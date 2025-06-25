@@ -1,0 +1,20 @@
+CREATE TABLE users (
+  id SERIAL PRIMARY KEY,
+  username VARCHAR(50) UNIQUE NOT NULL,
+  password VARCHAR(255), -- NULL for Adventurers with no password
+  role VARCHAR(20) NOT NULL CHECK (role IN ('donegeon_master', 'bailiff', 'adventurer')),
+  guild_id INTEGER, -- NULL for now, will link to guilds table later
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE guilds (
+  id SERIAL PRIMARY KEY,
+  name VARCHAR(100) NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+ALTER TABLE users
+ADD CONSTRAINT fk_guild
+FOREIGN KEY (guild_id)
+REFERENCES guilds(id);

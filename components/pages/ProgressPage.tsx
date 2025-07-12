@@ -1,0 +1,96 @@
+
+
+import React, { useState, useMemo } from 'react';
+import { useAppState } from '../../context/AppContext';
+import { RewardCategory, QuestCompletionStatus, RewardItem } from '../../types';
+import Card from '../ui/Card';
+import LineChart from '../ui/LineChart';
+
+const ProgressPage: React.FC = () => {
+    const { currentUser, questCompletions, quests, rewardTypes, appMode } = useAppState();
+    
+    const xpTypes = useMemo(() => {
+        return rewardTypes.filter(rt => rt.category === RewardCategory.XP);
+    }, [rewardTypes]);
+
+    const [selectedXpType, setSelectedXpType] = useState<string>(xpTypes.length > 0 ? xpTypes[0].id : '');
+
+    const chartData = useMemo(() => {
+        if (!currentUser || !selectedXpType) return [];
+        
+        const currentGuildId = appMode.mode === 'guild' ? appMode.guildId : undefined;
+
+        const userCompletions = questCompletions.filter(
+            c => c.userId === currentUser.id && c.status === QuestCompletionStatus.Approved && c.guildId === currentGuildId
+        );
+
+        const dataByDay: { [date: string]: number } = {};
+        const today = new Date();
+        
+        for (let i = 0; i < 30; i++) {
+            const date = new Date();
+            date.setDate(today.getDate() - i);
+            dataByDay[date.toISOString().split('T')[0]] = 0;
+        }
+
+        userCompletions.forEach(completion => {
+            const completionDate = new Date(completion.completedAt);
+            const thirtyDaysAgo = new Date(today);
+            thirtyDaysAgo.setDate(today.getDate() - 30);
+
+            if (completionDate >= thirtyDaysAgo) {
+                const quest = quests.find(q => q.id === completion.questId);
+                if (!quest) return;
+
+                const xpReward = quest.rewards.find(r => r.rewardTypeId === selectedXpType);
+                if (xpReward) {
+                    dataByDay[completion.completedAt] = (dataByDay[completion.completedAt] || 0) + xpReward.amount;
+                }
+            }
+        });
+        
+        let cumulativeTotal = 0;
+        return Object.entries(dataByDay)
+            .map(([date, value]) => ({ date: new Date(date), value }))
+            .sort((a, b) => a.date.getTime() - b.date.getTime())
+            .map(item => {
+                cumulativeTotal += item.value;
+                return {
+                    label: item.date.toLocaleDateString('default', { month: 'short', day: 'numeric' }),
+                    value: cumulativeTotal
+                };
+            });
+
+    }, [currentUser, questCompletions, quests, selectedXpType, appMode]);
+
+    if (!currentUser) return <div>Loading...</div>;
+
+    return (
+        <div>
+            <h1 className="text-4xl font-medieval text-stone-100 mb-8">Adventurer's Progress</h1>
+            <Card>
+                <div className="flex justify-between items-center px-6 py-4 border-b border-stone-700/60">
+                    <h3 className="text-xl font-medieval text-emerald-400">XP Gained (Last 30 Days)</h3>
+                    {xpTypes.length > 0 && (
+                        <select
+                            value={selectedXpType}
+                            onChange={(e) => setSelectedXpType(e.target.value)}
+                            className="px-4 py-2 bg-stone-700 border border-stone-600 rounded-md focus:ring-emerald-500 focus:border-emerald-500 transition"
+                        >
+                            {xpTypes.map(xp => <option key={xp.id} value={xp.id}>{xp.name}</option>)}
+                        </select>
+                    )}
+                </div>
+                <div className="p-6">
+                    {chartData.length > 0 && chartData.some(d => d.value > 0) ? (
+                        <LineChart data={chartData} color="#10b981" />
+                    ) : (
+                        <p className="text-stone-400 text-center">No XP of this type has been earned recently in this mode. Go complete some quests!</p>
+                    )}
+                </div>
+            </Card>
+        </div>
+    );
+};
+
+export default ProgressPage;

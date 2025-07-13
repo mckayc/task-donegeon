@@ -1,7 +1,7 @@
 # Task Donegeon
 
-**Version:** 0.0.20
-**Last Updated:** 2023-10-27T17:00:00Z
+**Version:** 0.0.21
+**Last Updated:** 2023-10-27T18:00:00Z
 
 ---
 
@@ -117,6 +117,12 @@ This is the fastest way to get a live, publicly accessible version of your appli
     -   Click on **Database** in the settings menu.
     -   Under **Connection string**, make sure the **URI** tab is selected.
     -   **Copy the entire, full connection string.** It is critical that you copy the whole value. It will start with `postgres://`.
+
+    > **⚠️ IMPORTANT NOTE:** You MUST copy the full **URI**. Do not just copy the "Host" field.
+    > - **Correct Hostname (from URI):** `aws-0-us-east-1.pooler.supabase.com`
+    > - **Incorrect Hostname:** `db.your-project-ref.supabase.co`
+    >
+    > Using the incorrect, shorter hostname will result in a connection error on Vercel.
 
 3.  **Set up and Deploy on Vercel**
     -   Log in to your [Vercel dashboard](https://vercel.com/new) and click **Add New... > Project**.

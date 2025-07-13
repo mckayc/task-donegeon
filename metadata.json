@@ -1,9 +1,8 @@
-
 {
   "name": "Task Donegeon",
-  "version": "0.0.20",
-  "lastChange": "Added a backend check for the DATABASE_URL and updated documentation to resolve a Vercel deployment connection error.",
+  "version": "0.0.21",
+  "lastChange": "Updated README with clearer instructions to fix the Vercel ENOTFOUND database connection error.",
   "description": "A gamified task and chore tracker for families and groups. Complete quests, earn currency and experience, and level up your character in a fun, medieval-themed adventure.",
   "requestFramePermissions": [],
-  "prompt": "Here is the latest error:\n\nServer responded with 500: {\"error\":\"Internal Server Error\",\"message\":\"Failed to load data from database: getaddrinfo ENOTFOUND db.eolcretsaccxsncuvkfm\"}"
+  "prompt": "Here is the latest error:\n\nServer responded with 500: {\"error\":\"Internal Server Error\",\"message\":\"Failed to load data from database: getaddrinfo ENOTFOUND db.eolcretsaccxsncuvkfm.supabase.co\"}"
 }

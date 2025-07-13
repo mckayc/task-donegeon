@@ -1,5 +1,6 @@
 
 
+
 import React, { createContext, useState, useContext, ReactNode, useEffect, useMemo, useCallback } from 'react';
 import { User, Quest, RewardTypeDefinition, RewardCategory, QuestAvailability, Role, QuestCompletion, QuestCompletionStatus, RewardItem, Market, MarketItem, QuestType, PurchaseRequest, PurchaseRequestStatus, Guild, Rank, Trophy, UserTrophy, Notification, TrophyRequirement, TrophyRequirementType, AppMode, Page, AdminAdjustment, AdminAdjustmentType, AvatarAsset, DigitalAsset, SystemLog, AppSettings, Blueprint, ImportResolution, IAppData, Theme } from '../types';
 import { createMockUsers, INITIAL_REWARD_TYPES, INITIAL_RANKS, INITIAL_TROPHIES, createSampleMarkets, createSampleQuests, createInitialGuilds, createInitialDigitalAssets, INITIAL_SETTINGS } from '../data/initialData';
@@ -38,7 +39,6 @@ interface AppDispatch {
   dismissQuest: (questId: string) => void;
   setCurrentUser: (user: User | null) => void;
   setTargetedUserForLogin: (user: User | null) => void;
-  setIsFirstRun: (isFirstRun: boolean) => void;
   setIsSwitchingUser: (isSwitching: boolean) => void;
   addRewardType: (rewardType: Omit<RewardTypeDefinition, 'id' | 'isCore'>) => void;
   updateRewardType: (rewardType: RewardTypeDefinition) => void;
@@ -77,6 +77,7 @@ interface AppDispatch {
   updateSettings: (settings: Partial<AppSettings>) => void;
   importBlueprint: (blueprint: Blueprint, resolutions: ImportResolution[]) => void;
   restoreFromBackup: (backupData: IAppData) => void;
+  populateInitialGameData: () => void;
 }
 
 const AppDispatchContext = createContext<AppDispatch | undefined>(undefined);
@@ -156,50 +157,16 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             }
             const savedData = await response.json() as IAppData;
 
-            if (savedData && Object.keys(savedData).length > 0 && savedData.users && savedData.users.length > 0) {
+            // Load data if it exists, otherwise the default empty state is used
+            if (savedData && Object.keys(savedData).length > 0) {
                 const finalSettings = deepMergeSettings(INITIAL_SETTINGS, savedData.settings || {});
                 setAppData({
+                    // Provide a default structure to merge with to prevent missing keys
+                    ...{ users: [], currentUser: null, quests: [], markets: [], rewardTypes: [], questCompletions: [], purchaseRequests: [], guilds: [], ranks: [], trophies: [], userTrophies: [], adminAdjustments: [], digitalAssets: [], systemLogs: [], appMode: { mode: 'personal' }, settings: INITIAL_SETTINGS },
                     ...savedData,
-                    currentUser: null,
+                    currentUser: null, // Always start logged out
                     settings: finalSettings,
                 });
-            } else {
-                // First run, initialize with sample data
-                const initialUsers = createMockUsers();
-                const initialGuilds = createInitialGuilds(initialUsers);
-                const initialQuests = createSampleQuests();
-                const initialMarkets = createSampleMarkets();
-                
-                const initialData: IAppData = {
-                    users: initialUsers,
-                    quests: initialQuests,
-                    markets: initialMarkets,
-                    rewardTypes: INITIAL_REWARD_TYPES,
-                    questCompletions: [],
-                    purchaseRequests: [],
-                    guilds: initialGuilds,
-                    ranks: INITIAL_RANKS,
-                    trophies: INITIAL_TROPHIES,
-                    userTrophies: [],
-                    adminAdjustments: [],
-                    digitalAssets: createInitialDigitalAssets(),
-                    systemLogs: [],
-                    appMode: { mode: 'personal' },
-                    currentUser: null,
-                    settings: INITIAL_SETTINGS,
-                };
-                setAppData(initialData);
-
-                // Save this initial state to the backend
-                const saveResponse = await fetch('/api/data/save', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(initialData),
-                });
-                if (!saveResponse.ok) {
-                    throw new Error('Failed to save initial data to the server.');
-                }
-                addNotification({ type: 'info', message: 'Welcome! Your Donegeon has been created.' });
             }
         } catch (error) {
             const errorMessage = error instanceof Error ? error.message : String(error);
@@ -237,7 +204,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   }, [debouncedAppData, isDataLoaded, addNotification, backendError]);
 
   const { users, currentUser, quests, markets, rewardTypes, questCompletions, purchaseRequests, guilds, ranks, trophies, userTrophies, adminAdjustments, digitalAssets, systemLogs, appMode, settings } = appData;
-  const isFirstRun = isDataLoaded && users.length === 0 && !backendError;
+  const isFirstRun = isDataLoaded && !users.some(u => u.role === Role.DonegeonMaster) && !backendError;
 
   const allTags = useMemo(() => {
     const tags = new Set<string>();
@@ -278,6 +245,44 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   }, [activePage]);
 
   // --- DISPATCH FUNCTIONS ---
+
+  const populateInitialGameData = useCallback(() => {
+    setAppData(prev => {
+        // To avoid overwriting, check if core assets already exist.
+        // A simple check on quests is enough.
+        if (prev.quests.length > 0) return prev;
+
+        addNotification({ type: 'info', message: 'Your Donegeon is being populated with sample data!' });
+        
+        // Add sample users (adventurers), filtering out the default admin as one was just created
+        const sampleAdventurers = createMockUsers()
+            .filter(u => u.role !== Role.DonegeonMaster)
+            .map((user, i) => ({
+                ...user,
+                id: `user-sample-${i}`,
+                avatar: {},
+                ownedAvatarAssets: [],
+                personalPurse: {},
+                personalExperience: {},
+                guildBalances: {},
+                ownedThemes: ['emerald', 'rose', 'sky'] as Theme[],
+            }));
+        
+        const allUsers = [...prev.users, ...sampleAdventurers];
+
+        return {
+            ...prev,
+            users: allUsers,
+            quests: createSampleQuests(),
+            markets: createSampleMarkets(),
+            rewardTypes: prev.rewardTypes.length > 0 ? prev.rewardTypes : INITIAL_REWARD_TYPES,
+            guilds: createInitialGuilds(allUsers),
+            ranks: prev.ranks.length > 0 ? prev.ranks : INITIAL_RANKS,
+            trophies: prev.trophies.length > 0 ? prev.trophies : INITIAL_TROPHIES,
+            digitalAssets: prev.digitalAssets.length > 0 ? prev.digitalAssets : createInitialDigitalAssets(),
+        };
+    });
+  }, [addNotification]);
 
   const removeNotification = useCallback((notificationId: string) => {
     setNotifications(prev => prev.filter(n => n.id !== notificationId));
@@ -1037,14 +1042,15 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   };
 
   const dispatch: AppDispatch = useMemo(() => ({
-    setAppMode, addUser, updateUser, addQuest, updateQuest, deleteQuest, setCurrentUser, setIsFirstRun,
+    setAppMode, addUser, updateUser, addQuest, updateQuest, deleteQuest, setCurrentUser,
     setIsSwitchingUser, setTargetedUserForLogin, addNotification, removeNotification, setActivePage, setActiveMarketId, deleteUser,
     addRewardType, updateRewardType, deleteRewardType, completeQuest, approveQuestCompletion,
     rejectQuestCompletion, claimQuest, releaseQuest, addMarket, updateMarket, deleteMarket,
     addMarketItem, updateMarketItem, deleteMarketItem, purchaseMarketItem, cancelPurchaseRequest,
     approvePurchaseRequest, rejectPurchaseRequest, addGuild, updateGuild, deleteGuild, setRanks,
     addTrophy, updateTrophy, deleteTrophy, awardTrophy, applyManualAdjustment, addDigitalAsset,
-    updateDigitalAsset, deleteDigitalAsset, dismissQuest, updateSettings, importBlueprint, restoreFromBackup
+    updateDigitalAsset, deleteDigitalAsset, dismissQuest, updateSettings, importBlueprint, restoreFromBackup,
+    populateInitialGameData
   }), [
       setAppMode, addUser, updateUser, addQuest, updateQuest, deleteQuest, setCurrentUser,
       setIsSwitchingUser, setTargetedUserForLogin, addNotification, removeNotification, setActivePage, setActiveMarketId, deleteUser,
@@ -1053,7 +1059,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       addMarketItem, updateMarketItem, deleteMarketItem, purchaseMarketItem, cancelPurchaseRequest,
       approvePurchaseRequest, rejectPurchaseRequest, addGuild, updateGuild, deleteGuild, setRanks,
       addTrophy, updateTrophy, deleteTrophy, awardTrophy, applyManualAdjustment, addDigitalAsset,
-      updateDigitalAsset, deleteDigitalAsset, dismissQuest, updateSettings, importBlueprint, restoreFromBackup
+      updateDigitalAsset, deleteDigitalAsset, dismissQuest, updateSettings, importBlueprint, restoreFromBackup,
+      populateInitialGameData
   ]);
 
   if (!isDataLoaded) {

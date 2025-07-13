@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { Role } from '../../types';
@@ -6,7 +7,7 @@ import Input from '../ui/Input';
 import UserFormFields from '../users/UserFormFields';
 
 const FirstRunWizard: React.FC = () => {
-  const { addUser, setIsFirstRun, setCurrentUser } = useAppDispatch();
+  const { addUser, setCurrentUser, populateInitialGameData } = useAppDispatch();
   const { settings } = useAppState();
   const [formData, setFormData] = useState({
     firstName: '',
@@ -43,8 +44,10 @@ const FirstRunWizard: React.FC = () => {
     };
     
     const createdUser = addUser(newUser);
+    // After creating the admin, populate the world with sample data
+    populateInitialGameData();
     setCurrentUser(createdUser);
-    setIsFirstRun(false);
+    // isFirstRun is now derived state, so no need to set it false manually
   };
 
   return (
@@ -65,7 +68,7 @@ const FirstRunWizard: React.FC = () => {
           
           {error && <p className="text-red-400 text-center">{error}</p>}
           <div className="pt-4 text-center">
-            <Button type="submit" className="w-full md:w-auto">Create My Account</Button>
+            <Button type="submit" className="w-full md:w-auto">Create My Account & Build the World</Button>
           </div>
         </form>
       </div>

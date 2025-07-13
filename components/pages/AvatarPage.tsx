@@ -1,14 +1,13 @@
+
 import React, { useMemo, useState } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import Avatar from '../ui/Avatar';
 import Card from '../ui/Card';
-import { AvatarAsset, User } from '../../types';
+import { AvatarAsset, DigitalAsset } from '../../types';
 
 const AvatarPage: React.FC = () => {
-    const { currentUser, markets } = useAppState();
+    const { currentUser, markets, digitalAssets } = useAppState();
     const { updateUser } = useAppDispatch();
-
-    const [activeSlot, setActiveSlot] = useState<string>('hair');
 
     const { ownedAssetsBySlot, allMarketAvatarItems, availableSlots } = useMemo(() => {
         const slots = new Map<string, AvatarAsset[]>();
@@ -27,18 +26,16 @@ const AvatarPage: React.FC = () => {
             slots.set(asset.slot, [...currentSlotAssets, asset]);
         });
         
-        // Ensure activeSlot is valid
         const slotKeys = Array.from(slots.keys());
-        if (slotKeys.length > 0 && !slotKeys.includes(activeSlot)) {
-            setActiveSlot(slotKeys[0]);
-        }
-
         return { 
             ownedAssetsBySlot: slots, 
             allMarketAvatarItems: marketItems,
             availableSlots: slotKeys,
         };
-    }, [currentUser?.ownedAvatarAssets, markets, activeSlot]);
+    }, [currentUser?.ownedAvatarAssets, markets]);
+    
+    const [activeSlot, setActiveSlot] = useState<string>(availableSlots[0] || 'hair');
+
 
     if (!currentUser) {
         return <Card title="Error"><p>Could not load user data.</p></Card>;
@@ -83,12 +80,8 @@ const AvatarPage: React.FC = () => {
                         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 max-h-[60vh] overflow-y-auto scrollbar-hide p-1">
                             {assetsForActiveSlot.map(asset => {
                                 const isEquipped = currentUser.avatar[asset.slot] === asset.assetId;
-                                const previewUser: User = {
-                                    ...currentUser,
-                                    avatar: {
-                                        [asset.slot]: asset.assetId
-                                    }
-                                };
+                                const fullAsset = digitalAssets.find(da => da.slot === asset.slot && da.assetId === asset.assetId);
+
                                 return (
                                     <button
                                         key={asset.assetId}
@@ -100,7 +93,11 @@ const AvatarPage: React.FC = () => {
                                         }`}
                                     >
                                         <div className="w-20 h-20 mx-auto bg-stone-700 rounded-lg flex items-center justify-center overflow-hidden mb-2">
-                                            <Avatar user={previewUser} className="w-full h-full scale-150" />
+                                            {fullAsset?.dataUrl ? (
+                                                <img src={fullAsset.dataUrl} alt={fullAsset.name} className="w-full h-full object-contain" />
+                                            ) : (
+                                                <div className="text-xs text-stone-500">No Img</div>
+                                            )}
                                         </div>
                                         <p className="font-semibold text-sm text-stone-200 truncate">
                                             {allMarketAvatarItems.get(asset.assetId) || asset.assetId}

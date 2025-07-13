@@ -143,6 +143,7 @@ export interface DigitalAsset {
   slot: string;
   assetId: string;
   cost: RewardItem[];
+  dataUrl: string;
 }
 
 export interface Market {

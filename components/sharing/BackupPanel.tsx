@@ -9,13 +9,14 @@ const BackupPanel: React.FC = () => {
     const handleBackup = () => {
         // Exclude transient UI state from the backup
         const {
+            isAppUnlocked,
+            isFirstRun,
             notifications,
             isSwitchingUser,
+            targetedUserForLogin,
             activePage,
             activeMarketId,
             allTags,
-            svgContent,
-            isFirstRun,
             ...dataToBackup
         } = appState;
 

@@ -1,5 +1,6 @@
 
 
+
 import React, { useState } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { DigitalAsset } from '../../types';
@@ -43,6 +44,7 @@ const DigitalAssetsPage: React.FC = () => {
                     <table className="w-full text-left">
                         <thead className="border-b border-stone-700/60">
                             <tr>
+                                <th className="p-4 font-semibold">Preview</th>
                                 <th className="p-4 font-semibold">Name</th>
                                 <th className="p-4 font-semibold">Slot</th>
                                 <th className="p-4 font-semibold">Asset ID</th>
@@ -53,6 +55,15 @@ const DigitalAssetsPage: React.FC = () => {
                         <tbody>
                             {digitalAssets.map(asset => (
                                 <tr key={asset.id} className="border-b border-stone-700/40 last:border-b-0">
+                                    <td className="p-4">
+                                        <div className="w-12 h-12 bg-stone-700 rounded-md flex items-center justify-center">
+                                            {asset.dataUrl ? (
+                                                <img src={asset.dataUrl} alt={asset.name} className="w-full h-full object-contain" />
+                                            ) : (
+                                                <span className="text-xs text-stone-500">No Img</span>
+                                            )}
+                                        </div>
+                                    </td>
                                     <td className="p-4 font-bold">{asset.name}</td>
                                     <td className="p-4 text-stone-400 capitalize">{asset.slot}</td>
                                     <td className="p-4 text-stone-400 font-mono">{asset.assetId}</td>

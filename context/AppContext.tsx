@@ -1,6 +1,7 @@
 
 
 
+
 import React, { createContext, useState, useContext, ReactNode, useEffect, useMemo, useCallback } from 'react';
 import { User, Quest, RewardTypeDefinition, RewardCategory, QuestAvailability, Role, QuestCompletion, QuestCompletionStatus, RewardItem, Market, MarketItem, QuestType, PurchaseRequest, PurchaseRequestStatus, Guild, Rank, Trophy, UserTrophy, Notification, TrophyRequirement, TrophyRequirementType, AppMode, Page, AdminAdjustment, AdminAdjustmentType, AvatarAsset, MediaAsset, SystemLog, AppSettings, Blueprint, ImportResolution, IAppData, Theme, ShareableAssetType, DigitalAsset } from '../types';
 import { createMockUsers, INITIAL_REWARD_TYPES, INITIAL_RANKS, INITIAL_TROPHIES, createSampleMarkets, createSampleQuests, createInitialGuilds, INITIAL_SETTINGS } from '../data/initialData';
@@ -22,7 +23,6 @@ interface AppState extends IAppData {
   activePage: Page;
   activeMarketId: string | null;
   allTags: string[];
-  svgContent: string | null;
 }
 
 const AppStateContext = createContext<AppState | undefined>(undefined);
@@ -138,7 +138,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [activeMarketId, setActiveMarketId] = useState<string | null>(null);
   const [isSwitchingUser, setIsSwitchingUser] = useState<boolean>(false);
   const [targetedUserForLogin, setTargetedUserForLogin] = useState<User | null>(null);
-  const [svgContent, setSvgContent] = useState<string | null>(null);
   
   const [isAppUnlocked, setAppUnlockedState] = useState<boolean>(() => {
     return sessionStorage.getItem('isAppUnlocked') === 'true';
@@ -154,14 +153,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const addNotification = useCallback((notification: Omit<Notification, 'id'>) => {
     const newNotification = { ...notification, id: `notif-${Date.now()}-${Math.random()}` };
     setNotifications(prev => [...prev, newNotification]);
-  }, []);
-
-  // Fetch avatar SVG once on app load
-  useEffect(() => {
-    fetch('/assets/avatar.svg')
-      .then(res => res.text())
-      .then(setSvgContent)
-      .catch(console.error);
   }, []);
 
   // Load data from backend or initialize
@@ -1167,7 +1158,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     activePage,
     activeMarketId,
     allTags,
-    svgContent,
   };
 
   const dispatchValue: AppDispatch = {

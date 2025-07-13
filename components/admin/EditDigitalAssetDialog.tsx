@@ -1,5 +1,6 @@
 
 
+
 import React, { useState, useEffect } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { DigitalAsset, RewardItem, RewardCategory } from '../../types';
@@ -21,6 +22,7 @@ const EditDigitalAssetDialog: React.FC<EditDigitalAssetDialogProps> = ({ asset, 
     slot: 'hair',
     assetId: '',
     cost: [] as RewardItem[],
+    dataUrl: '',
   });
   const [error, setError] = useState('');
 
@@ -32,10 +34,22 @@ const EditDigitalAssetDialog: React.FC<EditDigitalAssetDialogProps> = ({ asset, 
         slot: asset.slot,
         assetId: asset.assetId,
         cost: [...asset.cost],
+        dataUrl: asset.dataUrl,
       });
     }
   }, [asset]);
   
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+            setFormData(prev => ({...prev, dataUrl: reader.result as string}));
+        };
+        reader.readAsDataURL(file);
+    }
+  };
+
   const handleRewardChange = (category: 'cost') => (index: number, field: keyof RewardItem, value: string | number) => {
     const newItems = [...formData[category]];
     if (field === 'amount') {
@@ -61,6 +75,10 @@ const EditDigitalAssetDialog: React.FC<EditDigitalAssetDialogProps> = ({ asset, 
     e.preventDefault();
     if (!formData.name.trim() || !formData.assetId.trim()) {
       setError('Name and Asset ID are required.');
+      return;
+    }
+    if (!formData.dataUrl) {
+      setError('An image file must be uploaded for this asset.');
       return;
     }
     setError('');
@@ -90,7 +108,17 @@ const EditDigitalAssetDialog: React.FC<EditDigitalAssetDialogProps> = ({ asset, 
             
             <div className="grid grid-cols-2 gap-4">
               <Input label="Avatar Slot" placeholder="e.g. hair, shirt" value={formData.slot} onChange={(e) => setFormData(p => ({...p, slot: e.target.value.toLowerCase()}))} required />
-              <Input label="Asset ID (from SVG)" placeholder="e.g. hair-style-1" value={formData.assetId} onChange={(e) => setFormData(p => ({...p, assetId: e.target.value}))} required />
+              <Input label="Asset ID (must be unique for this slot)" placeholder="e.g. hair-style-1" value={formData.assetId} onChange={(e) => setFormData(p => ({...p, assetId: e.target.value}))} required />
+            </div>
+
+            <div>
+              <label htmlFor="asset-image" className="block text-sm font-medium text-stone-300 mb-1">Asset Image</label>
+              <Input id="asset-image" type="file" accept="image/png, image/svg+xml, image/jpeg" onChange={handleFileChange} />
+              {formData.dataUrl && (
+                  <div className="mt-4 p-2 bg-stone-900/50 rounded-md inline-block">
+                    <img src={formData.dataUrl} alt="Asset preview" className="w-24 h-24 object-contain" />
+                  </div>
+              )}
             </div>
 
             <RewardInputGroup category='cost' items={formData.cost} onChange={handleRewardChange('cost')} onAdd={handleAddRewardForCategory('cost')} onRemove={handleRemoveReward('cost')} />

@@ -1,7 +1,7 @@
 {
   "name": "Task Donegeon",
-  "version": "0.0.28",
-  "lastChange": "Added full Docker support for self-hosting and implemented a session-based 'Master Lock' security screen.",
+  "version": "0.0.30",
+  "lastChange": "Updated the README.md with the project's GitHub URL for setup instructions.",
   "description": "A gamified task and chore tracker for families and groups. Complete quests, earn currency and experience, and level up your character in a fun, medieval-themed adventure.",
   "requestFramePermissions": [],
   "prompt": "These are the existing files in the app:"

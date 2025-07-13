@@ -1,7 +1,7 @@
 # Task Donegeon
 
-**Version:** 0.0.28
-**Last Updated:** 2023-10-28T10:00:00Z
+**Version:** 0.0.30
+**Last Updated:** 2023-10-28T12:00:00Z
 
 ---
 
@@ -71,8 +71,8 @@ This setup runs the frontend and backend as separate processes, which is ideal f
 
 1.  **Clone the Repository**
     ```bash
-    git clone <your-repository-url>
-    cd <repository-folder>
+    git clone https://github.com/mckayc/task-donegeon.git
+    cd task-donegeon
     ```
 2.  **Set up the Database**
     You need a PostgreSQL database. You can install it locally or use a free tier from a cloud provider like Supabase. The easiest local method is using Docker:
@@ -87,13 +87,12 @@ This setup runs the frontend and backend as separate processes, which is ideal f
     cd backend
     npm install
 
-    # Create an environment file
-    touch .env
+    # Create an environment file from the example template
+    cp ../.env.example .env
 
-    # Add your database connection string to the .env file
+    # Now edit the new .env file with your database connection string
     # Example: DATABASE_URL=postgres://postgres:your_secret_password@localhost:5432/postgres
-    echo "DATABASE_URL=your_database_connection_string" > .env
-
+    
     # Start the backend server
     npm start
     ```
@@ -111,7 +110,7 @@ This setup runs the frontend and backend as separate processes, which is ideal f
 This is the fastest way to get a live, publicly accessible version of your application.
 
 1.  **Fork the Repository**
-    Fork this project's repository to your own GitHub account.
+    Fork the repository at `https://github.com/mckayc/task-donegeon` to your own GitHub account.
 
 2.  **Set up Supabase Project**
     -   Log in to your [Supabase dashboard](https://supabase.com/dashboard) and create a new project.
@@ -156,21 +155,16 @@ This method uses Docker Compose to build and run the application and its databas
 
 1.  **Clone the Repository**
     ```bash
-    git clone <your-repository-url>
-    cd <repository-folder>
+    git clone https://github.com/mckayc/task-donegeon.git
+    cd task-donegeon
     ```
 
 2.  **Create Environment File**
-    Create a file named `.env` in the root of the project. This file will provide the credentials for the database container.
+    This project includes an example environment file `.env.example`. Copy it to create your local environment file:
     ```bash
-    touch .env
+    cp .env.example .env
     ```
-    Add the following content to the `.env` file, replacing the placeholder values:
-    ```
-    POSTGRES_USER=donegeon
-    POSTGRES_PASSWORD=a_very_strong_password
-    POSTGRES_DB=task_donegeon_db
-    ```
+    Now, open the `.env` file and **change the `POSTGRES_PASSWORD`** to a strong, unique password.
 
 3.  **Build and Run with Docker Compose**
     ```bash
@@ -178,7 +172,7 @@ This method uses Docker Compose to build and run the application and its databas
     ```
     This command will:
     -   Build a production-ready Docker image for the application.
-    -   Create and start a PostgreSQL container.
+    -   Create and start a PostgreSQL container using the credentials from your `.env` file.
     -   Create and start the application container, connecting it to the database.
     
     The application will be available at `http://localhost:3001`. To stop the application, press `Ctrl+C` in the terminal and then run `docker-compose down`.

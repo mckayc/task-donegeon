@@ -1,7 +1,7 @@
 {
-  "name": "Task Donegeon (0.1 - Docker Working)",
-  "version": "0.0.33",
-  "lastChange": "Added Media Manager and Portainer instructions.",
+  "name": "Task Donegeon",
+  "version": "0.0.34",
+  "lastChange": "Implemented AI Asset Library and hybrid file storage (local/Supabase).",
   "description": "A gamified task and chore tracker for families and groups. Complete quests, earn currency and experience, and level up your character in a fun, medieval-themed adventure.",
   "requestFramePermissions": [],
   "prompt": ""

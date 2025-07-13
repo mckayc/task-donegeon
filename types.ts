@@ -122,7 +122,7 @@ export interface MediaAsset {
   name: string;
   type: string; // e.g., 'image/png'
   size: number;
-  dataUrl: string; // base64 data URL
+  url: string; // URL to the hosted asset
   createdAt: string;
 }
 
@@ -142,8 +142,7 @@ export interface DigitalAsset {
   description: string;
   slot: string;
   assetId: string;
-  cost: RewardItem[];
-  dataUrl: string;
+  imageUrl: string;
 }
 
 export interface Market {

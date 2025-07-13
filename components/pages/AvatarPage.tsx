@@ -1,4 +1,5 @@
 
+
 import React, { useMemo, useState } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import Avatar from '../ui/Avatar';
@@ -93,8 +94,8 @@ const AvatarPage: React.FC = () => {
                                         }`}
                                     >
                                         <div className="w-20 h-20 mx-auto bg-stone-700 rounded-lg flex items-center justify-center overflow-hidden mb-2">
-                                            {fullAsset?.dataUrl ? (
-                                                <img src={fullAsset.dataUrl} alt={fullAsset.name} className="w-full h-full object-contain" />
+                                            {fullAsset?.imageUrl ? (
+                                                <img src={fullAsset.imageUrl} alt={fullAsset.name} className="w-full h-full object-contain" />
                                             ) : (
                                                 <div className="text-xs text-stone-500">No Img</div>
                                             )}

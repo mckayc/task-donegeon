@@ -3,23 +3,71 @@ const express = require('express');
 const cors = require('cors');
 const { Pool } = require('pg');
 const path = require('path');
+const multer = require('multer');
+const { createClient } = require('@supabase/supabase-js');
+const { GoogleGenAI } = require('@google/genai');
+const fs = require('fs');
 
-// --- Environment Variable Check ---
-if (!process.env.DATABASE_URL) {
-  console.error('FATAL ERROR: DATABASE_URL environment variable is not set.');
-  process.exit(1);
+// Define the Type enum values, as they are not directly available in JS
+const Type = {
+    OBJECT: 'OBJECT',
+    ARRAY: 'ARRAY',
+    STRING: 'STRING',
+    NUMBER: 'NUMBER',
+    INTEGER: 'INTEGER',
+    BOOLEAN: 'BOOLEAN',
+};
+
+
+// --- Environment Variable Checks ---
+const requiredEnv = ['DATABASE_URL', 'API_KEY', 'STORAGE_PROVIDER'];
+if (process.env.STORAGE_PROVIDER === 'supabase') {
+    requiredEnv.push('SUPABASE_URL', 'SUPABASE_SERVICE_ROLE_KEY');
+}
+for (const envVar of requiredEnv) {
+    if (!process.env[envVar]) {
+        console.error(`FATAL ERROR: ${envVar} environment variable is not set.`);
+        process.exit(1);
+    }
 }
 
 const app = express();
 const port = process.env.PORT || 3001;
 
 // === Middleware ===
-app.use(cors()); 
-// Increase limit for potentially large state saves from the client
+app.use(cors());
 app.use(express.json({ limit: '10mb' }));
 
-// Serve static files from the React app build directory
+// === Supabase Client (if applicable) ===
+let supabase;
+if (process.env.STORAGE_PROVIDER === 'supabase') {
+    supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
+}
+
+// === Multer Configuration for File Uploads ===
+const storage = process.env.STORAGE_PROVIDER === 'supabase'
+  ? multer.memoryStorage()
+  : multer.diskStorage({
+      destination: (req, file, cb) => {
+        const uploadsDir = path.join(__dirname, 'uploads');
+        fs.mkdirSync(uploadsDir, { recursive: true });
+        cb(null, uploadsDir);
+      },
+      filename: (req, file, cb) => {
+        cb(null, `${Date.now()}-${file.originalname}`);
+      }
+    });
+const upload = multer({ storage });
+
+
+// === Static File Serving ===
+// Serve React app build files
 app.use(express.static(path.join(__dirname, '../dist')));
+// Serve local uploads if using local storage
+if (process.env.STORAGE_PROVIDER === 'local') {
+    app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+}
+
 
 // === Database Connection Pool ===
 const pool = new Pool({
@@ -52,7 +100,6 @@ const initializeDatabase = async () => {
                 console.error('Could not connect to database after several retries. Exiting.');
                 process.exit(1);
             }
-            // Wait before retrying
             await new Promise(res => setTimeout(res, 5000));
         }
     }
@@ -61,86 +108,87 @@ const initializeDatabase = async () => {
 
 // === API ROUTES ===
 
-// Health check endpoint
-app.get('/api/health', async (req, res, next) => {
-  try {
-    const client = await pool.connect();
-    try {
-      await client.query('SELECT NOW()'); 
-      res.status(200).json({ 
-        status: 'ok', 
-        message: 'Backend is healthy and database connection is successful.' 
-      });
-    } finally {
-      client.release();
-    }
-  } catch (err) {
-    err.message = `Database health check failed: ${err.message}`;
-    next(err); 
-  }
-});
+// Health check
+app.get('/api/health', (req, res) => res.status(200).json({ status: 'ok' }));
 
-// Load all application data
+// Load data
 app.get('/api/data/load', async (req, res, next) => {
     try {
         const result = await pool.query('SELECT key, value FROM app_data');
-        const data = result.rows.reduce((acc, row) => {
-            acc[row.key] = row.value;
-            return acc;
-        }, {});
-        res.status(200).json(data);
-    } catch (err) {
-        err.message = `Failed to load data from database: ${err.message}`;
-        next(err);
-    }
+        res.status(200).json(result.rows[0]?.value || {});
+    } catch (err) { next(err); }
 });
 
-// Save all application data from a single state object
+// Save data
 app.post('/api/data/save', async (req, res, next) => {
-    const dataToSave = req.body;
-    if (typeof dataToSave !== 'object' || dataToSave === null) {
-        return res.status(400).json({ error: 'Invalid data format. Expected a JSON object.' });
-    }
-
-    const client = await pool.connect();
     try {
-        await client.query('BEGIN'); // Start transaction
-
-        for (const key in dataToSave) {
-            if (Object.prototype.hasOwnProperty.call(dataToSave, key)) {
-                const value = JSON.stringify(dataToSave[key]);
-                const query = {
-                    text: `
-                        INSERT INTO app_data (key, value)
-                        VALUES ($1, $2)
-                        ON CONFLICT (key) DO UPDATE
-                        SET value = $2;
-                    `,
-                    values: [key, value],
-                };
-                await client.query(query);
-            }
-        }
-        
-        await client.query('COMMIT'); // Commit transaction
+        const dataToSave = JSON.stringify(req.body);
+        await pool.query(
+            `INSERT INTO app_data (key, value) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET value = $2;`,
+            ['app_state', dataToSave]
+        );
         res.status(200).json({ message: 'Data saved successfully.' });
+    } catch (err) { next(err); }
+});
+
+// Media Upload
+app.post('/api/media/upload', upload.single('file'), async (req, res, next) => {
+    if (!req.file) return res.status(400).json({ error: 'No file uploaded.' });
+
+    try {
+        let fileUrl;
+        if (process.env.STORAGE_PROVIDER === 'supabase') {
+            const { data, error } = await supabase.storage
+                .from('media-assets')
+                .upload(req.file.originalname, req.file.buffer, {
+                    contentType: req.file.mimetype,
+                    upsert: true,
+                });
+            if (error) throw error;
+            const { data: { publicUrl } } = supabase.storage.from('media-assets').getPublicUrl(data.path);
+            fileUrl = publicUrl;
+        } else {
+            fileUrl = `/uploads/${req.file.filename}`;
+        }
+        res.status(201).json({ url: fileUrl, name: req.file.originalname, type: req.file.mimetype, size: req.file.size });
     } catch (err) {
-        await client.query('ROLLBACK'); // Rollback on error
-        err.message = `Failed to save data to database: ${err.message}`;
         next(err);
-    } finally {
-        client.release();
     }
 });
 
-// The "catchall" handler: for any request that doesn't match one above,
-// send back React's index.html file.
-app.get('*', (req, res) => {
-    res.sendFile(path.join(__dirname, '../dist/index.html'));
+// AI Asset Generation
+app.post('/api/generate-assets', async (req, res, next) => {
+    const { category, assetType } = req.body;
+    if (!category || !assetType) {
+        return res.status(400).json({ error: 'Category and assetType are required.' });
+    }
+
+    const ai = new GoogleGenAI({apiKey: process.env.API_KEY});
+    const isQuest = assetType === 'Quest';
+
+    const questSchema = { type: Type.OBJECT, properties: { title: { type: Type.STRING }, description: { type: Type.STRING }, reward_type: { type: Type.STRING }, reward_amount: { type: Type.INTEGER }, requires_approval: { type: Type.BOOLEAN } } };
+    const marketItemSchema = { type: Type.OBJECT, properties: { title: { type: Type.STRING }, description: { type: Type.STRING }, cost_type: { type: Type.STRING }, cost_amount: { type: Type.INTEGER } } };
+
+    const prompt = `Generate a list of 5 creative and engaging ${isQuest ? 'quests' : 'market items'} for a gamified to-do list app. The theme is "${category}". For each item, provide a title, a brief description, and the requested values.`;
+    const schema = { type: Type.ARRAY, items: isQuest ? questSchema : marketItemSchema };
+
+    try {
+        const response = await ai.models.generateContent({
+            model: 'gemini-2.5-flash',
+            contents: prompt,
+            config: { responseMimeType: 'application/json', responseSchema: schema },
+        });
+        const parsedAssets = JSON.parse(response.text);
+        res.status(200).json(parsedAssets);
+    } catch (err) {
+        next(err);
+    }
 });
 
 
-// === Error Handling Middleware ===
+// === Final Catchall & Error Handling ===
+app.get('*', (req, res) => res.sendFile(path.join(__dirname, '../dist/index.html')));
+
 app.use((err, req, res, next) => {
   console.error('An error occurred:', err.stack);
   res.status(500).json({

@@ -29,15 +29,14 @@ const Avatar: React.FC<AvatarProps> = ({ user, className }) => {
 
     return (
         <div className={`relative w-full h-full ${className || ''}`}>
-            {/* The order of assets can be controlled here if needed, e.g., by sorting `equippedAssets` */}
             {equippedAssets.map(asset => (
-                asset.dataUrl && (
+                asset.imageUrl && (
                     <img
                         key={asset.id}
-                        src={asset.dataUrl}
+                        src={asset.imageUrl}
                         alt={asset.name}
                         className="absolute inset-0 w-full h-full object-contain"
-                        style={{ zIndex: 1 }} // Basic layering, can be enhanced
+                        style={{ zIndex: 1 }}
                     />
                 )
             ))}

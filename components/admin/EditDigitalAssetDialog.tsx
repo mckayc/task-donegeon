@@ -1,12 +1,9 @@
 
-
-
 import React, { useState, useEffect } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
-import { DigitalAsset, RewardItem, RewardCategory } from '../../types';
+import { DigitalAsset } from '../../types';
 import Button from '../ui/Button';
 import Input from '../ui/Input';
-import RewardInputGroup from '../forms/RewardInputGroup';
 
 interface EditDigitalAssetDialogProps {
   asset: DigitalAsset | null;
@@ -14,15 +11,13 @@ interface EditDigitalAssetDialogProps {
 }
 
 const EditDigitalAssetDialog: React.FC<EditDigitalAssetDialogProps> = ({ asset, onClose }) => {
-  const { rewardTypes } = useAppState();
   const { addDigitalAsset, updateDigitalAsset } = useAppDispatch();
   const [formData, setFormData] = useState({
     name: '',
     description: '',
     slot: 'hair',
     assetId: '',
-    cost: [] as RewardItem[],
-    dataUrl: '',
+    imageUrl: '',
   });
   const [error, setError] = useState('');
 
@@ -33,43 +28,10 @@ const EditDigitalAssetDialog: React.FC<EditDigitalAssetDialogProps> = ({ asset, 
         description: asset.description,
         slot: asset.slot,
         assetId: asset.assetId,
-        cost: [...asset.cost],
-        dataUrl: asset.dataUrl,
+        imageUrl: asset.imageUrl,
       });
     }
   }, [asset]);
-  
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-        const reader = new FileReader();
-        reader.onloadend = () => {
-            setFormData(prev => ({...prev, dataUrl: reader.result as string}));
-        };
-        reader.readAsDataURL(file);
-    }
-  };
-
-  const handleRewardChange = (category: 'cost') => (index: number, field: keyof RewardItem, value: string | number) => {
-    const newItems = [...formData[category]];
-    if (field === 'amount') {
-        newItems[index][field] = Math.max(1, Number(value));
-    } else {
-        newItems[index][field] = value as string;
-    }
-    setFormData(prev => ({ ...prev, [category]: newItems }));
-  };
-  
-  const handleAddRewardForCategory = (category: 'cost') => (rewardCat: RewardCategory) => {
-    const defaultReward = rewardTypes.find(rt => rt.category === rewardCat);
-    const newItems = [...formData[category], { rewardTypeId: defaultReward?.id || '', amount: 1 }];
-    setFormData(prev => ({ ...prev, [category]: newItems }));
-  };
-  
-  const handleRemoveReward = (category: 'cost') => (indexToRemove: number) => {
-    const newItems = formData[category].filter((_, i) => i !== indexToRemove);
-    setFormData(prev => ({ ...prev, [category]: newItems }));
-  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -77,8 +39,8 @@ const EditDigitalAssetDialog: React.FC<EditDigitalAssetDialogProps> = ({ asset, 
       setError('Name and Asset ID are required.');
       return;
     }
-    if (!formData.dataUrl) {
-      setError('An image file must be uploaded for this asset.');
+    if (!formData.imageUrl.trim()) {
+      setError('An Image URL is required. Please upload the image in the Media Manager first and paste the URL here.');
       return;
     }
     setError('');
@@ -112,16 +74,13 @@ const EditDigitalAssetDialog: React.FC<EditDigitalAssetDialogProps> = ({ asset, 
             </div>
 
             <div>
-              <label htmlFor="asset-image" className="block text-sm font-medium text-stone-300 mb-1">Asset Image</label>
-              <Input id="asset-image" type="file" accept="image/png, image/svg+xml, image/jpeg" onChange={handleFileChange} />
-              {formData.dataUrl && (
+              <Input label="Image URL" placeholder="Upload in Media Manager and paste URL here" value={formData.imageUrl} onChange={(e) => setFormData(p => ({...p, imageUrl: e.target.value}))} required />
+              {formData.imageUrl && (
                   <div className="mt-4 p-2 bg-stone-900/50 rounded-md inline-block">
-                    <img src={formData.dataUrl} alt="Asset preview" className="w-24 h-24 object-contain" />
+                    <img src={formData.imageUrl} alt="Asset preview" className="w-24 h-24 object-contain" />
                   </div>
               )}
             </div>
-
-            <RewardInputGroup category='cost' items={formData.cost} onChange={handleRewardChange('cost')} onAdd={handleAddRewardForCategory('cost')} onRemove={handleRemoveReward('cost')} />
 
             {error && <p className="text-red-400 text-center">{error}</p>}
             <div className="flex justify-end space-x-4 pt-4">

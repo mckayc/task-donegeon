@@ -1,14 +1,12 @@
 
-
 import React, { useState } from 'react';
-import { GoogleGenAI, Type } from '@google/genai';
 import { useAppState, useAppDispatch } from '../../../context/AppContext';
 import Button from '../../ui/Button';
 import Card from '../../ui/Card';
-import { Quest, MarketItem, RewardCategory, RewardTypeDefinition, RewardItem, QuestType, QuestAvailability } from '../../../types';
+import { Quest, MarketItem, QuestType, QuestAvailability } from '../../../types';
 
 type AssetCategory = 'elementary_chores' | 'teen_chores' | 'fitness_goals' | 'learning_goals' | 'fantasy_rpg_items' | 'sci_fi_items';
-type GeneratedAsset = Partial<Quest> | Partial<MarketItem>;
+type GeneratedAsset = Partial<Quest> & Partial<MarketItem>;
 
 const CATEGORIES: { id: AssetCategory; label: string; assetType: 'Quest' | 'MarketItem'; }[] = [
     { id: 'elementary_chores', label: 'Quests: Elementary Chores', assetType: 'Quest' },
@@ -19,33 +17,9 @@ const CATEGORIES: { id: AssetCategory; label: string; assetType: 'Quest' | 'Mark
     { id: 'sci_fi_items', label: 'Market: Sci-Fi Gadgets', assetType: 'MarketItem' },
 ];
 
-const questSchema = {
-    type: Type.OBJECT,
-    properties: {
-        title: { type: Type.STRING, description: 'The creative and engaging title of the quest.' },
-        description: { type: Type.STRING, description: 'A brief, fun description of what needs to be done.' },
-        reward_type: { type: Type.STRING, enum: ['strength', 'diligence', 'wisdom', 'skill', 'creative'], description: 'The category of XP reward.' },
-        reward_amount: { type: Type.INTEGER, description: 'A small integer amount for the reward, between 5 and 20.' },
-        requires_approval: { type: Type.BOOLEAN, description: 'Whether this quest should require admin approval upon completion.' },
-    },
-    required: ['title', 'description', 'reward_type', 'reward_amount', 'requires_approval']
-};
-
-const marketItemSchema = {
-    type: Type.OBJECT,
-    properties: {
-        title: { type: Type.STRING, description: 'The creative and engaging name of the market item.' },
-        description: { type: Type.STRING, description: 'A brief, fun description of the item.' },
-        cost_type: { type: Type.STRING, enum: ['gold', 'gems', 'crystals'], description: 'The type of currency needed to buy this.' },
-        cost_amount: { type: Type.INTEGER, description: 'An integer amount for the cost, appropriate for the item.' },
-    },
-    required: ['title', 'description', 'cost_type', 'cost_amount']
-};
-
-
 const AssetLibraryPage: React.FC = () => {
     const { markets, rewardTypes } = useAppState();
-    const { addQuest, addMarketItem } = useAppDispatch();
+    const { addQuest, addMarketItem, addNotification } = useAppDispatch();
 
     const [selectedCategory, setSelectedCategory] = useState<AssetCategory>('elementary_chores');
     const [isLoading, setIsLoading] = useState(false);
@@ -57,40 +31,30 @@ const AssetLibraryPage: React.FC = () => {
         setGeneratedAssets([]);
         setSelection([]);
 
-        if (!process.env.API_KEY) {
-            alert("API_KEY environment variable not set.");
-            setIsLoading(false);
-            return;
-        }
-        
-        const ai = new GoogleGenAI({apiKey: process.env.API_KEY});
         const categoryInfo = CATEGORIES.find(c => c.id === selectedCategory);
         if (!categoryInfo) {
             setIsLoading(false);
             return;
         }
 
-        const isQuest = categoryInfo.assetType === 'Quest';
-        const prompt = `Generate a list of 5 creative and engaging ${isQuest ? 'quests' : 'market items'} for a gamified to-do list app. The theme is "${categoryInfo.label}". For each item, provide a title, a brief description, and the requested values.`;
-        const schema = {
-            type: Type.ARRAY,
-            items: isQuest ? questSchema : marketItemSchema
-        };
-
         try {
-            const response = await ai.models.generateContent({
-                model: 'gemini-2.5-flash',
-                contents: prompt,
-                config: {
-                    responseMimeType: 'application/json',
-                    responseSchema: schema,
-                },
+            const response = await fetch('/api/generate-assets', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ category: categoryInfo.label, assetType: categoryInfo.assetType }),
             });
-            const parsedAssets = JSON.parse(response.text);
+
+            if (!response.ok) {
+                const errorResult = await response.json();
+                throw new Error(errorResult.message || 'Failed to generate assets from server.');
+            }
+
+            const parsedAssets = await response.json();
             setGeneratedAssets(parsedAssets);
         } catch (error) {
             console.error('Error generating assets:', error);
-            alert('Failed to generate assets. Check the console for details.');
+            const message = error instanceof Error ? error.message : 'Unknown error';
+            addNotification({ type: 'error', message: `Failed to generate assets: ${message}` });
         } finally {
             setIsLoading(false);
         }
@@ -109,42 +73,36 @@ const AssetLibraryPage: React.FC = () => {
             crystals: rewardTypes.find(rt => rt.id === 'core-crystal')?.id,
         };
 
+        let importedCount = 0;
         selection.forEach(index => {
             const asset = generatedAssets[index] as any;
             if (categoryInfo.assetType === 'Quest') {
                 const rewardTypeId = rewardMap[asset.reward_type as keyof typeof rewardMap] || rewardMap.diligence!;
                 addQuest({
-                    title: asset.title,
-                    description: asset.description,
+                    title: asset.title, description: asset.description,
                     rewards: [{ rewardTypeId: rewardTypeId, amount: asset.reward_amount }],
-                    type: QuestType.Duty, // Default type for generated quests
-                    isActive: true,
-                    isOptional: false,
+                    type: QuestType.Duty, isActive: true, isOptional: false,
                     requiresApproval: asset.requires_approval,
-                    availabilityType: QuestAvailability.Daily,
-                    availabilityCount: null,
-                    weeklyRecurrenceDays: [],
-                    monthlyRecurrenceDays: [],
-                    assignedUserIds: [],
-                    tags: [selectedCategory],
-                    lateSetbacks: [],
-                    incompleteSetbacks: [],
+                    availabilityType: QuestAvailability.Daily, availabilityCount: null,
+                    weeklyRecurrenceDays: [], monthlyRecurrenceDays: [], assignedUserIds: [],
+                    tags: [selectedCategory], lateSetbacks: [], incompleteSetbacks: [],
                 });
+                importedCount++;
             } else { // MarketItem
                 const costTypeId = rewardMap[asset.cost_type as keyof typeof rewardMap] || rewardMap.crystals!;
                 const targetMarketId = markets.find(m => m.id.includes('gadget'))?.id || markets[0]?.id;
                 if(targetMarketId) {
                     addMarketItem(targetMarketId, {
-                        title: asset.title,
-                        description: asset.description,
+                        title: asset.title, description: asset.description,
                         cost: [{ rewardTypeId: costTypeId, amount: asset.cost_amount }],
                         payout: [],
                     });
+                    importedCount++;
                 }
             }
         });
 
-        alert(`${selection.length} assets imported successfully!`);
+        addNotification({type: 'success', message: `${importedCount} assets imported successfully!`});
         setGeneratedAssets([]);
         setSelection([]);
     };
@@ -159,7 +117,7 @@ const AssetLibraryPage: React.FC = () => {
         <div className="space-y-6">
             <Card title="AI-Powered Asset Library">
                 <p className="text-stone-400 text-sm mb-4">
-                    Quickly populate your game with pre-made content. Select a category and let our AI generate a list of relevant quests or market items for you to review and import.
+                    Quickly populate your game with pre-made content. Select a category and let our AI generate a list of relevant quests or market items for you to review and import. Requires a valid API key on the server.
                 </p>
                 <div className="flex flex-col sm:flex-row gap-4">
                     <select

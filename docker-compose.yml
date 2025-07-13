@@ -10,12 +10,15 @@ services:
         condition: service_healthy
     environment:
       - DATABASE_URL=postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
-      - NODE_ENV=development
+      - NODE_ENV=${NODE_ENV}
+      - API_KEY=${API_KEY}
+      - STORAGE_PROVIDER=${STORAGE_PROVIDER}
     networks:
       - donegeon_network
     volumes:
       - .:/app
       - /app/node_modules
+      - ./uploads:/app/uploads
 
   db:
     image: postgres:15-alpine

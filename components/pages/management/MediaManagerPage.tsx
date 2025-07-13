@@ -10,22 +10,42 @@ const MediaManagerPage: React.FC = () => {
     const { mediaAssets } = useAppState();
     const { addMediaAsset, deleteMediaAsset, addNotification } = useAppDispatch();
     const [isDragging, setIsDragging] = useState(false);
+    const [isUploading, setIsUploading] = useState(false);
     const [deletingAsset, setDeletingAsset] = useState<MediaAsset | null>(null);
 
-    const handleFileProcess = useCallback((file: File) => {
-        const reader = new FileReader();
-        reader.onload = () => {
-            addMediaAsset({
-                name: file.name,
-                type: file.type,
-                size: file.size,
-                dataUrl: reader.result as string,
+    const handleFileProcess = useCallback(async (file: File) => {
+        setIsUploading(true);
+        const formData = new FormData();
+        formData.append('file', file);
+
+        try {
+            const response = await fetch('/api/media/upload', {
+                method: 'POST',
+                body: formData,
             });
-        };
-        reader.onerror = () => {
-            addNotification({ type: 'error', message: 'Failed to read file.' });
-        };
-        reader.readAsDataURL(file);
+
+            if (!response.ok) {
+                const errorResult = await response.json();
+                throw new Error(errorResult.error || 'Upload failed');
+            }
+
+            const uploadedAsset = await response.json();
+            const newAsset: MediaAsset = {
+                id: `media-${Date.now()}`,
+                createdAt: new Date().toISOString(),
+                name: uploadedAsset.name,
+                type: uploadedAsset.type,
+                size: uploadedAsset.size,
+                url: uploadedAsset.url,
+            };
+            addMediaAsset(newAsset);
+
+        } catch (error) {
+            const message = error instanceof Error ? error.message : 'Unknown error';
+            addNotification({ type: 'error', message: `Upload failed: ${message}` });
+        } finally {
+            setIsUploading(false);
+        }
     }, [addMediaAsset, addNotification]);
 
     const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -47,18 +67,15 @@ const MediaManagerPage: React.FC = () => {
     const handleDragEvents = (event: React.DragEvent<HTMLDivElement>) => {
         event.preventDefault();
         event.stopPropagation();
-        if (event.type === 'dragenter' || event.type === 'dragover') {
-            setIsDragging(true);
-        } else if (event.type === 'dragleave') {
-            setIsDragging(false);
-        }
+        if (event.type === 'dragenter' || event.type === 'dragover') setIsDragging(true);
+        else if (event.type === 'dragleave') setIsDragging(false);
     };
     
     const copyToClipboard = (text: string) => {
         navigator.clipboard.writeText(text).then(() => {
-            addNotification({ type: 'success', message: 'Path copied to clipboard!'});
+            addNotification({ type: 'success', message: 'URL copied to clipboard!'});
         }, () => {
-            addNotification({ type: 'error', message: 'Failed to copy path.'});
+            addNotification({ type: 'error', message: 'Failed to copy URL.'});
         });
     };
 
@@ -67,40 +84,33 @@ const MediaManagerPage: React.FC = () => {
             <Card title="Upload New Media">
                 <div
                     onDrop={handleDrop}
-                    onDragEnter={handleDragEvents}
-                    onDragOver={handleDragEvents}
-                    onDragLeave={handleDragEvents}
+                    onDragEnter={handleDragEvents} onDragOver={handleDragEvents} onDragLeave={handleDragEvents}
                     className={`p-8 border-2 border-dashed rounded-lg text-center transition-colors ${
                         isDragging ? 'border-emerald-500 bg-emerald-900/20' : 'border-stone-600'
                     }`}
                 >
-                    <input
-                        id="file-upload"
-                        type="file"
-                        multiple
-                        onChange={handleFileSelect}
-                        className="hidden"
-                    />
+                    <input id="file-upload" type="file" multiple onChange={handleFileSelect} className="hidden" disabled={isUploading} />
                     <p className="text-stone-400 mb-4">Drag & drop files here, or</p>
-                    <Button onClick={() => document.getElementById('file-upload')?.click()}>
-                        Select Files
+                    <Button onClick={() => document.getElementById('file-upload')?.click()} disabled={isUploading}>
+                        {isUploading ? 'Uploading...' : 'Select Files'}
                     </Button>
                 </div>
             </Card>
 
-            <Card title="Upload Guide & Suggestions">
+            <Card title="Upload Guide & Storage Info">
                 <ul className="text-sm text-stone-400 space-y-3 list-disc list-inside">
+                    <li>
+                        <strong>Storage Method:</strong> Your application is configured to handle file storage in one of two ways based on its environment:
+                        <ul className="list-disc list-inside pl-6 mt-2">
+                            <li><strong>Local Docker:</strong> Files are saved to a local `/uploads` folder. This is great for development.</li>
+                            <li><strong>Production (Vercel):</strong> Files are uploaded to a cloud provider (like Supabase Storage) for permanent, public access.</li>
+                        </ul>
+                    </li>
                     <li>
                         <strong>Recommended Formats:</strong> Use vector formats like <strong className="text-stone-300">SVG</strong> for sharp, scalable icons. Use <strong className="text-stone-300">PNG</strong> with a transparent background for more complex images.
                     </li>
-                    <li>
-                        <strong>Image Dimensions:</strong> A square aspect ratio (e.g., 512x512 pixels) is ideal for avatar parts and icons to ensure they display consistently.
-                    </li>
-                    <li>
-                        <strong>Creation Tools:</strong> You can create your own assets using free tools like <a href="https://www.canva.com/" target="_blank" rel="noopener noreferrer" className="text-emerald-400 underline">Canva</a>, <a href="https://www.figma.com/" target="_blank" rel="noopener noreferrer" className="text-emerald-400 underline">Figma</a>, or advanced software like Adobe Illustrator. There are also many websites that offer free-to-use SVG icons.
-                    </li>
-                    <li>
-                        <strong>Usage Note:</strong> Once uploaded, you can copy an asset's path to link it to a Quest, Market Item, or Digital Asset in their respective management pages.
+                     <li>
+                        <strong>Usage:</strong> Once uploaded, an asset's URL can be copied. Paste this URL into the "Image URL" field when creating or editing a "Digital Asset" to make it usable in avatars.
                     </li>
                 </ul>
             </Card>
@@ -112,11 +122,11 @@ const MediaManagerPage: React.FC = () => {
                         {mediaAssets.map(asset => (
                             <div key={asset.id} className="bg-stone-800/50 rounded-lg p-3 group relative">
                                 <div className="aspect-square w-full bg-stone-700/50 rounded-md mb-2 flex items-center justify-center overflow-hidden">
-                                    <img src={asset.dataUrl} alt={asset.name} className="w-full h-full object-contain" />
+                                    <img src={asset.url} alt={asset.name} className="w-full h-full object-contain" />
                                 </div>
                                 <p className="text-xs text-stone-300 truncate" title={asset.name}>{asset.name}</p>
                                 <div className="absolute inset-0 bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2 p-2">
-                                    <Button variant="secondary" className="text-xs py-1 px-2 w-full" onClick={() => copyToClipboard(`path/to/assets/${asset.name}`)}>Copy Path</Button>
+                                    <Button variant="secondary" className="text-xs py-1 px-2 w-full" onClick={() => copyToClipboard(asset.url)}>Copy URL</Button>
                                     <Button className="!bg-red-600 hover:!bg-red-500 text-xs py-1 px-2 w-full" onClick={() => setDeletingAsset(asset)}>Delete</Button>
                                 </div>
                             </div>

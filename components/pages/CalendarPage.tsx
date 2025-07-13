@@ -115,7 +115,7 @@ const CalendarPage: React.FC = () => {
     const endDay = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
     const numDays = endDay.getDate();
     const startDayOfWeek = startDay.getDay();
-    const days = Array.from({ length: startDayOfWeek }, () => null);
+    const days: (Date | null)[] = Array.from({ length: startDayOfWeek }, () => null);
     for (let i = 1; i <= numDays; i++) { days.push(new Date(currentDate.getFullYear(), currentDate.getMonth(), i)); }
     const today = new Date();
     const weekDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];

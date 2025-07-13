@@ -1,6 +1,7 @@
 
 
-import { User, Role, RewardTypeDefinition, RewardCategory, Rank, Trophy, TrophyRequirementType, QuestType, Market, Quest, QuestAvailability, Guild, DigitalAsset, AppSettings, Theme } from '../types';
+
+import { User, Role, RewardTypeDefinition, RewardCategory, Rank, Trophy, TrophyRequirementType, QuestType, Market, Quest, QuestAvailability, Guild, DigitalAsset, AppSettings, Theme, AvatarAsset } from '../types';
 
 export const createMockUsers = (): User[] => {
     const users: Omit<User, 'id' | 'personalPurse' | 'personalExperience' | 'guildBalances' | 'avatar' | 'ownedAvatarAssets' | 'ownedThemes'>[] = [
@@ -18,7 +19,7 @@ export const createMockUsers = (): User[] => {
         ...u,
         id: `user-${i + 1}`,
         avatar: {},
-        ownedAvatarAssets: [],
+        ownedAvatarAssets: [] as AvatarAsset[],
         personalPurse: {},
         personalExperience: {},
         guildBalances: {},

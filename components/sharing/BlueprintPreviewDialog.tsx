@@ -1,7 +1,8 @@
 
+
 import React, { useState } from 'react';
 import { useAppState } from '../../context/AppContext';
-import { Blueprint, ImportResolution, ShareableAssetType } from '../../types';
+import { Blueprint, ImportResolution, ShareableAssetType, Terminology } from '../../types';
 import Button from '../ui/Button';
 import Input from '../ui/Input';
 
@@ -11,6 +12,14 @@ interface BlueprintPreviewDialogProps {
   onClose: () => void;
   onConfirm: (blueprint: Blueprint, resolutions: ImportResolution[]) => void;
 }
+
+const terminologyMap: { [key in ShareableAssetType]: keyof Terminology } = {
+    quests: 'tasks',
+    rewardTypes: 'points',
+    ranks: 'levels',
+    trophies: 'awards',
+    markets: 'stores',
+};
 
 const BlueprintPreviewDialog: React.FC<BlueprintPreviewDialogProps> = ({ blueprint, initialResolutions, onClose, onConfirm }) => {
     const { settings } = useAppState();
@@ -46,7 +55,7 @@ const BlueprintPreviewDialog: React.FC<BlueprintPreviewDialogProps> = ({ bluepri
                         <div className="p-4 bg-stone-900/50 rounded-lg">
                             <h4 className="font-semibold text-green-400 mb-2">New Items to be Added ({newItems.length})</h4>
                             <ul className="text-sm text-stone-300 list-disc list-inside max-h-32 overflow-y-auto">
-                                {newItems.map(res => <li key={`${res.type}-${res.id}`}>{res.name} <span className="text-xs text-stone-500 capitalize">({settings.terminology[res.type] || res.type})</span></li>)}
+                                {newItems.map(res => <li key={`${res.type}-${res.id}`}>{res.name} <span className="text-xs text-stone-500 capitalize">({settings.terminology[terminologyMap[res.type]] || res.type})</span></li>)}
                             </ul>
                         </div>
                     )}
@@ -58,7 +67,7 @@ const BlueprintPreviewDialog: React.FC<BlueprintPreviewDialogProps> = ({ bluepri
                             <div className="space-y-3 max-h-60 overflow-y-auto pr-2">
                                 {conflictingItems.map(res => (
                                     <div key={`${res.type}-${res.id}`} className="bg-stone-800/50 p-3 rounded-md">
-                                        <p className="font-bold text-stone-200">{res.name} <span className="text-xs text-stone-500 capitalize">({settings.terminology[res.type] || res.type})</span></p>
+                                        <p className="font-bold text-stone-200">{res.name} <span className="text-xs text-stone-500 capitalize">({settings.terminology[terminologyMap[res.type]] || res.type})</span></p>
                                         <div className="flex items-center gap-4 mt-2">
                                             <label className="flex items-center">
                                                 <input type="radio" name={`${res.type}-${res.id}`} checked={res.resolution === 'skip'} onChange={() => handleResolutionChange(res.id, res.type, 'skip')} className="h-4 w-4 text-emerald-600 bg-stone-700 border-stone-500 focus:ring-emerald-500" />

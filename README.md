@@ -1,7 +1,7 @@
 # Task Donegeon
 
-**Version:** 0.0.19
-**Last Updated:** 2023-10-27T16:00:00Z
+**Version:** 0.0.20
+**Last Updated:** 2023-10-27T17:00:00Z
 
 ---
 
@@ -115,7 +115,8 @@ This is the fastest way to get a live, publicly accessible version of your appli
     -   Log in to your [Supabase dashboard](https://supabase.com/dashboard) and create a new project.
     -   Once the project is ready, go to **Project Settings** (the gear icon).
     -   Click on **Database** in the settings menu.
-    -   Under **Connection string**, copy the URI. This is your `DATABASE_URL`.
+    -   Under **Connection string**, make sure the **URI** tab is selected.
+    -   **Copy the entire, full connection string.** It is critical that you copy the whole value. It will start with `postgres://`.
 
 3.  **Set up and Deploy on Vercel**
     -   Log in to your [Vercel dashboard](https://vercel.com/new) and click **Add New... > Project**.
@@ -123,7 +124,7 @@ This is the fastest way to get a live, publicly accessible version of your appli
     -   Vercel should automatically detect the project as a Vite application and set the build settings correctly.
     -   Expand the **Environment Variables** section. Add a new variable:
         -   **Name:** `DATABASE_URL`
-        -   **Value:** Paste the full connection string URI you copied from Supabase.
+        -   **Value:** Paste the **full and complete** connection string URI you copied from Supabase.
     -   Click **Deploy**.
 
 Vercel will build and deploy your application. The `vercel.json` file in this repository tells Vercel how to handle API requests, routing them to the backend server. Your site will be live in a few minutes!

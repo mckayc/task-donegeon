@@ -1,8 +1,9 @@
+
 {
   "name": "Task Donegeon",
-  "version": "0.0.19",
-  "lastChange": "Updated Vercel configuration to explicitly define frontend and backend builds, fixing a 404 routing error on deployment.",
+  "version": "0.0.20",
+  "lastChange": "Added a backend check for the DATABASE_URL and updated documentation to resolve a Vercel deployment connection error.",
   "description": "A gamified task and chore tracker for families and groups. Complete quests, earn currency and experience, and level up your character in a fun, medieval-themed adventure.",
   "requestFramePermissions": [],
-  "prompt": "We are making progress! I think it built correctly. This is the message that I am getting on the main page:\n\nConnection Error\nCould not connect to the Task Donegeon server. Please ensure the backend is running and accessible.\n\nServer responded with 404: The page could not be found NOT_FOUND sfo1::dfhh4-1752375145961-7be340acd0e9"
+  "prompt": "Here is the latest error:\n\nServer responded with 500: {\"error\":\"Internal Server Error\",\"message\":\"Failed to load data from database: getaddrinfo ENOTFOUND db.eolcretsaccxsncuvkfm\"}"
 }

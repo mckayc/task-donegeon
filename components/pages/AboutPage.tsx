@@ -2,7 +2,7 @@
 import React from 'react';
 import Card from '../ui/Card';
 import { useAppState } from '../../context/AppContext';
-import metadata from '../../../metadata.json';
+import metadata from '../../metadata.json';
 
 const AboutPage: React.FC = () => {
     const { settings } = useAppState();
@@ -11,7 +11,7 @@ const AboutPage: React.FC = () => {
 
     return (
         <div className="max-w-4xl mx-auto">
-            <h1 className="text-4xl font-medieval text-stone-100 mb-8">About {metadata.name}</h1>
+            <h1 className="text-4xl font-medieval text-stone-100 mb-8">About {settings.terminology.appName}</h1>
             <Card>
                 <div className="space-y-6 text-stone-300 leading-relaxed">
                     <p>{metadata.description}</p>

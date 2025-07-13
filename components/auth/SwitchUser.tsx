@@ -1,19 +1,22 @@
 import React, { useState } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
-import { User } from '../../types';
+import { User, Role } from '../../types';
 import Button from '../ui/Button';
 import Keypad from '../ui/Keypad';
 import Avatar from '../ui/Avatar';
 
 const SwitchUser: React.FC = () => {
     const { users } = useAppState();
-    const { setCurrentUser, setIsSwitchingUser } = useAppDispatch();
+    const { setCurrentUser, setIsSwitchingUser, setTargetedUserForLogin } = useAppDispatch();
     const [selectedUser, setSelectedUser] = useState<User | null>(null);
     const [pin, setPin] = useState('');
     const [error, setError] = useState('');
 
     const handleUserSelect = (user: User) => {
-        if (user.pin) {
+        if (user.role === Role.DonegeonMaster) {
+            setTargetedUserForLogin(user);
+            setIsSwitchingUser(false);
+        } else if (user.pin) {
             setSelectedUser(user);
             setError('');
             setPin('');

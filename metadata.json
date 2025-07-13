@@ -1,7 +1,7 @@
 {
   "name": "Task Donegeon",
-  "version": "0.0.25",
-  "lastChange": "Fixed an issue where the app would stay logged in across sessions by ensuring the current user is reset on startup.",
+  "version": "0.0.26",
+  "lastChange": "Implemented a secure login flow for the admin account to prevent unauthorized access when switching users.",
   "description": "A gamified task and chore tracker for families and groups. Complete quests, earn currency and experience, and level up your character in a fun, medieval-themed adventure.",
   "requestFramePermissions": [],
   "prompt": "Here are the runtime logs:\n\nJul 12 21:35:00.33\nGET\n500\ntask-donegeon-4xj77omn6-mckaycs-projects.vercel.app\n/api/data/load\nAn error occurred: Error: Failed to load data from database: getaddrinfo ENOTFOUND db.eolcretsaccxsncuvkfm.supabase.co at /var/task/backend/node_modules/pg-pool/index.js:45:11 at process.processTicksAndRejections (node:internal/process/task_queues:105:5) at async /var/task/backend/server.js:86:24\nJul 12 21:34:55.29\nGET\n500\ntask-donegeon-4xj77omn6-mckaycs-projects.vercel.app\n/api/data/load\n2\nAn error occurred: Error: Failed to load data from database: getaddrinfo ENOTFOUND db.eolcretsaccxsncuvkfm.supabase.co at /var/task/backend/node_modules/pg-pool/index.js:45:11 at process.processTicksAndRejections (node:internal/process/task_queues:105:5) at async /var/task/backend/server.js:86:24\nJul 12 21:34:55.26\nGET\n500\ntask-donegeon-4xj77omn6-mckaycs-projects.vercel.app\n/api/data/load\nAn error occurred: Error: Failed to load data from database: getaddrinfo ENOTFOUND db.eolcretsaccxsncuvkfm.supabase.co at /var/task/backend/node_modules/pg-pool/index.js:45:11 at process.processTicksAndRejections (node:internal/process/task_queues:105:5) at async /var/task/backend/server.js:86:24"

@@ -1,5 +1,6 @@
 
 
+
 import React, { useEffect } from 'react';
 import { useAppState } from './context/AppContext';
 import FirstRunWizard from './components/auth/FirstRunWizard';
@@ -9,7 +10,7 @@ import AuthPage from './components/auth/AuthPage';
 import NotificationContainer from './components/ui/NotificationContainer';
 
 const App: React.FC = () => {
-  const { isFirstRun, currentUser, isSwitchingUser, settings } = useAppState();
+  const { isFirstRun, currentUser, isSwitchingUser, targetedUserForLogin, settings } = useAppState();
 
   useEffect(() => {
     const activeTheme = currentUser?.theme || settings.theme;
@@ -29,6 +30,7 @@ const App: React.FC = () => {
         }
       
         if (!currentUser) {
+          // This now correctly handles both normal login and targeted admin login
           return <AuthPage />;
         }
       

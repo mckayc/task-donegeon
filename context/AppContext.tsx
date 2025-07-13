@@ -16,6 +16,7 @@ interface AppState extends IAppData {
   isFirstRun: boolean;
   notifications: Notification[];
   isSwitchingUser: boolean;
+  targetedUserForLogin: User | null;
   activePage: Page;
   activeMarketId: string | null;
   allTags: string[];
@@ -36,6 +37,7 @@ interface AppDispatch {
   deleteQuest: (questId: string) => void;
   dismissQuest: (questId: string) => void;
   setCurrentUser: (user: User | null) => void;
+  setTargetedUserForLogin: (user: User | null) => void;
   setIsFirstRun: (isFirstRun: boolean) => void;
   setIsSwitchingUser: (isSwitching: boolean) => void;
   addRewardType: (rewardType: Omit<RewardTypeDefinition, 'id' | 'isCore'>) => void;
@@ -125,6 +127,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [activePage, setActivePage] = useState<Page>('Dashboard');
   const [activeMarketId, setActiveMarketId] = useState<string | null>(null);
   const [isSwitchingUser, setIsSwitchingUser] = useState<boolean>(false);
+  const [targetedUserForLogin, setTargetedUserForLogin] = useState<User | null>(null);
   const [svgContent, setSvgContent] = useState<string | null>(null);
   
   const debouncedAppData = useDebounce(appData, 1000);
@@ -1030,12 +1033,12 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   // --- STATE & DISPATCH PROVIDER ---
 
   const state: AppState = {
-    isFirstRun, users, currentUser, quests, markets, rewardTypes, questCompletions, purchaseRequests, guilds, ranks, trophies, userTrophies, adminAdjustments, digitalAssets, systemLogs, notifications, appMode, isSwitchingUser, activePage, activeMarketId, allTags, svgContent, settings
+    isFirstRun, users, currentUser, quests, markets, rewardTypes, questCompletions, purchaseRequests, guilds, ranks, trophies, userTrophies, adminAdjustments, digitalAssets, systemLogs, notifications, appMode, isSwitchingUser, targetedUserForLogin, activePage, activeMarketId, allTags, svgContent, settings
   };
 
   const dispatch: AppDispatch = useMemo(() => ({
     setAppMode, addUser, updateUser, addQuest, updateQuest, deleteQuest, setCurrentUser, setIsFirstRun,
-    setIsSwitchingUser, addNotification, removeNotification, setActivePage, setActiveMarketId, deleteUser,
+    setIsSwitchingUser, setTargetedUserForLogin, addNotification, removeNotification, setActivePage, setActiveMarketId, deleteUser,
     addRewardType, updateRewardType, deleteRewardType, completeQuest, approveQuestCompletion,
     rejectQuestCompletion, claimQuest, releaseQuest, addMarket, updateMarket, deleteMarket,
     addMarketItem, updateMarketItem, deleteMarketItem, purchaseMarketItem, cancelPurchaseRequest,
@@ -1044,7 +1047,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     updateDigitalAsset, deleteDigitalAsset, dismissQuest, updateSettings, importBlueprint, restoreFromBackup
   }), [
       setAppMode, addUser, updateUser, addQuest, updateQuest, deleteQuest, setCurrentUser,
-      setIsSwitchingUser, addNotification, removeNotification, setActivePage, setActiveMarketId, deleteUser,
+      setIsSwitchingUser, setTargetedUserForLogin, addNotification, removeNotification, setActivePage, setActiveMarketId, deleteUser,
       addRewardType, updateRewardType, deleteRewardType, completeQuest, approveQuestCompletion,
       rejectQuestCompletion, claimQuest, releaseQuest, addMarket, updateMarket, deleteMarket,
       addMarketItem, updateMarketItem, deleteMarketItem, purchaseMarketItem, cancelPurchaseRequest,

@@ -1,7 +1,7 @@
 # Task Donegeon
 
-**Version:** 0.0.25
-**Last Updated:** 2023-10-27T20:00:00Z
+**Version:** 0.0.26
+**Last Updated:** 2023-10-27T21:00:00Z
 
 ---
 
@@ -23,6 +23,7 @@ Task Donegeon is a gamified task and chore management application designed for f
 
 -   **Gamified Task Management:** Create recurring "Duties" and one-time "Ventures" with customizable rewards and penalties.
 -   **Character Progression:** Users earn Experience Points (XP) to gain Ranks, from Novice to Grandmaster.
+-   **Secure Admin Login:** The Donegeon Master account is always protected by a password, even when switching users, to prevent unauthorized access.
 -   **Virtual Economy:** Earn multiple types of currency (e.g., Gold, Gems, Crystals) to spend in a customizable Marketplace.
 -   **Avatar Customization:** Users can unlock and equip different cosmetic items for their personal avatars.
 -   **Guild System:** Create groups for collaborative tasks. Guilds have their own separate economy and quests, perfect for managing family chores.

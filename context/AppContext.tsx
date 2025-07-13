@@ -79,6 +79,9 @@ interface AppDispatch {
   importBlueprint: (blueprint: Blueprint, resolutions: ImportResolution[]) => void;
   restoreFromBackup: (backupData: IAppData) => void;
   populateInitialGameData: () => void;
+  clearAllHistory: () => void;
+  resetAllPlayerData: () => void;
+  deleteAllCustomContent: () => void;
 }
 
 const AppDispatchContext = createContext<AppDispatch | undefined>(undefined);
@@ -942,6 +945,54 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     restore();
   }, [addNotification]);
 
+  const clearAllHistory = useCallback(() => {
+    setAppData(prev => ({
+        ...prev,
+        questCompletions: [],
+        purchaseRequests: [],
+        adminAdjustments: [],
+        systemLogs: [],
+    }));
+    addNotification({ type: 'success', message: 'All historical data has been cleared.' });
+  }, [addNotification]);
+
+  const resetAllPlayerData = useCallback(() => {
+    setAppData(prev => {
+        const newUsers = prev.users.map(user => {
+            if (user.role !== Role.DonegeonMaster) {
+                return {
+                    ...user,
+                    personalPurse: {},
+                    personalExperience: {},
+                    guildBalances: {},
+                };
+            }
+            return user;
+        });
+
+        return {
+            ...prev,
+            users: newUsers,
+            userTrophies: prev.userTrophies.filter(ut => prev.users.find(u => u.id === ut.userId)?.role === Role.DonegeonMaster),
+        };
+    });
+    addNotification({ type: 'success', message: "All player wallets, XP, and trophies have been reset." });
+  }, [addNotification]);
+  
+  const deleteAllCustomContent = useCallback(() => {
+    setAppData(prev => ({
+        ...prev,
+        quests: [],
+        markets: [],
+        rewardTypes: prev.rewardTypes.filter(rt => rt.isCore),
+        ranks: prev.ranks.filter(r => r.xpThreshold === 0),
+        trophies: [],
+        digitalAssets: [],
+        guilds: prev.guilds.filter(g => g.isDefault),
+    }));
+    addNotification({ type: 'success', message: 'All custom content (quests, markets, rewards, etc.) has been deleted.' });
+  }, [addNotification]);
+
 
   // GAME LOOP for checking quest timers
   useEffect(() => {
@@ -1060,7 +1111,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     approvePurchaseRequest, rejectPurchaseRequest, addGuild, updateGuild, deleteGuild, setRanks,
     addTrophy, updateTrophy, deleteTrophy, awardTrophy, applyManualAdjustment, addDigitalAsset,
     updateDigitalAsset, deleteDigitalAsset, dismissQuest, updateSettings, importBlueprint, restoreFromBackup,
-    populateInitialGameData
+    populateInitialGameData, clearAllHistory, resetAllPlayerData, deleteAllCustomContent
   }), [
       setAppUnlocked, setAppMode, addUser, updateUser, addQuest, updateQuest, deleteQuest, setCurrentUser,
       setIsSwitchingUser, setTargetedUserForLogin, addNotification, removeNotification, setActivePage, setActiveMarketId, deleteUser,
@@ -1070,7 +1121,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       approvePurchaseRequest, rejectPurchaseRequest, addGuild, updateGuild, deleteGuild, setRanks,
       addTrophy, updateTrophy, deleteTrophy, awardTrophy, applyManualAdjustment, addDigitalAsset,
       updateDigitalAsset, deleteDigitalAsset, dismissQuest, updateSettings, importBlueprint, restoreFromBackup,
-      populateInitialGameData
+      populateInitialGameData, clearAllHistory, resetAllPlayerData, deleteAllCustomContent
   ]);
 
   if (!isDataLoaded) {

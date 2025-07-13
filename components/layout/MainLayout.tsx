@@ -30,6 +30,8 @@ import VacationModeBanner from '../settings/VacationModeBanner';
 import ManageRanksPage from '../pages/ManageRanksPage';
 import ManageTrophiesPage from '../pages/ManageTrophiesPage';
 import ThemesPage from '../pages/ThemesPage';
+import DataManagementPage from '../pages/DataManagementPage';
+import AboutPage from '../pages/AboutPage';
 
 const MainLayout: React.FC = () => {
   const { activePage } = useAppState();
@@ -57,7 +59,9 @@ const MainLayout: React.FC = () => {
       case 'Manage Trophies': return <ManageTrophiesPage />;
       case 'Approvals': return <ApprovalsPage />;
       case 'Settings': return <SettingsPage />;
+      case 'Data Management': return <DataManagementPage />;
       case 'Profile': return <ProfilePage />;
+      case 'About': return <AboutPage />;
       case 'Help': return <HelpPage />;
       default: return <Dashboard />;
     }

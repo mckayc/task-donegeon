@@ -303,7 +303,7 @@ export interface AppSettings {
   terminology: Terminology;
 }
 
-export type Page = 'Dashboard' | 'Avatar' | 'Quests' | 'Marketplace' | 'Chronicles' | 'Guild' | 'Calendar' | 'Progress' | 'Trophies' | 'Ranks' | 'Manage Users' | 'Rewards' | 'Manage Quests' | 'Approvals' | 'Manage Markets' | 'Digital Assets' | 'Manage Guilds' | 'Settings' | 'Profile' | 'Help' | 'Manage Ranks' | 'Manage Trophies' | 'Themes';
+export type Page = 'Dashboard' | 'Avatar' | 'Quests' | 'Marketplace' | 'Chronicles' | 'Guild' | 'Calendar' | 'Progress' | 'Trophies' | 'Ranks' | 'Manage Users' | 'Rewards' | 'Manage Quests' | 'Approvals' | 'Manage Markets' | 'Digital Assets' | 'Manage Guilds' | 'Settings' | 'Profile' | 'About' | 'Help' | 'Manage Ranks' | 'Manage Trophies' | 'Themes' | 'Data Management';
 
 export type ShareableAssetType = 'quests' | 'rewardTypes' | 'ranks' | 'trophies' | 'markets';
 

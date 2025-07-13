@@ -8,13 +8,6 @@ import Button from '../ui/Button';
 import { ChevronDownIcon } from '../ui/Icons';
 import Input from '../ui/Input';
 import ToggleSwitch from '../ui/ToggleSwitch';
-import { analyzeBlueprintForConflicts } from '../../utils/sharing';
-import BlueprintPreviewDialog from '../sharing/BlueprintPreviewDialog';
-import ExportPanel from '../sharing/ExportPanel';
-import ImportPanel from '../sharing/ImportPanel';
-import BackupPanel from '../sharing/BackupPanel';
-import RestorePanel from '../sharing/RestorePanel';
-import ConfirmDialog from '../ui/ConfirmDialog';
 
 
 const CollapsibleSection: React.FC<{ title: string; children: React.ReactNode; defaultOpen?: boolean; }> = ({ title, children, defaultOpen = false }) => {
@@ -63,14 +56,11 @@ const terminologyLabels: { [key in keyof Terminology]: string } = {
 };
 
 const SettingsPage: React.FC = () => {
-    const { currentUser: contextUser, users, settings, ...appData } = useAppState();
-    const { updateSettings, addNotification, importBlueprint, restoreFromBackup } = useAppDispatch();
+    const { currentUser: contextUser, users, settings } = useAppState();
+    const { updateSettings, addNotification } = useAppDispatch();
     
     const [formState, setFormState] = useState<AppSettings>(settings);
-    const [previewingBlueprint, setPreviewingBlueprint] = useState<{ blueprint: Blueprint; resolutions: ImportResolution[] } | null>(null);
-    const [isRestoreConfirmOpen, setIsRestoreConfirmOpen] = useState(false);
-    const [backupToRestore, setBackupToRestore] = useState<IAppData | null>(null);
-
+    
     const currentUser = users.find(u => u.id === contextUser?.id);
 
     useEffect(() => {
@@ -142,58 +132,6 @@ const SettingsPage: React.FC = () => {
     const handleSave = () => {
         updateSettings(formState);
         addNotification({ type: 'success', message: 'Settings saved successfully!' });
-    };
-
-    const handleBlueprintFileSelect = (file: File) => {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            try {
-                const text = e.target?.result;
-                if (typeof text === 'string') {
-                    const blueprint = JSON.parse(text) as Blueprint;
-                    // Add validation here later
-                    const resolutions = analyzeBlueprintForConflicts(blueprint, appData);
-                    setPreviewingBlueprint({ blueprint, resolutions });
-                }
-            } catch (err) {
-                addNotification({ type: 'error', message: 'Failed to parse Blueprint file. Is it valid JSON?' });
-            }
-        };
-        reader.readAsText(file);
-    };
-
-    const handleRestoreFileSelect = (file: File) => {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            try {
-                const text = e.target?.result;
-                if (typeof text === 'string') {
-                    const backup = JSON.parse(text) as IAppData;
-                    if (backup.users && backup.quests && backup.settings) {
-                        setBackupToRestore(backup);
-                        setIsRestoreConfirmOpen(true);
-                    } else {
-                         addNotification({ type: 'error', message: 'Invalid backup file format.' });
-                    }
-                }
-            } catch (err) {
-                 addNotification({ type: 'error', message: 'Failed to parse backup file.' });
-            }
-        };
-        reader.readAsText(file);
-    };
-
-    const handleConfirmRestore = () => {
-        if (backupToRestore) {
-            restoreFromBackup(backupToRestore);
-        }
-        setIsRestoreConfirmOpen(false);
-        setBackupToRestore(null);
-    };
-
-    const handleConfirmImport = (blueprint: Blueprint, resolutions: ImportResolution[]) => {
-        importBlueprint(blueprint, resolutions);
-        setPreviewingBlueprint(null);
     };
     
     const themes: Theme[] = ['emerald', 'rose', 'sky', 'arcane', 'cartoon', 'forest', 'ocean', 'vulcan', 'royal', 'winter', 'sunset', 'cyberpunk', 'steampunk', 'parchment', 'eerie'];
@@ -286,74 +224,8 @@ const SettingsPage: React.FC = () => {
                 </div>
             </CollapsibleSection>
 
-            <CollapsibleSection title="Data Management">
-                <DataSharingTabs 
-                    onBlueprintFileSelect={handleBlueprintFileSelect} 
-                    onBackupFileSelect={handleRestoreFileSelect}
-                />
-            </CollapsibleSection>
-
-            {previewingBlueprint && (
-                <BlueprintPreviewDialog
-                    blueprint={previewingBlueprint.blueprint}
-                    initialResolutions={previewingBlueprint.resolutions}
-                    onClose={() => setPreviewingBlueprint(null)}
-                    onConfirm={handleConfirmImport}
-                />
-            )}
-            <ConfirmDialog
-                isOpen={isRestoreConfirmOpen}
-                onClose={() => setIsRestoreConfirmOpen(false)}
-                onConfirm={handleConfirmRestore}
-                title="Restore from Backup"
-                message="Are you sure you want to restore from this backup file? This will overwrite ALL current data in your game. This action cannot be undone."
-            />
         </div>
     );
 };
-
-
-const DataSharingTabs: React.FC<{ 
-    onBlueprintFileSelect: (file: File) => void;
-    onBackupFileSelect: (file: File) => void;
-}> = ({ onBlueprintFileSelect, onBackupFileSelect }) => {
-    const [activeTab, setActiveTab] = useState<'blueprint' | 'backup'>('blueprint');
-    return (
-        <div>
-            <div className="border-b" style={{ borderColor: 'hsl(var(--color-border))' }}>
-                <nav className="-mb-px flex space-x-8" aria-label="Tabs">
-                    <button
-                        onClick={() => setActiveTab('blueprint')}
-                        className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'blueprint' ? 'border-accent text-accent-light' : 'border-transparent text-stone-400 hover:text-stone-200 hover:border-stone-300'}`}
-                    >
-                        Blueprint Sharing
-                    </button>
-                    <button
-                        onClick={() => setActiveTab('backup')}
-                        className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'backup' ? 'border-accent text-accent-light' : 'border-transparent text-stone-400 hover:text-stone-200 hover:border-stone-300'}`}
-                    >
-                        Full Backup & Restore
-                    </button>
-                </nav>
-            </div>
-            <div className="pt-6">
-                {activeTab === 'blueprint' && (
-                    <div className="space-y-6">
-                        <ExportPanel />
-                        <div className="my-6 border-t" style={{ borderColor: 'hsl(var(--color-border))' }}></div>
-                        <ImportPanel onFileSelect={onBlueprintFileSelect} />
-                    </div>
-                )}
-                 {activeTab === 'backup' && (
-                    <div className="space-y-6">
-                        <BackupPanel />
-                        <div className="my-6 border-t" style={{ borderColor: 'hsl(var(--color-border))' }}></div>
-                        <RestorePanel onFileSelect={onBackupFileSelect} />
-                    </div>
-                )}
-            </div>
-        </div>
-    );
-}
 
 export default SettingsPage;

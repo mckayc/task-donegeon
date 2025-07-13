@@ -7,18 +7,9 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
-# Dependencies
 node_modules
-backend/node_modules
-
-# Build artifacts
 dist
 dist-ssr
-
-# Local environment variables
-# Do not commit these files to version control!
-.env
-.env.*
 *.local
 
 # Editor directories and files

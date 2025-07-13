@@ -124,6 +124,7 @@ const Sidebar: React.FC = () => {
     { name: 'Rewards', Icon: Icons.RewardsIcon, role: Role.DonegeonMaster, termKey: 'points' },
     { name: 'Manage Ranks', Icon: Icons.ManageRanksIcon, role: Role.DonegeonMaster, termKey: 'levels' },
     { name: 'Manage Trophies', Icon: Icons.ManageTrophiesIcon, role: Role.DonegeonMaster, termKey: 'awards' },
+    { name: 'Data Management', Icon: Icons.DataManagementIcon, role: Role.DonegeonMaster },
     { name: 'Settings', Icon: Icons.SettingsIcon, role: Role.DonegeonMaster },
   ];
   
@@ -164,7 +165,8 @@ const Sidebar: React.FC = () => {
             </div>
         )}
       </nav>
-      <div className="px-4 py-4 border-t" style={{ borderColor: 'hsl(var(--color-border))' }}>
+      <div className="px-4 py-4 border-t space-y-1" style={{ borderColor: 'hsl(var(--color-border))' }}>
+        <NavLink item={{ name: 'About', Icon: Icons.AboutIcon }} activePage={activePage} setActivePage={setActivePage} />
         <NavLink item={{ name: 'Help', Icon: Icons.HelpIcon }} activePage={activePage} setActivePage={setActivePage} />
       </div>
     </div>

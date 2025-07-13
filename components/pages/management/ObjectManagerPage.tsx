@@ -8,24 +8,25 @@ import ConfirmDialog from '../../ui/ConfirmDialog';
 import { generateBlueprint } from '../../../utils/sharing';
 
 const ObjectManagerPage: React.FC = () => {
-    const { settings, quests, markets, rewardTypes, ranks, trophies } = useAppState();
+    const appState = useAppState();
+    const { settings, quests, markets, rewardTypes, ranks, trophies } = appState;
     const { deleteSelectedAssets, addNotification } = useAppDispatch();
 
-    const ASSET_TYPES: { key: ShareableAssetType, label: keyof Terminology, data: any[], icon: React.FC }[] = [
-        { key: 'quests', label: 'tasks', data: quests, icon: Icons.QuestsIcon },
-        { key: 'markets', label: 'stores', data: markets, icon: Icons.MarketplaceIcon },
-        { key: 'rewardTypes', label: 'points', data: rewardTypes.filter(rt => !rt.isCore), icon: Icons.RewardsIcon },
-        { key: 'ranks', label: 'levels', data: ranks, icon: Icons.RankIcon },
-        { key: 'trophies', label: 'awards', data: trophies, icon: Icons.TrophyIcon },
+    const ASSET_TYPES: { key: ShareableAssetType, label: keyof Terminology, data: any[] }[] = [
+        { key: 'quests', label: 'tasks', data: quests },
+        { key: 'markets', label: 'stores', data: markets },
+        { key: 'rewardTypes', label: 'points', data: rewardTypes.filter(rt => !rt.isCore) },
+        { key: 'ranks', label: 'levels', data: ranks },
+        { key: 'trophies', label: 'awards', data: trophies },
     ];
 
-    const [selectedAssetType, setSelectedAssetType] = useState<ShareableAssetType>('quests');
+    const [activeAssetType, setActiveAssetType] = useState<ShareableAssetType>('quests');
     const [selection, setSelection] = useState<Record<ShareableAssetType, string[]>>({
         quests: [], markets: [], rewardTypes: [], ranks: [], trophies: []
     });
     const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
 
-    const activeAsset = useMemo(() => ASSET_TYPES.find(at => at.key === selectedAssetType)!, [selectedAssetType, ASSET_TYPES]);
+    const activeAsset = useMemo(() => ASSET_TYPES.find(at => at.key === activeAssetType)!, [activeAssetType, ASSET_TYPES]);
     const totalSelectedCount = useMemo(() => Object.values(selection).reduce((sum, ids) => sum + ids.length, 0), [selection]);
 
     const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -33,17 +34,17 @@ const ObjectManagerPage: React.FC = () => {
         const allIds = activeAsset.data.map(item => item.id);
         setSelection(prev => ({
             ...prev,
-            [selectedAssetType]: isChecked ? allIds : [],
+            [activeAssetType]: isChecked ? allIds : [],
         }));
     };
 
     const handleSelectOne = (id: string) => {
         setSelection(prev => {
-            const currentSelection = prev[selectedAssetType];
+            const currentSelection = prev[activeAssetType];
             const newSelection = currentSelection.includes(id)
                 ? currentSelection.filter(itemId => itemId !== id)
                 : [...currentSelection, id];
-            return { ...prev, [selectedAssetType]: newSelection };
+            return { ...prev, [activeAssetType]: newSelection };
         });
     };
 
@@ -61,14 +62,14 @@ const ObjectManagerPage: React.FC = () => {
                 `A custom export of selected assets from ${settings.terminology.appName}.`,
                 settings.terminology.appName,
                 selection,
-                { quests, rewardTypes, ranks, trophies, markets, settings }
+                appState
             );
             addNotification({type: 'success', message: 'Blueprint file generated!'});
         }
     };
     
     const renderTable = () => {
-        const currentSelection = selection[selectedAssetType];
+        const currentSelection = selection[activeAssetType];
         const allSelected = activeAsset.data.length > 0 && currentSelection.length === activeAsset.data.length;
 
         return (
@@ -109,7 +110,7 @@ const ObjectManagerPage: React.FC = () => {
                                             />
                                         </td>
                                         <td className="p-4 font-bold text-stone-200">{item.title || item.name}</td>
-                                        <td className="p-4 text-stone-400">{item.type || item.category || `${item.xpThreshold} XP`}</td>
+                                        <td className="p-4 text-stone-400">{item.type || item.category || (item.xpThreshold !== undefined ? `${item.xpThreshold} XP` : '')}</td>
                                     </tr>
                                 ))
                             )}
@@ -121,7 +122,18 @@ const ObjectManagerPage: React.FC = () => {
     };
 
     return (
-        <div className="h-full flex flex-col">
+        <div className="h-full flex flex-col gap-4">
+            <div className="flex items-center gap-2 p-1 bg-stone-900/50 rounded-lg">
+                {ASSET_TYPES.map(asset => (
+                    <button
+                        key={asset.key}
+                        onClick={() => setActiveAssetType(asset.key)}
+                        className={`flex-1 flex items-center justify-center p-2 rounded-md font-semibold text-sm transition-colors ${activeAssetType === asset.key ? 'bg-emerald-600 text-white' : 'text-stone-300 hover:bg-stone-700'}`}
+                    >
+                        <span className="capitalize">{settings.terminology[asset.label]}</span>
+                    </button>
+                ))}
+            </div>
             <div className="flex-grow flex flex-col">
                 {renderTable()}
             </div>

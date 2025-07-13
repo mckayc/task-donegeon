@@ -2,6 +2,7 @@
 
 
 
+
 import React, { useState } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { Role, Page, QuestCompletionStatus, PurchaseRequestStatus, Terminology } from '../../types';
@@ -124,7 +125,7 @@ const Sidebar: React.FC = () => {
     { name: 'Rewards', Icon: Icons.RewardsIcon, role: Role.DonegeonMaster, termKey: 'points' },
     { name: 'Manage Ranks', Icon: Icons.ManageRanksIcon, role: Role.DonegeonMaster, termKey: 'levels' },
     { name: 'Manage Trophies', Icon: Icons.ManageTrophiesIcon, role: Role.DonegeonMaster, termKey: 'awards' },
-    { name: 'Data Management', Icon: Icons.DataManagementIcon, role: Role.DonegeonMaster },
+    { name: 'Data Management', Icon: Icons.DatabaseIcon, role: Role.DonegeonMaster },
     { name: 'Settings', Icon: Icons.SettingsIcon, role: Role.DonegeonMaster },
   ];
   

@@ -64,40 +64,46 @@ const MediaManagerPage: React.FC = () => {
 
     return (
         <div className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="md:col-span-2">
-                    <h2 className="text-2xl font-bold text-stone-100 mb-2">Upload New Media</h2>
-                    <div
-                        onDrop={handleDrop}
-                        onDragEnter={handleDragEvents}
-                        onDragOver={handleDragEvents}
-                        onDragLeave={handleDragEvents}
-                        className={`p-8 border-2 border-dashed rounded-lg text-center transition-colors ${
-                            isDragging ? 'border-emerald-500 bg-emerald-900/20' : 'border-stone-600'
-                        }`}
-                    >
-                        <input
-                            id="file-upload"
-                            type="file"
-                            multiple
-                            onChange={handleFileSelect}
-                            className="hidden"
-                        />
-                        <p className="text-stone-400 mb-4">Drag & drop files here, or</p>
-                        <Button onClick={() => document.getElementById('file-upload')?.click()}>
-                            Select Files
-                        </Button>
-                    </div>
+            <Card title="Upload New Media">
+                <div
+                    onDrop={handleDrop}
+                    onDragEnter={handleDragEvents}
+                    onDragOver={handleDragEvents}
+                    onDragLeave={handleDragEvents}
+                    className={`p-8 border-2 border-dashed rounded-lg text-center transition-colors ${
+                        isDragging ? 'border-emerald-500 bg-emerald-900/20' : 'border-stone-600'
+                    }`}
+                >
+                    <input
+                        id="file-upload"
+                        type="file"
+                        multiple
+                        onChange={handleFileSelect}
+                        className="hidden"
+                    />
+                    <p className="text-stone-400 mb-4">Drag & drop files here, or</p>
+                    <Button onClick={() => document.getElementById('file-upload')?.click()}>
+                        Select Files
+                    </Button>
                 </div>
-                <Card title="Upload Guide">
-                    <ul className="text-sm text-stone-400 space-y-2 list-disc list-inside">
-                        <li><strong>Formats:</strong> SVG, PNG recommended.</li>
-                        <li><strong>Dimensions:</strong> Square (1:1 aspect ratio) for best results.</li>
-                        <li><strong>Naming:</strong> Use descriptive names (e.g., `hair-long-blonde.svg`).</li>
-                        <li><strong>Note:</strong> Uploads are simulated and stored locally in your session.</li>
-                    </ul>
-                </Card>
-            </div>
+            </Card>
+
+            <Card title="Upload Guide & Suggestions">
+                <ul className="text-sm text-stone-400 space-y-3 list-disc list-inside">
+                    <li>
+                        <strong>Recommended Formats:</strong> Use vector formats like <strong className="text-stone-300">SVG</strong> for sharp, scalable icons. Use <strong className="text-stone-300">PNG</strong> with a transparent background for more complex images.
+                    </li>
+                    <li>
+                        <strong>Image Dimensions:</strong> A square aspect ratio (e.g., 512x512 pixels) is ideal for avatar parts and icons to ensure they display consistently.
+                    </li>
+                    <li>
+                        <strong>Creation Tools:</strong> You can create your own assets using free tools like <a href="https://www.canva.com/" target="_blank" rel="noopener noreferrer" className="text-emerald-400 underline">Canva</a>, <a href="https://www.figma.com/" target="_blank" rel="noopener noreferrer" className="text-emerald-400 underline">Figma</a>, or advanced software like Adobe Illustrator. There are also many websites that offer free-to-use SVG icons.
+                    </li>
+                    <li>
+                        <strong>Usage Note:</strong> Once uploaded, you can copy an asset's path to link it to a Quest, Market Item, or Digital Asset in their respective management pages.
+                    </li>
+                </ul>
+            </Card>
 
             <div>
                 <h2 className="text-2xl font-bold text-stone-100 mb-4">Media Gallery</h2>

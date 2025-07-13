@@ -1,6 +1,4 @@
 
-
-
 import React, { useState } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { DigitalAsset } from '../../types';
@@ -9,8 +7,8 @@ import Card from '../ui/Card';
 import EditDigitalAssetDialog from '../admin/EditDigitalAssetDialog';
 
 const DigitalAssetsPage: React.FC = () => {
-    const { digitalAssets, rewardTypes } = useAppState();
-    const { deleteDigitalAsset } = useAppDispatch();
+    const { digitalAssets, rewardTypes, settings } = useAppState();
+    const { deleteDigitalAsset, setActivePage } = useAppDispatch();
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [editingAsset, setEditingAsset] = useState<DigitalAsset | null>(null);
 
@@ -33,13 +31,26 @@ const DigitalAssetsPage: React.FC = () => {
     const getRewardName = (id: string) => rewardTypes.find(rt => rt.id === id)?.name || 'Unknown';
 
     return (
-        <div>
-            <div className="flex justify-between items-center mb-8">
-                <h1 className="text-4xl font-medieval text-stone-100">Manage Digital Assets</h1>
+        <div className="space-y-6">
+            <Card title="How to Use Digital Assets">
+                <p className="text-sm text-stone-400">
+                    Digital Assets are the cosmetic items players can equip on their avatars. Follow these steps to make them available in-game:
+                </p>
+                <ol className="list-decimal list-inside text-sm text-stone-300 mt-2 space-y-1">
+                    <li>Create a new asset here, giving it a unique <strong className="text-stone-100">Slot</strong> (e.g., "hair", "shirt") and <strong className="text-stone-100">Asset ID</strong> (e.g., "hair-spiky-red"). Upload the corresponding image.</li>
+                    <li>Go to <strong className="text-emerald-400 cursor-pointer" onClick={() => setActivePage('Manage Markets')}>Manage {settings.terminology.stores}</strong>.</li>
+                    <li>Create or edit a {settings.terminology.store.toLowerCase()} and add a new item.</li>
+                    <li>In the "Avatar Item Payout" section of the new item, enter the <strong className="text-stone-100">exact same Slot and Asset ID</strong> you created here.</li>
+                    <li>Set a price. Now players can buy this asset in the {settings.terminology.store.toLowerCase()}!</li>
+                </ol>
+            </Card>
+            
+            <div className="flex justify-between items-center">
+                <h2 className="text-2xl font-bold text-stone-100">Manage Digital Assets</h2>
                 <Button onClick={handleCreate}>Create New Asset</Button>
             </div>
 
-            <Card title="All Digital Assets">
+            <Card>
                 <div className="overflow-x-auto">
                     <table className="w-full text-left">
                         <thead className="border-b border-stone-700/60">
@@ -48,7 +59,7 @@ const DigitalAssetsPage: React.FC = () => {
                                 <th className="p-4 font-semibold">Name</th>
                                 <th className="p-4 font-semibold">Slot</th>
                                 <th className="p-4 font-semibold">Asset ID</th>
-                                <th className="p-4 font-semibold">Cost</th>
+                                <th className="p-4 font-semibold">Cost (For Reference)</th>
                                 <th className="p-4 font-semibold">Actions</th>
                             </tr>
                         </thead>

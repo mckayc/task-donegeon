@@ -1,21 +1,21 @@
 
-
-
 import React, { useState } from 'react';
-import { useAppState } from '../../context/AppContext';
 import * as Icons from '../ui/Icons';
 import ObjectManagerPage from './management/ObjectManagerPage';
-import MediaManagerPage from './management/MediaManagerPage';
+import BackupAndImportPage from './management/BackupAndImportPage';
+import AssetLibraryPage from './management/AssetLibraryPage';
 import DigitalAssetsPage from './DigitalAssetsPage';
+import MediaManagerPage from './management/MediaManagerPage';
 
-type ManagementPage = 'objects' | 'media' | 'digital_assets';
+type ManagementPage = 'objects' | 'backup' | 'library' | 'digital_assets' | 'media';
 
 const DataManagementPage: React.FC = () => {
-    const { settings } = useAppState();
     const [activePage, setActivePage] = useState<ManagementPage>('objects');
 
     const managementPages: { id: ManagementPage, label: string, icon: React.FC }[] = [
         { id: 'objects', label: 'Object Manager', icon: Icons.ObjectManagerIcon },
+        { id: 'backup', label: 'Backup & Import', icon: Icons.DatabaseIcon },
+        { id: 'library', label: 'Asset Library', icon: Icons.SparklesIcon },
         { id: 'media', label: 'Media Manager', icon: Icons.MediaManagerIcon },
         { id: 'digital_assets', label: 'Digital Assets', icon: Icons.AvatarIcon },
     ];
@@ -24,7 +24,11 @@ const DataManagementPage: React.FC = () => {
         switch (activePage) {
             case 'objects':
                 return <ObjectManagerPage />;
-            case 'media':
+            case 'backup':
+                return <BackupAndImportPage />;
+            case 'library':
+                return <AssetLibraryPage />;
+             case 'media':
                 return <MediaManagerPage />;
             case 'digital_assets':
                 return <DigitalAssetsPage />;
@@ -51,7 +55,7 @@ const DataManagementPage: React.FC = () => {
                         ))}
                     </div>
                 </nav>
-                <div className="flex-grow flex flex-col overflow-y-auto">
+                <div className="flex-grow flex flex-col overflow-y-auto pr-4">
                     {renderContent()}
                 </div>
             </div>

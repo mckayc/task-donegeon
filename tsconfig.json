@@ -16,6 +16,6 @@
     "noEmit": true,
     "jsx": "react-jsx"
   },
-  "include": ["."],
+  "include": ["components", "context", "data", "hooks", "utils", "index.tsx", "App.tsx", "types.ts"],
   "references": [{ "path": "./tsconfig.node.json" }]
 }

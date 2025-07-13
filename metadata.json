@@ -1,8 +1,8 @@
 {
   "name": "Task Donegeon",
-  "version": "0.0.15",
-  "lastChange": "Added README.md with project overview and deployment instructions.",
+  "version": "0.0.16",
+  "lastChange": "Fixed a TypeScript build error on Vercel by refining the tsconfig.json include paths.",
   "description": "A gamified task and chore tracker for families and groups. Complete quests, earn currency and experience, and level up your character in a fun, medieval-themed adventure.",
   "requestFramePermissions": [],
-  "prompt": "Please update the Readme file to explain what is going on for Github and put a version number and timestamp so I know the code I upload to github is the most recent."
+  "prompt": "I just deployed in Vercel and got this error log:\n\nerror TS6305: Output file '/vercel/path0/vite.config.d.ts' has not been built from source file '/vercel/path0/vite.config.ts'.\n  The file is in the program because:\n    Matched by include pattern '.' in '/vercel/path0/tsconfig.json'\nError: Command \"npm run build\" exited with 2\nExiting build container"
 }

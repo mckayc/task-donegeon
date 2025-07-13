@@ -1,6 +1,7 @@
+
 import React, { useState, useEffect } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
-import { MarketItem, RewardItem, RewardCategory, AvatarAsset, DigitalAsset } from '../../types';
+import { MarketItem, RewardItem, RewardCategory, AvatarAsset } from '../../types';
 import Button from '../ui/Button';
 import Input from '../ui/Input';
 import RewardInputGroup from '../forms/RewardInputGroup';
@@ -12,10 +13,8 @@ interface EditItemDialogProps {
 }
 
 const EditMarketItemDialog: React.FC<EditItemDialogProps> = ({ marketId, itemToEdit, onClose }) => {
-  const { rewardTypes, digitalAssets } = useAppState();
+  const { rewardTypes } = useAppState();
   const { addMarketItem, updateMarketItem } = useAppDispatch();
-  const [itemType, setItemType] = useState<'standard' | 'digitalAsset'>(itemToEdit?.avatarAssetPayout ? 'digitalAsset' : 'standard');
-  const [selectedAssetId, setSelectedAssetId] = useState<string>('');
 
   const [formData, setFormData] = useState({
     title: '',
@@ -35,33 +34,8 @@ const EditMarketItemDialog: React.FC<EditItemDialogProps> = ({ marketId, itemToE
         payout: [...itemToEdit.payout],
         avatarAssetPayout: itemToEdit.avatarAssetPayout ? { ...itemToEdit.avatarAssetPayout } : undefined,
       });
-
-      // Find the digital asset that corresponds to the item being edited
-      if (itemToEdit.avatarAssetPayout) {
-        const correspondingAsset = digitalAssets.find(da => 
-            da.slot === itemToEdit.avatarAssetPayout?.slot &&
-            da.assetId === itemToEdit.avatarAssetPayout?.assetId
-        );
-        if (correspondingAsset) {
-            setSelectedAssetId(correspondingAsset.id);
-        }
-      }
     }
-  }, [itemToEdit, digitalAssets]);
-
-  const handleSelectDigitalAsset = (assetId: string) => {
-    setSelectedAssetId(assetId);
-    const asset = digitalAssets.find(da => da.id === assetId);
-    if (asset) {
-        setFormData({
-            title: asset.name,
-            description: asset.description,
-            cost: [...asset.cost],
-            payout: [],
-            avatarAssetPayout: { slot: asset.slot, assetId: asset.assetId },
-        });
-    }
-  }
+  }, [itemToEdit]);
   
   const handleRewardChange = (category: 'cost' | 'payout') => (index: number, field: keyof RewardItem, value: string | number) => {
     const newItems = [...formData[category]];
@@ -84,14 +58,21 @@ const EditMarketItemDialog: React.FC<EditItemDialogProps> = ({ marketId, itemToE
     setFormData(prev => ({ ...prev, [category]: newItems }));
   };
 
+  const handleAvatarChange = (field: keyof AvatarAsset, value: string) => {
+      setFormData(prev => ({
+          ...prev,
+          avatarAssetPayout: {
+              ...prev.avatarAssetPayout,
+              slot: field === 'slot' ? value : prev.avatarAssetPayout?.slot || '',
+              assetId: field === 'assetId' ? value : prev.avatarAssetPayout?.assetId || '',
+          }
+      }));
+  }
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.title.trim()) {
         setError('Title is required.');
-        return;
-    }
-     if (itemType === 'digitalAsset' && !formData.avatarAssetPayout) {
-        setError('Please select a valid digital asset.');
         return;
     }
     setError('');
@@ -100,8 +81,8 @@ const EditMarketItemDialog: React.FC<EditItemDialogProps> = ({ marketId, itemToE
         title: formData.title,
         description: formData.description,
         cost: formData.cost.filter(r => r.rewardTypeId && r.amount > 0),
-        payout: itemType === 'standard' ? formData.payout.filter(s => s.rewardTypeId && s.amount > 0) : [],
-        avatarAssetPayout: itemType === 'digitalAsset' ? formData.avatarAssetPayout : undefined,
+        payout: formData.payout.filter(s => s.rewardTypeId && s.amount > 0),
+        avatarAssetPayout: (formData.avatarAssetPayout?.slot && formData.avatarAssetPayout?.assetId) ? formData.avatarAssetPayout : undefined,
     };
 
     if (itemToEdit) {
@@ -122,44 +103,23 @@ const EditMarketItemDialog: React.FC<EditItemDialogProps> = ({ marketId, itemToE
             <h2 className="text-3xl font-medieval text-emerald-400 mb-6">{dialogTitle}</h2>
             <form onSubmit={handleSubmit} className="space-y-4">
 
-                <div className="flex space-x-2 p-1 bg-stone-900/50 rounded-lg">
-                    <button type="button" onClick={() => setItemType('standard')} className={`w-full p-2 rounded-md font-semibold text-sm transition-colors ${itemType === 'standard' ? 'bg-emerald-600 text-white' : 'text-stone-300 hover:bg-stone-700'}`}>
-                        Standard Item
-                    </button>
-                    <button type="button" onClick={() => setItemType('digitalAsset')} className={`w-full p-2 rounded-md font-semibold text-sm transition-colors ${itemType === 'digitalAsset' ? 'bg-emerald-600 text-white' : 'text-stone-300 hover:bg-stone-700'}`}>
-                        Digital Asset
-                    </button>
-                </div>
-
-                {itemType === 'digitalAsset' ? (
-                     <div>
-                        <label htmlFor="digital-asset-select" className="block text-sm font-medium text-stone-300 mb-1">Select Asset</label>
-                        <select
-                            id="digital-asset-select"
-                            value={selectedAssetId}
-                            onChange={(e) => handleSelectDigitalAsset(e.target.value)}
-                            className="w-full px-4 py-2 bg-stone-700 border border-stone-600 rounded-md focus:ring-emerald-500 focus:border-emerald-500 transition"
-                        >
-                            <option value="" disabled>Choose a digital asset...</option>
-                            {digitalAssets.map(asset => (
-                                <option key={asset.id} value={asset.id}>{asset.name} ({asset.slot})</option>
-                            ))}
-                        </select>
-                    </div>
-                ) : null}
-
-              <Input label="Item Title" id="title" name="title" value={formData.title} onChange={(e) => setFormData(p => ({...p, title: e.target.value}))} required disabled={itemType === 'digitalAsset'} />
+              <Input label="Item Title" id="title" name="title" value={formData.title} onChange={(e) => setFormData(p => ({...p, title: e.target.value}))} required />
               <div>
                 <label htmlFor="description" className="block text-sm font-medium text-stone-300 mb-1">Description</label>
-                <textarea id="description" name="description" rows={3} value={formData.description} onChange={(e) => setFormData(p => ({...p, description: e.target.value}))} className="w-full px-4 py-2 bg-stone-700 border border-stone-600 rounded-md" disabled={itemType === 'digitalAsset'}/>
+                <textarea id="description" name="description" rows={3} value={formData.description} onChange={(e) => setFormData(p => ({...p, description: e.target.value}))} className="w-full px-4 py-2 bg-stone-700 border border-stone-600 rounded-md"/>
               </div>
               
               <RewardInputGroup category='cost' items={formData.cost} onChange={handleRewardChange('cost')} onAdd={handleAddRewardForCategory('cost')} onRemove={handleRemoveReward('cost')} />
+              <RewardInputGroup category='payout' items={formData.payout} onChange={handleRewardChange('payout')} onAdd={handleAddRewardForCategory('payout')} onRemove={handleRemoveReward('payout')} />
               
-              {itemType === 'standard' && (
-                  <RewardInputGroup category='payout' items={formData.payout} onChange={handleRewardChange('payout')} onAdd={handleAddRewardForCategory('payout')} onRemove={handleRemoveReward('payout')} />
-              )}
-    
+              <div className="p-4 bg-stone-900/50 rounded-lg">
+                <h4 className="font-semibold text-stone-200 mb-2">Avatar Item Payout (Optional)</h4>
+                <div className="grid grid-cols-2 gap-4">
+                    <Input label="Slot" placeholder="e.g., hair, shirt" value={formData.avatarAssetPayout?.slot || ''} onChange={(e) => handleAvatarChange('slot', e.target.value)} />
+                    <Input label="Asset ID" placeholder="e.g., hair-style-1" value={formData.avatarAssetPayout?.assetId || ''} onChange={(e) => handleAvatarChange('assetId', e.target.value)} />
+                </div>
+              </div>
+
               {error && <p className="text-red-400 text-center">{error}</p>}
               <div className="flex justify-end space-x-4 pt-4">
                 <Button type="button" variant="secondary" onClick={onClose}>Cancel</Button>

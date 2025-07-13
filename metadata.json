@@ -1,8 +1,7 @@
-
 {
   "name": "Task Donegeon (0.1 - Docker Working)",
-  "version": "0.0.31",
-  "lastChange": "Added an 'About' page with version info and a link to the GitHub repository.",
+  "version": "0.0.33",
+  "lastChange": "Added Media Manager and Portainer instructions.",
   "description": "A gamified task and chore tracker for families and groups. Complete quests, earn currency and experience, and level up your character in a fun, medieval-themed adventure.",
   "requestFramePermissions": [],
   "prompt": ""

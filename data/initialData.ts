@@ -1,7 +1,7 @@
 
 
 
-import { User, Role, RewardTypeDefinition, RewardCategory, Rank, Trophy, TrophyRequirementType, QuestType, Market, Quest, QuestAvailability, Guild, DigitalAsset, AppSettings, Theme, AvatarAsset } from '../types';
+import { User, Role, RewardTypeDefinition, RewardCategory, Rank, Trophy, TrophyRequirementType, QuestType, Market, Quest, QuestAvailability, Guild, AppSettings, Theme, AvatarAsset } from '../types';
 
 export const createMockUsers = (): User[] => {
     const users: Omit<User, 'id' | 'personalPurse' | 'personalExperience' | 'guildBalances' | 'avatar' | 'ownedAvatarAssets' | 'ownedThemes'>[] = [
@@ -148,17 +148,6 @@ export const INITIAL_TROPHIES: Trophy[] = [
     { id: 'manual-trophy-9', name: 'Master Chef', description: 'Awarded for exceptional cooking or help in the kitchen.', icon: '🧑‍🍳', isManual: true, requirements: [] },
     { id: 'manual-trophy-10', name: 'Green Thumb', description: 'Awarded for excellent work in the garden or with plants.', icon: '🌱', isManual: true, requirements: [] },
 ];
-
-export const createInitialDigitalAssets = (): DigitalAsset[] => {
-    return [
-        { id: 'da-hair-1', name: 'Brown Spikes', description: 'A spiky brown hairdo.', slot: 'hair', assetId: 'hair-style-1', cost: [{ rewardTypeId: 'core-gems', amount: 5 }] },
-        { id: 'da-hair-2', name: 'Blonde Top', description: 'A stylish blonde look.', slot: 'hair', assetId: 'hair-style-2', cost: [{ rewardTypeId: 'core-gems', amount: 5 }] },
-        { id: 'da-hair-3', name: 'Black Spikes', description: 'A cool, spiky black hairstyle.', slot: 'hair', assetId: 'hair-style-3', cost: [{ rewardTypeId: 'core-gems', amount: 5 }] },
-        { id: 'da-shirt-1', name: 'Red Tunic', description: 'A simple, heroic red tunic.', slot: 'shirt', assetId: 'shirt-red-simple', cost: [{ rewardTypeId: 'core-gold', amount: 10 }] },
-        { id: 'da-shirt-2', name: 'Blue Tunic', description: 'A sturdy blue tunic.', slot: 'shirt', assetId: 'shirt-blue-simple', cost: [{ rewardTypeId: 'core-gold', amount: 10 }] },
-        { id: 'da-shirt-3', name: 'Green Tunic', description: "A classic adventurer's green tunic.", slot: 'shirt', assetId: 'shirt-green-simple', cost: [{ rewardTypeId: 'core-gold', amount: 10 }] },
-    ];
-};
 
 const THEMES: Theme[] = ['emerald', 'rose', 'sky', 'arcane', 'cartoon', 'forest', 'ocean', 'vulcan', 'royal', 'winter', 'sunset', 'cyberpunk', 'steampunk', 'parchment', 'eerie'];
 

@@ -1,3 +1,4 @@
+
 export enum Role {
   DonegeonMaster = 'Donegeon Master',
   Gatekeeper = 'Gatekeeper',
@@ -116,13 +117,13 @@ export interface AvatarAsset {
   assetId: string;
 }
 
-export interface DigitalAsset {
+export interface MediaAsset {
   id: string;
   name: string;
-  description: string;
-  slot: string;
-  assetId: string; // The ID in the SVG, e.g., 'hair-style-4'
-  cost: RewardItem[];
+  type: string; // e.g., 'image/png'
+  size: number;
+  dataUrl: string; // base64 data URL
+  createdAt: string;
 }
 
 export interface MarketItem {
@@ -133,6 +134,15 @@ export interface MarketItem {
   payout: RewardItem[]; // For items that give back currency/XP
   avatarAssetPayout?: AvatarAsset; // For items that grant a cosmetic
   themePayout?: Theme; // For items that grant a theme
+}
+
+export interface DigitalAsset {
+  id: string;
+  name: string;
+  description: string;
+  slot: string;
+  assetId: string;
+  cost: RewardItem[];
 }
 
 export interface Market {
@@ -303,7 +313,7 @@ export interface AppSettings {
   terminology: Terminology;
 }
 
-export type Page = 'Dashboard' | 'Avatar' | 'Quests' | 'Marketplace' | 'Chronicles' | 'Guild' | 'Calendar' | 'Progress' | 'Trophies' | 'Ranks' | 'Manage Users' | 'Rewards' | 'Manage Quests' | 'Approvals' | 'Manage Markets' | 'Digital Assets' | 'Manage Guilds' | 'Settings' | 'Profile' | 'About' | 'Help' | 'Manage Ranks' | 'Manage Trophies' | 'Themes' | 'Data Management';
+export type Page = 'Dashboard' | 'Avatar' | 'Quests' | 'Marketplace' | 'Chronicles' | 'Guild' | 'Calendar' | 'Progress' | 'Trophies' | 'Ranks' | 'Manage Users' | 'Rewards' | 'Manage Quests' | 'Approvals' | 'Manage Markets' | 'Manage Guilds' | 'Settings' | 'Profile' | 'About' | 'Help' | 'Manage Ranks' | 'Manage Trophies' | 'Themes' | 'Data Management';
 
 export type ShareableAssetType = 'quests' | 'rewardTypes' | 'ranks' | 'trophies' | 'markets';
 
@@ -337,6 +347,7 @@ export interface IAppData {
   trophies: Trophy[];
   userTrophies: UserTrophy[];
   adminAdjustments: AdminAdjustment[];
+  mediaAssets: MediaAsset[];
   digitalAssets: DigitalAsset[];
   systemLogs: SystemLog[];
   appMode: AppMode;

@@ -1,8 +1,9 @@
 
 
+
 import React, { createContext, useState, useContext, ReactNode, useEffect, useMemo, useCallback } from 'react';
-import { User, Quest, RewardTypeDefinition, RewardCategory, QuestAvailability, Role, QuestCompletion, QuestCompletionStatus, RewardItem, Market, MarketItem, QuestType, PurchaseRequest, PurchaseRequestStatus, Guild, Rank, Trophy, UserTrophy, Notification, TrophyRequirement, TrophyRequirementType, AppMode, Page, AdminAdjustment, AdminAdjustmentType, AvatarAsset, DigitalAsset, SystemLog, AppSettings, Blueprint, ImportResolution, IAppData, Theme, ShareableAssetType } from '../types';
-import { createMockUsers, INITIAL_REWARD_TYPES, INITIAL_RANKS, INITIAL_TROPHIES, createSampleMarkets, createSampleQuests, createInitialGuilds, createInitialDigitalAssets, INITIAL_SETTINGS } from '../data/initialData';
+import { User, Quest, RewardTypeDefinition, RewardCategory, QuestAvailability, Role, QuestCompletion, QuestCompletionStatus, RewardItem, Market, MarketItem, QuestType, PurchaseRequest, PurchaseRequestStatus, Guild, Rank, Trophy, UserTrophy, Notification, TrophyRequirement, TrophyRequirementType, AppMode, Page, AdminAdjustment, AdminAdjustmentType, AvatarAsset, MediaAsset, SystemLog, AppSettings, Blueprint, ImportResolution, IAppData, Theme, ShareableAssetType, DigitalAsset } from '../types';
+import { createMockUsers, INITIAL_REWARD_TYPES, INITIAL_RANKS, INITIAL_TROPHIES, createSampleMarkets, createSampleQuests, createInitialGuilds, INITIAL_SETTINGS } from '../data/initialData';
 import { toYMD, fromYMD } from '../utils/quests';
 import { useDebounce } from '../hooks/useDebounce';
 
@@ -68,6 +69,8 @@ interface AppDispatch {
   deleteTrophy: (trophyId: string) => void;
   awardTrophy: (userId: string, trophyId: string, guildId?: string) => void;
   applyManualAdjustment: (adjustment: Omit<AdminAdjustment, 'id' | 'adjustedAt' | 'adjusterId'>) => boolean;
+  addMediaAsset: (asset: Omit<MediaAsset, 'id' | 'createdAt'>) => void;
+  deleteMediaAsset: (assetId: string) => void;
   addDigitalAsset: (asset: Omit<DigitalAsset, 'id'>) => void;
   updateDigitalAsset: (asset: DigitalAsset) => void;
   deleteDigitalAsset: (assetId: string) => void;
@@ -120,6 +123,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     trophies: [],
     userTrophies: [],
     adminAdjustments: [],
+    mediaAssets: [],
     digitalAssets: [],
     systemLogs: [],
     appMode: { mode: 'personal' },
@@ -176,7 +180,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
                 const finalSettings = deepMergeSettings(INITIAL_SETTINGS, savedData.settings || {});
                 setAppData({
                     // Provide a default structure to merge with to prevent missing keys
-                    ...{ users: [], currentUser: null, quests: [], markets: [], rewardTypes: [], questCompletions: [], purchaseRequests: [], guilds: [], ranks: [], trophies: [], userTrophies: [], adminAdjustments: [], digitalAssets: [], systemLogs: [], appMode: { mode: 'personal' }, settings: INITIAL_SETTINGS },
+                    ...{ users: [], currentUser: null, quests: [], markets: [], rewardTypes: [], questCompletions: [], purchaseRequests: [], guilds: [], ranks: [], trophies: [], userTrophies: [], adminAdjustments: [], mediaAssets: [], digitalAssets: [], systemLogs: [], appMode: { mode: 'personal' }, settings: INITIAL_SETTINGS },
                     ...savedData,
                     currentUser: null, // Always start logged out
                     settings: finalSettings,
@@ -217,7 +221,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     saveData();
   }, [debouncedAppData, isDataLoaded, addNotification, backendError]);
 
-  const { users, currentUser, quests, markets, rewardTypes, questCompletions, purchaseRequests, guilds, ranks, trophies, userTrophies, adminAdjustments, digitalAssets, systemLogs, appMode, settings } = appData;
+  const { users, currentUser, quests, markets, rewardTypes, questCompletions, purchaseRequests, guilds, ranks, trophies, userTrophies, adminAdjustments, mediaAssets, digitalAssets, systemLogs, appMode, settings } = appData;
   const isFirstRun = isDataLoaded && !users.some(u => u.role === Role.DonegeonMaster) && !backendError;
 
   const allTags = useMemo(() => {
@@ -293,7 +297,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             guilds: createInitialGuilds(allUsers),
             ranks: prev.ranks.length > 0 ? prev.ranks : INITIAL_RANKS,
             trophies: prev.trophies.length > 0 ? prev.trophies : INITIAL_TROPHIES,
-            digitalAssets: prev.digitalAssets.length > 0 ? prev.digitalAssets : createInitialDigitalAssets(),
         };
     });
   }, [addNotification]);
@@ -784,18 +787,34 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     return true;
   }, [currentUser, applyRewards, deductRewards, awardTrophy, addNotification]);
 
+  const addMediaAsset = useCallback((asset: Omit<MediaAsset, 'id' | 'createdAt'>) => {
+    const newAsset: MediaAsset = {
+        ...asset,
+        id: `media-${Date.now()}`,
+        createdAt: new Date().toISOString(),
+    };
+    setAppData(prev => ({ ...prev, mediaAssets: [...prev.mediaAssets, newAsset] }));
+    addNotification({ type: 'success', message: `Asset "${newAsset.name}" uploaded.` });
+  }, [addNotification]);
+  
+  const deleteMediaAsset = useCallback((assetId: string) => {
+      setAppData(prev => ({ ...prev, mediaAssets: prev.mediaAssets.filter(ma => ma.id !== assetId) }));
+      addNotification({ type: 'info', message: 'Asset deleted.' });
+  }, [addNotification]);
+
   const addDigitalAsset = useCallback((asset: Omit<DigitalAsset, 'id'>) => {
-      const newAsset = { ...asset, id: `da-${Date.now()}` };
-      setAppData(prev => ({ ...prev, digitalAssets: [...prev.digitalAssets, newAsset] }));
+    const newAsset = { ...asset, id: `d-asset-${Date.now()}` };
+    setAppData(prev => ({...prev, digitalAssets: [...prev.digitalAssets, newAsset]}));
   }, []);
 
   const updateDigitalAsset = useCallback((asset: DigitalAsset) => {
-      setAppData(prev => ({ ...prev, digitalAssets: prev.digitalAssets.map(da => da.id === asset.id ? asset : da)}));
+    setAppData(prev => ({...prev, digitalAssets: prev.digitalAssets.map(da => da.id === asset.id ? asset : da)}));
   }, []);
   
   const deleteDigitalAsset = useCallback((assetId: string) => {
-      setAppData(prev => ({ ...prev, digitalAssets: prev.digitalAssets.filter(da => da.id !== assetId)}));
-  }, []);
+    setAppData(prev => ({...prev, digitalAssets: prev.digitalAssets.filter(da => da.id !== assetId)}));
+    addNotification({ type: 'info', message: 'Digital asset deleted.' });
+  }, [addNotification]);
   
   const setIsFirstRun = (isFirstRun: boolean) => {
       // This is a derived value now, so this function does nothing.
@@ -988,7 +1007,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         rewardTypes: prev.rewardTypes.filter(rt => rt.isCore),
         ranks: prev.ranks.filter(r => r.xpThreshold === 0),
         trophies: [],
-        digitalAssets: [],
+        mediaAssets: [],
         guilds: prev.guilds.filter(g => g.isDefault),
     }));
     addNotification({ type: 'success', message: 'All custom content (quests, markets, rewards, etc.) has been deleted.' });
@@ -1191,6 +1210,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     deleteTrophy,
     awardTrophy,
     applyManualAdjustment,
+    addMediaAsset,
+    deleteMediaAsset,
     addDigitalAsset,
     updateDigitalAsset,
     deleteDigitalAsset,

@@ -1,6 +1,7 @@
 
 
 
+
 import React from 'react';
 import Sidebar from './Sidebar';
 import Header from './Header';
@@ -25,7 +26,6 @@ import RanksPage from '../pages/RanksPage';
 import { useAppState } from '../../context/AppContext';
 import HelpPage from '../pages/HelpPage';
 import AvatarPage from '../pages/AvatarPage';
-import DigitalAssetsPage from '../pages/DigitalAssetsPage';
 import VacationModeBanner from '../settings/VacationModeBanner';
 import ManageRanksPage from '../pages/ManageRanksPage';
 import ManageTrophiesPage from '../pages/ManageTrophiesPage';
@@ -53,7 +53,6 @@ const MainLayout: React.FC = () => {
       case 'Rewards': return <RewardsPage />;
       case 'Manage Quests': return <ManageQuestsPage />;
       case 'Manage Markets': return <ManageMarketsPage />;
-      case 'Digital Assets': return <DigitalAssetsPage />;
       case 'Manage Guilds': return <ManageGuildsPage />;
       case 'Manage Ranks': return <ManageRanksPage />;
       case 'Manage Trophies': return <ManageTrophiesPage />;

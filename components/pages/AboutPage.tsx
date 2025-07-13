@@ -1,8 +1,9 @@
-
 import React from 'react';
 import Card from '../ui/Card';
 import { useAppState } from '../../context/AppContext';
-import metadata from '../../metadata.json';
+import metadataString from '/metadata.json?raw';
+
+const metadata = JSON.parse(metadataString);
 
 const AboutPage: React.FC = () => {
     const { settings } = useAppState();

@@ -1,6 +1,6 @@
 # Task Donegeon
 
-**Version:** 0.0.31
+**Version:** 0.0.33
 **Last Updated:** 2023-10-28T12:00:00Z
 
 ---
@@ -16,6 +16,7 @@ Task Donegeon is a gamified task and chore management application designed for f
   - [Option 1: Local Development (Recommended for contributing)](#option-1-local-development-recommended-for-contributing)
   - [Option 2: Vercel & Supabase Deployment (Recommended for production)](#option-2-vercel--supabase-deployment-recommended-for-production)
   - [Option 3: Docker Deployment (Recommended for self-hosting)](#option-3-docker-deployment-recommended-for-self-hosting)
+  - [Option 4: Portainer Deployment (Self-hosting with a UI)](#option-4-portainer-deployment-self-hosting-with-a-ui)
 - [🧪 Next Steps for Testing](#-next-steps-for-testing)
 
 
@@ -175,11 +176,52 @@ This method uses Docker Compose to build and run the application and its databas
     -   Create and start a PostgreSQL container using the credentials from your `.env` file.
     -   Create and start the application container, connecting it to the database.
     
-    The application will be available at `http://localhost:3001`. To stop the application, press `Ctrl+C` in the terminal and then run `docker-compose down`.
+    The application will be available at `http://localhost:3002`. To stop the application, press `Ctrl+C` in the terminal and then run `docker-compose down`.
+
+### Option 4: Portainer Deployment (Self-hosting with a UI)
+
+This method is for users who have [Portainer](https://www.portainer.io/) running to manage their Docker environment. It provides a simple graphical interface for deployment.
+
+1.  **Log into Portainer** and navigate to your Docker environment.
+
+2.  From the left menu, select **Stacks**.
+
+3.  Click **+ Add stack**.
+
+4.  **Configuration:**
+    -   **Name:** Give your stack a name, for example, `task-donegeon`.
+    -   **Build method:** Select **Web editor**.
+
+5.  **Web editor:** Copy the entire contents of the `docker-compose.yml` file from this repository and paste it into the web editor.
+
+6.  **Environment Variables:**
+    -   Scroll down to the **Environment variables** section.
+    -   Click **Advanced mode**.
+    -   You **must** set the following environment variables. These are the same variables found in the `.env.example` file.
+    
+    ```env
+    # Database Credentials
+    # IMPORTANT: Use a strong, unique password.
+    POSTGRES_DB=taskdonegeon
+    POSTGRES_USER=donegeon_master
+    POSTGRES_PASSWORD=your_super_secret_password_here
+    
+    # Node Environment
+    NODE_ENV=production
+    ```
+    -   Copy the block above, replace `your_super_secret_password_here` with your own secure password, and paste it into the environment variables text area.
+
+7.  **Deploy the stack:**
+    -   Click the **Deploy the stack** button.
+    -   Portainer will pull the necessary images, build the application container, and start the services.
+
+8.  **Access Your App:**
+    -   Once deployment is complete, you can access Task Donegeon at `http://<your-server-ip>:3002`.
+    -   Note: The `docker-compose.yml` maps port `3002` on the host to avoid conflicts with other common applications.
 
 ---
 ## 🧪 Next Steps for Testing
 
 - **Cloud Deployment:** Follow the **Vercel & Supabase** guide. This is the quickest way to get a live version of the app to play with and share.
 - **Local Changes:** Use the **Local Development** guide if you want to edit the code and see your changes instantly.
-- **Self-Hosted Instance:** The **Docker** guide is perfect for running a complete, isolated version of the app and its database on your own machine.
+- **Self-Hosted Instance:** The **Docker** or **Portainer** guide is perfect for running a complete, isolated version of the app and its database on your own machine.

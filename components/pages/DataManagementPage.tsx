@@ -1,182 +1,173 @@
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
-import { IAppData, Blueprint, ImportResolution, AppSettings } from '../../types';
+import { ShareableAssetType, Terminology } from '../../types';
+import * as Icons from '../ui/Icons';
 import Button from '../ui/Button';
 import ConfirmDialog from '../ui/ConfirmDialog';
-import Card from '../ui/Card';
-import BlueprintPreviewDialog from '../sharing/BlueprintPreviewDialog';
-import ExportPanel from '../sharing/ExportPanel';
-import ImportPanel from '../sharing/ImportPanel';
-import BackupPanel from '../sharing/BackupPanel';
-import RestorePanel from '../sharing/RestorePanel';
-import { analyzeBlueprintForConflicts } from '../../utils/sharing';
+import { generateBlueprint } from '../../utils/sharing';
 
 const DataManagementPage: React.FC = () => {
-    const { addNotification, importBlueprint, restoreFromBackup, clearAllHistory, resetAllPlayerData, deleteAllCustomContent, ...appData } = useAppDispatch();
-    const appState = useAppState();
+    const { settings, quests, markets, rewardTypes, ranks, trophies } = useAppState();
+    const { deleteSelectedAssets, addNotification } = useAppDispatch();
 
-    const [activeTab, setActiveTab] = useState<'sharing' | 'deletion'>('sharing');
-    const [isConfirmOpen, setIsConfirmOpen] = useState(false);
-    const [confirmAction, setConfirmAction] = useState<(() => void) | null>(null);
-    const [confirmTitle, setConfirmTitle] = useState('');
-    const [confirmMessage, setConfirmMessage] = useState('');
-    
-    const [previewingBlueprint, setPreviewingBlueprint] = useState<{ blueprint: Blueprint; resolutions: ImportResolution[] } | null>(null);
-    const [backupToRestore, setBackupToRestore] = useState<IAppData | null>(null);
+    const ASSET_TYPES: { key: ShareableAssetType, label: keyof Terminology, data: any[], icon: React.FC }[] = [
+        { key: 'quests', label: 'tasks', data: quests, icon: Icons.QuestsIcon },
+        { key: 'markets', label: 'stores', data: markets, icon: Icons.MarketplaceIcon },
+        { key: 'rewardTypes', label: 'points', data: rewardTypes.filter(rt => !rt.isCore), icon: Icons.RewardsIcon },
+        { key: 'ranks', label: 'levels', data: ranks, icon: Icons.RankIcon },
+        { key: 'trophies', label: 'awards', data: trophies, icon: Icons.TrophyIcon },
+    ];
 
-    const handleActionConfirm = (action: () => void, title: string, message: string) => {
-        setConfirmAction(() => action);
-        setConfirmTitle(title);
-        setConfirmMessage(message);
-        setIsConfirmOpen(true);
+    const [selectedAssetType, setSelectedAssetType] = useState<ShareableAssetType>('quests');
+    const [selection, setSelection] = useState<Record<ShareableAssetType, string[]>>({
+        quests: [], markets: [], rewardTypes: [], ranks: [], trophies: []
+    });
+    const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
+
+    const activeAsset = useMemo(() => ASSET_TYPES.find(at => at.key === selectedAssetType)!, [selectedAssetType, ASSET_TYPES]);
+    const totalSelectedCount = useMemo(() => Object.values(selection).reduce((sum, ids) => sum + ids.length, 0), [selection]);
+
+    const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const isChecked = e.target.checked;
+        const allIds = activeAsset.data.map(item => item.id);
+        setSelection(prev => ({
+            ...prev,
+            [selectedAssetType]: isChecked ? allIds : [],
+        }));
     };
 
-    const executeConfirmedAction = () => {
-        if (confirmAction) {
-            confirmAction();
+    const handleSelectOne = (id: string) => {
+        setSelection(prev => {
+            const currentSelection = prev[selectedAssetType];
+            const newSelection = currentSelection.includes(id)
+                ? currentSelection.filter(itemId => itemId !== id)
+                : [...currentSelection, id];
+            return { ...prev, [selectedAssetType]: newSelection };
+        });
+    };
+
+    const handleConfirmDelete = () => {
+        deleteSelectedAssets(selection);
+        setSelection({ quests: [], markets: [], rewardTypes: [], ranks: [], trophies: [] });
+        setConfirmDeleteOpen(false);
+    };
+
+    const handleExportSelected = () => {
+        const blueprintName = window.prompt("Enter a name for your Blueprint:", "My Custom Export");
+        if (blueprintName) {
+            generateBlueprint(
+                blueprintName,
+                `A custom export of selected assets from ${settings.terminology.appName}.`,
+                settings.terminology.appName,
+                selection,
+                { quests, rewardTypes, ranks, trophies, markets, settings }
+            );
+            addNotification({type: 'success', message: 'Blueprint file generated!'});
         }
-        setIsConfirmOpen(false);
-        setConfirmAction(null);
     };
     
-    const handleBlueprintFileSelect = (file: File) => {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            try {
-                const text = e.target?.result;
-                if (typeof text === 'string') {
-                    const blueprint = JSON.parse(text) as Blueprint;
-                    // Add validation here later
-                    const resolutions = analyzeBlueprintForConflicts(blueprint, appState);
-                    setPreviewingBlueprint({ blueprint, resolutions });
-                }
-            } catch (err) {
-                addNotification({ type: 'error', message: 'Failed to parse Blueprint file. Is it valid JSON?' });
-            }
-        };
-        reader.readAsText(file);
-    };
+    const renderTable = () => {
+        const currentSelection = selection[selectedAssetType];
+        const allSelected = activeAsset.data.length > 0 && currentSelection.length === activeAsset.data.length;
 
-    const handleRestoreFileSelect = (file: File) => {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            try {
-                const text = e.target?.result;
-                if (typeof text === 'string') {
-                    const backup = JSON.parse(text) as IAppData;
-                    if (backup.users && backup.quests && backup.settings) {
-                        setBackupToRestore(backup);
-                        handleActionConfirm(
-                            () => handleConfirmRestore(backup),
-                            'Restore from Backup',
-                            'Are you sure you want to restore from this backup file? This will overwrite ALL current data in your game. This action cannot be undone.'
-                        );
-                    } else {
-                         addNotification({ type: 'error', message: 'Invalid backup file format.' });
-                    }
-                }
-            } catch (err) {
-                 addNotification({ type: 'error', message: 'Failed to parse backup file.' });
-            }
-        };
-        reader.readAsText(file);
-    };
-
-    const handleConfirmRestore = (backupData: IAppData | null) => {
-        if (backupData) {
-            restoreFromBackup(backupData);
-        }
-        setBackupToRestore(null);
-    };
-
-    const handleConfirmImport = (blueprint: Blueprint, resolutions: ImportResolution[]) => {
-        importBlueprint(blueprint, resolutions);
-        setPreviewingBlueprint(null);
+        return (
+             <div className="bg-stone-800/50 border border-stone-700/60 rounded-xl shadow-lg flex-grow overflow-hidden flex flex-col">
+                <div className="overflow-x-auto">
+                    <table className="w-full text-left">
+                        <thead className="border-b border-stone-700/60 bg-stone-900/40">
+                            <tr>
+                                <th className="p-4 w-12">
+                                    <input
+                                        type="checkbox"
+                                        checked={allSelected}
+                                        onChange={handleSelectAll}
+                                        className="h-4 w-4 rounded text-emerald-600 bg-stone-700 border-stone-500 focus:ring-emerald-500"
+                                        aria-label="Select all items"
+                                    />
+                                </th>
+                                <th className="p-4 font-semibold">Name</th>
+                                <th className="p-4 font-semibold">Type / Info</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {activeAsset.data.length === 0 ? (
+                                <tr>
+                                    <td colSpan={3} className="p-8 text-center text-stone-400">
+                                        No {settings.terminology[activeAsset.label].toLowerCase()} found.
+                                    </td>
+                                </tr>
+                            ) : (
+                                activeAsset.data.map(item => (
+                                    <tr key={item.id} className="border-b border-stone-700/40 last:border-b-0 hover:bg-stone-800/40">
+                                        <td className="p-4">
+                                            <input
+                                                type="checkbox"
+                                                checked={currentSelection.includes(item.id)}
+                                                onChange={() => handleSelectOne(item.id)}
+                                                className="h-4 w-4 rounded text-emerald-600 bg-stone-700 border-stone-500 focus:ring-emerald-500"
+                                            />
+                                        </td>
+                                        <td className="p-4 font-bold text-stone-200">{item.title || item.name}</td>
+                                        <td className="p-4 text-stone-400">{item.type || item.category || `${item.xpThreshold} XP`}</td>
+                                    </tr>
+                                ))
+                            )}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        );
     };
 
     return (
-        <div className="space-y-8">
-            <h1 className="text-4xl font-medieval text-stone-100">Data Management</h1>
-            <div className="bg-stone-800/50 border border-stone-700/60 rounded-xl shadow-lg backdrop-blur-sm">
-                <div className="border-b" style={{ borderColor: 'hsl(var(--color-border))' }}>
-                    <nav className="-mb-px flex space-x-8 px-6" aria-label="Tabs">
-                        <button
-                            onClick={() => setActiveTab('sharing')}
-                            className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'sharing' ? 'border-accent text-accent-light' : 'border-transparent text-stone-400 hover:text-stone-200 hover:border-stone-300'}`}
-                        >
-                            Backup & Sharing
-                        </button>
-                        <button
-                            onClick={() => setActiveTab('deletion')}
-                            className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'deletion' ? 'border-accent text-red-400' : 'border-transparent text-stone-400 hover:text-stone-200 hover:border-stone-300'}`}
-                        >
-                            Bulk Deletion (Danger Zone)
-                        </button>
-                    </nav>
-                </div>
-                <div className="p-6">
-                    {activeTab === 'sharing' && (
-                        <div className="space-y-6">
-                            <ExportPanel />
-                            <div className="my-6 border-t" style={{ borderColor: 'hsl(var(--color-border))' }}></div>
-                            <ImportPanel onFileSelect={handleBlueprintFileSelect} />
-                            <div className="my-6 border-t" style={{ borderColor: 'hsl(var(--color-border))' }}></div>
-                            <BackupPanel />
-                            <div className="my-6 border-t" style={{ borderColor: 'hsl(var(--color-border))' }}></div>
-                            <RestorePanel onFileSelect={handleRestoreFileSelect} />
-                        </div>
-                    )}
-                    {activeTab === 'deletion' && (
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                             <Card className="border-red-500/30 bg-red-900/10">
-                                <h3 className="text-xl font-bold text-red-300">Clear All History</h3>
-                                <p className="text-red-200/80 mt-2 text-sm">Permanently deletes all quest completions, purchase requests, system logs, and admin adjustments. Player and content data will be preserved.</p>
-                                <div className="text-right mt-4">
-                                    <Button onClick={() => handleActionConfirm(clearAllHistory, 'Clear All History', 'Are you sure you want to delete all historical records? This cannot be undone.')} className="!bg-red-600 hover:!bg-red-500">
-                                        Clear History
-                                    </Button>
-                                </div>
-                            </Card>
-                             <Card className="border-red-500/30 bg-red-900/10">
-                                <h3 className="text-xl font-bold text-red-300">Reset All Player Data</h3>
-                                <p className="text-red-200/80 mt-2 text-sm">Resets all player wallets, XP, and earned trophies to zero. User accounts and game content will remain. This is useful for starting a new "season".</p>
-                                <div className="text-right mt-4">
-                                    <Button onClick={() => handleActionConfirm(resetAllPlayerData, 'Reset All Player Data', 'Are you sure you want to reset all player data? This cannot be undone.')} className="!bg-red-600 hover:!bg-red-500">
-                                        Reset Players
-                                    </Button>
-                                </div>
-                            </Card>
-                             <Card className="border-red-500/30 bg-red-900/10 md:col-span-2">
-                                <h3 className="text-xl font-bold text-red-300">Delete All Custom Content</h3>
-                                <p className="text-red-200/80 mt-2 text-sm">Permanently deletes ALL custom-created content: Quests, Markets, Trophies, Ranks (except the first), non-core Rewards, and non-default Guilds. User accounts and history will be preserved.</p>
-                                <div className="text-right mt-4">
-                                    <Button onClick={() => handleActionConfirm(deleteAllCustomContent, 'Delete All Custom Content', 'Are you sure you want to delete ALL custom content? This is extremely destructive and cannot be undone.')} className="!bg-red-600 hover:!bg-red-500">
-                                        Delete Content
-                                    </Button>
-                                </div>
-                            </Card>
-                        </div>
-                    )}
+        <div className="h-full flex flex-col">
+            <h1 className="text-4xl font-medieval text-stone-100 mb-8 flex-shrink-0">Asset Manager</h1>
+            <div className="flex-grow flex gap-6 overflow-hidden">
+                <nav className="w-64 bg-stone-800/50 border border-stone-700/60 rounded-xl p-4 flex-shrink-0 flex flex-col">
+                    <h2 className="text-lg font-bold text-stone-300 mb-4 px-2">Asset Types</h2>
+                    <div className="space-y-2">
+                        {ASSET_TYPES.map(asset => (
+                            <button
+                                key={asset.key}
+                                onClick={() => setSelectedAssetType(asset.key)}
+                                className={`w-full flex items-center p-3 text-left rounded-lg transition-colors ${selectedAssetType === asset.key ? 'bg-emerald-600/20 text-emerald-300' : 'text-stone-300 hover:bg-stone-700/50'}`}
+                            >
+                                <asset.icon />
+                                <span className="capitalize">{settings.terminology[asset.label]}</span>
+                            </button>
+                        ))}
+                    </div>
+                </nav>
+                <div className="flex-grow flex flex-col">
+                    {renderTable()}
                 </div>
             </div>
-
-            {previewingBlueprint && (
-                <BlueprintPreviewDialog
-                    blueprint={previewingBlueprint.blueprint}
-                    initialResolutions={previewingBlueprint.resolutions}
-                    onClose={() => setPreviewingBlueprint(null)}
-                    onConfirm={handleConfirmImport}
-                />
+            {totalSelectedCount > 0 && (
+                <div className="fixed bottom-8 left-1/2 -translate-x-1/2 w-auto bg-stone-900 border border-stone-700 rounded-full shadow-2xl flex items-center gap-6 px-6 py-3 z-20 animate-fade-in-up">
+                    <span className="font-bold text-stone-200">{totalSelectedCount} item(s) selected</span>
+                    <div className="flex items-center gap-3">
+                        <Button variant="secondary" onClick={handleExportSelected} className="py-2 px-5 text-sm">Export Selected</Button>
+                        <Button onClick={() => setConfirmDeleteOpen(true)} className="!bg-red-600 hover:!bg-red-500 py-2 px-5 text-sm">Delete Selected</Button>
+                    </div>
+                </div>
             )}
-
             <ConfirmDialog
-                isOpen={isConfirmOpen}
-                onClose={() => setIsConfirmOpen(false)}
-                onConfirm={executeConfirmedAction}
-                title={confirmTitle}
-                message={confirmMessage}
+                isOpen={confirmDeleteOpen}
+                onClose={() => setConfirmDeleteOpen(false)}
+                onConfirm={handleConfirmDelete}
+                title="Delete Selected Assets"
+                message={`Are you sure you want to permanently delete the ${totalSelectedCount} selected asset(s)? This action cannot be undone.`}
             />
+             <style>{`
+                @keyframes fade-in-up {
+                    from { opacity: 0; transform: translate(-50%, 10px); }
+                    to { opacity: 1; transform: translate(-50%, 0); }
+                }
+                .animate-fade-in-up {
+                    animation: fade-in-up 0.3s ease-out forwards;
+                }
+            `}</style>
         </div>
     );
 };

@@ -1,9 +1,9 @@
 
 
 import React, { createContext, useState, useContext, ReactNode, useEffect, useMemo, useCallback } from 'react';
-import { User, Quest, RewardTypeDefinition, RewardCategory, QuestAvailability, Role, QuestCompletion, QuestCompletionStatus, RewardItem, Market, MarketItem, QuestType, PurchaseRequest, PurchaseRequestStatus, Guild, Rank, Trophy, UserTrophy, Notification, TrophyRequirement, TrophyRequirementType, AppMode, Page, AdminAdjustment, AdminAdjustmentType, AvatarAsset, DigitalAsset, SystemLog, AppSettings, Blueprint, ImportResolution, IAppData, Theme } from '../types';
+import { User, Quest, RewardTypeDefinition, RewardCategory, QuestAvailability, Role, QuestCompletion, QuestCompletionStatus, RewardItem, Market, MarketItem, QuestType, PurchaseRequest, PurchaseRequestStatus, Guild, Rank, Trophy, UserTrophy, Notification, TrophyRequirement, TrophyRequirementType, AppMode, Page, AdminAdjustment, AdminAdjustmentType, AvatarAsset, DigitalAsset, SystemLog, AppSettings, Blueprint, ImportResolution, IAppData, Theme, ShareableAssetType } from '../types';
 import { createMockUsers, INITIAL_REWARD_TYPES, INITIAL_RANKS, INITIAL_TROPHIES, createSampleMarkets, createSampleQuests, createInitialGuilds, createInitialDigitalAssets, INITIAL_SETTINGS } from '../data/initialData';
-import { toYMD } from '../utils/quests';
+import { toYMD, fromYMD } from '../utils/quests';
 import { useDebounce } from '../hooks/useDebounce';
 
 
@@ -82,6 +82,7 @@ interface AppDispatch {
   clearAllHistory: () => void;
   resetAllPlayerData: () => void;
   deleteAllCustomContent: () => void;
+  deleteSelectedAssets: (selection: Record<ShareableAssetType, string[]>) => void;
 }
 
 const AppDispatchContext = createContext<AppDispatch | undefined>(undefined);
@@ -993,6 +994,25 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     addNotification({ type: 'success', message: 'All custom content (quests, markets, rewards, etc.) has been deleted.' });
   }, [addNotification]);
 
+  const deleteSelectedAssets = useCallback((selection: Record<ShareableAssetType, string[]>) => {
+    setAppData(prev => {
+        const newState = { ...prev };
+        let changed = false;
+
+        (Object.keys(selection) as ShareableAssetType[]).forEach(assetType => {
+            const idsToDelete = new Set(selection[assetType]);
+            if (idsToDelete.size > 0) {
+                changed = true;
+                const currentAssets = newState[assetType] as { id: string }[];
+                newState[assetType] = currentAssets.filter(asset => !idsToDelete.has(asset.id)) as any;
+            }
+        });
+
+        return changed ? newState : prev;
+    });
+    addNotification({ type: 'success', message: 'Selected assets have been deleted.' });
+  }, [addNotification]);
+
 
   // GAME LOOP for checking quest timers
   useEffect(() => {
@@ -1012,8 +1032,9 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         
         setAppData(prevData => {
             let wasChanged = false;
-            let logsToCreate: SystemLog[] = [];
-            let setbacksToApply: { userId: string, setbacks: RewardItem[], guildId?: string}[] = [];
+            const newSystemLogs: SystemLog[] = [];
+            const newUsers = structuredClone(prevData.users);
+            let usersModified = false;
 
             // --- Hardcore Mode Logic ---
             if (!forgivingSetbacks) {
@@ -1045,111 +1066,158 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
                             }
                         }
                     }
+                    
+                    const applySetbacksToUser = (user: User, setbacks: RewardItem[], guildId?: string) => {
+                        setbacks.forEach(setback => {
+                            const rewardDef = prevData.rewardTypes.find(rt => rt.id === setback.rewardTypeId);
+                            if (!rewardDef) return;
 
-                    if (lateDeadline && lateDeadline < now && quest.lateSetbacks.length > 0) {
-                        const logKey = `${quest.id}-${toYMD(lateDeadline)}-late`;
-                        const alreadyLogged = prevData.systemLogs.some(log => log.id.startsWith(logKey));
-                        if (!alreadyLogged) {
-                           logsToCreate.push({ id: `${logKey}-${Date.now()}`, timestamp: now.toISOString(), type: 'QUEST_LATE', questId: quest.id, userIds: assignedUsers, setbacksApplied: quest.lateSetbacks });
-                           assignedUsers.forEach(uid => setbacksToApply.push({ userId: uid, setbacks: quest.lateSetbacks, guildId: quest.guildId }));
-                           wasChanged = true;
+                            if (guildId) {
+                                if (!user.guildBalances[guildId]) user.guildBalances[guildId] = { purse: {}, experience: {} };
+                                const balanceSheet = user.guildBalances[guildId];
+                                if (rewardDef.category === RewardCategory.Currency) {
+                                    balanceSheet.purse[setback.rewardTypeId] = (balanceSheet.purse[setback.rewardTypeId] || 0) - setback.amount;
+                                } else {
+                                    balanceSheet.experience[setback.rewardTypeId] = (balanceSheet.experience[setback.rewardTypeId] || 0) - setback.amount;
+                                }
+                            } else {
+                                if (rewardDef.category === RewardCategory.Currency) {
+                                    user.personalPurse[setback.rewardTypeId] = (user.personalPurse[setback.rewardTypeId] || 0) - setback.amount;
+                                } else {
+                                    user.personalExperience[setback.rewardTypeId] = (user.personalExperience[setback.rewardTypeId] || 0) - setback.amount;
+                                }
+                            }
+                        });
+                        usersModified = true;
+                    }
+
+                    const checkAndApply = (deadline: Date | null, setbacks: RewardItem[], logType: 'QUEST_LATE' | 'QUEST_INCOMPLETE') => {
+                        if (deadline && deadline < now && setbacks.length > 0) {
+                            const logKey = `${quest.id}-${toYMD(deadline)}-${logType.toLowerCase()}`;
+                            const alreadyLogged = prevData.systemLogs.some(log => log.id.startsWith(logKey));
+
+                            if (!alreadyLogged) {
+                                const usersToPenalize = assignedUsers.filter(userId => {
+                                    const userCompletions = prevData.questCompletions.filter(c => c.questId === quest.id && c.userId === userId);
+                                    if (userCompletions.length === 0) return true; // not completed
+                                    const lastCompletionDate = userCompletions.sort((a,b) => fromYMD(b.completedAt).getTime() - fromYMD(a.completedAt).getTime())[0]?.completedAt;
+                                    return lastCompletionDate ? fromYMD(lastCompletionDate) < deadline : true;
+                                });
+
+                                if (usersToPenalize.length > 0) {
+                                    newSystemLogs.push({ id: logKey, timestamp: now.toISOString(), type: logType, questId: quest.id, userIds: usersToPenalize, setbacksApplied: setbacks });
+                                    usersToPenalize.forEach(userId => {
+                                        const userIndex = newUsers.findIndex(u => u.id === userId);
+                                        if (userIndex !== -1) {
+                                            applySetbacksToUser(newUsers[userIndex], setbacks, quest.guildId);
+                                        }
+                                    });
+                                    wasChanged = true;
+                                }
+                            }
                         }
-                    }
+                    };
 
-                    if (incompleteDeadline && incompleteDeadline < now && quest.incompleteSetbacks.length > 0) {
-                        const logKey = `${quest.id}-${toYMD(incompleteDeadline)}-incomplete`;
-                        const alreadyLogged = prevData.systemLogs.some(log => log.id.startsWith(logKey));
-                         if (!alreadyLogged) {
-                           logsToCreate.push({ id: `${logKey}-${Date.now()}`, timestamp: now.toISOString(), type: 'QUEST_INCOMPLETE', questId: quest.id, userIds: assignedUsers, setbacksApplied: quest.incompleteSetbacks });
-                           assignedUsers.forEach(uid => setbacksToApply.push({ userId: uid, setbacks: quest.incompleteSetbacks, guildId: quest.guildId }));
-                           wasChanged = true;
-                         }
-                    }
+                    checkAndApply(lateDeadline, quest.lateSetbacks, 'QUEST_LATE');
+                    checkAndApply(incompleteDeadline, quest.incompleteSetbacks, 'QUEST_INCOMPLETE');
                 }
             }
-            // End of hardcore mode logic
 
-            // TODO: Add forgiving mode logic here later. For now, it just bypasses the immediate setback.
-
-            if (wasChanged) {
-                // Apply side effects (notifications, deductions) after determining state changes
-                setTimeout(() => {
-                    logsToCreate.forEach(log => {
-                        const quest = prevData.quests.find(q => q.id === log.questId);
-                        if (quest) {
-                            const message = log.type === 'QUEST_LATE' ? `${prevData.settings.terminology.task} is now LATE: "${quest.title}"` : `${prevData.settings.terminology.task} is INCOMPLETE: "${quest.title}"`;
-                            addNotification({ type: 'error', message });
-                        }
-                    });
-                     setbacksToApply.forEach(s => {
-                        deductRewards(s.userId, s.setbacks, s.guildId);
-                    });
-                }, 0);
-
-                return { ...prevData, systemLogs: [...prevData.systemLogs, ...logsToCreate] };
+            if (!wasChanged) {
+                return prevData;
             }
 
-            return prevData;
+            return {
+                ...prevData,
+                users: usersModified ? newUsers : prevData.users,
+                systemLogs: [...prevData.systemLogs, ...newSystemLogs],
+            };
         });
+    }, 60000); // Check every minute
 
-    }, 1000 * 30); // Check every 30 seconds
     return () => clearInterval(intervalId);
-  }, [addNotification, deductRewards, appData.settings]);
+  }, [appData.settings, appData.quests, appData.users, appData.systemLogs, addNotification]);
 
-  // --- STATE & DISPATCH PROVIDER ---
-
-  const state: AppState = {
-    isAppUnlocked, isFirstRun, users, currentUser, quests, markets, rewardTypes, questCompletions, purchaseRequests, guilds, ranks, trophies, userTrophies, adminAdjustments, digitalAssets, systemLogs, notifications, appMode, isSwitchingUser, targetedUserForLogin, activePage, activeMarketId, allTags, svgContent, settings
+  const stateValue: AppState = {
+    ...appData,
+    isAppUnlocked,
+    isFirstRun,
+    notifications,
+    isSwitchingUser,
+    targetedUserForLogin,
+    activePage,
+    activeMarketId,
+    allTags,
+    svgContent,
   };
 
-  const dispatch: AppDispatch = useMemo(() => ({
-    setAppUnlocked, setAppMode, addUser, updateUser, addQuest, updateQuest, deleteQuest, setCurrentUser,
-    setIsSwitchingUser, setTargetedUserForLogin, addNotification, removeNotification, setActivePage, setActiveMarketId, deleteUser,
-    addRewardType, updateRewardType, deleteRewardType, completeQuest, approveQuestCompletion,
-    rejectQuestCompletion, claimQuest, releaseQuest, addMarket, updateMarket, deleteMarket,
-    addMarketItem, updateMarketItem, deleteMarketItem, purchaseMarketItem, cancelPurchaseRequest,
-    approvePurchaseRequest, rejectPurchaseRequest, addGuild, updateGuild, deleteGuild, setRanks,
-    addTrophy, updateTrophy, deleteTrophy, awardTrophy, applyManualAdjustment, addDigitalAsset,
-    updateDigitalAsset, deleteDigitalAsset, dismissQuest, updateSettings, importBlueprint, restoreFromBackup,
-    populateInitialGameData, clearAllHistory, resetAllPlayerData, deleteAllCustomContent
-  }), [
-      setAppUnlocked, setAppMode, addUser, updateUser, addQuest, updateQuest, deleteQuest, setCurrentUser,
-      setIsSwitchingUser, setTargetedUserForLogin, addNotification, removeNotification, setActivePage, setActiveMarketId, deleteUser,
-      addRewardType, updateRewardType, deleteRewardType, completeQuest, approveQuestCompletion,
-      rejectQuestCompletion, claimQuest, releaseQuest, addMarket, updateMarket, deleteMarket,
-      addMarketItem, updateMarketItem, deleteMarketItem, purchaseMarketItem, cancelPurchaseRequest,
-      approvePurchaseRequest, rejectPurchaseRequest, addGuild, updateGuild, deleteGuild, setRanks,
-      addTrophy, updateTrophy, deleteTrophy, awardTrophy, applyManualAdjustment, addDigitalAsset,
-      updateDigitalAsset, deleteDigitalAsset, dismissQuest, updateSettings, importBlueprint, restoreFromBackup,
-      populateInitialGameData, clearAllHistory, resetAllPlayerData, deleteAllCustomContent
-  ]);
-
-  if (!isDataLoaded) {
-      return <div className="min-h-screen flex items-center justify-center bg-stone-900 text-stone-200"><h1 className="text-3xl font-medieval animate-pulse">Loading the Donegeon...</h1></div>
-  }
-  
-  if (backendError) {
-      return (
-         <div className="min-h-screen flex items-center justify-center bg-stone-900 text-stone-200 p-4">
-            <div className="max-w-lg text-center">
-                <h1 className="text-4xl font-medieval text-red-500 mb-4">Connection Error</h1>
-                <p className="text-stone-300 mb-6">Could not connect to the Task Donegeon server. Please ensure the backend is running and accessible.</p>
-                <p className="text-xs text-stone-500 bg-stone-800 p-3 rounded-md font-mono">{backendError}</p>
-            </div>
-         </div>
-      )
-  }
+  const dispatchValue: AppDispatch = {
+    setAppUnlocked,
+    setAppMode,
+    addUser,
+    updateUser,
+    deleteUser,
+    addQuest,
+    updateQuest,
+    deleteQuest,
+    dismissQuest,
+    setCurrentUser,
+    setTargetedUserForLogin,
+    setIsSwitchingUser,
+    addRewardType,
+    updateRewardType,
+    deleteRewardType,
+    completeQuest,
+    approveQuestCompletion,
+    rejectQuestCompletion,
+    claimQuest,
+    releaseQuest,
+    addMarket,
+    updateMarket,
+    deleteMarket,
+    addMarketItem,
+    updateMarketItem,
+    deleteMarketItem,
+    purchaseMarketItem,
+    cancelPurchaseRequest,
+    approvePurchaseRequest,
+    rejectPurchaseRequest,
+    addGuild,
+    updateGuild,
+    deleteGuild,
+    setRanks,
+    addTrophy,
+    updateTrophy,
+    deleteTrophy,
+    awardTrophy,
+    applyManualAdjustment,
+    addDigitalAsset,
+    updateDigitalAsset,
+    deleteDigitalAsset,
+    addNotification,
+    removeNotification,
+    setActivePage,
+    setActiveMarketId,
+    updateSettings,
+    importBlueprint,
+    restoreFromBackup,
+    populateInitialGameData,
+    clearAllHistory,
+    resetAllPlayerData,
+    deleteAllCustomContent,
+    deleteSelectedAssets,
+  };
 
   return (
-    <AppStateContext.Provider value={state}>
-      <AppDispatchContext.Provider value={dispatch}>
+    <AppStateContext.Provider value={stateValue}>
+      <AppDispatchContext.Provider value={dispatchValue}>
         {children}
       </AppDispatchContext.Provider>
     </AppStateContext.Provider>
   );
 };
 
-export const useAppState = () => {
+export const useAppState = (): AppState => {
   const context = useContext(AppStateContext);
   if (context === undefined) {
     throw new Error('useAppState must be used within an AppProvider');
@@ -1157,7 +1225,7 @@ export const useAppState = () => {
   return context;
 };
 
-export const useAppDispatch = () => {
+export const useAppDispatch = (): AppDispatch => {
   const context = useContext(AppDispatchContext);
   if (context === undefined) {
     throw new Error('useAppDispatch must be used within an AppProvider');

@@ -2,6 +2,7 @@
 const express = require('express');
 const cors = require('cors');
 const { Pool } = require('pg');
+const path = require('path');
 
 const app = express();
 const port = process.env.PORT || 3001;
@@ -10,6 +11,9 @@ const port = process.env.PORT || 3001;
 app.use(cors()); 
 // Increase limit for potentially large state saves from the client
 app.use(express.json({ limit: '10mb' }));
+
+// Serve static files from the React app build directory
+app.use(express.static(path.join(__dirname, '../dist')));
 
 // === Database Connection Pool ===
 const pool = new Pool({
@@ -122,6 +126,13 @@ app.post('/api/data/save', async (req, res, next) => {
         client.release();
     }
 });
+
+// The "catchall" handler: for any request that doesn't match one above,
+// send back React's index.html file.
+app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, '../dist/index.html'));
+});
+
 
 // === Error Handling Middleware ===
 app.use((err, req, res, next) => {

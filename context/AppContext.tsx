@@ -1,5 +1,6 @@
 
 
+
 import React, { createContext, useState, useContext, ReactNode, useEffect, useMemo, useCallback } from 'react';
 import { User, Quest, RewardTypeDefinition, RewardCategory, QuestAvailability, Role, QuestCompletion, QuestCompletionStatus, RewardItem, Market, MarketItem, QuestType, PurchaseRequest, PurchaseRequestStatus, Guild, Rank, Trophy, UserTrophy, Notification, TrophyRequirement, TrophyRequirementType, AppMode, Page, AdminAdjustment, AdminAdjustmentType, AvatarAsset, DigitalAsset, SystemLog, AppSettings, Blueprint, ImportResolution, IAppData, Theme } from '../types';
 import { createMockUsers, INITIAL_REWARD_TYPES, INITIAL_RANKS, INITIAL_TROPHIES, createSampleMarkets, createSampleQuests, createInitialGuilds, createInitialDigitalAssets, INITIAL_SETTINGS } from '../data/initialData';
@@ -79,18 +80,6 @@ interface AppDispatch {
 
 const AppDispatchContext = createContext<AppDispatch | undefined>(undefined);
 
-const LOCAL_STORAGE_PREFIX = 'task-donegeon-';
-
-const loadFromLocalStorage = <T,>(key: string, defaultValue: T): T => {
-    try {
-        const item = localStorage.getItem(`${LOCAL_STORAGE_PREFIX}${key}`);
-        return item ? JSON.parse(item) : defaultValue;
-    } catch (error) {
-        console.warn(`Error reading localStorage key “${key}”:`, error);
-        return defaultValue;
-    }
-};
-
 const deepMergeSettings = (initial: AppSettings, saved: Partial<AppSettings>): AppSettings => {
     return {
         ...initial,
@@ -131,6 +120,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   });
 
   const [isDataLoaded, setIsDataLoaded] = useState(false);
+  const [backendError, setBackendError] = useState<string | null>(null);
   
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [activePage, setActivePage] = useState<Page>('Dashboard');
@@ -138,7 +128,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [isSwitchingUser, setIsSwitchingUser] = useState<boolean>(false);
   const [svgContent, setSvgContent] = useState<string | null>(null);
   
-  const debouncedAppData = useDebounce(appData, 500);
+  const debouncedAppData = useDebounce(appData, 1000);
 
   const addNotification = useCallback((notification: Omit<Notification, 'id'>) => {
     const newNotification = { ...notification, id: `notif-${Date.now()}-${Math.random()}` };
@@ -153,88 +143,98 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       .catch(console.error);
   }, []);
 
-  // Load data from localStorage or initialize
+  // Load data from backend or initialize
   useEffect(() => {
-    const savedUsers = loadFromLocalStorage<User[]>('users', []);
+    const loadData = async () => {
+        try {
+            const response = await fetch('/api/data/load');
+            if (!response.ok) {
+                const errorBody = await response.text();
+                throw new Error(`Server responded with ${response.status}: ${errorBody}`);
+            }
+            const savedData = await response.json() as IAppData;
 
-    if (savedUsers.length > 0) {
-        const savedSettings = loadFromLocalStorage<Partial<AppSettings>>('settings', {});
-        const finalSettings = deepMergeSettings(INITIAL_SETTINGS, savedSettings);
+            if (savedData && Object.keys(savedData).length > 0 && savedData.users && savedData.users.length > 0) {
+                const finalSettings = deepMergeSettings(INITIAL_SETTINGS, savedData.settings || {});
+                setAppData({
+                    ...savedData,
+                    settings: finalSettings,
+                });
+            } else {
+                // First run, initialize with sample data
+                const initialUsers = createMockUsers();
+                const initialGuilds = createInitialGuilds(initialUsers);
+                const initialQuests = createSampleQuests();
+                const initialMarkets = createSampleMarkets();
+                
+                const initialData: IAppData = {
+                    users: initialUsers,
+                    quests: initialQuests,
+                    markets: initialMarkets,
+                    rewardTypes: INITIAL_REWARD_TYPES,
+                    questCompletions: [],
+                    purchaseRequests: [],
+                    guilds: initialGuilds,
+                    ranks: INITIAL_RANKS,
+                    trophies: INITIAL_TROPHIES,
+                    userTrophies: [],
+                    adminAdjustments: [],
+                    digitalAssets: createInitialDigitalAssets(),
+                    systemLogs: [],
+                    appMode: { mode: 'personal' },
+                    currentUser: null,
+                    settings: INITIAL_SETTINGS,
+                };
+                setAppData(initialData);
 
-        setAppData({
-            users: savedUsers,
-            currentUser: loadFromLocalStorage<User | null>('currentUser', null),
-            quests: loadFromLocalStorage<Quest[]>('quests', []),
-            markets: loadFromLocalStorage<Market[]>('markets', []),
-            rewardTypes: loadFromLocalStorage<RewardTypeDefinition[]>('rewardTypes', INITIAL_REWARD_TYPES),
-            questCompletions: loadFromLocalStorage<QuestCompletion[]>('completions', []),
-            purchaseRequests: loadFromLocalStorage<PurchaseRequest[]>('purchases', []),
-            guilds: loadFromLocalStorage<Guild[]>('guilds', []),
-            ranks: loadFromLocalStorage<Rank[]>('ranks', INITIAL_RANKS),
-            trophies: loadFromLocalStorage<Trophy[]>('trophies', INITIAL_TROPHIES),
-            userTrophies: loadFromLocalStorage<UserTrophy[]>('userTrophies', []),
-            adminAdjustments: loadFromLocalStorage<AdminAdjustment[]>('adjustments', []),
-            digitalAssets: loadFromLocalStorage<DigitalAsset[]>('digital-assets', createInitialDigitalAssets()),
-            systemLogs: loadFromLocalStorage<SystemLog[]>('systemLogs', []),
-            appMode: loadFromLocalStorage<AppMode>('appMode', { mode: 'personal' }),
-            settings: finalSettings,
-        });
-    } else {
-        // First run, initialize with sample data
-        const initialUsers = createMockUsers();
-        const initialGuilds = createInitialGuilds(initialUsers);
-        const initialQuests = createSampleQuests();
-        const initialMarkets = createSampleMarkets();
-        setAppData({
-            users: initialUsers,
-            quests: initialQuests,
-            markets: initialMarkets,
-            rewardTypes: INITIAL_REWARD_TYPES,
-            questCompletions: [],
-            purchaseRequests: [],
-            guilds: initialGuilds,
-            ranks: INITIAL_RANKS,
-            trophies: INITIAL_TROPHIES,
-            userTrophies: [],
-            adminAdjustments: [],
-            digitalAssets: createInitialDigitalAssets(),
-            systemLogs: [],
-            appMode: { mode: 'personal' },
-            currentUser: null,
-            settings: INITIAL_SETTINGS,
-        });
-    }
-    setIsDataLoaded(true);
-  }, []);
+                // Save this initial state to the backend
+                const saveResponse = await fetch('/api/data/save', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(initialData),
+                });
+                if (!saveResponse.ok) {
+                    throw new Error('Failed to save initial data to the server.');
+                }
+                addNotification({ type: 'info', message: 'Welcome! Your Donegeon has been created.' });
+            }
+        } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            console.error('Failed to load or initialize data:', errorMessage);
+            addNotification({ type: 'error', message: 'Could not connect to the server.' });
+            setBackendError(errorMessage);
+        } finally {
+            setIsDataLoaded(true);
+        }
+    };
+    loadData();
+  }, [addNotification]);
 
-  // Save data on change (debounced)
+  // Save data to backend on change (debounced)
   useEffect(() => {
-    if (!isDataLoaded) return;
-    try {
-        localStorage.setItem(`${LOCAL_STORAGE_PREFIX}users`, JSON.stringify(debouncedAppData.users));
-        localStorage.setItem(`${LOCAL_STORAGE_PREFIX}currentUser`, JSON.stringify(debouncedAppData.currentUser));
-        localStorage.setItem(`${LOCAL_STORAGE_PREFIX}quests`, JSON.stringify(debouncedAppData.quests));
-        localStorage.setItem(`${LOCAL_STORAGE_PREFIX}markets`, JSON.stringify(debouncedAppData.markets));
-        localStorage.setItem(`${LOCAL_STORAGE_PREFIX}rewardTypes`, JSON.stringify(debouncedAppData.rewardTypes));
-        localStorage.setItem(`${LOCAL_STORAGE_PREFIX}completions`, JSON.stringify(debouncedAppData.questCompletions));
-        localStorage.setItem(`${LOCAL_STORAGE_PREFIX}purchases`, JSON.stringify(debouncedAppData.purchaseRequests));
-        localStorage.setItem(`${LOCAL_STORAGE_PREFIX}guilds`, JSON.stringify(debouncedAppData.guilds));
-        localStorage.setItem(`${LOCAL_STORAGE_PREFIX}ranks`, JSON.stringify(debouncedAppData.ranks));
-        localStorage.setItem(`${LOCAL_STORAGE_PREFIX}trophies`, JSON.stringify(debouncedAppData.trophies));
-        localStorage.setItem(`${LOCAL_STORAGE_PREFIX}userTrophies`, JSON.stringify(debouncedAppData.userTrophies));
-        localStorage.setItem(`${LOCAL_STORAGE_PREFIX}adjustments`, JSON.stringify(debouncedAppData.adminAdjustments));
-        localStorage.setItem(`${LOCAL_STORAGE_PREFIX}digital-assets`, JSON.stringify(debouncedAppData.digitalAssets));
-        localStorage.setItem(`${LOCAL_STORAGE_PREFIX}systemLogs`, JSON.stringify(debouncedAppData.systemLogs));
-        localStorage.setItem(`${LOCAL_STORAGE_PREFIX}appMode`, JSON.stringify(debouncedAppData.appMode));
-        localStorage.setItem(`${LOCAL_STORAGE_PREFIX}settings`, JSON.stringify(debouncedAppData.settings));
-    } catch (error) {
-      console.error("Could not save data to localStorage:", error);
-      addNotification({ type: 'error', message: 'Failed to save progress.' });
-    }
-  }, [debouncedAppData, isDataLoaded, addNotification]);
+    if (!isDataLoaded || backendError) return;
+
+    const saveData = async () => {
+      try {
+        const response = await fetch('/api/data/save', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(debouncedAppData),
+        });
+        if (!response.ok) {
+          throw new Error('Failed to save data to the server.');
+        }
+      } catch (error) {
+        console.error("Could not save data to backend:", error);
+        addNotification({ type: 'error', message: 'Failed to save progress.' });
+      }
+    };
+
+    saveData();
+  }, [debouncedAppData, isDataLoaded, addNotification, backendError]);
 
   const { users, currentUser, quests, markets, rewardTypes, questCompletions, purchaseRequests, guilds, ranks, trophies, userTrophies, adminAdjustments, digitalAssets, systemLogs, appMode, settings } = appData;
-  const isFirstRun = isDataLoaded && users.length === 0;
+  const isFirstRun = isDataLoaded && users.length === 0 && !backendError;
 
   const allTags = useMemo(() => {
     const tags = new Set<string>();
@@ -903,20 +903,25 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   }, [addNotification]);
   
   const restoreFromBackup = useCallback((backupData: IAppData) => {
-    // Overwrite localStorage with the backup data
-    try {
-        Object.keys(backupData).forEach(key => {
-            if (key !== 'currentUser') { // Don't overwrite currentUser to avoid auth issues on reload
-                localStorage.setItem(`${LOCAL_STORAGE_PREFIX}${key}`, JSON.stringify(backupData[key as keyof IAppData]));
+    const restore = async () => {
+        try {
+            const response = await fetch('/api/data/save', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(backupData),
+            });
+            if (!response.ok) {
+                const errorBody = await response.text();
+                throw new Error(`Server responded with ${response.status}: ${errorBody}`);
             }
-        });
-        addNotification({ type: 'success', message: 'Restore successful! The application will now reload.' });
-        // Force a reload to apply the new state from localStorage
-        setTimeout(() => window.location.reload(), 1500);
-    } catch (error) {
-        console.error("Failed to restore from backup:", error);
-        addNotification({ type: 'error', message: 'Failed to restore from backup.' });
-    }
+            addNotification({ type: 'success', message: 'Restore successful! The application will now reload.' });
+            setTimeout(() => window.location.reload(), 1500);
+        } catch (error) {
+            console.error("Failed to restore from backup:", error);
+            addNotification({ type: 'error', message: 'Failed to restore from backup.' });
+        }
+    };
+    restore();
   }, [addNotification]);
 
 
@@ -1050,6 +1055,18 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
   if (!isDataLoaded) {
       return <div className="min-h-screen flex items-center justify-center bg-stone-900 text-stone-200"><h1 className="text-3xl font-medieval animate-pulse">Loading the Donegeon...</h1></div>
+  }
+  
+  if (backendError) {
+      return (
+         <div className="min-h-screen flex items-center justify-center bg-stone-900 text-stone-200 p-4">
+            <div className="max-w-lg text-center">
+                <h1 className="text-4xl font-medieval text-red-500 mb-4">Connection Error</h1>
+                <p className="text-stone-300 mb-6">Could not connect to the Task Donegeon server. Please ensure the backend is running and accessible.</p>
+                <p className="text-xs text-stone-500 bg-stone-800 p-3 rounded-md font-mono">{backendError}</p>
+            </div>
+         </div>
+      )
   }
 
   return (

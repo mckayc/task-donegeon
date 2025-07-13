@@ -1,6 +1,8 @@
 {
-  "name": "Copy of Task Donegeon (v0.0.13) - Before backend Frontend attempt",
+  "name": "Task Donegeon",
+  "version": "0.0.15",
+  "lastChange": "Added README.md with project overview and deployment instructions.",
   "description": "A gamified task and chore tracker for families and groups. Complete quests, earn currency and experience, and level up your character in a fun, medieval-themed adventure.",
   "requestFramePermissions": [],
-  "prompt": ""
+  "prompt": "Please update the Readme file to explain what is going on for Github and put a version number and timestamp so I know the code I upload to github is the most recent."
 }

@@ -1,7 +1,7 @@
 # Task Donegeon
 
-**Version:** 0.0.21
-**Last Updated:** 2023-10-27T18:00:00Z
+**Version:** 0.0.25
+**Last Updated:** 2023-10-27T20:00:00Z
 
 ---
 
@@ -111,20 +111,34 @@ This is the fastest way to get a live, publicly accessible version of your appli
 1.  **Fork the Repository**
     Fork this project's repository to your own GitHub account.
 
-2.  **Set up Supabase**
+2.  **Set up Supabase Project**
     -   Log in to your [Supabase dashboard](https://supabase.com/dashboard) and create a new project.
-    -   Once the project is ready, go to **Project Settings** (the gear icon).
-    -   Click on **Database** in the settings menu.
+    -   Once the project is ready, go to **Project Settings** (the gear icon) > **Database**.
     -   Under **Connection string**, make sure the **URI** tab is selected.
     -   **Copy the entire, full connection string.** It is critical that you copy the whole value. It will start with `postgres://`.
 
-    > **⚠️ IMPORTANT NOTE:** You MUST copy the full **URI**. Do not just copy the "Host" field.
-    > - **Correct Hostname (from URI):** `aws-0-us-east-1.pooler.supabase.com`
-    > - **Incorrect Hostname:** `db.your-project-ref.supabase.co`
-    >
-    > Using the incorrect, shorter hostname will result in a connection error on Vercel.
+    > <div style="border: 2px solid #FBBF24; background-color: #31271A; padding: 1rem; border-radius: 0.5rem;">
+    >   <h4 style="color: #FBBF24; margin-top: 0;">⚠️ Critical Vercel Deployment Note</h4>
+    >   You <strong>MUST</strong> use the pooled connection string from the <strong>URI</strong> tab for Vercel. Using the wrong string is the most common cause of deployment failure.
+    >   <ul>
+    >       <li>✅ <strong>Correct Hostname (from URI):</strong> <code>aws-0-us-east-1.pooler.supabase.com</code></li>
+    >       <li>❌ <strong>Incorrect Hostname:</strong> <code>db.your-project-ref.supabase.co</code></li>
+    >   </ul>
+    >   If your app fails with a <code>getaddrinfo ENOTFOUND</code> error, it means you have used the incorrect hostname.
+    > </div>
 
-3.  **Set up and Deploy on Vercel**
+3.  **Create the Database Table**
+    - This is a one-time setup step. In your Supabase project, go to the **SQL Editor** (it has a database cylinder icon).
+    - In the query window, paste the following command:
+      ```sql
+      CREATE TABLE IF NOT EXISTS app_data (
+          key TEXT PRIMARY KEY,
+          value JSONB NOT NULL
+      );
+      ```
+    - Click the **RUN** button. You should see a "Success" message. The application table is now ready.
+
+4.  **Set up and Deploy on Vercel**
     -   Log in to your [Vercel dashboard](https://vercel.com/new) and click **Add New... > Project**.
     -   Import the repository you forked on GitHub.
     -   Vercel should automatically detect the project as a Vite application and set the build settings correctly.
@@ -133,7 +147,7 @@ This is the fastest way to get a live, publicly accessible version of your appli
         -   **Value:** Paste the **full and complete** connection string URI you copied from Supabase.
     -   Click **Deploy**.
 
-Vercel will build and deploy your application. The `vercel.json` file in this repository tells Vercel how to handle API requests, routing them to the backend server. Your site will be live in a few minutes!
+Vercel will build and deploy your application. The `vercel.json` file in this repository tells Vercel how to handle API requests, routing them to the backend server. Your site will be live in a few minutes! After the first deployment, remember to **Redeploy** from the Vercel dashboard if you update your environment variables.
 
 ### Option 3: Docker Deployment (Recommended for self-hosting)
 This method uses Docker Compose to build and run the application and its database in isolated containers.

@@ -1,8 +1,8 @@
 {
   "name": "Task Donegeon",
-  "version": "0.0.18",
-  "lastChange": "Fixed multiple TypeScript build errors on Vercel related to type inference in the calendar, initial data creation, and blueprint sharing components.",
+  "version": "0.0.19",
+  "lastChange": "Updated Vercel configuration to explicitly define frontend and backend builds, fixing a 404 routing error on deployment.",
   "description": "A gamified task and chore tracker for families and groups. Complete quests, earn currency and experience, and level up your character in a fun, medieval-themed adventure.",
   "requestFramePermissions": [],
-  "prompt": "I am getting the same errors. Please make sure the files are updated. Also please update the readme file."
+  "prompt": "We are making progress! I think it built correctly. This is the message that I am getting on the main page:\n\nConnection Error\nCould not connect to the Task Donegeon server. Please ensure the backend is running and accessible.\n\nServer responded with 404: The page could not be found NOT_FOUND sfo1::dfhh4-1752375145961-7be340acd0e9"
 }

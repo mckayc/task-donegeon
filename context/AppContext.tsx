@@ -1,6 +1,5 @@
 
 
-
 import React, { createContext, useState, useContext, ReactNode, useEffect, useMemo, useCallback } from 'react';
 import { User, Quest, RewardTypeDefinition, RewardCategory, QuestAvailability, Role, QuestCompletion, QuestCompletionStatus, RewardItem, Market, MarketItem, QuestType, PurchaseRequest, PurchaseRequestStatus, Guild, Rank, Trophy, UserTrophy, Notification, TrophyRequirement, TrophyRequirementType, AppMode, Page, AdminAdjustment, AdminAdjustmentType, AvatarAsset, DigitalAsset, SystemLog, AppSettings, Blueprint, ImportResolution, IAppData, Theme } from '../types';
 import { createMockUsers, INITIAL_REWARD_TYPES, INITIAL_RANKS, INITIAL_TROPHIES, createSampleMarkets, createSampleQuests, createInitialGuilds, createInitialDigitalAssets, INITIAL_SETTINGS } from '../data/initialData';
@@ -14,6 +13,7 @@ import { useDebounce } from '../hooks/useDebounce';
 
 // Full state including non-persistent UI state
 interface AppState extends IAppData {
+  isAppUnlocked: boolean;
   isFirstRun: boolean;
   notifications: Notification[];
   isSwitchingUser: boolean;
@@ -29,6 +29,7 @@ const AppStateContext = createContext<AppState | undefined>(undefined);
 
 // --- DISPATCH ---
 interface AppDispatch {
+  setAppUnlocked: (isUnlocked: boolean) => void;
   setAppMode: (mode: AppMode) => void;
   addUser: (user: Omit<User, 'id' | 'personalPurse' | 'personalExperience' | 'guildBalances' | 'avatar' | 'ownedAvatarAssets' | 'ownedThemes'>) => User;
   updateUser: (userId: string, updatedData: Partial<User>) => void;
@@ -131,6 +132,15 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [targetedUserForLogin, setTargetedUserForLogin] = useState<User | null>(null);
   const [svgContent, setSvgContent] = useState<string | null>(null);
   
+  const [isAppUnlocked, setAppUnlockedState] = useState<boolean>(() => {
+    return sessionStorage.getItem('isAppUnlocked') === 'true';
+  });
+
+  const setAppUnlocked = useCallback((isUnlocked: boolean) => {
+    sessionStorage.setItem('isAppUnlocked', String(isUnlocked));
+    setAppUnlockedState(isUnlocked);
+  }, []);
+
   const debouncedAppData = useDebounce(appData, 1000);
 
   const addNotification = useCallback((notification: Omit<Notification, 'id'>) => {
@@ -1038,11 +1048,11 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   // --- STATE & DISPATCH PROVIDER ---
 
   const state: AppState = {
-    isFirstRun, users, currentUser, quests, markets, rewardTypes, questCompletions, purchaseRequests, guilds, ranks, trophies, userTrophies, adminAdjustments, digitalAssets, systemLogs, notifications, appMode, isSwitchingUser, targetedUserForLogin, activePage, activeMarketId, allTags, svgContent, settings
+    isAppUnlocked, isFirstRun, users, currentUser, quests, markets, rewardTypes, questCompletions, purchaseRequests, guilds, ranks, trophies, userTrophies, adminAdjustments, digitalAssets, systemLogs, notifications, appMode, isSwitchingUser, targetedUserForLogin, activePage, activeMarketId, allTags, svgContent, settings
   };
 
   const dispatch: AppDispatch = useMemo(() => ({
-    setAppMode, addUser, updateUser, addQuest, updateQuest, deleteQuest, setCurrentUser,
+    setAppUnlocked, setAppMode, addUser, updateUser, addQuest, updateQuest, deleteQuest, setCurrentUser,
     setIsSwitchingUser, setTargetedUserForLogin, addNotification, removeNotification, setActivePage, setActiveMarketId, deleteUser,
     addRewardType, updateRewardType, deleteRewardType, completeQuest, approveQuestCompletion,
     rejectQuestCompletion, claimQuest, releaseQuest, addMarket, updateMarket, deleteMarket,
@@ -1052,7 +1062,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     updateDigitalAsset, deleteDigitalAsset, dismissQuest, updateSettings, importBlueprint, restoreFromBackup,
     populateInitialGameData
   }), [
-      setAppMode, addUser, updateUser, addQuest, updateQuest, deleteQuest, setCurrentUser,
+      setAppUnlocked, setAppMode, addUser, updateUser, addQuest, updateQuest, deleteQuest, setCurrentUser,
       setIsSwitchingUser, setTargetedUserForLogin, addNotification, removeNotification, setActivePage, setActiveMarketId, deleteUser,
       addRewardType, updateRewardType, deleteRewardType, completeQuest, approveQuestCompletion,
       rejectQuestCompletion, claimQuest, releaseQuest, addMarket, updateMarket, deleteMarket,

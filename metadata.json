@@ -1,8 +1,7 @@
-
 {
   "name": "Task Donegeon",
-  "version": "0.0.27",
-  "lastChange": "Improved first-run logic to check for an admin user, not just any user. The app now auto-populates with sample data after the admin is created.",
+  "version": "0.0.28",
+  "lastChange": "Added full Docker support for self-hosting and implemented a session-based 'Master Lock' security screen.",
   "description": "A gamified task and chore tracker for families and groups. Complete quests, earn currency and experience, and level up your character in a fun, medieval-themed adventure.",
   "requestFramePermissions": [],
   "prompt": "These are the existing files in the app:"

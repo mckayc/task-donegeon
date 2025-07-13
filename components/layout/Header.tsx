@@ -5,12 +5,13 @@ import Avatar from '../ui/Avatar';
 
 const Header: React.FC = () => {
   const { currentUser, rewardTypes, appMode, guilds, settings } = useAppState();
-  const { setCurrentUser, setIsSwitchingUser, setAppMode, setActivePage } = useAppDispatch();
+  const { setCurrentUser, setIsSwitchingUser, setAppMode, setActivePage, setAppUnlocked } = useAppDispatch();
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
   const [modeDropdownOpen, setModeDropdownOpen] = useState(false);
 
   const handleLogout = () => {
     setCurrentUser(null);
+    setAppUnlocked(false);
     setProfileDropdownOpen(false);
   };
   

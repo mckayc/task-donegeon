@@ -1,7 +1,7 @@
 # Task Donegeon
 
-**Version:** 0.0.26
-**Last Updated:** 2023-10-27T21:00:00Z
+**Version:** 0.0.28
+**Last Updated:** 2023-10-28T10:00:00Z
 
 ---
 
@@ -21,6 +21,7 @@ Task Donegeon is a gamified task and chore management application designed for f
 
 ## ✨ Features
 
+-   **Session-Based Master Lock:** The application is locked upon first visit and requires an admin password to unlock for the session, providing a strong security layer before any user profiles are accessible.
 -   **Gamified Task Management:** Create recurring "Duties" and one-time "Ventures" with customizable rewards and penalties.
 -   **Character Progression:** Users earn Experience Points (XP) to gain Ranks, from Novice to Grandmaster.
 -   **Secure Admin Login:** The Donegeon Master account is always protected by a password, even when switching users, to prevent unauthorized access.

@@ -6,7 +6,7 @@ import BackupAndImportPage from './management/BackupAndImportPage';
 import AssetLibraryPage from './management/AssetLibraryPage';
 import AssetManagerPage from './management/MediaManagerPage';
 
-type ManagementPage = 'objects' | 'backup' | 'library' | 'assets';
+type ManagementPage = 'objects' | 'assets' | 'backup' | 'library';
 
 const DataManagementPage: React.FC = () => {
     const [activePage, setActivePage] = useState<ManagementPage>('objects');

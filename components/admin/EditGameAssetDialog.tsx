@@ -79,7 +79,7 @@ const EditGameAssetDialog: React.FC<EditGameAssetDialogProps> = ({ assetToEdit, 
 
     const payload = {
       ...formData,
-      avatarSlot: formData.category === 'Avatar' ? formData.avatarSlot : undefined,
+      avatarSlot: formData.category.toLowerCase() === 'avatar' ? formData.avatarSlot : undefined,
     };
 
     if (assetToEdit) {
@@ -98,7 +98,7 @@ const EditGameAssetDialog: React.FC<EditGameAssetDialogProps> = ({ assetToEdit, 
         <div className="p-8 border-b border-stone-700/60">
             <h2 className="text-3xl font-medieval text-emerald-400">{dialogTitle}</h2>
         </div>
-        <form onSubmit={handleSubmit} className="flex-1 space-y-4 p-8 overflow-y-auto scrollbar-hide">
+        <form id="asset-dialog-form" onSubmit={handleSubmit} className="flex-1 space-y-4 p-8 overflow-y-auto scrollbar-hide">
           <div className="flex gap-6 items-start">
               <div className="w-24 h-24 bg-stone-700 rounded-md flex-shrink-0">
                   <img src={formData.url} alt="Asset preview" className="w-full h-full object-contain" />
@@ -145,7 +145,7 @@ const EditGameAssetDialog: React.FC<EditGameAssetDialogProps> = ({ assetToEdit, 
          <div className="p-6 border-t border-stone-700/60 mt-auto">
             <div className="flex justify-end space-x-4">
               <Button type="button" variant="secondary" onClick={onClose}>Cancel</Button>
-              <Button type="submit" form="asset-dialog-form" onClick={handleSubmit}>{assetToEdit ? 'Save Changes' : 'Create Asset'}</Button>
+              <Button type="submit" form="asset-dialog-form">{assetToEdit ? 'Save Changes' : 'Create Asset'}</Button>
             </div>
         </div>
       </div>

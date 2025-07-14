@@ -1,7 +1,8 @@
 
+
 import React, { createContext, useState, useContext, ReactNode, useEffect, useMemo, useCallback } from 'react';
 import { User, Quest, RewardTypeDefinition, RewardCategory, QuestAvailability, Role, QuestCompletion, QuestCompletionStatus, RewardItem, Market, QuestType, PurchaseRequest, PurchaseRequestStatus, Guild, Rank, Trophy, UserTrophy, Notification, TrophyRequirement, TrophyRequirementType, AppMode, Page, AdminAdjustment, AdminAdjustmentType, SystemLog, AppSettings, Blueprint, ImportResolution, IAppData, Theme, ShareableAssetType, GameAsset } from '../types';
-import { createMockUsers, INITIAL_REWARD_TYPES, INITIAL_RANKS, INITIAL_TROPHIES, createSampleMarkets, createSampleQuests, createInitialGuilds, INITIAL_SETTINGS } from '../data/initialData';
+import { createMockUsers, INITIAL_REWARD_TYPES, INITIAL_RANKS, INITIAL_TROPHIES, createSampleMarkets, createSampleQuests, createInitialGuilds, INITIAL_SETTINGS, createSampleGameAssets } from '../data/initialData';
 import { toYMD, fromYMD } from '../utils/quests';
 import { useDebounce } from '../hooks/useDebounce';
 
@@ -249,7 +250,10 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
         return {
             ...prev,
-            users: allUsers, quests: createSampleQuests(), markets: createSampleMarkets(),
+            users: allUsers,
+            quests: createSampleQuests(),
+            markets: createSampleMarkets(),
+            gameAssets: createSampleGameAssets(),
             rewardTypes: prev.rewardTypes.length > 0 ? prev.rewardTypes : INITIAL_REWARD_TYPES,
             guilds: createInitialGuilds(allUsers),
             ranks: prev.ranks.length > 0 ? prev.ranks : INITIAL_RANKS,

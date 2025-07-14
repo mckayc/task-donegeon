@@ -1,186 +1,133 @@
 
 
+
 import React, { useState } from 'react';
 import { useAppState, useAppDispatch } from '../../../context/AppContext';
 import Button from '../../ui/Button';
 import Card from '../../ui/Card';
-import { Quest, QuestType, QuestAvailability } from '../../../types';
-
-type AssetCategory = 'elementary_chores' | 'teen_chores' | 'fitness_goals' | 'learning_goals' | 'fantasy_rpg_items' | 'sci_fi_items';
-type GeneratedAsset = {
-    title: string;
-    description: string;
-    // Quest properties
-    reward_type?: string;
-    reward_amount?: number;
-    requires_approval?: boolean;
-    // Market Item properties
-    cost_type?: string;
-    cost_amount?: number;
-};
-
-const CATEGORIES: { id: AssetCategory; label: string; assetType: 'Quest' | 'MarketItem'; }[] = [
-    { id: 'elementary_chores', label: 'Quests: Elementary Chores', assetType: 'Quest' },
-    { id: 'teen_chores', label: 'Quests: Teen Responsibilities', assetType: 'Quest' },
-    { id: 'fitness_goals', label: 'Quests: Fitness Goals', assetType: 'Quest' },
-    { id: 'learning_goals', label: 'Quests: Learning Goals', assetType: 'Quest' },
-    { id: 'fantasy_rpg_items', label: 'Market: Fantasy RPG Items', assetType: 'MarketItem' },
-    { id: 'sci_fi_items', label: 'Market: Sci-Fi Gadgets', assetType: 'MarketItem' },
-];
+import { Quest, GameAsset, RewardItem, Trophy } from '../../../types';
+import { libraryPacks, LibraryPack } from '../../../data/assetLibrary';
 
 const AssetLibraryPage: React.FC = () => {
-    const { markets, rewardTypes } = useAppState();
-    const { addQuest, addGameAsset, addNotification } = useAppDispatch();
+    const { addQuest, addGameAsset, addTrophy, addRewardType, addMarket, addNotification } = useAppDispatch();
+    
+    const [selectedPack, setSelectedPack] = useState<LibraryPack | null>(null);
 
-    const [selectedCategory, setSelectedCategory] = useState<AssetCategory>('elementary_chores');
-    const [isLoading, setIsLoading] = useState(false);
-    const [generatedAssets, setGeneratedAssets] = useState<GeneratedAsset[]>([]);
-    const [selection, setSelection] = useState<number[]>([]);
-
-    const handleGenerate = async () => {
-        setIsLoading(true);
-        setGeneratedAssets([]);
-        setSelection([]);
-
-        const categoryInfo = CATEGORIES.find(c => c.id === selectedCategory);
-        if (!categoryInfo) {
-            setIsLoading(false);
-            return;
-        }
-
-        try {
-            const response = await fetch('/api/generate-assets', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ category: categoryInfo.label, assetType: categoryInfo.assetType }),
-            });
-
-            if (!response.ok) {
-                const errorResult = await response.json();
-                throw new Error(errorResult.message || 'Failed to generate assets from server.');
-            }
-
-            const parsedAssets = await response.json();
-            setGeneratedAssets(parsedAssets);
-        } catch (error) {
-            console.error('Error generating assets:', error);
-            const message = error instanceof Error ? error.message : 'Unknown error';
-            addNotification({ type: 'error', message: `Failed to generate assets: ${message}` });
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
-    const handleImport = () => {
-        const categoryInfo = CATEGORIES.find(c => c.id === selectedCategory)!;
-        const rewardMap = {
-            strength: rewardTypes.find(rt => rt.id === 'core-strength')?.id,
-            diligence: rewardTypes.find(rt => rt.id === 'core-diligence')?.id,
-            wisdom: rewardTypes.find(rt => rt.id === 'core-wisdom')?.id,
-            skill: rewardTypes.find(rt => rt.id === 'core-skill')?.id,
-            creative: rewardTypes.find(rt => rt.id === 'core-creative')?.id,
-            gold: rewardTypes.find(rt => rt.id === 'core-gold')?.id,
-            gems: rewardTypes.find(rt => rt.id === 'core-gems')?.id,
-            crystals: rewardTypes.find(rt => rt.id === 'core-crystal')?.id,
-        };
-
+    const handleImport = (pack: LibraryPack) => {
         let importedCount = 0;
-        selection.forEach(index => {
-            const asset = generatedAssets[index];
-            if (categoryInfo.assetType === 'Quest') {
-                const rewardTypeId = rewardMap[asset.reward_type as keyof typeof rewardMap] || rewardMap.diligence!;
-                addQuest({
-                    title: asset.title, description: asset.description,
-                    rewards: [{ rewardTypeId: rewardTypeId, amount: asset.reward_amount || 10 }],
-                    type: QuestType.Duty, isActive: true, isOptional: false,
-                    requiresApproval: asset.requires_approval || false,
-                    availabilityType: QuestAvailability.Daily, availabilityCount: null,
-                    weeklyRecurrenceDays: [], monthlyRecurrenceDays: [], assignedUserIds: [],
-                    tags: [selectedCategory], lateSetbacks: [], incompleteSetbacks: [],
-                });
+        
+        const generateId = (prefix: string) => `${prefix}-${Date.now()}-${Math.random().toString(36).substring(2, 8)}`;
+        
+        // Maps for new IDs
+        const rewardIdMap = new Map<string, string>();
+        const marketIdMap = new Map<string, string>();
+        
+        // Import Rewards first as they are dependencies
+        if (pack.assets.rewardTypes) {
+            pack.assets.rewardTypes.forEach(rt => {
+                const newId = generateId('rt');
+                rewardIdMap.set(rt.id, newId);
+                const { id, ...restOfRt } = rt;
+                addRewardType(restOfRt);
                 importedCount++;
-            } else { // GameAsset from MarketItem
-                const costTypeId = rewardMap[asset.cost_type as keyof typeof rewardMap] || rewardMap.crystals!;
-                const targetMarketId = markets.find(m => m.id.includes('gadget'))?.id || markets[0]?.id;
-                if(targetMarketId) {
-                    addGameAsset({
-                        name: asset.title,
-                        description: asset.description,
-                        url: 'https://placehold.co/150x150/22c55e/FFFFFF?text=AI',
-                        category: 'Generated',
-                        avatarSlot: undefined,
-                        isForSale: true,
-                        cost: [{ rewardTypeId: costTypeId, amount: asset.cost_amount || 1 }],
-                        marketIds: [targetMarketId],
-                    });
-                    importedCount++;
-                }
-            }
-        });
+            });
+        }
+        
+        // Import Trophies
+        if (pack.assets.trophies) {
+             pack.assets.trophies.forEach(trophy => {
+                const { id, ...restOfTrophy } = trophy;
+                addTrophy(restOfTrophy);
+                importedCount++;
+             });
+        }
+        
+        // Import Markets
+        if (pack.assets.markets) {
+             pack.assets.markets.forEach(market => {
+                const newId = generateId('market');
+                marketIdMap.set(market.id, newId);
+                const { id, ...restOfMarket } = market;
+                addMarket(restOfMarket);
+                importedCount++;
+             });
+        }
+        
+        // Import Quests, remapping reward IDs
+        if (pack.assets.quests) {
+            pack.assets.quests.forEach(quest => {
+                const { id, ...restOfQuest } = quest;
+                const newQuest: Omit<Quest, 'id' | 'claimedByUserIds' | 'dismissals'> = {
+                    ...restOfQuest,
+                    rewards: quest.rewards.map(r => ({ ...r, rewardTypeId: rewardIdMap.get(r.rewardTypeId) || r.rewardTypeId })),
+                    lateSetbacks: quest.lateSetbacks.map(r => ({ ...r, rewardTypeId: rewardIdMap.get(r.rewardTypeId) || r.rewardTypeId })),
+                    incompleteSetbacks: quest.incompleteSetbacks.map(r => ({ ...r, rewardTypeId: rewardIdMap.get(r.rewardTypeId) || r.rewardTypeId })),
+                };
+                addQuest(newQuest);
+                importedCount++;
+            });
+        }
 
-        addNotification({type: 'success', message: `${importedCount} assets imported successfully!`});
-        setGeneratedAssets([]);
-        setSelection([]);
+        // Import GameAssets, remapping market IDs and reward IDs
+        if (pack.assets.gameAssets) {
+            pack.assets.gameAssets.forEach(asset => {
+                const { id, ...restOfAsset } = asset;
+                const newAsset: Omit<GameAsset, 'id' | 'creatorId' | 'createdAt'> = {
+                    ...restOfAsset,
+                    marketIds: asset.marketIds.map(mid => marketIdMap.get(mid) || mid),
+                    cost: asset.cost.map(c => ({...c, rewardTypeId: rewardIdMap.get(c.rewardTypeId) || c.rewardTypeId })),
+                };
+                addGameAsset(newAsset);
+                importedCount++;
+            });
+        }
+
+        addNotification({type: 'success', message: `Successfully installed ${pack.title} pack (${importedCount} assets)!`});
+        setSelectedPack(null);
     };
-    
-    const handleToggleSelection = (index: number) => {
-        setSelection(prev => 
-            prev.includes(index) ? prev.filter(i => i !== index) : [...prev, index]
-        );
-    }
-    
+
     return (
         <div className="space-y-6">
-            <Card title="AI-Powered Asset Library">
+            <Card title="Built-in Asset Library">
                 <p className="text-stone-400 text-sm mb-4">
-                    Quickly populate your game with pre-made content. Select a category and let our AI generate a list of relevant quests or market items for you to review and import. Requires a valid API key on the server.
+                    Quickly populate your game with pre-made content packs. Select a pack to see its contents, then install it to add the assets to your game.
                 </p>
-                <div className="flex flex-col sm:flex-row gap-4">
-                    <select
-                        value={selectedCategory}
-                        onChange={(e) => setSelectedCategory(e.target.value as AssetCategory)}
-                        className="flex-grow px-4 py-2 bg-stone-700 border border-stone-600 rounded-md"
-                        disabled={isLoading}
-                    >
-                        {CATEGORIES.map(cat => <option key={cat.id} value={cat.id}>{cat.label}</option>)}
-                    </select>
-                    <Button onClick={handleGenerate} disabled={isLoading} className="flex-shrink-0">
-                        {isLoading ? 'Generating...' : 'Generate Assets'}
-                    </Button>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {libraryPacks.map(pack => (
+                        <button key={pack.id} onClick={() => setSelectedPack(pack)} className="text-left">
+                            <Card className="h-full hover:bg-stone-700/50 hover:border-accent transition-colors duration-200">
+                                <span className="text-sm font-bold uppercase text-emerald-400">{pack.type}</span>
+                                <h4 className="text-lg font-bold text-stone-100 mt-1">{pack.title}</h4>
+                                <p className="text-sm text-stone-400 mt-2">{pack.description}</p>
+                            </Card>
+                        </button>
+                    ))}
                 </div>
             </Card>
 
-            {(isLoading || generatedAssets.length > 0) && (
-                <Card>
-                    {isLoading ? (
-                        <p className="text-center text-stone-300">Generating... Please wait a moment.</p>
-                    ) : (
-                        <div className="space-y-4">
-                             <div className="flex justify-between items-center">
-                                <h3 className="text-xl font-semibold text-stone-200">Generated Assets</h3>
-                                <Button onClick={handleImport} disabled={selection.length === 0}>
-                                    Import {selection.length} Selected
-                                </Button>
-                            </div>
-                            <div className="space-y-2 max-h-96 overflow-y-auto pr-2">
-                                {generatedAssets.map((asset, index) => (
-                                    <div key={index} className="flex items-start gap-3 p-3 bg-stone-900/40 rounded-lg">
-                                        <input
-                                            type="checkbox"
-                                            checked={selection.includes(index)}
-                                            onChange={() => handleToggleSelection(index)}
-                                            className="h-5 w-5 mt-1 rounded text-emerald-600 bg-stone-700 border-stone-500 focus:ring-emerald-500"
-                                        />
-                                        <div>
-                                            <p className="font-bold text-stone-100">{asset.title}</p>
-                                            <p className="text-sm text-stone-400">{asset.description}</p>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
+            {selectedPack && (
+                <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+                    <div className="bg-stone-800 border border-stone-700 rounded-xl shadow-2xl max-w-lg w-full max-h-[80vh] flex flex-col">
+                        <div className="p-6 border-b border-stone-700/60">
+                            <h2 className="text-2xl font-medieval text-accent">{selectedPack.title}</h2>
+                            <p className="text-sm text-stone-400">{selectedPack.description}</p>
                         </div>
-                    )}
-                </Card>
+                        <div className="p-6 space-y-2 overflow-y-auto scrollbar-hide text-sm text-stone-300 list-disc list-inside">
+                            <h4 className="font-bold text-stone-200">Contents:</h4>
+                            <ul className="list-disc list-inside">
+                                {selectedPack.assets.quests?.map(q => <li key={q.id}>Quest: {q.title}</li>)}
+                                {selectedPack.assets.markets?.map(m => <li key={m.id}>Market: {m.title}</li>)}
+                                {selectedPack.assets.gameAssets?.map(ga => <li key={ga.id}>Item: {ga.name}</li>)}
+                                {selectedPack.assets.trophies?.map(t => <li key={t.id}>Trophy: {t.name}</li>)}
+                                {selectedPack.assets.rewardTypes?.map(rt => <li key={rt.id}>Reward: {rt.name}</li>)}
+                            </ul>
+                        </div>
+                        <div className="p-4 border-t border-stone-700/60 text-right space-x-4">
+                            <Button variant="secondary" onClick={() => setSelectedPack(null)}>Cancel</Button>
+                            <Button onClick={() => handleImport(selectedPack)}>Install Pack</Button>
+                        </div>
+                    </div>
+                </div>
             )}
         </div>
     );

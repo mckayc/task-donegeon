@@ -1,7 +1,8 @@
+
 # Task Donegeon
 
-**Version:** 0.0.37
-**Last Updated:** 2023-10-31T12:00:00Z
+**Version:** 0.0.38
+**Last Updated:** 2023-11-01T10:00:00Z
 
 ---
 
@@ -17,7 +18,7 @@ Task Donegeon is a gamified task and chore management application designed for f
 ## ✨ Features
 
 -   **Session-Based Master Lock:** The application is locked upon first visit and requires an admin password to unlock for the session, providing a strong security layer before any user profiles are accessible.
--   **AI-Powered Asset Library:** Use the Gemini API to automatically generate themed quests and market items to quickly populate your game world.
+-   **Static Asset Library:** A large, built-in library of pre-made quests, markets, items, and trophies to quickly populate a new game world.
 -   **Hybrid File Storage:** Supports local file storage for Docker development and Supabase cloud storage for production deployments.
 -   **Gamified Task Management:** Create recurring "Duties" and one-time "Ventures" with customizable rewards and penalties.
 -   **Character Progression:** Users earn Experience Points (XP) to gain Ranks, from Novice to Grandmaster.
@@ -28,7 +29,7 @@ Task Donegeon is a gamified task and chore management application designed for f
 -   **Theming Engine:** Unlock and apply various visual themes to completely change the look and feel of the application.
 -   **Robust Admin Controls:** A "Donegeon Master" role with full control over users, quests, rewards, game rules, and terminology.
 -   **Data Persistence:** A full backend ensures all data is saved to a server, providing a consistent experience across sessions.
--   **Sharing & Backup:** Export and import game content (quests, markets, etc.) via "Blueprints," and create full data backups for peace of mind.
+-   **Full Backup & Restore:** Admins can download a complete backup of the entire game state and restore it, ensuring data safety.
 
 ## 🗺️ Roadmap
 
@@ -47,7 +48,6 @@ This phase focuses on high-impact improvements for admins and players that enhan
 This phase introduces major new creative outlets and systems for deeper engagement.
 
 -   **Theme Creator:** An admin tool to create and edit custom visual themes (colors, fonts, etc.) that can be sold in a market.
--   **Template Library:** Admins can browse and import pre-made templates for quests, rewards, and other game objects to quickly add new content.
 -   **Reward Rarity & Limits:** Ability to specify how many of a certain reward can be claimed, creating rare or one-of-a-kind items.
 -   **Automated Quest Rotation:** A system for automatically rotating daily or weekly duties among guild members to ensure fair distribution of chores.
 
@@ -70,7 +70,6 @@ This phase focuses on long-term stability, accessibility, and preparing the app 
 
 -   **Frontend:** React (with Hooks & Context API), TypeScript, Vite, TailwindCSS
 -   **Backend:** Node.js with Express.js, PostgreSQL
--   **AI:** Google Gemini API
 -   **Deployment:** Docker, Vercel (Frontend & Serverless Functions), Supabase (Database & Storage)
 
 ## 🚀 Getting Started
@@ -80,7 +79,6 @@ This phase focuses on long-term stability, accessibility, and preparing the app 
 -   **npm:** (usually comes with Node.js).
 -   **Git:** For cloning the repository.
 -   **Docker & Docker Compose:** Required for Docker/Portainer deployment.
--   **Google Gemini API Key:** Required for the AI Asset Library feature. Get one at [Google AI Studio](https://aistudio.google.com/app/apikey).
 -   **Cloud Accounts:** Required for the Vercel/Supabase option (Vercel, Supabase, GitHub).
 
 ---
@@ -104,7 +102,6 @@ This phase focuses on long-term stability, accessibility, and preparing the app 
 3.  **Configure `.env` File:**
     Copy `.env.example` to `.env` and fill in the variables.
     - `DATABASE_URL`: `postgres://postgres:your_secret_password@localhost:5432/postgres`
-    - `API_KEY`: Your Google Gemini API Key.
     - `STORAGE_PROVIDER`: `local`
 
 4.  **Run Backend & Frontend:**
@@ -124,7 +121,6 @@ This phase focuses on long-term stability, accessibility, and preparing the app 
     -   Import your forked repository on Vercel.
     -   Under **Environment Variables**, add the following:
         -   `DATABASE_URL`: Your full Supabase URI connection string.
-        -   `API_KEY`: Your Google Gemini API Key.
         -   `STORAGE_PROVIDER`: `supabase`
         -   `SUPABASE_URL`: Your Supabase project URL (from **Project Settings > API**).
         -   `SUPABASE_SERVICE_ROLE_KEY`: Your Supabase `service_role` key (from **Project Settings > API**).
@@ -134,7 +130,6 @@ This phase focuses on long-term stability, accessibility, and preparing the app 
 1.  **Clone the Repository**.
 2.  **Configure `.env` File:** Copy `.env.example` to `.env` and set all variables.
     -   `POSTGRES_PASSWORD`: A strong, unique password.
-    -   `API_KEY`: Your Google Gemini API Key.
     -   `STORAGE_PROVIDER`: `local`
 3.  **Build and Run:**
     ```bash
@@ -156,10 +151,15 @@ This phase focuses on long-term stability, accessibility, and preparing the app 
     # Node Environment
     NODE_ENV=production
 
-    # Gemini API Key (Required for Asset Library)
-    API_KEY=your_google_gemini_api_key_here
-
     # Storage Provider ('local' for Docker, 'supabase' for production)
     STORAGE_PROVIDER=local
     ```
 5.  **Deploy the stack**. The app will be available at `http://<your-server-ip>:3002`.
+
+### Option 5: Production Deployment from Docker Hub
+1.  Create a `.env` file with the required production variables.
+2.  Run the application using the `docker-compose.prod.yml` file:
+    ```bash
+    docker-compose -f docker-compose.prod.yml up -d
+    ```
+    This command will pull the latest pre-built image from Docker Hub and run it, along with the database service. It is the recommended way to run the app on a server.

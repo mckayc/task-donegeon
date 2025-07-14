@@ -64,18 +64,18 @@ const ThemesPage: React.FC = () => {
                         <div key={theme} className="space-y-3">
                             <button
                                 onClick={() => setSelectedTheme(theme)}
-                                className={`w-full aspect-[4/3] rounded-lg transition-all duration-200 border-4 ${isActive ? 'border-white shadow-2xl scale-105' : 'border-transparent'}`}
+                                className={`w-36 h-28 rounded-lg transition-all duration-200 border-4 ${isActive ? 'border-white shadow-2xl scale-105' : 'border-transparent'}`}
                                 style={{ 
                                     backgroundColor: `hsl(var(--color-${theme}-hue, 224), var(--color-${theme}-saturation, 39%), var(--color-${theme}-lightness, 10%))`,
                                     fontFamily: `var(--font-${theme}-display, 'Roboto')`,
                                 }}
                             >
-                                <div className="p-4 flex flex-col justify-between h-full text-white">
-                                    <h3 className="text-xl font-bold capitalize">{theme}</h3>
-                                    <div className="flex justify-end items-center gap-2">
-                                        <div className="w-6 h-6 rounded-full" style={{ backgroundColor: `hsl(var(--color-${theme}-hue, 158), var(--color-${theme}-saturation, 84%), var(--color-${theme}-lightness, 39%))`}}></div>
-                                        <div className="w-6 h-6 rounded-full" style={{ backgroundColor: `hsl(var(--color-${theme}-accent-hue, 158), var(--color-${theme}-accent-saturation, 75%), var(--color-${theme}-accent-lightness, 58%))`}}></div>
-                                        <div className="w-6 h-6 rounded-full" style={{ backgroundColor: `hsl(var(--color-${theme}-accent-light-hue, 158), var(--color-${theme}-accent-light-saturation, 70%), var(--color-${theme}-accent-light-lightness, 45%))`}}></div>
+                                <div className="p-2 flex flex-col justify-between h-full text-white">
+                                    <h3 className="text-lg font-bold capitalize">{theme}</h3>
+                                    <div className="flex justify-end items-center gap-1">
+                                        <div className="w-4 h-4 rounded-full" style={{ backgroundColor: `hsl(var(--color-${theme}-hue, 158), var(--color-${theme}-saturation, 84%), var(--color-${theme}-lightness, 39%))`}}></div>
+                                        <div className="w-4 h-4 rounded-full" style={{ backgroundColor: `hsl(var(--color-${theme}-accent-hue, 158), var(--color-${theme}-accent-saturation, 75%), var(--color-${theme}-accent-lightness, 58%))`}}></div>
+                                        <div className="w-4 h-4 rounded-full" style={{ backgroundColor: `hsl(var(--color-${theme}-accent-light-hue, 158), var(--color-${theme}-accent-light-saturation, 70%), var(--color-${theme}-accent-light-lightness, 45%))`}}></div>
                                     </div>
                                 </div>
                             </button>

@@ -132,9 +132,13 @@ const Sidebar: React.FC = () => {
 
   return (
     <div className="w-72 flex flex-col" style={{ backgroundColor: 'hsl(var(--color-bg-primary))', borderRight: '1px solid hsl(var(--color-border))' }}>
-      <div className="flex items-center justify-center h-20 border-b" style={{ borderColor: 'hsl(var(--color-border))' }}>
+      <button 
+        onClick={() => setActivePage('Dashboard')} 
+        className="flex items-center justify-center h-20 border-b cursor-pointer hover:bg-stone-800/50 transition-colors" 
+        style={{ borderColor: 'hsl(var(--color-border))' }}
+      >
         <h1 className="text-3xl font-medieval text-accent">{settings.terminology.appName}</h1>
-      </div>
+      </button>
       <nav className="flex-1 px-4 py-6 space-y-2 overflow-y-auto scrollbar-hide">
         {mainNavItems.map((item) => <NavLink key={item.name} item={item} activePage={activePage} setActivePage={setActivePage} />)}
         

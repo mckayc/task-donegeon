@@ -95,14 +95,15 @@ const AboutPage: React.FC = () => {
             try {
                 const response = await fetch('/api/metadata');
                 if (!response.ok) {
-                    throw new Error('Failed to fetch application details');
+                    const errorBody = await response.text();
+                    throw new Error(`Failed to fetch application details: ${errorBody}`);
                 }
                 const data: Metadata = await response.json();
                 setMetadata(data);
             } catch (err) {
                 const message = err instanceof Error ? err.message : 'Unknown error';
                 setError(message);
-                console.error("Error fetching metadata:", message);
+                console.error("Error fetching metadata:", err);
             }
         };
 

@@ -115,6 +115,17 @@ const ChroniclesPage: React.FC = () => {
         return 'text-stone-400';
     }
   };
+  
+  const formatTimestamp = (dateString: string): string => {
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) {
+      // Handle cases where the date string might be just 'YYYY-MM-DD'
+      const isoDate = fromYMD(dateString);
+      return isoDate.toLocaleDateString('default', { year: 'numeric', month: 'long', day: 'numeric' });
+    }
+    return date.toLocaleDateString('default', { year: 'numeric', month: 'long', day: 'numeric' }) + ' at ' + date.toLocaleTimeString('default', { hour: '2-digit', minute: '2-digit' });
+  };
+
 
   return (
     <div>
@@ -151,7 +162,7 @@ const ChroniclesPage: React.FC = () => {
                         <span className="text-stone-300 font-normal"> {activity.text}</span>
                       </p>
                       <p className="text-sm text-stone-400 mt-1">
-                        {new Date(activity.date).toLocaleString()}
+                        {formatTimestamp(activity.date)}
                       </p>
                     </div>
                     <div className={`font-semibold ${statusColor(activity.status)} ml-4`}>

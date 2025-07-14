@@ -1,8 +1,23 @@
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { Page, Role, AppMode, Guild } from '../../types';
 import Avatar from '../ui/Avatar';
+
+const Clock: React.FC = () => {
+    const [time, setTime] = useState(new Date());
+
+    useEffect(() => {
+        const timerId = setInterval(() => setTime(new Date()), 1000);
+        return () => clearInterval(timerId);
+    }, []);
+
+    return (
+        <div className="hidden lg:block bg-stone-800/50 px-4 py-2 rounded-full border border-stone-700/60 font-mono text-lg font-semibold text-stone-300">
+            {time.toLocaleTimeString()}
+        </div>
+    );
+};
 
 const Header: React.FC = () => {
   const { currentUser, rewardTypes, appMode, guilds, settings } = useAppState();
@@ -102,22 +117,25 @@ const Header: React.FC = () => {
              ))}
          </div>
       </div>
-      <div className="relative">
-        <button onClick={() => setProfileDropdownOpen(!profileDropdownOpen)} className="flex items-center space-x-3">
-          <span className="hidden sm:inline text-stone-200 font-medium">{currentUser.gameName}</span>
-          <Avatar user={currentUser} className="w-12 h-12 bg-emerald-800 rounded-full border-2 border-accent overflow-hidden" />
-        </button>
-        {profileDropdownOpen && (
-          <div className="absolute right-0 mt-2 w-48 bg-stone-800 border border-stone-700 rounded-lg shadow-xl z-20">
-            <a href="#" onClick={handleSwitchUser} className="block px-4 py-2 text-stone-300 hover:bg-stone-700">Switch User</a>
-            <a href="#" onClick={() => navigateTo('Profile')} className="block px-4 py-2 text-stone-300 hover:bg-stone-700">Profile</a>
-            {currentUser.role === Role.DonegeonMaster && (
-                <a href="#" onClick={() => navigateTo('Settings')} className="block px-4 py-2 text-stone-300 hover:bg-stone-700">Settings</a>
-            )}
-            <div className="border-t border-stone-700"></div>
-            <a href="#" onClick={handleLogout} className="block px-4 py-2 text-red-400 hover:bg-stone-700">Logout</a>
-          </div>
-        )}
+      <div className="flex items-center gap-4">
+        <Clock />
+        <div className="relative">
+          <button onClick={() => setProfileDropdownOpen(!profileDropdownOpen)} className="flex items-center space-x-3">
+            <span className="hidden sm:inline text-stone-200 font-medium">{currentUser.gameName}</span>
+            <Avatar user={currentUser} className="w-12 h-12 bg-emerald-800 rounded-full border-2 border-accent overflow-hidden" />
+          </button>
+          {profileDropdownOpen && (
+            <div className="absolute right-0 mt-2 w-48 bg-stone-800 border border-stone-700 rounded-lg shadow-xl z-20">
+              <a href="#" onClick={handleSwitchUser} className="block px-4 py-2 text-stone-300 hover:bg-stone-700">Switch User</a>
+              <a href="#" onClick={() => navigateTo('Profile')} className="block px-4 py-2 text-stone-300 hover:bg-stone-700">Profile</a>
+              {currentUser.role === Role.DonegeonMaster && (
+                  <a href="#" onClick={() => navigateTo('Settings')} className="block px-4 py-2 text-stone-300 hover:bg-stone-700">Settings</a>
+              )}
+              <div className="border-t border-stone-700"></div>
+              <a href="#" onClick={handleLogout} className="block px-4 py-2 text-red-400 hover:bg-stone-700">Logout</a>
+            </div>
+          )}
+        </div>
       </div>
     </header>
   );

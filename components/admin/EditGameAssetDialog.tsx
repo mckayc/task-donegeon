@@ -15,7 +15,7 @@ interface EditGameAssetDialogProps {
 
 const EditGameAssetDialog: React.FC<EditGameAssetDialogProps> = ({ assetToEdit, newAssetUrl, onClose }) => {
   const { addGameAsset, updateGameAsset } = useAppDispatch();
-  const { markets } = useAppState();
+  const { markets, rewardTypes } = useAppState();
 
   const [formData, setFormData] = useState({
     name: '',
@@ -53,7 +53,9 @@ const EditGameAssetDialog: React.FC<EditGameAssetDialogProps> = ({ assetToEdit, 
   };
   
   const handleAddRewardForCategory = (rewardCat: RewardCategory) => {
-    setFormData(prev => ({ ...prev, cost: [...prev.cost, { rewardTypeId: '', amount: 1 }] }));
+    const defaultReward = rewardTypes.find(rt => rt.category === rewardCat);
+    if (!defaultReward) return;
+    setFormData(prev => ({ ...prev, cost: [...prev.cost, { rewardTypeId: defaultReward.id, amount: 1 }] }));
   };
   
   const handleRemoveReward = (indexToRemove: number) => {

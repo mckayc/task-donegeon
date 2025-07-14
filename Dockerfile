@@ -1,48 +1,44 @@
-# Stage 1: Build the React frontend
+# Stage 1: Build the frontend assets
 FROM node:18-alpine AS build
+
 WORKDIR /app
 
-# Copy frontend package.json and install dependencies
-COPY package.json ./
-COPY tsconfig.json ./
-COPY tsconfig.node.json ./
-COPY vite.config.ts ./
-COPY index.html ./
-COPY index.tsx ./
-COPY App.tsx ./
+# Copy all necessary configuration and source files
+COPY package.json tsconfig.json tsconfig.node.json vite.config.ts ./
+COPY index.html index.tsx App.tsx ./
 COPY components ./components
 COPY context ./context
 COPY data ./data
 COPY hooks ./hooks
 COPY utils ./utils
 COPY types.ts ./
-# Copy public assets if any (like the avatar svg)
-# Assuming it's in a public/assets folder based on standard Vite setup
-# If the path is different, adjust it here.
-# Example: COPY public/assets ./public/assets
 COPY public ./public
+COPY metadata.json ./
 
+# Install dependencies and build the frontend
 RUN npm install
-
-# Build the frontend
 RUN npm run build
 
-# Stage 2: Create the production server
-FROM node:18-alpine
+# Stage 2: Create the final production image
+FROM node:18-alpine AS production
+
 WORKDIR /app
 
-# Copy backend dependencies and install them
+# Copy backend package file and install production dependencies
 COPY backend/package.json ./backend/
 RUN cd backend && npm install --production
 
-# Copy built frontend from Stage 1
+# Copy built frontend assets from the build stage
 COPY --from=build /app/dist ./dist
 
-# Copy backend server code
+# Copy the backend server code
 COPY backend/server.js ./backend/
 
-# Expose the port the backend server will run on
+# Copy the metadata file so the backend can serve it
+COPY metadata.json ./
+
+# Expose the port the server runs on
 EXPOSE 3001
 
-# The command to start the server
+# Command to run the backend server
 CMD ["node", "backend/server.js"]

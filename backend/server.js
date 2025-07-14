@@ -5,22 +5,10 @@ const { Pool } = require('pg');
 const path = require('path');
 const multer = require('multer');
 const { createClient } = require('@supabase/supabase-js');
-const { GoogleGenAI } = require('@google/genai');
 const fs = require('fs');
 
-// Define the Type enum values, as they are not directly available in JS
-const Type = {
-    OBJECT: 'OBJECT',
-    ARRAY: 'ARRAY',
-    STRING: 'STRING',
-    NUMBER: 'NUMBER',
-    INTEGER: 'INTEGER',
-    BOOLEAN: 'BOOLEAN',
-};
-
-
 // --- Environment Variable Checks ---
-const requiredEnv = ['DATABASE_URL', 'API_KEY', 'STORAGE_PROVIDER'];
+const requiredEnv = ['DATABASE_URL', 'STORAGE_PROVIDER'];
 if (process.env.STORAGE_PROVIDER === 'supabase') {
     requiredEnv.push('SUPABASE_URL', 'SUPABASE_SERVICE_ROLE_KEY');
 }
@@ -111,6 +99,22 @@ const initializeDatabase = async () => {
 // Health check
 app.get('/api/health', (req, res) => res.status(200).json({ status: 'ok' }));
 
+// Get app metadata
+app.get('/api/metadata', (req, res, next) => {
+    try {
+        const metadataPath = path.join(__dirname, '..', 'metadata.json');
+        fs.readFile(metadataPath, 'utf8', (err, data) => {
+            if (err) {
+                console.error('Error reading metadata.json:', err);
+                return res.status(500).json({ error: 'Could not read metadata file.' });
+            }
+            res.status(200).json(JSON.parse(data));
+        });
+    } catch (err) {
+        next(err);
+    }
+});
+
 // Load data
 app.get('/api/data/load', async (req, res, next) => {
     try {
@@ -155,36 +159,6 @@ app.post('/api/media/upload', upload.single('file'), async (req, res, next) => {
         next(err);
     }
 });
-
-// AI Asset Generation
-app.post('/api/generate-assets', async (req, res, next) => {
-    const { category, assetType } = req.body;
-    if (!category || !assetType) {
-        return res.status(400).json({ error: 'Category and assetType are required.' });
-    }
-
-    const ai = new GoogleGenAI({apiKey: process.env.API_KEY});
-    const isQuest = assetType === 'Quest';
-
-    const questSchema = { type: Type.OBJECT, properties: { title: { type: Type.STRING }, description: { type: Type.STRING }, reward_type: { type: Type.STRING }, reward_amount: { type: Type.INTEGER }, requires_approval: { type: Type.BOOLEAN } } };
-    const marketItemSchema = { type: Type.OBJECT, properties: { title: { type: Type.STRING }, description: { type: Type.STRING }, cost_type: { type: Type.STRING }, cost_amount: { type: Type.INTEGER } } };
-
-    const prompt = `Generate a list of 5 creative and engaging ${isQuest ? 'quests' : 'market items'} for a gamified to-do list app. The theme is "${category}". For each item, provide a title, a brief description, and the requested values.`;
-    const schema = { type: Type.ARRAY, items: isQuest ? questSchema : marketItemSchema };
-
-    try {
-        const response = await ai.models.generateContent({
-            model: 'gemini-2.5-flash',
-            contents: prompt,
-            config: { responseMimeType: 'application/json', responseSchema: schema },
-        });
-        const parsedAssets = JSON.parse(response.text);
-        res.status(200).json(parsedAssets);
-    } catch (err) {
-        next(err);
-    }
-});
-
 
 // === Final Catchall & Error Handling ===
 app.get('*', (req, res) => res.sendFile(path.join(__dirname, '../dist/index.html')));

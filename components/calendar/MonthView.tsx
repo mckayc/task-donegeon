@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo } from 'react';
 import { Quest, QuestCompletion, QuestAvailability, QuestType, QuestCompletionStatus } from '../../types';
 import { toYMD } from '../../utils/quests';
@@ -148,8 +147,8 @@ const MonthView: React.FC<MonthViewProps> = ({ currentDate, quests, questComplet
                             </div>
                             {(dailyCompletions.length > 0 || dailyPending.length > 0) && (
                                 <div className="absolute bottom-2 left-2 flex flex-wrap items-center gap-1">
-                                    {dailyCompletions.slice(0, 5).map(comp => (<div key={comp.id} className="w-2 h-2 rounded-full bg-green-500" title="Quest Completed"></div>))}
-                                    {dailyPending.slice(0, Math.max(0, 5 - dailyCompletions.length)).map(comp => (<div key={comp.id} className="w-2 h-2 rounded-full bg-yellow-400" title="Pending Approval"></div>))}
+                                    {dailyCompletions.slice(0, 5).map((comp: QuestCompletion) => (<div key={comp.id} className="w-2 h-2 rounded-full bg-green-500" title="Quest Completed"></div>))}
+                                    {dailyPending.slice(0, Math.max(0, 5 - dailyCompletions.length)).map((comp: QuestCompletion) => (<div key={comp.id} className="w-2 h-2 rounded-full bg-yellow-400" title="Pending Approval"></div>))}
                                     {totalIndicators > 5 && <div className="w-2 h-2 rounded-full bg-stone-500 flex items-center justify-center text-white text-[8px] font-bold" title={`${totalIndicators - 5} more`}>+</div>}
                                 </div>
                             )}

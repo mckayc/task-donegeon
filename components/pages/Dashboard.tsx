@@ -1,3 +1,4 @@
+
 import React, { useMemo } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { Quest, QuestAvailability, QuestCompletionStatus, RewardCategory, Role, User, QuestType } from '../../types';
@@ -16,14 +17,14 @@ const Dashboard: React.FC = () => {
 
     const handleCompleteQuest = (questId: string) => {
         const quest = quests.find(q => q.id === questId);
-        if (!quest) return;
+        if (!quest || !currentUser) return;
 
         const needsNote = quest.requiresApproval;
         if (needsNote) {
             const note = window.prompt(`Add an optional note for this ${terminology.task.toLowerCase()} completion:`);
-            completeQuest(questId, { note: note || undefined });
+            completeQuest(quest.id, currentUser.id, quest.rewards, quest.requiresApproval, quest.guildId, { note: note || undefined });
         } else {
-            completeQuest(questId);
+            completeQuest(quest.id, currentUser.id, quest.rewards, quest.requiresApproval, quest.guildId);
         }
     };
 

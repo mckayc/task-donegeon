@@ -1,5 +1,6 @@
 
 
+
 import React, { useState } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { User, RewardItem, RewardCategory, AdminAdjustmentType, Trophy } from '../../types';
@@ -12,7 +13,7 @@ interface ManualAdjustmentDialogProps {
 }
 
 const ManualAdjustmentDialog: React.FC<ManualAdjustmentDialogProps> = ({ user, onClose }) => {
-  const { guilds, trophies, userTrophies } = useAppState();
+  const { guilds, trophies, userTrophies, currentUser } = useAppState();
   const { applyManualAdjustment } = useAppDispatch();
   const [reason, setReason] = useState('');
   const [guildId, setGuildId] = useState('');
@@ -44,6 +45,11 @@ const ManualAdjustmentDialog: React.FC<ManualAdjustmentDialogProps> = ({ user, o
     e.preventDefault();
     setError('');
     
+    if (!currentUser) {
+        setError('Could not identify the current admin user.');
+        return;
+    }
+
     if (!reason.trim()) {
         setError('A reason for the adjustment is required.');
         return;
@@ -51,6 +57,7 @@ const ManualAdjustmentDialog: React.FC<ManualAdjustmentDialogProps> = ({ user, o
     
     const adjustmentPayload = {
         userId: user.id,
+        adjusterId: currentUser.id,
         reason,
         type: actionType,
         rewards: actionType === AdminAdjustmentType.Reward ? rewards.filter(r => r.rewardTypeId && r.amount > 0) : [],

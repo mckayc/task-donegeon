@@ -19,7 +19,7 @@ const OnboardingWizard: React.FC = () => {
             <div className="max-w-lg w-full bg-stone-800 border border-stone-700 rounded-2xl shadow-2xl p-8 text-center">
                 <h1 className="text-4xl font-medieval text-accent mb-4">Welcome, {currentUser.gameName}!</h1>
                 <p className="text-stone-300 mb-6">
-                    You've joined the world of {settings.terminology.appName}. Here, completing your assigned {settings.terminology.tasks} will earn you {settings.terminology.points} and {settings.terminology.xp}. Spend them in the {settings.terminology.shoppingCenter} to get cool rewards!
+                    You've joined the world of {settings.terminology.appName}. Here, completing your assigned {settings.terminology.tasks.toLowerCase()} will earn you {settings.terminology.points.toLowerCase()} and {settings.terminology.xp.toLowerCase()}. Spend them in the {settings.terminology.shoppingCenter.toLowerCase()} to get cool rewards!
                 </p>
                 <p className="text-stone-400 text-sm mb-8">
                     Check the "{settings.terminology.tasks}" page for your first adventure. Good luck!

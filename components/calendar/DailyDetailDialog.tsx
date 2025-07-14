@@ -1,4 +1,5 @@
 
+
 import React, { useMemo } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { Quest, QuestCompletion, QuestType } from '../../types';
@@ -89,24 +90,25 @@ const QuestListItem: React.FC<{
 
 
 const DailyDetailDialog: React.FC<DailyDetailDialogProps> = ({ date, onClose, dueQuests, completedForDay, pendingForDay }) => {
-  const { quests } = useAppState();
+  const { quests, currentUser } = useAppState();
   const { completeQuest, claimQuest, releaseQuest } = useAppDispatch();
 
   const isFutureDate = toYMD(date) > toYMD(new Date());
 
   const handleAction = (quest: Quest, action: 'complete' | 'claim' | 'release') => {
+    if (!currentUser) return;
     if (action === 'complete') {
         const needsNote = quest.requiresApproval;
         if (needsNote) {
             const note = window.prompt("Add an optional note for this quest completion:");
-            completeQuest(quest.id, { note: note || undefined, completionDate: date });
+            completeQuest(quest.id, currentUser.id, quest.rewards, quest.requiresApproval, quest.guildId, { note: note || undefined, completionDate: date });
         } else {
-            completeQuest(quest.id, { completionDate: date });
+            completeQuest(quest.id, currentUser.id, quest.rewards, quest.requiresApproval, quest.guildId, { completionDate: date });
         }
     } else if (action === 'claim') {
-        claimQuest(quest.id);
+        claimQuest(quest.id, currentUser.id);
     } else if (action === 'release') {
-        releaseQuest(quest.id);
+        releaseQuest(quest.id, currentUser.id);
     }
   };
 

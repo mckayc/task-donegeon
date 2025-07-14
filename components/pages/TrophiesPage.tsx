@@ -1,15 +1,22 @@
 
 
 
+
 import React, { useMemo } from 'react';
-import { useAppState } from '../../context/AppContext';
+import { useAuth } from '../../context/AuthContext';
+import { useGameData } from '../../context/GameDataContext';
+import { useSettings } from '../../context/SettingsContext';
 import { Role, Trophy, UserTrophy, TrophyRequirementType, QuestType, QuestCompletionStatus, Quest } from '../../types';
 import Card from '../ui/Card';
-import { TrophyIcon } from '../ui/Icons';
+import { TrophyIcon as AwardIcon } from '../ui/Icons'; // Renamed to avoid conflict
 import { fromYMD } from '../../utils/quests';
+import EmptyState from '../ui/EmptyState';
 
 const RequirementStatus: React.FC<{ trophy: Trophy }> = ({ trophy }) => {
-    const { currentUser, questCompletions, quests, ranks, appMode } = useAppState();
+    const { currentUser } = useAuth();
+    const { questCompletions, quests, ranks } = useGameData();
+    const { appMode } = useSettings();
+
     if (!currentUser || trophy.isManual) return null;
 
     if (appMode.mode === 'guild') {
@@ -73,10 +80,12 @@ const TrophyCard: React.FC<{ trophy: Trophy & { awardedAt?: string }, isEarned: 
 );
 
 const TrophiesPage: React.FC = () => {
-    const { currentUser, trophies, userTrophies, appMode } = useAppState();
+    const { currentUser } = useAuth();
+    const { trophies, userTrophies } = useGameData();
+    const { appMode, settings } = useSettings();
 
-    const [myEarnedTrophyAwards, myEarnedTrophyIds, availableTrophies] = useMemo(() => {
-        if (!currentUser) return [[], new Set(), []];
+    const [myEarnedTrophyAwards, availableTrophies] = useMemo(() => {
+        if (!currentUser) return [[], []];
 
         const currentGuildId = appMode.mode === 'guild' ? appMode.guildId : undefined;
 
@@ -84,7 +93,7 @@ const TrophiesPage: React.FC = () => {
         const earnedIds = new Set(earnedAwards.map(ut => ut.trophyId));
         const available = trophies.filter(t => !earnedIds.has(t.id));
         
-        return [earnedAwards, earnedIds, available];
+        return [earnedAwards, available];
     }, [currentUser, trophies, userTrophies, appMode]);
     
     const earnedTrophiesWithDate = useMemo(() => {
@@ -92,32 +101,36 @@ const TrophiesPage: React.FC = () => {
             const trophyDetails = trophies.find(t => t.id === award.trophyId);
             return trophyDetails ? { ...trophyDetails, awardedAt: award.awardedAt } : null;
         }).filter((t): t is Trophy & { awardedAt: string } => t !== null)
-          .sort((a, b) => fromYMD(b.awardedAt).getTime() - fromYMD(a.awardedAt).getTime());
+          .sort((a, b) => new Date(b.awardedAt).getTime() - new Date(a.awardedAt).getTime());
     }, [myEarnedTrophyAwards, trophies]);
 
     if (!currentUser) return null;
 
     return (
         <div>
-            <h1 className="text-4xl font-medieval text-stone-100 mb-8">Trophy Hall</h1>
+            <h1 className="text-4xl font-medieval text-stone-100 mb-8">{settings.terminology.award} Hall</h1>
 
-            <Card title="My Trophy Case" titleIcon={<TrophyIcon />} className="mb-8">
+            <Card title={`My ${settings.terminology.award} Case`} titleIcon={<AwardIcon />} className="mb-8">
                 {earnedTrophiesWithDate.length > 0 ? (
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                         {earnedTrophiesWithDate.map(trophy => <TrophyCard key={trophy.id} trophy={trophy} isEarned={true} />)}
                     </div>
                 ) : (
-                    <p className="text-stone-400 text-center">You haven't earned any trophies in this mode yet. Keep questing!</p>
+                    <EmptyState
+                        Icon={AwardIcon}
+                        title={`No ${settings.terminology.awards} Earned Yet`}
+                        message={`You haven't earned any ${settings.terminology.awards.toLowerCase()} in this mode yet. Keep questing!`}
+                    />
                 )}
             </Card>
 
-             <Card title="Available Trophies">
+             <Card title={`Available ${settings.terminology.awards}`}>
                 {availableTrophies.length > 0 ? (
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                         {availableTrophies.map(trophy => <TrophyCard key={trophy.id} trophy={trophy} isEarned={false} />)}
                     </div>
                 ) : (
-                    <p className="text-stone-400 text-center">Congratulations! You have earned all available trophies!</p>
+                    <p className="text-stone-400 text-center py-4">Congratulations! You have earned all available {settings.terminology.awards.toLowerCase()}!</p>
                 )}
             </Card>
         </div>

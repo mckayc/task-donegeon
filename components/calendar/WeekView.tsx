@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { Quest, QuestCompletion, QuestAvailability, QuestType, QuestCompletionStatus } from '../../types';
 import { toYMD } from '../../utils/quests';
 import DailyDetailDialog from './DailyDetailDialog';
+import { useAppState } from '../../context/AppContext';
 
 interface WeekViewProps {
     currentDate: Date;
@@ -11,6 +12,7 @@ interface WeekViewProps {
 
 const WeekView: React.FC<WeekViewProps> = ({ currentDate, quests, questCompletions }) => {
     const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+    const { currentUser, appMode } = useAppState();
 
     const startOfWeek = new Date(currentDate);
     startOfWeek.setDate(currentDate.getDate() - currentDate.getDay());
@@ -47,36 +49,51 @@ const WeekView: React.FC<WeekViewProps> = ({ currentDate, quests, questCompletio
     }, [quests, days]);
 
     const completionsByDate = useMemo(() => {
+        if (!currentUser) return new Map();
+        const currentGuildId = appMode.mode === 'guild' ? appMode.guildId : undefined;
+        const relevantCompletions = questCompletions.filter(c =>
+            c.status === QuestCompletionStatus.Approved && c.userId === currentUser.id && c.guildId === currentGuildId
+        );
+
         const map = new Map<string, QuestCompletion[]>();
-        questCompletions.forEach(comp => {
-            if (comp.status === QuestCompletionStatus.Approved) {
-                const dateKey = toYMD(new Date(comp.completedAt));
-                map.set(dateKey, [...(map.get(dateKey) || []), comp]);
-            }
+        relevantCompletions.forEach(completion => {
+            const dateKey = toYMD(new Date(completion.completedAt));
+            const collection = map.get(dateKey) || [];
+            collection.push(completion);
+            map.set(dateKey, collection);
         });
         return map;
-    }, [questCompletions]);
+    }, [questCompletions, currentUser, appMode]);
 
      const pendingCompletionsByDate = useMemo(() => {
+        if (!currentUser) return new Map();
+        const currentGuildId = appMode.mode === 'guild' ? appMode.guildId : undefined;
+        const relevantCompletions = questCompletions.filter(c =>
+            c.status === QuestCompletionStatus.Pending && c.userId === currentUser.id && c.guildId === currentGuildId
+        );
+
         const map = new Map<string, QuestCompletion[]>();
-        questCompletions.forEach(comp => {
-            if (comp.status === QuestCompletionStatus.Pending) {
-                const dateKey = toYMD(new Date(comp.completedAt));
-                map.set(dateKey, [...(map.get(dateKey) || []), comp]);
-            }
+        relevantCompletions.forEach(completion => {
+            const dateKey = toYMD(new Date(completion.completedAt));
+            const collection = map.get(dateKey) || [];
+            collection.push(completion);
+            map.set(dateKey, collection);
         });
         return map;
-    }, [questCompletions]);
+    }, [questCompletions, currentUser, appMode]);
 
     return (
         <>
-            <div className="grid grid-cols-7 divide-x divide-stone-700/60 bg-stone-900/20">
+            <div className="grid grid-cols-1 md:grid-cols-7 divide-y md:divide-y-0 md:divide-x divide-stone-700/60 bg-stone-900/20">
                 {days.map(day => {
                     const dateKey = toYMD(day);
                     const dueQuests = questsByDate.get(dateKey) || [];
                     const completedQuests = completionsByDate.get(dateKey) || [];
                     const pendingQuests = pendingCompletionsByDate.get(dateKey) || [];
-                    const incompleteCount = dueQuests.length - completedQuests.length - pendingQuests.length;
+                    
+                    const incompleteDuties = dueQuests.filter(q => q.type === QuestType.Duty && ![...completedQuests, ...pendingQuests].map(c => c.questId).includes(q.id)).length;
+                    const incompleteVentures = dueQuests.filter(q => q.type === QuestType.Venture && ![...completedQuests, ...pendingQuests].map(c => c.questId).includes(q.id)).length;
+
 
                     return (
                         <div key={day.toISOString()} className="flex-1 min-w-[120px]">
@@ -91,10 +108,11 @@ const WeekView: React.FC<WeekViewProps> = ({ currentDate, quests, questCompletio
                                 onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && setSelectedDate(day)}
                                 className="p-2 space-y-2 h-48 overflow-y-auto scrollbar-hide cursor-pointer hover:bg-stone-700/30 transition-colors"
                             >
-                                {incompleteCount > 0 && <span className="block text-center text-sm font-bold text-amber-400">{incompleteCount} To-Do</span>}
-                                {pendingQuests.length > 0 && <span className="block text-center text-sm text-yellow-500">{pendingQuests.length} Pending</span>}
-                                {completedQuests.length > 0 && <span className="block text-center text-sm text-green-500">{completedQuests.length} Done</span>}
-                                {dueQuests.length === 0 && <div className="h-full w-full opacity-30"></div>}
+                               {incompleteDuties > 0 && <div className="text-xs text-center p-1 rounded bg-sky-900/50 text-sky-300">{incompleteDuties} Duties</div>}
+                               {incompleteVentures > 0 && <div className="text-xs text-center p-1 rounded bg-amber-900/50 text-amber-300">{incompleteVentures} Ventures</div>}
+                               {pendingQuests.length > 0 && <div className="text-xs text-center p-1 rounded bg-yellow-900/50 text-yellow-300">{pendingQuests.length} Pending</div>}
+                               {completedQuests.length > 0 && <div className="text-xs text-center p-1 rounded bg-green-900/50 text-green-300">{completedQuests.length} Done</div>}
+                               {dueQuests.length === 0 && <div className="h-full w-full opacity-30"></div>}
                             </div>
                         </div>
                     );

@@ -1,10 +1,12 @@
 
 
+
+
 import React from 'react';
-import { RewardCategory, RewardItem, RewardTypeDefinition } from '../../types';
-import { useAppState } from '../../context/AppContext';
+import { RewardCategory, RewardItem } from '../../types';
 import Input from '../ui/Input';
 import Button from '../ui/Button';
+import { useAppState } from '../../context/AppContext';
 
 interface RewardInputGroupProps {
   category: 'rewards' | 'setbacks' | 'cost' | 'payout' | 'lateSetbacks' | 'incompleteSetbacks';
@@ -47,7 +49,7 @@ const RewardInputGroup: React.FC<RewardInputGroupProps> = ({ category, items, on
                     {filteredRewardTypes.map(rt => <option key={rt.id} value={rt.id}>{rt.name}</option>)}
                   </select>
                   <Input type="number" min="1" value={item.amount} onChange={(e) => onChange(originalIndex, 'amount', e.target.value)} className="w-24" aria-label="Amount" />
-                  <button type="button" onClick={() => onRemove(originalIndex)} className="text-red-400 hover:text-red-300 p-2 rounded-full bg-stone-700 hover:bg-stone-600">
+                  <button type="button" onClick={() => onRemove(originalIndex)} className="text-red-400 hover:text-red-300 p-2 rounded-full bg-stone-700 hover:bg-stone-600" aria-label={`Remove ${rewardCat} item`}>
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM7 9a1 1 0 000 2h6a1 1 0 100-2H7z" clipRule="evenodd" /></svg>
                   </button>
                 </div>

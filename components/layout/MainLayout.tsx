@@ -1,4 +1,5 @@
 
+
 import React from 'react';
 import Sidebar from './Sidebar';
 import Header from './Header';
@@ -20,7 +21,7 @@ import CalendarPage from '../pages/CalendarPage';
 import ProgressPage from '../pages/ProgressPage';
 import TrophiesPage from '../pages/TrophiesPage';
 import RanksPage from '../pages/RanksPage';
-import { useAppState } from '../../context/AppContext';
+import { useSettings } from '../../context/SettingsContext';
 import HelpPage from '../pages/HelpPage';
 import AvatarPage from '../pages/AvatarPage';
 import VacationModeBanner from '../settings/VacationModeBanner';
@@ -34,7 +35,7 @@ import ManageItemsPage from '../pages/ManageItemsPage';
 import AiStudioPage from '../pages/AiStudioPage';
 
 const MainLayout: React.FC = () => {
-  const { activePage } = useAppState();
+  const { activePage } = useSettings();
 
   const renderPage = () => {
     switch (activePage) {

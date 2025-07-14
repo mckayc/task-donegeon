@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo, useEffect } from 'react';
 import Card from '../ui/Card';
 import Button from '../ui/Button';
@@ -59,7 +60,10 @@ const QuestItem: React.FC<{ quest: Quest; onCompleteWithNote: (quest: Quest) => 
         return questCompletions.filter(c => c.questId === quest.id).length;
     }, [questCompletions, quest.id]);
     
-    const handleSimpleComplete = () => completeQuest(quest.id);
+    const handleSimpleComplete = () => {
+        if (!currentUser) return;
+        completeQuest(quest.id, currentUser.id, quest.rewards, quest.requiresApproval, quest.guildId);
+    };
 
     let lateDeadline: Date | null = null;
     let incompleteDeadline: Date | null = null;
@@ -106,14 +110,14 @@ const QuestItem: React.FC<{ quest: Quest; onCompleteWithNote: (quest: Quest) => 
 
     const renderButtons = () => {
         if (isIncomplete) {
-            return <Button variant="secondary" className="text-sm py-1 px-3 !bg-red-900/50 hover:!bg-red-800/60 text-red-300" onClick={() => dismissQuest(quest.id)}>Dismiss</Button>;
+            return <Button variant="secondary" className="text-sm py-1 px-3 !bg-red-900/50 hover:!bg-red-800/60 text-red-300" onClick={() => dismissQuest(quest.id, currentUser.id)}>Dismiss</Button>;
         }
         switch (status.status) {
             case 'CLAIMABLE':
-                return <Button variant="primary" className="text-sm py-1 px-3 !bg-sky-600 hover:!bg-sky-500" onClick={() => claimQuest(quest.id)}>{status.buttonText}</Button>;
+                return <Button variant="primary" className="text-sm py-1 px-3 !bg-sky-600 hover:!bg-sky-500" onClick={() => claimQuest(quest.id, currentUser.id)}>{status.buttonText}</Button>;
             case 'RELEASEABLE':
                 return <>
-                    <Button variant="secondary" className="text-sm py-1 px-3 !bg-orange-800/60 hover:!bg-orange-700/70 text-orange-200" onClick={() => releaseQuest(quest.id)}>Release</Button>
+                    <Button variant="secondary" className="text-sm py-1 px-3 !bg-orange-800/60 hover:!bg-orange-700/70 text-orange-200" onClick={() => releaseQuest(quest.id, currentUser.id)}>Release</Button>
                     <Button variant="secondary" className="text-sm py-1 px-3" onClick={() => onCompleteWithNote(quest)}>With Note</Button>
                     <Button variant="primary" className="text-sm py-1 px-3" onClick={handleSimpleComplete}>{status.buttonText}</Button>
                 </>;

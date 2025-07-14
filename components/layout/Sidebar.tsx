@@ -1,8 +1,11 @@
 
+
 import React, { useState } from 'react';
-import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { Role, Page, QuestCompletionStatus, PurchaseRequestStatus, Terminology } from '../../types';
 import * as Icons from '../ui/Icons';
+import { useAuth } from '../../context/AuthContext';
+import { useGameData } from '../../context/GameDataContext';
+import { useSettings, useSettingsDispatch } from '../../context/SettingsContext';
 
 
 interface NavItem {
@@ -63,7 +66,7 @@ const CollapsibleNavGroup: React.FC<{
 
 
 const NavLink: React.FC<{ item: NavItem, activePage: Page, setActivePage: (page: Page) => void, badgeCount?: number, isNested?: boolean }> = ({ item, activePage, setActivePage, badgeCount = 0, isNested = false }) => {
-    const { settings } = useAppState();
+    const { settings } = useSettings();
     const linkName = item.termKey ? settings.terminology[item.termKey] : item.name;
 
     return (
@@ -73,7 +76,7 @@ const NavLink: React.FC<{ item: NavItem, activePage: Page, setActivePage: (page:
           onClick={(e) => { e.preventDefault(); setActivePage(item.name); }}
           className={`relative flex items-center py-3 text-lg rounded-lg transition-colors duration-200 ${isNested ? 'px-4 pl-10' : 'px-4'} ${
             activePage === item.name
-              ? 'bg-accent-subtle text-accent-light'
+              ? 'bg-emerald-600/20 text-emerald-300'
               : 'text-stone-300 hover:bg-stone-700/50 hover:text-white'
           }`}
         >
@@ -89,8 +92,10 @@ const NavLink: React.FC<{ item: NavItem, activePage: Page, setActivePage: (page:
 };
 
 const Sidebar: React.FC = () => {
-  const { currentUser, questCompletions, purchaseRequests, activePage, settings } = useAppState();
-  const { setActivePage } = useAppDispatch();
+  const { currentUser } = useAuth();
+  const { questCompletions, purchaseRequests } = useGameData();
+  const { activePage, settings } = useSettings();
+  const { setActivePage } = useSettingsDispatch();
   
   if (!currentUser) return null;
 

@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { useGameDataDispatch } from '../../../context/GameDataContext';
 import Button from '../../ui/Button';
 import Card from '../../ui/Card';
-import { libraryPacks, LibraryPack } from '../../../data/assetLibrary';
+import { libraryPacks } from '../../../data/assetLibrary';
+import { LibraryPack } from '../../../types';
 import AssetLibraryImportDialog from '../../sharing/AssetLibraryImportDialog';
 
 const AssetLibraryPage: React.FC = () => {

@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { LibraryPack, Quest, GameAsset, Trophy, Market, RewardTypeDefinition } from '../../types';
-import { useAppDispatch } from '../../context/AppContext';
 import Button from '../ui/Button';
+import { useGameDataDispatch } from '../../context/GameDataContext';
 
 interface AssetLibraryImportDialogProps {
   pack: LibraryPack;
@@ -11,7 +11,7 @@ interface AssetLibraryImportDialogProps {
 type SelectableAsset = { id: string; name: string; type: keyof LibraryPack['assets'] };
 
 const AssetLibraryImportDialog: React.FC<AssetLibraryImportDialogProps> = ({ pack, onClose }) => {
-    const { addQuest, addGameAsset, addTrophy, addRewardType, addMarket, addNotification } = useAppDispatch();
+    const { addQuest, addGameAsset, addTrophy, addRewardType, addMarket, addNotification } = useGameDataDispatch();
 
     const allAssets = useMemo((): SelectableAsset[] => {
         const assets: SelectableAsset[] = [];
@@ -44,30 +44,52 @@ const AssetLibraryImportDialog: React.FC<AssetLibraryImportDialogProps> = ({ pac
         const rewardIdMap = new Map<string, string>();
         const marketIdMap = new Map<string, string>();
 
+        // Import Reward Types first to create dependency map
         pack.assets.rewardTypes?.forEach(rt => {
             if (selectedIds.includes(rt.id)) {
                 const newId = generateId('rt');
                 rewardIdMap.set(rt.id, newId);
                 const { id, ...rest } = rt;
-                addRewardType(rest); importedCount++;
+                addRewardType(rest); 
+                importedCount++;
             }
         });
         
+        // Import Trophies and Markets
         pack.assets.trophies?.forEach(t => { if (selectedIds.includes(t.id)) { const { id, ...rest } = t; addTrophy(rest); importedCount++; }});
-        pack.assets.markets?.forEach(m => { if (selectedIds.includes(m.id)) { const newId = generateId('market'); marketIdMap.set(m.id, newId); const { id, ...rest } = m; addMarket(rest); importedCount++; }});
+        pack.assets.markets?.forEach(m => { 
+            if (selectedIds.includes(m.id)) { 
+                const newId = generateId('market'); 
+                marketIdMap.set(m.id, newId); 
+                const { id, ...rest } = m; 
+                addMarket(rest); 
+                importedCount++; 
+            }
+        });
         
+        // Import Quests, mapping reward IDs
         pack.assets.quests?.forEach(q => {
             if (selectedIds.includes(q.id)) {
                 const { id, ...rest } = q;
-                const newQuest = { ...rest, rewards: q.rewards.map(r => ({ ...r, rewardTypeId: rewardIdMap.get(r.rewardTypeId) || r.rewardTypeId })) };
+                const newQuest = { 
+                    ...rest, 
+                    rewards: q.rewards.map(r => ({ ...r, rewardTypeId: rewardIdMap.get(r.rewardTypeId) || r.rewardTypeId })),
+                    lateSetbacks: q.lateSetbacks.map(r => ({ ...r, rewardTypeId: rewardIdMap.get(r.rewardTypeId) || r.rewardTypeId })),
+                    incompleteSetbacks: q.incompleteSetbacks.map(r => ({ ...r, rewardTypeId: rewardIdMap.get(r.rewardTypeId) || r.rewardTypeId })),
+                };
                 addQuest(newQuest); importedCount++;
             }
         });
         
+        // Import Game Assets, mapping market and reward IDs
         pack.assets.gameAssets?.forEach(ga => {
             if (selectedIds.includes(ga.id)) {
                 const { id, ...rest } = ga;
-                const newAsset = { ...rest, marketIds: ga.marketIds.map(mid => marketIdMap.get(mid) || mid), cost: ga.cost.map(c => ({...c, rewardTypeId: rewardIdMap.get(c.rewardTypeId) || c.rewardTypeId }))};
+                const newAsset = { 
+                    ...rest, 
+                    marketIds: (ga.marketIds || []).map(mid => marketIdMap.get(mid) || mid), 
+                    cost: (ga.cost || []).map(c => ({...c, rewardTypeId: rewardIdMap.get(c.rewardTypeId) || c.rewardTypeId }))
+                };
                 addGameAsset(newAsset); importedCount++;
             }
         });

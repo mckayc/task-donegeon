@@ -1,4 +1,5 @@
 
+
 import React, { useState, useMemo } from 'react';
 import Card from '../ui/Card';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
@@ -135,7 +136,7 @@ const MarketItemView: React.FC<{ market: Market }> = ({ market }) => {
                                     ) : isOwned ? (
                                         <Button className="text-sm py-1 px-3" disabled>Owned</Button>
                                     ) : (
-                                        <Button className="text-sm py-1 px-3" disabled={!canAfford(asset.cost)} onClick={() => purchaseMarketItem(asset.id, market.id)}>Purchase</Button>
+                                        <Button className="text-sm py-1 px-3" disabled={!canAfford(asset.cost)} onClick={() => purchaseMarketItem(asset.id, market.id, currentUser, asset.cost, asset)}>Purchase</Button>
                                     )}
                                 </div>
                             </div>

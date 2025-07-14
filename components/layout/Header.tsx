@@ -1,8 +1,11 @@
 
+
 import React, { useState, useMemo, useEffect } from 'react';
-import { useAppState, useAppDispatch } from '../../context/AppContext';
-import { Page, Role, AppMode, Guild } from '../../types';
+import { Page, Role, AppMode } from '../../types';
 import Avatar from '../ui/Avatar';
+import { useAuth, useAuthDispatch } from '../../context/AuthContext';
+import { useGameData } from '../../context/GameDataContext';
+import { useSettings, useSettingsDispatch } from '../../context/SettingsContext';
 
 const Clock: React.FC = () => {
     const [time, setTime] = useState(new Date());
@@ -20,8 +23,12 @@ const Clock: React.FC = () => {
 };
 
 const Header: React.FC = () => {
-  const { currentUser, rewardTypes, appMode, guilds, settings } = useAppState();
-  const { setCurrentUser, setIsSwitchingUser, setAppMode, setActivePage, setAppUnlocked } = useAppDispatch();
+  const { currentUser } = useAuth();
+  const { setCurrentUser, setIsSwitchingUser, setAppUnlocked } = useAuthDispatch();
+  const { rewardTypes, guilds } = useGameData();
+  const { appMode, settings } = useSettings();
+  const { setAppMode, setActivePage } = useSettingsDispatch();
+
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
   const [modeDropdownOpen, setModeDropdownOpen] = useState(false);
 
@@ -46,7 +53,6 @@ const Header: React.FC = () => {
   const balances = useMemo(() => {
     if (!currentUser) return [];
 
-    const coreRewardTypes = rewardTypes.filter(rt => rt.isCore);
     let currentPurse: { [key: string]: number } = {};
     let currentExperience: { [key: string]: number } = {};
 
@@ -61,11 +67,11 @@ const Header: React.FC = () => {
         }
     }
     
-    const userBalances = [ ...Object.entries(currentPurse), ...Object.entries(currentExperience) ];
-
-    return coreRewardTypes.map(rt => {
-        const balance = userBalances.find(([id, _]) => id === rt.id);
-        return { ...rt, amount: balance ? balance[1] : 0 }
+    return rewardTypes.map(rt => {
+        const amount = rt.isCore
+          ? (rt.category === 'Currency' ? currentPurse[rt.id] : currentExperience[rt.id]) || 0
+          : 0;
+        return { ...rt, amount };
     }).filter(b => b.amount > 0);
 
   }, [currentUser, rewardTypes, appMode]);

@@ -45,7 +45,7 @@ const FirstRunWizard: React.FC = () => {
     
     const createdUser = addUser(newUser);
     // After creating the admin, populate the world with sample data
-    populateInitialGameData();
+    populateInitialGameData(createdUser);
     setCurrentUser(createdUser);
     // isFirstRun is now derived state, so no need to set it false manually
   };

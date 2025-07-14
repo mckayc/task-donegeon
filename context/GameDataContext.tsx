@@ -1,3 +1,4 @@
+
 import React, { createContext, useState, useContext, ReactNode, useEffect, useMemo, useCallback } from 'react';
 import { User, Quest, RewardTypeDefinition, QuestCompletion, RewardItem, Market, QuestType, PurchaseRequest, Guild, Rank, Trophy, UserTrophy, Notification, TrophyRequirementType, AppMode, AdminAdjustment, AdminAdjustmentType, SystemLog, Blueprint, ImportResolution, IAppData, ShareableAssetType, GameAsset, Theme, QuestCompletionStatus, RewardCategory, PurchaseRequestStatus, QuestAvailability, Role } from '../types';
 import { createMockUsers, INITIAL_REWARD_TYPES, INITIAL_RANKS, INITIAL_TROPHIES, createSampleMarkets, createSampleQuests, createInitialGuilds, INITIAL_SETTINGS, createSampleGameAssets } from '../data/initialData';
@@ -69,6 +70,7 @@ interface GameDataDispatch {
   resetAllPlayerData: () => void;
   deleteAllCustomContent: () => void;
   deleteSelectedAssets: (selection: Record<ShareableAssetType, string[]>) => void;
+  uploadFile: (file: File) => Promise<{ url: string } | null>;
 }
 
 const GameDataStateContext = createContext<GameDataState | undefined>(undefined);
@@ -382,6 +384,79 @@ export const GameDataProvider: React.FC<{ children: ReactNode }> = ({ children }
     addNotification({ type: 'success', message: 'Selected assets have been deleted.' });
   }, [addNotification]);
 
+  const uploadFile = async (file: File): Promise<{ url: string } | null> => {
+    const formData = new FormData();
+    formData.append('file', file);
+    try {
+        const response = await fetch('/api/media/upload', {
+            method: 'POST',
+            body: formData,
+        });
+        if (!response.ok) {
+            const errorResult = await response.json();
+            throw new Error(errorResult.error || 'Upload failed');
+        }
+        return await response.json();
+    } catch (error) {
+        const message = error instanceof Error ? error.message : 'Unknown error';
+        addNotification({ type: 'error', message: `Upload failed: ${message}` });
+        return null;
+    }
+  };
+  
+  const importBlueprint = useCallback((blueprint: Blueprint, resolutions: ImportResolution[]) => {
+    const idMap = new Map<string, string>();
+    const generateId = (prefix: string) => `${prefix}-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
+    
+    resolutions.forEach(res => {
+        if (res.resolution !== 'skip') {
+            idMap.set(res.id, generateId(res.type.slice(0, 2)));
+        }
+    });
+
+    const newAssets: Partial<IAppData> = {
+        quests: [], rewardTypes: [], ranks: [], trophies: [], markets: [],
+    };
+    
+    // Add assets based on resolutions
+    resolutions.forEach(res => {
+        if (res.resolution === 'skip') return;
+
+        const asset = blueprint.assets[res.type]?.find(a => a.id === res.id);
+        if (!asset) return;
+        
+        const newAsset = { ...asset, id: idMap.get(asset.id)! };
+        if (res.resolution === 'rename' && res.newName) {
+            if('title' in newAsset) newAsset.title = res.newName;
+            else newAsset.name = res.newName;
+        }
+        
+        newAssets[res.type]?.push(newAsset as any);
+    });
+
+    // Update dependencies inside imported assets
+    newAssets.quests?.forEach(quest => {
+        quest.rewards = quest.rewards.map(r => ({ ...r, rewardTypeId: idMap.get(r.rewardTypeId) || r.rewardTypeId }));
+        quest.lateSetbacks = quest.lateSetbacks.map(r => ({ ...r, rewardTypeId: idMap.get(r.rewardTypeId) || r.rewardTypeId }));
+        quest.incompleteSetbacks = quest.incompleteSetbacks.map(r => ({ ...r, rewardTypeId: idMap.get(r.rewardTypeId) || r.rewardTypeId }));
+    });
+    newAssets.trophies?.forEach(trophy => {
+        trophy.requirements.forEach(req => {
+            if (req.type === TrophyRequirementType.AchieveRank) {
+                req.value = idMap.get(req.value) || req.value;
+            }
+        });
+    });
+
+    setQuests(prev => [...prev, ...(newAssets.quests || [])]);
+    setRewardTypes(prev => [...prev, ...(newAssets.rewardTypes || [])]);
+    setRanks(prev => [...prev, ...(newAssets.ranks || [])]);
+    setTrophies(prev => [...prev, ...(newAssets.trophies || [])]);
+    setMarkets(prev => [...prev, ...(newAssets.markets || [])]);
+    
+    addNotification({ type: 'success', message: `Successfully imported content from ${blueprint.name}!`});
+  }, [addNotification]);
+
   const stateValue: GameDataState = {
     users, quests, markets, rewardTypes, questCompletions, purchaseRequests, guilds, ranks, trophies, userTrophies, adminAdjustments, gameAssets, systemLogs,
     notifications, activeMarketId, allTags, isDataLoaded
@@ -392,8 +467,8 @@ export const GameDataProvider: React.FC<{ children: ReactNode }> = ({ children }
     completeQuest, approveQuestCompletion, rejectQuestCompletion, claimQuest, releaseQuest, addMarket, updateMarket, deleteMarket,
     purchaseMarketItem, cancelPurchaseRequest, approvePurchaseRequest, rejectPurchaseRequest, addGuild, updateGuild, deleteGuild, setRanks,
     addTrophy, updateTrophy, deleteTrophy, awardTrophy, applyManualAdjustment, addGameAsset, updateGameAsset, deleteGameAsset,
-    addNotification, removeNotification, setActiveMarketId, importBlueprint: () => {}, restoreFromBackup, populateInitialGameData, clearAllHistory, resetAllPlayerData,
-    deleteAllCustomContent, deleteSelectedAssets
+    addNotification, removeNotification, setActiveMarketId, importBlueprint, restoreFromBackup, populateInitialGameData, clearAllHistory, resetAllPlayerData,
+    deleteAllCustomContent, deleteSelectedAssets, uploadFile
   };
 
   return (

@@ -1,10 +1,11 @@
 
+
 import React from 'react';
 import { Quest, QuestCompletion, QuestType, QuestAvailability } from '../../types';
 import { isQuestAvailableForUser } from '../../utils/quests';
 import CompleteQuestDialog from '../quests/CompleteQuestDialog';
 import Button from '../ui/Button';
-import { useAppDispatch } from '../../context/AppContext';
+import { useAppDispatch, useAppState } from '../../context/AppContext';
 
 interface QuestListProps {
     title?: string;
@@ -16,6 +17,7 @@ interface QuestListProps {
 const QuestList: React.FC<QuestListProps> = ({ title, date, quests, questCompletions }) => {
     const [completingQuest, setCompletingQuest] = React.useState<Quest | null>(null);
     const { completeQuest } = useAppDispatch();
+    const { currentUser } = useAppState();
 
     const isQuestScheduledForDay = (quest: Quest, day: Date): boolean => {
         if (quest.type === QuestType.Venture) {
@@ -42,10 +44,11 @@ const QuestList: React.FC<QuestListProps> = ({ title, date, quests, questComplet
     }
 
     const handleComplete = (quest: Quest) => {
+        if (!currentUser) return;
         if (quest.requiresApproval) {
             setCompletingQuest(quest);
         } else {
-            completeQuest(quest.id, { completionDate: date });
+            completeQuest(quest.id, currentUser.id, quest.rewards, quest.requiresApproval, quest.guildId, { completionDate: date });
         }
     };
     

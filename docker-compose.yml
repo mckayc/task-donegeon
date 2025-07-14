@@ -1,44 +1,58 @@
-# docker-compose.prod.yml
-# Use this file for deploying the pre-built image from Docker Hub.
-# Run with: docker-compose -f docker-compose.prod.yml up -d
+# This is your primary docker-compose file for LOCAL DEVELOPMENT.
+# It builds the app image locally and mounts your source code for live changes.
+# Run with: docker-compose up --build -d
 
 services:
   app:
-    image: mckayc/task-donegeon:latest  # Pulls the specified image from Docker Hub
-    restart: always
+    # Builds the Docker image using the Dockerfile in the current directory.
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: task-donegeon-app-dev
+    restart: unless-stopped
+    # Maps port 3002 on your machine to port 3001 inside the container.
     ports:
       - "3002:3001"
+    # Ensures the database container is healthy before starting the app.
     depends_on:
       db:
         condition: service_healthy
+    # Passes environment variables to the application.
+    # These should be defined in a local .env file.
     environment:
-      # These environment variables must be set on the host machine or in a .env file
       - DATABASE_URL=postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
-      - NODE_ENV=production
+      - NODE_ENV=${NODE_ENV}
       - API_KEY=${API_KEY}
       - STORAGE_PROVIDER=${STORAGE_PROVIDER}
-      # If using Supabase for storage in production, uncomment and set these:
-      # - SUPABASE_URL=${SUPABASE_URL}
-      # - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
+    # Defines the network for communication between containers.
     networks:
       - donegeon_network
+    # Sets up volumes for data persistence and live-reloading.
     volumes:
-      # IMPORTANT: We DO NOT mount the source code here.
-      # We only mount the 'uploads' directory to persist user-uploaded files.
+      # Mounts the current directory into the container for live code changes.
+      - .:/app
+      # Prevents the local node_modules from overwriting the container's.
+      - /app/node_modules
+      # Persists uploaded files from the container's /app/uploads to a local ./uploads folder.
       - ./uploads:/app/uploads
 
   db:
+    # Uses the official PostgreSQL 15 image.
     image: postgres:15-alpine
-    restart: always
+    container_name: task-donegeon-db-dev
+    restart: unless-stopped
+    # Maps port 5433 on your machine to port 5432 in the container to avoid conflicts.
     ports:
-      - "5433:5432" # Maps the host port 5433 to the container's port 5432
+      - "5433:5432"
+    # Configures the database using variables from your .env file.
     environment:
-      # These environment variables must be set on the host machine or in a .env file
       - POSTGRES_DB=${POSTGRES_DB}
       - POSTGRES_USER=${POSTGRES_USER}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+    # Persists the database data in a named volume.
     volumes:
-      - postgres_data:/var/lib/postgresql/data # Persists database data
+      - postgres_data:/var/lib/postgresql/data
+    # Checks if the database is ready to accept connections.
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
       interval: 10s
@@ -47,9 +61,11 @@ services:
     networks:
       - donegeon_network
 
+# Defines the named volume for database persistence.
 volumes:
-  postgres_data: # Defines a named volume for the database
+  postgres_data:
 
+# Defines the custom bridge network for the services.
 networks:
   donegeon_network:
     driver: bridge

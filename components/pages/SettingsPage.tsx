@@ -1,6 +1,7 @@
 
 
 
+
 import React, { useState, ChangeEvent, useRef, useEffect } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { Role, AppSettings, Terminology, Blueprint, ImportResolution, IAppData, Theme } from '../../types';
@@ -189,6 +190,22 @@ const SettingsPage: React.FC = () => {
                                 </div>
                             )}
                         </div>
+                    </div>
+                </div>
+            </CollapsibleSection>
+
+            <CollapsibleSection title="AI Features">
+                <div className="space-y-6">
+                    <div className="flex items-start">
+                        <ToggleSwitch
+                            enabled={formState.enableAiFeatures}
+                            setEnabled={(val) => handleToggleChange('enableAiFeatures', val)}
+                            label="Enable AI-Powered Features"
+                        />
+                        <p className="text-sm ml-6" style={{ color: 'hsl(var(--color-text-secondary))' }}>
+                            Allow the use of Gemini AI to power features like the Quest Idea Generator.
+                            This requires a valid Gemini API key to be configured by the server administrator.
+                        </p>
                     </div>
                 </div>
             </CollapsibleSection>

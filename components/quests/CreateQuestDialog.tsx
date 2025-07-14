@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { Quest, QuestType, RewardItem, RewardCategory, QuestAvailability } from '../../types';
@@ -11,6 +10,7 @@ import TagInput from '../ui/TagInput';
 
 interface QuestDialogProps {
   questToEdit?: Quest;
+  initialData?: { title: string, description: string };
   onClose: () => void;
 }
 
@@ -19,7 +19,7 @@ const DUTY_AVAILABILITIES = [QuestAvailability.Daily, QuestAvailability.Weekly, 
 const VENTURE_AVAILABILITIES = [QuestAvailability.Frequency, QuestAvailability.Unlimited];
 
 
-const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, onClose }) => {
+const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialData, onClose }) => {
   const { users, guilds, rewardTypes, allTags, settings } = useAppState();
   const { addQuest, updateQuest } = useAppDispatch();
 
@@ -52,8 +52,8 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, onClose })
       }
       // New quest
       return {
-        title: '',
-        description: '',
+        title: initialData?.title || '',
+        description: initialData?.description || '',
         type: QuestType.Duty,
         icon: '📝',
         rewards: [] as RewardItem[],

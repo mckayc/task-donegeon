@@ -1,4 +1,5 @@
 
+
 import { User, Role, RewardTypeDefinition, RewardCategory, Rank, Trophy, TrophyRequirementType, QuestType, Market, Quest, QuestAvailability, Guild, AppSettings, Theme, GameAsset } from '../types';
 
 export const createMockUsers = (): User[] => {
@@ -114,6 +115,7 @@ export const INITIAL_SETTINGS: AppSettings = {
     moderator: 'Gatekeeper',
     user: 'Explorer',
   },
+  enableAiFeatures: false,
 };
 
 

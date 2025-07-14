@@ -5,23 +5,29 @@ import Button from '../ui/Button';
 import Card from '../ui/Card';
 import CreateQuestDialog from '../quests/CreateQuestDialog';
 import ConfirmDialog from '../ui/ConfirmDialog';
+import QuestIdeaGenerator from '../quests/QuestIdeaGenerator';
+import { SparklesIcon } from '../ui/Icons';
 
 const ManageQuestsPage: React.FC = () => {
-    const { quests } = useAppState();
+    const { quests, settings } = useAppState();
     const { deleteQuest } = useAppDispatch();
     const [editingQuest, setEditingQuest] = useState<Quest | null>(null);
-    const [isDialogOpen, setIsDialogOpen] = useState(false);
+    const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+    const [isGeneratorOpen, setIsGeneratorOpen] = useState(false);
     const [isConfirmOpen, setIsConfirmOpen] = useState(false);
     const [deletingId, setDeletingId] = useState<string | null>(null);
+    const [initialCreateData, setInitialCreateData] = useState<{ title: string; description: string } | null>(null);
 
     const handleEdit = (quest: Quest) => {
+        setInitialCreateData(null);
         setEditingQuest(quest);
-        setIsDialogOpen(true);
+        setIsCreateDialogOpen(true);
     };
 
     const handleCreate = () => {
+        setInitialCreateData(null);
         setEditingQuest(null);
-        setIsDialogOpen(true);
+        setIsCreateDialogOpen(true);
     };
 
     const handleDeleteRequest = (questId: string) => {
@@ -39,14 +45,31 @@ const ManageQuestsPage: React.FC = () => {
     
     const handleCloseDialog = () => {
         setEditingQuest(null);
-        setIsDialogOpen(false);
+        setIsCreateDialogOpen(false);
+        setInitialCreateData(null);
     }
+    
+    const handleUseIdea = (idea: { title: string; description: string }) => {
+        setIsGeneratorOpen(false);
+        setInitialCreateData(idea);
+        setEditingQuest(null);
+        setIsCreateDialogOpen(true);
+    };
+
 
     return (
         <div>
             <div className="flex justify-between items-center mb-8">
                 <h1 className="text-4xl font-medieval text-stone-100">Manage Quests</h1>
-                <Button onClick={handleCreate}>Create New Quest</Button>
+                 <div className="flex gap-2">
+                    {settings.enableAiFeatures && (
+                        <Button onClick={() => setIsGeneratorOpen(true)} variant="secondary">
+                            <SparklesIcon className="w-5 h-5 mr-2" />
+                            Generate Ideas
+                        </Button>
+                    )}
+                    <Button onClick={handleCreate}>Create New Quest</Button>
+                </div>
             </div>
 
             <Card title="All Created Quests">
@@ -92,7 +115,9 @@ const ManageQuestsPage: React.FC = () => {
                 {quests.length === 0 && <p className="text-stone-400 p-4 text-center">No quests have been created yet.</p>}
             </Card>
             
-            {isDialogOpen && <CreateQuestDialog questToEdit={editingQuest || undefined} onClose={handleCloseDialog} />}
+            {isCreateDialogOpen && <CreateQuestDialog questToEdit={editingQuest || undefined} initialData={initialCreateData || undefined} onClose={handleCloseDialog} />}
+            
+            {isGeneratorOpen && <QuestIdeaGenerator onUseIdea={handleUseIdea} onClose={() => setIsGeneratorOpen(false)} />}
 
             <ConfirmDialog
                 isOpen={isConfirmOpen}

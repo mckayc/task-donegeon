@@ -13,7 +13,7 @@ const DataManagementPage: React.FC = () => {
 
     const managementPages: { id: ManagementPage, label: string, icon: React.FC }[] = [
         { id: 'objects', label: 'Object Manager', icon: Icons.ObjectManagerIcon },
-        { id: 'assets', label: 'Asset Manager', icon: Icons.AssetManagerIcon },
+        { id: 'assets', label: 'Asset Manager', icon: Icons.ItemManagerIcon },
         { id: 'backup', label: 'Backup & Import', icon: Icons.DatabaseIcon },
         { id: 'library', label: 'Asset Library', icon: Icons.SparklesIcon },
     ];

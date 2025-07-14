@@ -1,8 +1,8 @@
 
 # Task Donegeon
 
-**Version:** 0.0.38
-**Last Updated:** 2023-11-01T10:00:00Z
+**Version:** 0.0.41
+**Last Updated:** 2024-05-21T18:00:00Z
 
 ---
 
@@ -17,13 +17,14 @@ Task Donegeon is a gamified task and chore management application designed for f
 
 ## ✨ Features
 
--   **Session-Based Master Lock:** The application is locked upon first visit and requires an admin password to unlock for the session, providing a strong security layer before any user profiles are accessible.
--   **Static Asset Library:** A large, built-in library of pre-made quests, markets, items, and trophies to quickly populate a new game world.
--   **Hybrid File Storage:** Supports local file storage for Docker development and Supabase cloud storage for production deployments.
+-   **AI-Powered Content Creation:** Includes an "AI Studio" for generating quests, items, and trophies, plus AI image generation for item icons.
+-   **Advanced Calendar:** Features Month, Week, and Day views for better planning and task management.
+-   **Session-Based Master Lock:** The application is locked upon first visit and requires an admin password to unlock for the session, providing a strong security layer.
+-   **Static Asset Library:** A large, built-in library of pre-made quests, markets, items, and trophies with selective import.
 -   **Gamified Task Management:** Create recurring "Duties" and one-time "Ventures" with customizable rewards and penalties.
 -   **Character Progression:** Users earn Experience Points (XP) to gain Ranks, from Novice to Grandmaster.
 -   **Virtual Economy:** Earn multiple types of currency (e.g., Gold, Gems, Crystals) to spend in a customizable Marketplace.
--   **Avatar Customization:** Users can unlock and equip different cosmetic items using uploaded images.
+-   **Avatar Customization:** Users can unlock and equip different cosmetic items using uploaded or AI-generated images.
 -   **Guild System:** Create groups for collaborative tasks. Guilds have their own separate economy and quests, perfect for managing family chores.
 -   **Trophy & Achievement System:** Unlockable trophies for completing milestones, which can be awarded automatically or manually.
 -   **Theming Engine:** Unlock and apply various visual themes to completely change the look and feel of the application.

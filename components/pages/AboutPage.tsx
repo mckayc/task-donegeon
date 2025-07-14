@@ -127,6 +127,10 @@ const AboutPage: React.FC = () => {
                         <p><strong>Last Updated:</strong> {new Date(metadata.lastChangeDate).toLocaleString()}</p>
                     )}
                 </div>
+                 <div className="pt-4 border-t border-stone-700/60 text-sm">
+                    <h3 className="text-lg font-semibold text-stone-100 mb-2">Latest Changes</h3>
+                    <p>{metadata.lastChange}</p>
+                </div>
 
                 <div className="pt-4 border-t border-stone-700/60">
                     <h3 className="text-lg font-semibold text-stone-100 mb-2">Contribute or Report Issues</h3>

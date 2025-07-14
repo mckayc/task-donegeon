@@ -30,6 +30,8 @@ import ThemesPage from '../pages/ThemesPage';
 import DataManagementPage from '../pages/DataManagementPage';
 import AboutPage from '../pages/AboutPage';
 import CollectionPage from '../pages/CollectionPage';
+import ManageItemsPage from '../pages/ManageItemsPage';
+import AiStudioPage from '../pages/AiStudioPage';
 
 const MainLayout: React.FC = () => {
   const { activePage } = useAppState();
@@ -51,10 +53,12 @@ const MainLayout: React.FC = () => {
       case 'Manage Users': return <UserManagementPage />;
       case 'Rewards': return <RewardsPage />;
       case 'Manage Quests': return <ManageQuestsPage />;
+      case 'Manage Items': return <ManageItemsPage />;
       case 'Manage Markets': return <ManageMarketsPage />;
       case 'Manage Guilds': return <ManageGuildsPage />;
       case 'Manage Ranks': return <ManageRanksPage />;
       case 'Manage Trophies': return <ManageTrophiesPage />;
+      case 'AI Studio': return <AiStudioPage />;
       case 'Approvals': return <ApprovalsPage />;
       case 'Settings': return <SettingsPage />;
       case 'Data Management': return <DataManagementPage />;

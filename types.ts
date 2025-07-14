@@ -1,5 +1,6 @@
 
 
+
 export enum Role {
   DonegeonMaster = 'Donegeon Master',
   Gatekeeper = 'Gatekeeper',
@@ -107,7 +108,7 @@ export interface QuestCompletion {
   id: string;
   questId: string;
   userId: string;
-  completedAt: string;
+  completedAt: string; // ISO 8601 format string
   status: QuestCompletionStatus;
   note?: string;
   guildId?: string;
@@ -292,7 +293,7 @@ export interface AppSettings {
   enableAiFeatures: boolean;
 }
 
-export type Page = 'Dashboard' | 'Avatar' | 'Quests' | 'Marketplace' | 'Chronicles' | 'Guild' | 'Calendar' | 'Progress' | 'Trophies' | 'Ranks' | 'Manage Users' | 'Rewards' | 'Manage Quests' | 'Approvals' | 'Manage Markets' | 'Manage Guilds' | 'Settings' | 'Profile' | 'About' | 'Help' | 'Manage Ranks' | 'Manage Trophies' | 'Themes' | 'Data Management' | 'Collection';
+export type Page = 'Dashboard' | 'Avatar' | 'Quests' | 'Marketplace' | 'Chronicles' | 'Guild' | 'Calendar' | 'Progress' | 'Trophies' | 'Ranks' | 'Manage Users' | 'Rewards' | 'Manage Quests' | 'Manage Items' | 'Approvals' | 'Manage Markets' | 'Manage Guilds' | 'Settings' | 'Profile' | 'About' | 'Help' | 'Manage Ranks' | 'Manage Trophies' | 'Themes' | 'Data Management' | 'Collection' | 'AI Studio';
 
 export type ShareableAssetType = 'quests' | 'rewardTypes' | 'ranks' | 'trophies' | 'markets';
 
@@ -311,6 +312,15 @@ export interface Blueprint {
   version: 1;
   exportedAt: string;
   assets: BlueprintAssets;
+}
+
+export interface ImportResolution {
+  type: ShareableAssetType;
+  id: string; // Original ID from blueprint
+  name: string;
+  status: 'new' | 'conflict';
+  resolution: 'skip' | 'rename' | 'keep';
+  newName?: string;
 }
 
 export interface IAppData {

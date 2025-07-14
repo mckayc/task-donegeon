@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { Quest } from '../../types';
@@ -60,19 +61,19 @@ const ManageQuestsPage: React.FC = () => {
     return (
         <div>
             <div className="flex justify-between items-center mb-8">
-                <h1 className="text-4xl font-medieval text-stone-100">Manage Quests</h1>
+                <h1 className="text-4xl font-medieval text-stone-100">Manage {settings.terminology.tasks}</h1>
                  <div className="flex gap-2">
                     {settings.enableAiFeatures && (
                         <Button onClick={() => setIsGeneratorOpen(true)} variant="secondary">
                             <SparklesIcon className="w-5 h-5 mr-2" />
-                            Generate Ideas
+                            Create with AI
                         </Button>
                     )}
-                    <Button onClick={handleCreate}>Create New Quest</Button>
+                    <Button onClick={handleCreate}>Create New {settings.terminology.task}</Button>
                 </div>
             </div>
 
-            <Card title="All Created Quests">
+            <Card title={`All Created ${settings.terminology.tasks}`}>
                  <div className="overflow-x-auto">
                     <table className="w-full text-left">
                         <thead className="border-b border-stone-700/60">
@@ -112,7 +113,7 @@ const ManageQuestsPage: React.FC = () => {
                         </tbody>
                     </table>
                 </div>
-                {quests.length === 0 && <p className="text-stone-400 p-4 text-center">No quests have been created yet.</p>}
+                {quests.length === 0 && <p className="text-stone-400 p-4 text-center">No {settings.terminology.tasks.toLowerCase()} have been created yet.</p>}
             </Card>
             
             {isCreateDialogOpen && <CreateQuestDialog questToEdit={editingQuest || undefined} initialData={initialCreateData || undefined} onClose={handleCloseDialog} />}
@@ -123,8 +124,8 @@ const ManageQuestsPage: React.FC = () => {
                 isOpen={isConfirmOpen}
                 onClose={() => setIsConfirmOpen(false)}
                 onConfirm={handleConfirmDelete}
-                title="Delete Quest"
-                message="Are you sure you want to delete this quest? This action is permanent and cannot be undone."
+                title={`Delete ${settings.terminology.task}`}
+                message={`Are you sure you want to delete this ${settings.terminology.task.toLowerCase()}? This action is permanent and cannot be undone.`}
             />
         </div>
     );

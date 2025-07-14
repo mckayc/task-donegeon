@@ -117,11 +117,13 @@ const Sidebar: React.FC = () => {
     { name: 'Approvals', Icon: Icons.ApprovalsIcon, role: Role.Gatekeeper },
     { name: 'Manage Users', Icon: Icons.ManageUsersIcon, role: Role.DonegeonMaster },
     { name: 'Manage Quests', Icon: Icons.ManageQuestsIcon, role: Role.DonegeonMaster, termKey: 'tasks' },
+    { name: 'Manage Items', Icon: Icons.ItemManagerIcon, role: Role.DonegeonMaster },
     { name: 'Manage Markets', Icon: Icons.ManageMarketsIcon, role: Role.DonegeonMaster, termKey: 'shoppingCenter' },
     { name: 'Manage Guilds', Icon: Icons.ManageGuildsIcon, role: Role.DonegeonMaster, termKey: 'groups' },
     { name: 'Rewards', Icon: Icons.RewardsIcon, role: Role.DonegeonMaster, termKey: 'points' },
     { name: 'Manage Ranks', Icon: Icons.ManageRanksIcon, role: Role.DonegeonMaster, termKey: 'levels' },
     { name: 'Manage Trophies', Icon: Icons.ManageTrophiesIcon, role: Role.DonegeonMaster, termKey: 'awards' },
+    { name: 'AI Studio', Icon: Icons.SparklesIcon, role: Role.DonegeonMaster },
     { name: 'Data Management', Icon: Icons.DatabaseIcon, role: Role.DonegeonMaster },
     { name: 'Settings', Icon: Icons.SettingsIcon, role: Role.DonegeonMaster },
   ];

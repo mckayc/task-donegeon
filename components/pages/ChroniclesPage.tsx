@@ -1,9 +1,10 @@
 
+
+
 import React, { useMemo, useState } from 'react';
 import Card from '../ui/Card';
 import { useAppState } from '../../context/AppContext';
 import { QuestCompletionStatus, Role, PurchaseRequestStatus, AdminAdjustmentType } from '../../types';
-import { fromYMD } from '../../utils/quests';
 
 const ChroniclesPage: React.FC = () => {
   const { questCompletions, purchaseRequests, users, quests, gameAssets, currentUser, userTrophies, trophies, appMode, adminAdjustments, rewardTypes, systemLogs, settings } = useAppState();
@@ -66,7 +67,7 @@ const ChroniclesPage: React.FC = () => {
       
       return {
         id: log.id,
-        date: new Date(log.timestamp).toISOString().split('T')[0],
+        date: log.timestamp,
         type: 'System',
         // System logs apply to all assigned users
         userId: log.userIds.includes(currentUser.id) ? currentUser.id : 'system', 
@@ -119,11 +120,16 @@ const ChroniclesPage: React.FC = () => {
   const formatTimestamp = (dateString: string): string => {
     const date = new Date(dateString);
     if (isNaN(date.getTime())) {
-      // Handle cases where the date string might be just 'YYYY-MM-DD'
-      const isoDate = fromYMD(dateString);
-      return isoDate.toLocaleDateString('default', { year: 'numeric', month: 'long', day: 'numeric' });
+      // Fallback for YYYY-MM-DD format if it still exists
+      return dateString;
     }
-    return date.toLocaleDateString('default', { year: 'numeric', month: 'long', day: 'numeric' }) + ' at ' + date.toLocaleTimeString('default', { hour: '2-digit', minute: '2-digit' });
+    return date.toLocaleString('default', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
   };
 
 

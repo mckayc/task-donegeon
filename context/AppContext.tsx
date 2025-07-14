@@ -1,5 +1,6 @@
 
 
+
 import React, { createContext, useState, useContext, ReactNode, useEffect, useMemo, useCallback } from 'react';
 import { User, Quest, RewardTypeDefinition, RewardCategory, QuestAvailability, Role, QuestCompletion, QuestCompletionStatus, RewardItem, Market, QuestType, PurchaseRequest, PurchaseRequestStatus, Guild, Rank, Trophy, UserTrophy, Notification, TrophyRequirement, TrophyRequirementType, AppMode, Page, AdminAdjustment, AdminAdjustmentType, SystemLog, AppSettings, Blueprint, ImportResolution, IAppData, Theme, ShareableAssetType, GameAsset } from '../types';
 import { createMockUsers, INITIAL_REWARD_TYPES, INITIAL_RANKS, INITIAL_TROPHIES, createSampleMarkets, createSampleQuests, createInitialGuilds, INITIAL_SETTINGS, createSampleGameAssets } from '../data/initialData';
@@ -79,6 +80,7 @@ interface AppDispatch {
   resetAllPlayerData: () => void;
   deleteAllCustomContent: () => void;
   deleteSelectedAssets: (selection: Record<ShareableAssetType, string[]>) => void;
+  uploadFile: (file: File) => Promise<{ url: string; } | null>;
 }
 
 const AppDispatchContext = createContext<AppDispatch | undefined>(undefined);
@@ -463,7 +465,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
       const newCompletion: QuestCompletion = {
           id: `comp-${Date.now()}`, questId, userId: currentUser.id,
-          completedAt: toYMD(options?.completionDate || new Date()),
+          completedAt: (options?.completionDate || new Date()).toISOString(),
           status: quest.requiresApproval ? QuestCompletionStatus.Pending : QuestCompletionStatus.Approved,
           guildId: quest.guildId, note: options?.note,
       };
@@ -811,8 +813,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
                                 const usersToPenalize = assignedUsers.filter(userId => {
                                     const userCompletions = prevData.questCompletions.filter(c => c.questId === quest.id && c.userId === userId);
                                     if (userCompletions.length === 0) return true;
-                                    const lastCompletionDate = userCompletions.sort((a,b) => fromYMD(b.completedAt).getTime() - fromYMD(a.completedAt).getTime())[0]?.completedAt;
-                                    return lastCompletionDate ? fromYMD(lastCompletionDate) < deadline : true;
+                                    const lastCompletionDate = userCompletions.sort((a,b) => new Date(b.completedAt).getTime() - new Date(a.completedAt).getTime())[0]?.completedAt;
+                                    return lastCompletionDate ? new Date(lastCompletionDate) < deadline : true;
                                 });
                                 if (usersToPenalize.length > 0) {
                                     newSystemLogs.push({ id: logKey, timestamp: now.toISOString(), type: logType, questId: quest.id, userIds: usersToPenalize, setbacksApplied: setbacks });
@@ -836,6 +838,28 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     return () => clearInterval(intervalId);
   }, [appData.settings, appData.quests, appData.users, appData.systemLogs, addNotification]);
 
+  const uploadFile = useCallback(async (file: File): Promise<{url: string} | null> => {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      try {
+          const response = await fetch('/api/media/upload', {
+              method: 'POST',
+              body: formData,
+          });
+
+          if (!response.ok) {
+              const errorResult = await response.json();
+              throw new Error(errorResult.error || 'Upload failed');
+          }
+          return await response.json();
+      } catch (error) {
+          const message = error instanceof Error ? error.message : 'Unknown error';
+          addNotification({ type: 'error', message: `Upload failed: ${message}` });
+          return null;
+      }
+  }, [addNotification]);
+
   const dispatchValue: AppDispatch = {
     setAppUnlocked, setAppMode, addUser, updateUser, deleteUser, addQuest, updateQuest, deleteQuest, dismissQuest,
     setCurrentUser, setTargetedUserForLogin, setIsSwitchingUser, addRewardType, updateRewardType, deleteRewardType,
@@ -844,7 +868,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     addGuild, updateGuild, deleteGuild, setRanks, addTrophy, updateTrophy, deleteTrophy, awardTrophy, applyManualAdjustment, 
     addGameAsset, updateGameAsset, deleteGameAsset, addNotification, removeNotification, setActivePage, setActiveMarketId,
     updateSettings, importBlueprint, restoreFromBackup, populateInitialGameData, clearAllHistory, resetAllPlayerData,
-    deleteAllCustomContent, deleteSelectedAssets
+    deleteAllCustomContent, deleteSelectedAssets, uploadFile
   };
 
   return (

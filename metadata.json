@@ -1,9 +1,9 @@
 
 {
-  "name": "Task Donegeon",
-  "version": "0.0.38",
-  "lastChange": "Replaced AI Asset Library with a large static library. Added header clock, fixed UI bugs, and improved navigation.",
-  "lastChangeDate": "2023-11-01T10:00:00Z",
+  "name": "Task Donegeon - 0.0.41",
+  "version": "0.0.41",
+  "lastChange": "Major feature update including Calendar views, AI Studio for asset creation, AI image generation, and numerous UI/UX improvements.",
+  "lastChangeDate": "2024-05-21T18:00:00Z",
   "description": "A gamified task and chore tracker for families and groups. Complete quests, earn currency and experience, and level up your character in a fun, medieval-themed adventure.",
   "requestFramePermissions": [],
   "prompt": ""

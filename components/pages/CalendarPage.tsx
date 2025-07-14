@@ -12,7 +12,7 @@ type CalendarView = 'month' | 'week' | 'day';
 
 const CalendarPage: React.FC = () => {
     const { quests, currentUser, questCompletions, appMode } = useAppState();
-    const [view, setView] = useState<CalendarView>('month');
+    const [view, setView] = useState<CalendarView>('day');
     const [currentDate, setCurrentDate] = useState(new Date());
     
     if (!currentUser) return null;
@@ -69,9 +69,9 @@ const CalendarPage: React.FC = () => {
                         <button onClick={() => changeDate(1)} className="p-2 rounded-full hover:bg-stone-700 transition">&gt;</button>
                     </div>
                      <div className="flex space-x-2 p-1 bg-stone-900/50 rounded-lg">
-                        <ViewButton type="month">Month</ViewButton>
-                        <ViewButton type="week">Week</ViewButton>
                         <ViewButton type="day">Day</ViewButton>
+                        <ViewButton type="week">Week</ViewButton>
+                        <ViewButton type="month">Month</ViewButton>
                     </div>
                 </div>
 

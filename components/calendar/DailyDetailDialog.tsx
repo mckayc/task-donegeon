@@ -1,5 +1,4 @@
 
-
 import React, { useMemo } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { Quest, QuestCompletion, QuestType } from '../../types';
@@ -40,52 +39,59 @@ const QuestListItem: React.FC<{
                 return <Button variant="primary" className="text-sm py-1 px-3" onClick={() => onAction(quest, 'complete')} disabled={disabled || userStatus.isActionDisabled}>{userStatus.buttonText}</Button>;
         }
     };
+    
+    const statusConfig = {
+        todo: {
+            iconContainerClass: quest.type === QuestType.Duty ? 'bg-sky-900/50' : 'bg-amber-900/50',
+            iconJsx: <span className="font-bold text-xl">{quest.icon || '📝'}</span>,
+            textClass: 'font-semibold text-stone-200',
+            isStrikethrough: false,
+            containerOpacity: '',
+            buttonJsx: renderButtons()
+        },
+        pending: {
+            iconContainerClass: 'bg-yellow-900/50 text-yellow-400',
+            iconJsx: <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.414-1.414L11 7.586V6z" clipRule="evenodd" /></svg>,
+            textClass: 'font-semibold text-stone-300',
+            isStrikethrough: false,
+            containerOpacity: 'opacity-80',
+            buttonJsx: <Button variant="secondary" className="text-sm py-1 px-3" disabled>Pending</Button>
+        },
+        completed: {
+            iconContainerClass: 'bg-green-900/50 text-green-400',
+            iconJsx: <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" /></svg>,
+            textClass: 'font-semibold text-stone-300',
+            isStrikethrough: true,
+            containerOpacity: 'opacity-60',
+            buttonJsx: <Button variant="secondary" className="text-sm py-1 px-3" disabled>Completed</Button>
+        }
+    };
 
-    if (status === 'todo') {
-        return (
-            <div className="bg-stone-900/50 p-3 rounded-lg flex items-center justify-between gap-3">
-                <div className="flex items-center gap-3 overflow-hidden">
-                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${quest.type === QuestType.Duty ? 'bg-sky-900/50' : 'bg-amber-900/50'}`}>
-                        <span className="font-bold text-xl">{quest.icon || '📝'}</span>
-                    </div>
-                    <p className="font-semibold text-stone-200 truncate" title={quest.title}>{quest.title}</p>
+    const currentConfig = statusConfig[status];
+    if (!currentConfig) return null;
+
+    const containerClasses = [
+        "bg-stone-900/50 p-3 rounded-lg flex items-center justify-between gap-3",
+        quest.isOptional ? "border-2 border-dashed border-stone-700" : "",
+        currentConfig.containerOpacity
+    ].join(" ");
+
+    return (
+        <div className={containerClasses}>
+            <div className="flex items-center gap-3 overflow-hidden">
+                <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${currentConfig.iconContainerClass}`}>
+                    {currentConfig.iconJsx}
                 </div>
-                <div className="flex items-center gap-2 flex-shrink-0">
-                    {renderButtons()}
+                <div className="flex-grow overflow-hidden">
+                    <p className={`${currentConfig.textClass} truncate ${currentConfig.isStrikethrough ? 'line-through' : ''}`} title={quest.title}>{quest.title}</p>
+                    {quest.isOptional && <p className="text-xs text-stone-400">Optional</p>}
                 </div>
             </div>
-        );
-    }
-
-    if (status === 'pending') {
-        return (
-            <div className="bg-stone-900/50 p-3 rounded-lg flex items-center justify-between gap-3 opacity-80">
-                <div className="flex items-center gap-3 overflow-hidden">
-                    <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 bg-yellow-900/50 text-yellow-400">
-                         <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.414-1.414L11 7.586V6z" clipRule="evenodd" /></svg>
-                    </div>
-                    <p className="font-semibold text-stone-300 truncate" title={quest.title}>{quest.title}</p>
-                </div>
-                <Button variant="secondary" className="text-sm py-1 px-3" disabled>Pending</Button>
+            <div className="flex items-center gap-2 flex-shrink-0">
+                {currentConfig.buttonJsx}
             </div>
-        );
-    }
-
-    if (status === 'completed') {
-        return (
-            <div className="bg-stone-900/50 p-3 rounded-lg flex items-center justify-between gap-3 opacity-60">
-                <div className="flex items-center gap-3 overflow-hidden">
-                    <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 bg-green-900/50 text-green-400">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" /></svg>
-                    </div>
-                    <p className="font-semibold text-stone-300 line-through truncate" title={quest.title}>{quest.title}</p>
-                </div>
-                <Button variant="secondary" className="text-sm py-1 px-3" disabled>Completed</Button>
-            </div>
-        );
-    }
-
-    return null;
+        </div>
+    );
 };
 
 

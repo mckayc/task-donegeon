@@ -282,7 +282,10 @@ const Dashboard: React.FC = () => {
                                             <div className="flex items-center gap-3 overflow-hidden">
                                                 {quest.icon && <span className="text-2xl">{quest.icon}</span>}
                                                 <div className="flex-grow overflow-hidden">
-                                                    <p className="font-semibold text-stone-100 truncate" title={quest.title}>{quest.title}</p>
+                                                    <p className="font-semibold text-stone-100 truncate flex items-center gap-2" title={quest.title}>
+                                                        <span>{quest.title}</span>
+                                                        {quest.isOptional && <span className="font-normal text-xs px-2 py-0.5 rounded-full bg-stone-700 text-stone-400 border border-stone-600">Optional</span>}
+                                                    </p>
                                                     {dueDateString && <p className="text-xs text-stone-400">{dueDateString}</p>}
                                                 </div>
                                             </div>

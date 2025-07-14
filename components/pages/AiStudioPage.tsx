@@ -112,8 +112,12 @@ const AiStudioPage: React.FC = () => {
         const isImageRequest = assetType.startsWith('Images');
         const model = isImageRequest ? 'imagen-3.0-generate-002' : 'gemini-2.5-flash';
         
-        let fullPrompt: any = `Context: ${context || 'A typical family with children.'}\nRequest: Generate ${quantity} ${assetType} based on the theme: "${prompt}".`;
-        if(isImageRequest) fullPrompt = `Pixel art game icon, square, simple colorful background. Item: ${prompt}`;
+        let fullPrompt: any;
+        if (isImageRequest) {
+            fullPrompt = `Pixel art game icon, square, simple colorful background. Item: ${prompt}`;
+        } else {
+            fullPrompt = `Context: ${context || 'A typical family with children.'}\nRequest: Generate a JSON object with a single key "assets". The value of "assets" should be an array of ${quantity} ${assetType} based on the theme: "${prompt}".`;
+        }
 
         const requestBody: any = { model, prompt: fullPrompt };
 

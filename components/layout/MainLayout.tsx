@@ -1,5 +1,3 @@
-
-
 import React from 'react';
 import Sidebar from './Sidebar';
 import Header from './Header';
@@ -28,12 +26,15 @@ import VacationModeBanner from '../settings/VacationModeBanner';
 import ManageRanksPage from '../pages/ManageRanksPage';
 import ManageTrophiesPage from '../pages/ManageTrophiesPage';
 import ThemesPage from '../pages/ThemesPage';
-import DataManagementPage from '../pages/DataManagementPage';
 import AboutPage from '../pages/AboutPage';
 import CollectionPage from '../pages/CollectionPage';
 import ManageItemsPage from '../pages/ManageItemsPage';
 import AiStudioPage from '../pages/AiStudioPage';
 import LayoutPage from '../pages/LayoutPage';
+import ObjectManagerPage from '../pages/management/ObjectManagerPage';
+import AssetManagerPage from '../pages/management/MediaManagerPage';
+import BackupAndImportPage from '../pages/management/BackupAndImportPage';
+import AssetLibraryPage from '../pages/management/AssetLibraryPage';
 
 const MainLayout: React.FC = () => {
   const { activePage } = useSettings();
@@ -53,7 +54,7 @@ const MainLayout: React.FC = () => {
       case 'Chronicles': return <ChroniclesPage />;
       case 'Guild': return <GuildPage />;
       case 'Manage Users': return <UserManagementPage />;
-      case 'Rewards': return <RewardsPage />;
+      case 'Manage Rewards': return <RewardsPage />;
       case 'Manage Quests': return <ManageQuestsPage />;
       case 'Manage Items': return <ManageItemsPage />;
       case 'Manage Markets': return <ManageMarketsPage />;
@@ -63,11 +64,14 @@ const MainLayout: React.FC = () => {
       case 'AI Studio': return <AiStudioPage />;
       case 'Approvals': return <ApprovalsPage />;
       case 'Settings': return <SettingsPage />;
-      case 'Layout': return <LayoutPage />;
-      case 'Data Management': return <DataManagementPage />;
+      case 'Layout & Appearance': return <LayoutPage />;
+      case 'Object Manager': return <ObjectManagerPage />;
+      case 'Asset Manager': return <AssetManagerPage />;
+      case 'Backup & Import': return <BackupAndImportPage />;
+      case 'Asset Library': return <AssetLibraryPage />;
       case 'Profile': return <ProfilePage />;
       case 'About': return <AboutPage />;
-      case 'Help': return <HelpPage />;
+      case 'Help Guide': return <HelpPage />;
       default: return <Dashboard />;
     }
   };

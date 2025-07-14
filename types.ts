@@ -120,6 +120,7 @@ export interface GameAsset {
   name: string;
   description: string;
   url: string;
+  icon?: string;
   category: string;
   avatarSlot?: string;
   isForSale: boolean;
@@ -276,7 +277,7 @@ export interface Terminology {
   user: string;
 }
 
-export type Page = 'Dashboard' | 'Avatar' | 'Quests' | 'Marketplace' | 'Chronicles' | 'Guild' | 'Calendar' | 'Progress' | 'Trophies' | 'Ranks' | 'Manage Users' | 'Rewards' | 'Manage Quests' | 'Manage Items' | 'Approvals' | 'Manage Markets' | 'Manage Guilds' | 'Settings' | 'Profile' | 'About' | 'Help' | 'Manage Ranks' | 'Manage Trophies' | 'Themes' | 'Data Management' | 'Collection' | 'AI Studio' | 'Layout'
+export type Page = 'Dashboard' | 'Avatar' | 'Quests' | 'Marketplace' | 'Chronicles' | 'Guild' | 'Calendar' | 'Progress' | 'Trophies' | 'Ranks' | 'Manage Users' | 'Manage Rewards' | 'Manage Quests' | 'Manage Items' | 'Approvals' | 'Manage Markets' | 'Manage Guilds' | 'Settings' | 'Profile' | 'About' | 'Help Guide' | 'Manage Ranks' | 'Manage Trophies' | 'Themes' | 'Data Management' | 'Collection' | 'AI Studio' | 'Layout & Appearance'
 | 'Object Manager' | 'Asset Manager' | 'Backup & Import' | 'Asset Library'
 ;
 
@@ -369,7 +370,7 @@ export interface IAppData {
 
 export interface LibraryPack {
     id: string;
-    type: 'Quests' | 'Markets & Items' | 'Trophies' | 'Rewards';
+    type: 'Quests' | 'Markets' | 'Items' | 'Trophies' | 'Rewards';
     title: string;
     description: string;
     color?: string;

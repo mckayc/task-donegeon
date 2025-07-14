@@ -134,11 +134,11 @@ const QuestItem: React.FC<{ quest: Quest; onCompleteWithNote: (quest: Quest) => 
     };
 
     const isDuty = quest.type === QuestType.Duty;
-    
     let baseCardClass = isDuty ? 'bg-sky-900/30' : 'bg-amber-900/30';
+    const optionalClass = quest.isOptional ? 'border-dashed' : '';
 
     return (
-        <div className={`border-2 rounded-xl shadow-lg flex flex-col h-full transition-colors duration-500 ${baseCardClass} ${borderClass}`}>
+        <div className={`border-2 rounded-xl shadow-lg flex flex-col h-full transition-colors duration-500 ${baseCardClass} ${borderClass} ${optionalClass}`}>
             {/* Header */}
             <div className="p-4 border-b border-white/10 flex items-start gap-4">
                 <div className={`w-12 h-12 rounded-lg flex items-center justify-center flex-shrink-0 text-3xl ${isDuty ? 'bg-sky-900/70' : 'bg-amber-900/70'}`}>

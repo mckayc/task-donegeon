@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { LibraryPack, Quest, GameAsset, Trophy, Market, RewardTypeDefinition } from '../../types';
+import { LibraryPack } from '../../types';
 import Button from '../ui/Button';
 import { useGameDataDispatch } from '../../context/GameDataContext';
 
@@ -8,22 +8,33 @@ interface AssetLibraryImportDialogProps {
   onClose: () => void;
 }
 
-type SelectableAsset = { id: string; name: string; type: keyof LibraryPack['assets'] };
+type SelectableAsset = { id: string; name: string; description: string; icon: string; type: keyof LibraryPack['assets'] };
 
 const AssetLibraryImportDialog: React.FC<AssetLibraryImportDialogProps> = ({ pack, onClose }) => {
     const { addQuest, addGameAsset, addTrophy, addRewardType, addMarket, addNotification } = useGameDataDispatch();
 
     const allAssets = useMemo((): SelectableAsset[] => {
         const assets: SelectableAsset[] = [];
-        pack.assets.quests?.forEach(q => assets.push({ id: q.id, name: q.title, type: 'quests' }));
-        pack.assets.gameAssets?.forEach(ga => assets.push({ id: ga.id, name: ga.name, type: 'gameAssets' }));
-        pack.assets.trophies?.forEach(t => assets.push({ id: t.id, name: t.name, type: 'trophies' }));
-        pack.assets.markets?.forEach(m => assets.push({ id: m.id, name: m.title, type: 'markets' }));
-        pack.assets.rewardTypes?.forEach(rt => assets.push({ id: rt.id, name: rt.name, type: 'rewardTypes' }));
+        pack.assets.quests?.forEach(q => assets.push({ id: q.id, name: q.title, description: q.description, icon: q.icon || '📝', type: 'quests' }));
+        pack.assets.gameAssets?.forEach(ga => assets.push({ id: ga.id, name: ga.name, description: ga.description, icon: ga.icon || '📦', type: 'gameAssets' }));
+        pack.assets.trophies?.forEach(t => assets.push({ id: t.id, name: t.name, description: t.description, icon: t.icon, type: 'trophies' }));
+        pack.assets.markets?.forEach(m => assets.push({ id: m.id, name: m.title, description: m.description, icon: m.icon || '🛒', type: 'markets' }));
+        pack.assets.rewardTypes?.forEach(rt => assets.push({ id: rt.id, name: rt.name, description: rt.description, icon: rt.icon || '💎', type: 'rewardTypes' }));
         return assets;
     }, [pack]);
     
     const [selectedIds, setSelectedIds] = useState<string[]>(allAssets.map(a => a.id));
+
+    const groupedAssets = useMemo(() => {
+        const groups: { [key: string]: SelectableAsset[] } = {};
+        allAssets.forEach(asset => {
+            if (!groups[asset.type]) {
+                groups[asset.type] = [];
+            }
+            groups[asset.type].push(asset);
+        });
+        return groups;
+    }, [allAssets]);
 
     const handleToggle = (id: string) => {
         setSelectedIds(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]);
@@ -98,6 +109,14 @@ const AssetLibraryImportDialog: React.FC<AssetLibraryImportDialogProps> = ({ pac
         onClose();
     };
 
+    const typeTitles: {[key: string]: string} = {
+        quests: "Quests",
+        gameAssets: "Items",
+        markets: "Markets",
+        trophies: "Trophies",
+        rewardTypes: "Reward Types"
+    };
+
     return (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
             <div className="bg-stone-800 border border-stone-700 rounded-xl shadow-2xl max-w-lg w-full max-h-[80vh] flex flex-col">
@@ -112,16 +131,29 @@ const AssetLibraryImportDialog: React.FC<AssetLibraryImportDialogProps> = ({ pac
                             {selectedIds.length === allAssets.length ? 'Deselect All' : 'Select All'}
                         </Button>
                     </div>
-                    {allAssets.map(asset => (
-                        <label key={asset.id} className="flex items-center p-2 rounded-md hover:bg-stone-700/50 cursor-pointer">
-                            <input
-                                type="checkbox"
-                                checked={selectedIds.includes(asset.id)}
-                                onChange={() => handleToggle(asset.id)}
-                                className="h-4 w-4 rounded text-emerald-600 bg-stone-700 border-stone-500 focus:ring-emerald-500"
-                            />
-                            <span className="ml-3 text-stone-300">{asset.name} <span className="text-xs text-stone-500 capitalize">{asset.type}</span></span>
-                        </label>
+                    {Object.entries(groupedAssets).map(([type, assets]) => (
+                        <div key={type}>
+                            <h5 className="font-bold text-lg text-stone-300 capitalize mb-2">{typeTitles[type] || type}</h5>
+                             <div className="space-y-2">
+                                {assets.map(asset => (
+                                    <label key={asset.id} className="flex items-start p-3 rounded-md hover:bg-stone-700/50 cursor-pointer border border-transparent has-[:checked]:bg-stone-700/60 has-[:checked]:border-stone-600/80 transition-colors">
+                                        <input
+                                            type="checkbox"
+                                            checked={selectedIds.includes(asset.id)}
+                                            onChange={() => handleToggle(asset.id)}
+                                            className="h-5 w-5 rounded text-emerald-600 bg-stone-700 border-stone-500 focus:ring-emerald-500 mt-1 flex-shrink-0"
+                                        />
+                                        <div className="ml-3">
+                                            <span className="font-semibold text-stone-200 flex items-center gap-2">
+                                                <span className="text-xl">{asset.icon}</span>
+                                                {asset.name}
+                                            </span>
+                                            <p className="text-sm text-stone-400 mt-1">{asset.description}</p>
+                                        </div>
+                                    </label>
+                                ))}
+                            </div>
+                        </div>
                     ))}
                 </div>
                 <div className="p-4 border-t border-stone-700/60 text-right space-x-4">

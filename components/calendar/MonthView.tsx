@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo } from 'react';
 import { Quest, QuestCompletion, QuestAvailability, QuestType, QuestCompletionStatus } from '../../types';
 import { toYMD } from '../../utils/quests';
@@ -138,7 +139,7 @@ const MonthView: React.FC<MonthViewProps> = ({ currentDate, quests, questComplet
                             {day && <span className="font-bold">{day.getDate()}</span>}
                             <div className="mt-1 space-y-1">
                                 {dailyQuestsToShow.slice(0, 4).map(quest => (
-                                    <div key={quest.id} className={`text-xs px-1.5 py-1 rounded-md truncate flex items-center gap-1.5 ${quest.type === QuestType.Duty ? 'bg-sky-900/50 text-sky-300' : 'bg-amber-900/50 text-amber-300'}`}>
+                                    <div key={quest.id} className={`text-xs px-1.5 py-1 rounded-md truncate flex items-center gap-1.5 ${quest.type === QuestType.Duty ? 'bg-sky-900/50 text-sky-300' : 'bg-amber-900/50 text-amber-300'} ${quest.isOptional ? 'opacity-70' : ''}`}>
                                         {quest.icon && <span className="flex-shrink-0">{quest.icon}</span>}
                                         <span title={quest.title} className="truncate">{quest.title}</span>
                                     </div>

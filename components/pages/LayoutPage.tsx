@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { useSettings } from '../../context/SettingsContext';
 import { useAppDispatch } from '../../context/AppContext';
@@ -92,6 +91,7 @@ const LayoutPage: React.FC = () => {
 
     const renderSidebarEditor = () => {
         const items = formState.sidebars[activeTab];
+        if (!items) return null; // Guard against empty sidebar configs
         return (
             <div className="space-y-2">
                 {items.map((item, index) => (
@@ -167,7 +167,6 @@ const LayoutPage: React.FC = () => {
                  <div className="border-b border-stone-700 mb-6">
                     <nav className="-mb-px flex space-x-6">
                         <button onClick={() => setActiveTab('main')} className={`whitespace-nowrap pb-4 px-1 border-b-2 font-medium text-sm transition-colors ${activeTab === 'main' ? 'border-emerald-500 text-emerald-400' : 'border-transparent text-stone-400 hover:text-stone-200'}`}>Main Sidebar</button>
-                        <button onClick={() => setActiveTab('dataManagement')} className={`whitespace-nowrap pb-4 px-1 border-b-2 font-medium text-sm transition-colors ${activeTab === 'dataManagement' ? 'border-emerald-500 text-emerald-400' : 'border-transparent text-stone-400 hover:text-stone-200'}`}>Data Management Sidebar</button>
                     </nav>
                 </div>
                 <p className="text-stone-400 text-sm mb-4">Drag and drop to reorder links. Use arrows to create nested groups.</p>

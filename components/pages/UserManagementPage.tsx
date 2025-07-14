@@ -1,5 +1,7 @@
+
 import React, { useState } from 'react';
-import { useAppState, useAppDispatch } from '../../context/AppContext';
+import { useAuth, useAuthDispatch } from '../../context/AuthContext';
+import { useSettings } from '../../context/SettingsContext';
 import Button from '../ui/Button';
 import AddUserDialog from '../users/AddUserDialog';
 import { Role, User } from '../../types';
@@ -7,8 +9,9 @@ import EditUserDialog from '../users/EditUserDialog';
 import ManualAdjustmentDialog from '../admin/ManualAdjustmentDialog';
 
 const UserManagementPage: React.FC = () => {
-    const { users, settings } = useAppState();
-    const { deleteUser } = useAppDispatch();
+    const { users } = useAuth();
+    const { settings } = useSettings();
+    const { deleteUser } = useAuthDispatch();
     const [isAddUserDialogOpen, setIsAddUserDialogOpen] = useState(false);
     const [isEditUserDialogOpen, setIsEditUserDialogOpen] = useState(false);
     const [editingUser, setEditingUser] = useState<User | null>(null);

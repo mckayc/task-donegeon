@@ -6,10 +6,13 @@ import Card from '../ui/Card';
 import Button from '../ui/Button';
 import { TrophyIcon } from '../ui/Icons';
 import { isQuestAvailableForUser, isQuestVisibleToUserInMode, fromYMD, getQuestUserStatus } from '../../utils/quests';
+import { useGameDataDispatch } from '../../context/GameDataContext';
+import { useSettingsDispatch } from '../../context/SettingsContext';
 
 const Dashboard: React.FC = () => {
     const { currentUser, quests, rewardTypes, users, ranks, userTrophies, trophies, questCompletions, purchaseRequests, appMode, settings } = useAppState();
-    const { completeQuest, setActivePage } = useAppDispatch();
+    const { completeQuest } = useGameDataDispatch();
+    const { setActivePage } = useSettingsDispatch();
 
     if (!currentUser) return <div>Loading adventurer's data...</div>;
     

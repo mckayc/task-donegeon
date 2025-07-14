@@ -1,13 +1,14 @@
+
 import React, { useState } from 'react';
-import { useAppState, useAppDispatch } from '../../context/AppContext';
+import { useAuth, useAuthDispatch } from '../../context/AuthContext';
 import { User, Role } from '../../types';
 import Button from '../ui/Button';
 import Keypad from '../ui/Keypad';
 import Avatar from '../ui/Avatar';
 
 const SwitchUser: React.FC = () => {
-    const { users } = useAppState();
-    const { setCurrentUser, setIsSwitchingUser, setTargetedUserForLogin } = useAppDispatch();
+    const { users } = useAuth();
+    const { setCurrentUser, setIsSwitchingUser, setTargetedUserForLogin } = useAuthDispatch();
     const [selectedUser, setSelectedUser] = useState<User | null>(null);
     const [pin, setPin] = useState('');
     const [error, setError] = useState('');

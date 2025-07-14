@@ -1,7 +1,7 @@
 
-
 import React, { useState } from 'react';
-import { useAppState, useAppDispatch } from '../../context/AppContext';
+import { useSettings } from '../../context/SettingsContext';
+import { useAuth, useAuthDispatch } from '../../context/AuthContext';
 import { Role, User } from '../../types';
 import Button from '../ui/Button';
 import Input from '../ui/Input';
@@ -9,8 +9,8 @@ import UserFormFields from '../users/UserFormFields';
 import Avatar from '../ui/Avatar';
 
 const LoginForm: React.FC<{ onSwitchMode: () => void; isTargetedLogin?: boolean }> = ({ onSwitchMode, isTargetedLogin = false }) => {
-    const { users, targetedUserForLogin } = useAppState();
-    const { setCurrentUser, setTargetedUserForLogin, setIsSwitchingUser } = useAppDispatch();
+    const { users, targetedUserForLogin } = useAuth();
+    const { setCurrentUser, setTargetedUserForLogin, setIsSwitchingUser } = useAuthDispatch();
     
     const userToLogin = isTargetedLogin ? targetedUserForLogin : null;
 
@@ -111,8 +111,9 @@ const LoginForm: React.FC<{ onSwitchMode: () => void; isTargetedLogin?: boolean 
 };
 
 const RegisterForm: React.FC<{ onSwitchMode: () => void }> = ({ onSwitchMode }) => {
-    const { users, settings } = useAppState();
-    const { addUser, setCurrentUser } = useAppDispatch();
+    const { users } = useAuth();
+    const { settings } = useSettings();
+    const { addUser, setCurrentUser } = useAuthDispatch();
     const [formData, setFormData] = useState({
         firstName: '',
         lastName: '',
@@ -151,7 +152,7 @@ const RegisterForm: React.FC<{ onSwitchMode: () => void }> = ({ onSwitchMode }) 
         }
 
         const { confirmPassword, ...newUserPayload } = formData;
-        const newUser: Omit<User, 'id' | 'personalPurse' | 'personalExperience' | 'guildBalances' | 'avatar' | 'ownedAssetIds' | 'ownedThemes'> = {
+        const newUser: Omit<User, 'id' | 'personalPurse' | 'personalExperience' | 'guildBalances' | 'avatar' | 'ownedAssetIds' | 'ownedThemes' | 'hasBeenOnboarded'> = {
             ...newUserPayload,
             role: Role.Explorer,
         };
@@ -187,8 +188,9 @@ const RegisterForm: React.FC<{ onSwitchMode: () => void }> = ({ onSwitchMode }) 
 };
 
 const AuthPage: React.FC = () => {
-    const { settings, targetedUserForLogin } = useAppState();
-    const { setIsSwitchingUser } = useAppDispatch();
+    const { settings } = useSettings();
+    const { targetedUserForLogin } = useAuth();
+    const { setIsSwitchingUser } = useAuthDispatch();
     const [isLoginMode, setIsLoginMode] = useState(true);
 
     if (targetedUserForLogin) {

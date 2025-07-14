@@ -1,17 +1,18 @@
 
-
-import React, { useState, ReactNode } from 'react';
+import React, { useState, useEffect, ReactNode } from 'react';
 import Card from '../ui/Card';
+import { useSettings } from '../../context/SettingsContext';
 import { ChevronDownIcon } from '../ui/Icons';
-import { useAppState } from '../../context/AppContext';
 
-interface HelpSectionProps {
-  title: string;
-  children: ReactNode;
-  defaultOpen?: boolean;
+interface Metadata {
+  name: string;
+  version: string;
+  description: string;
+  lastChange: string;
+  lastChangeDate?: string;
 }
 
-const HelpSection: React.FC<HelpSectionProps> = ({ title, children, defaultOpen = false }) => {
+const CollapsibleSection: React.FC<{ title: string; children: React.ReactNode; defaultOpen?: boolean; }> = ({ title, children, defaultOpen = false }) => {
     const [isOpen, setIsOpen] = useState(defaultOpen);
     return (
         <div className="border-b border-stone-700/60 last:border-b-0">
@@ -33,18 +34,18 @@ const HelpSection: React.FC<HelpSectionProps> = ({ title, children, defaultOpen 
 }
 
 const HelpPage: React.FC = () => {
-    const { settings } = useAppState();
+    const { settings } = useSettings();
     const { terminology } = settings;
 
     return (
         <div className="max-w-4xl mx-auto">
             <h1 className="text-4xl font-medieval text-stone-100 mb-8">{terminology.appName} Guide</h1>
             <Card className="p-0 overflow-hidden">
-                <HelpSection title="Introduction: What is Task Donegeon?" defaultOpen>
+                <CollapsibleSection title="Introduction: What is Task Donegeon?" defaultOpen>
                     <p className="leading-relaxed">Welcome to {terminology.appName}! This app transforms everyday tasks, chores, and goals into a fun, medieval-themed role-playing game (RPG). Instead of just checking off a to-do list, you'll complete {terminology.tasks}, earn virtual currency and experience points (XP), unlock {terminology.awards}, and improve your {terminology.level}. It's designed to make productivity more engaging for families, groups, or even individuals.</p>
-                </HelpSection>
+                </CollapsibleSection>
 
-                <HelpSection title="Core Concepts">
+                <CollapsibleSection title="Core Concepts">
                     <h4 className="text-lg font-bold text-stone-100">Roles</h4>
                     <p>Every member of your {terminology.group} has a role that defines what they can do:</p>
                     <ul className="list-disc list-inside space-y-2 pl-4">
@@ -73,9 +74,9 @@ const HelpPage: React.FC = () => {
                         <li><strong>Late:</strong> The point at which a {terminology.task} is considered late. A {terminology.negativePoint} may be applied, but the {terminology.task} can still be completed for its original {terminology.points}.</li>
                         <li><strong>Incomplete:</strong> The final deadline. If a {terminology.task} isn't completed by this time, it becomes unavailable and a potentially larger {terminology.negativePoint} is applied.</li>
                     </ul>
-                </HelpSection>
+                </CollapsibleSection>
                 
-                <HelpSection title={`User Guide: For Every ${terminology.user}`}>
+                <CollapsibleSection title={`User Guide: For Every ${terminology.user}`}>
                     <p className="leading-relaxed">Here's a breakdown of the pages you'll use most often.</p>
                     <ul className="list-disc list-inside space-y-2 pl-4">
                         <li><strong>Dashboard:</strong> Your main hub. Get a quick overview of your current {terminology.level}, recent activities, inventory of {terminology.points}, and a list of high-priority {terminology.tasks}.</li>
@@ -89,9 +90,9 @@ const HelpPage: React.FC = () => {
                         <li><strong>{terminology.history}:</strong> A detailed log of all your activity, from {terminology.task} completions to purchases and admin adjustments.</li>
                         <li><strong>{terminology.groups}:</strong> View the {terminology.groups} you are a member of and see the other members.</li>
                     </ul>
-                </HelpSection>
+                </CollapsibleSection>
 
-                <HelpSection title={`Admin Guide: For the ${terminology.admin}`}>
+                <CollapsibleSection title={`Admin Guide: For the ${terminology.admin}`}>
                     <p className="leading-relaxed">If you are a <strong>{terminology.admin}</strong> or <strong>{terminology.moderator}</strong>, you have special administrative powers.</p>
                     <h4 className="text-lg font-bold text-stone-100 mt-4">Getting Started</h4>
                     <p>As the first {terminology.admin}, your initial steps should be:</p>
@@ -113,7 +114,7 @@ const HelpPage: React.FC = () => {
                         <li><strong>Backup & Sharing:</strong> You can create a full backup of all game data for safekeeping. You can also create and import "Blueprints" - smaller files that only contain certain assets (like a pack of chores) that you can share with others.</li>
                         <li><strong>Bulk Deletion:</strong> This section contains "danger zone" actions for cleaning up your game. You can wipe all historical records, reset all player wallets and XP, or even delete all the custom content you've created to start over without having to reset user accounts.</li>
                     </ul>
-                </HelpSection>
+                </CollapsibleSection>
 
             </Card>
         </div>

@@ -1,10 +1,9 @@
 
-
-
-
 import React, { useState, ChangeEvent, useRef, useEffect } from 'react';
-import { useAppState, useAppDispatch } from '../../context/AppContext';
-import { Role, AppSettings, Terminology, Blueprint, ImportResolution, IAppData, Theme } from '../../types';
+import { useAuth } from '../../context/AuthContext';
+import { useSettings, useSettingsDispatch } from '../../context/SettingsContext';
+import { useAppDispatch } from '../../context/AppContext';
+import { Role, AppSettings, Terminology, Theme } from '../../types';
 import Button from '../ui/Button';
 import { ChevronDownIcon } from '../ui/Icons';
 import Input from '../ui/Input';
@@ -57,13 +56,12 @@ const terminologyLabels: { [key in keyof Terminology]: string } = {
 };
 
 const SettingsPage: React.FC = () => {
-    const { currentUser: contextUser, users, settings } = useAppState();
+    const { currentUser } = useAuth();
+    const { settings } = useSettings();
     const { updateSettings, addNotification } = useAppDispatch();
     
     const [formState, setFormState] = useState<AppSettings>(settings);
     
-    const currentUser = users.find(u => u.id === contextUser?.id);
-
     useEffect(() => {
         // Instant theme preview
         document.body.dataset.theme = formState.theme;

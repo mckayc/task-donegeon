@@ -1,5 +1,7 @@
+
 import React, { useState } from 'react';
-import { useAppState, useAppDispatch } from '../../context/AppContext';
+import { useAuth, useAuthDispatch } from '../../context/AuthContext';
+import { useSettings } from '../../context/SettingsContext';
 import { Role } from '../../types';
 import Button from '../ui/Button';
 import Input from '../ui/Input';
@@ -10,8 +12,9 @@ interface AddUserDialogProps {
 }
 
 const AddUserDialog: React.FC<AddUserDialogProps> = ({ onClose }) => {
-  const { users, settings } = useAppState();
-  const { addUser } = useAppDispatch();
+  const { users } = useAuth();
+  const { settings } = useSettings();
+  const { addUser } = useAuthDispatch();
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',

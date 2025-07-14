@@ -1,13 +1,15 @@
-import React, { useState, useEffect } from 'react';
-import { useAppState, useAppDispatch } from '../../context/AppContext';
+
+import React, { useState } from 'react';
+import { useAuth, useAuthDispatch } from '../../context/AuthContext';
+import { useGameDataDispatch } from '../../context/GameDataContext';
 import Button from '../ui/Button';
 import Card from '../ui/Card';
 import Input from '../ui/Input';
-import { Theme } from '../../types';
 
 const ProfilePage: React.FC = () => {
-    const { currentUser, settings } = useAppState();
-    const { updateUser, addNotification } = useAppDispatch();
+    const { currentUser } = useAuth();
+    const { updateUser } = useAuthDispatch();
+    const { addNotification } = useGameDataDispatch();
     
     // This check ensures we don't proceed if the user isn't logged in.
     if (!currentUser) {

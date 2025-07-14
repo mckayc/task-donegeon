@@ -1,14 +1,17 @@
 
 import React, { useState } from 'react';
-import { useAppState, useAppDispatch } from '../../context/AppContext';
+import { useAuthDispatch } from '../../context/AuthContext';
+import { useGameDataDispatch } from '../../context/GameDataContext';
+import { useSettings } from '../../context/SettingsContext';
 import { Role } from '../../types';
 import Button from '../ui/Button';
 import Input from '../ui/Input';
 import UserFormFields from '../users/UserFormFields';
 
 const FirstRunWizard: React.FC = () => {
-  const { addUser, setCurrentUser, populateInitialGameData } = useAppDispatch();
-  const { settings } = useAppState();
+  const { addUser, setCurrentUser } = useAuthDispatch();
+  const { populateInitialGameData } = useGameDataDispatch();
+  const { settings } = useSettings();
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',

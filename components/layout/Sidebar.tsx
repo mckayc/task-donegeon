@@ -1,8 +1,4 @@
 
-
-
-
-
 import React, { useState } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { Role, Page, QuestCompletionStatus, PurchaseRequestStatus, Terminology } from '../../types';
@@ -108,6 +104,7 @@ const Sidebar: React.FC = () => {
   
   const characterNavItems: NavItem[] = [
     { name: 'Avatar', Icon: Icons.AvatarIcon },
+    { name: 'Collection', Icon: Icons.CollectionIcon },
     { name: 'Themes', Icon: Icons.ThemeIcon },
     { name: 'Progress', Icon: Icons.ProgressIcon },
     { name: 'Trophies', Icon: Icons.TrophyIcon, termKey: 'awards' },

@@ -1,7 +1,4 @@
 
-
-
-
 import React from 'react';
 import Sidebar from './Sidebar';
 import Header from './Header';
@@ -32,6 +29,7 @@ import ManageTrophiesPage from '../pages/ManageTrophiesPage';
 import ThemesPage from '../pages/ThemesPage';
 import DataManagementPage from '../pages/DataManagementPage';
 import AboutPage from '../pages/AboutPage';
+import CollectionPage from '../pages/CollectionPage';
 
 const MainLayout: React.FC = () => {
   const { activePage } = useAppState();
@@ -40,6 +38,7 @@ const MainLayout: React.FC = () => {
     switch (activePage) {
       case 'Dashboard': return <Dashboard />;
       case 'Avatar': return <AvatarPage />;
+      case 'Collection': return <CollectionPage />;
       case 'Themes': return <ThemesPage />;
       case 'Quests': return <QuestsPage />;
       case 'Marketplace': return <MarketplacePage />;

@@ -21,8 +21,8 @@ export interface User {
   gameName: string;
   birthday: string;
   role: Role;
-  avatar: { [slot: string]: string }; // e.g., { hair: 'hair-style-1', shirt: 'shirt-red' }
-  ownedAvatarAssets: AvatarAsset[];
+  avatar: { [slot: string]: string }; // Now uses GameAsset['id']
+  ownedAssetIds: string[];
   pin?: string;
   password?: string;
   personalPurse: { [rewardTypeId: string]: number };
@@ -112,37 +112,18 @@ export interface QuestCompletion {
   guildId?: string;
 }
 
-export interface AvatarAsset {
-  slot: string;
-  assetId: string;
-}
-
-export interface MediaAsset {
+export interface GameAsset {
   id: string;
   name: string;
-  type: string; // e.g., 'image/png'
-  size: number;
-  url: string; // URL to the hosted asset
-  createdAt: string;
-}
-
-export interface MarketItem {
-  id: string;
-  title: string;
   description: string;
+  url: string;
+  category: string;
+  avatarSlot?: string;
+  isForSale: boolean;
   cost: RewardItem[];
-  payout: RewardItem[]; // For items that give back currency/XP
-  avatarAssetPayout?: AvatarAsset; // For items that grant a cosmetic
-  themePayout?: Theme; // For items that grant a theme
-}
-
-export interface DigitalAsset {
-  id: string;
-  name: string;
-  description: string;
-  slot: string;
-  assetId: string;
-  imageUrl: string;
+  marketIds: string[];
+  creatorId: string;
+  createdAt: string;
 }
 
 export interface Market {
@@ -150,7 +131,6 @@ export interface Market {
   title: string;
   description: string;
   icon?: string;
-  items: MarketItem[];
   guildId?: string;
 }
 
@@ -164,16 +144,13 @@ export enum PurchaseRequestStatus {
 export interface PurchaseRequest {
   id: string;
   userId: string;
-  marketId: string;
-  itemId: string;
+  assetId: string;
   requestedAt: string;
   status: PurchaseRequestStatus;
-  itemDetails: {
-      title: string;
+  assetDetails: {
+      name: string;
+      description: string;
       cost: RewardItem[];
-      payout: RewardItem[];
-      avatarAssetPayout?: AvatarAsset;
-      themePayout?: Theme;
   };
   guildId?: string;
 }
@@ -313,7 +290,7 @@ export interface AppSettings {
   terminology: Terminology;
 }
 
-export type Page = 'Dashboard' | 'Avatar' | 'Quests' | 'Marketplace' | 'Chronicles' | 'Guild' | 'Calendar' | 'Progress' | 'Trophies' | 'Ranks' | 'Manage Users' | 'Rewards' | 'Manage Quests' | 'Approvals' | 'Manage Markets' | 'Manage Guilds' | 'Settings' | 'Profile' | 'About' | 'Help' | 'Manage Ranks' | 'Manage Trophies' | 'Themes' | 'Data Management';
+export type Page = 'Dashboard' | 'Avatar' | 'Quests' | 'Marketplace' | 'Chronicles' | 'Guild' | 'Calendar' | 'Progress' | 'Trophies' | 'Ranks' | 'Manage Users' | 'Rewards' | 'Manage Quests' | 'Approvals' | 'Manage Markets' | 'Manage Guilds' | 'Settings' | 'Profile' | 'About' | 'Help' | 'Manage Ranks' | 'Manage Trophies' | 'Themes' | 'Data Management' | 'Collection';
 
 export type ShareableAssetType = 'quests' | 'rewardTypes' | 'ranks' | 'trophies' | 'markets';
 
@@ -347,8 +324,7 @@ export interface IAppData {
   trophies: Trophy[];
   userTrophies: UserTrophy[];
   adminAdjustments: AdminAdjustment[];
-  mediaAssets: MediaAsset[];
-  digitalAssets: DigitalAsset[];
+  gameAssets: GameAsset[];
   systemLogs: SystemLog[];
   appMode: AppMode;
   settings: AppSettings;

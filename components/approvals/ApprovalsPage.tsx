@@ -1,5 +1,6 @@
 
 
+
 import React, { useState } from 'react';
 import Card from '../ui/Card';
 import Button from '../ui/Button';
@@ -10,7 +11,7 @@ import Input from '../ui/Input';
 const ApprovalsPage: React.FC = () => {
     const { 
       questCompletions, users, quests, currentUser,
-      purchaseRequests, markets, guilds
+      purchaseRequests, guilds
     } = useAppState();
 
     const {
@@ -36,9 +37,6 @@ const ApprovalsPage: React.FC = () => {
 
     const getQuestTitle = (questId: string) => quests.find(q => q.id === questId)?.title || 'Unknown Quest';
     const getUserName = (userId: string) => users.find(u => u.id === userId)?.gameName || 'Unknown User';
-    const getItemTitle = (marketId: string, itemId: string) => {
-      return markets.find(m => m.id === marketId)?.items.find(i => i.id === itemId)?.title || 'Unknown Item';
-    };
     const getGuildName = (guildId?: string) => guildId ? guilds.find(g => g.id === guildId)?.name : 'Personal';
     
     const handleNoteChange = (completionId: string, text: string) => {
@@ -98,7 +96,7 @@ const ApprovalsPage: React.FC = () => {
                                       <p className="font-bold text-stone-100 flex items-center gap-2">
                                           <span className="text-emerald-300">{getUserName(purchase.userId)}</span>
                                           <span className="text-stone-300 font-normal"> wants to purchase </span>
-                                          "{getItemTitle(purchase.marketId, purchase.itemId) || purchase.itemDetails.title}"
+                                          "{purchase.assetDetails.name}"
                                            <span className="px-2 py-0.5 text-xs font-semibold rounded-full bg-blue-500/20 text-blue-300">
                                                 {getGuildName(purchase.guildId)}
                                             </span>

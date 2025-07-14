@@ -1,3 +1,4 @@
+
 import React, { useMemo, useState } from 'react';
 import Card from '../ui/Card';
 import { useAppState } from '../../context/AppContext';
@@ -5,7 +6,7 @@ import { QuestCompletionStatus, Role, PurchaseRequestStatus, AdminAdjustmentType
 import { fromYMD } from '../../utils/quests';
 
 const ChroniclesPage: React.FC = () => {
-  const { questCompletions, purchaseRequests, users, quests, markets, currentUser, userTrophies, trophies, appMode, adminAdjustments, rewardTypes, systemLogs, settings } = useAppState();
+  const { questCompletions, purchaseRequests, users, quests, gameAssets, currentUser, userTrophies, trophies, appMode, adminAdjustments, rewardTypes, systemLogs, settings } = useAppState();
   const [viewMode, setViewMode] = useState<'all' | 'personal'>('all');
 
   if (!currentUser) return null;
@@ -17,7 +18,6 @@ const ChroniclesPage: React.FC = () => {
 
     const getQuestTitle = (questId: string) => quests.find(q => q.id === questId)?.title || `Unknown ${settings.terminology.task}`;
     const getUserName = (userId: string) => users.find(u => u.id === userId)?.gameName || 'Unknown User';
-    const getItemTitle = (itemId: string) => markets.flatMap(m => m.items).find(i => i.id === itemId)?.title || 'Unknown Item';
     const getTrophyName = (trophyId: string) => trophies.find(t => t.id === trophyId)?.name || `Unknown ${settings.terminology.award}`;
     const getRewardDisplay = (rewardId: string) => {
         const reward = rewardTypes.find(rt => rt.id === rewardId);
@@ -33,7 +33,7 @@ const ChroniclesPage: React.FC = () => {
     const purchaseActivities = purchaseRequests
       .filter(p => p.guildId === currentGuildId)
       .map(p => ({
-        id: p.id, date: p.requestedAt, type: 'Purchase', userId: p.userId, getUserName: () => getUserName(p.userId), text: `purchased "${getItemTitle(p.itemId) || p.itemDetails.title}"`, status: p.status, note: undefined,
+        id: p.id, date: p.requestedAt, type: 'Purchase', userId: p.userId, getUserName: () => getUserName(p.userId), text: `purchased "${p.assetDetails.name}"`, status: p.status, note: undefined,
     }));
     
     const trophyActivities = userTrophies
@@ -89,7 +89,7 @@ const ChroniclesPage: React.FC = () => {
     
     return [...relevantActivities].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
-  }, [questCompletions, purchaseRequests, userTrophies, adminAdjustments, systemLogs, users, quests, markets, trophies, currentUser, appMode, rewardTypes, viewMode, settings]);
+  }, [questCompletions, purchaseRequests, userTrophies, adminAdjustments, systemLogs, users, quests, gameAssets, trophies, currentUser, appMode, rewardTypes, viewMode, settings]);
 
   const statusColor = (status: any) => {
     switch (status) {

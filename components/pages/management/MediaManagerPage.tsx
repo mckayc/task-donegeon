@@ -1,17 +1,21 @@
 
 import React, { useState, useCallback } from 'react';
 import { useAppState, useAppDispatch } from '../../../context/AppContext';
-import { MediaAsset } from '../../../types';
+import { GameAsset } from '../../../types';
 import Button from '../../ui/Button';
 import Card from '../../ui/Card';
 import ConfirmDialog from '../../ui/ConfirmDialog';
+import EditGameAssetDialog from '../../admin/EditGameAssetDialog';
 
-const MediaManagerPage: React.FC = () => {
-    const { mediaAssets } = useAppState();
-    const { addMediaAsset, deleteMediaAsset, addNotification } = useAppDispatch();
+const AssetManagerPage: React.FC = () => {
+    const { gameAssets } = useAppState();
+    const { deleteGameAsset, addNotification } = useAppDispatch();
     const [isDragging, setIsDragging] = useState(false);
     const [isUploading, setIsUploading] = useState(false);
-    const [deletingAsset, setDeletingAsset] = useState<MediaAsset | null>(null);
+    
+    const [editingAsset, setEditingAsset] = useState<GameAsset | null>(null);
+    const [assetToCreateUrl, setAssetToCreateUrl] = useState<string | null>(null);
+    const [deletingAsset, setDeletingAsset] = useState<GameAsset | null>(null);
 
     const handleFileProcess = useCallback(async (file: File) => {
         setIsUploading(true);
@@ -30,15 +34,8 @@ const MediaManagerPage: React.FC = () => {
             }
 
             const uploadedAsset = await response.json();
-            const newAsset: MediaAsset = {
-                id: `media-${Date.now()}`,
-                createdAt: new Date().toISOString(),
-                name: uploadedAsset.name,
-                type: uploadedAsset.type,
-                size: uploadedAsset.size,
-                url: uploadedAsset.url,
-            };
-            addMediaAsset(newAsset);
+            setAssetToCreateUrl(uploadedAsset.url);
+            addNotification({type: 'success', message: 'Image uploaded! Now add its details.'});
 
         } catch (error) {
             const message = error instanceof Error ? error.message : 'Unknown error';
@@ -46,12 +43,13 @@ const MediaManagerPage: React.FC = () => {
         } finally {
             setIsUploading(false);
         }
-    }, [addMediaAsset, addNotification]);
+    }, [addNotification]);
 
     const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
         if (event.target.files) {
             Array.from(event.target.files).forEach(handleFileProcess);
         }
+        event.target.value = ''; // Allow re-uploading the same file
     };
 
     const handleDrop = useCallback((event: React.DragEvent<HTMLDivElement>) => {
@@ -81,7 +79,7 @@ const MediaManagerPage: React.FC = () => {
 
     return (
         <div className="space-y-6">
-            <Card title="Upload New Media">
+            <Card title="Upload New Asset">
                 <div
                     onDrop={handleDrop}
                     onDragEnter={handleDragEvents} onDragOver={handleDragEvents} onDragLeave={handleDragEvents}
@@ -90,58 +88,66 @@ const MediaManagerPage: React.FC = () => {
                     }`}
                 >
                     <input id="file-upload" type="file" multiple onChange={handleFileSelect} className="hidden" disabled={isUploading} />
-                    <p className="text-stone-400 mb-4">Drag & drop files here, or</p>
+                    <p className="text-stone-400 mb-4">Drag & drop files here, or click to select.</p>
                     <Button onClick={() => document.getElementById('file-upload')?.click()} disabled={isUploading}>
-                        {isUploading ? 'Uploading...' : 'Select Files'}
+                        {isUploading ? 'Uploading...' : 'Upload Image'}
                     </Button>
                 </div>
             </Card>
 
-            <Card title="Upload Guide & Storage Info">
-                <ul className="text-sm text-stone-400 space-y-3 list-disc list-inside">
+            <Card title="Upload Guide">
+                 <ul className="text-sm text-stone-400 space-y-2 list-disc list-inside">
                     <li>
-                        <strong>Storage Method:</strong> Your application is configured to handle file storage in one of two ways based on its environment:
-                        <ul className="list-disc list-inside pl-6 mt-2">
-                            <li><strong>Local Docker:</strong> Files are saved to a local `/uploads` folder. This is great for development.</li>
-                            <li><strong>Production (Vercel):</strong> Files are uploaded to a cloud provider (like Supabase Storage) for permanent, public access.</li>
-                        </ul>
+                        <strong>Step 1: Upload an Image.</strong> Drag a file or click the button above.
                     </li>
                     <li>
-                        <strong>Recommended Formats:</strong> Use vector formats like <strong className="text-stone-300">SVG</strong> for sharp, scalable icons. Use <strong className="text-stone-300">PNG</strong> with a transparent background for more complex images.
+                        <strong>Step 2: Define Properties.</strong> A dialog will appear where you set the asset's name, category, and sale details.
                     </li>
                      <li>
-                        <strong>Usage:</strong> Once uploaded, an asset's URL can be copied. Paste this URL into the "Image URL" field when creating or editing a "Digital Asset" to make it usable in avatars.
+                        <strong>Recommended Formats:</strong> Use vector formats like <strong className="text-stone-300">SVG</strong> for sharp, scalable icons. Use <strong className="text-stone-300">PNG</strong> with a transparent background for more complex images. A square aspect ratio is recommended for consistency.
                     </li>
                 </ul>
             </Card>
 
             <div>
-                <h2 className="text-2xl font-bold text-stone-100 mb-4">Media Gallery</h2>
-                {mediaAssets.length > 0 ? (
+                <h2 className="text-2xl font-bold text-stone-100 mb-4">Asset Gallery</h2>
+                {gameAssets.length > 0 ? (
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-                        {mediaAssets.map(asset => (
+                        {gameAssets.map(asset => (
                             <div key={asset.id} className="bg-stone-800/50 rounded-lg p-3 group relative">
                                 <div className="aspect-square w-full bg-stone-700/50 rounded-md mb-2 flex items-center justify-center overflow-hidden">
                                     <img src={asset.url} alt={asset.name} className="w-full h-full object-contain" />
                                 </div>
                                 <p className="text-xs text-stone-300 truncate" title={asset.name}>{asset.name}</p>
                                 <div className="absolute inset-0 bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2 p-2">
-                                    <Button variant="secondary" className="text-xs py-1 px-2 w-full" onClick={() => copyToClipboard(asset.url)}>Copy URL</Button>
+                                    <Button variant="secondary" className="text-xs py-1 px-2 w-full" onClick={() => setEditingAsset(asset)}>Edit Details</Button>
+                                    <Button variant="secondary" className="text-xs py-1 px-2 w-full !bg-blue-900/70 hover:!bg-blue-800/80 text-blue-200" onClick={() => copyToClipboard(asset.url)}>Copy URL</Button>
                                     <Button className="!bg-red-600 hover:!bg-red-500 text-xs py-1 px-2 w-full" onClick={() => setDeletingAsset(asset)}>Delete</Button>
                                 </div>
                             </div>
                         ))}
                     </div>
                 ) : (
-                    <p className="text-stone-400 text-center py-8">No media has been uploaded yet.</p>
+                    <p className="text-stone-400 text-center py-8">No assets have been created yet.</p>
                 )}
             </div>
+
+            {(editingAsset || assetToCreateUrl) && (
+                <EditGameAssetDialog
+                    assetToEdit={editingAsset}
+                    newAssetUrl={assetToCreateUrl}
+                    onClose={() => {
+                        setEditingAsset(null);
+                        setAssetToCreateUrl(null);
+                    }}
+                />
+            )}
 
             <ConfirmDialog
                 isOpen={!!deletingAsset}
                 onClose={() => setDeletingAsset(null)}
                 onConfirm={() => {
-                    if (deletingAsset) deleteMediaAsset(deletingAsset.id);
+                    if (deletingAsset) deleteGameAsset(deletingAsset.id);
                     setDeletingAsset(null);
                 }}
                 title="Delete Asset"
@@ -151,4 +157,4 @@ const MediaManagerPage: React.FC = () => {
     );
 };
 
-export default MediaManagerPage;
+export default AssetManagerPage;

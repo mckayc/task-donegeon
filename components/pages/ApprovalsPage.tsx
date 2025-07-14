@@ -1,4 +1,5 @@
 
+
 import React, { useState } from 'react';
 import Card from '../ui/Card';
 import Button from '../ui/Button';
@@ -9,7 +10,7 @@ import Input from '../ui/Input';
 const ApprovalsPage: React.FC = () => {
     const { 
       questCompletions, users, quests, currentUser,
-      purchaseRequests, markets
+      purchaseRequests, gameAssets
     } = useAppState();
     const { 
         approveQuestCompletion, rejectQuestCompletion, 
@@ -34,9 +35,6 @@ const ApprovalsPage: React.FC = () => {
 
     const getQuestTitle = (questId: string) => quests.find(q => q.id === questId)?.title || 'Unknown Quest';
     const getUserName = (userId: string) => users.find(u => u.id === userId)?.gameName || 'Unknown User';
-    const getItemTitle = (marketId: string, itemId: string) => {
-      return markets.find(m => m.id === marketId)?.items.find(i => i.id === itemId)?.title || 'Unknown Item';
-    };
     
     const handleNoteChange = (completionId: string, text: string) => {
         setNotes(prev => ({ ...prev, [completionId]: text }));
@@ -92,7 +90,7 @@ const ApprovalsPage: React.FC = () => {
                                       <p className="font-bold text-stone-100">
                                           <span className="text-emerald-300">{getUserName(purchase.userId)}</span>
                                           <span className="text-stone-300 font-normal"> wants to purchase </span>
-                                          "{getItemTitle(purchase.marketId, purchase.itemId) || purchase.itemDetails.title}"
+                                          "{purchase.assetDetails.name}"
                                       </p>
                                       <p className="text-sm text-stone-400 mt-1">
                                           Requested: {new Date(purchase.requestedAt).toLocaleString()}

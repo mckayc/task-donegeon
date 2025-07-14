@@ -1,10 +1,8 @@
 
-
-
-import { User, Role, RewardTypeDefinition, RewardCategory, Rank, Trophy, TrophyRequirementType, QuestType, Market, Quest, QuestAvailability, Guild, AppSettings, Theme, AvatarAsset } from '../types';
+import { User, Role, RewardTypeDefinition, RewardCategory, Rank, Trophy, TrophyRequirementType, QuestType, Market, Quest, QuestAvailability, Guild, AppSettings, Theme, GameAsset } from '../types';
 
 export const createMockUsers = (): User[] => {
-    const users: Omit<User, 'id' | 'personalPurse' | 'personalExperience' | 'guildBalances' | 'avatar' | 'ownedAvatarAssets' | 'ownedThemes'>[] = [
+    const users: Omit<User, 'id' | 'personalPurse' | 'personalExperience' | 'guildBalances' | 'avatar' | 'ownedAssetIds' | 'ownedThemes'>[] = [
         { firstName: 'Alistair', lastName: 'Blackwood', username: 'dmaster', email: 'dm@example.com', gameName: 'The Donegeon Master', birthday: '1980-01-01', role: Role.DonegeonMaster, password: 'password123' },
         { firstName: 'Brynn', lastName: 'Stonehand', username: 'brynn', email: 'brynn@example.com', gameName: 'Warden Brynn', birthday: '1995-05-10', role: Role.Gatekeeper, password: 'password123' },
         { firstName: 'Kaelen', lastName: 'Swift', username: 'kaelen', email: 'kaelen@example.com', gameName: 'Swift Shadow', birthday: '1998-09-20', role: Role.Gatekeeper, password: 'password123' },
@@ -19,7 +17,7 @@ export const createMockUsers = (): User[] => {
         ...u,
         id: `user-${i + 1}`,
         avatar: {},
-        ownedAvatarAssets: [] as AvatarAsset[],
+        ownedAssetIds: [],
         personalPurse: {},
         personalExperience: {},
         guildBalances: {},
@@ -31,15 +29,6 @@ export const createMockUsers = (): User[] => {
     if (dm) {
         dm.personalPurse = { 'core-gold': 100, 'core-gems': 50 };
         dm.personalExperience = { 'core-wisdom': 50, 'core-strength': 150 };
-        dm.avatar = { hair: 'hair-style-1', shirt: 'shirt-blue-simple' };
-        dm.ownedAvatarAssets = [
-            { slot: 'hair', assetId: 'hair-style-1' },
-            { slot: 'hair', assetId: 'hair-style-2' },
-            { slot: 'hair', assetId: 'hair-style-3' },
-            { slot: 'shirt', assetId: 'shirt-red-simple' },
-            { slot: 'shirt', assetId: 'shirt-blue-simple' },
-            { slot: 'shirt', assetId: 'shirt-green-simple' },
-        ];
     }
     return initialUsers;
 };
@@ -149,8 +138,6 @@ export const INITIAL_TROPHIES: Trophy[] = [
     { id: 'manual-trophy-10', name: 'Green Thumb', description: 'Awarded for excellent work in the garden or with plants.', icon: '🌱', isManual: true, requirements: [] },
 ];
 
-const THEMES: Theme[] = ['emerald', 'rose', 'sky', 'arcane', 'cartoon', 'forest', 'ocean', 'vulcan', 'royal', 'winter', 'sunset', 'cyberpunk', 'steampunk', 'parchment', 'eerie'];
-
 export const createSampleMarkets = (): Market[] => {
     return [
         {
@@ -158,49 +145,24 @@ export const createSampleMarkets = (): Market[] => {
             title: "The Tailor's Shop",
             description: 'Purchase new hairstyles and outfits to customize your avatar.',
             icon: '👕',
-            items: [
-                { id: 'item-hair-1', title: 'Brown Spikes', description: 'A spiky brown hairdo.', cost: [{ rewardTypeId: 'core-gems', amount: 5 }], payout: [], avatarAssetPayout: { slot: 'hair', assetId: 'hair-style-1'} },
-                { id: 'item-hair-2', title: 'Blonde Top', description: 'A stylish blonde look.', cost: [{ rewardTypeId: 'core-gems', amount: 5 }], payout: [], avatarAssetPayout: { slot: 'hair', assetId: 'hair-style-2'} },
-                { id: 'item-hair-3', title: 'Black Spikes', description: 'A cool, spiky black hairstyle.', cost: [{ rewardTypeId: 'core-gems', amount: 5 }], payout: [], avatarAssetPayout: { slot: 'hair', assetId: 'hair-style-3'} },
-                { id: 'item-shirt-1', title: 'Red Tunic', description: 'A simple, heroic red tunic.', cost: [{ rewardTypeId: 'core-gold', amount: 10 }], payout: [], avatarAssetPayout: { slot: 'shirt', assetId: 'shirt-red-simple'} },
-                { id: 'item-shirt-2', title: 'Blue Tunic', description: 'A sturdy blue tunic.', cost: [{ rewardTypeId: 'core-gold', amount: 10 }], payout: [], avatarAssetPayout: { slot: 'shirt', assetId: 'shirt-blue-simple'} },
-                { id: 'item-shirt-3', title: 'Green Tunic', description: 'A classic adventurer\'s green tunic.', cost: [{ rewardTypeId: 'core-gold', amount: 10 }], payout: [], avatarAssetPayout: { slot: 'shirt', assetId: 'shirt-green-simple'} },
-            ]
         },
         {
             id: 'market-themes',
             title: "Lumina Weaver's Atelier",
             description: "Purchase new visual themes to change the entire look and feel of your Donegeon.",
             icon: '🎨',
-            items: THEMES.filter(t => !['emerald', 'rose', 'sky'].includes(t)) // Don't sell the default themes
-                .map((theme, index) => ({
-                    id: `theme-item-${theme}`,
-                    title: `Theme: ${theme.charAt(0).toUpperCase() + theme.slice(1)}`,
-                    description: `Unlocks the "${theme}" visual theme for your account.`,
-                    cost: [{ rewardTypeId: 'core-gems', amount: 20 + index * 5 }],
-                    payout: [],
-                    themePayout: theme
-                }))
         },
         {
             id: 'market-bank',
             title: 'Personal Bank of Donegeon',
             description: 'Exchange your personal currencies here.',
             icon: '🏦',
-            items: [
-                { id: 'item-1', title: '1 Gem', description: 'Trade 10 Crystals for 1 Gem.', cost: [{ rewardTypeId: 'core-crystal', amount: 10 }], payout: [{ rewardTypeId: 'core-gems', amount: 1 }] },
-                { id: 'item-2', title: '1 Gold Coin', description: 'Trade 5 Gems for 1 Gold Coin.', cost: [{ rewardTypeId: 'core-gems', amount: 5 }], payout: [{ rewardTypeId: 'core-gold', amount: 1 }] },
-            ]
         },
         {
             id: 'market-exp',
             title: 'Personal Hall of Experiences',
             description: 'Spend your personal Gems on memorable experiences.',
             icon: '🎬',
-            items: [
-                { id: 'item-3', title: 'Movie Night', description: 'Pick a movie for the family to watch.', cost: [{ rewardTypeId: 'core-gems', amount: 10 }], payout: [] },
-                { id: 'item-4', title: 'Ice Cream Trip', description: 'A special trip to the ice cream parlor.', cost: [{ rewardTypeId: 'core-gems', amount: 20 }], payout: [] },
-            ]
         },
         {
             id: 'market-guild',
@@ -208,22 +170,12 @@ export const createSampleMarkets = (): Market[] => {
             description: 'Spend your guild rewards on special items.',
             icon: '🏛️',
             guildId: 'guild-default-1',
-            items: [
-                { id: 'item-5', title: 'Guild Banner', description: 'A decorative banner for your profile.', cost: [{ rewardTypeId: 'core-gold', amount: 25 }], payout: []},
-            ]
         },
         {
             id: 'market-gadget',
             title: "The Gadgeteer's Workshop",
             description: 'Spend your crystals on screen time and digital goods.',
             icon: '🎮',
-            items: [
-                { id: 'item-gadget-1', title: '30 Mins Bonus Screen Time', cost: [{ rewardTypeId: 'core-crystal', amount: 50 }], payout: [], description: 'An extra half hour of tablet or TV time.' },
-                { id: 'item-gadget-2', title: 'New App/Game (Under $5)', cost: [{ rewardTypeId: 'core-crystal', amount: 250 }], payout: [], description: 'Purchase a new application or game for your device.' },
-                { id: 'item-gadget-3', title: 'Co-op Gaming with DM', cost: [{ rewardTypeId: 'core-gems', amount: 15 }], payout: [], description: 'Schedule a 1-hour gaming session with the Donegeon Master.' },
-                { id: 'item-gadget-4', title: 'Choose the Weekend Movie', cost: [{ rewardTypeId: 'core-gems', amount: 10 }], payout: [], description: 'You get to pick the movie for family movie night.' },
-                { id: 'item-gadget-5', title: 'Late Night Pass (30 Mins)', cost: [{ rewardTypeId: 'core-crystal', amount: 75 }], payout: [], description: 'Stay up 30 minutes past your normal bedtime.' },
-            ]
         },
         {
             id: 'market-treasury',
@@ -231,13 +183,6 @@ export const createSampleMarkets = (): Market[] => {
             description: 'Spend guild gold on delicious treats for everyone!',
             icon: '🍕',
             guildId: 'guild-default-1',
-            items: [
-                { id: 'item-treasury-1', title: 'Guild Pizza Night', cost: [{ rewardTypeId: 'core-gold', amount: 20 }], payout: [], description: 'The guild orders pizza for dinner.' },
-                { id: 'item-treasury-2', title: 'Ice Cream Sundae Bar', cost: [{ rewardTypeId: 'core-gold', amount: 15 }], payout: [], description: 'An epic ice cream sundae bar for dessert.' },
-                { id: 'item-treasury-3', title: 'Guild Baking Day', cost: [{ rewardTypeId: 'core-gold', amount: 10 }], payout: [], description: 'Bake cookies or a cake together as a guild.' },
-                { id: 'item-treasury-4', title: 'No-Chore Dinner', cost: [{ rewardTypeId: 'core-gold', amount: 30 }], payout: [], description: "The guild gets takeout, and no one has to do dishes." },
-                { id: 'item-treasury-5', title: 'Breakfast for Dinner', cost: [{ rewardTypeId: 'core-gold', amount: 12 }], payout: [], description: 'Pancakes and waffles for dinner tonight!' },
-            ]
         },
     ];
 };

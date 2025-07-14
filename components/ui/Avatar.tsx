@@ -9,11 +9,11 @@ interface AvatarProps {
 }
 
 const Avatar: React.FC<AvatarProps> = ({ user, className }) => {
-    const { digitalAssets } = useAppState();
+    const { gameAssets } = useAppState();
 
     const equippedAssets = Object.entries(user.avatar)
-        .map(([slot, assetId]) => {
-            return digitalAssets.find(da => da.slot === slot && da.assetId === assetId);
+        .map(([_, assetId]) => {
+            return gameAssets.find(ga => ga.id === assetId);
         })
         .filter((asset): asset is NonNullable<typeof asset> => !!asset);
 
@@ -30,15 +30,13 @@ const Avatar: React.FC<AvatarProps> = ({ user, className }) => {
     return (
         <div className={`relative w-full h-full ${className || ''}`}>
             {equippedAssets.map(asset => (
-                asset.imageUrl && (
-                    <img
-                        key={asset.id}
-                        src={asset.imageUrl}
-                        alt={asset.name}
-                        className="absolute inset-0 w-full h-full object-contain"
-                        style={{ zIndex: 1 }}
-                    />
-                )
+                <img
+                    key={asset.id}
+                    src={asset.url}
+                    alt={asset.name}
+                    className="absolute inset-0 w-full h-full object-contain"
+                    style={{ zIndex: 1 }}
+                />
             ))}
         </div>
     );

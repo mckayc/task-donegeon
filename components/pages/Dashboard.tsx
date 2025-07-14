@@ -1,3 +1,4 @@
+
 import React, { useMemo } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { Quest, QuestAvailability, QuestCompletionStatus, RewardCategory, Role, User, QuestType } from '../../types';
@@ -184,7 +185,7 @@ const Dashboard: React.FC = () => {
                                 if (activity.type === 'Quest') {
                                     text = `Completed "${getQuestTitle(activity.data.questId)}"`;
                                 } else if (activity.type === 'Purchase') {
-                                    text = `Purchased "${activity.data.itemDetails.title}"`;
+                                    text = `Purchased "${activity.data.assetDetails.name}"`;
                                 } else if (activity.type === 'Trophy') {
                                     text = `Earned ${terminology.award}: "${getTrophyName(activity.data.trophyId)}"`;
                                     value = "New Achievement!"

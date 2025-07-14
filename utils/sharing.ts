@@ -1,10 +1,11 @@
 
-import { Blueprint, BlueprintAssets, Quest, RewardItem, RewardTypeDefinition, ShareableAssetType, Trophy, Rank, Market, AppSettings, ImportResolution } from '../types';
+
+import { Blueprint, BlueprintAssets, Quest, RewardItem, RewardTypeDefinition, ShareableAssetType, Trophy, Rank, Market, IAppData, ImportResolution, GameAsset } from '../types';
 
 /**
  * Finds all unique dependency IDs (e.g., rewardType IDs) from a collection of assets.
  */
-const getDependencies = (assets: (Quest | Market)[]): Set<string> => {
+const getDependencies = (assets: (Quest | GameAsset)[]): Set<string> => {
     const dependencyIds = new Set<string>();
 
     const extractFromRewardItems = (items: RewardItem[]) => {
@@ -16,12 +17,8 @@ const getDependencies = (assets: (Quest | Market)[]): Set<string> => {
             extractFromRewardItems(asset.rewards);
             extractFromRewardItems(asset.lateSetbacks);
             extractFromRewardItems(asset.incompleteSetbacks);
-        }
-        if ('items' in asset) { // It's a Market
-            asset.items.forEach(item => {
-                extractFromRewardItems(item.cost);
-                extractFromRewardItems(item.payout);
-            });
+        } else if ('cost' in asset) { // It's a GameAsset
+             extractFromRewardItems(asset.cost);
         }
     });
 
@@ -37,7 +34,7 @@ export const generateBlueprint = (
     description: string,
     author: string,
     selectedAssets: { [key in ShareableAssetType]: string[] },
-    allAssets: Omit<BlueprintAssets, 'ranks'> & { ranks: Rank[], settings: AppSettings }
+    allAssets: IAppData
 ) => {
     const blueprint: Blueprint = {
         name,
@@ -58,8 +55,13 @@ export const generateBlueprint = (
     blueprint.assets.quests = allAssets.quests.filter(q => selectedAssets.quests.includes(q.id));
     blueprint.assets.markets = allAssets.markets.filter(m => selectedAssets.markets.includes(m.id));
 
-    // Find all reward types these quests and markets depend on
-    const requiredRewardTypeIds = getDependencies([...blueprint.assets.quests, ...blueprint.assets.markets]);
+    // Find all game assets for sale in the selected markets
+    const assetsInSelectedMarkets = allAssets.gameAssets.filter(ga => 
+      ga.isForSale && ga.marketIds.some(mid => selectedAssets.markets.includes(mid))
+    );
+    
+    // Find all reward types these quests and market items depend on
+    const requiredRewardTypeIds = getDependencies([...blueprint.assets.quests, ...assetsInSelectedMarkets]);
 
     // Add required reward types automatically
     allAssets.rewardTypes.forEach(rt => {
@@ -91,7 +93,7 @@ export const generateBlueprint = (
  */
 export const analyzeBlueprintForConflicts = (
   blueprint: Blueprint,
-  currentData: Omit<BlueprintAssets, 'ranks'> & { ranks: Rank[] }
+  currentData: IAppData
 ): ImportResolution[] => {
     const resolutions: ImportResolution[] = [];
     if (!blueprint || !blueprint.assets) return [];

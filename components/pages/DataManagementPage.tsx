@@ -4,34 +4,30 @@ import * as Icons from '../ui/Icons';
 import ObjectManagerPage from './management/ObjectManagerPage';
 import BackupAndImportPage from './management/BackupAndImportPage';
 import AssetLibraryPage from './management/AssetLibraryPage';
-import DigitalAssetsPage from './DigitalAssetsPage';
-import MediaManagerPage from './management/MediaManagerPage';
+import AssetManagerPage from './management/AssetManagerPage';
 
-type ManagementPage = 'objects' | 'backup' | 'library' | 'digital_assets' | 'media';
+type ManagementPage = 'objects' | 'backup' | 'library' | 'assets';
 
 const DataManagementPage: React.FC = () => {
     const [activePage, setActivePage] = useState<ManagementPage>('objects');
 
     const managementPages: { id: ManagementPage, label: string, icon: React.FC }[] = [
         { id: 'objects', label: 'Object Manager', icon: Icons.ObjectManagerIcon },
+        { id: 'assets', label: 'Asset Manager', icon: Icons.AssetManagerIcon },
         { id: 'backup', label: 'Backup & Import', icon: Icons.DatabaseIcon },
         { id: 'library', label: 'Asset Library', icon: Icons.SparklesIcon },
-        { id: 'media', label: 'Media Manager', icon: Icons.MediaManagerIcon },
-        { id: 'digital_assets', label: 'Digital Assets', icon: Icons.AvatarIcon },
     ];
     
     const renderContent = () => {
         switch (activePage) {
             case 'objects':
                 return <ObjectManagerPage />;
+            case 'assets':
+                return <AssetManagerPage />;
             case 'backup':
                 return <BackupAndImportPage />;
             case 'library':
                 return <AssetLibraryPage />;
-             case 'media':
-                return <MediaManagerPage />;
-            case 'digital_assets':
-                return <DigitalAssetsPage />;
             default:
                 return null;
         }

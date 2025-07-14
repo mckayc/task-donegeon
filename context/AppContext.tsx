@@ -1,6 +1,6 @@
 
 import React, { createContext, useState, useContext, ReactNode, useEffect, useMemo, useCallback } from 'react';
-import { User, Quest, RewardTypeDefinition, RewardCategory, QuestAvailability, Role, QuestCompletion, QuestCompletionStatus, RewardItem, Market, MarketItem, QuestType, PurchaseRequest, PurchaseRequestStatus, Guild, Rank, Trophy, UserTrophy, Notification, TrophyRequirement, TrophyRequirementType, AppMode, Page, AdminAdjustment, AdminAdjustmentType, AvatarAsset, MediaAsset, SystemLog, AppSettings, Blueprint, ImportResolution, IAppData, Theme, ShareableAssetType, DigitalAsset } from '../types';
+import { User, Quest, RewardTypeDefinition, RewardCategory, QuestAvailability, Role, QuestCompletion, QuestCompletionStatus, RewardItem, Market, QuestType, PurchaseRequest, PurchaseRequestStatus, Guild, Rank, Trophy, UserTrophy, Notification, TrophyRequirement, TrophyRequirementType, AppMode, Page, AdminAdjustment, AdminAdjustmentType, SystemLog, AppSettings, Blueprint, ImportResolution, IAppData, Theme, ShareableAssetType, GameAsset } from '../types';
 import { createMockUsers, INITIAL_REWARD_TYPES, INITIAL_RANKS, INITIAL_TROPHIES, createSampleMarkets, createSampleQuests, createInitialGuilds, INITIAL_SETTINGS } from '../data/initialData';
 import { toYMD, fromYMD } from '../utils/quests';
 import { useDebounce } from '../hooks/useDebounce';
@@ -29,7 +29,7 @@ const AppStateContext = createContext<AppState | undefined>(undefined);
 interface AppDispatch {
   setAppUnlocked: (isUnlocked: boolean) => void;
   setAppMode: (mode: AppMode) => void;
-  addUser: (user: Omit<User, 'id' | 'personalPurse' | 'personalExperience' | 'guildBalances' | 'avatar' | 'ownedAvatarAssets' | 'ownedThemes'>) => User;
+  addUser: (user: Omit<User, 'id' | 'personalPurse' | 'personalExperience' | 'guildBalances' | 'avatar' | 'ownedAssetIds' | 'ownedThemes'>) => User;
   updateUser: (userId: string, updatedData: Partial<User>) => void;
   deleteUser: (userId: string) => void;
   addQuest: (quest: Omit<Quest, 'id' | 'claimedByUserIds' | 'dismissals'>) => void;
@@ -47,13 +47,10 @@ interface AppDispatch {
   rejectQuestCompletion: (completionId: string, note?: string) => void;
   claimQuest: (questId: string) => void;
   releaseQuest: (questId: string) => void;
-  addMarket: (market: Omit<Market, 'id' | 'items'>) => void;
+  addMarket: (market: Omit<Market, 'id'>) => void;
   updateMarket: (market: Market) => void;
   deleteMarket: (marketId: string) => void;
-  addMarketItem: (marketId: string, item: Omit<MarketItem, 'id'>) => void;
-  updateMarketItem: (marketId: string, item: MarketItem) => void;
-  deleteMarketItem: (marketId: string, itemId: string) => void;
-  purchaseMarketItem: (marketId: string, itemId: string) => void;
+  purchaseMarketItem: (assetId: string, marketId: string) => void;
   cancelPurchaseRequest: (purchaseId: string) => void;
   approvePurchaseRequest: (purchaseId: string) => void;
   rejectPurchaseRequest: (purchaseId: string) => void;
@@ -66,11 +63,9 @@ interface AppDispatch {
   deleteTrophy: (trophyId: string) => void;
   awardTrophy: (userId: string, trophyId: string, guildId?: string) => void;
   applyManualAdjustment: (adjustment: Omit<AdminAdjustment, 'id' | 'adjustedAt' | 'adjusterId'>) => boolean;
-  addMediaAsset: (asset: MediaAsset) => void;
-  deleteMediaAsset: (assetId: string) => void;
-  addDigitalAsset: (asset: Omit<DigitalAsset, 'id'>) => void;
-  updateDigitalAsset: (asset: DigitalAsset) => void;
-  deleteDigitalAsset: (assetId: string) => void;
+  addGameAsset: (asset: Omit<GameAsset, 'id' | 'creatorId' | 'createdAt'>) => void;
+  updateGameAsset: (asset: GameAsset) => void;
+  deleteGameAsset: (assetId: string) => void;
   addNotification: (notification: Omit<Notification, 'id'>) => void;
   removeNotification: (notificationId: string) => void;
   setActivePage: (page: Page) => void;
@@ -120,8 +115,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     trophies: [],
     userTrophies: [],
     adminAdjustments: [],
-    mediaAssets: [],
-    digitalAssets: [],
+    gameAssets: [],
     systemLogs: [],
     appMode: { mode: 'personal' },
     settings: INITIAL_SETTINGS,
@@ -166,7 +160,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             if (savedData && Object.keys(savedData).length > 0) {
                 const finalSettings = deepMergeSettings(INITIAL_SETTINGS, savedData.settings || {});
                 setAppData({
-                    ...{ users: [], currentUser: null, quests: [], markets: [], rewardTypes: [], questCompletions: [], purchaseRequests: [], guilds: [], ranks: [], trophies: [], userTrophies: [], adminAdjustments: [], mediaAssets: [], digitalAssets: [], systemLogs: [], appMode: { mode: 'personal' }, settings: INITIAL_SETTINGS },
+                    ...{ users: [], currentUser: null, quests: [], markets: [], rewardTypes: [], questCompletions: [], purchaseRequests: [], guilds: [], ranks: [], trophies: [], userTrophies: [], adminAdjustments: [], gameAssets: [], systemLogs: [], appMode: { mode: 'personal' }, settings: INITIAL_SETTINGS },
                     ...savedData,
                     currentUser: null,
                     settings: finalSettings,
@@ -207,7 +201,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     saveData();
   }, [debouncedAppData, isDataLoaded, addNotification, backendError]);
 
-  const { users, currentUser, quests, markets, rewardTypes, questCompletions, purchaseRequests, guilds, ranks, trophies, userTrophies, adminAdjustments, mediaAssets, digitalAssets, systemLogs, appMode, settings } = appData;
+  const { users, currentUser, quests, markets, rewardTypes, questCompletions, purchaseRequests, guilds, ranks, trophies, userTrophies, adminAdjustments, gameAssets, systemLogs, appMode, settings } = appData;
   const isFirstRun = isDataLoaded && !users.some(u => u.role === Role.DonegeonMaster) && !backendError;
 
   const allTags = useMemo(() => {
@@ -247,7 +241,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             .map((user, i) => ({
                 ...user,
                 id: `user-sample-${i}`,
-                avatar: {}, ownedAvatarAssets: [], personalPurse: {}, personalExperience: {}, guildBalances: {},
+                avatar: {}, ownedAssetIds: [], personalPurse: {}, personalExperience: {}, guildBalances: {},
                 ownedThemes: ['emerald', 'rose', 'sky'] as Theme[],
             }));
         
@@ -395,9 +389,9 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     return true;
   }, [appData.users, appData.rewardTypes]);
 
-  const addUser = useCallback((user: Omit<User, 'id' | 'personalPurse' | 'personalExperience' | 'guildBalances' | 'avatar' | 'ownedAvatarAssets' | 'ownedThemes'>): User => {
+  const addUser = useCallback((user: Omit<User, 'id' | 'personalPurse' | 'personalExperience' | 'guildBalances' | 'avatar' | 'ownedAssetIds' | 'ownedThemes'>): User => {
     const newUser: User = { 
-        ...user, id: `user-${Date.now()}`, avatar: {}, ownedAvatarAssets: [], personalPurse: {},
+        ...user, id: `user-${Date.now()}`, avatar: {}, ownedAssetIds: [], personalPurse: {},
         personalExperience: {}, guildBalances: {}, ownedThemes: ['emerald', 'rose', 'sky']
     };
     
@@ -518,8 +512,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     setAppData(prev => ({...prev, rewardTypes: prev.rewardTypes.filter(rt => rt.id !== rewardTypeId)}));
   }, []);
   
-  const addMarket = useCallback((market: Omit<Market, 'id'|'items'>) => {
-    setAppData(prev => ({...prev, markets: [...prev.markets, { ...market, id: `market-${Date.now()}`, items: [] }]}));
+  const addMarket = useCallback((market: Omit<Market, 'id'>) => {
+    setAppData(prev => ({...prev, markets: [...prev.markets, { ...market, id: `market-${Date.now()}` }]}));
   }, []);
 
   const updateMarket = useCallback((market: Market) => {
@@ -530,45 +524,33 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     setAppData(prev => ({...prev, markets: prev.markets.filter(m => m.id !== marketId)}));
   }, []);
 
-  const addMarketItem = useCallback((marketId: string, item: Omit<MarketItem, 'id'>) => {
-    setAppData(prev => ({...prev, markets: prev.markets.map(m => m.id === marketId ? { ...m, items: [...m.items, { ...item, id: `item-${Date.now()}` }] } : m)}));
-  }, []);
-  
-  const updateMarketItem = useCallback((marketId: string, item: MarketItem) => {
-    setAppData(prev => ({...prev, markets: prev.markets.map(m => m.id === marketId ? { ...m, items: m.items.map(i => i.id === item.id ? item : i) } : m)}));
-  }, []);
-
-  const deleteMarketItem = useCallback((marketId: string, itemId: string) => {
-    setAppData(prev => ({...prev, markets: prev.markets.map(m => m.id === marketId ? { ...m, items: m.items.filter(i => i.id !== itemId) } : m)}));
-  }, []);
-
-  const purchaseMarketItem = useCallback((marketId: string, itemId: string) => {
+  const purchaseMarketItem = useCallback((assetId: string, marketId: string) => {
     if(!currentUser) return;
+    const asset = gameAssets.find(a => a.id === assetId);
+    if (!asset || !asset.isForSale) return;
+    
     const market = markets.find(m => m.id === marketId);
-    const item = market?.items.find(i => i.id === itemId);
-    if (!market || !item) return;
+    if(!market) return;
 
     const requiresApproval = currentUser.role === Role.Explorer;
+    const guildId = market.guildId;
 
-    const itemDetails = { title: item.title, cost: item.cost, payout: item.payout, avatarAssetPayout: item.avatarAssetPayout, themePayout: item.themePayout, };
+    const assetDetails = { name: asset.name, description: asset.description, cost: asset.cost };
 
     if (requiresApproval) {
-        setAppData(prev => ({ ...prev, purchaseRequests: [...prev.purchaseRequests, { id: `purchase-${Date.now()}`, userId: currentUser.id, marketId, itemId, requestedAt: toYMD(new Date()), status: PurchaseRequestStatus.Pending, itemDetails, guildId: market.guildId, }]}));
-        addNotification({type: 'info', message: `"${item.title}" purchase requested.`})
+        setAppData(prev => ({ ...prev, purchaseRequests: [...prev.purchaseRequests, { id: `purchase-${Date.now()}`, userId: currentUser.id, assetId, requestedAt: toYMD(new Date()), status: PurchaseRequestStatus.Pending, assetDetails, guildId }]}));
+        addNotification({type: 'info', message: `"${asset.name}" purchase requested.`})
     } else {
-        const affordable = deductRewards(currentUser.id, item.cost, market.guildId);
+        const affordable = deductRewards(currentUser.id, asset.cost, guildId);
         if (affordable) {
-            applyRewards(currentUser.id, item.payout, market.guildId);
-            if(item.avatarAssetPayout) updateUser(currentUser.id, { ownedAvatarAssets: [...currentUser.ownedAvatarAssets, item.avatarAssetPayout] });
-            if(item.themePayout) updateUser(currentUser.id, { ownedThemes: [...currentUser.ownedThemes, item.themePayout] });
-            addNotification({type: 'success', message: `Purchased "${item.title}"!`});
-
-            setAppData(prev => ({ ...prev, purchaseRequests: [...prev.purchaseRequests, { id: `purchase-${Date.now()}`, userId: currentUser.id, marketId, itemId, requestedAt: toYMD(new Date()), status: PurchaseRequestStatus.Completed, itemDetails, guildId: market.guildId, }]}));
+            updateUser(currentUser.id, { ownedAssetIds: [...currentUser.ownedAssetIds, asset.id] });
+            addNotification({type: 'success', message: `Purchased "${asset.name}"!`});
+            setAppData(prev => ({ ...prev, purchaseRequests: [...prev.purchaseRequests, { id: `purchase-${Date.now()}`, userId: currentUser.id, assetId, requestedAt: toYMD(new Date()), status: PurchaseRequestStatus.Completed, assetDetails, guildId }]}));
         } else {
             addNotification({type: 'error', message: 'You cannot afford this item.'});
         }
     }
-  }, [currentUser, markets, deductRewards, applyRewards, addNotification, updateUser]);
+  }, [currentUser, gameAssets, markets, deductRewards, addNotification, updateUser]);
 
   const cancelPurchaseRequest = useCallback((purchaseId: string) => {
       setAppData(prev => ({...prev, purchaseRequests: prev.purchaseRequests.map(p => p.id === purchaseId ? { ...p, status: PurchaseRequestStatus.Cancelled } : p)}));
@@ -578,22 +560,18 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       const request = purchaseRequests.find(p => p.id === purchaseId);
       if (!request) return;
 
-      const affordable = deductRewards(request.userId, request.itemDetails.cost, request.guildId);
+      const affordable = deductRewards(request.userId, request.assetDetails.cost, request.guildId);
       if (affordable) {
-          applyRewards(request.userId, request.itemDetails.payout, request.guildId);
           const user = users.find(u => u.id === request.userId);
           if (user) {
-              let updates: Partial<User> = {};
-              if (request.itemDetails.avatarAssetPayout) updates.ownedAvatarAssets = [...user.ownedAvatarAssets, request.itemDetails.avatarAssetPayout];
-              if (request.itemDetails.themePayout) updates.ownedThemes = [...user.ownedThemes, request.itemDetails.themePayout];
-              if (Object.keys(updates).length > 0) updateUser(user.id, updates);
+              updateUser(user.id, { ownedAssetIds: [...user.ownedAssetIds, request.assetId] });
           }
           setAppData(prev => ({ ...prev, purchaseRequests: prev.purchaseRequests.map(p => p.id === purchaseId ? { ...p, status: PurchaseRequestStatus.Completed } : p) }));
           addNotification({type: 'success', message: 'Purchase approved.'});
       } else {
           addNotification({type: 'error', message: "User can't afford this."});
       }
-  }, [purchaseRequests, users, deductRewards, applyRewards, addNotification, updateUser]);
+  }, [purchaseRequests, users, deductRewards, addNotification, updateUser]);
 
   const rejectPurchaseRequest = useCallback((purchaseId: string) => {
       setAppData(prev => ({ ...prev, purchaseRequests: prev.purchaseRequests.map(p => p.id === purchaseId ? { ...p, status: PurchaseRequestStatus.Rejected } : p) }));
@@ -641,27 +619,25 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     return true;
   }, [currentUser, applyRewards, deductRewards, awardTrophy, addNotification]);
 
-  const addMediaAsset = useCallback((asset: MediaAsset) => {
-    setAppData(prev => ({ ...prev, mediaAssets: [...prev.mediaAssets, asset] }));
-    addNotification({ type: 'success', message: `Asset "${asset.name}" uploaded.` });
-  }, [addNotification]);
-  
-  const deleteMediaAsset = useCallback((assetId: string) => {
-      setAppData(prev => ({ ...prev, mediaAssets: prev.mediaAssets.filter(ma => ma.id !== assetId) }));
-      addNotification({ type: 'info', message: 'Asset deleted.' });
-  }, [addNotification]);
+  const addGameAsset = useCallback((asset: Omit<GameAsset, 'id' | 'creatorId' | 'createdAt'>) => {
+    if (!currentUser) return;
+    const newAsset: GameAsset = {
+        ...asset,
+        id: `g-asset-${Date.now()}`,
+        creatorId: currentUser.id,
+        createdAt: new Date().toISOString(),
+    };
+    setAppData(prev => ({ ...prev, gameAssets: [...prev.gameAssets, newAsset] }));
+    addNotification({ type: 'success', message: `Asset "${asset.name}" created.` });
+  }, [currentUser, addNotification]);
 
-  const addDigitalAsset = useCallback((asset: Omit<DigitalAsset, 'id'>) => {
-    setAppData(prev => ({...prev, digitalAssets: [...prev.digitalAssets, { ...asset, id: `d-asset-${Date.now()}` }]}));
-  }, []);
-
-  const updateDigitalAsset = useCallback((asset: DigitalAsset) => {
-    setAppData(prev => ({...prev, digitalAssets: prev.digitalAssets.map(da => da.id === asset.id ? asset : da)}));
+  const updateGameAsset = useCallback((asset: GameAsset) => {
+    setAppData(prev => ({...prev, gameAssets: prev.gameAssets.map(ga => ga.id === asset.id ? asset : ga)}));
   }, []);
   
-  const deleteDigitalAsset = useCallback((assetId: string) => {
-    setAppData(prev => ({...prev, digitalAssets: prev.digitalAssets.filter(da => da.id !== assetId)}));
-    addNotification({ type: 'info', message: 'Digital asset deleted.' });
+  const deleteGameAsset = useCallback((assetId: string) => {
+    setAppData(prev => ({...prev, gameAssets: prev.gameAssets.filter(ga => ga.id !== assetId)}));
+    addNotification({ type: 'info', message: 'Asset deleted.' });
   }, [addNotification]);
   
   const updateSettings = useCallback((newSettings: Partial<AppSettings>) => {
@@ -719,10 +695,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             if (resolution?.resolution !== 'skip') {
                 const newMarket = structuredClone(market);
                 newMarket.id = getNewId(market.id, 'market'); newMarket.title = resolveName('markets', market.id, market.title);
-                newMarket.items = newMarket.items.map(item => {
-                    item.id = getNewId(item.id, 'item'); item.cost = remapRewards(item.cost); item.payout = remapRewards(item.payout);
-                    return item;
-                });
                 newState.markets.push(newMarket);
             }
         });
@@ -751,7 +723,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const resetAllPlayerData = useCallback(() => {
     setAppData(prev => {
         const newUsers = prev.users.map(user => {
-            if (user.role !== Role.DonegeonMaster) return { ...user, personalPurse: {}, personalExperience: {}, guildBalances: {} };
+            if (user.role !== Role.DonegeonMaster) return { ...user, personalPurse: {}, personalExperience: {}, guildBalances: {}, ownedAssetIds: [], avatar: {} };
             return user;
         });
         return { ...prev, users: newUsers, userTrophies: prev.userTrophies.filter(ut => prev.users.find(u => u.id === ut.userId)?.role === Role.DonegeonMaster) };
@@ -762,7 +734,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const deleteAllCustomContent = useCallback(() => {
     setAppData(prev => ({
         ...prev, quests: [], markets: [], rewardTypes: prev.rewardTypes.filter(rt => rt.isCore),
-        ranks: prev.ranks.filter(r => r.xpThreshold === 0), trophies: [], mediaAssets: [],
+        ranks: prev.ranks.filter(r => r.xpThreshold === 0), trophies: [], gameAssets: [],
         guilds: prev.guilds.filter(g => g.isDefault),
     }));
     addNotification({ type: 'success', message: 'All custom content (quests, markets, rewards, etc.) has been deleted.' });
@@ -864,10 +836,9 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     setAppUnlocked, setAppMode, addUser, updateUser, deleteUser, addQuest, updateQuest, deleteQuest, dismissQuest,
     setCurrentUser, setTargetedUserForLogin, setIsSwitchingUser, addRewardType, updateRewardType, deleteRewardType,
     completeQuest, approveQuestCompletion, rejectQuestCompletion, claimQuest, releaseQuest, addMarket, updateMarket,
-    deleteMarket, addMarketItem, updateMarketItem, deleteMarketItem, purchaseMarketItem, cancelPurchaseRequest,
-    approvePurchaseRequest, rejectPurchaseRequest, addGuild, updateGuild, deleteGuild, setRanks, addTrophy,
-    updateTrophy, deleteTrophy, awardTrophy, applyManualAdjustment, addMediaAsset, deleteMediaAsset, addDigitalAsset,
-    updateDigitalAsset, deleteDigitalAsset, addNotification, removeNotification, setActivePage, setActiveMarketId,
+    deleteMarket, purchaseMarketItem, cancelPurchaseRequest, approvePurchaseRequest, rejectPurchaseRequest, 
+    addGuild, updateGuild, deleteGuild, setRanks, addTrophy, updateTrophy, deleteTrophy, awardTrophy, applyManualAdjustment, 
+    addGameAsset, updateGameAsset, deleteGameAsset, addNotification, removeNotification, setActivePage, setActiveMarketId,
     updateSettings, importBlueprint, restoreFromBackup, populateInitialGameData, clearAllHistory, resetAllPlayerData,
     deleteAllCustomContent, deleteSelectedAssets
   };

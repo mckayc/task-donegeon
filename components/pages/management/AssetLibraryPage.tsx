@@ -1,12 +1,23 @@
 
+
 import React, { useState } from 'react';
 import { useAppState, useAppDispatch } from '../../../context/AppContext';
 import Button from '../../ui/Button';
 import Card from '../../ui/Card';
-import { Quest, MarketItem, QuestType, QuestAvailability } from '../../../types';
+import { Quest, QuestType, QuestAvailability } from '../../../types';
 
 type AssetCategory = 'elementary_chores' | 'teen_chores' | 'fitness_goals' | 'learning_goals' | 'fantasy_rpg_items' | 'sci_fi_items';
-type GeneratedAsset = Partial<Quest> & Partial<MarketItem>;
+type GeneratedAsset = {
+    title: string;
+    description: string;
+    // Quest properties
+    reward_type?: string;
+    reward_amount?: number;
+    requires_approval?: boolean;
+    // Market Item properties
+    cost_type?: string;
+    cost_amount?: number;
+};
 
 const CATEGORIES: { id: AssetCategory; label: string; assetType: 'Quest' | 'MarketItem'; }[] = [
     { id: 'elementary_chores', label: 'Quests: Elementary Chores', assetType: 'Quest' },
@@ -19,7 +30,7 @@ const CATEGORIES: { id: AssetCategory; label: string; assetType: 'Quest' | 'Mark
 
 const AssetLibraryPage: React.FC = () => {
     const { markets, rewardTypes } = useAppState();
-    const { addQuest, addMarketItem, addNotification } = useAppDispatch();
+    const { addQuest, addGameAsset, addNotification } = useAppDispatch();
 
     const [selectedCategory, setSelectedCategory] = useState<AssetCategory>('elementary_chores');
     const [isLoading, setIsLoading] = useState(false);
@@ -75,27 +86,32 @@ const AssetLibraryPage: React.FC = () => {
 
         let importedCount = 0;
         selection.forEach(index => {
-            const asset = generatedAssets[index] as any;
+            const asset = generatedAssets[index];
             if (categoryInfo.assetType === 'Quest') {
                 const rewardTypeId = rewardMap[asset.reward_type as keyof typeof rewardMap] || rewardMap.diligence!;
                 addQuest({
                     title: asset.title, description: asset.description,
-                    rewards: [{ rewardTypeId: rewardTypeId, amount: asset.reward_amount }],
+                    rewards: [{ rewardTypeId: rewardTypeId, amount: asset.reward_amount || 10 }],
                     type: QuestType.Duty, isActive: true, isOptional: false,
-                    requiresApproval: asset.requires_approval,
+                    requiresApproval: asset.requires_approval || false,
                     availabilityType: QuestAvailability.Daily, availabilityCount: null,
                     weeklyRecurrenceDays: [], monthlyRecurrenceDays: [], assignedUserIds: [],
                     tags: [selectedCategory], lateSetbacks: [], incompleteSetbacks: [],
                 });
                 importedCount++;
-            } else { // MarketItem
+            } else { // GameAsset from MarketItem
                 const costTypeId = rewardMap[asset.cost_type as keyof typeof rewardMap] || rewardMap.crystals!;
                 const targetMarketId = markets.find(m => m.id.includes('gadget'))?.id || markets[0]?.id;
                 if(targetMarketId) {
-                    addMarketItem(targetMarketId, {
-                        title: asset.title, description: asset.description,
-                        cost: [{ rewardTypeId: costTypeId, amount: asset.cost_amount }],
-                        payout: [],
+                    addGameAsset({
+                        name: asset.title,
+                        description: asset.description,
+                        url: 'https://placehold.co/150x150/22c55e/FFFFFF?text=AI',
+                        category: 'Generated',
+                        avatarSlot: undefined,
+                        isForSale: true,
+                        cost: [{ rewardTypeId: costTypeId, amount: asset.cost_amount || 1 }],
+                        marketIds: [targetMarketId],
                     });
                     importedCount++;
                 }

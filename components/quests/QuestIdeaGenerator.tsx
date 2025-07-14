@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { GoogleGenAI, Type } from "@google/genai";
 import Button from '../ui/Button';
@@ -70,12 +71,17 @@ const QuestIdeaGenerator: React.FC<QuestIdeaGeneratorProps> = ({ onUseIdea, onCl
                 }
             });
 
-            const jsonResponse = JSON.parse(response.text) as QuestIdeaResponse;
+            const text = response.text;
+            if (!text) {
+                throw new Error("Received an empty response from the AI. The prompt may have been blocked or was too generic.");
+            }
+            const jsonResponse = JSON.parse(text) as QuestIdeaResponse;
             setGeneratedQuests(jsonResponse.quests || []);
 
         } catch (err) {
             console.error("Gemini API error:", err);
-            setError('Failed to generate ideas. Please check the prompt and try again.');
+            const message = err instanceof Error ? err.message : 'An unknown error occurred.';
+            setError(`Failed to generate ideas. ${message}`);
         } finally {
             setIsLoading(false);
         }

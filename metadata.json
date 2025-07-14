@@ -1,9 +1,8 @@
-
 {
-  "name": "Task Donegeon - 0.0.43",
-  "version": "0.0.43",
-  "lastChange": "Overhauled UI with new icons. Implemented Week and Day views in the Calendar. Enhanced AI Studio with API status checks and image/market generation. Fixed timestamp inaccuracies in chronicles.",
-  "lastChangeDate": "2024-05-23T10:00:00Z",
+  "name": "Task Donegeon - 0.0.44",
+  "version": "0.0.44",
+  "lastChange": "Major architectural refactor of app state into multiple contexts. Implemented selective asset library imports, interactive calendar week view, loading/empty states, onboarding wizard, and standardized confirmation dialogs. A11y and UX improvements.",
+  "lastChangeDate": "2024-05-24T12:00:00Z",
   "description": "A gamified task and chore tracker for families and groups. Complete quests, earn currency and experience, and level up your character in a fun, medieval-themed adventure.",
   "requestFramePermissions": [],
   "prompt": ""

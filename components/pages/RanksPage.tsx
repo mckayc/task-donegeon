@@ -1,5 +1,3 @@
-
-
 import React, { useMemo } from 'react';
 import { useAppState } from '../../context/AppContext';
 import { Rank } from '../../types';
@@ -22,8 +20,8 @@ const RanksPage: React.FC = () => {
         
         const allRanks = [...ranks].sort((a, b) => a.xpThreshold - b.xpThreshold);
         
-        let foundRank: Rank = allRanks[0];
-        let foundNextRank: Rank | null = allRanks[1] || null;
+        let foundRank: Rank | null = null;
+        let foundNextRank: Rank | null = null;
 
         for (let i = allRanks.length - 1; i >= 0; i--) {
             if (currentTotalXp >= allRanks[i].xpThreshold) {
@@ -33,8 +31,14 @@ const RanksPage: React.FC = () => {
             }
         }
         
-        const xpForNext = foundNextRank ? foundNextRank.xpThreshold - foundRank.xpThreshold : 0;
-        const xpIntoCurrent = currentTotalXp - foundRank.xpThreshold;
+        // If no rank is found (e.g., all have thresholds > 0 and user has 0 XP), default to the first rank.
+        if (!foundRank && allRanks.length > 0) {
+            foundRank = allRanks[0];
+            foundNextRank = allRanks[1] || null;
+        }
+
+        const xpForNext = (foundRank && foundNextRank) ? foundNextRank.xpThreshold - foundRank.xpThreshold : 0;
+        const xpIntoCurrent = foundRank ? currentTotalXp - foundRank.xpThreshold : 0;
         const progress = (foundNextRank && xpForNext > 0) ? Math.min(100, (xpIntoCurrent / xpForNext) * 100) : 100;
         
         return { 
@@ -55,7 +59,7 @@ const RanksPage: React.FC = () => {
             <Card className="mb-8" title="Your Current Rank" titleIcon={<RankIcon />}>
                 <div className="flex flex-col md:flex-row items-center gap-6">
                     <div className="w-24 h-24 bg-stone-700/50 rounded-full flex items-center justify-center text-5xl flex-shrink-0">
-                        {currentRank.icon}
+                        {currentRank.icon || '🔰'}
                     </div>
                     <div className="flex-grow w-full">
                         <h3 className="text-3xl font-bold text-emerald-300">{currentRank.name}</h3>
@@ -89,7 +93,7 @@ const RanksPage: React.FC = () => {
 
                         return (
                              <div key={rank.id} className={`p-4 rounded-lg flex items-center gap-4 transition-all duration-300 ${cardClass}`}>
-                                <div className="text-3xl">{rank.icon}</div>
+                                <div className="text-3xl">{rank.icon || '🔰'}</div>
                                 <div>
                                     <p className="font-bold text-stone-100">{rank.name} (Lvl {index + 1})</p>
                                     <p className="text-xs text-stone-400">{rank.xpThreshold} XP Required</p>

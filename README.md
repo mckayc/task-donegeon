@@ -1,8 +1,8 @@
 
 # Task Donegeon
 
-**Version:** 0.0.43
-**Last Updated:** 2024-05-23T10:00:00Z
+**Version:** 0.0.44
+**Last Updated:** 2024-05-24T12:00:00Z
 
 ---
 
@@ -17,21 +17,20 @@ Task Donegeon is a gamified task and chore management application designed for f
 
 ## ✨ Features
 
+-   **Refactored Architecture:** The application's state management has been refactored from a single context into multiple, focused contexts for better scalability and maintainability.
+-   **Enhanced UI/UX:** Features improved loading states, engaging empty state components, standardized confirmation dialogs, and a new user onboarding wizard.
+-   **Selective Asset Library:** A large, built-in library of pre-made quests and items with a new dialog for selective, checkbox-based importing.
 -   **Secure AI-Powered Features:** Includes an "AI Studio" for generating quests, items, trophies, and images, all powered by a secure backend proxy.
--   **Advanced Calendar:** Features Month, Week, and Day views for better planning and task management.
+-   **Advanced Calendar:** Features interactive Month, Week, and Day views for better planning and task management.
 -   **Refreshed UI:** A complete overhaul of the sidebar icons for a modern, consistent look.
--   **Session-Based Master Lock:** The application is locked upon first visit and requires an admin password to unlock for the session, providing a strong security layer.
--   **Static Asset Library:** A large, built-in library of pre-made quests, markets, items, and trophies with selective import.
+-   **Session-Based Master Lock:** The application is locked upon first visit and requires an admin password to unlock for the session.
 -   **Gamified Task Management:** Create recurring "Duties" and one-time "Ventures" with customizable rewards and penalties.
--   **Character Progression:** Users earn Experience Points (XP) to gain Ranks, from Novice to Grandmaster.
--   **Virtual Economy:** Earn multiple types of currency (e.g., Gold, Gems, Crystals) to spend in a customizable Marketplace.
--   **Avatar Customization:** Users can unlock and equip different cosmetic items using uploaded or AI-generated images.
--   **Guild System:** Create groups for collaborative tasks. Guilds have their own separate economy and quests, perfect for managing family chores.
--   **Trophy & Achievement System:** Unlockable trophies for completing milestones, which can be awarded automatically or manually.
--   **Theming Engine:** Unlock and apply various visual themes to completely change the look and feel of the application.
--   **Robust Admin Controls:** A "Donegeon Master" role with full control over users, quests, rewards, game rules, and terminology.
--   **Data Persistence:** A full backend ensures all data is saved to a server, providing a consistent experience across sessions.
--   **Full Backup & Restore:** Admins can download a complete backup of the entire game state and restore it, ensuring data safety.
+-   **Character Progression & Virtual Economy:** Earn XP to gain Ranks and multiple currencies to spend in a customizable Marketplace.
+-   **Avatar Customization:** Unlock and equip different cosmetic items using uploaded or AI-generated images.
+-   **Guild System:** Create groups for collaborative tasks with their own separate economy and quests.
+-   **Trophy & Theming Systems:** Unlockable trophies for milestones and various visual themes to change the app's look and feel.
+-   **Robust Admin Controls & Data Persistence:** A "Donegeon Master" role with full control over the game, with all data saved to a server.
+-   **Full Backup & Restore:** Admins can download a complete backup of the entire game state and restore it.
 
 ## 🗺️ Roadmap
 
@@ -40,6 +39,7 @@ Here is the planned development path for Task Donegeon, prioritized for the most
 ### Phase 1: Foundational Features & Quality of Life
 This phase focuses on high-impact improvements for admins and players that enhance the core experience.
 
+-   **Backend Authentication:** Implement JWT-based authentication to secure all backend API endpoints.
 -   **Enhanced Security:** A comprehensive security audit and implementation of best practices like strict input validation, Content Security Policy (CSP), and secure headers.
 -   **Quest Bundles:** Group quests into "Quest Chains" or "Storylines." This allows admins to create multi-step adventures.
 -   **Showcase Page:** A public profile page for each explorer to showcase their avatar, earned trophies, and key stats.

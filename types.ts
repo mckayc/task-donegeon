@@ -1,6 +1,7 @@
 
 
 
+
 export enum Role {
   DonegeonMaster = 'Donegeon Master',
   Gatekeeper = 'Gatekeeper',
@@ -37,6 +38,7 @@ export interface User {
   };
   theme?: Theme;
   ownedThemes: Theme[];
+  hasBeenOnboarded?: boolean;
 }
 
 export enum QuestType {
@@ -325,7 +327,6 @@ export interface ImportResolution {
 
 export interface IAppData {
   users: User[];
-  currentUser: User | null;
   quests: Quest[];
   markets: Market[];
   rewardTypes: RewardTypeDefinition[];
@@ -338,15 +339,19 @@ export interface IAppData {
   adminAdjustments: AdminAdjustment[];
   gameAssets: GameAsset[];
   systemLogs: SystemLog[];
-  appMode: AppMode;
   settings: AppSettings;
 }
 
-export interface ImportResolution {
-  type: ShareableAssetType;
-  id: string; // Original ID from blueprint
-  name: string;
-  status: 'new' | 'conflict';
-  resolution: 'skip' | 'rename' | 'keep';
-  newName?: string;
+export interface LibraryPack {
+    id: string;
+    type: 'Quests' | 'Markets & Items' | 'Trophies' | 'Rewards';
+    title: string;
+    description: string;
+    assets: {
+        quests?: Omit<Quest, 'claimedByUserIds' | 'dismissals'>[];
+        gameAssets?: Omit<GameAsset, 'creatorId' | 'createdAt'>[];
+        markets?: Market[];
+        rewardTypes?: Omit<RewardTypeDefinition, 'isCore'>[];
+        trophies?: Trophy[];
+    };
 }

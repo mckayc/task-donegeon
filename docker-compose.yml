@@ -1,8 +1,6 @@
 services:
   app:
-    build:
-      context: .
-      dockerfile: Dockerfile
+    image: mckayc/task-donegeon:latest
     ports:
       - "3002:3001"
     depends_on:

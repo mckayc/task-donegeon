@@ -1,8 +1,8 @@
 {
   "name": "Task Donegeon",
-  "version": "0.0.36",
-  "lastChange": "Added a detailed, prioritized roadmap to the About page and README.md.",
-  "lastChangeDate": "2023-10-30T10:00:00Z",
+  "version": "0.0.37",
+  "lastChange": "Added 'Enhanced Security' to roadmap and significantly expanded sample data (quests, markets, trophies).",
+  "lastChangeDate": "2023-10-31T12:00:00Z",
   "description": "A gamified task and chore tracker for families and groups. Complete quests, earn currency and experience, and level up your character in a fun, medieval-themed adventure.",
   "requestFramePermissions": [],
   "prompt": ""

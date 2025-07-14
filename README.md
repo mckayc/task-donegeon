@@ -1,7 +1,7 @@
 # Task Donegeon
 
-**Version:** 0.0.36
-**Last Updated:** 2023-10-30T10:00:00Z
+**Version:** 0.0.37
+**Last Updated:** 2023-10-31T12:00:00Z
 
 ---
 
@@ -37,6 +37,7 @@ Here is the planned development path for Task Donegeon, prioritized for the most
 ### Phase 1: Foundational Features & Quality of Life
 This phase focuses on high-impact improvements for admins and players that enhance the core experience.
 
+-   **Enhanced Security:** A comprehensive security audit and implementation of best practices like strict input validation, Content Security Policy (CSP), and secure headers.
 -   **Quest Bundles:** Group quests into "Quest Chains" or "Storylines." This allows admins to create multi-step adventures.
 -   **Showcase Page:** A public profile page for each explorer to showcase their avatar, earned trophies, and key stats.
 -   **Advanced Object Manager:** Implement bulk editing, quick duplication, and powerful filtering/sorting for all game objects.

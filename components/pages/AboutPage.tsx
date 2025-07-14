@@ -41,6 +41,7 @@ const RoadmapContent: React.FC = () => (
             <h4 className="text-xl font-bold text-stone-100 font-medieval">Phase 1: Foundational Features &amp; Quality of Life</h4>
             <p className="text-xs text-stone-400">This phase focuses on high-impact improvements for admins and players that enhance the core experience.</p>
             <ul className="list-disc list-inside space-y-2 mt-2">
+                <li><strong>Enhanced Security:</strong> A comprehensive security audit and implementation of best practices like strict input validation, Content Security Policy (CSP), and secure headers.</li>
                 <li><strong>Quest Bundles:</strong> Group quests into "Quest Chains" or "Storylines" to create multi-step adventures.</li>
                 <li><strong>Showcase Page:</strong> A public profile page for each explorer to showcase their avatar, earned trophies, and key stats.</li>
                 <li><strong>Advanced Object Manager:</strong> Implement bulk editing, quick duplication, and powerful filtering/sorting for all game objects.</li>

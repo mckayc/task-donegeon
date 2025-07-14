@@ -1,8 +1,7 @@
-
 # Task Donegeon
 
-**Version:** 0.0.35
-**Last Updated:** 2023-10-29T12:00:00Z
+**Version:** 0.0.36
+**Last Updated:** 2023-10-30T10:00:00Z
 
 ---
 
@@ -10,14 +9,10 @@ Task Donegeon is a gamified task and chore management application designed for f
 
 ## Table of Contents
 - [✨ Features](#-features)
+- [🗺️ Roadmap](#️-roadmap)
 - [🛠️ Tech Stack](#️-tech-stack)
 - [🚀 Getting Started](#-getting-started)
-  - [Prerequisites](#prerequisites)
 - [⚙️ Installation and Running](#️-installation-and-running)
-  - [Option 1: Local Development (Recommended for contributing)](#option-1-local-development-recommended-for-contributing)
-  - [Option 2: Vercel & Supabase Deployment (Recommended for production)](#option-2-vercel--supabase-deployment-recommended-for-production)
-  - [Option 3: Docker Deployment (Recommended for self-hosting)](#option-3-docker-deployment-recommended-for-self-hosting)
-  - [Option 4: Portainer Deployment (Self-hosting with a UI)](#option-4-portainer-deployment-self-hosting-with-a-ui)
 
 ## ✨ Features
 
@@ -34,6 +29,41 @@ Task Donegeon is a gamified task and chore management application designed for f
 -   **Robust Admin Controls:** A "Donegeon Master" role with full control over users, quests, rewards, game rules, and terminology.
 -   **Data Persistence:** A full backend ensures all data is saved to a server, providing a consistent experience across sessions.
 -   **Sharing & Backup:** Export and import game content (quests, markets, etc.) via "Blueprints," and create full data backups for peace of mind.
+
+## 🗺️ Roadmap
+
+Here is the planned development path for Task Donegeon, prioritized for the most impactful features first.
+
+### Phase 1: Foundational Features & Quality of Life
+This phase focuses on high-impact improvements for admins and players that enhance the core experience.
+
+-   **Quest Bundles:** Group quests into "Quest Chains" or "Storylines." This allows admins to create multi-step adventures.
+-   **Showcase Page:** A public profile page for each explorer to showcase their avatar, earned trophies, and key stats.
+-   **Advanced Object Manager:** Implement bulk editing, quick duplication, and powerful filtering/sorting for all game objects.
+-   **Improved Progress Page:** A more detailed summary of user activity, highlighting strengths and areas for improvement with visual charts.
+
+### Phase 2: Core Gameplay & Personalization
+This phase introduces major new creative outlets and systems for deeper engagement.
+
+-   **Theme Creator:** An admin tool to create and edit custom visual themes (colors, fonts, etc.) that can be sold in a market.
+-   **Template Library:** Admins can browse and import pre-made templates for quests, rewards, and other game objects to quickly add new content.
+-   **Reward Rarity & Limits:** Ability to specify how many of a certain reward can be claimed, creating rare or one-of-a-kind items.
+-   **Automated Quest Rotation:** A system for automatically rotating daily or weekly duties among guild members to ensure fair distribution of chores.
+
+### Phase 3: Advanced Systems & World Expansion
+This phase includes the big, game-changing features that add new dimensions to the world.
+
+-   **Game Map:** A visual map with unlockable locations. Traveling to a location could unlock new quests or markets.
+-   **Explorer Markets:** Allow explorers to open their own markets to sell items or services to other players, creating a player-driven economy.
+-   **Advanced Reporting:** A dedicated reporting dashboard for admins to track user engagement, economic flow, and quest completion rates.
+
+### Phase 4: Platform Maturity & Polish
+This phase focuses on long-term stability, accessibility, and preparing the app for a wider audience.
+
+-   **Real-time Notifications:** Use WebSockets for instant updates on approvals, purchases, and guild activity.
+-   **Accessibility (A11Y) Audit:** A full review to ensure the application is usable by people with disabilities.
+-   **Mobile App / PWA:** Package the application as a Progressive Web App (PWA) for a native-like experience on mobile devices.
+
 
 ## 🛠️ Tech Stack
 
@@ -56,7 +86,7 @@ Task Donegeon is a gamified task and chore management application designed for f
 
 ## ⚙️ Installation and Running
 
-### Option 1: Local Development
+### Option 1: Local Development (Recommended for contributing)
 1.  **Clone & Install:**
     ```bash
     git clone https://github.com/mckayc/task-donegeon.git

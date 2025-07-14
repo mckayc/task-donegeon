@@ -1,8 +1,8 @@
-
 {
   "name": "Task Donegeon",
-  "version": "0.0.35",
-  "lastChange": "Refactored asset management into a unified system and fixed module loading bugs.",
+  "version": "0.0.36",
+  "lastChange": "Added a detailed, prioritized roadmap to the About page and README.md.",
+  "lastChangeDate": "2023-10-30T10:00:00Z",
   "description": "A gamified task and chore tracker for families and groups. Complete quests, earn currency and experience, and level up your character in a fun, medieval-themed adventure.",
   "requestFramePermissions": [],
   "prompt": ""

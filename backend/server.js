@@ -241,7 +241,14 @@ app.use((err, req, res, next) => {
 
 
 // === Start Server ===
-app.listen(port, async () => {
-  console.log(`Task Donegeon backend listening at http://localhost:${port}`);
-  await initializeDatabase();
-});
+// This part is ignored by Vercel but used for local development
+if (process.env.NODE_ENV !== 'production' || process.env.VERCEL !== '1') {
+    app.listen(port, async () => {
+        console.log(`Task Donegeon backend listening at http://localhost:${port}`);
+        await initializeDatabase();
+    });
+}
+
+
+// Export the app for Vercel
+module.exports = app;

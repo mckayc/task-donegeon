@@ -1,7 +1,7 @@
-
 {
   "name": "task-donegeon-backend",
   "version": "1.0.0",
+  "type": "commonjs",
   "description": "Backend API for Task Donegeon",
   "main": "server.js",
   "scripts": {

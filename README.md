@@ -1,8 +1,8 @@
 
 # Task Donegeon
 
-**Version:** 0.0.41
-**Last Updated:** 2024-05-21T18:00:00Z
+**Version:** 0.0.42
+**Last Updated:** 2024-05-22T12:00:00Z
 
 ---
 
@@ -17,7 +17,7 @@ Task Donegeon is a gamified task and chore management application designed for f
 
 ## ✨ Features
 
--   **AI-Powered Content Creation:** Includes an "AI Studio" for generating quests, items, and trophies, plus AI image generation for item icons.
+-   **Secure AI-Powered Features:** Includes an "AI Studio" for generating quests, items, and trophies, plus AI image generation for item icons, all powered by a secure backend proxy.
 -   **Advanced Calendar:** Features Month, Week, and Day views for better planning and task management.
 -   **Session-Based Master Lock:** The application is locked upon first visit and requires an admin password to unlock for the session, providing a strong security layer.
 -   **Static Asset Library:** A large, built-in library of pre-made quests, markets, items, and trophies with selective import.
@@ -70,7 +70,7 @@ This phase focuses on long-term stability, accessibility, and preparing the app 
 ## 🛠️ Tech Stack
 
 -   **Frontend:** React (with Hooks & Context API), TypeScript, Vite, TailwindCSS
--   **Backend:** Node.js with Express.js, PostgreSQL
+-   **Backend:** Node.js with Express.js, PostgreSQL, Google Gemini
 -   **Deployment:** Docker, Vercel (Frontend & Serverless Functions), Supabase (Database & Storage)
 
 ## 🚀 Getting Started
@@ -79,6 +79,7 @@ This phase focuses on long-term stability, accessibility, and preparing the app 
 -   **Node.js:** v18 or later.
 -   **npm:** (usually comes with Node.js).
 -   **Git:** For cloning the repository.
+-   **Google Gemini API Key:** Required for all AI features. You can get one from [Google AI Studio](https://aistudio.google.com/app/apikey).
 -   **Docker & Docker Compose:** Required for Docker/Portainer deployment.
 -   **Cloud Accounts:** Required for the Vercel/Supabase option (Vercel, Supabase, GitHub).
 
@@ -102,8 +103,9 @@ This phase focuses on long-term stability, accessibility, and preparing the app 
     ```
 3.  **Configure `.env` File:**
     Copy `.env.example` to `.env` and fill in the variables.
-    - `DATABASE_URL`: `postgres://postgres:your_secret_password@localhost:5432/postgres`
-    - `STORAGE_PROVIDER`: `local`
+    -   `DATABASE_URL`: `postgres://postgres:your_secret_password@localhost:5432/postgres`
+    -   `STORAGE_PROVIDER`: `local`
+    -   **`API_KEY`**: Your Google Gemini API Key.
 
 4.  **Run Backend & Frontend:**
     -   In one terminal, from the `backend` directory: `npm start`
@@ -125,6 +127,7 @@ This phase focuses on long-term stability, accessibility, and preparing the app 
         -   `STORAGE_PROVIDER`: `supabase`
         -   `SUPABASE_URL`: Your Supabase project URL (from **Project Settings > API**).
         -   `SUPABASE_SERVICE_ROLE_KEY`: Your Supabase `service_role` key (from **Project Settings > API**).
+        -   **`API_KEY`**: Your Google Gemini API Key.
     -   Click **Deploy**.
 
 ### Option 3: Docker Deployment
@@ -132,6 +135,7 @@ This phase focuses on long-term stability, accessibility, and preparing the app 
 2.  **Configure `.env` File:** Copy `.env.example` to `.env` and set all variables.
     -   `POSTGRES_PASSWORD`: A strong, unique password.
     -   `STORAGE_PROVIDER`: `local`
+    -   **`API_KEY`**: Your Google Gemini API Key.
 3.  **Build and Run:**
     ```bash
     docker-compose up --build
@@ -154,6 +158,9 @@ This phase focuses on long-term stability, accessibility, and preparing the app 
 
     # Storage Provider ('local' for Docker, 'supabase' for production)
     STORAGE_PROVIDER=local
+
+    # Google Gemini API Key
+    API_KEY=your_gemini_api_key_here
     ```
 5.  **Deploy the stack**. The app will be available at `http://<your-server-ip>:3002`.
 

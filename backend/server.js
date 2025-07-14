@@ -6,6 +6,7 @@ const path = require('path');
 const multer = require('multer');
 const { createClient } = require('@supabase/supabase-js');
 const fs = require('fs');
+const { GoogleGenAI } = require('@google/genai');
 
 // --- Environment Variable Checks ---
 const requiredEnv = ['DATABASE_URL', 'STORAGE_PROVIDER'];
@@ -30,6 +31,14 @@ app.use(express.json({ limit: '10mb' }));
 let supabase;
 if (process.env.STORAGE_PROVIDER === 'supabase') {
     supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
+}
+
+// === Gemini AI Client ===
+let ai;
+if (process.env.API_KEY) {
+    ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+} else {
+    console.warn("WARNING: API_KEY environment variable not set. AI features will be disabled.");
 }
 
 // === Multer Configuration for File Uploads ===
@@ -159,6 +168,38 @@ app.post('/api/media/upload', upload.single('file'), async (req, res, next) => {
         next(err);
     }
 });
+
+// --- AI Endpoints ---
+app.get('/api/ai/status', (req, res) => {
+  res.json({ isConfigured: !!ai });
+});
+
+app.post('/api/ai/generate', async (req, res, next) => {
+    if (!ai) return res.status(503).json({ error: "AI features are not configured on the server." });
+    
+    const { model, prompt, generationConfig } = req.body;
+    
+    try {
+        if (model.startsWith('imagen')) {
+             const response = await ai.models.generateImages({
+                model,
+                prompt,
+                config: generationConfig,
+            });
+            res.json(response);
+        } else {
+            const response = await ai.models.generateContent({
+                model,
+                contents: prompt,
+                config: generationConfig,
+            });
+            res.json(response);
+        }
+    } catch (err) {
+        next(err);
+    }
+});
+
 
 // === Final Catchall & Error Handling ===
 app.get('*', (req, res) => res.sendFile(path.join(__dirname, '../dist/index.html')));

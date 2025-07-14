@@ -6,6 +6,7 @@ import Button from '../ui/Button';
 import Input from '../ui/Input';
 import RewardInputGroup from '../forms/RewardInputGroup';
 import ToggleSwitch from '../ui/ToggleSwitch';
+import { SparklesIcon } from '../ui/Icons';
 
 interface EditGameAssetDialogProps {
   assetToEdit: GameAsset | null;
@@ -14,8 +15,8 @@ interface EditGameAssetDialogProps {
 }
 
 const EditGameAssetDialog: React.FC<EditGameAssetDialogProps> = ({ assetToEdit, newAssetUrl, onClose }) => {
-  const { addGameAsset, updateGameAsset } = useAppDispatch();
-  const { markets, rewardTypes } = useAppState();
+  const { addGameAsset, updateGameAsset, uploadFile, addNotification } = useAppDispatch();
+  const { markets, rewardTypes, settings } = useAppState();
 
   const [formData, setFormData] = useState({
     name: '',
@@ -28,6 +29,8 @@ const EditGameAssetDialog: React.FC<EditGameAssetDialogProps> = ({ assetToEdit, 
     marketIds: [] as string[],
   });
   const [error, setError] = useState('');
+  const [imagePrompt, setImagePrompt] = useState('');
+  const [isGenerating, setIsGenerating] = useState(false);
 
   useEffect(() => {
     if (assetToEdit) {
@@ -41,6 +44,7 @@ const EditGameAssetDialog: React.FC<EditGameAssetDialogProps> = ({ assetToEdit, 
         cost: [...assetToEdit.cost],
         marketIds: [...assetToEdit.marketIds],
       });
+      setImagePrompt(assetToEdit.name);
     } else if (newAssetUrl) {
       setFormData(prev => ({ ...prev, url: newAssetUrl }));
     }
@@ -91,6 +95,62 @@ const EditGameAssetDialog: React.FC<EditGameAssetDialogProps> = ({ assetToEdit, 
     }
     onClose();
   };
+
+  const handleGenerateImage = async () => {
+    if (!imagePrompt) return;
+    setIsGenerating(true);
+    setError('');
+    
+    try {
+        const response = await fetch('/api/ai/generate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                model: 'imagen-3.0-generate-002',
+                prompt: `Pixel art icon for a video game, simple, clean background. Item: ${imagePrompt}`,
+                generationConfig: {
+                    numberOfImages: 1,
+                    outputMimeType: 'image/png',
+                    aspectRatio: '1:1',
+                }
+            })
+        });
+
+        if (!response.ok) {
+            const err = await response.json();
+            throw new Error(err.error || 'Failed to generate image.');
+        }
+
+        const result = await response.json();
+        const base64Bytes = result.generatedImages?.[0]?.image?.imageBytes;
+
+        if (base64Bytes) {
+            const byteCharacters = atob(base64Bytes);
+            const byteNumbers = new Array(byteCharacters.length);
+            for (let i = 0; i < byteCharacters.length; i++) {
+                byteNumbers[i] = byteCharacters.charCodeAt(i);
+            }
+            const byteArray = new Uint8Array(byteNumbers);
+            const blob = new Blob([byteArray], {type: 'image/png'});
+            const file = new File([blob], `${imagePrompt.replace(/ /g, '_')}.png`, { type: 'image/png' });
+            
+            const uploadedFile = await uploadFile(file);
+            if (uploadedFile?.url) {
+                setFormData(p => ({...p, url: uploadedFile.url }));
+            } else {
+                throw new Error("Failed to upload the generated image.");
+            }
+        } else {
+            throw new Error("AI did not return a valid image.");
+        }
+
+    } catch(err) {
+        const message = err instanceof Error ? err.message : String(err);
+        setError(`Image generation failed: ${message}`);
+    } finally {
+        setIsGenerating(false);
+    }
+  };
   
   const dialogTitle = assetToEdit ? `Edit ${assetToEdit.name}` : 'Create New Asset';
 
@@ -102,14 +162,36 @@ const EditGameAssetDialog: React.FC<EditGameAssetDialogProps> = ({ assetToEdit, 
         </div>
         <form id="asset-dialog-form" onSubmit={handleSubmit} className="flex-1 space-y-4 p-8 overflow-y-auto scrollbar-hide">
           <div className="flex gap-6 items-start">
-              <div className="w-24 h-24 bg-stone-700 rounded-md flex-shrink-0">
-                  <img src={formData.url} alt="Asset preview" className="w-full h-full object-contain" />
+              <div className="w-24 h-24 bg-stone-700 rounded-md flex-shrink-0 flex items-center justify-center">
+                  {isGenerating ? (
+                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-400"></div>
+                  ) : (
+                     <img src={formData.url || 'https://placehold.co/150x150/1c1917/FFFFFF?text=?'} alt="Asset preview" className="w-full h-full object-contain" />
+                  )}
               </div>
               <div className="flex-grow space-y-4">
                 <Input label="Asset Name" value={formData.name} onChange={(e) => setFormData(p => ({...p, name: e.target.value}))} required />
                 <Input label="Description" value={formData.description} onChange={(e) => setFormData(p => ({...p, description: e.target.value}))} />
               </div>
           </div>
+          
+           {settings.enableAiFeatures && (
+            <div className="p-3 bg-stone-900/40 rounded-lg space-y-2">
+                <label className="text-sm font-medium text-stone-300 flex items-center gap-2"><SparklesIcon className="w-4 h-4 text-accent" /> Generate Image with AI</label>
+                 <div className="flex items-center gap-2">
+                    <Input
+                        placeholder="e.g., 'golden key', 'blue potion'"
+                        value={imagePrompt}
+                        onChange={(e) => setImagePrompt(e.target.value)}
+                        className="flex-grow text-sm"
+                        disabled={isGenerating}
+                    />
+                    <Button type="button" variant="secondary" onClick={handleGenerateImage} disabled={isGenerating || !imagePrompt.trim()} className="text-sm py-2 px-4">
+                        {isGenerating ? 'Generating...' : 'Generate'}
+                    </Button>
+                </div>
+            </div>
+           )}
 
           <div className="grid grid-cols-2 gap-4">
               <Input label="Category" placeholder="e.g. Avatar, Pet, Item" value={formData.category} onChange={(e) => setFormData(p => ({...p, category: e.target.value}))} required />

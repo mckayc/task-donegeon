@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { GoogleGenAI, Type } from "@google/genai";
+import { GenerateContentResponse, Type } from "@google/genai";
 import Button from '../ui/Button';
 import Input from '../ui/Input';
 import { SparklesIcon } from '../ui/Icons';
@@ -9,10 +9,6 @@ import { useAppState } from '../../context/AppContext';
 interface QuestIdea {
   title: string;
   description: string;
-}
-
-interface QuestIdeaResponse {
-    quests: QuestIdea[];
 }
 
 interface QuestIdeaGeneratorProps {
@@ -36,50 +32,62 @@ const QuestIdeaGenerator: React.FC<QuestIdeaGeneratorProps> = ({ onUseIdea, onCl
         setError('');
         setGeneratedQuests([]);
 
+        const fullPrompt = `Generate 5 quest ideas for a gamified task app called ${settings.terminology.appName}. The quests should be practical, actionable, and based on the theme: "${prompt}".`;
+
         try {
-            const ai = new GoogleGenAI({ apiKey: process.env.API_KEY! });
-            const response = await ai.models.generateContent({
-                model: 'gemini-2.5-flash',
-                contents: `Generate 5 quest ideas for a gamified task app. The quests should be based on the theme: "${prompt}".`,
-                config: {
-                    systemInstruction: "You are a creative assistant for a gamified task management app called Task Donegeon. Your goal is to generate quest ideas in JSON format. The quests should be practical and actionable.",
-                    responseMimeType: "application/json",
-                    responseSchema: {
-                        type: Type.OBJECT,
-                        properties: {
-                            quests: {
-                                type: Type.ARRAY,
-                                description: 'A list of quest ideas.',
-                                items: {
-                                    type: Type.OBJECT,
-                                    properties: {
-                                        title: {
-                                            type: Type.STRING,
-                                            description: 'A short, engaging title for the quest.'
+            const response = await fetch('/api/ai/generate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    model: 'gemini-2.5-flash',
+                    prompt: fullPrompt,
+                    generationConfig: {
+                        responseMimeType: "application/json",
+                        responseSchema: {
+                            type: Type.OBJECT,
+                            properties: {
+                                quests: {
+                                    type: Type.ARRAY,
+                                    description: 'A list of quest ideas.',
+                                    items: {
+                                        type: Type.OBJECT,
+                                        properties: {
+                                            title: {
+                                                type: Type.STRING,
+                                                description: 'A short, engaging title for the quest.'
+                                            },
+                                            description: {
+                                                type: Type.STRING,
+                                                description: 'A brief, one-sentence description of the quest.'
+                                            },
                                         },
-                                        description: {
-                                            type: Type.STRING,
-                                            description: 'A brief, one-sentence description of the quest.'
-                                        },
-                                    },
-                                    required: ['title', 'description']
+                                        required: ['title', 'description']
+                                    }
                                 }
-                            }
-                        },
-                        required: ['quests']
+                            },
+                            required: ['quests']
+                        }
                     }
-                }
+                })
             });
 
-            const text = response.text;
+            if (!response.ok) {
+                const err = await response.json();
+                throw new Error(err.error || 'Failed to generate ideas.');
+            }
+
+            const result: GenerateContentResponse = await response.json();
+            const text = result.text;
+
             if (!text) {
                 throw new Error("Received an empty response from the AI. The prompt may have been blocked or was too generic.");
             }
-            const jsonResponse = JSON.parse(text) as QuestIdeaResponse;
+            
+            const jsonResponse = JSON.parse(text);
             setGeneratedQuests(jsonResponse.quests || []);
 
         } catch (err) {
-            console.error("Gemini API error:", err);
+            console.error("AI Generation Error:", err);
             const message = err instanceof Error ? err.message : 'An unknown error occurred.';
             setError(`Failed to generate ideas. ${message}`);
         } finally {

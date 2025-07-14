@@ -1,9 +1,10 @@
 
-import React, { useState, ChangeEvent, useRef, useEffect } from 'react';
+
+import React, { useState, ChangeEvent } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useSettings, useSettingsDispatch } from '../../context/SettingsContext';
 import { useAppDispatch } from '../../context/AppContext';
-import { Role, AppSettings, Terminology, Theme } from '../../types';
+import { Role, AppSettings, Terminology } from '../../types';
 import Button from '../ui/Button';
 import { ChevronDownIcon } from '../ui/Icons';
 import Input from '../ui/Input';
@@ -62,15 +63,6 @@ const SettingsPage: React.FC = () => {
     
     const [formState, setFormState] = useState<AppSettings>(settings);
     
-    useEffect(() => {
-        // Instant theme preview
-        document.body.dataset.theme = formState.theme;
-        // Cleanup function to revert theme if user navigates away without saving
-        return () => {
-            document.body.dataset.theme = settings.theme;
-        };
-    }, [formState.theme, settings.theme]);
-
     if (currentUser?.role !== Role.DonegeonMaster) {
         return <div className="p-6 rounded-lg" style={{ backgroundColor: 'hsl(var(--color-bg-secondary))' }}><p>You do not have permission to view this page.</p></div>;
     }
@@ -133,8 +125,6 @@ const SettingsPage: React.FC = () => {
         addNotification({ type: 'success', message: 'Settings saved successfully!' });
     };
     
-    const themes: Theme[] = ['emerald', 'rose', 'sky', 'arcane', 'cartoon', 'forest', 'ocean', 'vulcan', 'royal', 'winter', 'sunset', 'cyberpunk', 'steampunk', 'parchment', 'eerie'];
-
     return (
         <div className="space-y-8 relative">
             <div className="sticky top-0 z-10 -mx-8 -mt-8 px-8 pt-6 pb-4 mb-2" style={{ backgroundColor: 'hsl(var(--color-bg-tertiary))', borderBottom: '1px solid hsl(var(--color-border))' }}>
@@ -144,33 +134,7 @@ const SettingsPage: React.FC = () => {
                 </div>
             </div>
 
-
-            <CollapsibleSection title="General" defaultOpen>
-                <div className="space-y-4">
-                    <Input label="App Name" name="terminology.appName" value={formState.terminology.appName} onChange={handleFormChange} />
-                    <div>
-                        <label className="block text-sm font-medium mb-2" style={{ color: 'hsl(var(--color-text-secondary))' }}>Default Theme</label>
-                        <div className="flex flex-wrap gap-4">
-                            {themes.map(theme => (
-                                <button
-                                    key={theme}
-                                    type="button"
-                                    onClick={() => setFormState(p => ({...p, theme}))}
-                                    className={`capitalize w-24 h-16 rounded-lg font-bold text-white flex items-center justify-center transition-all ${formState.theme === theme ? 'ring-2 ring-offset-2 ring-offset-stone-800 ring-white' : ''}`}
-                                    style={{
-                                        fontFamily: `var(--font-${theme}-display, var(--font-display))`, 
-                                        backgroundColor: `hsl(var(--color-${theme}-hue, var(--color-primary-hue)) var(--color-${theme}-saturation, var(--color-primary-saturation)) var(--color-${theme}-lightness, var(--color-primary-lightness)))`
-                                    }}
-                                >
-                                    {theme}
-                                </button>
-                            ))}
-                        </div>
-                    </div>
-                </div>
-            </CollapsibleSection>
-
-            <CollapsibleSection title="Game Rules">
+            <CollapsibleSection title="Game Rules" defaultOpen>
                  <div className="space-y-6">
                     <div className="flex items-start">
                         <ToggleSwitch enabled={formState.forgivingSetbacks} setEnabled={(val) => handleToggleChange('forgivingSetbacks', val)} label="Forgiving Setbacks" />

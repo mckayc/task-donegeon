@@ -174,6 +174,27 @@ app.get('/api/ai/status', (req, res) => {
   res.json({ isConfigured: !!ai });
 });
 
+app.post('/api/ai/test', async (req, res, next) => {
+    if (!ai) {
+        return res.status(400).json({ success: false, error: "AI features are not configured on the server." });
+    }
+    try {
+        // Perform a simple, low-cost API call to validate the key
+        const response = await ai.models.generateContent({ model: 'gemini-2.5-flash', contents: 'test' });
+        // Check if response is valid, though just not erroring is usually enough
+        if (response && response.text) {
+             res.json({ success: true });
+        } else {
+            throw new Error("Received an empty or invalid response from the API.");
+        }
+    } catch (error) {
+        console.error("AI API Key Test Failed:", error.message);
+        // Check for specific authentication-related errors if possible, otherwise send a generic message.
+        // Google's API often returns a 400 or 403 with specific error messages in the body for bad keys.
+        res.status(400).json({ success: false, error: 'API key is invalid or permissions are insufficient.' });
+    }
+});
+
 app.post('/api/ai/generate', async (req, res, next) => {
     if (!ai) return res.status(503).json({ error: "AI features are not configured on the server." });
     

@@ -1,12 +1,12 @@
 
 # Task Donegeon
 
-**Version:** 0.0.45
-**Last Updated:** 2024-05-25T10:00:00Z
+**Version:** 0.0.46
+**Last Updated:** 2024-05-26T10:00:00Z
 
 ---
 
-Task Donegeon is a gamified task and chore management application designed for families, groups, or individuals. It turns everyday responsibilities into an engaging medieval-themed role-playing game. Users complete "quests" (tasks), earn virtual currency and experience points (XP), customize their avatars, and level up their characters in a fun and motivating environment.
+Task Donegeon is a gamified task and chore management application designed for families, groups, or individuals. It turns everyday responsibilities into an engaging medieval-themed role-playing game. Users complete "quests" (tasks), earn virtual currency and experience points (XP), customize their avatars, and level up their characters in a fun and motivating environment. It leverages a powerful backend to persist all data and includes unique features like an **Asset Library** full of pre-made content and an **AI Studio** powered by Google Gemini to help administrators generate new quests, items, and images, making world-building a breeze.
 
 ## Table of Contents
 - [✨ Features](#-features)

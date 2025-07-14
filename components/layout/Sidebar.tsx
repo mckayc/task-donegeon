@@ -1,86 +1,37 @@
 
 
-import React, { useState } from 'react';
-import { Role, Page, QuestCompletionStatus, PurchaseRequestStatus, Terminology } from '../../types';
-import * as Icons from '../ui/Icons';
+
+import React, { useState, useMemo } from 'react';
+import { Role, Page, QuestCompletionStatus, PurchaseRequestStatus, Terminology, SidebarConfigItem, SidebarLink } from '../../types';
 import { useAuth } from '../../context/AuthContext';
 import { useGameData } from '../../context/GameDataContext';
 import { useSettings, useSettingsDispatch } from '../../context/SettingsContext';
 
+const ChevronDownIcon: React.FC<{className?: string}> = ({ className }) => (
+  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={className || "w-6 h-6"}>
+    <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+  </svg>
+);
 
-interface NavItem {
-  name: Page;
-  Icon: React.FC;
-  role?: Role; // For links inside a group that have specific role requirements
-  termKey?: keyof Terminology;
-}
-
-const CollapsibleNavGroup: React.FC<{
-    title: string;
-    Icon: React.FC;
-    items: NavItem[];
-    activePage: Page;
-    currentUserRole: Role;
-    setActivePage: (page: Page) => void;
-    badgeCount?: number;
-}> = ({ title, Icon, items, activePage, currentUserRole, setActivePage, badgeCount }) => {
-    const isGroupActive = items.some(item => item.name === activePage);
-    const [isOpen, setIsOpen] = useState(isGroupActive);
-
-    const visibleItems = items.filter(item => {
-        if (!item.role) return true;
-        return currentUserRole === Role.DonegeonMaster || (item.role === currentUserRole);
-    });
-    
-    if (visibleItems.length === 0) return null;
-
-    return (
-        <div>
-            <button
-                onClick={() => setIsOpen(!isOpen)}
-                className="w-full flex items-center justify-between px-4 py-3 text-lg rounded-lg text-stone-300 hover:bg-stone-700/50 hover:text-white"
-            >
-                <div className="flex items-center">
-                    <Icon />
-                    <span>{title}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                    {badgeCount && badgeCount > 0 && !isOpen ? (
-                         <span className="flex items-center justify-center w-5 h-5 text-xs font-bold text-white bg-red-600 rounded-full">
-                            {badgeCount}
-                        </span>
-                    ) : null}
-                    <Icons.ChevronDownIcon className={`w-5 h-5 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
-                </div>
-            </button>
-            {isOpen && (
-                <div className="mt-1 space-y-1">
-                    {visibleItems.map(item => (
-                        <NavLink key={item.name} item={item} activePage={activePage} setActivePage={setActivePage} isNested={true} badgeCount={item.name === 'Approvals' ? badgeCount : 0} />
-                    ))}
-                </div>
-            )}
-        </div>
-    );
-};
-
-
-const NavLink: React.FC<{ item: NavItem, activePage: Page, setActivePage: (page: Page) => void, badgeCount?: number, isNested?: boolean }> = ({ item, activePage, setActivePage, badgeCount = 0, isNested = false }) => {
+const NavLink: React.FC<{ item: SidebarLink, activePage: Page, setActivePage: (page: Page) => void, badgeCount?: number }> = ({ item, activePage, setActivePage, badgeCount = 0 }) => {
     const { settings } = useSettings();
-    const linkName = item.termKey ? settings.terminology[item.termKey] : item.name;
+    const linkName = item.termKey ? settings.terminology[item.termKey] : item.id;
+
+    const isNested = item.level > 0;
+    const isActive = activePage === item.id;
 
     return (
         <a
-          key={item.name}
           href="#"
-          onClick={(e) => { e.preventDefault(); setActivePage(item.name); }}
-          className={`relative flex items-center py-3 text-lg rounded-lg transition-colors duration-200 ${isNested ? 'px-4 pl-10' : 'px-4'} ${
-            activePage === item.name
+          onClick={(e) => { e.preventDefault(); setActivePage(item.id); }}
+          className={`relative flex items-center py-3 text-lg rounded-lg transition-colors duration-200 ${isNested ? 'px-4 pl-12' : 'px-4'} ${
+            isActive
               ? 'bg-emerald-600/20 text-emerald-300'
               : 'text-stone-300 hover:bg-stone-700/50 hover:text-white'
           }`}
+          style={{ paddingLeft: isNested ? `${1.5 + item.level * 1.5}rem` : '1rem' }}
         >
-          <item.Icon />
+          <span className="mr-3 text-xl">{item.emoji}</span>
           <span>{linkName}</span>
           {badgeCount > 0 && (
             <span className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center justify-center w-5 h-5 text-xs font-bold text-white bg-red-600 rounded-full">
@@ -91,6 +42,46 @@ const NavLink: React.FC<{ item: NavItem, activePage: Page, setActivePage: (page:
     );
 };
 
+interface CollapsibleNavGroupProps {
+    title: string;
+    children: React.ReactNode;
+    activePage: Page;
+    childPages: Page[];
+    badgeCount?: number;
+}
+
+const CollapsibleNavGroup: React.FC<CollapsibleNavGroupProps> = ({ title, children, activePage, childPages, badgeCount }) => {
+    const isGroupActive = childPages.includes(activePage);
+    const [isOpen, setIsOpen] = useState(isGroupActive);
+
+    return (
+        <div className="border-t border-stone-700/60 my-2 pt-2">
+            <button
+                onClick={() => setIsOpen(!isOpen)}
+                className="w-full flex items-center justify-between px-4 py-3 text-lg rounded-lg text-stone-300 hover:bg-stone-700/50 hover:text-white"
+            >
+                <div className="flex items-center">
+                    <span className="font-semibold text-accent-light">{title}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                    {badgeCount && badgeCount > 0 && !isOpen ? (
+                         <span className="flex items-center justify-center w-5 h-5 text-xs font-bold text-white bg-red-600 rounded-full">
+                            {badgeCount}
+                        </span>
+                    ) : null}
+                    <ChevronDownIcon className={`w-5 h-5 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+                </div>
+            </button>
+            {isOpen && (
+                <div className="mt-1 space-y-1">
+                    {children}
+                </div>
+            )}
+        </div>
+    );
+};
+
+
 const Sidebar: React.FC = () => {
   const { currentUser } = useAuth();
   const { questCompletions, purchaseRequests } = useGameData();
@@ -99,42 +90,70 @@ const Sidebar: React.FC = () => {
   
   if (!currentUser) return null;
 
-  const mainNavItems: NavItem[] = [
-    { name: 'Dashboard', Icon: Icons.DashboardIcon },
-    { name: 'Quests', Icon: Icons.QuestsIcon, termKey: 'tasks' },
-    { name: 'Marketplace', Icon: Icons.MarketplaceIcon, termKey: 'shoppingCenter' },
-    { name: 'Calendar', Icon: Icons.CalendarIcon },
-  ];
-  
-  const characterNavItems: NavItem[] = [
-    { name: 'Avatar', Icon: Icons.AvatarIcon },
-    { name: 'Collection', Icon: Icons.CollectionIcon },
-    { name: 'Themes', Icon: Icons.ThemeIcon },
-    { name: 'Progress', Icon: Icons.ProgressIcon },
-    { name: 'Trophies', Icon: Icons.TrophyIcon, termKey: 'awards' },
-    { name: 'Ranks', Icon: Icons.RankIcon, termKey: 'levels' },
-    { name: 'Chronicles', Icon: Icons.ChroniclesIcon, termKey: 'history' },
-    { name: 'Guild', Icon: Icons.GuildIcon, termKey: 'groups' },
-  ];
+  const visibleLinks = useMemo(() => settings.sidebars.main.filter(link => {
+    if (!link.isVisible) return false;
+    if (currentUser.role === Role.DonegeonMaster) return true;
+    if (currentUser.role === Role.Gatekeeper) return link.role === Role.Gatekeeper || link.role === Role.Explorer;
+    return link.role === Role.Explorer;
+  }), [settings.sidebars.main, currentUser.role]);
 
-  const managementNavItems: NavItem[] = [
-    { name: 'Approvals', Icon: Icons.ApprovalsIcon, role: Role.Gatekeeper },
-    { name: 'Manage Users', Icon: Icons.ManageUsersIcon, role: Role.DonegeonMaster },
-    { name: 'Manage Quests', Icon: Icons.ManageQuestsIcon, role: Role.DonegeonMaster, termKey: 'tasks' },
-    { name: 'Manage Items', Icon: Icons.ItemManagerIcon, role: Role.DonegeonMaster },
-    { name: 'Manage Markets', Icon: Icons.ManageMarketsIcon, role: Role.DonegeonMaster, termKey: 'shoppingCenter' },
-    { name: 'Manage Guilds', Icon: Icons.ManageGuildsIcon, role: Role.DonegeonMaster, termKey: 'groups' },
-    { name: 'Rewards', Icon: Icons.RewardsIcon, role: Role.DonegeonMaster, termKey: 'points' },
-    { name: 'Manage Ranks', Icon: Icons.ManageRanksIcon, role: Role.DonegeonMaster, termKey: 'levels' },
-    { name: 'Manage Trophies', Icon: Icons.ManageTrophiesIcon, role: Role.DonegeonMaster, termKey: 'awards' },
-    settings.enableAiFeatures ? { name: 'AI Studio', Icon: Icons.SparklesIcon, role: Role.DonegeonMaster } : null,
-    { name: 'Data Management', Icon: Icons.DatabaseIcon, role: Role.DonegeonMaster },
-    { name: 'Settings', Icon: Icons.SettingsIcon, role: Role.DonegeonMaster },
-  ].filter(Boolean) as NavItem[];
-  
   const pendingQuestApprovals = questCompletions.filter(c => c.status === QuestCompletionStatus.Pending).length;
   const pendingPurchaseApprovals = purchaseRequests.filter(p => p.status === PurchaseRequestStatus.Pending).length;
   const totalApprovals = pendingQuestApprovals + (currentUser?.role === Role.DonegeonMaster ? pendingPurchaseApprovals : 0);
+
+  const renderNavItems = () => {
+    const navTree: React.ReactNode[] = [];
+    let i = 0;
+    while (i < visibleLinks.length) {
+        const item = visibleLinks[i];
+        if (item.type === 'header') {
+            const groupChildren: React.ReactNode[] = [];
+            const childPages: Page[] = [];
+            i++;
+            while (i < visibleLinks.length && visibleLinks[i].level > item.level) {
+                const childItem = visibleLinks[i];
+                if(childItem.type === 'link') {
+                    groupChildren.push(
+                        <NavLink 
+                            key={childItem.id} 
+                            item={childItem} 
+                            activePage={activePage} 
+                            setActivePage={setActivePage} 
+                            badgeCount={childItem.id === 'Approvals' ? totalApprovals : 0}
+                        />
+                    );
+                    childPages.push(childItem.id);
+                }
+                i++;
+            }
+            navTree.push(
+                <CollapsibleNavGroup 
+                    key={item.id} 
+                    title={item.title} 
+                    activePage={activePage} 
+                    childPages={childPages} 
+                    badgeCount={item.title === 'Management' ? totalApprovals : 0}
+                >
+                    {groupChildren}
+                </CollapsibleNavGroup>
+            );
+        } else if (item.type === 'link') {
+            navTree.push(
+                <NavLink 
+                    key={item.id} 
+                    item={item} 
+                    activePage={activePage} 
+                    setActivePage={setActivePage} 
+                    badgeCount={item.id === 'Approvals' ? totalApprovals : 0}
+                />
+            );
+            i++;
+        } else {
+            i++;
+        }
+    }
+    return navTree;
+  }
 
   return (
     <div className="w-72 flex flex-col" style={{ backgroundColor: 'hsl(var(--color-bg-primary))', borderRight: '1px solid hsl(var(--color-border))' }}>
@@ -145,38 +164,9 @@ const Sidebar: React.FC = () => {
       >
         <h1 className="text-3xl font-medieval text-accent">{settings.terminology.appName}</h1>
       </button>
-      <nav className="flex-1 px-4 py-6 space-y-2 overflow-y-auto scrollbar-hide">
-        {mainNavItems.map((item) => <NavLink key={item.name} item={item} activePage={activePage} setActivePage={setActivePage} />)}
-        
-        <div className="pt-4 mt-4 border-t space-y-1" style={{ borderColor: 'hsl(var(--color-border))' }}>
-             <CollapsibleNavGroup
-                title="Character"
-                Icon={Icons.CharacterIcon}
-                items={characterNavItems}
-                activePage={activePage}
-                currentUserRole={currentUser.role}
-                setActivePage={setActivePage}
-             />
-        </div>
-
-        {(currentUser.role === Role.DonegeonMaster || currentUser.role === Role.Gatekeeper) && (
-             <div className="pt-4 mt-4 border-t space-y-1" style={{ borderColor: 'hsl(var(--color-border))' }}>
-                <CollapsibleNavGroup
-                    title="Management"
-                    Icon={Icons.AdminIcon}
-                    items={managementNavItems}
-                    activePage={activePage}
-                    currentUserRole={currentUser.role}
-                    setActivePage={setActivePage}
-                    badgeCount={totalApprovals}
-                />
-            </div>
-        )}
+      <nav className="flex-1 px-4 py-6 space-y-1 overflow-y-auto scrollbar-hide">
+        {renderNavItems()}
       </nav>
-      <div className="px-4 py-4 border-t space-y-1" style={{ borderColor: 'hsl(var(--color-border))' }}>
-        <NavLink item={{ name: 'About', Icon: Icons.AboutIcon }} activePage={activePage} setActivePage={setActivePage} />
-        <NavLink item={{ name: 'Help', Icon: Icons.HelpIcon }} activePage={activePage} setActivePage={setActivePage} />
-      </div>
     </div>
   );
 };

@@ -1,35 +1,44 @@
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import * as Icons from '../ui/Icons';
 import ObjectManagerPage from './management/ObjectManagerPage';
 import BackupAndImportPage from './management/BackupAndImportPage';
 import AssetLibraryPage from './management/AssetLibraryPage';
 import AssetManagerPage from './management/MediaManagerPage';
+import { useAppState } from '../../context/AppContext';
+import { Page, SidebarConfigItem, SidebarLink } from '../../types';
 
-type ManagementPage = 'objects' | 'assets' | 'backup' | 'library';
+type ManagementPage = 'Object Manager' | 'Asset Manager' | 'Backup & Import' | 'Asset Library';
+
+const iconMap: { [key in ManagementPage]: React.FC<{className?: string}> } = {
+    'Object Manager': Icons.ObjectManagerIcon,
+    'Asset Manager': Icons.ItemManagerIcon,
+    'Backup & Import': Icons.DatabaseIcon,
+    'Asset Library': Icons.SparklesIcon,
+};
 
 const DataManagementPage: React.FC = () => {
-    const [activePage, setActivePage] = useState<ManagementPage>('objects');
-
-    const managementPages: { id: ManagementPage, label: string, icon: React.FC }[] = [
-        { id: 'objects', label: 'Object Manager', icon: Icons.ObjectManagerIcon },
-        { id: 'assets', label: 'Asset Manager', icon: Icons.ItemManagerIcon },
-        { id: 'backup', label: 'Backup & Import', icon: Icons.DatabaseIcon },
-        { id: 'library', label: 'Asset Library', icon: Icons.SparklesIcon },
-    ];
+    const { settings } = useAppState();
     
+    const visibleItems = useMemo((): SidebarConfigItem[] => {
+        return settings.sidebars.dataManagement.filter(item => item.isVisible);
+    }, [settings.sidebars.dataManagement]);
+
+    const initialPage = useMemo((): Page => {
+        const firstLink = visibleItems.find(item => item.type === 'link') as SidebarLink | undefined;
+        return firstLink?.id ?? 'Object Manager';
+    }, [visibleItems]);
+
+    const [activePage, setActivePage] = useState<Page>(initialPage);
+
+
     const renderContent = () => {
         switch (activePage) {
-            case 'objects':
-                return <ObjectManagerPage />;
-            case 'assets':
-                return <AssetManagerPage />;
-            case 'backup':
-                return <BackupAndImportPage />;
-            case 'library':
-                return <AssetLibraryPage />;
-            default:
-                return null;
+            case 'Object Manager': return <ObjectManagerPage />;
+            case 'Asset Manager': return <AssetManagerPage />;
+            case 'Backup & Import': return <BackupAndImportPage />;
+            case 'Asset Library': return <AssetLibraryPage />;
+            default: return <ObjectManagerPage />;
         }
     }
 
@@ -39,16 +48,20 @@ const DataManagementPage: React.FC = () => {
             <div className="flex-grow flex gap-6 overflow-hidden">
                 <nav className="w-64 bg-stone-800/50 border border-stone-700/60 rounded-xl p-4 flex-shrink-0 flex flex-col">
                     <div className="space-y-2">
-                        {managementPages.map(page => (
-                            <button
-                                key={page.id}
-                                onClick={() => setActivePage(page.id)}
-                                className={`w-full flex items-center p-3 text-left rounded-lg transition-colors ${activePage === page.id ? 'bg-emerald-600/20 text-emerald-300' : 'text-stone-300 hover:bg-stone-700/50'}`}
-                            >
-                                <page.icon />
-                                <span className="capitalize">{page.label}</span>
-                            </button>
-                        ))}
+                        {visibleItems.map(item => {
+                            if (item.type !== 'link') return null;
+                            const Icon = iconMap[item.id as ManagementPage];
+                            return (
+                                <button
+                                    key={item.id}
+                                    onClick={() => setActivePage(item.id)}
+                                    className={`w-full flex items-center p-3 text-left rounded-lg transition-colors ${activePage === item.id ? 'bg-emerald-600/20 text-emerald-300' : 'text-stone-300 hover:bg-stone-700/50'}`}
+                                >
+                                    {Icon && <Icon />}
+                                    <span className="capitalize">{item.id}</span>
+                                </button>
+                            );
+                        })}
                     </div>
                 </nav>
                 <div className="flex-grow flex flex-col overflow-y-auto pr-4">

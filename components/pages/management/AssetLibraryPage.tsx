@@ -17,7 +17,7 @@ const AssetLibraryPage: React.FC = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {libraryPacks.map(pack => (
                         <button key={pack.id} onClick={() => setSelectedPack(pack)} className="text-left">
-                            <Card className="h-full hover:bg-stone-700/50 hover:border-accent transition-colors duration-200">
+                            <Card className={`h-full hover:bg-stone-700/50 hover:border-accent transition-colors duration-200 border-2 ${pack.color || 'border-stone-700/60'}`}>
                                 <span className="text-sm font-bold uppercase text-emerald-400">{pack.type}</span>
                                 <h4 className="text-lg font-bold text-stone-100 mt-1">{pack.title}</h4>
                                 <p className="text-sm text-stone-400 mt-2">{pack.description}</p>

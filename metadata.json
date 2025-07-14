@@ -1,8 +1,9 @@
+
 {
-  "name": "Task Donegeon - 0.0.45",
-  "version": "0.0.45",
-  "lastChange": "Major architectural refactor of app state into multiple contexts. Implemented selective asset library imports, interactive calendar week view, loading/empty states, onboarding wizard, and standardized confirmation dialogs. A11y and UX improvements. Fixed all build errors.",
-  "lastChangeDate": "2024-05-25T10:00:00Z",
+  "name": "Task Donegeon - 0.0.46",
+  "version": "0.0.46",
+  "lastChange": "Fixed Data Management sidebar linking. Added robust validation for the Gemini API key. Updated version and documentation to reflect AI capabilities and Asset Library.",
+  "lastChangeDate": "2024-05-26T10:00:00Z",
   "description": "A gamified task and chore tracker for families and groups. Complete quests, earn currency and experience, and level up your character in a fun, medieval-themed adventure.",
   "requestFramePermissions": [],
   "prompt": ""

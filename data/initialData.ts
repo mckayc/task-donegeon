@@ -1,6 +1,7 @@
 
 
-import { User, Role, RewardTypeDefinition, RewardCategory, Rank, Trophy, TrophyRequirementType, QuestType, Market, Quest, QuestAvailability, Guild, AppSettings, Theme, GameAsset } from '../types';
+
+import { User, Role, RewardTypeDefinition, RewardCategory, Rank, Trophy, TrophyRequirementType, QuestType, Market, Quest, QuestAvailability, Guild, AppSettings, Theme, GameAsset, SidebarConfigItem } from '../types';
 
 export const createMockUsers = (): User[] => {
     const users: Omit<User, 'id' | 'personalPurse' | 'personalExperience' | 'guildBalances' | 'avatar' | 'ownedAssetIds' | 'ownedThemes'>[] = [
@@ -74,6 +75,50 @@ export const INITIAL_RANKS: Rank[] = Array.from({ length: 50 }, (_, i) => ({
     icon: rankIcons[i] || '❓',
 }));
 
+export const INITIAL_MAIN_SIDEBAR_CONFIG: SidebarConfigItem[] = [
+  // Main
+  { type: 'link', id: 'Dashboard', emoji: '🏠', isVisible: true, level: 0, role: Role.Explorer },
+  { type: 'link', id: 'Quests', emoji: '🗺️', isVisible: true, level: 0, role: Role.Explorer, termKey: 'tasks' },
+  { type: 'link', id: 'Marketplace', emoji: '💰', isVisible: true, level: 0, role: Role.Explorer, termKey: 'shoppingCenter' },
+  { type: 'link', id: 'Calendar', emoji: '🗓️', isVisible: true, level: 0, role: Role.Explorer },
+  // Character
+  { type: 'header', id: 'header-char', title: 'Character', level: 0, role: Role.Explorer, isVisible: true },
+  { type: 'link', id: 'Avatar', emoji: '🧑', isVisible: true, level: 1, role: Role.Explorer },
+  { type: 'link', id: 'Collection', emoji: '📦', isVisible: true, level: 1, role: Role.Explorer },
+  { type: 'link', id: 'Themes', emoji: '🎨', isVisible: true, level: 1, role: Role.Explorer },
+  { type: 'link', id: 'Progress', emoji: '📊', isVisible: true, level: 1, role: Role.Explorer },
+  { type: 'link', id: 'Trophies', emoji: '🏆', isVisible: true, level: 1, role: Role.Explorer, termKey: 'awards' },
+  { type: 'link', id: 'Ranks', emoji: '🎖️', isVisible: true, level: 1, role: Role.Explorer, termKey: 'levels' },
+  { type: 'link', id: 'Chronicles', emoji: '📜', isVisible: true, level: 1, role: Role.Explorer, termKey: 'history' },
+  { type: 'link', id: 'Guild', emoji: '🏰', isVisible: true, level: 1, role: Role.Explorer, termKey: 'groups' },
+  // Management
+  { type: 'header', id: 'header-mgmt', title: 'Management', level: 0, role: Role.Gatekeeper, isVisible: true },
+  { type: 'link', id: 'Approvals', emoji: '✅', isVisible: true, level: 1, role: Role.Gatekeeper },
+  { type: 'link', id: 'Manage Users', emoji: '👥', isVisible: true, level: 1, role: Role.DonegeonMaster },
+  { type: 'link', id: 'Manage Quests', emoji: '🗺️', isVisible: true, level: 1, role: Role.DonegeonMaster, termKey: 'tasks' },
+  { type: 'link', id: 'Manage Items', emoji: '⚔️', isVisible: true, level: 1, role: Role.DonegeonMaster },
+  { type: 'link', id: 'Manage Markets', emoji: '💰', isVisible: true, level: 1, role: Role.DonegeonMaster, termKey: 'shoppingCenter' },
+  { type: 'link', id: 'Manage Guilds', emoji: '🏰', isVisible: true, level: 1, role: Role.DonegeonMaster, termKey: 'groups' },
+  { type: 'link', id: 'Rewards', emoji: '💎', isVisible: true, level: 1, role: Role.DonegeonMaster, termKey: 'points' },
+  { type: 'link', id: 'Manage Ranks', emoji: '🎖️', isVisible: true, level: 1, role: Role.DonegeonMaster, termKey: 'levels' },
+  { type: 'link', id: 'Manage Trophies', emoji: '🏆', isVisible: true, level: 1, role: Role.DonegeonMaster, termKey: 'awards' },
+  { type: 'link', id: 'AI Studio', emoji: '✨', isVisible: true, level: 1, role: Role.DonegeonMaster },
+  { type: 'link', id: 'Data Management', emoji: '💾', isVisible: true, level: 1, role: Role.DonegeonMaster },
+  { type: 'link', id: 'Layout', emoji: '🖌️', isVisible: true, level: 1, role: Role.DonegeonMaster },
+  { type: 'link', id: 'Settings', emoji: '⚙️', isVisible: true, level: 1, role: Role.DonegeonMaster },
+  // Footer
+  { type: 'header', id: 'header-footer', title: 'Footer', level: 0, role: Role.Explorer, isVisible: true },
+  { type: 'link', id: 'About', emoji: 'ℹ️', isVisible: true, level: 1, role: Role.Explorer },
+  { type: 'link', id: 'Help', emoji: '❓', isVisible: true, level: 1, role: Role.Explorer },
+];
+
+export const INITIAL_DATA_MANAGEMENT_SIDEBAR_CONFIG: SidebarConfigItem[] = [
+    { type: 'link', id: 'Object Manager', emoji: '🗂️', isVisible: true, level: 0, role: Role.DonegeonMaster },
+    { type: 'link', id: 'Asset Manager', emoji: '🖼️', isVisible: true, level: 0, role: Role.DonegeonMaster },
+    { type: 'link', id: 'Backup & Import', emoji: '💾', isVisible: true, level: 0, role: Role.DonegeonMaster },
+    { type: 'link', id: 'Asset Library', emoji: '📚', isVisible: true, level: 0, role: Role.DonegeonMaster },
+];
+
 export const INITIAL_SETTINGS: AppSettings = {
   forgivingSetbacks: false,
   vacationMode: {
@@ -116,6 +161,10 @@ export const INITIAL_SETTINGS: AppSettings = {
     user: 'Explorer',
   },
   enableAiFeatures: false,
+  sidebars: {
+      main: INITIAL_MAIN_SIDEBAR_CONFIG,
+      dataManagement: INITIAL_DATA_MANAGEMENT_SIDEBAR_CONFIG,
+  }
 };
 
 

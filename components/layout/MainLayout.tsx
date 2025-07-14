@@ -33,6 +33,7 @@ import AboutPage from '../pages/AboutPage';
 import CollectionPage from '../pages/CollectionPage';
 import ManageItemsPage from '../pages/ManageItemsPage';
 import AiStudioPage from '../pages/AiStudioPage';
+import LayoutPage from '../pages/LayoutPage';
 
 const MainLayout: React.FC = () => {
   const { activePage } = useSettings();
@@ -62,6 +63,7 @@ const MainLayout: React.FC = () => {
       case 'AI Studio': return <AiStudioPage />;
       case 'Approvals': return <ApprovalsPage />;
       case 'Settings': return <SettingsPage />;
+      case 'Layout': return <LayoutPage />;
       case 'Data Management': return <DataManagementPage />;
       case 'Profile': return <ProfilePage />;
       case 'About': return <AboutPage />;

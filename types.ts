@@ -1,7 +1,6 @@
 
 
 
-
 export enum Role {
   DonegeonMaster = 'Donegeon Master',
   Gatekeeper = 'Gatekeeper',
@@ -277,6 +276,30 @@ export interface Terminology {
   user: string;
 }
 
+export type Page = 'Dashboard' | 'Avatar' | 'Quests' | 'Marketplace' | 'Chronicles' | 'Guild' | 'Calendar' | 'Progress' | 'Trophies' | 'Ranks' | 'Manage Users' | 'Rewards' | 'Manage Quests' | 'Manage Items' | 'Approvals' | 'Manage Markets' | 'Manage Guilds' | 'Settings' | 'Profile' | 'About' | 'Help' | 'Manage Ranks' | 'Manage Trophies' | 'Themes' | 'Data Management' | 'Collection' | 'AI Studio' | 'Layout'
+| 'Object Manager' | 'Asset Manager' | 'Backup & Import' | 'Asset Library'
+;
+
+export interface SidebarLink {
+  type: 'link';
+  id: Page;
+  emoji: string;
+  isVisible: boolean;
+  level: number; // 0 for top-level, 1 for nested, etc.
+  role: Role;
+  termKey?: keyof Terminology;
+}
+
+export interface SidebarHeader {
+    type: 'header';
+    title: string;
+    id: string; // Unique ID for key prop
+    level: 0; // Headers are always top-level
+    role: Role; // For visibility filtering
+    isVisible: boolean;
+}
+
+export type SidebarConfigItem = SidebarLink | SidebarHeader;
 
 export interface AppSettings {
   forgivingSetbacks: boolean;
@@ -293,9 +316,11 @@ export interface AppSettings {
   theme: Theme;
   terminology: Terminology;
   enableAiFeatures: boolean;
+  sidebars: {
+      main: SidebarConfigItem[];
+      dataManagement: SidebarConfigItem[];
+  };
 }
-
-export type Page = 'Dashboard' | 'Avatar' | 'Quests' | 'Marketplace' | 'Chronicles' | 'Guild' | 'Calendar' | 'Progress' | 'Trophies' | 'Ranks' | 'Manage Users' | 'Rewards' | 'Manage Quests' | 'Manage Items' | 'Approvals' | 'Manage Markets' | 'Manage Guilds' | 'Settings' | 'Profile' | 'About' | 'Help' | 'Manage Ranks' | 'Manage Trophies' | 'Themes' | 'Data Management' | 'Collection' | 'AI Studio';
 
 export type ShareableAssetType = 'quests' | 'rewardTypes' | 'ranks' | 'trophies' | 'markets';
 
@@ -347,6 +372,7 @@ export interface LibraryPack {
     type: 'Quests' | 'Markets & Items' | 'Trophies' | 'Rewards';
     title: string;
     description: string;
+    color?: string;
     assets: {
         quests?: Omit<Quest, 'claimedByUserIds' | 'dismissals'>[];
         gameAssets?: Omit<GameAsset, 'creatorId' | 'createdAt'>[];

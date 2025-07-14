@@ -1,9 +1,8 @@
 
-
 import React, { useState, useEffect } from 'react';
 import Button from '../ui/Button';
 import Input from '../ui/Input';
-import { SparklesIcon } from '../ui/Icons';
+import { SparklesIcon, CheckCircleIcon, XCircleIcon } from '../ui/Icons';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { Type, GenerateContentResponse } from '@google/genai';
 import { Quest, Trophy, GameAsset, QuestAvailability, QuestType, Market } from '../../types';
@@ -18,10 +17,25 @@ interface GeneratedAsset {
     isSelected: boolean;
 }
 
+const ApiInstructions: React.FC = () => (
+    <div className="prose prose-invert max-w-none text-stone-300 text-sm space-y-4">
+        <p>To use the AI Studio, a Google Gemini API key must be configured on the server. Get your key from the <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" className="text-accent hover:underline">Google AI Studio</a>.</p>
+        <p>The server administrator needs to set the <code>API_KEY</code> environment variable:</p>
+        <ul className="list-disc list-inside space-y-1">
+            <li><strong>For Local/Docker Development:</strong> Add <code>API_KEY=your_api_key_here</code> to the <code>.env</code> file in the project's root directory.</li>
+            <li><strong>For Vercel Deployment:</strong> Add an environment variable named <code>API_KEY</code> with your key in the Vercel project settings.</li>
+        </ul>
+        <p>After setting the key, the server may need to be restarted. Use the "Test API Key" button below to verify the setup.</p>
+    </div>
+);
+
+
 const AiStudioPage: React.FC = () => {
     const { addQuest, addTrophy, addGameAsset, addNotification, addMarket, uploadFile } = useAppDispatch();
     const { settings } = useAppState();
-    const [isApiConfigured, setIsApiConfigured] = useState<boolean | null>(null);
+    const [apiStatus, setApiStatus] = useState<'unknown' | 'testing' | 'valid' | 'invalid'>('unknown');
+    const [apiError, setApiError] = useState<string | null>(null);
+
     const [context, setContext] = useState(localStorage.getItem('aiStudioContext') || '');
     const [prompt, setPrompt] = useState('');
     const [quantity, setQuantity] = useState(5);
@@ -30,20 +44,24 @@ const AiStudioPage: React.FC = () => {
     const [error, setError] = useState('');
     const [generatedAssets, setGeneratedAssets] = useState<GeneratedAsset[]>([]);
 
-    const checkApiStatus = async () => {
+    const testApiKey = async () => {
+        setApiStatus('testing');
+        setApiError(null);
         try {
-            const response = await fetch('/api/ai/status');
+            const response = await fetch('/api/ai/test', { method: 'POST' });
             const data = await response.json();
-            setIsApiConfigured(data.isConfigured);
+            if (response.ok && data.success) {
+                setApiStatus('valid');
+            } else {
+                setApiStatus('invalid');
+                setApiError(data.error || 'An unknown error occurred during testing.');
+            }
         } catch {
-            setIsApiConfigured(false);
+            setApiStatus('invalid');
+            setApiError('Could not connect to the server to test the API key.');
         }
     };
-
-    useEffect(() => {
-        checkApiStatus();
-    }, []);
-
+    
     const handleSaveContext = () => {
         localStorage.setItem('aiStudioContext', context);
         addNotification({ type: 'success', message: 'Context saved!' });
@@ -193,16 +211,7 @@ const AiStudioPage: React.FC = () => {
     return (
         <div className="space-y-6">
             <h1 className="text-4xl font-medieval text-stone-100 flex items-center gap-3"><SparklesIcon className="w-8 h-8 text-accent" /> AI Studio</h1>
-            <Card>
-                <div className="flex justify-between items-center">
-                    <h3 className="text-xl font-semibold">API Status</h3>
-                    <Button variant="secondary" onClick={checkApiStatus}>Check Connection</Button>
-                </div>
-                {isApiConfigured === null && <p className="text-stone-400 mt-2">Checking API status...</p>}
-                {isApiConfigured === true && <p className="text-green-400 mt-2">Gemini API is configured and ready.</p>}
-                {isApiConfigured === false && <p className="text-amber-400 mt-2">Gemini API is not configured. Ask the server administrator to add the `API_KEY` to the environment variables to enable AI features.</p>}
-            </Card>
-            
+
             <Card title="Generation Context"><p className="text-stone-400 text-sm mb-3">Provide background info about your group. This helps the AI generate more relevant ideas. Saved in your browser.</p><textarea value={context} onChange={e => setContext(e.target.value)} rows={4} className="w-full px-4 py-2 bg-stone-700 border border-stone-600 rounded-md" placeholder="e.g., A family with two kids, ages 8 and 12. We live in a house with a backyard and have one dog. We want to focus on chores and outdoor activities." /><div className="text-right mt-2"><Button variant="secondary" onClick={handleSaveContext}>Save Context</Button></div></Card>
             <Card title="Generate New Assets">
                 <div className="space-y-4">
@@ -222,6 +231,40 @@ const AiStudioPage: React.FC = () => {
             {error && <p className="text-red-400 text-center bg-red-900/30 p-3 rounded-md">{error}</p>}
             {isLoading && (<div className="text-center py-10"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-400 mx-auto"></div><p className="mt-4 text-stone-300">The AI is conjuring your assets...</p></div>)}
             {generatedAssets.length > 0 && (<Card title="Generated Assets"><div className="space-y-3">{generatedAssets.map(asset => (<div key={asset.id} className="bg-stone-900/50 p-3 rounded-lg flex items-center gap-4"><input type="checkbox" checked={asset.isSelected} onChange={() => toggleAssetSelection(asset.id)} className="h-5 w-5 rounded text-emerald-600 bg-stone-700 border-stone-500 focus:ring-emerald-500 flex-shrink-0" /><div className="flex-grow">{renderAsset(asset)}</div></div>))}</div><div className="text-right pt-4 mt-4 border-t border-stone-700"><Button onClick={handleImportAssets}>Import Selected</Button></div></Card>)}
+            
+            <Card title="API Key Setup">
+                <ApiInstructions />
+            </Card>
+
+            <Card>
+                <div className="flex justify-between items-center">
+                    <h3 className="text-xl font-semibold">Gemini API Connection Status</h3>
+                    <Button variant="secondary" onClick={testApiKey} disabled={apiStatus === 'testing'}>
+                        {apiStatus === 'testing' ? 'Testing...' : 'Test API Key'}
+                    </Button>
+                </div>
+                <div className="mt-4">
+                    {apiStatus === 'testing' && (<div className="flex items-center gap-2 text-stone-400"><div className="animate-spin rounded-full h-5 w-5 border-b-2 border-stone-400"></div><p>Testing connection...</p></div>)}
+                    {apiStatus === 'valid' && (
+                        <div className="flex items-center gap-2 text-green-400 font-semibold">
+                            <CheckCircleIcon className="w-6 h-6" />
+                            <p>Success! Gemini API is configured and the key is valid.</p>
+                        </div>
+                    )}
+                    {apiStatus === 'invalid' && (
+                        <div className="text-red-400 font-semibold">
+                           <div className="flex items-center gap-2">
+                                <XCircleIcon className="w-6 h-6" />
+                                <p>Connection Failed.</p>
+                           </div>
+                           {apiError && <p className="text-sm mt-2 ml-8">{apiError}</p>}
+                        </div>
+                    )}
+                     {apiStatus === 'unknown' && (
+                        <p className="text-stone-400 text-sm">API status has not been tested yet.</p>
+                    )}
+                </div>
+            </Card>
 
         </div>
     );

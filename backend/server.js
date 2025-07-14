@@ -117,7 +117,10 @@ app.get('/api/metadata', (req, res, next) => {
                 console.error('Error reading metadata.json:', err);
                 return res.status(500).json({ error: 'Could not read metadata file.' });
             }
-            res.status(200).json(JSON.parse(data));
+            const metadata = JSON.parse(data);
+            // Overwrite the date with the current server time for accuracy
+            metadata.lastChangeDate = new Date().toISOString();
+            res.status(200).json(metadata);
         });
     } catch (err) {
         next(err);
@@ -204,7 +207,7 @@ app.post('/api/ai/generate', async (req, res, next) => {
         if (model.startsWith('imagen')) {
              const response = await ai.models.generateImages({
                 model,
-                prompt,
+                contents: prompt,
                 config: generationConfig,
             });
             // Send back only the necessary data in a clean object

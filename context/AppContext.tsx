@@ -726,7 +726,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             if (user.role !== Role.DonegeonMaster) return { ...user, personalPurse: {}, personalExperience: {}, guildBalances: {}, ownedAssetIds: [], avatar: {} };
             return user;
         });
-        return { ...prev, users: newUsers, userTrophies: prev.userTrophies.filter(ut => prev.users.find(u => u.id === ut.userId)?.role === Role.DonegeonMaster) };
+        return { ...prev, userTrophies: prev.userTrophies.filter(ut => prev.users.find(u => u.id === ut.userId)?.role === Role.DonegeonMaster) };
     });
     addNotification({ type: 'success', message: "All player wallets, XP, and trophies have been reset." });
   }, [addNotification]);

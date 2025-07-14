@@ -4,7 +4,7 @@ import * as Icons from '../ui/Icons';
 import ObjectManagerPage from './management/ObjectManagerPage';
 import BackupAndImportPage from './management/BackupAndImportPage';
 import AssetLibraryPage from './management/AssetLibraryPage';
-import AssetManagerPage from './management/AssetManagerPage';
+import AssetManagerPage from './management/MediaManagerPage';
 
 type ManagementPage = 'objects' | 'backup' | 'library' | 'assets';
 

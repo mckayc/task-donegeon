@@ -3,7 +3,6 @@ import React, { useState } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { Role, Page, QuestCompletionStatus, PurchaseRequestStatus, Terminology } from '../../types';
 import * as Icons from '../ui/Icons';
-import { ChevronDownIcon } from '../ui/Icons';
 
 
 interface NavItem {
@@ -48,7 +47,7 @@ const CollapsibleNavGroup: React.FC<{
                             {badgeCount}
                         </span>
                     ) : null}
-                    <ChevronDownIcon className={`w-5 h-5 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+                    <Icons.ChevronDownIcon className={`w-5 h-5 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
                 </div>
             </button>
             {isOpen && (
@@ -123,10 +122,10 @@ const Sidebar: React.FC = () => {
     { name: 'Rewards', Icon: Icons.RewardsIcon, role: Role.DonegeonMaster, termKey: 'points' },
     { name: 'Manage Ranks', Icon: Icons.ManageRanksIcon, role: Role.DonegeonMaster, termKey: 'levels' },
     { name: 'Manage Trophies', Icon: Icons.ManageTrophiesIcon, role: Role.DonegeonMaster, termKey: 'awards' },
-    { name: 'AI Studio', Icon: Icons.SparklesIcon, role: Role.DonegeonMaster },
+    settings.enableAiFeatures ? { name: 'AI Studio', Icon: Icons.SparklesIcon, role: Role.DonegeonMaster } : null,
     { name: 'Data Management', Icon: Icons.DatabaseIcon, role: Role.DonegeonMaster },
     { name: 'Settings', Icon: Icons.SettingsIcon, role: Role.DonegeonMaster },
-  ];
+  ].filter(Boolean) as NavItem[];
   
   const pendingQuestApprovals = questCompletions.filter(c => c.status === QuestCompletionStatus.Pending).length;
   const pendingPurchaseApprovals = purchaseRequests.filter(p => p.status === PurchaseRequestStatus.Pending).length;

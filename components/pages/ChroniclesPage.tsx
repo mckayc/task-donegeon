@@ -1,6 +1,4 @@
 
-
-
 import React, { useMemo, useState } from 'react';
 import Card from '../ui/Card';
 import { useAppState } from '../../context/AppContext';
@@ -119,17 +117,26 @@ const ChroniclesPage: React.FC = () => {
   
   const formatTimestamp = (dateString: string): string => {
     const date = new Date(dateString);
+    // Handles both ISO strings and YYYY-MM-DD.
+    // If it's just a date, it will be interpreted as UTC midnight, then toLocaleString converts it to local.
+    // That's acceptable for old data. New data will have the correct time.
     if (isNaN(date.getTime())) {
-      // Fallback for YYYY-MM-DD format if it still exists
-      return dateString;
+      return dateString; // Invalid date
     }
-    return date.toLocaleString('default', {
+
+    const options: Intl.DateTimeFormatOptions = {
       year: 'numeric',
       month: 'long',
       day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
+    };
+    
+    // Add time options only if the original string contained time information
+    if (dateString.includes('T')) {
+      options.hour = '2-digit';
+      options.minute = '2-digit';
+    }
+
+    return date.toLocaleString('default', options);
   };
 
 

@@ -1,9 +1,9 @@
 
 {
-  "name": "Task Donegeon - 0.0.42",
-  "version": "0.0.42",
-  "lastChange": "Implemented a secure backend proxy for all Gemini AI features. Added AI Studio for content generation and AI image generation for assets. Created new pages for managing items and assets. Fixed bugs related to missing pages and incorrect dates.",
-  "lastChangeDate": "2024-05-22T12:00:00Z",
+  "name": "Task Donegeon - 0.0.43",
+  "version": "0.0.43",
+  "lastChange": "Overhauled UI with new icons. Implemented Week and Day views in the Calendar. Enhanced AI Studio with API status checks and image/market generation. Fixed timestamp inaccuracies in chronicles.",
+  "lastChangeDate": "2024-05-23T10:00:00Z",
   "description": "A gamified task and chore tracker for families and groups. Complete quests, earn currency and experience, and level up your character in a fun, medieval-themed adventure.",
   "requestFramePermissions": [],
   "prompt": ""

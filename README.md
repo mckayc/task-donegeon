@@ -1,8 +1,8 @@
 
 # Task Donegeon
 
-**Version:** 0.0.42
-**Last Updated:** 2024-05-22T12:00:00Z
+**Version:** 0.0.43
+**Last Updated:** 2024-05-23T10:00:00Z
 
 ---
 
@@ -17,8 +17,9 @@ Task Donegeon is a gamified task and chore management application designed for f
 
 ## ✨ Features
 
--   **Secure AI-Powered Features:** Includes an "AI Studio" for generating quests, items, and trophies, plus AI image generation for item icons, all powered by a secure backend proxy.
+-   **Secure AI-Powered Features:** Includes an "AI Studio" for generating quests, items, trophies, and images, all powered by a secure backend proxy.
 -   **Advanced Calendar:** Features Month, Week, and Day views for better planning and task management.
+-   **Refreshed UI:** A complete overhaul of the sidebar icons for a modern, consistent look.
 -   **Session-Based Master Lock:** The application is locked upon first visit and requires an admin password to unlock for the session, providing a strong security layer.
 -   **Static Asset Library:** A large, built-in library of pre-made quests, markets, items, and trophies with selective import.
 -   **Gamified Task Management:** Create recurring "Duties" and one-time "Ventures" with customizable rewards and penalties.
@@ -105,7 +106,7 @@ This phase focuses on long-term stability, accessibility, and preparing the app 
     Copy `.env.example` to `.env` and fill in the variables.
     -   `DATABASE_URL`: `postgres://postgres:your_secret_password@localhost:5432/postgres`
     -   `STORAGE_PROVIDER`: `local`
-    -   **`API_KEY`**: Your Google Gemini API Key.
+    -   **`API_KEY`**: Your Google Gemini API Key. Without this, AI features will be disabled.
 
 4.  **Run Backend & Frontend:**
     -   In one terminal, from the `backend` directory: `npm start`

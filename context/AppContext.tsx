@@ -1,6 +1,4 @@
 
-
-
 import React, { createContext, useState, useContext, ReactNode, useEffect, useMemo, useCallback } from 'react';
 import { User, Quest, RewardTypeDefinition, RewardCategory, QuestAvailability, Role, QuestCompletion, QuestCompletionStatus, RewardItem, Market, QuestType, PurchaseRequest, PurchaseRequestStatus, Guild, Rank, Trophy, UserTrophy, Notification, TrophyRequirement, TrophyRequirementType, AppMode, Page, AdminAdjustment, AdminAdjustmentType, SystemLog, AppSettings, Blueprint, ImportResolution, IAppData, Theme, ShareableAssetType, GameAsset } from '../types';
 import { createMockUsers, INITIAL_REWARD_TYPES, INITIAL_RANKS, INITIAL_TROPHIES, createSampleMarkets, createSampleQuests, createInitialGuilds, INITIAL_SETTINGS, createSampleGameAssets } from '../data/initialData';
@@ -276,7 +274,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
         if (prev.userTrophies.some(ut => ut.userId === userId && ut.trophyId === trophyId && ut.guildId === guildId)) return prev;
 
-        const newAward: UserTrophy = { id: `award-${Date.now()}`, userId, trophyId, awardedAt: toYMD(new Date()), guildId };
+        const newAward: UserTrophy = { id: `award-${Date.now()}`, userId, trophyId, awardedAt: new Date().toISOString(), guildId };
 
         const awardInCurrentMode = (guildId === undefined && prev.appMode.mode === 'personal') || (prev.appMode.mode === 'guild' && prev.appMode.guildId === guildId);
         if (prev.currentUser?.id === userId && awardInCurrentMode) {
@@ -544,14 +542,14 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     const assetDetails = { name: asset.name, description: asset.description, cost: asset.cost };
 
     if (requiresApproval) {
-        setAppData(prev => ({ ...prev, purchaseRequests: [...prev.purchaseRequests, { id: `purchase-${Date.now()}`, userId: currentUser.id, assetId, requestedAt: toYMD(new Date()), status: PurchaseRequestStatus.Pending, assetDetails, guildId }]}));
+        setAppData(prev => ({ ...prev, purchaseRequests: [...prev.purchaseRequests, { id: `purchase-${Date.now()}`, userId: currentUser.id, assetId, requestedAt: new Date().toISOString(), status: PurchaseRequestStatus.Pending, assetDetails, guildId }]}));
         addNotification({type: 'info', message: `"${asset.name}" purchase requested.`})
     } else {
         const affordable = deductRewards(currentUser.id, asset.cost, guildId);
         if (affordable) {
             updateUser(currentUser.id, { ownedAssetIds: [...currentUser.ownedAssetIds, asset.id] });
             addNotification({type: 'success', message: `Purchased "${asset.name}"!`});
-            setAppData(prev => ({ ...prev, purchaseRequests: [...prev.purchaseRequests, { id: `purchase-${Date.now()}`, userId: currentUser.id, assetId, requestedAt: toYMD(new Date()), status: PurchaseRequestStatus.Completed, assetDetails, guildId }]}));
+            setAppData(prev => ({ ...prev, purchaseRequests: [...prev.purchaseRequests, { id: `purchase-${Date.now()}`, userId: currentUser.id, assetId, requestedAt: new Date().toISOString(), status: PurchaseRequestStatus.Completed, assetDetails, guildId }]}));
         } else {
             addNotification({type: 'error', message: 'You cannot afford this item.'});
         }
@@ -614,7 +612,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   
   const applyManualAdjustment = useCallback((adjustment: Omit<AdminAdjustment, 'id' | 'adjustedAt' | 'adjusterId'>): boolean => {
     if (!currentUser) return false;
-    const newAdjustment: AdminAdjustment = { ...adjustment, id: `adj-${Date.now()}`, adjustedAt: toYMD(new Date()), adjusterId: currentUser.id };
+    const newAdjustment: AdminAdjustment = { ...adjustment, id: `adj-${Date.now()}`, adjustedAt: new Date().toISOString(), adjusterId: currentUser.id };
     setAppData(prev => ({ ...prev, adminAdjustments: [...prev.adminAdjustments, newAdjustment] }));
 
     if (newAdjustment.type === AdminAdjustmentType.Reward) applyRewards(newAdjustment.userId, newAdjustment.rewards, newAdjustment.guildId);

@@ -1,8 +1,4 @@
 
-
-
-
-
 import { Quest, QuestCompletion, QuestAvailability, QuestCompletionStatus, AppMode, User, QuestType } from '../types';
 
 /**
@@ -54,112 +50,73 @@ export const isQuestAvailableForUser = (
   userCompletions: QuestCompletion[],
   today: Date
 ): boolean => {
-  // If a quest has a hard incomplete deadline, it's unavailable after that time.
-  if (quest.type === QuestType.Venture && quest.incompleteDateTime && today > new Date(quest.incompleteDateTime)) {
-    return false;
-  }
-  
-  if (quest.type === QuestType.Duty && quest.incompleteTime) {
-    const isScheduledToday =
-        quest.availabilityType === QuestAvailability.Daily ||
-        (quest.availabilityType === QuestAvailability.Weekly && quest.weeklyRecurrenceDays.includes(today.getDay())) ||
-        (quest.availabilityType === QuestAvailability.Monthly && quest.monthlyRecurrenceDays.includes(today.getDate()));
-
-    if (isScheduledToday) {
-        const [hours, minutes] = quest.incompleteTime.split(':').map(Number);
-        const incompleteDeadlineToday = new Date(today.getFullYear(), today.getMonth(), today.getDate(), hours, minutes);
-        if (today > incompleteDeadlineToday) {
-            return false;
-        }
-    }
-  }
-
   const questUserCompletions = userCompletions.filter(
     (c) => c.questId === quest.id && c.status === QuestCompletionStatus.Approved
   );
-  
-  const todayYMD = toYMD(today);
 
-  switch (quest.availabilityType) {
-    case QuestAvailability.Daily:
-      // Available if not completed today.
-      return !questUserCompletions.some((c) => c.completedAt === todayYMD);
-
-    case QuestAvailability.Weekly: {
-      // Not available if it's not the right day of the week.
-      if (!quest.weeklyRecurrenceDays.includes(today.getDay())) {
-        return false;
-      }
-      // Find the most recent completion for this quest.
-      const mostRecentCompletion = questUserCompletions.sort(
-        (a, b) => fromYMD(b.completedAt).getTime() - fromYMD(a.completedAt).getTime()
-      )[0];
-      // If never completed, it's available.
-      if (!mostRecentCompletion) {
-        return true;
-      }
-      
-      // Determine the date of the last time this quest was scheduled.
-      // 1. Find the most recent recurrence day that is on or before today's day of the week.
-      const lastCycleDayOfWeek = quest.weeklyRecurrenceDays
-        .filter(d => d <= today.getDay())
-        .pop() ?? quest.weeklyRecurrenceDays[quest.weeklyRecurrenceDays.length - 1];
-      // 2. Calculate how many days ago that was.
-      const daysToSubtract = (today.getDay() - lastCycleDayOfWeek + 7) % 7;
-      const lastCycleDate = new Date(today);
-      lastCycleDate.setDate(today.getDate() - daysToSubtract);
-      
-      // The quest is available if the last completion was before the last scheduled date.
-      return fromYMD(mostRecentCompletion.completedAt) < lastCycleDate;
+  // Venture-specific logic for early completion and deadlines
+  if (quest.type === QuestType.Venture) {
+    if (quest.incompleteDateTime && today > new Date(quest.incompleteDateTime)) {
+      return false; // Past the final deadline
     }
-      
-    case QuestAvailability.Monthly: {
-      // Not available if it's not the right day of the month.
-      if (!quest.monthlyRecurrenceDays.includes(today.getDate())) {
-        return false;
-      }
-       // Find the most recent completion.
-       const mostRecentCompletion = questUserCompletions.sort(
-        (a, b) => fromYMD(b.completedAt).getTime() - fromYMD(a.completedAt).getTime()
-      )[0];
-       // If never completed, it's available.
-      if (!mostRecentCompletion) {
-        return true;
-      }
-      
-      // Determine the date of the last time this quest was scheduled.
-      // 1. Find the most recent recurrence day that is on or before today's date.
-      const lastCycleDayOfMonth = quest.monthlyRecurrenceDays
-          .filter(d => d <= today.getDate())
-          .pop();
-
-      let lastCycleDate: Date;
-      if (lastCycleDayOfMonth !== undefined) {
-          // If a recurrence day happened this month, use it.
-          lastCycleDate = new Date(today.getFullYear(), today.getMonth(), lastCycleDayOfMonth);
-      } else {
-          // If all recurrence days are later in the month, find the last one from the previous month.
-          const prevMonth = new Date(today.getFullYear(), today.getMonth(), 0);
-          const lastRecurrenceDayInPrevMonth = quest.monthlyRecurrenceDays
-              .slice()
-              .sort((a,b) => b-a)[0]; // The latest date in the month is the last possible cycle.
-          lastCycleDate = new Date(prevMonth.getFullYear(), prevMonth.getMonth(), lastRecurrenceDayInPrevMonth);
-      }
-      // The quest is available if the last completion was before the last scheduled date.
-      return fromYMD(mostRecentCompletion.completedAt) < lastCycleDate;
+    if (quest.availabilityType === QuestAvailability.Unlimited) {
+      return questUserCompletions.length === 0;
     }
-      
-    case QuestAvailability.Frequency:
-      // Available if the number of completions is less than the allowed count.
+    if (quest.availabilityType === QuestAvailability.Frequency) {
       return questUserCompletions.length < (quest.availabilityCount || 1);
-
-    case QuestAvailability.Unlimited:
-        // Available if it has never been completed.
-        return questUserCompletions.length === 0;
-
-    default:
-      return true;
+    }
+    // If a venture has no specific availability, it's treated as unlimited.
+    return questUserCompletions.length === 0;
   }
+  
+  // Duty-specific logic
+  if (quest.type === QuestType.Duty) {
+    if (quest.incompleteTime) {
+      const isScheduledToday =
+          quest.availabilityType === QuestAvailability.Daily ||
+          (quest.availabilityType === QuestAvailability.Weekly && quest.weeklyRecurrenceDays.includes(today.getDay())) ||
+          (quest.availabilityType === QuestAvailability.Monthly && quest.monthlyRecurrenceDays.includes(today.getDate()));
+
+      if (isScheduledToday) {
+          const [hours, minutes] = quest.incompleteTime.split(':').map(Number);
+          const incompleteDeadlineToday = new Date(today.getFullYear(), today.getMonth(), today.getDate(), hours, minutes);
+          if (today > incompleteDeadlineToday) {
+              return false;
+          }
+      }
+    }
+    
+    const todayYMD = toYMD(today);
+
+    switch (quest.availabilityType) {
+      case QuestAvailability.Daily:
+        // Available if not completed today.
+        return !questUserCompletions.some((c) => toYMD(new Date(c.completedAt)) === todayYMD);
+
+      case QuestAvailability.Weekly: {
+        // Not available if it's not the right day of the week.
+        if (!quest.weeklyRecurrenceDays.includes(today.getDay())) {
+          return false;
+        }
+        // Available if not completed today.
+        return !questUserCompletions.some((c) => toYMD(new Date(c.completedAt)) === todayYMD);
+      }
+        
+      case QuestAvailability.Monthly: {
+        // Not available if it's not the right day of the month.
+        if (!quest.monthlyRecurrenceDays.includes(today.getDate())) {
+          return false;
+        }
+        // Available if not completed today.
+        return !questUserCompletions.some((c) => toYMD(new Date(c.completedAt)) === todayYMD);
+      }
+        
+      default:
+        return true;
+    }
+  }
+
+  return true; // Should not be reached
 };
 
 
@@ -188,23 +145,25 @@ export const getQuestUserStatus = (
     c.guildId === currentGuildId
   );
   
-  const isPendingOnDate = userCompletionsForQuest.some(c => c.status === QuestCompletionStatus.Pending && c.completedAt === dateYMD);
+  const isPendingOnDate = userCompletionsForQuest.some(c => c.status === QuestCompletionStatus.Pending && toYMD(new Date(c.completedAt)) === dateYMD);
   if (isPendingOnDate) {
     return { status: 'PENDING', buttonText: 'Pending Approval', isActionDisabled: true };
   }
 
-  const isApprovedOnDate = userCompletionsForQuest.some(c => c.status === QuestCompletionStatus.Approved && c.completedAt === dateYMD);
-  if (isApprovedOnDate) {
+  const isApprovedOnDate = userCompletionsForQuest.some(c => c.status === QuestCompletionStatus.Approved && toYMD(new Date(c.completedAt)) === dateYMD);
+  if (quest.type === QuestType.Duty && isApprovedOnDate) {
     return { status: 'COMPLETED', buttonText: 'Completed', isActionDisabled: true };
   }
-
+  
   // Handle general completion for non-daily quests
-  if (quest.availabilityType !== QuestAvailability.Daily) {
-    const isApproved = userCompletionsForQuest.some(c => c.status === QuestCompletionStatus.Approved);
-    if (isApproved && quest.availabilityType !== QuestAvailability.Frequency) {
-        return { status: 'COMPLETED', buttonText: 'Completed', isActionDisabled: true };
-    }
+  const approvedCompletions = userCompletionsForQuest.filter(c => c.status === QuestCompletionStatus.Approved);
+  if (quest.availabilityType === QuestAvailability.Unlimited && approvedCompletions.length > 0) {
+      return { status: 'COMPLETED', buttonText: 'Completed', isActionDisabled: true };
   }
+  if (quest.availabilityType === QuestAvailability.Frequency && approvedCompletions.length >= (quest.availabilityCount || 1)) {
+     return { status: 'COMPLETED', buttonText: 'Completed', isActionDisabled: true };
+  }
+
 
   const isClaimableVenture = quest.type === QuestType.Venture && quest.availabilityType === QuestAvailability.Frequency;
   if (isClaimableVenture) {

@@ -1,17 +1,11 @@
 
 
-
 import React, { useState, useMemo } from 'react';
 import { Role, Page, QuestCompletionStatus, PurchaseRequestStatus, Terminology, SidebarConfigItem, SidebarLink } from '../../types';
 import { useAuth } from '../../context/AuthContext';
 import { useGameData } from '../../context/GameDataContext';
 import { useSettings, useSettingsDispatch } from '../../context/SettingsContext';
-
-const ChevronDownIcon: React.FC<{className?: string}> = ({ className }) => (
-  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={className || "w-6 h-6"}>
-    <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
-  </svg>
-);
+import { ChevronDownIcon } from '../ui/Icons';
 
 const NavLink: React.FC<{ item: SidebarLink, activePage: Page, setActivePage: (page: Page) => void, badgeCount?: number }> = ({ item, activePage, setActivePage, badgeCount = 0 }) => {
     const { settings } = useSettings();

@@ -1,7 +1,7 @@
 # Task Donegeon
 
-**Version:** 0.0.50
-**Last Updated:** 2025-05-30T10:00:00Z
+**Version:** 0.0.51
+**Last Updated:** 2025-05-30T11:00:00Z
 
 ---
 
@@ -16,6 +16,7 @@ Task Donegeon is a gamified task and chore management application designed for f
 
 ## ✨ Features
 
+-   **Bug Fixes & Stability:** Fixed various UI bugs and missing icons across the application for a more stable and consistent user experience.
 -   **AI Image Generation:** Admins can generate images for items from prompts within the Asset Manager and directly in the item editing dialog. A global image style can be set in the AI Studio for a consistent look.
 -   **Refactored Architecture:** The application's state management has been refactored from a single context into multiple, focused contexts for better scalability and maintainability.
 -   **Enhanced UI/UX:** Features improved loading states, engaging empty state components, standardized confirmation dialogs, and a new user onboarding wizard.

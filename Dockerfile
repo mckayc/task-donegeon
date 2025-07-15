@@ -1,44 +1,44 @@
-# Stage 1: Build the frontend assets
-FROM node:18-alpine AS build
+# === Stage 1: Build the React Frontend ===
+# Use a Node.js image as a base for building
+FROM node:18-alpine AS builder
 
+# Set the working directory inside the container
 WORKDIR /app
 
-# Copy all necessary configuration and source files
-COPY package.json tsconfig.json tsconfig.node.json vite.config.ts ./
-COPY index.html index.tsx App.tsx ./
-COPY components ./components
-COPY context ./context
-COPY data ./data
-COPY hooks ./hooks
-COPY utils ./utils
-COPY types.ts ./
-COPY public ./public
-COPY metadata.json ./
+# Copy package.json to leverage Docker layer caching
+COPY package.json ./
 
-# Install dependencies and build the frontend
+# Install frontend dependencies
 RUN npm install
+
+# Copy the rest of the frontend source code
+COPY . .
+
+# Build the frontend for production
 RUN npm run build
 
-# Stage 2: Create the final production image
-FROM node:18-alpine AS production
+# === Stage 2: Create the Final Production Image ===
+# Use a lean Node.js image for the final container
+FROM node:18-alpine
 
+# Set the working directory
 WORKDIR /app
 
-# Copy backend package file and install production dependencies
+# Copy over the built frontend from the 'builder' stage
+COPY --from=builder /app/dist ./dist
+
+# Copy the backend's package.json
 COPY backend/package.json ./backend/
-RUN cd backend && npm install --production
 
-# Copy built frontend assets from the build stage
-COPY --from=build /app/dist ./dist
+# Change to the backend directory and install only production dependencies
+WORKDIR /app/backend
+RUN npm install --only=production
 
-# Copy the backend server code
-COPY backend/server.js ./backend/
+# Copy the backend source code
+COPY backend/server.js ./
 
-# Copy the metadata file so the backend can serve it
-COPY metadata.json ./
-
-# Expose the port the server runs on
+# Expose the port the backend server runs on
 EXPOSE 3001
 
-# Command to run the backend server
-CMD ["node", "backend/server.js"]
+# The command to run the backend server when the container starts
+CMD ["node", "server.js"]

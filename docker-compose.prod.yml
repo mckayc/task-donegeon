@@ -1,10 +1,9 @@
 version: '3.8'
 
 services:
-  # This is your application, pulled from Docker Hub
   app:
     image: mckayc/task-donegeon:latest
-    container_name: task-donegeon-app
+    container_name: task-donegeon-app-prod
     restart: unless-stopped
     ports:
       - "3002:3001"
@@ -16,10 +15,9 @@ services:
     volumes:
       - ./uploads:/app/backend/uploads
 
-  # This is the PostgreSQL database
   db:
     image: postgres:15
-    container_name: task-donegeon-db
+    container_name: task-donegeon-db-prod
     restart: always
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-taskdonegeon}

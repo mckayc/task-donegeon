@@ -26,6 +26,8 @@ const EditGameAssetDialog: React.FC<EditGameAssetDialogProps> = ({ assetToEdit, 
     isForSale: false,
     cost: [] as RewardItem[],
     marketIds: [] as string[],
+    purchaseLimit: null as number | null,
+    purchaseCount: 0,
   });
   const [error, setError] = useState('');
 
@@ -40,6 +42,8 @@ const EditGameAssetDialog: React.FC<EditGameAssetDialogProps> = ({ assetToEdit, 
         isForSale: assetToEdit.isForSale,
         cost: [...assetToEdit.cost],
         marketIds: [...assetToEdit.marketIds],
+        purchaseLimit: assetToEdit.purchaseLimit,
+        purchaseCount: assetToEdit.purchaseCount,
       });
     } else if (newAssetUrl) {
       setFormData(prev => ({ ...prev, url: newAssetUrl }));

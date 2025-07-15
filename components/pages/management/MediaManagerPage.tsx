@@ -1,4 +1,6 @@
 
+
+
 import React, { useState, useCallback } from 'react';
 import { useAppState, useAppDispatch } from '../../../context/AppContext';
 import { GameAsset } from '../../../types';
@@ -6,44 +8,52 @@ import Button from '../../ui/Button';
 import Card from '../../ui/Card';
 import ConfirmDialog from '../../ui/ConfirmDialog';
 import EditGameAssetDialog from '../../admin/EditGameAssetDialog';
+import Input from '../../ui/Input';
+import { SparklesIcon } from '../../ui/Icons';
+import { useSettings } from '../../../context/SettingsContext';
+
+interface GeneratedImage {
+    name: string;
+    base64: string;
+    url: string;
+}
 
 const AssetManagerPage: React.FC = () => {
     const { gameAssets } = useAppState();
-    const { deleteGameAsset, addNotification } = useAppDispatch();
+    const { settings, isAiAvailable } = useSettings();
+    const { deleteGameAsset, addNotification, uploadFile } = useAppDispatch();
     const [isDragging, setIsDragging] = useState(false);
-    const [isUploading, setIsUploading] = useState(false);
     
     const [editingAsset, setEditingAsset] = useState<GameAsset | null>(null);
     const [assetToCreateUrl, setAssetToCreateUrl] = useState<string | null>(null);
+    const [assetToCreateName, setAssetToCreateName] = useState<string | null>(null);
     const [deletingAsset, setDeletingAsset] = useState<GameAsset | null>(null);
 
+    const [generationPrompt, setGenerationPrompt] = useState('');
+    const [isGenerating, setIsGenerating] = useState(false);
+    const [generatedImages, setGeneratedImages] = useState<GeneratedImage[]>([]);
+    const [error, setError] = useState('');
+
+
     const handleFileProcess = useCallback(async (file: File) => {
-        setIsUploading(true);
-        const formData = new FormData();
-        formData.append('file', file);
-
+        setIsGenerating(true); // Reuse loading state
+        setError('');
         try {
-            const response = await fetch('/api/media/upload', {
-                method: 'POST',
-                body: formData,
-            });
-
-            if (!response.ok) {
-                const errorResult = await response.json();
-                throw new Error(errorResult.error || 'Upload failed');
+            const uploadedAsset = await uploadFile(file);
+            if (uploadedAsset?.url) {
+                setAssetToCreateUrl(uploadedAsset.url);
+                setAssetToCreateName(generationPrompt || file.name.replace(/\.[^/.]+$/, ""));
+                addNotification({type: 'success', message: 'Image uploaded! Now add its details.'});
+            } else {
+                throw new Error('Upload failed to return a URL.');
             }
-
-            const uploadedAsset = await response.json();
-            setAssetToCreateUrl(uploadedAsset.url);
-            addNotification({type: 'success', message: 'Image uploaded! Now add its details.'});
-
         } catch (error) {
             const message = error instanceof Error ? error.message : 'Unknown error';
             addNotification({ type: 'error', message: `Upload failed: ${message}` });
         } finally {
-            setIsUploading(false);
+            setIsGenerating(false);
         }
-    }, [addNotification]);
+    }, [addNotification, uploadFile, generationPrompt]);
 
     const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
         if (event.target.files) {
@@ -68,6 +78,60 @@ const AssetManagerPage: React.FC = () => {
         if (event.type === 'dragenter' || event.type === 'dragover') setIsDragging(true);
         else if (event.type === 'dragleave') setIsDragging(false);
     };
+
+    const handleGenerate = async () => {
+        if (!generationPrompt.trim()) return;
+        setIsGenerating(true);
+        setError('');
+        setGeneratedImages([]);
+        
+        try {
+            const imageStyleContext = localStorage.getItem('aiImageStyleContext') || 'Pixel art game icon, square, simple colorful background.';
+            const fullPrompt = `${imageStyleContext}. Item: ${generationPrompt}`;
+            const response = await fetch('/api/ai/generate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    model: 'imagen-3.0-generate-002',
+                    prompt: fullPrompt,
+                    config: { numberOfImages: 4, outputMimeType: 'image/png', aspectRatio: '1:1' }
+                })
+            });
+
+            if (!response.ok) {
+                const err = await response.json();
+                throw new Error(err.error || 'Failed to generate images.');
+            }
+
+            const result = await response.json();
+            const images = result.generatedImages.map((img: any, i: number) => ({
+                name: `${generationPrompt} ${i + 1}`,
+                base64: img.image.imageBytes,
+                url: `data:image/png;base64,${img.image.imageBytes}`
+            }));
+            setGeneratedImages(images);
+
+        } catch (err) {
+            const message = err instanceof Error ? err.message : String(err);
+            setError(`Image generation failed: ${message}`);
+        } finally {
+            setIsGenerating(false);
+        }
+    };
+
+    const handleCreateFromGenerated = (image: GeneratedImage) => {
+        const byteCharacters = atob(image.base64);
+        const byteNumbers = new Array(byteCharacters.length);
+        for (let i = 0; i < byteCharacters.length; i++) {
+            byteNumbers[i] = byteCharacters.charCodeAt(i);
+        }
+        const byteArray = new Uint8Array(byteNumbers);
+        const blob = new Blob([byteArray], { type: 'image/png' });
+        const file = new File([blob], `${image.name.replace(/ /g, '_')}.png`, { type: 'image/png' });
+        
+        // Use the existing upload and dialog flow
+        handleFileProcess(file);
+    };
     
     const copyToClipboard = (text: string) => {
         navigator.clipboard.writeText(text).then(() => {
@@ -76,6 +140,12 @@ const AssetManagerPage: React.FC = () => {
             addNotification({ type: 'error', message: 'Failed to copy URL.'});
         });
     };
+    
+    const handleCloseDialog = () => {
+        setEditingAsset(null);
+        setAssetToCreateUrl(null);
+        setAssetToCreateName(null);
+    }
 
     return (
         <div className="space-y-6">
@@ -87,27 +157,52 @@ const AssetManagerPage: React.FC = () => {
                         isDragging ? 'border-emerald-500 bg-emerald-900/20' : 'border-stone-600'
                     }`}
                 >
-                    <input id="file-upload" type="file" multiple onChange={handleFileSelect} className="hidden" disabled={isUploading} />
+                    <input id="file-upload" type="file" multiple onChange={handleFileSelect} className="hidden" disabled={isGenerating} />
                     <p className="text-stone-400 mb-4">Drag & drop files here, or click to select.</p>
-                    <Button onClick={() => document.getElementById('file-upload')?.click()} disabled={isUploading}>
-                        {isUploading ? 'Uploading...' : 'Upload Image'}
+                    <Button onClick={() => document.getElementById('file-upload')?.click()} disabled={isGenerating}>
+                        {isGenerating ? 'Processing...' : 'Upload Image'}
                     </Button>
                 </div>
             </Card>
 
-            <Card title="Upload Guide">
-                 <ul className="text-sm text-stone-400 space-y-2 list-disc list-inside">
-                    <li>
-                        <strong>Step 1: Upload an Image.</strong> Drag a file or click the button above.
-                    </li>
-                    <li>
-                        <strong>Step 2: Define Properties.</strong> A dialog will appear where you set the asset's name, category, and sale details.
-                    </li>
-                     <li>
-                        <strong>Recommended Formats:</strong> Use vector formats like <strong className="text-stone-300">SVG</strong> for sharp, scalable icons. Use <strong className="text-stone-300">PNG</strong> with a transparent background for more complex images. A square aspect ratio is recommended for consistency.
-                    </li>
-                </ul>
-            </Card>
+            {isAiAvailable && (
+                <Card title="Generate Assets with AI">
+                    <p className="text-stone-400 text-sm mb-4">Enter a prompt to generate a set of images, then click "Create Asset" on your favorite to save it.</p>
+                    <div className="flex items-end gap-2">
+                        <Input
+                            label="Prompt"
+                            placeholder="e.g., 'a glowing magic sword', 'a cute baby dragon'"
+                            value={generationPrompt}
+                            onChange={(e) => setGenerationPrompt(e.target.value)}
+                            onKeyDown={e => e.key === 'Enter' && handleGenerate()}
+                            className="flex-grow"
+                            disabled={isGenerating}
+                        />
+                        <Button onClick={handleGenerate} disabled={isGenerating || !generationPrompt.trim()}>
+                            <SparklesIcon className="w-5 h-5 mr-2" />
+                            {isGenerating ? 'Generating...' : 'Generate'}
+                        </Button>
+                    </div>
+                     {error && <p className="text-red-400 text-center mt-4">{error}</p>}
+                </Card>
+            )}
+
+            {isGenerating && (<div className="text-center py-10"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-400 mx-auto"></div><p className="mt-4 text-stone-300">The AI is conjuring your assets...</p></div>)}
+
+            {generatedImages.length > 0 && (
+                <Card title="Generated Images">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                        {generatedImages.map((image, index) => (
+                             <div key={index} className="bg-stone-800/50 rounded-lg p-3 group relative">
+                                <div className="aspect-square w-full bg-stone-700/50 rounded-md mb-2 flex items-center justify-center overflow-hidden">
+                                    <img src={image.url} alt={image.name} className="w-full h-full object-contain" />
+                                </div>
+                                <Button className="w-full text-xs py-1 px-2" onClick={() => handleCreateFromGenerated(image)}>Create Asset</Button>
+                            </div>
+                        ))}
+                    </div>
+                </Card>
+            )}
 
             <div>
                 <h2 className="text-2xl font-bold text-stone-100 mb-4">Asset Gallery</h2>
@@ -136,10 +231,7 @@ const AssetManagerPage: React.FC = () => {
                 <EditGameAssetDialog
                     assetToEdit={editingAsset}
                     newAssetUrl={assetToCreateUrl}
-                    onClose={() => {
-                        setEditingAsset(null);
-                        setAssetToCreateUrl(null);
-                    }}
+                    onClose={handleCloseDialog}
                 />
             )}
 

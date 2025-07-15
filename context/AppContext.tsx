@@ -1,4 +1,5 @@
 
+
 import React, { createContext, useState, useContext, ReactNode, useEffect, useCallback, useMemo } from 'react';
 import { AppSettings, User, Quest, RewardTypeDefinition, QuestCompletion, RewardItem, Market, PurchaseRequest, Guild, Rank, Trophy, UserTrophy, Notification, AppMode, Page, IAppData, ShareableAssetType, GameAsset, Role, QuestCompletionStatus, RewardCategory, PurchaseRequestStatus, AdminAdjustment, AdminAdjustmentType, SystemLog, QuestType, QuestAvailability, Blueprint, ImportResolution, TrophyRequirementType } from '../types';
 import { INITIAL_SETTINGS, createMockUsers, INITIAL_REWARD_TYPES, INITIAL_RANKS, INITIAL_TROPHIES, createSampleMarkets, createSampleQuests, createInitialGuilds, createSampleGameAssets } from '../data/initialData';
@@ -18,6 +19,7 @@ interface AppState extends IAppData {
   allTags: string[];
   isSwitchingUser: boolean;
   targetedUserForLogin: User | null;
+  isAiConfigured: boolean;
 }
 
 // The single, unified dispatch for the entire application
@@ -112,6 +114,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [activeMarketId, setActiveMarketId] = useState<string | null>(null);
   const [isSwitchingUser, setIsSwitchingUser] = useState<boolean>(false);
   const [targetedUserForLogin, setTargetedUserForLogin] = useState<User | null>(null);
+  const [isAiConfigured, setIsAiConfigured] = useState(false);
 
   const isFirstRun = isDataLoaded && !users.some(u => u.role === Role.DonegeonMaster);
 
@@ -130,6 +133,14 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             setSettings(prev => ({...prev, ...data.settings}));
           }
         }
+        
+        // Check AI status
+        const aiResponse = await fetch('/api/ai/status');
+        if (aiResponse.ok) {
+            const aiData = await aiResponse.json();
+            setIsAiConfigured(aiData.isConfigured);
+        }
+
       } catch (error) { console.error("Failed to load data:", error); } 
       finally { setIsDataLoaded(true); }
     };
@@ -148,7 +159,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
   // === BUSINESS LOGIC / DISPATCH FUNCTIONS ===
   const addNotification = useCallback((notification: Omit<Notification, 'id'>) => {
-    setNotifications(prev => [...prev, { ...notification, id: `notif-${Date.now()}` }]);
+    const uniqueId = `notif-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+    setNotifications(prev => [...prev, { ...notification, id: uniqueId }]);
   }, []);
 
   const removeNotification = useCallback((notificationId: string) => {
@@ -288,7 +300,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const stateValue: AppState = {
     users, quests, markets, rewardTypes, questCompletions, purchaseRequests, guilds, ranks, trophies, userTrophies, adminAdjustments, gameAssets, systemLogs, settings,
     currentUser, isAppUnlocked, isFirstRun, activePage, appMode, notifications, isDataLoaded, activeMarketId, allTags: useMemo(() => Array.from(new Set(quests.flatMap(q => q.tags))).sort(), [quests]),
-    isSwitchingUser, targetedUserForLogin,
+    isSwitchingUser, targetedUserForLogin, isAiConfigured,
   };
 
   const dispatchValue: AppDispatch = {

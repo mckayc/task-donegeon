@@ -207,10 +207,9 @@ app.post('/api/ai/generate', async (req, res, next) => {
         if (model.startsWith('imagen')) {
              const response = await ai.models.generateImages({
                 model,
-                contents: prompt,
+                prompt: prompt,
                 config: generationConfig,
             });
-            // Send back only the necessary data in a clean object
             res.json({ generatedImages: response.generatedImages });
         } else {
             const response = await ai.models.generateContent({
@@ -218,7 +217,6 @@ app.post('/api/ai/generate', async (req, res, next) => {
                 contents: prompt,
                 config: generationConfig,
             });
-            // Send back only the text property in a clean object
             res.json({ text: response.text });
         }
     } catch (err) {

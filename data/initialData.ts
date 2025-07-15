@@ -1,3 +1,4 @@
+
 import { User, Role, RewardTypeDefinition, RewardCategory, Rank, Trophy, TrophyRequirementType, QuestType, Market, Quest, QuestAvailability, Guild, AppSettings, Theme, GameAsset, SidebarConfigItem } from '../types';
 
 export const createMockUsers = (): User[] => {
@@ -102,7 +103,7 @@ export const INITIAL_MAIN_SIDEBAR_CONFIG: SidebarConfigItem[] = [
   { type: 'link', id: 'Manage Ranks', emoji: '🏅', isVisible: true, level: 1, role: Role.DonegeonMaster, termKey: 'levels' },
   { type: 'link', id: 'Manage Trophies', emoji: '🏆', isVisible: true, level: 1, role: Role.DonegeonMaster, termKey: 'awards' },
   { type: 'link', id: 'AI Studio', emoji: '✨', isVisible: true, level: 1, role: Role.DonegeonMaster },
-  { type: 'link', id: 'Layout & Appearance', emoji: '🖌️', isVisible: true, level: 1, role: Role.DonegeonMaster },
+  { type: 'link', id: 'Appearance', emoji: '🖌️', isVisible: true, level: 1, role: Role.DonegeonMaster },
   { type: 'link', id: 'Settings', emoji: '⚙️', isVisible: true, level: 1, role: Role.DonegeonMaster },
   { type: 'link', id: 'Object Manager', emoji: '🗂️', isVisible: true, level: 1, role: Role.DonegeonMaster },
   { type: 'link', id: 'Asset Manager', emoji: '🖼️', isVisible: true, level: 1, role: Role.DonegeonMaster },
@@ -288,23 +289,23 @@ export const createSampleQuests = (): Quest[] => {
 export const createSampleGameAssets = (): GameAsset[] => {
     const assets: Omit<GameAsset, 'id' | 'creatorId' | 'createdAt'>[] = [
         // Avatar Items
-        { name: 'Basic Shirt', description: 'A simple, clean shirt.', url: 'https://via.placeholder.com/150/22c55e/FFFFFF?text=Shirt', category: 'Avatar', avatarSlot: 'shirt', isForSale: true, cost: [{ rewardTypeId: 'core-crystal', amount: 20 }], marketIds: ['market-tailor']},
-        { name: 'Sturdy Trousers', description: 'Practical trousers for adventuring.', url: 'https://via.placeholder.com/150/78716c/FFFFFF?text=Pants', category: 'Avatar', avatarSlot: 'pants', isForSale: true, cost: [{ rewardTypeId: 'core-crystal', amount: 20 }], marketIds: ['market-tailor']},
-        { name: 'Wizard Hat', description: 'A pointy hat for the magically inclined.', url: 'https://via.placeholder.com/150/7c3aed/FFFFFF?text=Hat', category: 'Avatar', avatarSlot: 'hat', isForSale: true, cost: [{ rewardTypeId: 'core-crystal', amount: 50 }], marketIds: ['market-tailor', 'market-blacksmith']},
-        { name: 'Leather Boots', description: 'Durable boots for any terrain.', url: 'https://via.placeholder.com/150/a16207/FFFFFF?text=Boots', category: 'Avatar', avatarSlot: 'feet', isForSale: true, cost: [{ rewardTypeId: 'core-crystal', amount: 30 }], marketIds: ['market-tailor']},
-        { name: 'Iron Sword', description: 'A trusty sword. (Cosmetic)', url: 'https://via.placeholder.com/150/9ca3af/FFFFFF?text=Sword', category: 'Avatar', avatarSlot: 'hand-right', isForSale: true, cost: [{ rewardTypeId: 'core-gold', amount: 10 }], marketIds: ['market-blacksmith']},
-        { name: 'Wooden Shield', description: 'A simple but effective shield. (Cosmetic)', url: 'https://via.placeholder.com/150/854d0e/FFFFFF?text=Shield', category: 'Avatar', avatarSlot: 'hand-left', isForSale: true, cost: [{ rewardTypeId: 'core-gold', amount: 8 }], marketIds: ['market-blacksmith']},
+        { name: 'Basic Shirt', description: 'A simple, clean shirt.', url: 'https://via.placeholder.com/150/22c55e/FFFFFF?text=Shirt', category: 'Avatar', avatarSlot: 'shirt', isForSale: true, cost: [{ rewardTypeId: 'core-crystal', amount: 20 }], marketIds: ['market-tailor'], purchaseLimit: null, purchaseCount: 0 },
+        { name: 'Sturdy Trousers', description: 'Practical trousers for adventuring.', url: 'https://via.placeholder.com/150/78716c/FFFFFF?text=Pants', category: 'Avatar', avatarSlot: 'pants', isForSale: true, cost: [{ rewardTypeId: 'core-crystal', amount: 20 }], marketIds: ['market-tailor'], purchaseLimit: null, purchaseCount: 0 },
+        { name: 'Wizard Hat', description: 'A pointy hat for the magically inclined.', url: 'https://via.placeholder.com/150/7c3aed/FFFFFF?text=Hat', category: 'Avatar', avatarSlot: 'hat', isForSale: true, cost: [{ rewardTypeId: 'core-crystal', amount: 50 }], marketIds: ['market-tailor', 'market-blacksmith'], purchaseLimit: 10, purchaseCount: 0 },
+        { name: 'Leather Boots', description: 'Durable boots for any terrain.', url: 'https://via.placeholder.com/150/a16207/FFFFFF?text=Boots', category: 'Avatar', avatarSlot: 'feet', isForSale: true, cost: [{ rewardTypeId: 'core-crystal', amount: 30 }], marketIds: ['market-tailor'], purchaseLimit: null, purchaseCount: 0 },
+        { name: 'Iron Sword', description: 'A trusty sword. (Cosmetic)', url: 'https://via.placeholder.com/150/9ca3af/FFFFFF?text=Sword', category: 'Avatar', avatarSlot: 'hand-right', isForSale: true, cost: [{ rewardTypeId: 'core-gold', amount: 10 }], marketIds: ['market-blacksmith'], purchaseLimit: 5, purchaseCount: 0 },
+        { name: 'Wooden Shield', description: 'A simple but effective shield. (Cosmetic)', url: 'https://via.placeholder.com/150/854d0e/FFFFFF?text=Shield', category: 'Avatar', avatarSlot: 'hand-left', isForSale: true, cost: [{ rewardTypeId: 'core-gold', amount: 8 }], marketIds: ['market-blacksmith'], purchaseLimit: 5, purchaseCount: 0 },
         
         // Themes
-        { name: 'Arcane Theme', description: 'A mystical theme of purple and gold.', url: 'https://via.placeholder.com/150/8b5cf6/FFFFFF?text=Arcane', category: 'Theme', isForSale: true, cost: [{ rewardTypeId: 'core-gems', amount: 25 }], marketIds: ['market-themes']},
-        { name: 'Forest Theme', description: 'A natural theme of greens and browns.', url: 'https://via.placeholder.com/150/166534/FFFFFF?text=Forest', category: 'Theme', isForSale: true, cost: [{ rewardTypeId: 'core-gems', amount: 25 }], marketIds: ['market-themes']},
-        { name: 'Cyberpunk Theme', description: 'A futuristic theme of neon pink and blue.', url: 'https://via.placeholder.com/150/ec4899/FFFFFF?text=Cyber', category: 'Theme', isForSale: true, cost: [{ rewardTypeId: 'core-gems', amount: 50 }], marketIds: ['market-themes']},
+        { name: 'Arcane Theme', description: 'A mystical theme of purple and gold.', url: 'https://via.placeholder.com/150/8b5cf6/FFFFFF?text=Arcane', category: 'Theme', isForSale: true, cost: [{ rewardTypeId: 'core-gems', amount: 25 }], marketIds: ['market-themes'], purchaseLimit: 1, purchaseCount: 0 },
+        { name: 'Forest Theme', description: 'A natural theme of greens and browns.', url: 'https://via.placeholder.com/150/166534/FFFFFF?text=Forest', category: 'Theme', isForSale: true, cost: [{ rewardTypeId: 'core-gems', amount: 25 }], marketIds: ['market-themes'], purchaseLimit: 1, purchaseCount: 0 },
+        { name: 'Cyberpunk Theme', description: 'A futuristic theme of neon pink and blue.', url: 'https://via.placeholder.com/150/ec4899/FFFFFF?text=Cyber', category: 'Theme', isForSale: true, cost: [{ rewardTypeId: 'core-gems', amount: 50 }], marketIds: ['market-themes'], purchaseLimit: 1, purchaseCount: 0 },
 
         // Consumables / Real World
-        { name: '30 Mins Screen Time', description: 'A voucher for 30 minutes of video games or TV.', url: 'https://via.placeholder.com/150/3b82f6/FFFFFF?text=30m', category: 'Screen Time', isForSale: true, cost: [{ rewardTypeId: 'core-crystal', amount: 30 }], marketIds: ['market-gadget']},
-        { name: 'Choose the Movie', description: 'You get to pick the movie for the next family movie night.', url: 'https://via.placeholder.com/150/f97316/FFFFFF?text=Movie', category: 'Experience', isForSale: true, cost: [{ rewardTypeId: 'core-gems', amount: 20 }], marketIds: ['market-exp']},
-        { name: 'Pizza Night', description: 'The guild gets to order pizza!', url: 'https://via.placeholder.com/150/ef4444/FFFFFF?text=Pizza', category: 'Guild Experience', isForSale: true, cost: [{ rewardTypeId: 'core-gold', amount: 20 }], marketIds: ['market-treasury']},
-        { name: 'Ice Cream Trip', description: 'A family trip to get ice cream.', url: 'https://via.placeholder.com/150/f472b6/FFFFFF?text=Ice+Cream', category: 'Outing', isForSale: true, cost: [{ rewardTypeId: 'core-gold', amount: 10 }], marketIds: ['market-bank']},
+        { name: '30 Mins Screen Time', description: 'A voucher for 30 minutes of video games or TV.', url: 'https://via.placeholder.com/150/3b82f6/FFFFFF?text=30m', category: 'Real-World Reward', isForSale: true, cost: [{ rewardTypeId: 'core-crystal', amount: 30 }], marketIds: ['market-gadget'], purchaseLimit: null, purchaseCount: 0 },
+        { name: 'Choose the Movie', description: 'You get to pick the movie for the next family movie night.', url: 'https://via.placeholder.com/150/f97316/FFFFFF?text=Movie', category: 'Real-World Reward', isForSale: true, cost: [{ rewardTypeId: 'core-gems', amount: 20 }], marketIds: ['market-exp'], purchaseLimit: 5, purchaseCount: 0 },
+        { name: 'Pizza Night', description: 'The guild gets to order pizza!', url: 'https://via.placeholder.com/150/ef4444/FFFFFF?text=Pizza', category: 'Real-World Reward', isForSale: true, cost: [{ rewardTypeId: 'core-gold', amount: 20 }], marketIds: ['market-treasury'], purchaseLimit: null, purchaseCount: 0 },
+        { name: 'Ice Cream Trip', description: 'A family trip to get ice cream.', url: 'https://via.placeholder.com/150/f472b6/FFFFFF?text=Ice+Cream', category: 'Real-World Reward', isForSale: true, cost: [{ rewardTypeId: 'core-gold', amount: 10 }], marketIds: ['market-bank'], purchaseLimit: null, purchaseCount: 0 },
     ];
     
     return assets.map((asset, i) => ({

@@ -1,3 +1,4 @@
+
 import React from 'react';
 import Sidebar from './Sidebar';
 import Header from './Header';
@@ -30,7 +31,7 @@ import AboutPage from '../pages/AboutPage';
 import CollectionPage from '../pages/CollectionPage';
 import ManageItemsPage from '../pages/ManageItemsPage';
 import AiStudioPage from '../pages/AiStudioPage';
-import LayoutPage from '../pages/LayoutPage';
+import AppearancePage from '../pages/AppearancePage';
 import ObjectManagerPage from '../pages/management/ObjectManagerPage';
 import AssetManagerPage from '../pages/management/MediaManagerPage';
 import BackupAndImportPage from '../pages/management/BackupAndImportPage';
@@ -64,7 +65,7 @@ const MainLayout: React.FC = () => {
       case 'AI Studio': return <AiStudioPage />;
       case 'Approvals': return <ApprovalsPage />;
       case 'Settings': return <SettingsPage />;
-      case 'Layout & Appearance': return <LayoutPage />;
+      case 'Appearance': return <AppearancePage />;
       case 'Object Manager': return <ObjectManagerPage />;
       case 'Asset Manager': return <AssetManagerPage />;
       case 'Backup & Import': return <BackupAndImportPage />;

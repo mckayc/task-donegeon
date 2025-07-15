@@ -1,4 +1,5 @@
 
+import { GenerateContentResponse } from "@google/genai";
 
 
 export enum Role {
@@ -128,6 +129,8 @@ export interface GameAsset {
   marketIds: string[];
   creatorId: string;
   createdAt: string;
+  purchaseLimit: number | null; // null for infinite
+  purchaseCount: number;
 }
 
 export interface Market {
@@ -277,7 +280,7 @@ export interface Terminology {
   user: string;
 }
 
-export type Page = 'Dashboard' | 'Avatar' | 'Quests' | 'Marketplace' | 'Chronicles' | 'Guild' | 'Calendar' | 'Progress' | 'Trophies' | 'Ranks' | 'Manage Users' | 'Manage Rewards' | 'Manage Quests' | 'Manage Items' | 'Approvals' | 'Manage Markets' | 'Manage Guilds' | 'Settings' | 'Profile' | 'About' | 'Help Guide' | 'Manage Ranks' | 'Manage Trophies' | 'Themes' | 'Data Management' | 'Collection' | 'AI Studio' | 'Layout & Appearance'
+export type Page = 'Dashboard' | 'Avatar' | 'Quests' | 'Marketplace' | 'Chronicles' | 'Guild' | 'Calendar' | 'Progress' | 'Trophies' | 'Ranks' | 'Manage Users' | 'Manage Rewards' | 'Manage Quests' | 'Manage Items' | 'Approvals' | 'Manage Markets' | 'Manage Guilds' | 'Settings' | 'Profile' | 'About' | 'Help Guide' | 'Manage Ranks' | 'Manage Trophies' | 'Themes' | 'Data Management' | 'Collection' | 'AI Studio' | 'Appearance'
 | 'Object Manager' | 'Asset Manager' | 'Backup & Import' | 'Asset Library'
 ;
 

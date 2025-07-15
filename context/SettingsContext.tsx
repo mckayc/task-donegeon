@@ -1,4 +1,5 @@
 
+
 import React from 'react';
 import { AppSettings, Page, AppMode } from '../types';
 import { useAppState, useAppDispatch } from './AppContext';
@@ -8,6 +9,7 @@ export interface SettingsState {
   settings: AppSettings;
   activePage: Page;
   appMode: AppMode;
+  isAiAvailable: boolean;
 }
 
 // The dispatch functions provided by this context
@@ -20,8 +22,13 @@ export interface SettingsDispatch {
 
 // Hook to consume the settings state slice
 export const useSettings = (): SettingsState => {
-  const { settings, activePage, appMode } = useAppState();
-  return { settings, activePage, appMode };
+  const { settings, activePage, appMode, isAiConfigured } = useAppState();
+  return { 
+    settings, 
+    activePage, 
+    appMode,
+    isAiAvailable: settings.enableAiFeatures && isAiConfigured,
+  };
 };
 
 // Hook to consume the settings dispatch functions

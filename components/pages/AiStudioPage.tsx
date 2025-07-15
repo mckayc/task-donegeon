@@ -1,12 +1,16 @@
 
+
+
+
 import React, { useState, useEffect } from 'react';
 import Button from '../ui/Button';
 import Input from '../ui/Input';
 import { SparklesIcon, CheckCircleIcon, XCircleIcon } from '../ui/Icons';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
-import { Type, GenerateContentResponse } from '@google/genai';
+import { GenerateContentResponse, Type } from '@google/genai';
 import { Quest, Trophy, GameAsset, QuestAvailability, QuestType, Market } from '../../types';
 import Card from '../ui/Card';
+import { useSettings } from '../../context/SettingsContext';
 
 type AssetType = 'Quests' | 'Trophies' | 'Items' | 'Markets' | 'Images - Items' | 'Images - Trophies' | 'Images - Avatars';
 
@@ -33,10 +37,12 @@ const ApiInstructions: React.FC = () => (
 const AiStudioPage: React.FC = () => {
     const { addQuest, addTrophy, addGameAsset, addNotification, addMarket, uploadFile } = useAppDispatch();
     const { settings } = useAppState();
+    const { isAiAvailable } = useSettings();
     const [apiStatus, setApiStatus] = useState<'unknown' | 'testing' | 'valid' | 'invalid'>('unknown');
     const [apiError, setApiError] = useState<string | null>(null);
 
     const [context, setContext] = useState(localStorage.getItem('aiStudioContext') || '');
+    const [imageStyleContext, setImageStyleContext] = useState(localStorage.getItem('aiImageStyleContext') || 'Pixel art game icon, square, simple colorful background.');
     const [prompt, setPrompt] = useState('');
     const [quantity, setQuantity] = useState(5);
     const [assetType, setAssetType] = useState<AssetType>('Quests');
@@ -64,6 +70,7 @@ const AiStudioPage: React.FC = () => {
     
     const handleSaveContext = () => {
         localStorage.setItem('aiStudioContext', context);
+        localStorage.setItem('aiImageStyleContext', imageStyleContext);
         addNotification({ type: 'success', message: 'Context saved!' });
     };
 
@@ -114,7 +121,7 @@ const AiStudioPage: React.FC = () => {
         
         let fullPrompt: any;
         if (isImageRequest) {
-            fullPrompt = `Pixel art game icon, square, simple colorful background. Item: ${prompt}`;
+            fullPrompt = `${imageStyleContext}. Item: ${prompt}`;
         } else {
             fullPrompt = `Context: ${context || 'A typical family with children.'}\nRequest: Generate a JSON object with a single key "assets". The value of "assets" should be an array of ${quantity} ${assetType} based on the theme: "${prompt}".`;
         }
@@ -173,7 +180,7 @@ const AiStudioPage: React.FC = () => {
             switch(asset.type) {
                 case 'Quests': addQuest({ title: asset.data.title, description: asset.data.description, tags: asset.data.tags || [], type: asset.data.type || QuestType.Duty, rewards: [], lateSetbacks: [], incompleteSetbacks: [], isActive: true, isOptional: false, requiresApproval: false, availabilityType: QuestAvailability.Daily, availabilityCount: null, weeklyRecurrenceDays: [], monthlyRecurrenceDays: [], assignedUserIds: [] }); break;
                 case 'Trophies': addTrophy({ name: asset.data.name, description: asset.data.description, icon: asset.data.icon || '🏆', isManual: true, requirements: [] }); break;
-                case 'Items': addGameAsset({ name: asset.data.name, description: asset.data.description, category: asset.data.category || 'Misc', url: 'https://placehold.co/150x150/84cc16/FFFFFF?text=New', isForSale: false, cost: [], marketIds: [] }); break;
+                case 'Items': addGameAsset({ name: asset.data.name, description: asset.data.description, category: asset.data.category || 'Misc', url: 'https://placehold.co/150x150/84cc16/FFFFFF?text=New', isForSale: false, cost: [], marketIds: [], purchaseLimit: null, purchaseCount: 0 }); break;
                 case 'Markets': addMarket({ title: asset.data.title, description: asset.data.description, icon: asset.data.icon || '🛒' }); break;
                 case 'Images - Items': case 'Images - Trophies': case 'Images - Avatars':
                     const byteCharacters = atob(asset.data.base64);
@@ -185,7 +192,7 @@ const AiStudioPage: React.FC = () => {
                     const uploadedFile = await uploadFile(file);
                     if (uploadedFile?.url) {
                         const category = asset.type.split(' - ')[1];
-                        addGameAsset({ name: asset.data.name, description: `Icon for ${asset.data.name}`, category: category, url: uploadedFile.url, isForSale: false, cost: [], marketIds: [] });
+                        addGameAsset({ name: asset.data.name, description: `Icon for ${asset.data.name}`, category: category, url: uploadedFile.url, isForSale: false, cost: [], marketIds: [], purchaseLimit: null, purchaseCount: 0 });
                     }
                     break;
             }
@@ -216,19 +223,32 @@ const AiStudioPage: React.FC = () => {
         <div className="space-y-6">
             <h1 className="text-4xl font-medieval text-stone-100 flex items-center gap-3"><SparklesIcon className="w-8 h-8 text-accent" /> AI Studio</h1>
 
-            <Card title="Generation Context"><p className="text-stone-400 text-sm mb-3">Provide background info about your group. This helps the AI generate more relevant ideas. Saved in your browser.</p><textarea value={context} onChange={e => setContext(e.target.value)} rows={4} className="w-full px-4 py-2 bg-stone-700 border border-stone-600 rounded-md" placeholder="e.g., A family with two kids, ages 8 and 12. We live in a house with a backyard and have one dog. We want to focus on chores and outdoor activities." /><div className="text-right mt-2"><Button variant="secondary" onClick={handleSaveContext}>Save Context</Button></div></Card>
+            <Card title="Generation Context">
+                <p className="text-stone-400 text-sm mb-3">Provide background info about your group to help the AI generate relevant text-based ideas.</p>
+                <textarea value={context} onChange={e => setContext(e.target.value)} rows={3} className="w-full px-4 py-2 bg-stone-700 border border-stone-600 rounded-md" placeholder="e.g., A family with two kids, ages 8 and 12. We live in a house with a backyard and have one dog. We want to focus on chores and outdoor activities." />
+                
+                <p className="text-stone-400 text-sm mb-3 mt-4">Provide a style for all generated images.</p>
+                <textarea value={imageStyleContext} onChange={e => setImageStyleContext(e.target.value)} rows={2} className="w-full px-4 py-2 bg-stone-700 border border-stone-600 rounded-md" placeholder="e.g., Pixel art icon, simple colorful background" />
+                
+                <div className="text-right mt-2">
+                    <Button variant="secondary" onClick={handleSaveContext}>Save Context</Button>
+                </div>
+            </Card>
             <Card title="Generate New Assets">
                 <div className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div><label className="block text-sm font-medium text-stone-300 mb-1">Asset Type</label><Input as="select" value={assetType} onChange={e => setAssetType(e.target.value as AssetType)}>
-                            <option value="Quests">{settings.terminology.tasks}</option><option value="Trophies">{settings.terminology.awards}</option><option value="Items">Items</option><option value="Markets">Markets</option>
-                            <option disabled>---</option>
-                            <option value="Images - Items">Images - Items</option><option value="Images - Trophies">Images - Trophies</option><option value="Images - Avatars">Images - Avatars</option>
-                        </Input></div>
-                        <div><Input label="Quantity" type="number" min="1" max="10" value={quantity} onChange={e => setQuantity(Number(e.target.value))} /></div>
-                    </div>
-                    <div><Input label={assetType.startsWith('Images') ? "Image Prompt" : "Generation Prompt / Theme"} placeholder={assetType.startsWith('Images') ? "e.g., 'a magic potion', 'a steel sword'" : "e.g., 'summer yard work', 'creative art projects'"} value={prompt} onChange={e => setPrompt(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleGenerate()} disabled={isLoading} /></div>
-                    <div className="text-right"><Button onClick={handleGenerate} disabled={isLoading || !prompt.trim()}><SparklesIcon className="w-5 h-5 mr-2" />{isLoading ? 'Generating...' : 'Generate Assets'}</Button></div>
+                    <fieldset disabled={!isAiAvailable || isLoading} className="space-y-4 disabled:opacity-60">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div><label className="block text-sm font-medium text-stone-300 mb-1">Asset Type</label><Input as="select" value={assetType} onChange={e => setAssetType(e.target.value as AssetType)}>
+                                <option value="Quests">{settings.terminology.tasks}</option><option value="Trophies">{settings.terminology.awards}</option><option value="Items">Items</option><option value="Markets">Markets</option>
+                                <option disabled>---</option>
+                                <option value="Images - Items">Images - Items</option><option value="Images - Trophies">Images - Trophies</option><option value="Images - Avatars">Images - Avatars</option>
+                            </Input></div>
+                            <div><Input label="Quantity" type="number" min="1" max="10" value={quantity} onChange={e => setQuantity(Number(e.target.value))} /></div>
+                        </div>
+                        <div><Input label={assetType.startsWith('Images') ? "Image Prompt" : "Generation Prompt / Theme"} placeholder={assetType.startsWith('Images') ? "e.g., 'a magic potion', 'a steel sword'" : "e.g., 'summer yard work', 'creative art projects'"} value={prompt} onChange={e => setPrompt(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleGenerate()} /></div>
+                    </fieldset>
+                    <div className="text-right"><Button onClick={handleGenerate} disabled={isLoading || !prompt.trim() || !isAiAvailable}><SparklesIcon className="w-5 h-5 mr-2" />{isLoading ? 'Generating...' : 'Generate Assets'}</Button></div>
+                    {!isAiAvailable && <p className="text-sm text-center text-amber-400 mt-4">AI Features are not available. Please enable them in Settings and ensure the server has a valid API key.</p>}
                 </div>
             </Card>
 

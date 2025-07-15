@@ -1,5 +1,6 @@
 
 
+
 import React, { useState } from 'react';
 import { useGameData, useGameDataDispatch } from '../../context/GameDataContext';
 import { useSettings } from '../../context/SettingsContext';
@@ -14,7 +15,7 @@ import EmptyState from '../ui/EmptyState';
 
 const ManageQuestsPage: React.FC = () => {
     const { quests } = useGameData();
-    const { settings } = useSettings();
+    const { settings, isAiAvailable } = useSettings();
     const { deleteQuest } = useGameDataDispatch();
     const [editingQuest, setEditingQuest] = useState<Quest | null>(null);
     const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
@@ -67,7 +68,7 @@ const ManageQuestsPage: React.FC = () => {
             <div className="flex justify-between items-center mb-8">
                 <h1 className="text-4xl font-medieval text-stone-100">Manage {settings.terminology.tasks}</h1>
                  <div className="flex gap-2">
-                    {settings.enableAiFeatures && (
+                    {isAiAvailable && (
                         <Button onClick={() => setIsGeneratorOpen(true)} variant="secondary">
                             <SparklesIcon className="w-5 h-5 mr-2" />
                             Create with AI

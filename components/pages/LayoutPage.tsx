@@ -1,8 +1,8 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useSettings } from '../../context/SettingsContext';
-import { useAppDispatch } from '../../context/AppContext';
-import { AppSettings, Theme, SidebarConfigItem, Page, SidebarLink } from '../../types';
+import { useAppState, useAppDispatch } from '../../context/AppContext';
+import { AppSettings, ThemeDefinition, SidebarConfigItem, Page, SidebarLink } from '../../types';
 import Button from '../ui/Button';
 import Input from '../ui/Input';
 import Card from '../ui/Card';
@@ -14,6 +14,7 @@ type SidebarKey = keyof AppSettings['sidebars'];
 
 const AppearancePage: React.FC = () => {
     const { settings } = useSettings();
+    const { themes: allThemes } = useAppState();
     const { updateSettings, addNotification } = useAppDispatch();
     
     const [formState, setFormState] = useState(settings);
@@ -88,7 +89,7 @@ const AppearancePage: React.FC = () => {
         setFormState(p => ({ ...p, sidebars: { ...p.sidebars, [activeTab]: newSidebarConfig }}));
     };
 
-    const themes: Theme[] = ['emerald', 'rose', 'sky', 'arcane', 'cartoon', 'forest', 'ocean', 'vulcan', 'royal', 'winter', 'sunset', 'cyberpunk', 'steampunk', 'parchment', 'eerie'];
+    const themes: ThemeDefinition[] = allThemes.filter(t => !t.isCustom);
 
     const renderSidebarEditor = () => {
         const items = formState.sidebars[activeTab];
@@ -145,20 +146,23 @@ const AppearancePage: React.FC = () => {
                     <div>
                         <label className="block text-sm font-medium mb-2" style={{ color: 'hsl(var(--color-text-secondary))' }}>Default Theme</label>
                         <div className="flex flex-wrap gap-4">
-                            {themes.map(theme => (
+                            {themes.map(theme => {
+                                const themeStyle = {
+                                    fontFamily: theme.styles['--font-display'],
+                                    backgroundColor: `hsl(${theme.styles['--color-primary-hue']} ${theme.styles['--color-primary-saturation']} ${theme.styles['--color-primary-lightness']})`
+                                };
+                                return (
                                 <button
-                                    key={theme}
+                                    key={theme.id}
                                     type="button"
-                                    onClick={() => setFormState(p => ({...p, theme}))}
-                                    className={`capitalize w-24 h-16 rounded-lg font-bold text-white flex items-center justify-center transition-all ${formState.theme === theme ? 'ring-2 ring-offset-2 ring-offset-stone-800 ring-white' : ''}`}
-                                    style={{
-                                        fontFamily: `var(--font-${theme}-display, var(--font-display))`, 
-                                        backgroundColor: `hsl(var(--color-${theme}-hue, var(--color-primary-hue)) var(--color-${theme}-saturation, var(--color-primary-saturation)) var(--color-${theme}-lightness, var(--color-primary-lightness)))`
-                                    }}
+                                    onClick={() => setFormState(p => ({...p, theme: theme.id}))}
+                                    className={`capitalize w-24 h-16 rounded-lg font-bold text-white flex items-center justify-center transition-all ${formState.theme === theme.id ? 'ring-2 ring-offset-2 ring-offset-stone-800 ring-white' : ''}`}
+                                    style={themeStyle}
                                 >
-                                    {theme}
+                                    {theme.name}
                                 </button>
-                            ))}
+                                )
+                            })}
                         </div>
                     </div>
                 </div>
@@ -173,26 +177,6 @@ const AppearancePage: React.FC = () => {
                 <p className="text-stone-400 text-sm mb-4">Drag and drop to reorder links. Use arrows to create nested groups.</p>
                 {renderSidebarEditor()}
             </Card>
-
-             <style>{`
-                :root { 
-                    --color-emerald-hue: 158; --color-emerald-saturation: 84%; --color-emerald-lightness: 39%; --font-emerald-display: 'MedievalSharp', cursive;
-                    --color-rose-hue: 346; --color-rose-saturation: 84%; --color-rose-lightness: 59%; --font-rose-display: 'MedievalSharp', cursive;
-                    --color-sky-hue: 204; --color-sky-saturation: 85%; --color-sky-lightness: 54%; --font-sky-display: 'MedievalSharp', cursive;
-                    --color-arcane-hue: 265; --color-arcane-saturation: 60%; --color-arcane-lightness: 55%; --font-arcane-display: 'Uncial Antiqua', cursive;
-                    --color-cartoon-hue: 25; --color-cartoon-saturation: 95%; --color-cartoon-lightness: 55%; --font-cartoon-display: 'Comic Neue', cursive;
-                    --color-forest-hue: 130; --color-forest-saturation: 60%; --color-forest-lightness: 40%; --font-forest-display: 'Metamorphous', serif;
-                    --color-ocean-hue: 180; --color-ocean-saturation: 85%; --color-ocean-lightness: 45%; --font-ocean-display: 'Uncial Antiqua', cursive;
-                    --color-vulcan-hue: 0; --color-vulcan-saturation: 85%; --color-vulcan-lightness: 50%; --font-vulcan-display: 'Metamorphous', serif;
-                    --color-royal-hue: 250; --color-royal-saturation: 60%; --color-royal-lightness: 50%; --font-royal-display: 'Uncial Antiqua', cursive;
-                    --color-winter-hue: 205; --color-winter-saturation: 70%; --color-winter-lightness: 50%; --font-winter-display: 'Metamorphous', serif;
-                    --color-sunset-hue: 15; --color-sunset-saturation: 90%; --color-sunset-lightness: 60%; --font-sunset-display: 'MedievalSharp', cursive;
-                    --color-cyberpunk-hue: 320; --color-cyberpunk-saturation: 100%; --color-cyberpunk-lightness: 60%; --font-cyberpunk-display: 'Press Start 2P', cursive;
-                    --color-steampunk-hue: 30; --color-steampunk-saturation: 60%; --color-steampunk-lightness: 50%; --font-steampunk-display: 'IM Fell English SC', serif;
-                    --color-parchment-hue: 20; --color-parchment-saturation: 50%; --color-parchment-lightness: 40%; --font-parchment-display: 'IM Fell English SC', serif;
-                    --color-eerie-hue: 120; --color-eerie-saturation: 40%; --color-eerie-lightness: 45%; --font-eerie-display: 'Metamorphous', serif;
-                }
-            `}</style>
         </div>
     );
 };

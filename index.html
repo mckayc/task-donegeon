@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
   <head>
@@ -10,12 +11,6 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=MedievalSharp&family=Roboto:wght@400;500;700&family=Comic+Neue:wght@700&family=Uncial+Antiqua&family=Press+Start+2P&family=Special+Elite&family=Metamorphous&family=IM+Fell+English+SC&display=swap" rel="stylesheet">
     <style>
-      body {
-        font-family: 'Roboto', sans-serif;
-      }
-      .font-medieval {
-        font-family: 'MedievalSharp', cursive;
-      }
       /* For hiding scrollbars */
       .scrollbar-hide::-webkit-scrollbar {
           display: none;
@@ -26,7 +21,7 @@
       }
 
       /* THEME VARIABLES */
-      :root, body[data-theme="emerald"] {
+      :root {
         --font-display: 'MedievalSharp', cursive;
         --font-body: 'Roboto', sans-serif;
         --color-bg-primary: 224 71% 4%;    /* stone-950 */
@@ -38,118 +33,6 @@
         --color-primary-hue: 158; --color-primary-saturation: 84%; --color-primary-lightness: 39%;
         --color-accent-hue: 158; --color-accent-saturation: 75%; --color-accent-lightness: 58%;
         --color-accent-light-hue: 158; --color-accent-light-saturation: 70%; --color-accent-light-lightness: 45%;
-      }
-      body[data-theme="rose"] {
-        --font-display: 'MedievalSharp', cursive; --font-body: 'Roboto', sans-serif;
-        --color-bg-primary: 334 27% 10%; --color-bg-secondary: 334 20% 15%; --color-bg-tertiary: 334 15% 22%;
-        --color-text-primary: 346 33% 94%; --color-text-secondary: 346 20% 70%; --color-border: 346 15% 40%;
-        --color-primary-hue: 346; --color-primary-saturation: 84%; --color-primary-lightness: 59%;
-        --color-accent-hue: 346; --color-accent-saturation: 91%; --color-accent-lightness: 71%;
-        --color-accent-light-hue: 346; --color-accent-light-saturation: 80%; --color-accent-light-lightness: 60%;
-      }
-      body[data-theme="sky"] {
-        --font-display: 'MedievalSharp', cursive; --font-body: 'Roboto', sans-serif;
-        --color-bg-primary: 217 33% 12%; --color-bg-secondary: 217 28% 17%; --color-bg-tertiary: 217 25% 25%;
-        --color-text-primary: 210 40% 98%; --color-text-secondary: 215 25% 75%; --color-border: 215 20% 40%;
-        --color-primary-hue: 204; --color-primary-saturation: 85%; --color-primary-lightness: 54%;
-        --color-accent-hue: 202; --color-accent-saturation: 90%; --color-accent-lightness: 70%;
-        --color-accent-light-hue: 202; --color-accent-light-saturation: 80%; --color-accent-light-lightness: 60%;
-      }
-      body[data-theme="arcane"] {
-        --font-display: 'Uncial Antiqua', cursive; --font-body: 'Roboto', sans-serif;
-        --color-bg-primary: 265 39% 12%; --color-bg-secondary: 265 30% 18%; --color-bg-tertiary: 265 25% 25%;
-        --color-text-primary: 271 67% 93%; --color-text-secondary: 271 25% 75%; --color-border: 271 20% 45%;
-        --color-primary-hue: 265; --color-primary-saturation: 60%; --color-primary-lightness: 55%;
-        --color-accent-hue: 265; --color-accent-saturation: 70%; --color-accent-lightness: 75%;
-        --color-accent-light-hue: 45; --color-accent-light-saturation: 80%; --color-accent-light-lightness: 65%;
-      }
-      body[data-theme="cartoon"] {
-        --font-display: 'Comic Neue', cursive; --font-body: 'Comic Neue', cursive;
-        --color-bg-primary: 214 53% 15%; --color-bg-secondary: 214 43% 22%; --color-bg-tertiary: 214 38% 30%;
-        --color-text-primary: 210 40% 96%; --color-text-secondary: 210 30% 75%; --color-border: 210 25% 45%;
-        --color-primary-hue: 25; --color-primary-saturation: 95%; --color-primary-lightness: 55%;
-        --color-accent-hue: 200; --color-accent-saturation: 85%; --color-accent-lightness: 60%;
-        --color-accent-light-hue: 200; --color-accent-light-saturation: 90%; --color-accent-light-lightness: 70%;
-      }
-      body[data-theme="forest"] {
-        --font-display: 'Metamorphous', serif; --font-body: 'Roboto', sans-serif;
-        --color-bg-primary: 120 25% 10%; --color-bg-secondary: 120 20% 15%; --color-bg-tertiary: 120 15% 22%;
-        --color-text-primary: 90 30% 90%; --color-text-secondary: 90 15% 65%; --color-border: 120 10% 35%;
-        --color-primary-hue: 130; --color-primary-saturation: 60%; --color-primary-lightness: 40%;
-        --color-accent-hue: 90; --color-accent-saturation: 50%; --color-accent-lightness: 65%;
-        --color-accent-light-hue: 40; --color-accent-light-saturation: 50%; --color-accent-light-lightness: 55%;
-      }
-      body[data-theme="ocean"] {
-        --font-display: 'Uncial Antiqua', cursive; --font-body: 'Roboto', sans-serif;
-        --color-bg-primary: 200 100% 10%; --color-bg-secondary: 200 80% 18%; --color-bg-tertiary: 200 70% 25%;
-        --color-text-primary: 190 70% 95%; --color-text-secondary: 190 40% 75%; --color-border: 190 40% 40%;
-        --color-primary-hue: 180; --color-primary-saturation: 85%; --color-primary-lightness: 45%;
-        --color-accent-hue: 170; --color-accent-saturation: 70%; --color-accent-lightness: 70%;
-        --color-accent-light-hue: 160; --color-accent-light-saturation: 60%; --color-accent-light-lightness: 80%;
-      }
-       body[data-theme="vulcan"] {
-        --font-display: 'Metamorphous', serif; --font-body: 'Roboto', sans-serif;
-        --color-bg-primary: 0 0% 5%; --color-bg-secondary: 0 0% 10%; --color-bg-tertiary: 0 0% 18%;
-        --color-text-primary: 0 0% 95%; --color-text-secondary: 0 0% 70%; --color-border: 0 0% 30%;
-        --color-primary-hue: 0; --color-primary-saturation: 85%; --color-primary-lightness: 50%;
-        --color-accent-hue: 30; --color-accent-saturation: 90%; --color-accent-lightness: 60%;
-        --color-accent-light-hue: 30; --color-accent-light-saturation: 80%; --color-accent-light-lightness: 75%;
-      }
-      body[data-theme="royal"] {
-        --font-display: 'Uncial Antiqua', cursive; --font-body: 'Roboto', sans-serif;
-        --color-bg-primary: 260 50% 12%; --color-bg-secondary: 260 40% 18%; --color-bg-tertiary: 260 35% 25%;
-        --color-text-primary: 260 50% 95%; --color-text-secondary: 260 30% 75%; --color-border: 260 25% 40%;
-        --color-primary-hue: 250; --color-primary-saturation: 60%; --color-primary-lightness: 50%;
-        --color-accent-hue: 50; --color-accent-saturation: 80%; --color-accent-lightness: 60%;
-        --color-accent-light-hue: 50; --color-accent-light-saturation: 70%; --color-accent-light-lightness: 75%;
-      }
-       body[data-theme="winter"] {
-        --font-display: 'Metamorphous', serif; --font-body: 'Roboto', sans-serif;
-        --color-bg-primary: 200 20% 95%; --color-bg-secondary: 200 25% 90%; --color-bg-tertiary: 200 22% 80%;
-        --color-text-primary: 210 30% 20%; --color-text-secondary: 210 20% 45%; --color-border: 210 15% 65%;
-        --color-primary-hue: 205; --color-primary-saturation: 70%; --color-primary-lightness: 50%;
-        --color-accent-hue: 210; --color-accent-saturation: 60%; --color-accent-lightness: 65%;
-        --color-accent-light-hue: 215; --color-accent-light-saturation: 50%; --color-accent-light-lightness: 55%;
-      }
-      body[data-theme="sunset"] {
-        --font-display: 'MedievalSharp', cursive; --font-body: 'Roboto', sans-serif;
-        --color-bg-primary: 20 60% 10%; --color-bg-secondary: 25 50% 15%; --color-bg-tertiary: 30 45% 22%;
-        --color-text-primary: 30 80% 95%; --color-text-secondary: 30 50% 75%; --color-border: 30 30% 40%;
-        --color-primary-hue: 15; --color-primary-saturation: 90%; --color-primary-lightness: 60%;
-        --color-accent-hue: 330; --color-accent-saturation: 80%; --color-accent-lightness: 70%;
-        --color-accent-light-hue: 330; --color-accent-light-saturation: 70%; --color-accent-light-lightness: 80%;
-      }
-      body[data-theme="cyberpunk"] {
-        --font-display: 'Press Start 2P', cursive; --font-body: 'Roboto', sans-serif;
-        --color-bg-primary: 240 50% 5%; --color-bg-secondary: 240 40% 10%; --color-bg-tertiary: 240 35% 15%;
-        --color-text-primary: 180 100% 85%; --color-text-secondary: 180 50% 65%; --color-border: 180 50% 30%;
-        --color-primary-hue: 320; --color-primary-saturation: 100%; --color-primary-lightness: 60%;
-        --color-accent-hue: 180; --color-accent-saturation: 100%; --color-accent-lightness: 50%;
-        --color-accent-light-hue: 60; --color-accent-light-saturation: 100%; --color-accent-light-lightness: 55%;
-      }
-      body[data-theme="steampunk"] {
-        --font-display: 'IM Fell English SC', serif; --font-body: 'Special Elite', cursive;
-        --color-bg-primary: 30 30% 20%; --color-bg-secondary: 30 25% 25%; --color-bg-tertiary: 30 20% 32%;
-        --color-text-primary: 35 30% 85%; --color-text-secondary: 35 20% 65%; --color-border: 35 20% 45%;
-        --color-primary-hue: 30; --color-primary-saturation: 60%; --color-primary-lightness: 50%;
-        --color-accent-hue: 180; --color-accent-saturation: 30%; --color-accent-lightness: 55%;
-        --color-accent-light-hue: 40; --color-accent-light-saturation: 40%; --color-accent-light-lightness: 70%;
-      }
-       body[data-theme="parchment"] {
-        --font-display: 'IM Fell English SC', serif; --font-body: 'Special Elite', cursive;
-        --color-bg-primary: 45 40% 94%; --color-bg-secondary: 45 35% 90%; --color-bg-tertiary: 45 30% 82%;
-        --color-text-primary: 30 30% 20%; --color-text-secondary: 30 25% 35%; --color-border: 30 20% 55%;
-        --color-primary-hue: 20; --color-primary-saturation: 50%; --color-primary-lightness: 40%;
-        --color-accent-hue: 0; --color-accent-saturation: 40%; --color-accent-lightness: 45%;
-        --color-accent-light-hue: 0; --color-accent-light-saturation: 30%; --color-accent-light-lightness: 30%;
-      }
-       body[data-theme="eerie"] {
-        --font-display: 'Metamorphous', serif; --font-body: 'Special Elite', cursive;
-        --color-bg-primary: 150 10% 8%; --color-bg-secondary: 150 8% 12%; --color-bg-tertiary: 150 7% 18%;
-        --color-text-primary: 140 20% 88%; --color-text-secondary: 140 10% 65%; --color-border: 140 8% 30%;
-        --color-primary-hue: 120; --color-primary-saturation: 40%; --color-primary-lightness: 45%;
-        --color-accent-hue: 280; --color-accent-saturation: 40%; --color-accent-lightness: 60%;
-        --color-accent-light-hue: 280; --color-accent-light-saturation: 30%; --color-accent-light-lightness: 75%;
       }
 
       body {

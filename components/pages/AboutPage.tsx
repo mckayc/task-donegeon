@@ -42,8 +42,9 @@ const RoadmapContent: React.FC = () => (
             <h4 className="text-xl font-bold text-stone-100 font-medieval">Phase 1: Foundational Features &amp; Quality of Life</h4>
             <p className="text-xs text-stone-400">This phase focuses on high-impact improvements for admins and players that enhance the core experience.</p>
             <ul className="list-disc list-inside space-y-2 mt-2">
+                <li><strong>Backend Authentication:</strong> Implement JWT-based authentication to secure all backend API endpoints.</li>
                 <li><strong>Enhanced Security:</strong> A comprehensive security audit and implementation of best practices like strict input validation, Content Security Policy (CSP), and secure headers.</li>
-                <li><strong>Quest Bundles:</strong> Group quests into "Quest Chains" or "Storylines" to create multi-step adventures.</li>
+                <li><strong>Quest Bundles:</strong> Group quests into "Quest Chains" or "Storylines." This allows admins to create multi-step adventures.</li>
                 <li><strong>Showcase Page:</strong> A public profile page for each explorer to showcase their avatar, earned trophies, and key stats.</li>
                 <li><strong>Advanced Object Manager:</strong> Implement bulk editing, quick duplication, and powerful filtering/sorting for all game objects.</li>
                 <li><strong>Improved Progress Page:</strong> A more detailed summary of user activity, highlighting strengths and areas for improvement with visual charts.</li>
@@ -55,9 +56,8 @@ const RoadmapContent: React.FC = () => (
             <p className="text-xs text-stone-400">This phase introduces major new creative outlets and systems for deeper engagement.</p>
             <ul className="list-disc list-inside space-y-2 mt-2">
                 <li><strong>Theme Creator:</strong> An admin tool to create and edit custom visual themes (colors, fonts, etc.) that can be sold in a market.</li>
-                <li><strong>Template Library:</strong> Admins can browse and import pre-made templates for quests, rewards, and other game objects.</li>
                 <li><strong>Reward Rarity &amp; Limits:</strong> Ability to specify how many of a certain reward can be claimed, creating rare or one-of-a-kind items.</li>
-                <li><strong>Automated Quest Rotation:</strong> A system for automatically rotating daily or weekly duties among guild members.</li>
+                <li><strong>Automated Quest Rotation:</strong> A system for automatically rotating daily or weekly duties among guild members to ensure fair distribution of chores.</li>
             </ul>
         </div>
         
@@ -66,8 +66,8 @@ const RoadmapContent: React.FC = () => (
             <p className="text-xs text-stone-400">This phase includes the big, game-changing features that add new dimensions to the world.</p>
             <ul className="list-disc list-inside space-y-2 mt-2">
                 <li><strong>Game Map:</strong> A visual map with unlockable locations. Traveling to a location could unlock new quests or markets.</li>
-                <li><strong>Explorer Markets:</strong> Allow explorers to open their own markets to sell items or services to other players.</li>
-                <li><strong>Advanced Admin Reporting:</strong> A dedicated reporting dashboard for admins to track user engagement, economic flow, and quest completion rates.</li>
+                <li><strong>Explorer Markets:</strong> Allow explorers to open their own markets to sell items or services to other players, creating a player-driven economy.</li>
+                <li><strong>Advanced Reporting:</strong> A dedicated reporting dashboard for admins to track user engagement, economic flow, and quest completion rates.</li>
             </ul>
         </div>
 
@@ -121,6 +121,7 @@ const AboutPage: React.FC = () => {
         return (
             <div className="space-y-6 text-stone-300 leading-relaxed">
                 <p>{metadata.description}</p>
+                 <p>This version refines the user interface by moving the rewards display into the main content area, next to the page title. This provides better context and declutters the header. It also includes important bug fixes for reward balance updates and administrator PIN login flows.</p>
                 
                 <div className="pt-4 border-t border-stone-700/60 text-sm">
                     <p><strong>Version:</strong> {metadata.version}</p>
@@ -152,12 +153,11 @@ const AboutPage: React.FC = () => {
     }
 
     return (
-        <div className="max-w-4xl mx-auto">
-            <h1 className="text-4xl font-medieval text-stone-100 mb-8">About {settings.terminology.appName}</h1>
+        <div>
             <Card>
                 {renderContent()}
             </Card>
-            <CollapsibleSection title="Roadmap">
+            <CollapsibleSection title="Roadmap" defaultOpen>
                 <RoadmapContent />
             </CollapsibleSection>
         </div>

@@ -1,5 +1,4 @@
 
-
 import React, { useState, ChangeEvent } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useSettings, useSettingsDispatch } from '../../context/SettingsContext';
@@ -128,13 +127,29 @@ const SettingsPage: React.FC = () => {
     return (
         <div className="space-y-8 relative">
             <div className="sticky top-0 z-10 -mx-8 -mt-8 px-8 pt-6 pb-4 mb-2" style={{ backgroundColor: 'hsl(var(--color-bg-tertiary))', borderBottom: '1px solid hsl(var(--color-border))' }}>
-                <div className="flex justify-between items-center">
-                    <h1 className="text-4xl font-medieval text-stone-100" style={{ color: 'hsl(var(--color-text-primary))' }}>Game Settings</h1>
+                <div className="flex justify-end items-center">
                     <Button onClick={handleSave}>Save All Settings</Button>
                 </div>
             </div>
 
-            <CollapsibleSection title="Game Rules" defaultOpen>
+            <CollapsibleSection title="Security" defaultOpen>
+                 <div className="space-y-6">
+                    <div className="flex items-start">
+                        <ToggleSwitch enabled={formState.security.quickUserSwitchingEnabled} setEnabled={(val) => handleToggleChange('security.quickUserSwitchingEnabled', val)} label="Quick User Switching" />
+                        <p className="text-sm ml-6" style={{ color: 'hsl(var(--color-text-secondary))' }}>If enabled, a bar with user avatars will appear at the top for one-click switching.</p>
+                    </div>
+                     <div className="pt-4 border-t flex items-start" style={{ borderColor: 'hsl(var(--color-border))' }}>
+                        <ToggleSwitch enabled={formState.security.requirePinForUsers} setEnabled={(val) => handleToggleChange('security.requirePinForUsers', val)} label="Require PIN for Users" />
+                        <p className="text-sm ml-6" style={{ color: 'hsl(var(--color-text-secondary))' }}>If disabled, users will not be prompted for a PIN when switching profiles. This is less secure but faster for trusted environments.</p>
+                    </div>
+                     <div className="pt-4 border-t flex items-start" style={{ borderColor: 'hsl(var(--color-border))' }}>
+                        <ToggleSwitch enabled={formState.security.requirePasswordForAdmin} setEnabled={(val) => handleToggleChange('security.requirePasswordForAdmin', val)} label={`Require Password for ${formState.terminology.admin} & ${formState.terminology.moderator}`} />
+                        <p className="text-sm ml-6" style={{ color: 'hsl(var(--color-text-secondary))' }}>If enabled, these roles must use their password to log in. If disabled, they can use their PIN like regular users.</p>
+                    </div>
+                </div>
+            </CollapsibleSection>
+
+            <CollapsibleSection title="Game Rules">
                  <div className="space-y-6">
                     <div className="flex items-start">
                         <ToggleSwitch enabled={formState.forgivingSetbacks} setEnabled={(val) => handleToggleChange('forgivingSetbacks', val)} label="Forgiving Setbacks" />

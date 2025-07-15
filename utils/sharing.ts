@@ -48,6 +48,7 @@ export const generateBlueprint = (
             ranks: [],
             trophies: [],
             markets: [],
+            gameAssets: [],
         }
     };
 

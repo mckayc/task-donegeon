@@ -1,8 +1,8 @@
+
 import React, { useState } from 'react';
 import Button from '../../ui/Button';
 import Card from '../../ui/Card';
-import { libraryPacks } from '../../../data/assetLibrary';
-import { LibraryPack } from '../../../types';
+import { libraryPacks, LibraryPack } from '../../../data/assetLibrary';
 import AssetLibraryImportDialog from '../../sharing/AssetLibraryImportDialog';
 
 const assetTypes: { type: LibraryPack['type']; title: string; }[] = [

@@ -143,7 +143,6 @@ const ChroniclesPage: React.FC = () => {
   return (
     <div>
       <div className="flex justify-between items-center mb-8 flex-wrap gap-4">
-        <h1 className="text-4xl font-medieval text-stone-100">{settings.terminology.history}</h1>
         {currentUser.role === Role.DonegeonMaster && (
             <div className="flex space-x-2 p-1 bg-stone-900/50 rounded-lg">
                 <button

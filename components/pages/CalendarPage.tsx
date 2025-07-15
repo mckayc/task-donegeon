@@ -60,7 +60,6 @@ const CalendarPage: React.FC = () => {
 
     return (
         <div>
-            <h1 className="text-4xl font-medieval text-stone-100 mb-8">Quest Calendar</h1>
             <Card>
                 <div className="flex items-center justify-between p-4 border-b border-stone-700/60 flex-wrap gap-4">
                     <div className="flex items-center">

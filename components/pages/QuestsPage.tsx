@@ -311,31 +311,29 @@ const QuestsPage: React.FC = () => {
 
     return (
         <div>
-            <div className="flex justify-between items-center mb-8 flex-wrap gap-4">
-                <h1 className="text-4xl font-medieval text-stone-100">The {settings.terminology.task} Board</h1>
-                {currentUser?.role === Role.DonegeonMaster && (
-                    <Button onClick={() => setIsCreateQuestDialogOpen(true)}>Create {settings.terminology.task}</Button>
-                )}
-            </div>
-            
-            <div className="mb-6 flex justify-between items-center flex-wrap gap-4">
+            <div className="flex justify-between items-center mb-6 flex-wrap gap-4">
                 <div className="flex space-x-2 p-1 bg-stone-900/50 rounded-lg max-w-sm">
                     <FilterButton type="all">All {settings.terminology.tasks}</FilterButton>
                     <FilterButton type={QuestType.Duty}>{settings.terminology.recurringTasks}</FilterButton>
                     <FilterButton type={QuestType.Venture}>{settings.terminology.singleTasks}</FilterButton>
                 </div>
-                <div>
-                    <label htmlFor="sort-quests" className="text-sm font-medium text-stone-400 mr-2">Sort by:</label>
-                    <select
-                        id="sort-quests"
-                        value={sortBy}
-                        onChange={e => setSortBy(e.target.value as 'priority' | 'title' | 'dueDate')}
-                        className="px-3 py-1.5 bg-stone-700 border border-stone-600 rounded-md focus:ring-emerald-500 focus:border-emerald-500 transition text-sm"
-                    >
-                        <option value="priority">Priority</option>
-                        <option value="title">Title</option>
-                        <option value="dueDate">Due Date</option>
-                    </select>
+                <div className="flex items-center gap-4">
+                    <div>
+                        <label htmlFor="sort-quests" className="text-sm font-medium text-stone-400 mr-2">Sort by:</label>
+                        <select
+                            id="sort-quests"
+                            value={sortBy}
+                            onChange={e => setSortBy(e.target.value as 'priority' | 'title' | 'dueDate')}
+                            className="px-3 py-1.5 bg-stone-700 border border-stone-600 rounded-md focus:ring-emerald-500 focus:border-emerald-500 transition text-sm"
+                        >
+                            <option value="priority">Priority</option>
+                            <option value="title">Title</option>
+                            <option value="dueDate">Due Date</option>
+                        </select>
+                    </div>
+                    {currentUser?.role === Role.DonegeonMaster && (
+                        <Button onClick={() => setIsCreateQuestDialogOpen(true)}>Create {settings.terminology.task}</Button>
+                    )}
                 </div>
             </div>
 

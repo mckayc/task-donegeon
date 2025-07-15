@@ -1,7 +1,7 @@
 
 
 import React, { useState, useMemo, useEffect } from 'react';
-import { Page, Role, AppMode } from '../../types';
+import { Page, Role, AppMode, User } from '../../types';
 import Avatar from '../ui/Avatar';
 import { useAuth, useAuthDispatch } from '../../context/AuthContext';
 import { useGameData } from '../../context/GameDataContext';
@@ -22,10 +22,40 @@ const Clock: React.FC = () => {
     );
 };
 
+const QuickSwitchBar: React.FC = () => {
+    const { users, loginHistory } = useAuth();
+    const { setIsSwitchingUser, setTargetedUserForLogin } = useAuthDispatch();
+    
+    const sortedUsers = useMemo(() => {
+        return loginHistory
+            .map(userId => users.find(u => u.id === userId))
+            .filter((u): u is User => !!u);
+    }, [loginHistory, users]);
+
+    const handleSwitch = (user: User) => {
+        setTargetedUserForLogin(user);
+        setIsSwitchingUser(true);
+    };
+
+    if (sortedUsers.length < 2) return null;
+
+    return (
+        <div className="flex items-center gap-3">
+            <span className="text-xs font-bold text-stone-400 uppercase hidden lg:inline">Switch:</span>
+            {sortedUsers.slice(0, 5).map(user => (
+                 <button key={user.id} onClick={() => handleSwitch(user)} title={`Switch to ${user.gameName}`} className="group flex items-center gap-2 rounded-full hover:bg-stone-700/50 p-1 transition-colors">
+                     <Avatar user={user} className="w-9 h-9" />
+                     <span className="text-sm font-semibold text-stone-300 group-hover:text-white hidden xl:inline pr-2">{user.gameName}</span>
+                 </button>
+            ))}
+        </div>
+    );
+}
+
 const Header: React.FC = () => {
   const { currentUser } = useAuth();
   const { setCurrentUser, setIsSwitchingUser, setAppUnlocked } = useAuthDispatch();
-  const { rewardTypes, guilds } = useGameData();
+  const { guilds } = useGameData();
   const { appMode, settings } = useSettings();
   const { setAppMode, setActivePage } = useSettingsDispatch();
 
@@ -33,6 +63,8 @@ const Header: React.FC = () => {
   const [modeDropdownOpen, setModeDropdownOpen] = useState(false);
 
   const handleLogout = () => {
+    localStorage.removeItem('lastUserId');
+    sessionStorage.removeItem('isAppUnlocked');
     setCurrentUser(null);
     setAppUnlocked(false);
     setProfileDropdownOpen(false);
@@ -40,7 +72,6 @@ const Header: React.FC = () => {
   
   const handleSwitchUser = (e: React.MouseEvent) => {
     e.preventDefault();
-    setCurrentUser(null);
     setIsSwitchingUser(true);
     setProfileDropdownOpen(false);
   };
@@ -49,32 +80,6 @@ const Header: React.FC = () => {
     setActivePage(page);
     setProfileDropdownOpen(false);
   }
-
-  const balances = useMemo(() => {
-    if (!currentUser) return [];
-
-    let currentPurse: { [key: string]: number } = {};
-    let currentExperience: { [key: string]: number } = {};
-
-    if (appMode.mode === 'personal') {
-        currentPurse = currentUser.personalPurse;
-        currentExperience = currentUser.personalExperience;
-    } else if (appMode.mode === 'guild') {
-        const guildBalance = currentUser.guildBalances[appMode.guildId];
-        if (guildBalance) {
-            currentPurse = guildBalance.purse;
-            currentExperience = guildBalance.experience;
-        }
-    }
-    
-    return rewardTypes.map(rt => {
-        const amount = rt.isCore
-          ? (rt.category === 'Currency' ? currentPurse[rt.id] : currentExperience[rt.id]) || 0
-          : 0;
-        return { ...rt, amount };
-    }).filter(b => b.amount > 0);
-
-  }, [currentUser, rewardTypes, appMode]);
   
   const handleModeChange = (mode: AppMode) => {
     setAppMode(mode);
@@ -97,6 +102,7 @@ const Header: React.FC = () => {
 
   return (
     <header className="h-20 bg-stone-900/30 flex items-center justify-between px-4 md:px-8 border-b border-stone-700/50">
+      {/* Left Group */}
       <div className="flex items-center gap-2 md:gap-4">
          <div className="relative">
             <button onClick={() => setModeDropdownOpen(!modeDropdownOpen)} className="flex items-center gap-2 bg-stone-800/50 px-3 py-1.5 rounded-full border border-stone-700/60 hover:bg-stone-700 transition-colors">
@@ -114,15 +120,14 @@ const Header: React.FC = () => {
               </div>
             )}
          </div>
-         <div className="hidden md:flex items-center gap-3">
-             {balances.map(balance => (
-                <div key={balance.id} className="flex items-center gap-2 bg-stone-800/50 px-3 py-1.5 rounded-full border border-stone-700/60" title={`${balance.name}: ${balance.amount}`}>
-                    <span className="text-lg">{balance.icon}</span>
-                    <span className="font-semibold text-stone-200">{balance.amount}</span>
-                </div>
-             ))}
-         </div>
       </div>
+
+      {/* Center Group */}
+      <div className="hidden md:flex items-center justify-center flex-grow mx-4">
+        {settings.security.quickUserSwitchingEnabled && <QuickSwitchBar />}
+      </div>
+      
+      {/* Right Group */}
       <div className="flex items-center gap-4">
         <Clock />
         <div className="relative">

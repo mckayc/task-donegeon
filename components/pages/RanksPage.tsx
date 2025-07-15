@@ -31,7 +31,6 @@ const RanksPage: React.FC = () => {
             }
         }
         
-        // If no rank is found (e.g., all have thresholds > 0 and user has 0 XP), default to the first rank.
         if (!foundRank && allRanks.length > 0) {
             foundRank = allRanks[0];
             foundNextRank = allRanks[1] || null;
@@ -41,67 +40,53 @@ const RanksPage: React.FC = () => {
         const xpIntoCurrent = foundRank ? currentTotalXp - foundRank.xpThreshold : 0;
         const progress = (foundNextRank && xpForNext > 0) ? Math.min(100, (xpIntoCurrent / xpForNext) * 100) : 100;
         
-        return { 
-            currentRank: foundRank, 
-            nextRank: foundNextRank, 
-            totalXp: currentTotalXp, 
+        return {
+            currentRank: foundRank,
+            nextRank: foundNextRank,
+            totalXp: currentTotalXp,
             progressPercentage: progress,
             sortedRanks: allRanks
         };
     }, [currentUser, ranks, appMode]);
 
-    if (!currentUser || !currentRank) return null;
+    if (!currentUser || !ranks || ranks.length === 0) {
+        return <Card><p>No ranks have been configured for this game yet.</p></Card>;
+    }
+    
+    if (!currentRank) {
+         return <Card><p>Your rank could not be determined.</p></Card>;
+    }
 
     return (
-        <div>
-            <h1 className="text-4xl font-medieval text-stone-100 mb-8">Ranks of the Donegeon</h1>
-
-            <Card className="mb-8" title="Your Current Rank" titleIcon={<RankIcon />}>
-                <div className="flex flex-col md:flex-row items-center gap-6">
-                    <div className="w-24 h-24 bg-stone-700/50 rounded-full flex items-center justify-center text-5xl flex-shrink-0">
-                        {currentRank.icon || '🔰'}
-                    </div>
-                    <div className="flex-grow w-full">
-                        <h3 className="text-3xl font-bold text-emerald-300">{currentRank.name}</h3>
-                        <p className="text-stone-300">Total XP: {totalXp}</p>
-                        <div className="mt-4">
-                            <div className="flex justify-between text-sm text-stone-400 mb-1">
-                                <span>Lvl {sortedRanks.findIndex(r => r.id === currentRank.id) + 1}</span>
-                                {nextRank && <span>Next: {nextRank.name}</span>}
-                            </div>
-                            <div className="w-full bg-stone-700 rounded-full h-4 overflow-hidden">
-                                <div className="bg-emerald-500 h-4 rounded-full transition-all duration-500" style={{width: `${progressPercentage}%`}}></div>
-                            </div>
-                             <div className="flex justify-between text-sm text-stone-400 mt-1">
-                                <span>{currentRank.xpThreshold} XP</span>
-                                {nextRank && <span>{nextRank.xpThreshold} XP</span>}
-                            </div>
+        <div className="space-y-8">
+            <Card title="Your Current Rank">
+                <div className="flex flex-col sm:flex-row items-center gap-6">
+                    <div className="text-7xl">{currentRank.icon}</div>
+                    <div className="flex-grow w-full text-center sm:text-left">
+                        <h3 className="text-3xl font-bold text-accent-light">{currentRank.name}</h3>
+                        <p className="text-stone-400">Total XP: {totalXp}</p>
+                        <div className="w-full bg-stone-700 rounded-full h-4 mt-4 overflow-hidden">
+                            <div className="h-4 rounded-full btn-primary" style={{width: `${progressPercentage}%`}}></div>
                         </div>
+                        <p className="text-sm text-stone-300 mt-2">
+                            {nextRank ? `${totalXp} / ${nextRank.xpThreshold} XP towards ${nextRank.name}` : `You have reached the highest rank!`}
+                        </p>
                     </div>
                 </div>
             </Card>
 
             <Card title="All Ranks">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {sortedRanks.map((rank, index) => {
-                        const isAchieved = totalXp >= rank.xpThreshold;
-                        const isCurrent = rank.id === currentRank.id;
-
-                        let cardClass = 'bg-stone-800/50 opacity-50';
-                        if (isCurrent) cardClass = 'bg-emerald-900/40 border-2 border-emerald-500';
-                        else if (isAchieved) cardClass = 'bg-stone-700/60 opacity-80';
-
-                        return (
-                             <div key={rank.id} className={`p-4 rounded-lg flex items-center gap-4 transition-all duration-300 ${cardClass}`}>
-                                <div className="text-3xl">{rank.icon || '🔰'}</div>
-                                <div>
-                                    <p className="font-bold text-stone-100">{rank.name} (Lvl {index + 1})</p>
-                                    <p className="text-xs text-stone-400">{rank.xpThreshold} XP Required</p>
-                                </div>
+                <ul className="space-y-3">
+                    {sortedRanks.map(rank => (
+                        <li key={rank.id} className={`p-4 rounded-lg flex items-center gap-4 ${rank.id === currentRank.id ? 'bg-emerald-900/50 border-l-4 border-emerald-400' : 'bg-stone-800/60'}`}>
+                            <div className="text-4xl">{rank.icon}</div>
+                            <div>
+                                <h4 className="font-bold text-lg text-stone-100">{rank.name}</h4>
+                                <p className="text-sm text-stone-400">Requires: {rank.xpThreshold} XP</p>
                             </div>
-                        )
-                    })}
-                </div>
+                        </li>
+                    ))}
+                </ul>
             </Card>
         </div>
     );

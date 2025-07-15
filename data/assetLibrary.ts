@@ -1,5 +1,17 @@
 
-import { Quest, QuestType, QuestAvailability, GameAsset, Market, RewardTypeDefinition, Trophy, TrophyRequirementType, RewardCategory, LibraryPack } from '../types';
+import { Quest, QuestType, QuestAvailability, GameAsset, Market, RewardTypeDefinition, Trophy, TrophyRequirementType, RewardCategory, BlueprintAssets } from '../types';
+
+export type LibraryPackType = 'Quests' | 'Items' | 'Markets' | 'Trophies' | 'Rewards';
+
+export interface LibraryPack {
+  id: string;
+  type: LibraryPackType;
+  title: string;
+  description: string;
+  color: string;
+  assets: Partial<BlueprintAssets>;
+}
+
 
 const QUEST_COLOR = 'border-sky-500';
 const MARKET_COLOR = 'border-violet-500';
@@ -8,18 +20,22 @@ const TROPHY_COLOR = 'border-amber-400';
 const REWARD_COLOR = 'border-rose-500';
 
 
-const createQuest = (data: Partial<Omit<Quest, 'claimedByUserIds' | 'dismissals'>>): Omit<Quest, 'claimedByUserIds' | 'dismissals'> => ({
+const createQuest = (data: Partial<Quest>): Quest => ({
     id: `lib-q-${data.title?.toLowerCase().replace(/ /g, '-')}-${Math.random().toString(36).substring(7)}`,
     title: 'Untitled', description: '', type: QuestType.Duty, icon: '📝', rewards: [],
     lateSetbacks: [], incompleteSetbacks: [], isActive: true, isOptional: false,
     requiresApproval: false, availabilityType: QuestAvailability.Daily, availabilityCount: null,
-    weeklyRecurrenceDays: [], monthlyRecurrenceDays: [], assignedUserIds: [], tags: [], ...data
+    weeklyRecurrenceDays: [], monthlyRecurrenceDays: [], assignedUserIds: [], tags: [],
+    claimedByUserIds: [], dismissals: [],
+    ...data
 });
 
-const createAsset = (data: Partial<Omit<GameAsset, 'creatorId' | 'createdAt'>>): Omit<GameAsset, 'creatorId' | 'createdAt'> => ({
+const createAsset = (data: Partial<GameAsset>): GameAsset => ({
     id: `lib-ga-${data.name?.toLowerCase().replace(/ /g, '-')}-${Math.random().toString(36).substring(7)}`,
     name: 'Untitled Asset', description: '', url: 'https://placehold.co/150x150/84cc16/FFFFFF?text=Item',
-    icon: '📦', category: 'Misc', isForSale: false, cost: [], marketIds: [], purchaseLimit: null, purchaseCount: 0, ...data
+    icon: '📦', category: 'Misc', isForSale: false, cost: [], marketIds: [], purchaseLimit: null, purchaseCount: 0,
+    creatorId: 'library', createdAt: new Date().toISOString(),
+    ...data
 });
 
 const createMarket = (data: Partial<Market>): Market => ({
@@ -32,9 +48,9 @@ const createTrophy = (data: Partial<Trophy>): Trophy => ({
     name: 'Untitled Trophy', description: '', icon: '🏆', isManual: true, requirements: [], ...data
 });
 
-const createReward = (data: Partial<Omit<RewardTypeDefinition, 'isCore'>>): Omit<RewardTypeDefinition, 'isCore'> => ({
+const createReward = (data: Partial<RewardTypeDefinition>): RewardTypeDefinition => ({
      id: `lib-rt-${data.name?.toLowerCase().replace(/ /g, '-')}-${Math.random().toString(36).substring(7)}`,
-    name: 'Untitled Reward', description: '', category: RewardCategory.Currency, icon: '💎', ...data
+    name: 'Untitled Reward', description: '', category: RewardCategory.Currency, icon: '💎', isCore: false, ...data
 });
 
 const morningQuests = [

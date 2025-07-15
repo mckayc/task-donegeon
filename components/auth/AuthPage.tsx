@@ -10,7 +10,7 @@ import Avatar from '../ui/Avatar';
 
 const LoginForm: React.FC<{ onSwitchMode: () => void; isTargetedLogin?: boolean }> = ({ onSwitchMode, isTargetedLogin = false }) => {
     const { users, targetedUserForLogin } = useAuth();
-    const { setCurrentUser, setTargetedUserForLogin, setIsSwitchingUser } = useAuthDispatch();
+    const { setCurrentUser, setTargetedUserForLogin, setIsSwitchingUser, setAppUnlocked } = useAuthDispatch();
     
     const userToLogin = isTargetedLogin ? targetedUserForLogin : null;
 
@@ -26,13 +26,23 @@ const LoginForm: React.FC<{ onSwitchMode: () => void; isTargetedLogin?: boolean 
             (u.username.toLowerCase() === identifier.toLowerCase() || u.email.toLowerCase() === identifier.toLowerCase())
         );
 
-        if (user && user.password === password) {
-            setCurrentUser(user);
-            if (userToLogin) {
-                setTargetedUserForLogin(null);
+        if (user) {
+            if (user.password) {
+                if (user.password === password) {
+                    setCurrentUser(user);
+                    if (userToLogin) {
+                        setTargetedUserForLogin(null);
+                    }
+                    // If this was a password challenge after a switch, unlock the app
+                    setAppUnlocked(true);
+                } else {
+                    setError('Invalid password.');
+                }
+            } else {
+                setError(`${user.gameName} logs in with a PIN. Please use the "Switch Profile" button.`);
             }
         } else {
-            setError('Invalid credentials.');
+            setError('Invalid username or email.');
         }
     };
 
@@ -155,6 +165,7 @@ const RegisterForm: React.FC<{ onSwitchMode: () => void }> = ({ onSwitchMode }) 
         const newUser: Omit<User, 'id' | 'personalPurse' | 'personalExperience' | 'guildBalances' | 'avatar' | 'ownedAssetIds' | 'ownedThemes' | 'hasBeenOnboarded'> = {
             ...newUserPayload,
             role: Role.Explorer,
+            pin: '',
         };
 
         const createdUser = addUser(newUser);

@@ -1,11 +1,11 @@
 # Task Donegeon
 
-**Version:** 0.0.51
-**Last Updated:** 2025-05-30T11:00:00Z
+**Version:** 0.0.52
+**Last Updated:** 2025-06-01T10:00:00Z
 
 ---
 
-Task Donegeon is a gamified task and chore management application designed for families, groups, or individuals. It turns everyday responsibilities into an engaging medieval-themed role-playing game. Users complete "quests" (tasks), earn virtual currency and experience points (XP), customize their avatars, and level up their characters in a fun and motivating environment. It leverages a powerful backend to persist all data and includes unique features like an **Asset Library** full of pre-made content and an **AI Studio** powered by Google Gemini to help administrators generate new quests, items, and images, making world-building a breeze.
+Task Donegeon is a gamified task and chore management application designed for families, groups, or individuals. It turns everyday responsibilities into an engaging medieval-themed role-playing game. Users complete "quests" (tasks), earn virtual currency and experience points (XP), customize their avatars, and level up their characters in a fun and motivating environment. It leverages a powerful backend to persist all data and includes unique features like an **Asset Library** full of pre-made content and an **AI Studio** powered by Google Gemini to help administrators generate new quests and items, making world-building a breeze.
 
 ## Table of Contents
 - [✨ Features](#-features)
@@ -16,18 +16,18 @@ Task Donegeon is a gamified task and chore management application designed for f
 
 ## ✨ Features
 
--   **Bug Fixes & Stability:** Fixed various UI bugs and missing icons across the application for a more stable and consistent user experience.
--   **AI Image Generation:** Admins can generate images for items from prompts within the Asset Manager and directly in the item editing dialog. A global image style can be set in the AI Studio for a consistent look.
--   **Refactored Architecture:** The application's state management has been refactored from a single context into multiple, focused contexts for better scalability and maintainability.
--   **Enhanced UI/UX:** Features improved loading states, engaging empty state components, standardized confirmation dialogs, and a new user onboarding wizard.
--   **Selective Asset Library:** A large, built-in library of pre-made quests and items with a new dialog for selective, checkbox-based importing.
--   **Secure AI-Powered Features:** Includes an "AI Studio" for generating quests, items, trophies, and images, all powered by a secure backend proxy.
+-   **Effortless Setup:** Get started instantly. The app comes pre-configured with a default `admin` account, bypassing any initial setup wizard.
+-   **Direct Login:** The application starts on a master password screen, ensuring the game world is secure from the start.
+-   **Refined UI/UX:** Moved the rewards display out of the header and next to the page title for better contextual awareness.
+-   **Hybrid PIN Entry:** A streamlined PIN login screen with both a standard text input for keyboards and an on-screen keypad for touch devices.
+-   **Enhanced Security & Login:** Features persistent login sessions, a quick user-switching bar, and configurable PIN/password requirements for different user roles.
+-   **Local Image Gallery:** Admins can now manage a local image gallery by simply dropping files into an `uploads` folder. The app automatically categorizes them by filename for easy use.
+-   **Secure AI-Powered Features:** Includes an "AI Studio" for generating quests, items, trophies, and more, powered by a secure backend proxy using the Gemini API.
 -   **Advanced Calendar:** Features interactive Month, Week, and Day views for better planning and task management.
--   **Refreshed UI:** A complete overhaul of the sidebar icons for a modern, consistent look.
 -   **Session-Based Master Lock:** The application is locked upon first visit and requires an admin password to unlock for the session.
 -   **Gamified Task Management:** Create recurring "Duties" and one-time "Ventures" with customizable rewards and penalties.
 -   **Character Progression & Virtual Economy:** Earn XP to gain Ranks and multiple currencies to spend in a customizable Marketplace.
--   **Avatar Customization:** Unlock and equip different cosmetic items using uploaded or AI-generated images.
+-   **Avatar Customization:** Unlock and equip different cosmetic items using uploaded images.
 -   **Guild System:** Create groups for collaborative tasks with their own separate economy and quests.
 -   **Trophy & Theming Systems:** Unlockable trophies for milestones and various visual themes to change the app's look and feel.
 -   **Robust Admin Controls & Data Persistence:** A "Donegeon Master" role with full control over the game, with all data saved to a server.
@@ -77,15 +77,13 @@ This phase focuses on long-term stability, accessibility, and preparing the app 
 
 ## 🚀 Getting Started
 
-### Prerequisites
--   **Node.js:** v18 or later.
--   **npm:** (usually comes with Node.js).
--   **Git:** For cloning the repository.
--   **Google Gemini API Key:** Required for all AI features. You can get one from [Google AI Studio](https://aistudio.google.com/app/apikey).
--   **Docker & Docker Compose:** Required for Docker/Portainer deployment.
--   **Cloud Accounts:** Required for the Vercel/Supabase option (Vercel, Supabase, GitHub).
+When you run the application for the first time, it will be automatically seeded with a default set of users and data. You will be presented with a lock screen.
 
----
+**Login as the administrator to unlock the app:**
+-   **Username**: Select `admin` from the dropdown (if shown).
+-   **Password**: `123456`
+
+Once unlocked, you and other users can log in using the "Switch Profile" button. Other pre-seeded accounts have the password `123456` if they are an admin/moderator role, or a PIN of `1234` if they are a standard user.
 
 ## ⚙️ Installation and Running
 

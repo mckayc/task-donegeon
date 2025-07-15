@@ -26,7 +26,7 @@ export interface User {
   role: Role;
   avatar: { [slot: string]: string }; // Now uses GameAsset['id']
   ownedAssetIds: string[];
-  pin?: string;
+  pin: string;
   password?: string;
   personalPurse: { [rewardTypeId: string]: number };
   personalExperience: { [rewardTypeId: string]: number };
@@ -36,8 +36,8 @@ export interface User {
       experience: { [rewardTypeId: string]: number };
     }
   };
-  theme?: Theme;
-  ownedThemes: Theme[];
+  theme?: string; // Theme ID
+  ownedThemes: string[]; // Array of Theme IDs
   hasBeenOnboarded?: boolean;
 }
 
@@ -246,8 +246,6 @@ export interface Notification {
   icon?: string;
 }
 
-export type Theme = 'emerald' | 'rose' | 'sky' | 'arcane' | 'cartoon' | 'forest' | 'ocean' | 'vulcan' | 'royal' | 'winter' | 'sunset' | 'cyberpunk' | 'steampunk' | 'parchment' | 'eerie';
-
 export interface Terminology {
   appName: string;
   // Singular
@@ -282,6 +280,7 @@ export interface Terminology {
 
 export type Page = 'Dashboard' | 'Avatar' | 'Quests' | 'Marketplace' | 'Chronicles' | 'Guild' | 'Calendar' | 'Progress' | 'Trophies' | 'Ranks' | 'Manage Users' | 'Manage Rewards' | 'Manage Quests' | 'Manage Items' | 'Approvals' | 'Manage Markets' | 'Manage Guilds' | 'Settings' | 'Profile' | 'About' | 'Help Guide' | 'Manage Ranks' | 'Manage Trophies' | 'Themes' | 'Data Management' | 'Collection' | 'AI Studio' | 'Appearance'
 | 'Object Manager' | 'Asset Manager' | 'Backup & Import' | 'Asset Library'
+| 'Theme Editor'
 ;
 
 export interface SidebarLink {
@@ -317,7 +316,12 @@ export interface AppSettings {
     isOptional: boolean;
     isActive: boolean;
   };
-  theme: Theme;
+  security: {
+    quickUserSwitchingEnabled: boolean;
+    requirePinForUsers: boolean;
+    requirePasswordForAdmin: boolean;
+  };
+  theme: string;
   terminology: Terminology;
   enableAiFeatures: boolean;
   sidebars: {
@@ -334,6 +338,7 @@ export interface BlueprintAssets {
   ranks: Rank[];
   trophies: Trophy[];
   markets: Market[];
+  gameAssets: GameAsset[];
 }
 
 export interface Blueprint {
@@ -354,6 +359,35 @@ export interface ImportResolution {
   newName?: string;
 }
 
+export interface ThemeStyle {
+  '--font-display': string;
+  '--font-body': string;
+  '--color-bg-primary': string;
+  '--color-bg-secondary': string;
+  '--color-bg-tertiary': string;
+  '--color-text-primary': string;
+  '--color-text-secondary': string;
+  '--color-border': string;
+  '--color-primary-hue': string;
+  '--color-primary-saturation': string;
+  '--color-primary-lightness': string;
+  '--color-accent-hue': string;
+  '--color-accent-saturation': string;
+  '--color-accent-lightness': string;
+  '--color-accent-light-hue': string;
+  '--color-accent-light-saturation': string;
+  '--color-accent-light-lightness': string;
+}
+
+export interface ThemeDefinition {
+  id: string;
+  name: string;
+  isCustom: boolean;
+  styles: ThemeStyle;
+}
+
+export type Theme = ThemeDefinition;
+
 export interface IAppData {
   users: User[];
   quests: Quest[];
@@ -369,19 +403,17 @@ export interface IAppData {
   gameAssets: GameAsset[];
   systemLogs: SystemLog[];
   settings: AppSettings;
+  themes: ThemeDefinition[];
+  loginHistory: string[];
 }
 
+export type LibraryPackType = 'Quests' | 'Items' | 'Markets' | 'Trophies' | 'Rewards';
+
 export interface LibraryPack {
-    id: string;
-    type: 'Quests' | 'Markets' | 'Items' | 'Trophies' | 'Rewards';
-    title: string;
-    description: string;
-    color?: string;
-    assets: {
-        quests?: Omit<Quest, 'claimedByUserIds' | 'dismissals'>[];
-        gameAssets?: Omit<GameAsset, 'creatorId' | 'createdAt'>[];
-        markets?: Market[];
-        rewardTypes?: Omit<RewardTypeDefinition, 'isCore'>[];
-        trophies?: Trophy[];
-    };
+  id: string;
+  type: LibraryPackType;
+  title: string;
+  description: string;
+  color: string;
+  assets: Partial<BlueprintAssets>;
 }

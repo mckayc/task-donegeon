@@ -1,5 +1,6 @@
 
 
+
 import React, { useState } from 'react';
 import { Market } from '../../types';
 import Button from '../ui/Button';
@@ -41,8 +42,7 @@ const ManageMarketsPage: React.FC = () => {
 
     return (
         <div>
-            <div className="flex justify-between items-center mb-8">
-                <h1 className="text-4xl font-medieval text-stone-100">Manage {settings.terminology.stores}</h1>
+            <div className="flex justify-end items-center mb-8">
                 <Button onClick={handleCreateMarket}>Create New {settings.terminology.store}</Button>
             </div>
 

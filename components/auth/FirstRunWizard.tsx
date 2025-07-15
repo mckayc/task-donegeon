@@ -21,6 +21,8 @@ const FirstRunWizard: React.FC = () => {
     birthday: '',
     password: '',
     confirmPassword: '',
+    pin: '',
+    confirmPin: '',
   });
   const [error, setError] = useState('');
 
@@ -38,9 +40,17 @@ const FirstRunWizard: React.FC = () => {
       setError("Password must be at least 6 characters long.");
       return;
     }
+    if (formData.pin !== formData.confirmPin) {
+      setError("PINs do not match.");
+      return;
+    }
+    if (formData.pin.length < 4 || formData.pin.length > 10 || !/^\d+$/.test(formData.pin)) {
+        setError('PIN must be 4-10 numbers.');
+        return;
+    }
     setError('');
 
-    const { confirmPassword, ...newUserPayload } = formData;
+    const { confirmPassword, confirmPin, ...newUserPayload } = formData;
     const newUser = {
       ...newUserPayload,
       role: Role.DonegeonMaster,
@@ -66,6 +76,10 @@ const FirstRunWizard: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <Input label="Password" id="password" name="password" type="password" value={formData.password} onChange={handleChange} required />
               <Input label="Confirm Password" id="confirmPassword" name="confirmPassword" type="password" value={formData.confirmPassword} onChange={handleChange} required />
+            </div>
+             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <Input label="PIN (4-10 digits)" id="pin" name="pin" type="password" value={formData.pin} onChange={handleChange} required />
+              <Input label="Confirm PIN" id="confirmPin" name="confirmPin" type="password" value={formData.confirmPin} onChange={handleChange} required />
             </div>
           </div>
           

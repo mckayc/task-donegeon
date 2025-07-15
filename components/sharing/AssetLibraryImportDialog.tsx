@@ -1,14 +1,17 @@
+
+
 import React, { useState, useMemo } from 'react';
-import { LibraryPack } from '../../types';
+import { BlueprintAssets, TrophyRequirementType } from '../../types';
 import Button from '../ui/Button';
 import { useGameDataDispatch } from '../../context/GameDataContext';
+import { LibraryPack } from '../../data/assetLibrary';
 
 interface AssetLibraryImportDialogProps {
   pack: LibraryPack;
   onClose: () => void;
 }
 
-type SelectableAsset = { id: string; name: string; description: string; icon: string; type: keyof LibraryPack['assets'] };
+type SelectableAsset = { id: string; name: string; description: string; icon: string; type: keyof BlueprintAssets };
 
 const AssetLibraryImportDialog: React.FC<AssetLibraryImportDialogProps> = ({ pack, onClose }) => {
     const { addQuest, addGameAsset, addTrophy, addRewardType, addMarket, addNotification } = useGameDataDispatch();
@@ -28,10 +31,11 @@ const AssetLibraryImportDialog: React.FC<AssetLibraryImportDialogProps> = ({ pac
     const groupedAssets = useMemo(() => {
         const groups: { [key: string]: SelectableAsset[] } = {};
         allAssets.forEach(asset => {
-            if (!groups[asset.type]) {
-                groups[asset.type] = [];
+            const typeKey = asset.type as string;
+            if (!groups[typeKey]) {
+                groups[typeKey] = [];
             }
-            groups[asset.type].push(asset);
+            groups[typeKey].push(asset);
         });
         return groups;
     }, [allAssets]);
@@ -54,6 +58,8 @@ const AssetLibraryImportDialog: React.FC<AssetLibraryImportDialogProps> = ({ pac
         
         const rewardIdMap = new Map<string, string>();
         const marketIdMap = new Map<string, string>();
+        const trophyIdMap = new Map<string, string>();
+
 
         // Import Reward Types first to create dependency map
         pack.assets.rewardTypes?.forEach(rt => {
@@ -67,7 +73,26 @@ const AssetLibraryImportDialog: React.FC<AssetLibraryImportDialogProps> = ({ pac
         });
         
         // Import Trophies and Markets
-        pack.assets.trophies?.forEach(t => { if (selectedIds.includes(t.id)) { const { id, ...rest } = t; addTrophy(rest); importedCount++; }});
+        pack.assets.trophies?.forEach(t => { 
+            if (selectedIds.includes(t.id)) { 
+                const newId = generateId('trophy');
+                trophyIdMap.set(t.id, newId);
+                const { id, ...rest } = t; 
+                const newTrophy = {
+                    ...rest,
+                    requirements: (t.requirements || []).map(req => {
+                        const newReq = { ...req };
+                        if (newReq.type === TrophyRequirementType.EarnTotalReward && rewardIdMap.has(newReq.value)) {
+                            newReq.value = rewardIdMap.get(newReq.value)!;
+                        }
+                        // Note: Rank mapping would go here if ranks were part of library packs.
+                        return newReq;
+                    })
+                };
+                addTrophy(newTrophy); 
+                importedCount++; 
+            }
+        });
         pack.assets.markets?.forEach(m => { 
             if (selectedIds.includes(m.id)) { 
                 const newId = generateId('market'); 

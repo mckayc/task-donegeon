@@ -108,8 +108,6 @@ const TrophiesPage: React.FC = () => {
 
     return (
         <div>
-            <h1 className="text-4xl font-medieval text-stone-100 mb-8">{settings.terminology.award} Hall</h1>
-
             <Card title={`My ${settings.terminology.award} Case`} titleIcon={<AwardIcon />} className="mb-8">
                 {earnedTrophiesWithDate.length > 0 ? (
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">

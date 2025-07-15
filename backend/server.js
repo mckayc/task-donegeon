@@ -5,7 +5,7 @@ const { Pool } = require('pg');
 const path = require('path');
 const multer = require('multer');
 const { createClient } = require('@supabase/supabase-js');
-const fs = require('fs');
+const fs = require('fs').promises;
 const { GoogleGenAI } = require('@google/genai');
 
 // --- Environment Variable Checks ---
@@ -42,13 +42,13 @@ if (process.env.API_KEY) {
 }
 
 // === Multer Configuration for File Uploads ===
+const UPLOADS_DIR = path.join(__dirname, 'uploads');
 const storage = process.env.STORAGE_PROVIDER === 'supabase'
   ? multer.memoryStorage()
   : multer.diskStorage({
       destination: (req, file, cb) => {
-        const uploadsDir = path.join(__dirname, 'uploads');
-        fs.mkdirSync(uploadsDir, { recursive: true });
-        cb(null, uploadsDir);
+        require('fs').mkdirSync(UPLOADS_DIR, { recursive: true });
+        cb(null, UPLOADS_DIR);
       },
       filename: (req, file, cb) => {
         cb(null, `${Date.now()}-${file.originalname}`);
@@ -62,7 +62,7 @@ const upload = multer({ storage });
 app.use(express.static(path.join(__dirname, '../dist')));
 // Serve local uploads if using local storage
 if (process.env.STORAGE_PROVIDER === 'local') {
-    app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+    app.use('/uploads', express.static(UPLOADS_DIR));
 }
 
 
@@ -109,20 +109,16 @@ const initializeDatabase = async () => {
 app.get('/api/health', (req, res) => res.status(200).json({ status: 'ok' }));
 
 // Get app metadata
-app.get('/api/metadata', (req, res, next) => {
+app.get('/api/metadata', async (req, res, next) => {
     try {
         const metadataPath = path.join(__dirname, '..', 'metadata.json');
-        fs.readFile(metadataPath, 'utf8', (err, data) => {
-            if (err) {
-                console.error('Error reading metadata.json:', err);
-                return res.status(500).json({ error: 'Could not read metadata file.' });
-            }
-            const metadata = JSON.parse(data);
-            // Overwrite the date with the current server time for accuracy
-            metadata.lastChangeDate = new Date().toISOString();
-            res.status(200).json(metadata);
-        });
+        const data = await fs.readFile(metadataPath, 'utf8');
+        const metadata = JSON.parse(data);
+        // Overwrite the date with the current server time for accuracy
+        metadata.lastChangeDate = new Date().toISOString();
+        res.status(200).json(metadata);
     } catch (err) {
+        console.error('Error reading metadata.json:', err);
         next(err);
     }
 });
@@ -172,6 +168,33 @@ app.post('/api/media/upload', upload.single('file'), async (req, res, next) => {
     }
 });
 
+// Local Image Gallery
+app.get('/api/media/local-gallery', async (req, res, next) => {
+    if (process.env.STORAGE_PROVIDER !== 'local') {
+        return res.status(200).json([]); // Only for local storage
+    }
+    try {
+        await fs.mkdir(UPLOADS_DIR, { recursive: true });
+        const files = await fs.readdir(UPLOADS_DIR);
+        const imageFiles = files
+            .filter(file => /\.(png|jpg|jpeg|gif|webp|svg)$/i.test(file))
+            .map(file => {
+                const parts = file.replace(/\.[^/.]+$/, "").split('-');
+                const category = parts.length > 1 ? parts[0] : 'Miscellaneous';
+                const name = parts.length > 1 ? parts.slice(1).join(' ') : parts[0];
+                return {
+                    url: `/uploads/${file}`,
+                    category: category.charAt(0).toUpperCase() + category.slice(1),
+                    name: name.charAt(0).toUpperCase() + name.slice(1),
+                };
+            });
+        res.status(200).json(imageFiles);
+    } catch (err) {
+        next(err);
+    }
+});
+
+
 // --- AI Endpoints ---
 app.get('/api/ai/status', (req, res) => {
   res.json({ isConfigured: !!ai });
@@ -204,21 +227,12 @@ app.post('/api/ai/generate', async (req, res, next) => {
     const { model, prompt, generationConfig } = req.body;
     
     try {
-        if (model.startsWith('imagen')) {
-             const response = await ai.models.generateImages({
-                model,
-                prompt: prompt,
-                config: generationConfig,
-            });
-            res.json({ generatedImages: response.generatedImages });
-        } else {
-            const response = await ai.models.generateContent({
-                model,
-                contents: prompt,
-                config: generationConfig,
-            });
-            res.json({ text: response.text });
-        }
+        const response = await ai.models.generateContent({
+            model,
+            contents: prompt,
+            config: generationConfig,
+        });
+        res.json({ text: response.text });
     } catch (err) {
         next(err);
     }

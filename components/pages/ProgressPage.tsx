@@ -67,7 +67,6 @@ const ProgressPage: React.FC = () => {
 
     return (
         <div>
-            <h1 className="text-4xl font-medieval text-stone-100 mb-8">Adventurer's Progress</h1>
             <Card>
                 <div className="flex justify-between items-center px-6 py-4 border-b border-stone-700/60">
                     <h3 className="text-xl font-medieval text-emerald-400">XP Gained (Last 30 Days)</h3>

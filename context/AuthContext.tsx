@@ -11,6 +11,7 @@ export interface AuthState {
   isFirstRun: boolean;
   isSwitchingUser: boolean;
   targetedUserForLogin: User | null;
+  loginHistory: string[];
 }
 
 // The dispatch functions provided by this context
@@ -34,6 +35,7 @@ export const useAuth = (): AuthState => {
     isFirstRun,
     isSwitchingUser,
     targetedUserForLogin,
+    loginHistory,
   } = useAppState();
 
   return {
@@ -43,6 +45,7 @@ export const useAuth = (): AuthState => {
     isFirstRun,
     isSwitchingUser,
     targetedUserForLogin,
+    loginHistory,
   };
 };
 

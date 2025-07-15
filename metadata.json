@@ -1,8 +1,8 @@
 {
-  "name": "Task Donegeon - 0.0.51",
-  "version": "0.0.51",
-  "lastChange": "Fixed multiple UI bugs, including missing icons and inconsistent component behaviors, to enhance application stability and user experience.",
-  "lastChangeDate": "2025-05-30T11:00:00Z",
+  "name": "Task Donegeon - 0.0.52",
+  "version": "0.0.52",
+  "lastChange": "Moved rewards display into the main content area for better visibility. Fixed bugs related to rewards not updating and incorrect PIN logic for administrators.",
+  "lastChangeDate": "2025-06-01T10:00:00Z",
   "description": "A gamified task and chore tracker for families and groups. Complete quests, earn currency and experience, and level up your character in a fun, medieval-themed adventure.",
   "requestFramePermissions": [],
   "prompt": ""

@@ -61,7 +61,6 @@ const ProfilePage: React.FC = () => {
 
     return (
         <div>
-            <h1 className="text-4xl font-medieval text-stone-100 mb-8">Your Profile</h1>
             <Card>
                 <form onSubmit={handleSave} className="space-y-8 max-w-lg mx-auto">
                     <div>

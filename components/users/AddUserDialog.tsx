@@ -36,7 +36,8 @@ const AddUserDialog: React.FC<AddUserDialogProps> = ({ onClose }) => {
     e.preventDefault();
     setError('');
 
-    if (formData.pin && (formData.pin.length < 4 || formData.pin.length > 10 || !/^\d+$/.test(formData.pin))) {
+    const isPinRequired = settings.security.requirePinForUsers;
+    if (isPinRequired && (formData.pin.length < 4 || formData.pin.length > 10 || !/^\d+$/.test(formData.pin))) {
         setError('PIN must be 4-10 numbers.');
         return;
     }
@@ -57,7 +58,7 @@ const AddUserDialog: React.FC<AddUserDialogProps> = ({ onClose }) => {
     const newUserPayload = {
         ...formData,
         role: formData.role as Role,
-        pin: formData.pin || undefined,
+        pin: formData.pin, // PIN can be an empty string if not required
     };
 
     addUser(newUserPayload);
@@ -81,8 +82,16 @@ const AddUserDialog: React.FC<AddUserDialogProps> = ({ onClose }) => {
             </select>
           </div>
           <div>
-            <Input label="PIN (4-10 digits, optional)" id="pin" name="pin" type="text" value={formData.pin} onChange={handleChange} />
-            <p className="text-xs text-stone-400 mt-1">A PIN is an easy way for kids to switch profiles securely.</p>
+            <Input 
+                label={`PIN (4-10 digits${!settings.security.requirePinForUsers ? ', optional' : ''})`}
+                id="pin" 
+                name="pin" 
+                type="password" 
+                value={formData.pin} 
+                onChange={handleChange} 
+                required={settings.security.requirePinForUsers} 
+            />
+            <p className="text-xs text-stone-400 mt-1">An easy way for users to switch profiles securely. Can be disabled in Settings.</p>
           </div>
           {error && <p className="text-red-400 text-center">{error}</p>}
           <div className="flex justify-end space-x-4 pt-4">

@@ -68,7 +68,6 @@ const MarketItemView: React.FC<{ market: Market }> = ({ market }) => {
 
     return (
         <Card 
-            title={`${market.icon || '🛒'} ${market.title}`}
             headerAction={
                 <div className="flex items-center gap-2">
                     <label htmlFor="sort-market-items" className="text-sm font-medium text-stone-400">Sort by:</label>
@@ -178,7 +177,6 @@ const MarketplacePage: React.FC = () => {
 
     return (
         <div>
-            <h1 className="text-4xl font-medieval text-stone-100 mb-8">{settings.terminology.shoppingCenter}</h1>
             {visibleMarkets.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {visibleMarkets.map(market => (

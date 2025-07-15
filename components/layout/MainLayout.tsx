@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import Sidebar from './Sidebar';
 import Header from './Header';
 import Dashboard from '../pages/Dashboard';
@@ -36,9 +36,48 @@ import ObjectManagerPage from '../pages/management/ObjectManagerPage';
 import AssetManagerPage from '../pages/management/MediaManagerPage';
 import BackupAndImportPage from '../pages/management/BackupAndImportPage';
 import AssetLibraryPage from '../pages/management/AssetLibraryPage';
+import ThemeEditorPage from '../pages/ThemeEditorPage';
+import { useAuth } from '../../context/AuthContext';
+import { useGameData } from '../../context/GameDataContext';
+import RewardDisplay from '../ui/RewardDisplay';
 
 const MainLayout: React.FC = () => {
-  const { activePage } = useSettings();
+  const { activePage, settings } = useSettings();
+  const { currentUser } = useAuth();
+  const { markets, activeMarketId } = useGameData();
+
+  const getPageTitle = (page: Page): string => {
+    switch (page) {
+      case 'Dashboard': return `${currentUser?.gameName || 'User'}'s Dashboard`;
+      case 'Quests': return `The ${settings.terminology.task} Board`;
+      case 'Marketplace':
+        if (activeMarketId) {
+          const market = markets.find(m => m.id === activeMarketId);
+          return market?.title || 'Marketplace';
+        }
+        return settings.terminology.shoppingCenter;
+      case 'Chronicles': return settings.terminology.history;
+      case 'Guild': return `Your ${settings.terminology.groups}`;
+      case 'Manage Users': return `Manage ${settings.terminology.group} Members`;
+      case 'Manage Rewards': return `Manage ${settings.terminology.points}`;
+      case 'Manage Quests': return `Manage ${settings.terminology.tasks}`;
+      case 'Manage Items': return `Manage Items & Assets`;
+      case 'Manage Markets': return `Manage ${settings.terminology.stores}`;
+      case 'Manage Guilds': return `Manage ${settings.terminology.groups}`;
+      case 'Manage Ranks': return `Manage ${settings.terminology.levels}`;
+      case 'Manage Trophies': return `Manage ${settings.terminology.awards}`;
+      case 'Trophies': return `${settings.terminology.award} Hall`;
+      case 'Ranks': return `Ranks of the Donegeon`;
+      case 'Help Guide': return `${settings.terminology.appName} Guide`;
+      case 'About': return `About ${settings.terminology.appName}`;
+      case 'Collection': return `My Collection`;
+      case 'Avatar': return `Customize Your Avatar`;
+      case 'Calendar': return 'Quest Calendar';
+      case 'Progress': return `Adventurer's Progress`;
+      case 'Profile': return 'Your Profile';
+      default: return page;
+    }
+  };
 
   const renderPage = () => {
     switch (activePage) {
@@ -66,6 +105,7 @@ const MainLayout: React.FC = () => {
       case 'Approvals': return <ApprovalsPage />;
       case 'Settings': return <SettingsPage />;
       case 'Appearance': return <AppearancePage />;
+      case 'Theme Editor': return <ThemeEditorPage />;
       case 'Object Manager': return <ObjectManagerPage />;
       case 'Asset Manager': return <AssetManagerPage />;
       case 'Backup & Import': return <BackupAndImportPage />;
@@ -77,12 +117,18 @@ const MainLayout: React.FC = () => {
     }
   };
 
+  const pageTitle = getPageTitle(activePage);
+
   return (
     <div className="flex h-screen" style={{ backgroundColor: 'hsl(var(--color-bg-secondary))', color: 'hsl(var(--color-text-primary))' }}>
       <Sidebar />
       <div className="flex-1 flex flex-col overflow-hidden">
         <Header />
         <main className="flex-1 overflow-x-hidden overflow-y-auto p-4 md:p-8" style={{ backgroundColor: 'hsl(var(--color-bg-tertiary))' }}>
+          <div className="flex justify-between items-center mb-8 flex-wrap gap-4">
+            <h1 className="text-4xl font-medieval text-stone-100">{pageTitle}</h1>
+            <RewardDisplay />
+          </div>
           <VacationModeBanner />
           {renderPage()}
         </main>

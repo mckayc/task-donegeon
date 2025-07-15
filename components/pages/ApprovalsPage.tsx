@@ -1,5 +1,6 @@
 
 
+
 import React, { useState } from 'react';
 import Card from '../ui/Card';
 import Button from '../ui/Button';
@@ -22,7 +23,6 @@ const ApprovalsPage: React.FC = () => {
     if (!currentUser || (currentUser.role !== Role.DonegeonMaster && currentUser.role !== Role.Gatekeeper)) {
         return (
             <div>
-                <h1 className="text-4xl font-medieval text-stone-100 mb-8">Access Denied</h1>
                 <Card>
                     <p className="text-stone-300">You do not have permission to view this page.</p>
                 </Card>
@@ -42,7 +42,6 @@ const ApprovalsPage: React.FC = () => {
 
     return (
         <div>
-            <h1 className="text-4xl font-medieval text-stone-100 mb-8">Pending Approvals</h1>
             <Card title="Quests Awaiting Verification">
                 {pendingCompletions.length > 0 ? (
                     <ul className="space-y-4">

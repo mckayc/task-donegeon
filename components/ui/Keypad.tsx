@@ -1,4 +1,5 @@
 
+
 import React from 'react';
 
 interface KeypadProps {
@@ -10,7 +11,7 @@ interface KeypadProps {
 
 const Keypad: React.FC<KeypadProps> = ({ onKeyPress, onBackspace, onEnter, className }) => {
 
-    const KeyButton: React.FC<{ children: React.ReactNode; onClick: () => void; wide?: boolean; primary?: boolean }> = ({ children, onClick, wide, primary }) => {
+    const KeyButton: React.FC<{ children: React.ReactNode; onClick: () => void; primary?: boolean }> = ({ children, onClick, primary }) => {
         const primaryClasses = 'bg-emerald-600 hover:bg-emerald-500 text-white';
         const secondaryClasses = 'bg-stone-700 hover:bg-stone-600 text-stone-200';
         
@@ -18,7 +19,7 @@ const Keypad: React.FC<KeypadProps> = ({ onKeyPress, onBackspace, onEnter, class
             <button
                 type="button"
                 onClick={onClick}
-                className={`flex items-center justify-center h-16 rounded-lg text-2xl font-bold transition-colors ${wide ? 'col-span-1' : ''} ${primary ? primaryClasses : secondaryClasses} ${wide ? 'text-sm' : ''}`}
+                className={`flex items-center justify-center h-12 rounded-lg text-xl font-bold transition-colors duration-150 focus:outline-none ${primary ? primaryClasses : secondaryClasses}`}
             >
                 {children}
             </button>

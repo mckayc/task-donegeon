@@ -1,16 +1,9 @@
 
-import React, { useState, useEffect, ReactNode } from 'react';
+
+import React, { useState } from 'react';
 import Card from '../ui/Card';
 import { useSettings } from '../../context/SettingsContext';
 import { ChevronDownIcon } from '../ui/Icons';
-
-interface Metadata {
-  name: string;
-  version: string;
-  description: string;
-  lastChange: string;
-  lastChangeDate?: string;
-}
 
 const CollapsibleSection: React.FC<{ title: string; children: React.ReactNode; defaultOpen?: boolean; }> = ({ title, children, defaultOpen = false }) => {
     const [isOpen, setIsOpen] = useState(defaultOpen);
@@ -25,7 +18,7 @@ const CollapsibleSection: React.FC<{ title: string; children: React.ReactNode; d
                 <ChevronDownIcon className={`w-6 h-6 text-stone-400 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
             </button>
             {isOpen && (
-                <div className="px-6 pb-6 text-stone-300 space-y-4 prose">
+                <div className="px-6 pb-6 text-stone-300 space-y-4 prose prose-invert max-w-none">
                     {children}
                 </div>
             )}
@@ -39,36 +32,40 @@ const HelpPage: React.FC = () => {
 
     return (
         <div className="max-w-4xl mx-auto">
-            <h1 className="text-4xl font-medieval text-stone-100 mb-8">{terminology.appName} Guide</h1>
             <Card className="p-0 overflow-hidden">
                 <CollapsibleSection title="Introduction: What is Task Donegeon?" defaultOpen>
-                    <p className="leading-relaxed">Welcome to {terminology.appName}! This app transforms everyday tasks, chores, and goals into a fun, medieval-themed role-playing game (RPG). Instead of just checking off a to-do list, you'll complete {terminology.tasks}, earn virtual currency and experience points (XP), unlock {terminology.awards}, and improve your {terminology.level}. It's designed to make productivity more engaging for families, groups, or even individuals.</p>
+                    <p>Welcome to {terminology.appName}! This app transforms everyday tasks, chores, and goals into a fun, medieval-themed role-playing game (RPG). Instead of just checking off a to-do list, you'll complete {terminology.tasks}, earn virtual currency and experience points (XP), unlock {terminology.awards}, and improve your {terminology.level}.</p>
+                    <p>It's designed to make productivity more engaging for families, groups, or even individuals who want to add a bit of adventure to their daily lives.</p>
                 </CollapsibleSection>
 
-                <CollapsibleSection title="Core Concepts">
-                    <h4 className="text-lg font-bold text-stone-100">Roles</h4>
+                 <CollapsibleSection title="Core Concepts: How It All Works">
+                    <h4 className="text-lg font-bold text-stone-100">Roles: Who's Who?</h4>
                     <p>Every member of your {terminology.group} has a role that defines what they can do:</p>
                     <ul className="list-disc list-inside space-y-2 pl-4">
-                        <li><strong>{terminology.admin}:</strong> The game administrator. They can create and manage users, {terminology.tasks}, {terminology.stores}, {terminology.groups}, and all game settings. They have the ultimate authority.</li>
+                        <li><strong>{terminology.admin}:</strong> The game administrator. They can create and manage all users, {terminology.tasks}, {terminology.stores}, {terminology.groups}, and settings. They have the ultimate authority.</li>
                         <li><strong>{terminology.moderator}:</strong> A helper role. They can approve or reject {terminology.task} completions, assisting the {terminology.admin} in managing the game's day-to-day activity.</li>
                         <li><strong>{terminology.user}:</strong> The standard player role. They complete {terminology.tasks}, earn {terminology.points}, and customize their character.</li>
                     </ul>
 
                     <h4 className="text-lg font-bold text-stone-100 mt-4">Personal vs. {terminology.group} Mode</h4>
-                    <p className="leading-relaxed">The app has two primary contexts, which you can switch between using the dropdown in the header:</p>
+                    <p>The app has two primary contexts, which you can switch between using the dropdown in the header:</p>
                     <ul className="list-disc list-inside space-y-2 pl-4">
-                        <li><strong>Personal Mode:</strong> This is your individual space. {terminology.tasks} you complete here add to your personal balances of currency and XP. You can spend this personal currency in personal {terminology.stores}. Example: A personal {terminology.task} might be "Read a chapter of a book" or "Practice piano for 30 minutes".</li>
-                        <li><strong>{terminology.group} Mode:</strong> When you switch to a {terminology.group}, you'll see {terminology.tasks} and {terminology.stores} specific to that group. Rewards earned here go into your balance for that specific {terminology.group}, creating a separate economy. This is perfect for family chores or group projects. Example: A {terminology.group} {terminology.task} might be "Help clean the kitchen after dinner" or "Rake the leaves in the yard".</li>
+                        <li><strong>Personal Mode:</strong> This is your individual space. {terminology.tasks} you complete here add to your personal balances of currency and XP. You can spend this personal currency in personal {terminology.stores}.
+                            <br/><em>Example: A personal {terminology.task.toLowerCase()} might be "Read a chapter of a book" or "Practice piano for 30 minutes".</em></li>
+                        <li><strong>{terminology.group} Mode:</strong> When you switch to a {terminology.group}, you'll see {terminology.tasks} and {terminology.stores} specific to that group. Rewards earned here go into your balance for that specific {terminology.group}, creating a separate economy. This is perfect for family chores or group projects.
+                            <br/><em>Example: A {terminology.group.toLowerCase()} {terminology.task.toLowerCase()} might be "Help clean the kitchen after dinner" or "Rake the leaves in the yard".</em></li>
                     </ul>
 
                     <h4 className="text-lg font-bold text-stone-100 mt-4">{terminology.tasks}: {terminology.recurringTasks} vs. {terminology.singleTasks}</h4>
                      <p>All tasks fall into one of two categories:</p>
                     <ul className="list-disc list-inside space-y-2 pl-4">
-                        <li><strong>{terminology.recurringTasks}:</strong> These are repeating tasks that happen on a schedule, like daily, weekly, or on specific dates of the month. Example: "Take out the trash every Tuesday" or "Make your bed every morning".</li>
-                        <li><strong>{terminology.singleTasks}:</strong> These are one-time tasks or projects. They can be completable once, or have a certain number of available "slots" for multiple people to complete. Example: "Organize the garage" or "Finish your science fair project".</li>
+                        <li><strong>{terminology.recurringTasks}:</strong> These are repeating tasks that happen on a schedule, like daily, weekly, or on specific dates of the month. They are great for building habits.
+                            <br/><em>Example: "Take out the trash every Tuesday" or "Make your bed every morning".</em></li>
+                        <li><strong>{terminology.singleTasks}:</strong> These are one-time tasks or projects. They can be completable once, or have a certain number of available "slots" for multiple people to complete.
+                            <br/><em>Example: "Organize the garage" (completable once) or "Help wash the car" (could have 2 slots).</em></li>
                     </ul>
 
-                    <h4 className="text-lg font-bold text-stone-100 mt-4">Deadlines & {terminology.negativePoints}</h4>
+                    <h4 className="text-lg font-bold text-stone-100 mt-4">Deadlines &amp; {terminology.negativePoints}</h4>
                     <p>The {terminology.admin} can set deadlines for any {terminology.task}. There are two types:</p>
                      <ul className="list-disc list-inside space-y-2 pl-4">
                         <li><strong>Late:</strong> The point at which a {terminology.task} is considered late. A {terminology.negativePoint} may be applied, but the {terminology.task} can still be completed for its original {terminology.points}.</li>
@@ -76,44 +73,87 @@ const HelpPage: React.FC = () => {
                     </ul>
                 </CollapsibleSection>
                 
-                <CollapsibleSection title={`User Guide: For Every ${terminology.user}`}>
-                    <p className="leading-relaxed">Here's a breakdown of the pages you'll use most often.</p>
+                <CollapsibleSection title={`A Tour of the Donegeon (For Everyone)`}>
+                    <p>Here's a breakdown of the pages you'll use most often, accessible from the sidebar.</p>
                     <ul className="list-disc list-inside space-y-2 pl-4">
                         <li><strong>Dashboard:</strong> Your main hub. Get a quick overview of your current {terminology.level}, recent activities, inventory of {terminology.points}, and a list of high-priority {terminology.tasks}.</li>
-                        <li><strong>Avatar & Themes:</strong> Customize your character's appearance with items you've purchased. You can also change the entire app's visual style by selecting a theme you own.</li>
                         <li><strong>{terminology.tasks.toString()}:</strong> This is the main board showing all available {terminology.recurringTasks} and {terminology.singleTasks}. You can complete, claim, or release {terminology.tasks} from here.</li>
                         <li><strong>{terminology.shoppingCenter}:</strong> Browse the {terminology.stores} set up by your {terminology.admin}. Spend your hard-earned currency on virtual items (like avatar outfits or themes) or real-world rewards.</li>
                         <li><strong>Calendar:</strong> A monthly view of all your required {terminology.tasks}. {terminology.recurringTasks} appear on the days they are scheduled, and {terminology.singleTasks} appear on their due date. This is great for planning ahead.</li>
-                        <li><strong>Progress:</strong> See a chart of your XP gains over the last 30 days. You can filter by different XP types to see what skills you've been working on.</li>
+                        <li><strong>Avatar &amp; Collection:</strong> Customize your character's appearance with items you've purchased. You can also change the entire app's visual style by selecting a theme you own. The collection page shows all non-avatar items.</li>
+                        <li><strong>Progress &amp; {terminology.levels}:</strong> See a chart of your XP gains over the last 30 days and view your current {terminology.level}, your progress to the next one, and the full list of all {terminology.levels} in the game.</li>
                         <li><strong>{terminology.awards}:</strong> View your trophy case! See all the {terminology.awards} you've earned and check the requirements for those you can still unlock.</li>
-                        <li><strong>{terminology.levels}:</strong> See your current {terminology.level}, your progress to the next one, and the full list of all {terminology.levels} in the game.</li>
                         <li><strong>{terminology.history}:</strong> A detailed log of all your activity, from {terminology.task} completions to purchases and admin adjustments.</li>
                         <li><strong>{terminology.groups}:</strong> View the {terminology.groups} you are a member of and see the other members.</li>
                     </ul>
                 </CollapsibleSection>
 
-                <CollapsibleSection title={`Admin Guide: For the ${terminology.admin}`}>
-                    <p className="leading-relaxed">If you are a <strong>{terminology.admin}</strong> or <strong>{terminology.moderator}</strong>, you have special administrative powers.</p>
-                    <h4 className="text-lg font-bold text-stone-100 mt-4">Getting Started</h4>
-                    <p>As the first {terminology.admin}, your initial steps should be:</p>
-                    <ol className="list-decimal list-inside space-y-2 pl-4">
-                        <li><strong>Review Settings:</strong> Go to the Settings page and look at the Terminology section. You can rename "Quests" to "Chores", "Guilds" to "Family", etc., to make the app fit your group perfectly.</li>
-                        <li><strong>Create Users:</strong> Go to "Manage Users" and create accounts for everyone in your group. You can set their role and an optional, easy-to-remember PIN for quick login.</li>
-                    </ol>
+                <CollapsibleSection title={`The Admin's Toolkit`}>
+                    <p>If you are a <strong>{terminology.admin}</strong> or <strong>{terminology.moderator}</strong>, you have special administrative powers.</p>
+                    <h4 className="text-lg font-bold text-stone-100 mt-4">User Management</h4>
+                    <p>Go to `Manage Users` to add new adventurers, edit their details, or delete them. The "Adjust" button is a powerful tool to manually grant {terminology.points} or {terminology.awards} for actions that happen outside the app.</p>
+                    <p><em>Example Use Case: A user gets a great report card. You can use the "Adjust" button to grant them 100 bonus XP and a special "Good Grades" trophy you created.</em></p>
 
-                    <h4 className="text-lg font-bold text-stone-100 mt-4">Management Pages</h4>
+                    <h4 className="text-lg font-bold text-stone-100 mt-4">Content Creation &amp; Management</h4>
+                    <p>The "Manage" pages in the sidebar are your world-building tools. You can define new {terminology.tasks}, set up {terminology.stores} with custom items, create {terminology.groups}, define custom {terminology.points}, design {terminology.levels}, and invent unique {terminology.awards}.</p>
+                    
+                    <h4 className="text-lg font-bold text-stone-100 mt-4">Managing Images &amp; Assets</h4>
+                    <p>All items in the game, from avatar clothes to marketplace rewards, are "Game Assets." You can manage these from `Manage Items`. When creating or editing an asset, you can add an image in several ways:</p>
                     <ul className="list-disc list-inside space-y-2 pl-4">
-                        <li><strong>Approvals:</strong> This is your inbox for pending actions. When a {terminology.user} completes a {terminology.task} that needs approval, it will appear here. You can approve or reject it, with an optional note.</li>
-                        <li><strong>Manage Users:</strong> Add new adventurers, edit their details, or delete them. The "Adjust" button is a powerful tool to manually grant {terminology.points} or {terminology.awards} for actions that happen outside the app (e.g., "Bonus XP for a great report card").</li>
-                        <li><strong>Content Management (Quests, Markets, etc.):</strong> These pages are your world-building tools. You can define new {terminology.tasks}, set up {terminology.stores} with custom items, create {terminology.groups}, define custom {terminology.points}, design {terminology.levels}, and invent unique {terminology.awards}.</li>
+                        <li><strong>Upload New:</strong> The most common way. Click "Upload New" to select an image from your computer. It will be uploaded to the server.</li>
+                        <li><strong>Select Existing:</strong> Click "Select Existing" to choose from any image that has been previously uploaded for *any* asset. This saves space and keeps your library clean.</li>
                     </ul>
 
-                     <h4 className="text-lg font-bold text-stone-100 mt-4">Data Management</h4>
-                     <p>This powerful page gives you full control over the game's data. It is separated into two main areas:</p>
+                    <h5 className="text-md font-bold text-stone-100 mt-4">Manually Adding Images (For Local/Docker Installs)</h5>
+                    <p>If you are running the application locally using Docker, you have a powerful third option for adding images in bulk:</p>
                     <ul className="list-disc list-inside space-y-2 pl-4">
-                        <li><strong>Backup & Sharing:</strong> You can create a full backup of all game data for safekeeping. You can also create and import "Blueprints" - smaller files that only contain certain assets (like a pack of chores) that you can share with others.</li>
-                        <li><strong>Bulk Deletion:</strong> This section contains "danger zone" actions for cleaning up your game. You can wipe all historical records, reset all player wallets and XP, or even delete all the custom content you've created to start over without having to reset user accounts.</li>
+                        <li>
+                            <strong>Where to add files:</strong> Place your image files directly into the <code>backend/uploads</code> folder within your project directory.
+                        </li>
+                        <li>
+                            <strong>How to name files:</strong> Follow a specific naming convention: <code>Category-Name.png</code>. The application uses the hyphen to separate the category from the name.
+                            <ul className="list-disc list-inside space-y-1 pl-6 mt-2">
+                                <li>Example 1: <code>Pet-BabyDragon.png</code> will create an image named "BabyDragon" in the "Pet" category.</li>
+                                <li>Example 2: <code>Avatar-FierySword.png</code> will create an image named "FierySword" in the "Avatar" category.</li>
+                            </ul>
+                        </li>
+                        <li>
+                            <strong>Why do this:</strong> This is the fastest way to add many images at once. When you visit the `Asset Manager` page, these images will automatically appear in the gallery, pre-categorized and ready to be used for new game assets.
+                        </li>
                     </ul>
+
+                    <p className="font-bold mt-4">Best Practices for Images:</p>
+                    <ul className="list-disc list-inside space-y-2 pl-4">
+                        <li>Use PNG images with transparent backgrounds for avatar items for the best look.</li>
+                        <li>Keep file sizes small (under 200kb is ideal) to ensure the app loads quickly.</li>
+                        <li>Square images (e.g., 500x500 pixels) tend to look best in the UI.</li>
+                    </ul>
+
+                    <h4 className="text-lg font-bold text-stone-100 mt-4">Data Management</h4>
+                    <p>This powerful page gives you full control over the game's data. It is separated into several areas:</p>
+                    <ul className="list-disc list-inside space-y-2 pl-4">
+                        <li><strong>Backup & Import:</strong> Create a full backup of all game data for safekeeping. You can also import these backups or smaller "Blueprint" files.</li>
+                        <li><strong>Object Manager:</strong> A powerful table view of all your created content. You can bulk-select items to delete them or export them as a Blueprint.</li>
+                        <li><strong>Asset Library:</strong> Jumpstart your game with pre-made content packs! Install packs of quests, items, and more with just a few clicks.</li>
+                    </ul>
+                </CollapsibleSection>
+
+                <CollapsibleSection title="Settings Deep Dive">
+                    <p>The `Settings` page allows the {terminology.admin} to fine-tune the game experience.</p>
+                     <h4 className="text-lg font-bold text-stone-100 mt-4">Security Settings</h4>
+                    <ul className="list-disc list-inside space-y-2 pl-4">
+                        <li><strong>Quick User Switching:</strong> Shows avatars in the header for fast switching. Turn this off for a cleaner interface or if you have many users.</li>
+                        <li><strong>Require PIN for Users:</strong> When ON, standard users must enter their PIN to log in. Turn this OFF for young children or on a trusted family device for easier access.</li>
+                        <li><strong>Require Password for Admins:</strong> When ON, {terminology.admin} and {terminology.moderator} roles must use their full password. Turn this OFF to allow them to use their PIN, which is faster but less secure.</li>
+                    </ul>
+                     <h4 className="text-lg font-bold text-stone-100 mt-4">Game Rules</h4>
+                    <ul className="list-disc list-inside space-y-2 pl-4">
+                        <li><strong>Forgiving Setbacks:</strong> When ON, {terminology.negativePoints} are only applied if a {terminology.task} is incomplete at the end of the day. When OFF, {terminology.negativePoints} are applied the moment a {terminology.task} becomes late.</li>
+                        <li><strong>Vacation Mode:</strong> Pause all deadlines and {terminology.negativePoints} between two dates. Perfect for holidays!</li>
+                    </ul>
+                    <h4 className="text-lg font-bold text-stone-100 mt-4">Terminology</h4>
+                    <p>This is one of the most powerful features for personalization. You can change almost any key term in the app.
+                    <br/><em>Example: You could change `{terminology.appName}` to "The Family Crew," `{terminology.task}` to "Chore," and `{terminology.group}` to "Team" to create a less fantasy-themed experience.</em></p>
                 </CollapsibleSection>
 
             </Card>

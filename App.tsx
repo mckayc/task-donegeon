@@ -1,8 +1,9 @@
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { useAuth } from './context/AuthContext';
 import { useSettings } from './context/SettingsContext';
-import { useGameData } from './context/GameDataContext'; // Import useGameData
+import { useGameData } from './context/GameDataContext';
+import { useAppState } from './context/AppContext';
 import FirstRunWizard from './components/auth/FirstRunWizard';
 import MainLayout from './components/layout/MainLayout';
 import SwitchUser from './components/auth/SwitchUser';
@@ -10,6 +11,29 @@ import AuthPage from './components/auth/AuthPage';
 import NotificationContainer from './components/ui/NotificationContainer';
 import AppLockScreen from './components/auth/AppLockScreen';
 import OnboardingWizard from './components/auth/OnboardingWizard';
+
+const ThemeStyleProvider: React.FC = () => {
+    const { themes } = useAppState();
+
+    const generateThemeStyles = () => {
+        return themes.map(theme => {
+            const styles = Object.entries(theme.styles)
+                .map(([key, value]) => `${key}: ${value};`)
+                .join('\n');
+            
+            return `
+                body[data-theme="${theme.id}"] {
+                    ${styles}
+                }
+            `;
+        }).join('\n\n');
+    };
+
+    return (
+        <style>{generateThemeStyles()}</style>
+    );
+};
+
 
 const App: React.FC = () => {
   const { isAppUnlocked, isFirstRun, currentUser, isSwitchingUser } = useAuth();
@@ -35,6 +59,7 @@ const App: React.FC = () => {
 
   return (
     <>
+      <ThemeStyleProvider />
       <NotificationContainer />
       {showOnboarding && <OnboardingWizard />}
 

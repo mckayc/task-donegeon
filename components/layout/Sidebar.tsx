@@ -1,5 +1,6 @@
 
 
+
 import React, { useState, useMemo } from 'react';
 import { Role, Page, QuestCompletionStatus, PurchaseRequestStatus, Terminology, SidebarConfigItem, SidebarLink } from '../../types';
 import { useAuth } from '../../context/AuthContext';
@@ -79,17 +80,18 @@ const CollapsibleNavGroup: React.FC<CollapsibleNavGroupProps> = ({ title, childr
 const Sidebar: React.FC = () => {
   const { currentUser } = useAuth();
   const { questCompletions, purchaseRequests } = useGameData();
-  const { activePage, settings } = useSettings();
+  const { activePage, settings, isAiAvailable } = useSettings();
   const { setActivePage } = useSettingsDispatch();
   
   if (!currentUser) return null;
 
   const visibleLinks = useMemo(() => settings.sidebars.main.filter(link => {
     if (!link.isVisible) return false;
+    if (link.id === 'AI Studio' && !isAiAvailable) return false;
     if (currentUser.role === Role.DonegeonMaster) return true;
     if (currentUser.role === Role.Gatekeeper) return link.role === Role.Gatekeeper || link.role === Role.Explorer;
     return link.role === Role.Explorer;
-  }), [settings.sidebars.main, currentUser.role]);
+  }), [settings.sidebars.main, currentUser.role, isAiAvailable]);
 
   const pendingQuestApprovals = questCompletions.filter(c => c.status === QuestCompletionStatus.Pending).length;
   const pendingPurchaseApprovals = purchaseRequests.filter(p => p.status === PurchaseRequestStatus.Pending).length;

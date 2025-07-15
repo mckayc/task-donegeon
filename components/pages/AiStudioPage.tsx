@@ -1,10 +1,5 @@
 
-
-
-
-
-
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import Button from '../ui/Button';
 import Input from '../ui/Input';
 import { SparklesIcon, CheckCircleIcon, XCircleIcon } from '../ui/Icons';
@@ -14,7 +9,7 @@ import { Quest, Trophy, GameAsset, QuestAvailability, QuestType, Market } from '
 import Card from '../ui/Card';
 import { useSettings } from '../../context/SettingsContext';
 
-type AssetType = 'Quests' | 'Trophies' | 'Items' | 'Markets' | 'Images - Items' | 'Images - Trophies' | 'Images - Avatars';
+type AssetType = 'Quests' | 'Trophies' | 'Items' | 'Markets';
 
 interface GeneratedAsset {
     id: string;
@@ -37,14 +32,13 @@ const ApiInstructions: React.FC = () => (
 
 
 const AiStudioPage: React.FC = () => {
-    const { addQuest, addTrophy, addGameAsset, addNotification, addMarket, uploadFile } = useAppDispatch();
-    const { settings } = useAppState();
+    const { addQuest, addTrophy, addGameAsset, addNotification, addMarket } = useAppDispatch();
+    const { settings, isAiConfigured } = useAppState();
     const { isAiAvailable } = useSettings();
-    const [apiStatus, setApiStatus] = useState<'unknown' | 'testing' | 'valid' | 'invalid'>('unknown');
+    const [apiStatus, setApiStatus] = useState<'unknown' | 'testing' | 'valid' | 'invalid'>(isAiConfigured ? 'valid' : 'unknown');
     const [apiError, setApiError] = useState<string | null>(null);
 
     const [context, setContext] = useState(localStorage.getItem('aiStudioContext') || '');
-    const [imageStyleContext, setImageStyleContext] = useState(localStorage.getItem('aiImageStyleContext') || 'Pixel art game icon, square, simple colorful background.');
     const [prompt, setPrompt] = useState('');
     const [quantity, setQuantity] = useState(5);
     const [assetType, setAssetType] = useState<AssetType>('Quests');
@@ -72,7 +66,6 @@ const AiStudioPage: React.FC = () => {
     
     const handleSaveContext = () => {
         localStorage.setItem('aiStudioContext', context);
-        localStorage.setItem('aiImageStyleContext', imageStyleContext);
         addNotification({ type: 'success', message: 'Context saved!' });
     };
 
@@ -118,23 +111,20 @@ const AiStudioPage: React.FC = () => {
         if (!prompt.trim()) { setError('Please enter a prompt to generate assets.'); return; }
         setIsLoading(true); setError(''); setGeneratedAssets([]);
         
-        const isImageRequest = assetType.startsWith('Images');
-        const model = isImageRequest ? 'imagen-3.0-generate-002' : 'gemini-2.5-flash';
-        
-        let fullPrompt: any;
-        if (isImageRequest) {
-            fullPrompt = `${imageStyleContext}. Item: ${prompt}`;
-        } else {
-            fullPrompt = `Context: ${context || 'A typical family with children.'}\nRequest: Generate a JSON object with a single key "assets". The value of "assets" should be an array of ${quantity} ${assetType} based on the theme: "${prompt}".`;
-        }
+        const fullPrompt = `Context: ${context || 'A typical family with children.'}\nRequest: Generate a JSON object with a single key "assets". The value of "assets" should be an array of ${quantity} ${assetType} based on the theme: "${prompt}".`;
 
-        const requestBody: any = { model, prompt: fullPrompt };
-
-        if (isImageRequest) {
-            requestBody.generationConfig = { numberOfImages: quantity, outputMimeType: 'image/png', aspectRatio: '1:1' };
-        } else {
-            requestBody.generationConfig = { responseMimeType: "application/json", responseSchema: { type: Type.OBJECT, properties: { assets: getSchemaForAssetType(assetType) }, required: ['assets'] }};
-        }
+        const requestBody: any = {
+             model: 'gemini-2.5-flash',
+             prompt: fullPrompt,
+             generationConfig: { 
+                 responseMimeType: "application/json",
+                 responseSchema: {
+                     type: Type.OBJECT,
+                     properties: { assets: getSchemaForAssetType(assetType) },
+                     required: ['assets']
+                 }
+            }
+        };
 
         try {
             const response = await fetch('/api/ai/generate', {
@@ -146,22 +136,12 @@ const AiStudioPage: React.FC = () => {
             if (!response.ok) { const err = await response.json(); throw new Error(err.error || 'Failed to generate assets.'); }
 
             const result = await response.json();
-            
-            if (isImageRequest) {
-                const imageUrls = result.generatedImages.map((img: any, i: number) => ({
-                    id: `gen-img-${i}-${Date.now()}`, type: assetType,
-                    data: { name: `${prompt} ${i + 1}`, url: `data:image/png;base64,${img.image.imageBytes}`, base64: img.image.imageBytes },
-                    isSelected: true
-                }));
-                setGeneratedAssets(imageUrls);
-            } else {
-                const text = result.text;
-                if (!text) throw new Error("Received an empty response from the AI.");
-                const jsonResponse = JSON.parse(text);
-                if (jsonResponse.assets && Array.isArray(jsonResponse.assets)) {
-                    setGeneratedAssets(jsonResponse.assets.map((asset: any, i: number) => ({ id: `gen-${i}-${Date.now()}`, type: assetType, data: asset, isSelected: true, })));
-                } else { throw new Error("AI response did not contain a valid 'assets' array."); }
-            }
+            const text = result.text;
+            if (!text) throw new Error("Received an empty response from the AI.");
+            const jsonResponse = JSON.parse(text);
+            if (jsonResponse.assets && Array.isArray(jsonResponse.assets)) {
+                setGeneratedAssets(jsonResponse.assets.map((asset: any, i: number) => ({ id: `gen-${i}-${Date.now()}`, type: assetType, data: asset, isSelected: true, })));
+            } else { throw new Error("AI response did not contain a valid 'assets' array."); }
 
         } catch (err) {
             const message = err instanceof Error ? err.message : String(err);
@@ -184,19 +164,6 @@ const AiStudioPage: React.FC = () => {
                 case 'Trophies': addTrophy({ name: asset.data.name, description: asset.data.description, icon: asset.data.icon || '🏆', isManual: true, requirements: [] }); break;
                 case 'Items': addGameAsset({ name: asset.data.name, description: asset.data.description, category: asset.data.category || 'Misc', url: 'https://placehold.co/150x150/84cc16/FFFFFF?text=New', isForSale: false, cost: [], marketIds: [], purchaseLimit: null, purchaseCount: 0 }); break;
                 case 'Markets': addMarket({ title: asset.data.title, description: asset.data.description, icon: asset.data.icon || '🛒' }); break;
-                case 'Images - Items': case 'Images - Trophies': case 'Images - Avatars':
-                    const byteCharacters = atob(asset.data.base64);
-                    const byteNumbers = new Array(byteCharacters.length);
-                    for (let i = 0; i < byteCharacters.length; i++) { byteNumbers[i] = byteCharacters.charCodeAt(i); }
-                    const byteArray = new Uint8Array(byteNumbers);
-                    const blob = new Blob([byteArray], {type: 'image/png'});
-                    const file = new File([blob], `${asset.data.name.replace(/ /g, '_')}.png`, { type: 'image/png' });
-                    const uploadedFile = await uploadFile(file);
-                    if (uploadedFile?.url) {
-                        const category = asset.type.split(' - ')[1];
-                        addGameAsset({ name: asset.data.name, description: `Icon for ${asset.data.name}`, category: category, url: uploadedFile.url, isForSale: false, cost: [], marketIds: [], purchaseLimit: null, purchaseCount: 0 });
-                    }
-                    break;
             }
         }
         addNotification({type: 'success', message: `${assetsToImport.length} assets imported successfully!`});
@@ -204,14 +171,6 @@ const AiStudioPage: React.FC = () => {
     };
 
     const renderAsset = (asset: GeneratedAsset) => {
-        if (asset.type.startsWith('Images')) {
-            return (
-                <div className="flex items-center gap-4">
-                    <img src={asset.data.url} alt={asset.data.name} className="w-12 h-12 rounded-md bg-stone-700 object-contain" />
-                    <p className="font-bold text-stone-200">{asset.data.name}</p>
-                </div>
-            );
-        }
         switch (asset.type) {
             case 'Quests': return (<div><p className="font-bold text-stone-200">{asset.data.title}</p><p className="text-sm text-stone-400">{asset.data.description}</p>{asset.data.tags && asset.data.tags.length > 0 && (<div className="mt-1 flex flex-wrap gap-1">{asset.data.tags.map((tag: string) => <span key={tag} className="text-xs bg-blue-900/50 text-blue-300 px-1.5 py-0.5 rounded">{tag}</span>)}</div>)}</div>);
             case 'Trophies': return <p><span className="text-2xl mr-2">{asset.data.icon}</span> <span className="font-bold text-stone-200">{asset.data.name}</span> - {asset.data.description}</p>;
@@ -229,28 +188,32 @@ const AiStudioPage: React.FC = () => {
                 <p className="text-stone-400 text-sm mb-3">Provide background info about your group to help the AI generate relevant text-based ideas.</p>
                 <textarea value={context} onChange={e => setContext(e.target.value)} rows={3} className="w-full px-4 py-2 bg-stone-700 border border-stone-600 rounded-md" placeholder="e.g., A family with two kids, ages 8 and 12. We live in a house with a backyard and have one dog. We want to focus on chores and outdoor activities." />
                 
-                <p className="text-stone-400 text-sm mb-3 mt-4">Provide a style for all generated images.</p>
-                <textarea value={imageStyleContext} onChange={e => setImageStyleContext(e.target.value)} rows={2} className="w-full px-4 py-2 bg-stone-700 border border-stone-600 rounded-md" placeholder="e.g., Pixel art icon, simple colorful background" />
-                
                 <div className="text-right mt-2">
                     <Button variant="secondary" onClick={handleSaveContext}>Save Context</Button>
                 </div>
             </Card>
             <Card title="Generate New Assets">
                 <div className="space-y-4">
-                    <fieldset disabled={!isAiAvailable || isLoading} className="space-y-4 disabled:opacity-60">
+                    <fieldset disabled={!isAiAvailable || !isAiConfigured || isLoading} className="space-y-4 disabled:opacity-60">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div><label className="block text-sm font-medium text-stone-300 mb-1">Asset Type</label><Input as="select" value={assetType} onChange={e => setAssetType(e.target.value as AssetType)}>
                                 <option value="Quests">{settings.terminology.tasks}</option><option value="Trophies">{settings.terminology.awards}</option><option value="Items">Items</option><option value="Markets">Markets</option>
-                                <option disabled>---</option>
-                                <option value="Images - Items">Images - Items</option><option value="Images - Trophies">Images - Trophies</option><option value="Images - Avatars">Images - Avatars</option>
                             </Input></div>
                             <div><Input label="Quantity" type="number" min="1" max="10" value={quantity} onChange={e => setQuantity(Number(e.target.value))} /></div>
                         </div>
-                        <div><Input label={assetType.startsWith('Images') ? "Image Prompt" : "Generation Prompt / Theme"} placeholder={assetType.startsWith('Images') ? "e.g., 'a magic potion', 'a steel sword'" : "e.g., 'summer yard work', 'creative art projects'"} value={prompt} onChange={e => setPrompt(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleGenerate()} /></div>
+                        <div><Input label="Generation Prompt / Theme" placeholder={"e.g., 'summer yard work', 'creative art projects'"} value={prompt} onChange={e => setPrompt(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleGenerate()} /></div>
                     </fieldset>
-                    <div className="text-right"><Button onClick={handleGenerate} disabled={isLoading || !prompt.trim() || !isAiAvailable}><SparklesIcon className="w-5 h-5 mr-2" />{isLoading ? 'Generating...' : 'Generate Assets'}</Button></div>
-                    {!isAiAvailable && <p className="text-sm text-center text-amber-400 mt-4">AI Features are not available. Please enable them in Settings and ensure the server has a valid API key.</p>}
+                    <div className="text-right">
+                        <Button onClick={handleGenerate} disabled={isLoading || !prompt.trim() || !isAiAvailable || !isAiConfigured}>
+                            <SparklesIcon className="w-5 h-5 mr-2" />
+                            {isLoading ? 'Generating...' : 'Generate Assets'}
+                        </Button>
+                    </div>
+                    {!isAiAvailable ? (
+                        <p className="text-sm text-center text-amber-400 mt-4">AI Features are disabled. You can enable them in the Settings page.</p>
+                    ) : !isAiConfigured ? (
+                        <p className="text-sm text-center text-amber-400 mt-4">AI Features are not configured on the server. Please check the API Key Setup below.</p>
+                    ) : null}
                 </div>
             </Card>
 
@@ -260,10 +223,7 @@ const AiStudioPage: React.FC = () => {
             
             <Card title="API Key Setup">
                 <ApiInstructions />
-            </Card>
-
-            <Card>
-                <div className="flex justify-between items-center">
+                <div className="mt-4 flex justify-between items-center">
                     <h3 className="text-xl font-semibold">Gemini API Connection Status</h3>
                     <Button variant="secondary" onClick={testApiKey} disabled={apiStatus === 'testing'}>
                         {apiStatus === 'testing' ? 'Testing...' : 'Test API Key'}

@@ -1,13 +1,17 @@
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
-import { Role } from '../../types';
+import { Role, User } from '../../types';
 import Button from '../ui/Button';
 import Input from '../ui/Input';
 
 const AppLockScreen: React.FC = () => {
   const { users, settings } = useAppState();
   const { setAppUnlocked } = useAppDispatch();
+  
+  const adminUsers = useMemo(() => users.filter(u => u.role === Role.DonegeonMaster), [users]);
+
+  const [selectedAdminId, setSelectedAdminId] = useState(adminUsers.length > 0 ? adminUsers[0].id : '');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isChecking, setIsChecking] = useState(false);
@@ -17,8 +21,8 @@ const AppLockScreen: React.FC = () => {
     setIsChecking(true);
     setError('');
 
-    const adminUsers = users.filter(u => u.role === Role.DonegeonMaster);
-    const isValidPassword = adminUsers.some(admin => admin.password === password);
+    const admin = adminUsers.find(u => u.id === selectedAdminId);
+    const isValidPassword = admin && admin.password === password;
 
     setTimeout(() => { // Simulate network delay slightly
         if (isValidPassword) {
@@ -39,6 +43,19 @@ const AppLockScreen: React.FC = () => {
           <p className="text-stone-300 mt-2">Enter a Master Password to unlock.</p>
         </div>
         <form onSubmit={handleSubmit} className="space-y-4">
+          {adminUsers.length > 1 && (
+            <Input
+              as="select"
+              label="Select Administrator"
+              id="admin-select"
+              value={selectedAdminId}
+              onChange={(e) => setSelectedAdminId(e.target.value)}
+            >
+              {adminUsers.map(admin => (
+                <option key={admin.id} value={admin.id}>{admin.gameName}</option>
+              ))}
+            </Input>
+          )}
           <Input
             label="Master Password"
             id="master-password"

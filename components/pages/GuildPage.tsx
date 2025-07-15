@@ -1,3 +1,4 @@
+
 import React from 'react';
 import Card from '../ui/Card';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
@@ -18,7 +19,6 @@ const GuildPage: React.FC = () => {
 
     return (
         <div>
-            <h1 className="text-4xl font-medieval text-stone-100 mb-8">Your {settings.terminology.groups}</h1>
             {myGuilds.length > 0 ? (
                 <div className="space-y-8">
                     {myGuilds.map(guild => (

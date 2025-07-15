@@ -156,7 +156,6 @@ const Dashboard: React.FC = () => {
 
     return (
         <div>
-            <h1 className="text-4xl font-medieval text-stone-100 mb-8">Adventurer Dashboard</h1>
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <Card 
                     title={terminology.level} 
@@ -202,7 +201,7 @@ const Dashboard: React.FC = () => {
                             })}
                         </ul>
                     ) : (
-                         <p className="text-stone-400">No recent activity. Go complete a {terminology.task.toLowerCase()}!</p>
+                         <p className="text-stone-400">No recent activity. Go complete a ${terminology.task.toLowerCase()}!</p>
                     )}
                 </Card>
 
@@ -265,7 +264,7 @@ const Dashboard: React.FC = () => {
                                 <p className="mt-2 text-lg font-semibold text-amber-300">{mostRecentTrophy.name}</p>
                                 <p className="text-sm text-stone-400">{mostRecentTrophy.description}</p>
                             </div>
-                        ) : ( <p className="text-stone-400 text-center">No {terminology.awards.toLowerCase()} earned yet in this mode.</p> )}
+                        ) : ( <p className="text-stone-400 text-center">No ${terminology.awards.toLowerCase()} earned yet in this mode.</p> )}
                     </div>
                 </Card>
                 
@@ -300,7 +299,7 @@ const Dashboard: React.FC = () => {
                                     );
                                 })}
                             </ul>
-                        ) : ( <p className="text-stone-400">No pressing {terminology.tasks.toLowerCase()} at the moment. Check the main {terminology.tasks} page for more!</p> )}
+                        ) : ( <p className="text-stone-400">No pressing ${terminology.tasks.toLowerCase()} at the moment. Check the main ${terminology.tasks} page for more!</p> )}
                     </Card>
                 </div>
             </div>

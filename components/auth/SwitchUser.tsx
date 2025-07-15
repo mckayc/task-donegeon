@@ -1,31 +1,59 @@
 
-import React, { useState } from 'react';
+
+import React, { useState, useEffect } from 'react';
 import { useAuth, useAuthDispatch } from '../../context/AuthContext';
 import { User, Role } from '../../types';
 import Button from '../ui/Button';
 import Keypad from '../ui/Keypad';
 import Avatar from '../ui/Avatar';
+import { useSettings } from '../../context/SettingsContext';
+import Input from '../ui/Input';
 
 const SwitchUser: React.FC = () => {
-    const { users } = useAuth();
+    const { users, currentUser: anyCurrentUser, targetedUserForLogin } = useAuth();
     const { setCurrentUser, setIsSwitchingUser, setTargetedUserForLogin } = useAuthDispatch();
+    const { settings } = useSettings();
     const [selectedUser, setSelectedUser] = useState<User | null>(null);
     const [pin, setPin] = useState('');
     const [error, setError] = useState('');
 
     const handleUserSelect = (user: User) => {
-        if (user.role === Role.DonegeonMaster) {
+        const isAdminOrGatekeeper = user.role === Role.DonegeonMaster || user.role === Role.Gatekeeper;
+
+        // Case 1: Admin needs a password
+        if (isAdminOrGatekeeper && settings.security.requirePasswordForAdmin) {
+            setCurrentUser(null);
             setTargetedUserForLogin(user);
             setIsSwitchingUser(false);
-        } else if (user.pin) {
-            setSelectedUser(user);
-            setError('');
-            setPin('');
-        } else {
-            setCurrentUser(user);
-            setIsSwitchingUser(false);
+            return;
         }
+
+        // Case 2: Any user needs a PIN
+        if (settings.security.requirePinForUsers) {
+            if (user.pin) {
+                setSelectedUser(user);
+                setError('');
+                setPin('');
+            } else {
+                setError(`${user.gameName} does not have a PIN set up. An admin must set one.`);
+                setSelectedUser(null);
+            }
+            return;
+        }
+
+        // Case 3: No security for this user, log in directly.
+        setCurrentUser(user);
+        setIsSwitchingUser(false);
     };
+
+
+    useEffect(() => {
+        if (targetedUserForLogin) {
+            handleUserSelect(targetedUserForLogin);
+            // Clean up the targeted user so it doesn't re-trigger
+            setTargetedUserForLogin(null);
+        }
+    }, [targetedUserForLogin]);
 
     const handlePinSubmit = () => {
         if (selectedUser && selectedUser.pin === pin) {
@@ -38,9 +66,13 @@ const SwitchUser: React.FC = () => {
     };
     
     const goBack = () => {
-        setSelectedUser(null);
-        // If we got here, there's no currentUser. If we cancel, we should go back to the main auth page.
-        setIsSwitchingUser(false); 
+        if (anyCurrentUser) {
+            setIsSwitchingUser(false);
+        } else {
+            setSelectedUser(null);
+            setError('');
+            setIsSwitchingUser(false);
+        }
     };
 
     if (selectedUser) {
@@ -52,12 +84,33 @@ const SwitchUser: React.FC = () => {
                         <h2 className="text-3xl font-bold text-stone-100 mb-2">{selectedUser.gameName}</h2>
                         <p className="text-stone-400 mb-6">Enter your PIN to continue</p>
                         
-                        <div className="flex justify-center items-center gap-3 h-10 mb-4">
-                            {Array.from({ length: selectedUser.pin?.length || 4 }).map((_, i) => (
-                                <div key={i} className={`w-4 h-4 rounded-full transition-colors ${i < pin.length ? 'bg-emerald-400' : 'bg-stone-600'}`}></div>
-                            ))}
+                        <div className="w-full max-w-xs mb-4">
+                            <Input
+                                id="pin-input"
+                                name="pin"
+                                type="password"
+                                aria-label="PIN Input"
+                                value={pin}
+                                onChange={(e) => {
+                                    const val = e.target.value;
+                                    // Only allow numbers and limit length
+                                    if (/^\d*$/.test(val) && val.length <= 10) {
+                                        setPin(val);
+                                    }
+                                }}
+                                onKeyDown={e => {
+                                    if (e.key === 'Enter') {
+                                        e.preventDefault();
+                                        handlePinSubmit();
+                                    }
+                                }}
+                                className="text-center tracking-[.5em] text-2xl h-14"
+                                autoComplete="off"
+                                inputMode="numeric"
+                                autoFocus
+                            />
                         </div>
-
+                        
                         {error && <p className="text-red-400 text-center mb-4">{error}</p>}
                         
                         <Keypad
@@ -77,9 +130,19 @@ const SwitchUser: React.FC = () => {
         );
     }
 
+    // While targetedUserForLogin is processing, show a loader to avoid flashing the user grid
+    if (targetedUserForLogin) {
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-stone-900">
+                <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-emerald-400"></div>
+            </div>
+        );
+    }
+
     return (
         <div className="min-h-screen flex flex-col items-center justify-center bg-stone-900 p-4">
             <h1 className="text-5xl font-medieval text-emerald-400 text-center mb-10">Choose Your Adventurer</h1>
+            {error && <p className="text-red-400 bg-red-900/30 p-3 rounded-md mb-8 max-w-lg text-center">{error}</p>}
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
                 {users.map(user => (
                     <div key={user.id} onClick={() => handleUserSelect(user)} className="flex flex-col items-center text-center cursor-pointer group">

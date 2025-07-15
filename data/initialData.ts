@@ -1,19 +1,26 @@
 
-import { User, Role, RewardTypeDefinition, RewardCategory, Rank, Trophy, TrophyRequirementType, QuestType, Market, Quest, QuestAvailability, Guild, AppSettings, Theme, GameAsset, SidebarConfigItem } from '../types';
+import { User, Role, RewardTypeDefinition, RewardCategory, Rank, Trophy, TrophyRequirementType, QuestType, Market, Quest, QuestAvailability, Guild, AppSettings, SidebarConfigItem, GameAsset, ThemeDefinition, ThemeStyle } from '../types';
 
 export const createMockUsers = (): User[] => {
-    const users: Omit<User, 'id' | 'personalPurse' | 'personalExperience' | 'guildBalances' | 'avatar' | 'ownedAssetIds' | 'ownedThemes'>[] = [
-        { firstName: 'Alistair', lastName: 'Blackwood', username: 'dmaster', email: 'dm@example.com', gameName: 'The Donegeon Master', birthday: '1980-01-01', role: Role.DonegeonMaster, password: 'password123' },
-        { firstName: 'Brynn', lastName: 'Stonehand', username: 'brynn', email: 'brynn@example.com', gameName: 'Warden Brynn', birthday: '1995-05-10', role: Role.Gatekeeper, password: 'password123' },
-        { firstName: 'Kaelen', lastName: 'Swift', username: 'kaelen', email: 'kaelen@example.com', gameName: 'Swift Shadow', birthday: '1998-09-20', role: Role.Gatekeeper, password: 'password123' },
-        { firstName: 'Elara', lastName: 'Meadowlight', username: 'elara', email: 'elara@example.com', gameName: 'Whisperwind', birthday: '2010-03-15', role: Role.Explorer, password: 'password123', pin: '1234' },
-        { firstName: 'Ronan', lastName: 'Ironhide', username: 'ronan', email: 'ronan@example.com', gameName: 'The Bull', birthday: '2012-07-22', role: Role.Explorer, password: 'password123' },
-        { firstName: 'Lyra', lastName: 'Nightbreeze', username: 'lyra', email: 'lyra@example.com', gameName: 'Starlight', birthday: '2011-11-05', role: Role.Explorer, password: 'password123', pin: '5678' },
-        { firstName: 'Finnian', lastName: 'Riverbend', username: 'finn', email: 'finn@example.com', gameName: 'Finn the Agile', birthday: '2013-02-28', role: Role.Explorer, password: 'password123' },
-        { firstName: 'Seraphina', lastName: 'Flameheart', username: 'seraphina', email: 'seraphina@example.com', gameName: 'Ember', birthday: '2014-06-12', role: Role.Explorer, password: 'password123' }
+    const usersData: Omit<User, 'id' | 'personalPurse' | 'personalExperience' | 'guildBalances' | 'avatar' | 'ownedAssetIds' | 'ownedThemes' | 'hasBeenOnboarded'>[] = [
+        // Donegeon Masters
+        { firstName: 'The', lastName: 'Admin', username: 'admin', email: 'admin@donegeon.com', gameName: 'admin', birthday: '2000-01-01', role: Role.DonegeonMaster, password: '123456', pin: '1234' },
+        { firstName: 'Valerius', lastName: 'Crow', username: 'valerius', email: 'valerius@donegeon.com', gameName: 'Crow', birthday: '1985-05-10', role: Role.DonegeonMaster, password: '123456', pin: '1234' },
+        
+        // Gatekeepers
+        { firstName: 'Seraphina', lastName: 'Ironhand', username: 'sera', email: 'sera@donegeon.com', gameName: 'Sera', birthday: '1995-08-20', role: Role.Gatekeeper, password: '123456', pin: '1234' },
+        { firstName: 'Gideon', lastName: 'Blackwood', username: 'gideon', email: 'gideon@donegeon.com', gameName: 'Gideon', birthday: '1992-11-30', role: Role.Gatekeeper, password: '123456', pin: '1234' },
+
+        // Explorers
+        { firstName: 'Lyra', lastName: 'Swift', username: 'lyra', email: 'lyra@donegeon.com', gameName: 'Lyra', birthday: '2010-04-15', role: Role.Explorer, pin: '1234' },
+        { firstName: 'Finn', lastName: 'Riverbend', username: 'finn', email: 'finn@donegeon.com', gameName: 'Finn', birthday: '2012-06-22', role: Role.Explorer, pin: '1234' },
+        { firstName: 'Elara', lastName: 'Meadowlight', username: 'elara', email: 'elara@donegeon.com', gameName: 'Elara', birthday: '2011-09-05', role: Role.Explorer, pin: '1234' },
+        { firstName: 'Ronan', lastName: 'Stonefist', username: 'ronan', email: 'ronan@donegeon.com', gameName: 'Ronan', birthday: '2013-01-18', role: Role.Explorer, pin: '1234' },
+        { firstName: 'Kael', lastName: 'Shadowsun', username: 'kael', email: 'kael@donegeon.com', gameName: 'Kael', birthday: '2014-03-25', role: Role.Explorer, pin: '1234' },
+        { firstName: 'Orion', lastName: 'Starfall', username: 'orion', email: 'orion@donegeon.com', gameName: 'Orion', birthday: '2015-07-30', role: Role.Explorer, pin: '1234' },
     ];
 
-    const initialUsers = users.map((u, i) => ({
+    const initialUsers = usersData.map((u, i) => ({
         ...u,
         id: `user-${i + 1}`,
         avatar: {},
@@ -21,11 +28,12 @@ export const createMockUsers = (): User[] => {
         personalPurse: {},
         personalExperience: {},
         guildBalances: {},
-        ownedThemes: ['emerald', 'rose', 'sky'] as Theme[],
+        ownedThemes: ['emerald', 'rose', 'sky'],
+        hasBeenOnboarded: false,
     }));
 
-    // Add some initial balances for the DM
-    const dm = initialUsers.find(u => u.role === Role.DonegeonMaster);
+    // Add some initial balances for the main admin
+    const dm = initialUsers.find(u => u.username === 'admin');
     if (dm) {
         dm.personalPurse = { 'core-gold': 100, 'core-gems': 50 };
         dm.personalExperience = { 'core-wisdom': 50, 'core-strength': 150 };
@@ -104,6 +112,7 @@ export const INITIAL_MAIN_SIDEBAR_CONFIG: SidebarConfigItem[] = [
   { type: 'link', id: 'Manage Trophies', emoji: '🏆', isVisible: true, level: 1, role: Role.DonegeonMaster, termKey: 'awards' },
   { type: 'link', id: 'AI Studio', emoji: '✨', isVisible: true, level: 1, role: Role.DonegeonMaster },
   { type: 'link', id: 'Appearance', emoji: '🖌️', isVisible: true, level: 1, role: Role.DonegeonMaster },
+  { type: 'link', id: 'Theme Editor', emoji: '🎭', isVisible: true, level: 1, role: Role.DonegeonMaster },
   { type: 'link', id: 'Settings', emoji: '⚙️', isVisible: true, level: 1, role: Role.DonegeonMaster },
   { type: 'link', id: 'Object Manager', emoji: '🗂️', isVisible: true, level: 1, role: Role.DonegeonMaster },
   { type: 'link', id: 'Asset Manager', emoji: '🖼️', isVisible: true, level: 1, role: Role.DonegeonMaster },
@@ -116,216 +125,134 @@ export const INITIAL_MAIN_SIDEBAR_CONFIG: SidebarConfigItem[] = [
   { type: 'link', id: 'Help Guide', emoji: '❓', isVisible: true, level: 1, role: Role.Explorer },
 ];
 
-export const INITIAL_SETTINGS: AppSettings = {
-  forgivingSetbacks: false,
-  vacationMode: {
-    enabled: false,
-    startDate: undefined,
-    endDate: undefined,
-  },
-  questDefaults: {
-    requiresApproval: false,
-    isOptional: false,
-    isActive: true,
-  },
-  theme: 'emerald',
-  terminology: {
-    appName: 'Task Donegeon',
-    task: 'Quest',
-    tasks: 'Quests',
-    recurringTask: 'Duty',
-    recurringTasks: 'Duties',
-    singleTask: 'Venture',
-    singleTasks: 'Ventures',
-    shoppingCenter: 'Marketplace',
-    store: 'Market',
-    stores: 'Markets',
-    history: 'Chronicles',
-    group: 'Guild',
-    groups: 'Guilds',
-    level: 'Rank',
-    levels: 'Ranks',
-    award: 'Trophy',
-    awards: 'Trophies',
-    point: 'Reward',
-    points: 'Rewards',
-    xp: 'Experience Points',
-    currency: 'Currency',
-    negativePoint: 'Setback',
-    negativePoints: 'Setbacks',
-    admin: 'Donegeon Master',
-    moderator: 'Gatekeeper',
-    user: 'Explorer',
-  },
-  enableAiFeatures: false,
-  sidebars: {
-      main: INITIAL_MAIN_SIDEBAR_CONFIG,
-      dataManagement: [],
-  }
+const rawThemes: { [key: string]: ThemeStyle } = {
+  emerald: { '--font-display': "'MedievalSharp', cursive", '--font-body': "'Roboto', sans-serif", '--color-bg-primary': "224 71% 4%", '--color-bg-secondary': "224 39% 10%", '--color-bg-tertiary': "240 10% 19%", '--color-text-primary': "240 8% 90%", '--color-text-secondary': "240 6% 65%", '--color-border': "240 6% 30%", '--color-primary-hue': "158", '--color-primary-saturation': "84%", '--color-primary-lightness': "39%", '--color-accent-hue': "158", '--color-accent-saturation': "75%", '--color-accent-lightness': "58%", '--color-accent-light-hue': "158", '--color-accent-light-saturation': "70%", '--color-accent-light-lightness': "45%" },
+  rose: { '--font-display': "'MedievalSharp', cursive", '--font-body': "'Roboto', sans-serif", '--color-bg-primary': "334 27% 10%", '--color-bg-secondary': "334 20% 15%", '--color-bg-tertiary': "334 15% 22%", '--color-text-primary': "346 33% 94%", '--color-text-secondary': "346 20% 70%", '--color-border': "346 15% 40%", '--color-primary-hue': "346", '--color-primary-saturation': "84%", '--color-primary-lightness': "59%", '--color-accent-hue': "346", '--color-accent-saturation': "91%", '--color-accent-lightness': "71%", '--color-accent-light-hue': "346", '--color-accent-light-saturation': "80%", '--color-accent-light-lightness': "60%" },
+  sky: { '--font-display': "'MedievalSharp', cursive", '--font-body': "'Roboto', sans-serif", '--color-bg-primary': "217 33% 12%", '--color-bg-secondary': "217 28% 17%", '--color-bg-tertiary': "217 25% 25%", '--color-text-primary': "210 40% 98%", '--color-text-secondary': "215 25% 75%", '--color-border': "215 20% 40%", '--color-primary-hue': "204", '--color-primary-saturation': "85%", '--color-primary-lightness': "54%", '--color-accent-hue': "202", '--color-accent-saturation': "90%", '--color-accent-lightness': "70%", '--color-accent-light-hue': "202", '--color-accent-light-saturation': "80%", '--color-accent-light-lightness': "60%" },
+  arcane: { '--font-display': "'Uncial Antiqua', cursive", '--font-body': "'Roboto', sans-serif", '--color-bg-primary': "265 39% 12%", '--color-bg-secondary': "265 30% 18%", '--color-bg-tertiary': "265 25% 25%", '--color-text-primary': "271 67% 93%", '--color-text-secondary': "271 25% 75%", '--color-border': "271 20% 45%", '--color-primary-hue': "265", '--color-primary-saturation': "60%", '--color-primary-lightness': "55%", '--color-accent-hue': "265", '--color-accent-saturation': "70%", '--color-accent-lightness': "75%", '--color-accent-light-hue': "45", '--color-accent-light-saturation': "80%", '--color-accent-light-lightness': "65%" },
+  cartoon: { '--font-display': "'Comic Neue', cursive", '--font-body': "'Comic Neue', cursive", '--color-bg-primary': "214 53% 15%", '--color-bg-secondary': "214 43% 22%", '--color-bg-tertiary': "214 38% 30%", '--color-text-primary': "210 40% 96%", '--color-text-secondary': "210 30% 75%", '--color-border': "210 25% 45%", '--color-primary-hue': "25", '--color-primary-saturation': "95%", '--color-primary-lightness': "55%", '--color-accent-hue': "200", '--color-accent-saturation': "85%", '--color-accent-lightness': "60%", '--color-accent-light-hue': "200", '--color-accent-light-saturation': "90%", '--color-accent-light-lightness': "70%" },
+  forest: { '--font-display': "'Metamorphous', serif", '--font-body': "'Roboto', sans-serif", '--color-bg-primary': "120 25% 10%", '--color-bg-secondary': "120 20% 15%", '--color-bg-tertiary': "120 15% 22%", '--color-text-primary': "90 30% 90%", '--color-text-secondary': "90 15% 65%", '--color-border': "120 10% 35%", '--color-primary-hue': "130", '--color-primary-saturation': "60%", '--color-primary-lightness': "40%", '--color-accent-hue': "90", '--color-accent-saturation': "50%", '--color-accent-lightness': "65%", '--color-accent-light-hue': "40", '--color-accent-light-saturation': "50%", '--color-accent-light-lightness': "55%" },
+  ocean: { '--font-display': "'Uncial Antiqua', cursive", '--font-body': "'Roboto', sans-serif", '--color-bg-primary': "200 100% 10%", '--color-bg-secondary': "200 80% 18%", '--color-bg-tertiary': "200 70% 25%", '--color-text-primary': "190 70% 95%", '--color-text-secondary': "190 40% 75%", '--color-border': "190 40% 40%", '--color-primary-hue': '180', '--color-primary-saturation': '85%', '--color-primary-lightness': '45%', '--color-accent-hue': '190', '--color-accent-saturation': '80%', '--color-accent-lightness': '60%', '--color-accent-light-hue': '190', '--color-accent-light-saturation': '70%', '--color-accent-light-lightness': '70%' },
+  vulcan: { '--font-display': "'Metamorphous', serif", '--font-body': "'Roboto', sans-serif", '--color-bg-primary': "10 50% 8%", '--color-bg-secondary': "10 40% 12%", '--color-bg-tertiary': "10 35% 18%", '--color-text-primary': "10 10% 90%", '--color-text-secondary': "10 5% 65%", '--color-border': "10 10% 35%", '--color-primary-hue': "0", '--color-primary-saturation': "85%", '--color-primary-lightness': "50%", '--color-accent-hue': "25", '--color-accent-saturation': "90%", '--color-accent-lightness': "60%", '--color-accent-light-hue': "45", '--color-accent-light-saturation': "80%", '--color-accent-light-lightness': "65%" },
+  royal: { '--font-display': "'Uncial Antiqua', cursive", '--font-body': "'Roboto', sans-serif", '--color-bg-primary': "250 40% 10%", '--color-bg-secondary': "250 30% 16%", '--color-bg-tertiary': "250 25% 24%", '--color-text-primary': "250 50% 92%", '--color-text-secondary': "250 25% 70%", '--color-border': "250 20% 40%", '--color-primary-hue': "250", '--color-primary-saturation': "60%", '--color-primary-lightness': "50%", '--color-accent-hue': "45", '--color-accent-saturation': "80%", '--color-accent-lightness': "60%", '--color-accent-light-hue': "45", '--color-accent-light-saturation': "85%", '--color-accent-light-lightness': "70%" },
+  winter: { '--font-display': "'Metamorphous', serif", '--font-body': "'Roboto', sans-serif", '--color-bg-primary': "205 30% 15%", '--color-bg-secondary': "205 25% 22%", '--color-bg-tertiary': "205 20% 30%", '--color-text-primary': "205 60% 95%", '--color-text-secondary': "205 30% 75%", '--color-border': "205 20% 45%", '--color-primary-hue': "205", '--color-primary-saturation': "70%", '--color-primary-lightness': "50%", '--color-accent-hue': "195", '--color-accent-saturation': "80%", '--color-accent-lightness': "65%", '--color-accent-light-hue': "215", '--color-accent-light-saturation': "60%", '--color-accent-light-lightness': "55%" },
+  sunset: { '--font-display': "'MedievalSharp', cursive", '--font-body': "'Roboto', sans-serif", '--color-bg-primary': "20 50% 10%", '--color-bg-secondary': "20 40% 15%", '--color-bg-tertiary': "20 35% 22%", '--color-text-primary': "30 80% 90%", '--color-text-secondary': "30 40% 70%", '--color-border': "30 20% 40%", '--color-primary-hue': "15", '--color-primary-saturation': "90%", '--color-primary-lightness': "60%", '--color-accent-hue': "35", '--color-accent-saturation': "95%", '--color-accent-lightness': "65%", '--color-accent-light-hue': "340", '--color-accent-light-saturation': "80%", '--color-accent-light-lightness': "70%" },
+  cyberpunk: { '--font-display': "'Press Start 2P', cursive", '--font-body': "'Roboto', sans-serif", '--color-bg-primary': "260 50% 5%", '--color-bg-secondary': "280 40% 10%", '--color-bg-tertiary': "300 30% 15%", '--color-text-primary': "320 100% 95%", '--color-text-secondary': "300 50% 75%", '--color-border': "300 30% 35%", '--color-primary-hue': "320", '--color-primary-saturation': "100%", '--color-primary-lightness': "60%", '--color-accent-hue': "180", '--color-accent-saturation': "100%", '--color-accent-lightness': "50%", '--color-accent-light-hue': "55", '--color-accent-light-saturation': "100%", '--color-accent-light-lightness': "50%" },
+  steampunk: { '--font-display': "'IM Fell English SC', serif", '--font-body': "'Roboto', sans-serif", '--color-bg-primary': "30 20% 12%", '--color-bg-secondary': "30 15% 18%", '--color-bg-tertiary': "30 10% 25%", '--color-text-primary': "35 30% 85%", '--color-text-secondary': "35 20% 65%", '--color-border': "35 15% 40%", '--color-primary-hue': "30", '--color-primary-saturation': "60%", '--color-primary-lightness': "50%", '--color-accent-hue': "190", '--color-accent-saturation': "40%", '--color-accent-lightness': "55%", '--color-accent-light-hue': "20", '--color-accent-light-saturation': "30%", '--color-accent-light-lightness': "60%" },
+  parchment: { '--font-display': "'IM Fell English SC', serif", '--font-body': "'Roboto', sans-serif", '--color-bg-primary': "40 30% 85%", '--color-bg-secondary': "40 25% 90%", '--color-bg-tertiary': "40 20% 95%", '--color-text-primary': "35 40% 15%", '--color-text-secondary': "35 30% 35%", '--color-border': "35 20% 70%", '--color-primary-hue': "20", '--color-primary-saturation': "50%", '--color-primary-lightness': "40%", '--color-accent-hue': "0", '--color-accent-saturation': "50%", '--color-accent-lightness': "45%", '--color-accent-light-hue': "10", '--color-accent-light-saturation': "40%", '--color-accent-light-lightness': "50%" },
+  eerie: { '--font-display': "'Metamorphous', serif", '--font-body': "'Roboto', sans-serif", '--color-bg-primary': "120 10% 8%", '--color-bg-secondary': "120 8% 12%", '--color-bg-tertiary': "120 5% 18%", '--color-text-primary': "120 30% 88%", '--color-text-secondary': "120 15% 65%", '--color-border': "120 10% 30%", '--color-primary-hue': "120", '--color-primary-saturation': "40%", '--color-primary-lightness': "45%", '--color-accent-hue': "80", '--color-accent-saturation': "50%", '--color-accent-lightness': "55%", '--color-accent-light-hue': "30", '--color-accent-light-saturation': "40%", '--color-accent-light-lightness': "50%" },
 };
 
+export const INITIAL_THEMES: ThemeDefinition[] = Object.entries(rawThemes).map(([id, styles]) => ({
+  id,
+  name: id.charAt(0).toUpperCase() + id.slice(1),
+  isCustom: false,
+  styles
+}));
+
+export const INITIAL_SETTINGS: AppSettings = {
+    forgivingSetbacks: true,
+    vacationMode: {
+        enabled: false,
+    },
+    questDefaults: {
+        requiresApproval: false,
+        isOptional: false,
+        isActive: true,
+    },
+    security: {
+      quickUserSwitchingEnabled: true,
+      requirePinForUsers: true,
+      requirePasswordForAdmin: true,
+    },
+    theme: 'emerald',
+    terminology: {
+      appName: 'Task Donegeon',
+      task: 'Quest',
+      tasks: 'Quests',
+      recurringTask: 'Duty',
+      recurringTasks: 'Duties',
+      singleTask: 'Venture',
+      singleTasks: 'Ventures',
+      shoppingCenter: 'Marketplace',
+      store: 'Market',
+      stores: 'Markets',
+      history: 'Chronicles',
+      group: 'Guild',
+      groups: 'Guilds',
+      level: 'Rank',
+      levels: 'Ranks',
+      award: 'Trophy',
+      awards: 'Trophies',
+      point: 'Reward',
+      points: 'Rewards',
+      xp: 'XP',
+      currency: 'Currency',
+      negativePoint: 'Setback',
+      negativePoints: 'Setbacks',
+      admin: 'Donegeon Master',
+      moderator: 'Gatekeeper',
+      user: 'Explorer',
+    },
+    enableAiFeatures: true,
+    sidebars: {
+        main: INITIAL_MAIN_SIDEBAR_CONFIG,
+        dataManagement: [
+            { type: 'link', id: 'Object Manager', emoji: '🗂️', isVisible: true, level: 0, role: Role.DonegeonMaster },
+            { type: 'link', id: 'Asset Manager', emoji: '🖼️', isVisible: true, level: 0, role: Role.DonegeonMaster },
+            { type: 'link', id: 'Asset Library', emoji: '📚', isVisible: true, level: 0, role: Role.DonegeonMaster },
+            { type: 'link', id: 'Backup & Import', emoji: '💾', isVisible: true, level: 0, role: Role.DonegeonMaster },
+        ]
+    }
+};
 
 export const INITIAL_TROPHIES: Trophy[] = [
-    // --- Automatic Trophies ---
-    { id: 'auto-trophy-1', name: 'Duty Demon', description: 'Complete 10 Duties.', icon: '😈', isManual: false, requirements: [{ type: TrophyRequirementType.CompleteQuestType, value: QuestType.Duty, count: 10, }] },
-    { id: 'auto-trophy-2', name: 'Venture Capitalist', description: 'Complete 10 Ventures.', icon: '🚀', isManual: false, requirements: [{ type: TrophyRequirementType.CompleteQuestType, value: QuestType.Venture, count: 10, }] },
-    { id: 'auto-trophy-3', name: 'Knighted', description: 'Achieve the rank of Knight.', icon: '🛡️', isManual: false, requirements: [{ type: TrophyRequirementType.AchieveRank, value: 'rank-7', count: 1 }] },
-    { id: 'auto-trophy-4', name: 'Grandmaster', description: 'Achieve the rank of Grandmaster.', icon: '⭐', isManual: false, requirements: [{ type: TrophyRequirementType.AchieveRank, value: 'rank-26', count: 1 }] },
-    { id: 'auto-trophy-5', name: 'Quest Tycoon', description: 'Complete 50 quests total.', icon: '📈', isManual: false, requirements: [{ type: TrophyRequirementType.CompleteQuestType, value: QuestType.Duty, count: 25 }, { type: TrophyRequirementType.CompleteQuestType, value: QuestType.Venture, count: 25 }] },
-    { id: 'auto-trophy-6', name: 'Chore Champion', description: 'Complete 20 quests with the "chore" tag.', icon: '🧼', isManual: false, requirements: [{ type: TrophyRequirementType.CompleteQuestTag, value: 'chore', count: 20 }] },
-    { id: 'auto-trophy-7', name: 'Scholar', description: 'Complete 15 quests with the "learning" tag.', icon: '🎓', isManual: false, requirements: [{ type: TrophyRequirementType.CompleteQuestTag, value: 'learning', count: 15 }] },
-    { id: 'auto-trophy-8', name: 'Iron Will', description: 'Complete 10 quests with the "fitness" tag.', icon: '🏋️', isManual: false, requirements: [{ type: TrophyRequirementType.CompleteQuestTag, value: 'fitness', count: 10 }] },
-    
-    // --- Manual Trophies ---
-    { id: 'manual-trophy-1', name: 'First Quest', description: 'Awarded for completing your very first quest.', icon: '🏆', isManual: true, requirements: [] },
-    { id: 'manual-trophy-2', name: 'Act of Kindness', description: 'Awarded for an outstanding act of kindness or helpfulness.', icon: '❤️', isManual: true, requirements: [] },
-    { id: 'manual-trophy-3', name: 'Creative Genius', description: 'Awarded for a particularly creative solution or idea.', icon: '💡', isManual: true, requirements: [] },
-    { id: 'manual-trophy-4', name: 'Leadership', description: 'Awarded for demonstrating strong leadership qualities.', icon: '👑', isManual: true, requirements: [] },
-    { id: 'manual-trophy-5', name: 'Sportsmanship Award', description: 'Awarded for excellent sportsmanship.', icon: '🏅', isManual: true, requirements: [] },
-    { id: 'manual-trophy-6', name: 'The Strategist', description: 'Awarded for brilliant planning or strategy.', icon: '♟️', isManual: true, requirements: [] },
-    { id: 'manual-trophy-7', name: 'Problem Solver', description: 'Awarded for solving a difficult problem.', icon: '🧩', isManual: true, requirements: [] },
-    { id: 'manual-trophy-8', name: 'Fearless Explorer', description: 'Awarded for trying something new and challenging.', icon: '🧭', isManual: true, requirements: [] },
-    { id: 'manual-trophy-9', name: 'Master Chef', description: 'Awarded for exceptional cooking or help in the kitchen.', icon: '🧑‍🍳', isManual: true, requirements: [] },
-    { id: 'manual-trophy-10', name: 'Green Thumb', description: 'Awarded for excellent work in the garden or with plants.', icon: '🌱', isManual: true, requirements: [] },
-    { id: 'manual-trophy-11', name: 'The Diplomat', description: 'For resolving a conflict with grace and wisdom.', icon: '🤝', isManual: true, requirements: [] },
-    { id: 'manual-trophy-12', name: 'Tech Whiz', description: 'For skillfully fixing a technical issue.', icon: '💻', isManual: true, requirements: [] },
-    { id: 'manual-trophy-13', name: 'Perfect Attendance', description: 'For impeccable reliability and showing up on time.', icon: '🗓️', isManual: true, requirements: [] },
-    { id: 'manual-trophy-14', name: 'The Comedian', description: 'For making everyone laugh when they needed it most.', icon: '😂', isManual: true, requirements: [] },
-    { id: 'manual-trophy-15', name: 'Master Collaborator', description: 'For being an exceptional team player.', icon: '🧑‍🤝‍🧑', isManual: true, requirements: [] },
-    { id: 'manual-trophy-16', name: 'Bug Squasher', description: 'For finding and reporting a bug in the app.', icon: '🐞', isManual: true, requirements: [] },
-    { id: 'manual-trophy-17', name: 'The Organizer', description: 'For an impressive feat of tidiness and organization.', icon: '🗂️', isManual: true, requirements: [] },
-    { id: 'manual-trophy-18', name: 'Animal Whisperer', description: 'For showing special care to a pet or animal.', icon: '🐾', isManual: true, requirements: [] },
-    { id: 'manual-trophy-19', name: 'The Mentor', description: 'For patiently teaching someone a new skill.', icon: '👨‍🏫', isManual: true, requirements: [] },
-    { id: 'manual-trophy-20', name: 'Financial Sense', description: 'For making a very wise purchase or saving decision.', icon: '💸', isManual: true, requirements: [] },
-    { id: 'manual-trophy-21', name: 'The Builder', description: 'For constructing something amazing, physically or digitally.', icon: '🏗️', isManual: true, requirements: [] },
-    { id: 'manual-trophy-22', name: 'Good Neighbor', description: 'For helping a neighbor without being asked.', icon: '🏡', isManual: true, requirements: [] },
-    { id: 'manual-trophy-23', name: 'The Artist', description: 'For creating a beautiful piece of art.', icon: '🖼️', isManual: true, requirements: [] },
-    { id: 'manual-trophy-24', name: 'The Musician', description: 'For a wonderful musical performance.', icon: '🎵', isManual: true, requirements: [] },
-    { id: 'manual-trophy-25', name: 'The Pillar', description: 'For being exceptionally strong during a tough time.', icon: '🏛️', isManual: true, requirements: [] },
+    { id: 'trophy-1', name: 'First Quest', description: 'Complete your first quest.', icon: '🎉', isManual: false, requirements: [{type: TrophyRequirementType.CompleteQuestType, value: QuestType.Duty, count: 1}] },
+    { id: 'trophy-2', name: 'Duty-Bound', description: 'Complete 10 Duties.', icon: '🛡️', isManual: false, requirements: [{type: TrophyRequirementType.CompleteQuestType, value: QuestType.Duty, count: 10}] },
+    { id: 'trophy-3', name: 'Venture Forth', description: 'Complete 10 Ventures.', icon: '🗺️', isManual: false, requirements: [{type: TrophyRequirementType.CompleteQuestType, value: QuestType.Venture, count: 10}] },
+    { id: 'trophy-4', name: 'The Janitor', description: 'For exceptional cleanliness.', icon: '🧹', isManual: true, requirements: [] },
+    { id: 'trophy-5', name: 'Bookworm', description: 'Complete 5 learning quests.', icon: '📚', isManual: false, requirements: [{type: TrophyRequirementType.CompleteQuestTag, value: 'learning', count: 5}] },
+    { id: 'trophy-6', name: 'Initiate Rank', description: 'Achieve the rank of Initiate', icon: '🌱', isManual: false, requirements: [{type: TrophyRequirementType.AchieveRank, value: 'rank-2', count: 1}]}
 ];
 
-export const createSampleMarkets = (): Market[] => {
-    return [
-        { id: 'market-tailor', title: "The Tailor's Shop", description: 'Purchase new hairstyles and outfits to customize your avatar.', icon: '👕' },
-        { id: 'market-themes', title: "Lumina Weaver's Atelier", description: "Purchase new visual themes to change the entire look and feel of your Donegeon.", icon: '🎨' },
-        { id: 'market-bank', title: 'Personal Bank of Donegeon', description: 'Exchange your personal currencies here.', icon: '🏦' },
-        { id: 'market-exp', title: 'Personal Hall of Experiences', description: 'Spend your personal Gems on memorable experiences.', icon: '🎬' },
-        { id: 'market-guild', title: 'The Guild Hall Market', description: 'Spend your guild rewards on special items.', icon: '🏛️', guildId: 'guild-default-1' },
-        { id: 'market-gadget', title: "The Gadgeteer's Workshop", description: 'Spend your crystals on screen time and digital goods.', icon: '🎮' },
-        { id: 'market-treasury', title: 'The Treasury of Taste', description: 'Spend guild gold on delicious treats for everyone!', icon: '🍕', guildId: 'guild-default-1' },
-        { id: 'market-blacksmith', title: "The Blacksmith's Forge", description: "Cosmetic tools, weapons, and armor for your avatar.", icon: '⚒️' },
-        { id: 'market-menagerie', title: "The Menagerie", description: 'Adopt virtual pets and companions.', icon: '🦄' },
-        { id: 'market-alchemist', title: "The Alchemist's Lab", description: "Purchase rare and interesting power-ups (coming soon).", icon: '⚗️' },
-    ];
-};
+export const createSampleMarkets = (): Market[] => ([
+  { id: 'market-1', title: 'The Adventurer\'s Sundries', description: 'General goods for the everyday hero.', icon: '🛍️' },
+  { id: 'market-2', title: 'The Treasure Trove', description: 'Rare and valuable items for purchase.', icon: '💎', guildId: 'guild-1' },
+]);
 
-const createBaseQuest = (): Omit<Quest, 'id' | 'claimedByUserIds' | 'dismissals' | 'title' | 'description' | 'type' | 'rewards' | 'lateSetbacks' | 'incompleteSetbacks' | 'icon'> => ({
-    isActive: true,
-    isOptional: false,
-    requiresApproval: false,
-    availabilityType: QuestAvailability.Daily,
-    availabilityCount: null,
-    weeklyRecurrenceDays: [],
-    monthlyRecurrenceDays: [],
-    assignedUserIds: [],
-    tags: [],
-});
+export const createSampleGameAssets = (): GameAsset[] => ([
+    { id: 'ga-1', name: 'Health Potion', description: 'A common potion for healing.', url: 'https://placehold.co/150/ef4444/FFFFFF?text=HP', icon: '🧪', category: 'Item', avatarSlot: undefined, isForSale: true, cost: [{rewardTypeId: 'core-gold', amount: 10}], marketIds: ['market-1'], creatorId: 'user-1', createdAt: new Date().toISOString(), purchaseLimit: null, purchaseCount: 0 },
+    { id: 'ga-2', name: 'Cool Blue Shirt', description: 'A cool blue shirt for your avatar.', url: 'https://placehold.co/150/3b82f6/FFFFFF?text=Shirt', icon: '👕', category: 'Avatar', avatarSlot: 'shirt', isForSale: true, cost: [{rewardTypeId: 'core-gold', amount: 50}], marketIds: ['market-1'], creatorId: 'user-1', createdAt: new Date().toISOString(), purchaseLimit: null, purchaseCount: 0 },
+    { id: 'ga-3', name: 'Guild Banner', description: 'A banner representing the main guild.', url: 'https://placehold.co/150/f97316/FFFFFF?text=Banner', icon: '🚩', category: 'Trophy Display', avatarSlot: undefined, isForSale: true, cost: [{rewardTypeId: 'core-gems', amount: 20}], marketIds: ['market-2'], creatorId: 'user-1', createdAt: new Date().toISOString(), purchaseLimit: 1, purchaseCount: 0 },
+]);
 
-export const createSampleQuests = (): Quest[] => {
-    const quests: Omit<Quest, 'id' | 'claimedByUserIds' | 'dismissals'>[] = [
-        // --- TIMED DAILY DUTIES ---
-        { ...createBaseQuest(), icon: '🛏️', title: "Morning Room Tidy", description: "Make your bed and put away any clothes on the floor before school.", type: QuestType.Duty, rewards: [{ rewardTypeId: 'core-diligence', amount: 5 }], lateSetbacks: [{ rewardTypeId: 'core-crystal', amount: 1 }], incompleteSetbacks: [{ rewardTypeId: 'core-crystal', amount: 3 }], tags: ['chore', 'home', 'daily', 'morning'], lateTime: '08:00', incompleteTime: '12:00' },
-        { ...createBaseQuest(), icon: '🎒', title: "Evening Bag Prep", description: "Pack your school bag for tomorrow and place it by the door.", type: QuestType.Duty, rewards: [{ rewardTypeId: 'core-wisdom', amount: 5 }], lateSetbacks: [{ rewardTypeId: 'core-crystal', amount: 2 }], incompleteSetbacks: [], tags: ['chore', 'school', 'daily', 'evening'], lateTime: '20:00' },
+export const createInitialGuilds = (users: User[]): Guild[] => ([
+  { id: 'guild-1', name: 'The Vanguard', purpose: 'The primary guild for all adventurers.', memberIds: users.map(u => u.id), isDefault: true },
+]);
 
-        // --- UNTIMED DUTIES ---
-        { ...createBaseQuest(), icon: '🍎', title: "Empty Your Lunchbox", description: "Take out all containers and trash from your lunchbox after school.", type: QuestType.Duty, rewards: [{ rewardTypeId: 'core-crystal', amount: 2 }], lateSetbacks: [], incompleteSetbacks: [], tags: ['chore', 'daily'] },
-        { ...createBaseQuest(), icon: '📚', title: "Read for 20 Minutes", description: "Read a book of your choice for at least 20 minutes.", type: QuestType.Duty, rewards: [{ rewardTypeId: 'core-wisdom', amount: 10 }], lateSetbacks: [], incompleteSetbacks: [], tags: ['learning', 'daily'] },
-        { ...createBaseQuest(), icon: '🍽️', title: "Clear Your Dishes", description: "After eating, bring your plate, cup, and utensils to the kitchen.", type: QuestType.Duty, rewards: [{ rewardTypeId: 'core-diligence', amount: 3 }], lateSetbacks: [], incompleteSetbacks: [], tags: ['chore', 'daily', 'kitchen'] },
-        { ...createBaseQuest(), icon: '🦷', title: "Brush Your Teeth", description: "Brush your teeth in the morning and evening.", type: QuestType.Duty, rewards: [{ rewardTypeId: 'core-diligence', amount: 2 }], lateSetbacks: [], incompleteSetbacks: [], tags: ['health', 'daily'] },
-        { ...createBaseQuest(), icon: '💧', title: "Drink a Full Glass of Water", description: "Stay hydrated by drinking a full glass of water upon waking up.", type: QuestType.Duty, rewards: [{ rewardTypeId: 'core-strength', amount: 1 }], lateSetbacks: [], incompleteSetbacks: [], tags: ['health', 'daily', 'morning'] },
-        { ...createBaseQuest(), icon: '👟', title: "Put Away Your Shoes", description: "When you come inside, take off your shoes and put them where they belong.", type: QuestType.Duty, rewards: [{ rewardTypeId: 'core-diligence', amount: 2 }], lateSetbacks: [], incompleteSetbacks: [], tags: ['chore', 'daily'] },
-        { ...createBaseQuest(), icon: '🎹', title: "Practice Your Instrument", description: "Practice your musical instrument for 15 minutes.", type: QuestType.Duty, rewards: [{ rewardTypeId: 'core-skill', amount: 15 }], lateSetbacks: [], incompleteSetbacks: [], tags: ['learning', 'daily', 'music'] },
-        { ...createBaseQuest(), icon: '🤔', title: "Daily Journal Entry", description: "Write one sentence in your journal about your day.", type: QuestType.Duty, rewards: [{ rewardTypeId: 'core-creative', amount: 5 }], lateSetbacks: [], incompleteSetbacks: [], tags: ['creative', 'daily'] },
-        
-        // --- WEEKLY DUTIES ---
-        { ...createBaseQuest(), icon: '🌿', title: "Water the Plants", description: "Check and water all the indoor plants.", type: QuestType.Duty, rewards: [{ rewardTypeId: 'core-diligence', amount: 10 }], lateSetbacks: [], incompleteSetbacks: [], availabilityType: QuestAvailability.Weekly, weeklyRecurrenceDays: [3, 6], requiresApproval: true, tags: ['chore', 'home', 'weekly'] },
-        { ...createBaseQuest(), icon: '🗑️', title: "Take Out the Trash & Recycling", description: "Gather all trash and recycling and take it to the curb.", type: QuestType.Duty, rewards: [{ rewardTypeId: 'core-strength', amount: 10 }], lateSetbacks: [], incompleteSetbacks: [], availabilityType: QuestAvailability.Weekly, weeklyRecurrenceDays: [2], guildId: 'guild-default-1', tags: ['chore', 'weekly', 'guild'] },
-        { ...createBaseQuest(), icon: '⚽', title: "Attend Sports Practice", description: "Go to your scheduled sports practice and give it your best effort.", type: QuestType.Duty, rewards: [{ rewardTypeId: 'core-skill', amount: 20 }], lateSetbacks: [], incompleteSetbacks: [], availabilityType: QuestAvailability.Weekly, weeklyRecurrenceDays: [1, 4], tags: ['fitness', 'weekly', 'sports'] },
-        { ...createBaseQuest(), icon: '🛒', title: "Help with Groceries", description: "Help bring in and put away the groceries.", type: QuestType.Duty, rewards: [{ rewardTypeId: 'core-strength', amount: 5 }], lateSetbacks: [], incompleteSetbacks: [], availabilityType: QuestAvailability.Weekly, weeklyRecurrenceDays: [5], tags: ['chore', 'weekly'] },
-        
-        // --- TIMED VENTURES ---
-        { ...createBaseQuest(), icon: '🍁', guildId: 'guild-default-1', title: "The Great Yard Crusade", description: "Work together to rake all the leaves in the front yard before the weekend is over.", type: QuestType.Venture, rewards: [{ rewardTypeId: 'core-strength', amount: 30 }, { rewardTypeId: 'core-gold', amount: 5 }], lateSetbacks: [{ rewardTypeId: 'core-gold', amount: 1 }], incompleteSetbacks: [{ rewardTypeId: 'core-gold', amount: 3 }], availabilityType: QuestAvailability.Unlimited, requiresApproval: true, lateDateTime: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(), incompleteDateTime: new Date(Date.now() + 4 * 24 * 60 * 60 * 1000).toISOString(), tags: ['chore', 'outdoors', 'guild'] },
-        { ...createBaseQuest(), icon: '🔬', title: "Science Fair Project", description: "Finish the research and build the display for the science fair.", type: QuestType.Venture, rewards: [{ rewardTypeId: 'core-wisdom', amount: 50 }, { rewardTypeId: 'core-gems', amount: 10 }], lateSetbacks: [], incompleteSetbacks: [{ rewardTypeId: 'core-gems', amount: 5 }], availabilityType: QuestAvailability.Unlimited, requiresApproval: true, lateDateTime: undefined, incompleteDateTime: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(), tags: ['learning', 'school', 'project'] },
-        
-        // --- PRE-FAILED QUESTS FOR DEMO ---
-        { ...createBaseQuest(), icon: '📦', title: "Sort the Storage Room (INCOMPLETE)", description: "This quest was not completed in time and is now marked incomplete.", type: QuestType.Venture, rewards: [{ rewardTypeId: 'core-diligence', amount: 50 }], lateSetbacks: [], incompleteSetbacks: [{ rewardTypeId: 'core-diligence', amount: 10 }], availabilityType: QuestAvailability.Unlimited, requiresApproval: true, lateDateTime: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(), incompleteDateTime: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(), tags: ['chore', 'organizing', 'demo'] },
-        { ...createBaseQuest(), icon: '🐶', title: "Walk the Dog (LATE)", description: "This daily quest is now late! Complete it before it's too late.", type: QuestType.Duty, rewards: [{ rewardTypeId: 'core-strength', amount: 5 }], lateSetbacks: [{ rewardTypeId: 'core-crystal', amount: 5 }], incompleteSetbacks: [{ rewardTypeId: 'core-crystal', amount: 10 }], tags: ['chore', 'pet', 'daily', 'demo'], lateTime: new Date(Date.now() - 2 * 60 * 60 * 1000).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false }), incompleteTime: new Date(Date.now() + 2 * 60 * 60 * 1000).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false }) },
-        
-        // --- UNTIMED VENTURES ---
-        { ...createBaseQuest(), icon: '💌', title: "Write a Thank You Note", description: "Write a thoughtful thank you note to a family member or friend.", type: QuestType.Venture, availabilityType: QuestAvailability.Unlimited, rewards: [{ rewardTypeId: 'core-gems', amount: 5 }], lateSetbacks: [], incompleteSetbacks: [], isOptional: true, tags: ['social', 'kindness'] },
-        { ...createBaseQuest(), icon: '🧱', title: "Build a LEGO Masterpiece", description: "Create something amazing out of LEGOs and show it off.", type: QuestType.Venture, availabilityType: QuestAvailability.Unlimited, rewards: [{ rewardTypeId: 'core-creative', amount: 10 }], lateSetbacks: [], incompleteSetbacks: [], requiresApproval: true, tags: ['creative', 'play'] },
-        { ...createBaseQuest(), icon: '🎲', guildId: 'guild-default-1', title: "Organize the Game Cabinet", description: "Team up to sort and organize all board games and video games.", type: QuestType.Venture, rewards: [{ rewardTypeId: 'core-diligence', amount: 20 }, { rewardTypeId: 'core-gems', amount: 2 }], lateSetbacks: [], incompleteSetbacks: [], availabilityType: QuestAvailability.Unlimited, tags: ['organizing', 'guild'] },
-        { ...createBaseQuest(), icon: '🚲', title: "Bike Ride Adventure", description: "Go for a 30-minute bike ride around the neighborhood or on a trail.", type: QuestType.Venture, availabilityType: QuestAvailability.Unlimited, rewards: [{ rewardTypeId: 'core-strength', amount: 15 }], lateSetbacks: [], incompleteSetbacks: [], tags: ['fitness', 'outdoors'] },
-        { ...createBaseQuest(), icon: '🤝', title: "Help a Sibling", description: "Offer to help a sibling with one of their chores or with their homework.", type: QuestType.Venture, availabilityType: QuestAvailability.Unlimited, rewards: [{ rewardTypeId: 'core-gems', amount: 10 }], lateSetbacks: [], incompleteSetbacks: [], tags: ['social', 'kindness', 'home'] },
-        { ...createBaseQuest(), icon: '🧑‍🍳', title: "Cook a Meal", description: "Help plan and cook a meal for the family.", type: QuestType.Venture, rewards: [{ rewardTypeId: 'core-skill', amount: 25 }, { rewardTypeId: 'core-diligence', amount: 10 }], lateSetbacks: [], incompleteSetbacks: [], requiresApproval: true, tags: ['chore', 'home', 'kitchen'] },
-        { ...createBaseQuest(), icon: '🧹', title: "Deep Clean Your Room", description: "Do a thorough cleaning of your room: dust, vacuum, and organize.", type: QuestType.Venture, availabilityType: QuestAvailability.Unlimited, rewards: [{ rewardTypeId: 'core-diligence', amount: 40 }], lateSetbacks: [], incompleteSetbacks: [], tags: ['chore', 'organizing'] },
-        { ...createBaseQuest(), icon: '🌳', title: "Plant Something", description: "Plant a flower, herb, or vegetable in the garden.", type: QuestType.Venture, availabilityType: QuestAvailability.Unlimited, rewards: [{ rewardTypeId: 'core-creative', amount: 15 }], lateSetbacks: [], incompleteSetbacks: [], tags: ['outdoors', 'creative'] },
-        { ...createBaseQuest(), icon: '🗺️', title: "Plan a Family Outing", description: "Research and plan a fun, low-cost outing for the family.", type: QuestType.Venture, availabilityType: QuestAvailability.Unlimited, rewards: [{ rewardTypeId: 'core-wisdom', amount: 20 }], lateSetbacks: [], incompleteSetbacks: [], tags: ['social', 'planning'] },
-        { ...createBaseQuest(), icon: '💻', title: "Learn a New Skill Online", description: "Complete a tutorial for a new software, language, or skill (e.g., coding, photo editing).", type: QuestType.Venture, availabilityType: QuestAvailability.Unlimited, rewards: [{ rewardTypeId: 'core-skill', amount: 30 }], lateSetbacks: [], incompleteSetbacks: [], tags: ['learning', 'tech'] },
-        { ...createBaseQuest(), icon: '🎨', title: "Create a Piece of Art", description: "Draw, paint, or sculpt a piece of original artwork.", type: QuestType.Venture, availabilityType: QuestAvailability.Unlimited, rewards: [{ rewardTypeId: 'core-creative', amount: 20 }], lateSetbacks: [], incompleteSetbacks: [], requiresApproval: true, tags: ['creative', 'art'] },
-        { ...createBaseQuest(), icon: '🏃', title: "Run a 5K", description: "Train for and complete a 5K run.", type: QuestType.Venture, availabilityType: QuestAvailability.Unlimited, rewards: [{ rewardTypeId: 'core-strength', amount: 100 }], lateSetbacks: [], incompleteSetbacks: [], tags: ['fitness', 'milestone'] },
-        { ...createBaseQuest(), icon: '🤖', title: "Build a Simple Robot", description: "Use a kit or online guide to build and program a simple robot.", type: QuestType.Venture, availabilityType: QuestAvailability.Unlimited, rewards: [{ rewardTypeId: 'core-skill', amount: 50 }], lateSetbacks: [], incompleteSetbacks: [], requiresApproval: true, tags: ['tech', 'learning'] },
-        { ...createBaseQuest(), icon: '🧺', title: "Do a Load of Laundry", description: "Wash, dry, fold, and put away one full load of your own laundry.", type: QuestType.Venture, rewards: [{ rewardTypeId: 'core-diligence', amount: 15 }], lateSetbacks: [], incompleteSetbacks: [], tags: ['chore', 'home'] },
-    ];
-    
-    return quests.map((q, index) => ({
-        ...q,
-        id: `quest-sample-${index + 1}`,
-        claimedByUserIds: [],
-        dismissals: [],
-    }));
-};
-
-export const createSampleGameAssets = (): GameAsset[] => {
-    const assets: Omit<GameAsset, 'id' | 'creatorId' | 'createdAt'>[] = [
-        // Avatar Items
-        { name: 'Basic Shirt', description: 'A simple, clean shirt.', url: 'https://via.placeholder.com/150/22c55e/FFFFFF?text=Shirt', category: 'Avatar', avatarSlot: 'shirt', isForSale: true, cost: [{ rewardTypeId: 'core-crystal', amount: 20 }], marketIds: ['market-tailor'], purchaseLimit: null, purchaseCount: 0 },
-        { name: 'Sturdy Trousers', description: 'Practical trousers for adventuring.', url: 'https://via.placeholder.com/150/78716c/FFFFFF?text=Pants', category: 'Avatar', avatarSlot: 'pants', isForSale: true, cost: [{ rewardTypeId: 'core-crystal', amount: 20 }], marketIds: ['market-tailor'], purchaseLimit: null, purchaseCount: 0 },
-        { name: 'Wizard Hat', description: 'A pointy hat for the magically inclined.', url: 'https://via.placeholder.com/150/7c3aed/FFFFFF?text=Hat', category: 'Avatar', avatarSlot: 'hat', isForSale: true, cost: [{ rewardTypeId: 'core-crystal', amount: 50 }], marketIds: ['market-tailor', 'market-blacksmith'], purchaseLimit: 10, purchaseCount: 0 },
-        { name: 'Leather Boots', description: 'Durable boots for any terrain.', url: 'https://via.placeholder.com/150/a16207/FFFFFF?text=Boots', category: 'Avatar', avatarSlot: 'feet', isForSale: true, cost: [{ rewardTypeId: 'core-crystal', amount: 30 }], marketIds: ['market-tailor'], purchaseLimit: null, purchaseCount: 0 },
-        { name: 'Iron Sword', description: 'A trusty sword. (Cosmetic)', url: 'https://via.placeholder.com/150/9ca3af/FFFFFF?text=Sword', category: 'Avatar', avatarSlot: 'hand-right', isForSale: true, cost: [{ rewardTypeId: 'core-gold', amount: 10 }], marketIds: ['market-blacksmith'], purchaseLimit: 5, purchaseCount: 0 },
-        { name: 'Wooden Shield', description: 'A simple but effective shield. (Cosmetic)', url: 'https://via.placeholder.com/150/854d0e/FFFFFF?text=Shield', category: 'Avatar', avatarSlot: 'hand-left', isForSale: true, cost: [{ rewardTypeId: 'core-gold', amount: 8 }], marketIds: ['market-blacksmith'], purchaseLimit: 5, purchaseCount: 0 },
-        
-        // Themes
-        { name: 'Arcane Theme', description: 'A mystical theme of purple and gold.', url: 'https://via.placeholder.com/150/8b5cf6/FFFFFF?text=Arcane', category: 'Theme', isForSale: true, cost: [{ rewardTypeId: 'core-gems', amount: 25 }], marketIds: ['market-themes'], purchaseLimit: 1, purchaseCount: 0 },
-        { name: 'Forest Theme', description: 'A natural theme of greens and browns.', url: 'https://via.placeholder.com/150/166534/FFFFFF?text=Forest', category: 'Theme', isForSale: true, cost: [{ rewardTypeId: 'core-gems', amount: 25 }], marketIds: ['market-themes'], purchaseLimit: 1, purchaseCount: 0 },
-        { name: 'Cyberpunk Theme', description: 'A futuristic theme of neon pink and blue.', url: 'https://via.placeholder.com/150/ec4899/FFFFFF?text=Cyber', category: 'Theme', isForSale: true, cost: [{ rewardTypeId: 'core-gems', amount: 50 }], marketIds: ['market-themes'], purchaseLimit: 1, purchaseCount: 0 },
-
-        // Consumables / Real World
-        { name: '30 Mins Screen Time', description: 'A voucher for 30 minutes of video games or TV.', url: 'https://via.placeholder.com/150/3b82f6/FFFFFF?text=30m', category: 'Real-World Reward', isForSale: true, cost: [{ rewardTypeId: 'core-crystal', amount: 30 }], marketIds: ['market-gadget'], purchaseLimit: null, purchaseCount: 0 },
-        { name: 'Choose the Movie', description: 'You get to pick the movie for the next family movie night.', url: 'https://via.placeholder.com/150/f97316/FFFFFF?text=Movie', category: 'Real-World Reward', isForSale: true, cost: [{ rewardTypeId: 'core-gems', amount: 20 }], marketIds: ['market-exp'], purchaseLimit: 5, purchaseCount: 0 },
-        { name: 'Pizza Night', description: 'The guild gets to order pizza!', url: 'https://via.placeholder.com/150/ef4444/FFFFFF?text=Pizza', category: 'Real-World Reward', isForSale: true, cost: [{ rewardTypeId: 'core-gold', amount: 20 }], marketIds: ['market-treasury'], purchaseLimit: null, purchaseCount: 0 },
-        { name: 'Ice Cream Trip', description: 'A family trip to get ice cream.', url: 'https://via.placeholder.com/150/f472b6/FFFFFF?text=Ice+Cream', category: 'Real-World Reward', isForSale: true, cost: [{ rewardTypeId: 'core-gold', amount: 10 }], marketIds: ['market-bank'], purchaseLimit: null, purchaseCount: 0 },
-    ];
-    
-    return assets.map((asset, i) => ({
-        ...asset,
-        id: `g-asset-sample-${i}`,
-        creatorId: 'system',
-        createdAt: new Date().toISOString(),
-    }));
-};
-
-export const createInitialGuilds = (allUsers: User[]): Guild[] => {
-    const dm = allUsers.find(u => u.role === Role.DonegeonMaster);
-    if (dm) {
-        return [{
-            id: 'guild-default-1',
-            name: `${dm.firstName}'s Guild`,
-            purpose: 'The main guild for all adventurers.',
-            memberIds: allUsers.map(u => u.id),
-            isDefault: true
-        }];
-    }
-    return [];
-}
+export const createSampleQuests = (): Quest[] => ([
+  {
+    id: 'quest-1', title: 'Morning Bed Making', description: 'Make your bed every morning.', type: QuestType.Duty, icon: '🛏️', tags: ['chore', 'morning'],
+    rewards: [{ rewardTypeId: 'core-diligence', amount: 5 }], lateSetbacks: [], incompleteSetbacks: [{ rewardTypeId: 'core-gems', amount: 1 }],
+    isActive: true, isOptional: false, availabilityType: QuestAvailability.Daily, availabilityCount: null, weeklyRecurrenceDays: [], monthlyRecurrenceDays: [],
+    assignedUserIds: [], requiresApproval: false, claimedByUserIds: [], dismissals: [], lateTime: '09:00', incompleteTime: '12:00'
+  },
+  {
+    id: 'quest-2', title: 'Clean Your Room', description: 'Clean your room once a week.', type: QuestType.Duty, icon: '🧹', tags: ['chore', 'weekly'],
+    rewards: [{ rewardTypeId: 'core-diligence', amount: 25 }], lateSetbacks: [{ rewardTypeId: 'core-gems', amount: 2 }], incompleteSetbacks: [{ rewardTypeId: 'core-gems', amount: 5 }],
+    isActive: true, isOptional: false, availabilityType: QuestAvailability.Weekly, availabilityCount: null, weeklyRecurrenceDays: [6], monthlyRecurrenceDays: [],
+    assignedUserIds: [], requiresApproval: true, claimedByUserIds: [], dismissals: []
+  },
+  {
+    id: 'quest-3', title: 'Read a Book', description: 'Read a book for 30 minutes.', type: QuestType.Venture, icon: '📚', tags: ['learning'],
+    rewards: [{ rewardTypeId: 'core-wisdom', amount: 15 }], lateSetbacks: [], incompleteSetbacks: [],
+    isActive: true, isOptional: true, availabilityType: QuestAvailability.Unlimited, availabilityCount: null, weeklyRecurrenceDays: [], monthlyRecurrenceDays: [],
+    assignedUserIds: [], requiresApproval: false, claimedByUserIds: [], dismissals: []
+  },
+  {
+    id: 'quest-4', title: 'Take out the Trash', description: 'Take out the kitchen trash when it is full.', type: QuestType.Venture, icon: '🗑️', tags: ['chore'],
+    rewards: [{ rewardTypeId: 'core-diligence', amount: 5 }], lateSetbacks: [], incompleteSetbacks: [],
+    isActive: true, isOptional: false, availabilityType: QuestAvailability.Frequency, availabilityCount: 1, weeklyRecurrenceDays: [], monthlyRecurrenceDays: [],
+    assignedUserIds: [], requiresApproval: true, claimedByUserIds: [], dismissals: [], guildId: 'guild-1'
+  }
+]);

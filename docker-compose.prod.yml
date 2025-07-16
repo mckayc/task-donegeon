@@ -1,63 +1,70 @@
-# -----------------------------------------------------------------
-# DOCKER-COMPOSE FOR PRODUCTION
-#
-# This file is intended for deploying the application on a server.
-# It uses a pre-built image from Docker Hub and runs it alongside
-# a persistent database container.
-#
-# To run: docker-compose -f docker-compose.prod.yml up -d
-# -----------------------------------------------------------------
-version: '3.8'
+# docker-compose.prod.yml
+# This file is for deploying the pre-built image from Docker Hub in a production-like environment.
+# It ensures stability by using the tested image and separates concerns from local development.
+# ---
+# To Run:
+# 1. Make sure you have a .env file with all necessary production variables.
+# 2. Run the command: docker-compose -f docker-compose.prod.yml up -d
 
 services:
-  # The PostgreSQL Database Service
-  db:
-    image: postgres:15-alpine
-    container_name: task-donegeon-db-prod
-    restart: unless-stopped
-    volumes:
-      # This ensures your database data persists even if the container is removed.
-      - postgres_data:/var/lib/postgresql/data
-    environment:
-      # These variables MUST match the ones used in the 'app' service below.
-      POSTGRES_DB: ${POSTGRES_DB:-taskdonegeon}
-      POSTGRES_USER: ${POSTGRES_USER:-donegeon_master}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?err_postgres_password_is_not_set}
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-  # The Task Donegeon Application Service
   app:
-    # This pulls the pre-built image. You can replace this with your own image.
+    # Pulls the latest pre-built image from your Docker Hub repository.
+    # This is much faster and more reliable for deployment than building from source.
     image: mckayc/task-donegeon:latest
     container_name: task-donegeon-app-prod
     restart: unless-stopped
     ports:
-      # Exposes the app on port 3002 of the host machine.
+      # Maps port 3002 on the host machine to port 3001 inside the container.
       - "3002:3001"
-    volumes:
-      # Mounts the local uploads folder for persistent file storage.
-      - ./uploads:/usr/src/app/backend/uploads
+    # Ensures the database container is healthy and ready before starting the app.
     depends_on:
       db:
         condition: service_healthy
+    # Passes environment variables to the application.
+    # These MUST be set on the host machine or in a .env file in the same directory.
     environment:
-      # Ensure this matches the 'db' service credentials.
-      DATABASE_URL: "postgres://${POSTGRES_USER:-donegeon_master}:${POSTGRES_PASSWORD:?err_postgres_password_is_not_set}@db:5432/${POSTGRES_DB:-taskdonegeon}"
-      
-      # Set Node environment to production.
-      NODE_ENV: production
-      PORT: 3001
+      - DATABASE_URL=postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+      - NODE_ENV=production
+      - API_KEY=${API_KEY}
+      - STORAGE_PROVIDER=${STORAGE_PROVIDER}
+      # If using Supabase for storage in production, uncomment and set these:
+      # - SUPABASE_URL=${SUPABASE_URL}
+      # - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
+    networks:
+      - donegeon_network
+    volumes:
+      # IMPORTANT: We DO NOT mount the source code here to ensure the container uses its own baked-in code.
+      # We ONLY mount the 'uploads' directory to persist user-uploaded files.
+      - ./uploads:/app/uploads
 
-      # Storage provider must be 'local' for this setup.
-      STORAGE_PROVIDER: local
-      
-      # Pass the Gemini API Key from your host's .env file.
-      API_KEY: ${API_KEY}
+  db:
+    image: postgres:15-alpine
+    container_name: task-donegeon-db-prod
+    restart: unless-stopped
+    ports:
+      # Maps port 5433 on the host to port 5432 in the container to avoid conflicts.
+      - "5433:5432"
+    environment:
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+    volumes:
+      # Persists all database data in a named volume on the host machine.
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      # Checks if the database is ready to accept connections before starting the app.
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - donegeon_network
 
 volumes:
-  # Defines the named volume for persistent database storage.
+  # Defines a named volume for the database to ensure data persistence.
   postgres_data:
+
+networks:
+  # Defines the custom bridge network for the services to communicate.
+  donegeon_network:
+    driver: bridge

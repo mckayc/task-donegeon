@@ -1,44 +1,61 @@
-# === Stage 1: Build the React Frontend ===
-# Use a Node.js image as a base for building
-FROM node:18-alpine AS builder
+# -----------------------------------------------------------------
+# DOCKERFILE FOR BUILDING THE PRODUCTION IMAGE
+#
+# This uses a multi-stage build to create a small, optimized image.
+# Stage 1: Builds the React frontend and prepares backend files.
+# Stage 2: Creates the final image with only production dependencies.
+# -----------------------------------------------------------------
 
-# Set the working directory inside the container
-WORKDIR /app
+# --- Stage 1: Build Stage ---
+    FROM node:20-alpine AS build
 
-# Copy package.json to leverage Docker layer caching
-COPY package.json ./
-
-# Install frontend dependencies
-RUN npm install
-
-# Copy the rest of the frontend source code
-COPY . .
-
-# Build the frontend for production
-RUN npm run build
-
-# === Stage 2: Create the Final Production Image ===
-# Use a lean Node.js image for the final container
-FROM node:18-alpine
-
-# Set the working directory
-WORKDIR /app
-
-# Copy over the built frontend from the 'builder' stage
-COPY --from=builder /app/dist ./dist
-
-# Copy the backend's package.json
-COPY backend/package.json ./backend/
-
-# Change to the backend directory and install only production dependencies
-WORKDIR /app/backend
-RUN npm install --only=production
-
-# Copy the backend source code
-COPY backend/server.js ./
-
-# Expose the port the backend server runs on
-EXPOSE 3001
-
-# The command to run the backend server when the container starts
-CMD ["node", "server.js"]
+    # Set the working directory
+    WORKDIR /usr/src/app
+    
+    # Copy root and backend package.json files
+    COPY package.json ./
+    COPY backend/package.json ./backend/
+    
+    # Install root (frontend) dependencies
+    RUN npm install
+    
+    # Install backend dependencies
+    RUN npm install --prefix backend
+    
+    # Copy all source code
+    COPY . .
+    
+    # Build the React frontend
+    RUN npm run build
+    
+    # --- Stage 2: Production Stage ---
+    FROM node:20-alpine
+    
+    # Set the working directory
+    WORKDIR /usr/src/app
+    
+    # Copy package.json files for production install
+    COPY package.json ./
+    COPY backend/package.json ./backend/
+    
+    # Install ONLY production dependencies for a smaller image size
+    RUN npm install --omit=dev
+    RUN npm install --prefix backend --omit=dev
+    
+    # Copy the built frontend static files from the build stage
+    COPY --from=build /usr/src/app/dist ./dist
+    
+    # Copy the backend source code from the build stage
+    COPY --from=build /usr/src/app/backend ./backend
+    
+    # Copy metadata.json
+    COPY --from=build /usr/src/app/metadata.json ./
+    
+    # Ensure the uploads directory exists
+    RUN mkdir -p /usr/src/app/backend/uploads
+    
+    # Expose the port the backend server will run on
+    EXPOSE 3001
+    
+    # Command to run the application
+    CMD [ "node", "backend/server.js" ]

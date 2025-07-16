@@ -354,7 +354,7 @@ const Dashboard: React.FC = () => {
                     onClose={() => setSelectedQuest(null)}
                     onComplete={() => handleStartCompletion(selectedQuest)}
                     onToggleTodo={() => handleToggleTodo(selectedQuest)}
-                    isTodo={currentUser && selectedQuest.type === QuestType.Venture && selectedQuest.todoUserIds?.includes(currentUser.id)}
+                    isTodo={!!(currentUser && selectedQuest.type === QuestType.Venture && selectedQuest.todoUserIds?.includes(currentUser.id))}
                 />
             )}
             {completingQuest && (

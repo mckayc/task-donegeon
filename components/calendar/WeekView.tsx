@@ -74,7 +74,7 @@ const WeekView: React.FC<WeekViewProps> = ({ currentDate, quests, questCompletio
                     onClose={() => setSelectedQuest(null)}
                     onComplete={() => handleStartCompletion(selectedQuest.quest, selectedQuest.date)}
                     onToggleTodo={handleToggleTodo}
-                    isTodo={currentUser && selectedQuest.quest.todoUserIds?.includes(currentUser.id)}
+                    isTodo={!!(currentUser && selectedQuest.quest.todoUserIds?.includes(currentUser.id))}
                 />
             )}
             {completingQuest && (

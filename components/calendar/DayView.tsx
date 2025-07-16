@@ -70,7 +70,7 @@ const DayView: React.FC<DayViewProps> = ({ currentDate, quests, questCompletions
                     onClose={() => setSelectedQuest(null)}
                     onComplete={() => handleStartCompletion(selectedQuest)}
                     onToggleTodo={handleToggleTodo}
-                    isTodo={currentUser && selectedQuest.type === QuestType.Venture && selectedQuest.todoUserIds?.includes(currentUser.id)}
+                    isTodo={!!(currentUser && selectedQuest.type === QuestType.Venture && selectedQuest.todoUserIds?.includes(currentUser.id))}
                 />
             )}
             {completingQuest && (

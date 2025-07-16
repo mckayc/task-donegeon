@@ -1,4 +1,5 @@
 
+
 import React, { useState, useRef } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { ThemeDefinition } from '../../types';
@@ -111,8 +112,7 @@ const ThemeEditorPage: React.FC = () => {
 
     return (
         <div className="space-y-8">
-            <div className="flex justify-between items-center">
-                <h1 className="text-4xl font-medieval text-stone-100">Theme Editor</h1>
+            <div className="flex justify-end items-center mb-8">
                 <div className="flex gap-2">
                     <Button variant="secondary" onClick={handleImportClick}>Import Theme</Button>
                     <Button onClick={handleCreate}>Create New Theme</Button>

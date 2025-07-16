@@ -1,7 +1,7 @@
 # Task Donegeon
 
-**Version:** 0.0.52
-**Last Updated:** 2025-06-01T10:00:00Z
+**Version:** 0.0.55
+**Last Updated:** 2025-06-04T10:00:00Z
 
 ---
 
@@ -20,8 +20,9 @@ Task Donegeon is a gamified task and chore management application designed for f
 -   **Direct Login:** The application starts on a master password screen, ensuring the game world is secure from the start.
 -   **Refined UI/UX:** Moved the rewards display out of the header and next to the page title for better contextual awareness.
 -   **Hybrid PIN Entry:** A streamlined PIN login screen with both a standard text input for keyboards and an on-screen keypad for touch devices.
+-   **Fullscreen Toggle:** A new button in the header allows users to enter and exit fullscreen mode, perfect for tablet and kiosk use.
 -   **Enhanced Security & Login:** Features persistent login sessions, a quick user-switching bar, and configurable PIN/password requirements for different user roles.
--   **Local Image Gallery:** Admins can now manage a local image gallery by simply dropping files into an `uploads` folder. The app automatically categorizes them by filename for easy use.
+-   **Flexible Image Support:** The app supports standard web image formats, including `PNG`, `JPG`, `GIF`, `SVG`, and modern `WebP` files. Admins can manage a local image gallery by simply dropping files into an `uploads` folder, and the app automatically categorizes them by filename for easy use.
 -   **Secure AI-Powered Features:** Includes an "AI Studio" for generating quests, items, trophies, and more, powered by a secure backend proxy using the Gemini API.
 -   **Advanced Calendar:** Features interactive Month, Week, and Day views for better planning and task management.
 -   **Session-Based Master Lock:** The application is locked upon first visit and requires an admin password to unlock for the session.
@@ -51,6 +52,7 @@ This phase focuses on high-impact improvements for admins and players that enhan
 This phase introduces major new creative outlets and systems for deeper engagement.
 
 -   **Theme Creator:** An admin tool to create and edit custom visual themes (colors, fonts, etc.) that can be sold in a market.
+-   **User-Created Content:** A system allowing Explorers to design their own quests and items, then submit them to admins for approval. This fosters creativity and allows the game world to be co-created by its members.
 -   **Reward Rarity & Limits:** Ability to specify how many of a certain reward can be claimed, creating rare or one-of-a-kind items.
 -   **Automated Quest Rotation:** A system for automatically rotating daily or weekly duties among guild members to ensure fair distribution of chores.
 

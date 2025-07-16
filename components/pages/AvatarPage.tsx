@@ -1,4 +1,5 @@
 
+
 import React, { useMemo, useState } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import Avatar from '../ui/Avatar';
@@ -43,7 +44,6 @@ const AvatarPage: React.FC = () => {
 
     return (
         <div>
-            <h1 className="text-4xl font-medieval text-stone-100 mb-8">Customize Your Avatar</h1>
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 <div className="lg:col-span-1 flex items-center justify-center">
                     <div className="w-64 h-64 md:w-80 md:h-80">

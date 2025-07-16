@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { Role, User } from '../../types';
@@ -7,7 +6,7 @@ import Input from '../ui/Input';
 
 const AppLockScreen: React.FC = () => {
   const { users, settings } = useAppState();
-  const { setAppUnlocked } = useAppDispatch();
+  const { setAppUnlocked, setCurrentUser } = useAppDispatch();
   
   const adminUsers = useMemo(() => users.filter(u => u.role === Role.DonegeonMaster), [users]);
 
@@ -25,8 +24,9 @@ const AppLockScreen: React.FC = () => {
     const isValidPassword = admin && admin.password === password;
 
     setTimeout(() => { // Simulate network delay slightly
-        if (isValidPassword) {
+        if (isValidPassword && admin) {
             setAppUnlocked(true);
+            setCurrentUser(admin);
         } else {
             setError('Incorrect Master Password.');
             setPassword('');

@@ -1,4 +1,3 @@
-
 import { GenerateContentResponse } from "@google/genai";
 
 
@@ -317,9 +316,16 @@ export interface AppSettings {
     isActive: boolean;
   };
   security: {
-    quickUserSwitchingEnabled: boolean;
     requirePinForUsers: boolean;
     requirePasswordForAdmin: boolean;
+  };
+  sharedMode: {
+    enabled: boolean;
+    quickUserSwitchingEnabled: boolean;
+    allowCompletion: boolean;
+    autoExit: boolean;
+    autoExitMinutes: number;
+    userIds: string[];
   };
   theme: string;
   terminology: Terminology;

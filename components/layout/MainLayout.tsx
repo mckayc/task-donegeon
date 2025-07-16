@@ -1,5 +1,6 @@
 
-import React, { useMemo } from 'react';
+
+import React, { useMemo, useEffect } from 'react';
 import Sidebar from './Sidebar';
 import Header from './Header';
 import Dashboard from '../pages/Dashboard';
@@ -8,7 +9,7 @@ import MarketplacePage from '../pages/MarketplacePage';
 import ChroniclesPage from '../pages/ChroniclesPage';
 import GuildPage from '../pages/GuildPage';
 import UserManagementPage from '../pages/UserManagementPage';
-import { Page } from '../../types';
+import { Page, Role } from '../../types';
 import RewardsPage from '../pages/RewardsPage';
 import ManageQuestsPage from '../pages/ManageQuestsPage';
 import ApprovalsPage from '../pages/ApprovalsPage';
@@ -20,7 +21,7 @@ import CalendarPage from '../pages/CalendarPage';
 import ProgressPage from '../pages/ProgressPage';
 import TrophiesPage from '../pages/TrophiesPage';
 import RanksPage from '../pages/RanksPage';
-import { useSettings } from '../../context/SettingsContext';
+import { useSettings, useSettingsDispatch } from '../../context/SettingsContext';
 import HelpPage from '../pages/HelpPage';
 import AvatarPage from '../pages/AvatarPage';
 import VacationModeBanner from '../settings/VacationModeBanner';
@@ -38,13 +39,38 @@ import BackupAndImportPage from '../pages/management/BackupAndImportPage';
 import AssetLibraryPage from '../pages/management/AssetLibraryPage';
 import ThemeEditorPage from '../pages/ThemeEditorPage';
 import { useAuth } from '../../context/AuthContext';
-import { useGameData } from '../../context/GameDataContext';
+import { useGameData, useGameDataDispatch } from '../../context/GameDataContext';
 import RewardDisplay from '../ui/RewardDisplay';
 
 const MainLayout: React.FC = () => {
   const { activePage, settings } = useSettings();
+  const { setActivePage } = useSettingsDispatch();
+  const { addNotification } = useGameDataDispatch();
   const { currentUser } = useAuth();
   const { markets, activeMarketId } = useGameData();
+
+  const ADMIN_ONLY_PAGES: Page[] = [
+    'Manage Users', 'Manage Rewards', 'Manage Quests', 'Manage Items', 'Manage Markets',
+    'Manage Guilds', 'Manage Ranks', 'Manage Trophies', 'Settings', 'AI Studio',
+    'Appearance', 'Theme Editor', 'Object Manager', 'Asset Manager', 'Backup & Import', 'Asset Library',
+  ];
+  const GATEKEEPER_PAGES: Page[] = ['Approvals'];
+
+  useEffect(() => {
+    if (!currentUser) return;
+
+    const isPageAdminOnly = ADMIN_ONLY_PAGES.includes(activePage);
+    const isPageForGatekeepers = GATEKEEPER_PAGES.includes(activePage);
+
+    if (isPageAdminOnly && currentUser.role !== Role.DonegeonMaster) {
+      addNotification({ type: 'error', message: 'You do not have permission to view this page.' });
+      setActivePage('Dashboard');
+    } else if (isPageForGatekeepers && currentUser.role === Role.Explorer) {
+      addNotification({ type: 'error', message: 'You do not have permission to view this page.' });
+      setActivePage('Dashboard');
+    }
+  }, [activePage, currentUser, setActivePage, addNotification]);
+
 
   const getPageTitle = (page: Page): string => {
     switch (page) {

@@ -1,8 +1,6 @@
-
-
-import React, { createContext, useState, useContext, ReactNode, useEffect, useCallback, useMemo } from 'react';
+import React, { createContext, useState, useContext, ReactNode, useEffect, useCallback, useMemo, useRef } from 'react';
 import { AppSettings, User, Quest, RewardTypeDefinition, QuestCompletion, RewardItem, Market, PurchaseRequest, Guild, Rank, Trophy, UserTrophy, Notification, AppMode, Page, IAppData, ShareableAssetType, GameAsset, Role, QuestCompletionStatus, RewardCategory, PurchaseRequestStatus, AdminAdjustment, AdminAdjustmentType, SystemLog, QuestType, QuestAvailability, Blueprint, ImportResolution, TrophyRequirementType, ThemeDefinition } from '../types';
-import { INITIAL_SETTINGS, createMockUsers, INITIAL_REWARD_TYPES, INITIAL_RANKS, INITIAL_TROPHIES, createSampleMarkets, createSampleQuests, createInitialGuilds, createSampleGameAssets, INITIAL_THEMES } from '../data/initialData';
+import { INITIAL_SETTINGS, createMockUsers, INITIAL_REWARD_TYPES, INITIAL_RANKS, INITIAL_TROPHIES, createSampleMarkets, createSampleQuests, createInitialGuilds, createSampleGameAssets, INITIAL_THEMES, createInitialQuestCompletions } from '../data/initialData';
 import { useDebounce } from '../hooks/useDebounce';
 import { toYMD } from '../utils/quests';
 
@@ -18,6 +16,7 @@ interface AppState extends IAppData {
   activeMarketId: string | null;
   allTags: string[];
   isSwitchingUser: boolean;
+  isSharedViewActive: boolean;
   targetedUserForLogin: User | null;
   isAiConfigured: boolean;
 }
@@ -33,6 +32,8 @@ interface AppDispatch {
   setAppUnlocked: (isUnlocked: boolean) => void;
   setIsSwitchingUser: (isSwitching: boolean) => void;
   setTargetedUserForLogin: (user: User | null) => void;
+  exitToSharedView: () => void;
+  setIsSharedViewActive: (isActive: boolean) => void;
 
   // Game Data
   addQuest: (quest: Omit<Quest, 'id' | 'claimedByUserIds' | 'dismissals'>) => void;
@@ -118,8 +119,11 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [isDataLoaded, setIsDataLoaded] = useState(false);
   const [activeMarketId, setActiveMarketId] = useState<string | null>(null);
   const [isSwitchingUser, setIsSwitchingUser] = useState<boolean>(false);
+  const [isSharedViewActive, _setIsSharedViewActive] = useState(false);
   const [targetedUserForLogin, setTargetedUserForLogin] = useState<User | null>(null);
   const [isAiConfigured, setIsAiConfigured] = useState(false);
+  const [isRestoring, setIsRestoring] = useState(false);
+  const inactivityTimer = useRef<number | null>(null);
 
   const isFirstRun = isDataLoaded && !users.some(u => u.role === Role.DonegeonMaster);
 
@@ -151,7 +155,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
                 quests: createSampleQuests(),
                 markets: createSampleMarkets(),
                 rewardTypes: INITIAL_REWARD_TYPES,
-                questCompletions: [],
+                questCompletions: createInitialQuestCompletions(),
                 purchaseRequests: [],
                 guilds: createInitialGuilds(initialUsers),
                 ranks: INITIAL_RANKS,
@@ -167,6 +171,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         }
 
         if (dataToSet) {
+            const loadedSettings = {...INITIAL_SETTINGS, ...dataToSet.settings};
             setUsers(dataToSet.users || []);
             setQuests(dataToSet.quests || []);
             setMarkets(dataToSet.markets || []);
@@ -180,7 +185,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             setAdminAdjustments(dataToSet.adminAdjustments || []);
             setGameAssets(dataToSet.gameAssets || []);
             setSystemLogs(dataToSet.systemLogs || []);
-            setSettings(prev => ({...prev, ...dataToSet!.settings}));
+            setSettings(loadedSettings);
             setThemes(dataToSet.themes || INITIAL_THEMES);
             setLoginHistory(dataToSet.loginHistory || []);
 
@@ -189,6 +194,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
               const lastUser = dataToSet.users.find((u:User) => u.id === lastUserId);
               if (lastUser) _setCurrentUser(lastUser);
             }
+             _setIsSharedViewActive(loadedSettings.sharedMode.enabled && !localStorage.getItem('lastUserId'));
         }
 
         try {
@@ -208,7 +214,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   }, []);
 
   useEffect(() => {
-    if (!isDataLoaded) return;
+    if (!isDataLoaded || isRestoring) return; // Add isRestoring guard
     if (users.length === 0 && quests.length === 0) return; // Don't save empty state during init
 
     const saveData = async () => {
@@ -222,7 +228,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       catch (error) { console.error("Failed to save data:", error); }
     };
     saveData();
-  }, [debouncedAppData, isDataLoaded]);
+  }, [debouncedAppData, isDataLoaded, isRestoring]); // Add isRestoring dependency
 
 
   // === BUSINESS LOGIC / DISPATCH FUNCTIONS ===
@@ -298,7 +304,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         }
       });
       if (meetsAllRequirements) {
-        setUserTrophies(prev => [...prev, { id: `award-${Date.now()}-${Math.random()}`, userId, trophyId: trophy.id, awardedAt: new Date().toISOString(), guildId }]);
+        setUserTrophies(prev => [...prev, { id: `award-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`, userId, trophyId: trophy.id, awardedAt: new Date().toISOString(), guildId }]);
         addNotification({ type: 'trophy', message: `Trophy Unlocked: ${trophy.name}!`, icon: trophy.icon });
       }
     }
@@ -307,17 +313,38 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   // Auth
   const setCurrentUser = (user: User | null) => {
     _setCurrentUser(user);
+    _setIsSharedViewActive(false); // Entering a user profile always deactivates shared view
     if (user) {
+        setActivePage('Dashboard');
         localStorage.setItem('lastUserId', user.id);
         setLoginHistory(prev => [user.id, ...prev.filter(id => id !== user.id).slice(0, 9)]);
     } else {
         localStorage.removeItem('lastUserId');
     }
   };
+  const exitToSharedView = useCallback(() => {
+    _setCurrentUser(null);
+    _setIsSharedViewActive(true);
+    localStorage.removeItem('lastUserId');
+  }, []);
+
   const addUser = (userData: Omit<User, 'id' | 'personalPurse' | 'personalExperience' | 'guildBalances' | 'avatar' | 'ownedAssetIds' | 'ownedThemes' | 'hasBeenOnboarded'>): User => {
-    const newUser: User = { ...userData, id: `user-${Date.now()}`, avatar: {}, ownedAssetIds: [], personalPurse: {}, personalExperience: {}, guildBalances: {}, ownedThemes: ['emerald', 'rose', 'sky'], hasBeenOnboarded: false };
+    const newUser: User = { ...userData, id: `user-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`, avatar: {}, ownedAssetIds: [], personalPurse: {}, personalExperience: {}, guildBalances: {}, ownedThemes: ['emerald', 'rose', 'sky'], hasBeenOnboarded: false };
     setUsers(prev => [...prev, newUser]);
     setGuilds(prev => prev.map(g => g.isDefault ? { ...g, memberIds: [...g.memberIds, newUser.id] } : g));
+    
+    const roleTag = `tutorial-${newUser.role.toLowerCase().replace(/ /g, '-')}`;
+    setQuests(prevQuests => {
+        return prevQuests.map(q => {
+            if (q.tags.includes(roleTag)) {
+                if (!q.assignedUserIds.includes(newUser.id)) {
+                    return { ...q, assignedUserIds: [...q.assignedUserIds, newUser.id] };
+                }
+            }
+            return q;
+        });
+    });
+
     return newUser;
   };
   const updateUser = (userId: string, updatedData: Partial<User>) => {
@@ -331,24 +358,24 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const setAppUnlocked = (isUnlocked: boolean) => { sessionStorage.setItem('isAppUnlocked', String(isUnlocked)); _setAppUnlocked(isUnlocked); };
   
   // GameData
-  const addQuest = (quest: Omit<Quest, 'id' | 'claimedByUserIds' | 'dismissals'>) => setQuests(prev => [...prev, { ...quest, id: `quest-${Date.now()}`, claimedByUserIds: [], dismissals: [] }]);
+  const addQuest = (quest: Omit<Quest, 'id' | 'claimedByUserIds' | 'dismissals'>) => setQuests(prev => [...prev, { ...quest, id: `quest-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`, claimedByUserIds: [], dismissals: [] }]);
   const updateQuest = (updatedQuest: Quest) => setQuests(prev => prev.map(q => q.id === updatedQuest.id ? updatedQuest : q));
   const deleteQuest = (questId: string) => setQuests(prev => prev.filter(q => q.id !== questId));
   const dismissQuest = (questId: string, userId: string) => { setQuests(prevQuests => prevQuests.map(q => q.id === questId ? { ...q, dismissals: [...q.dismissals.filter(d => d.userId !== userId), { userId, dismissedAt: new Date().toISOString() }] } : q)); };
   const claimQuest = (questId: string, userId: string) => setQuests(prev => prev.map(q => q.id === questId ? { ...q, claimedByUserIds: [...q.claimedByUserIds, userId] } : q));
   const releaseQuest = (questId: string, userId: string) => setQuests(prev => prev.map(q => q.id === questId ? { ...q, claimedByUserIds: q.claimedByUserIds.filter(id => id !== userId) } : q));
   const completeQuest = (questId: string, userId: string, rewards: RewardItem[], requiresApproval: boolean, guildId?: string, options?: { note?: string; completionDate?: Date }) => {
-    const newCompletion: QuestCompletion = { id: `comp-${Date.now()}`, questId, userId, completedAt: (options?.completionDate || new Date()).toISOString(), status: requiresApproval ? QuestCompletionStatus.Pending : QuestCompletionStatus.Approved, guildId, note: options?.note };
+    const newCompletion: QuestCompletion = { id: `comp-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`, questId, userId, completedAt: (options?.completionDate || new Date()).toISOString(), status: requiresApproval ? QuestCompletionStatus.Pending : QuestCompletionStatus.Approved, guildId, note: options?.note };
     setQuestCompletions(prev => [...prev, newCompletion]);
     if (!requiresApproval) { applyRewards(userId, rewards, guildId); const quest = quests.find(q => q.id === questId); addNotification({ type: 'success', message: `Quest Completed: ${quest?.title}`}); checkAndAwardTrophies(userId, guildId); } 
     else { addNotification({ type: 'info', message: `Quest submitted for approval.` }); }
   };
   const approveQuestCompletion = (completionId: string, note?: string) => { const c = questCompletions.find(c => c.id === completionId); if (c) { const q = quests.find(q => q.id === c.questId); if (q) { setQuestCompletions(prev => prev.map(comp => comp.id === completionId ? { ...comp, status: QuestCompletionStatus.Approved, note: note || comp.note } : comp)); applyRewards(c.userId, q.rewards, q.guildId); addNotification({ type: 'success', message: `Quest approved!`}); checkAndAwardTrophies(c.userId, q.guildId); } } };
   const rejectQuestCompletion = (completionId: string, note?: string) => { setQuestCompletions(prev => prev.map(c => c.id === completionId ? { ...c, status: QuestCompletionStatus.Rejected, note: note || c.note } : c)); addNotification({ type: 'info', message: `Quest rejected.`}); };
-  const addRewardType = (rewardType: Omit<RewardTypeDefinition, 'id' | 'isCore'>) => setRewardTypes(prev => [...prev, { ...rewardType, id: `custom-${Date.now()}`, isCore: false }]);
+  const addRewardType = (rewardType: Omit<RewardTypeDefinition, 'id' | 'isCore'>) => setRewardTypes(prev => [...prev, { ...rewardType, id: `custom-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`, isCore: false }]);
   const updateRewardType = (rewardType: RewardTypeDefinition) => setRewardTypes(prev => prev.map(rt => rt.id === rewardType.id ? rewardType : rt));
   const deleteRewardType = (rewardTypeId: string) => setRewardTypes(prev => prev.filter(rt => rt.id !== rewardTypeId));
-  const addMarket = (market: Omit<Market, 'id'>) => setMarkets(prev => [...prev, { ...market, id: `market-${Date.now()}` }]);
+  const addMarket = (market: Omit<Market, 'id'>) => setMarkets(prev => [...prev, { ...market, id: `market-${Date.now()}-${Math.random().toString(36).substring(2, 9)}` }]);
   const updateMarket = (market: Market) => setMarkets(prev => prev.map(m => m.id === market.id ? market : m));
   const deleteMarket = (marketId: string) => setMarkets(prev => prev.filter(m => m.id !== marketId));
   
@@ -395,25 +422,54 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     return true;
   };
   
-  const purchaseMarketItem = (assetId: string, marketId: string, user: User, cost: RewardItem[], assetDetails: any) => { const m = markets.find(m => m.id === marketId); if(!m) return; const reqApproval = user.role === Role.Explorer; if (reqApproval) { setPurchaseRequests(p => [...p, { id: `purchase-${Date.now()}`, userId: user.id, assetId, requestedAt: new Date().toISOString(), status: PurchaseRequestStatus.Pending, assetDetails, guildId: m.guildId }]); addNotification({type: 'info', message: `"${assetDetails.name}" purchase requested.`}); } else { if(deductRewards(user.id, cost, m.guildId)){ setUsers(p => p.map(u => u.id === user.id ? { ...u, ownedAssetIds: [...u.ownedAssetIds, assetId] } : u)); addNotification({type: 'success', message: `Purchased "${assetDetails.name}"!`}); setPurchaseRequests(p => [...p, { id: `purchase-${Date.now()}`, userId: user.id, assetId, requestedAt: new Date().toISOString(), status: PurchaseRequestStatus.Completed, assetDetails, guildId: m.guildId }]);} else { addNotification({type: 'error', message: 'You cannot afford this item.'}); } } };
+  const purchaseMarketItem = (assetId: string, marketId: string, user: User, cost: RewardItem[], assetDetails: any) => {
+    const m = markets.find(m => m.id === marketId);
+    if (!m) return;
+    
+    // Direct purchase for all users. deductRewards checks affordability and applies deduction.
+    if (deductRewards(user.id, cost, m.guildId)) {
+      setUsers(p => p.map(u => u.id === user.id ? { ...u, ownedAssetIds: [...u.ownedAssetIds, assetId] } : u));
+      addNotification({ type: 'success', message: `Purchased "${assetDetails.name}"!` });
+      // Log the purchase as completed
+      setPurchaseRequests(p => [...p, { id: `purchase-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`, userId: user.id, assetId, requestedAt: new Date().toISOString(), status: PurchaseRequestStatus.Completed, assetDetails, guildId: m.guildId }]);
+    } else {
+      addNotification({ type: 'error', message: 'You cannot afford this item.' });
+    }
+  };
   const cancelPurchaseRequest = (purchaseId: string) => setPurchaseRequests(prev => prev.map(p => p.id === purchaseId ? { ...p, status: PurchaseRequestStatus.Cancelled } : p));
   const approvePurchaseRequest = (purchaseId: string) => { const r = purchaseRequests.find(p => p.id === purchaseId); if (!r) return; if(deductRewards(r.userId, r.assetDetails.cost, r.guildId)){ setUsers(p => p.map(u => u.id === r.userId ? { ...u, ownedAssetIds: [...u.ownedAssetIds, r.assetId] } : u)); setPurchaseRequests(p => p.map(pr => pr.id === purchaseId ? { ...pr, status: PurchaseRequestStatus.Completed } : pr)); addNotification({type: 'success', message: 'Purchase approved.'});} else { addNotification({type: 'error', message: "User can't afford this."});} };
   const rejectPurchaseRequest = (purchaseId: string) => { setPurchaseRequests(prev => prev.map(p => p.id === purchaseId ? { ...p, status: PurchaseRequestStatus.Rejected } : p)); addNotification({ type: 'info', message: 'Purchase request rejected.' }); };
-  const addGuild = (guild: Omit<Guild, 'id'>) => setGuilds(prev => [...prev, { ...guild, id: `guild-${Date.now()}`}]);
+  const addGuild = (guild: Omit<Guild, 'id'>) => setGuilds(prev => [...prev, { ...guild, id: `guild-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`}]);
   const updateGuild = (guild: Guild) => setGuilds(prev => prev.map(g => g.id === guild.id ? guild : g));
   const deleteGuild = (guildId: string) => setGuilds(prev => prev.filter(g => g.id !== guildId));
-  const addTrophy = (trophy: Omit<Trophy, 'id'>) => setTrophies(prev => [...prev, { ...trophy, id: `trophy-${Date.now()}`}]);
+  const addTrophy = (trophy: Omit<Trophy, 'id'>) => setTrophies(prev => [...prev, { ...trophy, id: `trophy-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`}]);
   const updateTrophy = (trophy: Trophy) => setTrophies(prev => prev.map(t => t.id === trophy.id ? trophy : t));
   const deleteTrophy = (trophyId: string) => setTrophies(prev => prev.filter(t => t.id !== trophyId));
-  const awardTrophy = (userId: string, trophyId: string, guildId?: string) => { const t = trophies.find(t => t.id === trophyId); if (t) { setUserTrophies(p => [...p, { id: `award-${Date.now()}`, userId, trophyId, awardedAt: new Date().toISOString(), guildId }]); addNotification({ type: 'trophy', message: `Trophy Unlocked: ${t.name}!`, icon: t.icon }); }};
+  const awardTrophy = (userId: string, trophyId: string, guildId?: string) => { const t = trophies.find(t => t.id === trophyId); if (t) { setUserTrophies(p => [...p, { id: `award-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`, userId, trophyId, awardedAt: new Date().toISOString(), guildId }]); addNotification({ type: 'trophy', message: `Trophy Unlocked: ${t.name}!`, icon: t.icon }); }};
 
-  const applyManualAdjustment = (adj: Omit<AdminAdjustment, 'id' | 'adjustedAt'>): boolean => { const newAdj: AdminAdjustment = { ...adj, id: `adj-${Date.now()}`, adjustedAt: new Date().toISOString() }; setAdminAdjustments(p => [...p, newAdj]); if (newAdj.type === AdminAdjustmentType.Reward) applyRewards(newAdj.userId, newAdj.rewards, newAdj.guildId); else if (newAdj.type === AdminAdjustmentType.Setback) deductRewards(newAdj.userId, newAdj.setbacks, newAdj.guildId); else if (newAdj.type === AdminAdjustmentType.Trophy && newAdj.trophyId) awardTrophy(newAdj.userId, newAdj.trophyId, newAdj.guildId); addNotification({type: 'success', message: 'Manual adjustment applied.'}); return true; };
-  const addGameAsset = (asset: Omit<GameAsset, 'id'|'creatorId'|'createdAt'>) => { setGameAssets(p => [...p, { ...asset, id: `g-asset-${Date.now()}`, creatorId: 'admin', createdAt: new Date().toISOString() }]); addNotification({ type: 'success', message: `Asset "${asset.name}" created.` }); };
+  const applyManualAdjustment = (adj: Omit<AdminAdjustment, 'id' | 'adjustedAt'>): boolean => { const newAdj: AdminAdjustment = { ...adj, id: `adj-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`, adjustedAt: new Date().toISOString() }; setAdminAdjustments(p => [...p, newAdj]); if (newAdj.type === AdminAdjustmentType.Reward) applyRewards(newAdj.userId, newAdj.rewards, newAdj.guildId); else if (newAdj.type === AdminAdjustmentType.Setback) deductRewards(newAdj.userId, newAdj.setbacks, newAdj.guildId); else if (newAdj.type === AdminAdjustmentType.Trophy && newAdj.trophyId) awardTrophy(newAdj.userId, newAdj.trophyId, newAdj.guildId); addNotification({type: 'success', message: 'Manual adjustment applied.'}); return true; };
+  const addGameAsset = (asset: Omit<GameAsset, 'id'|'creatorId'|'createdAt'>) => { setGameAssets(p => [...p, { ...asset, id: `g-asset-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`, creatorId: 'admin', createdAt: new Date().toISOString() }]); addNotification({ type: 'success', message: `Asset "${asset.name}" created.` }); };
   const updateGameAsset = (asset: GameAsset) => setGameAssets(prev => prev.map(ga => ga.id === asset.id ? asset : ga));
   const deleteGameAsset = (assetId: string) => { setGameAssets(prev => prev.filter(ga => ga.id !== assetId)); addNotification({ type: 'info', message: 'Asset deleted.' }); };
   const uploadFile = async (file: File): Promise<{ url: string } | null> => { const fd = new FormData(); fd.append('file', file); try { const r = await fetch('/api/media/upload', { method: 'POST', body: fd }); if (!r.ok) { const e = await r.json(); throw new Error(e.error || 'Upload failed'); } return await r.json(); } catch (e) { const m = e instanceof Error ? e.message : 'Unknown error'; addNotification({ type: 'error', message: `Upload failed: ${m}` }); return null; } };
-  const populateInitialGameData = (adminUser: User) => { addNotification({ type: 'info', message: 'Your Donegeon is being populated!' }); const sA = createMockUsers().filter(u => u.role !== Role.DonegeonMaster); const aIU = [adminUser, ...sA]; setUsers(aIU); setQuests(createSampleQuests()); setMarkets(createSampleMarkets()); setGameAssets(createSampleGameAssets()); setRewardTypes(INITIAL_REWARD_TYPES); setGuilds(createInitialGuilds(aIU)); setRanks(INITIAL_RANKS); setTrophies(INITIAL_TROPHIES); };
-  const restoreFromBackup = async (backupData: IAppData) => { try { await fetch('/api/data/save', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(backupData) }); addNotification({ type: 'success', message: 'Restore successful! Reloading...' }); setTimeout(() => window.location.reload(), 1500); } catch (e) { addNotification({ type: 'error', message: 'Failed to restore from backup.' }); } };
+  const populateInitialGameData = (adminUser: User) => { addNotification({ type: 'info', message: 'Your Donegeon is being populated!' }); const sA = createMockUsers().filter(u => u.role !== Role.DonegeonMaster); const aIU = [adminUser, ...sA]; setUsers(aIU); setQuests(createSampleQuests()); setMarkets(createSampleMarkets()); setGameAssets(createSampleGameAssets()); setRewardTypes(INITIAL_REWARD_TYPES); setGuilds(createInitialGuilds(aIU)); setRanks(INITIAL_RANKS); setTrophies(INITIAL_TROPHIES); setQuestCompletions(createInitialQuestCompletions()); };
+  
+  const restoreFromBackup = async (backupData: IAppData) => {
+    setIsRestoring(true); // Prevent debounced save
+    try {
+        await fetch('/api/data/save', { 
+            method: 'POST', 
+            headers: { 'Content-Type': 'application/json' }, 
+            body: JSON.stringify(backupData) 
+        });
+        addNotification({ type: 'success', message: 'Restore successful! The app will now reload.' });
+        setTimeout(() => window.location.reload(), 1500);
+    } catch (e) {
+        addNotification({ type: 'error', message: 'Failed to restore from backup.' });
+        setIsRestoring(false); // Reset flag on failure
+    }
+  };
+
   const importBlueprint = (blueprint: Blueprint, resolutions: ImportResolution[]) => { const idMap = new Map<string, string>(); const genId = (p: string) => `${p}-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`; resolutions.forEach(res => { if (res.resolution !== 'skip') idMap.set(res.id, genId(res.type.slice(0, 2))); }); const newAssets: Partial<IAppData> = { quests: [], rewardTypes: [], ranks: [], trophies: [], markets: [] }; resolutions.forEach(res => { if (res.resolution === 'skip') return; const a = blueprint.assets[res.type]?.find(a => a.id === res.id); if (a) { const nA = { ...a, id: idMap.get(a.id)! }; if (res.resolution === 'rename' && res.newName) { if('title' in nA) nA.title = res.newName; else nA.name = res.newName; } newAssets[res.type]?.push(nA as any); } }); newAssets.quests?.forEach(q => { q.rewards = q.rewards.map(r => ({ ...r, rewardTypeId: idMap.get(r.rewardTypeId) || r.rewardTypeId })); q.lateSetbacks = q.lateSetbacks.map(r => ({ ...r, rewardTypeId: idMap.get(r.rewardTypeId) || r.rewardTypeId })); q.incompleteSetbacks = q.incompleteSetbacks.map(r => ({ ...r, rewardTypeId: idMap.get(r.rewardTypeId) || r.rewardTypeId })); }); newAssets.trophies?.forEach(t => t.requirements.forEach(r => { if(r.type === TrophyRequirementType.AchieveRank) r.value = idMap.get(r.value) || r.value; })); setQuests(p => [...p, ...(newAssets.quests || [])]); setRewardTypes(p => [...p, ...(newAssets.rewardTypes || [])]); setRanks(p => [...p, ...(newAssets.ranks || [])]); setTrophies(p => [...p, ...(newAssets.trophies || [])]); setMarkets(p => [...p, ...(newAssets.markets || [])]); addNotification({ type: 'success', message: `Imported from ${blueprint.name}!`}); };
   const clearAllHistory = () => { setQuestCompletions([]); setPurchaseRequests([]); setAdminAdjustments([]); setSystemLogs([]); addNotification({ type: 'success', message: 'All historical data has been cleared.' }); };
   const resetAllPlayerData = () => { setUsers(prev => prev.map(u => u.role !== Role.DonegeonMaster ? { ...u, personalPurse: {}, personalExperience: {}, guildBalances: {}, ownedAssetIds: [], avatar: {} } : u)); setUserTrophies(prev => prev.filter(ut => users.find(u => u.id === ut.userId)?.role === Role.DonegeonMaster)); addNotification({ type: 'success', message: "All player data has been reset." }); };
@@ -422,7 +478,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
   // Theme Management
   const addTheme = (theme: Omit<ThemeDefinition, 'id'>) => {
-    const newTheme: ThemeDefinition = { ...theme, id: `custom-${Date.now()}`, isCustom: true };
+    const newTheme: ThemeDefinition = { ...theme, id: `custom-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`, isCustom: true };
     setThemes(prev => [...prev, newTheme]);
     addNotification({ type: 'success', message: 'Theme created!' });
   };
@@ -439,15 +495,40 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     setSettings(prev => ({...prev, ...settingsToUpdate}));
   };
 
+  // Inactivity Timer for Shared Mode
+  const resetInactivityTimer = useCallback(() => {
+    if (inactivityTimer.current) clearTimeout(inactivityTimer.current);
+    if (settings.sharedMode.enabled && settings.sharedMode.autoExit && currentUser) {
+        inactivityTimer.current = window.setTimeout(
+            exitToSharedView,
+            settings.sharedMode.autoExitMinutes * 60 * 1000
+        );
+    }
+  }, [settings.sharedMode, currentUser, exitToSharedView]);
+
+  useEffect(() => {
+      window.addEventListener('mousemove', resetInactivityTimer);
+      window.addEventListener('keydown', resetInactivityTimer);
+      window.addEventListener('click', resetInactivityTimer);
+      resetInactivityTimer(); // Initial setup
+      return () => {
+          window.removeEventListener('mousemove', resetInactivityTimer);
+          window.removeEventListener('keydown', resetInactivityTimer);
+          window.removeEventListener('click', resetInactivityTimer);
+          if (inactivityTimer.current) clearTimeout(inactivityTimer.current);
+      };
+  }, [resetInactivityTimer]);
+
+
   // === CONTEXT PROVIDER VALUE ===
   const stateValue: AppState = {
     users, quests, markets, rewardTypes, questCompletions, purchaseRequests, guilds, ranks, trophies, userTrophies, adminAdjustments, gameAssets, systemLogs, settings, themes, loginHistory,
     currentUser, isAppUnlocked, isFirstRun, activePage, appMode, notifications, isDataLoaded, activeMarketId, allTags: useMemo(() => Array.from(new Set(quests.flatMap(q => q.tags))).sort(), [quests]),
-    isSwitchingUser, targetedUserForLogin, isAiConfigured
+    isSwitchingUser, isSharedViewActive, targetedUserForLogin, isAiConfigured
   };
 
   const dispatchValue: AppDispatch = {
-    addUser, updateUser, deleteUser, setCurrentUser, markUserAsOnboarded, setAppUnlocked, setIsSwitchingUser, setTargetedUserForLogin,
+    addUser, updateUser, deleteUser, setCurrentUser, markUserAsOnboarded, setAppUnlocked, setIsSwitchingUser, setTargetedUserForLogin, exitToSharedView, setIsSharedViewActive: _setIsSharedViewActive,
     addQuest, updateQuest, deleteQuest, dismissQuest, claimQuest, releaseQuest, completeQuest, approveQuestCompletion, rejectQuestCompletion,
     addRewardType, updateRewardType, deleteRewardType, addMarket, updateMarket, deleteMarket, purchaseMarketItem, cancelPurchaseRequest, approvePurchaseRequest, rejectPurchaseRequest,
     addGuild, updateGuild, deleteGuild, setRanks, addTrophy, updateTrophy, deleteTrophy, awardTrophy, applyManualAdjustment, addGameAsset, updateGameAsset, deleteGameAsset,

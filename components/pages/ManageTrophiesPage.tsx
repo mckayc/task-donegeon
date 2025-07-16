@@ -42,8 +42,7 @@ const ManageTrophiesPage: React.FC = () => {
 
     return (
         <div>
-            <div className="flex justify-between items-center mb-8">
-                <h1 className="text-4xl font-medieval text-stone-100">Manage {settings.terminology.awards}</h1>
+            <div className="flex justify-end items-center mb-8">
                 <Button onClick={handleCreate}>Create New {settings.terminology.award}</Button>
             </div>
 

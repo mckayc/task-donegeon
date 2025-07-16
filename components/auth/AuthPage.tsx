@@ -8,21 +8,19 @@ import Input from '../ui/Input';
 import UserFormFields from '../users/UserFormFields';
 import Avatar from '../ui/Avatar';
 
-const LoginForm: React.FC<{ onSwitchMode: () => void; isTargetedLogin?: boolean }> = ({ onSwitchMode, isTargetedLogin = false }) => {
-    const { users, targetedUserForLogin } = useAuth();
-    const { setCurrentUser, setTargetedUserForLogin, setIsSwitchingUser, setAppUnlocked } = useAuthDispatch();
+const LoginForm: React.FC<{ onSwitchMode: () => void; }> = ({ onSwitchMode }) => {
+    const { users } = useAuth();
+    const { setCurrentUser, setAppUnlocked } = useAuthDispatch();
     
-    const userToLogin = isTargetedLogin ? targetedUserForLogin : null;
-
     const [password, setPassword] = useState('');
-    const [identifier, setIdentifier] = useState(isTargetedLogin ? (userToLogin?.username || '') : '');
+    const [identifier, setIdentifier] = useState('');
     const [error, setError] = useState('');
 
     const handleLogin = (e: React.FormEvent) => {
         e.preventDefault();
         setError('');
 
-        const user = userToLogin || users.find(u =>
+        const user = users.find(u =>
             (u.username.toLowerCase() === identifier.toLowerCase() || u.email.toLowerCase() === identifier.toLowerCase())
         );
 
@@ -30,10 +28,6 @@ const LoginForm: React.FC<{ onSwitchMode: () => void; isTargetedLogin?: boolean 
             if (user.password) {
                 if (user.password === password) {
                     setCurrentUser(user);
-                    if (userToLogin) {
-                        setTargetedUserForLogin(null);
-                    }
-                    // If this was a password challenge after a switch, unlock the app
                     setAppUnlocked(true);
                 } else {
                     setError('Invalid password.');
@@ -45,44 +39,6 @@ const LoginForm: React.FC<{ onSwitchMode: () => void; isTargetedLogin?: boolean 
             setError('Invalid username or email.');
         }
     };
-
-    const handleGoBack = () => {
-        setTargetedUserForLogin(null);
-        setIsSwitchingUser(true);
-    };
-
-    if (userToLogin) {
-        return (
-            <>
-                <div className="flex flex-col items-center mb-6">
-                    <Avatar user={userToLogin} className="w-24 h-24 mb-4 bg-emerald-800 rounded-full border-4 border-emerald-600 overflow-hidden" />
-                    <h2 className="text-3xl font-bold text-stone-100">{userToLogin.gameName}</h2>
-                    <p className="text-stone-400">Enter password to continue</p>
-                </div>
-                <form onSubmit={handleLogin} className="space-y-4">
-                    <Input
-                        label="Password"
-                        id="password"
-                        name="password"
-                        type="password"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        required
-                        autoFocus
-                    />
-                    {error && <p className="text-red-400 text-center">{error}</p>}
-                    <div className="pt-2">
-                        <Button type="submit" className="w-full">Login</Button>
-                    </div>
-                </form>
-                <div className="mt-4">
-                    <Button variant="secondary" onClick={handleGoBack} className="w-full">
-                        Back to User Selection
-                    </Button>
-                </div>
-            </>
-        );
-    }
 
     return (
         <>
@@ -200,19 +156,8 @@ const RegisterForm: React.FC<{ onSwitchMode: () => void }> = ({ onSwitchMode }) 
 
 const AuthPage: React.FC = () => {
     const { settings } = useSettings();
-    const { targetedUserForLogin } = useAuth();
     const { setIsSwitchingUser } = useAuthDispatch();
     const [isLoginMode, setIsLoginMode] = useState(true);
-
-    if (targetedUserForLogin) {
-        return (
-            <div className="min-h-screen flex items-center justify-center bg-stone-900 p-4">
-                <div className="max-w-md w-full bg-stone-800 border border-stone-700 rounded-2xl shadow-2xl p-8 md:p-12">
-                    <LoginForm onSwitchMode={() => {}} isTargetedLogin={true} />
-                </div>
-            </div>
-        )
-    }
     
     return (
         <div className="min-h-screen flex items-center justify-center bg-stone-900 p-4">

@@ -15,16 +15,21 @@ const SwitchUser: React.FC = () => {
     const { settings } = useSettings();
     const [selectedUser, setSelectedUser] = useState<User | null>(null);
     const [pin, setPin] = useState('');
+    const [password, setPassword] = useState('');
+    const [needsPassword, setNeedsPassword] = useState(false);
     const [error, setError] = useState('');
 
     const handleUserSelect = (user: User) => {
+        setError('');
+        setPin('');
+        setPassword('');
+
         const isAdminOrGatekeeper = user.role === Role.DonegeonMaster || user.role === Role.Gatekeeper;
 
-        // Case 1: Admin needs a password
+        // Case 1: Admin/Gatekeeper needs a password
         if (isAdminOrGatekeeper && settings.security.requirePasswordForAdmin) {
-            setCurrentUser(null);
-            setTargetedUserForLogin(user);
-            setIsSwitchingUser(false);
+            setSelectedUser(user);
+            setNeedsPassword(true); // Show password form
             return;
         }
 
@@ -32,11 +37,11 @@ const SwitchUser: React.FC = () => {
         if (settings.security.requirePinForUsers) {
             if (user.pin) {
                 setSelectedUser(user);
-                setError('');
-                setPin('');
+                setNeedsPassword(false); // Show PIN form
             } else {
                 setError(`${user.gameName} does not have a PIN set up. An admin must set one.`);
                 setSelectedUser(null);
+                setNeedsPassword(false);
             }
             return;
         }
@@ -64,6 +69,16 @@ const SwitchUser: React.FC = () => {
             setPin('');
         }
     };
+
+    const handlePasswordSubmit = () => {
+        if (selectedUser && selectedUser.password === password) {
+            setCurrentUser(selectedUser);
+            setIsSwitchingUser(false);
+        } else {
+            setError('Incorrect Password. Please try again.');
+            setPassword('');
+        }
+    };
     
     const goBack = () => {
         if (anyCurrentUser) {
@@ -76,58 +91,92 @@ const SwitchUser: React.FC = () => {
     };
 
     if (selectedUser) {
-        return (
-             <div className="min-h-screen flex items-center justify-center bg-stone-900 p-4">
-                <div className="max-w-md w-full bg-stone-800 border border-stone-700 rounded-2xl shadow-2xl p-8">
-                     <div className="flex flex-col items-center">
-                        <Avatar user={selectedUser} className="w-24 h-24 mb-4 bg-emerald-800 rounded-full border-4 border-emerald-600 overflow-hidden" />
-                        <h2 className="text-3xl font-bold text-stone-100 mb-2">{selectedUser.gameName}</h2>
-                        <p className="text-stone-400 mb-6">Enter your PIN to continue</p>
-                        
-                        <div className="w-full max-w-xs mb-4">
-                            <Input
-                                id="pin-input"
-                                name="pin"
-                                type="password"
-                                aria-label="PIN Input"
-                                value={pin}
-                                onChange={(e) => {
-                                    const val = e.target.value;
-                                    // Only allow numbers and limit length
-                                    if (/^\d*$/.test(val) && val.length <= 10) {
-                                        setPin(val);
-                                    }
-                                }}
-                                onKeyDown={e => {
-                                    if (e.key === 'Enter') {
-                                        e.preventDefault();
-                                        handlePinSubmit();
-                                    }
-                                }}
-                                className="text-center tracking-[.5em] text-2xl h-14"
-                                autoComplete="off"
-                                inputMode="numeric"
-                                autoFocus
-                            />
-                        </div>
-                        
-                        {error && <p className="text-red-400 text-center mb-4">{error}</p>}
-                        
-                        <Keypad
-                            onKeyPress={(key) => {
-                                if (pin.length < 10) setPin(p => p + key)
-                            }}
-                            onBackspace={() => setPin(p => p.slice(0, -1))}
-                            onEnter={handlePinSubmit}
-                        />
-
-                        <div className="mt-6 w-full">
-                            <Button variant="secondary" onClick={() => setSelectedUser(null)} className="w-full">Back to user selection</Button>
+        if (needsPassword) {
+            // Render Password Form
+            return (
+                <div className="min-h-screen flex items-center justify-center bg-stone-900 p-4">
+                    <div className="max-w-md w-full bg-stone-800 border border-stone-700 rounded-2xl shadow-2xl p-8">
+                         <div className="flex flex-col items-center">
+                            <Avatar user={selectedUser} className="w-24 h-24 mb-4 bg-emerald-800 rounded-full border-4 border-emerald-600 overflow-hidden" />
+                            <h2 className="text-3xl font-bold text-stone-100 mb-2">{selectedUser.gameName}</h2>
+                            <p className="text-stone-400 mb-6">Enter your Password to continue</p>
+                            <form onSubmit={(e) => { e.preventDefault(); handlePasswordSubmit(); }} className="w-full space-y-4">
+                                <Input
+                                    label="Password"
+                                    id="password-input"
+                                    name="password"
+                                    type="password"
+                                    value={password}
+                                    onChange={(e) => setPassword(e.target.value)}
+                                    required
+                                    autoFocus
+                                />
+                                {error && <p className="text-red-400 text-center">{error}</p>}
+                                <div className="pt-2">
+                                  <Button type="submit" className="w-full">Login</Button>
+                                </div>
+                            </form>
+                            <div className="mt-4 w-full">
+                                <Button variant="secondary" onClick={() => { setSelectedUser(null); setNeedsPassword(false); }} className="w-full">Back to user selection</Button>
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
-        );
+            );
+        } else {
+            // Render PIN form
+            return (
+                 <div className="min-h-screen flex items-center justify-center bg-stone-900 p-4">
+                    <div className="max-w-md w-full bg-stone-800 border border-stone-700 rounded-2xl shadow-2xl p-8">
+                         <div className="flex flex-col items-center">
+                            <Avatar user={selectedUser} className="w-24 h-24 mb-4 bg-emerald-800 rounded-full border-4 border-emerald-600 overflow-hidden" />
+                            <h2 className="text-3xl font-bold text-stone-100 mb-2">{selectedUser.gameName}</h2>
+                            <p className="text-stone-400 mb-6">Enter your PIN to continue</p>
+                            
+                            <div className="w-full max-w-xs mb-4">
+                                <Input
+                                    id="pin-input"
+                                    name="pin"
+                                    type="password"
+                                    aria-label="PIN Input"
+                                    value={pin}
+                                    onChange={(e) => {
+                                        const val = e.target.value;
+                                        if (/^\d*$/.test(val) && val.length <= 10) {
+                                            setPin(val);
+                                        }
+                                    }}
+                                    onKeyDown={e => {
+                                        if (e.key === 'Enter') {
+                                            e.preventDefault();
+                                            handlePinSubmit();
+                                        }
+                                    }}
+                                    className="text-center tracking-[.5em] text-2xl h-14"
+                                    autoComplete="off"
+                                    inputMode="numeric"
+                                    autoFocus
+                                />
+                            </div>
+                            
+                            {error && <p className="text-red-400 text-center mb-4">{error}</p>}
+                            
+                            <Keypad
+                                onKeyPress={(key) => {
+                                    if (pin.length < 10) setPin(p => p + key)
+                                }}
+                                onBackspace={() => setPin(p => p.slice(0, -1))}
+                                onEnter={handlePinSubmit}
+                            />
+    
+                            <div className="mt-6 w-full">
+                                <Button variant="secondary" onClick={() => setSelectedUser(null)} className="w-full">Back to user selection</Button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
     }
 
     // While targetedUserForLogin is processing, show a loader to avoid flashing the user grid

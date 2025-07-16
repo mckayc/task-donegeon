@@ -124,9 +124,10 @@ const HelpPage: React.FC = () => {
 
                     <p className="font-bold mt-4">Best Practices for Images:</p>
                     <ul className="list-disc list-inside space-y-2 pl-4">
-                        <li>Use PNG images with transparent backgrounds for avatar items for the best look.</li>
-                        <li>Keep file sizes small (under 200kb is ideal) to ensure the app loads quickly.</li>
-                        <li>Square images (e.g., 500x500 pixels) tend to look best in the UI.</li>
+                        <li><strong>Supported Formats:</strong> The app supports standard web image formats like <code>PNG</code>, <code>JPG</code>, <code>GIF</code>, <code>SVG</code>, and <code>WebP</code>.</li>
+                        <li><strong>Use Transparency Wisely:</strong> For avatar items, use formats that support transparency like <code>PNG</code> or <code>WebP</code>. This ensures they layer correctly without a white box around them.</li>
+                        <li><strong>Optimize File Size:</strong> <code>WebP</code> is highly recommended as it offers excellent quality with smaller file sizes compared to PNG or JPG. Aim to keep files under 200kb to ensure the app loads quickly.</li>
+                        <li><strong>Keep it Square:</strong> Square images (e.g., 500x500 pixels) tend to display most consistently in the UI.</li>
                     </ul>
 
                     <h4 className="text-lg font-bold text-stone-100 mt-4">Data Management</h4>

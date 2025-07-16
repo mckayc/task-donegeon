@@ -1,8 +1,7 @@
-
 import React, { useState, ChangeEvent } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useSettings, useSettingsDispatch } from '../../context/SettingsContext';
-import { useAppDispatch } from '../../context/AppContext';
+import { useAppDispatch, useAppState } from '../../context/AppContext';
 import { Role, AppSettings, Terminology } from '../../types';
 import Button from '../ui/Button';
 import { ChevronDownIcon } from '../ui/Icons';
@@ -56,7 +55,7 @@ const terminologyLabels: { [key in keyof Terminology]: string } = {
 };
 
 const SettingsPage: React.FC = () => {
-    const { currentUser } = useAuth();
+    const { currentUser, users } = useAppState();
     const { settings } = useSettings();
     const { updateSettings, addNotification } = useAppDispatch();
     
@@ -67,61 +66,63 @@ const SettingsPage: React.FC = () => {
     }
 
     const handleFormChange = (e: ChangeEvent<HTMLInputElement>) => {
-        const { name, value } = e.target;
+        const { name, value, type } = e.target;
         const keys = name.split('.');
         
         setFormState(prev => {
-            if (keys.length === 2) {
-                const [outerKey, innerKey] = keys as [keyof AppSettings, string];
-                return {
-                    ...prev,
-                    [outerKey]: {
-                        ...(prev[outerKey] as object),
-                        [innerKey]: value,
-                    },
-                };
+            let newState = {...prev};
+            let currentLevel: any = newState;
+            for (let i = 0; i < keys.length - 1; i++) {
+                currentLevel = currentLevel[keys[i]];
             }
-            return { ...prev, [name]: value };
+            const finalValue = type === 'number' ? parseInt(value) || 0 : value;
+            currentLevel[keys[keys.length - 1]] = finalValue;
+            return newState;
         });
     };
     
     const handleToggleChange = (name: string, enabled: boolean) => {
          const keys = name.split('.');
          setFormState(prev => {
-            if (keys.length === 2) {
-                const [outerKey, innerKey] = keys as [keyof AppSettings, string];
-                return {
-                    ...prev,
-                    [outerKey]: {
-                        ...(prev[outerKey] as object),
-                        [innerKey]: enabled,
-                    },
-                };
+            let newState = {...prev};
+            let currentLevel: any = newState;
+            for (let i = 0; i < keys.length - 1; i++) {
+                currentLevel = currentLevel[keys[i]];
             }
-            return { ...prev, [name]: enabled };
+            currentLevel[keys[keys.length - 1]] = enabled;
+            return newState;
         });
     };
     
     const handleDateChange = (name: string, dateStr: string) => {
         const keys = name.split('.');
          setFormState(prev => {
-            if (keys.length === 2) {
-                const [outerKey, innerKey] = keys as [keyof AppSettings, string];
-                return {
-                    ...prev,
-                    [outerKey]: {
-                        ...(prev[outerKey] as object),
-                        [innerKey]: dateStr ? new Date(dateStr).toISOString().split('T')[0] : undefined
-                    },
-                };
-            }
-            return { ...prev, [name]: dateStr };
+             let newState = {...prev};
+             let currentLevel: any = newState;
+             for (let i = 0; i < keys.length - 1; i++) {
+                 currentLevel = currentLevel[keys[i]];
+             }
+            currentLevel[keys[keys.length-1]] = dateStr ? new Date(dateStr).toISOString().split('T')[0] : undefined
+            return newState;
         });
     }
 
     const handleSave = () => {
         updateSettings(formState);
         addNotification({ type: 'success', message: 'Settings saved successfully!' });
+    };
+
+    const handleSharedUserToggle = (userId: string) => {
+        setFormState(prev => {
+            const currentIds = prev.sharedMode.userIds;
+            const newIds = currentIds.includes(userId)
+                ? currentIds.filter(id => id !== userId)
+                : [...currentIds, userId];
+            return {
+                ...prev,
+                sharedMode: { ...prev.sharedMode, userIds: newIds }
+            };
+        });
     };
     
     return (
@@ -132,12 +133,51 @@ const SettingsPage: React.FC = () => {
                 </div>
             </div>
 
-            <CollapsibleSection title="Security" defaultOpen>
-                 <div className="space-y-6">
+            <CollapsibleSection title="Shared Mode" defaultOpen>
+                <div className="space-y-6">
                     <div className="flex items-start">
-                        <ToggleSwitch enabled={formState.security.quickUserSwitchingEnabled} setEnabled={(val) => handleToggleChange('security.quickUserSwitchingEnabled', val)} label="Quick User Switching" />
-                        <p className="text-sm ml-6" style={{ color: 'hsl(var(--color-text-secondary))' }}>If enabled, a bar with user avatars will appear at the top for one-click switching.</p>
+                        <ToggleSwitch enabled={formState.sharedMode.enabled} setEnabled={(val) => handleToggleChange('sharedMode.enabled', val)} label="Enable Shared Mode" />
+                        <p className="text-sm ml-6" style={{ color: 'hsl(var(--color-text-secondary))' }}>This mode is for a device in a shared location (like a family tablet) where multiple people can view and use the app like a kiosk.</p>
                     </div>
+
+                    <div className={`space-y-6 pl-8 mt-4 border-l-2 border-stone-700 ${!formState.sharedMode.enabled ? 'opacity-50 pointer-events-none' : ''}`}>
+                         <div className="flex items-start">
+                            <ToggleSwitch enabled={formState.sharedMode.quickUserSwitchingEnabled} setEnabled={(val) => handleToggleChange('sharedMode.quickUserSwitchingEnabled', val)} label="Quick User Switching Bar" />
+                            <p className="text-sm ml-6" style={{ color: 'hsl(var(--color-text-secondary))' }}>If enabled, a bar with user avatars will appear at the top for one-click switching.</p>
+                        </div>
+                         <div className="flex items-start">
+                            <ToggleSwitch enabled={formState.sharedMode.allowCompletion} setEnabled={(val) => handleToggleChange('sharedMode.allowCompletion', val)} label="Allow Completion in Shared View" />
+                            <p className="text-sm ml-6" style={{ color: 'hsl(var(--color-text-secondary))' }}>If enabled, a "Complete" button will appear next to tasks in the shared calendar view. Recommended to keep off for security.</p>
+                        </div>
+                        <div className="flex items-start">
+                             <ToggleSwitch enabled={formState.sharedMode.autoExit} setEnabled={(val) => handleToggleChange('sharedMode.autoExit', val)} label="Auto Exit to Shared View" />
+                             <div className="ml-6 flex-grow">
+                                <p className="text-sm" style={{ color: 'hsl(var(--color-text-secondary))' }}>Automatically return to the shared calendar view after a period of inactivity.</p>
+                                {formState.sharedMode.autoExit && (
+                                    <div className="mt-2">
+                                        <Input label="Inactivity Time (minutes)" type="number" name="sharedMode.autoExitMinutes" min="1" value={formState.sharedMode.autoExitMinutes} onChange={handleFormChange} />
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
+                        <div>
+                            <h4 className="font-semibold text-stone-200 mb-2">Users in Shared Mode</h4>
+                             <div className="space-y-2 max-h-40 overflow-y-auto border border-stone-700 p-2 rounded-md">
+                                {users.map(user => (
+                                    <div key={user.id} className="flex items-center">
+                                        <input type="checkbox" id={`shared-user-${user.id}`} checked={formState.sharedMode.userIds.includes(user.id)} onChange={() => handleSharedUserToggle(user.id)} className="h-4 w-4 text-emerald-600 bg-stone-700 border-stone-500 rounded focus:ring-emerald-500" />
+                                        <label htmlFor={`shared-user-${user.id}`} className="ml-3 text-stone-300">{user.gameName} ({user.role})</label>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </CollapsibleSection>
+
+            <CollapsibleSection title="Security">
+                 <div className="space-y-6">
                      <div className="pt-4 border-t flex items-start" style={{ borderColor: 'hsl(var(--color-border))' }}>
                         <ToggleSwitch enabled={formState.security.requirePinForUsers} setEnabled={(val) => handleToggleChange('security.requirePinForUsers', val)} label="Require PIN for Users" />
                         <p className="text-sm ml-6" style={{ color: 'hsl(var(--color-text-secondary))' }}>If disabled, users will not be prompted for a PIN when switching profiles. This is less secure but faster for trusted environments.</p>

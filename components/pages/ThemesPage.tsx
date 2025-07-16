@@ -43,8 +43,7 @@ const ThemesPage: React.FC = () => {
 
     return (
         <div>
-            <div className="flex justify-between items-center mb-8">
-                <h1 className="text-4xl font-medieval text-stone-100">Themes</h1>
+            <div className="flex justify-end items-center mb-8">
                 <Button onClick={handleSave} disabled={!currentUser.ownedThemes.includes(selectedThemeId)}>
                     Save Active Theme
                 </Button>

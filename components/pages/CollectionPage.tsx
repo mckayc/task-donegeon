@@ -1,4 +1,5 @@
 
+
 import React, { useMemo } from 'react';
 import { useAppState } from '../../context/AppContext';
 import Card from '../ui/Card';
@@ -20,7 +21,6 @@ const CollectionPage: React.FC = () => {
 
     return (
         <div>
-            <h1 className="text-4xl font-medieval text-stone-100 mb-8">My Collection</h1>
             <Card title="Purchased Items" titleIcon={<CollectionIcon />}>
                 {myCollection.length > 0 ? (
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">

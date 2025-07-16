@@ -8,10 +8,20 @@ import { analyzeBlueprintForConflicts } from '../../../utils/sharing';
 import BlueprintPreviewDialog from '../../sharing/BlueprintPreviewDialog';
 import ConfirmDialog from '../../ui/ConfirmDialog';
 
+const formatBytes = (bytes: number, decimals = 2) => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const dm = decimals < 0 ? 0 : decimals;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+}
+
 interface LocalBackup {
     id: string;
     timestamp: Date;
     name: string;
+    size: number;
     data: IAppData;
 }
 
@@ -77,13 +87,36 @@ const BackupAndImportPage: React.FC = () => {
     };
     
     const handleGenerateBackup = () => {
-        const { isAppUnlocked, isFirstRun, notifications, isSwitchingUser, targetedUserForLogin, activePage, activeMarketId, allTags, ...dataToBackup } = appState;
+        const dataToBackup: IAppData = {
+            users: appState.users,
+            quests: appState.quests,
+            markets: appState.markets,
+            rewardTypes: appState.rewardTypes,
+            questCompletions: appState.questCompletions,
+            purchaseRequests: appState.purchaseRequests,
+            guilds: appState.guilds,
+            ranks: appState.ranks,
+            trophies: appState.trophies,
+            userTrophies: appState.userTrophies,
+            adminAdjustments: appState.adminAdjustments,
+            gameAssets: appState.gameAssets,
+            systemLogs: appState.systemLogs,
+            settings: appState.settings,
+            themes: appState.themes,
+            loginHistory: appState.loginHistory
+        };
+        
+        const dataStr = JSON.stringify(dataToBackup, null, 2);
+        const size = new Blob([dataStr]).size;
+
         const newBackup: LocalBackup = {
             id: `backup-${Date.now()}`,
             timestamp: new Date(),
             name: `donegeon_backup_${new Date().toISOString().replace(/:/g, '-').slice(0, 19)}.json`,
             data: dataToBackup,
+            size: size,
         };
+
         const updatedBackups = [newBackup, ...localBackups];
         setLocalBackups(updatedBackups);
         saveBackupsToLocal(updatedBackups);
@@ -122,7 +155,9 @@ const BackupAndImportPage: React.FC = () => {
                             <div key={backup.id} className="flex justify-between items-center p-3 bg-stone-900/50 rounded-md">
                                 <div>
                                     <p className="font-semibold text-stone-200">{backup.name}</p>
-                                    <p className="text-xs text-stone-400">{backup.timestamp.toLocaleString()}</p>
+                                    <p className="text-xs text-stone-400">
+                                        {backup.timestamp.toLocaleString()} ({formatBytes(backup.size)})
+                                    </p>
                                 </div>
                                 <div className="flex gap-2">
                                     <Button variant="secondary" className="text-sm py-1 px-3" onClick={() => handleDownloadBackup(backup)}>Download</Button>

@@ -56,6 +56,7 @@ const RoadmapContent: React.FC = () => (
             <p className="text-xs text-stone-400">This phase introduces major new creative outlets and systems for deeper engagement.</p>
             <ul className="list-disc list-inside space-y-2 mt-2">
                 <li><strong>Theme Creator:</strong> An admin tool to create and edit custom visual themes (colors, fonts, etc.) that can be sold in a market.</li>
+                <li><strong>User-Created Content:</strong> A system allowing Explorers to design their own quests and items, then submit them to admins for approval. This fosters creativity and allows the game world to be co-created by its members.</li>
                 <li><strong>Reward Rarity &amp; Limits:</strong> Ability to specify how many of a certain reward can be claimed, creating rare or one-of-a-kind items.</li>
                 <li><strong>Automated Quest Rotation:</strong> A system for automatically rotating daily or weekly duties among guild members to ensure fair distribution of chores.</li>
             </ul>
@@ -121,7 +122,7 @@ const AboutPage: React.FC = () => {
         return (
             <div className="space-y-6 text-stone-300 leading-relaxed">
                 <p>{metadata.description}</p>
-                 <p>This version refines the user interface by moving the rewards display into the main content area, next to the page title. This provides better context and declutters the header. It also includes important bug fixes for reward balance updates and administrator PIN login flows.</p>
+                 <p>This version introduces a fullscreen toggle button in the header, perfect for an immersive experience on tablets. It also includes fixes for item import IDs and shared calendar quest visibility.</p>
                 
                 <div className="pt-4 border-t border-stone-700/60 text-sm">
                     <p><strong>Version:</strong> {metadata.version}</p>

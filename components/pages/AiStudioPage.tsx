@@ -1,4 +1,5 @@
 
+
 import React, { useState } from 'react';
 import Button from '../ui/Button';
 import Input from '../ui/Input';
@@ -182,8 +183,6 @@ const AiStudioPage: React.FC = () => {
     
     return (
         <div className="space-y-6">
-            <h1 className="text-4xl font-medieval text-stone-100 flex items-center gap-3"><SparklesIcon className="w-8 h-8 text-accent" /> AI Studio</h1>
-
             <Card title="Generation Context">
                 <p className="text-stone-400 text-sm mb-3">Provide background info about your group to help the AI generate relevant text-based ideas.</p>
                 <textarea value={context} onChange={e => setContext(e.target.value)} rows={3} className="w-full px-4 py-2 bg-stone-700 border border-stone-600 rounded-md" placeholder="e.g., A family with two kids, ages 8 and 12. We live in a house with a backyard and have one dog. We want to focus on chores and outdoor activities." />

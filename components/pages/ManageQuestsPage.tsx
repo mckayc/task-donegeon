@@ -1,11 +1,8 @@
 
-
-
-
 import React, { useState } from 'react';
 import { useGameData, useGameDataDispatch } from '../../context/GameDataContext';
 import { useSettings } from '../../context/SettingsContext';
-import { Quest } from '../../types';
+import { Quest, QuestType } from '../../types';
 import Button from '../ui/Button';
 import Card from '../ui/Card';
 import CreateQuestDialog from '../quests/CreateQuestDialog';
@@ -23,7 +20,7 @@ const ManageQuestsPage: React.FC = () => {
     const [isGeneratorOpen, setIsGeneratorOpen] = useState(false);
     const [isConfirmOpen, setIsConfirmOpen] = useState(false);
     const [deletingId, setDeletingId] = useState<string | null>(null);
-    const [initialCreateData, setInitialCreateData] = useState<{ title: string; description: string } | null>(null);
+    const [initialCreateData, setInitialCreateData] = useState<{ title: string; description: string; type: QuestType } | null>(null);
 
     const handleEdit = (quest: Quest) => {
         setInitialCreateData(null);
@@ -56,7 +53,7 @@ const ManageQuestsPage: React.FC = () => {
         setInitialCreateData(null);
     }
     
-    const handleUseIdea = (idea: { title: string; description: string }) => {
+    const handleUseIdea = (idea: { title: string; description: string; type: QuestType }) => {
         setIsGeneratorOpen(false);
         setInitialCreateData(idea);
         setEditingQuest(null);
@@ -70,7 +67,6 @@ const ManageQuestsPage: React.FC = () => {
                  <div className="flex gap-2">
                     {isAiAvailable && (
                         <Button onClick={() => setIsGeneratorOpen(true)} variant="secondary">
-                            <SparklesIcon className="w-5 h-5 mr-2" />
                             Create with AI
                         </Button>
                     )}

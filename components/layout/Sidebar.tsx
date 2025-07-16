@@ -1,14 +1,13 @@
 
-
-
 import React, { useState, useMemo } from 'react';
 import { Role, Page, QuestCompletionStatus, PurchaseRequestStatus, Terminology, SidebarConfigItem, SidebarLink } from '../../types';
 import { useAuth } from '../../context/AuthContext';
 import { useGameData } from '../../context/GameDataContext';
 import { useSettings, useSettingsDispatch } from '../../context/SettingsContext';
-import { ChevronDownIcon } from '../ui/Icons';
+import { ChevronDownIcon, ArrowLeftIcon, ArrowRightIcon } from '../ui/Icons';
+import { useAppState, useAppDispatch } from '../../context/AppContext';
 
-const NavLink: React.FC<{ item: SidebarLink, activePage: Page, setActivePage: (page: Page) => void, badgeCount?: number }> = ({ item, activePage, setActivePage, badgeCount = 0 }) => {
+const NavLink: React.FC<{ item: SidebarLink, activePage: Page, setActivePage: (page: Page) => void, badgeCount?: number, isCollapsed: boolean }> = ({ item, activePage, setActivePage, badgeCount = 0, isCollapsed }) => {
     const { settings } = useSettings();
     const linkName = item.termKey ? settings.terminology[item.termKey] : item.id;
 
@@ -19,18 +18,19 @@ const NavLink: React.FC<{ item: SidebarLink, activePage: Page, setActivePage: (p
         <a
           href="#"
           onClick={(e) => { e.preventDefault(); setActivePage(item.id); }}
-          className={`relative flex items-center py-3 text-lg rounded-lg transition-colors duration-200 ${isNested ? 'px-4 pl-12' : 'px-4'} ${
+          className={`relative flex items-center py-3 text-lg rounded-lg transition-colors duration-200 ${isNested ? 'pl-12' : 'px-4'} ${ isCollapsed ? 'justify-center' : ''} ${
             isActive
               ? 'bg-emerald-600/20 text-emerald-300'
               : 'text-stone-300 hover:bg-stone-700/50 hover:text-white'
           }`}
-          style={{ paddingLeft: isNested ? `${1.5 + item.level * 1.5}rem` : '1rem' }}
+          style={!isCollapsed ? { paddingLeft: isNested ? `${1.5 + item.level * 1.5}rem` : '1rem' } : {}}
+          title={isCollapsed ? linkName : ''}
         >
-          <span className="mr-3 text-xl">{item.emoji}</span>
-          <span>{linkName}</span>
+          <span className={`text-xl ${!isCollapsed ? 'mr-3' : ''}`}>{item.emoji}</span>
+          {!isCollapsed && <span>{linkName}</span>}
           {badgeCount > 0 && (
-            <span className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center justify-center w-5 h-5 text-xs font-bold text-white bg-red-600 rounded-full">
-                {badgeCount}
+            <span className={`absolute flex items-center justify-center w-5 h-5 text-xs font-bold text-white bg-red-600 rounded-full ${isCollapsed ? 'top-1 right-1' : 'right-3 top-1/2 -translate-y-1/2'}`}>
+                {badgeCount > 9 ? '9+' : badgeCount}
             </span>
           )}
         </a>
@@ -43,11 +43,16 @@ interface CollapsibleNavGroupProps {
     activePage: Page;
     childPages: Page[];
     badgeCount?: number;
+    isCollapsed: boolean;
 }
 
-const CollapsibleNavGroup: React.FC<CollapsibleNavGroupProps> = ({ title, children, activePage, childPages, badgeCount }) => {
+const CollapsibleNavGroup: React.FC<CollapsibleNavGroupProps> = ({ title, children, activePage, childPages, badgeCount, isCollapsed }) => {
     const isGroupActive = childPages.includes(activePage);
     const [isOpen, setIsOpen] = useState(isGroupActive);
+
+    if (isCollapsed) {
+        return <div className="border-t border-stone-700/60 my-2"></div>;
+    }
 
     return (
         <div className="border-t border-stone-700/60 my-2 pt-2">
@@ -61,7 +66,7 @@ const CollapsibleNavGroup: React.FC<CollapsibleNavGroupProps> = ({ title, childr
                 <div className="flex items-center gap-2">
                     {badgeCount && badgeCount > 0 && !isOpen ? (
                          <span className="flex items-center justify-center w-5 h-5 text-xs font-bold text-white bg-red-600 rounded-full">
-                            {badgeCount}
+                            {badgeCount > 9 ? '9+' : badgeCount}
                         </span>
                     ) : null}
                     <ChevronDownIcon className={`w-5 h-5 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
@@ -82,6 +87,8 @@ const Sidebar: React.FC = () => {
   const { questCompletions, purchaseRequests } = useGameData();
   const { activePage, settings, isAiAvailable } = useSettings();
   const { setActivePage } = useSettingsDispatch();
+  const { isSidebarCollapsed } = useAppState();
+  const { toggleSidebar } = useAppDispatch();
   
   if (!currentUser) return null;
 
@@ -116,6 +123,7 @@ const Sidebar: React.FC = () => {
                             activePage={activePage} 
                             setActivePage={setActivePage} 
                             badgeCount={childItem.id === 'Approvals' ? totalApprovals : 0}
+                            isCollapsed={isSidebarCollapsed}
                         />
                     );
                     childPages.push(childItem.id);
@@ -129,6 +137,7 @@ const Sidebar: React.FC = () => {
                     activePage={activePage} 
                     childPages={childPages} 
                     badgeCount={item.title === 'Management' ? totalApprovals : 0}
+                    isCollapsed={isSidebarCollapsed}
                 >
                     {groupChildren}
                 </CollapsibleNavGroup>
@@ -141,6 +150,7 @@ const Sidebar: React.FC = () => {
                     activePage={activePage} 
                     setActivePage={setActivePage} 
                     badgeCount={item.id === 'Approvals' ? totalApprovals : 0}
+                    isCollapsed={isSidebarCollapsed}
                 />
             );
             i++;
@@ -152,17 +162,26 @@ const Sidebar: React.FC = () => {
   }
 
   return (
-    <div className="w-72 flex flex-col" style={{ backgroundColor: 'hsl(var(--color-bg-primary))', borderRight: '1px solid hsl(var(--color-border))' }}>
+    <div className={`flex flex-col flex-shrink-0 transition-all duration-300 ${isSidebarCollapsed ? 'w-20' : 'w-72'}`} style={{ backgroundColor: 'hsl(var(--color-bg-primary))', borderRight: '1px solid hsl(var(--color-border))' }}>
       <button 
         onClick={() => setActivePage('Dashboard')} 
         className="flex items-center justify-center h-20 border-b cursor-pointer hover:bg-stone-800/50 transition-colors" 
         style={{ borderColor: 'hsl(var(--color-border))' }}
       >
-        <h1 className="text-3xl font-medieval text-accent">{settings.terminology.appName}</h1>
+        <h1 className={`font-medieval text-accent transition-opacity duration-200 ${isSidebarCollapsed ? 'opacity-0' : 'opacity-100'}`}>{settings.terminology.appName}</h1>
       </button>
-      <nav className="flex-1 px-4 py-6 space-y-1 overflow-y-auto scrollbar-hide">
+      <nav className="flex-1 px-2 py-6 space-y-1 overflow-y-auto scrollbar-hide">
         {renderNavItems()}
       </nav>
+      <div className="px-2 py-4 border-t" style={{ borderColor: 'hsl(var(--color-border))' }}>
+         <button 
+            onClick={toggleSidebar}
+            title={isSidebarCollapsed ? 'Expand Sidebar' : 'Collapse Sidebar'}
+            className="w-full flex items-center justify-center py-2 text-stone-400 hover:bg-stone-700/50 hover:text-white rounded-lg transition-colors"
+         >
+            {isSidebarCollapsed ? <ArrowRightIcon className="w-6 h-6" /> : <ArrowLeftIcon className="w-6 h-6" />}
+         </button>
+      </div>
     </div>
   );
 };

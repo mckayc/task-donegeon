@@ -56,16 +56,6 @@ const storage = process.env.STORAGE_PROVIDER === 'supabase'
     });
 const upload = multer({ storage });
 
-
-// === Static File Serving ===
-// Serve React app build files
-app.use(express.static(path.join(__dirname, '../dist')));
-// Serve local uploads if using local storage
-if (process.env.STORAGE_PROVIDER === 'local') {
-    app.use('/uploads', express.static(UPLOADS_DIR));
-}
-
-
 // === Database Connection Pool ===
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
@@ -173,22 +163,40 @@ app.get('/api/media/local-gallery', async (req, res, next) => {
     if (process.env.STORAGE_PROVIDER !== 'local') {
         return res.status(200).json([]); // Only for local storage
     }
+    
+    const walk = async (dir, parentCategory = null) => {
+        let dirents;
+        try {
+            dirents = await fs.readdir(dir, { withFileTypes: true });
+        } catch (e) {
+            if (e.code === 'ENOENT') { // Directory doesn't exist yet
+                await fs.mkdir(dir, { recursive: true });
+                return [];
+            }
+            throw e; // Other errors
+        }
+
+        let imageFiles = [];
+        for (const dirent of dirents) {
+            const fullPath = path.join(dir, dirent.name);
+            if (dirent.isDirectory()) {
+                const nestedFiles = await walk(fullPath, dirent.name);
+                imageFiles = imageFiles.concat(nestedFiles);
+            } else if (/\.(png|jpg|jpeg|gif|webp|svg)$/i.test(dirent.name)) {
+                const relativePath = path.relative(UPLOADS_DIR, fullPath).replace(/\\/g, '/');
+                imageFiles.push({
+                    url: `/uploads/${relativePath}`,
+                    category: parentCategory ? (parentCategory.charAt(0).toUpperCase() + parentCategory.slice(1)) : 'Miscellaneous',
+                    name: dirent.name.replace(/\.[^/.]+$/, ""),
+                });
+            }
+        }
+        return imageFiles;
+    };
+
     try {
-        await fs.mkdir(UPLOADS_DIR, { recursive: true });
-        const files = await fs.readdir(UPLOADS_DIR);
-        const imageFiles = files
-            .filter(file => /\.(png|jpg|jpeg|gif|webp|svg)$/i.test(file))
-            .map(file => {
-                const parts = file.replace(/\.[^/.]+$/, "").split('-');
-                const category = parts.length > 1 ? parts[0] : 'Miscellaneous';
-                const name = parts.length > 1 ? parts.slice(1).join(' ') : parts[0];
-                return {
-                    url: `/uploads/${file}`,
-                    category: category.charAt(0).toUpperCase() + category.slice(1),
-                    name: name.charAt(0).toUpperCase() + name.slice(1),
-                };
-            });
-        res.status(200).json(imageFiles);
+        const allImageFiles = await walk(UPLOADS_DIR);
+        res.status(200).json(allImageFiles);
     } catch (err) {
         next(err);
     }
@@ -237,6 +245,15 @@ app.post('/api/ai/generate', async (req, res, next) => {
         next(err);
     }
 });
+
+
+// === Static File Serving ===
+// Serve React app build files
+app.use(express.static(path.join(__dirname, '../dist')));
+// Serve local uploads if using local storage
+if (process.env.STORAGE_PROVIDER === 'local') {
+    app.use('/uploads', express.static(UPLOADS_DIR));
+}
 
 
 // === Final Catchall & Error Handling ===

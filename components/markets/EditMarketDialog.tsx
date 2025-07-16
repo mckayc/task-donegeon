@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { Market } from '../../types';
@@ -7,13 +8,19 @@ import EmojiPicker from '../ui/EmojiPicker';
 
 interface EditMarketDialogProps {
   market: Market | null;
+  initialData?: { title: string; description: string; icon: string; };
   onClose: () => void;
 }
 
-const EditMarketDialog: React.FC<EditMarketDialogProps> = ({ market, onClose }) => {
+const EditMarketDialog: React.FC<EditMarketDialogProps> = ({ market, initialData, onClose }) => {
   const { guilds } = useAppState();
   const { addMarket, updateMarket } = useAppDispatch();
-  const [formData, setFormData] = useState({ title: '', description: '', guildId: '', icon: '🛒' });
+  const [formData, setFormData] = useState({ 
+      title: initialData?.title || '', 
+      description: initialData?.description || '', 
+      guildId: '', 
+      icon: initialData?.icon || '🛒' 
+  });
   const [isEmojiPickerOpen, setIsEmojiPickerOpen] = useState(false);
 
   useEffect(() => {

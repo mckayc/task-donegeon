@@ -9,7 +9,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=MedievalSharp&family=Roboto:wght@400;500;700&family=Comic+Neue:wght@700&family=Uncial+Antiqua&family=Press+Start+2P&family=Special+Elite&family=Metamorphous&family=IM+Fell+English+SC&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Almendra&family=Almendra+Display&family=Almendra+SC&family=Butcherman&family=Cinzel&family=Cinzel+Decorative&family=Comic+Neue:wght@700&family=Cormorant+Garamond&family=Creepster&family=Crimson+Pro&family=Eater&family=EB+Garamond&family=Fondamento&family=Fruktur&family=Griffy&family=Henny+Penny&family=IM+Fell+English+SC&family=Lora&family=MedievalSharp&family=Metamorphous&family=New+Rocker&family=Nosifer&family=Pirata+One&family=Press+Start+2P&family=Roboto:wght@400;500;700&family=Rye&family=Sancreek&family=Smokum&family=Special+Elite&family=Uncial+Antiqua&family=Vollkorn&display=swap" rel="stylesheet">
     <style>
       /* For hiding scrollbars */
       .scrollbar-hide::-webkit-scrollbar {
@@ -24,6 +24,8 @@
       :root {
         --font-display: 'MedievalSharp', cursive;
         --font-body: 'Roboto', sans-serif;
+        --font-size-display: 3rem;
+        --font-size-body: 1rem;
         --color-bg-primary: 224 71% 4%;    /* stone-950 */
         --color-bg-secondary: 224 39% 10%; /* stone-900 */
         --color-bg-tertiary: 240 10% 19%;  /* stone-800 */
@@ -37,8 +39,12 @@
 
       body {
         font-family: var(--font-body);
+        font-size: var(--font-size-body);
         background-color: hsl(var(--color-bg-primary));
         color: hsl(var(--color-text-primary));
+      }
+      h1 {
+        font-size: var(--font-size-display);
       }
       .font-medieval {
         font-family: var(--font-display);

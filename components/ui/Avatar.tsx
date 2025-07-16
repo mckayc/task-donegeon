@@ -17,27 +17,22 @@ const Avatar: React.FC<AvatarProps> = ({ user, className }) => {
         })
         .filter((asset): asset is NonNullable<typeof asset> => !!asset);
 
-    if (equippedAssets.length === 0) {
-        return (
-            <div className={`flex items-center justify-center bg-stone-700 rounded-full ${className}`}>
+    return (
+        <div className={`relative flex items-center justify-center ${className}`}>
+            {equippedAssets.length === 0 ? (
                 <span className="font-bold text-xl text-stone-300">
                     {user.gameName.charAt(0).toUpperCase()}
                 </span>
-            </div>
-        );
-    }
-
-    return (
-        <div className={`relative w-full h-full ${className || ''}`}>
-            {equippedAssets.map(asset => (
-                <img
-                    key={asset.id}
-                    src={asset.url}
-                    alt={asset.name}
-                    className="absolute inset-0 w-full h-full object-contain"
-                    style={{ zIndex: 1 }}
-                />
-            ))}
+            ) : (
+                equippedAssets.map(asset => (
+                    <img
+                        key={asset.id}
+                        src={asset.url}
+                        alt={asset.name}
+                        className="absolute inset-0 w-full h-full object-contain"
+                    />
+                ))
+            )}
         </div>
     );
 };

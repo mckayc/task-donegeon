@@ -1,8 +1,8 @@
 {
-  "name": "Task Donegeon - 0.0.56",
-  "version": "0.0.56",
-  "lastChange": "Standardized quest interactions across all views with a unified pop-up. Added a 'To-Do' system for prioritizing Ventures, which now also appear in calendars. Revamped the Chronicles view for clarity and fixed numerous UI bugs.",
-  "lastChangeDate": "2025-06-05T10:00:00Z",
+  "name": "Task Donegeon - 0.0.57 - Polished and Synced",
+  "version": "0.0.57",
+  "lastChange": "Implemented a collapsible sidebar and data synchronization across devices. Added AI generation for items (with icons), markets, trophies, and themes. The theme editor now features an expanded font library and size controls. The user avatar in the header now correctly displays equipped items, and the asset upload system has been revamped for better organization.",
+  "lastChangeDate": "2025-06-10T10:00:00Z",
   "description": "A gamified task and chore tracker for families and groups. Complete quests, earn currency and experience, and level up your character in a fun, medieval-themed adventure.",
   "requestFramePermissions": [],
   "prompt": ""

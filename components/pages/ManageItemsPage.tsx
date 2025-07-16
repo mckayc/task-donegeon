@@ -1,5 +1,4 @@
 
-
 import React, { useState } from 'react';
 import { useGameData, useGameDataDispatch } from '../../context/GameDataContext';
 import { useSettings } from '../../context/SettingsContext';
@@ -9,16 +8,20 @@ import Card from '../ui/Card';
 import ConfirmDialog from '../ui/ConfirmDialog';
 import EditGameAssetDialog from '../admin/EditGameAssetDialog';
 import EmptyState from '../ui/EmptyState';
-import { ItemManagerIcon } from '../ui/Icons';
+import { ItemManagerIcon, SparklesIcon } from '../ui/Icons';
+import ItemIdeaGenerator from '../quests/ItemIdeaGenerator';
 
 const ManageItemsPage: React.FC = () => {
     const { gameAssets } = useGameData();
-    const { settings } = useSettings();
+    const { settings, isAiAvailable } = useSettings();
     const { deleteGameAsset } = useGameDataDispatch();
     
     const [editingAsset, setEditingAsset] = useState<GameAsset | null>(null);
     const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
     const [deletingAsset, setDeletingAsset] = useState<GameAsset | null>(null);
+    const [isGeneratorOpen, setIsGeneratorOpen] = useState(false);
+    const [initialCreateData, setInitialCreateData] = useState<{ name: string; description: string; category: string; icon: string; } | null>(null);
+
 
     const handleEdit = (asset: GameAsset) => {
         setEditingAsset(asset);
@@ -44,11 +47,25 @@ const ManageItemsPage: React.FC = () => {
     const handleCloseDialog = () => {
         setEditingAsset(null);
         setIsCreateDialogOpen(false);
+        setInitialCreateData(null);
     }
+    
+    const handleUseIdea = (idea: { name: string; description: string; category: string; icon: string; }) => {
+        setIsGeneratorOpen(false);
+        setInitialCreateData(idea);
+        setEditingAsset(null);
+        setIsCreateDialogOpen(true);
+    };
+
 
     return (
         <div>
-            <div className="flex justify-end items-center mb-8">
+            <div className="flex justify-end items-center mb-8 gap-2">
+                 {isAiAvailable && (
+                    <Button onClick={() => setIsGeneratorOpen(true)} variant="secondary">
+                        Create with AI
+                    </Button>
+                )}
                 <Button onClick={handleCreate}>Create New Asset</Button>
             </div>
 
@@ -100,6 +117,8 @@ const ManageItemsPage: React.FC = () => {
             </Card>
             
             {isCreateDialogOpen && <EditGameAssetDialog assetToEdit={editingAsset} newAssetUrl={null} onClose={handleCloseDialog} />}
+            {isGeneratorOpen && <ItemIdeaGenerator onUseIdea={handleUseIdea} onClose={() => setIsGeneratorOpen(false)} />}
+
 
             <ConfirmDialog
                 isOpen={!!deletingAsset}

@@ -21,7 +21,7 @@ const SharedHeader: React.FC = () => {
 
   return (
     <header className="h-20 bg-stone-900/30 flex items-center justify-between px-4 md:px-8 border-b border-stone-700/50">
-      <h1 className="text-3xl font-medieval text-accent">{settings.terminology.appName}</h1>
+      <h1 className="font-medieval text-accent">{settings.terminology.appName}</h1>
       <div className="flex items-center gap-3">
         {sharedUsers.map(user => (
           <button

@@ -1,3 +1,4 @@
+
 import { GenerateContentResponse } from "@google/genai";
 
 
@@ -369,6 +370,8 @@ export interface ImportResolution {
 export interface ThemeStyle {
   '--font-display': string;
   '--font-body': string;
+  '--font-size-display': string;
+  '--font-size-body': string;
   '--color-bg-primary': string;
   '--color-bg-secondary': string;
   '--color-bg-tertiary': string;

@@ -1,10 +1,13 @@
 
+
 import React, { useState } from 'react';
 import { GenerateContentResponse, Type } from "@google/genai";
 import Button from '../ui/Button';
 import Input from '../ui/Input';
 import { SparklesIcon } from '../ui/Icons';
 import { useAppState } from '../../context/AppContext';
+import { QuestType } from '../../types';
+import ToggleSwitch from '../ui/ToggleSwitch';
 
 interface QuestIdea {
   title: string;
@@ -12,13 +15,14 @@ interface QuestIdea {
 }
 
 interface QuestIdeaGeneratorProps {
-  onUseIdea: (idea: QuestIdea) => void;
+  onUseIdea: (idea: QuestIdea & { type: QuestType }) => void;
   onClose: () => void;
 }
 
 const QuestIdeaGenerator: React.FC<QuestIdeaGeneratorProps> = ({ onUseIdea, onClose }) => {
     const { settings } = useAppState();
     const [prompt, setPrompt] = useState('');
+    const [questType, setQuestType] = useState<QuestType>(QuestType.Venture);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
     const [generatedQuests, setGeneratedQuests] = useState<QuestIdea[]>([]);
@@ -32,7 +36,7 @@ const QuestIdeaGenerator: React.FC<QuestIdeaGeneratorProps> = ({ onUseIdea, onCl
         setError('');
         setGeneratedQuests([]);
 
-        const fullPrompt = `Generate 5 quest ideas for a gamified task app called ${settings.terminology.appName}. The quests should be practical, actionable, and based on the theme: "${prompt}".`;
+        const fullPrompt = `Generate 5 quest ideas for a gamified task app called ${settings.terminology.appName}. The quests should be of type "${questType}". Duties are recurring tasks and Ventures are one-time projects. The quests should be practical, actionable, and based on the theme: "${prompt}".`;
 
         try {
             const response = await fetch('/api/ai/generate', {
@@ -107,7 +111,7 @@ const QuestIdeaGenerator: React.FC<QuestIdeaGeneratorProps> = ({ onUseIdea, onCl
                 </div>
 
                 <div className="flex-1 space-y-4 p-8 overflow-y-auto scrollbar-hide">
-                    <div className="flex gap-4">
+                    <div className="flex flex-col gap-4">
                         <Input
                             label="Quest Theme"
                             placeholder="e.g., 'Weekly kitchen chores for kids'"
@@ -117,6 +121,19 @@ const QuestIdeaGenerator: React.FC<QuestIdeaGeneratorProps> = ({ onUseIdea, onCl
                             className="flex-grow"
                             disabled={isLoading}
                         />
+                         <div className="flex items-center justify-between p-3 bg-stone-900/40 rounded-lg">
+                            <span className="font-semibold text-stone-300">Quest Type:</span>
+                             <div className="flex items-center gap-4">
+                                <label className="flex items-center cursor-pointer">
+                                    <input type="radio" name="questType" value={QuestType.Venture} checked={questType === QuestType.Venture} onChange={() => setQuestType(QuestType.Venture)} className="h-4 w-4 text-emerald-600 bg-stone-700 border-stone-500 focus:ring-emerald-500" />
+                                    <span className="ml-2">{settings.terminology.singleTask} (One-time)</span>
+                                </label>
+                                 <label className="flex items-center cursor-pointer">
+                                    <input type="radio" name="questType" value={QuestType.Duty} checked={questType === QuestType.Duty} onChange={() => setQuestType(QuestType.Duty)} className="h-4 w-4 text-emerald-600 bg-stone-700 border-stone-500 focus:ring-emerald-500" />
+                                    <span className="ml-2">{settings.terminology.recurringTask} (Recurring)</span>
+                                </label>
+                            </div>
+                         </div>
                         <Button onClick={handleGenerate} disabled={isLoading || !prompt.trim()} className="self-end">
                             {isLoading ? 'Generating...' : 'Generate'}
                         </Button>
@@ -139,7 +156,7 @@ const QuestIdeaGenerator: React.FC<QuestIdeaGeneratorProps> = ({ onUseIdea, onCl
                                         <h4 className="font-bold text-stone-100">{quest.title}</h4>
                                         <p className="text-sm text-stone-400">{quest.description}</p>
                                     </div>
-                                    <Button variant="secondary" className="text-sm py-1 px-3 flex-shrink-0" onClick={() => onUseIdea(quest)}>
+                                    <Button variant="secondary" className="text-sm py-1 px-3 flex-shrink-0" onClick={() => onUseIdea({...quest, type: questType})}>
                                         Use Idea
                                     </Button>
                                 </div>

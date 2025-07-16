@@ -1,6 +1,4 @@
 
-
-
 import React, { useState } from 'react';
 import { Market } from '../../types';
 import Button from '../ui/Button';
@@ -9,23 +7,27 @@ import EditMarketDialog from '../markets/EditMarketDialog';
 import ConfirmDialog from '../ui/ConfirmDialog';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import EmptyState from '../ui/EmptyState';
-import { MarketplaceIcon } from '../ui/Icons';
+import { MarketplaceIcon, SparklesIcon } from '../ui/Icons';
+import MarketIdeaGenerator from '../quests/MarketIdeaGenerator';
 
 const ManageMarketsPage: React.FC = () => {
-    const { markets, settings } = useAppState();
+    const { markets, settings, isAiConfigured: isAiAvailable } = useAppState();
     const { deleteMarket } = useAppDispatch();
     const [isMarketDialogOpen, setIsMarketDialogOpen] = useState(false);
     const [editingMarket, setEditingMarket] = useState<Market | null>(null);
     const [deletingMarket, setDeletingMarket] = useState<Market | null>(null);
-
+    const [isGeneratorOpen, setIsGeneratorOpen] = useState(false);
+    const [initialCreateData, setInitialCreateData] = useState<{ title: string; description: string; icon: string; } | null>(null);
 
     const handleCreateMarket = () => {
         setEditingMarket(null);
+        setInitialCreateData(null);
         setIsMarketDialogOpen(true);
     };
 
     const handleEditMarket = (market: Market) => {
         setEditingMarket(market);
+        setInitialCreateData(null);
         setIsMarketDialogOpen(true);
     };
 
@@ -39,10 +41,22 @@ const ManageMarketsPage: React.FC = () => {
         }
         setDeletingMarket(null);
     };
+    
+    const handleUseIdea = (idea: { title: string; description: string; icon: string; }) => {
+        setIsGeneratorOpen(false);
+        setInitialCreateData(idea);
+        setEditingMarket(null);
+        setIsMarketDialogOpen(true);
+    };
 
     return (
         <div>
-            <div className="flex justify-end items-center mb-8">
+            <div className="flex justify-end items-center mb-8 gap-2">
+                {isAiAvailable && (
+                    <Button onClick={() => setIsGeneratorOpen(true)} variant="secondary">
+                        Create with AI
+                    </Button>
+                )}
                 <Button onClick={handleCreateMarket}>Create New {settings.terminology.store}</Button>
             </div>
 
@@ -84,7 +98,11 @@ const ManageMarketsPage: React.FC = () => {
             {isMarketDialogOpen && (
                 <EditMarketDialog
                     market={editingMarket}
-                    onClose={() => setIsMarketDialogOpen(false)}
+                    initialData={initialCreateData || undefined}
+                    onClose={() => {
+                        setIsMarketDialogOpen(false);
+                        setInitialCreateData(null);
+                    }}
                 />
             )}
             
@@ -97,6 +115,8 @@ const ManageMarketsPage: React.FC = () => {
                     message={`Are you sure you want to delete the ${settings.terminology.store.toLowerCase()} "${deletingMarket.title}"? This is permanent.`}
                 />
             )}
+
+            {isGeneratorOpen && <MarketIdeaGenerator onUseIdea={handleUseIdea} onClose={() => setIsGeneratorOpen(false)} />}
         </div>
     );
 };

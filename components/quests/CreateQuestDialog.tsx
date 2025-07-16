@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { Quest, QuestType, RewardItem, RewardCategory, QuestAvailability } from '../../types';
@@ -10,7 +11,7 @@ import TagInput from '../ui/TagInput';
 
 interface QuestDialogProps {
   questToEdit?: Quest;
-  initialData?: { title: string, description: string };
+  initialData?: { title: string, description: string, type?: QuestType };
   onClose: () => void;
 }
 
@@ -54,7 +55,7 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
       return {
         title: initialData?.title || '',
         description: initialData?.description || '',
-        type: QuestType.Duty,
+        type: initialData?.type || QuestType.Duty,
         icon: '📝',
         rewards: [] as RewardItem[],
         lateSetbacks: [] as RewardItem[],

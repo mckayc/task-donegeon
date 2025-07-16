@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { Role, User } from '../../types';
@@ -39,7 +40,7 @@ const AppLockScreen: React.FC = () => {
     <div className="min-h-screen flex items-center justify-center bg-stone-900 p-4">
       <div className="max-w-md w-full bg-stone-800 border border-stone-700 rounded-2xl shadow-2xl p-8 md:p-12">
         <div className="text-center mb-6">
-          <h1 className="text-5xl font-medieval text-accent">{settings.terminology.appName}</h1>
+          <h1 className="font-medieval text-accent">{settings.terminology.appName}</h1>
           <p className="text-stone-300 mt-2">Enter a Master Password to unlock.</p>
         </div>
         <form onSubmit={handleSubmit} className="space-y-4">

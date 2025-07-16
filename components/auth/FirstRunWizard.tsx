@@ -66,7 +66,7 @@ const FirstRunWizard: React.FC = () => {
   return (
     <div className="min-h-screen flex items-center justify-center bg-stone-900 p-4">
       <div className="max-w-2xl w-full bg-stone-800 border border-stone-700 rounded-2xl shadow-2xl p-8 md:p-12">
-        <h1 className="text-5xl font-medieval text-accent text-center mb-4">Welcome, {settings.terminology.admin}!</h1>
+        <h1 className="font-medieval text-accent text-center mb-4">Welcome, {settings.terminology.admin}!</h1>
         <p className="text-stone-300 text-center mb-8">
           Let's set up your account. As the {settings.terminology.admin}, you will be in charge of your {settings.terminology.group.toLowerCase()}, {settings.terminology.tasks.toLowerCase()}, and adventurers.
         </p>

@@ -190,7 +190,7 @@ const SwitchUser: React.FC = () => {
 
     return (
         <div className="min-h-screen flex flex-col items-center justify-center bg-stone-900 p-4">
-            <h1 className="text-5xl font-medieval text-emerald-400 text-center mb-10">Choose Your Adventurer</h1>
+            <h1 className="font-medieval text-emerald-400 text-center mb-10">Choose Your Adventurer</h1>
             {error && <p className="text-red-400 bg-red-900/30 p-3 rounded-md mb-8 max-w-lg text-center">{error}</p>}
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
                 {users.map(user => (

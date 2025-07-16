@@ -1,5 +1,4 @@
 
-
 import React, { useState, useRef } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { ThemeDefinition } from '../../types';
@@ -7,6 +6,9 @@ import Button from '../ui/Button';
 import Card from '../ui/Card';
 import EditThemeDialog from '../admin/EditThemeDialog';
 import ConfirmDialog from '../ui/ConfirmDialog';
+import { useSettings } from '../../context/SettingsContext';
+import { SparklesIcon } from '../ui/Icons';
+import ThemeIdeaGenerator from '../quests/ThemeIdeaGenerator';
 
 const ThemePreviewCard: React.FC<{ theme: ThemeDefinition, onEdit: () => void, onDelete: () => void, onExport: () => void }> = ({ theme, onEdit, onDelete, onExport }) => {
     const previewStyle = {
@@ -44,10 +46,12 @@ const ThemePreviewCard: React.FC<{ theme: ThemeDefinition, onEdit: () => void, o
 const ThemeEditorPage: React.FC = () => {
     const { themes } = useAppState();
     const { addTheme, deleteTheme } = useAppDispatch();
+    const { isAiAvailable } = useSettings();
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [editingTheme, setEditingTheme] = useState<ThemeDefinition | null>(null);
     const [deletingTheme, setDeletingTheme] = useState<ThemeDefinition | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const [isGeneratorOpen, setIsGeneratorOpen] = useState(false);
 
     const handleCreate = () => {
         setEditingTheme(null);
@@ -110,10 +114,20 @@ const ThemeEditorPage: React.FC = () => {
         event.target.value = ''; // Reset input
     };
 
+    const handleUseIdea = (idea: { name: string; styles: any; }) => {
+        addTheme({ ...idea, isCustom: true });
+        setIsGeneratorOpen(false);
+    };
+
     return (
         <div className="space-y-8">
             <div className="flex justify-end items-center mb-8">
                 <div className="flex gap-2">
+                    {isAiAvailable && (
+                        <Button onClick={() => setIsGeneratorOpen(true)} variant="secondary">
+                            Create with AI
+                        </Button>
+                    )}
                     <Button variant="secondary" onClick={handleImportClick}>Import Theme</Button>
                     <Button onClick={handleCreate}>Create New Theme</Button>
                     <input type="file" ref={fileInputRef} onChange={handleFileImport} accept=".json" className="hidden" />
@@ -133,6 +147,7 @@ const ThemeEditorPage: React.FC = () => {
             </div>
 
             {isDialogOpen && <EditThemeDialog themeToEdit={editingTheme} onClose={() => setIsDialogOpen(false)} />}
+            {isGeneratorOpen && <ThemeIdeaGenerator onUseIdea={handleUseIdea} onClose={() => setIsGeneratorOpen(false)} />}
             
             <ConfirmDialog
                 isOpen={!!deletingTheme}

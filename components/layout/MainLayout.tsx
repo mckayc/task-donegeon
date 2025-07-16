@@ -1,5 +1,4 @@
 
-
 import React, { useMemo, useEffect } from 'react';
 import Sidebar from './Sidebar';
 import Header from './Header';
@@ -21,7 +20,6 @@ import CalendarPage from '../pages/CalendarPage';
 import ProgressPage from '../pages/ProgressPage';
 import TrophiesPage from '../pages/TrophiesPage';
 import RanksPage from '../pages/RanksPage';
-import { useSettings, useSettingsDispatch } from '../../context/SettingsContext';
 import HelpPage from '../pages/HelpPage';
 import AvatarPage from '../pages/AvatarPage';
 import VacationModeBanner from '../settings/VacationModeBanner';
@@ -38,17 +36,13 @@ import AssetManagerPage from '../pages/management/MediaManagerPage';
 import BackupAndImportPage from '../pages/management/BackupAndImportPage';
 import AssetLibraryPage from '../pages/management/AssetLibraryPage';
 import ThemeEditorPage from '../pages/ThemeEditorPage';
-import { useAuth } from '../../context/AuthContext';
-import { useGameData, useGameDataDispatch } from '../../context/GameDataContext';
 import RewardDisplay from '../ui/RewardDisplay';
+import { useAppState, useAppDispatch } from '../../context/AppContext';
 
 const MainLayout: React.FC = () => {
-  const { activePage, settings } = useSettings();
-  const { setActivePage } = useSettingsDispatch();
-  const { addNotification } = useGameDataDispatch();
-  const { currentUser } = useAuth();
-  const { markets, activeMarketId } = useGameData();
-
+  const { activePage, settings, currentUser, markets, activeMarketId } = useAppState();
+  const { setActivePage, addNotification } = useAppDispatch();
+  
   const ADMIN_ONLY_PAGES: Page[] = [
     'Manage Users', 'Manage Rewards', 'Manage Quests', 'Manage Items', 'Manage Markets',
     'Manage Guilds', 'Manage Ranks', 'Manage Trophies', 'Settings', 'AI Studio',
@@ -148,11 +142,11 @@ const MainLayout: React.FC = () => {
   return (
     <div className="flex h-screen" style={{ backgroundColor: 'hsl(var(--color-bg-secondary))', color: 'hsl(var(--color-text-primary))' }}>
       <Sidebar />
-      <div className="flex-1 flex flex-col overflow-hidden">
+      <div className="flex-1 flex flex-col overflow-hidden transition-all duration-300">
         <Header />
         <main className="flex-1 overflow-x-hidden overflow-y-auto p-4 md:p-8" style={{ backgroundColor: 'hsl(var(--color-bg-tertiary))' }}>
           <div className="flex justify-between items-center mb-8 flex-wrap gap-4">
-            <h1 className="text-4xl font-medieval text-stone-100">{pageTitle}</h1>
+            <h1 className="font-medieval text-stone-100">{pageTitle}</h1>
             <RewardDisplay />
           </div>
           <VacationModeBanner />

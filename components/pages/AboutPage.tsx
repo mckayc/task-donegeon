@@ -122,7 +122,7 @@ const AboutPage: React.FC = () => {
         return (
             <div className="space-y-6 text-stone-300 leading-relaxed">
                 <p>{metadata.description}</p>
-                 <p>This version standardizes quest interactions across the entire app with a unified pop-up system. It introduces a "To-Do" list for prioritizing Ventures, which now also appear in all calendar views. The Chronicles log has been redesigned for clarity, and numerous UI bugs have been fixed.</p>
+                 <p>This version introduces a collapsible sidebar and automatic data synchronization across all your devices. We've supercharged content creation with new AI generators for items, markets, trophies, and themes. The theme editor is now more powerful with an expanded font library and size controls. Plus, your custom avatar now correctly displays in the header, and managing assets is easier with a new folder-based upload system.</p>
                 
                 <div className="pt-4 border-t border-stone-700/60 text-sm">
                     <p><strong>Version:</strong> {metadata.version}</p>

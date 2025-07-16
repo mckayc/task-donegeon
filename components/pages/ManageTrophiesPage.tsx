@@ -1,5 +1,4 @@
 
-
 import React, { useState } from 'react';
 import { Trophy } from '../../types';
 import Button from '../ui/Button';
@@ -9,23 +8,29 @@ import ConfirmDialog from '../ui/ConfirmDialog';
 import { useGameData, useGameDataDispatch } from '../../context/GameDataContext';
 import { useSettings } from '../../context/SettingsContext';
 import EmptyState from '../ui/EmptyState';
-import { TrophyIcon } from '../ui/Icons';
+import { SparklesIcon, TrophyIcon } from '../ui/Icons';
+import TrophyIdeaGenerator from '../quests/TrophyIdeaGenerator';
 
 const ManageTrophiesPage: React.FC = () => {
     const { trophies } = useGameData();
-    const { settings } = useSettings();
+    const { settings, isAiAvailable } = useSettings();
     const { deleteTrophy } = useGameDataDispatch();
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [editingTrophy, setEditingTrophy] = useState<Trophy | null>(null);
     const [deletingTrophy, setDeletingTrophy] = useState<Trophy | null>(null);
+    const [isGeneratorOpen, setIsGeneratorOpen] = useState(false);
+    const [initialCreateData, setInitialCreateData] = useState<{ name: string; description: string; icon: string; } | null>(null);
+
 
     const handleCreate = () => {
         setEditingTrophy(null);
+        setInitialCreateData(null);
         setIsDialogOpen(true);
     };
 
     const handleEdit = (trophy: Trophy) => {
         setEditingTrophy(trophy);
+        setInitialCreateData(null);
         setIsDialogOpen(true);
     };
 
@@ -39,10 +44,22 @@ const ManageTrophiesPage: React.FC = () => {
         }
         setDeletingTrophy(null);
     };
+    
+    const handleUseIdea = (idea: { name: string; description: string; icon: string; }) => {
+        setIsGeneratorOpen(false);
+        setInitialCreateData(idea);
+        setEditingTrophy(null);
+        setIsDialogOpen(true);
+    };
 
     return (
         <div>
-            <div className="flex justify-end items-center mb-8">
+            <div className="flex justify-end items-center mb-8 gap-2">
+                 {isAiAvailable && (
+                    <Button onClick={() => setIsGeneratorOpen(true)} variant="secondary">
+                        Create with AI
+                    </Button>
+                )}
                 <Button onClick={handleCreate}>Create New {settings.terminology.award}</Button>
             </div>
 
@@ -89,7 +106,11 @@ const ManageTrophiesPage: React.FC = () => {
                 )}
             </Card>
 
-            {isDialogOpen && <EditTrophyDialog trophy={editingTrophy} onClose={() => setIsDialogOpen(false)} />}
+            {isDialogOpen && <EditTrophyDialog trophy={editingTrophy} initialData={initialCreateData || undefined} onClose={() => {
+                setIsDialogOpen(false);
+                setInitialCreateData(null);
+            }} />}
+            {isGeneratorOpen && <TrophyIdeaGenerator onUseIdea={handleUseIdea} onClose={() => setIsGeneratorOpen(false)} />}
             
             {deletingTrophy && (
                 <ConfirmDialog

@@ -1,6 +1,7 @@
 
 
 
+
 import React, { useState, useEffect } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { Trophy, TrophyRequirement, TrophyRequirementType, QuestType } from '../../types';
@@ -11,16 +12,17 @@ import EmojiPicker from '../ui/EmojiPicker';
 
 interface EditTrophyDialogProps {
   trophy: Trophy | null;
+  initialData?: { name: string; description: string; icon: string; };
   onClose: () => void;
 }
 
-const EditTrophyDialog: React.FC<EditTrophyDialogProps> = ({ trophy, onClose }) => {
+const EditTrophyDialog: React.FC<EditTrophyDialogProps> = ({ trophy, initialData, onClose }) => {
   const { ranks, allTags } = useAppState();
   const { addTrophy, updateTrophy } = useAppDispatch();
   const [formData, setFormData] = useState<Omit<Trophy, 'id'>>({ 
-    name: '', 
-    description: '', 
-    icon: '🏆', 
+    name: initialData?.name || '', 
+    description: initialData?.description || '', 
+    icon: initialData?.icon || '🏆', 
     isManual: true, 
     requirements: [] 
   });

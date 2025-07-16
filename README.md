@@ -1,7 +1,7 @@
 # Task Donegeon
 
-**Version:** 0.0.56
-**Last Updated:** 2025-06-05T10:00:00Z
+**Version:** 0.0.57
+**Last Updated:** 2025-06-10T10:00:00Z
 
 ---
 
@@ -16,25 +16,19 @@ Task Donegeon is a gamified task and chore management application designed for f
 
 ## ✨ Features
 
--   **Standardized Quest Interactions:** All quests in every view (Dashboard, Calendars, Quest Board) now use a unified interaction model. Click any quest to open a detailed pop-up with "Complete" and "To-Do" options, ensuring a consistent user experience.
--   **Venture Prioritization:** Users can mark one-time "Ventures" as a "To-Do" item, which highlights them visually and sorts them to the top of all lists.
--   **Dynamic Calendar:** The calendar views now intelligently display not only scheduled "Duties" but also any "Ventures" that are due, required, or marked as a "To-Do" item.
--   **Unified Completion Flow:** The "Complete" button now consistently opens a dialog where users can optionally add a note before finalizing the quest.
--   **Redesigned Chronicles:** The history log has been redesigned into a clean, three-column layout for easier readability.
--   **Effortless Setup:** Get started instantly. The app comes pre-configured with a default `admin` account, bypassing any initial setup wizard.
--   **Direct Login:** The application starts on a master password screen, ensuring the game world is secure from the start.
--   **Fullscreen Toggle:** A new button in the header allows users to enter and exit fullscreen mode, perfect for tablet and kiosk use.
--   **Enhanced Security & Login:** Features persistent login sessions, a quick user-switching bar, and configurable PIN/password requirements for different user roles.
--   **Flexible Image Support:** The app supports standard web image formats, including `PNG`, `JPG`, `GIF`, `SVG`, and modern `WebP` files. Admins can manage a local image gallery by simply dropping files into an `uploads` folder, and the app automatically categorizes them by filename for easy use.
--   **Secure AI-Powered Features:** Includes an "AI Studio" for generating quests, items, trophies, and more, powered by a secure backend proxy using the Gemini API.
--   **Advanced Calendar:** Features interactive Month, Week, and Day views for better planning and task management.
--   **Gamified Task Management:** Create recurring "Duties" and one-time "Ventures" with customizable rewards and penalties.
+-   **Data Synchronization:** Automatic data syncing keeps your application state consistent across all your devices.
+-   **Collapsible Sidebar:** A new collapsible sidebar allows for a more compact and focused view.
+-   **AI-Powered Content Generation:** The AI Studio, powered by Google Gemini, can generate ideas for quests (duties vs. ventures), items (including icons), markets, trophies, and even entire visual themes.
+-   **Powerful Theme Editor:** An enhanced theme editor now includes a vastly expanded font library (>30 fonts) and font size controls for deeper customization.
+-   **Revamped Asset Management:** A new upload system recognizes folder structures for automatic categorization of assets.
+-   **Gamified Task Management:** Create recurring "Duties" and one-time "Ventures" with customizable rewards, deadlines, and penalties.
+-   **Dynamic Calendar:** Interactive Month, Week, and Day views intelligently display all your tasks.
 -   **Character Progression & Virtual Economy:** Earn XP to gain Ranks and multiple currencies to spend in a customizable Marketplace.
--   **Avatar Customization:** Unlock and equip different cosmetic items using uploaded images.
+-   **Avatar Customization:** Unlock and equip different cosmetic items, now correctly reflected in the header and throughout the app.
 -   **Guild System:** Create groups for collaborative tasks with their own separate economy and quests.
 -   **Trophy & Theming Systems:** Unlockable trophies for milestones and various visual themes to change the app's look and feel.
 -   **Robust Admin Controls & Data Persistence:** A "Donegeon Master" role with full control over the game, with all data saved to a server.
--   **Full Backup & Restore:** Admins can download a complete backup of the entire game state and restore it.
+-   **Full Backup, Restore, and Sharing:** Admins can download a complete backup, restore it, or create smaller "Blueprints" to share content with others.
 
 ## 🗺️ Roadmap
 
@@ -146,27 +140,15 @@ Once unlocked, you and other users can log in using the "Switch Profile" button.
     ```
     The app will be at `http://localhost:3002`. Uploaded files will be in the `./uploads` directory.
 
-### Option 4: Portainer Deployment
+### Option 4: Portainer Deployment (Updated Guide)
 1.  In Portainer, go to **Stacks** > **+ Add stack**.
-2.  **Name** it `task-donegeon`.
-3.  **Paste** the contents of `docker-compose.yml` into the Web editor.
-4.  Switch to **Advanced mode** for **Environment variables** and paste the following, replacing the placeholder values:
-    ```env
-    # Database Credentials
-    POSTGRES_DB=taskdonegeon
-    POSTGRES_USER=donegeon_master
-    POSTGRES_PASSWORD=your_super_secret_password_here
-    
-    # Node Environment
-    NODE_ENV=production
-
-    # Storage Provider ('local' for Docker, 'supabase' for production)
-    STORAGE_PROVIDER=local
-
-    # Google Gemini API Key
-    API_KEY=your_gemini_api_key_here
-    ```
-5.  **Deploy the stack**. The app will be available at `http://<your-server-ip>:3002`.
+2.  Give the stack a **Name** (e.g., `task-donegeon`).
+3.  **Paste** the contents of `docker-compose.prod.yml` into the Web editor.
+4.  Scroll down to the **Environment variables** section. It's crucial to add the required secrets here. Click **Add environment variable** for each of the following:
+    -   **Name:** `POSTGRES_PASSWORD`, **Value:** `your_super_secret_password_here` (Choose a strong password)
+    -   **Name:** `API_KEY`, **Value:** `your_gemini_api_key_here` (If you want AI features)
+    -   You can also explicitly set `POSTGRES_USER` and `POSTGRES_DB` here if you wish to override the defaults.
+5.  Click **Deploy the stack**. The app will be available at `http://<your-server-ip>:3002`.
 
 ### Option 5: Production Deployment from Docker Hub
 1.  Create a `.env` file with the required production variables.

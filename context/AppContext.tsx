@@ -1,3 +1,4 @@
+
 import React, { createContext, useState, useContext, ReactNode, useEffect, useCallback, useMemo, useRef } from 'react';
 import { AppSettings, User, Quest, RewardTypeDefinition, QuestCompletion, RewardItem, Market, PurchaseRequest, Guild, Rank, Trophy, UserTrophy, Notification, AppMode, Page, IAppData, ShareableAssetType, GameAsset, Role, QuestCompletionStatus, RewardCategory, PurchaseRequestStatus, AdminAdjustment, AdminAdjustmentType, SystemLog, QuestType, QuestAvailability, Blueprint, ImportResolution, TrophyRequirementType, ThemeDefinition } from '../types';
 import { INITIAL_SETTINGS, createMockUsers, INITIAL_REWARD_TYPES, INITIAL_RANKS, INITIAL_TROPHIES, createSampleMarkets, createSampleQuests, createInitialGuilds, createSampleGameAssets, INITIAL_THEMES, createInitialQuestCompletions } from '../data/initialData';
@@ -19,6 +20,7 @@ interface AppState extends IAppData {
   isSharedViewActive: boolean;
   targetedUserForLogin: User | null;
   isAiConfigured: boolean;
+  isSidebarCollapsed: boolean;
 }
 
 // The single, unified dispatch for the entire application
@@ -88,6 +90,7 @@ interface AppDispatch {
   addNotification: (notification: Omit<Notification, 'id'>) => void;
   removeNotification: (notificationId: string) => void;
   setActiveMarketId: (marketId: string | null) => void;
+  toggleSidebar: () => void;
 }
 
 const AppStateContext = createContext<AppState | undefined>(undefined);
@@ -125,7 +128,9 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [targetedUserForLogin, setTargetedUserForLogin] = useState<User | null>(null);
   const [isAiConfigured, setIsAiConfigured] = useState(false);
   const [isRestoring, setIsRestoring] = useState(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState<boolean>(() => localStorage.getItem('isSidebarCollapsed') === 'true');
   const inactivityTimer = useRef<number | null>(null);
+  const stateRef = useRef<AppState>();
 
   const isFirstRun = isDataLoaded && !users.some(u => u.role === Role.DonegeonMaster);
 
@@ -150,21 +155,20 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         }
 
         if (!dataToSet) {
-            console.log("Seeding with initial data.");
-            const initialUsers = createMockUsers();
+            console.log("Seeding with initial data for first run.");
             dataToSet = {
-                users: initialUsers,
-                quests: createSampleQuests(),
-                markets: createSampleMarkets(),
+                users: [],
+                quests: [],
+                markets: [],
                 rewardTypes: INITIAL_REWARD_TYPES,
-                questCompletions: createInitialQuestCompletions(),
+                questCompletions: [],
                 purchaseRequests: [],
-                guilds: createInitialGuilds(initialUsers),
+                guilds: [],
                 ranks: INITIAL_RANKS,
-                trophies: INITIAL_TROPHIES,
+                trophies: [],
                 userTrophies: [],
                 adminAdjustments: [],
-                gameAssets: createSampleGameAssets(),
+                gameAssets: [],
                 systemLogs: [],
                 settings: INITIAL_SETTINGS,
                 themes: INITIAL_THEMES,
@@ -238,6 +242,88 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     const uniqueId = `notif-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
     setNotifications(prev => [...prev, { ...notification, id: uniqueId }]);
   }, []);
+
+  // Polling for data sync
+  useEffect(() => {
+    if (!currentUser || isFirstRun || !isDataLoaded) return;
+
+    const syncData = async () => {
+      if (document.hidden) {
+        return;
+      }
+
+      try {
+        const response = await fetch('/api/data/load');
+        if (!response.ok) {
+          console.error(`Sync failed: Server returned status ${response.status}`);
+          return;
+        }
+
+        const serverData: IAppData = await response.json();
+        
+        // Use the ref to get the most current local data for comparison
+        const currentLocalData = stateRef.current ? {
+            users: stateRef.current.users,
+            quests: stateRef.current.quests,
+            markets: stateRef.current.markets,
+            rewardTypes: stateRef.current.rewardTypes,
+            questCompletions: stateRef.current.questCompletions,
+            purchaseRequests: stateRef.current.purchaseRequests,
+            guilds: stateRef.current.guilds,
+            ranks: stateRef.current.ranks,
+            trophies: stateRef.current.trophies,
+            userTrophies: stateRef.current.userTrophies,
+            adminAdjustments: stateRef.current.adminAdjustments,
+            gameAssets: stateRef.current.gameAssets,
+            systemLogs: stateRef.current.systemLogs,
+            settings: stateRef.current.settings,
+            themes: stateRef.current.themes,
+            loginHistory: stateRef.current.loginHistory,
+        } : null;
+
+        if (currentLocalData && JSON.stringify(currentLocalData) !== JSON.stringify(serverData)) {
+            console.log("Data out of sync. Refreshing from server.");
+            addNotification({ type: 'info', message: 'Data synced with server.' });
+
+            const loadedSettings = {...INITIAL_SETTINGS, ...serverData.settings};
+            setUsers(serverData.users || []);
+            setQuests(serverData.quests || []);
+            setMarkets(serverData.markets || []);
+            setRewardTypes(serverData.rewardTypes || []);
+            setQuestCompletions(serverData.questCompletions || []);
+            setPurchaseRequests(serverData.purchaseRequests || []);
+            setGuilds(serverData.guilds || []);
+            setRanks(serverData.ranks || []);
+            setTrophies(serverData.trophies || []);
+            setUserTrophies(serverData.userTrophies || []);
+            setAdminAdjustments(serverData.adminAdjustments || []);
+            setGameAssets(serverData.gameAssets || []);
+            setSystemLogs(serverData.systemLogs || []);
+            setSettings(loadedSettings);
+            setThemes(serverData.themes || INITIAL_THEMES);
+            setLoginHistory(serverData.loginHistory || []);
+
+            if (stateRef.current?.currentUser) {
+              const updatedUser = (serverData.users || []).find(u => u.id === stateRef.current!.currentUser!.id);
+              if (updatedUser) {
+                _setCurrentUser(updatedUser);
+              }
+            }
+        }
+      } catch (error) {
+        console.error("Data sync failed:", error);
+      }
+    };
+
+    const intervalId = setInterval(syncData, 15000); // Poll every 15 seconds
+    document.addEventListener('visibilitychange', syncData);
+
+    return () => {
+      clearInterval(intervalId);
+      document.removeEventListener('visibilitychange', syncData);
+    };
+  }, [currentUser, isFirstRun, isDataLoaded, addNotification]);
+
 
   const removeNotification = useCallback((notificationId: string) => {
     setNotifications(prev => prev.filter(n => n.id !== notificationId));
@@ -456,7 +542,21 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const updateGameAsset = (asset: GameAsset) => setGameAssets(prev => prev.map(ga => ga.id === asset.id ? asset : ga));
   const deleteGameAsset = (assetId: string) => { setGameAssets(prev => prev.filter(ga => ga.id !== assetId)); addNotification({ type: 'info', message: 'Asset deleted.' }); };
   const uploadFile = async (file: File): Promise<{ url: string } | null> => { const fd = new FormData(); fd.append('file', file); try { const r = await fetch('/api/media/upload', { method: 'POST', body: fd }); if (!r.ok) { const e = await r.json(); throw new Error(e.error || 'Upload failed'); } return await r.json(); } catch (e) { const m = e instanceof Error ? e.message : 'Unknown error'; addNotification({ type: 'error', message: `Upload failed: ${m}` }); return null; } };
-  const populateInitialGameData = (adminUser: User) => { addNotification({ type: 'info', message: 'Your Donegeon is being populated!' }); const sA = createMockUsers().filter(u => u.role !== Role.DonegeonMaster); const aIU = [adminUser, ...sA]; setUsers(aIU); setQuests(createSampleQuests()); setMarkets(createSampleMarkets()); setGameAssets(createSampleGameAssets()); setRewardTypes(INITIAL_REWARD_TYPES); setGuilds(createInitialGuilds(aIU)); setRanks(INITIAL_RANKS); setTrophies(INITIAL_TROPHIES); setQuestCompletions(createInitialQuestCompletions()); };
+  const populateInitialGameData = (adminUser: User) => {
+    addNotification({ type: 'info', message: 'Your Donegeon is being populated!' });
+    const sA = createMockUsers().filter(u => u.role !== Role.DonegeonMaster);
+    const aIU = [adminUser, ...sA];
+    setUsers(aIU);
+    const newQuests = createSampleQuests(aIU);
+    setQuests(newQuests);
+    setMarkets(createSampleMarkets());
+    setGameAssets(createSampleGameAssets());
+    setRewardTypes(INITIAL_REWARD_TYPES);
+    setGuilds(createInitialGuilds(aIU));
+    setRanks(INITIAL_RANKS);
+    setTrophies(INITIAL_TROPHIES);
+    setQuestCompletions(createInitialQuestCompletions(aIU, newQuests));
+  };
   
   const restoreFromBackup = async (backupData: IAppData) => {
     setIsRestoring(true); // Prevent debounced save
@@ -495,6 +595,14 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     addNotification({ type: 'info', message: 'Theme deleted.' });
   };
   
+  const toggleSidebar = useCallback(() => {
+    setIsSidebarCollapsed(prev => {
+        const newState = !prev;
+        localStorage.setItem('isSidebarCollapsed', String(newState));
+        return newState;
+    });
+  }, []);
+
   const handleUpdateSettings = (settingsToUpdate: Partial<AppSettings>) => {
     setSettings(prev => ({...prev, ...settingsToUpdate}));
   };
@@ -528,8 +636,11 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const stateValue: AppState = {
     users, quests, markets, rewardTypes, questCompletions, purchaseRequests, guilds, ranks, trophies, userTrophies, adminAdjustments, gameAssets, systemLogs, settings, themes, loginHistory,
     currentUser, isAppUnlocked, isFirstRun, activePage, appMode, notifications, isDataLoaded, activeMarketId, allTags: useMemo(() => Array.from(new Set(quests.flatMap(q => q.tags))).sort(), [quests]),
-    isSwitchingUser, isSharedViewActive, targetedUserForLogin, isAiConfigured
+    isSwitchingUser, isSharedViewActive, targetedUserForLogin, isAiConfigured, isSidebarCollapsed
   };
+
+  // Keep a ref to the state to use in the polling effect without causing re-renders
+  stateRef.current = stateValue;
 
   const dispatchValue: AppDispatch = {
     addUser, updateUser, deleteUser, setCurrentUser, markUserAsOnboarded, setAppUnlocked, setIsSwitchingUser, setTargetedUserForLogin, exitToSharedView, setIsSharedViewActive: _setIsSharedViewActive,
@@ -538,7 +649,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     addGuild, updateGuild, deleteGuild, setRanks, addTrophy, updateTrophy, deleteTrophy, awardTrophy, applyManualAdjustment, addGameAsset, updateGameAsset, deleteGameAsset,
     addTheme, updateTheme, deleteTheme,
     populateInitialGameData, importBlueprint, restoreFromBackup, clearAllHistory, resetAllPlayerData, deleteAllCustomContent, deleteSelectedAssets, uploadFile,
-    updateSettings: handleUpdateSettings, setActivePage, setAppMode, addNotification, removeNotification, setActiveMarketId,
+    updateSettings: handleUpdateSettings, setActivePage, setAppMode, addNotification, removeNotification, setActiveMarketId, toggleSidebar
   };
 
   return (

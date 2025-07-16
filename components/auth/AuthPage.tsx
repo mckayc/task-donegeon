@@ -163,7 +163,7 @@ const AuthPage: React.FC = () => {
         <div className="min-h-screen flex items-center justify-center bg-stone-900 p-4">
             <div className="max-w-md w-full bg-stone-800 border border-stone-700 rounded-2xl shadow-2xl p-8 md:p-12">
                 <div className="text-center mb-8">
-                    <h1 className="text-5xl font-medieval text-accent">{settings.terminology.appName}</h1>
+                    <h1 className="font-medieval text-accent">{settings.terminology.appName}</h1>
                 </div>
 
                 {isLoginMode ? (

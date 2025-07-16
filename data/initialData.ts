@@ -167,7 +167,7 @@ export const INITIAL_SETTINGS: AppSettings = {
         quickUserSwitchingEnabled: true,
         allowCompletion: false,
         autoExit: false,
-        autoExitMinutes: 10,
+        autoExitMinutes: 2,
         userIds: [],
     },
     theme: 'emerald',

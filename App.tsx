@@ -1,8 +1,5 @@
 
-import React, { useEffect, useMemo } from 'react';
-import { useAuth } from './context/AuthContext';
-import { useSettings } from './context/SettingsContext';
-import { useGameData } from './context/GameDataContext';
+import React, { useEffect } from 'react';
 import { useAppState } from './context/AppContext';
 import FirstRunWizard from './components/auth/FirstRunWizard';
 import MainLayout from './components/layout/MainLayout';
@@ -11,6 +8,7 @@ import AuthPage from './components/auth/AuthPage';
 import NotificationContainer from './components/ui/NotificationContainer';
 import AppLockScreen from './components/auth/AppLockScreen';
 import OnboardingWizard from './components/auth/OnboardingWizard';
+import SharedLayout from './components/layout/SharedLayout';
 
 const ThemeStyleProvider: React.FC = () => {
     const { themes } = useAppState();
@@ -36,15 +34,11 @@ const ThemeStyleProvider: React.FC = () => {
 
 
 const App: React.FC = () => {
-  const { isAppUnlocked, isFirstRun, currentUser, isSwitchingUser } = useAuth();
-  const { settings } = useSettings();
-  const { isDataLoaded } = useGameData(); // Get the data loaded flag
+  const { isAppUnlocked, isFirstRun, currentUser, isSwitchingUser, isDataLoaded, settings, isSharedViewActive } = useAppState();
 
   useEffect(() => {
-    if (currentUser || settings.theme) {
-      const activeTheme = currentUser?.theme || settings.theme;
-      document.body.dataset.theme = activeTheme;
-    }
+    const activeTheme = currentUser?.theme || settings.theme;
+    document.body.dataset.theme = activeTheme;
   }, [settings.theme, currentUser]);
 
   if (!isDataLoaded) {
@@ -64,21 +58,18 @@ const App: React.FC = () => {
       {showOnboarding && <OnboardingWizard />}
 
       {(() => {
-        if (!isAppUnlocked && !isFirstRun) {
-            return <AppLockScreen />;
-        }
+        if (isFirstRun) { return <FirstRunWizard />; }
+        if (!isAppUnlocked && !isFirstRun) { return <AppLockScreen />; }
         
-        if (isFirstRun) {
-          return <FirstRunWizard />;
-        }
+        // The user switching flow must take precedence over the shared view.
+        if (isSwitchingUser) { return <SwitchUser />; }
         
-        if (isSwitchingUser) {
-          return <SwitchUser />;
+        // If not switching, and shared mode is active, show the shared layout.
+        if (settings.sharedMode.enabled && isSharedViewActive) {
+          return <SharedLayout />;
         }
-      
-        if (!currentUser) {
-          return <AuthPage />;
-        }
+
+        if (!currentUser) { return <AuthPage />; }
       
         return <MainLayout />;
       })()}

@@ -97,6 +97,7 @@ export interface Quest {
   requiresApproval: boolean;
   claimedByUserIds: string[];
   dismissals: { userId: string; dismissedAt: string; }[];
+  todoUserIds?: string[];
 }
 
 export enum QuestCompletionStatus {
@@ -420,6 +421,7 @@ export interface LibraryPack {
   type: LibraryPackType;
   title: string;
   description: string;
+  emoji: string;
   color: string;
   assets: Partial<BlueprintAssets>;
 }

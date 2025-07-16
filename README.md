@@ -1,7 +1,7 @@
 # Task Donegeon
 
-**Version:** 0.0.55
-**Last Updated:** 2025-06-04T10:00:00Z
+**Version:** 0.0.56
+**Last Updated:** 2025-06-05T10:00:00Z
 
 ---
 
@@ -16,16 +16,18 @@ Task Donegeon is a gamified task and chore management application designed for f
 
 ## ✨ Features
 
+-   **Standardized Quest Interactions:** All quests in every view (Dashboard, Calendars, Quest Board) now use a unified interaction model. Click any quest to open a detailed pop-up with "Complete" and "To-Do" options, ensuring a consistent user experience.
+-   **Venture Prioritization:** Users can mark one-time "Ventures" as a "To-Do" item, which highlights them visually and sorts them to the top of all lists.
+-   **Dynamic Calendar:** The calendar views now intelligently display not only scheduled "Duties" but also any "Ventures" that are due, required, or marked as a "To-Do" item.
+-   **Unified Completion Flow:** The "Complete" button now consistently opens a dialog where users can optionally add a note before finalizing the quest.
+-   **Redesigned Chronicles:** The history log has been redesigned into a clean, three-column layout for easier readability.
 -   **Effortless Setup:** Get started instantly. The app comes pre-configured with a default `admin` account, bypassing any initial setup wizard.
 -   **Direct Login:** The application starts on a master password screen, ensuring the game world is secure from the start.
--   **Refined UI/UX:** Moved the rewards display out of the header and next to the page title for better contextual awareness.
--   **Hybrid PIN Entry:** A streamlined PIN login screen with both a standard text input for keyboards and an on-screen keypad for touch devices.
 -   **Fullscreen Toggle:** A new button in the header allows users to enter and exit fullscreen mode, perfect for tablet and kiosk use.
 -   **Enhanced Security & Login:** Features persistent login sessions, a quick user-switching bar, and configurable PIN/password requirements for different user roles.
 -   **Flexible Image Support:** The app supports standard web image formats, including `PNG`, `JPG`, `GIF`, `SVG`, and modern `WebP` files. Admins can manage a local image gallery by simply dropping files into an `uploads` folder, and the app automatically categorizes them by filename for easy use.
 -   **Secure AI-Powered Features:** Includes an "AI Studio" for generating quests, items, trophies, and more, powered by a secure backend proxy using the Gemini API.
 -   **Advanced Calendar:** Features interactive Month, Week, and Day views for better planning and task management.
--   **Session-Based Master Lock:** The application is locked upon first visit and requires an admin password to unlock for the session.
 -   **Gamified Task Management:** Create recurring "Duties" and one-time "Ventures" with customizable rewards and penalties.
 -   **Character Progression & Virtual Economy:** Earn XP to gain Ranks and multiple currencies to spend in a customizable Marketplace.
 -   **Avatar Customization:** Unlock and equip different cosmetic items using uploaded images.

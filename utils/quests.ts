@@ -1,4 +1,3 @@
-
 import { Quest, QuestCompletion, QuestAvailability, QuestCompletionStatus, AppMode, User, QuestType } from '../types';
 
 /**
@@ -19,6 +18,22 @@ export const fromYMD = (ymd: string): Date => {
   const [year, month, day] = ymd.split('-').map(Number);
   return new Date(year, month - 1, day);
 };
+
+/**
+ * Checks if a quest is scheduled to appear on a specific day, based on its type and recurrence rules.
+ */
+export const isQuestScheduledForDay = (quest: Quest, day: Date): boolean => {
+    if (quest.type === QuestType.Venture) {
+        return !!quest.lateDateTime && toYMD(new Date(quest.lateDateTime)) === toYMD(day);
+    }
+    // It's a Duty
+    switch (quest.availabilityType) {
+        case QuestAvailability.Daily: return true;
+        case QuestAvailability.Weekly: return quest.weeklyRecurrenceDays.includes(day.getDay());
+        case QuestAvailability.Monthly: return quest.monthlyRecurrenceDays.includes(day.getDate());
+        default: return false;
+    }
+}
 
 /**
  * Checks if a quest should be visible to a user in the current app mode.
@@ -117,6 +132,60 @@ export const isQuestAvailableForUser = (
   }
 
   return true; // Should not be reached
+};
+
+/**
+ * Generates a sort key for a quest based on priority rules.
+ * Lower numbers are higher priority.
+ * Sorts by:
+ * 1. Type (Duty > Venture)
+ * 2. Time-based priority (Due soon > To-Do > other)
+ * 3. Title (alphabetical)
+ */
+const getQuestSortKey = (quest: Quest, user: User, date: Date = new Date()): [number, number, string] => {
+    // Priority 1: Type (Duty = 0, Venture = 1)
+    const typePriority = quest.type === QuestType.Duty ? 0 : 1;
+
+    let timePriority = 9999; // Default low priority
+
+    if (quest.type === QuestType.Duty) {
+        if (quest.lateTime) {
+            const [hours, minutes] = quest.lateTime.split(':').map(Number);
+            timePriority = hours * 60 + minutes;
+        } else {
+            timePriority = 10000; // No due time, sort after ones with time
+        }
+    } else { // Venture
+        const isDueToday = quest.lateDateTime && toYMD(new Date(quest.lateDateTime)) === toYMD(date);
+        const isTodo = quest.todoUserIds?.includes(user.id);
+
+        if (isDueToday) {
+            timePriority = 0;
+        } else if (isTodo) {
+            timePriority = 1;
+        } else {
+            timePriority = 2; // Other ventures
+        }
+    }
+
+    return [typePriority, timePriority, quest.title.toLowerCase()];
+};
+
+/**
+ * A comparator function for sorting quests based on a standardized priority order.
+ * @param user The current user, for To-Do list checking.
+ * @param date The date context for sorting (e.g., today's date).
+ * @returns A comparator function for Array.prototype.sort().
+ */
+export const questSorter = (user: User, date: Date = new Date()) => (a: Quest, b: Quest) => {
+    const keyA = getQuestSortKey(a, user, date);
+    const keyB = getQuestSortKey(b, user, date);
+
+    for (let i = 0; i < keyA.length; i++) {
+        if (keyA[i] < keyB[i]) return -1;
+        if (keyA[i] > keyB[i]) return 1;
+    }
+    return 0;
 };
 
 

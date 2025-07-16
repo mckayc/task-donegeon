@@ -1,4 +1,3 @@
-
 import React, { useMemo, useState } from 'react';
 import Card from '../ui/Card';
 import { useAppState } from '../../context/AppContext';
@@ -26,33 +25,35 @@ const ChroniclesPage: React.FC = () => {
     const questActivities = questCompletions
       .filter(c => c.guildId === currentGuildId)
       .map(c => ({
-        id: c.id, date: c.completedAt, type: 'Quest', userId: c.userId, getUserName: () => getUserName(c.userId), text: `completed "${getQuestTitle(c.questId)}"`, status: c.status, note: c.note,
+        id: c.id, date: c.completedAt, type: 'Quest', userId: c.userId, getUserName: () => getUserName(c.userId), text: `${getUserName(c.userId)} completed "${getQuestTitle(c.questId)}"`, title: getQuestTitle(c.questId), status: c.status, note: c.note,
     }));
 
     const purchaseActivities = purchaseRequests
       .filter(p => p.guildId === currentGuildId)
       .map(p => ({
-        id: p.id, date: p.requestedAt, type: 'Purchase', userId: p.userId, getUserName: () => getUserName(p.userId), text: `purchased "${p.assetDetails.name}"`, status: p.status, note: undefined,
+        id: p.id, date: p.requestedAt, type: 'Purchase', userId: p.userId, getUserName: () => getUserName(p.userId), text: `${getUserName(p.userId)} purchased "${p.assetDetails.name}"`, title: `Purchased "${p.assetDetails.name}"`, status: p.status, note: undefined,
     }));
     
     const trophyActivities = userTrophies
       .filter(ut => ut.guildId === currentGuildId)
       .map(ut => ({
-        id: ut.id, date: ut.awardedAt, type: 'Trophy', userId: ut.userId, getUserName: () => getUserName(ut.userId), text: `was awarded the ${settings.terminology.award.toLowerCase()}: "${getTrophyName(ut.trophyId)}"`, status: "Awarded" as const, note: "Congratulations!",
+        id: ut.id, date: ut.awardedAt, type: 'Trophy', userId: ut.userId, getUserName: () => getUserName(ut.userId), text: `${getUserName(ut.userId)} was awarded the ${settings.terminology.award.toLowerCase()}: "${getTrophyName(ut.trophyId)}"`, title: `Earned: ${getTrophyName(ut.trophyId)}`, status: "Awarded" as const, note: "Congratulations!",
     }));
 
     const adjustmentActivities = adminAdjustments
         .filter(adj => adj.guildId === currentGuildId)
         .map(adj => {
             let text = `received an adjustment from ${getUserName(adj.adjusterId)}`;
+            let title = `Adjustment for ${getUserName(adj.userId)}`;
             if (adj.type === AdminAdjustmentType.Trophy) {
                 text = `was awarded the ${settings.terminology.award.toLowerCase()} "${getTrophyName(adj.trophyId || '')}" by ${getUserName(adj.adjusterId)}`;
+                title = `Trophy awarded to ${getUserName(adj.userId)}`;
             }
             const rewardsText = adj.rewards.map(r => `+${r.amount} ${getRewardDisplay(r.rewardTypeId).icon}`).join(', ');
             const setbacksText = adj.setbacks.map(s => `-${s.amount} ${getRewardDisplay(s.rewardTypeId).icon}`).join(', ');
 
             return {
-                id: adj.id, date: adj.adjustedAt, type: 'Adjustment', userId: adj.userId, getUserName: () => getUserName(adj.userId), text: text, status: adj.type, note: `${adj.reason} \n ${rewardsText} ${setbacksText}`.trim()
+                id: adj.id, date: adj.adjustedAt, type: 'Adjustment', userId: adj.userId, getUserName: () => getUserName(adj.userId), text, title, status: adj.type, note: `${adj.reason} \n ${rewardsText} ${setbacksText}`.trim()
             }
         });
     
@@ -62,19 +63,20 @@ const ChroniclesPage: React.FC = () => {
       
       const logType = log.type === 'QUEST_LATE' ? 'became LATE' : 'became INCOMPLETE';
       const setbacksText = log.setbacksApplied.map(s => `-${s.amount} ${getRewardDisplay(s.rewardTypeId).icon}`).join(', ');
+      const title = `${settings.terminology.task} ${logType}: "${quest.title}"`
       
       return {
         id: log.id,
         date: log.timestamp,
         type: 'System',
-        // System logs apply to all assigned users
         userId: log.userIds.includes(currentUser.id) ? currentUser.id : 'system', 
         getUserName: () => 'SYSTEM',
-        text: `${settings.terminology.task} "${quest.title}" ${logType}.`,
+        text: title,
+        title: title,
         status: log.type,
-        note: `${settings.terminology.negativePoints} applied to ${log.userIds.map(getUserName).join(', ')}: ${setbacksText}`,
+        note: `Applied to ${log.userIds.map(getUserName).join(', ')}: ${setbacksText}`,
       }
-    }).filter(a => a !== null);
+    }).filter((a): a is NonNullable<typeof a> => a !== null);
 
 
     const allActivities = [...questActivities, ...purchaseActivities, ...trophyActivities, ...adjustmentActivities, ...systemLogActivities];
@@ -117,28 +119,9 @@ const ChroniclesPage: React.FC = () => {
   
   const formatTimestamp = (dateString: string): string => {
     const date = new Date(dateString);
-    // Handles both ISO strings and YYYY-MM-DD.
-    // If it's just a date, it will be interpreted as UTC midnight, then toLocaleString converts it to local.
-    // That's acceptable for old data. New data will have the correct time.
-    if (isNaN(date.getTime())) {
-      return dateString; // Invalid date
-    }
-
-    const options: Intl.DateTimeFormatOptions = {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-    };
-    
-    // Add time options only if the original string contained time information
-    if (dateString.includes('T')) {
-      options.hour = '2-digit';
-      options.minute = '2-digit';
-    }
-
-    return date.toLocaleString('default', options);
+    if (isNaN(date.getTime())) return dateString; // Invalid date
+    return date.toLocaleString('default', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' });
   };
-
 
   return (
     <div>
@@ -164,30 +147,24 @@ const ChroniclesPage: React.FC = () => {
         {sortedActivities.length > 0 ? (
           <ul className="space-y-4">
             {sortedActivities.map(activity => (
-              <li key={activity.id} className="bg-stone-800/60 p-4 rounded-lg flex justify-between items-start">
-                <div className="flex-grow">
-                  <div className="flex justify-between items-center">
-                    <div>
-                      <p className="font-bold text-stone-100">
-                        {activity.type !== 'System' && currentUser.role !== Role.Explorer && <span className="text-accent-light">{activity.getUserName()}</span>}
-                        {activity.type === 'System' && <span className="text-purple-400">{activity.getUserName()}</span>}
-                        <span className="text-stone-300 font-normal"> {activity.text}</span>
-                      </p>
-                      <p className="text-sm text-stone-400 mt-1">
-                        {formatTimestamp(activity.date)}
-                      </p>
+                <li key={activity.id} className="flex items-start gap-4 p-3 bg-stone-800/60 rounded-lg">
+                    {/* Column 1: Title & Date */}
+                    <div className="flex-1 w-2/5">
+                        <p className="font-semibold text-stone-200" title={activity.title}>
+                           {currentUser.role !== Role.Explorer && activity.type !== 'System' && <span className="text-accent-light">{activity.getUserName()} </span>}
+                           <span className="text-stone-300 font-normal">{activity.type === 'Quest' ? `completed ` : ''}"{activity.title}"</span>
+                        </p>
+                        <p className="text-xs text-stone-400 mt-1">{formatTimestamp(activity.date)}</p>
                     </div>
-                    <div className={`font-semibold ${statusColor(activity.status)} ml-4`}>
-                      {activity.status}
+                    {/* Column 2: Note */}
+                    <div className="w-2/5 text-sm text-stone-400 italic" title={activity.note}>
+                        {activity.note ? <p className="whitespace-pre-wrap">"{activity.note}"</p> : ''}
                     </div>
-                  </div>
-                  {activity.note && (
-                    <div className="mt-2 pl-4 border-l-2 border-stone-700 whitespace-pre-wrap">
-                        <p className="text-sm text-stone-400 italic">"{activity.note}"</p>
+                    {/* Column 3: Status */}
+                    <div className={`w-1/5 text-right font-semibold ${statusColor(activity.status)}`}>
+                        {activity.status}
                     </div>
-                  )}
-                </div>
-              </li>
+                </li>
             ))}
           </ul>
         ) : (

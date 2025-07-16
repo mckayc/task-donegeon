@@ -76,14 +76,15 @@ const HelpPage: React.FC = () => {
                 <CollapsibleSection title={`A Tour of the Donegeon (For Everyone)`}>
                     <p>Here's a breakdown of the pages you'll use most often, accessible from the sidebar.</p>
                     <ul className="list-disc list-inside space-y-2 pl-4">
-                        <li><strong>Dashboard:</strong> Your main hub. Get a quick overview of your current {terminology.level}, recent activities, inventory of {terminology.points}, and a list of high-priority {terminology.tasks}.</li>
-                        <li><strong>{terminology.tasks.toString()}:</strong> This is the main board showing all available {terminology.recurringTasks} and {terminology.singleTasks}. You can complete, claim, or release {terminology.tasks} from here.</li>
+                        <li><strong>Dashboard:</strong> Your main hub. Get a quick overview of your current {terminology.level}, recent activities, inventory of {terminology.points}, and a list of high-priority {terminology.tasks}. Click on any task to open its details and complete it.</li>
+                        <li><strong>{terminology.tasks.toString()}:</strong> This is the main board showing all available {terminology.recurringTasks} and {terminology.singleTasks}. Click on any card to see its full details and complete it.</li>
                         <li><strong>{terminology.shoppingCenter}:</strong> Browse the {terminology.stores} set up by your {terminology.admin}. Spend your hard-earned currency on virtual items (like avatar outfits or themes) or real-world rewards.</li>
-                        <li><strong>Calendar:</strong> A monthly view of all your required {terminology.tasks}. {terminology.recurringTasks} appear on the days they are scheduled, and {terminology.singleTasks} appear on their due date. This is great for planning ahead.</li>
+                        <li><strong>Calendar:</strong> A monthly view of all your required {terminology.tasks}. {terminology.recurringTasks} appear on the days they are scheduled. {terminology.singleTasks} will appear if they are due, required, or you have marked them as a "To-Do" item. This is great for planning ahead.</li>
+                        <li><strong>Prioritizing with To-Do:</strong> For {terminology.singleTasks}, you'll see a "To-Do" toggle in the detail view. Marking a {terminology.singleTask.toLowerCase()} as a To-Do will highlight it with a purple border and move it to the top of your lists, helping you focus on what's important.</li>
                         <li><strong>Avatar &amp; Collection:</strong> Customize your character's appearance with items you've purchased. You can also change the entire app's visual style by selecting a theme you own. The collection page shows all non-avatar items.</li>
                         <li><strong>Progress &amp; {terminology.levels}:</strong> See a chart of your XP gains over the last 30 days and view your current {terminology.level}, your progress to the next one, and the full list of all {terminology.levels} in the game.</li>
                         <li><strong>{terminology.awards}:</strong> View your trophy case! See all the {terminology.awards} you've earned and check the requirements for those you can still unlock.</li>
-                        <li><strong>{terminology.history}:</strong> A detailed log of all your activity, from {terminology.task} completions to purchases and admin adjustments.</li>
+                        <li><strong>{terminology.history}:</strong> A detailed log of all your activity, from {terminology.task} completions to purchases and admin adjustments. The new 3-column layout shows the action, any notes, and the final status.</li>
                         <li><strong>{terminology.groups}:</strong> View the {terminology.groups} you are a member of and see the other members.</li>
                     </ul>
                 </CollapsibleSection>

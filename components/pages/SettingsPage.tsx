@@ -1,3 +1,4 @@
+
 import React, { useState, ChangeEvent } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useSettings, useSettingsDispatch } from '../../context/SettingsContext';
@@ -163,6 +164,7 @@ const SettingsPage: React.FC = () => {
 
                         <div>
                             <h4 className="font-semibold text-stone-200 mb-2">Users in Shared Mode</h4>
+                            <p className="text-xs text-stone-400 mb-2">If no users are selected, Shared Mode will include all users by default.</p>
                              <div className="space-y-2 max-h-40 overflow-y-auto border border-stone-700 p-2 rounded-md">
                                 {users.map(user => (
                                     <div key={user.id} className="flex items-center">

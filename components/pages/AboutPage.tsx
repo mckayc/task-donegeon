@@ -122,7 +122,7 @@ const AboutPage: React.FC = () => {
         return (
             <div className="space-y-6 text-stone-300 leading-relaxed">
                 <p>{metadata.description}</p>
-                 <p>This version introduces a fullscreen toggle button in the header, perfect for an immersive experience on tablets. It also includes fixes for item import IDs and shared calendar quest visibility.</p>
+                 <p>This version standardizes quest interactions across the entire app with a unified pop-up system. It introduces a "To-Do" list for prioritizing Ventures, which now also appear in all calendar views. The Chronicles log has been redesigned for clarity, and numerous UI bugs have been fixed.</p>
                 
                 <div className="pt-4 border-t border-stone-700/60 text-sm">
                     <p><strong>Version:</strong> {metadata.version}</p>

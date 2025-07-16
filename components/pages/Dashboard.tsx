@@ -1,34 +1,43 @@
-
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
-import { Quest, QuestAvailability, QuestCompletionStatus, RewardCategory, Role, User, QuestType } from '../../types';
+import { Quest, QuestAvailability, QuestCompletionStatus, RewardCategory, Role, User, QuestType, PurchaseRequest, UserTrophy } from '../../types';
 import Card from '../ui/Card';
 import Button from '../ui/Button';
 import { TrophyIcon } from '../ui/Icons';
-import { isQuestAvailableForUser, isQuestVisibleToUserInMode, fromYMD, getQuestUserStatus } from '../../utils/quests';
-import { useGameDataDispatch } from '../../context/GameDataContext';
-import { useSettingsDispatch } from '../../context/SettingsContext';
+import { isQuestAvailableForUser, isQuestVisibleToUserInMode, fromYMD, getQuestUserStatus, questSorter } from '../../utils/quests';
+import QuestDetailDialog from '../quests/QuestDetailDialog';
+import CompleteQuestDialog from '../quests/CompleteQuestDialog';
 
 const Dashboard: React.FC = () => {
     const { currentUser, quests, rewardTypes, users, ranks, userTrophies, trophies, questCompletions, purchaseRequests, appMode, settings } = useAppState();
-    const { completeQuest } = useGameDataDispatch();
-    const { setActivePage } = useSettingsDispatch();
+    const { completeQuest, setActivePage, markQuestAsTodo, unmarkQuestAsTodo } = useAppDispatch();
+    
+    const [selectedQuest, setSelectedQuest] = useState<Quest | null>(null);
+    const [completingQuest, setCompletingQuest] = useState<Quest | null>(null);
 
     if (!currentUser) return <div>Loading adventurer's data...</div>;
     
     const { terminology } = settings;
 
-    const handleCompleteQuest = (questId: string) => {
-        const quest = quests.find(q => q.id === questId);
-        if (!quest || !currentUser) return;
+    const handleQuestSelect = (quest: Quest) => {
+        setSelectedQuest(quest);
+    };
 
-        const needsNote = quest.requiresApproval;
-        if (needsNote) {
-            const note = window.prompt(`Add an optional note for this ${terminology.task.toLowerCase()} completion:`);
-            completeQuest(quest.id, currentUser.id, quest.rewards, quest.requiresApproval, quest.guildId, { note: note || undefined });
+    const handleStartCompletion = (questToComplete: Quest) => {
+        setSelectedQuest(null);
+        setCompletingQuest(questToComplete);
+    };
+
+    const handleToggleTodo = (questToComplete: Quest) => {
+        if (!currentUser || questToComplete.type !== QuestType.Venture) return;
+        const isTodo = questToComplete.todoUserIds?.includes(currentUser.id);
+        if (isTodo) {
+            unmarkQuestAsTodo(questToComplete.id, currentUser.id);
         } else {
-            completeQuest(quest.id, currentUser.id, quest.rewards, quest.requiresApproval, quest.guildId);
+            markQuestAsTodo(questToComplete.id, currentUser.id);
         }
+        // Also update the selectedQuest so the dialog reflects the change immediately
+        setSelectedQuest(prev => prev ? {...prev, todoUserIds: isTodo ? (prev.todoUserIds || []).filter(id => id !== currentUser.id) : [...(prev.todoUserIds || []), currentUser.id]} : null);
     };
 
     const currentBalances = useMemo(() => {
@@ -78,17 +87,51 @@ const Dashboard: React.FC = () => {
     
     const recentActivities = useMemo(() => {
         const currentGuildId = appMode.mode === 'guild' ? appMode.guildId : undefined;
-        const allActivities = [
-            ...questCompletions.map(c => ({ type: 'Quest' as const, data: c, date: c.completedAt })),
-            ...purchaseRequests.map(p => ({ type: 'Purchase' as const, data: p, date: p.requestedAt })),
-            ...userTrophies.map(ut => ({ type: 'Trophy' as const, data: ut, date: ut.awardedAt }))
-        ].filter(a => a.data.userId === currentUser.id && a.data.guildId === currentGuildId);
+        
+        type Activity = {
+            id: string;
+            type: 'Quest' | 'Purchase' | 'Trophy';
+            title: string;
+            date: string;
+            note?: string;
+            status: string;
+        };
+
+        const allActivities: Activity[] = [
+            ...questCompletions
+                .filter(c => c.userId === currentUser.id && c.guildId === currentGuildId)
+                .map(c => ({
+                    id: c.id,
+                    type: 'Quest' as const,
+                    title: quests.find(q => q.id === c.questId)?.title || `Unknown ${terminology.task}`,
+                    date: c.completedAt,
+                    note: c.note,
+                    status: c.status,
+                })),
+            ...purchaseRequests
+                .filter(p => p.userId === currentUser.id && p.guildId === currentGuildId)
+                .map(p => ({
+                    id: p.id,
+                    type: 'Purchase' as const,
+                    title: `Purchased "${p.assetDetails.name}"`,
+                    date: p.requestedAt,
+                    note: undefined,
+                    status: p.status,
+                })),
+            ...userTrophies
+                .filter(ut => ut.userId === currentUser.id && ut.guildId === currentGuildId)
+                .map(ut => ({
+                    id: ut.id,
+                    type: 'Trophy' as const,
+                    title: `Earned ${terminology.award}: "${trophies.find(t => t.id === ut.trophyId)?.name || ''}"`,
+                    date: ut.awardedAt,
+                    note: undefined,
+                    status: 'Awarded!',
+                }))
+        ];
 
         return allActivities.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).slice(0, 5);
-    }, [questCompletions, purchaseRequests, userTrophies, currentUser.id, appMode]);
-
-    const getQuestTitle = (id: string) => quests.find(q => q.id === id)?.title;
-    const getTrophyName = (id: string) => trophies.find(t => t.id === id)?.name;
+    }, [questCompletions, purchaseRequests, userTrophies, quests, trophies, currentUser.id, appMode, terminology]);
 
     const leaderboard = useMemo(() => {
         const currentGuildId = appMode.mode === 'guild' ? appMode.guildId : undefined;
@@ -114,24 +157,6 @@ const Dashboard: React.FC = () => {
     }, [userTrophies, trophies, currentUser.id, appMode]);
 
     const quickActionQuests = useMemo(() => {
-        const getQuestPriority = (quest: Quest) => {
-            if (quest.isOptional) return 6;
-            if (quest.claimedByUserIds.includes(currentUser.id)) return 1;
-
-            let lateDeadline: Date | null = null;
-            if (quest.type === QuestType.Venture && quest.lateDateTime) {
-                lateDeadline = new Date(quest.lateDateTime);
-            } else if (quest.type === QuestType.Duty && quest.lateTime) {
-                const now = new Date();
-                const [hours, minutes] = quest.lateTime.split(':').map(Number);
-                lateDeadline = new Date(now.getFullYear(), now.getMonth(), now.getDate(), hours, minutes);
-            }
-
-            if (lateDeadline && lateDeadline < new Date() && quest.lateSetbacks.length > 0) return 2;
-            if (quest.availabilityType === QuestAvailability.Daily) return 4;
-            return 5;
-        };
-
         const currentGuildId = appMode.mode === 'guild' ? appMode.guildId : undefined;
         const userCompletions = questCompletions.filter(c => c.userId === currentUser.id && c.guildId === currentGuildId);
         const today = new Date();
@@ -141,7 +166,7 @@ const Dashboard: React.FC = () => {
                    isQuestAvailableForUser(quest, userCompletions, today);
         });
 
-        return completableQuests.sort((a, b) => getQuestPriority(a) - getQuestPriority(b));
+        return completableQuests.sort(questSorter(currentUser, today));
     }, [quests, currentUser, questCompletions, appMode]);
 
     const getDueDateString = (quest: Quest): string | null => {
@@ -152,6 +177,21 @@ const Dashboard: React.FC = () => {
             return `Due Today at: ${quest.lateTime}`;
         }
         return null;
+    };
+
+    const statusColorClass = (status: string) => {
+        switch (status) {
+            case "Awarded!":
+            case QuestCompletionStatus.Approved:
+            case "Completed":
+                return 'text-green-400';
+            case QuestCompletionStatus.Pending:
+                return 'text-yellow-400';
+            case QuestCompletionStatus.Rejected:
+                return 'text-red-400';
+            default:
+                return 'text-stone-400';
+        }
     };
 
     return (
@@ -181,24 +221,20 @@ const Dashboard: React.FC = () => {
                 <Card title={`Recent ${terminology.history}`} className="lg:col-span-2">
                     {recentActivities.length > 0 ? (
                         <ul className="space-y-3">
-                            {recentActivities.map(activity => {
-                                let text = 'did something';
-                                let value = '';
-                                if (activity.type === 'Quest') {
-                                    text = `Completed "${getQuestTitle(activity.data.questId)}"`;
-                                } else if (activity.type === 'Purchase') {
-                                    text = `Purchased "${activity.data.assetDetails.name}"`;
-                                } else if (activity.type === 'Trophy') {
-                                    text = `Earned ${terminology.award}: "${getTrophyName(activity.data.trophyId)}"`;
-                                    value = "New Achievement!"
-                                }
-                                return (
-                                <li key={activity.data.id} className="flex justify-between items-center text-stone-300">
-                                    <span>{text}</span> 
-                                    <span className={`${value.startsWith('+') ? 'text-green-400' : value.startsWith('-') ? 'text-red-400' : 'text-amber-400'} font-semibold`}>{value}</span>
+                            {recentActivities.map(activity => (
+                                <li key={activity.id} className="flex items-start gap-4 p-3 bg-stone-800/50 rounded-lg">
+                                    <div className="flex-1">
+                                        <p className="font-semibold text-stone-200">{activity.title}</p>
+                                        <p className="text-xs text-stone-400 mt-1">{new Date(activity.date).toLocaleString()}</p>
+                                    </div>
+                                    <div className="w-1/3 text-sm text-stone-400 italic truncate" title={activity.note}>
+                                        {activity.note ? `"${activity.note}"` : ''}
+                                    </div>
+                                    <div className={`w-1/5 text-right font-semibold ${statusColorClass(activity.status)}`}>
+                                        {activity.status}
+                                    </div>
                                 </li>
-                                )
-                            })}
+                            ))}
                         </ul>
                     ) : (
                          <p className="text-stone-400">No recent activity. Go complete a ${terminology.task.toLowerCase()}!</p>
@@ -275,26 +311,34 @@ const Dashboard: React.FC = () => {
                                 {quickActionQuests.map(quest => {
                                     const status = getQuestUserStatus(quest, currentUser, questCompletions);
                                     const dueDateString = getDueDateString(quest);
-                                    
+                                    const isDisabled = status.isActionDisabled || status.status === 'COMPLETED' || status.status === 'PENDING';
+                                    const isTodo = quest.type === QuestType.Venture && quest.todoUserIds?.includes(currentUser.id);
+
+                                    let bgClass = quest.type === QuestType.Duty ? 'bg-sky-900/50 hover:bg-sky-800/60' : 'bg-amber-900/40 hover:bg-amber-800/50';
+                                    let borderClass = 'border-transparent';
+
+                                    if(isTodo) {
+                                        borderClass = 'border-purple-500';
+                                    }
+
                                     return (
-                                        <li key={quest.id} className="bg-stone-900/40 p-3 rounded-lg flex justify-between items-center">
-                                            <div className="flex items-center gap-3 overflow-hidden">
-                                                {quest.icon && <span className="text-2xl">{quest.icon}</span>}
-                                                <div className="flex-grow overflow-hidden">
-                                                    <p className="font-semibold text-stone-100 truncate flex items-center gap-2" title={quest.title}>
-                                                        <span>{quest.title}</span>
-                                                        {quest.isOptional && <span className="font-normal text-xs px-2 py-0.5 rounded-full bg-stone-700 text-stone-400 border border-stone-600">Optional</span>}
-                                                    </p>
-                                                    {dueDateString && <p className="text-xs text-stone-400">{dueDateString}</p>}
+                                        <li key={quest.id}>
+                                            <button
+                                                onClick={() => handleQuestSelect(quest)}
+                                                disabled={isDisabled}
+                                                className={`w-full text-left p-3 rounded-lg flex justify-between items-center transition-colors border-2 ${bgClass} ${borderClass} ${isDisabled ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'}`}
+                                            >
+                                                <div className="flex items-center gap-3 overflow-hidden">
+                                                    {quest.icon && <span className="text-2xl">{quest.icon}</span>}
+                                                    <div className="flex-grow overflow-hidden">
+                                                        <p className="font-semibold text-stone-100 truncate flex items-center gap-2" title={quest.title}>
+                                                            <span>{quest.title}</span>
+                                                            {quest.isOptional && <span className="font-normal text-xs px-2 py-0.5 rounded-full bg-stone-700 text-stone-400 border border-stone-600">Optional</span>}
+                                                        </p>
+                                                        {dueDateString && <p className="text-xs text-stone-400">{dueDateString}</p>}
+                                                    </div>
                                                 </div>
-                                            </div>
-                                            <Button 
-                                                variant={status.isActionDisabled ? 'secondary' : 'primary'} 
-                                                className="text-sm py-1 px-3 ml-2 flex-shrink-0" 
-                                                onClick={() => handleCompleteQuest(quest.id)} 
-                                                disabled={status.isActionDisabled}>
-                                                    {status.buttonText}
-                                            </Button>
+                                            </button>
                                         </li>
                                     );
                                 })}
@@ -303,6 +347,22 @@ const Dashboard: React.FC = () => {
                     </Card>
                 </div>
             </div>
+
+            {selectedQuest && (
+                <QuestDetailDialog
+                    quest={selectedQuest}
+                    onClose={() => setSelectedQuest(null)}
+                    onComplete={() => handleStartCompletion(selectedQuest)}
+                    onToggleTodo={() => handleToggleTodo(selectedQuest)}
+                    isTodo={currentUser && selectedQuest.type === QuestType.Venture && selectedQuest.todoUserIds?.includes(currentUser.id)}
+                />
+            )}
+            {completingQuest && (
+                <CompleteQuestDialog
+                    quest={completingQuest}
+                    onClose={() => setCompletingQuest(null)}
+                />
+            )}
         </div>
     );
 };

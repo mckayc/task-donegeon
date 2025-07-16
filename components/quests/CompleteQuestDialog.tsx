@@ -1,23 +1,26 @@
-
 import React, { useState } from 'react';
-import { Quest } from '../../types';
+import { Quest, User } from '../../types';
 import { useAppDispatch, useAppState } from '../../context/AppContext';
 import Button from '../ui/Button';
 
 interface CompleteQuestDialogProps {
   quest: Quest;
   onClose: () => void;
+  completionDate?: Date;
+  user?: User; // Optional user for shared mode
 }
 
-const CompleteQuestDialog: React.FC<CompleteQuestDialogProps> = ({ quest, onClose }) => {
+const CompleteQuestDialog: React.FC<CompleteQuestDialogProps> = ({ quest, onClose, completionDate, user }) => {
   const { completeQuest } = useAppDispatch();
   const { currentUser } = useAppState();
   const [note, setNote] = useState('');
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!currentUser) return;
-    completeQuest(quest.id, currentUser.id, quest.rewards, quest.requiresApproval, quest.guildId, { note: note || undefined });
+    const userToComplete = user || currentUser;
+    if (!userToComplete) return;
+
+    completeQuest(quest.id, userToComplete.id, quest.rewards, quest.requiresApproval, quest.guildId, { note: note || undefined, completionDate });
     onClose();
   };
 
@@ -38,7 +41,7 @@ const CompleteQuestDialog: React.FC<CompleteQuestDialogProps> = ({ quest, onClos
               value={note}
               onChange={(e) => setNote(e.target.value)}
               className="w-full px-4 py-2 bg-stone-700 border border-stone-600 rounded-md focus:ring-emerald-500 focus:border-emerald-500 transition"
-              placeholder="Any notes for the approver? Or just a record for yourself?"
+              placeholder="Enter a note for yourself or for the approver."
             />
           </div>
           <div className="flex justify-end space-x-4 pt-4">

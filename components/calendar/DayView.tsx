@@ -1,7 +1,11 @@
-
-import React from 'react';
-import { Quest, QuestCompletion, QuestType } from '../../types';
+import React, { useMemo, useState } from 'react';
+import { Quest, QuestCompletion, QuestType, QuestAvailability } from '../../types';
 import QuestList from './QuestList';
+import { useCalendarVentures } from '../../hooks/useCalendarVentures';
+import { useAppDispatch, useAppState } from '../../context/AppContext';
+import QuestDetailDialog from '../quests/QuestDetailDialog';
+import CompleteQuestDialog from '../quests/CompleteQuestDialog';
+import { questSorter, isQuestScheduledForDay } from '../../utils/quests';
 
 interface DayViewProps {
     currentDate: Date;
@@ -10,25 +14,73 @@ interface DayViewProps {
 }
 
 const DayView: React.FC<DayViewProps> = ({ currentDate, quests, questCompletions }) => {
+    const calendarVentures = useCalendarVentures(currentDate);
+    const [selectedQuest, setSelectedQuest] = useState<Quest | null>(null);
+    const [completingQuest, setCompletingQuest] = useState<Quest | null>(null);
+    const { markQuestAsTodo, unmarkQuestAsTodo } = useAppDispatch();
+    const { currentUser } = useAppState();
+
+    const scheduledDuties = quests.filter(q => q.type === QuestType.Duty && isQuestScheduledForDay(q, currentDate));
+    
+    const sortedQuests = useMemo(() => {
+        if (!currentUser) return [];
+        const allQuestsForDay = [...scheduledDuties, ...calendarVentures];
+        const uniqueQuests = Array.from(new Set(allQuestsForDay.map(q => q.id))).map(id => allQuestsForDay.find(q => q.id === id)!);
+        return uniqueQuests.sort(questSorter(currentUser, currentDate));
+    }, [currentUser, scheduledDuties, calendarVentures, currentDate]);
+
+    const handleStartCompletion = (quest: Quest) => {
+        setCompletingQuest(quest);
+        setSelectedQuest(null);
+    };
+
+    const handleToggleTodo = () => {
+        if (!selectedQuest || !currentUser) return;
+        const isCurrentlyTodo = selectedQuest.todoUserIds?.includes(currentUser.id);
+        
+        if (isCurrentlyTodo) {
+            unmarkQuestAsTodo(selectedQuest.id, currentUser.id);
+        } else {
+            markQuestAsTodo(selectedQuest.id, currentUser.id);
+        }
+
+        // Update the dialog's state immediately for better UX
+        setSelectedQuest(prev => {
+            if (!prev) return null;
+            const newTodoUserIds = isCurrentlyTodo
+                ? (prev.todoUserIds || []).filter(id => id !== currentUser.id)
+                : [...(prev.todoUserIds || []), currentUser.id];
+            return { ...prev, todoUserIds: newTodoUserIds };
+        });
+    };
+
     return (
-         <div className="flex flex-col md:flex-row divide-y md:divide-y-0 md:divide-x divide-stone-700/60 bg-stone-900/20">
-            <div className="flex-1 p-4 space-y-4 h-[70vh] overflow-y-auto scrollbar-hide">
-                <h3 className="text-xl font-bold text-sky-400">Duties</h3>
-                <QuestList
+         <>
+            <div className="p-4 h-[70vh] overflow-y-auto scrollbar-hide">
+                 <QuestList
                     date={currentDate}
-                    quests={quests.filter(q => q.type === QuestType.Duty)}
+                    quests={sortedQuests}
                     questCompletions={questCompletions}
+                    onQuestSelect={setSelectedQuest}
                 />
             </div>
-            <div className="flex-1 p-4 space-y-4 h-[70vh] overflow-y-auto scrollbar-hide">
-                <h3 className="text-xl font-bold text-amber-400">Ventures</h3>
-                <QuestList
-                    date={currentDate}
-                    quests={quests.filter(q => q.type === QuestType.Venture)}
-                    questCompletions={questCompletions}
+            {selectedQuest && (
+                <QuestDetailDialog
+                    quest={selectedQuest}
+                    onClose={() => setSelectedQuest(null)}
+                    onComplete={() => handleStartCompletion(selectedQuest)}
+                    onToggleTodo={handleToggleTodo}
+                    isTodo={currentUser && selectedQuest.type === QuestType.Venture && selectedQuest.todoUserIds?.includes(currentUser.id)}
                 />
-            </div>
-        </div>
+            )}
+            {completingQuest && (
+                <CompleteQuestDialog
+                    quest={completingQuest}
+                    onClose={() => setCompletingQuest(null)}
+                    completionDate={currentDate}
+                />
+            )}
+        </>
     );
 };
 

@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { User, Quest, RewardTypeDefinition, QuestCompletion, RewardItem, Market, PurchaseRequest, Guild, Rank, Trophy, UserTrophy, Notification, AdminAdjustment, SystemLog, Blueprint, ImportResolution, GameAsset } from '../types';
 import { useAppState, useAppDispatch } from './AppContext';
@@ -39,6 +38,8 @@ export interface GameDataDispatch {
   rejectQuestCompletion: (completionId: string, note?: string) => void;
   claimQuest: (questId: string, userId: string) => void;
   releaseQuest: (questId: string, userId: string) => void;
+  markQuestAsTodo: (questId: string, userId: string) => void;
+  unmarkQuestAsTodo: (questId: string, userId: string) => void;
   addMarket: (market: Omit<Market, 'id'>) => void;
   updateMarket: (market: Market) => void;
   deleteMarket: (marketId: string) => void;

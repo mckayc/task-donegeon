@@ -42,6 +42,8 @@ interface AppDispatch {
   dismissQuest: (questId: string, userId: string) => void;
   claimQuest: (questId: string, userId: string) => void;
   releaseQuest: (questId: string, userId: string) => void;
+  markQuestAsTodo: (questId: string, userId: string) => void;
+  unmarkQuestAsTodo: (questId: string, userId: string) => void;
   completeQuest: (questId: string, userId: string, rewards: RewardItem[], requiresApproval: boolean, guildId?: string, options?: { note?: string; completionDate?: Date }) => void;
   approveQuestCompletion: (completionId: string, note?: string) => void;
   rejectQuestCompletion: (completionId: string, note?: string) => void;
@@ -358,12 +360,14 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const setAppUnlocked = (isUnlocked: boolean) => { sessionStorage.setItem('isAppUnlocked', String(isUnlocked)); _setAppUnlocked(isUnlocked); };
   
   // GameData
-  const addQuest = (quest: Omit<Quest, 'id' | 'claimedByUserIds' | 'dismissals'>) => setQuests(prev => [...prev, { ...quest, id: `quest-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`, claimedByUserIds: [], dismissals: [] }]);
+  const addQuest = (quest: Omit<Quest, 'id' | 'claimedByUserIds' | 'dismissals'>) => setQuests(prev => [...prev, { ...quest, id: `quest-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`, claimedByUserIds: [], dismissals: [], todoUserIds: [] }]);
   const updateQuest = (updatedQuest: Quest) => setQuests(prev => prev.map(q => q.id === updatedQuest.id ? updatedQuest : q));
   const deleteQuest = (questId: string) => setQuests(prev => prev.filter(q => q.id !== questId));
   const dismissQuest = (questId: string, userId: string) => { setQuests(prevQuests => prevQuests.map(q => q.id === questId ? { ...q, dismissals: [...q.dismissals.filter(d => d.userId !== userId), { userId, dismissedAt: new Date().toISOString() }] } : q)); };
   const claimQuest = (questId: string, userId: string) => setQuests(prev => prev.map(q => q.id === questId ? { ...q, claimedByUserIds: [...q.claimedByUserIds, userId] } : q));
   const releaseQuest = (questId: string, userId: string) => setQuests(prev => prev.map(q => q.id === questId ? { ...q, claimedByUserIds: q.claimedByUserIds.filter(id => id !== userId) } : q));
+  const markQuestAsTodo = (questId: string, userId: string) => { setQuests(prevQuests => prevQuests.map(q => q.id === questId ? { ...q, todoUserIds: Array.from(new Set([...(q.todoUserIds || []), userId])) } : q)); };
+  const unmarkQuestAsTodo = (questId: string, userId: string) => { setQuests(prevQuests => prevQuests.map(q => q.id === questId ? { ...q, todoUserIds: (q.todoUserIds || []).filter(id => id !== userId) } : q)); };
   const completeQuest = (questId: string, userId: string, rewards: RewardItem[], requiresApproval: boolean, guildId?: string, options?: { note?: string; completionDate?: Date }) => {
     const newCompletion: QuestCompletion = { id: `comp-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`, questId, userId, completedAt: (options?.completionDate || new Date()).toISOString(), status: requiresApproval ? QuestCompletionStatus.Pending : QuestCompletionStatus.Approved, guildId, note: options?.note };
     setQuestCompletions(prev => [...prev, newCompletion]);
@@ -529,7 +533,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
   const dispatchValue: AppDispatch = {
     addUser, updateUser, deleteUser, setCurrentUser, markUserAsOnboarded, setAppUnlocked, setIsSwitchingUser, setTargetedUserForLogin, exitToSharedView, setIsSharedViewActive: _setIsSharedViewActive,
-    addQuest, updateQuest, deleteQuest, dismissQuest, claimQuest, releaseQuest, completeQuest, approveQuestCompletion, rejectQuestCompletion,
+    addQuest, updateQuest, deleteQuest, dismissQuest, claimQuest, releaseQuest, markQuestAsTodo, unmarkQuestAsTodo, completeQuest, approveQuestCompletion, rejectQuestCompletion,
     addRewardType, updateRewardType, deleteRewardType, addMarket, updateMarket, deleteMarket, purchaseMarketItem, cancelPurchaseRequest, approvePurchaseRequest, rejectPurchaseRequest,
     addGuild, updateGuild, deleteGuild, setRanks, addTrophy, updateTrophy, deleteTrophy, awardTrophy, applyManualAdjustment, addGameAsset, updateGameAsset, deleteGameAsset,
     addTheme, updateTheme, deleteTheme,

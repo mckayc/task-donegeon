@@ -1,3 +1,4 @@
+
 import React, { useMemo } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { User } from '../../types';
@@ -9,9 +10,8 @@ const SharedHeader: React.FC = () => {
 
   const sharedUsers = useMemo(() => {
     const userMap = new Map(users.map(u => [u.id, u]));
-    return settings.sharedMode.userIds
-      .map(id => userMap.get(id))
-      .filter((u): u is User => !!u);
+    const userIdsToShow = settings.sharedMode.userIds.length > 0 ? settings.sharedMode.userIds : users.map(u => u.id);
+    return userIdsToShow.map(id => userMap.get(id)).filter((u): u is User => !!u);
   }, [users, settings.sharedMode.userIds]);
 
   const handleUserSelect = (user: User) => {

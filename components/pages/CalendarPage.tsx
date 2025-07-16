@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo } from 'react';
 import { useAppState } from '../../context/AppContext';
 import { Quest, QuestType, QuestCompletion, QuestCompletionStatus, QuestAvailability } from '../../types';
@@ -9,6 +8,16 @@ import WeekView from '../calendar/WeekView';
 import DayView from '../calendar/DayView';
 
 type CalendarView = 'month' | 'week' | 'day';
+
+const ViewButton: React.FC<{ type: CalendarView, currentView: CalendarView, setView: (view: CalendarView) => void, children: React.ReactNode }> = ({ type, currentView, setView, children }) => (
+    <button
+        onClick={() => setView(type)}
+        className={`px-3 py-1 rounded-md font-semibold text-sm transition-colors ${currentView === type ? 'btn-primary' : 'text-stone-300 hover:bg-stone-700'}`}
+    >
+        {children}
+    </button>
+);
+
 
 const CalendarPage: React.FC = () => {
     const { quests, currentUser, questCompletions, appMode } = useAppState();
@@ -48,15 +57,6 @@ const CalendarPage: React.FC = () => {
                 return currentDate.toLocaleDateString('default', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
         }
     };
-    
-    const ViewButton: React.FC<{ type: CalendarView, children: React.ReactNode }> = ({ type, children }) => (
-        <button
-            onClick={() => setView(type)}
-            className={`px-3 py-1 rounded-md font-semibold text-sm transition-colors ${view === type ? 'btn-primary' : 'text-stone-300 hover:bg-stone-700'}`}
-        >
-            {children}
-        </button>
-    );
 
     return (
         <div>
@@ -68,9 +68,9 @@ const CalendarPage: React.FC = () => {
                         <button onClick={() => changeDate(1)} className="p-2 rounded-full hover:bg-stone-700 transition">&gt;</button>
                     </div>
                      <div className="flex space-x-2 p-1 bg-stone-900/50 rounded-lg">
-                        <ViewButton type="day">Day</ViewButton>
-                        <ViewButton type="week">Week</ViewButton>
-                        <ViewButton type="month">Month</ViewButton>
+                        <ViewButton type="day" currentView={view} setView={setView}>Day</ViewButton>
+                        <ViewButton type="week" currentView={view} setView={setView}>Week</ViewButton>
+                        <ViewButton type="month" currentView={view} setView={setView}>Month</ViewButton>
                     </div>
                 </div>
 

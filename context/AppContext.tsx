@@ -551,6 +551,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const updateGameAsset = useCallback((asset: GameAsset) => setGameAssets(prev => prev.map(ga => ga.id === asset.id ? asset : ga)), []);
   const deleteGameAsset = useCallback((assetId: string) => { setGameAssets(prev => prev.filter(ga => ga.id !== assetId)); addNotification({ type: 'info', message: 'Asset deleted.' }); }, [addNotification]);
   const uploadFile = useCallback(async (file: File): Promise<{ url: string } | null> => { const fd = new FormData(); fd.append('file', file); try { const r = await fetch('/api/media/upload', { method: 'POST', body: fd }); if (!r.ok) { const e = await r.json(); throw new Error(e.error || 'Upload failed'); } return await r.json(); } catch (e) { const m = e instanceof Error ? e.message : 'Unknown error'; addNotification({ type: 'error', message: `Upload failed: ${m}` }); return null; } }, [addNotification]);
+  
   const populateInitialGameData = useCallback((adminUser: User) => {
     addNotification({ type: 'info', message: 'Your Donegeon is being populated!' });
     const sA = createMockUsers().filter(u => u.role !== Role.DonegeonMaster);

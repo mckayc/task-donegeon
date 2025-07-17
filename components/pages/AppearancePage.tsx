@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { AppSettings, ThemeDefinition, SidebarConfigItem, Page, SidebarLink } from '../../types';
@@ -14,7 +15,9 @@ const AppearancePage: React.FC = () => {
     const { settings, themes: allThemes } = useAppState();
     const { updateSettings, addNotification } = useAppDispatch();
     
-    const [formState, setFormState] = useState<AppSettings>(JSON.parse(JSON.stringify(settings)));
+    // Initialize state once from settings, preventing resets on re-render from sync
+    const [formState, setFormState] = useState<AppSettings>(() => JSON.parse(JSON.stringify(settings)));
+    
     const [activeTab, setActiveTab] = useState<SidebarKey>('main');
     const [pickerOpenFor, setPickerOpenFor] = useState<number | null>(null);
 

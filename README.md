@@ -1,7 +1,7 @@
 # Task Donegeon
 
-**Version:** 0.0.57
-**Last Updated:** 2025-06-10T10:00:00Z
+**Version:** 0.0.58
+**Last Updated:** 2025-06-11T10:00:00Z
 
 ---
 
@@ -16,10 +16,11 @@ Task Donegeon is a gamified task and chore management application designed for f
 
 ## ✨ Features
 
+-   **Bug Fixes & Stability:** Resolved a critical bug where unsaved changes in the Theme Editor and Appearance page would be lost during background data syncs, ensuring a smoother customization experience.
+-   **Theme Editor Overhaul:** The Theme Editor has been completely revamped with a live dashboard preview, allowing users to see their changes instantly. It now includes over 30 new fonts and precise sliders for font size control.
 -   **Data Synchronization:** Automatic data syncing keeps your application state consistent across all your devices.
 -   **Collapsible Sidebar:** A new collapsible sidebar allows for a more compact and focused view.
 -   **AI-Powered Content Generation:** The AI Studio, powered by Google Gemini, can generate ideas for quests (duties vs. ventures), items (including icons), markets, trophies, and even entire visual themes.
--   **Powerful Theme Editor:** An enhanced theme editor now includes a vastly expanded font library (>30 fonts) and font size controls for deeper customization.
 -   **Revamped Asset Management:** A new upload system recognizes folder structures for automatic categorization of assets.
 -   **Gamified Task Management:** Create recurring "Duties" and one-time "Ventures" with customizable rewards, deadlines, and penalties.
 -   **Dynamic Calendar:** Interactive Month, Week, and Day views intelligently display all your tasks.

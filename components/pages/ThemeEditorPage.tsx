@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { ThemeDefinition, ThemeStyle } from '../../types';
@@ -5,19 +6,18 @@ import Button from '../ui/Button';
 import Card from '../ui/Card';
 import Input from '../ui/Input';
 import { getContrast, getWcagRating, hslValuesToCss, parseHslString, hexToHsl, rgbToHex, hslToRgb } from '../../utils/colors';
-import { useSettings } from '../../context/SettingsContext';
-import { SparklesIcon } from '../ui/Icons';
+import { SparklesIcon, TrophyIcon, RankIcon } from '../ui/Icons';
 import ThemeIdeaGenerator from '../quests/ThemeIdeaGenerator';
 import ConfirmDialog from '../ui/ConfirmDialog';
 
 const FONT_OPTIONS = [
     "'MedievalSharp', cursive", "'Uncial Antiqua', cursive", "'Press Start 2P', cursive", "'IM Fell English SC', serif", 
-    "'Cinzel Decorative', cursive", "'Comic Neue', cursive", "'Special Elite', cursive", "'Metamorphous', serif", 
+    "'Cinzel Decorative', cursive", "'Comic Neue', 'cursive'", "'Special Elite', cursive", "'Metamorphous', serif", 
     "'Almendra', serif", "'Almendra Display', serif", "'Almendra SC', serif", "'Butcherman', cursive", 
     "'Creepster', cursive", "'Eater', cursive", "'Fondamento', cursive", "'Fruktur', cursive", "'Griffy', cursive", 
     "'Henny Penny', cursive", "'New Rocker', cursive", "'Nosifer', cursive", "'Pirata One', cursive", "'Rye', cursive", 
     "'Sancreek', cursive", "'Smokum', cursive", "'Roboto', sans-serif", "'Lora', serif", "'Vollkorn', serif", 
-    "'EB Garamond', serif", "'Cormorant Garamond', serif", "'Crimson Pro', serif",
+    "'EB Garamond', serif", "'Cormorant Garamond', serif", "'Crimson Pro', serif", "'Cinzel', serif"
 ];
 
 const ColorInput: React.FC<{ label: string, value: string, onChange: (value: string) => void }> = ({ label, value, onChange }) => {
@@ -106,27 +106,45 @@ const ContrastChecker: React.FC<{ styles: ThemeStyle }> = ({ styles }) => {
 
 
 const ThemePreview: React.FC<{ themeData: ThemeStyle }> = ({ themeData }) => {
+    const { settings } = useAppState();
     return (
         <div style={themeData as React.CSSProperties} className="p-6 rounded-lg h-full transition-all duration-300 flex flex-col bg-stone-900 border-2 border-stone-700">
-            <div className="flex-grow p-4 rounded-lg" style={{ backgroundColor: 'hsl(var(--color-bg-primary))' }}>
-                <h1 style={{ fontFamily: 'var(--font-display)', color: 'hsl(var(--color-text-primary))', fontSize: 'var(--font-size-display)' }}>
-                    Theme Preview
-                </h1>
-                <p style={{ fontFamily: 'var(--font-body)', color: 'hsl(var(--color-text-secondary))', fontSize: 'var(--font-size-body)'}}>
-                    This is some sample body text to demonstrate the look and feel of the current theme settings. You can see how the fonts and colors work together.
-                </p>
-                <div className="mt-6 flex gap-4">
-                    <button className="px-6 py-3 font-bold rounded-lg shadow-md text-white" style={{ backgroundColor: 'hsl(var(--color-primary-hue) var(--color-primary-saturation) var(--color-primary-lightness))' }}>
-                        Primary Button
-                    </button>
-                    <button className="px-6 py-3 font-bold rounded-lg shadow-md" style={{ backgroundColor: 'hsl(var(--color-bg-secondary))', color: 'hsl(var(--color-text-primary))' }}>
-                        Secondary
-                    </button>
-                </div>
-                <p className="mt-4" style={{ fontFamily: 'var(--font-body)', color: 'hsl(var(--color-accent-hue) var(--color-accent-saturation) var(--color-accent-lightness))', fontSize: 'var(--font-size-body)'}}>
-                    This text uses the accent color.
-                </p>
-            </div>
+             <div className="flex-grow p-4 rounded-lg space-y-4" style={{ backgroundColor: 'hsl(var(--color-bg-tertiary))' }}>
+                <Card 
+                    title={settings.terminology.level} 
+                    className="lg:col-span-1"
+                >
+                    <div className="cursor-pointer text-center">
+                        <div className="w-24 h-24 mx-auto mb-4 bg-stone-700 rounded-full flex items-center justify-center text-5xl border-4 border-accent">
+                           <RankIcon />
+                        </div>
+                        <p className="text-2xl font-bold text-accent-light">Adept</p>
+                        <p className="text-stone-400">Level 5</p>
+                        <div className="w-full bg-stone-700 rounded-full h-4 mt-4 overflow-hidden">
+                            <div className="h-4 rounded-full btn-primary" style={{width: `60%`}}></div>
+                        </div>
+                    </div>
+                </Card>
+
+                <Card title="Inventory">
+                    <div>
+                        <h4 className="font-bold text-lg text-stone-300 mb-2 border-b border-stone-700 pb-1 capitalize">{settings.terminology.currency}</h4>
+                        <div className="space-y-2 mt-2">
+                            <div className="flex items-baseline justify-between">
+                                <span className="text-stone-200 flex items-center gap-2"><span>💰</span> <span>Gold</span></span>
+                                <span className="font-semibold text-accent-light">125</span>
+                            </div>
+                        </div>
+                    </div>
+                </Card>
+
+                 <Card title={`Latest ${settings.terminology.award}`}>
+                     <div className="text-center">
+                        <div className="w-16 h-16 mx-auto bg-amber-900/50 rounded-full flex items-center justify-center text-amber-400 text-3xl"><TrophyIcon /></div>
+                        <p className="mt-2 text-lg font-semibold text-amber-300">First Quest</p>
+                    </div>
+                </Card>
+             </div>
         </div>
     );
 };
@@ -156,7 +174,7 @@ const ThemeEditorPage: React.FC = () => {
                 styles: defaultStyles || {} as ThemeStyle
             });
         }
-    }, [selectedThemeId]);
+    }, [selectedThemeId]); // This effect ONLY runs when the user selects a different theme, not on background syncs.
 
     const handleStyleChange = (key: keyof ThemeStyle, value: string) => {
         if (!formData) return;
@@ -169,7 +187,7 @@ const ThemeEditorPage: React.FC = () => {
             return;
         }
         
-        if (selectedThemeId === 'new') {
+        if (selectedThemeId === 'new' || formData.id === 'new') {
             const { id, ...newThemeData } = formData;
             addTheme(newThemeData);
         } else {
@@ -262,7 +280,7 @@ const ThemeEditorPage: React.FC = () => {
                         {formData.isCustom && selectedThemeId !== 'new' && (
                             <Button variant="secondary" className="!bg-red-900/50 hover:!bg-red-800/60 text-red-300" onClick={() => setDeletingTheme(formData)}>Delete Theme</Button>
                         )}
-                        <Button onClick={handleSave}>{selectedThemeId === 'new' ? 'Create Theme' : 'Save Changes'}</Button>
+                        <Button onClick={handleSave}>{(selectedThemeId === 'new' || formData.id === 'new') ? 'Create Theme' : 'Save Changes'}</Button>
                     </div>
                 </div>
             </div>

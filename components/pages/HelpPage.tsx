@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import Card from '../ui/Card';
-import { useSettings } from '../../context/SettingsContext';
+import { useAppState } from '../../context/AppContext';
 import { ChevronDownIcon } from '../ui/Icons';
 
 const CollapsibleSection: React.FC<{ title: string; children: React.ReactNode; defaultOpen?: boolean; }> = ({ title, children, defaultOpen = false }) => {
@@ -27,7 +27,7 @@ const CollapsibleSection: React.FC<{ title: string; children: React.ReactNode; d
 }
 
 const HelpPage: React.FC = () => {
-    const { settings } = useSettings();
+    const { settings } = useAppState();
     const { terminology } = settings;
 
     return (
@@ -98,6 +98,13 @@ const HelpPage: React.FC = () => {
                     <h4 className="text-lg font-bold text-stone-100 mt-4">Content Creation &amp; Management</h4>
                     <p>The "Manage" pages in the sidebar are your world-building tools. You can define new {terminology.tasks}, set up {terminology.stores} with custom items, create {terminology.groups}, define custom {terminology.points}, design {terminology.levels}, and invent unique {terminology.awards}.</p>
                     
+                    <h4 className="text-lg font-bold text-stone-100 mt-4">Theme Editor</h4>
+                    <p>The Theme Editor (found under `Content Management` in the sidebar) is a powerful tool for customizing the entire look and feel of the application. It features a two-panel layout:</p>
+                    <ul className="list-disc list-inside space-y-2 pl-4">
+                        <li><strong>Live Preview (Left):</strong> The left side of the screen shows a live preview that looks just like your main dashboard. Any change you make in the controls is reflected here instantly.</li>
+                        <li><strong>Controls (Right):</strong> The right side contains all your editing tools. You can select a theme to edit, rename it, and adjust its properties. This includes choosing from over 30 display and body fonts, using sliders to set precise font sizes, and picking exact colors for every part of the UI. Changes are not saved until you hit the "Save" or "Create" button, so you can experiment freely.</li>
+                    </ul>
+
                     <h4 className="text-lg font-bold text-stone-100 mt-4">Managing Images &amp; Assets</h4>
                     <p>All items in the game, from avatar clothes to marketplace rewards, are "Game Assets." You can manage these from `Manage Items`. When creating or editing an asset, you can add an image in several ways:</p>
                     <ul className="list-disc list-inside space-y-2 pl-4">

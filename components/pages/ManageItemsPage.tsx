@@ -7,7 +7,7 @@ import Card from '../ui/Card';
 import ConfirmDialog from '../ui/ConfirmDialog';
 import EditGameAssetDialog from '../admin/EditGameAssetDialog';
 import EmptyState from '../ui/EmptyState';
-import { ItemManagerIcon } from '../ui/Icons';
+import { ItemManagerIcon, SparklesIcon } from '../ui/Icons';
 import ItemIdeaGenerator from '../quests/ItemIdeaGenerator';
 
 const ManageItemsPage: React.FC = () => {

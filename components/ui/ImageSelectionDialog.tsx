@@ -6,20 +6,15 @@ import Button from './Button';
 interface ImageSelectionDialogProps {
   onSelect: (url: string) => void;
   onClose: () => void;
-  filterAssetIds?: string[];
 }
 
-const ImageSelectionDialog: React.FC<ImageSelectionDialogProps> = ({ onSelect, onClose, filterAssetIds }) => {
+const ImageSelectionDialog: React.FC<ImageSelectionDialogProps> = ({ onSelect, onClose }) => {
   const { gameAssets } = useAppState();
   const [searchTerm, setSearchTerm] = useState('');
 
   const uniqueImages = useMemo(() => {
     const seenUrls = new Set<string>();
-    const assetsToConsider = filterAssetIds
-      ? gameAssets.filter(asset => filterAssetIds.includes(asset.id))
-      : gameAssets;
-
-    return assetsToConsider
+    return gameAssets
       .filter(asset => {
         if (!asset.url || seenUrls.has(asset.url)) {
           return false;
@@ -28,7 +23,7 @@ const ImageSelectionDialog: React.FC<ImageSelectionDialogProps> = ({ onSelect, o
         return true;
       })
       .map(asset => ({ url: asset.url, name: asset.name }));
-  }, [gameAssets, filterAssetIds]);
+  }, [gameAssets]);
 
   const filteredImages = useMemo(() => {
     if (!searchTerm.trim()) {

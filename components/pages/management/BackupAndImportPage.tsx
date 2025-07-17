@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { useAppState, useAppDispatch } from '../../../context/AppContext';
 import { Blueprint, IAppData, ImportResolution } from '../../../types';
@@ -103,8 +102,7 @@ const BackupAndImportPage: React.FC = () => {
             systemLogs: appState.systemLogs,
             settings: appState.settings,
             themes: appState.themes,
-            loginHistory: appState.loginHistory,
-            chatMessages: appState.chatMessages,
+            loginHistory: appState.loginHistory
         };
         
         const dataStr = JSON.stringify(dataToBackup, null, 2);

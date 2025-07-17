@@ -1,8 +1,8 @@
 {
-  "name": "Task Donegeon - 0.0.61 - Bulk Actions & Profile Uploads",
-  "version": "0.0.61",
-  "lastChange": "Added bulk actions to management pages, profile picture uploads, market open/close status, and various UI improvements.",
-  "lastChangeDate": "2024-07-16T15:10:00Z",
+  "name": "Task Donegeon - 0.0.59 - Wrong version",
+  "version": "0.0.59",
+  "lastChange": "Adjusted the main page header (H1) font size to an intermediate value for improved readability and visual balance.",
+  "lastChangeDate": "2025-06-12T10:00:00Z",
   "description": "A gamified task and chore tracker for families and groups. Complete quests, earn currency and experience, and level up your character in a fun, medieval-themed adventure.",
   "requestFramePermissions": [],
   "prompt": ""

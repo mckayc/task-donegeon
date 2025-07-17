@@ -1,3 +1,4 @@
+
 import { GenerateContentResponse } from "@google/genai";
 
 
@@ -24,7 +25,6 @@ export interface User {
   birthday: string;
   role: Role;
   avatar: { [slot: string]: string }; // Now uses GameAsset['id']
-  profilePictureUrl?: string;
   ownedAssetIds: string[];
   pin: string;
   password?: string;
@@ -132,7 +132,6 @@ export interface GameAsset {
   createdAt: string;
   purchaseLimit: number | null; // null for infinite
   purchaseCount: number;
-  linkedThemeId?: string; // Links this asset to a theme that gets unlocked on purchase
 }
 
 export interface Market {
@@ -141,7 +140,6 @@ export interface Market {
   description: string;
   icon?: string;
   guildId?: string;
-  status: 'open' | 'closed';
 }
 
 export enum PurchaseRequestStatus {
@@ -322,7 +320,6 @@ export interface AppSettings {
   security: {
     requirePinForUsers: boolean;
     requirePasswordForAdmin: boolean;
-    allowProfileEditing: boolean;
   };
   sharedMode: {
     enabled: boolean;
@@ -335,10 +332,6 @@ export interface AppSettings {
   theme: string;
   terminology: Terminology;
   enableAiFeatures: boolean;
-  chat: {
-    enabled: boolean;
-    chatEmoji: string;
-  };
   sidebars: {
       main: SidebarConfigItem[];
       dataManagement: SidebarConfigItem[];
@@ -375,14 +368,10 @@ export interface ImportResolution {
 }
 
 export interface ThemeStyle {
-  '--font-h1': string;
-  '--font-size-h1': string;
-  '--font-p': string;
-  '--font-size-p': string;
-  '--font-span': string;
-  '--font-size-span': string;
-  '--font-button': string;
-  '--font-size-button': string;
+  '--font-display': string;
+  '--font-body': string;
+  '--font-size-display': string;
+  '--font-size-body': string;
   '--color-bg-primary': string;
   '--color-bg-secondary': string;
   '--color-bg-tertiary': string;
@@ -409,15 +398,6 @@ export interface ThemeDefinition {
 
 export type Theme = ThemeDefinition;
 
-export interface ChatMessage {
-  id: string;
-  senderId: string;
-  recipientId: string;
-  message: string;
-  timestamp: string;
-  isRead: boolean;
-}
-
 export interface IAppData {
   users: User[];
   quests: Quest[];
@@ -435,7 +415,6 @@ export interface IAppData {
   settings: AppSettings;
   themes: ThemeDefinition[];
   loginHistory: string[];
-  chatMessages: ChatMessage[];
 }
 
 export type LibraryPackType = 'Quests' | 'Items' | 'Markets' | 'Trophies' | 'Rewards';
@@ -449,14 +428,3 @@ export interface LibraryPack {
   color: string;
   assets: Partial<BlueprintAssets>;
 }
-
-export type ChronicleEvent = {
-    id: string;
-    date: string;
-    type: 'Quest' | 'Purchase' | 'Trophy' | 'Adjustment' | 'System';
-    title: string;
-    note?: string;
-    status: string;
-    icon: string;
-    color: string;
-};

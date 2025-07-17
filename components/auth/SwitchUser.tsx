@@ -138,7 +138,12 @@ const SwitchUser: React.FC = () => {
                                     type="password"
                                     aria-label="PIN Input"
                                     value={pin}
-                                    readOnly={true}
+                                    onChange={(e) => {
+                                        const val = e.target.value;
+                                        if (/^\d*$/.test(val) && val.length <= 10) {
+                                            setPin(val);
+                                        }
+                                    }}
                                     onKeyDown={e => {
                                         if (e.key === 'Enter') {
                                             e.preventDefault();
@@ -147,7 +152,7 @@ const SwitchUser: React.FC = () => {
                                     }}
                                     className="text-center tracking-[.5em] text-2xl h-14"
                                     autoComplete="off"
-                                    inputMode="none"
+                                    inputMode="numeric"
                                     autoFocus
                                 />
                             </div>

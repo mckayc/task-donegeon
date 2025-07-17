@@ -156,7 +156,7 @@ const MarketplacePage: React.FC = () => {
     
     const visibleMarkets = React.useMemo(() => {
         const currentGuildId = appMode.mode === 'guild' ? appMode.guildId : undefined;
-        return markets.filter(market => market.status === 'open' && market.guildId === currentGuildId);
+        return markets.filter(market => market.guildId === currentGuildId);
     }, [markets, appMode]);
 
     const activeMarket = React.useMemo(() => {

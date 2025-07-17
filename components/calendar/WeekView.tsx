@@ -1,21 +1,19 @@
 import React, { useMemo, useState } from 'react';
 import { Quest, QuestCompletion, QuestType } from '../../types';
-import { isQuestScheduledForDay, questSorter, toYMD } from '../../utils/quests';
+import { isQuestScheduledForDay, questSorter } from '../../utils/quests';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { useCalendarVentures } from '../../hooks/useCalendarVentures';
 import QuestList from './QuestList';
 import QuestDetailDialog from '../quests/QuestDetailDialog';
 import CompleteQuestDialog from '../quests/CompleteQuestDialog';
-import ChronicleEventList from './ChronicleEventList';
 
 interface WeekViewProps {
     currentDate: Date;
     quests: Quest[];
     questCompletions: QuestCompletion[];
-    mode: 'quests' | 'chronicles';
 }
 
-const WeekView: React.FC<WeekViewProps> = ({ currentDate, quests, questCompletions, mode }) => {
+const WeekView: React.FC<WeekViewProps> = ({ currentDate, quests, questCompletions }) => {
     const { currentUser } = useAppState();
     const { markQuestAsTodo, unmarkQuestAsTodo } = useAppDispatch();
     const [selectedQuest, setSelectedQuest] = useState<{quest: Quest, date: Date} | null>(null);
@@ -59,7 +57,7 @@ const WeekView: React.FC<WeekViewProps> = ({ currentDate, quests, questCompletio
 
     return (
         <>
-            <div className="flex flex-row divide-x divide-stone-700/60 bg-stone-900/20 overflow-x-auto scrollbar-hide">
+            <div className="flex flex-row divide-x divide-stone-700/60 bg-stone-900/20">
                 {days.map(day => (
                     <DayColumn
                         key={day.toISOString()}
@@ -67,7 +65,6 @@ const WeekView: React.FC<WeekViewProps> = ({ currentDate, quests, questCompletio
                         quests={quests}
                         questCompletions={questCompletions}
                         onSelectQuest={(quest) => setSelectedQuest({ quest, date: day })}
-                        mode={mode}
                     />
                 ))}
             </div>
@@ -92,7 +89,7 @@ const WeekView: React.FC<WeekViewProps> = ({ currentDate, quests, questCompletio
 };
 
 // Memoize DayColumn to prevent re-renders when other days' data changes.
-const DayColumn = React.memo(({ day, quests, questCompletions, onSelectQuest, mode }: { day: Date, quests: Quest[], questCompletions: QuestCompletion[], onSelectQuest: (quest: Quest) => void, mode: 'quests' | 'chronicles' }) => {
+const DayColumn = React.memo(({ day, quests, questCompletions, onSelectQuest }: { day: Date, quests: Quest[], questCompletions: QuestCompletion[], onSelectQuest: (quest: Quest) => void }) => {
     const calendarVentures = useCalendarVentures(day);
     const { currentUser } = useAppState();
 
@@ -104,25 +101,19 @@ const DayColumn = React.memo(({ day, quests, questCompletions, onSelectQuest, mo
         return uniqueQuests.sort(questSorter(currentUser, questCompletions, day));
     }, [currentUser, day, quests, questCompletions, calendarVentures]);
     
-    const isToday = toYMD(day) === toYMD(new Date());
-
     return (
         <div className="flex-1 min-w-[200px] flex flex-col">
-            <div className={`text-center font-semibold py-2 bg-stone-800/50 text-stone-300 border-b border-stone-700/60 flex-shrink-0 transition-colors ${isToday ? 'bg-emerald-800/50' : ''}`}>
+            <div className="text-center font-semibold py-2 bg-stone-800/50 text-stone-300 border-b border-stone-700/60 flex-shrink-0">
                 <p>{day.toLocaleDateString('default', { weekday: 'short' })}</p>
                 <p className="text-2xl">{day.getDate()}</p>
             </div>
             <div className="p-2 space-y-4 overflow-y-auto scrollbar-hide flex-grow h-[65vh]">
-            {mode === 'quests' ? (
-                <QuestList
+            <QuestList
                     date={day}
                     quests={sortedQuests}
                     questCompletions={questCompletions}
                     onQuestSelect={onSelectQuest}
                 />
-            ) : (
-                <ChronicleEventList date={day} />
-            )}
             </div>
         </div>
     );

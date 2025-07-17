@@ -1,3 +1,4 @@
+
 import React, { createContext, useState, useContext, ReactNode, useEffect, useCallback, useMemo, useRef } from 'react';
 import { AppSettings, User, Quest, RewardTypeDefinition, QuestCompletion, RewardItem, Market, PurchaseRequest, Guild, Rank, Trophy, UserTrophy, Notification, AppMode, Page, IAppData, ShareableAssetType, GameAsset, Role, QuestCompletionStatus, RewardCategory, PurchaseRequestStatus, AdminAdjustment, AdminAdjustmentType, SystemLog, QuestType, QuestAvailability, Blueprint, ImportResolution, TrophyRequirementType, ThemeDefinition } from '../types';
 import { INITIAL_SETTINGS, createMockUsers, INITIAL_REWARD_TYPES, INITIAL_RANKS, INITIAL_TROPHIES, createSampleMarkets, createSampleQuests, createInitialGuilds, createSampleGameAssets, INITIAL_THEMES, createInitialQuestCompletions } from '../data/initialData';
@@ -145,7 +146,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     (async () => {
         let dataToSet: IAppData | null = null;
         try {
-            const response = await fetch('/api/data/load');
+            const response = await window.fetch('/api/data/load');
             if (response.ok) {
                 const data = await response.json();
                 if (data && data.users && data.users.length > 0) {
@@ -207,7 +208,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         }
 
         try {
-            const aiResponse = await fetch('/api/ai/status');
+            const aiResponse = await window.fetch('/api/ai/status');
             if (aiResponse.ok) {
                 const aiData = await aiResponse.json();
                 setIsAiConfigured(aiData.isConfigured);
@@ -227,7 +228,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
     const saveData = async () => {
       try { 
-        await fetch('/api/data/save', { 
+        await window.fetch('/api/data/save', { 
             method: 'POST', 
             headers: { 'Content-Type': 'application/json' }, 
             body: JSON.stringify(debouncedAppData) 
@@ -258,7 +259,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       setSyncError(null);
 
       try {
-        const response = await fetch('/api/data/load');
+        const response = await window.fetch('/api/data/load');
         if (!response.ok) {
           const errorText = await response.text();
           console.error(`Sync failed: Server returned status ${response.status}`);
@@ -548,7 +549,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const addGameAsset = useCallback((asset: Omit<GameAsset, 'id'|'creatorId'|'createdAt'>) => { setGameAssets(p => [...p, { ...asset, id: `g-asset-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`, creatorId: 'admin', createdAt: new Date().toISOString() }]); addNotification({ type: 'success', message: `Asset "${asset.name}" created.` }); }, [addNotification]);
   const updateGameAsset = useCallback((asset: GameAsset) => setGameAssets(prev => prev.map(ga => ga.id === asset.id ? asset : ga)), []);
   const deleteGameAsset = useCallback((assetId: string) => { setGameAssets(prev => prev.filter(ga => ga.id !== assetId)); addNotification({ type: 'info', message: 'Asset deleted.' }); }, [addNotification]);
-  const uploadFile = useCallback(async (file: File): Promise<{ url: string } | null> => { const fd = new FormData(); fd.append('file', file); try { const r = await fetch('/api/media/upload', { method: 'POST', body: fd }); if (!r.ok) { const e = await r.json(); throw new Error(e.error || 'Upload failed'); } return await r.json(); } catch (e) { const m = e instanceof Error ? e.message : 'Unknown error'; addNotification({ type: 'error', message: `Upload failed: ${m}` }); return null; } }, [addNotification]);
+  const uploadFile = useCallback(async (file: File): Promise<{ url: string } | null> => { const fd = new FormData(); fd.append('file', file); try { const r = await window.fetch('/api/media/upload', { method: 'POST', body: fd }); if (!r.ok) { const e = await r.json(); throw new Error(e.error || 'Upload failed'); } return await r.json(); } catch (e) { const m = e instanceof Error ? e.message : 'Unknown error'; addNotification({ type: 'error', message: `Upload failed: ${m}` }); return null; } }, [addNotification]);
   
   const populateInitialGameData = useCallback((adminUser: User) => {
     addNotification({ type: 'info', message: 'Your Donegeon is being populated!' });
@@ -569,7 +570,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const restoreFromBackup = useCallback(async (backupData: IAppData) => {
     setIsRestoring(true); // Prevent debounced save
     try {
-        await fetch('/api/data/save', { 
+        await window.fetch('/api/data/save', { 
             method: 'POST', 
             headers: { 'Content-Type': 'application/json' }, 
             body: JSON.stringify(backupData) 

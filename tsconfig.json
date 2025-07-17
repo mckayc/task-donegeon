@@ -20,7 +20,6 @@
     "App.tsx",
     "index.tsx",
     "types.ts",
-    "vite.config.ts",
     "components/admin/EditGameAssetDialog.tsx",
     "components/admin/ManualAdjustmentDialog.tsx",
     "components/auth/AddUserDialog.tsx",

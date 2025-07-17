@@ -1,7 +1,6 @@
 
 import React, { useState } from 'react';
-import { useGameData, useGameDataDispatch } from '../../context/GameDataContext';
-import { useSettings } from '../../context/SettingsContext';
+import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { Quest, QuestType } from '../../types';
 import Button from '../ui/Button';
 import Card from '../ui/Card';
@@ -12,15 +11,16 @@ import { QuestsIcon, SparklesIcon } from '../ui/Icons';
 import EmptyState from '../ui/EmptyState';
 
 const ManageQuestsPage: React.FC = () => {
-    const { quests } = useGameData();
-    const { settings, isAiAvailable } = useSettings();
-    const { deleteQuest } = useGameDataDispatch();
+    const { quests, settings, isAiConfigured } = useAppState();
+    const { deleteQuest } = useAppDispatch();
     const [editingQuest, setEditingQuest] = useState<Quest | null>(null);
     const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
     const [isGeneratorOpen, setIsGeneratorOpen] = useState(false);
     const [isConfirmOpen, setIsConfirmOpen] = useState(false);
     const [deletingId, setDeletingId] = useState<string | null>(null);
     const [initialCreateData, setInitialCreateData] = useState<{ title: string; description: string; type: QuestType } | null>(null);
+
+    const isAiAvailable = settings.enableAiFeatures && isAiConfigured;
 
     const handleEdit = (quest: Quest) => {
         setInitialCreateData(null);

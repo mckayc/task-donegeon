@@ -66,7 +66,7 @@ export const isQuestAvailableForUser = (
   today: Date
 ): boolean => {
   const questUserCompletions = userCompletions.filter(
-    (c) => c.questId === quest.id && c.status === QuestCompletionStatus.Approved
+    (c) => c.questId === quest.id && (c.status === QuestCompletionStatus.Approved || c.status === QuestCompletionStatus.Pending)
   );
 
   // Venture-specific logic for early completion and deadlines
@@ -138,11 +138,17 @@ export const isQuestAvailableForUser = (
  * Generates a sort key for a quest based on priority rules.
  * Lower numbers are higher priority.
  * Sorts by:
- * 1. Type (Duty > Venture)
- * 2. Time-based priority (Due soon > To-Do > other)
- * 3. Title (alphabetical)
+ * 1. Completion Status (Available > Completed/Pending)
+ * 2. Type (Duty > Venture)
+ * 3. Time-based priority (Due soon > To-Do > other)
+ * 4. Title (alphabetical)
  */
-const getQuestSortKey = (quest: Quest, user: User, date: Date = new Date()): [number, number, string] => {
+const getQuestSortKey = (quest: Quest, user: User, date: Date, allCompletions: QuestCompletion[]): [number, number, number, string] => {
+    // Priority 0: Completion Status
+    const userCompletionsForQuest = allCompletions.filter(c => c.questId === quest.id && c.userId === user.id);
+    const isAvailable = isQuestAvailableForUser(quest, userCompletionsForQuest, date);
+    const completionPriority = isAvailable ? 0 : 1;
+
     // Priority 1: Type (Duty = 0, Venture = 1)
     const typePriority = quest.type === QuestType.Duty ? 0 : 1;
 
@@ -168,18 +174,19 @@ const getQuestSortKey = (quest: Quest, user: User, date: Date = new Date()): [nu
         }
     }
 
-    return [typePriority, timePriority, quest.title.toLowerCase()];
+    return [completionPriority, typePriority, timePriority, quest.title.toLowerCase()];
 };
 
 /**
  * A comparator function for sorting quests based on a standardized priority order.
  * @param user The current user, for To-Do list checking.
+ * @param allCompletions All quest completions, to determine availability.
  * @param date The date context for sorting (e.g., today's date).
  * @returns A comparator function for Array.prototype.sort().
  */
-export const questSorter = (user: User, date: Date = new Date()) => (a: Quest, b: Quest) => {
-    const keyA = getQuestSortKey(a, user, date);
-    const keyB = getQuestSortKey(b, user, date);
+export const questSorter = (user: User, allCompletions: QuestCompletion[], date: Date = new Date()) => (a: Quest, b: Quest) => {
+    const keyA = getQuestSortKey(a, user, date, allCompletions);
+    const keyB = getQuestSortKey(b, user, date, allCompletions);
 
     for (let i = 0; i < keyA.length; i++) {
         if (keyA[i] < keyB[i]) return -1;

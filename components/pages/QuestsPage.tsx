@@ -206,21 +206,19 @@ const QuestsPage: React.FC = () => {
         if (!currentUser) return [];
         
         const currentGuildId = appMode.mode === 'guild' ? appMode.guildId : undefined;
-        const userCompletions = questCompletions.filter(c => c.userId === currentUser.id && c.guildId === currentGuildId);
-
+        
         return quests.filter(quest => 
             quest.isActive &&
             (quest.assignedUserIds.length === 0 || quest.assignedUserIds.includes(currentUser.id)) &&
-            quest.guildId === currentGuildId &&
-            isQuestAvailableForUser(quest, userCompletions, now)
+            quest.guildId === currentGuildId
         );
-    }, [currentUser, quests, questCompletions, appMode, now]);
+    }, [currentUser, quests, appMode]);
 
     const filteredAndSortedQuests = useMemo(() => {
         if(!currentUser) return [];
         const questsToProcess = filter === 'all' ? availableQuests : availableQuests.filter(q => q.type === filter);
-        return [...questsToProcess].sort(questSorter(currentUser, now));
-    }, [availableQuests, filter, currentUser, now]);
+        return [...questsToProcess].sort(questSorter(currentUser, questCompletions, now));
+    }, [availableQuests, filter, currentUser, now, questCompletions]);
     
     if (!currentUser) return null;
 

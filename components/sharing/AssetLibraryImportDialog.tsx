@@ -3,7 +3,7 @@
 import React, { useState, useMemo } from 'react';
 import { BlueprintAssets, TrophyRequirementType } from '../../types';
 import Button from '../ui/Button';
-import { useGameDataDispatch } from '../../context/GameDataContext';
+import { useAppDispatch } from '../../context/AppContext';
 import { LibraryPack } from '../../data/assetLibrary';
 
 interface AssetLibraryImportDialogProps {
@@ -14,7 +14,7 @@ interface AssetLibraryImportDialogProps {
 type SelectableAsset = { id: string; name: string; description: string; icon: string; type: keyof BlueprintAssets };
 
 const AssetLibraryImportDialog: React.FC<AssetLibraryImportDialogProps> = ({ pack, onClose }) => {
-    const { addQuest, addGameAsset, addTrophy, addRewardType, addMarket, addNotification } = useGameDataDispatch();
+    const { addQuest, addGameAsset, addTrophy, addRewardType, addMarket, addNotification } = useAppDispatch();
 
     const allAssets = useMemo((): SelectableAsset[] => {
         const assets: SelectableAsset[] = [];

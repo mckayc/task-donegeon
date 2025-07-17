@@ -13,6 +13,7 @@ interface DailyDetailDialogProps {
   scheduledQuests: Quest[];
   completedForDay: QuestCompletion[];
   pendingForDay: QuestCompletion[];
+  questCompletions: QuestCompletion[];
 }
 
 const QuestListItem: React.FC<{
@@ -82,7 +83,7 @@ const QuestListItem: React.FC<{
 };
 
 
-const DailyDetailDialog: React.FC<DailyDetailDialogProps> = ({ date, onClose, scheduledQuests, completedForDay, pendingForDay }) => {
+const DailyDetailDialog: React.FC<DailyDetailDialogProps> = ({ date, onClose, scheduledQuests, completedForDay, pendingForDay, questCompletions }) => {
   const { quests, currentUser } = useAppState();
   const { markQuestAsTodo, unmarkQuestAsTodo } = useAppDispatch();
   const [selectedQuestForDetail, setSelectedQuestForDetail] = useState<Quest | null>(null);
@@ -97,8 +98,8 @@ const DailyDetailDialog: React.FC<DailyDetailDialogProps> = ({ date, onClose, sc
     const additionalVentures = availableVentures.filter(v => !scheduledIds.has(v.id));
     const combined = [...scheduledQuests, ...additionalVentures];
     const uniqueQuests = Array.from(new Set(combined.map(q => q.id))).map(id => combined.find(q => q.id === id)!);
-    return uniqueQuests.sort(questSorter(currentUser, date));
-  }, [scheduledQuests, availableVentures, currentUser, date]);
+    return uniqueQuests.sort(questSorter(currentUser, questCompletions, date));
+  }, [scheduledQuests, availableVentures, currentUser, date, questCompletions]);
 
   const handleStartCompletion = (quest: Quest) => {
       if(isFutureDate) return;

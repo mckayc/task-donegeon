@@ -1,7 +1,5 @@
 
 
-
-
 import React, { useState, useEffect } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { GameAsset, RewardItem, RewardCategory } from '../../types';
@@ -9,7 +7,6 @@ import Button from '../ui/Button';
 import Input from '../ui/Input';
 import RewardInputGroup from '../forms/RewardInputGroup';
 import ToggleSwitch from '../ui/ToggleSwitch';
-import { useSettings } from '../../context/SettingsContext';
 import ImageSelectionDialog from '../ui/ImageSelectionDialog';
 
 interface EditGameAssetDialogProps {

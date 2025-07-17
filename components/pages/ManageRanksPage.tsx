@@ -6,15 +6,13 @@ import Button from '../ui/Button';
 import Card from '../ui/Card';
 import EditRankDialog from '../settings/EditRankDialog';
 import ConfirmDialog from '../ui/ConfirmDialog';
-import { useGameData, useGameDataDispatch } from '../../context/GameDataContext';
-import { useSettings } from '../../context/SettingsContext';
+import { useAppState, useAppDispatch } from '../../context/AppContext';
 import EmptyState from '../ui/EmptyState';
 import { RankIcon } from '../ui/Icons';
 
 const ManageRanksPage: React.FC = () => {
-    const { ranks } = useGameData();
-    const { settings } = useSettings();
-    const { setRanks } = useGameDataDispatch();
+    const { ranks, settings } = useAppState();
+    const { setRanks } = useAppDispatch();
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [editingRank, setEditingRank] = useState<Rank | null>(null);
     const [deletingRank, setDeletingRank] = useState<Rank | null>(null);

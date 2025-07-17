@@ -1,7 +1,6 @@
 
 
 import React, { useState, useEffect, useRef } from 'react';
-import { useSettings } from '../../context/SettingsContext';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { AppSettings, ThemeDefinition, SidebarConfigItem, Page, SidebarLink } from '../../types';
 import Button from '../ui/Button';
@@ -14,8 +13,7 @@ import { GrabHandleIcon, ArrowLeftIcon, ArrowRightIcon } from '../ui/Icons';
 type SidebarKey = keyof AppSettings['sidebars'];
 
 const AppearancePage: React.FC = () => {
-    const { settings } = useSettings();
-    const { themes: allThemes } = useAppState();
+    const { settings, themes: allThemes } = useAppState();
     const { updateSettings, addNotification } = useAppDispatch();
     
     const [formState, setFormState] = useState<AppSettings>(JSON.parse(JSON.stringify(settings)));

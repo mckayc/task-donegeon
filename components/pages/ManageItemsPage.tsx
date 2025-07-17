@@ -1,7 +1,6 @@
 
 import React, { useState } from 'react';
-import { useGameData, useGameDataDispatch } from '../../context/GameDataContext';
-import { useSettings } from '../../context/SettingsContext';
+import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { GameAsset } from '../../types';
 import Button from '../ui/Button';
 import Card from '../ui/Card';
@@ -12,9 +11,8 @@ import { ItemManagerIcon, SparklesIcon } from '../ui/Icons';
 import ItemIdeaGenerator from '../quests/ItemIdeaGenerator';
 
 const ManageItemsPage: React.FC = () => {
-    const { gameAssets } = useGameData();
-    const { settings, isAiAvailable } = useSettings();
-    const { deleteGameAsset } = useGameDataDispatch();
+    const { gameAssets, settings, isAiConfigured } = useAppState();
+    const { deleteGameAsset } = useAppDispatch();
     
     const [editingAsset, setEditingAsset] = useState<GameAsset | null>(null);
     const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
@@ -22,6 +20,7 @@ const ManageItemsPage: React.FC = () => {
     const [isGeneratorOpen, setIsGeneratorOpen] = useState(false);
     const [initialCreateData, setInitialCreateData] = useState<{ name: string; description: string; category: string; icon: string; } | null>(null);
 
+    const isAiAvailable = settings.enableAiFeatures && isAiConfigured;
 
     const handleEdit = (asset: GameAsset) => {
         setEditingAsset(asset);

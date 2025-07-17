@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, ReactNode } from 'react';
 import Card from '../ui/Card';
-import { useSettings } from '../../context/SettingsContext';
+import { useAppState } from '../../context/AppContext';
 import { ChevronDownIcon } from '../ui/Icons';
 
 interface Metadata {
@@ -86,7 +86,7 @@ const RoadmapContent: React.FC = () => (
 
 
 const AboutPage: React.FC = () => {
-    const { settings } = useSettings();
+    const { settings } = useAppState();
     const [metadata, setMetadata] = useState<Metadata | null>(null);
     const [error, setError] = useState<string | null>(null);
     

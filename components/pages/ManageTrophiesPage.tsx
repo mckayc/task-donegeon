@@ -5,22 +5,21 @@ import Button from '../ui/Button';
 import Card from '../ui/Card';
 import EditTrophyDialog from '../settings/EditTrophyDialog';
 import ConfirmDialog from '../ui/ConfirmDialog';
-import { useGameData, useGameDataDispatch } from '../../context/GameDataContext';
-import { useSettings } from '../../context/SettingsContext';
+import { useAppState, useAppDispatch } from '../../context/AppContext';
 import EmptyState from '../ui/EmptyState';
 import { SparklesIcon, TrophyIcon } from '../ui/Icons';
 import TrophyIdeaGenerator from '../quests/TrophyIdeaGenerator';
 
 const ManageTrophiesPage: React.FC = () => {
-    const { trophies } = useGameData();
-    const { settings, isAiAvailable } = useSettings();
-    const { deleteTrophy } = useGameDataDispatch();
+    const { trophies, settings, isAiConfigured } = useAppState();
+    const { deleteTrophy } = useAppDispatch();
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [editingTrophy, setEditingTrophy] = useState<Trophy | null>(null);
     const [deletingTrophy, setDeletingTrophy] = useState<Trophy | null>(null);
     const [isGeneratorOpen, setIsGeneratorOpen] = useState(false);
     const [initialCreateData, setInitialCreateData] = useState<{ name: string; description: string; icon: string; } | null>(null);
 
+    const isAiAvailable = settings.enableAiFeatures && isAiConfigured;
 
     const handleCreate = () => {
         setEditingTrophy(null);

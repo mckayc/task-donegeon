@@ -26,8 +26,8 @@ const DayView: React.FC<DayViewProps> = ({ currentDate, quests, questCompletions
         if (!currentUser) return [];
         const allQuestsForDay = [...scheduledDuties, ...calendarVentures];
         const uniqueQuests = Array.from(new Set(allQuestsForDay.map(q => q.id))).map(id => allQuestsForDay.find(q => q.id === id)!);
-        return uniqueQuests.sort(questSorter(currentUser, currentDate));
-    }, [currentUser, scheduledDuties, calendarVentures, currentDate]);
+        return uniqueQuests.sort(questSorter(currentUser, questCompletions, currentDate));
+    }, [currentUser, scheduledDuties, calendarVentures, currentDate, questCompletions]);
 
     const handleStartCompletion = (quest: Quest) => {
         setCompletingQuest(quest);

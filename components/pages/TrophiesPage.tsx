@@ -1,88 +1,77 @@
 
-
-
-
 import React, { useMemo } from 'react';
-import { useAuth } from '../../context/AuthContext';
-import { useGameData } from '../../context/GameDataContext';
-import { useSettings } from '../../context/SettingsContext';
-import { Role, Trophy, UserTrophy, TrophyRequirementType, QuestType, QuestCompletionStatus, Quest } from '../../types';
+import { useAppState } from '../../context/AppContext';
+import { Role, Trophy, UserTrophy, TrophyRequirementType, QuestType, QuestCompletionStatus, Quest, AppMode, User } from '../../types';
 import Card from '../ui/Card';
 import { TrophyIcon as AwardIcon } from '../ui/Icons'; // Renamed to avoid conflict
 import { fromYMD } from '../../utils/quests';
 import EmptyState from '../ui/EmptyState';
 
-const RequirementStatus: React.FC<{ trophy: Trophy }> = ({ trophy }) => {
-    const { currentUser } = useAuth();
-    const { questCompletions, quests, ranks } = useGameData();
-    const { appMode } = useSettings();
-
-    if (!currentUser || trophy.isManual) return null;
-
-    if (appMode.mode === 'guild') {
-        return <p className="mt-2 text-xs italic text-stone-500">Progress for automatic trophies is tracked in your Personal scope.</p>;
-    }
-
-    const userCompletedQuests = questCompletions.filter(c => c.userId === currentUser.id && !c.guildId && c.status === QuestCompletionStatus.Approved);
-    const totalXp = Object.values(currentUser.personalExperience).reduce((sum: number, amount: number) => sum + amount, 0);
-    const userRank = ranks.slice().sort((a, b) => b.xpThreshold - a.xpThreshold).find(r => totalXp >= r.xpThreshold);
-
-    return (
-        <div className="mt-2 text-xs space-y-1 text-stone-400">
-            <p className="font-bold text-stone-300">Requirements:</p>
-            {trophy.requirements.map((req, index) => {
-                let progressText = '';
-                let requirementText = '';
-
-                switch (req.type) {
-                    case TrophyRequirementType.CompleteQuestType:
-                        const completedCount = userCompletedQuests.filter(c => quests.find(q => q.id === c.questId)?.type === req.value).length;
-                        requirementText = `Complete ${req.count} quest(s) of type: ${req.value}.`;
-                        progressText = `(${Math.min(completedCount, req.count)}/${req.count})`;
-                        break;
-                    case TrophyRequirementType.CompleteQuestTag:
-                        const completedTagCount = userCompletedQuests.filter(c => quests.find(q => q.id === c.questId)?.tags?.includes(req.value)).length;
-                        requirementText = `Complete ${req.count} quest(s) with tag: "${req.value}".`;
-                        progressText = `(${Math.min(completedTagCount, req.count)}/${req.count})`;
-                        break;
-                    case TrophyRequirementType.AchieveRank:
-                        const rankName = ranks.find(r => r.id === req.value)?.name || 'Unknown Rank';
-                        const hasRank = userRank?.id === req.value;
-                        requirementText = `Achieve the rank of: ${rankName}.`;
-                        progressText = hasRank ? '(Achieved)' : '(Not yet achieved)';
-                        break;
-                    default:
-                        return null;
-                }
-                return (
-                    <div key={index}>
-                       <span>{requirementText}</span>
-                       <span className={`font-semibold ml-1 ${progressText.includes('Achieved') ? 'text-green-400' : 'text-emerald-400'}`}>{progressText}</span>
-                    </div>
-                );
-            })}
-        </div>
-    )
-};
-
-const TrophyCard: React.FC<{ trophy: Trophy & { awardedAt?: string }, isEarned: boolean }> = ({ trophy, isEarned }) => (
-    <div className={`bg-stone-800/70 p-4 rounded-lg flex flex-col items-center text-center transition-all duration-200 ${!isEarned ? 'opacity-60' : ''}`}>
-        <div className={`w-20 h-20 mb-4 rounded-full flex items-center justify-center ${isEarned ? 'bg-amber-900/50' : 'bg-stone-700'}`}>
-            <span className="text-4xl">{trophy.icon}</span>
-        </div>
-        <h4 className={`font-bold text-lg ${isEarned ? 'text-amber-300' : 'text-stone-300'}`}>{trophy.name}</h4>
-        <p className="text-stone-400 text-sm mt-1 flex-grow">{trophy.description}</p>
-        {isEarned && trophy.awardedAt && (
-             <p className="text-xs text-stone-500 mt-2">Awarded: {fromYMD(trophy.awardedAt).toLocaleDateString()}</p>
-        )}
-        {!isEarned && <RequirementStatus trophy={trophy} />}
-    </div>
-);
-
 const TrophiesPage: React.FC = () => {
-    const { currentUser } = useAuth();
-    const { trophies, userTrophies } = useGameData();
-    const { appMode, settings } = useSettings();
+    const { currentUser, trophies, userTrophies, appMode, settings, questCompletions, quests, ranks } = useAppState();
+
+    const RequirementStatus: React.FC<{ trophy: Trophy }> = ({ trophy }) => {
+        if (!currentUser || trophy.isManual) return null;
+
+        if (appMode.mode === 'guild') {
+            return <p className="mt-2 text-xs italic text-stone-500">Progress for automatic trophies is tracked in your Personal scope.</p>;
+        }
+
+        const userCompletedQuests = questCompletions.filter(c => c.userId === currentUser.id && !c.guildId && c.status === QuestCompletionStatus.Approved);
+        const totalXp = Object.values(currentUser.personalExperience).reduce((sum: number, amount: number) => sum + amount, 0);
+        const userRank = ranks.slice().sort((a, b) => b.xpThreshold - a.xpThreshold).find(r => totalXp >= r.xpThreshold);
+
+        return (
+            <div className="mt-2 text-xs space-y-1 text-stone-400">
+                <p className="font-bold text-stone-300">Requirements:</p>
+                {trophy.requirements.map((req, index) => {
+                    let progressText = '';
+                    let requirementText = '';
+
+                    switch (req.type) {
+                        case TrophyRequirementType.CompleteQuestType:
+                            const completedCount = userCompletedQuests.filter(c => quests.find(q => q.id === c.questId)?.type === req.value).length;
+                            requirementText = `Complete ${req.count} quest(s) of type: ${req.value}.`;
+                            progressText = `(${Math.min(completedCount, req.count)}/${req.count})`;
+                            break;
+                        case TrophyRequirementType.CompleteQuestTag:
+                            const completedTagCount = userCompletedQuests.filter(c => quests.find(q => q.id === c.questId)?.tags?.includes(req.value)).length;
+                            requirementText = `Complete ${req.count} quest(s) with tag: "${req.value}".`;
+                            progressText = `(${Math.min(completedTagCount, req.count)}/${req.count})`;
+                            break;
+                        case TrophyRequirementType.AchieveRank:
+                            const rankName = ranks.find(r => r.id === req.value)?.name || 'Unknown Rank';
+                            const hasRank = userRank?.id === req.value;
+                            requirementText = `Achieve the rank of: ${rankName}.`;
+                            progressText = hasRank ? '(Achieved)' : '(Not yet achieved)';
+                            break;
+                        default:
+                            return null;
+                    }
+                    return (
+                        <div key={index}>
+                           <span>{requirementText}</span>
+                           <span className={`font-semibold ml-1 ${progressText.includes('Achieved') ? 'text-green-400' : 'text-emerald-400'}`}>{progressText}</span>
+                        </div>
+                    );
+                })}
+            </div>
+        )
+    };
+
+    const TrophyCard: React.FC<{ trophy: Trophy & { awardedAt?: string }, isEarned: boolean }> = ({ trophy, isEarned }) => (
+        <div className={`bg-stone-800/70 p-4 rounded-lg flex flex-col items-center text-center transition-all duration-200 ${!isEarned ? 'opacity-60' : ''}`}>
+            <div className={`w-20 h-20 mb-4 rounded-full flex items-center justify-center ${isEarned ? 'bg-amber-900/50' : 'bg-stone-700'}`}>
+                <span className="text-4xl">{trophy.icon}</span>
+            </div>
+            <h4 className={`font-bold text-lg ${isEarned ? 'text-amber-300' : 'text-stone-300'}`}>{trophy.name}</h4>
+            <p className="text-stone-400 text-sm mt-1 flex-grow">{trophy.description}</p>
+            {isEarned && trophy.awardedAt && (
+                 <p className="text-xs text-stone-500 mt-2">Awarded: {fromYMD(trophy.awardedAt).toLocaleDateString()}</p>
+            )}
+            {!isEarned && <RequirementStatus trophy={trophy} />}
+        </div>
+    );
 
     const [myEarnedTrophyAwards, availableTrophies] = useMemo(() => {
         if (!currentUser) return [[], []];

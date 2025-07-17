@@ -157,16 +157,13 @@ const Dashboard: React.FC = () => {
     }, [userTrophies, trophies, currentUser.id, appMode]);
 
     const quickActionQuests = useMemo(() => {
-        const currentGuildId = appMode.mode === 'guild' ? appMode.guildId : undefined;
-        const userCompletions = questCompletions.filter(c => c.userId === currentUser.id && c.guildId === currentGuildId);
         const today = new Date();
-
         const completableQuests = quests.filter(quest => {
             return isQuestVisibleToUserInMode(quest, currentUser.id, appMode) &&
-                   isQuestAvailableForUser(quest, userCompletions, today);
+                   isQuestAvailableForUser(quest, questCompletions, today);
         });
 
-        return completableQuests.sort(questSorter(currentUser, today));
+        return completableQuests.sort(questSorter(currentUser, questCompletions, today));
     }, [quests, currentUser, questCompletions, appMode]);
 
     const getDueDateString = (quest: Quest): string | null => {

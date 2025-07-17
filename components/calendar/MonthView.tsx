@@ -167,6 +167,7 @@ const MonthView: React.FC<MonthViewProps> = ({ currentDate, quests, questComplet
                     scheduledQuests={questsByDate.get(toYMD(selectedDate)) || []}
                     completedForDay={completionsByDate.get(toYMD(selectedDate)) || []}
                     pendingForDay={pendingCompletionsByDate.get(toYMD(selectedDate)) || []}
+                    questCompletions={questCompletions}
                 />
             )}
         </>

@@ -98,8 +98,8 @@ const DayColumn = React.memo(({ day, quests, questCompletions, onSelectQuest }: 
         const scheduledDuties = quests.filter(q => q.type === QuestType.Duty && isQuestScheduledForDay(q, day));
         const allQuestsForDay = [...scheduledDuties, ...calendarVentures];
         const uniqueQuests = Array.from(new Set(allQuestsForDay.map(q => q.id))).map(id => allQuestsForDay.find(q => q.id === id)!);
-        return uniqueQuests.sort(questSorter(currentUser, day));
-    }, [currentUser, day, quests, calendarVentures]);
+        return uniqueQuests.sort(questSorter(currentUser, questCompletions, day));
+    }, [currentUser, day, quests, questCompletions, calendarVentures]);
     
     return (
         <div className="flex-1 min-w-[200px] flex flex-col">

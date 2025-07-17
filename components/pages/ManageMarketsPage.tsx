@@ -11,13 +11,15 @@ import { MarketplaceIcon, SparklesIcon } from '../ui/Icons';
 import MarketIdeaGenerator from '../quests/MarketIdeaGenerator';
 
 const ManageMarketsPage: React.FC = () => {
-    const { markets, settings, isAiConfigured: isAiAvailable } = useAppState();
+    const { markets, settings, isAiConfigured } = useAppState();
     const { deleteMarket } = useAppDispatch();
     const [isMarketDialogOpen, setIsMarketDialogOpen] = useState(false);
     const [editingMarket, setEditingMarket] = useState<Market | null>(null);
     const [deletingMarket, setDeletingMarket] = useState<Market | null>(null);
     const [isGeneratorOpen, setIsGeneratorOpen] = useState(false);
     const [initialCreateData, setInitialCreateData] = useState<{ title: string; description: string; icon: string; } | null>(null);
+
+    const isAiAvailable = settings.enableAiFeatures && isAiConfigured;
 
     const handleCreateMarket = () => {
         setEditingMarket(null);

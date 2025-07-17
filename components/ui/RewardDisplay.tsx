@@ -1,12 +1,9 @@
+
 import React, { useMemo } from 'react';
-import { useAuth } from '../../context/AuthContext';
-import { useGameData } from '../../context/GameDataContext';
-import { useSettings } from '../../context/SettingsContext';
+import { useAppState } from '../../context/AppContext';
 
 const RewardDisplay: React.FC = () => {
-  const { currentUser } = useAuth();
-  const { rewardTypes } = useGameData();
-  const { appMode } = useSettings();
+  const { currentUser, rewardTypes, appMode } = useAppState();
 
   const balances = useMemo(() => {
     if (!currentUser) return [];

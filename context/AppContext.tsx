@@ -1,4 +1,3 @@
-
 import React, { createContext, useState, useContext, ReactNode, useEffect, useCallback, useMemo, useRef } from 'react';
 import { AppSettings, User, Quest, RewardTypeDefinition, QuestCompletion, RewardItem, Market, PurchaseRequest, Guild, Rank, Trophy, UserTrophy, Notification, AppMode, Page, IAppData, ShareableAssetType, GameAsset, Role, QuestCompletionStatus, RewardCategory, PurchaseRequestStatus, AdminAdjustment, AdminAdjustmentType, SystemLog, QuestType, QuestAvailability, Blueprint, ImportResolution, ThemeDefinition, ChatMessage, TrophyRequirementType } from '../types';
 import { INITIAL_SETTINGS, createMockUsers, INITIAL_REWARD_TYPES, INITIAL_RANKS, INITIAL_TROPHIES, createSampleMarkets, createSampleQuests, createInitialGuilds, createSampleGameAssets, INITIAL_THEMES, createInitialQuestCompletions } from '../data/initialData';
@@ -221,7 +220,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
               const lastUser = dataToSet.users.find((u:User) => u.id === lastUserId);
               if (lastUser) _setCurrentUser(lastUser);
             }
-             _setIsSharedViewActive(loadedSettings.sharedMode.enabled && !localStorage.getItem('lastUserId'));
+             const shouldBeShared = loadedSettings.sharedMode.enabled && !localStorage.getItem('lastUserId');
+             _setIsSharedViewActive(shouldBeShared);
         }
 
         try {
@@ -633,7 +633,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     setRanks(INITIAL_RANKS);
     setTrophies(INITIAL_TROPHIES);
     setQuestCompletions(createInitialQuestCompletions(aIU, newQuests));
-  }, [addNotification, setUsers, setQuests, setMarkets, setGameAssets, setRewardTypes, setGuilds, setRanks, setTrophies, setQuestCompletions]);
+  }, [addNotification]);
   
   const restoreFromBackup = useCallback(async (backupData: IAppData) => {
     setIsRestoring(true); // Prevent debounced save

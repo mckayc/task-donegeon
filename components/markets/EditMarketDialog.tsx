@@ -5,6 +5,7 @@ import { Market } from '../../types';
 import Button from '../ui/Button';
 import Input from '../ui/Input';
 import EmojiPicker from '../ui/EmojiPicker';
+import ToggleSwitch from '../ui/ToggleSwitch';
 
 interface EditMarketDialogProps {
   market: Market | null;
@@ -19,7 +20,8 @@ const EditMarketDialog: React.FC<EditMarketDialogProps> = ({ market, initialData
       title: initialData?.title || '', 
       description: initialData?.description || '', 
       guildId: '', 
-      icon: initialData?.icon || '🛒' 
+      icon: initialData?.icon || '🛒',
+      status: 'open' as 'open' | 'closed'
   });
   const [isEmojiPickerOpen, setIsEmojiPickerOpen] = useState(false);
 
@@ -29,7 +31,8 @@ const EditMarketDialog: React.FC<EditMarketDialogProps> = ({ market, initialData
         title: market.title, 
         description: market.description, 
         guildId: market.guildId || '',
-        icon: market.icon || '🛒' 
+        icon: market.icon || '🛒',
+        status: market.status || 'open'
       });
     }
   }, [market]);
@@ -103,6 +106,16 @@ const EditMarketDialog: React.FC<EditMarketDialogProps> = ({ market, initialData
                 <option value="">Personal (Available to individuals)</option>
                 {guilds.map(g => <option key={g.id} value={g.id}>{g.name}</option>)}
             </select>
+          </div>
+          <div>
+            <ToggleSwitch
+              enabled={formData.status === 'open'}
+              setEnabled={(val) => setFormData(p => ({...p, status: val ? 'open' : 'closed'}))}
+              label="Market Status"
+            />
+            <p className="text-xs text-stone-400 mt-1">
+              {formData.status === 'open' ? 'The market is currently open and visible to users.' : 'The market is closed and hidden from users.'}
+            </p>
           </div>
           <div className="flex justify-end space-x-4 pt-4">
             <Button type="button" variant="secondary" onClick={onClose}>Cancel</Button>

@@ -141,6 +141,7 @@ export interface Market {
   description: string;
   icon?: string;
   guildId?: string;
+  status: 'open' | 'closed';
 }
 
 export enum PurchaseRequestStatus {

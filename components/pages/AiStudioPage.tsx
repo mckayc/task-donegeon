@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import Button from '../ui/Button';
 import Input from '../ui/Input';
@@ -7,7 +6,6 @@ import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { GenerateContentResponse, Type } from '@google/genai';
 import { Quest, Trophy, GameAsset, QuestAvailability, QuestType, Market } from '../../types';
 import Card from '../ui/Card';
-import { useSettings } from '../../context/SettingsContext';
 
 type AssetType = 'Quests' | 'Trophies' | 'Items' | 'Markets';
 
@@ -34,7 +32,6 @@ const ApiInstructions: React.FC = () => (
 const AiStudioPage: React.FC = () => {
     const { addQuest, addTrophy, addGameAsset, addNotification, addMarket } = useAppDispatch();
     const { settings, isAiConfigured } = useAppState();
-    const { isAiAvailable } = useSettings();
     const [apiStatus, setApiStatus] = useState<'unknown' | 'testing' | 'valid' | 'invalid'>(isAiConfigured ? 'valid' : 'unknown');
     const [apiError, setApiError] = useState<string | null>(null);
 
@@ -45,6 +42,8 @@ const AiStudioPage: React.FC = () => {
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
     const [generatedAssets, setGeneratedAssets] = useState<GeneratedAsset[]>([]);
+
+    const isAiAvailable = settings.enableAiFeatures;
 
     const testApiKey = async () => {
         setApiStatus('testing');
@@ -163,7 +162,7 @@ const AiStudioPage: React.FC = () => {
                 case 'Quests': addQuest({ title: asset.data.title, description: asset.data.description, tags: asset.data.tags || [], type: asset.data.type || QuestType.Duty, rewards: [], lateSetbacks: [], incompleteSetbacks: [], isActive: true, isOptional: false, requiresApproval: false, availabilityType: QuestAvailability.Daily, availabilityCount: null, weeklyRecurrenceDays: [], monthlyRecurrenceDays: [], assignedUserIds: [] }); break;
                 case 'Trophies': addTrophy({ name: asset.data.name, description: asset.data.description, icon: asset.data.icon || '🏆', isManual: true, requirements: [] }); break;
                 case 'Items': addGameAsset({ name: asset.data.name, description: asset.data.description, category: asset.data.category || 'Misc', url: 'https://placehold.co/150x150/84cc16/FFFFFF?text=New', isForSale: false, cost: [], marketIds: [], purchaseLimit: null, purchaseCount: 0 }); break;
-                case 'Markets': addMarket({ title: asset.data.title, description: asset.data.description, icon: asset.data.icon || '🛒' }); break;
+                case 'Markets': addMarket({ title: asset.data.title, description: asset.data.description, icon: asset.data.icon || '🛒', status: 'open' }); break;
             }
         }
         addNotification({type: 'success', message: `${assetsToImport.length} assets imported successfully!`});

@@ -4,6 +4,7 @@ import React, { useState, useEffect, ReactNode } from 'react';
 import Card from '../ui/Card';
 import { useAppState } from '../../context/AppContext';
 import { ChevronDownIcon } from '../ui/Icons';
+import { APP_UPDATE_DATE_STRING } from '../../utils/constants';
 
 interface Metadata {
   name: string;
@@ -125,9 +126,7 @@ const AboutPage: React.FC = () => {
                 
                 <div className="pt-4 border-t border-stone-700/60 text-sm">
                     <p><strong>Version:</strong> {metadata.version}</p>
-                    {metadata.lastChangeDate && (
-                        <p><strong>Last Updated:</strong> {new Date(metadata.lastChangeDate).toLocaleString()}</p>
-                    )}
+                    <p><strong>Last Updated:</strong> {new Date(APP_UPDATE_DATE_STRING).toLocaleString()}</p>
                 </div>
                  <div className="pt-4 border-t border-stone-700/60 text-sm">
                     <h3 className="text-lg font-semibold text-stone-100 mb-2">Latest Changes</h3>

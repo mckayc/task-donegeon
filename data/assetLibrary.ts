@@ -41,7 +41,7 @@ const createAsset = (data: Partial<GameAsset>): GameAsset => ({
 
 const createMarket = (data: Partial<Market>): Market => ({
     id: `lib-m-${data.title?.toLowerCase().replace(/ /g, '-')}-${Math.random().toString(36).substring(7)}`,
-    title: 'Untitled Market', description: '', icon: '🛒', ...data
+    title: 'Untitled Market', description: '', icon: '🛒', status: 'open', ...data
 });
 
 const createTrophy = (data: Partial<Trophy>): Trophy => ({

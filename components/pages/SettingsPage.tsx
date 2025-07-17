@@ -5,6 +5,7 @@ import Button from '../ui/Button';
 import { ChevronDownIcon } from '../ui/Icons';
 import Input from '../ui/Input';
 import ToggleSwitch from '../ui/ToggleSwitch';
+import EmojiPicker from '../ui/EmojiPicker';
 
 
 const CollapsibleSection: React.FC<{ title: string; children: React.ReactNode; defaultOpen?: boolean; }> = ({ title, children, defaultOpen = false }) => {
@@ -57,6 +58,7 @@ const SettingsPage: React.FC = () => {
     const { updateSettings, addNotification } = useAppDispatch();
     
     const [formState, setFormState] = useState<AppSettings>(settings);
+    const [isEmojiPickerOpen, setIsEmojiPickerOpen] = useState(false);
     
     if (currentUser?.role !== Role.DonegeonMaster) {
         return <div className="p-6 rounded-lg" style={{ backgroundColor: 'hsl(var(--color-bg-secondary))' }}><p>You do not have permission to view this page.</p></div>;
@@ -242,14 +244,26 @@ const SettingsPage: React.FC = () => {
                         </p>
                     </div>
                      <div className="pt-4 border-t border-stone-700">
-                        <Input
-                            label="Chat Icon"
-                            name="chat.chatEmoji"
-                            value={formState.chat.chatEmoji}
-                            onChange={handleFormChange}
-                            maxLength={2}
-                            placeholder="💬"
-                        />
+                        <label className="block text-sm font-medium text-stone-300 mb-1">Chat Icon</label>
+                        <div className="relative">
+                            <button
+                                type="button"
+                                onClick={() => setIsEmojiPickerOpen(prev => !prev)}
+                                className="w-full text-left px-4 py-2 bg-stone-700 border border-stone-600 rounded-md flex items-center gap-2"
+                            >
+                                <span className="text-2xl">{formState.chat.chatEmoji}</span>
+                                <span className="text-stone-300">Click to change</span>
+                            </button>
+                            {isEmojiPickerOpen && (
+                                <EmojiPicker
+                                    onSelect={(emoji) => {
+                                        setFormState(p => ({...p, chat: {...p.chat, chatEmoji: emoji}}));
+                                        setIsEmojiPickerOpen(false);
+                                    }}
+                                    onClose={() => setIsEmojiPickerOpen(false)}
+                                />
+                            )}
+                        </div>
                         <p className="text-xs text-stone-400 mt-1">Choose an emoji for the chat button in the sidebar.</p>
                     </div>
                 </div>

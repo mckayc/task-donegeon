@@ -32,7 +32,7 @@ const ThemesPage: React.FC = () => {
     };
 
     const getPreviewStyle = (theme: ThemeDefinition) => ({
-        fontFamily: theme.styles['--font-display'],
+        fontFamily: theme.styles['--font-h1'],
         backgroundColor: `hsl(${theme.styles['--color-bg-primary']})`,
         color: `hsl(${theme.styles['--color-text-primary']})`,
     });

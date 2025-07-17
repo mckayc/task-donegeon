@@ -147,7 +147,7 @@ const AppearancePage: React.FC = () => {
                         <div className="flex flex-wrap gap-4">
                             {themes.map(theme => {
                                 const themeStyle = {
-                                    fontFamily: theme.styles['--font-display'],
+                                    fontFamily: theme.styles['--font-h1'],
                                     backgroundColor: `hsl(${theme.styles['--color-primary-hue']} ${theme.styles['--color-primary-saturation']} ${theme.styles['--color-primary-lightness']})`
                                 };
                                 return (

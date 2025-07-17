@@ -1,8 +1,6 @@
-
 import React, { createContext, useState, useContext, ReactNode, useEffect, useCallback, useMemo, useRef } from 'react';
 import { AppSettings, User, Quest, RewardTypeDefinition, QuestCompletion, RewardItem, Market, PurchaseRequest, Guild, Rank, Trophy, UserTrophy, Notification, AppMode, Page, IAppData, ShareableAssetType, GameAsset, Role, QuestCompletionStatus, RewardCategory, PurchaseRequestStatus, AdminAdjustment, AdminAdjustmentType, SystemLog, QuestType, QuestAvailability, Blueprint, ImportResolution, TrophyRequirementType, ThemeDefinition } from '../types';
 import { INITIAL_SETTINGS, createMockUsers, INITIAL_REWARD_TYPES, INITIAL_RANKS, INITIAL_TROPHIES, createSampleMarkets, createSampleQuests, createInitialGuilds, createSampleGameAssets, INITIAL_THEMES, createInitialQuestCompletions } from '../data/initialData';
-import { useDebounce } from '../hooks/useDebounce';
 import { toYMD } from '../utils/quests';
 
 // The single, unified state for the entire application
@@ -143,8 +141,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     users, quests, markets, rewardTypes, questCompletions, purchaseRequests, guilds, ranks, trophies, userTrophies, adminAdjustments, gameAssets, systemLogs, settings, themes, loginHistory
   }), [users, quests, markets, rewardTypes, questCompletions, purchaseRequests, guilds, ranks, trophies, userTrophies, adminAdjustments, gameAssets, systemLogs, settings, themes, loginHistory]);
   
-  const debouncedAppData = useDebounce(appData, 500);
-
   useEffect(() => {
     const loadData = async () => {
         let dataToSet: IAppData | null = null;
@@ -227,21 +223,27 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   }, []);
 
   useEffect(() => {
-    if (!isDataLoaded || isRestoring) return; // Add isRestoring guard
-    if (users.length === 0 && quests.length === 0) return; // Don't save empty state during init
+    if (!isDataLoaded || isRestoring) return;
+    if (users.length === 0 && quests.length === 0) return;
 
-    const saveData = async () => {
-      try { 
-        await fetch('/api/data/save', { 
-            method: 'POST', 
-            headers: { 'Content-Type': 'application/json' }, 
-            body: JSON.stringify(debouncedAppData) 
-        }); 
-      } 
-      catch (error) { console.error("Failed to save data:", error); }
-    };
-    saveData();
-  }, [debouncedAppData, isDataLoaded, isRestoring]); // Add isRestoring dependency
+    const handler = setTimeout(() => {
+        const saveData = async () => {
+          try { 
+            await fetch('/api/data/save', { 
+                method: 'POST', 
+                headers: { 'Content-Type': 'application/json' }, 
+                body: JSON.stringify(appData) 
+            }); 
+          } 
+          catch (error) { console.error("Failed to save data:", error); }
+        };
+        saveData();
+    }, 500);
+
+    return () => {
+        clearTimeout(handler);
+    }
+  }, [appData, isDataLoaded, isRestoring]);
 
 
   // === BUSINESS LOGIC / DISPATCH FUNCTIONS ===

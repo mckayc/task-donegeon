@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { Quest, QuestType, QuestAvailability, User } from '../../types';
@@ -10,11 +9,13 @@ import PinEntryDialog from '../auth/PinEntryDialog';
 import QuestDetailDialog from '../quests/QuestDetailDialog';
 import CompleteQuestDialog from '../quests/CompleteQuestDialog';
 
-const SharedCalendarPage: React.FC = () => {
+interface SharedCalendarPageProps {
+    currentDate: Date;
+}
+
+const SharedCalendarPage: React.FC<SharedCalendarPageProps> = ({ currentDate }) => {
     const { settings, users, quests, questCompletions, guilds } = useAppState();
     const { markQuestAsTodo, unmarkQuestAsTodo } = useAppDispatch();
-    const [currentDate, setCurrentDate] = useState(new Date());
-    const [sortBy, setSortBy] = useState<'user' | 'time' | 'title'>('user');
     const [verifyingQuest, setVerifyingQuest] = useState<{ quest: Quest; user: User } | null>(null);
     const [questForNoteCompletion, setQuestForNoteCompletion] = useState<{ quest: Quest; user: User } | null>(null);
     const [selectedQuestDetails, setSelectedQuestDetails] = useState<{ quest: Quest; user: User } | null>(null);
@@ -103,15 +104,7 @@ const SharedCalendarPage: React.FC = () => {
 
     return (
         <div className="p-4 md:p-8 flex flex-col h-full">
-            <Card className="flex-shrink-0">
-                <div className="flex justify-between items-center p-4 border-b border-stone-700/60 flex-wrap gap-4">
-                    <h2 className="text-2xl font-semibold text-emerald-300">
-                        {currentDate.toLocaleDateString('default', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
-                    </h2>
-                </div>
-            </Card>
-
-            <div className="flex-grow flex gap-4 overflow-x-auto pt-6 pb-4 scrollbar-hide">
+            <div className="flex-grow flex gap-4 overflow-x-auto pt-2 pb-4 scrollbar-hide">
                 {sharedUsers.map(user => {
                     if (!user) return null;
                     const userQuests = questsByUser.get(user.id) || [];

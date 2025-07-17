@@ -1,9 +1,6 @@
-
 import React, { createContext, useState, useContext, ReactNode, useEffect, useCallback, useMemo, useRef } from 'react';
-import { AppSettings, User, Quest, RewardTypeDefinition, QuestCompletion, RewardItem, Market, PurchaseRequest, Guild, Rank, Trophy, UserTrophy, Notification, AppMode, Page, IAppData, ShareableAssetType, GameAsset, Role, QuestCompletionStatus, RewardCategory, PurchaseRequestStatus, AdminAdjustment, AdminAdjustmentType, SystemLog, QuestType, QuestAvailability, Blueprint, ImportResolution, TrophyRequirementType, ThemeDefinition } from '../types';
+import { AppSettings, User, Quest, RewardTypeDefinition, QuestCompletion, RewardItem, Market, PurchaseRequest, Guild, Rank, Trophy, UserTrophy, Notification, AppMode, Page, IAppData, ShareableAssetType, GameAsset, Role, QuestCompletionStatus, RewardCategory, PurchaseRequestStatus, AdminAdjustment, AdminAdjustmentType, SystemLog, QuestType, QuestAvailability, Blueprint, ImportResolution, ThemeDefinition, ChatMessage, TrophyRequirementType } from '../types';
 import { INITIAL_SETTINGS, createMockUsers, INITIAL_REWARD_TYPES, INITIAL_RANKS, INITIAL_TROPHIES, createSampleMarkets, createSampleQuests, createInitialGuilds, createSampleGameAssets, INITIAL_THEMES, createInitialQuestCompletions } from '../data/initialData';
-import { useDebounce } from '../hooks/useDebounce';
-import { toYMD } from '../utils/quests';
 
 // The single, unified state for the entire application
 interface AppState extends IAppData {
@@ -18,6 +15,7 @@ interface AppState extends IAppData {
   allTags: string[];
   isSwitchingUser: boolean;
   isSharedViewActive: boolean;
+  isChatOpen: boolean;
   targetedUserForLogin: User | null;
   isAiConfigured: boolean;
   isSidebarCollapsed: boolean;
@@ -84,6 +82,8 @@ interface AppDispatch {
   deleteAllCustomContent: () => void;
   deleteSelectedAssets: (selection: Record<ShareableAssetType, string[]>) => void;
   uploadFile: (file: File) => Promise<{ url: string } | null>;
+  sendMessage: (recipientId: string, message: string) => void;
+  markMessagesAsRead: (otherUserId: string) => void;
 
   // Settings & UI
   updateSettings: (settings: Partial<AppSettings>) => void;
@@ -93,6 +93,7 @@ interface AppDispatch {
   removeNotification: (notificationId: string) => void;
   setActiveMarketId: (marketId: string | null) => void;
   toggleSidebar: () => void;
+  toggleChat: () => void;
 }
 
 const AppStateContext = createContext<AppState | undefined>(undefined);
@@ -116,6 +117,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [settings, setSettings] = useState<AppSettings>(INITIAL_SETTINGS);
   const [themes, setThemes] = useState<ThemeDefinition[]>(INITIAL_THEMES);
   const [loginHistory, setLoginHistory] = useState<string[]>([]);
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
 
   // UI State
   const [currentUser, _setCurrentUser] = useState<User | null>(null);
@@ -127,6 +129,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [activeMarketId, setActiveMarketId] = useState<string | null>(null);
   const [isSwitchingUser, setIsSwitchingUser] = useState<boolean>(false);
   const [isSharedViewActive, _setIsSharedViewActive] = useState(false);
+  const [isChatOpen, setIsChatOpen] = useState(false);
   const [targetedUserForLogin, setTargetedUserForLogin] = useState<User | null>(null);
   const [isAiConfigured, setIsAiConfigured] = useState(false);
   const [isRestoring, setIsRestoring] = useState(false);
@@ -139,11 +142,12 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const isFirstRun = isDataLoaded && !users.some(u => u.role === Role.DonegeonMaster);
 
   // === DATA PERSISTENCE ===
-  const appData: IAppData = { users, quests, markets, rewardTypes, questCompletions, purchaseRequests, guilds, ranks, trophies, userTrophies, adminAdjustments, gameAssets, systemLogs, settings, themes, loginHistory };
-  const debouncedAppData = useDebounce(appData, 500);
-
+  const appData = useMemo(() => ({
+    users, quests, markets, rewardTypes, questCompletions, purchaseRequests, guilds, ranks, trophies, userTrophies, adminAdjustments, gameAssets, systemLogs, settings, themes, loginHistory, chatMessages
+  }), [users, quests, markets, rewardTypes, questCompletions, purchaseRequests, guilds, ranks, trophies, userTrophies, adminAdjustments, gameAssets, systemLogs, settings, themes, loginHistory, chatMessages]);
+  
   useEffect(() => {
-    (async () => {
+    const loadData = async () => {
         let dataToSet: IAppData | null = null;
         try {
             const response = await fetch('/api/data/load');
@@ -169,7 +173,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
                 purchaseRequests: [],
                 guilds: [],
                 ranks: INITIAL_RANKS,
-                trophies: [],
+                trophies: INITIAL_TROPHIES,
                 userTrophies: [],
                 adminAdjustments: [],
                 gameAssets: [],
@@ -177,11 +181,22 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
                 settings: INITIAL_SETTINGS,
                 themes: INITIAL_THEMES,
                 loginHistory: [],
+                chatMessages: [],
             };
         }
 
         if (dataToSet) {
-            const loadedSettings = {...INITIAL_SETTINGS, ...dataToSet.settings};
+            const loadedSettings = {
+                ...INITIAL_SETTINGS,
+                ...dataToSet.settings,
+                vacationMode: { ...INITIAL_SETTINGS.vacationMode, ...dataToSet.settings?.vacationMode },
+                questDefaults: { ...INITIAL_SETTINGS.questDefaults, ...dataToSet.settings?.questDefaults },
+                security: { ...INITIAL_SETTINGS.security, ...dataToSet.settings?.security },
+                sharedMode: { ...INITIAL_SETTINGS.sharedMode, ...dataToSet.settings?.sharedMode },
+                chat: { ...INITIAL_SETTINGS.chat, ...dataToSet.settings?.chat },
+                terminology: { ...INITIAL_SETTINGS.terminology, ...dataToSet.settings?.terminology },
+                sidebars: { ...INITIAL_SETTINGS.sidebars, ...dataToSet.settings?.sidebars },
+            };
             setUsers(dataToSet.users || []);
             setQuests(dataToSet.quests || []);
             setMarkets(dataToSet.markets || []);
@@ -198,13 +213,15 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             setSettings(loadedSettings);
             setThemes(dataToSet.themes || INITIAL_THEMES);
             setLoginHistory(dataToSet.loginHistory || []);
+            setChatMessages(dataToSet.chatMessages || []);
 
             const lastUserId = localStorage.getItem('lastUserId');
             if (lastUserId && dataToSet.users) {
               const lastUser = dataToSet.users.find((u:User) => u.id === lastUserId);
               if (lastUser) _setCurrentUser(lastUser);
             }
-             _setIsSharedViewActive(loadedSettings.sharedMode.enabled && !localStorage.getItem('lastUserId'));
+             const shouldBeShared = loadedSettings.sharedMode.enabled && !localStorage.getItem('lastUserId');
+             _setIsSharedViewActive(shouldBeShared);
         }
 
         try {
@@ -219,25 +236,32 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         }
 
         setIsDataLoaded(true);
-    })();
+    };
+    loadData();
   }, []);
 
   useEffect(() => {
-    if (!isDataLoaded || isRestoring) return; // Add isRestoring guard
-    if (users.length === 0 && quests.length === 0) return; // Don't save empty state during init
+    if (!isDataLoaded || isRestoring) return;
+    if (users.length === 0 && quests.length === 0) return;
 
-    const saveData = async () => {
-      try { 
-        await fetch('/api/data/save', { 
-            method: 'POST', 
-            headers: { 'Content-Type': 'application/json' }, 
-            body: JSON.stringify(debouncedAppData) 
-        }); 
-      } 
-      catch (error) { console.error("Failed to save data:", error); }
-    };
-    saveData();
-  }, [debouncedAppData, isDataLoaded, isRestoring]); // Add isRestoring dependency
+    const handler = setTimeout(() => {
+        const saveData = async () => {
+          try { 
+            await fetch('/api/data/save', { 
+                method: 'POST', 
+                headers: { 'Content-Type': 'application/json' }, 
+                body: JSON.stringify(appData) 
+            }); 
+          } 
+          catch (error) { console.error("Failed to save data:", error); }
+        };
+        saveData();
+    }, 500);
+
+    return () => {
+        clearTimeout(handler);
+    }
+  }, [appData, isDataLoaded, isRestoring]);
 
 
   // === BUSINESS LOGIC / DISPATCH FUNCTIONS ===
@@ -285,12 +309,23 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             settings: stateRef.current.settings,
             themes: stateRef.current.themes,
             loginHistory: stateRef.current.loginHistory,
+            chatMessages: stateRef.current.chatMessages,
         } : null;
 
         if (currentLocalData && JSON.stringify(currentLocalData) !== JSON.stringify(serverData)) {
             console.log("Data out of sync. Refreshing from server.");
             
-            const loadedSettings = {...INITIAL_SETTINGS, ...serverData.settings};
+            const loadedSettings = {
+                ...INITIAL_SETTINGS,
+                ...serverData.settings,
+                vacationMode: { ...INITIAL_SETTINGS.vacationMode, ...serverData.settings?.vacationMode },
+                questDefaults: { ...INITIAL_SETTINGS.questDefaults, ...serverData.settings?.questDefaults },
+                security: { ...INITIAL_SETTINGS.security, ...serverData.settings?.security },
+                sharedMode: { ...INITIAL_SETTINGS.sharedMode, ...serverData.settings?.sharedMode },
+                chat: { ...INITIAL_SETTINGS.chat, ...serverData.settings?.chat },
+                terminology: { ...INITIAL_SETTINGS.terminology, ...serverData.settings?.terminology },
+                sidebars: { ...INITIAL_SETTINGS.sidebars, ...serverData.settings?.sidebars },
+            };
             setUsers(serverData.users || []);
             setQuests(serverData.quests || []);
             setMarkets(serverData.markets || []);
@@ -307,6 +342,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             setSettings(loadedSettings);
             setThemes(serverData.themes || INITIAL_THEMES);
             setLoginHistory(serverData.loginHistory || []);
+            setChatMessages(serverData.chatMessages || []);
 
             if (stateRef.current?.currentUser) {
               const updatedUser = (serverData.users || []).find(u => u.id === stateRef.current!.currentUser!.id);
@@ -332,7 +368,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       clearInterval(intervalId);
       document.removeEventListener('visibilitychange', syncData);
     };
-  }, [currentUser, isFirstRun, isDataLoaded, addNotification]);
+  }, [currentUser, isFirstRun, isDataLoaded]);
 
 
   const removeNotification = useCallback((notificationId: string) => {
@@ -527,15 +563,48 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     if (!m) return;
     
     if (deductRewards(user.id, cost, m.guildId)) {
-      setUsers(p => p.map(u => u.id === user.id ? { ...u, ownedAssetIds: [...u.ownedAssetIds, assetId] } : u));
+      setUsers(prevUsers => prevUsers.map(u => {
+        if (u.id === user.id) {
+          const updatedUser = { ...u, ownedAssetIds: [...u.ownedAssetIds, assetId] };
+          const asset = gameAssets.find(ga => ga.id === assetId);
+          if (asset?.linkedThemeId) {
+            updatedUser.ownedThemes = [...new Set([...u.ownedThemes, asset.linkedThemeId])];
+          }
+          return updatedUser;
+        }
+        return u;
+      }));
       addNotification({ type: 'success', message: `Purchased "${assetDetails.name}"!` });
       setPurchaseRequests(p => [...p, { id: `purchase-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`, userId: user.id, assetId, requestedAt: new Date().toISOString(), status: PurchaseRequestStatus.Completed, assetDetails, guildId: m.guildId }]);
     } else {
       addNotification({ type: 'error', message: 'You cannot afford this item.' });
     }
-  }, [markets, deductRewards, addNotification]);
+  }, [markets, deductRewards, addNotification, gameAssets]);
+
   const cancelPurchaseRequest = useCallback((purchaseId: string) => setPurchaseRequests(prev => prev.map(p => p.id === purchaseId ? { ...p, status: PurchaseRequestStatus.Cancelled } : p)), []);
-  const approvePurchaseRequest = useCallback((purchaseId: string) => { const r = purchaseRequests.find(p => p.id === purchaseId); if (!r) return; if(deductRewards(r.userId, r.assetDetails.cost, r.guildId)){ setUsers(p => p.map(u => u.id === r.userId ? { ...u, ownedAssetIds: [...u.ownedAssetIds, r.assetId] } : u)); setPurchaseRequests(p => p.map(pr => pr.id === purchaseId ? { ...pr, status: PurchaseRequestStatus.Completed } : pr)); addNotification({type: 'success', message: 'Purchase approved.'});} else { addNotification({type: 'error', message: "User can't afford this."});} }, [purchaseRequests, deductRewards, addNotification]);
+  
+  const approvePurchaseRequest = useCallback((purchaseId: string) => {
+    const r = purchaseRequests.find(p => p.id === purchaseId);
+    if (!r) return;
+    if (deductRewards(r.userId, r.assetDetails.cost, r.guildId)) {
+        setUsers(prevUsers => prevUsers.map(u => {
+            if (u.id === r.userId) {
+                const updatedUser = { ...u, ownedAssetIds: [...u.ownedAssetIds, r.assetId] };
+                const asset = gameAssets.find(ga => ga.id === r.assetId);
+                if (asset?.linkedThemeId) {
+                    updatedUser.ownedThemes = [...new Set([...u.ownedThemes, asset.linkedThemeId])];
+                }
+                return updatedUser;
+            }
+            return u;
+        }));
+        setPurchaseRequests(p => p.map(pr => pr.id === purchaseId ? { ...pr, status: PurchaseRequestStatus.Completed } : pr));
+        addNotification({ type: 'success', message: 'Purchase approved.' });
+    } else {
+        addNotification({ type: 'error', message: "User can't afford this." });
+    }
+  }, [purchaseRequests, deductRewards, addNotification, gameAssets]);
+
   const rejectPurchaseRequest = useCallback((purchaseId: string) => { setPurchaseRequests(prev => prev.map(p => p.id === purchaseId ? { ...p, status: PurchaseRequestStatus.Rejected } : p)); addNotification({ type: 'info', message: 'Purchase request rejected.' }); }, [addNotification]);
   const addGuild = useCallback((guild: Omit<Guild, 'id'>) => setGuilds(prev => [...prev, { ...guild, id: `guild-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`}]), []);
   const updateGuild = useCallback((guild: Guild) => setGuilds(prev => prev.map(g => g.id === guild.id ? guild : g)), []);
@@ -553,8 +622,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   
   const populateInitialGameData = useCallback((adminUser: User) => {
     addNotification({ type: 'info', message: 'Your Donegeon is being populated!' });
-    const sA = createMockUsers().filter(u => u.role !== Role.DonegeonMaster);
-    const aIU = [adminUser, ...sA];
+    const aIU = createMockUsers(adminUser);
     setUsers(aIU);
     const newQuests = createSampleQuests(aIU);
     setQuests(newQuests);
@@ -604,6 +672,32 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     addNotification({ type: 'info', message: 'Theme deleted.' });
   }, [addNotification]);
   
+  // Chat Management
+  const sendMessage = useCallback((recipientId: string, message: string) => {
+    if (!currentUser || !message.trim()) return;
+    const newMessage: ChatMessage = {
+        id: `chat-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+        senderId: currentUser.id,
+        recipientId,
+        message: message.trim(),
+        timestamp: new Date().toISOString(),
+        isRead: false
+    };
+    setChatMessages(prev => [...prev, newMessage]);
+  }, [currentUser]);
+
+  const markMessagesAsRead = useCallback((otherUserId: string) => {
+      if (!currentUser) return;
+      const hasUnread = chatMessages.some(msg => msg.senderId === otherUserId && msg.recipientId === currentUser.id && !msg.isRead);
+      if (hasUnread) {
+          setChatMessages(prev => prev.map(msg => 
+              (msg.senderId === otherUserId && msg.recipientId === currentUser.id && !msg.isRead) 
+              ? { ...msg, isRead: true } 
+              : msg
+          ));
+      }
+  }, [currentUser, chatMessages]);
+
   const toggleSidebar = useCallback(() => {
     setIsSidebarCollapsed(prev => {
         const newState = !prev;
@@ -611,6 +705,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         return newState;
     });
   }, []);
+  
+  const toggleChat = useCallback(() => setIsChatOpen(prev => !prev), []);
 
   const updateSettings = useCallback((settingsToUpdate: Partial<AppSettings>) => {
     setSettings(prev => ({...prev, ...settingsToUpdate}));
@@ -643,9 +739,9 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
   // === CONTEXT PROVIDER VALUE ===
   const stateValue: AppState = {
-    users, quests, markets, rewardTypes, questCompletions, purchaseRequests, guilds, ranks, trophies, userTrophies, adminAdjustments, gameAssets, systemLogs, settings, themes, loginHistory,
+    users, quests, markets, rewardTypes, questCompletions, purchaseRequests, guilds, ranks, trophies, userTrophies, adminAdjustments, gameAssets, systemLogs, settings, themes, loginHistory, chatMessages,
     currentUser, isAppUnlocked, isFirstRun, activePage, appMode, notifications, isDataLoaded, activeMarketId, allTags: useMemo(() => Array.from(new Set(quests.flatMap(q => q.tags))).sort(), [quests]),
-    isSwitchingUser, isSharedViewActive, targetedUserForLogin, isAiConfigured, isSidebarCollapsed,
+    isSwitchingUser, isSharedViewActive, isChatOpen, targetedUserForLogin, isAiConfigured, isSidebarCollapsed,
     syncStatus, syncError,
   };
 
@@ -659,7 +755,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     addGuild, updateGuild, deleteGuild, setRanks, addTrophy, updateTrophy, deleteTrophy, awardTrophy, applyManualAdjustment, addGameAsset, updateGameAsset, deleteGameAsset,
     addTheme, updateTheme, deleteTheme,
     populateInitialGameData, importBlueprint, restoreFromBackup, clearAllHistory, resetAllPlayerData, deleteAllCustomContent, deleteSelectedAssets, uploadFile,
-    updateSettings, setActivePage, setAppMode, addNotification, removeNotification, setActiveMarketId, toggleSidebar
+    sendMessage, markMessagesAsRead,
+    updateSettings, setActivePage, setAppMode, addNotification, removeNotification, setActiveMarketId, toggleSidebar, toggleChat
   };
 
   return (

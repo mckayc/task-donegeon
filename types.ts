@@ -24,6 +24,7 @@ export interface User {
   birthday: string;
   role: Role;
   avatar: { [slot: string]: string }; // Now uses GameAsset['id']
+  profilePictureUrl?: string;
   ownedAssetIds: string[];
   pin: string;
   password?: string;
@@ -131,6 +132,7 @@ export interface GameAsset {
   createdAt: string;
   purchaseLimit: number | null; // null for infinite
   purchaseCount: number;
+  linkedThemeId?: string; // Links this asset to a theme that gets unlocked on purchase
 }
 
 export interface Market {
@@ -319,6 +321,7 @@ export interface AppSettings {
   security: {
     requirePinForUsers: boolean;
     requirePasswordForAdmin: boolean;
+    allowProfileEditing: boolean;
   };
   sharedMode: {
     enabled: boolean;
@@ -445,3 +448,14 @@ export interface LibraryPack {
   color: string;
   assets: Partial<BlueprintAssets>;
 }
+
+export type ChronicleEvent = {
+    id: string;
+    date: string;
+    type: 'Quest' | 'Purchase' | 'Trophy' | 'Adjustment' | 'System';
+    title: string;
+    note?: string;
+    status: string;
+    icon: string;
+    color: string;
+};

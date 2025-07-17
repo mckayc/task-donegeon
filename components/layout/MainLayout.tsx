@@ -40,7 +40,7 @@ import { useAppState, useAppDispatch } from '../../context/AppContext';
 import ChatController from '../chat/ChatController';
 
 const MainLayout: React.FC = () => {
-  const { activePage, settings, currentUser, markets, activeMarketId } = useAppState();
+  const { activePage, settings, currentUser, markets, guilds, appMode, activeMarketId } = useAppState();
   const { setActivePage, addNotification } = useAppDispatch();
   
   const ADMIN_ONLY_PAGES: Page[] = [
@@ -68,7 +68,12 @@ const MainLayout: React.FC = () => {
 
   const getPageTitle = (page: Page): string => {
     switch (page) {
-      case 'Dashboard': return `${currentUser?.gameName || 'User'}'s Dashboard`;
+      case 'Dashboard':
+        if (appMode.mode === 'guild') {
+            const guild = guilds.find(g => g.id === appMode.guildId);
+            return `${guild?.name || 'Guild'} Dashboard - ${currentUser?.gameName || 'User'}`;
+        }
+        return `${currentUser?.gameName || 'User'}'s Dashboard`;
       case 'Quests': return `The ${settings.terminology.task} Board`;
       case 'Marketplace':
         if (activeMarketId) {

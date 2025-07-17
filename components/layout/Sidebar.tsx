@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo } from 'react';
 import { Role, Page, QuestCompletionStatus, PurchaseRequestStatus, Terminology, SidebarConfigItem, SidebarLink } from '../../types';
 import { ChevronDownIcon, ArrowLeftIcon, ArrowRightIcon } from '../ui/Icons';
@@ -88,11 +87,16 @@ const Sidebar: React.FC = () => {
 
   const visibleLinks = useMemo(() => settings.sidebars.main.filter(link => {
     if (!link.isVisible) return false;
+    
+    if (link.id === 'Profile' && !settings.security.allowProfileEditing && currentUser.role !== Role.DonegeonMaster) {
+        return false;
+    }
+
     if (link.id === 'AI Studio' && !isAiAvailable) return false;
     if (currentUser.role === Role.DonegeonMaster) return true;
     if (currentUser.role === Role.Gatekeeper) return link.role === Role.Gatekeeper || link.role === Role.Explorer;
     return link.role === Role.Explorer;
-  }), [settings.sidebars.main, currentUser.role, isAiAvailable]);
+  }), [settings.sidebars.main, currentUser.role, isAiAvailable, settings.security.allowProfileEditing]);
 
   const pendingQuestApprovals = questCompletions.filter(c => c.status === QuestCompletionStatus.Pending).length;
   const pendingPurchaseApprovals = purchaseRequests.filter(p => p.status === PurchaseRequestStatus.Pending).length;

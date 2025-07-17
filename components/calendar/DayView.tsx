@@ -1,19 +1,22 @@
+
 import React, { useMemo, useState } from 'react';
-import { Quest, QuestCompletion, QuestType } from '../../types';
+import { Quest, QuestCompletion } from '../../types';
 import QuestList from './QuestList';
 import { useCalendarVentures } from '../../hooks/useCalendarVentures';
 import { useAppDispatch, useAppState } from '../../context/AppContext';
 import QuestDetailDialog from '../quests/QuestDetailDialog';
 import CompleteQuestDialog from '../quests/CompleteQuestDialog';
 import { questSorter, isQuestScheduledForDay } from '../../utils/quests';
+import ChronicleEventList from './ChronicleEventList';
 
 interface DayViewProps {
     currentDate: Date;
     quests: Quest[];
     questCompletions: QuestCompletion[];
+    mode: 'quests' | 'chronicles';
 }
 
-const DayView: React.FC<DayViewProps> = ({ currentDate, quests, questCompletions }) => {
+const DayView: React.FC<DayViewProps> = ({ currentDate, quests, questCompletions, mode }) => {
     const calendarVentures = useCalendarVentures(currentDate);
     const [selectedQuest, setSelectedQuest] = useState<Quest | null>(null);
     const [completingQuest, setCompletingQuest] = useState<Quest | null>(null);
@@ -23,7 +26,7 @@ const DayView: React.FC<DayViewProps> = ({ currentDate, quests, questCompletions
     const { duties, ventures } = useMemo(() => {
         if (!currentUser) return { duties: [], ventures: [] };
         
-        const scheduledDuties = quests.filter(q => q.type === QuestType.Duty && isQuestScheduledForDay(q, currentDate));
+        const scheduledDuties = quests.filter(q => q.type === 'Duty' && isQuestScheduledForDay(q, currentDate));
         
         const allDuties = [...scheduledDuties].sort(questSorter(currentUser, questCompletions, currentDate));
         const allVentures = [...calendarVentures].sort(questSorter(currentUser, questCompletions, currentDate));
@@ -56,6 +59,14 @@ const DayView: React.FC<DayViewProps> = ({ currentDate, quests, questCompletions
             return { ...prev, todoUserIds: newTodoUserIds };
         });
     };
+    
+    if (mode === 'chronicles') {
+        return (
+            <div className="p-4 h-[70vh] overflow-y-auto scrollbar-hide">
+                <ChronicleEventList date={currentDate} />
+            </div>
+        );
+    }
 
     return (
          <>
@@ -97,7 +108,7 @@ const DayView: React.FC<DayViewProps> = ({ currentDate, quests, questCompletions
                     onClose={() => setSelectedQuest(null)}
                     onComplete={() => handleStartCompletion(selectedQuest)}
                     onToggleTodo={handleToggleTodo}
-                    isTodo={!!(currentUser && selectedQuest.type === QuestType.Venture && selectedQuest.todoUserIds?.includes(currentUser.id))}
+                    isTodo={!!(currentUser && selectedQuest.type === 'Venture' && selectedQuest.todoUserIds?.includes(currentUser.id))}
                 />
             )}
             {completingQuest && (

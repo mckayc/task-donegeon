@@ -6,14 +6,16 @@ import { useCalendarVentures } from '../../hooks/useCalendarVentures';
 import QuestList from './QuestList';
 import QuestDetailDialog from '../quests/QuestDetailDialog';
 import CompleteQuestDialog from '../quests/CompleteQuestDialog';
+import ChronicleEventList from './ChronicleEventList';
 
 interface WeekViewProps {
     currentDate: Date;
     quests: Quest[];
     questCompletions: QuestCompletion[];
+    mode: 'quests' | 'chronicles';
 }
 
-const WeekView: React.FC<WeekViewProps> = ({ currentDate, quests, questCompletions }) => {
+const WeekView: React.FC<WeekViewProps> = ({ currentDate, quests, questCompletions, mode }) => {
     const { currentUser } = useAppState();
     const { markQuestAsTodo, unmarkQuestAsTodo } = useAppDispatch();
     const [selectedQuest, setSelectedQuest] = useState<{quest: Quest, date: Date} | null>(null);
@@ -57,7 +59,7 @@ const WeekView: React.FC<WeekViewProps> = ({ currentDate, quests, questCompletio
 
     return (
         <>
-            <div className="flex flex-row divide-x divide-stone-700/60 bg-stone-900/20">
+            <div className="flex flex-row divide-x divide-stone-700/60 bg-stone-900/20 overflow-x-auto scrollbar-hide">
                 {days.map(day => (
                     <DayColumn
                         key={day.toISOString()}
@@ -65,6 +67,7 @@ const WeekView: React.FC<WeekViewProps> = ({ currentDate, quests, questCompletio
                         quests={quests}
                         questCompletions={questCompletions}
                         onSelectQuest={(quest) => setSelectedQuest({ quest, date: day })}
+                        mode={mode}
                     />
                 ))}
             </div>
@@ -89,7 +92,7 @@ const WeekView: React.FC<WeekViewProps> = ({ currentDate, quests, questCompletio
 };
 
 // Memoize DayColumn to prevent re-renders when other days' data changes.
-const DayColumn = React.memo(({ day, quests, questCompletions, onSelectQuest }: { day: Date, quests: Quest[], questCompletions: QuestCompletion[], onSelectQuest: (quest: Quest) => void }) => {
+const DayColumn = React.memo(({ day, quests, questCompletions, onSelectQuest, mode }: { day: Date, quests: Quest[], questCompletions: QuestCompletion[], onSelectQuest: (quest: Quest) => void, mode: 'quests' | 'chronicles' }) => {
     const calendarVentures = useCalendarVentures(day);
     const { currentUser } = useAppState();
 
@@ -108,12 +111,16 @@ const DayColumn = React.memo(({ day, quests, questCompletions, onSelectQuest }: 
                 <p className="text-2xl">{day.getDate()}</p>
             </div>
             <div className="p-2 space-y-4 overflow-y-auto scrollbar-hide flex-grow h-[65vh]">
-            <QuestList
+            {mode === 'quests' ? (
+                <QuestList
                     date={day}
                     quests={sortedQuests}
                     questCompletions={questCompletions}
                     onQuestSelect={onSelectQuest}
                 />
+            ) : (
+                <ChronicleEventList date={day} />
+            )}
             </div>
         </div>
     );

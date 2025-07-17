@@ -1,3 +1,4 @@
+
 import React, { createContext, useState, useContext, ReactNode, useEffect, useCallback, useMemo, useRef } from 'react';
 import { AppSettings, User, Quest, RewardTypeDefinition, QuestCompletion, RewardItem, Market, PurchaseRequest, Guild, Rank, Trophy, UserTrophy, Notification, AppMode, Page, IAppData, ShareableAssetType, GameAsset, Role, QuestCompletionStatus, RewardCategory, PurchaseRequestStatus, AdminAdjustment, AdminAdjustmentType, SystemLog, QuestType, QuestAvailability, Blueprint, ImportResolution, ThemeDefinition, ChatMessage, TrophyRequirementType } from '../types';
 import { INITIAL_SETTINGS, createMockUsers, INITIAL_REWARD_TYPES, INITIAL_RANKS, INITIAL_TROPHIES, createSampleMarkets, createSampleQuests, createInitialGuilds, createSampleGameAssets, INITIAL_THEMES, createInitialQuestCompletions } from '../data/initialData';
@@ -367,7 +368,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       clearInterval(intervalId);
       document.removeEventListener('visibilitychange', syncData);
     };
-  }, [currentUser, isFirstRun, isDataLoaded, addNotification]);
+  }, [currentUser, isFirstRun, isDataLoaded]);
 
 
   const removeNotification = useCallback((notificationId: string) => {
@@ -562,15 +563,48 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     if (!m) return;
     
     if (deductRewards(user.id, cost, m.guildId)) {
-      setUsers(p => p.map(u => u.id === user.id ? { ...u, ownedAssetIds: [...u.ownedAssetIds, assetId] } : u));
+      setUsers(prevUsers => prevUsers.map(u => {
+        if (u.id === user.id) {
+          const updatedUser = { ...u, ownedAssetIds: [...u.ownedAssetIds, assetId] };
+          const asset = gameAssets.find(ga => ga.id === assetId);
+          if (asset?.linkedThemeId) {
+            updatedUser.ownedThemes = [...new Set([...u.ownedThemes, asset.linkedThemeId])];
+          }
+          return updatedUser;
+        }
+        return u;
+      }));
       addNotification({ type: 'success', message: `Purchased "${assetDetails.name}"!` });
       setPurchaseRequests(p => [...p, { id: `purchase-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`, userId: user.id, assetId, requestedAt: new Date().toISOString(), status: PurchaseRequestStatus.Completed, assetDetails, guildId: m.guildId }]);
     } else {
       addNotification({ type: 'error', message: 'You cannot afford this item.' });
     }
-  }, [markets, deductRewards, addNotification]);
+  }, [markets, deductRewards, addNotification, gameAssets]);
+
   const cancelPurchaseRequest = useCallback((purchaseId: string) => setPurchaseRequests(prev => prev.map(p => p.id === purchaseId ? { ...p, status: PurchaseRequestStatus.Cancelled } : p)), []);
-  const approvePurchaseRequest = useCallback((purchaseId: string) => { const r = purchaseRequests.find(p => p.id === purchaseId); if (!r) return; if(deductRewards(r.userId, r.assetDetails.cost, r.guildId)){ setUsers(p => p.map(u => u.id === r.userId ? { ...u, ownedAssetIds: [...u.ownedAssetIds, r.assetId] } : u)); setPurchaseRequests(p => p.map(pr => pr.id === purchaseId ? { ...pr, status: PurchaseRequestStatus.Completed } : pr)); addNotification({type: 'success', message: 'Purchase approved.'});} else { addNotification({type: 'error', message: "User can't afford this."});} }, [purchaseRequests, deductRewards, addNotification]);
+  
+  const approvePurchaseRequest = useCallback((purchaseId: string) => {
+    const r = purchaseRequests.find(p => p.id === purchaseId);
+    if (!r) return;
+    if (deductRewards(r.userId, r.assetDetails.cost, r.guildId)) {
+        setUsers(prevUsers => prevUsers.map(u => {
+            if (u.id === r.userId) {
+                const updatedUser = { ...u, ownedAssetIds: [...u.ownedAssetIds, r.assetId] };
+                const asset = gameAssets.find(ga => ga.id === r.assetId);
+                if (asset?.linkedThemeId) {
+                    updatedUser.ownedThemes = [...new Set([...u.ownedThemes, asset.linkedThemeId])];
+                }
+                return updatedUser;
+            }
+            return u;
+        }));
+        setPurchaseRequests(p => p.map(pr => pr.id === purchaseId ? { ...pr, status: PurchaseRequestStatus.Completed } : pr));
+        addNotification({ type: 'success', message: 'Purchase approved.' });
+    } else {
+        addNotification({ type: 'error', message: "User can't afford this." });
+    }
+  }, [purchaseRequests, deductRewards, addNotification, gameAssets]);
+
   const rejectPurchaseRequest = useCallback((purchaseId: string) => { setPurchaseRequests(prev => prev.map(p => p.id === purchaseId ? { ...p, status: PurchaseRequestStatus.Rejected } : p)); addNotification({ type: 'info', message: 'Purchase request rejected.' }); }, [addNotification]);
   const addGuild = useCallback((guild: Omit<Guild, 'id'>) => setGuilds(prev => [...prev, { ...guild, id: `guild-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`}]), []);
   const updateGuild = useCallback((guild: Guild) => setGuilds(prev => prev.map(g => g.id === guild.id ? guild : g)), []);
@@ -588,8 +622,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   
   const populateInitialGameData = useCallback((adminUser: User) => {
     addNotification({ type: 'info', message: 'Your Donegeon is being populated!' });
-    const sA = createMockUsers();
-    const aIU = [adminUser, ...sA];
+    const aIU = createMockUsers(adminUser);
     setUsers(aIU);
     const newQuests = createSampleQuests(aIU);
     setQuests(newQuests);

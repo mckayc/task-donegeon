@@ -87,31 +87,30 @@ const Header: React.FC = () => {
     <header className="h-20 bg-stone-900/30 flex items-center justify-between px-4 md:px-8 border-b border-stone-700/50">
       {/* Left Group */}
       <div className="flex items-center gap-2 md:gap-4">
-        {settings.sharedMode.enabled ? (
+        {settings.sharedMode.enabled && (
             <button
                 onClick={exitToSharedView}
                 className="bg-amber-600 text-white px-4 py-1.5 rounded-full font-bold text-lg hover:bg-amber-500 transition-colors"
             >
                 Exit User
             </button>
-        ) : (
-            <div className="relative">
-                <button onClick={() => setModeDropdownOpen(!modeDropdownOpen)} className="flex items-center gap-2 bg-stone-800/50 px-3 py-1.5 rounded-full border border-stone-700/60 hover:bg-stone-700 transition-colors">
-                    <span className="font-semibold text-accent-light">{currentModeName}</span>
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-stone-400" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" /></svg>
-                </button>
-                {modeDropdownOpen && (
-                <div className="absolute left-0 mt-2 w-56 bg-stone-800 border border-stone-700 rounded-lg shadow-xl z-20">
-                    <a href="#" onClick={() => handleModeChange({ mode: 'personal' })} className="block px-4 py-2 text-stone-300 hover:bg-stone-700">{currentUser.gameName} (Personal)</a>
-                    <div className="border-t border-stone-700 my-1"></div>
-                    <div className="px-4 pt-2 pb-1 text-xs text-stone-500 font-semibold uppercase">{settings.terminology.groups}</div>
-                    {userGuilds.map(guild => (
-                        <a href="#" key={guild.id} onClick={() => handleModeChange({ mode: 'guild', guildId: guild.id })} className="block px-4 py-2 text-stone-300 hover:bg-stone-700">{guild.name}</a>
-                    ))}
-                </div>
-                )}
-            </div>
         )}
+        <div className="relative">
+            <button onClick={() => setModeDropdownOpen(!modeDropdownOpen)} className="flex items-center gap-2 bg-stone-800/50 px-3 py-1.5 rounded-full border border-stone-700/60 hover:bg-stone-700 transition-colors">
+                <span className="font-semibold text-accent-light">{currentModeName}</span>
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-stone-400" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" /></svg>
+            </button>
+            {modeDropdownOpen && (
+            <div className="absolute left-0 mt-2 w-56 bg-stone-800 border border-stone-700 rounded-lg shadow-xl z-20">
+                <a href="#" onClick={() => handleModeChange({ mode: 'personal' })} className="block px-4 py-2 text-stone-300 hover:bg-stone-700">{currentUser.gameName} (Personal)</a>
+                <div className="border-t border-stone-700 my-1"></div>
+                <div className="px-4 pt-2 pb-1 text-xs text-stone-500 font-semibold uppercase">{settings.terminology.groups}</div>
+                {userGuilds.map(guild => (
+                    <a href="#" key={guild.id} onClick={() => handleModeChange({ mode: 'guild', guildId: guild.id })} className="block px-4 py-2 text-stone-300 hover:bg-stone-700">{guild.name}</a>
+                ))}
+            </div>
+            )}
+        </div>
       </div>
 
       {/* Center Group */}
@@ -131,7 +130,9 @@ const Header: React.FC = () => {
           {profileDropdownOpen && (
             <div className="absolute right-0 mt-2 w-48 bg-stone-800 border border-stone-700 rounded-lg shadow-xl z-20">
               <a href="#" onClick={handleSwitchUser} className="block px-4 py-2 text-stone-300 hover:bg-stone-700">Switch User</a>
-              <a href="#" onClick={() => navigateTo('Profile')} className="block px-4 py-2 text-stone-300 hover:bg-stone-700">Profile</a>
+              {(settings.security.allowProfileEditing || currentUser.role === Role.DonegeonMaster) && (
+                <a href="#" onClick={() => navigateTo('Profile')} className="block px-4 py-2 text-stone-300 hover:bg-stone-700">Profile</a>
+              )}
               {currentUser.role === Role.DonegeonMaster && (
                   <a href="#" onClick={() => navigateTo('Settings')} className="block px-4 py-2 text-stone-300 hover:bg-stone-700">Settings</a>
               )}

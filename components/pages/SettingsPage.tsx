@@ -184,6 +184,10 @@ const SettingsPage: React.FC = () => {
                         <ToggleSwitch enabled={formState.security.requirePasswordForAdmin} setEnabled={(val) => handleToggleChange('security.requirePasswordForAdmin', val)} label={`Require Password for ${formState.terminology.admin} & ${formState.terminology.moderator}`} />
                         <p className="text-sm ml-6" style={{ color: 'hsl(var(--color-text-secondary))' }}>If enabled, these roles must use their password to log in. If disabled, they can use their PIN like regular users.</p>
                     </div>
+                    <div className="pt-4 border-t flex items-start" style={{ borderColor: 'hsl(var(--color-border))' }}>
+                        <ToggleSwitch enabled={formState.security.allowProfileEditing} setEnabled={(val) => handleToggleChange('security.allowProfileEditing', val)} label="Allow Users to Edit Profiles" />
+                        <p className="text-sm ml-6" style={{ color: 'hsl(var(--color-text-secondary))' }}>If enabled, users will see a 'Profile' link in their dropdown menu allowing them to change their name, password, PIN, and other details.</p>
+                    </div>
                 </div>
             </CollapsibleSection>
 

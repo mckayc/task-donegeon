@@ -1,3 +1,4 @@
+
 import { User, Role, RewardTypeDefinition, RewardCategory, Rank, Trophy, TrophyRequirementType, QuestType, Market, Quest, QuestAvailability, Guild, AppSettings, SidebarConfigItem, GameAsset, ThemeDefinition, ThemeStyle, QuestCompletion, QuestCompletionStatus } from '../types';
 
 // Helper function to create quests with default values, moved here to resolve scope issues.
@@ -25,7 +26,7 @@ const createQuest = (data: Partial<Quest>): Quest => ({
     ...data,
 });
 
-export const createMockUsers = (): User[] => {
+export const createMockUsers = (adminUser: User): User[] => {
     const usersData: Omit<User, 'id' | 'personalPurse' | 'personalExperience' | 'guildBalances' | 'avatar' | 'ownedAssetIds' | 'ownedThemes' | 'hasBeenOnboarded'>[] = [
         // Gatekeepers
         { firstName: 'Gate', lastName: 'Keeper', username: 'gatekeeper', email: 'gatekeeper@donegeon.com', gameName: 'Gatekeeper', birthday: '1995-08-20', role: Role.Gatekeeper, password: '123456', pin: '1234' },
@@ -34,7 +35,7 @@ export const createMockUsers = (): User[] => {
         { firstName: 'New', lastName: 'Explorer', username: 'explorer', email: 'explorer@donegeon.com', gameName: 'Explorer', birthday: '2010-04-15', role: Role.Explorer, pin: '1234' },
     ];
 
-    const initialUsers = usersData.map((u, i) => ({
+    const sampleUsers = usersData.map((u, i) => ({
         ...u,
         id: `user-${i + 1}`,
         avatar: {},
@@ -47,12 +48,12 @@ export const createMockUsers = (): User[] => {
     }));
 
     // Give explorer starting gold for the tutorial quest
-    const explorer = initialUsers.find(u => u.username === 'explorer');
+    const explorer = sampleUsers.find(u => u.username === 'explorer');
     if (explorer) {
         explorer.personalPurse = { 'core-gold': 100 };
     }
     
-    return initialUsers;
+    return [adminUser, ...sampleUsers];
 };
 
 export const INITIAL_REWARD_TYPES: RewardTypeDefinition[] = [
@@ -105,6 +106,7 @@ export const INITIAL_MAIN_SIDEBAR_CONFIG: SidebarConfigItem[] = [
   // Character Section
   { type: 'header', id: 'header-character', title: 'Character', level: 0, role: Role.Explorer, isVisible: true },
   { type: 'link', id: 'Avatar', emoji: '🧑‍🎤', isVisible: true, level: 1, role: Role.Explorer },
+  { type: 'link', id: 'Profile', emoji: '👤', isVisible: true, level: 1, role: Role.Explorer },
   { type: 'link', id: 'Collection', emoji: '🎒', isVisible: true, level: 1, role: Role.Explorer },
   { type: 'link', id: 'Themes', emoji: '🎨', isVisible: true, level: 1, role: Role.Explorer },
   { type: 'link', id: 'Guild', emoji: '🏰', isVisible: true, level: 1, role: Role.Explorer, termKey: 'groups' },
@@ -177,6 +179,7 @@ export const INITIAL_SETTINGS: AppSettings = {
   security: {
     requirePinForUsers: true,
     requirePasswordForAdmin: true,
+    allowProfileEditing: false,
   },
   sharedMode: {
     enabled: false,
@@ -225,9 +228,30 @@ export const INITIAL_TROPHIES: Trophy[] = [
     { id: 'trophy-4', name: 'Knighted', description: 'Achieve the rank of Knight.', icon: '⚔️', isManual: false, requirements: [{ type: TrophyRequirementType.AchieveRank, value: 'rank-7', count: 1 }] },
 ];
 
+export const createThemeAssets = (): GameAsset[] => {
+    return INITIAL_THEMES.filter(t => !t.isCustom).map(theme => ({
+        id: `theme-asset-${theme.id}`,
+        name: `${theme.name} Theme`,
+        description: `Unlocks the ${theme.name} theme, a new look for your Donegeon.`,
+        url: 'https://placehold.co/150/a855f7/FFFFFF?text=Theme', // Generic placeholder
+        icon: '🎨',
+        category: 'Theme',
+        isForSale: true,
+        cost: [{ rewardTypeId: 'core-gold', amount: 100 }], // Standard cost
+        marketIds: ['market-themes'],
+        purchaseLimit: 1, // Can only buy a theme once
+        purchaseCount: 0,
+        creatorId: 'system',
+        createdAt: new Date().toISOString(),
+        linkedThemeId: theme.id,
+        avatarSlot: undefined,
+    }));
+};
+
 export const createSampleMarkets = (): Market[] => [
     { id: 'market-1', title: 'The Adventurer\'s Outfitter', description: 'Basic gear for new heroes.', icon: '👕', guildId: undefined },
     { id: 'market-2', title: 'The Treasury of Fun', description: 'Spend your gems on memorable experiences.', icon: '🎬', guildId: undefined },
+    { id: 'market-themes', title: 'The Theme Shoppe', description: 'Purchase new visual themes for your Donegeon!', icon: '🎨', guildId: undefined },
 ];
 
 export const createSampleGameAssets = (): GameAsset[] => [
@@ -235,6 +259,7 @@ export const createSampleGameAssets = (): GameAsset[] => [
     { id: 'asset-2', name: 'Pointy Wizard Hat', description: 'A classic hat for any aspiring mage.', url: 'https://placehold.co/150/7c3aed/FFFFFF?text=Hat', icon: '🎩', category: 'Avatar', avatarSlot: 'hat', isForSale: true, cost: [{ rewardTypeId: 'core-gold', amount: 75 }], marketIds: ['market-1'], purchaseLimit: null, purchaseCount: 0, creatorId: 'system', createdAt: new Date().toISOString() },
     { id: 'asset-3', name: 'Movie Night Choice', description: 'You get to pick the movie for the next family movie night.', url: 'https://placehold.co/150/f97316/FFFFFF?text=Movie', icon: '🎬', category: 'Real-World Reward', isForSale: true, cost: [{ rewardTypeId: 'core-gems', amount: 100 }], marketIds: ['market-2'], purchaseLimit: 1, purchaseCount: 0, creatorId: 'system', createdAt: new Date().toISOString() },
     { id: 'asset-4', name: 'Pizza Night Feast', description: 'The family will order pizza for dinner tonight!', url: 'https://placehold.co/150/ef4444/FFFFFF?text=Pizza', icon: '🍕', category: 'Real-World Reward', isForSale: true, cost: [{ rewardTypeId: 'core-gems', amount: 200 }], marketIds: ['market-2'], purchaseLimit: null, purchaseCount: 0, creatorId: 'system', createdAt: new Date().toISOString() },
+    ...createThemeAssets(),
 ];
 
 export const createInitialGuilds = (users: User[]): Guild[] => [

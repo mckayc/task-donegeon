@@ -15,6 +15,7 @@ interface AppState extends IAppData {
   allTags: string[];
   isSwitchingUser: boolean;
   isSharedViewActive: boolean;
+  isChatOpen: boolean;
   targetedUserForLogin: User | null;
   isAiConfigured: boolean;
   isSidebarCollapsed: boolean;
@@ -92,6 +93,7 @@ interface AppDispatch {
   removeNotification: (notificationId: string) => void;
   setActiveMarketId: (marketId: string | null) => void;
   toggleSidebar: () => void;
+  toggleChat: () => void;
 }
 
 const AppStateContext = createContext<AppState | undefined>(undefined);
@@ -127,6 +129,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [activeMarketId, setActiveMarketId] = useState<string | null>(null);
   const [isSwitchingUser, setIsSwitchingUser] = useState<boolean>(false);
   const [isSharedViewActive, _setIsSharedViewActive] = useState(false);
+  const [isChatOpen, setIsChatOpen] = useState(false);
   const [targetedUserForLogin, setTargetedUserForLogin] = useState<User | null>(null);
   const [isAiConfigured, setIsAiConfigured] = useState(false);
   const [isRestoring, setIsRestoring] = useState(false);
@@ -170,7 +173,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
                 purchaseRequests: [],
                 guilds: [],
                 ranks: INITIAL_RANKS,
-                trophies: [],
+                trophies: INITIAL_TROPHIES,
                 userTrophies: [],
                 adminAdjustments: [],
                 gameAssets: [],
@@ -669,6 +672,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         return newState;
     });
   }, []);
+  
+  const toggleChat = useCallback(() => setIsChatOpen(prev => !prev), []);
 
   const updateSettings = useCallback((settingsToUpdate: Partial<AppSettings>) => {
     setSettings(prev => ({...prev, ...settingsToUpdate}));
@@ -703,7 +708,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const stateValue: AppState = {
     users, quests, markets, rewardTypes, questCompletions, purchaseRequests, guilds, ranks, trophies, userTrophies, adminAdjustments, gameAssets, systemLogs, settings, themes, loginHistory, chatMessages,
     currentUser, isAppUnlocked, isFirstRun, activePage, appMode, notifications, isDataLoaded, activeMarketId, allTags: useMemo(() => Array.from(new Set(quests.flatMap(q => q.tags))).sort(), [quests]),
-    isSwitchingUser, isSharedViewActive, targetedUserForLogin, isAiConfigured, isSidebarCollapsed,
+    isSwitchingUser, isSharedViewActive, isChatOpen, targetedUserForLogin, isAiConfigured, isSidebarCollapsed,
     syncStatus, syncError,
   };
 
@@ -718,7 +723,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     addTheme, updateTheme, deleteTheme,
     populateInitialGameData, importBlueprint, restoreFromBackup, clearAllHistory, resetAllPlayerData, deleteAllCustomContent, deleteSelectedAssets, uploadFile,
     sendMessage, markMessagesAsRead,
-    updateSettings, setActivePage, setAppMode, addNotification, removeNotification, setActiveMarketId, toggleSidebar
+    updateSettings, setActivePage, setAppMode, addNotification, removeNotification, setActiveMarketId, toggleSidebar, toggleChat
   };
 
   return (

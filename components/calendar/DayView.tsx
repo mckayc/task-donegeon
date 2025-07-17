@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { Quest, QuestCompletion, QuestType, QuestAvailability } from '../../types';
+import { Quest, QuestCompletion, QuestType } from '../../types';
 import QuestList from './QuestList';
 import { useCalendarVentures } from '../../hooks/useCalendarVentures';
 import { useAppDispatch, useAppState } from '../../context/AppContext';
@@ -18,16 +18,19 @@ const DayView: React.FC<DayViewProps> = ({ currentDate, quests, questCompletions
     const [selectedQuest, setSelectedQuest] = useState<Quest | null>(null);
     const [completingQuest, setCompletingQuest] = useState<Quest | null>(null);
     const { markQuestAsTodo, unmarkQuestAsTodo } = useAppDispatch();
-    const { currentUser } = useAppState();
+    const { currentUser, settings } = useAppState();
 
-    const scheduledDuties = quests.filter(q => q.type === QuestType.Duty && isQuestScheduledForDay(q, currentDate));
-    
-    const sortedQuests = useMemo(() => {
-        if (!currentUser) return [];
-        const allQuestsForDay = [...scheduledDuties, ...calendarVentures];
-        const uniqueQuests = Array.from(new Set(allQuestsForDay.map(q => q.id))).map(id => allQuestsForDay.find(q => q.id === id)!);
-        return uniqueQuests.sort(questSorter(currentUser, questCompletions, currentDate));
-    }, [currentUser, scheduledDuties, calendarVentures, currentDate, questCompletions]);
+    const { duties, ventures } = useMemo(() => {
+        if (!currentUser) return { duties: [], ventures: [] };
+        
+        const scheduledDuties = quests.filter(q => q.type === QuestType.Duty && isQuestScheduledForDay(q, currentDate));
+        
+        const allDuties = [...scheduledDuties].sort(questSorter(currentUser, questCompletions, currentDate));
+        const allVentures = [...calendarVentures].sort(questSorter(currentUser, questCompletions, currentDate));
+        
+        return { duties: allDuties, ventures: allVentures };
+    }, [currentUser, quests, calendarVentures, currentDate, questCompletions]);
+
 
     const handleStartCompletion = (quest: Quest) => {
         setCompletingQuest(quest);
@@ -57,12 +60,36 @@ const DayView: React.FC<DayViewProps> = ({ currentDate, quests, questCompletions
     return (
          <>
             <div className="p-4 h-[70vh] overflow-y-auto scrollbar-hide">
-                 <QuestList
-                    date={currentDate}
-                    quests={sortedQuests}
-                    questCompletions={questCompletions}
-                    onQuestSelect={setSelectedQuest}
-                />
+                 {duties.length === 0 && ventures.length === 0 ? (
+                     <div className="flex items-center justify-center h-full">
+                         <p className="text-stone-400 text-center py-8">No quests scheduled for this day.</p>
+                     </div>
+                 ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6">
+                        <div className="space-y-4">
+                            <h3 className="text-2xl font-bold text-sky-400 border-b-2 border-sky-800/50 pb-2 mb-4">{settings.terminology.recurringTasks}</h3>
+                             {duties.length > 0 ? (
+                                <QuestList
+                                    date={currentDate}
+                                    quests={duties}
+                                    questCompletions={questCompletions}
+                                    onQuestSelect={setSelectedQuest}
+                                />
+                            ) : <p className="text-sm text-stone-500 italic">No {settings.terminology.recurringTasks.toLowerCase()} for today.</p>}
+                        </div>
+                         <div className="space-y-4">
+                            <h3 className="text-2xl font-bold text-amber-400 border-b-2 border-amber-800/50 pb-2 mb-4">{settings.terminology.singleTasks}</h3>
+                             {ventures.length > 0 ? (
+                                <QuestList
+                                    date={currentDate}
+                                    quests={ventures}
+                                    questCompletions={questCompletions}
+                                    onQuestSelect={setSelectedQuest}
+                                />
+                            ) : <p className="text-sm text-stone-500 italic">No {settings.terminology.singleTasks.toLowerCase()} for today.</p>}
+                        </div>
+                    </div>
+                 )}
             </div>
             {selectedQuest && (
                 <QuestDetailDialog

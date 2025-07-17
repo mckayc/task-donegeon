@@ -237,6 +237,17 @@ const SettingsPage: React.FC = () => {
                             Allow users to send direct messages to each other.
                         </p>
                     </div>
+                     <div className="pt-4 border-t border-stone-700">
+                        <Input
+                            label="Chat Icon"
+                            name="chat.chatEmoji"
+                            value={formState.chat.chatEmoji}
+                            onChange={handleFormChange}
+                            maxLength={2}
+                            placeholder="💬"
+                        />
+                        <p className="text-xs text-stone-400 mt-1">Choose an emoji for the chat button in the sidebar.</p>
+                    </div>
                 </div>
             </CollapsibleSection>
 

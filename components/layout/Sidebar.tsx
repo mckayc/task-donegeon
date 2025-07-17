@@ -80,8 +80,8 @@ const CollapsibleNavGroup: React.FC<CollapsibleNavGroupProps> = ({ title, childr
 
 
 const Sidebar: React.FC = () => {
-  const { currentUser, questCompletions, purchaseRequests, activePage, settings, isAiConfigured, isSidebarCollapsed } = useAppState();
-  const { setActivePage, toggleSidebar } = useAppDispatch();
+  const { currentUser, questCompletions, purchaseRequests, activePage, settings, isAiConfigured, isSidebarCollapsed, chatMessages } = useAppState();
+  const { setActivePage, toggleSidebar, toggleChat } = useAppDispatch();
   const isAiAvailable = settings.enableAiFeatures && isAiConfigured;
   
   if (!currentUser) return null;
@@ -97,6 +97,13 @@ const Sidebar: React.FC = () => {
   const pendingQuestApprovals = questCompletions.filter(c => c.status === QuestCompletionStatus.Pending).length;
   const pendingPurchaseApprovals = purchaseRequests.filter(p => p.status === PurchaseRequestStatus.Pending).length;
   const totalApprovals = pendingQuestApprovals + (currentUser?.role === Role.DonegeonMaster ? pendingPurchaseApprovals : 0);
+
+  const totalUnreadMessages = useMemo(() => {
+    if (!currentUser) return 0;
+    return chatMessages.filter(
+      msg => msg.recipientId === currentUser.id && !msg.isRead
+    ).length;
+  }, [chatMessages, currentUser]);
 
   const renderNavItems = () => {
     const navTree: React.ReactNode[] = [];
@@ -168,6 +175,21 @@ const Sidebar: React.FC = () => {
         {renderNavItems()}
       </nav>
       <div className="px-2 py-4 border-t" style={{ borderColor: 'hsl(var(--color-border))' }}>
+        {settings.chat.enabled && (
+            <button
+              onClick={toggleChat}
+              title="Open Chat"
+              className="relative w-full flex items-center justify-center py-2 text-stone-400 hover:bg-stone-700/50 hover:text-white rounded-lg transition-colors mb-2"
+            >
+              <span className="text-3xl">{settings.chat.chatEmoji}</span>
+              {!isSidebarCollapsed && <span className="ml-2 font-semibold">Chat</span>}
+              {totalUnreadMessages > 0 && (
+                <span className={`absolute flex items-center justify-center w-5 h-5 text-xs font-bold text-white bg-red-600 rounded-full ${isSidebarCollapsed ? 'top-1 right-1' : 'top-1 right-2'}`}>
+                  {totalUnreadMessages > 9 ? '9+' : totalUnreadMessages}
+                </span>
+              )}
+            </button>
+         )}
          <button 
             onClick={toggleSidebar}
             title={isSidebarCollapsed ? 'Expand Sidebar' : 'Collapse Sidebar'}

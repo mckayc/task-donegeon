@@ -333,6 +333,7 @@ export interface AppSettings {
   enableAiFeatures: boolean;
   chat: {
     enabled: boolean;
+    chatEmoji: string;
   };
   sidebars: {
       main: SidebarConfigItem[];

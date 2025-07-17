@@ -2,31 +2,54 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { Page, Role, AppMode, User } from '../../types';
 import Avatar from '../ui/Avatar';
-import { useAuth, useAuthDispatch } from '../../context/AuthContext';
-import { useGameData } from '../../context/GameDataContext';
-import { useSettings, useSettingsDispatch } from '../../context/SettingsContext';
-import { useAppDispatch } from '../../context/AppContext';
+import { useAppState, useAppDispatch } from '../../context/AppContext';
 import FullscreenToggle from '../ui/FullscreenToggle';
+
+const SyncStatusIndicator: React.FC = () => {
+    const { syncStatus, syncError } = useAppState();
+
+    const statusConfig = {
+        idle: { color: 'bg-stone-500', pulse: false, title: 'Ready.' },
+        syncing: { color: 'bg-blue-500', pulse: true, title: 'Syncing data...' },
+        success: { color: 'bg-green-500', pulse: false, title: 'Data is up to date.' },
+        error: { color: 'bg-red-500', pulse: false, title: `Sync Error: ${syncError || 'An unknown error occurred.'}` },
+    };
+
+    const currentStatus = statusConfig[syncStatus];
+
+    return (
+        <div className={`w-3 h-3 rounded-full ${currentStatus.color} ${currentStatus.pulse ? 'animate-pulse' : ''} transition-colors`}></div>
+    );
+};
+
 
 const Clock: React.FC = () => {
     const [time, setTime] = useState(new Date());
+    const { syncStatus, syncError } = useAppState();
 
     useEffect(() => {
         const timerId = setInterval(() => setTime(new Date()), 1000);
         return () => clearInterval(timerId);
     }, []);
+    
+    const statusTitle = {
+        idle: 'Ready.',
+        syncing: 'Syncing data...',
+        success: 'Data is up to date.',
+        error: `Sync Error: ${syncError || 'An unknown error occurred.'}`,
+    }[syncStatus];
 
     return (
-        <div className="hidden lg:block bg-stone-800/50 px-4 py-2 rounded-full border border-stone-700/60 font-mono text-lg font-semibold text-stone-300">
-            {time.toLocaleTimeString()}
+        <div title={statusTitle} className="hidden lg:block bg-stone-800/50 px-4 py-2 rounded-full border border-stone-700/60 font-mono text-lg font-semibold text-stone-300 flex items-center gap-3">
+            <SyncStatusIndicator />
+            <span>{time.toLocaleTimeString()}</span>
         </div>
     );
 };
 
 const QuickSwitchBar: React.FC = () => {
-    const { users, loginHistory } = useAuth();
-    const { setIsSwitchingUser, setTargetedUserForLogin } = useAuthDispatch();
-    const { settings } = useSettings();
+    const { users, loginHistory, settings } = useAppState();
+    const { setTargetedUserForLogin, setIsSwitchingUser } = useAppDispatch();
     
     const sortedUsers = useMemo(() => {
         const sharedModeUserIds = new Set(settings.sharedMode.userIds);
@@ -56,12 +79,8 @@ const QuickSwitchBar: React.FC = () => {
 }
 
 const Header: React.FC = () => {
-  const { currentUser } = useAuth();
-  const { setCurrentUser, setIsSwitchingUser, setAppUnlocked } = useAuthDispatch();
-  const { exitToSharedView } = useAppDispatch();
-  const { guilds } = useGameData();
-  const { appMode, settings } = useSettings();
-  const { setAppMode, setActivePage } = useSettingsDispatch();
+  const { currentUser, guilds, appMode, settings } = useAppState();
+  const { setCurrentUser, setIsSwitchingUser, setAppUnlocked, exitToSharedView, setAppMode, setActivePage } = useAppDispatch();
 
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
   const [modeDropdownOpen, setModeDropdownOpen] = useState(false);

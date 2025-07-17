@@ -143,7 +143,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const debouncedAppData = useDebounce(appData, 500);
 
   useEffect(() => {
-    const loadData = async () => {
+    (async () => {
         let dataToSet: IAppData | null = null;
         try {
             const response = await fetch('/api/data/load');
@@ -219,8 +219,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         }
 
         setIsDataLoaded(true);
-    };
-    loadData();
+    })();
   }, []);
 
   useEffect(() => {

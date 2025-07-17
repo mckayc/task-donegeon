@@ -1,9 +1,9 @@
 
 {
-  "name": "Task Donegeon - 0.0.59 - Documentation Update",
-  "version": "0.0.59",
-  "lastChange": "Updated documentation across the app, including the README, About, and Help pages. Increased version number.",
-  "lastChangeDate": "2025-06-12T10:00:00Z",
+  "name": "Task Donegeon - 0.0.60 - H1 Font Size Reduction",
+  "version": "0.0.60",
+  "lastChange": "Reduced H1 font size across all themes for better visual balance and readability. Updated documentation.",
+  "lastChangeDate": "2025-06-13T10:00:00Z",
   "description": "A gamified task and chore tracker for families and groups. Complete quests, earn currency and experience, and level up your character in a fun, medieval-themed adventure.",
   "requestFramePermissions": [],
   "prompt": ""

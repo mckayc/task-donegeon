@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo } from 'react';
 import { Quest, QuestCompletion, QuestAvailability, QuestType, QuestCompletionStatus, ChronicleEvent, UserTrophy, AdminAdjustment, PurchaseRequest, AdminAdjustmentType, SystemLog } from '../../types';
 import { toYMD } from '../../utils/quests';
@@ -154,7 +153,7 @@ const MonthView: React.FC<MonthViewProps> = ({ currentDate, quests, questComplet
             const pendingOnDate = pendingCompletionsByDate.get(dateKey) || [];
             const completedQuestIds = new Set([...completionsOnDate, ...pendingOnDate].map(c => c.questId));
             
-            const incompleteQuests = questsOnDate.filter(q => !completedQuestIds.has(q.id));
+            const incompleteQuests = questsOnDate.filter((q: Quest) => !completedQuestIds.has(q.id));
 
             if (incompleteQuests.length > 0) {
                 map.set(dateKey, incompleteQuests);
@@ -206,7 +205,7 @@ const MonthView: React.FC<MonthViewProps> = ({ currentDate, quests, questComplet
                             {mode === 'quests' ? (
                                 <>
                                     <div className="mt-1 space-y-1">
-                                        {dailyQuestsToShow.slice(0, 4).map(quest => (
+                                        {dailyQuestsToShow.slice(0, 4).map((quest: Quest) => (
                                             <div
                                                 key={quest.id}
                                                 className={`w-full text-left text-xs px-1.5 py-1 rounded-md truncate flex items-center gap-1.5 ${quest.type === QuestType.Duty ? 'bg-sky-900/50 text-sky-300' : 'bg-amber-900/50 text-amber-300'} ${quest.isOptional ? 'opacity-70' : ''}`}

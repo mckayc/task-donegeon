@@ -633,7 +633,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     setRanks(INITIAL_RANKS);
     setTrophies(INITIAL_TROPHIES);
     setQuestCompletions(createInitialQuestCompletions(aIU, newQuests));
-  }, [addNotification]);
+  }, [addNotification, setUsers, setQuests, setMarkets, setGameAssets, setRewardTypes, setGuilds, setRanks, setTrophies, setQuestCompletions]);
   
   const restoreFromBackup = useCallback(async (backupData: IAppData) => {
     setIsRestoring(true); // Prevent debounced save

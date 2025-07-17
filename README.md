@@ -1,7 +1,7 @@
 # Task Donegeon
 
-**Version:** 0.0.61
-**Last Updated:** 2024-07-16T15:10:00Z
+**Version:** 0.0.59
+**Last Updated:** 2025-06-12T10:00:00Z
 
 ---
 
@@ -16,15 +16,19 @@ Task Donegeon is a gamified task and chore management application designed for f
 
 ## ✨ Features
 
--   **Bulk Content Management:** Admins can now select multiple items on the `Manage Quests`, `Manage Items`, and `Manage Markets` pages to perform bulk actions like deleting, activating/deactivating, or changing sale status.
--   **Profile Picture Uploads:** Users can now upload a custom profile picture or select an image from their collection of purchased assets, replacing the old URL-based system.
--   **Market Controls:** Admins can now set markets to "Open" or "Closed" status, controlling their visibility in the Marketplace.
--   **UI/UX Enhancements:** The current day is now highlighted in the calendar's week view, and the main page titles (H1) have been resized for better visual balance.
+-   **Bug Fixes & Stability:** Resolved a critical bug where unsaved changes in the Theme Editor and Appearance page would be lost during background data syncs, ensuring a smoother customization experience.
 -   **Theme Editor Overhaul:** The Theme Editor has been completely revamped with a live dashboard preview, allowing users to see their changes instantly. It now includes over 30 new fonts and precise sliders for font size control.
 -   **Data Synchronization:** Automatic data syncing keeps your application state consistent across all your devices.
--   **AI-Powered Content Generation:** The AI Studio, powered by Google Gemini, can generate ideas for quests, items, markets, trophies, and themes.
+-   **Collapsible Sidebar:** A new collapsible sidebar allows for a more compact and focused view.
+-   **AI-Powered Content Generation:** The AI Studio, powered by Google Gemini, can generate ideas for quests (duties vs. ventures), items (including icons), markets, trophies, and even entire visual themes.
+-   **Revamped Asset Management:** A new upload system recognizes folder structures for automatic categorization of assets.
 -   **Gamified Task Management:** Create recurring "Duties" and one-time "Ventures" with customizable rewards, deadlines, and penalties.
+-   **Dynamic Calendar:** Interactive Month, Week, and Day views intelligently display all your tasks.
+-   **Character Progression & Virtual Economy:** Earn XP to gain Ranks and multiple currencies to spend in a customizable Marketplace.
 -   **Avatar Customization:** Unlock and equip different cosmetic items, now correctly reflected in the header and throughout the app.
+-   **Guild System:** Create groups for collaborative tasks with their own separate economy and quests.
+-   **Trophy & Theming Systems:** Unlockable trophies for milestones and various visual themes to change the app's look and feel.
+-   **Robust Admin Controls & Data Persistence:** A "Donegeon Master" role with full control over the game, with all data saved to a server.
 -   **Full Backup, Restore, and Sharing:** Admins can download a complete backup, restore it, or create smaller "Blueprints" to share content with others.
 
 ## 🗺️ Roadmap
@@ -34,7 +38,6 @@ Here is the planned development path for Task Donegeon, prioritized for the most
 ### Phase 1: Foundational Features & Quality of Life
 This phase focuses on high-impact improvements for admins and players that enhance the core experience.
 
--   **Conditional Market Opening:** Allow markets to open based on conditions like the day of the week, user rank, or quest completion.
 -   **Backend Authentication:** Implement JWT-based authentication to secure all backend API endpoints.
 -   **Enhanced Security:** A comprehensive security audit and implementation of best practices like strict input validation, Content Security Policy (CSP), and secure headers.
 -   **Quest Bundles:** Group quests into "Quest Chains" or "Storylines." This allows admins to create multi-step adventures.
@@ -45,6 +48,7 @@ This phase focuses on high-impact improvements for admins and players that enhan
 ### Phase 2: Core Gameplay & Personalization
 This phase introduces major new creative outlets and systems for deeper engagement.
 
+-   **Theme Creator:** An admin tool to create and edit custom visual themes (colors, fonts, etc.) that can be sold in a market.
 -   **User-Created Content:** A system allowing Explorers to design their own quests and items, then submit them to admins for approval. This fosters creativity and allows the game world to be co-created by its members.
 -   **Reward Rarity & Limits:** Ability to specify how many of a certain reward can be claimed, creating rare or one-of-a-kind items.
 -   **Automated Quest Rotation:** A system for automatically rotating daily or weekly duties among guild members to ensure fair distribution of chores.

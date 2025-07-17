@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { useSettings } from '../../context/SettingsContext';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
@@ -148,7 +147,7 @@ const AppearancePage: React.FC = () => {
                         <div className="flex flex-wrap gap-4">
                             {themes.map(theme => {
                                 const themeStyle = {
-                                    fontFamily: theme.styles['--font-h1'],
+                                    fontFamily: theme.styles['--font-display'],
                                     backgroundColor: `hsl(${theme.styles['--color-primary-hue']} ${theme.styles['--color-primary-saturation']} ${theme.styles['--color-primary-lightness']})`
                                 };
                                 return (

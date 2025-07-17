@@ -7,7 +7,7 @@ import EditTrophyDialog from '../settings/EditTrophyDialog';
 import ConfirmDialog from '../ui/ConfirmDialog';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import EmptyState from '../ui/EmptyState';
-import { TrophyIcon } from '../ui/Icons';
+import { SparklesIcon, TrophyIcon } from '../ui/Icons';
 import TrophyIdeaGenerator from '../quests/TrophyIdeaGenerator';
 
 const ManageTrophiesPage: React.FC = () => {

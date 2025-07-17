@@ -11,20 +11,12 @@ const BackupPanel: React.FC = () => {
         const {
             isAppUnlocked,
             isFirstRun,
-            currentUser,
-            activePage,
-            appMode,
             notifications,
-            isDataLoaded,
+            isSwitchingUser,
+            targetedUserForLogin,
+            activePage,
             activeMarketId,
             allTags,
-            isSwitchingUser,
-            isSharedViewActive,
-            targetedUserForLogin,
-            isAiConfigured,
-            isSidebarCollapsed,
-            syncStatus,
-            syncError,
             ...dataToBackup
         } = appState;
 

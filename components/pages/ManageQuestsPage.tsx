@@ -7,7 +7,7 @@ import Card from '../ui/Card';
 import CreateQuestDialog from '../quests/CreateQuestDialog';
 import ConfirmDialog from '../ui/ConfirmDialog';
 import QuestIdeaGenerator from '../quests/QuestIdeaGenerator';
-import { QuestsIcon } from '../ui/Icons';
+import { QuestsIcon, SparklesIcon } from '../ui/Icons';
 import EmptyState from '../ui/EmptyState';
 
 const ManageQuestsPage: React.FC = () => {

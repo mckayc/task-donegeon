@@ -7,7 +7,7 @@ import EditMarketDialog from '../markets/EditMarketDialog';
 import ConfirmDialog from '../ui/ConfirmDialog';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import EmptyState from '../ui/EmptyState';
-import { MarketplaceIcon } from '../ui/Icons';
+import { MarketplaceIcon, SparklesIcon } from '../ui/Icons';
 import MarketIdeaGenerator from '../quests/MarketIdeaGenerator';
 
 const ManageMarketsPage: React.FC = () => {

@@ -1,3 +1,4 @@
+
 import React, { useMemo } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { User } from '../../types';
@@ -55,7 +56,7 @@ const SharedHeader: React.FC<SharedHeaderProps> = ({ currentDate, setCurrentDate
                 title={`Login as ${user.gameName}`}
                 className="group flex flex-col items-center gap-1 flex-shrink-0"
               >
-                <Avatar user={user} className="w-12 h-12 bg-stone-700 rounded-full border-2 border-stone-600 group-hover:border-accent transition-colors" />
+                <Avatar user={user} className="w-12 h-12 bg-stone-700 rounded-full border-2 border-stone-600 group-hover:border-accent transition-colors overflow-hidden" />
                 <span className="text-xs font-semibold text-stone-300 group-hover:text-white transition-colors">{user.gameName}</span>
               </button>
             ))}

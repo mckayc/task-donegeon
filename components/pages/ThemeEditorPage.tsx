@@ -147,7 +147,7 @@ const ThemeEditorPage: React.FC = () => {
                 styles: defaultStyles || {} as ThemeStyle
             });
         }
-    }, [selectedThemeId, themes]);
+    }, [selectedThemeId]);
 
     const handleStyleChange = (key: keyof ThemeStyle, value: string) => {
         if (!formData) return;

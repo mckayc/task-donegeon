@@ -133,14 +133,14 @@ const ThemePreview: React.FC<{ themeData: ThemeStyle }> = ({ themeData }) => {
 
 
 const ThemeEditorPage: React.FC = () => {
-    const { themes } = useAppState();
+    const { themes, isAiConfigured } = useAppState();
     const { addTheme, updateTheme, deleteTheme, addNotification } = useAppDispatch();
-    const { isAiAvailable } = useSettings();
 
     const [selectedThemeId, setSelectedThemeId] = useState<string>('new');
     const [formData, setFormData] = useState<ThemeDefinition | null>(null);
     const [deletingTheme, setDeletingTheme] = useState<ThemeDefinition | null>(null);
     const [isGeneratorOpen, setIsGeneratorOpen] = useState(false);
+    const isAiAvailable = useAppState().settings.enableAiFeatures && isAiConfigured;
 
     useEffect(() => {
         const themeToEdit = themes.find(t => t.id === selectedThemeId);
@@ -156,7 +156,7 @@ const ThemeEditorPage: React.FC = () => {
                 styles: defaultStyles || {} as ThemeStyle
             });
         }
-    }, [selectedThemeId, themes]);
+    }, [selectedThemeId]);
 
     const handleStyleChange = (key: keyof ThemeStyle, value: string) => {
         if (!formData) return;

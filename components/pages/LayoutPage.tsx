@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { useSettings } from '../../context/SettingsContext';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
@@ -89,7 +88,7 @@ const AppearancePage: React.FC = () => {
         setFormState(p => ({ ...p, sidebars: { ...p.sidebars, [activeTab]: newSidebarConfig }}));
     };
 
-    const themes: ThemeDefinition[] = allThemes.filter(t => !t.isCustom);
+    const themes: ThemeDefinition[] = allThemes;
 
     const renderSidebarEditor = () => {
         const items = formState.sidebars[activeTab];

@@ -122,7 +122,6 @@ const AboutPage: React.FC = () => {
         return (
             <div className="space-y-6 text-stone-300 leading-relaxed">
                 <p>{metadata.description}</p>
-                 <p>This version resolves a critical bug that caused theme selections to reset during data syncs. It also introduces a completely overhauled Theme Editor, featuring a live preview that mirrors the dashboard, over 30 new fonts, and precise sliders for font size control, providing a more stable and powerful customization experience.</p>
                 
                 <div className="pt-4 border-t border-stone-700/60 text-sm">
                     <p><strong>Version:</strong> {metadata.version}</p>

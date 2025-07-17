@@ -1,4 +1,3 @@
-
 import { GenerateContentResponse } from "@google/genai";
 
 
@@ -332,6 +331,9 @@ export interface AppSettings {
   theme: string;
   terminology: Terminology;
   enableAiFeatures: boolean;
+  chat: {
+    enabled: boolean;
+  };
   sidebars: {
       main: SidebarConfigItem[];
       dataManagement: SidebarConfigItem[];
@@ -402,6 +404,15 @@ export interface ThemeDefinition {
 
 export type Theme = ThemeDefinition;
 
+export interface ChatMessage {
+  id: string;
+  senderId: string;
+  recipientId: string;
+  message: string;
+  timestamp: string;
+  isRead: boolean;
+}
+
 export interface IAppData {
   users: User[];
   quests: Quest[];
@@ -419,6 +430,7 @@ export interface IAppData {
   settings: AppSettings;
   themes: ThemeDefinition[];
   loginHistory: string[];
+  chatMessages: ChatMessage[];
 }
 
 export type LibraryPackType = 'Quests' | 'Items' | 'Markets' | 'Trophies' | 'Rewards';

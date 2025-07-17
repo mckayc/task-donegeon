@@ -1,4 +1,3 @@
-
 import React, { useState, ChangeEvent } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { Role, AppSettings, Terminology } from '../../types';
@@ -221,6 +220,21 @@ const SettingsPage: React.FC = () => {
                         <p className="text-sm ml-6" style={{ color: 'hsl(var(--color-text-secondary))' }}>
                             Allow the use of Gemini AI to power features like the Quest Idea Generator.
                             This requires a valid Gemini API key to be configured by the server administrator.
+                        </p>
+                    </div>
+                </div>
+            </CollapsibleSection>
+            
+            <CollapsibleSection title="Chat">
+                <div className="space-y-6">
+                    <div className="flex items-start">
+                        <ToggleSwitch
+                            enabled={formState.chat.enabled}
+                            setEnabled={(val) => handleToggleChange('chat.enabled', val)}
+                            label="Enable Chat"
+                        />
+                        <p className="text-sm ml-6" style={{ color: 'hsl(var(--color-text-secondary))' }}>
+                            Allow users to send direct messages to each other.
                         </p>
                     </div>
                 </div>

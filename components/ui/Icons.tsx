@@ -40,6 +40,11 @@ export const ArrowLeftIcon: React.FC<{className?: string}> = ({ className }) => 
     </svg>
 );
 
+export const ChatBubbleIcon: React.FC<{className?: string}> = ({ className }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={className || "w-6 h-6"}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M20.25 8.511c.884.284 1.5 1.128 1.5 2.097v4.286c0 1.136-.847 2.1-1.98 2.193l-3.722.537a5.25 5.25 0 01-4.496-4.496l.537-3.722c.094-1.133.957-1.98 2.193-1.98h4.286c.969 0 1.813.616 2.097 1.5zM15.75 15.75l-2.062 2.062a2.25 2.25 0 01-3.182 0l-2.062-2.062a2.25 2.25 0 010-3.182l2.062-2.062a2.25 2.25 0 013.182 0l2.062 2.062a2.25 2.25 0 010 3.182zM4.5 19.5a2.25 2.25 0 01-2.25-2.25v-4.5a2.25 2.25 0 012.25-2.25h4.5a2.25 2.25 0 012.25 2.25v4.5a2.25 2.25 0 01-2.25 2.25h-4.5z" />
+    </svg>
+);
 
 export const DashboardIcon: React.FC = () => (
   <svg {...iconProps}>

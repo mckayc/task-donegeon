@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { ThemeDefinition, ThemeStyle } from '../../types';

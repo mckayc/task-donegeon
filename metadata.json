@@ -1,8 +1,9 @@
+
 {
-  "name": "Task Donegeon - 0.0.58 - First Release",
-  "version": "0.0.58",
-  "lastChange": "Fixed a bug where theme selections on the Appearance page and edits in the Theme Editor would reset during data syncs. Overhauled the Theme Editor with a live dashboard preview and over 30 new fonts.",
-  "lastChangeDate": "2025-06-11T10:00:00Z",
+  "name": "Task Donegeon - 0.0.59 - Documentation Update",
+  "version": "0.0.59",
+  "lastChange": "Updated documentation across the app, including the README, About, and Help pages. Increased version number.",
+  "lastChangeDate": "2025-06-12T10:00:00Z",
   "description": "A gamified task and chore tracker for families and groups. Complete quests, earn currency and experience, and level up your character in a fun, medieval-themed adventure.",
   "requestFramePermissions": [],
   "prompt": ""

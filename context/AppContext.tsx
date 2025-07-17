@@ -1,8 +1,6 @@
-
 import React, { createContext, useState, useContext, ReactNode, useEffect, useCallback, useMemo, useRef } from 'react';
-import { AppSettings, User, Quest, RewardTypeDefinition, QuestCompletion, RewardItem, Market, PurchaseRequest, Guild, Rank, Trophy, UserTrophy, Notification, AppMode, Page, IAppData, ShareableAssetType, GameAsset, Role, QuestCompletionStatus, RewardCategory, PurchaseRequestStatus, AdminAdjustment, AdminAdjustmentType, SystemLog, QuestType, QuestAvailability, Blueprint, ImportResolution, TrophyRequirementType, ThemeDefinition } from '../types';
+import { AppSettings, User, Quest, RewardTypeDefinition, QuestCompletion, RewardItem, Market, PurchaseRequest, Guild, Rank, Trophy, UserTrophy, Notification, AppMode, Page, IAppData, ShareableAssetType, GameAsset, Role, QuestCompletionStatus, RewardCategory, PurchaseRequestStatus, AdminAdjustment, AdminAdjustmentType, SystemLog, QuestType, QuestAvailability, Blueprint, ImportResolution, ThemeDefinition, ChatMessage, TrophyRequirementType } from '../types';
 import { INITIAL_SETTINGS, createMockUsers, INITIAL_REWARD_TYPES, INITIAL_RANKS, INITIAL_TROPHIES, createSampleMarkets, createSampleQuests, createInitialGuilds, createSampleGameAssets, INITIAL_THEMES, createInitialQuestCompletions } from '../data/initialData';
-import { toYMD } from '../utils/quests';
 
 // The single, unified state for the entire application
 interface AppState extends IAppData {
@@ -83,6 +81,8 @@ interface AppDispatch {
   deleteAllCustomContent: () => void;
   deleteSelectedAssets: (selection: Record<ShareableAssetType, string[]>) => void;
   uploadFile: (file: File) => Promise<{ url: string } | null>;
+  sendMessage: (recipientId: string, message: string) => void;
+  markMessagesAsRead: (otherUserId: string) => void;
 
   // Settings & UI
   updateSettings: (settings: Partial<AppSettings>) => void;
@@ -115,6 +115,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [settings, setSettings] = useState<AppSettings>(INITIAL_SETTINGS);
   const [themes, setThemes] = useState<ThemeDefinition[]>(INITIAL_THEMES);
   const [loginHistory, setLoginHistory] = useState<string[]>([]);
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
 
   // UI State
   const [currentUser, _setCurrentUser] = useState<User | null>(null);
@@ -139,8 +140,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
   // === DATA PERSISTENCE ===
   const appData = useMemo(() => ({
-    users, quests, markets, rewardTypes, questCompletions, purchaseRequests, guilds, ranks, trophies, userTrophies, adminAdjustments, gameAssets, systemLogs, settings, themes, loginHistory
-  }), [users, quests, markets, rewardTypes, questCompletions, purchaseRequests, guilds, ranks, trophies, userTrophies, adminAdjustments, gameAssets, systemLogs, settings, themes, loginHistory]);
+    users, quests, markets, rewardTypes, questCompletions, purchaseRequests, guilds, ranks, trophies, userTrophies, adminAdjustments, gameAssets, systemLogs, settings, themes, loginHistory, chatMessages
+  }), [users, quests, markets, rewardTypes, questCompletions, purchaseRequests, guilds, ranks, trophies, userTrophies, adminAdjustments, gameAssets, systemLogs, settings, themes, loginHistory, chatMessages]);
   
   useEffect(() => {
     const loadData = async () => {
@@ -177,11 +178,22 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
                 settings: INITIAL_SETTINGS,
                 themes: INITIAL_THEMES,
                 loginHistory: [],
+                chatMessages: [],
             };
         }
 
         if (dataToSet) {
-            const loadedSettings = {...INITIAL_SETTINGS, ...dataToSet.settings};
+            const loadedSettings = {
+                ...INITIAL_SETTINGS,
+                ...dataToSet.settings,
+                vacationMode: { ...INITIAL_SETTINGS.vacationMode, ...dataToSet.settings?.vacationMode },
+                questDefaults: { ...INITIAL_SETTINGS.questDefaults, ...dataToSet.settings?.questDefaults },
+                security: { ...INITIAL_SETTINGS.security, ...dataToSet.settings?.security },
+                sharedMode: { ...INITIAL_SETTINGS.sharedMode, ...dataToSet.settings?.sharedMode },
+                chat: { ...INITIAL_SETTINGS.chat, ...dataToSet.settings?.chat },
+                terminology: { ...INITIAL_SETTINGS.terminology, ...dataToSet.settings?.terminology },
+                sidebars: { ...INITIAL_SETTINGS.sidebars, ...dataToSet.settings?.sidebars },
+            };
             setUsers(dataToSet.users || []);
             setQuests(dataToSet.quests || []);
             setMarkets(dataToSet.markets || []);
@@ -198,6 +210,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             setSettings(loadedSettings);
             setThemes(dataToSet.themes || INITIAL_THEMES);
             setLoginHistory(dataToSet.loginHistory || []);
+            setChatMessages(dataToSet.chatMessages || []);
 
             const lastUserId = localStorage.getItem('lastUserId');
             if (lastUserId && dataToSet.users) {
@@ -292,12 +305,23 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             settings: stateRef.current.settings,
             themes: stateRef.current.themes,
             loginHistory: stateRef.current.loginHistory,
+            chatMessages: stateRef.current.chatMessages,
         } : null;
 
         if (currentLocalData && JSON.stringify(currentLocalData) !== JSON.stringify(serverData)) {
             console.log("Data out of sync. Refreshing from server.");
             
-            const loadedSettings = {...INITIAL_SETTINGS, ...serverData.settings};
+            const loadedSettings = {
+                ...INITIAL_SETTINGS,
+                ...serverData.settings,
+                vacationMode: { ...INITIAL_SETTINGS.vacationMode, ...serverData.settings?.vacationMode },
+                questDefaults: { ...INITIAL_SETTINGS.questDefaults, ...serverData.settings?.questDefaults },
+                security: { ...INITIAL_SETTINGS.security, ...serverData.settings?.security },
+                sharedMode: { ...INITIAL_SETTINGS.sharedMode, ...serverData.settings?.sharedMode },
+                chat: { ...INITIAL_SETTINGS.chat, ...serverData.settings?.chat },
+                terminology: { ...INITIAL_SETTINGS.terminology, ...serverData.settings?.terminology },
+                sidebars: { ...INITIAL_SETTINGS.sidebars, ...serverData.settings?.sidebars },
+            };
             setUsers(serverData.users || []);
             setQuests(serverData.quests || []);
             setMarkets(serverData.markets || []);
@@ -314,6 +338,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             setSettings(loadedSettings);
             setThemes(serverData.themes || INITIAL_THEMES);
             setLoginHistory(serverData.loginHistory || []);
+            setChatMessages(serverData.chatMessages || []);
 
             if (stateRef.current?.currentUser) {
               const updatedUser = (serverData.users || []).find(u => u.id === stateRef.current!.currentUser!.id);
@@ -560,7 +585,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   
   const populateInitialGameData = useCallback((adminUser: User) => {
     addNotification({ type: 'info', message: 'Your Donegeon is being populated!' });
-    const sA = createMockUsers().filter(u => u.role !== Role.DonegeonMaster);
+    const sA = createMockUsers();
     const aIU = [adminUser, ...sA];
     setUsers(aIU);
     const newQuests = createSampleQuests(aIU);
@@ -611,6 +636,32 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     addNotification({ type: 'info', message: 'Theme deleted.' });
   }, [addNotification]);
   
+  // Chat Management
+  const sendMessage = useCallback((recipientId: string, message: string) => {
+    if (!currentUser || !message.trim()) return;
+    const newMessage: ChatMessage = {
+        id: `chat-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+        senderId: currentUser.id,
+        recipientId,
+        message: message.trim(),
+        timestamp: new Date().toISOString(),
+        isRead: false
+    };
+    setChatMessages(prev => [...prev, newMessage]);
+  }, [currentUser]);
+
+  const markMessagesAsRead = useCallback((otherUserId: string) => {
+      if (!currentUser) return;
+      const hasUnread = chatMessages.some(msg => msg.senderId === otherUserId && msg.recipientId === currentUser.id && !msg.isRead);
+      if (hasUnread) {
+          setChatMessages(prev => prev.map(msg => 
+              (msg.senderId === otherUserId && msg.recipientId === currentUser.id && !msg.isRead) 
+              ? { ...msg, isRead: true } 
+              : msg
+          ));
+      }
+  }, [currentUser, chatMessages]);
+
   const toggleSidebar = useCallback(() => {
     setIsSidebarCollapsed(prev => {
         const newState = !prev;
@@ -650,7 +701,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
   // === CONTEXT PROVIDER VALUE ===
   const stateValue: AppState = {
-    users, quests, markets, rewardTypes, questCompletions, purchaseRequests, guilds, ranks, trophies, userTrophies, adminAdjustments, gameAssets, systemLogs, settings, themes, loginHistory,
+    users, quests, markets, rewardTypes, questCompletions, purchaseRequests, guilds, ranks, trophies, userTrophies, adminAdjustments, gameAssets, systemLogs, settings, themes, loginHistory, chatMessages,
     currentUser, isAppUnlocked, isFirstRun, activePage, appMode, notifications, isDataLoaded, activeMarketId, allTags: useMemo(() => Array.from(new Set(quests.flatMap(q => q.tags))).sort(), [quests]),
     isSwitchingUser, isSharedViewActive, targetedUserForLogin, isAiConfigured, isSidebarCollapsed,
     syncStatus, syncError,
@@ -666,6 +717,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     addGuild, updateGuild, deleteGuild, setRanks, addTrophy, updateTrophy, deleteTrophy, awardTrophy, applyManualAdjustment, addGameAsset, updateGameAsset, deleteGameAsset,
     addTheme, updateTheme, deleteTheme,
     populateInitialGameData, importBlueprint, restoreFromBackup, clearAllHistory, resetAllPlayerData, deleteAllCustomContent, deleteSelectedAssets, uploadFile,
+    sendMessage, markMessagesAsRead,
     updateSettings, setActivePage, setAppMode, addNotification, removeNotification, setActiveMarketId, toggleSidebar
   };
 

@@ -1,11 +1,7 @@
-
 import { User, Role, RewardTypeDefinition, RewardCategory, Rank, Trophy, TrophyRequirementType, QuestType, Market, Quest, QuestAvailability, Guild, AppSettings, SidebarConfigItem, GameAsset, ThemeDefinition, ThemeStyle, QuestCompletion, QuestCompletionStatus } from '../types';
 
 export const createMockUsers = (): User[] => {
     const usersData: Omit<User, 'id' | 'personalPurse' | 'personalExperience' | 'guildBalances' | 'avatar' | 'ownedAssetIds' | 'ownedThemes' | 'hasBeenOnboarded'>[] = [
-        // Donegeon Masters
-        { firstName: 'The', lastName: 'Admin', username: 'admin', email: 'admin@donegeon.com', gameName: 'admin', birthday: '2000-01-01', role: Role.DonegeonMaster, password: '123456', pin: '1234' },
-        
         // Gatekeepers
         { firstName: 'Gate', lastName: 'Keeper', username: 'gatekeeper', email: 'gatekeeper@donegeon.com', gameName: 'Gatekeeper', birthday: '1995-08-20', role: Role.Gatekeeper, password: '123456', pin: '1234' },
 
@@ -201,6 +197,9 @@ export const INITIAL_SETTINGS: AppSettings = {
       user: 'Explorer',
     },
     enableAiFeatures: false,
+    chat: {
+      enabled: true,
+    },
     sidebars: {
         main: INITIAL_MAIN_SIDEBAR_CONFIG,
         dataManagement: [

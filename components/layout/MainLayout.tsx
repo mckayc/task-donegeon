@@ -1,4 +1,3 @@
-
 import React, { useMemo, useEffect } from 'react';
 import Sidebar from './Sidebar';
 import Header from './Header';
@@ -38,6 +37,7 @@ import AssetLibraryPage from '../pages/management/AssetLibraryPage';
 import ThemeEditorPage from '../pages/ThemeEditorPage';
 import RewardDisplay from '../ui/RewardDisplay';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
+import ChatController from '../chat/ChatController';
 
 const MainLayout: React.FC = () => {
   const { activePage, settings, currentUser, markets, activeMarketId } = useAppState();
@@ -153,6 +153,7 @@ const MainLayout: React.FC = () => {
           {renderPage()}
         </main>
       </div>
+      {settings.chat.enabled && <ChatController />}
     </div>
   );
 };

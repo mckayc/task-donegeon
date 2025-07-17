@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { AppSettings, ThemeDefinition, SidebarConfigItem, Page, SidebarLink } from '../../types';
@@ -15,9 +14,7 @@ const AppearancePage: React.FC = () => {
     const { settings, themes: allThemes } = useAppState();
     const { updateSettings, addNotification } = useAppDispatch();
     
-    // Initialize state once from settings, preventing resets on re-render from sync
-    const [formState, setFormState] = useState<AppSettings>(() => JSON.parse(JSON.stringify(settings)));
-    
+    const [formState, setFormState] = useState<AppSettings | null>(null);
     const [activeTab, setActiveTab] = useState<SidebarKey>('main');
     const [pickerOpenFor, setPickerOpenFor] = useState<number | null>(null);
 
@@ -25,40 +22,59 @@ const AppearancePage: React.FC = () => {
     const dragOverItem = useRef<number | null>(null);
 
     useEffect(() => {
-        document.body.dataset.theme = formState.theme;
-        return () => { document.body.dataset.theme = settings.theme; };
-    }, [formState.theme, settings.theme]);
+        // Only initialize the form state once from the global settings when the component mounts.
+        // This prevents unsaved user changes from being overwritten by background data syncs.
+        if (settings && formState === null) {
+            setFormState(JSON.parse(JSON.stringify(settings)));
+        }
+    }, [settings, formState]);
+
+
+    useEffect(() => {
+        if (formState) {
+            document.body.dataset.theme = formState.theme;
+        }
+        // On unmount, revert to the globally saved theme
+        return () => {
+            document.body.dataset.theme = settings.theme;
+        };
+    }, [formState, settings.theme]);
 
     const handleSave = () => {
-        updateSettings(formState);
-        addNotification({ type: 'success', message: 'Appearance settings saved successfully!' });
+        if (formState) {
+            updateSettings(formState);
+            addNotification({ type: 'success', message: 'Appearance settings saved successfully!' });
+        }
     };
 
     const handleSidebarItemChange = (index: number, field: keyof SidebarLink, value: string | boolean) => {
+        if (!formState) return;
         const newSidebarConfig = [...formState.sidebars[activeTab]];
         const item = newSidebarConfig[index];
         if (item.type === 'link') {
             (item as any)[field] = value;
-            setFormState(p => ({ ...p, sidebars: { ...p.sidebars, [activeTab]: newSidebarConfig }}));
+            setFormState(p => p ? ({ ...p, sidebars: { ...p.sidebars, [activeTab]: newSidebarConfig }}) : null);
         }
     };
     
     const handleIndent = (index: number) => {
+        if (!formState) return;
         const newSidebarConfig = [...formState.sidebars[activeTab]];
         const item = newSidebarConfig[index];
         const prevItem = newSidebarConfig[index - 1];
         if (item.type === 'link' && index > 0 && prevItem) {
             item.level = Math.min(item.level + 1, prevItem.level + 1);
-            setFormState(p => ({ ...p, sidebars: { ...p.sidebars, [activeTab]: newSidebarConfig }}));
+            setFormState(p => p ? ({ ...p, sidebars: { ...p.sidebars, [activeTab]: newSidebarConfig }}) : null);
         }
     };
 
     const handleOutdent = (index: number) => {
+        if (!formState) return;
         const newSidebarConfig = [...formState.sidebars[activeTab]];
         const item = newSidebarConfig[index];
         if (item.type === 'link' && item.level > 0) {
             item.level = item.level - 1;
-            setFormState(p => ({ ...p, sidebars: { ...p.sidebars, [activeTab]: newSidebarConfig }}));
+            setFormState(p => p ? ({ ...p, sidebars: { ...p.sidebars, [activeTab]: newSidebarConfig }}) : null);
         }
     };
 
@@ -80,14 +96,22 @@ const AppearancePage: React.FC = () => {
     };
 
     const handleDrop = () => {
-        if (dragItem.current === null || dragOverItem.current === null || dragItem.current === dragOverItem.current) return;
+        if (!formState || dragItem.current === null || dragOverItem.current === null || dragItem.current === dragOverItem.current) return;
         
         const newSidebarConfig = [...formState.sidebars[activeTab]];
         const dragItemContent = newSidebarConfig.splice(dragItem.current, 1)[0];
         newSidebarConfig.splice(dragOverItem.current, 0, dragItemContent);
         
-        setFormState(p => ({ ...p, sidebars: { ...p.sidebars, [activeTab]: newSidebarConfig }}));
+        setFormState(p => p ? ({ ...p, sidebars: { ...p.sidebars, [activeTab]: newSidebarConfig }}) : null);
     };
+
+    if (!formState) {
+        return (
+          <div className="flex items-center justify-center h-full">
+            <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-emerald-400"></div>
+          </div>
+        );
+    }
 
     const themes: ThemeDefinition[] = allThemes;
 
@@ -133,7 +157,7 @@ const AppearancePage: React.FC = () => {
 
     return (
         <div className="space-y-8 relative">
-            <div className="sticky top-0 z-10 -mx-8 -mt-8 px-8 pt-6 pb-4 mb-2" style={{ backgroundColor: 'hsl(var(--color-bg-tertiary))', borderBottom: '1px solid hsl(var(--color-border))' }}>
+             <div className="sticky top-0 z-10 -mx-8 -mt-8 px-8 pt-6 pb-4 mb-2" style={{ backgroundColor: 'hsl(var(--color-bg-tertiary))', borderBottom: '1px solid hsl(var(--color-border))' }}>
                 <div className="flex justify-end items-center">
                     <Button onClick={handleSave}>Save Appearance Settings</Button>
                 </div>
@@ -141,20 +165,20 @@ const AppearancePage: React.FC = () => {
 
             <Card title="General Appearance">
                 <div className="space-y-6">
-                    <Input label="App Name" value={formState.terminology.appName} onChange={e => setFormState(p => ({...p, terminology: { ...p.terminology, appName: e.target.value}}))} />
+                    <Input label="App Name" value={formState.terminology.appName} onChange={e => setFormState(p => p ? ({...p, terminology: { ...p.terminology, appName: e.target.value}}) : null)} />
                     <div>
                         <label className="block text-sm font-medium mb-2" style={{ color: 'hsl(var(--color-text-secondary))' }}>Default Theme</label>
                         <div className="flex flex-wrap gap-4">
                             {themes.map(theme => {
                                 const themeStyle = {
-                                    fontFamily: theme.styles['--font-display'],
+                                    fontFamily: theme.styles['--font-h1'],
                                     backgroundColor: `hsl(${theme.styles['--color-primary-hue']} ${theme.styles['--color-primary-saturation']} ${theme.styles['--color-primary-lightness']})`
                                 };
                                 return (
                                 <button
                                     key={theme.id}
                                     type="button"
-                                    onClick={() => setFormState(p => ({...p, theme: theme.id}))}
+                                    onClick={() => setFormState(p => p ? ({...p, theme: theme.id}) : null)}
                                     className={`capitalize w-24 h-16 rounded-lg font-bold text-white flex items-center justify-center transition-all ${formState.theme === theme.id ? 'ring-2 ring-offset-2 ring-offset-stone-800 ring-white' : ''}`}
                                     style={themeStyle}
                                 >

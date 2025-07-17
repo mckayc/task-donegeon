@@ -3,7 +3,6 @@ import React, { useState } from 'react';
 import { GenerateContentResponse, Type } from "@google/genai";
 import Button from '../ui/Button';
 import Input from '../ui/Input';
-import { SparklesIcon } from '../ui/Icons';
 import { useAppState } from '../../context/AppContext';
 
 interface TrophyIdea {
@@ -93,7 +92,7 @@ const TrophyIdeaGenerator: React.FC<TrophyIdeaGeneratorProps> = ({ onUseIdea, on
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
             <div className="bg-stone-800 border border-stone-700 rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] flex flex-col">
                 <div className="p-8 border-b border-stone-700/60">
-                    <h2 className="text-3xl font-medieval text-accent flex items-center gap-3"><SparklesIcon className="w-8 h-8" /> Generate {settings.terminology.award} Ideas</h2>
+                    <h2 className="text-3xl font-medieval text-accent flex items-center gap-3">Generate {settings.terminology.award} Ideas</h2>
                 </div>
                 <div className="flex-1 space-y-4 p-8 overflow-y-auto scrollbar-hide">
                     <div className="flex gap-4">

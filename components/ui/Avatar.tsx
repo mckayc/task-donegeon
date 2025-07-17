@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { User } from '../../types';
 import { useAppState } from '../../context/AppContext';
@@ -10,6 +9,18 @@ interface AvatarProps {
 
 const Avatar: React.FC<AvatarProps> = ({ user, className }) => {
     const { gameAssets } = useAppState();
+
+    if (user.profilePictureUrl) {
+        return (
+             <div className={`relative flex items-center justify-center bg-stone-700 ${className}`}>
+                <img
+                    src={user.profilePictureUrl}
+                    alt={user.gameName}
+                    className="absolute inset-0 w-full h-full object-cover"
+                />
+            </div>
+        )
+    }
 
     const equippedAssets = Object.entries(user.avatar)
         .map(([_, assetId]) => {

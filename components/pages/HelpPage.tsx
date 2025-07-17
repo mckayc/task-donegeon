@@ -86,6 +86,7 @@ const HelpPage: React.FC = () => {
                         <li><strong>{terminology.awards}:</strong> View your trophy case! See all the {terminology.awards} you've earned and check the requirements for those you can still unlock.</li>
                         <li><strong>{terminology.history}:</strong> A detailed log of all your activity, from {terminology.task} completions to purchases and admin adjustments. The new 3-column layout shows the action, any notes, and the final status.</li>
                         <li><strong>{terminology.groups}:</strong> View the {terminology.groups} you are a member of and see the other members.</li>
+                        <li><strong>Chat:</strong> Click the chat bubble icon to open the chat panel, where you can send and receive direct messages with other adventurers in your Donegeon.</li>
                     </ul>
                 </CollapsibleSection>
 

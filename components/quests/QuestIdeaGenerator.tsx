@@ -1,10 +1,8 @@
 
-
 import React, { useState } from 'react';
 import { GenerateContentResponse, Type } from "@google/genai";
 import Button from '../ui/Button';
 import Input from '../ui/Input';
-import { SparklesIcon } from '../ui/Icons';
 import { useAppState } from '../../context/AppContext';
 import { QuestType } from '../../types';
 import ToggleSwitch from '../ui/ToggleSwitch';
@@ -104,7 +102,6 @@ const QuestIdeaGenerator: React.FC<QuestIdeaGeneratorProps> = ({ onUseIdea, onCl
             <div className="bg-stone-800 border border-stone-700 rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] flex flex-col">
                 <div className="p-8 border-b border-stone-700/60">
                     <h2 className="text-3xl font-medieval text-accent flex items-center gap-3">
-                        <SparklesIcon className="w-8 h-8" />
                         Generate {settings.terminology.task} Ideas
                     </h2>
                     <p className="text-stone-400 mt-2">Describe a theme, and the AI will generate some ideas for you.</p>

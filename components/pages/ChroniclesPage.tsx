@@ -2,10 +2,13 @@ import React, { useMemo, useState } from 'react';
 import Card from '../ui/Card';
 import { useAppState } from '../../context/AppContext';
 import { QuestCompletionStatus, Role, PurchaseRequestStatus, AdminAdjustmentType } from '../../types';
+import Button from '../ui/Button';
 
 const ChroniclesPage: React.FC = () => {
   const { questCompletions, purchaseRequests, users, quests, gameAssets, currentUser, userTrophies, trophies, appMode, adminAdjustments, rewardTypes, systemLogs, settings } = useAppState();
   const [viewMode, setViewMode] = useState<'all' | 'personal'>('all');
+  const [itemsPerPage, setItemsPerPage] = useState(50);
+  const [currentPage, setCurrentPage] = useState(1);
 
   if (!currentUser) return null;
 
@@ -92,6 +95,13 @@ const ChroniclesPage: React.FC = () => {
 
   }, [questCompletions, purchaseRequests, userTrophies, adminAdjustments, systemLogs, users, quests, gameAssets, trophies, currentUser, appMode, rewardTypes, viewMode, settings]);
 
+  const paginatedActivities = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    return sortedActivities.slice(startIndex, startIndex + itemsPerPage);
+  }, [sortedActivities, currentPage, itemsPerPage]);
+
+  const totalPages = Math.ceil(sortedActivities.length / itemsPerPage);
+
   const statusColor = (status: any) => {
     switch (status) {
       case "Awarded":
@@ -126,7 +136,7 @@ const ChroniclesPage: React.FC = () => {
   return (
     <div>
       <div className="flex justify-between items-center mb-8 flex-wrap gap-4">
-        {currentUser.role === Role.DonegeonMaster && (
+        {currentUser.role === Role.DonegeonMaster ? (
             <div className="flex space-x-2 p-1 bg-stone-900/50 rounded-lg">
                 <button
                     onClick={() => setViewMode('all')}
@@ -141,32 +151,58 @@ const ChroniclesPage: React.FC = () => {
                     My Activity
                 </button>
             </div>
-        )}
+        ) : <div />}
+        <div className="flex items-center gap-2">
+            <label htmlFor="items-per-page" className="text-sm font-medium text-stone-300">Show:</label>
+            <select
+                id="items-per-page"
+                value={itemsPerPage}
+                onChange={e => { setItemsPerPage(Number(e.target.value)); setCurrentPage(1); }}
+                className="px-3 py-1.5 bg-stone-700 border border-stone-600 rounded-md focus:ring-emerald-500 focus:border-emerald-500 transition text-sm"
+            >
+                <option value={20}>20</option>
+                <option value={50}>50</option>
+                <option value={100}>100</option>
+            </select>
+        </div>
       </div>
       <Card title="Recent Activity">
         {sortedActivities.length > 0 ? (
-          <ul className="space-y-4">
-            {sortedActivities.map(activity => (
-                <li key={activity.id} className="flex items-start gap-4 p-3 bg-stone-800/60 rounded-lg">
-                    {/* Column 1: Title & Date */}
-                    <div className="flex-1 w-2/5">
-                        <p className="font-semibold text-stone-200" title={activity.title}>
-                           {currentUser.role !== Role.Explorer && activity.type !== 'System' && <span className="text-accent-light">{activity.getUserName()} </span>}
-                           <span className="text-stone-300 font-normal">{activity.type === 'Quest' ? `completed ` : ''}"{activity.title}"</span>
-                        </p>
-                        <p className="text-xs text-stone-400 mt-1">{formatTimestamp(activity.date)}</p>
-                    </div>
-                    {/* Column 2: Note */}
-                    <div className="w-2/5 text-sm text-stone-400 italic" title={activity.note}>
-                        {activity.note ? <p className="whitespace-pre-wrap">"{activity.note}"</p> : ''}
-                    </div>
-                    {/* Column 3: Status */}
-                    <div className={`w-1/5 text-right font-semibold ${statusColor(activity.status)}`}>
-                        {activity.status}
-                    </div>
-                </li>
-            ))}
-          </ul>
+          <>
+            <ul className="space-y-4">
+              {paginatedActivities.map(activity => (
+                  <li key={activity.id} className="flex items-start gap-4 p-3 bg-stone-800/60 rounded-lg">
+                      {/* Column 1: Title & Date */}
+                      <div className="flex-1 w-2/5">
+                          <p className="font-semibold text-stone-200" title={activity.title}>
+                             {currentUser.role !== Role.Explorer && activity.type !== 'System' && <span className="text-accent-light">{activity.getUserName()} </span>}
+                             <span className="text-stone-300 font-normal">{activity.type === 'Quest' ? `completed ` : ''}"{activity.title}"</span>
+                          </p>
+                          <p className="text-xs text-stone-400 mt-1">{formatTimestamp(activity.date)}</p>
+                      </div>
+                      {/* Column 2: Note */}
+                      <div className="w-2/5 text-sm text-stone-400 italic" title={activity.note}>
+                          {activity.note ? <p className="whitespace-pre-wrap">"{activity.note}"</p> : ''}
+                      </div>
+                      {/* Column 3: Status */}
+                      <div className={`w-1/5 text-right font-semibold ${statusColor(activity.status)}`}>
+                          {activity.status}
+                      </div>
+                  </li>
+              ))}
+            </ul>
+             {totalPages > 1 && (
+                <div className="flex justify-between items-center mt-6 pt-4 border-t border-stone-700">
+                    <Button variant="secondary" onClick={() => setCurrentPage(p => p - 1)} disabled={currentPage === 1}>
+                        &larr; Previous
+                    </Button>
+                    <span className="font-semibold text-stone-300">Page {currentPage} of {totalPages}</span>
+                    <Button variant="secondary" onClick={() => setCurrentPage(p => p + 1)} disabled={currentPage === totalPages}>
+                        Next &rarr;
+                    </Button>
+                </div>
+            )}
+          </>
         ) : (
           <p className="text-stone-400 text-center py-4">No activities have been recorded yet in this mode.</p>
         )}

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { ThemeDefinition } from '../../types';
@@ -7,7 +6,7 @@ import Card from '../ui/Card';
 
 const ThemesPage: React.FC = () => {
     const { currentUser, settings, themes } = useAppState();
-    const { updateUser, addNotification } = useAppDispatch();
+    const { updateUser, addNotification, setActivePage, setActiveMarketId } = useAppDispatch();
     
     if (!currentUser) return null;
 
@@ -31,8 +30,13 @@ const ThemesPage: React.FC = () => {
         }
     };
 
+    const handleBuyTheme = () => {
+        setActiveMarketId('market-themes');
+        setActivePage('Marketplace');
+    };
+
     const getPreviewStyle = (theme: ThemeDefinition) => ({
-        fontFamily: theme.styles['--font-display'],
+        fontFamily: theme.styles['--font-h1'],
         backgroundColor: `hsl(${theme.styles['--color-bg-primary']})`,
         color: `hsl(${theme.styles['--color-text-primary']})`,
     });
@@ -76,7 +80,9 @@ const ThemesPage: React.FC = () => {
                                     {isOwned ? (
                                         <span className="text-xs font-bold text-green-400 bg-green-900/50 px-3 py-1 rounded-full">OWNED</span>
                                     ) : (
-                                        <span className="text-xs font-bold text-stone-500 bg-stone-700/50 px-3 py-1 rounded-full">LOCKED</span>
+                                        <Button variant="secondary" className="text-xs py-1 px-2" onClick={handleBuyTheme}>
+                                            Go to Market
+                                        </Button>
                                     )}
                                 </div>
                             </div>

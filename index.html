@@ -22,10 +22,15 @@
 
       /* THEME VARIABLES */
       :root {
-        --font-display: 'MedievalSharp', cursive;
-        --font-body: 'Roboto', sans-serif;
-        --font-size-display: 3.2rem;
-        --font-size-body: 1rem;
+        --font-h1: 'MedievalSharp', cursive;
+        --font-size-h1: 3.2rem;
+        --font-p: 'Roboto', sans-serif;
+        --font-size-p: 1rem;
+        --font-span: 'Roboto', sans-serif;
+        --font-size-span: 1rem;
+        --font-button: 'Roboto', sans-serif;
+        --font-size-button: 1rem;
+        
         --color-bg-primary: 224 71% 4%;    /* stone-950 */
         --color-bg-secondary: 224 39% 10%; /* stone-900 */
         --color-bg-tertiary: 240 10% 19%;  /* stone-800 */
@@ -38,16 +43,27 @@
       }
 
       body {
-        font-family: var(--font-body);
-        font-size: var(--font-size-body);
+        font-family: var(--font-p);
+        font-size: var(--font-size-p);
         background-color: hsl(var(--color-bg-primary));
         color: hsl(var(--color-text-primary));
       }
       h1 {
-        font-size: var(--font-size-display);
+        font-family: var(--font-h1);
+        font-size: var(--font-size-h1);
       }
-      .font-medieval {
-        font-family: var(--font-display);
+      p {
+        font-family: var(--font-p);
+        font-size: var(--font-size-p);
+      }
+      span {
+        font-family: var(--font-span);
+        font-size: var(--font-size-span);
+      }
+      button {
+         font-family: var(--font-button);
+         font-size: var(--font-size-button);
+         font-weight: 700;
       }
       
       .btn-primary {

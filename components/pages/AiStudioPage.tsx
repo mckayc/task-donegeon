@@ -1,9 +1,8 @@
 
-
 import React, { useState } from 'react';
 import Button from '../ui/Button';
 import Input from '../ui/Input';
-import { SparklesIcon, CheckCircleIcon, XCircleIcon } from '../ui/Icons';
+import { CheckCircleIcon, XCircleIcon } from '../ui/Icons';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { GenerateContentResponse, Type } from '@google/genai';
 import { Quest, Trophy, GameAsset, QuestAvailability, QuestType, Market } from '../../types';
@@ -204,7 +203,6 @@ const AiStudioPage: React.FC = () => {
                     </fieldset>
                     <div className="text-right">
                         <Button onClick={handleGenerate} disabled={isLoading || !prompt.trim() || !isAiAvailable || !isAiConfigured}>
-                            <SparklesIcon className="w-5 h-5 mr-2" />
                             {isLoading ? 'Generating...' : 'Generate Assets'}
                         </Button>
                     </div>

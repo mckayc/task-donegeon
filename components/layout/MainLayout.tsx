@@ -146,7 +146,7 @@ const MainLayout: React.FC = () => {
         <Header />
         <main className="flex-1 overflow-x-hidden overflow-y-auto p-4 md:p-8" style={{ backgroundColor: 'hsl(var(--color-bg-tertiary))' }}>
           <div className="flex justify-between items-center mb-8 flex-wrap gap-4">
-            <h1 className="font-medieval text-stone-100">{pageTitle}</h1>
+            <h1 className="text-stone-100">{pageTitle}</h1>
             <RewardDisplay />
           </div>
           <VacationModeBanner />

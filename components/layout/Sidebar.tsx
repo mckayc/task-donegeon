@@ -162,7 +162,7 @@ const Sidebar: React.FC = () => {
         className="flex items-center justify-center h-20 border-b cursor-pointer hover:bg-stone-800/50 transition-colors" 
         style={{ borderColor: 'hsl(var(--color-border))' }}
       >
-        <h1 className={`font-medieval text-accent transition-opacity duration-200 ${isSidebarCollapsed ? 'opacity-0' : 'opacity-100'}`}>{settings.terminology.appName}</h1>
+        <h1 className={`text-accent transition-opacity duration-200 ${isSidebarCollapsed ? 'opacity-0' : 'opacity-100'}`}>{settings.terminology.appName}</h1>
       </button>
       <nav className="flex-1 px-2 py-6 space-y-1 overflow-y-auto scrollbar-hide">
         {renderNavItems()}

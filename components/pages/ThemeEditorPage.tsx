@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { ThemeDefinition, ThemeStyle } from '../../types';
@@ -5,7 +6,6 @@ import Button from '../ui/Button';
 import Card from '../ui/Card';
 import Input from '../ui/Input';
 import { getContrast, getWcagRating, hslValuesToCss, parseHslString, hexToHsl, rgbToHex, hslToRgb } from '../../utils/colors';
-import { SparklesIcon } from '../ui/Icons';
 import ThemeIdeaGenerator from '../quests/ThemeIdeaGenerator';
 import ConfirmDialog from '../ui/ConfirmDialog';
 
@@ -90,16 +90,36 @@ const ThemePreview: React.FC<{ themeData: ThemeStyle }> = ({ themeData }) => {
     return (
         <div style={themeData as React.CSSProperties} className="p-4 rounded-lg h-full transition-all duration-300 flex flex-col bg-stone-900 border-2 border-stone-700">
              <div className="flex-grow p-4 rounded-lg space-y-4" style={{ backgroundColor: 'hsl(var(--color-bg-tertiary))' }}>
-                <h1 className="font-medieval text-stone-100">Theme Preview</h1>
-                <p className="text-sm">This is body text. It uses the body font.</p>
+                <h1>Theme Preview</h1>
+                <p>This is paragraph text, with a <span>span of text</span> inside it.</p>
                 <div className="flex gap-4">
-                  <Button variant="primary">Primary</Button>
-                  <Button variant="secondary">Secondary</Button>
+                  <button className="px-6 py-3 rounded-lg shadow-md transition-transform transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed btn-primary">Primary Button</button>
+                  <button className="px-6 py-3 rounded-lg shadow-md transition-transform transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed bg-stone-600 text-stone-100 hover:bg-stone-500">Secondary</button>
                 </div>
                 <p className="text-sm text-accent">This is accent text.</p>
              </div>
         </div>
     );
+};
+
+const FontEditor: React.FC<{
+    label: string;
+    fontKey: keyof ThemeStyle;
+    sizeKey: keyof ThemeStyle;
+    styles: ThemeStyle;
+    onStyleChange: (key: keyof ThemeStyle, value: string) => void;
+}> = ({ label, fontKey, sizeKey, styles, onStyleChange }) => {
+  return (
+    <div>
+      <Input as="select" label={label} value={styles[fontKey]} onChange={e => onStyleChange(fontKey, e.target.value)}>
+        {FONT_OPTIONS.map(f => <option key={f} value={f}>{f.split(',')[0].replace(/'/g, '')}</option>)}
+      </Input>
+      <div className="mt-2">
+          <label className="flex justify-between text-sm font-medium mb-1">{label} Size <span>({styles[sizeKey]})</span></label>
+          <input type="range" min="0.8" max="4" step="0.05" value={parseFloat(styles[sizeKey] as string)} onChange={e => onStyleChange(sizeKey, `${e.target.value}rem`)} className="w-full h-2 bg-stone-700 rounded-lg appearance-none cursor-pointer" />
+      </div>
+    </div>
+  );
 };
 
 
@@ -127,7 +147,7 @@ const ThemeEditorPage: React.FC = () => {
                 styles: defaultStyles || {} as ThemeStyle
             });
         }
-    }, [selectedThemeId, themes]); // This effect ONLY runs when the user selects a different theme, not on background syncs.
+    }, [selectedThemeId, themes]);
 
     const handleStyleChange = (key: keyof ThemeStyle, value: string) => {
         if (!formData) return;
@@ -181,7 +201,7 @@ const ThemeEditorPage: React.FC = () => {
                             </Input>
                             {isAiAvailable && (
                                 <Button onClick={() => setIsGeneratorOpen(true)} variant="secondary" className="mt-7">
-                                    <SparklesIcon className="w-5 h-5 mr-2" /> Idea Generator
+                                    Idea Generator
                                 </Button>
                             )}
                         </div>
@@ -190,24 +210,10 @@ const ThemeEditorPage: React.FC = () => {
 
                     <Card title="Fonts & Sizes">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
-                             <div>
-                                <Input as="select" label="Display Font" value={formData.styles['--font-display']} onChange={e => handleStyleChange('--font-display', e.target.value)}>
-                                    {FONT_OPTIONS.map(f => <option key={f} value={f}>{f.split(',')[0].replace(/'/g, '')}</option>)}
-                                </Input>
-                                <div className="mt-2">
-                                    <label className="flex justify-between text-sm font-medium mb-1">Display Font Size <span>({formData.styles['--font-size-display']})</span></label>
-                                    <input type="range" min="1.5" max="4" step="0.1" value={parseFloat(formData.styles['--font-size-display'])} onChange={e => handleStyleChange('--font-size-display', `${e.target.value}rem`)} className="w-full h-2 bg-stone-700 rounded-lg appearance-none cursor-pointer" />
-                                </div>
-                            </div>
-                             <div>
-                                <Input as="select" label="Body Font" value={formData.styles['--font-body']} onChange={e => handleStyleChange('--font-body', e.target.value)}>
-                                    {FONT_OPTIONS.map(f => <option key={f} value={f}>{f.split(',')[0].replace(/'/g, '')}</option>)}
-                                </Input>
-                                <div className="mt-2">
-                                    <label className="flex justify-between text-sm font-medium mb-1">Body Font Size <span>({formData.styles['--font-size-body']})</span></label>
-                                    <input type="range" min="0.8" max="1.2" step="0.05" value={parseFloat(formData.styles['--font-size-body'])} onChange={e => handleStyleChange('--font-size-body', `${e.target.value}rem`)} className="w-full h-2 bg-stone-700 rounded-lg appearance-none cursor-pointer" />
-                                </div>
-                            </div>
+                             <FontEditor label="H1 Font" fontKey="--font-h1" sizeKey="--font-size-h1" styles={formData.styles} onStyleChange={handleStyleChange} />
+                             <FontEditor label="Paragraph Font" fontKey="--font-p" sizeKey="--font-size-p" styles={formData.styles} onStyleChange={handleStyleChange} />
+                             <FontEditor label="Span Font" fontKey="--font-span" sizeKey="--font-size-span" styles={formData.styles} onStyleChange={handleStyleChange} />
+                             <FontEditor label="Button Font" fontKey="--font-button" sizeKey="--font-size-button" styles={formData.styles} onStyleChange={handleStyleChange} />
                         </div>
                     </Card>
 

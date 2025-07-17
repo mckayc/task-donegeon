@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 
 export function useDebounce<T>(value: T, delay: number): T {
@@ -11,7 +12,7 @@ export function useDebounce<T>(value: T, delay: number): T {
     return () => {
       clearTimeout(handler);
     };
-  }, [JSON.stringify(value), delay]);
+  }, [value, delay]);
 
   return debouncedValue;
 }

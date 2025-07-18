@@ -40,7 +40,7 @@ const ChatPanel: React.FC = () => {
     }, [activeChatUser, activeConversation, markMessagesAsRead]);
     
     useEffect(() => {
-        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+        messagesEndRef.current?.scrollIntoView({ behavior: 'auto' });
     }, [activeConversation]);
 
     const handleSend = (e: React.FormEvent) => {
@@ -52,6 +52,8 @@ const ChatPanel: React.FC = () => {
     };
 
     if (!isChatOpen || !currentUser) return null;
+    
+    let lastDate: string | null = null;
 
     return (
         <div className="fixed bottom-6 right-6 z-50 w-[600px] h-[700px] bg-stone-800 border border-stone-700 rounded-xl shadow-2xl flex flex-col">
@@ -81,13 +83,26 @@ const ChatPanel: React.FC = () => {
                                 <p className="font-bold text-center text-stone-200">{activeChatUser.gameName}</p>
                             </div>
                             <div className="flex-grow p-3 space-y-3 overflow-y-auto scrollbar-hide">
-                                {activeConversation.map(msg => (
-                                    <div key={msg.id} className={`flex ${msg.senderId === currentUser.id ? 'justify-end' : 'justify-start'}`}>
-                                        <div className={`max-w-xs px-3 py-2 rounded-lg ${msg.senderId === currentUser.id ? 'bg-emerald-700 text-white' : 'bg-stone-600 text-stone-100'}`}>
-                                            <p className="text-sm">{msg.message}</p>
-                                        </div>
-                                    </div>
-                                ))}
+                                {activeConversation.map(msg => {
+                                    const msgDate = new Date(msg.timestamp).toLocaleDateString();
+                                    const showDateSeparator = msgDate !== lastDate;
+                                    lastDate = msgDate;
+                                    return (
+                                        <React.Fragment key={msg.id}>
+                                            {showDateSeparator && (
+                                                <div className="text-center text-xs text-stone-500 my-2">
+                                                    --- {new Date(msg.timestamp).toLocaleDateString('default', { month: 'long', day: 'numeric', year: 'numeric' })} ---
+                                                </div>
+                                            )}
+                                            <div className={`flex items-end gap-2 ${msg.senderId === currentUser.id ? 'justify-end' : 'justify-start'}`}>
+                                                <div className={`max-w-xs px-3 py-2 rounded-lg ${msg.senderId === currentUser.id ? 'bg-emerald-700 text-white' : 'bg-stone-600 text-stone-100'}`}>
+                                                    <p className="text-sm whitespace-pre-wrap">{msg.message}</p>
+                                                </div>
+                                                <span className="text-xs text-stone-500">{new Date(msg.timestamp).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}</span>
+                                            </div>
+                                        </React.Fragment>
+                                    );
+                                })}
                                 <div ref={messagesEndRef} />
                             </div>
                             <form onSubmit={handleSend} className="p-3 border-t border-stone-700 flex-shrink-0 flex items-center gap-2">

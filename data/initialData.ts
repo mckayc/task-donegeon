@@ -259,11 +259,44 @@ export const INITIAL_TROPHIES: Trophy[] = [
     { id: 'trophy-3', name: 'The Adjudicator', description: 'Approve or reject a pending quest.', icon: '⚖️', isManual: true, requirements: [] },
     { id: 'trophy-4', name: 'World Builder', description: 'Create a new quest.', icon: '🛠️', isManual: true, requirements: [] },
     { id: 'trophy-5', name: 'The Name Changer', description: 'Rename a user in the Manage Users panel.', icon: '✍️', isManual: true, requirements: [] },
-    { id: 'trophy-6', name: 'Initiate Rank', description: 'Achieve the rank of Initiate', icon: '🌱', isManual: false, requirements: [{type: TrophyRequirementType.AchieveRank, value: 'rank-2', count: 1}]}
+    { id: 'trophy-6', name: 'Initiate Rank', description: 'Achieve the rank of Initiate', icon: '🌱', isManual: false, requirements: [{type: TrophyRequirementType.AchieveRank, value: 'rank-2', count: 1}]},
+    { id: 'trophy-7', name: 'The Philanthropist', description: 'Donate an item to a guildmate.', icon: '🎁', isManual: true, requirements: [] },
+    { id: 'trophy-8', name: 'Master of Coin', description: 'Amass 1,000 gold.', icon: '💰', isManual: true, requirements: [] },
+    { id: 'trophy-9', name: 'Dungeon Crawler', description: 'Complete 10 Ventures.', icon: '🗺️', isManual: true, requirements: [] },
+    { id: 'trophy-10', name: 'Daily Grind', description: 'Complete 25 Duties.', icon: '⚙️', isManual: true, requirements: [] },
+    { id: 'trophy-11', name: 'The Collector', description: 'Own 10 unique items.', icon: '📦', isManual: true, requirements: [] },
+    { id: 'trophy-12', name: 'Fashionista', description: 'Own 5 pieces of avatar equipment.', icon: '🧑‍🎤', isManual: true, requirements: [] },
+    { id: 'trophy-13', name: 'The Completionist', description: 'Complete all available quests for a day.', icon: '💯', isManual: true, requirements: [] },
+    { id: 'trophy-14', name: 'The Achiever', description: 'Earn 5 other trophies.', icon: '🏆', isManual: true, requirements: [] },
+    { id: 'trophy-15', name: 'The Socialite', description: 'Join a guild.', icon: '🤝', isManual: true, requirements: [] },
+    { id: 'trophy-16', name: 'The Founder', description: 'Create a guild.', icon: '🏰', isManual: true, requirements: [] },
+    { id: 'trophy-17', name: 'The Merchant', description: 'Sell an item in the marketplace.', icon: '📈', isManual: true, requirements: [] },
+    { id: 'trophy-18', name: 'The Artisan', description: 'Craft an item.', icon: '🔨', isManual: true, requirements: [] },
+    { id: 'trophy-19', name: 'The Explorer', description: 'Discover a hidden area or secret.', icon: '🧭', isManual: true, requirements: [] },
+    { id: 'trophy-20', name: 'The Loremaster', description: 'Read 10 in-game books or lore entries.', icon: '📚', isManual: true, requirements: [] },
+    { id: 'trophy-21', name: 'The Beastmaster', description: 'Tame a pet.', icon: '🐾', isManual: true, requirements: [] },
+    { id: 'trophy-22', name: 'The Angler', description: 'Catch 50 fish.', icon: '🎣', isManual: true, requirements: [] },
+    { id: 'trophy-23', name: 'The Gardener', description: 'Harvest 100 plants.', icon: '🌱', isManual: true, requirements: [] },
+    { id: 'trophy-24', name: 'The Chef', description: 'Cook 20 different recipes.', icon: '🍳', isManual: true, requirements: [] },
+    { id: 'trophy-25', name: 'The Alchemist', description: 'Brew 15 different potions.', icon: '⚗️', isManual: true, requirements: [] },
+    { id: 'trophy-26', name: 'The Enchanter', description: 'Enchant an item.', icon: '✨', isManual: true, requirements: [] },
+    { id: 'trophy-27', name: 'The Blacksmith', description: 'Forge an item.', icon: '🔥', isManual: true, requirements: [] },
+    { id: 'trophy-28', name: 'The Jeweler', description: 'Cut a gemstone.', icon: '💎', isManual: true, requirements: [] },
+    { id: 'trophy-29', name: 'The Scribe', description: 'Write a scroll.', icon: '📜', isManual: true, requirements: [] },
+    { id: 'trophy-30', name: 'The Cartographer', description: 'Map out a new zone.', icon: '🗺️', isManual: true, requirements: [] },
+    { id: 'trophy-31', name: 'The Archaeologist', description: 'Uncover a lost artifact.', icon: '🏺', isManual: true, requirements: [] },
+    { id: 'trophy-32', name: 'The Linguist', description: 'Learn a new language.', icon: '🗣️', isManual: true, requirements: [] },
+    { id: 'trophy-33', name: 'The Musician', description: 'Master a musical instrument.', icon: '🎶', isManual: true, requirements: [] },
+    { id: 'trophy-34', name: 'The Dancer', description: 'Learn a new dance.', icon: '💃', isManual: true, requirements: [] },
+    { id: 'trophy-35', name: 'The Painter', description: 'Paint a masterpiece.', icon: '🎨', isManual: true, requirements: [] },
+    { id: 'trophy-36', name: 'The Sculptor', description: 'Carve a statue.', icon: '🗿', isManual: true, requirements: [] },
 ];
 
 export const createSampleMarkets = (): Market[] => ([
   { id: 'market-tutorial', title: 'Tutorial Market', description: 'A place to complete your first quests.', icon: '🎓', status: 'open' },
+  { id: 'market-bank', title: 'The Royal Bank', description: 'Exchange your various currencies here for a small fee.', icon: '🏦', status: 'open' },
+  { id: 'market-experiences', title: 'The Guild of Adventurers', description: 'Spend your hard-earned gems on real-world experiences and privileges.', icon: '🎟️', status: 'open' },
+  { id: 'market-candy', title: 'The Sugar Cube', description: 'A delightful shop for purchasing sweet treats with your crystals.', icon: '🍬', status: 'open' },
 ]);
 
 export const createSampleGameAssets = (): GameAsset[] => ([
@@ -281,8 +314,15 @@ export const createSampleGameAssets = (): GameAsset[] => ([
         creatorId: 'user-1', 
         createdAt: new Date().toISOString(), 
         purchaseLimit: 1, 
-        purchaseCount: 0 
+        purchaseCount: 0,
+        linkedThemeId: 'sapphire',
     },
+    { id: 'ga-bank-gold-to-gems', name: 'Exchange 10 Gold for 1 Gem', description: 'Exchange your Gold for valuable Gems.', url: 'https://placehold.co/150/4ade80/FFFFFF?text=10G%3D1Gem', icon: '🤝', category: 'Currency Exchange', isForSale: true, cost: [{rewardTypeId: 'core-gold', amount: 10}], payouts: [{rewardTypeId: 'core-gems', amount: 1}], marketIds: ['market-bank'], creatorId: 'system', createdAt: new Date().toISOString(), purchaseLimit: null, purchaseCount: 0 },
+    { id: 'ga-bank-gems-to-gold', name: 'Exchange 1 Gem for 8 Gold', description: 'Exchange your Gems for Gold at a slight loss.', url: 'https://placehold.co/150/f43f5e/FFFFFF?text=1Gem%3D8G', icon: '🤝', category: 'Currency Exchange', isForSale: true, cost: [{rewardTypeId: 'core-gems', amount: 1}], payouts: [{rewardTypeId: 'core-gold', amount: 8}], marketIds: ['market-bank'], creatorId: 'system', createdAt: new Date().toISOString(), purchaseLimit: null, purchaseCount: 0 },
+    { id: 'ga-exp-movie', name: 'Movie Night Choice', description: 'You get to pick the movie for the next family movie night.', url: 'https://placehold.co/150/f97316/FFFFFF?text=Movie', icon: '🎬', category: 'Real-World Reward', isForSale: true, cost: [{rewardTypeId: 'core-gems', amount: 10}], marketIds: ['market-experiences'], creatorId: 'system', createdAt: new Date().toISOString(), purchaseLimit: 1, purchaseCount: 0 },
+    { id: 'ga-exp-game-hour', name: 'One Hour of Gaming', description: 'A voucher for one hour of video games.', url: 'https://placehold.co/150/3b82f6/FFFFFF?text=1+Hour', icon: '🎮', category: 'Real-World Reward', isForSale: true, cost: [{rewardTypeId: 'core-gems', amount: 5}], marketIds: ['market-experiences'], creatorId: 'system', createdAt: new Date().toISOString(), purchaseLimit: null, purchaseCount: 0 },
+    { id: 'ga-candy-chocolate', name: 'Chocolate Bar', description: 'A delicious bar of chocolate.', url: 'https://placehold.co/150/78350f/FFFFFF?text=Chocolate', icon: '🍫', category: 'Treat', isForSale: true, cost: [{rewardTypeId: 'core-crystal', amount: 20}], marketIds: ['market-candy'], creatorId: 'system', createdAt: new Date().toISOString(), purchaseLimit: null, purchaseCount: 0 },
+    { id: 'ga-candy-lollipop', name: 'Lollipop', description: 'A sweet, colorful lollipop.', url: 'https://placehold.co/150/ec4899/FFFFFF?text=Lollipop', icon: '🍭', category: 'Treat', isForSale: true, cost: [{rewardTypeId: 'core-crystal', amount: 10}], marketIds: ['market-candy'], creatorId: 'system', createdAt: new Date().toISOString(), purchaseLimit: null, purchaseCount: 0 },
 ]);
 
 export const createInitialGuilds = (users: User[]): Guild[] => ([

@@ -266,7 +266,7 @@ const AiStudioPage: React.FC = () => {
                 </div>
                 <div className="text-right mt-4">
                     <Button onClick={handleGenerate} disabled={isLoading || !isAiAvailable}>
-                        {isLoading ? 'Generating...' : <><SparklesIcon className="w-5 h-5 mr-2" /> Generate</>}
+                        {isLoading ? 'Generating...' : 'Generate'}
                     </Button>
                 </div>
             </Card>

@@ -131,7 +131,7 @@ const Header: React.FC = () => {
                 </button>
                 {modeDropdownOpen && (
                 <div className="absolute left-0 mt-2 w-56 bg-stone-800 border border-stone-700 rounded-lg shadow-xl z-20">
-                    <div className="px-4 pt-2 pb-1 text-xs text-stone-500 font-semibold uppercase">Switch View</div>
+                    <div className="px-4 pt-2 pb-1 text-xs text-stone-500 font-semibold uppercase">Switch Personal/Guild View</div>
                     <a href="#" onClick={() => handleModeChange({ mode: 'personal' })} className="block px-4 py-2 text-stone-300 hover:bg-stone-700">{currentUser.gameName} (Personal)</a>
                     <div className="border-t border-stone-700 my-1"></div>
                     <div className="px-4 pt-2 pb-1 text-xs text-stone-500 font-semibold uppercase">{settings.terminology.groups}</div>

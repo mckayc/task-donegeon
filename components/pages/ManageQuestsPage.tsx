@@ -16,8 +16,7 @@ const ManageQuestsPage: React.FC = () => {
     const [editingQuest, setEditingQuest] = useState<Quest | null>(null);
     const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
     const [isGeneratorOpen, setIsGeneratorOpen] = useState(false);
-    const [isConfirmOpen, setIsConfirmOpen] = useState(false);
-    const [deletingIds, setDeletingIds] = useState<string[]>([]);
+    const [confirmation, setConfirmation] = useState<{ action: 'delete' | 'activate' | 'deactivate', ids: string[] } | null>(null);
     const [initialCreateData, setInitialCreateData] = useState<{ title: string; description: string; type: QuestType } | null>(null);
     const [selectedQuests, setSelectedQuests] = useState<string[]>([]);
     
@@ -35,18 +34,23 @@ const ManageQuestsPage: React.FC = () => {
         setIsCreateDialogOpen(true);
     };
 
-    const handleDeleteRequest = (questIds: string[]) => {
-        setDeletingIds(questIds);
-        setIsConfirmOpen(true);
-    };
-
-    const handleConfirmDelete = () => {
-        if (deletingIds.length > 0) {
-            deleteQuests(deletingIds);
-            setSelectedQuests([]);
+    const handleConfirmAction = () => {
+        if (!confirmation) return;
+        
+        switch(confirmation.action) {
+            case 'delete':
+                deleteQuests(confirmation.ids);
+                break;
+            case 'activate':
+                updateQuestsStatus(confirmation.ids, true);
+                break;
+            case 'deactivate':
+                updateQuestsStatus(confirmation.ids, false);
+                break;
         }
-        setIsConfirmOpen(false);
-        setDeletingIds([]);
+
+        setSelectedQuests([]);
+        setConfirmation(null);
     };
     
     const handleCloseDialog = () => {
@@ -78,10 +82,18 @@ const ManageQuestsPage: React.FC = () => {
         }
     };
     
-    const handleBulkStatusChange = (isActive: boolean) => {
-        updateQuestsStatus(selectedQuests, isActive);
-        setSelectedQuests([]);
+    const getConfirmationMessage = () => {
+        if (!confirmation) return '';
+        const count = confirmation.ids.length;
+        const item = count > 1 ? settings.terminology.tasks.toLowerCase() : settings.terminology.task.toLowerCase();
+        switch (confirmation.action) {
+            case 'delete': return `Are you sure you want to permanently delete ${count} ${item}?`;
+            case 'activate': return `Are you sure you want to mark ${count} ${item} as active?`;
+            case 'deactivate': return `Are you sure you want to mark ${count} ${item} as inactive?`;
+            default: return 'Are you sure?';
+        }
     };
+
 
     return (
         <div>
@@ -90,9 +102,9 @@ const ManageQuestsPage: React.FC = () => {
                     {selectedQuests.length > 0 && (
                         <div className="flex items-center gap-2 p-2 bg-stone-900/50 rounded-lg">
                             <span className="text-sm font-semibold text-stone-300 px-2">{selectedQuests.length} selected</span>
-                            <Button variant="secondary" className="text-sm py-1 px-3 !bg-green-800/60 hover:!bg-green-700/70 text-green-200" onClick={() => handleBulkStatusChange(true)}>Mark Active</Button>
-                            <Button variant="secondary" className="text-sm py-1 px-3 !bg-yellow-800/60 hover:!bg-yellow-700/70 text-yellow-200" onClick={() => handleBulkStatusChange(false)}>Mark Inactive</Button>
-                            <Button variant="secondary" className="text-sm py-1 px-3 !bg-red-900/50 hover:!bg-red-800/60 text-red-300" onClick={() => handleDeleteRequest(selectedQuests)}>Delete</Button>
+                            <Button variant="secondary" className="text-sm py-1 px-3 !bg-green-800/60 hover:!bg-green-700/70 text-green-200" onClick={() => setConfirmation({ action: 'activate', ids: selectedQuests })}>Mark Active</Button>
+                            <Button variant="secondary" className="text-sm py-1 px-3 !bg-yellow-800/60 hover:!bg-yellow-700/70 text-yellow-200" onClick={() => setConfirmation({ action: 'deactivate', ids: selectedQuests })}>Mark Inactive</Button>
+                            <Button variant="secondary" className="text-sm py-1 px-3 !bg-red-900/50 hover:!bg-red-800/60 text-red-300" onClick={() => setConfirmation({ action: 'delete', ids: selectedQuests })}>Delete</Button>
                         </div>
                     )}
                 </div>
@@ -142,7 +154,7 @@ const ManageQuestsPage: React.FC = () => {
                                         </td>
                                         <td className="p-4 space-x-2">
                                             <Button variant="secondary" className="text-sm py-1 px-3" onClick={() => handleEdit(quest)}>Edit</Button>
-                                            <Button variant="secondary" className="text-sm py-1 px-3 !bg-red-900/50 hover:!bg-red-800/60 text-red-300" onClick={() => handleDeleteRequest([quest.id])}>Delete</Button>
+                                            <Button variant="secondary" className="text-sm py-1 px-3 !bg-red-900/50 hover:!bg-red-800/60 text-red-300" onClick={() => setConfirmation({ action: 'delete', ids: [quest.id] })}>Delete</Button>
                                         </td>
                                     </tr>
                                 ))}
@@ -164,11 +176,11 @@ const ManageQuestsPage: React.FC = () => {
             {isGeneratorOpen && <QuestIdeaGenerator onUseIdea={handleUseIdea} onClose={() => setIsGeneratorOpen(false)} />}
 
             <ConfirmDialog
-                isOpen={isConfirmOpen}
-                onClose={() => setIsConfirmOpen(false)}
-                onConfirm={handleConfirmDelete}
-                title={`Delete ${deletingIds.length > 1 ? settings.terminology.tasks : settings.terminology.task}`}
-                message={`Are you sure you want to delete ${deletingIds.length} ${deletingIds.length > 1 ? settings.terminology.tasks.toLowerCase() : settings.terminology.task.toLowerCase()}? This action is permanent.`}
+                isOpen={!!confirmation}
+                onClose={() => setConfirmation(null)}
+                onConfirm={handleConfirmAction}
+                title="Confirm Action"
+                message={getConfirmationMessage()}
             />
         </div>
     );

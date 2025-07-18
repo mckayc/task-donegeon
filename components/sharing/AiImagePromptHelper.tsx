@@ -1,4 +1,5 @@
 
+
 import React, { useState, useMemo } from 'react';
 import { useAppDispatch } from '../../context/AppContext';
 import Button from '../ui/Button';
@@ -31,6 +32,8 @@ const AiImagePromptHelper: React.FC = () => {
     const copyToClipboard = () => {
         navigator.clipboard.writeText(finalPrompt).then(() => {
             addNotification({ type: 'success', message: 'Prompt copied to clipboard!' });
+        }, () => {
+            addNotification({ type: 'error', message: 'Failed to copy prompt.'});
         });
     };
     

@@ -318,8 +318,11 @@ export interface Terminology {
 }
 
 export type Page = 'Dashboard' | 'Avatar' | 'Quests' | 'Marketplace' | 'Chronicles' | 'Guild' | 'Calendar' | 'Progress' | 'Trophies' | 'Ranks' | 'Manage Users' | 'Manage Rewards' | 'Manage Quests' | 'Manage Items' | 'Approvals' | 'Manage Markets' | 'Manage Guilds' | 'Settings' | 'Profile' | 'About' | 'Help Guide' | 'Manage Ranks' | 'Manage Trophies' | 'Themes' | 'Data Management' | 'Collection' | 'AI Studio' | 'Appearance'
-| 'Object Exporter' | 'Asset Manager' | 'Backup & Import' | 'Asset Library'
 | 'Theme Editor'
+| 'Object Exporter'
+| 'Asset Manager'
+| 'Asset Library'
+| 'Backup & Import'
 ;
 
 export interface SidebarLink {

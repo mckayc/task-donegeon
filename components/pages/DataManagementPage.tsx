@@ -25,12 +25,12 @@ const DataManagementPage: React.FC = () => {
         return settings.sidebars.dataManagement.filter(item => item.isVisible);
     }, [settings.sidebars.dataManagement]);
 
-    const initialPage = useMemo((): Page => {
+    const initialPage = useMemo((): ManagementPage => {
         const firstLink = visibleItems.find(item => item.type === 'link') as SidebarLink | undefined;
-        return firstLink?.id ?? 'Object Exporter';
+        return (firstLink?.id as ManagementPage) ?? 'Object Exporter';
     }, [visibleItems]);
 
-    const [activePage, setActivePage] = useState<Page>(initialPage);
+    const [activePage, setActivePage] = useState<ManagementPage>(initialPage);
 
 
     const renderContent = () => {
@@ -55,7 +55,7 @@ const DataManagementPage: React.FC = () => {
                             return (
                                 <button
                                     key={item.id}
-                                    onClick={() => setActivePage(item.id)}
+                                    onClick={() => setActivePage(item.id as ManagementPage)}
                                     className={`w-full flex items-center p-3 text-left rounded-lg transition-colors ${activePage === item.id ? 'bg-emerald-600/20 text-emerald-300' : 'text-stone-300 hover:bg-stone-700/50'}`}
                                 >
                                     {Icon && <Icon className="w-5 h-5 mr-3" />}

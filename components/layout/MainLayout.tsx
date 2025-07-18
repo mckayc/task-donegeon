@@ -1,4 +1,5 @@
 
+
 import React, { useMemo, useEffect } from 'react';
 import Sidebar from './Sidebar';
 import Header from './Header';
@@ -31,14 +32,11 @@ import CollectionPage from '../pages/CollectionPage';
 import ManageItemsPage from '../pages/ManageItemsPage';
 import AiStudioPage from '../pages/AiStudioPage';
 import AppearancePage from '../pages/AppearancePage';
-import ObjectExporterPage from '../pages/management/ObjectExporterPage';
-import AssetManagerPage from '../pages/management/MediaManagerPage';
-import BackupAndImportPage from '../pages/management/BackupAndImportPage';
-import AssetLibraryPage from '../pages/management/AssetLibraryPage';
 import ThemeEditorPage from '../pages/ThemeEditorPage';
 import RewardDisplay from '../ui/RewardDisplay';
 import { useAppDispatch, useAuthState, useGameDataState, useSettingsState, useUIState } from '../../context/AppContext';
 import ChatPanel from '../chat/ChatPanel';
+import ChatController from '../chat/ChatController';
 import DataManagementPage from '../pages/DataManagementPage';
 
 const MainLayout: React.FC = () => {
@@ -157,6 +155,7 @@ const MainLayout: React.FC = () => {
         </main>
       </div>
       <ChatPanel />
+      <ChatController />
     </div>
   );
 };

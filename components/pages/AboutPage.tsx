@@ -1,5 +1,3 @@
-
-
 import React, { useState, useEffect, ReactNode } from 'react';
 import Card from '../ui/Card';
 import { useAppState } from '../../context/AppContext';
@@ -122,7 +120,6 @@ const AboutPage: React.FC = () => {
         return (
             <div className="space-y-6 text-stone-300 leading-relaxed">
                 <p>{metadata.description}</p>
-                 <p>This major update introduces a complete overhaul of the Theme Editor, redesigned Calendar views, and adds bulk actions to content management pages. New features include automated backups, profile picture uploads, and guild-specific themes. The AI Studio has been enhanced for better content generation, and many UI/UX improvements have been made across the entire application to improve usability and aesthetics.</p>
                 
                 <div className="pt-4 border-t border-stone-700/60 text-sm">
                     <p><strong>Version:</strong> {metadata.version}</p>

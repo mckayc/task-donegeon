@@ -1,6 +1,6 @@
 # Task Donegeon
 
-**Version:** 0.0.66
+**Version:** 0.0.67
 **Last Updated:** 2024-07-18T10:00:00Z
 
 ---

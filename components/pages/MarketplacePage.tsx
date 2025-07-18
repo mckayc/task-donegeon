@@ -135,7 +135,7 @@ const MarketItemView: React.FC<{ market: Market }> = ({ market }) => {
                                     ) : isOwned ? (
                                         <Button className="text-sm py-1 px-3" disabled>Owned</Button>
                                     ) : (
-                                        <Button className="text-sm py-1 px-3" disabled={!canAfford(asset.cost)} onClick={() => purchaseMarketItem(asset.id, market.id, currentUser, asset.cost, asset)}>Purchase</Button>
+                                        <Button className="text-sm py-1 px-3" disabled={!canAfford(asset.cost)} onClick={() => purchaseMarketItem(asset.id, market.id, currentUser)}>Purchase</Button>
                                     )}
                                 </div>
                             </div>

@@ -127,6 +127,7 @@ export interface GameAsset {
   avatarSlot?: string;
   isForSale: boolean;
   cost: RewardItem[];
+  payouts?: RewardItem[];
   marketIds: string[];
   creatorId: string;
   createdAt: string;

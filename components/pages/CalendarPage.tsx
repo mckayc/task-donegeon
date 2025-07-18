@@ -7,6 +7,8 @@ import MonthView from '../calendar/MonthView';
 import WeekView from '../calendar/WeekView';
 import DayView from '../calendar/DayView';
 import ChroniclesDayView from '../calendar/ChroniclesDayView';
+import ChroniclesMonthView from '../calendar/ChroniclesMonthView';
+import ChroniclesWeekView from '../calendar/ChroniclesWeekView';
 
 type CalendarView = 'month' | 'week' | 'day';
 type CalendarMode = 'quests' | 'chronicles';
@@ -64,11 +66,9 @@ const CalendarPage: React.FC = () => {
         if (mode === 'chronicles') {
             switch (view) {
                 case 'day': return <ChroniclesDayView currentDate={currentDate} />;
-                default: return (
-                    <div className="p-8 text-center text-stone-400">
-                        Chronicles view for week/month is coming soon!
-                    </div>
-                );
+                case 'week': return <ChroniclesWeekView currentDate={currentDate} />;
+                case 'month': return <ChroniclesMonthView currentDate={currentDate} />;
+                default: return null;
             }
         }
 

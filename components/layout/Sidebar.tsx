@@ -1,5 +1,4 @@
 
-
 import React, { useState, useMemo } from 'react';
 import { Role, Page, QuestCompletionStatus, PurchaseRequestStatus, Terminology, SidebarConfigItem, SidebarLink } from '../../types';
 import { ChevronDownIcon, ArrowLeftIcon, ArrowRightIcon } from '../ui/Icons';
@@ -81,7 +80,7 @@ const CollapsibleNavGroup: React.FC<CollapsibleNavGroupProps> = ({ title, childr
 
 
 const Sidebar: React.FC = () => {
-  const { currentUser, questCompletions, purchaseRequests, activePage, settings, isAiConfigured, isSidebarCollapsed, chatMessages } = useAppState();
+  const { currentUser, questCompletions, purchaseRequests, activePage, settings, isAiConfigured, isSidebarCollapsed, chatMessages, isChatOpen } = useAppState();
   const { setActivePage, toggleSidebar, toggleChat } = useAppDispatch();
   const isAiAvailable = settings.enableAiFeatures && isAiConfigured;
   
@@ -189,7 +188,7 @@ const Sidebar: React.FC = () => {
             >
               <span className={`text-xl ${!isSidebarCollapsed ? 'mr-3' : ''}`}>{settings.chat.chatEmoji}</span>
               {!isSidebarCollapsed && <span>{settings.terminology.link_chat}</span>}
-              {unreadMessagesCount > 0 && (
+              {unreadMessagesCount > 0 && !isChatOpen && (
                 <span className={`absolute flex items-center justify-center w-5 h-5 text-xs font-bold text-white bg-red-600 rounded-full ${isSidebarCollapsed ? 'top-1 right-1' : 'right-3 top-1/2 -translate-y-1/2'}`}>
                     {unreadMessagesCount > 9 ? '9+' : unreadMessagesCount}
                 </span>

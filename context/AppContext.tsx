@@ -59,7 +59,7 @@ interface AppDispatch {
   addMarket: (market: Omit<Market, 'id'>) => void;
   updateMarket: (market: Market) => void;
   deleteMarket: (marketId: string) => void;
-  purchaseMarketItem: (assetId: string, marketId: string, user: User, cost: RewardItem[], assetDetails: any) => void;
+  purchaseMarketItem: (assetId: string, marketId: string, user: User) => void;
   cancelPurchaseRequest: (purchaseId: string) => void;
   approvePurchaseRequest: (purchaseId: string) => void;
   rejectPurchaseRequest: (purchaseId: string) => void;
@@ -533,18 +533,46 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     return true;
   }, [users, rewardTypes, currentUser]);
   
-  const purchaseMarketItem = useCallback((assetId: string, marketId: string, user: User, cost: RewardItem[], assetDetails: any) => {
-    const m = markets.find(m => m.id === marketId);
-    if (!m) return;
+  const purchaseMarketItem = useCallback((assetId: string, marketId: string, user: User) => {
+    const market = markets.find(m => m.id === marketId);
+    const asset = gameAssets.find(ga => ga.id === assetId);
+    if (!market || !asset) return;
     
-    if (deductRewards(user.id, cost, m.guildId)) {
-      setUsers(p => p.map(u => u.id === user.id ? { ...u, ownedAssetIds: [...u.ownedAssetIds, assetId] } : u));
-      addNotification({ type: 'success', message: `Purchased "${assetDetails.name}"!` });
-      setPurchaseRequests(p => [...p, { id: `purchase-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`, userId: user.id, assetId, requestedAt: new Date().toISOString(), status: PurchaseRequestStatus.Completed, assetDetails, guildId: m.guildId }]);
+    if (deductRewards(user.id, asset.cost, market.guildId)) {
+        let wasModified = false;
+        const updatedUser = { ...user };
+
+        // Handle direct payouts (currency exchange)
+        if (asset.payouts && asset.payouts.length > 0) {
+            applyRewards(user.id, asset.payouts, market.guildId);
+            addNotification({ type: 'success', message: `Exchanged for ${asset.name}!` });
+            wasModified = true;
+        }
+
+        // Handle linked theme unlocks
+        if (asset.linkedThemeId && !updatedUser.ownedThemes.includes(asset.linkedThemeId)) {
+            updatedUser.ownedThemes = [...updatedUser.ownedThemes, asset.linkedThemeId];
+            addNotification({ type: 'success', message: `Theme Unlocked: ${asset.name}!` });
+            wasModified = true;
+        }
+        
+        // Handle regular item purchases (if not a pure exchange)
+        if (!asset.payouts || asset.payouts.length === 0) {
+             updatedUser.ownedAssetIds = [...updatedUser.ownedAssetIds, asset.id];
+             addNotification({ type: 'success', message: `Purchased "${asset.name}"!` });
+             wasModified = true;
+        }
+
+        if (wasModified) {
+            updateUser(user.id, updatedUser);
+        }
+
+        setPurchaseRequests(p => [...p, { id: `purchase-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`, userId: user.id, assetId, requestedAt: new Date().toISOString(), status: PurchaseRequestStatus.Completed, assetDetails: { name: asset.name, description: asset.description, cost: asset.cost }, guildId: market.guildId }]);
     } else {
       addNotification({ type: 'error', message: 'You cannot afford this item.' });
     }
-  }, [markets, deductRewards, addNotification]);
+  }, [markets, gameAssets, deductRewards, addNotification, applyRewards, updateUser]);
+
   const cancelPurchaseRequest = useCallback((purchaseId: string) => setPurchaseRequests(prev => prev.map(p => p.id === purchaseId ? { ...p, status: PurchaseRequestStatus.Cancelled } : p)), []);
   const approvePurchaseRequest = useCallback((purchaseId: string) => { const r = purchaseRequests.find(p => p.id === purchaseId); if (!r) return; if(deductRewards(r.userId, r.assetDetails.cost, r.guildId)){ setUsers(p => p.map(u => u.id === r.userId ? { ...u, ownedAssetIds: [...u.ownedAssetIds, r.assetId] } : u)); setPurchaseRequests(p => p.map(pr => pr.id === purchaseId ? { ...pr, status: PurchaseRequestStatus.Completed } : pr)); addNotification({type: 'success', message: 'Purchase approved.'});} else { addNotification({type: 'error', message: "User can't afford this."});} }, [purchaseRequests, deductRewards, addNotification]);
   const rejectPurchaseRequest = useCallback((purchaseId: string) => { setPurchaseRequests(prev => prev.map(p => p.id === purchaseId ? { ...p, status: PurchaseRequestStatus.Rejected } : p)); addNotification({ type: 'info', message: 'Purchase request rejected.' }); }, [addNotification]);

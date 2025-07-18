@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { Guild } from '../../types';
 import Button from '../ui/Button';
@@ -10,12 +10,13 @@ interface EditGuildDialogProps {
 }
 
 const EditGuildDialog: React.FC<EditGuildDialogProps> = ({ guild, onClose }) => {
-  const { users } = useAppState();
+  const { users, guilds, themes } = useAppState();
   const { addGuild, updateGuild } = useAppDispatch();
   const [formData, setFormData] = useState({
     name: '',
     purpose: '',
     memberIds: [] as string[],
+    themeId: '',
   });
 
   useEffect(() => {
@@ -23,10 +24,18 @@ const EditGuildDialog: React.FC<EditGuildDialogProps> = ({ guild, onClose }) => 
       setFormData({ 
           name: guild.name, 
           purpose: guild.purpose,
-          memberIds: [...guild.memberIds] 
+          memberIds: [...guild.memberIds],
+          themeId: guild.themeId || '',
       });
     }
   }, [guild]);
+
+  const availableThemes = useMemo(() => {
+      const lockedThemeIds = new Set(
+          guilds.filter(g => g.id !== guild?.id).map(g => g.themeId)
+      );
+      return themes.filter(t => !lockedThemeIds.has(t.id));
+  }, [themes, guilds, guild]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -47,10 +56,11 @@ const EditGuildDialog: React.FC<EditGuildDialogProps> = ({ guild, onClose }) => 
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    const payload = { ...formData, themeId: formData.themeId || undefined };
     if (guild) {
-      updateGuild({ ...guild, ...formData });
+      updateGuild({ ...guild, ...payload });
     } else {
-      addGuild(formData);
+      addGuild(payload);
     }
     onClose();
   };
@@ -97,6 +107,15 @@ const EditGuildDialog: React.FC<EditGuildDialogProps> = ({ guild, onClose }) => 
             </div>
           </div>
 
+          <div>
+              <Input as="select" label="Guild Theme (Optional)" name="themeId" value={formData.themeId} onChange={handleChange}>
+                  <option value="">-- Default User Theme --</option>
+                  {availableThemes.map(theme => (
+                      <option key={theme.id} value={theme.id}>{theme.name}</option>
+                  ))}
+              </Input>
+              <p className="text-xs text-stone-400 mt-1">Assigning a theme here will lock it for this guild's use only.</p>
+          </div>
 
           <div className="flex justify-end space-x-4 pt-4">
             <Button type="button" variant="secondary" onClick={onClose}>Cancel</Button>

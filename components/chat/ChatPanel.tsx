@@ -19,6 +19,11 @@ const ChatPanel: React.FC = () => {
         return users.filter(user => user.id !== currentUser.id);
     }, [currentUser, users]);
 
+    const unreadSenders = useMemo(() => {
+        if (!currentUser) return new Set();
+        return new Set(chatMessages.filter(msg => msg.recipientId === currentUser.id && !msg.isRead).map(msg => msg.senderId));
+    }, [chatMessages, currentUser]);
+
 
     const activeConversation = useMemo(() => {
         if (!currentUser || !activeChatUser) return [];
@@ -57,12 +62,16 @@ const ChatPanel: React.FC = () => {
             
             <div className="flex-grow flex overflow-hidden">
                 <aside className="w-1/3 border-r border-stone-700 overflow-y-auto scrollbar-hide">
-                    {chatPartners.map(user => (
-                        <button key={user.id} onClick={() => setActiveChatUser(user)} className={`w-full flex items-center gap-2 p-2 text-left hover:bg-stone-700/50 ${activeChatUser?.id === user.id ? 'bg-emerald-900/50' : ''}`}>
-                            <Avatar user={user} className="w-8 h-8 flex-shrink-0 rounded-full overflow-hidden" />
-                            <span className="text-sm font-semibold text-stone-200 truncate">{user.gameName}</span>
-                        </button>
-                    ))}
+                    {chatPartners.map(user => {
+                        const hasUnread = unreadSenders.has(user.id);
+                        return (
+                            <button key={user.id} onClick={() => setActiveChatUser(user)} className={`w-full flex items-center gap-2 p-2 text-left hover:bg-stone-700/50 ${activeChatUser?.id === user.id ? 'bg-emerald-900/50' : ''}`}>
+                                <Avatar user={user} className="w-8 h-8 flex-shrink-0 rounded-full overflow-hidden" />
+                                <span className="text-sm font-semibold text-stone-200 truncate flex-grow">{user.gameName}</span>
+                                {hasUnread && <div className="w-2.5 h-2.5 bg-red-500 rounded-full flex-shrink-0"></div>}
+                            </button>
+                        );
+                    })}
                 </aside>
 
                 <main className="w-2/3 flex flex-col">

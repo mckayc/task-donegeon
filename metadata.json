@@ -1,8 +1,8 @@
 {
-  "name": "Task Donegeon - 0.0.67 - Build Fix",
-  "version": "0.0.67",
-  "lastChange": "Fixed a critical build error caused by an obsolete file that contained a syntax error. Updated versioning across the application.",
-  "lastChangeDate": "2024-07-19T10:00:00Z",
+  "name": "Task Donegeon - 0.0.68 - Build Fix",
+  "version": "0.0.68",
+  "lastChange": "Fixed a critical build error caused by an obsolete file that contained TypeScript type errors related to a previous component rename.",
+  "lastChangeDate": "2024-07-20T10:00:00Z",
   "description": "A gamified task and chore tracker for families and groups. Complete quests, earn currency and experience, and level up your character in a fun, medieval-themed adventure.",
   "requestFramePermissions": [
     "camera"

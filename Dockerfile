@@ -1,61 +1,70 @@
-# -----------------------------------------------------------------
-# DOCKERFILE FOR BUILDING THE PRODUCTION IMAGE
-#
-# This uses a multi-stage build to create a small, optimized image.
-# Stage 1: Builds the React frontend and prepares backend files.
-# Stage 2: Creates the final image with only production dependencies.
-# -----------------------------------------------------------------
+# --- Stage 1: Build the React Frontend ---
+# We use 'AS build' to name this stage. It will be discarded later.
+FROM node:20-alpine AS build
 
-# --- Stage 1: Build Stage ---
-    FROM node:20-alpine AS build
+# Set the working directory inside the container for the build process.
+WORKDIR /usr/src/app
 
-    # Set the working directory
-    WORKDIR /usr/src/app
-    
-    # Copy root and backend package.json files
-    COPY package.json ./
-    COPY backend/package.json ./backend/
-    
-    # Install root (frontend) dependencies
-    RUN npm install
-    
-    # Install backend dependencies
-    RUN npm install --prefix backend
-    
-    # Copy all source code
-    COPY . .
-    
-    # Build the React frontend
-    RUN npm run build
-    
-    # --- Stage 2: Production Stage ---
-    FROM node:20-alpine
-    
-    # Set the working directory
-    WORKDIR /usr/src/app
-    
-    # Copy package.json files for production install
-    COPY package.json ./
-    COPY backend/package.json ./backend/
-    
-    # Install ONLY production dependencies for a smaller image size
-    RUN npm install --omit=dev
-    RUN npm install --prefix backend --omit=dev
-    
-    # Copy the built frontend static files from the build stage
-    COPY --from=build /usr/src/app/dist ./dist
-    
-    # Copy the backend source code from the build stage
-    COPY --from=build /usr/src/app/backend ./backend
-    
-    # Copy metadata.json
-    COPY --from=build /usr/src/app/metadata.json ./
-    
-    # Ensure the uploads directory exists
-    RUN mkdir -p /usr/src/app/backend/uploads
-    
-    # Expose the port the backend server will run on
-    EXPOSE 3001
-    
-    # Command to run the application
-    CMD [ "node", "backend/server.js" ]
+# Copy ONLY the package.json and package-lock.json files first.
+# This is the key to solving your caching issue. This layer is only
+# re-run if these specific files change.
+COPY package.json package-lock.json ./
+
+# Install all frontend dependencies, including devDependencies needed for building.
+RUN npm install
+
+# Now, copy the rest of your project's source code.
+# When you 'git pull', only this layer and the ones after it will be rebuilt.
+COPY . .
+
+# Run the build script defined in package.json to create the static assets.
+# The output will be in the `/usr/src/app/dist` directory.
+RUN npm run build
+
+
+# --- Stage 2: Prepare Backend Production Dependencies ---
+# This stage installs only the backend's production dependencies,
+# ignoring things like 'nodemon' to keep the final image small.
+FROM node:20-alpine AS dependencies
+
+WORKDIR /usr/src/app
+
+# Copy only the backend's package files.
+COPY backend/package.json backend/package-lock.json ./backend/
+
+# Install ONLY production dependencies for the backend.
+RUN npm install --prefix backend --omit=dev
+
+
+# --- Stage 3: Create the Final Production Image ---
+# Start from a fresh, lightweight Node.js image for the final product.
+FROM node:20-alpine
+
+# Set the final working directory for the running application.
+WORKDIR /app
+
+# Create a dedicated, non-root user and group for security purposes.
+# Running as a non-root user is a critical security best practice.
+RUN addgroup -S appgroup && adduser -S appuser -G appgroup
+
+# Copy the built frontend assets from the 'build' stage.
+COPY --from=build /usr/src/app/dist ./dist
+
+# Copy the production-only backend node_modules from the 'dependencies' stage.
+COPY --from=dependencies /usr/src/app/backend/node_modules ./backend/node_modules
+
+# Copy the backend's server code and the initial default uploads.
+COPY backend/server.js ./backend/
+COPY backend/uploads ./backend/uploads
+
+# Change ownership of all application files to our new non-root user.
+RUN chown -R appuser:appgroup /app
+
+# Switch to the non-root user. From this point on, all commands run as 'appuser'.
+USER appuser
+
+# Expose the port that the backend server will listen on.
+EXPOSE 3001
+
+# Define the command that will run when the container starts.
+CMD ["node", "backend/server.js"]

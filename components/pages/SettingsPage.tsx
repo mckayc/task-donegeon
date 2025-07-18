@@ -1,3 +1,4 @@
+
 import React, { useState, ChangeEvent } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { Role, AppSettings, Terminology } from '../../types';
@@ -5,7 +6,6 @@ import Button from '../ui/Button';
 import { ChevronDownIcon } from '../ui/Icons';
 import Input from '../ui/Input';
 import ToggleSwitch from '../ui/ToggleSwitch';
-import EmojiPicker from '../ui/EmojiPicker';
 
 
 const CollapsibleSection: React.FC<{ title: string; children: React.ReactNode; defaultOpen?: boolean; }> = ({ title, children, defaultOpen = false }) => {
@@ -58,7 +58,6 @@ const SettingsPage: React.FC = () => {
     const { updateSettings, addNotification } = useAppDispatch();
     
     const [formState, setFormState] = useState<AppSettings>(settings);
-    const [isEmojiPickerOpen, setIsEmojiPickerOpen] = useState(false);
     
     if (currentUser?.role !== Role.DonegeonMaster) {
         return <div className="p-6 rounded-lg" style={{ backgroundColor: 'hsl(var(--color-bg-secondary))' }}><p>You do not have permission to view this page.</p></div>;
@@ -186,10 +185,6 @@ const SettingsPage: React.FC = () => {
                         <ToggleSwitch enabled={formState.security.requirePasswordForAdmin} setEnabled={(val) => handleToggleChange('security.requirePasswordForAdmin', val)} label={`Require Password for ${formState.terminology.admin} & ${formState.terminology.moderator}`} />
                         <p className="text-sm ml-6" style={{ color: 'hsl(var(--color-text-secondary))' }}>If enabled, these roles must use their password to log in. If disabled, they can use their PIN like regular users.</p>
                     </div>
-                    <div className="pt-4 border-t flex items-start" style={{ borderColor: 'hsl(var(--color-border))' }}>
-                        <ToggleSwitch enabled={formState.security.allowProfileEditing} setEnabled={(val) => handleToggleChange('security.allowProfileEditing', val)} label="Allow Users to Edit Profiles" />
-                        <p className="text-sm ml-6" style={{ color: 'hsl(var(--color-text-secondary))' }}>If enabled, users will see a 'Profile' link in their dropdown menu allowing them to change their name, password, PIN, and other details.</p>
-                    </div>
                 </div>
             </CollapsibleSection>
 
@@ -227,44 +222,6 @@ const SettingsPage: React.FC = () => {
                             Allow the use of Gemini AI to power features like the Quest Idea Generator.
                             This requires a valid Gemini API key to be configured by the server administrator.
                         </p>
-                    </div>
-                </div>
-            </CollapsibleSection>
-            
-            <CollapsibleSection title="Chat">
-                <div className="space-y-6">
-                    <div className="flex items-start">
-                        <ToggleSwitch
-                            enabled={formState.chat.enabled}
-                            setEnabled={(val) => handleToggleChange('chat.enabled', val)}
-                            label="Enable Chat"
-                        />
-                        <p className="text-sm ml-6" style={{ color: 'hsl(var(--color-text-secondary))' }}>
-                            Allow users to send direct messages to each other.
-                        </p>
-                    </div>
-                     <div className="pt-4 border-t border-stone-700">
-                        <label className="block text-sm font-medium text-stone-300 mb-1">Chat Icon</label>
-                        <div className="relative">
-                            <button
-                                type="button"
-                                onClick={() => setIsEmojiPickerOpen(prev => !prev)}
-                                className="w-full text-left px-4 py-2 bg-stone-700 border border-stone-600 rounded-md flex items-center gap-2"
-                            >
-                                <span className="text-2xl">{formState.chat.chatEmoji}</span>
-                                <span className="text-stone-300">Click to change</span>
-                            </button>
-                            {isEmojiPickerOpen && (
-                                <EmojiPicker
-                                    onSelect={(emoji) => {
-                                        setFormState(p => ({...p, chat: {...p.chat, chatEmoji: emoji}}));
-                                        setIsEmojiPickerOpen(false);
-                                    }}
-                                    onClose={() => setIsEmojiPickerOpen(false)}
-                                />
-                            )}
-                        </div>
-                        <p className="text-xs text-stone-400 mt-1">Choose an emoji for the chat button in the sidebar.</p>
                     </div>
                 </div>
             </CollapsibleSection>

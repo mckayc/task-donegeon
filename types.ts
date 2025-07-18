@@ -375,14 +375,10 @@ export interface ImportResolution {
 }
 
 export interface ThemeStyle {
-  '--font-h1': string;
-  '--font-size-h1': string;
-  '--font-p': string;
-  '--font-size-p': string;
-  '--font-span': string;
-  '--font-size-span': string;
-  '--font-button': string;
-  '--font-size-button': string;
+  '--font-display': string;
+  '--font-body': string;
+  '--font-size-display': string;
+  '--font-size-body': string;
   '--color-bg-primary': string;
   '--color-bg-secondary': string;
   '--color-bg-tertiary': string;

@@ -5,7 +5,6 @@ import { useAppState } from '../../context/AppContext';
 import { RewardCategory, QuestCompletionStatus, RewardItem } from '../../types';
 import Card from '../ui/Card';
 import LineChart from '../ui/LineChart';
-import { toYMD } from '../../utils/quests';
 
 const ProgressPage: React.FC = () => {
     const { currentUser, questCompletions, quests, rewardTypes, appMode } = useAppState();
@@ -14,7 +13,7 @@ const ProgressPage: React.FC = () => {
         return rewardTypes.filter(rt => rt.category === RewardCategory.XP);
     }, [rewardTypes]);
 
-    const [selectedXpType, setSelectedXpType] = useState<string>('total-xp');
+    const [selectedXpType, setSelectedXpType] = useState<string>(xpTypes.length > 0 ? xpTypes[0].id : '');
 
     const chartData = useMemo(() => {
         if (!currentUser || !selectedXpType) return [];
@@ -28,47 +27,41 @@ const ProgressPage: React.FC = () => {
         const dataByDay: { [date: string]: number } = {};
         const today = new Date();
         
-        for (let i = 29; i >= 0; i--) {
+        for (let i = 0; i < 30; i++) {
             const date = new Date();
             date.setDate(today.getDate() - i);
-            dataByDay[toYMD(date)] = 0;
+            dataByDay[date.toISOString().split('T')[0]] = 0;
         }
 
         userCompletions.forEach(completion => {
-            const dateKey = toYMD(new Date(completion.completedAt));
-            if (dataByDay[dateKey] !== undefined) {
+            const completionDate = new Date(completion.completedAt);
+            const thirtyDaysAgo = new Date(today);
+            thirtyDaysAgo.setDate(today.getDate() - 30);
+
+            if (completionDate >= thirtyDaysAgo) {
                 const quest = quests.find(q => q.id === completion.questId);
                 if (!quest) return;
 
-                if (selectedXpType === 'total-xp') {
-                    const totalXpInQuest = quest.rewards.reduce((total, reward) => {
-                        const rewardDef = rewardTypes.find(rt => rt.id === reward.rewardTypeId);
-                        return (rewardDef?.category === RewardCategory.XP) ? total + reward.amount : total;
-                    }, 0);
-                    if (totalXpInQuest > 0) {
-                        dataByDay[dateKey] = (dataByDay[dateKey] || 0) + totalXpInQuest;
-                    }
-                } else {
-                    const xpReward = quest.rewards.find(r => r.rewardTypeId === selectedXpType);
-                    if (xpReward) {
-                         dataByDay[dateKey] = (dataByDay[dateKey] || 0) + xpReward.amount;
-                    }
+                const xpReward = quest.rewards.find(r => r.rewardTypeId === selectedXpType);
+                if (xpReward) {
+                    dataByDay[completion.completedAt] = (dataByDay[completion.completedAt] || 0) + xpReward.amount;
                 }
             }
         });
         
         let cumulativeTotal = 0;
         return Object.entries(dataByDay)
-            .sort(([dateA], [dateB]) => new Date(dateA).getTime() - new Date(dateB).getTime())
-            .map(([date, value]) => {
-                cumulativeTotal += value;
+            .map(([date, value]) => ({ date: new Date(date), value }))
+            .sort((a, b) => a.date.getTime() - b.date.getTime())
+            .map(item => {
+                cumulativeTotal += item.value;
                 return {
-                    label: new Date(date).toLocaleDateString('default', { timeZone: 'UTC', month: 'short', day: 'numeric' }),
+                    label: item.date.toLocaleDateString('default', { month: 'short', day: 'numeric' }),
                     value: cumulativeTotal
                 };
             });
 
-    }, [currentUser, questCompletions, quests, selectedXpType, appMode, rewardTypes]);
+    }, [currentUser, questCompletions, quests, selectedXpType, appMode]);
 
     if (!currentUser) return <div>Loading...</div>;
 
@@ -83,7 +76,6 @@ const ProgressPage: React.FC = () => {
                             onChange={(e) => setSelectedXpType(e.target.value)}
                             className="px-4 py-2 bg-stone-700 border border-stone-600 rounded-md focus:ring-emerald-500 focus:border-emerald-500 transition"
                         >
-                            <option value="total-xp">Total XP</option>
                             {xpTypes.map(xp => <option key={xp.id} value={xp.id}>{xp.name}</option>)}
                         </select>
                     )}

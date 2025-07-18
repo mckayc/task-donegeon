@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
 import Button from '../ui/Button';
 import Input from '../ui/Input';
-import { CheckCircleIcon, XCircleIcon } from '../ui/Icons';
+import { SparklesIcon, CheckCircleIcon, XCircleIcon } from '../ui/Icons';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { GenerateContentResponse, Type } from '@google/genai';
 import { Quest, Trophy, GameAsset, QuestAvailability, QuestType, Market } from '../../types';
 import Card from '../ui/Card';
+import { useSettings } from '../../context/SettingsContext';
 
 type AssetType = 'Quests' | 'Trophies' | 'Items' | 'Markets';
 
@@ -32,6 +33,7 @@ const ApiInstructions: React.FC = () => (
 const AiStudioPage: React.FC = () => {
     const { addQuest, addTrophy, addGameAsset, addNotification, addMarket } = useAppDispatch();
     const { settings, isAiConfigured } = useAppState();
+    const { isAiAvailable } = useSettings();
     const [apiStatus, setApiStatus] = useState<'unknown' | 'testing' | 'valid' | 'invalid'>(isAiConfigured ? 'valid' : 'unknown');
     const [apiError, setApiError] = useState<string | null>(null);
 
@@ -42,8 +44,6 @@ const AiStudioPage: React.FC = () => {
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
     const [generatedAssets, setGeneratedAssets] = useState<GeneratedAsset[]>([]);
-
-    const isAiAvailable = settings.enableAiFeatures;
 
     const testApiKey = async () => {
         setApiStatus('testing');
@@ -112,7 +112,7 @@ const AiStudioPage: React.FC = () => {
         
         const fullPrompt = `Context: ${context || 'A typical family with children.'}\nRequest: Generate a JSON object with a single key "assets". The value of "assets" should be an array of ${quantity} ${assetType} based on the theme: "${prompt}".`;
 
-        const requestBody: any = {
+        const requestBody = {
              model: 'gemini-2.5-flash',
              prompt: fullPrompt,
              generationConfig: { 
@@ -132,121 +132,167 @@ const AiStudioPage: React.FC = () => {
                 body: JSON.stringify(requestBody)
             });
 
-            if (!response.ok) { const err = await response.json(); throw new Error(err.error || 'Failed to generate assets.'); }
+            if (!response.ok) {
+                const err = await response.json();
+                throw new Error(err.error || `Server responded with status ${response.status}`);
+            }
 
-            const result = await response.json();
+            const result: { text: string } = await response.json();
             const text = result.text;
-            if (!text) throw new Error("Received an empty response from the AI.");
+
+            if (!text) {
+                throw new Error("Received an empty response from the AI. The prompt may have been blocked.");
+            }
+            
             const jsonResponse = JSON.parse(text);
-            if (jsonResponse.assets && Array.isArray(jsonResponse.assets)) {
-                setGeneratedAssets(jsonResponse.assets.map((asset: any, i: number) => ({ id: `gen-${i}-${Date.now()}`, type: assetType, data: asset, isSelected: true, })));
-            } else { throw new Error("AI response did not contain a valid 'assets' array."); }
+            const newAssets = (jsonResponse.assets || []).map((assetData: any) => ({
+                id: `gen-${Date.now()}-${Math.random()}`,
+                type: assetType,
+                data: assetData,
+                isSelected: true
+            }));
+            setGeneratedAssets(newAssets);
 
         } catch (err) {
-            const message = err instanceof Error ? err.message : String(err);
+            const message = err instanceof Error ? err.message : 'An unknown error occurred.';
             setError(`Failed to generate ideas. ${message}`);
         } finally {
             setIsLoading(false);
         }
     };
     
-    const toggleAssetSelection = (id: string) => { setGeneratedAssets(prev => prev.map(asset => asset.id === id ? { ...asset, isSelected: !asset.isSelected } : asset )); };
+    const handleToggleSelect = (id: string) => {
+        setGeneratedAssets(prev => prev.map(asset => 
+            asset.id === id ? { ...asset, isSelected: !asset.isSelected } : asset
+        ));
+    };
 
-    const handleImportAssets = async () => {
-        const assetsToImport = generatedAssets.filter(a => a.isSelected);
-        if (assetsToImport.length === 0) { addNotification({ type: 'info', message: 'No assets selected to import.' }); return; }
-
-        addNotification({type: 'info', message: `Importing ${assetsToImport.length} assets...`});
-        for (const asset of assetsToImport) {
-            switch(asset.type) {
-                case 'Quests': addQuest({ title: asset.data.title, description: asset.data.description, tags: asset.data.tags || [], type: asset.data.type || QuestType.Duty, rewards: [], lateSetbacks: [], incompleteSetbacks: [], isActive: true, isOptional: false, requiresApproval: false, availabilityType: QuestAvailability.Daily, availabilityCount: null, weeklyRecurrenceDays: [], monthlyRecurrenceDays: [], assignedUserIds: [] }); break;
-                case 'Trophies': addTrophy({ name: asset.data.name, description: asset.data.description, icon: asset.data.icon || '🏆', isManual: true, requirements: [] }); break;
-                case 'Items': addGameAsset({ name: asset.data.name, description: asset.data.description, category: asset.data.category || 'Misc', url: 'https://placehold.co/150x150/84cc16/FFFFFF?text=New', isForSale: false, cost: [], marketIds: [], purchaseLimit: null, purchaseCount: 0 }); break;
-                case 'Markets': addMarket({ title: asset.data.title, description: asset.data.description, icon: asset.data.icon || '🛒', status: 'open' }); break;
+    const handleImportSelected = () => {
+        let importedCount = 0;
+        generatedAssets.forEach(asset => {
+            if (asset.isSelected) {
+                switch (asset.type) {
+                    case 'Quests':
+                        addQuest({
+                            ...asset.data,
+                            type: QuestType.Venture,
+                            availabilityType: QuestAvailability.Unlimited,
+                            rewards: [], lateSetbacks: [], incompleteSetbacks: [],
+                            isActive: true, isOptional: false, requiresApproval: true,
+                            assignedUserIds: [], guildId: undefined,
+                            icon: '✨'
+                        });
+                        break;
+                    case 'Trophies':
+                        addTrophy({ ...asset.data, isManual: true, requirements: [] });
+                        break;
+                    case 'Items':
+                        addGameAsset({
+                            ...asset.data,
+                            url: 'https://placehold.co/150/84cc16/FFFFFF?text=AI',
+                            isForSale: false, cost: [], marketIds: [],
+                            purchaseLimit: null, purchaseCount: 0,
+                            icon: '✨'
+                        });
+                        break;
+                    case 'Markets':
+                        addMarket({ ...asset.data, status: 'open' });
+                        break;
+                }
+                importedCount++;
             }
-        }
-        addNotification({type: 'success', message: `${assetsToImport.length} assets imported successfully!`});
+        });
+        addNotification({ type: 'success', message: `Successfully imported ${importedCount} new assets!` });
         setGeneratedAssets([]);
     };
-
-    const renderAsset = (asset: GeneratedAsset) => {
-        switch (asset.type) {
-            case 'Quests': return (<div><p className="font-bold text-stone-200">{asset.data.title}</p><p className="text-sm text-stone-400">{asset.data.description}</p>{asset.data.tags && asset.data.tags.length > 0 && (<div className="mt-1 flex flex-wrap gap-1">{asset.data.tags.map((tag: string) => <span key={tag} className="text-xs bg-blue-900/50 text-blue-300 px-1.5 py-0.5 rounded">{tag}</span>)}</div>)}</div>);
-            case 'Trophies': return <p><span className="text-2xl mr-2">{asset.data.icon}</span> <span className="font-bold text-stone-200">{asset.data.name}</span> - {asset.data.description}</p>;
-            case 'Items': return <p><span className="font-bold text-stone-200">{asset.data.name}</span> <span className="text-xs text-stone-400">({asset.data.category})</span> - {asset.data.description}</p>;
-            case 'Markets': return <p><span className="text-2xl mr-2">{asset.data.icon}</span> <span className="font-bold text-stone-200">{asset.data.title}</span> - {asset.data.description}</p>;
-            default: return null;
-        }
-    };
     
+    const selectedCount = generatedAssets.filter(a => a.isSelected).length;
+
     return (
         <div className="space-y-6">
-            <Card title="Generation Context">
-                <p className="text-stone-400 text-sm mb-3">Provide background info about your group to help the AI generate relevant text-based ideas.</p>
-                <textarea value={context} onChange={e => setContext(e.target.value)} rows={3} className="w-full px-4 py-2 bg-stone-700 border border-stone-600 rounded-md" placeholder="e.g., A family with two kids, ages 8 and 12. We live in a house with a backyard and have one dog. We want to focus on chores and outdoor activities." />
-                
-                <div className="text-right mt-2">
-                    <Button variant="secondary" onClick={handleSaveContext}>Save Context</Button>
-                </div>
-            </Card>
-            <Card title="Generate New Assets">
-                <div className="space-y-4">
-                    <fieldset disabled={!isAiAvailable || !isAiConfigured || isLoading} className="space-y-4 disabled:opacity-60">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div><label className="block text-sm font-medium text-stone-300 mb-1">Asset Type</label><Input as="select" value={assetType} onChange={e => setAssetType(e.target.value as AssetType)}>
-                                <option value="Quests">{settings.terminology.tasks}</option><option value="Trophies">{settings.terminology.awards}</option><option value="Items">Items</option><option value="Markets">Markets</option>
-                            </Input></div>
-                            <div><Input label="Quantity" type="number" min="1" max="10" value={quantity} onChange={e => setQuantity(Number(e.target.value))} /></div>
-                        </div>
-                        <div><Input label="Generation Prompt / Theme" placeholder={"e.g., 'summer yard work', 'creative art projects'"} value={prompt} onChange={e => setPrompt(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleGenerate()} /></div>
-                    </fieldset>
-                    <div className="text-right">
-                        <Button onClick={handleGenerate} disabled={isLoading || !prompt.trim() || !isAiAvailable || !isAiConfigured}>
-                            {isLoading ? 'Generating...' : 'Generate Assets'}
-                        </Button>
+            <Card title="AI Studio Setup">
+                {!isAiAvailable ? (
+                    <div className="text-amber-300 bg-amber-900/40 p-4 rounded-md border border-amber-700/60">
+                        <p className="font-bold mb-2">AI Features Disabled</p>
+                        <p className="text-sm">The AI Studio is currently disabled in the main application settings. An administrator can enable it from the Settings page.</p>
                     </div>
-                    {!isAiAvailable ? (
-                        <p className="text-sm text-center text-amber-400 mt-4">AI Features are disabled. You can enable them in the Settings page.</p>
-                    ) : !isAiConfigured ? (
-                        <p className="text-sm text-center text-amber-400 mt-4">AI Features are not configured on the server. Please check the API Key Setup below.</p>
-                    ) : null}
+                ) : (
+                    <>
+                        <div className="flex items-center gap-4 mb-4">
+                            <span className="font-semibold text-stone-200">API Key Status:</span>
+                            {apiStatus === 'testing' && <span className="text-yellow-400">Testing...</span>}
+                            {apiStatus === 'valid' && <span className="flex items-center gap-2 text-green-400 font-bold"><CheckCircleIcon className="w-5 h-5" /> Connected</span>}
+                            {apiStatus === 'invalid' && <span className="flex items-center gap-2 text-red-400 font-bold"><XCircleIcon className="w-5 h-5" /> Invalid / Not Found</span>}
+                            {apiStatus === 'unknown' && <span className="text-stone-400">Unknown</span>}
+                            <Button variant="secondary" onClick={testApiKey} disabled={apiStatus === 'testing'} className="text-xs py-1 px-3">
+                                Test API Key
+                            </Button>
+                        </div>
+                        {apiStatus === 'invalid' && apiError && <p className="text-red-400 text-sm bg-red-900/30 p-3 rounded-md">{apiError}</p>}
+                        {(apiStatus === 'unknown' || apiStatus === 'invalid') && <ApiInstructions />}
+                    </>
+                )}
+            </Card>
+            
+            <Card title="Generation Context">
+                <p className="text-sm text-stone-400 mb-2">Provide some general context about your group or goals. This will be included with every prompt to help the AI generate more relevant content.</p>
+                <textarea
+                    value={context}
+                    onChange={e => setContext(e.target.value)}
+                    placeholder="e.g., A family with two kids, ages 8 and 12, focusing on household chores and homework."
+                    rows={3}
+                    className="w-full px-4 py-2 bg-stone-700 border border-stone-600 rounded-md"
+                />
+                <div className="text-right mt-2">
+                    <Button variant="secondary" onClick={handleSaveContext} className="text-xs py-1 px-3">Save Context</Button>
                 </div>
             </Card>
 
-            {error && <p className="text-red-400 text-center bg-red-900/30 p-3 rounded-md">{error}</p>}
-            {isLoading && (<div className="text-center py-10"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-400 mx-auto"></div><p className="mt-4 text-stone-300">The AI is conjuring your assets...</p></div>)}
-            {generatedAssets.length > 0 && (<Card title="Generated Assets"><div className="space-y-3">{generatedAssets.map(asset => (<div key={asset.id} className="bg-stone-900/50 p-3 rounded-lg flex items-center gap-4"><input type="checkbox" checked={asset.isSelected} onChange={() => toggleAssetSelection(asset.id)} className="h-5 w-5 rounded text-emerald-600 bg-stone-700 border-stone-500 focus:ring-emerald-500 flex-shrink-0" /><div className="flex-grow">{renderAsset(asset)}</div></div>))}</div><div className="text-right pt-4 mt-4 border-t border-stone-700"><Button onClick={handleImportAssets}>Import Selected</Button></div></Card>)}
-            
-            <Card title="API Key Setup">
-                <ApiInstructions />
-                <div className="mt-4 flex justify-between items-center">
-                    <h3 className="text-xl font-semibold">Gemini API Connection Status</h3>
-                    <Button variant="secondary" onClick={testApiKey} disabled={apiStatus === 'testing'}>
-                        {apiStatus === 'testing' ? 'Testing...' : 'Test API Key'}
+            <Card title="Asset Generator">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <Input as="select" label="Asset Type" value={assetType} onChange={e => setAssetType(e.target.value as AssetType)}>
+                        <option value="Quests">{settings.terminology.tasks}</option>
+                        <option value="Items">Items</option>
+                        <option value="Trophies">{settings.terminology.awards}</option>
+                        <option value="Markets">{settings.terminology.stores}</option>
+                    </Input>
+                    <Input label="Quantity" type="number" min="1" max="10" value={quantity} onChange={e => setQuantity(parseInt(e.target.value))} />
+                    <Input label="Prompt / Theme" placeholder="e.g., 'Weekly kitchen chores'" value={prompt} onChange={e => setPrompt(e.target.value)} />
+                </div>
+                <div className="text-right mt-4">
+                    <Button onClick={handleGenerate} disabled={isLoading || !isAiAvailable}>
+                        {isLoading ? 'Generating...' : <><SparklesIcon className="w-5 h-5 mr-2" /> Generate</>}
                     </Button>
                 </div>
-                <div className="mt-4">
-                    {apiStatus === 'testing' && (<div className="flex items-center gap-2 text-stone-400"><div className="animate-spin rounded-full h-5 w-5 border-b-2 border-stone-400"></div><p>Testing connection...</p></div>)}
-                    {apiStatus === 'valid' && (
-                        <div className="flex items-center gap-2 text-green-400 font-semibold">
-                            <CheckCircleIcon className="w-6 h-6" />
-                            <p>Success! Gemini API is configured and the key is valid.</p>
-                        </div>
-                    )}
-                    {apiStatus === 'invalid' && (
-                        <div className="text-red-400 font-semibold">
-                           <div className="flex items-center gap-2">
-                                <XCircleIcon className="w-6 h-6" />
-                                <p>Connection Failed.</p>
-                           </div>
-                           {apiError && <p className="text-sm mt-2 ml-8">{apiError}</p>}
-                        </div>
-                    )}
-                     {apiStatus === 'unknown' && (
-                        <p className="text-stone-400 text-sm">API status has not been tested yet.</p>
-                    )}
-                </div>
             </Card>
+            
+            {(isLoading || generatedAssets.length > 0) && (
+                <Card title="Generated Assets">
+                    {isLoading ? (
+                        <div className="text-center py-10">
+                            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-400 mx-auto"></div>
+                            <p className="mt-4 text-stone-300">The AI is thinking...</p>
+                        </div>
+                    ) : (
+                        <div className="space-y-3">
+                            {generatedAssets.map(asset => (
+                                <div key={asset.id} className="bg-stone-900/50 p-3 rounded-lg flex items-start gap-3">
+                                    <input type="checkbox" checked={asset.isSelected} onChange={() => handleToggleSelect(asset.id)} className="mt-1 h-5 w-5 rounded text-emerald-600 bg-stone-700 border-stone-600 focus:ring-emerald-500" />
+                                    <div>
+                                        <p className="font-bold text-stone-200">{asset.data.icon} {asset.data.title || asset.data.name}</p>
+                                        <p className="text-sm text-stone-400">{asset.data.description}</p>
+                                    </div>
+                                </div>
+                            ))}
+                            <div className="text-right pt-4 border-t border-stone-700/60">
+                                <Button onClick={handleImportSelected} disabled={selectedCount === 0}>
+                                    Import {selectedCount} Selected
+                                </Button>
+                            </div>
+                        </div>
+                    )}
+                </Card>
+            )}
 
         </div>
     );

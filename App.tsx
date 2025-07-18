@@ -1,4 +1,5 @@
 
+
 import React, { useEffect } from 'react';
 import { useAppState } from './context/AppContext';
 import FirstRunWizard from './components/auth/FirstRunWizard';
@@ -9,29 +10,6 @@ import NotificationContainer from './components/ui/NotificationContainer';
 import AppLockScreen from './components/auth/AppLockScreen';
 import OnboardingWizard from './components/auth/OnboardingWizard';
 import SharedLayout from './components/layout/SharedLayout';
-
-const ThemeStyleProvider: React.FC = () => {
-    const { themes } = useAppState();
-
-    const generateThemeStyles = () => {
-        return themes.map(theme => {
-            const styles = Object.entries(theme.styles)
-                .map(([key, value]) => `${key}: ${value};`)
-                .join('\n');
-            
-            return `
-                body[data-theme="${theme.id}"] {
-                    ${styles}
-                }
-            `;
-        }).join('\n\n');
-    };
-
-    return (
-        <style>{generateThemeStyles()}</style>
-    );
-};
-
 
 const App: React.FC = () => {
   const { isAppUnlocked, isFirstRun, currentUser, isSwitchingUser, isDataLoaded, settings, isSharedViewActive } = useAppState();
@@ -53,7 +31,6 @@ const App: React.FC = () => {
 
   return (
     <>
-      <ThemeStyleProvider />
       <NotificationContainer />
       {showOnboarding && <OnboardingWizard />}
 

@@ -4,7 +4,6 @@ import React, { useState, useEffect, ReactNode } from 'react';
 import Card from '../ui/Card';
 import { useAppState } from '../../context/AppContext';
 import { ChevronDownIcon } from '../ui/Icons';
-import { APP_UPDATE_DATE_STRING } from '../../utils/constants';
 
 interface Metadata {
   name: string;
@@ -123,10 +122,13 @@ const AboutPage: React.FC = () => {
         return (
             <div className="space-y-6 text-stone-300 leading-relaxed">
                 <p>{metadata.description}</p>
+                 <p>This version adjusts the main page header (H1) font size, setting it to an intermediate value between its previous larger and smaller sizes. This change provides improved readability and a more consistent visual balance across the application's main pages.</p>
                 
                 <div className="pt-4 border-t border-stone-700/60 text-sm">
                     <p><strong>Version:</strong> {metadata.version}</p>
-                    <p><strong>Last Updated:</strong> {new Date(APP_UPDATE_DATE_STRING).toLocaleString()}</p>
+                    {metadata.lastChangeDate && (
+                        <p><strong>Last Updated:</strong> {new Date(metadata.lastChangeDate).toLocaleString()}</p>
+                    )}
                 </div>
                  <div className="pt-4 border-t border-stone-700/60 text-sm">
                     <h3 className="text-lg font-semibold text-stone-100 mb-2">Latest Changes</h3>

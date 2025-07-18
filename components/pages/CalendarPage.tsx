@@ -1,15 +1,15 @@
 import React, { useState, useMemo } from 'react';
 import { useAppState } from '../../context/AppContext';
-import { Quest } from '../../types';
+import { Quest, QuestType, QuestCompletion, QuestCompletionStatus, QuestAvailability } from '../../types';
 import Card from '../ui/Card';
+import { toYMD } from '../../utils/quests';
 import MonthView from '../calendar/MonthView';
 import WeekView from '../calendar/WeekView';
 import DayView from '../calendar/DayView';
-import ToggleSwitch from '../ui/ToggleSwitch';
 
-type CalendarViewType = 'month' | 'week' | 'day';
+type CalendarView = 'month' | 'week' | 'day';
 
-const ViewButton: React.FC<{ type: CalendarViewType, currentView: CalendarViewType, setView: (view: CalendarViewType) => void, children: React.ReactNode }> = ({ type, currentView, setView, children }) => (
+const ViewButton: React.FC<{ type: CalendarView, currentView: CalendarView, setView: (view: CalendarView) => void, children: React.ReactNode }> = ({ type, currentView, setView, children }) => (
     <button
         onClick={() => setView(type)}
         className={`px-3 py-1 rounded-md font-semibold text-sm transition-colors ${currentView === type ? 'btn-primary' : 'text-stone-300 hover:bg-stone-700'}`}
@@ -21,8 +21,7 @@ const ViewButton: React.FC<{ type: CalendarViewType, currentView: CalendarViewTy
 
 const CalendarPage: React.FC = () => {
     const { quests, currentUser, questCompletions, appMode } = useAppState();
-    const [view, setView] = useState<CalendarViewType>('day');
-    const [mode, setMode] = useState<'quests' | 'chronicles'>('quests');
+    const [view, setView] = useState<CalendarView>('day');
     const [currentDate, setCurrentDate] = useState(new Date());
     
     if (!currentUser) return null;
@@ -68,19 +67,16 @@ const CalendarPage: React.FC = () => {
                         <h2 className="text-2xl font-semibold text-emerald-300 mx-4 text-center w-64">{getHeaderTitle()}</h2>
                         <button onClick={() => changeDate(1)} className="p-2 rounded-full hover:bg-stone-700 transition">&gt;</button>
                     </div>
-                    <div className="flex items-center gap-4">
-                        <ToggleSwitch enabled={mode === 'chronicles'} setEnabled={(val) => setMode(val ? 'chronicles' : 'quests')} label="Chronicles Mode" />
-                        <div className="flex space-x-2 p-1 bg-stone-900/50 rounded-lg">
-                            <ViewButton type="day" currentView={view} setView={setView}>Day</ViewButton>
-                            <ViewButton type="week" currentView={view} setView={setView}>Week</ViewButton>
-                            <ViewButton type="month" currentView={view} setView={setView}>Month</ViewButton>
-                        </div>
+                     <div className="flex space-x-2 p-1 bg-stone-900/50 rounded-lg">
+                        <ViewButton type="day" currentView={view} setView={setView}>Day</ViewButton>
+                        <ViewButton type="week" currentView={view} setView={setView}>Week</ViewButton>
+                        <ViewButton type="month" currentView={view} setView={setView}>Month</ViewButton>
                     </div>
                 </div>
 
-                {view === 'month' && <MonthView currentDate={currentDate} quests={filteredQuests} questCompletions={questCompletions} mode={mode} />}
-                {view === 'week' && <WeekView currentDate={currentDate} quests={filteredQuests} questCompletions={questCompletions} mode={mode} />}
-                {view === 'day' && <DayView currentDate={currentDate} quests={filteredQuests} questCompletions={questCompletions} mode={mode} />}
+                {view === 'month' && <MonthView currentDate={currentDate} quests={filteredQuests} questCompletions={questCompletions} />}
+                {view === 'week' && <WeekView currentDate={currentDate} quests={filteredQuests} questCompletions={questCompletions} />}
+                {view === 'day' && <DayView currentDate={currentDate} quests={filteredQuests} questCompletions={questCompletions} />}
 
             </Card>
         </div>

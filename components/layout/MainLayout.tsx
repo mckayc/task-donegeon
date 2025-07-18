@@ -1,3 +1,4 @@
+
 import React, { useMemo, useEffect } from 'react';
 import Sidebar from './Sidebar';
 import Header from './Header';
@@ -37,10 +38,9 @@ import AssetLibraryPage from '../pages/management/AssetLibraryPage';
 import ThemeEditorPage from '../pages/ThemeEditorPage';
 import RewardDisplay from '../ui/RewardDisplay';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
-import ChatController from '../chat/ChatController';
 
 const MainLayout: React.FC = () => {
-  const { activePage, settings, currentUser, markets, guilds, appMode, activeMarketId } = useAppState();
+  const { activePage, settings, currentUser, markets, activeMarketId } = useAppState();
   const { setActivePage, addNotification } = useAppDispatch();
   
   const ADMIN_ONLY_PAGES: Page[] = [
@@ -68,12 +68,7 @@ const MainLayout: React.FC = () => {
 
   const getPageTitle = (page: Page): string => {
     switch (page) {
-      case 'Dashboard':
-        if (appMode.mode === 'guild') {
-            const guild = guilds.find(g => g.id === appMode.guildId);
-            return `${guild?.name || 'Guild'} Dashboard - ${currentUser?.gameName || 'User'}`;
-        }
-        return `${currentUser?.gameName || 'User'}'s Dashboard`;
+      case 'Dashboard': return `${currentUser?.gameName || 'User'}'s Dashboard`;
       case 'Quests': return `The ${settings.terminology.task} Board`;
       case 'Marketplace':
         if (activeMarketId) {
@@ -151,14 +146,13 @@ const MainLayout: React.FC = () => {
         <Header />
         <main className="flex-1 overflow-x-hidden overflow-y-auto p-4 md:p-8" style={{ backgroundColor: 'hsl(var(--color-bg-tertiary))' }}>
           <div className="flex justify-between items-center mb-8 flex-wrap gap-4">
-            <h1 className="text-stone-100">{pageTitle}</h1>
+            <h1 className="font-medieval text-stone-100">{pageTitle}</h1>
             <RewardDisplay />
           </div>
           <VacationModeBanner />
           {renderPage()}
         </main>
       </div>
-      {settings.chat.enabled && <ChatController />}
     </div>
   );
 };

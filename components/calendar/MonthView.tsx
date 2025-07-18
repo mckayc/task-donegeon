@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Quest, QuestCompletion, QuestAvailability, QuestType, QuestCompletionStatus } from '../../types';
 import { toYMD } from '../../utils/quests';
 import DailyDetailDialog from './DailyDetailDialog';
@@ -13,6 +13,10 @@ interface MonthViewProps {
 const MonthView: React.FC<MonthViewProps> = ({ currentDate, quests, questCompletions }) => {
     const [selectedDate, setSelectedDate] = useState<Date | null>(null);
     const { currentUser, appMode } = useAppState();
+
+    useEffect(() => {
+        setSelectedDate(null);
+    }, [currentDate]);
 
     const questsByDate = useMemo(() => {
         const map = new Map<string, Quest[]>();

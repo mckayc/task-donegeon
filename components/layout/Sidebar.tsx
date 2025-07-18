@@ -1,4 +1,5 @@
 
+
 import React, { useState, useMemo } from 'react';
 import { Role, Page, QuestCompletionStatus, PurchaseRequestStatus, Terminology, SidebarConfigItem, SidebarLink } from '../../types';
 import { ChevronDownIcon, ArrowLeftIcon, ArrowRightIcon } from '../ui/Icons';
@@ -80,8 +81,8 @@ const CollapsibleNavGroup: React.FC<CollapsibleNavGroupProps> = ({ title, childr
 
 
 const Sidebar: React.FC = () => {
-  const { currentUser, questCompletions, purchaseRequests, activePage, settings, isAiConfigured, isSidebarCollapsed } = useAppState();
-  const { setActivePage, toggleSidebar } = useAppDispatch();
+  const { currentUser, questCompletions, purchaseRequests, activePage, settings, isAiConfigured, isSidebarCollapsed, chatMessages } = useAppState();
+  const { setActivePage, toggleSidebar, toggleChat } = useAppDispatch();
   const isAiAvailable = settings.enableAiFeatures && isAiConfigured;
   
   if (!currentUser) return null;
@@ -97,6 +98,17 @@ const Sidebar: React.FC = () => {
   const pendingQuestApprovals = questCompletions.filter(c => c.status === QuestCompletionStatus.Pending).length;
   const pendingPurchaseApprovals = purchaseRequests.filter(p => p.status === PurchaseRequestStatus.Pending).length;
   const totalApprovals = pendingQuestApprovals + (currentUser?.role === Role.DonegeonMaster ? pendingPurchaseApprovals : 0);
+
+  const unreadMessagesCount = useMemo(() => {
+    if (!currentUser) return 0;
+    const sendersWithUnread = new Set(
+        chatMessages
+            .filter(msg => msg.recipientId === currentUser.id && !msg.isRead)
+            .map(msg => msg.senderId)
+    );
+    return sendersWithUnread.size;
+  }, [chatMessages, currentUser]);
+
 
   const renderNavItems = () => {
     const navTree: React.ReactNode[] = [];
@@ -168,6 +180,22 @@ const Sidebar: React.FC = () => {
         {renderNavItems()}
       </nav>
       <div className="px-2 py-4 border-t" style={{ borderColor: 'hsl(var(--color-border))' }}>
+         {settings.chat.enabled && (
+             <a
+              href="#"
+              onClick={(e) => { e.preventDefault(); toggleChat(); }}
+              className={`relative flex items-center mb-2 py-3 text-lg rounded-lg transition-colors duration-200 px-4 ${ isSidebarCollapsed ? 'justify-center' : ''} text-stone-300 hover:bg-stone-700/50 hover:text-white`}
+              title={isSidebarCollapsed ? settings.terminology.link_chat : ''}
+            >
+              <span className={`text-xl ${!isSidebarCollapsed ? 'mr-3' : ''}`}>{settings.chat.chatEmoji}</span>
+              {!isSidebarCollapsed && <span>{settings.terminology.link_chat}</span>}
+              {unreadMessagesCount > 0 && (
+                <span className={`absolute flex items-center justify-center w-5 h-5 text-xs font-bold text-white bg-red-600 rounded-full ${isSidebarCollapsed ? 'top-1 right-1' : 'right-3 top-1/2 -translate-y-1/2'}`}>
+                    {unreadMessagesCount > 9 ? '9+' : unreadMessagesCount}
+                </span>
+              )}
+            </a>
+         )}
          <button 
             onClick={toggleSidebar}
             title={isSidebarCollapsed ? 'Expand Sidebar' : 'Collapse Sidebar'}

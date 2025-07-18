@@ -6,8 +6,8 @@ import Button from '../ui/Button';
 import Card from '../ui/Card';
 
 const ThemesPage: React.FC = () => {
-    const { currentUser, settings, themes } = useAppState();
-    const { updateUser, addNotification } = useAppDispatch();
+    const { currentUser, settings, themes, markets } = useAppState();
+    const { updateUser, addNotification, setActivePage, setActiveMarketId } = useAppDispatch();
     
     if (!currentUser) return null;
 
@@ -30,6 +30,14 @@ const ThemesPage: React.FC = () => {
             addNotification({ type: 'error', message: "You don't own this theme yet." });
         }
     };
+    
+    const goToThemeMarket = () => {
+        const themeMarket = markets.find(m => m.title.toLowerCase().includes('theme'));
+        if(themeMarket) {
+            setActiveMarketId(themeMarket.id);
+        }
+        setActivePage('Marketplace');
+    }
 
     const getPreviewStyle = (theme: ThemeDefinition) => ({
         fontFamily: theme.styles['--font-display'],
@@ -59,7 +67,7 @@ const ThemesPage: React.FC = () => {
                             <div key={theme.id} className="space-y-3">
                                 <button
                                     onClick={() => setSelectedThemeId(theme.id)}
-                                    className={`w-full aspect-[4/3] rounded-lg transition-all duration-200 border-4 ${isActive ? 'border-white shadow-2xl scale-105' : 'border-transparent opacity-70 hover:opacity-100'}`}
+                                    className={`w-full aspect-[4/3] rounded-lg transition-all duration-200 border-4 ${isActive ? 'border-white shadow-2xl scale-105' : 'border-transparent opacity-70 hover:opacity-100'} ${!isOwned ? '!opacity-50 cursor-not-allowed' : ''}`}
                                     style={getPreviewStyle(theme)}
                                     disabled={!isOwned}
                                 >
@@ -76,7 +84,9 @@ const ThemesPage: React.FC = () => {
                                     {isOwned ? (
                                         <span className="text-xs font-bold text-green-400 bg-green-900/50 px-3 py-1 rounded-full">OWNED</span>
                                     ) : (
-                                        <span className="text-xs font-bold text-stone-500 bg-stone-700/50 px-3 py-1 rounded-full">LOCKED</span>
+                                        <button onClick={goToThemeMarket} className="text-xs font-bold text-stone-400 bg-stone-700/50 px-3 py-1 rounded-full hover:bg-stone-700 hover:text-white transition-colors">
+                                            Unlock ➔
+                                        </button>
                                     )}
                                 </div>
                             </div>

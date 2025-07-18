@@ -6,6 +6,7 @@ import { useAppDispatch, useAppState } from '../../context/AppContext';
 import QuestDetailDialog from '../quests/QuestDetailDialog';
 import CompleteQuestDialog from '../quests/CompleteQuestDialog';
 import { questSorter, isQuestScheduledForDay } from '../../utils/quests';
+import Card from '../ui/Card';
 
 interface DayViewProps {
     currentDate: Date;
@@ -18,16 +19,18 @@ const DayView: React.FC<DayViewProps> = ({ currentDate, quests, questCompletions
     const [selectedQuest, setSelectedQuest] = useState<Quest | null>(null);
     const [completingQuest, setCompletingQuest] = useState<Quest | null>(null);
     const { markQuestAsTodo, unmarkQuestAsTodo } = useAppDispatch();
-    const { currentUser } = useAppState();
+    const { currentUser, settings } = useAppState();
 
-    const scheduledDuties = quests.filter(q => q.type === QuestType.Duty && isQuestScheduledForDay(q, currentDate));
-    
-    const sortedQuests = useMemo(() => {
+    const scheduledDuties = useMemo(() => {
         if (!currentUser) return [];
-        const allQuestsForDay = [...scheduledDuties, ...calendarVentures];
-        const uniqueQuests = Array.from(new Set(allQuestsForDay.map(q => q.id))).map(id => allQuestsForDay.find(q => q.id === id)!);
-        return uniqueQuests.sort(questSorter(currentUser, questCompletions, currentDate));
-    }, [currentUser, scheduledDuties, calendarVentures, currentDate, questCompletions]);
+        const duties = quests.filter(q => q.type === QuestType.Duty && isQuestScheduledForDay(q, currentDate));
+        return duties.sort(questSorter(currentUser, questCompletions, currentDate));
+    }, [quests, currentDate, currentUser, questCompletions]);
+    
+    const sortedVentures = useMemo(() => {
+        if (!currentUser) return [];
+        return [...calendarVentures].sort(questSorter(currentUser, questCompletions, currentDate));
+    }, [calendarVentures, currentUser, questCompletions, currentDate]);
 
     const handleStartCompletion = (quest: Quest) => {
         setCompletingQuest(quest);
@@ -56,13 +59,25 @@ const DayView: React.FC<DayViewProps> = ({ currentDate, quests, questCompletions
 
     return (
          <>
-            <div className="p-4 h-[70vh] overflow-y-auto scrollbar-hide">
-                 <QuestList
-                    date={currentDate}
-                    quests={sortedQuests}
-                    questCompletions={questCompletions}
-                    onQuestSelect={setSelectedQuest}
-                />
+            <div className="p-4 h-[70vh] grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="flex flex-col gap-4 overflow-y-auto scrollbar-hide pr-2">
+                    <QuestList
+                        title={settings.terminology.recurringTasks}
+                        date={currentDate}
+                        quests={scheduledDuties}
+                        questCompletions={questCompletions}
+                        onQuestSelect={setSelectedQuest}
+                    />
+                </div>
+                <div className="flex flex-col gap-4 overflow-y-auto scrollbar-hide pr-2">
+                    <QuestList
+                        title={settings.terminology.singleTasks}
+                        date={currentDate}
+                        quests={sortedVentures}
+                        questCompletions={questCompletions}
+                        onQuestSelect={setSelectedQuest}
+                    />
+                </div>
             </div>
             {selectedQuest && (
                 <QuestDetailDialog

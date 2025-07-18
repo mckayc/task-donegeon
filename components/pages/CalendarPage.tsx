@@ -8,6 +8,7 @@ import WeekView from '../calendar/WeekView';
 import DayView from '../calendar/DayView';
 
 type CalendarView = 'month' | 'week' | 'day';
+type CalendarMode = 'quests' | 'chronicles';
 
 const ViewButton: React.FC<{ type: CalendarView, currentView: CalendarView, setView: (view: CalendarView) => void, children: React.ReactNode }> = ({ type, currentView, setView, children }) => (
     <button
@@ -18,10 +19,10 @@ const ViewButton: React.FC<{ type: CalendarView, currentView: CalendarView, setV
     </button>
 );
 
-
 const CalendarPage: React.FC = () => {
     const { quests, currentUser, questCompletions, appMode } = useAppState();
     const [view, setView] = useState<CalendarView>('day');
+    const [mode, setMode] = useState<CalendarMode>('quests');
     const [currentDate, setCurrentDate] = useState(new Date());
     
     if (!currentUser) return null;
@@ -58,6 +59,23 @@ const CalendarPage: React.FC = () => {
         }
     };
 
+    const renderContent = () => {
+        if (mode === 'chronicles') {
+            return (
+                <div className="p-8 text-center text-stone-400">
+                    Chronicles view for the calendar is coming soon!
+                </div>
+            );
+        }
+
+        switch (view) {
+            case 'month': return <MonthView currentDate={currentDate} quests={filteredQuests} questCompletions={questCompletions} />;
+            case 'week': return <WeekView currentDate={currentDate} quests={filteredQuests} questCompletions={questCompletions} />;
+            case 'day': return <DayView currentDate={currentDate} quests={filteredQuests} questCompletions={questCompletions} />;
+            default: return null;
+        }
+    };
+
     return (
         <div>
             <Card>
@@ -67,17 +85,19 @@ const CalendarPage: React.FC = () => {
                         <h2 className="text-2xl font-semibold text-emerald-300 mx-4 text-center w-64">{getHeaderTitle()}</h2>
                         <button onClick={() => changeDate(1)} className="p-2 rounded-full hover:bg-stone-700 transition">&gt;</button>
                     </div>
-                     <div className="flex space-x-2 p-1 bg-stone-900/50 rounded-lg">
-                        <ViewButton type="day" currentView={view} setView={setView}>Day</ViewButton>
-                        <ViewButton type="week" currentView={view} setView={setView}>Week</ViewButton>
-                        <ViewButton type="month" currentView={view} setView={setView}>Month</ViewButton>
+                    <div className="flex items-center gap-4">
+                        <div className="flex space-x-2 p-1 bg-stone-900/50 rounded-lg">
+                            <button onClick={() => setMode('quests')} className={`px-3 py-1 rounded-md font-semibold text-sm transition-colors ${mode === 'quests' ? 'btn-primary' : 'text-stone-300 hover:bg-stone-700'}`}>Quests</button>
+                            <button onClick={() => setMode('chronicles')} className={`px-3 py-1 rounded-md font-semibold text-sm transition-colors ${mode === 'chronicles' ? 'btn-primary' : 'text-stone-300 hover:bg-stone-700'}`}>Chronicles</button>
+                        </div>
+                        <div className="flex space-x-2 p-1 bg-stone-900/50 rounded-lg">
+                            <ViewButton type="day" currentView={view} setView={setView}>Day</ViewButton>
+                            <ViewButton type="week" currentView={view} setView={setView}>Week</ViewButton>
+                            <ViewButton type="month" currentView={view} setView={setView}>Month</ViewButton>
+                        </div>
                     </div>
                 </div>
-
-                {view === 'month' && <MonthView currentDate={currentDate} quests={filteredQuests} questCompletions={questCompletions} />}
-                {view === 'week' && <WeekView currentDate={currentDate} quests={filteredQuests} questCompletions={questCompletions} />}
-                {view === 'day' && <DayView currentDate={currentDate} quests={filteredQuests} questCompletions={questCompletions} />}
-
+                {renderContent()}
             </Card>
         </div>
     );

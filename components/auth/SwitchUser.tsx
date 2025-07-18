@@ -1,5 +1,6 @@
 
 
+
 import React, { useState, useEffect } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { User, Role } from '../../types';
@@ -152,7 +153,7 @@ const SwitchUser: React.FC = () => {
                                     }}
                                     className="text-center tracking-[.5em] text-2xl h-14"
                                     autoComplete="off"
-                                    inputMode="numeric"
+                                    inputMode="none"
                                     autoFocus
                                 />
                             </div>

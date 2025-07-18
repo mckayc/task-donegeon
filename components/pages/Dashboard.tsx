@@ -194,114 +194,65 @@ const Dashboard: React.FC = () => {
     return (
         <div>
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <Card 
-                    title={terminology.level} 
-                    className="lg:col-span-1"
-                    headerAction={
-                        <Button variant="secondary" className="text-sm py-1 px-3" onClick={() => setActivePage('Ranks')}>
-                            View All
-                        </Button>
-                    }
-                >
-                    <div className="cursor-pointer text-center" onClick={() => setActivePage('Ranks')}>
-                        <div className="w-32 h-32 mx-auto mb-4 bg-stone-700 rounded-full flex items-center justify-center text-6xl border-4 border-accent">
-                           {rankData.currentRank.icon}
+                {/* Left Column */}
+                <div className="lg:col-span-1 space-y-6">
+                    <Card 
+                        title={terminology.level} 
+                        headerAction={
+                            <Button variant="secondary" className="text-sm py-1 px-3" onClick={() => setActivePage('Ranks')}>
+                                View All
+                            </Button>
+                        }
+                    >
+                        <div className="cursor-pointer text-center" onClick={() => setActivePage('Ranks')}>
+                            <div className="w-32 h-32 mx-auto mb-4 bg-stone-700 rounded-full flex items-center justify-center text-6xl border-4 border-accent">
+                               {rankData.currentRank.icon}
+                            </div>
+                            <p className="text-2xl font-bold text-accent-light">{rankData.currentRank.name}</p>
+                            <p className="text-stone-400">Level {rankData.currentLevel}</p>
+                            <div className="w-full bg-stone-700 rounded-full h-4 mt-4 overflow-hidden">
+                                <div className="h-4 rounded-full btn-primary" style={{width: `${rankData.progressPercentage}%`}}></div>
+                            </div>
+                            <p className="text-sm text-stone-300 mt-2">{rankData.totalXp} / {rankData.nextRank ? rankData.nextRank.xpThreshold : rankData.totalXp} {terminology.xp}</p>
                         </div>
-                        <p className="text-2xl font-bold text-accent-light">{rankData.currentRank.name}</p>
-                        <p className="text-stone-400">Level {rankData.currentLevel}</p>
-                        <div className="w-full bg-stone-700 rounded-full h-4 mt-4 overflow-hidden">
-                            <div className="h-4 rounded-full btn-primary" style={{width: `${rankData.progressPercentage}%`}}></div>
-                        </div>
-                        <p className="text-sm text-stone-300 mt-2">{rankData.totalXp} / {rankData.nextRank ? rankData.nextRank.xpThreshold : rankData.totalXp} {terminology.xp}</p>
-                    </div>
-                </Card>
-                <Card title={`Recent ${terminology.history}`} className="lg:col-span-2">
-                    {recentActivities.length > 0 ? (
-                        <ul className="space-y-3">
-                            {recentActivities.map(activity => (
-                                <li key={activity.id} className="flex items-start gap-4 p-3 bg-stone-800/50 rounded-lg">
-                                    <div className="flex-1">
-                                        <p className="font-semibold text-stone-200">{activity.title}</p>
-                                        <p className="text-xs text-stone-400 mt-1">{new Date(activity.date).toLocaleString()}</p>
-                                    </div>
-                                    <div className="w-1/3 text-sm text-stone-400 italic truncate" title={activity.note}>
-                                        {activity.note ? `"${activity.note}"` : ''}
-                                    </div>
-                                    <div className={`w-1/5 text-right font-semibold ${statusColorClass(activity.status)}`}>
-                                        {activity.status}
-                                    </div>
-                                </li>
-                            ))}
-                        </ul>
-                    ) : (
-                         <p className="text-stone-400">No recent activity. Go complete a ${terminology.task.toLowerCase()}!</p>
-                    )}
-                </Card>
+                    </Card>
 
-                <Card title="Inventory" className="lg:col-span-1">
-                    <div className="grid grid-cols-2 gap-x-6">
-                        <div>
-                            <h4 className="font-bold text-lg text-stone-300 mb-2 border-b border-stone-700 pb-1 capitalize">{terminology.currency}</h4>
-                            <div className="space-y-2 mt-2">
-                                {userCurrencies.length > 0 ? userCurrencies.map(c => 
-                                    <div key={c.id} className="flex items-baseline justify-between">
-                                        <span className="text-stone-200 flex items-center gap-2">
-                                            <span>{c.icon}</span>
-                                            <span>{c.name}</span>
-                                        </span>
-                                        <span className="font-semibold text-accent-light">{c.amount}</span>
-                                    </div>
-                                ) : <p className="text-stone-400 text-sm italic">None</p>}
+                    <Card title="Inventory">
+                        <div className="grid grid-cols-2 gap-x-6">
+                            <div>
+                                <h4 className="font-bold text-lg text-stone-300 mb-2 border-b border-stone-700 pb-1 capitalize">{terminology.currency}</h4>
+                                <div className="space-y-2 mt-2">
+                                    {userCurrencies.length > 0 ? userCurrencies.map(c => 
+                                        <div key={c.id} className="flex items-baseline justify-between">
+                                            <span className="text-stone-200 flex items-center gap-2">
+                                                <span>{c.icon}</span>
+                                                <span>{c.name}</span>
+                                            </span>
+                                            <span className="font-semibold text-accent-light">{c.amount}</span>
+                                        </div>
+                                    ) : <p className="text-stone-400 text-sm italic">None</p>}
+                                </div>
+                            </div>
+                             <div>
+                                <h4 className="font-bold text-lg text-stone-300 mb-2 border-b border-stone-700 pb-1 capitalize">{terminology.xp}</h4>
+                                <div className="space-y-2 mt-2">
+                                    {userExperience.length > 0 ? userExperience.map(xp => 
+                                        <div key={xp.id} className="flex items-baseline justify-between">
+                                            <span className="text-stone-200 flex items-center gap-2">
+                                                <span>{xp.icon}</span>
+                                                <span>{xp.name}</span>
+                                            </span>
+                                            <span className="font-semibold text-sky-400">{xp.amount}</span>
+                                        </div>
+                                    ) : <p className="text-stone-400 text-sm italic">None</p>}
+                                </div>
                             </div>
                         </div>
-                         <div>
-                            <h4 className="font-bold text-lg text-stone-300 mb-2 border-b border-stone-700 pb-1 capitalize">{terminology.xp}</h4>
-                            <div className="space-y-2 mt-2">
-                                {userExperience.length > 0 ? userExperience.map(xp => 
-                                    <div key={xp.id} className="flex items-baseline justify-between">
-                                        <span className="text-stone-200 flex items-center gap-2">
-                                            <span>{xp.icon}</span>
-                                            <span>{xp.name}</span>
-                                        </span>
-                                        <span className="font-semibold text-sky-400">{xp.amount}</span>
-                                    </div>
-                                ) : <p className="text-stone-400 text-sm italic">None</p>}
-                            </div>
-                        </div>
-                    </div>
-                </Card>
-                 <Card title={`Top Adventurers (Total ${terminology.xp})`} className="lg:col-span-2">
-                    <ol className="space-y-2 text-stone-200">
-                        {leaderboard.map((player, index) => (
-                             <li key={player.name} className="flex justify-between items-center font-semibold">
-                                <span>{index + 1}. {player.name} {player.name === currentUser.gameName && '(You)'}</span>
-                                <span>{player.xp} {terminology.xp}</span>
-                            </li>
-                        ))}
-                    </ol>
-                </Card>
+                    </Card>
+                </div>
 
-                <Card 
-                    title={`Latest ${terminology.award}`}
-                    className="lg:col-span-1"
-                    headerAction={
-                        <Button variant="secondary" className="text-sm py-1 px-3" onClick={() => setActivePage('Trophies')}>
-                            View All
-                        </Button>
-                    }
-                >
-                    <div className="cursor-pointer" onClick={() => setActivePage('Trophies')}>
-                        {mostRecentTrophy ? (
-                            <div className="text-center">
-                                <div className="w-16 h-16 mx-auto bg-amber-900/50 rounded-full flex items-center justify-center text-amber-400 text-3xl">{mostRecentTrophy.icon}</div>
-                                <p className="mt-2 text-lg font-semibold text-amber-300">{mostRecentTrophy.name}</p>
-                                <p className="text-sm text-stone-400">{mostRecentTrophy.description}</p>
-                            </div>
-                        ) : ( <p className="text-stone-400 text-center">No ${terminology.awards.toLowerCase()} earned yet in this mode.</p> )}
-                    </div>
-                </Card>
-                
-                <div className="lg:col-span-2">
+                {/* Right Column */}
+                <div className="lg:col-span-2 space-y-6">
                      <Card title="Quick Actions">
                         {quickActionQuests.length > 0 ? (
                             <ul className="space-y-3 max-h-72 overflow-y-auto scrollbar-hide pr-2">
@@ -342,6 +293,66 @@ const Dashboard: React.FC = () => {
                             </ul>
                         ) : ( <p className="text-stone-400">No pressing ${terminology.tasks.toLowerCase()} at the moment. Check the main ${terminology.tasks} page for more!</p> )}
                     </Card>
+
+                    <Card title={`Recent ${terminology.history}`}>
+                        <div className="max-h-80 overflow-y-auto scrollbar-hide">
+                            {recentActivities.length > 0 ? (
+                                <ul className="space-y-3">
+                                    {recentActivities.map(activity => (
+                                        <li key={activity.id} className="flex items-start gap-4 p-3 bg-stone-800/50 rounded-lg">
+                                            <div className="flex-1">
+                                                <p className="font-semibold text-stone-200">{activity.title}</p>
+                                                <p className="text-xs text-stone-400 mt-1">{new Date(activity.date).toLocaleString()}</p>
+                                            </div>
+                                            <div className="w-1/3 text-sm text-stone-400 italic truncate" title={activity.note}>
+                                                {activity.note ? `"${activity.note}"` : ''}
+                                            </div>
+                                            <div className={`w-1/5 text-right font-semibold ${statusColorClass(activity.status)}`}>
+                                                {activity.status}
+                                            </div>
+                                        </li>
+                                    ))}
+                                </ul>
+                            ) : (
+                                 <p className="text-stone-400">No recent activity. Go complete a ${terminology.task.toLowerCase()}!</p>
+                            )}
+                        </div>
+                    </Card>
+                </div>
+                 
+                {/* Full-width bottom row */}
+                <div className="lg:col-span-3">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <Card 
+                            title={`Latest ${terminology.award}`}
+                            className="md:col-span-1"
+                            headerAction={
+                                <Button variant="secondary" className="text-sm py-1 px-3" onClick={() => setActivePage('Trophies')}>
+                                    View All
+                                </Button>
+                            }
+                        >
+                            <div className="cursor-pointer" onClick={() => setActivePage('Trophies')}>
+                                {mostRecentTrophy ? (
+                                    <div className="text-center">
+                                        <div className="w-16 h-16 mx-auto bg-amber-900/50 rounded-full flex items-center justify-center text-amber-400 text-3xl">{mostRecentTrophy.icon}</div>
+                                        <p className="mt-2 text-lg font-semibold text-amber-300">{mostRecentTrophy.name}</p>
+                                        <p className="text-sm text-stone-400">{mostRecentTrophy.description}</p>
+                                    </div>
+                                ) : ( <p className="text-stone-400 text-center">No ${terminology.awards.toLowerCase()} earned yet in this mode.</p> )}
+                            </div>
+                        </Card>
+                         <Card title={`Top Adventurers (Total ${terminology.xp})`} className="md:col-span-2">
+                            <ol className="space-y-2 text-stone-200">
+                                {leaderboard.map((player, index) => (
+                                     <li key={player.name} className="flex justify-between items-center font-semibold">
+                                        <span>{index + 1}. {player.name} {player.name === currentUser.gameName && '(You)'}</span>
+                                        <span>{player.xp} {terminology.xp}</span>
+                                    </li>
+                                ))}
+                            </ol>
+                        </Card>
+                    </div>
                 </div>
             </div>
 

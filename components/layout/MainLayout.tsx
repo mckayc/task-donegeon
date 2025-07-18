@@ -1,4 +1,5 @@
 
+
 import React, { useMemo, useEffect } from 'react';
 import Sidebar from './Sidebar';
 import Header from './Header';
@@ -31,7 +32,7 @@ import CollectionPage from '../pages/CollectionPage';
 import ManageItemsPage from '../pages/ManageItemsPage';
 import AiStudioPage from '../pages/AiStudioPage';
 import AppearancePage from '../pages/AppearancePage';
-import ObjectManagerPage from '../pages/management/ObjectManagerPage';
+import ObjectExporterPage from '../pages/management/ObjectExporterPage';
 import AssetManagerPage from '../pages/management/MediaManagerPage';
 import BackupAndImportPage from '../pages/management/BackupAndImportPage';
 import AssetLibraryPage from '../pages/management/AssetLibraryPage';
@@ -88,6 +89,7 @@ const MainLayout: React.FC = () => {
       case 'Manage Guilds': return `Manage ${settings.terminology.groups}`;
       case 'Manage Ranks': return `Manage ${settings.terminology.levels}`;
       case 'Manage Trophies': return `Manage ${settings.terminology.awards}`;
+      case 'Object Manager': return 'Object Manager';
       case 'Trophies': return `${settings.terminology.award} Hall`;
       case 'Ranks': return `Ranks of the Donegeon`;
       case 'Help Guide': return `${settings.terminology.appName} Guide`;
@@ -128,7 +130,7 @@ const MainLayout: React.FC = () => {
       case 'Settings': return <SettingsPage />;
       case 'Appearance': return <AppearancePage />;
       case 'Theme Editor': return <ThemeEditorPage />;
-      case 'Object Manager': return <ObjectManagerPage />;
+      case 'Object Manager': return <ObjectExporterPage />;
       case 'Asset Manager': return <AssetManagerPage />;
       case 'Backup & Import': return <BackupAndImportPage />;
       case 'Asset Library': return <AssetLibraryPage />;

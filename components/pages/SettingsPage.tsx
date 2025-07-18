@@ -1,4 +1,5 @@
 
+
 import React, { useState, ChangeEvent } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { Role, AppSettings, Terminology } from '../../types';
@@ -51,6 +52,38 @@ const terminologyLabels: { [key in keyof Terminology]: string } = {
   admin: 'Admin (e.g., Donegeon Master)',
   moderator: 'Moderator (e.g., Gatekeeper)',
   user: 'User (e.g., Explorer)',
+  link_dashboard: 'Sidebar: Dashboard',
+  link_quests: 'Sidebar: Quests',
+  link_marketplace: 'Sidebar: Marketplace',
+  link_calendar: 'Sidebar: Calendar',
+  link_avatar: 'Sidebar: Avatar',
+  link_collection: 'Sidebar: Collection',
+  link_themes: 'Sidebar: Themes',
+  link_guild: 'Sidebar: Guild',
+  link_progress: 'Sidebar: Progress',
+  link_trophies: 'Sidebar: Trophies',
+  link_ranks: 'Sidebar: Ranks',
+  link_chronicles: 'Sidebar: Chronicles',
+  link_manage_quests: 'Sidebar: Manage Quests',
+  link_manage_items: 'Sidebar: Manage Items',
+  link_manage_markets: 'Sidebar: Manage Markets',
+  link_manage_rewards: 'Sidebar: Manage Rewards',
+  link_manage_ranks: 'Sidebar: Manage Ranks',
+  link_manage_trophies: 'Sidebar: Manage Trophies',
+  link_theme_editor: 'Sidebar: Theme Editor',
+  link_approvals: 'Sidebar: Approvals',
+  link_manage_users: 'Sidebar: Manage Users',
+  link_manage_guilds: 'Sidebar: Manage Guilds',
+  link_ai_studio: 'Sidebar: AI Studio',
+  link_appearance: 'Sidebar: Appearance',
+  link_object_manager: 'Sidebar: Object Manager',
+  link_asset_manager: 'Sidebar: Asset Manager',
+  link_backup_import: 'Sidebar: Backup & Import',
+  link_asset_library: 'Sidebar: Asset Library',
+  link_settings: 'Sidebar: Settings',
+  link_about: 'Sidebar: About',
+  link_help_guide: 'Sidebar: Help Guide',
+  link_chat: 'Sidebar: Chat',
 };
 
 const SettingsPage: React.FC = () => {
@@ -245,7 +278,7 @@ const SettingsPage: React.FC = () => {
 
              <CollapsibleSection title="Terminology">
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-4">
-                    {Object.keys(formState.terminology).filter(k => k !== 'appName').map(key => (
+                    {Object.keys(formState.terminology).map(key => (
                          <Input 
                             key={key}
                             label={terminologyLabels[key as keyof Terminology]}

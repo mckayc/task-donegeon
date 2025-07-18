@@ -12,12 +12,25 @@ import OnboardingWizard from './components/auth/OnboardingWizard';
 import SharedLayout from './components/layout/SharedLayout';
 
 const App: React.FC = () => {
-  const { isAppUnlocked, isFirstRun, currentUser, isSwitchingUser, isDataLoaded, settings, isSharedViewActive } = useAppState();
+  const { isAppUnlocked, isFirstRun, currentUser, isSwitchingUser, isDataLoaded, settings, isSharedViewActive, appMode, guilds } = useAppState();
 
   useEffect(() => {
-    const activeTheme = currentUser?.theme || settings.theme;
+    let activeTheme = settings.theme; // Default to system theme
+
+    if (appMode.mode === 'guild') {
+        const currentGuild = guilds.find(g => g.id === appMode.guildId);
+        if (currentGuild?.themeId) {
+            activeTheme = currentGuild.themeId; // Guild theme takes precedence
+        }
+    }
+
+    if (currentUser?.theme) {
+        activeTheme = currentUser.theme; // User's personal theme takes highest precedence
+    }
+    
     document.body.dataset.theme = activeTheme;
-  }, [settings.theme, currentUser]);
+  }, [settings.theme, currentUser, appMode, guilds]);
+
 
   if (!isDataLoaded) {
     return (

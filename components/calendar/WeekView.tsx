@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { Quest, QuestCompletion, QuestType } from '../../types';
-import { isQuestScheduledForDay, questSorter } from '../../utils/quests';
+import { isQuestScheduledForDay, questSorter, toYMD } from '../../utils/quests';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { useCalendarVentures } from '../../hooks/useCalendarVentures';
 import QuestList from './QuestList';
@@ -101,9 +101,11 @@ const DayColumn = React.memo(({ day, quests, questCompletions, onSelectQuest }: 
         return uniqueQuests.sort(questSorter(currentUser, questCompletions, day));
     }, [currentUser, day, quests, questCompletions, calendarVentures]);
     
+    const isToday = toYMD(day) === toYMD(new Date());
+
     return (
-        <div className="flex-1 min-w-[200px] flex flex-col">
-            <div className="text-center font-semibold py-2 bg-stone-800/50 text-stone-300 border-b border-stone-700/60 flex-shrink-0">
+        <div className={`flex-1 min-w-[200px] flex flex-col ${isToday ? 'bg-emerald-900/20' : ''}`}>
+            <div className={`text-center font-semibold py-2 ${isToday ? 'bg-emerald-800/30' : 'bg-stone-800/50'} text-stone-300 border-b border-stone-700/60 flex-shrink-0`}>
                 <p>{day.toLocaleDateString('default', { weekday: 'short' })}</p>
                 <p className="text-2xl">{day.getDate()}</p>
             </div>

@@ -171,6 +171,7 @@ export interface Guild {
   purpose: string;
   memberIds: string[];
   isDefault?: boolean;
+  themeId?: string;
 }
 
 export interface Rank {
@@ -279,6 +280,39 @@ export interface Terminology {
   admin: string;
   moderator: string;
   user: string;
+  // Sidebar Links
+  link_dashboard: string;
+  link_quests: string;
+  link_marketplace: string;
+  link_calendar: string;
+  link_avatar: string;
+  link_collection: string;
+  link_themes: string;
+  link_guild: string;
+  link_progress: string;
+  link_trophies: string;
+  link_ranks: string;
+  link_chronicles: string;
+  link_manage_quests: string;
+  link_manage_items: string;
+  link_manage_markets: string;
+  link_manage_rewards: string;
+  link_manage_ranks: string;
+  link_manage_trophies: string;
+  link_theme_editor: string;
+  link_approvals: string;
+  link_manage_users: string;
+  link_manage_guilds: string;
+  link_ai_studio: string;
+  link_appearance: string;
+  link_object_manager: string;
+  link_asset_manager: string;
+  link_backup_import: string;
+  link_asset_library: string;
+  link_settings: string;
+  link_about: string;
+  link_help_guide: string;
+  link_chat: string;
 }
 
 export type Page = 'Dashboard' | 'Avatar' | 'Quests' | 'Marketplace' | 'Chronicles' | 'Guild' | 'Calendar' | 'Progress' | 'Trophies' | 'Ranks' | 'Manage Users' | 'Manage Rewards' | 'Manage Quests' | 'Manage Items' | 'Approvals' | 'Manage Markets' | 'Manage Guilds' | 'Settings' | 'Profile' | 'About' | 'Help Guide' | 'Manage Ranks' | 'Manage Trophies' | 'Themes' | 'Data Management' | 'Collection' | 'AI Studio' | 'Appearance'
@@ -331,6 +365,11 @@ export interface AppSettings {
     autoExit: boolean;
     autoExitMinutes: number;
     userIds: string[];
+  };
+  automatedBackups: {
+    enabled: boolean;
+    frequencyHours: number; // e.g., 24 for daily
+    maxBackups: number; // e.g., 7 for a week's worth
   };
   theme: string;
   terminology: Terminology;

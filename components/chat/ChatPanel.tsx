@@ -14,13 +14,10 @@ const ChatPanel: React.FC = () => {
 
     const chatPartners = useMemo(() => {
         if (!currentUser) return [];
-        const partnerIds = new Set<string>();
-        chatMessages.forEach(msg => {
-            if (msg.senderId === currentUser.id) partnerIds.add(msg.recipientId);
-            if (msg.recipientId === currentUser.id) partnerIds.add(msg.senderId);
-        });
-        return Array.from(partnerIds).map(id => users.find(u => u.id === id)).filter((u): u is User => !!u);
-    }, [chatMessages, currentUser, users]);
+        // Show all users except the current one
+        return users.filter(user => user.id !== currentUser.id);
+    }, [currentUser, users]);
+
 
     const activeConversation = useMemo(() => {
         if (!currentUser || !activeChatUser) return [];
@@ -51,7 +48,7 @@ const ChatPanel: React.FC = () => {
     if (!isChatOpen || !currentUser) return null;
 
     return (
-        <div className="fixed bottom-6 right-6 z-50 w-[400px] h-[500px] bg-stone-800 border border-stone-700 rounded-xl shadow-2xl flex flex-col">
+        <div className="fixed bottom-24 right-6 z-50 w-[400px] h-[500px] bg-stone-800 border border-stone-700 rounded-xl shadow-2xl flex flex-col">
             <header className="p-4 border-b border-stone-700 flex justify-between items-center flex-shrink-0">
                 <h3 className="font-bold text-lg text-stone-100">Chat</h3>
                 <button onClick={toggleChat} className="text-stone-400 hover:text-white"><XCircleIcon className="w-6 h-6"/></button>
@@ -61,7 +58,7 @@ const ChatPanel: React.FC = () => {
                 <aside className="w-1/3 border-r border-stone-700 overflow-y-auto scrollbar-hide">
                     {chatPartners.map(user => (
                         <button key={user.id} onClick={() => setActiveChatUser(user)} className={`w-full flex items-center gap-2 p-2 text-left hover:bg-stone-700/50 ${activeChatUser?.id === user.id ? 'bg-emerald-900/50' : ''}`}>
-                            <Avatar user={user} className="w-8 h-8 flex-shrink-0" />
+                            <Avatar user={user} className="w-8 h-8 flex-shrink-0 rounded-full overflow-hidden" />
                             <span className="text-sm font-semibold text-stone-200 truncate">{user.gameName}</span>
                         </button>
                     ))}

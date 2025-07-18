@@ -5,10 +5,14 @@ import { useAppState, useAppDispatch } from '../../context/AppContext';
 import Avatar from '../ui/Avatar';
 import Card from '../ui/Card';
 import { GameAsset } from '../../types';
+import Button from '../ui/Button';
+import ImageSelectionDialog from '../ui/ImageSelectionDialog';
 
 const AvatarPage: React.FC = () => {
     const { currentUser, gameAssets } = useAppState();
-    const { updateUser } = useAppDispatch();
+    const { updateUser, uploadFile } = useAppDispatch();
+    const [isGalleryOpen, setIsGalleryOpen] = useState(false);
+    const [isUploading, setIsUploading] = useState(false);
 
     const { ownedAvatarAssets, availableSlots } = useMemo(() => {
         const assets = new Map<string, GameAsset[]>();
@@ -39,16 +43,48 @@ const AvatarPage: React.FC = () => {
         const newAvatarConfig = { ...currentUser.avatar, [asset.avatarSlot]: asset.id };
         updateUser(currentUser.id, { avatar: newAvatarConfig });
     };
+    
+    const handleProfilePictureSelect = (url: string) => {
+        updateUser(currentUser.id, { profilePictureUrl: url });
+        setIsGalleryOpen(false);
+    };
+
+    const handleProfilePictureUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            setIsUploading(true);
+            const result = await uploadFile(file);
+            if (result?.url) {
+                handleProfilePictureSelect(result.url);
+            }
+            setIsUploading(false);
+        }
+    };
 
     const assetsForActiveSlot = ownedAvatarAssets.get(activeSlot) || [];
 
     return (
         <div>
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                <div className="lg:col-span-1 flex items-center justify-center">
-                    <div className="w-64 h-64 md:w-80 md:h-80">
+                <div className="lg:col-span-1 flex flex-col items-center justify-center">
+                    <div className="w-64 h-64 md:w-80 md:h-80 rounded-full overflow-hidden bg-stone-700 border-4 border-accent">
                          <Avatar user={currentUser} className="w-full h-full" />
                     </div>
+                    <Card className="mt-6 w-full max-w-sm">
+                        <h4 className="font-bold text-lg text-stone-200 mb-3 text-center">Profile Picture</h4>
+                         <input id="profile-pic-upload" type="file" accept="image/*" onChange={handleProfilePictureUpload} className="hidden" />
+                        <div className="space-y-2">
+                            <Button onClick={() => document.getElementById('profile-pic-upload')?.click()} disabled={isUploading} className="w-full">
+                                {isUploading ? "Uploading..." : "Upload New Image"}
+                            </Button>
+                            <Button variant="secondary" onClick={() => setIsGalleryOpen(true)} className="w-full">Select from Collection</Button>
+                             {currentUser.profilePictureUrl && (
+                                <Button variant="secondary" onClick={() => updateUser(currentUser.id, { profilePictureUrl: undefined })} className="w-full !bg-red-900/50 hover:!bg-red-800/60 text-red-300">
+                                    Remove Picture
+                                </Button>
+                            )}
+                        </div>
+                    </Card>
                 </div>
                 <div className="lg:col-span-2">
                     <Card>
@@ -102,6 +138,12 @@ const AvatarPage: React.FC = () => {
                     </Card>
                 </div>
             </div>
+            {isGalleryOpen && (
+                <ImageSelectionDialog
+                    onSelect={handleProfilePictureSelect}
+                    onClose={() => setIsGalleryOpen(false)}
+                />
+            )}
         </div>
     );
 };

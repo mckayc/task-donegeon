@@ -1,4 +1,5 @@
 
+
 import React, { useState, useMemo } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { Quest, QuestType, QuestAvailability, User } from '../../types';
@@ -14,7 +15,6 @@ const SharedCalendarPage: React.FC = () => {
     const { settings, users, quests, questCompletions, guilds } = useAppState();
     const { markQuestAsTodo, unmarkQuestAsTodo } = useAppDispatch();
     const [currentDate, setCurrentDate] = useState(new Date());
-    const [sortBy, setSortBy] = useState<'user' | 'time' | 'title'>('user');
     const [verifyingQuest, setVerifyingQuest] = useState<{ quest: Quest; user: User } | null>(null);
     const [questForNoteCompletion, setQuestForNoteCompletion] = useState<{ quest: Quest; user: User } | null>(null);
     const [selectedQuestDetails, setSelectedQuestDetails] = useState<{ quest: Quest; user: User } | null>(null);
@@ -103,14 +103,6 @@ const SharedCalendarPage: React.FC = () => {
 
     return (
         <div className="p-4 md:p-8 flex flex-col h-full">
-            <Card className="flex-shrink-0">
-                <div className="flex justify-between items-center p-4 border-b border-stone-700/60 flex-wrap gap-4">
-                    <h2 className="text-2xl font-semibold text-emerald-300">
-                        {currentDate.toLocaleDateString('default', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
-                    </h2>
-                </div>
-            </Card>
-
             <div className="flex-grow flex gap-4 overflow-x-auto pt-6 pb-4 scrollbar-hide">
                 {sharedUsers.map(user => {
                     if (!user) return null;
@@ -118,7 +110,7 @@ const SharedCalendarPage: React.FC = () => {
                     return (
                         <div key={user.id} className="flex-shrink-0 w-80 bg-stone-800/50 rounded-lg flex flex-col">
                             <div className="p-3 border-b border-stone-700 flex items-center gap-3 flex-shrink-0">
-                                <Avatar user={user} className="w-10 h-10" />
+                                <Avatar user={user} className="w-10 h-10 rounded-full overflow-hidden" />
                                 <h3 className="font-bold text-lg text-stone-100">{user.gameName}</h3>
                             </div>
                             <div className="p-3 space-y-2 overflow-y-auto scrollbar-hide flex-grow">
@@ -167,8 +159,8 @@ const SharedCalendarPage: React.FC = () => {
             )}
             {selectedQuestDetails && (
                 <QuestDetailDialog
-                    quest={selectedQuestDetails.quest}
                     dialogTitle={dialogTitle}
+                    quest={selectedQuestDetails.quest}
                     onClose={() => setSelectedQuestDetails(null)}
                     onComplete={settings.sharedMode.allowCompletion ? () => handleCompleteClick(selectedQuestDetails.quest, selectedQuestDetails.user) : undefined}
                     onToggleTodo={handleToggleTodo}

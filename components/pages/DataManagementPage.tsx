@@ -1,7 +1,8 @@
 
+
 import React, { useState, useMemo } from 'react';
 import * as Icons from '../ui/Icons';
-import ObjectManagerPage from './management/ObjectManagerPage';
+import ObjectExporterPage from './management/ObjectExporterPage';
 import BackupAndImportPage from './management/BackupAndImportPage';
 import AssetLibraryPage from './management/AssetLibraryPage';
 import AssetManagerPage from './management/MediaManagerPage';
@@ -34,11 +35,11 @@ const DataManagementPage: React.FC = () => {
 
     const renderContent = () => {
         switch (activePage) {
-            case 'Object Manager': return <ObjectManagerPage />;
+            case 'Object Manager': return <ObjectExporterPage />;
             case 'Asset Manager': return <AssetManagerPage />;
             case 'Backup & Import': return <BackupAndImportPage />;
             case 'Asset Library': return <AssetLibraryPage />;
-            default: return <ObjectManagerPage />;
+            default: return <ObjectExporterPage />;
         }
     }
 

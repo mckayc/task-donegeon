@@ -3,9 +3,9 @@ import React, { useMemo } from 'react';
 import { useAppState } from '../../context/AppContext';
 import { Role, Trophy, UserTrophy, TrophyRequirementType, QuestType, QuestCompletionStatus, Quest, AppMode, User } from '../../types';
 import Card from '../ui/Card';
-import { TrophyIcon as AwardIcon } from '../ui/Icons'; // Renamed to avoid conflict
 import { fromYMD } from '../../utils/quests';
 import EmptyState from '../ui/EmptyState';
+import { TrophyIcon } from '../ui/Icons';
 
 const TrophiesPage: React.FC = () => {
     const { currentUser, trophies, userTrophies, appMode, settings, questCompletions, quests, ranks } = useAppState();
@@ -97,14 +97,14 @@ const TrophiesPage: React.FC = () => {
 
     return (
         <div>
-            <Card title={`My ${settings.terminology.award} Case`} titleIcon={<AwardIcon />} className="mb-8">
+            <Card title={`My ${settings.terminology.award} Case`} className="mb-8">
                 {earnedTrophiesWithDate.length > 0 ? (
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                         {earnedTrophiesWithDate.map(trophy => <TrophyCard key={trophy.id} trophy={trophy} isEarned={true} />)}
                     </div>
                 ) : (
                     <EmptyState
-                        Icon={AwardIcon}
+                        Icon={TrophyIcon}
                         title={`No ${settings.terminology.awards} Earned Yet`}
                         message={`You haven't earned any ${settings.terminology.awards.toLowerCase()} in this mode yet. Keep questing!`}
                     />

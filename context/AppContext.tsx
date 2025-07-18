@@ -650,6 +650,49 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       };
   }, [resetInactivityTimer]);
 
+  // Automated Backups
+  useEffect(() => {
+    if (!settings.automatedBackups.enabled || !isDataLoaded) return;
+    
+    const performBackup = () => {
+        try {
+            const savedBackupsRaw = localStorage.getItem('localBackups');
+            const savedBackups = savedBackupsRaw ? JSON.parse(savedBackupsRaw) : [];
+            let autoBackups = savedBackups.filter((b: any) => b.isAuto);
+
+            const dataToBackup = { users, quests, markets, rewardTypes, questCompletions, purchaseRequests, guilds, ranks, trophies, userTrophies, adminAdjustments, gameAssets, systemLogs, settings, themes, loginHistory, chatMessages };
+            const dataStr = JSON.stringify(dataToBackup);
+            const size = new Blob([dataStr]).size;
+
+            const newBackup = {
+                id: `auto-backup-${Date.now()}`,
+                timestamp: new Date().toISOString(),
+                name: `auto_backup_${new Date().toISOString().replace(/:/g, '-').slice(0, 19)}.json`,
+                data: dataToBackup,
+                size: size,
+                isAuto: true,
+            };
+
+            autoBackups.unshift(newBackup);
+
+            // Prune old backups
+            if (autoBackups.length > settings.automatedBackups.maxBackups) {
+                autoBackups = autoBackups.slice(0, settings.automatedBackups.maxBackups);
+            }
+            
+            const manualBackups = savedBackups.filter((b: any) => !b.isAuto);
+            localStorage.setItem('localBackups', JSON.stringify([...manualBackups, ...autoBackups]));
+            console.log(`Automated backup created at ${new Date().toLocaleString()}`);
+
+        } catch (e) {
+            console.error("Failed to perform automated backup:", e);
+        }
+    };
+
+    const intervalId = setInterval(performBackup, settings.automatedBackups.frequencyHours * 60 * 60 * 1000);
+    return () => clearInterval(intervalId);
+  }, [settings.automatedBackups, appData, isDataLoaded]);
+
   // Chat functions
   const toggleChat = useCallback(() => setIsChatOpen(prev => !prev), []);
 

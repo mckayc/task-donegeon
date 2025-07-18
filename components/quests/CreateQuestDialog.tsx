@@ -1,6 +1,7 @@
 
+
 import React, { useState, useEffect } from 'react';
-import { useAppState, useAppDispatch } from '../../context/AppContext';
+import { useAuthState, useGameDataState, useSettingsState, useAppDispatch } from '../../context/AppContext';
 import { Quest, QuestType, RewardItem, RewardCategory, QuestAvailability } from '../../types';
 import Button from '../ui/Button';
 import Input from '../ui/Input';
@@ -21,7 +22,9 @@ const VENTURE_AVAILABILITIES = [QuestAvailability.Frequency, QuestAvailability.U
 
 
 const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialData, onClose }) => {
-  const { users, guilds, rewardTypes, allTags, settings } = useAppState();
+  const { users } = useAuthState();
+  const { guilds, rewardTypes, allTags } = useGameDataState();
+  const { settings } = useSettingsState();
   const { addQuest, updateQuest } = useAppDispatch();
 
   const getInitialFormData = () => {

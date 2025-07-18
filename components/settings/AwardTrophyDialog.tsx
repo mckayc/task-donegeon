@@ -1,6 +1,7 @@
 
+
 import React, { useState } from 'react';
-import { useAppState, useAppDispatch } from '../../context/AppContext';
+import { useGameDataState, useAppDispatch } from '../../context/AppContext';
 import { Trophy, User } from '../../types';
 import Button from '../ui/Button';
 
@@ -10,7 +11,7 @@ interface AwardTrophyDialogProps {
 }
 
 const AwardTrophyDialog: React.FC<AwardTrophyDialogProps> = ({ user, onClose }) => {
-    const { trophies, userTrophies } = useAppState();
+    const { trophies, userTrophies } = useGameDataState();
     const { awardTrophy } = useAppDispatch();
     const [selectedTrophyId, setSelectedTrophyId] = useState<string>('');
     const [error, setError] = useState('');

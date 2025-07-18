@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { User } from '../../types';
-import { useAppState } from '../../context/AppContext';
+import { useGameDataState } from '../../context/AppContext';
 
 interface AvatarProps {
   user: User;
@@ -10,7 +10,7 @@ interface AvatarProps {
 }
 
 const Avatar: React.FC<AvatarProps> = ({ user, className }) => {
-    const { gameAssets } = useAppState();
+    const { gameAssets } = useGameDataState();
 
     const equippedAssets = Object.entries(user.avatar)
         .map(([_, assetId]) => {

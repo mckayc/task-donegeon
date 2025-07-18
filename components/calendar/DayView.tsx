@@ -1,8 +1,9 @@
+
 import React, { useMemo, useState } from 'react';
 import { Quest, QuestCompletion, QuestType, QuestAvailability } from '../../types';
 import QuestList from './QuestList';
 import { useCalendarVentures } from '../../hooks/useCalendarVentures';
-import { useAppDispatch, useAppState } from '../../context/AppContext';
+import { useAppDispatch, useAuthState, useSettingsState } from '../../context/AppContext';
 import QuestDetailDialog from '../quests/QuestDetailDialog';
 import CompleteQuestDialog from '../quests/CompleteQuestDialog';
 import { questSorter, isQuestScheduledForDay } from '../../utils/quests';
@@ -19,7 +20,8 @@ const DayView: React.FC<DayViewProps> = ({ currentDate, quests, questCompletions
     const [selectedQuest, setSelectedQuest] = useState<Quest | null>(null);
     const [completingQuest, setCompletingQuest] = useState<Quest | null>(null);
     const { markQuestAsTodo, unmarkQuestAsTodo } = useAppDispatch();
-    const { currentUser, settings } = useAppState();
+    const { currentUser } = useAuthState();
+    const { settings } = useSettingsState();
 
     const scheduledDuties = useMemo(() => {
         if (!currentUser) return [];

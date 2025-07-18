@@ -1,13 +1,38 @@
+
+
 import React, { useState } from 'react';
-import { useAppState } from '../../../context/AppContext';
-import { ShareableAssetType, Terminology } from '../../../types';
+import { useAuthState, useGameDataState, useSettingsState, useUIState } from '../../../context/AppContext';
+import { ShareableAssetType, Terminology, IAppData } from '../../../types';
 import Button from '../../ui/Button';
 import Input from '../../ui/Input';
 import { generateBlueprint } from '../../../utils/sharing';
 import Card from '../../ui/Card';
 
 const ObjectExporterPage: React.FC = () => {
-    const appState = useAppState();
+    const authState = useAuthState();
+    const gameDataState = useGameDataState();
+    const settingsState = useSettingsState();
+    const uiState = useUIState();
+
+    const appState: IAppData = {
+        users: authState.users,
+        loginHistory: authState.loginHistory,
+        quests: gameDataState.quests,
+        markets: gameDataState.markets,
+        rewardTypes: gameDataState.rewardTypes,
+        questCompletions: gameDataState.questCompletions,
+        purchaseRequests: gameDataState.purchaseRequests,
+        guilds: gameDataState.guilds,
+        ranks: gameDataState.ranks,
+        trophies: gameDataState.trophies,
+        userTrophies: gameDataState.userTrophies,
+        adminAdjustments: gameDataState.adminAdjustments,
+        gameAssets: gameDataState.gameAssets,
+        systemLogs: gameDataState.systemLogs,
+        settings: settingsState.settings,
+        themes: gameDataState.themes,
+        chatMessages: uiState.chatMessages,
+    };
     const { settings } = appState;
     const [selected, setSelected] = useState<{ [key in ShareableAssetType]: string[] }>({
         quests: [],

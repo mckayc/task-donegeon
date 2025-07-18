@@ -1,11 +1,13 @@
+
 import React, { useMemo } from 'react';
-import { useAppState } from '../../context/AppContext';
+import { useAuthState, useGameDataState, useUIState } from '../../context/AppContext';
 import { Rank } from '../../types';
 import Card from '../ui/Card';
-import { RankIcon } from '../ui/Icons';
 
 const RanksPage: React.FC = () => {
-    const { currentUser, ranks, appMode } = useAppState();
+    const { currentUser } = useAuthState();
+    const { ranks } = useGameDataState();
+    const { appMode } = useUIState();
 
     const { currentRank, nextRank, totalXp, progressPercentage, sortedRanks } = useMemo(() => {
         if (!currentUser || !ranks || ranks.length === 0) {
@@ -78,12 +80,13 @@ const RanksPage: React.FC = () => {
             <Card title="All Ranks">
                 <ul className="space-y-3">
                     {sortedRanks.map(rank => (
-                        <li key={rank.id} className={`p-4 rounded-lg flex items-center gap-4 ${rank.id === currentRank.id ? 'bg-emerald-900/50 border-l-4 border-emerald-400' : 'bg-stone-800/60'}`}>
-                            <div className="text-4xl">{rank.icon}</div>
-                            <div>
-                                <h4 className="font-bold text-lg text-stone-100">{rank.name}</h4>
+                         <li key={rank.id} className={`flex items-center gap-4 p-3 rounded-lg ${rank.id === currentRank.id ? 'bg-emerald-800/50' : ''}`}>
+                            <span className="text-3xl w-10 text-center">{rank.icon}</span>
+                            <div className="flex-grow">
+                                <p className="font-bold text-lg text-stone-100">{rank.name}</p>
                                 <p className="text-sm text-stone-400">Requires: {rank.xpThreshold} XP</p>
                             </div>
+                            {rank.id === currentRank.id && <span className="text-xs font-bold text-emerald-300 bg-emerald-900/50 px-2 py-1 rounded-full">CURRENT</span>}
                         </li>
                     ))}
                 </ul>

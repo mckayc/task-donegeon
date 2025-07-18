@@ -2,7 +2,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import Card from '../ui/Card';
 import Button from '../ui/Button';
 import CreateQuestDialog from '../quests/CreateQuestDialog';
-import { useAppState, useAppDispatch } from '../../context/AppContext';
+import { useAppDispatch, useAuthState, useGameDataState, useSettingsState, useUIState } from '../../context/AppContext';
 import { Role, QuestType, Quest, QuestAvailability } from '../../types';
 import { isQuestAvailableForUser, questSorter } from '../../utils/quests';
 import CompleteQuestDialog from '../quests/CompleteQuestDialog';
@@ -44,7 +44,9 @@ const formatTimeRemaining = (targetDate: Date, now: Date): string => {
 };
 
 const QuestItem: React.FC<{ quest: Quest; now: Date; onSelect: (quest: Quest) => void; }> = ({ quest, now, onSelect }) => {
-    const { rewardTypes, currentUser, questCompletions, settings } = useAppState();
+    const { currentUser } = useAuthState();
+    const { rewardTypes, questCompletions } = useGameDataState();
+    const { settings } = useSettingsState();
     
     if (!currentUser) return null;
 
@@ -169,7 +171,10 @@ const QuestsPage: React.FC = () => {
     const [completingQuest, setCompletingQuest] = useState<Quest | null>(null);
     const [selectedQuest, setSelectedQuest] = useState<Quest | null>(null);
     const [filter, setFilter] = useState<'all' | QuestType>('all');
-    const { currentUser, quests, questCompletions, appMode, settings } = useAppState();
+    const { currentUser } = useAuthState();
+    const { quests, questCompletions } = useGameDataState();
+    const { appMode } = useUIState();
+    const { settings } = useSettingsState();
     const { markQuestAsTodo, unmarkQuestAsTodo } = useAppDispatch();
     const [now, setNow] = useState(new Date());
 

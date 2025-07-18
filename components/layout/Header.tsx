@@ -1,13 +1,13 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { Page, Role, AppMode, User } from '../../types';
 import Avatar from '../ui/Avatar';
-import { useAppState, useAppDispatch } from '../../context/AppContext';
+import { useAppDispatch, useAuthState, useGameDataState, useSettingsState, useUIState } from '../../context/AppContext';
 import FullscreenToggle from '../ui/FullscreenToggle';
 import { ChevronDownIcon } from '../ui/Icons';
 
 const Clock: React.FC = () => {
     const [time, setTime] = useState(new Date());
-    const { syncStatus, syncError } = useAppState();
+    const { syncStatus, syncError } = useUIState();
 
     useEffect(() => {
         const timerId = setInterval(() => setTime(new Date()), 1000);
@@ -34,7 +34,8 @@ const Clock: React.FC = () => {
 };
 
 const QuickSwitchBar: React.FC = () => {
-    const { users, loginHistory, settings } = useAppState();
+    const { users, loginHistory } = useAuthState();
+    const { settings } = useSettingsState();
     const { setTargetedUserForLogin, setIsSwitchingUser } = useAppDispatch();
     
     const sortedUsers = useMemo(() => {
@@ -65,7 +66,10 @@ const QuickSwitchBar: React.FC = () => {
 }
 
 const Header: React.FC = () => {
-  const { currentUser, guilds, appMode, settings } = useAppState();
+  const { currentUser } = useAuthState();
+  const { guilds } = useGameDataState();
+  const { appMode } = useUIState();
+  const { settings } = useSettingsState();
   const { setCurrentUser, setIsSwitchingUser, setAppUnlocked, exitToSharedView, setAppMode, setActivePage } = useAppDispatch();
 
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);

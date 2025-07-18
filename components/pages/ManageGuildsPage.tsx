@@ -6,13 +6,14 @@ import { Guild } from '../../types';
 import Button from '../ui/Button';
 import Card from '../ui/Card';
 import EditGuildDialog from '../guilds/EditGuildDialog';
-import { useAppState, useAppDispatch } from '../../context/AppContext';
+import { useAppDispatch, useGameDataState, useSettingsState } from '../../context/AppContext';
 import ConfirmDialog from '../ui/ConfirmDialog';
 import EmptyState from '../ui/EmptyState';
 import { GuildIcon } from '../ui/Icons';
 
 const ManageGuildsPage: React.FC = () => {
-    const { guilds, settings } = useAppState();
+    const { guilds } = useGameDataState();
+    const { settings } = useSettingsState();
     const { deleteGuild } = useAppDispatch();
     const [isGuildDialogOpen, setIsGuildDialogOpen] = useState(false);
     const [editingGuild, setEditingGuild] = useState<Guild | null>(null);
@@ -48,8 +49,8 @@ const ManageGuildsPage: React.FC = () => {
             <div className="space-y-8">
                 {guilds.length > 0 ? (
                     guilds.map(guild => (
-                        <Card key={guild.id}>
-                            <div className="px-6 py-4 border-b border-stone-700/60 flex justify-between items-start flex-wrap gap-4">
+                        <Card key={guild.id} className="p-0 overflow-hidden">
+                            <div className="px-6 py-4 flex justify-between items-start flex-wrap gap-4">
                                 <div>
                                     <h3 className="text-2xl font-medieval text-accent">{guild.name}</h3>
                                     <p className="text-stone-400 text-sm">{guild.purpose}</p>
@@ -59,25 +60,27 @@ const ManageGuildsPage: React.FC = () => {
                                         </span>
                                     )}
                                 </div>
-                                {!guild.isDefault && (
-                                    <div className="flex space-x-2 flex-shrink-0">
-                                        <Button variant="secondary" className="text-sm py-1 px-3" onClick={() => handleEditGuild(guild)}>Edit</Button>
+                                <div className="flex space-x-2 flex-shrink-0">
+                                    <Button variant="secondary" className="text-sm py-1 px-3" onClick={() => handleEditGuild(guild)}>Edit</Button>
+                                    {!guild.isDefault && (
                                         <Button variant="secondary" className="text-sm py-1 px-3 !bg-red-900/50 hover:!bg-red-800/60 text-red-300" onClick={() => handleDeleteRequest(guild)}>Delete</Button>
-                                    </div>
-                                )}
+                                    )}
+                                </div>
                             </div>
-                            <div className="p-6">
-                                <h4 className="font-bold text-lg mb-4 text-stone-200">{guild.memberIds.length} Members</h4>
+                            <div className="p-6 bg-stone-900/30 border-t border-stone-700/60">
+                                <h4 className="font-bold text-lg text-stone-200">{guild.memberIds.length} Members</h4>
                             </div>
                         </Card>
                     ))
                 ) : (
-                    <EmptyState
-                        Icon={GuildIcon}
-                        title={`No ${settings.terminology.groups} Created`}
-                        message={`Create your first ${settings.terminology.group.toLowerCase()} to organize users and quests.`}
-                        actionButton={<Button onClick={handleCreateGuild}>Create {settings.terminology.group}</Button>}
-                    />
+                    <Card>
+                        <EmptyState
+                            Icon={GuildIcon}
+                            title={`No ${settings.terminology.groups} Created`}
+                            message={`Create your first ${settings.terminology.group.toLowerCase()} to organize users and quests.`}
+                            actionButton={<Button onClick={handleCreateGuild}>Create {settings.terminology.group}</Button>}
+                        />
+                    </Card>
                 )}
             </div>
 

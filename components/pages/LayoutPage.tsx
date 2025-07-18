@@ -1,6 +1,6 @@
+
 import React, { useState, useEffect, useRef } from 'react';
-import { useSettings } from '../../context/SettingsContext';
-import { useAppState, useAppDispatch } from '../../context/AppContext';
+import { useSettingsState, useGameDataState, useAppDispatch } from '../../context/AppContext';
 import { AppSettings, ThemeDefinition, SidebarConfigItem, Page, SidebarLink } from '../../types';
 import Button from '../ui/Button';
 import Input from '../ui/Input';
@@ -12,11 +12,13 @@ import { GrabHandleIcon, ArrowLeftIcon, ArrowRightIcon } from '../ui/Icons';
 type SidebarKey = keyof AppSettings['sidebars'];
 
 const AppearancePage: React.FC = () => {
-    const { settings } = useSettings();
-    const { themes: allThemes } = useAppState();
+    const { settings } = useSettingsState();
+    const { themes: allThemes } = useGameDataState();
     const { updateSettings, addNotification } = useAppDispatch();
     
-    const [formState, setFormState] = useState(settings);
+    // Initialize state once from settings, preventing resets on re-render from sync
+    const [formState, setFormState] = useState<AppSettings>(() => JSON.parse(JSON.stringify(settings)));
+    
     const [activeTab, setActiveTab] = useState<SidebarKey>('main');
     const [pickerOpenFor, setPickerOpenFor] = useState<number | null>(null);
 
@@ -133,8 +135,7 @@ const AppearancePage: React.FC = () => {
     return (
         <div className="space-y-8 relative">
             <div className="sticky top-0 z-10 -mx-8 -mt-8 px-8 pt-6 pb-4 mb-2" style={{ backgroundColor: 'hsl(var(--color-bg-tertiary))', borderBottom: '1px solid hsl(var(--color-border))' }}>
-                <div className="flex justify-between items-center">
-                    <h1 className="text-4xl font-medieval text-stone-100" style={{ color: 'hsl(var(--color-text-primary))' }}>Appearance</h1>
+                <div className="flex justify-end items-center">
                     <Button onClick={handleSave}>Save Appearance Settings</Button>
                 </div>
             </div>

@@ -1,7 +1,8 @@
 
+
 import React from 'react';
 import { AppSettings, Page, AppMode } from '../types';
-import { useAppState, useAppDispatch } from './AppContext';
+import { useSettingsState, useUIState, useAppDispatch } from './AppContext';
 
 // The state slice provided by this context
 export interface SettingsState {
@@ -21,12 +22,13 @@ export interface SettingsDispatch {
 
 // Hook to consume the settings state slice
 export const useSettings = (): SettingsState => {
-  const { settings, activePage, appMode } = useAppState();
+  const { settings, isAiConfigured } = useSettingsState();
+  const { activePage, appMode } = useUIState();
   return { 
     settings, 
     activePage, 
     appMode,
-    isAiAvailable: settings.enableAiFeatures,
+    isAiAvailable: settings.enableAiFeatures && isAiConfigured,
   };
 };
 

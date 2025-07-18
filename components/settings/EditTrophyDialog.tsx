@@ -2,8 +2,9 @@
 
 
 
+
 import React, { useState, useEffect } from 'react';
-import { useAppState, useAppDispatch } from '../../context/AppContext';
+import { useGameDataState, useAppDispatch } from '../../context/AppContext';
 import { Trophy, TrophyRequirement, TrophyRequirementType, QuestType } from '../../types';
 import Button from '../ui/Button';
 import Input from '../ui/Input';
@@ -17,7 +18,7 @@ interface EditTrophyDialogProps {
 }
 
 const EditTrophyDialog: React.FC<EditTrophyDialogProps> = ({ trophy, initialData, onClose }) => {
-  const { ranks, allTags } = useAppState();
+  const { ranks, allTags } = useGameDataState();
   const { addTrophy, updateTrophy } = useAppDispatch();
   const [formData, setFormData] = useState<Omit<Trophy, 'id'>>({ 
     name: initialData?.name || '', 

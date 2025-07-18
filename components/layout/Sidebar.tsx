@@ -2,10 +2,10 @@
 import React, { useState, useMemo } from 'react';
 import { Role, Page, QuestCompletionStatus, PurchaseRequestStatus, Terminology, SidebarConfigItem, SidebarLink } from '../../types';
 import { ChevronDownIcon, ArrowLeftIcon, ArrowRightIcon } from '../ui/Icons';
-import { useAppState, useAppDispatch } from '../../context/AppContext';
+import { useAppDispatch, useAuthState, useGameDataState, useSettingsState, useUIState } from '../../context/AppContext';
 
 const NavLink: React.FC<{ item: SidebarLink, activePage: Page, setActivePage: (page: Page) => void, badgeCount?: number, isCollapsed: boolean }> = ({ item, activePage, setActivePage, badgeCount = 0, isCollapsed }) => {
-    const { settings } = useAppState();
+    const { settings } = useSettingsState();
     const linkName = item.termKey ? settings.terminology[item.termKey] : item.id;
 
     const isNested = item.level > 0;
@@ -80,7 +80,10 @@ const CollapsibleNavGroup: React.FC<CollapsibleNavGroupProps> = ({ title, childr
 
 
 const Sidebar: React.FC = () => {
-  const { currentUser, questCompletions, purchaseRequests, activePage, settings, isAiConfigured, isSidebarCollapsed, chatMessages, isChatOpen } = useAppState();
+  const { currentUser } = useAuthState();
+  const { questCompletions, purchaseRequests } = useGameDataState();
+  const { activePage, isSidebarCollapsed, chatMessages, isChatOpen } = useUIState();
+  const { settings, isAiConfigured } = useSettingsState();
   const { setActivePage, toggleSidebar, toggleChat } = useAppDispatch();
   const isAiAvailable = settings.enableAiFeatures && isAiConfigured;
   

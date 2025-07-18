@@ -1,7 +1,9 @@
 
 
+
+
 import React, { useState, useEffect } from 'react';
-import { useAppState, useAppDispatch } from '../../context/AppContext';
+import { useGameDataState, useAppDispatch } from '../../context/AppContext';
 import { GameAsset, RewardItem, RewardCategory } from '../../types';
 import Button from '../ui/Button';
 import Input from '../ui/Input';
@@ -16,7 +18,7 @@ interface EditGameAssetDialogProps {
 
 const EditGameAssetDialog: React.FC<EditGameAssetDialogProps> = ({ assetToEdit, newAssetUrl, onClose }) => {
   const { addGameAsset, updateGameAsset } = useAppDispatch();
-  const { markets } = useAppState();
+  const { markets } = useGameDataState();
 
   const [formData, setFormData] = useState({
     name: '',

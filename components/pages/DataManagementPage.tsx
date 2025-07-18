@@ -6,7 +6,7 @@ import ObjectExporterPage from './management/ObjectExporterPage';
 import BackupAndImportPage from './management/BackupAndImportPage';
 import AssetLibraryPage from './management/AssetLibraryPage';
 import AssetManagerPage from './management/MediaManagerPage';
-import { useAppState } from '../../context/AppContext';
+import { useSettingsState } from '../../context/AppContext';
 import { Page, SidebarConfigItem, SidebarLink } from '../../types';
 
 type ManagementPage = 'Object Exporter' | 'Asset Manager' | 'Backup & Import' | 'Asset Library';
@@ -19,7 +19,7 @@ const iconMap: { [key in ManagementPage]: React.FC<{className?: string}> } = {
 };
 
 const DataManagementPage: React.FC = () => {
-    const { settings } = useAppState();
+    const { settings } = useSettingsState();
     
     const visibleItems = useMemo((): SidebarConfigItem[] => {
         return settings.sidebars.dataManagement.filter(item => item.isVisible);
@@ -45,21 +45,21 @@ const DataManagementPage: React.FC = () => {
 
     return (
         <div className="h-full flex flex-col">
-            <h1 className="text-4xl font-medieval text-stone-100 mb-8 flex-shrink-0">Data Management</h1>
             <div className="flex-grow flex gap-6 overflow-hidden">
                 <nav className="w-64 bg-stone-800/50 border border-stone-700/60 rounded-xl p-4 flex-shrink-0 flex flex-col">
                     <div className="space-y-2">
                         {visibleItems.map(item => {
                             if (item.type !== 'link') return null;
                             const Icon = iconMap[item.id as ManagementPage];
+                            const linkName = item.termKey ? settings.terminology[item.termKey] : item.id;
                             return (
                                 <button
                                     key={item.id}
                                     onClick={() => setActivePage(item.id)}
                                     className={`w-full flex items-center p-3 text-left rounded-lg transition-colors ${activePage === item.id ? 'bg-emerald-600/20 text-emerald-300' : 'text-stone-300 hover:bg-stone-700/50'}`}
                                 >
-                                    {Icon && <Icon />}
-                                    <span className="capitalize">{item.id}</span>
+                                    {Icon && <Icon className="w-5 h-5 mr-3" />}
+                                    <span className="capitalize">{linkName}</span>
                                 </button>
                             );
                         })}

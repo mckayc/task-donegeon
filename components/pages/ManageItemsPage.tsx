@@ -1,5 +1,6 @@
+
 import React, { useState } from 'react';
-import { useAppState, useAppDispatch } from '../../context/AppContext';
+import { useGameDataState, useSettingsState, useAppDispatch } from '../../context/AppContext';
 import { GameAsset } from '../../types';
 import Button from '../ui/Button';
 import Card from '../ui/Card';
@@ -10,7 +11,8 @@ import { ItemManagerIcon } from '../ui/Icons';
 import ItemIdeaGenerator from '../quests/ItemIdeaGenerator';
 
 const ManageItemsPage: React.FC = () => {
-    const { gameAssets, settings, isAiConfigured } = useAppState();
+    const { gameAssets } = useGameDataState();
+    const { settings, isAiConfigured } = useSettingsState();
     const { deleteGameAssets } = useAppDispatch();
     
     const [editingAsset, setEditingAsset] = useState<GameAsset | null>(null);

@@ -1,6 +1,7 @@
 
+
 import React, { useState } from 'react';
-import { useAppState, useAppDispatch } from '../../context/AppContext';
+import { useGameDataState, useAppDispatch } from '../../context/AppContext';
 import { RewardCategory, RewardTypeDefinition } from '../../types';
 import Button from '../ui/Button';
 import Card from '../ui/Card';
@@ -12,7 +13,7 @@ const RewardList: React.FC<{ title: string; rewards: RewardTypeDefinition[]; onE
         {rewards.length > 0 ? (
             <ul className="space-y-3">
                 {rewards.map(reward => (
-                    <li key={reward.id} className="bg-stone-800/60 p-4 rounded-lg flex justify-between items-center">
+                    <li key={reward.id} className="bg-stone-800/60 p-4 rounded-lg flex flex-col md:flex-row justify-between md:items-center gap-4">
                         <div>
                             <h4 className="font-bold text-lg text-stone-100 flex items-center gap-3">
                                 <span className="text-2xl">{reward.icon || (reward.category === RewardCategory.Currency ? '💰' : '⭐')}</span>
@@ -21,7 +22,7 @@ const RewardList: React.FC<{ title: string; rewards: RewardTypeDefinition[]; onE
                             </h4>
                             <p className="text-stone-400 text-sm mt-1">{reward.description}</p>
                         </div>
-                        <div className="flex space-x-2">
+                        <div className="flex space-x-2 self-end md:self-center flex-shrink-0">
                             <Button variant="secondary" className="text-sm py-1 px-3" onClick={() => onEdit(reward)}>Edit</Button>
                             {!reward.isCore && (
                                 <Button variant="secondary" className="text-sm py-1 px-3 !bg-red-900/50 hover:!bg-red-800/60 text-red-300" onClick={() => onDelete(reward.id)}>Delete</Button>
@@ -37,7 +38,7 @@ const RewardList: React.FC<{ title: string; rewards: RewardTypeDefinition[]; onE
 );
 
 const RewardsPage: React.FC = () => {
-    const { rewardTypes } = useAppState();
+    const { rewardTypes } = useGameDataState();
     const { deleteRewardType } = useAppDispatch();
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [editingReward, setEditingReward] = useState<RewardTypeDefinition | null>(null);

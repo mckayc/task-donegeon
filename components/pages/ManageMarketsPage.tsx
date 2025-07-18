@@ -4,13 +4,14 @@ import Button from '../ui/Button';
 import Card from '../ui/Card';
 import EditMarketDialog from '../markets/EditMarketDialog';
 import ConfirmDialog from '../ui/ConfirmDialog';
-import { useAppState, useAppDispatch } from '../../context/AppContext';
+import { useAppDispatch, useGameDataState, useSettingsState } from '../../context/AppContext';
 import EmptyState from '../ui/EmptyState';
 import { MarketplaceIcon } from '../ui/Icons';
 import MarketIdeaGenerator from '../quests/MarketIdeaGenerator';
 
 const ManageMarketsPage: React.FC = () => {
-    const { markets, settings, isAiConfigured } = useAppState();
+    const { markets } = useGameDataState();
+    const { settings, isAiConfigured } = useSettingsState();
     const { deleteMarket } = useAppDispatch();
     const [isMarketDialogOpen, setIsMarketDialogOpen] = useState(false);
     const [editingMarket, setEditingMarket] = useState<Market | null>(null);
@@ -61,9 +62,11 @@ const ManageMarketsPage: React.FC = () => {
                 <Button onClick={handleCreateMarket}>Create New {settings.terminology.store}</Button>
             </div>
 
-            <Card title={`All ${settings.terminology.stores}`}>
+            <Card title={`All ${settings.terminology.stores}`} className="p-0 md:p-6 overflow-hidden">
                 {markets.length > 0 ? (
-                    <div className="overflow-x-auto">
+                    <>
+                    {/* Table for larger screens */}
+                    <div className="overflow-x-auto hidden md:block">
                         <table className="w-full text-left">
                             <thead className="border-b border-stone-700/60">
                                 <tr>
@@ -86,13 +89,31 @@ const ManageMarketsPage: React.FC = () => {
                             </tbody>
                         </table>
                     </div>
+                     {/* Card list for smaller screens */}
+                    <div className="md:hidden p-4 space-y-4">
+                        {markets.map(market => (
+                             <div key={market.id} className="bg-stone-800/60 rounded-lg overflow-hidden">
+                                <div className="p-4">
+                                    <h3 className="font-bold text-lg text-stone-100">{market.icon} {market.title}</h3>
+                                    <p className="text-sm text-stone-400 mt-1">{market.description}</p>
+                                </div>
+                                <div className="bg-stone-900/30 p-2 border-t border-stone-700/60 flex justify-end gap-2">
+                                     <Button variant="secondary" className="text-sm py-1 px-3" onClick={() => handleEditMarket(market)}>Edit</Button>
+                                     <Button variant="secondary" className="text-sm py-1 px-3 !bg-red-900/50 hover:!bg-red-800/60 text-red-300" onClick={() => handleDeleteRequest(market)}>Delete</Button>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                    </>
                 ) : (
-                    <EmptyState 
-                        Icon={MarketplaceIcon}
-                        title={`No ${settings.terminology.stores} Found`}
-                        message={`Create a ${settings.terminology.store.toLowerCase()} to allow users to spend their currency.`}
-                        actionButton={<Button onClick={handleCreateMarket}>Create {settings.terminology.store}</Button>}
-                    />
+                    <div className="p-6">
+                        <EmptyState 
+                            Icon={MarketplaceIcon}
+                            title={`No ${settings.terminology.stores} Found`}
+                            message={`Create a ${settings.terminology.store.toLowerCase()} to allow users to spend their currency.`}
+                            actionButton={<Button onClick={handleCreateMarket}>Create {settings.terminology.store}</Button>}
+                        />
+                    </div>
                 )}
             </Card>
 

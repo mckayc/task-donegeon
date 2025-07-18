@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { useAppState } from '../../context/AppContext';
+import { useGameDataState, useAuthState, useUIState } from '../../context/AppContext';
 import { Quest, QuestType, QuestCompletion, QuestCompletionStatus, QuestAvailability } from '../../types';
 import Card from '../ui/Card';
 import { toYMD } from '../../utils/quests';
@@ -23,7 +23,9 @@ const ViewButton: React.FC<{ type: CalendarView, currentView: CalendarView, setV
 );
 
 const CalendarPage: React.FC = () => {
-    const { quests, currentUser, questCompletions, appMode } = useAppState();
+    const { quests, questCompletions } = useGameDataState();
+    const { currentUser } = useAuthState();
+    const { appMode } = useUIState();
     const [view, setView] = useState<CalendarView>('day');
     const [mode, setMode] = useState<CalendarMode>('quests');
     const [currentDate, setCurrentDate] = useState(new Date());

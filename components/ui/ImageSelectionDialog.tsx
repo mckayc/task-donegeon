@@ -1,5 +1,6 @@
+
 import React, { useMemo, useState } from 'react';
-import { useAppState } from '../../context/AppContext';
+import { useGameDataState } from '../../context/AppContext';
 import Input from './Input';
 import Button from './Button';
 
@@ -9,7 +10,7 @@ interface ImageSelectionDialogProps {
 }
 
 const ImageSelectionDialog: React.FC<ImageSelectionDialogProps> = ({ onSelect, onClose }) => {
-  const { gameAssets } = useAppState();
+  const { gameAssets } = useGameDataState();
   const [searchTerm, setSearchTerm] = useState('');
 
   const uniqueImages = useMemo(() => {

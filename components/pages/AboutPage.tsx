@@ -1,6 +1,7 @@
+
 import React, { useState, useEffect, ReactNode } from 'react';
 import Card from '../ui/Card';
-import { useAppState } from '../../context/AppContext';
+import { useSettingsState } from '../../context/AppContext';
 import { ChevronDownIcon } from '../ui/Icons';
 
 interface Metadata {
@@ -55,107 +56,54 @@ const RoadmapContent: React.FC = () => (
             <ul className="list-disc list-inside space-y-2 mt-2">
                 <li><strong>Theme Creator:</strong> An admin tool to create and edit custom visual themes (colors, fonts, etc.) that can be sold in a market.</li>
                 <li><strong>User-Created Content:</strong> A system allowing Explorers to design their own quests and items, then submit them to admins for approval. This fosters creativity and allows the game world to be co-created by its members.</li>
-                <li><strong>Reward Rarity &amp; Limits:</strong> Ability to specify how many of a certain reward can be claimed, creating rare or one-of-a-kind items.</li>
-                <li><strong>Automated Quest Rotation:</strong> A system for automatically rotating daily or weekly duties among guild members to ensure fair distribution of chores.</li>
-            </ul>
-        </div>
-        
-        <div>
-            <h4 className="text-xl font-bold text-stone-100 font-medieval">Phase 3: Advanced Systems &amp; World Expansion</h4>
-            <p className="text-xs text-stone-400">This phase includes the big, game-changing features that add new dimensions to the world.</p>
-            <ul className="list-disc list-inside space-y-2 mt-2">
-                <li><strong>Game Map:</strong> A visual map with unlockable locations. Traveling to a location could unlock new quests or markets.</li>
-                <li><strong>Explorer Markets:</strong> Allow explorers to open their own markets to sell items or services to other players, creating a player-driven economy.</li>
-                <li><strong>Advanced Reporting:</strong> A dedicated reporting dashboard for admins to track user engagement, economic flow, and quest completion rates.</li>
-            </ul>
-        </div>
-
-        <div>
-            <h4 className="text-xl font-bold text-stone-100 font-medieval">Phase 4: Platform Maturity &amp; Polish</h4>
-            <p className="text-xs text-stone-400">This phase focuses on long-term stability, accessibility, and preparing the app for a wider audience.</p>
-            <ul className="list-disc list-inside space-y-2 mt-2">
-                <li><strong>Real-time Notifications:</strong> Use WebSockets for instant updates on approvals, purchases, and guild activity.</li>
-                <li><strong>Accessibility (A11Y) Audit:</strong> A full review to ensure the application is usable by people with disabilities.</li>
-                <li><strong>Mobile App / PWA:</strong> Package the application as a Progressive Web App (PWA) for a native-like experience on mobile devices.</li>
+                <li><strong>Reward Rarity &amp; Limits:</strong> Ability to specify how many times a reward can be claimed, and its rarity.</li>
             </ul>
         </div>
     </div>
 );
 
-
 const AboutPage: React.FC = () => {
-    const { settings } = useAppState();
+    const { settings } = useSettingsState();
     const [metadata, setMetadata] = useState<Metadata | null>(null);
-    const [error, setError] = useState<string | null>(null);
-    
-    const GITHUB_URL = 'https://github.com/mckayc/task-donegeon';
+    const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
         const fetchMetadata = async () => {
             try {
                 const response = await fetch('/api/metadata');
-                if (!response.ok) {
-                    const errorBody = await response.text();
-                    throw new Error(`Failed to fetch application details: ${errorBody}`);
+                if (response.ok) {
+                    const data = await response.json();
+                    setMetadata(data);
                 }
-                const data: Metadata = await response.json();
-                setMetadata(data);
-            } catch (err) {
-                const message = err instanceof Error ? err.message : 'Unknown error';
-                setError(message);
-                console.error("Error fetching metadata:", err);
+            } catch (error) {
+                console.error("Failed to fetch metadata", error);
+            } finally {
+                setIsLoading(false);
             }
         };
-
         fetchMetadata();
     }, []);
 
-    const renderContent = () => {
-        if (error) {
-            return <p className="text-red-400">Could not load application details: {error}</p>;
-        }
-        if (!metadata) {
-            return <p>Loading application details...</p>;
-        }
-        return (
-            <div className="space-y-6 text-stone-300 leading-relaxed">
-                <p>{metadata.description}</p>
-                
-                <div className="pt-4 border-t border-stone-700/60 text-sm">
-                    <p><strong>Version:</strong> {metadata.version}</p>
-                    {metadata.lastChangeDate && (
-                        <p><strong>Last Updated:</strong> {new Date(metadata.lastChangeDate).toLocaleString()}</p>
+    return (
+        <div className="max-w-4xl mx-auto">
+            <Card>
+                <div className="text-center">
+                    <h1 className="text-4xl font-medieval text-accent">{settings.terminology.appName}</h1>
+                    {isLoading ? (
+                        <p className="text-stone-400 mt-2">Loading version info...</p>
+                    ) : metadata ? (
+                        <>
+                            <p className="text-stone-300 font-semibold mt-2">Version {metadata.version}</p>
+                            <p className="text-sm text-stone-500">Last updated: {metadata.lastChangeDate ? new Date(metadata.lastChangeDate).toLocaleString() : 'N/A'}</p>
+                        </>
+                    ) : (
+                        <p className="text-stone-400 mt-2">Could not load version information.</p>
                     )}
                 </div>
-                 <div className="pt-4 border-t border-stone-700/60 text-sm">
-                    <h3 className="text-lg font-semibold text-stone-100 mb-2">Latest Changes</h3>
-                    <p>{metadata.lastChange}</p>
-                </div>
-
-                <div className="pt-4 border-t border-stone-700/60">
-                    <h3 className="text-lg font-semibold text-stone-100 mb-2">Contribute or Report Issues</h3>
-                    <p>
-                        This project is open source. You can view the code, suggest features, or report bugs on our GitHub repository.
-                    </p>
-                    <a 
-                        href={GITHUB_URL} 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        className="inline-block mt-3 text-emerald-400 hover:text-emerald-300 font-bold underline"
-                    >
-                        Visit GitHub Repository &rarr;
-                    </a>
-                </div>
-            </div>
-        );
-    }
-
-    return (
-        <div>
-            <Card>
-                {renderContent()}
+                <p className="mt-6 text-lg text-stone-300 text-center">{metadata?.description || "A gamified task manager to make productivity fun."}</p>
             </Card>
-            <CollapsibleSection title="Roadmap" defaultOpen>
+
+            <CollapsibleSection title="Roadmap & Future Features" defaultOpen>
                 <RoadmapContent />
             </CollapsibleSection>
         </div>

@@ -1,5 +1,4 @@
 
-
 import React, { useMemo, useEffect } from 'react';
 import Sidebar from './Sidebar';
 import Header from './Header';
@@ -38,17 +37,21 @@ import BackupAndImportPage from '../pages/management/BackupAndImportPage';
 import AssetLibraryPage from '../pages/management/AssetLibraryPage';
 import ThemeEditorPage from '../pages/ThemeEditorPage';
 import RewardDisplay from '../ui/RewardDisplay';
-import { useAppState, useAppDispatch } from '../../context/AppContext';
+import { useAppDispatch, useAuthState, useGameDataState, useSettingsState, useUIState } from '../../context/AppContext';
 import ChatPanel from '../chat/ChatPanel';
+import DataManagementPage from '../pages/DataManagementPage';
 
 const MainLayout: React.FC = () => {
-  const { activePage, settings, currentUser, markets, activeMarketId } = useAppState();
+  const { settings } = useSettingsState();
+  const { currentUser } = useAuthState();
+  const { markets } = useGameDataState();
+  const { activePage, activeMarketId, isSidebarCollapsed } = useUIState();
   const { setActivePage, addNotification } = useAppDispatch();
   
   const ADMIN_ONLY_PAGES: Page[] = [
     'Manage Users', 'Manage Rewards', 'Manage Quests', 'Manage Items', 'Manage Markets',
     'Manage Guilds', 'Manage Ranks', 'Manage Trophies', 'Settings', 'AI Studio',
-    'Appearance', 'Theme Editor', 'Object Exporter', 'Asset Manager', 'Backup & Import', 'Asset Library',
+    'Appearance', 'Theme Editor', 'Data Management'
   ];
   const GATEKEEPER_PAGES: Page[] = ['Approvals'];
 
@@ -88,7 +91,7 @@ const MainLayout: React.FC = () => {
       case 'Manage Guilds': return `Manage ${settings.terminology.groups}`;
       case 'Manage Ranks': return `Manage ${settings.terminology.levels}`;
       case 'Manage Trophies': return `Manage ${settings.terminology.awards}`;
-      case 'Object Exporter': return 'Object Exporter';
+      case 'Data Management': return 'Data Management';
       case 'Trophies': return `${settings.terminology.award} Hall`;
       case 'Ranks': return `Ranks of the Donegeon`;
       case 'Help Guide': return `${settings.terminology.appName} Guide`;
@@ -129,10 +132,7 @@ const MainLayout: React.FC = () => {
       case 'Settings': return <SettingsPage />;
       case 'Appearance': return <AppearancePage />;
       case 'Theme Editor': return <ThemeEditorPage />;
-      case 'Object Exporter': return <ObjectExporterPage />;
-      case 'Asset Manager': return <AssetManagerPage />;
-      case 'Backup & Import': return <BackupAndImportPage />;
-      case 'Asset Library': return <AssetLibraryPage />;
+      case 'Data Management': return <DataManagementPage />;
       case 'Profile': return <ProfilePage />;
       case 'About': return <AboutPage />;
       case 'Help Guide': return <HelpPage />;
@@ -145,7 +145,7 @@ const MainLayout: React.FC = () => {
   return (
     <div className="flex h-screen" style={{ backgroundColor: 'hsl(var(--color-bg-secondary))', color: 'hsl(var(--color-text-primary))' }}>
       <Sidebar />
-      <div className="flex-1 flex flex-col overflow-hidden transition-all duration-300">
+      <div className={`flex-1 flex flex-col overflow-hidden transition-all duration-300 ${isSidebarCollapsed ? 'ml-20' : 'ml-72'}`}>
         <Header />
         <main className="flex-1 overflow-x-hidden overflow-y-auto p-4 md:p-8" style={{ backgroundColor: 'hsl(var(--color-bg-tertiary))' }}>
           <div className="flex justify-between items-center mb-8 flex-wrap gap-4">

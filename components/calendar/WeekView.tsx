@@ -1,7 +1,8 @@
+
 import React, { useMemo, useState } from 'react';
 import { Quest, QuestCompletion, QuestType } from '../../types';
 import { isQuestScheduledForDay, questSorter, toYMD } from '../../utils/quests';
-import { useAppState, useAppDispatch } from '../../context/AppContext';
+import { useAuthState, useAppDispatch } from '../../context/AppContext';
 import { useCalendarVentures } from '../../hooks/useCalendarVentures';
 import QuestList from './QuestList';
 import QuestDetailDialog from '../quests/QuestDetailDialog';
@@ -14,7 +15,7 @@ interface WeekViewProps {
 }
 
 const WeekView: React.FC<WeekViewProps> = ({ currentDate, quests, questCompletions }) => {
-    const { currentUser } = useAppState();
+    const { currentUser } = useAuthState();
     const { markQuestAsTodo, unmarkQuestAsTodo } = useAppDispatch();
     const [selectedQuest, setSelectedQuest] = useState<{quest: Quest, date: Date} | null>(null);
     const [completingQuest, setCompletingQuest] = useState<{quest: Quest, date: Date} | null>(null);
@@ -91,7 +92,7 @@ const WeekView: React.FC<WeekViewProps> = ({ currentDate, quests, questCompletio
 // Memoize DayColumn to prevent re-renders when other days' data changes.
 const DayColumn = React.memo(({ day, quests, questCompletions, onSelectQuest }: { day: Date, quests: Quest[], questCompletions: QuestCompletion[], onSelectQuest: (quest: Quest) => void }) => {
     const calendarVentures = useCalendarVentures(day);
-    const { currentUser } = useAppState();
+    const { currentUser } = useAuthState();
 
     const sortedQuests = useMemo(() => {
         if (!currentUser) return [];

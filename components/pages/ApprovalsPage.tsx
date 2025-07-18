@@ -1,28 +1,22 @@
 
+
 import React, { useState } from 'react';
 import Card from '../ui/Card';
 import Button from '../ui/Button';
-import { useAppState, useAppDispatch } from '../../context/AppContext';
+import { useAppDispatch, useAuthState, useGameDataState } from '../../context/AppContext';
 import { QuestCompletionStatus, Role, PurchaseRequestStatus } from '../../types';
 import Input from '../ui/Input';
 
 const ApprovalsPage: React.FC = () => {
-    const { 
-      questCompletions, users, quests, currentUser,
-      purchaseRequests, guilds
-    } = useAppState();
-
-    const {
-        approveQuestCompletion, rejectQuestCompletion,
-        approvePurchaseRequest, rejectPurchaseRequest
-    } = useAppDispatch();
+    const { currentUser, users } = useAuthState();
+    const { questCompletions, quests, purchaseRequests, guilds } = useGameDataState();
+    const { approveQuestCompletion, rejectQuestCompletion, approvePurchaseRequest, rejectPurchaseRequest } = useAppDispatch();
     
     const [notes, setNotes] = useState<{ [key: string]: string }>({});
 
     if (!currentUser || (currentUser.role !== Role.DonegeonMaster && currentUser.role !== Role.Gatekeeper)) {
         return (
             <div>
-                <h1 className="text-4xl font-medieval text-stone-100 mb-8">Access Denied</h1>
                 <Card>
                     <p className="text-stone-300">You do not have permission to view this page.</p>
                 </Card>

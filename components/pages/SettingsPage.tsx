@@ -1,7 +1,7 @@
 
 
 import React, { useState, ChangeEvent } from 'react';
-import { useAppState, useAppDispatch } from '../../context/AppContext';
+import { useAppDispatch, useAuthState, useSettingsState } from '../../context/AppContext';
 import { Role, AppSettings, Terminology } from '../../types';
 import Button from '../ui/Button';
 import { ChevronDownIcon } from '../ui/Icons';
@@ -87,7 +87,8 @@ const terminologyLabels: { [key in keyof Terminology]: string } = {
 };
 
 const SettingsPage: React.FC = () => {
-    const { currentUser, users, settings } = useAppState();
+    const { currentUser, users } = useAuthState();
+    const { settings } = useSettingsState();
     const { updateSettings, addNotification } = useAppDispatch();
     
     const [formState, setFormState] = useState<AppSettings>(settings);

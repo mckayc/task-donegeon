@@ -1,9 +1,10 @@
+
 import React from 'react';
-import { useAppState, useAppDispatch } from '../../context/AppContext';
+import { useUIState, useAppDispatch } from '../../context/AppContext';
 import Notification from './Notification';
 
 const NotificationContainer: React.FC = () => {
-    const { notifications } = useAppState();
+    const { notifications } = useUIState();
     const { removeNotification } = useAppDispatch();
 
     return (

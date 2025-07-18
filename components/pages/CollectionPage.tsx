@@ -1,12 +1,12 @@
 
-
 import React, { useMemo } from 'react';
-import { useAppState } from '../../context/AppContext';
+import { useAuthState, useGameDataState } from '../../context/AppContext';
 import Card from '../ui/Card';
 import { CollectionIcon } from '../ui/Icons';
 
 const CollectionPage: React.FC = () => {
-    const { currentUser, gameAssets } = useAppState();
+    const { currentUser } = useAuthState();
+    const { gameAssets } = useGameDataState();
 
     const myCollection = useMemo(() => {
         if (!currentUser) return [];

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useAppState, useAppDispatch } from '../../context/AppContext';
+import { useAppDispatch, useGameDataState, useSettingsState } from '../../context/AppContext';
 import { Quest, QuestType } from '../../types';
 import Button from '../ui/Button';
 import Card from '../ui/Card';
@@ -10,7 +10,8 @@ import { QuestsIcon } from '../ui/Icons';
 import EmptyState from '../ui/EmptyState';
 
 const ManageQuestsPage: React.FC = () => {
-    const { quests, settings, isAiConfigured } = useAppState();
+    const { quests } = useGameDataState();
+    const { settings, isAiConfigured } = useSettingsState();
     const { deleteQuests, updateQuestsStatus } = useAppDispatch();
     
     const [editingQuest, setEditingQuest] = useState<Quest | null>(null);
@@ -118,56 +119,84 @@ const ManageQuestsPage: React.FC = () => {
                 </div>
             </div>
 
-            <Card title={`All Created ${settings.terminology.tasks}`}>
+            <Card title={`All Created ${settings.terminology.tasks}`} className="p-0 md:p-6 overflow-hidden">
                 {quests.length > 0 ? (
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-left">
-                            <thead className="border-b border-stone-700/60">
-                                <tr>
-                                    <th className="p-4 w-12"><input type="checkbox" onChange={handleSelectAll} checked={selectedQuests.length === quests.length && quests.length > 0} className="h-4 w-4 rounded text-emerald-600 bg-stone-700 border-stone-600 focus:ring-emerald-500" /></th>
-                                    <th className="p-4 font-semibold">Title</th>
-                                    <th className="p-4 font-semibold">Type</th>
-                                    <th className="p-4 font-semibold">Status</th>
-                                    <th className="p-4 font-semibold">Tags</th>
-                                    <th className="p-4 font-semibold">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {quests.map(quest => (
-                                    <tr key={quest.id} className="border-b border-stone-700/40 last:border-b-0">
-                                        <td className="p-4"><input type="checkbox" checked={selectedQuests.includes(quest.id)} onChange={e => handleSelectOne(quest.id, e.target.checked)} className="h-4 w-4 rounded text-emerald-600 bg-stone-700 border-stone-600 focus:ring-emerald-500" /></td>
-                                        <td className="p-4 font-bold">{quest.title}</td>
-                                        <td className="p-4 text-stone-400">{quest.type}</td>
-                                        <td className="p-4">
-                                            <span className={`px-2 py-1 text-xs font-semibold rounded-full ${quest.isActive ? 'bg-green-500/20 text-green-300' : 'bg-stone-500/20 text-stone-300'}`}>
-                                                {quest.isActive ? 'Active' : 'Inactive'}
-                                            </span>
-                                        </td>
-                                        <td className="p-4">
-                                            <div className="flex flex-wrap gap-1">
-                                                {quest.tags?.map(tag => (
-                                                    <span key={tag} className="bg-blue-500/20 text-blue-300 text-xs font-medium px-2 py-1 rounded-full">
-                                                        {tag}
-                                                    </span>
-                                                ))}
-                                            </div>
-                                        </td>
-                                        <td className="p-4 space-x-2">
-                                            <Button variant="secondary" className="text-sm py-1 px-3" onClick={() => handleEdit(quest)}>Edit</Button>
-                                            <Button variant="secondary" className="text-sm py-1 px-3 !bg-red-900/50 hover:!bg-red-800/60 text-red-300" onClick={() => setConfirmation({ action: 'delete', ids: [quest.id] })}>Delete</Button>
-                                        </td>
+                    <>
+                        {/* Table for larger screens */}
+                        <div className="overflow-x-auto hidden md:block">
+                            <table className="w-full text-left">
+                                <thead className="border-b border-stone-700/60">
+                                    <tr>
+                                        <th className="p-4 w-12"><input type="checkbox" onChange={handleSelectAll} checked={selectedQuests.length === quests.length && quests.length > 0} className="h-4 w-4 rounded text-emerald-600 bg-stone-700 border-stone-600 focus:ring-emerald-500" /></th>
+                                        <th className="p-4 font-semibold">Title</th>
+                                        <th className="p-4 font-semibold">Type</th>
+                                        <th className="p-4 font-semibold">Status</th>
+                                        <th className="p-4 font-semibold">Tags</th>
+                                        <th className="p-4 font-semibold">Actions</th>
                                     </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
+                                </thead>
+                                <tbody>
+                                    {quests.map(quest => (
+                                        <tr key={quest.id} className="border-b border-stone-700/40 last:border-b-0">
+                                            <td className="p-4"><input type="checkbox" checked={selectedQuests.includes(quest.id)} onChange={e => handleSelectOne(quest.id, e.target.checked)} className="h-4 w-4 rounded text-emerald-600 bg-stone-700 border-stone-600 focus:ring-emerald-500" /></td>
+                                            <td className="p-4 font-bold">{quest.title}</td>
+                                            <td className="p-4 text-stone-400">{quest.type}</td>
+                                            <td className="p-4">
+                                                <span className={`px-2 py-1 text-xs font-semibold rounded-full ${quest.isActive ? 'bg-green-500/20 text-green-300' : 'bg-stone-500/20 text-stone-300'}`}>
+                                                    {quest.isActive ? 'Active' : 'Inactive'}
+                                                </span>
+                                            </td>
+                                            <td className="p-4">
+                                                <div className="flex flex-wrap gap-1">
+                                                    {quest.tags?.map(tag => (
+                                                        <span key={tag} className="bg-blue-500/20 text-blue-300 text-xs font-medium px-2 py-1 rounded-full">
+                                                            {tag}
+                                                        </span>
+                                                    ))}
+                                                </div>
+                                            </td>
+                                            <td className="p-4 space-x-2">
+                                                <Button variant="secondary" className="text-sm py-1 px-3" onClick={() => handleEdit(quest)}>Edit</Button>
+                                                <Button variant="secondary" className="text-sm py-1 px-3 !bg-red-900/50 hover:!bg-red-800/60 text-red-300" onClick={() => setConfirmation({ action: 'delete', ids: [quest.id] })}>Delete</Button>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                        {/* Card list for smaller screens */}
+                        <div className="md:hidden p-4 space-y-4">
+                             <div className="flex items-center p-2">
+                                <input type="checkbox" onChange={handleSelectAll} checked={selectedQuests.length === quests.length && quests.length > 0} className="h-4 w-4 rounded text-emerald-600 bg-stone-700 border-stone-600 focus:ring-emerald-500" />
+                                <label className="ml-3 text-sm font-semibold">Select All</label>
+                            </div>
+                            {quests.map(quest => (
+                                <div key={quest.id} className="bg-stone-800/60 rounded-lg p-3 flex gap-3">
+                                    <input type="checkbox" checked={selectedQuests.includes(quest.id)} onChange={e => handleSelectOne(quest.id, e.target.checked)} className="h-4 w-4 rounded text-emerald-600 bg-stone-700 border-stone-600 focus:ring-emerald-500 mt-1" />
+                                    <div className="flex-grow">
+                                        <p className="font-bold text-stone-100">{quest.title}</p>
+                                        <p className="text-sm text-stone-400">{quest.type} - <span className={`${quest.isActive ? 'text-green-400' : 'text-stone-500'}`}>{quest.isActive ? 'Active' : 'Inactive'}</span></p>
+                                         <div className="flex flex-wrap gap-1 mt-2">
+                                            {quest.tags?.map(tag => ( <span key={tag} className="bg-blue-500/20 text-blue-300 text-xs font-medium px-2 py-1 rounded-full">{tag}</span> ))}
+                                        </div>
+                                        <div className="flex gap-2 mt-3">
+                                            <Button variant="secondary" className="text-xs py-1 px-2" onClick={() => handleEdit(quest)}>Edit</Button>
+                                            <Button variant="secondary" className="text-xs py-1 px-2 !bg-red-900/50 hover:!bg-red-800/60 text-red-300" onClick={() => setConfirmation({ action: 'delete', ids: [quest.id] })}>Delete</Button>
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </>
                 ) : (
-                    <EmptyState 
-                        Icon={QuestsIcon}
-                        title={`No ${settings.terminology.tasks} Created Yet`}
-                        message={`Create your first ${settings.terminology.task.toLowerCase()} to get your adventurers started.`}
-                        actionButton={<Button onClick={handleCreate}>Create {settings.terminology.task}</Button>}
-                    />
+                    <div className="p-6">
+                        <EmptyState 
+                            Icon={QuestsIcon}
+                            title={`No ${settings.terminology.tasks} Created Yet`}
+                            message={`Create your first ${settings.terminology.task.toLowerCase()} to get your adventurers started.`}
+                            actionButton={<Button onClick={handleCreate}>Create {settings.terminology.task}</Button>}
+                        />
+                    </div>
                 )}
             </Card>
             

@@ -1,12 +1,13 @@
 
+
 import React, { useState } from 'react';
-import { useAppState, useAppDispatch } from '../../context/AppContext';
+import { useAuthState, useAppDispatch } from '../../context/AppContext';
 import Button from '../ui/Button';
 import Card from '../ui/Card';
 import Input from '../ui/Input';
 
 const ProfilePage: React.FC = () => {
-    const { currentUser } = useAppState();
+    const { currentUser } = useAuthState();
     const { updateUser, addNotification } = useAppDispatch();
     
     // This check ensures we don't proceed if the user isn't logged in.

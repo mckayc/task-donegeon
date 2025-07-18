@@ -1,6 +1,7 @@
+
 import React from 'react';
 import { User, Quest, RewardTypeDefinition, QuestCompletion, RewardItem, Market, PurchaseRequest, Guild, Rank, Trophy, UserTrophy, Notification, AdminAdjustment, SystemLog, Blueprint, ImportResolution, GameAsset } from '../types';
-import { useAppState, useAppDispatch } from './AppContext';
+import { useAuthState, useGameDataState, useUIState, useAppDispatch } from './AppContext';
 
 // The state slice provided by this context
 export interface GameDataState {
@@ -73,14 +74,16 @@ export interface GameDataDispatch {
 
 // Hook to consume the game data state slice
 export const useGameData = (): GameDataState => {
-  const {
-    users, quests, markets, rewardTypes, questCompletions, purchaseRequests, guilds, ranks, trophies, userTrophies, adminAdjustments, gameAssets, systemLogs,
-    notifications, activeMarketId, allTags, isDataLoaded
-  } = useAppState();
+  const { users } = useAuthState();
+  const gameDataState = useGameDataState();
+  const { notifications, activeMarketId, isDataLoaded } = useUIState();
 
   return {
-    users, quests, markets, rewardTypes, questCompletions, purchaseRequests, guilds, ranks, trophies, userTrophies, adminAdjustments, gameAssets, systemLogs,
-    notifications, activeMarketId, allTags, isDataLoaded
+    users,
+    ...gameDataState,
+    notifications, 
+    activeMarketId, 
+    isDataLoaded
   };
 };
 

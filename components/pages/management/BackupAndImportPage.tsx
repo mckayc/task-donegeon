@@ -1,6 +1,6 @@
 
-import React, { useState, useCallback, useRef, useEffect } from 'react';
-import { useAppState, useAppDispatch } from '../../../context/AppContext';
+import React, { useState, useCallback, useRef, useEffect, useMemo } from 'react';
+import { useGameDataState, useAppDispatch, useAuthState, useSettingsState, useUIState } from '../../../context/AppContext';
 import { Blueprint, IAppData, ImportResolution } from '../../../types';
 import Button from '../../ui/Button';
 import Card from '../../ui/Card';
@@ -23,10 +23,14 @@ interface LocalBackup {
     name: string;
     size: number;
     data: IAppData;
+    isAuto?: boolean;
 }
 
 const BackupAndImportPage: React.FC = () => {
-    const appState = useAppState();
+    const gameDataState = useGameDataState();
+    const authState = useAuthState();
+    const settingsState = useSettingsState();
+    const uiState = useUIState();
     const { restoreFromBackup, importBlueprint, addNotification } = useAppDispatch();
     const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -36,11 +40,31 @@ const BackupAndImportPage: React.FC = () => {
     const [fileToRestore, setFileToRestore] = useState<IAppData | null>(null);
     const [backupToDelete, setBackupToDelete] = useState<LocalBackup | null>(null);
 
+    const fullAppState: IAppData = useMemo(() => ({
+        users: authState.users,
+        loginHistory: authState.loginHistory,
+        quests: gameDataState.quests,
+        markets: gameDataState.markets,
+        rewardTypes: gameDataState.rewardTypes,
+        questCompletions: gameDataState.questCompletions,
+        purchaseRequests: gameDataState.purchaseRequests,
+        guilds: gameDataState.guilds,
+        ranks: gameDataState.ranks,
+        trophies: gameDataState.trophies,
+        userTrophies: gameDataState.userTrophies,
+        adminAdjustments: gameDataState.adminAdjustments,
+        gameAssets: gameDataState.gameAssets,
+        systemLogs: gameDataState.systemLogs,
+        themes: gameDataState.themes,
+        settings: settingsState.settings,
+        chatMessages: uiState.chatMessages,
+    }), [authState, gameDataState, settingsState, uiState]);
+
     useEffect(() => {
         try {
-            const savedBackups = localStorage.getItem('localBackups');
-            if (savedBackups) {
-                const parsed = JSON.parse(savedBackups).map((b: any) => ({...b, timestamp: new Date(b.timestamp)}));
+            const savedBackupsRaw = localStorage.getItem('localBackups');
+            if (savedBackupsRaw) {
+                const parsed = JSON.parse(savedBackupsRaw).map((b: any) => ({...b, timestamp: new Date(b.timestamp)}));
                 setLocalBackups(parsed);
             }
         } catch (e) {
@@ -70,7 +94,7 @@ const BackupAndImportPage: React.FC = () => {
                 if (parsed.users && parsed.settings) {
                     setFileToRestore(parsed);
                 } else if (parsed.name && parsed.assets) {
-                    const conflicts = analyzeBlueprintForConflicts(parsed, appState);
+                    const conflicts = analyzeBlueprintForConflicts(parsed, fullAppState);
                     setInitialResolutions(conflicts);
                     setBlueprintToPreview(parsed);
                 } else {
@@ -87,34 +111,14 @@ const BackupAndImportPage: React.FC = () => {
     };
     
     const handleGenerateBackup = () => {
-        const dataToBackup: IAppData = {
-            users: appState.users,
-            quests: appState.quests,
-            markets: appState.markets,
-            rewardTypes: appState.rewardTypes,
-            questCompletions: appState.questCompletions,
-            purchaseRequests: appState.purchaseRequests,
-            guilds: appState.guilds,
-            ranks: appState.ranks,
-            trophies: appState.trophies,
-            userTrophies: appState.userTrophies,
-            adminAdjustments: appState.adminAdjustments,
-            gameAssets: appState.gameAssets,
-            systemLogs: appState.systemLogs,
-            settings: appState.settings,
-            themes: appState.themes,
-            loginHistory: appState.loginHistory,
-            chatMessages: appState.chatMessages,
-        };
-        
-        const dataStr = JSON.stringify(dataToBackup, null, 2);
+        const dataStr = JSON.stringify(fullAppState, null, 2);
         const size = new Blob([dataStr]).size;
 
         const newBackup: LocalBackup = {
             id: `backup-${Date.now()}`,
             timestamp: new Date(),
             name: `donegeon_backup_${new Date().toISOString().replace(/:/g, '-').slice(0, 19)}.json`,
-            data: dataToBackup,
+            data: fullAppState,
             size: size,
         };
 

@@ -1,5 +1,6 @@
+
 import React, { useMemo, useState } from 'react';
-import { useAppState, useAppDispatch } from '../../context/AppContext';
+import { useGameDataState, useAuthState, useAppDispatch } from '../../context/AppContext';
 import { Quest, QuestCompletion, QuestType } from '../../types';
 import Button from '../ui/Button';
 import { toYMD, questSorter } from '../../utils/quests';
@@ -84,7 +85,8 @@ const QuestListItem: React.FC<{
 
 
 const DailyDetailDialog: React.FC<DailyDetailDialogProps> = ({ date, onClose, scheduledQuests, completedForDay, pendingForDay, questCompletions }) => {
-  const { quests, currentUser } = useAppState();
+  const { quests } = useGameDataState();
+  const { currentUser } = useAuthState();
   const { markQuestAsTodo, unmarkQuestAsTodo } = useAppDispatch();
   const [selectedQuestForDetail, setSelectedQuestForDetail] = useState<Quest | null>(null);
   const [completingQuest, setCompletingQuest] = useState<Quest | null>(null);

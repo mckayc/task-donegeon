@@ -1,6 +1,7 @@
 
+
 import React, { useState, useEffect } from 'react';
-import { useAppState, useAppDispatch } from '../../context/AppContext';
+import { useGameDataState, useAppDispatch } from '../../context/AppContext';
 import { Market } from '../../types';
 import Button from '../ui/Button';
 import Input from '../ui/Input';
@@ -13,7 +14,7 @@ interface EditMarketDialogProps {
 }
 
 const EditMarketDialog: React.FC<EditMarketDialogProps> = ({ market, initialData, onClose }) => {
-  const { guilds } = useAppState();
+  const { guilds } = useGameDataState();
   const { addMarket, updateMarket } = useAppDispatch();
   const [formData, setFormData] = useState({ 
       title: initialData?.title || '', 

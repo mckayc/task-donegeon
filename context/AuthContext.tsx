@@ -1,7 +1,8 @@
 
+
 import React from 'react';
 import { User } from '../types';
-import { useAppState, useAppDispatch } from './AppContext';
+import { useAuthState, useAppDispatch } from './AppContext';
 
 // The state slice provided by this context
 export interface AuthState {
@@ -28,25 +29,7 @@ export interface AuthDispatch {
 
 // Hook to consume the auth-related state slice
 export const useAuth = (): AuthState => {
-  const {
-    users,
-    currentUser,
-    isAppUnlocked,
-    isFirstRun,
-    isSwitchingUser,
-    targetedUserForLogin,
-    loginHistory,
-  } = useAppState();
-
-  return {
-    users,
-    currentUser,
-    isAppUnlocked,
-    isFirstRun,
-    isSwitchingUser,
-    targetedUserForLogin,
-    loginHistory,
-  };
+  return useAuthState();
 };
 
 // Hook to consume the auth-related dispatch functions

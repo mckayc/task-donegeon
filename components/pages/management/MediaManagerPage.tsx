@@ -1,11 +1,11 @@
+
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
-import { useAppState, useAppDispatch } from '../../../context/AppContext';
+import { useGameDataState, useAppDispatch } from '../../../context/AppContext';
 import { GameAsset } from '../../../types';
 import Button from '../../ui/Button';
 import Card from '../../ui/Card';
 import ConfirmDialog from '../../ui/ConfirmDialog';
 import EditGameAssetDialog from '../../admin/EditGameAssetDialog';
-import { useSettings } from '../../../context/SettingsContext';
 import AiImagePromptHelper from '../../sharing/AiImagePromptHelper';
 
 interface LocalGalleryImage {
@@ -15,7 +15,7 @@ interface LocalGalleryImage {
 }
 
 const AssetManagerPage: React.FC = () => {
-    const { gameAssets } = useAppState();
+    const { gameAssets } = useGameDataState();
     const { addNotification, uploadFile, deleteGameAsset } = useAppDispatch();
     const [isDragging, setIsDragging] = useState(false);
     

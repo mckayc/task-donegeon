@@ -4,6 +4,7 @@ import { User } from '../../types';
 import Avatar from '../ui/Avatar';
 import Input from '../ui/Input';
 import { XCircleIcon } from '../ui/Icons';
+import Button from '../ui/Button';
 
 const ChatPanel: React.FC = () => {
     const { currentUser, users, chatMessages, isChatOpen } = useAppState();
@@ -48,7 +49,7 @@ const ChatPanel: React.FC = () => {
     if (!isChatOpen || !currentUser) return null;
 
     return (
-        <div className="fixed bottom-24 right-6 z-50 w-[400px] h-[500px] bg-stone-800 border border-stone-700 rounded-xl shadow-2xl flex flex-col">
+        <div className="fixed bottom-6 right-6 z-50 w-[500px] h-[600px] bg-stone-800 border border-stone-700 rounded-xl shadow-2xl flex flex-col">
             <header className="p-4 border-b border-stone-700 flex justify-between items-center flex-shrink-0">
                 <h3 className="font-bold text-lg text-stone-100">Chat</h3>
                 <button onClick={toggleChat} className="text-stone-400 hover:text-white"><XCircleIcon className="w-6 h-6"/></button>
@@ -80,13 +81,15 @@ const ChatPanel: React.FC = () => {
                                 ))}
                                 <div ref={messagesEndRef} />
                             </div>
-                            <form onSubmit={handleSend} className="p-3 border-t border-stone-700 flex-shrink-0">
+                            <form onSubmit={handleSend} className="p-3 border-t border-stone-700 flex-shrink-0 flex items-center gap-2">
                                 <Input
                                     value={message}
                                     onChange={(e) => setMessage(e.target.value)}
                                     placeholder="Type a message..."
                                     autoComplete="off"
+                                    className="flex-grow"
                                 />
+                                <Button type="submit" className="px-4 py-2">Send</Button>
                             </form>
                         </>
                     ) : (

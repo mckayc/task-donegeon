@@ -8,7 +8,6 @@ const ObjectExporterPage: React.FC = () => {
 
     return (
         <div>
-            <h1 className="text-3xl font-medieval text-stone-100 mb-8">Export {settings.terminology.tasks}, {settings.terminology.stores}, and more</h1>
             <Card>
                 <ExportPanel />
             </Card>

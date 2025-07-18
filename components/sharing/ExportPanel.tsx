@@ -1,4 +1,5 @@
 
+
 import React, { useState } from 'react';
 import { useAppState } from '../../context/AppContext';
 import { ShareableAssetType, Terminology } from '../../types';
@@ -15,6 +16,7 @@ const ExportPanel: React.FC = () => {
         ranks: [],
         trophies: [],
         markets: [],
+        gameAssets: [],
     });
     const [blueprintName, setBlueprintName] = useState('');
     const [blueprintDesc, setBlueprintDesc] = useState('');
@@ -57,6 +59,7 @@ const ExportPanel: React.FC = () => {
         { key: 'ranks', label: 'levels', data: appState.ranks },
         { key: 'trophies', label: 'awards', data: appState.trophies },
         { key: 'markets', label: 'stores', data: appState.markets },
+        { key: 'gameAssets', label: 'link_manage_items', data: appState.gameAssets },
     ];
 
     return (

@@ -1,5 +1,5 @@
 {
-  "name": "Task Donegeon - 0.0.68 - Build Fix",
+  "name": "Task Donegeon - 0.0.68 - Build Fix2",
   "version": "0.0.68",
   "lastChange": "Fixed a critical build error caused by an obsolete file that contained TypeScript type errors related to a previous component rename.",
   "lastChangeDate": "2024-07-20T10:00:00Z",

@@ -19,6 +19,7 @@ const terminologyMap: { [key in ShareableAssetType]: keyof Terminology } = {
     ranks: 'levels',
     trophies: 'awards',
     markets: 'stores',
+    gameAssets: 'link_manage_items',
 };
 
 const BlueprintPreviewDialog: React.FC<BlueprintPreviewDialogProps> = ({ blueprint, initialResolutions, onClose, onConfirm }) => {

@@ -39,7 +39,6 @@ import AssetLibraryPage from '../pages/management/AssetLibraryPage';
 import ThemeEditorPage from '../pages/ThemeEditorPage';
 import RewardDisplay from '../ui/RewardDisplay';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
-import ChatController from '../chat/ChatController';
 import ChatPanel from '../chat/ChatPanel';
 
 const MainLayout: React.FC = () => {
@@ -157,7 +156,6 @@ const MainLayout: React.FC = () => {
           {renderPage()}
         </main>
       </div>
-      <ChatController />
       <ChatPanel />
     </div>
   );

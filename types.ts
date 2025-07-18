@@ -384,7 +384,7 @@ export interface AppSettings {
   };
 }
 
-export type ShareableAssetType = 'quests' | 'rewardTypes' | 'ranks' | 'trophies' | 'markets';
+export type ShareableAssetType = 'quests' | 'rewardTypes' | 'ranks' | 'trophies' | 'markets' | 'gameAssets';
 
 export interface BlueprintAssets {
   quests: Quest[];
@@ -494,4 +494,6 @@ export type ChronicleEvent = {
     status: string;
     icon: string;
     color: string;
+    userId?: string;
+    questType?: QuestType;
 };

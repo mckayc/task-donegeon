@@ -82,7 +82,7 @@ const ChatPanel: React.FC = () => {
                             <div className="p-3 border-b border-stone-700 flex-shrink-0">
                                 <p className="font-bold text-center text-stone-200">{activeChatUser.gameName}</p>
                             </div>
-                            <div className="flex-grow p-3 space-y-3 overflow-y-auto scrollbar-hide">
+                            <div className="flex-grow p-3 space-y-3 overflow-y-auto">
                                 {activeConversation.map(msg => {
                                     const msgDate = new Date(msg.timestamp).toLocaleDateString();
                                     const showDateSeparator = msgDate !== lastDate;

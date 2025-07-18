@@ -193,6 +193,33 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         }
 
         if (dataToSet) {
+            // --- MIGRATION LOGIC FOR NEW MARKETS AND ITEMS ---
+            const sampleMarkets = createSampleMarkets();
+            const sampleAssets = createSampleGameAssets();
+
+            const requiredMarkets = sampleMarkets.filter(m => m.id !== 'market-tutorial'); // Don't add tutorial market to existing setups
+            const marketIdsToAdd = new Set(requiredMarkets.map(m => m.id));
+            const requiredAssets = sampleAssets.filter(a => a.marketIds.some(mid => marketIdsToAdd.has(mid)));
+
+            const existingMarketIds = new Set((dataToSet.markets || []).map(m => m.id));
+            const marketsToAdd = requiredMarkets.filter(m => !existingMarketIds.has(m.id));
+
+            if (marketsToAdd.length > 0) {
+                console.log(`Applying migration: Adding ${marketsToAdd.length} new market(s).`);
+                if (!dataToSet.markets) dataToSet.markets = [];
+                dataToSet.markets.push(...marketsToAdd);
+            }
+            
+            const existingAssetIds = new Set((dataToSet.gameAssets || []).map(a => a.id));
+            const assetsToAdd = requiredAssets.filter(a => !existingAssetIds.has(a.id));
+            
+            if (assetsToAdd.length > 0) {
+                console.log(`Applying migration: Adding ${assetsToAdd.length} new game asset(s).`);
+                if (!dataToSet.gameAssets) dataToSet.gameAssets = [];
+                dataToSet.gameAssets.push(...assetsToAdd);
+            }
+            // --- END MIGRATION LOGIC ---
+
             const loadedSettings = {...INITIAL_SETTINGS, ...dataToSet.settings};
             setUsers(dataToSet.users || []);
             setQuests(dataToSet.quests || []);

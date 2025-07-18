@@ -1,8 +1,8 @@
 {
-  "name": "Task Donegeon - 0.0.69 - Bulk Management & AI Helper",
-  "version": "0.0.69",
-  "lastChange": "Added bulk management (delete, status change) for Quests, Items, and Trophies. Introduced new marketplaces (Bank, Experiences, Candy) with new items. Enhanced the AI Studio with separated Duty/Venture generation and increased quantity. Added an AI Image Prompt Helper to the Asset Manager. Added 30+ new trophies and improved the Calendar Chronicles view.",
-  "lastChangeDate": "2024-07-20T10:00:00Z",
+  "name": "Task Donegeon - 0.0.70 - Marketplace & Theme Editor Overhaul",
+  "version": "0.0.70",
+  "lastChange": "Enhanced the Asset Editor to allow creating exchange items with payouts. Added 30+ new trophies. Fixed the Theme Editor's live preview and theme selection. Made the chat scrollbar visible.",
+  "lastChangeDate": "2024-07-20T11:00:00Z",
   "description": "A gamified task and chore tracker for families and groups. Complete quests, earn currency and experience, and level up your character in a fun, medieval-themed adventure.",
   "requestFramePermissions": [
     "camera"

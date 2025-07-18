@@ -54,29 +54,26 @@ const ContrastChecker: React.FC<{ styles: ThemeStyle }> = ({ styles }) => {
 
 const ThemePreview: React.FC<{ themeData: ThemeStyle }> = ({ themeData }) => {
     const { settings } = useAppState();
-    const livePreviewStyles = Object.fromEntries(
-        Object.entries(themeData).map(([key, value]) => [key, `hsl(${value})`])
-    ) as React.CSSProperties;
     
-    livePreviewStyles.fontFamily = themeData['--font-body'];
+    // This creates a style object that sets the CSS variables for this component's scope.
+    const livePreviewStyles: React.CSSProperties = { ...themeData } as any;
 
     return (
-        <div style={livePreviewStyles} className="p-4 rounded-lg h-full transition-all duration-300 flex flex-col bg-stone-900 border-2 border-stone-700">
+        <div style={livePreviewStyles} className="p-4 rounded-lg h-full transition-all duration-300 flex flex-col border-2 border-stone-700" data-theme>
              <div className="flex-grow p-4 rounded-lg space-y-4" style={{ backgroundColor: 'hsl(var(--color-bg-tertiary))' }}>
-                <Card 
-                    title={settings.terminology.level} 
-                    className="lg:col-span-1"
-                >
-                    <div className="cursor-pointer text-center">
-                        <div className="w-24 h-24 mx-auto mb-4 bg-stone-700 rounded-full flex items-center justify-center text-5xl border-4" style={{borderColor: 'hsl(var(--color-accent-hue) var(--color-accent-saturation) var(--color-accent-lightness))'}}>
-                           <RankIcon />
-                        </div>
-                        <p className="text-2xl font-bold" style={{color: 'hsl(var(--color-accent-light-hue) var(--color-accent-light-saturation) var(--color-accent-light-lightness))'}}>Adept</p>
-                        <p style={{color: 'hsl(var(--color-text-secondary))'}}>Level 5</p>
-                        <div className="w-full bg-stone-700 rounded-full h-4 mt-4 overflow-hidden">
-                            <div className="h-4 rounded-full" style={{width: `60%`, backgroundColor: 'hsl(var(--color-primary-hue) var(--color-primary-saturation) var(--color-primary-lightness))'}}></div>
-                        </div>
-                    </div>
+                <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--font-size-display)', color: 'hsl(var(--color-text-primary))' }}>
+                    {settings.terminology.appName}
+                </h1>
+                <p style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--font-size-body)', color: 'hsl(var(--color-text-secondary))' }}>
+                    This is a preview of your theme. The quick brown fox jumps over the lazy dog.
+                </p>
+                <div className="flex gap-4">
+                    <Button variant="primary">Primary Button</Button>
+                    <Button variant="secondary">Secondary</Button>
+                </div>
+                <Card title="Sample Card" className="mt-4">
+                    <p>This card uses the secondary background color. The text inside is the primary text color.</p>
+                    <p className="text-accent mt-2">This text has the accent color.</p>
                 </Card>
              </div>
         </div>

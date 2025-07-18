@@ -1,5 +1,3 @@
-
-
 import React, { useState, useEffect } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { GameAsset, RewardItem, RewardCategory } from '../../types';
@@ -32,9 +30,11 @@ const EditGameAssetDialog: React.FC<EditGameAssetDialogProps> = ({ assetToEdit, 
     avatarSlot: '',
     isForSale: false,
     cost: [] as RewardItem[],
+    payouts: [] as RewardItem[],
     marketIds: [] as string[],
     purchaseLimit: null as number | null,
     purchaseCount: 0,
+    allowExchange: false,
   });
   const [customCategory, setCustomCategory] = useState('');
   const [error, setError] = useState('');
@@ -51,9 +51,11 @@ const EditGameAssetDialog: React.FC<EditGameAssetDialogProps> = ({ assetToEdit, 
         avatarSlot: assetToEdit.avatarSlot || '',
         isForSale: assetToEdit.isForSale,
         cost: [...assetToEdit.cost],
+        payouts: assetToEdit.payouts ? [...assetToEdit.payouts] : [],
         marketIds: [...assetToEdit.marketIds],
         purchaseLimit: assetToEdit.purchaseLimit,
         purchaseCount: assetToEdit.purchaseCount,
+        allowExchange: !!(assetToEdit.payouts && assetToEdit.payouts.length > 0),
       });
       if (!PREDEFINED_CATEGORIES.includes(assetToEdit.category)) {
           setCustomCategory(assetToEdit.category);
@@ -63,20 +65,20 @@ const EditGameAssetDialog: React.FC<EditGameAssetDialogProps> = ({ assetToEdit, 
     }
   }, [assetToEdit, newAssetUrl]);
 
-  const handleRewardChange = (index: number, field: keyof RewardItem, value: string | number) => {
-    const newItems = [...formData.cost];
+  const handleRewardChange = (category: 'cost' | 'payouts') => (index: number, field: keyof RewardItem, value: string | number) => {
+    const newItems = [...formData[category]];
     newItems[index] = { ...newItems[index], [field]: field === 'amount' ? Math.max(1, Number(value)) : value };
-    setFormData(prev => ({ ...prev, cost: newItems }));
+    setFormData(prev => ({ ...prev, [category]: newItems }));
   };
   
-  const handleAddRewardForCategory = (rewardCat: RewardCategory) => {
+  const handleAddRewardForCategory = (category: 'cost' | 'payouts') => (rewardCat: RewardCategory) => {
     const defaultReward = rewardTypes.find(rt => rt.category === rewardCat);
     if (!defaultReward) return;
-    setFormData(prev => ({ ...prev, cost: [...prev.cost, { rewardTypeId: defaultReward.id, amount: 1 }] }));
+    setFormData(prev => ({ ...prev, [category]: [...prev[category], { rewardTypeId: defaultReward.id, amount: 1 }] }));
   };
   
-  const handleRemoveReward = (indexToRemove: number) => {
-    setFormData(prev => ({ ...prev, cost: prev.cost.filter((_, i) => i !== indexToRemove) }));
+  const handleRemoveReward = (category: 'cost' | 'payouts') => (indexToRemove: number) => {
+    setFormData(prev => ({ ...prev, [category]: prev[category].filter((_, i) => i !== indexToRemove) }));
   };
 
   const handleMarketToggle = (marketId: string) => {
@@ -106,12 +108,15 @@ const EditGameAssetDialog: React.FC<EditGameAssetDialogProps> = ({ assetToEdit, 
       category: finalCategory,
       avatarSlot: formData.category.toLowerCase() === 'avatar' ? formData.avatarSlot : undefined,
       purchaseLimit: formData.isForSale ? formData.purchaseLimit : null,
+      payouts: formData.isForSale && formData.allowExchange ? formData.payouts : undefined,
     };
+    
+    const { allowExchange, ...finalPayload } = payload;
 
     if (assetToEdit) {
-      updateGameAsset({ ...assetToEdit, ...payload });
+      updateGameAsset({ ...assetToEdit, ...finalPayload });
     } else {
-      addGameAsset(payload);
+      addGameAsset(finalPayload);
     }
     onClose();
   };
@@ -196,7 +201,13 @@ const EditGameAssetDialog: React.FC<EditGameAssetDialogProps> = ({ assetToEdit, 
                               <div className="mt-2"><Input label="Purchase Limit" type="number" min="1" value={formData.purchaseLimit} onChange={(e) => setFormData(p => ({...p, purchaseLimit: parseInt(e.target.value) || 1}))} /></div>
                           )}
                       </div>
-                      <RewardInputGroup category='cost' items={formData.cost} onChange={handleRewardChange} onAdd={handleAddRewardForCategory} onRemove={handleRemoveReward} />
+                      <RewardInputGroup category='cost' items={formData.cost} onChange={handleRewardChange('cost')} onAdd={handleAddRewardForCategory('cost')} onRemove={handleRemoveReward('cost')} />
+                      <div>
+                          <ToggleSwitch enabled={formData.allowExchange} setEnabled={(val) => setFormData(p => ({...p, allowExchange: val}))} label="Allow Exchange (Item has Payouts)" />
+                      </div>
+                      {formData.allowExchange && (
+                          <RewardInputGroup category='payout' items={formData.payouts} onChange={handleRewardChange('payouts')} onAdd={handleAddRewardForCategory('payouts')} onRemove={handleRemoveReward('payouts')} />
+                      )}
                       <div>
                           <h4 className="font-semibold text-stone-200 mb-2">Available In</h4>
                           <div className="space-y-2 max-h-32 overflow-y-auto border border-stone-700 p-2 rounded-md">

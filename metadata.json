@@ -1,7 +1,7 @@
 {
   "name": "Task Donegeon - 0.0.72 - Performance & Responsiveness Overhaul",
-  "version": "0.0.72",
-  "lastChange": "Major performance refactor with split contexts. Implemented responsive table-to-card layouts for all management pages. Added accessibility focus trapping to all dialogs. Added to-do indicators on calendar. Cleaned up obsolete files.",
+  "version": "0.0.72-test",
+  "lastChange": "CACHE BUSTING VERIFICATION BUILD",
   "lastChangeDate": "2024-07-22T12:00:00Z",
   "description": "A gamified task and chore tracker for families and groups. Complete quests, earn currency and experience, and level up your character in a fun, medieval-themed adventure.",
   "requestFramePermissions": [

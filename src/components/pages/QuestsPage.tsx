@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import Card from '../ui/Card';
 import Button from '../ui/Button';
-import CreateQuestDialog from '../quests/CreateQuestDialog.tsx';
+import CreateQuestDialog from '../quests/CreateQuestDialog';
 import { useAppDispatch, useAuthState, useGameDataState, useSettingsState, useUIState } from '../../context/AppContext';
 import { Role, QuestType, Quest, QuestAvailability } from '../../types';
 import { isQuestAvailableForUser, questSorter } from '../../utils/quests';

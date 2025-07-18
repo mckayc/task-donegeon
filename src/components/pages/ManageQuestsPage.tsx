@@ -3,7 +3,7 @@ import { useAppDispatch, useGameDataState, useSettingsState } from '../../contex
 import { Quest, QuestType } from '../../types';
 import Button from '../ui/Button';
 import Card from '../ui/Card';
-import CreateQuestDialog from '../quests/CreateQuestDialog.tsx';
+import CreateQuestDialog from '../quests/CreateQuestDialog';
 import ConfirmDialog from '../ui/ConfirmDialog';
 import QuestIdeaGenerator from '../quests/QuestIdeaGenerator';
 import { QuestsIcon } from '../ui/Icons';

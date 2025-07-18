@@ -1,64 +1,57 @@
-# Dockerfile for Task Donegeon
+# --- Stage 1: Build Frontend ---
+# This stage is responsible for building your React frontend into static files.
+# We use the '-slim' image for better compatibility with npm packages.
+FROM node:20-slim AS build
 
-# --- STAGE 1: Install Backend Dependencies ---
-# This stage installs only the production dependencies for the backend.
-FROM node:20-alpine AS dependencies
-
+# Set the working directory inside the container
 WORKDIR /usr/src/app
 
-# Copy only the necessary package files for the backend.
-COPY backend/package*.json ./backend/
-
-# Clear npm cache and install ONLY production dependencies for the backend.
-# This keeps the final image smaller.
-RUN npm cache clean --force && npm install --prefix backend --omit=dev
-
-
-# --- STAGE 2: Build Frontend Application ---
-# This stage builds the React frontend. It needs devDependencies.
-FROM node:20-alpine AS build
-
-WORKDIR /usr/src/app
-
-# The CACHE_BUSTER argument is used to manually invalidate the Docker cache for this layer when needed.
-ARG CACHE_BUSTER
-RUN echo "Busting cache with value: ${CACHE_BUSTER}"
-
-# Copy frontend package files.
+# Copy all necessary files for the frontend build
+# This includes package files, source code, and configuration.
 COPY package*.json ./
+COPY src/ ./src/
+COPY index.html vite.config.ts tsconfig.json tsconfig.node.json ./
 
-# Clear npm cache and install all frontend dependencies, including devDependencies needed for building.
-RUN npm cache clean --force && npm install
-
-# Now, copy the rest of your project's source code into the container.
-COPY . .
-
-# Run the build script defined in package.json to create the static assets.
+# Install frontend dependencies and then build the application
+# This creates an optimized 'dist' folder with static assets.
+RUN npm install
 RUN npm run build
 
-
-# --- STAGE 3: Final Production Image ---
-# This stage creates the final, lean image to run the application.
-FROM node:20-alpine AS final
+# --- Stage 2: Install Backend Dependencies ---
+# This stage installs only the production dependencies for your Node.js backend.
+# This helps keep the final image smaller.
+FROM node:20-slim AS backend-deps
 
 WORKDIR /usr/src/app
 
-# Set the environment to production.
-ENV NODE_ENV=production
+# Copy only the backend's package files
+COPY backend/package*.json ./backend/
 
-# Copy the pre-installed backend dependencies from the 'dependencies' stage.
-COPY --from=dependencies /usr/src/app/backend/node_modules ./backend/node_modules
-COPY --from=dependencies /usr/src/app/backend/package*.json ./backend/
+# Install ONLY production dependencies for the backend.
+# The '--omit=dev' flag skips developer tools like 'nodemon'.
+RUN npm install --prefix backend --omit=dev
 
-# Copy the built frontend static assets from the 'build' stage.
+# --- Stage 3: Production ---
+# This is the final, lean image that will be deployed.
+# It copies artifacts from the previous stages without including the build tools.
+FROM node:20-slim AS production
+
+WORKDIR /usr/src/app
+
+# Copy backend production dependencies from the 'backend-deps' stage
+COPY --from=backend-deps /usr/src/app/backend ./backend
+
+# Copy the backend source code
+COPY backend/ ./backend
+
+# Copy the built frontend assets from the 'build' stage
 COPY --from=build /usr/src/app/dist ./dist
 
-# Copy only the necessary backend server file and local uploads directory.
-COPY backend/server.js ./backend/
-COPY backend/uploads ./backend/uploads
+# Copy the app's metadata file
+COPY metadata.json ./
 
-# Expose the port the backend server will run on.
+# Tell Docker that the container will listen on port 3001
 EXPOSE 3001
 
-# The command to start the backend server when the container starts.
+# The command that will be run when the container starts
 CMD ["node", "backend/server.js"]

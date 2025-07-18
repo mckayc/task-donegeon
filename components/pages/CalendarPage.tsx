@@ -6,6 +6,7 @@ import { toYMD } from '../../utils/quests';
 import MonthView from '../calendar/MonthView';
 import WeekView from '../calendar/WeekView';
 import DayView from '../calendar/DayView';
+import ChroniclesDayView from '../calendar/ChroniclesDayView';
 
 type CalendarView = 'month' | 'week' | 'day';
 type CalendarMode = 'quests' | 'chronicles';
@@ -61,11 +62,14 @@ const CalendarPage: React.FC = () => {
 
     const renderContent = () => {
         if (mode === 'chronicles') {
-            return (
-                <div className="p-8 text-center text-stone-400">
-                    Chronicles view for the calendar is coming soon!
-                </div>
-            );
+            switch (view) {
+                case 'day': return <ChroniclesDayView currentDate={currentDate} />;
+                default: return (
+                    <div className="p-8 text-center text-stone-400">
+                        Chronicles view for week/month is coming soon!
+                    </div>
+                );
+            }
         }
 
         switch (view) {
@@ -82,7 +86,7 @@ const CalendarPage: React.FC = () => {
                 <div className="flex items-center justify-between p-4 border-b border-stone-700/60 flex-wrap gap-4">
                     <div className="flex items-center">
                         <button onClick={() => changeDate(-1)} className="p-2 rounded-full hover:bg-stone-700 transition">&lt;</button>
-                        <h2 className="text-2xl font-semibold text-emerald-300 mx-4 text-center w-64">{getHeaderTitle()}</h2>
+                        <h2 className="text-2xl font-semibold text-emerald-300 mx-4 text-center w-auto min-w-[16rem] md:min-w-[24rem]">{getHeaderTitle()}</h2>
                         <button onClick={() => changeDate(1)} className="p-2 rounded-full hover:bg-stone-700 transition">&gt;</button>
                     </div>
                     <div className="flex items-center gap-4">

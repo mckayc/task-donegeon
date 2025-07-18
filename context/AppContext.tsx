@@ -1,4 +1,5 @@
 
+
 import React, { createContext, useState, useContext, ReactNode, useEffect, useCallback, useMemo, useRef } from 'react';
 import { AppSettings, User, Quest, RewardTypeDefinition, QuestCompletion, RewardItem, Market, PurchaseRequest, Guild, Rank, Trophy, UserTrophy, Notification, AppMode, Page, IAppData, ShareableAssetType, GameAsset, Role, QuestCompletionStatus, RewardCategory, PurchaseRequestStatus, AdminAdjustment, AdminAdjustmentType, SystemLog, QuestType, QuestAvailability, Blueprint, ImportResolution, TrophyRequirementType, ThemeDefinition, ChatMessage } from '../types';
 import { INITIAL_SETTINGS, createMockUsers, INITIAL_REWARD_TYPES, INITIAL_RANKS, INITIAL_TROPHIES, createSampleMarkets, createSampleQuests, createInitialGuilds, createSampleGameAssets, INITIAL_THEMES, createInitialQuestCompletions } from '../data/initialData';
@@ -699,13 +700,37 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const sendMessage = useCallback((message: Omit<ChatMessage, 'id' | 'timestamp' | 'isRead' | 'senderId'>) => {
     if (!currentUser) return;
     const newMessage: ChatMessage = {
-      ...message,
-      id: `msg-${Date.now()}-${Math.random()}`,
+      id: `msg-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
       senderId: currentUser.id,
       timestamp: new Date().toISOString(),
       isRead: false,
+      ...message
     };
-    setChatMessages(prev => [...prev, newMessage]);
+
+    // Use functional update to get the latest state and trigger an immediate save.
+    setChatMessages(prevMessages => {
+        const newMessages = [...prevMessages, newMessage];
+        const currentState = stateRef.current;
+        
+        if (currentState) {
+            // Manually update the stateRef to ensure the save operation has the absolute latest data,
+            // even before the next render cycle completes.
+            const updatedStateForSave = { ...currentState, chatMessages: newMessages };
+            stateRef.current = updatedStateForSave;
+            
+            // Fire-and-forget the save operation.
+            window.fetch('/api/data/save', { 
+                method: 'POST', 
+                headers: { 'Content-Type': 'application/json' }, 
+                body: JSON.stringify(updatedStateForSave) 
+            }).catch(error => {
+                console.error("Failed to save chat message immediately:", error);
+                // Optional: Revert state or show an error notification.
+            });
+        }
+        
+        return newMessages; // Return the new state for React to render.
+    });
   }, [currentUser]);
 
   const markMessagesAsRead = useCallback((senderId: string) => {

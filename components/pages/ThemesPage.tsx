@@ -2,28 +2,51 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
-import { ThemeDefinition } from '../../types';
+import { ThemeDefinition, AppMode } from '../../types';
 import Button from '../ui/Button';
 import Card from '../ui/Card';
 
 const ThemesPage: React.FC = () => {
-    const { currentUser, settings, themes, markets, guilds } = useAppState();
+    const { currentUser, settings, themes, markets, guilds, appMode } = useAppState();
     const { updateUser, addNotification, setActivePage, setActiveMarketId } = useAppDispatch();
     
     if (!currentUser) return null;
 
     const [selectedThemeId, setSelectedThemeId] = useState(currentUser.theme || settings.theme);
 
+    const applyThemeStyles = (themeId: string) => {
+        const theme = themes.find(t => t.id === themeId);
+        if (theme) {
+            Object.entries(theme.styles).forEach(([key, value]) => {
+                document.documentElement.style.setProperty(key, value);
+            });
+            document.body.dataset.theme = themeId;
+        }
+    };
+
     useEffect(() => {
-        // Instant theme preview when selection changes
-        document.body.dataset.theme = selectedThemeId;
-        // Cleanup function to revert theme if user navigates away without saving
+        // Apply the selected preview theme
+        applyThemeStyles(selectedThemeId);
+
+        // Cleanup function to revert to the actual saved theme when navigating away
         return () => {
-            const userTheme = currentUser?.theme;
-            const guildTheme = settings.theme; // Fallback
-            document.body.dataset.theme = userTheme || guildTheme;
+            let activeThemeId = settings.theme;
+            if (appMode.mode === 'guild') {
+                const guild = guilds.find(g => g.id === appMode.guildId);
+                if (guild?.themeId) {
+                    activeThemeId = guild.themeId;
+                } else if (currentUser?.theme) {
+                    activeThemeId = currentUser.theme;
+                }
+            } else {
+                if (currentUser?.theme) {
+                    activeThemeId = currentUser.theme;
+                }
+            }
+            applyThemeStyles(activeThemeId);
         };
-    }, [selectedThemeId, currentUser.theme, settings.theme]);
+    }, [selectedThemeId, themes, currentUser, settings, appMode, guilds]);
+
 
     const handleSave = () => {
         if (currentUser.ownedThemes.includes(selectedThemeId)) {

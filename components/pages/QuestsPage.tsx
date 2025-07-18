@@ -48,6 +48,7 @@ const QuestItem: React.FC<{ quest: Quest; now: Date; onSelect: (quest: Quest) =>
     
     if (!currentUser) return null;
 
+    const isAvailable = useMemo(() => isQuestAvailableForUser(quest, questCompletions.filter(c => c.userId === currentUser.id), now), [quest, questCompletions, currentUser.id, now]);
     const isTodo = quest.type === QuestType.Venture && quest.todoUserIds?.includes(currentUser.id);
 
     const getRewardInfo = (id: string) => {
@@ -108,7 +109,7 @@ const QuestItem: React.FC<{ quest: Quest; now: Date; onSelect: (quest: Quest) =>
     const optionalClass = quest.isOptional ? 'border-dashed' : '';
 
     return (
-        <div onClick={() => onSelect(quest)} className={`border-2 rounded-xl shadow-lg flex flex-col h-full transition-colors duration-500 cursor-pointer ${baseCardClass} ${borderClass} ${optionalClass}`}>
+        <div onClick={() => onSelect(quest)} className={`border-2 rounded-xl shadow-lg flex flex-col h-full transition-all duration-500 cursor-pointer ${baseCardClass} ${borderClass} ${optionalClass} ${!isAvailable ? 'opacity-50' : ''}`}>
             {/* Header */}
             <div className="p-4 border-b border-white/10 flex items-start gap-4">
                 <div className={`w-12 h-12 rounded-lg flex items-center justify-center flex-shrink-0 text-3xl ${isDuty ? 'bg-sky-900/70' : 'bg-amber-900/70'}`}>

@@ -12,24 +12,34 @@ import OnboardingWizard from './components/auth/OnboardingWizard';
 import SharedLayout from './components/layout/SharedLayout';
 
 const App: React.FC = () => {
-  const { isAppUnlocked, isFirstRun, currentUser, isSwitchingUser, isDataLoaded, settings, isSharedViewActive, appMode, guilds } = useAppState();
+  const { isAppUnlocked, isFirstRun, currentUser, isSwitchingUser, isDataLoaded, settings, isSharedViewActive, appMode, guilds, themes } = useAppState();
 
   useEffect(() => {
-    let activeTheme = settings.theme; // Default to system theme
+    let activeThemeId = settings.theme; // Default to system theme
 
     if (appMode.mode === 'guild') {
         const currentGuild = guilds.find(g => g.id === appMode.guildId);
         if (currentGuild?.themeId) {
-            activeTheme = currentGuild.themeId; // Guild theme takes precedence
+            activeThemeId = currentGuild.themeId; // Guild theme is priority in guild mode
+        } else if (currentUser?.theme) {
+            activeThemeId = currentUser.theme; // Fallback to user theme
+        }
+    } else { // Personal mode
+        if (currentUser?.theme) {
+            activeThemeId = currentUser.theme; // Use personal theme
         }
     }
-
-    if (currentUser?.theme) {
-        activeTheme = currentUser.theme; // User's personal theme takes highest precedence
-    }
     
-    document.body.dataset.theme = activeTheme;
-  }, [settings.theme, currentUser, appMode, guilds]);
+    // Find the theme definition and apply its styles
+    const theme = themes.find(t => t.id === activeThemeId);
+    if (theme) {
+        Object.entries(theme.styles).forEach(([key, value]) => {
+            document.documentElement.style.setProperty(key, value);
+        });
+    }
+
+    document.body.dataset.theme = activeThemeId;
+  }, [settings.theme, currentUser, appMode, guilds, themes]);
 
 
   if (!isDataLoaded) {

@@ -49,7 +49,7 @@ const ChatPanel: React.FC = () => {
     if (!isChatOpen || !currentUser) return null;
 
     return (
-        <div className="fixed bottom-6 right-6 z-50 w-[500px] h-[600px] bg-stone-800 border border-stone-700 rounded-xl shadow-2xl flex flex-col">
+        <div className="fixed bottom-6 right-6 z-50 w-[600px] h-[700px] bg-stone-800 border border-stone-700 rounded-xl shadow-2xl flex flex-col">
             <header className="p-4 border-b border-stone-700 flex justify-between items-center flex-shrink-0">
                 <h3 className="font-bold text-lg text-stone-100">Chat</h3>
                 <button onClick={toggleChat} className="text-stone-400 hover:text-white"><XCircleIcon className="w-6 h-6"/></button>

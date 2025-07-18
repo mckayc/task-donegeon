@@ -76,7 +76,7 @@ const terminologyLabels: { [key in keyof Terminology]: string } = {
   link_manage_guilds: 'Sidebar: Manage Guilds',
   link_ai_studio: 'Sidebar: AI Studio',
   link_appearance: 'Sidebar: Appearance',
-  link_object_manager: 'Sidebar: Object Manager',
+  link_object_exporter: 'Sidebar: Object Exporter',
   link_asset_manager: 'Sidebar: Asset Manager',
   link_backup_import: 'Sidebar: Backup & Import',
   link_asset_library: 'Sidebar: Asset Library',

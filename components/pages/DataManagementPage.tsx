@@ -9,10 +9,10 @@ import AssetManagerPage from './management/MediaManagerPage';
 import { useAppState } from '../../context/AppContext';
 import { Page, SidebarConfigItem, SidebarLink } from '../../types';
 
-type ManagementPage = 'Object Manager' | 'Asset Manager' | 'Backup & Import' | 'Asset Library';
+type ManagementPage = 'Object Exporter' | 'Asset Manager' | 'Backup & Import' | 'Asset Library';
 
 const iconMap: { [key in ManagementPage]: React.FC<{className?: string}> } = {
-    'Object Manager': Icons.ObjectManagerIcon,
+    'Object Exporter': Icons.ObjectManagerIcon,
     'Asset Manager': Icons.ItemManagerIcon,
     'Backup & Import': Icons.DatabaseIcon,
     'Asset Library': Icons.SparklesIcon,
@@ -27,7 +27,7 @@ const DataManagementPage: React.FC = () => {
 
     const initialPage = useMemo((): Page => {
         const firstLink = visibleItems.find(item => item.type === 'link') as SidebarLink | undefined;
-        return firstLink?.id ?? 'Object Manager';
+        return firstLink?.id ?? 'Object Exporter';
     }, [visibleItems]);
 
     const [activePage, setActivePage] = useState<Page>(initialPage);
@@ -35,7 +35,7 @@ const DataManagementPage: React.FC = () => {
 
     const renderContent = () => {
         switch (activePage) {
-            case 'Object Manager': return <ObjectExporterPage />;
+            case 'Object Exporter': return <ObjectExporterPage />;
             case 'Asset Manager': return <AssetManagerPage />;
             case 'Backup & Import': return <BackupAndImportPage />;
             case 'Asset Library': return <AssetLibraryPage />;

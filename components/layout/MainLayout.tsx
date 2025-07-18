@@ -49,7 +49,7 @@ const MainLayout: React.FC = () => {
   const ADMIN_ONLY_PAGES: Page[] = [
     'Manage Users', 'Manage Rewards', 'Manage Quests', 'Manage Items', 'Manage Markets',
     'Manage Guilds', 'Manage Ranks', 'Manage Trophies', 'Settings', 'AI Studio',
-    'Appearance', 'Theme Editor', 'Object Manager', 'Asset Manager', 'Backup & Import', 'Asset Library',
+    'Appearance', 'Theme Editor', 'Object Exporter', 'Asset Manager', 'Backup & Import', 'Asset Library',
   ];
   const GATEKEEPER_PAGES: Page[] = ['Approvals'];
 
@@ -89,7 +89,7 @@ const MainLayout: React.FC = () => {
       case 'Manage Guilds': return `Manage ${settings.terminology.groups}`;
       case 'Manage Ranks': return `Manage ${settings.terminology.levels}`;
       case 'Manage Trophies': return `Manage ${settings.terminology.awards}`;
-      case 'Object Manager': return 'Object Manager';
+      case 'Object Exporter': return 'Object Exporter';
       case 'Trophies': return `${settings.terminology.award} Hall`;
       case 'Ranks': return `Ranks of the Donegeon`;
       case 'Help Guide': return `${settings.terminology.appName} Guide`;
@@ -130,7 +130,7 @@ const MainLayout: React.FC = () => {
       case 'Settings': return <SettingsPage />;
       case 'Appearance': return <AppearancePage />;
       case 'Theme Editor': return <ThemeEditorPage />;
-      case 'Object Manager': return <ObjectExporterPage />;
+      case 'Object Exporter': return <ObjectExporterPage />;
       case 'Asset Manager': return <AssetManagerPage />;
       case 'Backup & Import': return <BackupAndImportPage />;
       case 'Asset Library': return <AssetLibraryPage />;

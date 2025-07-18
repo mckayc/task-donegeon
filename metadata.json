@@ -1,8 +1,8 @@
 {
-  "name": "Copy of Task Donegeon - 0.0.65 - New Features",
-  "version": "0.0.65",
-  "lastChange": "Added bulk actions to management pages, profile picture uploads, market open/close status, and various UI improvements.",
-  "lastChangeDate": "2024-07-16T15:10:00Z",
+  "name": "Task Donegeon - 0.0.66 - Major Feature Update",
+  "version": "0.0.66",
+  "lastChange": "Fixed TypeScript build error. Implemented extensive UI/UX overhaul including a new Theme Editor, updated Calendar views, and bulk content management. Added new features like automated backups, an AI prompt generator, profile picture uploads, and guild-specific themes. Enhanced AI Studio and customization options.",
+  "lastChangeDate": "2024-07-18T10:00:00Z",
   "description": "A gamified task and chore tracker for families and groups. Complete quests, earn currency and experience, and level up your character in a fun, medieval-themed adventure.",
   "requestFramePermissions": [
     "camera"

@@ -122,7 +122,7 @@ const AboutPage: React.FC = () => {
         return (
             <div className="space-y-6 text-stone-300 leading-relaxed">
                 <p>{metadata.description}</p>
-                 <p>This version adjusts the main page header (H1) font size, setting it to an intermediate value between its previous larger and smaller sizes. This change provides improved readability and a more consistent visual balance across the application's main pages.</p>
+                 <p>This major update introduces a complete overhaul of the Theme Editor, redesigned Calendar views, and adds bulk actions to content management pages. New features include automated backups, profile picture uploads, and guild-specific themes. The AI Studio has been enhanced for better content generation, and many UI/UX improvements have been made across the entire application to improve usability and aesthetics.</p>
                 
                 <div className="pt-4 border-t border-stone-700/60 text-sm">
                     <p><strong>Version:</strong> {metadata.version}</p>

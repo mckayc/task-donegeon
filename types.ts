@@ -305,7 +305,7 @@ export interface Terminology {
   link_manage_guilds: string;
   link_ai_studio: string;
   link_appearance: string;
-  link_object_manager: string;
+  link_object_exporter: string;
   link_asset_manager: string;
   link_backup_import: string;
   link_asset_library: string;
@@ -316,7 +316,7 @@ export interface Terminology {
 }
 
 export type Page = 'Dashboard' | 'Avatar' | 'Quests' | 'Marketplace' | 'Chronicles' | 'Guild' | 'Calendar' | 'Progress' | 'Trophies' | 'Ranks' | 'Manage Users' | 'Manage Rewards' | 'Manage Quests' | 'Manage Items' | 'Approvals' | 'Manage Markets' | 'Manage Guilds' | 'Settings' | 'Profile' | 'About' | 'Help Guide' | 'Manage Ranks' | 'Manage Trophies' | 'Themes' | 'Data Management' | 'Collection' | 'AI Studio' | 'Appearance'
-| 'Object Manager' | 'Asset Manager' | 'Backup & Import' | 'Asset Library'
+| 'Object Exporter' | 'Asset Manager' | 'Backup & Import' | 'Asset Library'
 | 'Theme Editor'
 ;
 

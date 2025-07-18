@@ -1,5 +1,4 @@
 
-
 import React, { useState, ChangeEvent } from 'react';
 import { useAppDispatch, useAuthState, useSettingsState } from '../../context/AppContext';
 import { Role, AppSettings, Terminology } from '../../types';
@@ -76,6 +75,7 @@ const terminologyLabels: { [key in keyof Terminology]: string } = {
   link_manage_guilds: 'Sidebar: Manage Guilds',
   link_ai_studio: 'Sidebar: AI Studio',
   link_appearance: 'Sidebar: Appearance',
+  link_data_management: 'Sidebar: Data Management',
   link_object_exporter: 'Sidebar: Object Exporter',
   link_asset_manager: 'Sidebar: Asset Manager',
   link_backup_import: 'Sidebar: Backup & Import',

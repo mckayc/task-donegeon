@@ -310,6 +310,7 @@ export interface Terminology {
   link_asset_manager: string;
   link_backup_import: string;
   link_asset_library: string;
+  link_data_management: string;
   link_settings: string;
   link_about: string;
   link_help_guide: string;

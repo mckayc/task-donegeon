@@ -85,6 +85,10 @@ interface AppDispatch {
   resetAllPlayerData: () => void;
   deleteAllCustomContent: () => void;
   deleteSelectedAssets: (selection: Record<ShareableAssetType, string[]>) => void;
+  deleteQuests: (questIds: string[]) => void;
+  deleteTrophies: (trophyIds: string[]) => void;
+  deleteGameAssets: (assetIds: string[]) => void;
+  updateQuestsStatus: (questIds: string[], isActive: boolean) => void;
   uploadFile: (file: File) => Promise<{ url: string } | null>;
 
   // Settings & UI
@@ -626,7 +630,11 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const clearAllHistory = useCallback(() => { setQuestCompletions([]); setPurchaseRequests([]); setAdminAdjustments([]); setSystemLogs([]); addNotification({ type: 'success', message: 'All historical data has been cleared.' }); }, [addNotification]);
   const resetAllPlayerData = useCallback(() => { setUsers(prev => prev.map(u => u.role !== Role.DonegeonMaster ? { ...u, personalPurse: {}, personalExperience: {}, guildBalances: {}, ownedAssetIds: [], avatar: {} } : u)); setUserTrophies(prev => prev.filter(ut => users.find(u => u.id === ut.userId)?.role === Role.DonegeonMaster)); addNotification({ type: 'success', message: "All player data has been reset." }); }, [users, addNotification]);
   const deleteAllCustomContent = useCallback(() => { setQuests([]); setMarkets([]); setGameAssets([]); setRewardTypes(p => p.filter(rt => rt.isCore)); setRanks(p => p.filter(r => r.xpThreshold === 0)); setTrophies([]); setGuilds(p => p.filter(g => g.isDefault)); addNotification({ type: 'success', message: 'All custom content has been deleted.' }); }, [addNotification]);
-  const deleteSelectedAssets = useCallback((selection: Record<ShareableAssetType, string[]>) => { (Object.keys(selection) as ShareableAssetType[]).forEach(assetType => { const ids = new Set(selection[assetType]); if (ids.size > 0) { switch (assetType) { case 'quests': setQuests(p => p.filter(i => !ids.has(i.id))); break; case 'markets': setMarkets(p => p.filter(i => !ids.has(i.id))); break; case 'rewardTypes': setRewardTypes(p => p.filter(i => !ids.has(i.id))); break; case 'ranks': setRanks(p => p.filter(i => !ids.has(i.id))); break; case 'trophies': setTrophies(p => p.filter(i => !ids.has(i.id))); break; } } }); addNotification({ type: 'success', message: 'Selected assets have been deleted.' }); }, [addNotification]);
+  const deleteSelectedAssets = useCallback((selection: Record<ShareableAssetType, string[]>) => { (Object.keys(selection) as ShareableAssetType[]).forEach(assetType => { const ids = new Set(selection[assetType]); if (ids.size > 0) { switch (assetType) { case 'quests': setQuests(p => p.filter(i => !ids.has(i.id))); break; case 'markets': setMarkets(p => p.filter(i => !ids.has(i.id))); break; case 'rewardTypes': setRewardTypes(p => p.filter(i => !ids.has(i.id))); break; case 'ranks': setRanks(p => p.filter(i => !ids.has(i.id))); break; case 'trophies': setTrophies(p => p.filter(i => !ids.has(i.id))); break; case 'gameAssets': setGameAssets(p => p.filter(i => !ids.has(i.id))); break; } } }); addNotification({ type: 'success', message: 'Selected assets have been deleted.' }); }, [addNotification]);
+  const deleteQuests = useCallback((questIds: string[]) => { setQuests(prev => prev.filter(q => !questIds.includes(q.id))); addNotification({ type: 'info', message: `${questIds.length} quest(s) deleted.` }); }, [addNotification]);
+  const deleteTrophies = useCallback((trophyIds: string[]) => { setTrophies(prev => prev.filter(t => !trophyIds.includes(t.id))); addNotification({ type: 'info', message: `${trophyIds.length} trophy(s) deleted.` }); }, [addNotification]);
+  const deleteGameAssets = useCallback((assetIds: string[]) => { setGameAssets(prev => prev.filter(ga => !assetIds.includes(ga.id))); addNotification({ type: 'info', message: `${assetIds.length} asset(s) deleted.` }); }, [addNotification]);
+  const updateQuestsStatus = useCallback((questIds: string[], isActive: boolean) => { setQuests(prev => prev.map(q => questIds.includes(q.id) ? { ...q, isActive } : q)); addNotification({ type: 'success', message: `${questIds.length} quest(s) updated.` }); }, [addNotification]);
 
   // Theme Management
   const addTheme = useCallback((theme: Omit<ThemeDefinition, 'id'>) => {
@@ -787,7 +795,9 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     addRewardType, updateRewardType, deleteRewardType, addMarket, updateMarket, deleteMarket, purchaseMarketItem, cancelPurchaseRequest, approvePurchaseRequest, rejectPurchaseRequest,
     addGuild, updateGuild, deleteGuild, setRanks, addTrophy, updateTrophy, deleteTrophy, awardTrophy, applyManualAdjustment, addGameAsset, updateGameAsset, deleteGameAsset,
     addTheme, updateTheme, deleteTheme,
-    populateInitialGameData, importBlueprint, restoreFromBackup, clearAllHistory, resetAllPlayerData, deleteAllCustomContent, deleteSelectedAssets, uploadFile,
+    populateInitialGameData, importBlueprint, restoreFromBackup, clearAllHistory, resetAllPlayerData, deleteAllCustomContent, deleteSelectedAssets, 
+    deleteQuests, deleteTrophies, deleteGameAssets, updateQuestsStatus,
+    uploadFile,
     updateSettings, setActivePage, setAppMode, addNotification, removeNotification, setActiveMarketId, toggleSidebar,
     toggleChat, sendMessage, markMessagesAsRead
   };

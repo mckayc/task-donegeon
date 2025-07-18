@@ -1,9 +1,3 @@
-
-
-
-
-
-
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { useAppState, useAppDispatch } from '../../../context/AppContext';
 import { GameAsset } from '../../../types';
@@ -12,6 +6,7 @@ import Card from '../../ui/Card';
 import ConfirmDialog from '../../ui/ConfirmDialog';
 import EditGameAssetDialog from '../../admin/EditGameAssetDialog';
 import { useSettings } from '../../../context/SettingsContext';
+import AiImagePromptHelper from '../../sharing/AiImagePromptHelper';
 
 interface LocalGalleryImage {
     url: string;
@@ -147,6 +142,10 @@ const AssetManagerPage: React.FC = () => {
                         {isUploading ? 'Processing...' : 'Upload Image'}
                     </Button>
                 </div>
+            </Card>
+            
+            <Card title="AI Image Generation Helper">
+                <AiImagePromptHelper />
             </Card>
 
             <Card title="Local Image Gallery">

@@ -1,6 +1,6 @@
 # Task Donegeon
 
-**Version:** 0.0.68
+**Version:** 0.0.69
 **Last Updated:** 2024-07-18T10:00:00Z
 
 ---
@@ -16,13 +16,16 @@ Task Donegeon is a gamified task and chore management application designed for f
 
 ## ✨ Features
 
+-   **Bulk Content Management:** Admins can now select multiple items on management pages to perform bulk actions like deleting or changing status.
+-   **AI Image Generation Helper:** The Asset Manager now includes an AI prompt helper with links to free AI art generators to streamline asset creation.
+-   **New Default Marketplaces:** Added a bank for currency exchange, an experience shop, and a candy store, complete with new items.
+-   **AI Studio Enhancements:** The asset generator now distinguishes between creating "Duties" and "Ventures" and can generate up to 20 ideas at once.
+-   **Expanded Trophy Collection:** Added over 30 new default trophies for users to earn.
 -   **Complete Theme Editor Overhaul:** Redesigned with a live preview, more fonts, and granular controls for colors and sizes.
--   **Enhanced Calendar Views:** Day view now has two columns (Duties/Ventures), and Week view highlights the current day.
+-   **Enhanced Calendar Views:** Day view now has two columns (Duties/Ventures), and Week/Month "Chronicles" views are fully functional.
 -   **Guild-Specific Themes:** Guilds can now have their own unique, lockable themes when in "Guild View".
 -   **Profile Picture Uploads:** Users can upload their own profile pictures for a more personalized avatar.
--   **Bulk Content Management:** Admins can now select multiple items on management pages to perform bulk actions like deleting or changing status.
 -   **Automated Backups:** Configure automated local backups to run at set intervals, ensuring data safety.
--   **AI-Powered Asset Creation:** The Asset Manager now includes an AI prompt generator and links to AI image generators to streamline asset creation.
 -   **Numerous UI/UX Improvements:** Including a redesigned PIN pad, scrollable dashboard sections, improved quest board sorting, and more customization options like editable sidebar link names.
 -   **Market Controls:** Admins can now set markets to "Open" or "Closed" status, controlling their visibility in the Marketplace.
 -   **Data Synchronization:** Automatic data syncing keeps your application state consistent across all your devices.

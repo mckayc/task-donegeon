@@ -8,7 +8,7 @@ import { Quest, Trophy, GameAsset, QuestAvailability, QuestType, Market } from '
 import Card from '../ui/Card';
 import { useSettings } from '../../context/SettingsContext';
 
-type AssetType = 'Quests' | 'Trophies' | 'Items' | 'Markets';
+type AssetType = 'Duties' | 'Ventures' | 'Trophies' | 'Items' | 'Markets';
 
 interface GeneratedAsset {
     id: string;
@@ -40,7 +40,7 @@ const AiStudioPage: React.FC = () => {
     const [context, setContext] = useState(localStorage.getItem('aiStudioContext') || '');
     const [prompt, setPrompt] = useState('');
     const [quantity, setQuantity] = useState(5);
-    const [assetType, setAssetType] = useState<AssetType>('Quests');
+    const [assetType, setAssetType] = useState<AssetType>('Ventures');
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
     const [generatedAssets, setGeneratedAssets] = useState<GeneratedAsset[]>([]);
@@ -69,6 +69,14 @@ const AiStudioPage: React.FC = () => {
     };
 
     const getSchemaForAssetType = (type: AssetType) => {
+        const questSchema = { type: Type.ARRAY, description: `A list of ${settings.terminology.tasks.toLowerCase()}.`, items: {
+            type: Type.OBJECT, properties: {
+                title: { type: Type.STRING, description: 'A short, engaging title.' },
+                description: { type: Type.STRING, description: 'A one-sentence description.' },
+                tags: { type: Type.ARRAY, items: { type: Type.STRING } }
+            }, required: ['title', 'description']
+        }};
+
         switch (type) {
             case 'Markets':
                 return { type: Type.ARRAY, description: 'A list of themed markets.', items: {
@@ -78,14 +86,9 @@ const AiStudioPage: React.FC = () => {
                         icon: { type: Type.STRING, description: 'A single emoji.' },
                     }, required: ['title', 'description', 'icon']
                 }};
-            case 'Quests':
-                return { type: Type.ARRAY, description: `A list of ${settings.terminology.tasks.toLowerCase()}.`, items: {
-                    type: Type.OBJECT, properties: {
-                        title: { type: Type.STRING, description: 'A short, engaging title.' },
-                        description: { type: Type.STRING, description: 'A one-sentence description.' },
-                        tags: { type: Type.ARRAY, items: { type: Type.STRING } }
-                    }, required: ['title', 'description']
-                }};
+            case 'Duties':
+            case 'Ventures':
+                return questSchema;
             case 'Trophies':
                 return { type: Type.ARRAY, description: `A list of ${settings.terminology.awards.toLowerCase()}.`, items: {
                     type: Type.OBJECT, properties: {
@@ -110,7 +113,8 @@ const AiStudioPage: React.FC = () => {
         if (!prompt.trim()) { setError('Please enter a prompt to generate assets.'); return; }
         setIsLoading(true); setError(''); setGeneratedAssets([]);
         
-        const fullPrompt = `Context: ${context || 'A typical family with children.'}\nRequest: Generate a JSON object with a single key "assets". The value of "assets" should be an array of ${quantity} ${assetType} based on the theme: "${prompt}".`;
+        const assetTypeName = assetType === 'Duties' ? 'Duties (recurring tasks)' : assetType === 'Ventures' ? 'Ventures (one-time projects)' : assetType;
+        const fullPrompt = `Context: ${context || 'A typical family with children.'}\nRequest: Generate a JSON object with a single key "assets". The value of "assets" should be an array of ${quantity} ${assetTypeName} based on the theme: "${prompt}".`;
 
         const requestBody = {
              model: 'gemini-2.5-flash',
@@ -172,15 +176,18 @@ const AiStudioPage: React.FC = () => {
         generatedAssets.forEach(asset => {
             if (asset.isSelected) {
                 switch (asset.type) {
-                    case 'Quests':
+                    case 'Duties':
                         addQuest({
-                            ...asset.data,
-                            type: QuestType.Venture,
-                            availabilityType: QuestAvailability.Unlimited,
-                            rewards: [], lateSetbacks: [], incompleteSetbacks: [],
-                            isActive: true, isOptional: false, requiresApproval: true,
-                            assignedUserIds: [], guildId: undefined,
-                            icon: '✨'
+                            ...asset.data, type: QuestType.Duty, availabilityType: QuestAvailability.Daily,
+                            rewards: [], lateSetbacks: [], incompleteSetbacks: [], isActive: true, isOptional: false,
+                            requiresApproval: true, assignedUserIds: [], guildId: undefined, icon: '✨'
+                        });
+                        break;
+                    case 'Ventures':
+                        addQuest({
+                            ...asset.data, type: QuestType.Venture, availabilityType: QuestAvailability.Unlimited,
+                            rewards: [], lateSetbacks: [], incompleteSetbacks: [], isActive: true, isOptional: false,
+                            requiresApproval: true, assignedUserIds: [], guildId: undefined, icon: '✨'
                         });
                         break;
                     case 'Trophies':
@@ -188,11 +195,8 @@ const AiStudioPage: React.FC = () => {
                         break;
                     case 'Items':
                         addGameAsset({
-                            ...asset.data,
-                            url: 'https://placehold.co/150/84cc16/FFFFFF?text=AI',
-                            isForSale: false, cost: [], marketIds: [],
-                            purchaseLimit: null, purchaseCount: 0,
-                            icon: '✨'
+                            ...asset.data, url: 'https://placehold.co/150/84cc16/FFFFFF?text=AI',
+                            isForSale: false, cost: [], marketIds: [], purchaseLimit: null, purchaseCount: 0, icon: '✨'
                         });
                         break;
                     case 'Markets':
@@ -251,12 +255,13 @@ const AiStudioPage: React.FC = () => {
             <Card title="Asset Generator">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <Input as="select" label="Asset Type" value={assetType} onChange={e => setAssetType(e.target.value as AssetType)}>
-                        <option value="Quests">{settings.terminology.tasks}</option>
+                        <option value="Ventures">{settings.terminology.singleTasks}</option>
+                        <option value="Duties">{settings.terminology.recurringTasks}</option>
                         <option value="Items">Items</option>
                         <option value="Trophies">{settings.terminology.awards}</option>
                         <option value="Markets">{settings.terminology.stores}</option>
                     </Input>
-                    <Input label="Quantity" type="number" min="1" max="10" value={quantity} onChange={e => setQuantity(parseInt(e.target.value))} />
+                    <Input label="Quantity" type="number" min="1" max="20" value={quantity} onChange={e => setQuantity(parseInt(e.target.value))} />
                     <Input label="Prompt / Theme" placeholder="e.g., 'Weekly kitchen chores'" value={prompt} onChange={e => setPrompt(e.target.value)} />
                 </div>
                 <div className="text-right mt-4">

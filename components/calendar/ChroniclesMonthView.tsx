@@ -48,7 +48,8 @@ const ChroniclesMonthView: React.FC<ChroniclesMonthViewProps> = ({ currentDate }
                             {day && <span className="font-bold">{day.getDate()}</span>}
                              {dailyChronicles.length > 0 && (
                                 <div className="absolute bottom-2 left-2 flex flex-wrap items-center gap-1">
-                                    {dailyChronicles.slice(0,10).map(event => (
+                                    <span className="text-xs font-bold mr-1 bg-black/30 px-1 rounded">{dailyChronicles.length}</span>
+                                    {dailyChronicles.slice(0,8).map(event => (
                                         <div key={event.id} className="w-2 h-2 rounded-full" style={{ backgroundColor: event.color }} title={event.title}></div>
                                     ))}
                                 </div>

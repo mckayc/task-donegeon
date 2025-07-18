@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { GenerateContentResponse, Type } from "@google/genai";
 import Button from '../ui/Button';

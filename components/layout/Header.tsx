@@ -1,10 +1,9 @@
-
-
 import React, { useState, useMemo, useEffect } from 'react';
 import { Page, Role, AppMode, User } from '../../types';
 import Avatar from '../ui/Avatar';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import FullscreenToggle from '../ui/FullscreenToggle';
+import { ChevronDownIcon } from '../ui/Icons';
 
 const Clock: React.FC = () => {
     const [time, setTime] = useState(new Date());
@@ -70,7 +69,7 @@ const Header: React.FC = () => {
   const { setCurrentUser, setIsSwitchingUser, setAppUnlocked, exitToSharedView, setAppMode, setActivePage } = useAppDispatch();
 
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
-  const [modeDropdownOpen, setModeDropdownOpen] = useState(false);
+  const [guildDropdownOpen, setGuildDropdownOpen] = useState(false);
 
   const handleLogout = () => {
     localStorage.removeItem('lastUserId');
@@ -93,22 +92,20 @@ const Header: React.FC = () => {
   
   const handleModeChange = (mode: AppMode) => {
     setAppMode(mode);
-    setModeDropdownOpen(false);
+    setGuildDropdownOpen(false);
   };
 
   const userGuilds = useMemo(() => {
     if (!currentUser) return [];
     return guilds.filter(g => g.memberIds.includes(currentUser.id));
   }, [currentUser, guilds]);
-
-  const currentModeName = useMemo(() => {
-    if (appMode.mode === 'guild') {
-      const g = guilds.find(g => g.id === appMode.guildId);
-      return g?.name || 'Guild View';
-    }
-    // currentUser is guaranteed to exist because of the check below
-    return `${currentUser!.gameName} (Personal)`;
-  }, [appMode, guilds, currentUser]);
+  
+  const currentGuildName = useMemo(() => {
+      if (appMode.mode === 'guild') {
+          return guilds.find(g => g.id === appMode.guildId)?.name || 'Guild';
+      }
+      return 'Guild';
+  }, [appMode, guilds]);
 
   if (!currentUser) return null;
 
@@ -124,22 +121,34 @@ const Header: React.FC = () => {
                 Exit User
             </button>
         ) : (
-            <div className="relative">
-                <button onClick={() => setModeDropdownOpen(!modeDropdownOpen)} className="flex items-center gap-2 bg-stone-800/50 px-3 py-1.5 rounded-full border border-stone-700/60 hover:bg-stone-700 transition-colors">
-                    <span className="font-semibold text-accent-light">{currentModeName}</span>
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-stone-400" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" /></svg>
+             <div className="flex bg-stone-800/50 p-1 rounded-full border border-stone-700/60">
+                <button onClick={() => handleModeChange({ mode: 'personal' })} className={`px-4 py-1.5 text-sm font-semibold rounded-full transition-colors ${appMode.mode === 'personal' ? 'bg-emerald-600 text-white' : 'text-stone-300 hover:bg-stone-700'}`}>
+                    Personal
                 </button>
-                {modeDropdownOpen && (
-                <div className="absolute left-0 mt-2 w-56 bg-stone-800 border border-stone-700 rounded-lg shadow-xl z-20">
-                    <div className="px-4 pt-2 pb-1 text-xs text-stone-500 font-semibold uppercase">Switch Personal/Guild View</div>
-                    <a href="#" onClick={() => handleModeChange({ mode: 'personal' })} className="block px-4 py-2 text-stone-300 hover:bg-stone-700">{currentUser.gameName} (Personal)</a>
-                    <div className="border-t border-stone-700 my-1"></div>
-                    <div className="px-4 pt-2 pb-1 text-xs text-stone-500 font-semibold uppercase">{settings.terminology.groups}</div>
-                    {userGuilds.map(guild => (
-                        <a href="#" key={guild.id} onClick={() => handleModeChange({ mode: 'guild', guildId: guild.id })} className="block px-4 py-2 text-stone-300 hover:bg-stone-700">{guild.name}</a>
-                    ))}
+                <div className="relative">
+                    <button
+                        onClick={() => {
+                            if (userGuilds.length === 1) {
+                                handleModeChange({ mode: 'guild', guildId: userGuilds[0].id });
+                            } else {
+                                setGuildDropdownOpen(p => !p);
+                            }
+                        }}
+                        disabled={userGuilds.length === 0}
+                        className={`px-4 py-1.5 text-sm font-semibold rounded-full transition-colors flex items-center gap-1 ${appMode.mode === 'guild' ? 'bg-emerald-600 text-white' : 'text-stone-300 hover:bg-stone-700 disabled:opacity-50'}`}
+                    >
+                        <span>{currentGuildName}</span>
+                        {userGuilds.length > 1 && <ChevronDownIcon className="w-4 h-4" />}
+                    </button>
+                     {guildDropdownOpen && userGuilds.length > 1 && (
+                        <div className="absolute left-0 mt-2 w-56 bg-stone-800 border border-stone-700 rounded-lg shadow-xl z-20">
+                            <div className="px-4 pt-2 pb-1 text-xs text-stone-500 font-semibold uppercase">Select a {settings.terminology.group}</div>
+                             {userGuilds.map(guild => (
+                                <a href="#" key={guild.id} onClick={() => handleModeChange({ mode: 'guild', guildId: guild.id })} className="block px-4 py-2 text-stone-300 hover:bg-stone-700">{guild.name}</a>
+                            ))}
+                        </div>
+                     )}
                 </div>
-                )}
             </div>
         )}
       </div>

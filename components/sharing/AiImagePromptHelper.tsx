@@ -1,5 +1,3 @@
-
-
 import React, { useState, useMemo } from 'react';
 import { useAppDispatch } from '../../context/AppContext';
 import Button from '../ui/Button';
@@ -7,6 +5,7 @@ import Input from '../ui/Input';
 
 const AiImagePromptHelper: React.FC = () => {
     const { addNotification } = useAppDispatch();
+    const [isCopied, setIsCopied] = useState(false);
     const [promptData, setPromptData] = useState({
         subject: '',
         style: 'digital painting',
@@ -32,6 +31,8 @@ const AiImagePromptHelper: React.FC = () => {
     const copyToClipboard = () => {
         navigator.clipboard.writeText(finalPrompt).then(() => {
             addNotification({ type: 'success', message: 'Prompt copied to clipboard!' });
+            setIsCopied(true);
+            setTimeout(() => setIsCopied(false), 2000);
         }, () => {
             addNotification({ type: 'error', message: 'Failed to copy prompt.'});
         });
@@ -65,23 +66,32 @@ const AiImagePromptHelper: React.FC = () => {
                     <Input label="Adjectives" name="adjectives" value={promptData.adjectives} onChange={handleChange} placeholder="e.g., glowing, ancient, tiny" />
                     <Input as="select" label="Style" name="style" value={promptData.style} onChange={handleChange}>
                         <option>digital painting</option>
+                        <option>concept art</option>
                         <option>photorealistic</option>
                         <option>anime style</option>
                         <option>cartoon</option>
                         <option>pixel art</option>
+                        <option>low poly</option>
                         <option>watercolor</option>
+                        <option>oil painting</option>
                         <option>3d render</option>
                     </Input>
                     <Input as="select" label="Artist / Platform Style" name="artist" value={promptData.artist} onChange={handleChange}>
                         <option>greg rutkowski</option>
+                        <option>artgerm</option>
+                        <option>alphonse mucha</option>
                         <option>artstation</option>
                         <option>studio ghibli</option>
                         <option>disney pixar</option>
-                        <option>d&d</option>
+                        <option>d&d rulebook</option>
+                        <option>unreal engine</option>
+                        <option>vray</option>
                     </Input>
                     <Input as="select" label="Lighting" name="lighting" value={promptData.lighting} onChange={handleChange}>
                         <option>cinematic lighting</option>
                         <option>dramatic lighting</option>
+                        <option>volumetric lighting</option>
+                        <option>studio lighting</option>
                         <option>soft light</option>
                         <option>god rays</option>
                         <option>rim lighting</option>
@@ -92,7 +102,9 @@ const AiImagePromptHelper: React.FC = () => {
                     <p className="text-stone-200 font-mono text-sm mt-1">{finalPrompt}</p>
                 </div>
                  <div className="text-right mt-2">
-                    <Button variant="secondary" onClick={copyToClipboard} className="text-xs py-1 px-3">Copy Prompt</Button>
+                    <Button variant="secondary" onClick={copyToClipboard} className="text-xs py-1 px-3">
+                        {isCopied ? 'Copied!' : 'Copy Prompt'}
+                    </Button>
                 </div>
             </div>
 

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import Button from '../ui/Button';
 import Input from '../ui/Input';
 import { SparklesIcon, CheckCircleIcon, XCircleIcon } from '../ui/Icons';
@@ -44,6 +44,7 @@ const AiStudioPage: React.FC = () => {
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
     const [generatedAssets, setGeneratedAssets] = useState<GeneratedAsset[]>([]);
+    const resultsRef = useRef<HTMLDivElement>(null);
 
     const testApiKey = async () => {
         setApiStatus('testing');
@@ -73,8 +74,9 @@ const AiStudioPage: React.FC = () => {
             type: Type.OBJECT, properties: {
                 title: { type: Type.STRING, description: 'A short, engaging title.' },
                 description: { type: Type.STRING, description: 'A one-sentence description.' },
+                icon: { type: Type.STRING, description: 'A single, relevant emoji.'},
                 tags: { type: Type.ARRAY, items: { type: Type.STRING } }
-            }, required: ['title', 'description']
+            }, required: ['title', 'description', 'icon']
         }};
 
         switch (type) {
@@ -102,8 +104,9 @@ const AiStudioPage: React.FC = () => {
                     type: Type.OBJECT, properties: {
                         name: { type: Type.STRING, description: 'The name of the item.' },
                         description: { type: Type.STRING, description: 'A short, enticing description.' },
-                        category: { type: Type.STRING, description: 'e.g., Avatar, Theme, Power-up' }
-                    }, required: ['name', 'description', 'category']
+                        category: { type: Type.STRING, description: 'e.g., Avatar, Theme, Power-up' },
+                        icon: { type: Type.STRING, description: 'A single, relevant emoji.'}
+                    }, required: ['name', 'description', 'category', 'icon']
                 }};
             default: return {};
         }
@@ -113,6 +116,8 @@ const AiStudioPage: React.FC = () => {
         if (!prompt.trim()) { setError('Please enter a prompt to generate assets.'); return; }
         setIsLoading(true); setError(''); setGeneratedAssets([]);
         
+        setTimeout(() => resultsRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
+
         const assetTypeName = assetType === 'Duties' ? 'Duties (recurring tasks)' : assetType === 'Ventures' ? 'Ventures (one-time projects)' : assetType;
         const fullPrompt = `Context: ${context || 'A typical family with children.'}\nRequest: Generate a JSON object with a single key "assets". The value of "assets" should be an array of ${quantity} ${assetTypeName} based on the theme: "${prompt}".`;
 
@@ -153,7 +158,7 @@ const AiStudioPage: React.FC = () => {
                 id: `gen-${Date.now()}-${Math.random()}`,
                 type: assetType,
                 data: assetData,
-                isSelected: true
+                isSelected: false
             }));
             setGeneratedAssets(newAssets);
 
@@ -171,6 +176,11 @@ const AiStudioPage: React.FC = () => {
         ));
     };
 
+    const handleToggleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const isSelected = e.target.checked;
+        setGeneratedAssets(prev => prev.map(asset => ({ ...asset, isSelected })));
+    };
+
     const handleImportSelected = () => {
         let importedCount = 0;
         generatedAssets.forEach(asset => {
@@ -180,27 +190,27 @@ const AiStudioPage: React.FC = () => {
                         addQuest({
                             ...asset.data, type: QuestType.Duty, availabilityType: QuestAvailability.Daily,
                             rewards: [], lateSetbacks: [], incompleteSetbacks: [], isActive: true, isOptional: false,
-                            requiresApproval: true, assignedUserIds: [], guildId: undefined, icon: '✨'
+                            requiresApproval: true, assignedUserIds: [], guildId: undefined, icon: asset.data.icon || '✨'
                         });
                         break;
                     case 'Ventures':
                         addQuest({
                             ...asset.data, type: QuestType.Venture, availabilityType: QuestAvailability.Unlimited,
                             rewards: [], lateSetbacks: [], incompleteSetbacks: [], isActive: true, isOptional: false,
-                            requiresApproval: true, assignedUserIds: [], guildId: undefined, icon: '✨'
+                            requiresApproval: true, assignedUserIds: [], guildId: undefined, icon: asset.data.icon || '✨'
                         });
                         break;
                     case 'Trophies':
-                        addTrophy({ ...asset.data, isManual: true, requirements: [] });
+                        addTrophy({ ...asset.data, isManual: true, requirements: [], icon: asset.data.icon || '🏆' });
                         break;
                     case 'Items':
                         addGameAsset({
                             ...asset.data, url: 'https://placehold.co/150/84cc16/FFFFFF?text=AI',
-                            isForSale: false, cost: [], marketIds: [], purchaseLimit: null, purchaseCount: 0, icon: '✨'
+                            isForSale: false, cost: [], marketIds: [], purchaseLimit: null, purchaseCount: 0, icon: asset.data.icon || '📦'
                         });
                         break;
                     case 'Markets':
-                        addMarket({ ...asset.data, status: 'open' });
+                        addMarket({ ...asset.data, status: 'open', icon: asset.data.icon || '🛒' });
                         break;
                 }
                 importedCount++;
@@ -271,33 +281,46 @@ const AiStudioPage: React.FC = () => {
                 </div>
             </Card>
             
-            {(isLoading || generatedAssets.length > 0) && (
-                <Card title="Generated Assets">
-                    {isLoading ? (
-                        <div className="text-center py-10">
-                            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-400 mx-auto"></div>
-                            <p className="mt-4 text-stone-300">The AI is thinking...</p>
-                        </div>
-                    ) : (
-                        <div className="space-y-3">
-                            {generatedAssets.map(asset => (
-                                <div key={asset.id} className="bg-stone-900/50 p-3 rounded-lg flex items-start gap-3">
-                                    <input type="checkbox" checked={asset.isSelected} onChange={() => handleToggleSelect(asset.id)} className="mt-1 h-5 w-5 rounded text-emerald-600 bg-stone-700 border-stone-600 focus:ring-emerald-500" />
-                                    <div>
-                                        <p className="font-bold text-stone-200">{asset.data.icon} {asset.data.title || asset.data.name}</p>
-                                        <p className="text-sm text-stone-400">{asset.data.description}</p>
-                                    </div>
-                                </div>
-                            ))}
-                            <div className="text-right pt-4 border-t border-stone-700/60">
-                                <Button onClick={handleImportSelected} disabled={selectedCount === 0}>
-                                    Import {selectedCount} Selected
-                                </Button>
+            <div ref={resultsRef}>
+                {(isLoading || generatedAssets.length > 0) && (
+                    <Card title="Generated Assets">
+                        {isLoading ? (
+                            <div className="text-center py-10">
+                                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-400 mx-auto"></div>
+                                <p className="mt-4 text-stone-300">The AI is thinking...</p>
                             </div>
-                        </div>
-                    )}
-                </Card>
-            )}
+                        ) : (
+                            <div className="space-y-3">
+                                <div className="flex justify-between items-center p-2 border-b border-stone-700/60">
+                                    <label className="flex items-center gap-3">
+                                        <input
+                                            type="checkbox"
+                                            checked={selectedCount === generatedAssets.length}
+                                            onChange={handleToggleSelectAll}
+                                            className="h-5 w-5 rounded text-emerald-600 bg-stone-700 border-stone-600 focus:ring-emerald-500"
+                                        />
+                                        <span className="font-semibold text-stone-300">Select / Deselect All</span>
+                                    </label>
+                                </div>
+                                {generatedAssets.map(asset => (
+                                    <div key={asset.id} className="bg-stone-900/50 p-3 rounded-lg flex items-start gap-3">
+                                        <input type="checkbox" checked={asset.isSelected} onChange={() => handleToggleSelect(asset.id)} className="mt-1 h-5 w-5 rounded text-emerald-600 bg-stone-700 border-stone-600 focus:ring-emerald-500" />
+                                        <div>
+                                            <p className="font-bold text-stone-200">{asset.data.icon} {asset.data.title || asset.data.name}</p>
+                                            <p className="text-sm text-stone-400">{asset.data.description}</p>
+                                        </div>
+                                    </div>
+                                ))}
+                                <div className="text-right pt-4 border-t border-stone-700/60">
+                                    <Button onClick={handleImportSelected} disabled={selectedCount === 0}>
+                                        Import {selectedCount} Selected
+                                    </Button>
+                                </div>
+                            </div>
+                        )}
+                    </Card>
+                )}
+            </div>
 
         </div>
     );

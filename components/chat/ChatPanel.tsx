@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect, useRef } from 'react';
+import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { User } from '../../types';
 import Avatar from '../ui/Avatar';
@@ -11,11 +11,11 @@ const ChatPanel: React.FC = () => {
     const { toggleChat, sendMessage, markMessagesAsRead } = useAppDispatch();
     const [activeChatUser, setActiveChatUser] = useState<User | null>(null);
     const [message, setMessage] = useState('');
-    const messagesEndRef = useRef<HTMLDivElement>(null);
+    const [userScrolledUp, setUserScrolledUp] = useState(false);
+    const messagesContainerRef = useRef<HTMLDivElement>(null);
 
     const chatPartners = useMemo(() => {
         if (!currentUser) return [];
-        // Show all users except the current one
         return users.filter(user => user.id !== currentUser.id);
     }, [currentUser, users]);
 
@@ -23,7 +23,6 @@ const ChatPanel: React.FC = () => {
         if (!currentUser) return new Set();
         return new Set(chatMessages.filter(msg => msg.recipientId === currentUser.id && !msg.isRead).map(msg => msg.senderId));
     }, [chatMessages, currentUser]);
-
 
     const activeConversation = useMemo(() => {
         if (!currentUser || !activeChatUser) return [];
@@ -33,6 +32,20 @@ const ChatPanel: React.FC = () => {
         ).sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
     }, [chatMessages, currentUser, activeChatUser]);
 
+    const scrollToBottom = useCallback(() => {
+        if (messagesContainerRef.current) {
+            messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
+        }
+    }, []);
+
+    const handleScroll = () => {
+        const container = messagesContainerRef.current;
+        if (container) {
+            const atBottom = container.scrollHeight - container.scrollTop <= container.clientHeight + 5; // Add a small buffer
+            setUserScrolledUp(!atBottom);
+        }
+    };
+
     useEffect(() => {
         if (activeChatUser) {
             markMessagesAsRead(activeChatUser.id);
@@ -40,16 +53,26 @@ const ChatPanel: React.FC = () => {
     }, [activeChatUser, activeConversation, markMessagesAsRead]);
     
     useEffect(() => {
-        messagesEndRef.current?.scrollIntoView({ behavior: 'auto' });
-    }, [activeConversation]);
-
+        if (!userScrolledUp) {
+            scrollToBottom();
+        }
+    }, [activeConversation, userScrolledUp, scrollToBottom]);
+    
     const handleSend = (e: React.FormEvent) => {
         e.preventDefault();
         if (message.trim() && activeChatUser) {
             sendMessage({ recipientId: activeChatUser.id, message });
             setMessage('');
+            setUserScrolledUp(false);
         }
     };
+    
+    useEffect(() => {
+        // When switching users, reset scroll state and scroll to bottom
+        setUserScrolledUp(false);
+        setTimeout(scrollToBottom, 0); 
+    }, [activeChatUser, scrollToBottom]);
+
 
     if (!isChatOpen || !currentUser) return null;
     
@@ -63,7 +86,7 @@ const ChatPanel: React.FC = () => {
             </header>
             
             <div className="flex-grow flex overflow-hidden">
-                <aside className="w-1/3 border-r border-stone-700 overflow-y-auto scrollbar-hide">
+                <aside className="w-1/3 border-r border-stone-700 overflow-y-auto">
                     {chatPartners.map(user => {
                         const hasUnread = unreadSenders.has(user.id);
                         return (
@@ -82,7 +105,7 @@ const ChatPanel: React.FC = () => {
                             <div className="p-3 border-b border-stone-700 flex-shrink-0">
                                 <p className="font-bold text-center text-stone-200">{activeChatUser.gameName}</p>
                             </div>
-                            <div className="flex-grow p-3 space-y-3 overflow-y-auto">
+                            <div ref={messagesContainerRef} onScroll={handleScroll} className="flex-grow p-3 space-y-3 overflow-y-auto">
                                 {activeConversation.map(msg => {
                                     const msgDate = new Date(msg.timestamp).toLocaleDateString();
                                     const showDateSeparator = msgDate !== lastDate;
@@ -103,7 +126,6 @@ const ChatPanel: React.FC = () => {
                                         </React.Fragment>
                                     );
                                 })}
-                                <div ref={messagesEndRef} />
                             </div>
                             <form onSubmit={handleSend} className="p-3 border-t border-stone-700 flex-shrink-0 flex items-center gap-2">
                                 <Input

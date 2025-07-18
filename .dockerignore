@@ -7,7 +7,7 @@ node_modules
 backend/node_modules
 npm-debug.log
 
-# Build output folder
+# Build output folder (this is generated inside the container)
 dist
 
 # Environment files (these should be injected, not copied)

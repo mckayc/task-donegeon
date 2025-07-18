@@ -1,9 +1,9 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { useAppState } from '../../context/AppContext';
+import { useUIState } from '../../context/AppContext';
 
 const Clock: React.FC = () => {
     const [time, setTime] = useState(new Date());
-    const { syncStatus, syncError } = useAppState();
+    const { syncStatus, syncError } = useUIState();
 
     useEffect(() => {
         const timerId = setInterval(() => setTime(new Date()), 1000);
@@ -28,4 +28,5 @@ const Clock: React.FC = () => {
         </div>
     );
 };
+
 export default Clock;

@@ -1,15 +1,14 @@
-
 import { useMemo } from 'react';
-import { useAuthState, useGameDataState, useUIState } from '../context/AppContext';
-import { ChronicleEvent, QuestCompletionStatus } from '../types';
+import { useAppState } from '../context/AppContext';
+import { ChronicleEvent, AdminAdjustmentType, QuestCompletionStatus, PurchaseRequestStatus, QuestType, Role } from '../types';
 import { toYMD } from '../utils/quests';
 
 export const useChronicles = ({ startDate, endDate }: { startDate: Date; endDate: Date; }) => {
-    const { currentUser, users } = useAuthState();
     const { 
-        quests, questCompletions
-    } = useGameDataState();
-    const { appMode } = useUIState();
+        currentUser, appMode, users, quests, rewardTypes,
+        questCompletions, purchaseRequests, userTrophies, trophies, 
+        adminAdjustments, systemLogs 
+    } = useAppState();
 
     const chroniclesByDate = useMemo(() => {
         const eventsByDate = new Map<string, ChronicleEvent[]>();
@@ -19,6 +18,9 @@ export const useChronicles = ({ startDate, endDate }: { startDate: Date; endDate
         const endYMD = toYMD(endDate);
         const currentGuildId = appMode.mode === 'guild' ? appMode.guildId : undefined;
         
+        const getUserName = (userId: string) => users.find(u => u.id === userId)?.gameName || 'Unknown User';
+        const getTrophyName = (trophyId: string) => trophies.find(t => t.id === trophyId)?.name || `Unknown Award`;
+
         // Process Quest Completions
         questCompletions.forEach(c => {
             const dateKey = toYMD(new Date(c.completedAt));

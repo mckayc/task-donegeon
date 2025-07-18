@@ -1,6 +1,5 @@
-
 import React, { useState, useEffect } from 'react';
-import { useGameDataState, useSettingsState, useAppDispatch } from '../../context/AppContext';
+import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { ThemeDefinition, ThemeStyle } from '../../types';
 import Button from '../ui/Button';
 import Card from '../ui/Card';
@@ -54,7 +53,7 @@ const ContrastChecker: React.FC<{ styles: ThemeStyle }> = ({ styles }) => {
 
 
 const ThemePreview: React.FC<{ themeData: ThemeStyle }> = ({ themeData }) => {
-    const { settings } = useSettingsState();
+    const { settings } = useAppState();
     
     // This creates a style object that sets the CSS variables for this component's scope.
     const livePreviewStyles: React.CSSProperties = { ...themeData } as any;
@@ -83,15 +82,14 @@ const ThemePreview: React.FC<{ themeData: ThemeStyle }> = ({ themeData }) => {
 
 
 const ThemeEditorPage: React.FC = () => {
-    const { themes } = useGameDataState();
-    const { settings, isAiConfigured } = useSettingsState();
+    const { themes, isAiConfigured } = useAppState();
     const { addTheme, updateTheme, deleteTheme, addNotification } = useAppDispatch();
 
     const [selectedThemeId, setSelectedThemeId] = useState<string>(themes[0]?.id || 'new');
     const [formData, setFormData] = useState<ThemeDefinition | null>(null);
     const [deletingTheme, setDeletingTheme] = useState<ThemeDefinition | null>(null);
     const [isGeneratorOpen, setIsGeneratorOpen] = useState(false);
-    const isAiAvailable = settings.enableAiFeatures && isAiConfigured;
+    const isAiAvailable = useAppState().settings.enableAiFeatures && isAiConfigured;
 
     useEffect(() => {
         const themeToEdit = themes.find(t => t.id === selectedThemeId);

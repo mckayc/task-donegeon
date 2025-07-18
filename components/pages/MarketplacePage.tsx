@@ -2,15 +2,12 @@
 
 import React, { useState, useMemo } from 'react';
 import Card from '../ui/Card';
-import { useAppDispatch, useAuthState, useGameDataState, useSettingsState, useUIState } from '../../context/AppContext';
+import { useAppState, useAppDispatch } from '../../context/AppContext';
 import Button from '../ui/Button';
 import { PurchaseRequestStatus, RewardCategory, Market, GameAsset } from '../../types';
 
 const MarketItemView: React.FC<{ market: Market }> = ({ market }) => {
-    const { currentUser } = useAuthState();
-    const { rewardTypes, purchaseRequests, gameAssets } = useGameDataState();
-    const { appMode } = useUIState();
-    const { settings } = useSettingsState();
+    const { rewardTypes, currentUser, purchaseRequests, appMode, settings, gameAssets } = useAppState();
     const { purchaseMarketItem, cancelPurchaseRequest } = useAppDispatch();
     const [sortBy, setSortBy] = useState<'default' | 'title-asc' | 'title-desc' | 'cost-low' | 'cost-high'>('default');
 
@@ -154,9 +151,7 @@ const MarketItemView: React.FC<{ market: Market }> = ({ market }) => {
 
 
 const MarketplacePage: React.FC = () => {
-    const { markets } = useGameDataState();
-    const { appMode, activeMarketId } = useUIState();
-    const { settings } = useSettingsState();
+    const { markets, appMode, activeMarketId, settings } = useAppState();
     const { setActiveMarketId } = useAppDispatch();
     
     const visibleMarkets = React.useMemo(() => {

@@ -1,7 +1,6 @@
 
-
 import React, { useState } from 'react';
-import { useSettingsState, useAppDispatch } from '../../context/AppContext';
+import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { Role } from '../../types';
 import Button from '../ui/Button';
 import Input from '../ui/Input';
@@ -9,7 +8,7 @@ import UserFormFields from '../users/UserFormFields';
 
 const FirstRunWizard: React.FC = () => {
   const { addUser, setCurrentUser, populateInitialGameData } = useAppDispatch();
-  const { settings } = useSettingsState();
+  const { settings } = useAppState();
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',

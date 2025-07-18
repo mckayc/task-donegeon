@@ -2,7 +2,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { Quest, QuestCompletion, QuestAvailability, QuestType, QuestCompletionStatus } from '../../types';
 import { toYMD } from '../../utils/quests';
 import DailyDetailDialog from './DailyDetailDialog';
-import { useUIState, useAuthState } from '../../context/AppContext';
+import { useAppState } from '../../context/AppContext';
 
 interface MonthViewProps {
     currentDate: Date;
@@ -12,8 +12,7 @@ interface MonthViewProps {
 
 const MonthView: React.FC<MonthViewProps> = ({ currentDate, quests, questCompletions }) => {
     const [selectedDate, setSelectedDate] = useState<Date | null>(null);
-    const { currentUser } = useAuthState();
-    const { appMode } = useUIState();
+    const { currentUser, appMode } = useAppState();
 
     useEffect(() => {
         setSelectedDate(null);
@@ -103,23 +102,6 @@ const MonthView: React.FC<MonthViewProps> = ({ currentDate, quests, questComplet
         return map;
     }, [questsByDate, completionsByDate, pendingCompletionsByDate]);
 
-     const todoVenturesByDate = useMemo(() => {
-        const map = new Map<string, boolean>();
-        if (!currentUser) return map;
-
-        const todoVentures = quests.filter(q => q.type === QuestType.Venture && q.todoUserIds?.includes(currentUser.id));
-        
-        todoVentures.forEach(quest => {
-            // A to-do venture should be marked on every day it is available until completed.
-            // For simplicity in month view, we just show it on its due date if it exists.
-            if(quest.lateDateTime) {
-                const dateKey = toYMD(new Date(quest.lateDateTime));
-                map.set(dateKey, true);
-            }
-        });
-        return map;
-    }, [quests, currentUser]);
-
     const startDay = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
     const endDay = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
     const numDays = endDay.getDate();
@@ -142,7 +124,6 @@ const MonthView: React.FC<MonthViewProps> = ({ currentDate, quests, questComplet
                     const dailyCompletions = completionsByDate.get(dateKey) || [];
                     const dailyPending = pendingCompletionsByDate.get(dateKey) || [];
                     const totalIndicators = dailyCompletions.length + dailyPending.length;
-                    const hasTodoVenture = todoVenturesByDate.has(dateKey);
                     
                     return (
                         <div
@@ -159,7 +140,6 @@ const MonthView: React.FC<MonthViewProps> = ({ currentDate, quests, questComplet
                             className={`relative h-32 md:h-40 p-2 text-left align-top bg-stone-800 text-stone-300 overflow-hidden focus:z-10 focus:outline-none focus:ring-2 focus:ring-emerald-500 ring-inset ${day ? 'hover:bg-stone-700/50 transition-colors duration-150 cursor-pointer' : 'bg-stone-900/50 cursor-default'} ${isToday ? 'border-2 border-emerald-500' : 'border-b border-r border-stone-700/60'}`}
                         >
                             {day && <span className="font-bold">{day.getDate()}</span>}
-                             {hasTodoVenture && <div className="absolute top-2 right-2 w-2 h-2 rounded-full bg-purple-500" title="To-Do Venture"></div>}
                             <div className="mt-1 space-y-1">
                                 {dailyQuestsToShow.slice(0, 4).map(quest => (
                                     <div

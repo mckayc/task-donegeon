@@ -1,9 +1,7 @@
 
 
-
-
 import React, { useMemo, useState } from 'react';
-import { useAuthState, useGameDataState, useAppDispatch } from '../../context/AppContext';
+import { useAppState, useAppDispatch } from '../../context/AppContext';
 import Avatar from '../ui/Avatar';
 import Card from '../ui/Card';
 import { GameAsset } from '../../types';
@@ -11,8 +9,7 @@ import Button from '../ui/Button';
 import ImageSelectionDialog from '../ui/ImageSelectionDialog';
 
 const AvatarPage: React.FC = () => {
-    const { currentUser } = useAuthState();
-    const { gameAssets } = useGameDataState();
+    const { currentUser, gameAssets } = useAppState();
     const { updateUser, uploadFile } = useAppDispatch();
     const [isGalleryOpen, setIsGalleryOpen] = useState(false);
     const [isUploading, setIsUploading] = useState(false);

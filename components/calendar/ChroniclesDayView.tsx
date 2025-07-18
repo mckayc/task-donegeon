@@ -1,6 +1,5 @@
-
 import React, { useMemo } from 'react';
-import { useUIState, useAuthState, useGameDataState, useSettingsState } from '../../context/AppContext';
+import { useAppState } from '../../context/AppContext';
 import { QuestCompletionStatus, QuestType, ChronicleEvent } from '../../types';
 import { toYMD } from '../../utils/quests';
 import Card from '../ui/Card';
@@ -23,10 +22,7 @@ const ChronicleItem: React.FC<{ event: ChronicleEvent }> = ({ event }) => (
 );
 
 const ChroniclesDayView: React.FC<ChroniclesDayViewProps> = ({ currentDate }) => {
-    const { currentUser } = useAuthState();
-    const { quests, questCompletions } = useGameDataState();
-    const { appMode } = useUIState();
-    const { settings } = useSettingsState();
+    const { questCompletions, quests, currentUser, appMode, purchaseRequests, userTrophies, trophies, adminAdjustments, users, rewardTypes, settings } = useAppState();
 
     const dailyChronicles = useMemo((): ChronicleEvent[] => {
         if (!currentUser) return [];

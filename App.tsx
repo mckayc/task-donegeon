@@ -1,7 +1,7 @@
 
 
 import React, { useEffect } from 'react';
-import { useSettingsState, useAuthState, useGameDataState, useUIState } from './context/AppContext';
+import { useAppState } from './context/AppContext';
 import FirstRunWizard from './components/auth/FirstRunWizard';
 import MainLayout from './components/layout/MainLayout';
 import SwitchUser from './components/auth/SwitchUser';
@@ -12,11 +12,7 @@ import OnboardingWizard from './components/auth/OnboardingWizard';
 import SharedLayout from './components/layout/SharedLayout';
 
 const App: React.FC = () => {
-  const { settings } = useSettingsState();
-  const { currentUser, isAppUnlocked, isFirstRun, isSwitchingUser } = useAuthState();
-  const { guilds, themes } = useGameDataState();
-  const { isDataLoaded, isSharedViewActive, appMode } = useUIState();
-
+  const { isAppUnlocked, isFirstRun, currentUser, isSwitchingUser, isDataLoaded, settings, isSharedViewActive, appMode, guilds, themes } = useAppState();
 
   useEffect(() => {
     let activeThemeId = settings.theme; // Default to system theme
@@ -34,6 +30,7 @@ const App: React.FC = () => {
         }
     }
     
+    // Find the theme definition and apply its styles
     const theme = themes.find(t => t.id === activeThemeId);
     if (theme) {
         Object.entries(theme.styles).forEach(([key, value]) => {

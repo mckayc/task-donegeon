@@ -2,13 +2,11 @@
 
 
 
-
-
 import React from 'react';
 import { RewardCategory, RewardItem } from '../../types';
 import Input from '../ui/Input';
 import Button from '../ui/Button';
-import { useGameDataState } from '../../context/AppContext';
+import { useAppState } from '../../context/AppContext';
 
 interface RewardInputGroupProps {
   category: 'rewards' | 'setbacks' | 'cost' | 'payout' | 'lateSetbacks' | 'incompleteSetbacks';
@@ -19,7 +17,7 @@ interface RewardInputGroupProps {
 }
 
 const RewardInputGroup: React.FC<RewardInputGroupProps> = ({ category, items, onChange, onAdd, onRemove }) => {
-  const { rewardTypes } = useGameDataState();
+  const { rewardTypes } = useAppState();
 
   return (
     <div className="p-4 bg-stone-900/50 rounded-lg">

@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { ChronicleEvent } from '../../types';
 import Button from '../ui/Button';
@@ -9,7 +8,7 @@ interface ChroniclesDetailDialogProps {
   onClose: () => void;
 }
 
-const ChroniclesDetailDialog = ({ date, events, onClose }: ChroniclesDetailDialogProps) => {
+const ChroniclesDetailDialog: React.FC<ChroniclesDetailDialogProps> = ({ date, events, onClose }) => {
   return (
     <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4" onClick={onClose}>
       <div className="bg-stone-800 border border-stone-700 rounded-xl shadow-2xl max-w-lg w-full max-h-[80vh] flex flex-col" onClick={e => e.stopPropagation()}>

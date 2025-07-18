@@ -1,14 +1,11 @@
 
-
 import React from 'react';
 import Card from '../ui/Card';
-import { useAppDispatch, useAuthState, useGameDataState, useSettingsState } from '../../context/AppContext';
+import { useAppState, useAppDispatch } from '../../context/AppContext';
 import Button from '../ui/Button';
 
 const GuildPage: React.FC = () => {
-    const { currentUser, users } = useAuthState();
-    const { guilds } = useGameDataState();
-    const { settings } = useSettingsState();
+    const { currentUser, users, guilds, settings } = useAppState();
     const { setAppMode, setActivePage } = useAppDispatch();
 
     if (!currentUser) return null;

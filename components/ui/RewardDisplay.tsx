@@ -1,12 +1,9 @@
 
-
 import React, { useMemo } from 'react';
-import { useAuthState, useGameDataState, useUIState } from '../../context/AppContext';
+import { useAppState } from '../../context/AppContext';
 
 const RewardDisplay: React.FC = () => {
-  const { currentUser } = useAuthState();
-  const { rewardTypes } = useGameDataState();
-  const { appMode } = useUIState();
+  const { currentUser, rewardTypes, appMode } = useAppState();
 
   const balances = useMemo(() => {
     if (!currentUser) return [];
@@ -26,7 +23,9 @@ const RewardDisplay: React.FC = () => {
     }
     
     return rewardTypes.map(rt => {
-        const amount = (rt.category === 'Currency' ? currentPurse[rt.id] : currentExperience[rt.id]) || 0;
+        const amount = rt.isCore
+          ? (rt.category === 'Currency' ? currentPurse[rt.id] : currentExperience[rt.id]) || 0
+          : 0;
         return { ...rt, amount };
     }).filter(b => b.amount > 0);
 

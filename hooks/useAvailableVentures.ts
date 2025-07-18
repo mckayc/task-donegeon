@@ -1,14 +1,11 @@
 
-
 import { useMemo } from 'react';
-import { useAuthState, useGameDataState, useUIState } from '../context/AppContext';
+import { useAppState } from '../context/AppContext';
 import { QuestType } from '../types';
 import { isQuestAvailableForUser } from '../utils/quests';
 
 export const useAvailableVentures = () => {
-    const { quests, questCompletions } = useGameDataState();
-    const { currentUser } = useAuthState();
-    const { appMode } = useUIState();
+    const { quests, currentUser, questCompletions, appMode } = useAppState();
 
     const top10AvailableVentures = useMemo(() => {
         if (!currentUser) return [];

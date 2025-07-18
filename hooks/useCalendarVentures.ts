@@ -1,13 +1,10 @@
-
 import { useMemo } from 'react';
-import { useAuthState, useGameDataState, useUIState } from '../context/AppContext';
+import { useAppState } from '../context/AppContext';
 import { Quest, QuestType } from '../types';
 import { isQuestAvailableForUser, toYMD } from '../utils/quests';
 
 export const useCalendarVentures = (date: Date) => {
-    const { quests, questCompletions } = useGameDataState();
-    const { currentUser } = useAuthState();
-    const { appMode } = useUIState();
+    const { quests, currentUser, questCompletions, appMode } = useAppState();
 
     return useMemo(() => {
         if (!currentUser || !date) return [];

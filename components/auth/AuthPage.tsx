@@ -1,7 +1,6 @@
 
-
 import React, { useState } from 'react';
-import { useAuthState, useSettingsState, useAppDispatch } from '../../context/AppContext';
+import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { Role, User } from '../../types';
 import Button from '../ui/Button';
 import Input from '../ui/Input';
@@ -9,7 +8,7 @@ import UserFormFields from '../users/UserFormFields';
 import Avatar from '../ui/Avatar';
 
 const LoginForm: React.FC<{ onSwitchMode: () => void; }> = ({ onSwitchMode }) => {
-    const { users } = useAuthState();
+    const { users } = useAppState();
     const { setCurrentUser, setAppUnlocked } = useAppDispatch();
     
     const [password, setPassword] = useState('');
@@ -77,7 +76,7 @@ const LoginForm: React.FC<{ onSwitchMode: () => void; }> = ({ onSwitchMode }) =>
 };
 
 const RegisterForm: React.FC<{ onSwitchMode: () => void }> = ({ onSwitchMode }) => {
-    const { users } = useAuthState();
+    const { users } = useAppState();
     const { addUser, setCurrentUser } = useAppDispatch();
     const [formData, setFormData] = useState({
         firstName: '',
@@ -154,7 +153,7 @@ const RegisterForm: React.FC<{ onSwitchMode: () => void }> = ({ onSwitchMode }) 
 };
 
 const AuthPage: React.FC = () => {
-    const { settings } = useSettingsState();
+    const { settings } = useAppState();
     const { setIsSwitchingUser } = useAppDispatch();
     const [isLoginMode, setIsLoginMode] = useState(true);
     

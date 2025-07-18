@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { useSettingsState, useGameDataState, useAppDispatch } from '../../context/AppContext';
+import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { AppSettings, ThemeDefinition, SidebarConfigItem, Page, SidebarLink } from '../../types';
 import Button from '../ui/Button';
 import Input from '../ui/Input';
@@ -12,8 +12,7 @@ import { GrabHandleIcon, ArrowLeftIcon, ArrowRightIcon } from '../ui/Icons';
 type SidebarKey = keyof AppSettings['sidebars'];
 
 const AppearancePage: React.FC = () => {
-    const { settings } = useSettingsState();
-    const { themes: allThemes } = useGameDataState();
+    const { settings, themes: allThemes } = useAppState();
     const { updateSettings, addNotification } = useAppDispatch();
     
     // Initialize state once from settings, preventing resets on re-render from sync

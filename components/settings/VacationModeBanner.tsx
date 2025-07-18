@@ -1,9 +1,8 @@
-
 import React from 'react';
-import { useSettingsState } from '../../context/AppContext';
+import { useAppState } from '../../context/AppContext';
 
 const VacationModeBanner: React.FC = () => {
-  const { settings } = useSettingsState();
+  const { settings } = useAppState();
   const { vacationMode } = settings;
 
   if (!vacationMode.enabled) {

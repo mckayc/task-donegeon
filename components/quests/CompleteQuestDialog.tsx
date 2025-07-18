@@ -1,7 +1,6 @@
-
 import React, { useState } from 'react';
 import { Quest, User } from '../../types';
-import { useAppDispatch, useAuthState } from '../../context/AppContext';
+import { useAppDispatch, useAppState } from '../../context/AppContext';
 import Button from '../ui/Button';
 
 interface CompleteQuestDialogProps {
@@ -13,7 +12,7 @@ interface CompleteQuestDialogProps {
 
 const CompleteQuestDialog: React.FC<CompleteQuestDialogProps> = ({ quest, onClose, completionDate, user }) => {
   const { completeQuest } = useAppDispatch();
-  const { currentUser } = useAuthState();
+  const { currentUser } = useAppState();
   const [note, setNote] = useState('');
 
   const handleSubmit = (e: React.FormEvent) => {

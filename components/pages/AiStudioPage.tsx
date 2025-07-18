@@ -1,12 +1,12 @@
-
 import React, { useState, useRef } from 'react';
 import Button from '../ui/Button';
 import Input from '../ui/Input';
 import { SparklesIcon, CheckCircleIcon, XCircleIcon } from '../ui/Icons';
-import { useSettingsState, useAppDispatch } from '../../context/AppContext';
+import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { GenerateContentResponse, Type } from '@google/genai';
 import { Quest, Trophy, GameAsset, QuestAvailability, QuestType, Market } from '../../types';
 import Card from '../ui/Card';
+import { useSettings } from '../../context/SettingsContext';
 
 type AssetType = 'Duties' | 'Ventures' | 'Trophies' | 'Items' | 'Markets';
 
@@ -32,8 +32,8 @@ const ApiInstructions: React.FC = () => (
 
 const AiStudioPage: React.FC = () => {
     const { addQuest, addTrophy, addGameAsset, addNotification, addMarket } = useAppDispatch();
-    const { settings, isAiConfigured } = useSettingsState();
-    const isAiAvailable = settings.enableAiFeatures && isAiConfigured;
+    const { settings, isAiConfigured } = useAppState();
+    const { isAiAvailable } = useSettings();
     const [apiStatus, setApiStatus] = useState<'unknown' | 'testing' | 'valid' | 'invalid'>(isAiConfigured ? 'valid' : 'unknown');
     const [apiError, setApiError] = useState<string | null>(null);
 

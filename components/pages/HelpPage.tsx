@@ -1,10 +1,8 @@
 
 
-
-
 import React, { useState } from 'react';
 import Card from '../ui/Card';
-import { useSettingsState } from '../../context/AppContext';
+import { useAppState } from '../../context/AppContext';
 import { ChevronDownIcon } from '../ui/Icons';
 
 const CollapsibleSection: React.FC<{ title: string; children: React.ReactNode; defaultOpen?: boolean; }> = ({ title, children, defaultOpen = false }) => {
@@ -29,7 +27,7 @@ const CollapsibleSection: React.FC<{ title: string; children: React.ReactNode; d
 }
 
 const HelpPage: React.FC = () => {
-    const { settings } = useSettingsState();
+    const { settings } = useAppState();
     const { terminology } = settings;
 
     return (

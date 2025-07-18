@@ -1,6 +1,5 @@
-
 import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react';
-import { useAuthState, useUIState, useAppDispatch } from '../../context/AppContext';
+import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { User } from '../../types';
 import Avatar from '../ui/Avatar';
 import Input from '../ui/Input';
@@ -8,8 +7,7 @@ import { XCircleIcon } from '../ui/Icons';
 import Button from '../ui/Button';
 
 const ChatPanel: React.FC = () => {
-    const { currentUser, users } = useAuthState();
-    const { chatMessages, isChatOpen } = useUIState();
+    const { currentUser, users, chatMessages, isChatOpen } = useAppState();
     const { toggleChat, sendMessage, markMessagesAsRead } = useAppDispatch();
     const [activeChatUser, setActiveChatUser] = useState<User | null>(null);
     const [message, setMessage] = useState('');

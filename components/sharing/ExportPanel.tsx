@@ -1,37 +1,15 @@
 
+
 import React, { useState } from 'react';
-import { useAuthState, useGameDataState, useSettingsState, useUIState } from '../../context/AppContext';
-import { ShareableAssetType, Terminology, IAppData } from '../../types';
+import { useAppState } from '../../context/AppContext';
+import { ShareableAssetType, Terminology } from '../../types';
 import Button from '../ui/Button';
 import Input from '../ui/Input';
 import { generateBlueprint } from '../../utils/sharing';
 
 const ExportPanel: React.FC = () => {
-    const { users, loginHistory } = useAuthState();
-    const gameDataState = useGameDataState();
-    const { settings } = useSettingsState();
-    const { chatMessages } = useUIState();
-
-    const appState: IAppData = {
-        users,
-        quests: gameDataState.quests,
-        markets: gameDataState.markets,
-        rewardTypes: gameDataState.rewardTypes,
-        questCompletions: gameDataState.questCompletions,
-        purchaseRequests: gameDataState.purchaseRequests,
-        guilds: gameDataState.guilds,
-        ranks: gameDataState.ranks,
-        trophies: gameDataState.trophies,
-        userTrophies: gameDataState.userTrophies,
-        adminAdjustments: gameDataState.adminAdjustments,
-        gameAssets: gameDataState.gameAssets,
-        systemLogs: gameDataState.systemLogs,
-        settings,
-        themes: gameDataState.themes,
-        loginHistory,
-        chatMessages,
-    };
-    
+    const appState = useAppState();
+    const { settings } = appState;
     const [selected, setSelected] = useState<{ [key in ShareableAssetType]: string[] }>({
         quests: [],
         rewardTypes: [],

@@ -1,14 +1,12 @@
 
-
 import React, { useState, useMemo } from 'react';
-import { useAuthState, useSettingsState, useAppDispatch } from '../../context/AppContext';
+import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { Role, User } from '../../types';
 import Button from '../ui/Button';
 import Input from '../ui/Input';
 
 const AppLockScreen: React.FC = () => {
-  const { users } = useAuthState();
-  const { settings } = useSettingsState();
+  const { users, settings } = useAppState();
   const { setAppUnlocked, setCurrentUser } = useAppDispatch();
   
   const adminUsers = useMemo(() => users.filter(u => u.role === Role.DonegeonMaster), [users]);

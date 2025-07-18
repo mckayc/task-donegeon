@@ -1,7 +1,6 @@
-
 import React, { useState, useEffect } from 'react';
-import { useGameDataState, useAppDispatch } from '../../context/AppContext';
-import { GameAsset, RewardItem, RewardCategory, Market, RewardTypeDefinition } from '../../types';
+import { useAppState, useAppDispatch } from '../../context/AppContext';
+import { GameAsset, RewardItem, RewardCategory } from '../../types';
 import Button from '../ui/Button';
 import Input from '../ui/Input';
 import RewardInputGroup from '../forms/RewardInputGroup';
@@ -21,7 +20,7 @@ const PREDEFINED_CATEGORIES = [
 
 const EditGameAssetDialog: React.FC<EditGameAssetDialogProps> = ({ assetToEdit, newAssetUrl, onClose }) => {
   const { addGameAsset, updateGameAsset, uploadFile, addNotification } = useAppDispatch();
-  const { markets, rewardTypes } = useGameDataState();
+  const { markets, rewardTypes } = useAppState();
 
   const [formData, setFormData] = useState({
     name: '',
@@ -73,7 +72,7 @@ const EditGameAssetDialog: React.FC<EditGameAssetDialogProps> = ({ assetToEdit, 
   };
   
   const handleAddRewardForCategory = (category: 'cost' | 'payouts') => (rewardCat: RewardCategory) => {
-    const defaultReward = rewardTypes.find((rt: RewardTypeDefinition) => rt.category === rewardCat);
+    const defaultReward = rewardTypes.find(rt => rt.category === rewardCat);
     if (!defaultReward) return;
     setFormData(prev => ({ ...prev, [category]: [...prev[category], { rewardTypeId: defaultReward.id, amount: 1 }] }));
   };
@@ -212,7 +211,7 @@ const EditGameAssetDialog: React.FC<EditGameAssetDialogProps> = ({ assetToEdit, 
                       <div>
                           <h4 className="font-semibold text-stone-200 mb-2">Available In</h4>
                           <div className="space-y-2 max-h-32 overflow-y-auto border border-stone-700 p-2 rounded-md">
-                              {markets.map((market: Market) => (
+                              {markets.map(market => (
                                   <div key={market.id} className="flex items-center">
                                       <input type="checkbox" id={`market-${market.id}`} checked={formData.marketIds.includes(market.id)} onChange={() => handleMarketToggle(market.id)} className="h-4 w-4 rounded text-emerald-600 bg-stone-700 border-stone-500 focus:ring-emerald-500" />
                                       <label htmlFor={`market-${market.id}`} className="ml-3 text-stone-300">{market.title}</label>

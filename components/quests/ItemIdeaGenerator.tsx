@@ -1,10 +1,9 @@
-
 import React, { useState } from 'react';
 import { GenerateContentResponse, Type } from "@google/genai";
 import Button from '../ui/Button';
 import Input from '../ui/Input';
 import { SparklesIcon } from '../ui/Icons';
-import { useSettingsState } from '../../context/AppContext';
+import { useAppState } from '../../context/AppContext';
 
 interface ItemIdea {
   name: string;
@@ -19,7 +18,7 @@ interface ItemIdeaGeneratorProps {
 }
 
 const ItemIdeaGenerator: React.FC<ItemIdeaGeneratorProps> = ({ onUseIdea, onClose }) => {
-    const { settings } = useSettingsState();
+    const { settings } = useAppState();
     const [prompt, setPrompt] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');

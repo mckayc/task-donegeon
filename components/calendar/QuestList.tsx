@@ -1,9 +1,8 @@
-
 import React, { useMemo } from 'react';
 import { Quest, QuestCompletion, QuestType, QuestAvailability } from '../../types';
 import { isQuestAvailableForUser, toYMD } from '../../utils/quests';
 import Button from '../ui/Button';
-import { useAppDispatch, useAuthState } from '../../context/AppContext';
+import { useAppDispatch, useAppState } from '../../context/AppContext';
 import QuestDetailDialog from '../quests/QuestDetailDialog';
 
 interface QuestListProps {
@@ -15,7 +14,7 @@ interface QuestListProps {
 }
 
 const QuestList: React.FC<QuestListProps> = ({ title, date, quests, questCompletions, onQuestSelect }) => {
-    const { currentUser } = useAuthState();
+    const { currentUser } = useAppState();
     const isFuture = toYMD(date) > toYMD(new Date());
 
     if (quests.length === 0) {

@@ -1,7 +1,7 @@
 
 
 import React, { useMemo } from 'react';
-import { useAuthState, useGameDataState, useSettingsState, useUIState } from '../../context/AppContext';
+import { useAppState } from '../../context/AppContext';
 import { Role, Trophy, UserTrophy, TrophyRequirementType, QuestType, QuestCompletionStatus, Quest, AppMode, User } from '../../types';
 import Card from '../ui/Card';
 import { fromYMD } from '../../utils/quests';
@@ -9,10 +9,7 @@ import EmptyState from '../ui/EmptyState';
 import { TrophyIcon } from '../ui/Icons';
 
 const TrophiesPage: React.FC = () => {
-    const { currentUser } = useAuthState();
-    const { trophies, userTrophies, questCompletions, quests, ranks } = useGameDataState();
-    const { appMode } = useUIState();
-    const { settings } = useSettingsState();
+    const { currentUser, trophies, userTrophies, appMode, settings, questCompletions, quests, ranks } = useAppState();
 
     const RequirementStatus: React.FC<{ trophy: Trophy }> = ({ trophy }) => {
         if (!currentUser || trophy.isManual) return null;

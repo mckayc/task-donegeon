@@ -1,7 +1,6 @@
-
 import React from 'react';
 import { Quest, RewardCategory, RewardItem, QuestType } from '../../types';
-import { useGameDataState, useSettingsState } from '../../context/AppContext';
+import { useAppState } from '../../context/AppContext';
 import Button from '../ui/Button';
 import ToggleSwitch from '../ui/ToggleSwitch';
 
@@ -15,8 +14,7 @@ interface QuestDetailDialogProps {
 }
 
 const QuestDetailDialog: React.FC<QuestDetailDialogProps> = ({ quest, onClose, onComplete, onToggleTodo, isTodo, dialogTitle }) => {
-    const { rewardTypes } = useGameDataState();
-    const { settings } = useSettingsState();
+    const { rewardTypes, settings } = useAppState();
 
     const getRewardInfo = (id: string) => {
         const rewardDef = rewardTypes.find(rt => rt.id === id);

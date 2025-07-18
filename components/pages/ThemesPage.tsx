@@ -1,15 +1,13 @@
 
+
 import React, { useState, useEffect, useMemo } from 'react';
-import { useAuthState, useSettingsState, useGameDataState, useUIState, useAppDispatch } from '../../context/AppContext';
-import { ThemeDefinition } from '../../types';
+import { useAppState, useAppDispatch } from '../../context/AppContext';
+import { ThemeDefinition, AppMode } from '../../types';
 import Button from '../ui/Button';
 import Card from '../ui/Card';
 
 const ThemesPage: React.FC = () => {
-    const { currentUser } = useAuthState();
-    const { settings } = useSettingsState();
-    const { themes, markets, guilds } = useGameDataState();
-    const { appMode } = useUIState();
+    const { currentUser, settings, themes, markets, guilds, appMode } = useAppState();
     const { updateUser, addNotification, setActivePage, setActiveMarketId } = useAppDispatch();
     
     if (!currentUser) return null;
@@ -32,7 +30,7 @@ const ThemesPage: React.FC = () => {
 
         // Cleanup function to revert to the actual saved theme when navigating away
         return () => {
-            let activeThemeId: string = settings.theme;
+            let activeThemeId = settings.theme;
             if (appMode.mode === 'guild') {
                 const guild = guilds.find(g => g.id === appMode.guildId);
                 if (guild?.themeId) {

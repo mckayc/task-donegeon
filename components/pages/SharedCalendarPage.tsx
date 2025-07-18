@@ -1,8 +1,7 @@
 
 
-
 import React, { useState, useMemo } from 'react';
-import { useSettingsState, useAuthState, useGameDataState, useAppDispatch } from '../../context/AppContext';
+import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { Quest, QuestType, QuestAvailability, User } from '../../types';
 import { isQuestAvailableForUser, toYMD, isQuestScheduledForDay, questSorter } from '../../utils/quests';
 import Card from '../ui/Card';
@@ -13,9 +12,7 @@ import QuestDetailDialog from '../quests/QuestDetailDialog';
 import CompleteQuestDialog from '../quests/CompleteQuestDialog';
 
 const SharedCalendarPage: React.FC = () => {
-    const { settings } = useSettingsState();
-    const { users } = useAuthState();
-    const { quests, questCompletions, guilds } = useGameDataState();
+    const { settings, users, quests, questCompletions, guilds } = useAppState();
     const { markQuestAsTodo, unmarkQuestAsTodo } = useAppDispatch();
     const [currentDate, setCurrentDate] = useState(new Date());
     const [verifyingQuest, setVerifyingQuest] = useState<{ quest: Quest; user: User } | null>(null);

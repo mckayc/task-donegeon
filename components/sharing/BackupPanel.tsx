@@ -1,36 +1,24 @@
 
 import React from 'react';
-import { useAuthState, useGameDataState, useSettingsState, useUIState } from '../../context/AppContext';
+import { useAppState } from '../../context/AppContext';
 import Button from '../ui/Button';
-import { IAppData } from '../../types';
 
 const BackupPanel: React.FC = () => {
-    const authState = useAuthState();
-    const gameDataState = useGameDataState();
-    const settingsState = useSettingsState();
-    const uiState = useUIState();
+    const appState = useAppState();
 
     const handleBackup = () => {
-        // Construct the full data object for backup
-        const dataToBackup: IAppData = {
-            users: authState.users,
-            loginHistory: authState.loginHistory,
-            quests: gameDataState.quests,
-            markets: gameDataState.markets,
-            rewardTypes: gameDataState.rewardTypes,
-            questCompletions: gameDataState.questCompletions,
-            purchaseRequests: gameDataState.purchaseRequests,
-            guilds: gameDataState.guilds,
-            ranks: gameDataState.ranks,
-            trophies: gameDataState.trophies,
-            userTrophies: gameDataState.userTrophies,
-            adminAdjustments: gameDataState.adminAdjustments,
-            gameAssets: gameDataState.gameAssets,
-            systemLogs: gameDataState.systemLogs,
-            themes: gameDataState.themes,
-            settings: settingsState.settings,
-            chatMessages: uiState.chatMessages,
-        };
+        // Exclude transient UI state from the backup
+        const {
+            isAppUnlocked,
+            isFirstRun,
+            notifications,
+            isSwitchingUser,
+            targetedUserForLogin,
+            activePage,
+            activeMarketId,
+            allTags,
+            ...dataToBackup
+        } = appState;
 
         const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(dataToBackup, null, 2));
         const timestamp = new Date().toISOString().replace(/:/g, '-').slice(0, 19);

@@ -1,6 +1,6 @@
 # Task Donegeon
 
-**Version:** 0.0.83
+**Version:** 0.0.84
 
 ---
 
@@ -15,19 +15,19 @@ Task Donegeon is a gamified task and chore management application designed for f
 
 ## ✨ Features
 
-### What's New in Version 0.0.83
--   **Durable Server-Side Backups:** The entire backup system has been overhauled for production-grade reliability. Backups are no longer stored in the browser's volatile `localStorage`.
-    -   **Persistent Storage:** Backups are now saved directly on the server's file system. For Docker users, this means you can map a local host directory (e.g., `./backups`) to persist your data indefinitely.
-    -   **Reliable Automated Backups:** The automated backup scheduler now runs as a server-side process, ensuring backups are created reliably at the configured interval, regardless of whether a user has the app open.
-    -   **New Management UI:** The "Backup & Import" page has been completely refactored to interact with the new server-side system, allowing you to generate, download, and delete backups stored on the server.
+### What's New in Version 0.0.84 (July 20, 2025)
+-   **Categorized Frontend Uploads:** The asset management workflow has been significantly improved.
+    -   **Categorize on Upload:** When uploading an image from the `Asset Manager` page, you can now specify a category directly.
+    -   **Automatic Folder Organization:** The backend will automatically save the image into a sub-folder matching the category name, keeping your uploads tidy on the server.
+    -   **Instant Gallery Update:** The uploaded image immediately appears in the Local Image Gallery under its new category, ready to be used in a Game Asset.
 
 ### Version History
-- **v0.0.82:** **Login Notifications System & DM Announcements:** A comprehensive notification system has been added. Users now see a popup on login detailing new quest assignments, guild announcements from Donegeon Masters, trophies unlocked, and items pending approval. This feature can be toggled in a new "Notifications" section in the settings.
-- **v0.0.81:** Revamped About Page, direct GitHub link, and a new Version History section.
-- **v0.0.80:** UI Streamlining (Global Reward Display), Smarter Sticky Card Headers, Docker Chat Fix, Dashboard Cleanup.
+- **v0.0.83 (July 19, 2025):** **Durable Server-Side Backups:** The entire backup system has been overhauled for production-grade reliability. Backups are now saved directly on the server's file system, and automated backups run as a reliable server-side process.
+- **v0.0.82 (July 18, 2025):** **Login Notifications System & DM Announcements:** A comprehensive notification system has been added. Users now see a popup on login detailing new quest assignments, guild announcements from Donegeon Masters, trophies unlocked, and items pending approval. This feature can be toggled in a new "Notifications" section in the settings.
+- **v0.0.81 (July 17, 2025):** Revamped About Page, direct GitHub link, and a new Version History section.
+- **v0.0.80 (July 16, 2025):** UI Streamlining (Global Reward Display), Smarter Sticky Card Headers, Docker Chat Fix, Dashboard Cleanup.
 
 ### Core Features
--   **Login Notifications & DM Announcements:** A robust system to ensure users see important updates, including high-priority messages from administrators.
 -   **Full-featured In-App Chat:** A real-time chat system allows users to message each other directly within the app, with notifications for unread messages.
 -   **Bulk Content Management:** Admins can now select multiple items on management pages to perform bulk actions like deleting or changing status.
 -   **AI Image Generation Helper:** The Asset Manager now includes an AI prompt helper with links to free AI art generators to streamline asset creation.
@@ -158,6 +158,8 @@ Once unlocked, you and other users can log in using the "Switch Profile" button.
     # Create local folders for persistent storage first
     mkdir uploads
     mkdir backups
+    # Ensure uploads folder has correct permissions for the container user (UID 1000)
+    sudo chown -R 1000:1000 ./uploads
     docker-compose up --build
     ```
     The app will be at `http://localhost:3002`. Uploaded files will be in the `./uploads` directory, and server-side backups will be in `./backups`.
@@ -169,7 +171,7 @@ Once unlocked, you and other users can log in using the "Switch Profile" button.
 4.  Scroll down to the **Environment variables** section. It's crucial to add the required secrets here. Click **Add environment variable** for each of the following:
     -   **Name:** `POSTGRES_PASSWORD`, **Value:** `your_super_secret_password_here` (Choose a strong password)
     -   **Name:** `API_KEY`, **Value:** `your_gemini_api_key_here` (If you want AI features)
-5.  **Important:** To make backups persistent, go to the **Volumes** tab in Portainer and map the container path `/app/backend/backups` to a host path (e.g., `/portainer/data/task-donegeon/backups`).
+5.  **Important:** To make backups and uploads persistent, go to the **Volumes** tab in Portainer and map the container paths (e.g., `/app/backend/backups`, `/app/uploads`) to a host path (e.g., `/portainer/data/task-donegeon/backups`).
 6.  Click **Deploy the stack**. The app will be available at `http://<your-server-ip>:3002`.
 
 ### Option 5: Production Deployment from Docker Hub
@@ -178,6 +180,8 @@ Once unlocked, you and other users can log in using the "Switch Profile" button.
     ```bash
     mkdir uploads
     mkdir backups
+    # Set correct ownership for container user
+    sudo chown -R 1000:1000 ./uploads ./backups
     ```
 3.  Run the application using the `docker-compose.prod.yml` file:
     ```bash

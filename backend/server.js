@@ -46,15 +46,29 @@ const UPLOADS_DIR = path.join(__dirname, 'uploads');
 const storage = process.env.STORAGE_PROVIDER === 'supabase'
   ? multer.memoryStorage()
   : multer.diskStorage({
-      destination: (req, file, cb) => {
-        require('fs').mkdirSync(UPLOADS_DIR, { recursive: true });
-        cb(null, UPLOADS_DIR);
+      destination: async (req, file, cb) => {
+        const category = req.body.category || 'Miscellaneous';
+        // Sanitize category to prevent path traversal and invalid folder names
+        const sanitizedCategory = category.replace(/[^a-zA-Z0-9-_ ]/g, '').trim();
+        const finalDir = path.join(UPLOADS_DIR, sanitizedCategory);
+        try {
+            await fs.mkdir(finalDir, { recursive: true });
+            cb(null, finalDir);
+        } catch (err) {
+            cb(err);
+        }
       },
       filename: (req, file, cb) => {
-        cb(null, `${Date.now()}-${file.originalname}`);
+        // Sanitize filename
+        const sanitizedFilename = file.originalname.replace(/[^a-zA-Z0-9-._]/g, '_');
+        cb(null, `${Date.now()}-${sanitizedFilename}`);
       }
     });
-const upload = multer({ storage });
+
+const upload = multer({
+    storage,
+    limits: { fileSize: 10 * 1024 * 1024 } // 10MB file size limit
+});
 
 // === Backup Configuration ===
 const BACKUP_DIR = process.env.BACKUP_PATH || path.join(__dirname, 'backups');
@@ -216,17 +230,24 @@ app.post('/api/media/upload', upload.single('file'), async (req, res, next) => {
     try {
         let fileUrl;
         if (process.env.STORAGE_PROVIDER === 'supabase') {
+            const category = req.body.category || 'Miscellaneous';
+            const sanitizedCategory = category.replace(/[^a-zA-Z0-9-_ ]/g, '').trim();
+            const sanitizedFilename = req.file.originalname.replace(/[^a-zA-Z0-9-._]/g, '_');
+            const filePath = sanitizedCategory ? `${sanitizedCategory}/${Date.now()}-${sanitizedFilename}` : `${Date.now()}-${sanitizedFilename}`;
+
             const { data, error } = await supabase.storage
                 .from('media-assets')
-                .upload(req.file.originalname, req.file.buffer, {
+                .upload(filePath, req.file.buffer, {
                     contentType: req.file.mimetype,
-                    upsert: true,
+                    upsert: false,
                 });
             if (error) throw error;
             const { data: { publicUrl } } = supabase.storage.from('media-assets').getPublicUrl(data.path);
             fileUrl = publicUrl;
         } else {
-            fileUrl = `/uploads/${req.file.filename}`;
+            // Construct URL based on the final path, including the category subfolder
+            const relativePath = path.relative(UPLOADS_DIR, req.file.path).replace(/\\/g, '/');
+            fileUrl = `/uploads/${relativePath}`;
         }
         res.status(201).json({ url: fileUrl, name: req.file.originalname, type: req.file.mimetype, size: req.file.size });
     } catch (err) {

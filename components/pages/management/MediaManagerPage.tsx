@@ -7,6 +7,7 @@ import ConfirmDialog from '../../ui/ConfirmDialog';
 import EditGameAssetDialog from '../../admin/EditGameAssetDialog';
 import { useSettings } from '../../../context/SettingsContext';
 import AiImagePromptHelper from '../../sharing/AiImagePromptHelper';
+import UploadWithCategoryDialog from '../../admin/UploadWithCategoryDialog';
 
 interface LocalGalleryImage {
     url: string;
@@ -21,9 +22,8 @@ const AssetManagerPage: React.FC = () => {
     
     const [editingAsset, setEditingAsset] = useState<GameAsset | null>(null);
     const [assetToCreateUrl, setAssetToCreateUrl] = useState<string | null>(null);
-    const [assetToCreateName, setAssetToCreateName] = useState<string | null>(null);
-    const [assetToCreateCategory, setAssetToCreateCategory] = useState<string | null>(null);
     const [deletingAsset, setDeletingAsset] = useState<GameAsset | null>(null);
+    const [fileToCategorize, setFileToCategorize] = useState<File | null>(null);
 
     const [isUploading, setIsUploading] = useState(false);
     const [localGallery, setLocalGallery] = useState<LocalGalleryImage[]>([]);
@@ -61,15 +61,16 @@ const AssetManagerPage: React.FC = () => {
 
 
     const handleFileProcess = useCallback(async (file: File) => {
+        setFileToCategorize(file);
+    }, []);
+    
+    const handleUploadWithCategory = async (file: File, category: string) => {
         setIsUploading(true);
         try {
-            const uploadedAsset = await uploadFile(file);
+            const uploadedAsset = await uploadFile(file, category);
             if (uploadedAsset?.url) {
-                setAssetToCreateUrl(uploadedAsset.url);
-                setAssetToCreateName(file.name.replace(/\.[^/.]+$/, ""));
-                setAssetToCreateCategory('Miscellaneous');
-                addNotification({type: 'success', message: 'Image uploaded! Now add its details.'});
-                fetchLocalGallery(); // Refresh gallery after upload
+                addNotification({ type: 'success', message: 'Image uploaded successfully!' });
+                fetchLocalGallery(); // Refresh gallery
             } else {
                 throw new Error('Upload failed to return a URL.');
             }
@@ -78,8 +79,9 @@ const AssetManagerPage: React.FC = () => {
             addNotification({ type: 'error', message: `Upload failed: ${message}` });
         } finally {
             setIsUploading(false);
+            setFileToCategorize(null);
         }
-    }, [addNotification, uploadFile, fetchLocalGallery]);
+    };
 
     const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
         if (event.target.files) {
@@ -107,8 +109,6 @@ const AssetManagerPage: React.FC = () => {
 
     const handleCreateFromGallery = (image: LocalGalleryImage) => {
         setAssetToCreateUrl(image.url);
-        setAssetToCreateName(image.name);
-        setAssetToCreateCategory(image.category);
     };
     
     const copyToClipboard = (text: string) => {
@@ -122,8 +122,6 @@ const AssetManagerPage: React.FC = () => {
     const handleCloseDialog = () => {
         setEditingAsset(null);
         setAssetToCreateUrl(null);
-        setAssetToCreateName(null);
-        setAssetToCreateCategory(null);
     }
 
     return (
@@ -200,6 +198,14 @@ const AssetManagerPage: React.FC = () => {
                     <p className="text-stone-400 text-center py-8">No assets have been saved yet.</p>
                 )}
             </div>
+            
+            {fileToCategorize && (
+                <UploadWithCategoryDialog
+                    file={fileToCategorize}
+                    onClose={() => setFileToCategorize(null)}
+                    onUpload={handleUploadWithCategory}
+                />
+            )}
 
             {(editingAsset || assetToCreateUrl) && (
                 <EditGameAssetDialog

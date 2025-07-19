@@ -1,12 +1,16 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import Card from '../ui/Card';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import Button from '../ui/Button';
+import { Guild, User } from '../../types';
+import GuildMemberProfilePage from '../guilds/GuildMemberProfilePage';
+import Avatar from '../ui/Avatar';
 
 const GuildPage: React.FC = () => {
     const { currentUser, users, guilds, settings } = useAppState();
     const { setAppMode, setActivePage } = useAppDispatch();
+    const [viewingMember, setViewingMember] = useState<{ user: User; guild: Guild } | null>(null);
 
     if (!currentUser) return null;
 
@@ -16,6 +20,10 @@ const GuildPage: React.FC = () => {
         setAppMode({ mode: 'guild', guildId: guildId });
         setActivePage('Dashboard');
     };
+
+    if (viewingMember) {
+        return <GuildMemberProfilePage user={viewingMember.user} guild={viewingMember.guild} onBack={() => setViewingMember(null)} />;
+    }
 
     return (
         <div>
@@ -39,13 +47,15 @@ const GuildPage: React.FC = () => {
                                         const member = users.find(u => u.id === memberId);
                                         if (!member) return null;
                                         return (
-                                            <div key={member.id} className="flex flex-col items-center text-center">
-                                                <div className="w-20 h-20 bg-stone-700 rounded-full flex items-center justify-center text-stone-300 font-bold text-2xl border-2 border-stone-600">
-                                                    {member.gameName.charAt(0).toUpperCase()}
-                                                </div>
+                                            <button 
+                                                key={member.id} 
+                                                className="flex flex-col items-center text-center p-2 rounded-lg hover:bg-stone-700/50 transition-colors group"
+                                                onClick={() => setViewingMember({ user: member, guild })}
+                                            >
+                                                <Avatar user={member} className="w-20 h-20 bg-stone-700 rounded-full border-2 border-stone-600 group-hover:border-accent transition-colors" />
                                                 <p className="mt-2 text-md font-semibold text-stone-200">{member.gameName}</p>
                                                 <p className="text-xs text-stone-400">{member.role}</p>
-                                            </div>
+                                            </button>
                                         )
                                     })}
                                 </div>

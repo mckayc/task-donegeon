@@ -121,18 +121,21 @@ const AboutPage: React.FC = () => {
 
     return (
         <div>
-            <CollapsibleSection title="What's New in Version 0.0.84 (July 20, 2025)" defaultOpen>
+            <CollapsibleSection title="What's New in Version 0.0.85 (July 21, 2025)" defaultOpen>
                  <div className="prose prose-invert max-w-none text-stone-300 space-y-4">
-                    <p>This release introduces a powerful new workflow for managing images, allowing administrators to categorize uploads directly from the frontend for better organization.</p>
+                    <p>This release adds a powerful new way to populate your game with high-quality, pre-made images without increasing the size of the application. The new **Image Pack Importer** is now available in the `Asset Manager`.</p>
                     <ul className="list-disc list-inside space-y-2 pl-4">
                         <li>
-                            <strong>Categorize on Upload:</strong> When uploading an image from the `Asset Manager` page, you can now specify a category directly.
+                            <strong>Fetch from GitHub:</strong> Click a button to fetch a list of available, curated image packs directly from the official Task Donegeon GitHub repository.
                         </li>
                         <li>
-                            <strong>Automatic Folder Organization:</strong> The backend will automatically save the image into a sub-folder matching the category name, keeping your uploads tidy on the server.
+                            <strong>Preview and Select:</strong> A new dialog allows you to see a sample image from each pack and select which ones you want to download.
                         </li>
                         <li>
-                            <strong>Instant Gallery Update:</strong> The uploaded image immediately appears in the Local Image Gallery under its new category, ready to be used in a Game Asset.
+                            <strong>Reliable Backend Import:</strong> The server handles the entire download and organization process, importing all images from the selected packs and sorting them into the correct category folders in your `uploads` directory.
+                        </li>
+                        <li>
+                            <strong>Leaner Application Build:</strong> By fetching assets on demand, the core application and its Docker image remain small and fast to download.
                         </li>
                     </ul>
                 </div>

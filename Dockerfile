@@ -19,7 +19,8 @@ RUN npm install
 # --- CHANGES FOR ENTRYPOINT to copy images ---
 
 # 1. Copy default images to a staging directory, NOT the final destination.
-COPY backend/uploads /app/default-uploads
+#COPY backend/uploads /app/default-uploads - original code
+COPY backend/uploads /app/uploads
 
 # 2. Copy the new entrypoint script into the container.
 #    /usr/local/bin is a standard location for user-installed scripts.

@@ -148,7 +148,16 @@ const ManageItemsPage: React.FC = () => {
                 )}
             </Card>
             
-            {isCreateDialogOpen && <EditGameAssetDialog assetToEdit={editingAsset} newAssetUrl={null} onClose={handleCloseDialog} />}
+            {isCreateDialogOpen && <EditGameAssetDialog 
+                assetToEdit={editingAsset} 
+                initialData={initialCreateData ? { 
+                    url: `https://placehold.co/150/FFFFFF/000000?text=${encodeURIComponent(initialCreateData.icon)}`, 
+                    name: initialCreateData.name, 
+                    category: initialCreateData.category, 
+                    description: initialCreateData.description 
+                } : null} 
+                onClose={handleCloseDialog} 
+            />}
             {isGeneratorOpen && <ItemIdeaGenerator onUseIdea={handleUseIdea} onClose={() => setIsGeneratorOpen(false)} />}
 
 

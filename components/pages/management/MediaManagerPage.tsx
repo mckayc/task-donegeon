@@ -22,7 +22,7 @@ const AssetManagerPage: React.FC = () => {
     const [isDragging, setIsDragging] = useState(false);
     
     const [editingAsset, setEditingAsset] = useState<GameAsset | null>(null);
-    const [assetToCreateUrl, setAssetToCreateUrl] = useState<string | null>(null);
+    const [assetToCreateData, setAssetToCreateData] = useState<{ url: string; name: string; category: string; } | null>(null);
     const [deletingAsset, setDeletingAsset] = useState<GameAsset | null>(null);
     const [fileToCategorize, setFileToCategorize] = useState<File | null>(null);
     const [isImporterOpen, setIsImporterOpen] = useState(false);
@@ -112,7 +112,12 @@ const AssetManagerPage: React.FC = () => {
     };
 
     const handleCreateFromGallery = (image: LocalGalleryImage) => {
-        setAssetToCreateUrl(image.url);
+        const assetName = image.name.replace(/\.[^/.]+$/, "").replace(/[-_]/g, ' ');
+        setAssetToCreateData({
+            url: image.url,
+            name: assetName.charAt(0).toUpperCase() + assetName.slice(1),
+            category: image.category,
+        });
     };
     
     const copyToClipboard = (text: string) => {
@@ -125,7 +130,7 @@ const AssetManagerPage: React.FC = () => {
     
     const handleCloseDialog = () => {
         setEditingAsset(null);
-        setAssetToCreateUrl(null);
+        setAssetToCreateData(null);
     }
 
     return (
@@ -161,7 +166,7 @@ const AssetManagerPage: React.FC = () => {
 
             <Card title="Local Image Gallery">
                 <p className="text-stone-400 text-sm mb-4">
-                    Images from your <code>/backend/uploads</code> folder are shown here. Name files as <code>Category-Name.png</code> (e.g. <code>Pet-BabyDragon.png</code>) for automatic categorization.
+                    Images from your <code>/uploads</code> folder are shown here. Use sub-folders for automatic categorization. For avatar items, use folders named <code>Avatar-SlotName</code> (e.g., <code>Avatar-hat</code>).
                 </p>
                 {isGalleryLoading ? (
                     <div className="text-center py-4 text-stone-400">Loading gallery...</div>
@@ -221,10 +226,10 @@ const AssetManagerPage: React.FC = () => {
                 />
             )}
 
-            {(editingAsset || assetToCreateUrl) && (
+            {(editingAsset || assetToCreateData) && (
                 <EditGameAssetDialog
                     assetToEdit={editingAsset}
-                    newAssetUrl={assetToCreateUrl}
+                    initialData={assetToCreateData}
                     onClose={handleCloseDialog}
                 />
             )}

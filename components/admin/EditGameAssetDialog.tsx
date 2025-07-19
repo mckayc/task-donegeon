@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { GameAsset, RewardItem, RewardCategory } from '../../types';
@@ -9,7 +10,7 @@ import ImageSelectionDialog from '../ui/ImageSelectionDialog';
 
 interface EditGameAssetDialogProps {
   assetToEdit: GameAsset | null;
-  newAssetUrl: string | null;
+  initialData: { url: string; name: string; category: string; description?: string; } | null;
   onClose: () => void;
 }
 
@@ -25,7 +26,7 @@ const PREDEFINED_CATEGORIES = [
     'Armor (Cosmetic)', 'Consumable', 'Real-World Reward', 'Trophy Display', 'Miscellaneous'
 ];
 
-const EditGameAssetDialog: React.FC<EditGameAssetDialogProps> = ({ assetToEdit, newAssetUrl, onClose }) => {
+const EditGameAssetDialog: React.FC<EditGameAssetDialogProps> = ({ assetToEdit, initialData, onClose }) => {
   const { addGameAsset, updateGameAsset, uploadFile, addNotification } = useAppDispatch();
   const { markets, rewardTypes } = useAppState();
 
@@ -68,10 +69,33 @@ const EditGameAssetDialog: React.FC<EditGameAssetDialogProps> = ({ assetToEdit, 
       if (!PREDEFINED_CATEGORIES.includes(assetToEdit.category)) {
           setCustomCategory(assetToEdit.category);
       }
-    } else if (newAssetUrl) {
-      setFormData(prev => ({ ...prev, url: newAssetUrl }));
+    } else if (initialData) {
+        const { url, name, category: rawCategory, description } = initialData;
+        let finalCategory = rawCategory;
+        let finalAvatarSlot = '';
+
+        if (rawCategory.toLowerCase().startsWith('avatar-')) {
+            const parts = rawCategory.split('-');
+            finalCategory = 'Avatar';
+            finalAvatarSlot = parts.slice(1).join('-').toLowerCase();
+        }
+
+        const isPredefined = PREDEFINED_CATEGORIES.includes(finalCategory);
+
+        setFormData(prev => ({
+            ...prev,
+            url,
+            name,
+            description: description || '',
+            category: isPredefined ? finalCategory : 'Other',
+            avatarSlot: finalAvatarSlot,
+        }));
+
+        if (!isPredefined) {
+            setCustomCategory(finalCategory);
+        }
     }
-  }, [assetToEdit, newAssetUrl]);
+  }, [assetToEdit, initialData]);
 
   const handleRewardChange = (category: 'cost' | 'payouts') => (index: number, field: keyof RewardItem, value: string | number) => {
     const newItems = [...formData[category]];

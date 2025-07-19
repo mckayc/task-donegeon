@@ -62,7 +62,7 @@ COPY --from=dependencies /usr/src/app/backend/node_modules ./backend/node_module
 
 # Copy the backend's server code and the initial default uploads.
 COPY backend/server.js ./backend/
-COPY backend/uploads ./backend/uploads
+# COPY backend/uploads ./backend/uploads - Hopefully don't need this anymore?
 
 # Change ownership of all application files to our new non-root user.
 # This is important for security.

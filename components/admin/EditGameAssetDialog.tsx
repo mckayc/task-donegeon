@@ -13,6 +13,13 @@ interface EditGameAssetDialogProps {
   onClose: () => void;
 }
 
+const InfoIcon: React.FC<{className?: string}> = ({ className }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={className || "w-5 h-5"}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="m11.25 11.25.041-.02a.75.75 0 0 1 1.063.852l-.708 2.836a.75.75 0 0 0 1.063.853l.041-.021M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9-3.75h.008v.008H12V8.25Z" />
+    </svg>
+);
+
+
 const PREDEFINED_CATEGORIES = [
     'Avatar', 'Theme', 'Pet', 'Tool', 'Weapon (Cosmetic)', 
     'Armor (Cosmetic)', 'Consumable', 'Real-World Reward', 'Trophy Display', 'Miscellaneous'
@@ -40,6 +47,7 @@ const EditGameAssetDialog: React.FC<EditGameAssetDialogProps> = ({ assetToEdit, 
   const [error, setError] = useState('');
   const [isUploading, setIsUploading] = useState(false);
   const [isGalleryOpen, setIsGalleryOpen] = useState(false);
+  const [isInfoVisible, setIsInfoVisible] = useState(false);
 
   useEffect(() => {
     if (assetToEdit) {
@@ -145,11 +153,16 @@ const EditGameAssetDialog: React.FC<EditGameAssetDialogProps> = ({ assetToEdit, 
           </div>
           <form id="asset-dialog-form" onSubmit={handleSubmit} className="flex-1 space-y-4 p-8 overflow-y-auto scrollbar-hide">
             <div className="flex gap-6 items-start">
-                <div className="w-48 h-48 bg-stone-700 rounded-md flex-shrink-0 flex items-center justify-center">
+                <div className="relative w-48 h-48 bg-stone-700 rounded-md flex-shrink-0 flex items-center justify-center">
                     {isUploading ? (
                        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-400"></div>
                     ) : (
                        <img src={formData.url || 'https://placehold.co/150x150/1c1917/FFFFFF?text=?'} alt="Asset preview" className="w-full h-full object-contain" />
+                    )}
+                    {formData.url && (
+                         <button type="button" onClick={() => setIsInfoVisible(true)} className="absolute top-1 right-1 p-1 bg-black/50 rounded-full text-white hover:bg-black/70 transition-colors" aria-label="Show image info">
+                            <InfoIcon />
+                        </button>
                     )}
                 </div>
                 <div className="flex-grow space-y-4">
@@ -233,6 +246,18 @@ const EditGameAssetDialog: React.FC<EditGameAssetDialogProps> = ({ assetToEdit, 
           </div>
         </div>
       </div>
+      
+      {isInfoVisible && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-[60]" onClick={() => setIsInfoVisible(false)}>
+            <div className="bg-stone-900 border border-stone-700 rounded-lg p-6 max-w-lg w-full" onClick={e => e.stopPropagation()}>
+                <h3 className="font-bold text-lg text-stone-200 mb-4">Asset Information</h3>
+                <Input label="Image URL" readOnly value={formData.url} onFocus={e => (e.target as HTMLInputElement).select()} />
+                <div className="text-right mt-4">
+                    <Button variant="secondary" onClick={() => setIsInfoVisible(false)}>Close</Button>
+                </div>
+            </div>
+        </div>
+      )}
 
       {isGalleryOpen && (
           <ImageSelectionDialog 

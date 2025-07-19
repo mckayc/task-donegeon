@@ -77,6 +77,12 @@ const RoadmapContent: React.FC = () => (
 const VersionHistoryContent: React.FC = () => (
     <div className="prose prose-invert max-w-none text-stone-300 space-y-4">
         <div>
+            <h4 className="text-lg font-bold text-stone-100">Version 0.0.84 (July 20, 2025)</h4>
+            <ul className="list-disc list-inside space-y-2 mt-2">
+                <li><strong>Categorized Frontend Uploads:</strong> When uploading an image from the `Asset Manager` page, you can now specify a category. The backend will automatically save the image into a sub-folder matching the category name, keeping uploads tidy.</li>
+            </ul>
+        </div>
+        <div>
             <h4 className="text-lg font-bold text-stone-100">Version 0.0.83 (July 19, 2025)</h4>
             <ul className="list-disc list-inside space-y-2 mt-2">
                 <li><strong>Durable Server-Side Backups:</strong> The entire backup system was overhauled for production-grade reliability. Backups are now saved directly on the server's file system, and automated backups run as a reliable server-side process.</li>
@@ -115,7 +121,7 @@ const AboutPage: React.FC = () => {
 
     return (
         <div>
-            <CollapsibleSection title="What's New in Version 0.0.84" defaultOpen>
+            <CollapsibleSection title="What's New in Version 0.0.84 (July 20, 2025)" defaultOpen>
                  <div className="prose prose-invert max-w-none text-stone-300 space-y-4">
                     <p>This release introduces a powerful new workflow for managing images, allowing administrators to categorize uploads directly from the frontend for better organization.</p>
                     <ul className="list-disc list-inside space-y-2 pl-4">

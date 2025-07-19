@@ -1,4 +1,3 @@
-
 import React, { useMemo } from 'react';
 import { Guild, Rank, User, Trophy } from '../../types';
 import { useAppState } from '../../context/AppContext';
@@ -15,13 +14,13 @@ interface GuildMemberProfilePageProps {
 const GuildMemberProfilePage: React.FC<GuildMemberProfilePageProps> = ({ user, guild, onBack }) => {
     const { ranks, rewardTypes, trophies, userTrophies, gameAssets } = useAppState();
 
-    const guildBalances = useMemo(() => {
-        return user.guildBalances[guild.id] || { purse: {}, experience: {} };
-    }, [user, guild.id]);
+    const personalBalances = useMemo(() => {
+        return { purse: user.personalPurse, experience: user.personalExperience };
+    }, [user]);
 
     const rankData = useMemo(() => {
         const sortedRanks = [...ranks].sort((a, b) => a.xpThreshold - b.xpThreshold);
-        const totalXp = Object.values(guildBalances.experience).reduce((sum: number, amount: number) => sum + amount, 0);
+        const totalXp = Object.values(personalBalances.experience).reduce((sum: number, amount: number) => sum + amount, 0);
         
         let currentRank: Rank | null = sortedRanks[0] || null;
         for (let i = sortedRanks.length - 1; i >= 0; i--) {
@@ -31,26 +30,26 @@ const GuildMemberProfilePage: React.FC<GuildMemberProfilePageProps> = ({ user, g
             }
         }
         return { currentRank, totalXp };
-    }, [guildBalances.experience, ranks]);
+    }, [personalBalances.experience, ranks]);
     
-    const guildCurrencies = useMemo(() => {
+    const personalCurrencies = useMemo(() => {
         return rewardTypes
-            .filter(rt => rt.category === 'Currency' && (guildBalances.purse[rt.id] || 0) > 0)
-            .map(c => ({ ...c, amount: guildBalances.purse[c.id] || 0 }));
-    }, [guildBalances.purse, rewardTypes]);
+            .filter(rt => rt.category === 'Currency' && (personalBalances.purse[rt.id] || 0) > 0)
+            .map(c => ({ ...c, amount: personalBalances.purse[c.id] || 0 }));
+    }, [personalBalances.purse, rewardTypes]);
 
-    const guildExperience = useMemo(() => {
+    const personalExperienceItems = useMemo(() => {
         return rewardTypes
-            .filter(rt => rt.category === 'XP' && (guildBalances.experience[rt.id] || 0) > 0)
-            .map(xp => ({ ...xp, amount: guildBalances.experience[xp.id] || 0 }));
-    }, [guildBalances.experience, rewardTypes]);
+            .filter(rt => rt.category === 'XP' && (personalBalances.experience[rt.id] || 0) > 0)
+            .map(xp => ({ ...xp, amount: personalBalances.experience[xp.id] || 0 }));
+    }, [personalBalances.experience, rewardTypes]);
 
-    const guildTrophies = useMemo(() => {
+    const personalTrophies = useMemo(() => {
         return userTrophies
-            .filter(ut => ut.userId === user.id && ut.guildId === guild.id)
+            .filter(ut => ut.userId === user.id && ut.guildId === undefined)
             .map(ut => trophies.find(t => t.id === ut.trophyId))
             .filter((t): t is Trophy => !!t);
-    }, [userTrophies, trophies, user.id, guild.id]);
+    }, [userTrophies, trophies, user.id]);
 
     const ownedItems = useMemo(() => {
         return user.ownedAssetIds
@@ -83,12 +82,12 @@ const GuildMemberProfilePage: React.FC<GuildMemberProfilePageProps> = ({ user, g
                 <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
                     {/* Rewards */}
                     <div>
-                        <h3 className="text-xl font-bold text-stone-200 mb-4">Guild Inventory</h3>
+                        <h3 className="text-xl font-bold text-stone-200 mb-4">Personal Inventory</h3>
                         <div className="space-y-4">
                              <div>
                                 <h4 className="font-bold text-lg text-stone-300 mb-2 border-b border-stone-700 pb-1">Currency</h4>
                                 <div className="space-y-2 mt-2">
-                                    {guildCurrencies.length > 0 ? guildCurrencies.map(c => 
+                                    {personalCurrencies.length > 0 ? personalCurrencies.map(c => 
                                         <div key={c.id} className="flex items-baseline justify-between">
                                             <span className="text-stone-200 flex items-center gap-2"><span>{c.icon}</span><span>{c.name}</span></span>
                                             <span className="font-semibold text-accent-light">{c.amount}</span>
@@ -99,7 +98,7 @@ const GuildMemberProfilePage: React.FC<GuildMemberProfilePageProps> = ({ user, g
                              <div>
                                 <h4 className="font-bold text-lg text-stone-300 mb-2 border-b border-stone-700 pb-1">Experience</h4>
                                 <div className="space-y-2 mt-2">
-                                    {guildExperience.length > 0 ? guildExperience.map(xp => 
+                                    {personalExperienceItems.length > 0 ? personalExperienceItems.map(xp => 
                                         <div key={xp.id} className="flex items-baseline justify-between">
                                             <span className="text-stone-200 flex items-center gap-2"><span>{xp.icon}</span><span>{xp.name}</span></span>
                                             <span className="font-semibold text-sky-400">{xp.amount}</span>
@@ -111,10 +110,10 @@ const GuildMemberProfilePage: React.FC<GuildMemberProfilePageProps> = ({ user, g
                     </div>
                     {/* Trophies */}
                     <div>
-                         <h3 className="text-xl font-bold text-stone-200 mb-4">Guild Trophies</h3>
-                         {guildTrophies.length > 0 ? (
+                         <h3 className="text-xl font-bold text-stone-200 mb-4">Personal Trophies</h3>
+                         {personalTrophies.length > 0 ? (
                             <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                                {guildTrophies.map(trophy => (
+                                {personalTrophies.map(trophy => (
                                     <div key={trophy.id} className="bg-stone-800/70 p-3 rounded-lg flex flex-col items-center text-center" title={trophy.description}>
                                         <div className="w-12 h-12 mb-2 rounded-full flex items-center justify-center bg-amber-900/50">
                                             <span className="text-3xl">{trophy.icon}</span>
@@ -123,7 +122,7 @@ const GuildMemberProfilePage: React.FC<GuildMemberProfilePageProps> = ({ user, g
                                     </div>
                                 ))}
                             </div>
-                         ) : <p className="text-stone-400 text-sm italic">No trophies earned in this guild yet.</p>}
+                         ) : <p className="text-stone-400 text-sm italic">No personal trophies earned yet.</p>}
                     </div>
                 </div>
                 

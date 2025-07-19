@@ -1,11 +1,11 @@
 import React, { useMemo, useState } from 'react';
 import Card from '../ui/Card';
 import { useAppState } from '../../context/AppContext';
-import { QuestCompletionStatus, Role, PurchaseRequestStatus, AdminAdjustmentType } from '../../types';
+import { QuestCompletionStatus, Role, PurchaseRequestStatus, AdminAdjustmentType, SystemNotificationType, ChronicleEvent } from '../../types';
 import Button from '../ui/Button';
 
 const ChroniclesPage: React.FC = () => {
-  const { questCompletions, purchaseRequests, users, quests, gameAssets, currentUser, userTrophies, trophies, appMode, adminAdjustments, rewardTypes, systemLogs, settings } = useAppState();
+  const { questCompletions, purchaseRequests, users, quests, gameAssets, currentUser, userTrophies, trophies, appMode, adminAdjustments, rewardTypes, systemLogs, settings, systemNotifications, guilds } = useAppState();
   const [viewMode, setViewMode] = useState<'all' | 'personal'>('all');
   const [itemsPerPage, setItemsPerPage] = useState(50);
   const [currentPage, setCurrentPage] = useState(1);
@@ -20,6 +20,7 @@ const ChroniclesPage: React.FC = () => {
     const getQuestTitle = (questId: string) => quests.find(q => q.id === questId)?.title || `Unknown ${settings.terminology.task}`;
     const getUserName = (userId: string) => users.find(u => u.id === userId)?.gameName || 'Unknown User';
     const getTrophyName = (trophyId: string) => trophies.find(t => t.id === trophyId)?.name || `Unknown ${settings.terminology.award}`;
+    const getGuildName = (guildId?: string) => guildId ? guilds.find(g => g.id === guildId)?.name : 'Personal';
     const getRewardDisplay = (rewardId: string) => {
         const reward = rewardTypes.find(rt => rt.id === rewardId);
         return { name: reward?.name || 'Unknown', icon: reward?.icon || '❓' };
@@ -80,9 +81,25 @@ const ChroniclesPage: React.FC = () => {
         note: `Applied to ${log.userIds.map(getUserName).join(', ')}: ${setbacksText}`,
       }
     }).filter((a): a is NonNullable<typeof a> => a !== null);
+    
+    const announcementActivities = systemNotifications
+      .filter(n => n.type === SystemNotificationType.Announcement && n.guildId === currentGuildId)
+      .map(n => ({
+        id: n.id,
+        date: n.timestamp,
+        type: 'Announcement',
+        userId: n.senderId,
+        getUserName: () => (n.senderId ? getUserName(n.senderId) : 'System'),
+        text: n.message,
+        title: `Announcement to ${getGuildName(n.guildId)}`,
+        status: `Sent by ${n.senderId ? getUserName(n.senderId) : 'System'}`,
+        note: n.message,
+        icon: '📢',
+        color: '#a855f7',
+      }));
 
 
-    const allActivities = [...questActivities, ...purchaseActivities, ...trophyActivities, ...adjustmentActivities, ...systemLogActivities];
+    const allActivities = [...questActivities, ...purchaseActivities, ...trophyActivities, ...adjustmentActivities, ...systemLogActivities, ...announcementActivities];
     
     let relevantActivities = allActivities;
     if (isExplorer) {
@@ -93,7 +110,7 @@ const ChroniclesPage: React.FC = () => {
     
     return [...relevantActivities].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
-  }, [questCompletions, purchaseRequests, userTrophies, adminAdjustments, systemLogs, users, quests, gameAssets, trophies, currentUser, appMode, rewardTypes, viewMode, settings]);
+  }, [questCompletions, purchaseRequests, userTrophies, adminAdjustments, systemLogs, users, quests, gameAssets, trophies, currentUser, appMode, rewardTypes, viewMode, settings, systemNotifications, guilds]);
   
   const totalPages = Math.ceil(sortedActivities.length / itemsPerPage);
   const paginatedActivities = sortedActivities.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);

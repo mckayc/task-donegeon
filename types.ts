@@ -251,6 +251,26 @@ export interface Notification {
   icon?: string;
 }
 
+export enum SystemNotificationType {
+    Announcement = 'Announcement',
+    QuestAssigned = 'QuestAssigned',
+    TrophyAwarded = 'TrophyAwarded',
+    ApprovalRequired = 'ApprovalRequired'
+}
+
+export interface SystemNotification {
+    id: string;
+    senderId?: string;
+    message: string;
+    type: SystemNotificationType;
+    timestamp: string;
+    recipientUserIds: string[]; // Specific users this is for
+    readByUserIds: string[];
+    link?: Page; // Optional link to a relevant page
+    guildId?: string;
+    icon?: string;
+}
+
 export interface Terminology {
   appName: string;
   // Singular
@@ -372,6 +392,9 @@ export interface AppSettings {
     frequencyHours: number; // e.g., 24 for daily
     maxBackups: number; // e.g., 7 for a week's worth
   };
+  loginNotifications: {
+    enabled: boolean;
+  };
   theme: string;
   terminology: Terminology;
   enableAiFeatures: boolean;
@@ -473,6 +496,7 @@ export interface IAppData {
   themes: ThemeDefinition[];
   loginHistory: string[];
   chatMessages: ChatMessage[];
+  systemNotifications: SystemNotification[];
 }
 
 export type LibraryPackType = 'Quests' | 'Items' | 'Markets' | 'Trophies' | 'Rewards';
@@ -490,7 +514,7 @@ export interface LibraryPack {
 export type ChronicleEvent = {
     id: string;
     date: string;
-    type: 'Quest' | 'Purchase' | 'Trophy' | 'Adjustment' | 'System';
+    type: 'Quest' | 'Purchase' | 'Trophy' | 'Adjustment' | 'System' | 'Announcement';
     title: string;
     note?: string;
     status: string;

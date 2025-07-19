@@ -213,6 +213,17 @@ const SettingsPage: React.FC = () => {
                 </div>
             </CollapsibleSection>
 
+            <CollapsibleSection title="Notifications" showSavedIndicator={showSaved === 'Notifications'}>
+                <div className="space-y-6">
+                    <div className="flex items-start">
+                        <ToggleSwitch enabled={formState.loginNotifications.enabled} setEnabled={(val) => handleToggleChange('loginNotifications.enabled', val, 'Notifications')} label="Enable popup notifications on login" />
+                        <p className="text-sm ml-6" style={{ color: 'hsl(var(--color-text-secondary))' }}>
+                            When this is turned on, if there are any new notifications when a user enters their account it will show a large popup with all the notifications.
+                        </p>
+                    </div>
+                </div>
+            </CollapsibleSection>
+
             <CollapsibleSection title="Shared Mode" onSave={() => handleManualSave('Shared Mode')} showSavedIndicator={showSaved === 'Shared Mode'}>
                 <div className="space-y-6">
                     <div className="flex items-start">

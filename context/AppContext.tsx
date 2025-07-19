@@ -1,7 +1,7 @@
 
 
 import React, { createContext, useState, useContext, ReactNode, useEffect, useCallback, useMemo, useRef } from 'react';
-import { AppSettings, User, Quest, RewardTypeDefinition, QuestCompletion, RewardItem, Market, PurchaseRequest, Guild, Rank, Trophy, UserTrophy, Notification, AppMode, Page, IAppData, ShareableAssetType, GameAsset, Role, QuestCompletionStatus, RewardCategory, PurchaseRequestStatus, AdminAdjustment, AdminAdjustmentType, SystemLog, QuestType, QuestAvailability, Blueprint, ImportResolution, TrophyRequirementType, ThemeDefinition, ChatMessage } from '../types';
+import { AppSettings, User, Quest, RewardTypeDefinition, QuestCompletion, RewardItem, Market, PurchaseRequest, Guild, Rank, Trophy, UserTrophy, Notification, AppMode, Page, IAppData, ShareableAssetType, GameAsset, Role, QuestCompletionStatus, RewardCategory, PurchaseRequestStatus, AdminAdjustment, AdminAdjustmentType, SystemLog, QuestType, QuestAvailability, Blueprint, ImportResolution, TrophyRequirementType, ThemeDefinition, ChatMessage, SystemNotification, SystemNotificationType } from '../types';
 import { INITIAL_SETTINGS, createMockUsers, INITIAL_REWARD_TYPES, INITIAL_RANKS, INITIAL_TROPHIES, createSampleMarkets, createSampleQuests, createInitialGuilds, createSampleGameAssets, INITIAL_THEMES, createInitialQuestCompletions } from '../data/initialData';
 import { useDebounce } from '../hooks/useDebounce';
 import { toYMD } from '../utils/quests';
@@ -101,8 +101,10 @@ interface AppDispatch {
   setActiveMarketId: (marketId: string | null) => void;
   toggleSidebar: () => void;
   toggleChat: () => void;
-  sendMessage: (message: Omit<ChatMessage, 'id' | 'timestamp' | 'readBy' | 'senderId'>) => void;
+  sendMessage: (message: Omit<ChatMessage, 'id' | 'timestamp' | 'readBy' | 'senderId'> & { isAnnouncement?: boolean }) => void;
   markMessagesAsRead: (params: { partnerId?: string; guildId?: string; }) => void;
+  addSystemNotification: (notification: Omit<SystemNotification, 'id' | 'timestamp' | 'readByUserIds'>) => void;
+  markSystemNotificationsAsRead: (notificationIds: string[]) => void;
 }
 
 const AppStateContext = createContext<AppState | undefined>(undefined);
@@ -127,6 +129,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [themes, setThemes] = useState<ThemeDefinition[]>(INITIAL_THEMES);
   const [loginHistory, setLoginHistory] = useState<string[]>([]);
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
+  const [systemNotifications, setSystemNotifications] = useState<SystemNotification[]>([]);
 
   // UI State
   const [currentUser, _setCurrentUser] = useState<User | null>(null);
@@ -151,7 +154,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const isFirstRun = isDataLoaded && !users.some(u => u.role === Role.DonegeonMaster);
 
   // === DATA PERSISTENCE ===
-  const appData = useMemo((): IAppData => ({ users, quests, markets, rewardTypes, questCompletions, purchaseRequests, guilds, ranks, trophies, userTrophies, adminAdjustments, gameAssets, systemLogs, settings, themes, loginHistory, chatMessages }), [users, quests, markets, rewardTypes, questCompletions, purchaseRequests, guilds, ranks, trophies, userTrophies, adminAdjustments, gameAssets, systemLogs, settings, themes, loginHistory, chatMessages]);
+  const appData = useMemo((): IAppData => ({ users, quests, markets, rewardTypes, questCompletions, purchaseRequests, guilds, ranks, trophies, userTrophies, adminAdjustments, gameAssets, systemLogs, settings, themes, loginHistory, chatMessages, systemNotifications }), [users, quests, markets, rewardTypes, questCompletions, purchaseRequests, guilds, ranks, trophies, userTrophies, adminAdjustments, gameAssets, systemLogs, settings, themes, loginHistory, chatMessages, systemNotifications]);
   const debouncedAppData = useDebounce(appData, 500);
 
   useEffect(() => {
@@ -190,6 +193,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
                 themes: INITIAL_THEMES,
                 loginHistory: [],
                 chatMessages: [],
+                systemNotifications: [],
             };
         }
 
@@ -229,6 +233,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
                 security: { ...INITIAL_SETTINGS.security, ...(savedSettings.security || {}) },
                 sharedMode: { ...INITIAL_SETTINGS.sharedMode, ...(savedSettings.sharedMode || {}) },
                 automatedBackups: { ...INITIAL_SETTINGS.automatedBackups, ...(savedSettings.automatedBackups || {}) },
+                loginNotifications: { ...INITIAL_SETTINGS.loginNotifications, ...(savedSettings.loginNotifications || {}) },
                 chat: { ...INITIAL_SETTINGS.chat, ...(savedSettings.chat || {}) },
                 sidebars: { ...INITIAL_SETTINGS.sidebars, ...(savedSettings.sidebars || {}) },
                 terminology: { ...INITIAL_SETTINGS.terminology, ...(savedSettings.terminology || {}) },
@@ -251,6 +256,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             setThemes(dataToSet.themes || INITIAL_THEMES);
             setLoginHistory(dataToSet.loginHistory || []);
             setChatMessages(dataToSet.chatMessages || []);
+            setSystemNotifications(dataToSet.systemNotifications || []);
 
             const lastUserId = localStorage.getItem('lastUserId');
             if (lastUserId && dataToSet.users) {
@@ -299,6 +305,28 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     setNotifications(prev => [...prev, { ...notification, id: uniqueId }]);
   }, []);
 
+  const addSystemNotification = useCallback((notification: Omit<SystemNotification, 'id' | 'timestamp' | 'readByUserIds'>) => {
+    if (!notification.recipientUserIds || notification.recipientUserIds.length === 0) return;
+    const newNotification: SystemNotification = {
+        id: `sysnotif-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+        timestamp: new Date().toISOString(),
+        readByUserIds: [],
+        ...notification
+    };
+    setSystemNotifications(prev => [...prev, newNotification]);
+  }, []);
+
+  const markSystemNotificationsAsRead = useCallback((notificationIds: string[]) => {
+    if (!currentUser) return;
+    const idsToMark = new Set(notificationIds);
+    setSystemNotifications(prev => prev.map(n => {
+        if (idsToMark.has(n.id) && !n.readByUserIds.includes(currentUser.id)) {
+            return { ...n, readByUserIds: [...n.readByUserIds, currentUser.id] };
+        }
+        return n;
+    }));
+  }, [currentUser]);
+
   // Polling for data sync
   useEffect(() => {
     if (!currentUser || isFirstRun || !isDataLoaded) return;
@@ -339,6 +367,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             themes: stateRef.current.themes,
             loginHistory: stateRef.current.loginHistory,
             chatMessages: stateRef.current.chatMessages,
+            systemNotifications: stateRef.current.systemNotifications,
         } : null;
 
         if (currentLocalData && JSON.stringify(currentLocalData) !== JSON.stringify(serverData)) {
@@ -351,6 +380,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
                 security: { ...INITIAL_SETTINGS.security, ...(savedSettings.security || {}) },
                 sharedMode: { ...INITIAL_SETTINGS.sharedMode, ...(savedSettings.sharedMode || {}) },
                 automatedBackups: { ...INITIAL_SETTINGS.automatedBackups, ...(savedSettings.automatedBackups || {}) },
+                loginNotifications: { ...INITIAL_SETTINGS.loginNotifications, ...(savedSettings.loginNotifications || {}) },
                 chat: { ...INITIAL_SETTINGS.chat, ...(savedSettings.chat || {}) },
                 sidebars: { ...INITIAL_SETTINGS.sidebars, ...(savedSettings.sidebars || {}) },
                 terminology: { ...INITIAL_SETTINGS.terminology, ...(savedSettings.terminology || {}) },
@@ -373,6 +403,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             setThemes(serverData.themes || INITIAL_THEMES);
             setLoginHistory(serverData.loginHistory || []);
             setChatMessages(serverData.chatMessages || []);
+            setSystemNotifications(serverData.systemNotifications || []);
 
             if (stateRef.current?.currentUser) {
               const updatedUser = (serverData.users || []).find(u => u.id === stateRef.current!.currentUser!.id);
@@ -446,6 +477,22 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     });
   }, [rewardTypes, currentUser]);
   
+  const awardTrophy = useCallback((userId: string, trophyId: string, guildId?: string) => {
+    const t = trophies.find(t => t.id === trophyId);
+    if (t) {
+      setUserTrophies(p => [...p, { id: `award-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`, userId, trophyId, awardedAt: new Date().toISOString(), guildId }]);
+      addNotification({ type: 'trophy', message: `Trophy Unlocked: ${t.name}!`, icon: t.icon });
+      addSystemNotification({
+        type: SystemNotificationType.TrophyAwarded,
+        message: `You unlocked a new trophy: "${t.name}"!`,
+        recipientUserIds: [userId],
+        guildId,
+        icon: t.icon,
+        link: 'Trophies',
+      });
+    }
+  }, [trophies, addNotification, addSystemNotification]);
+
   const checkAndAwardTrophies = useCallback((userId: string, guildId?: string) => {
     if (guildId) return; // Automatic trophies are personal-only for now
     const user = users.find(u => u.id === userId);
@@ -468,11 +515,10 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         }
       });
       if (meetsAllRequirements) {
-        setUserTrophies(prev => [...prev, { id: `award-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`, userId, trophyId: trophy.id, awardedAt: new Date().toISOString(), guildId }]);
-        addNotification({ type: 'trophy', message: `Trophy Unlocked: ${trophy.name}!`, icon: trophy.icon });
+        awardTrophy(userId, trophy.id, guildId);
       }
     }
-  }, [users, questCompletions, ranks, trophies, userTrophies, quests, addNotification]);
+  }, [users, questCompletions, ranks, trophies, userTrophies, quests, awardTrophy]);
 
   // Auth
   const setCurrentUser = (user: User | null) => {
@@ -522,8 +568,51 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const setAppUnlocked = useCallback((isUnlocked: boolean) => { sessionStorage.setItem('isAppUnlocked', String(isUnlocked)); _setAppUnlocked(isUnlocked); }, []);
   
   // GameData
-  const addQuest = useCallback((quest: Omit<Quest, 'id' | 'claimedByUserIds' | 'dismissals'>) => setQuests(prev => [...prev, { ...quest, id: `quest-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`, claimedByUserIds: [], dismissals: [], todoUserIds: [] }]), []);
-  const updateQuest = useCallback((updatedQuest: Quest) => setQuests(prev => prev.map(q => q.id === updatedQuest.id ? updatedQuest : q)), []);
+  const addQuest = useCallback((quest: Omit<Quest, 'id' | 'claimedByUserIds' | 'dismissals'>) => {
+    const newQuest: Quest = { ...quest, id: `quest-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`, claimedByUserIds: [], dismissals: [], todoUserIds: [] };
+    setQuests(prev => [...prev, newQuest]);
+    if (newQuest.assignedUserIds.length > 0) {
+        addSystemNotification({
+            type: SystemNotificationType.QuestAssigned,
+            message: `You have been assigned a new quest: "${newQuest.title}"`,
+            recipientUserIds: newQuest.assignedUserIds,
+            guildId: newQuest.guildId,
+            link: 'Quests',
+        });
+    } else if (newQuest.guildId) {
+        const guild = guilds.find(g => g.id === newQuest.guildId);
+        if (guild) {
+             addSystemNotification({
+                type: SystemNotificationType.QuestAssigned,
+                message: `A new guild quest is available: "${newQuest.title}"`,
+                recipientUserIds: guild.memberIds,
+                guildId: newQuest.guildId,
+                link: 'Quests',
+            });
+        }
+    }
+  }, [addSystemNotification, guilds]);
+  const updateQuest = useCallback((updatedQuest: Quest) => {
+    setQuests(prev => {
+        const oldQuest = prev.find(q => q.id === updatedQuest.id);
+        const newQuests = prev.map(q => q.id === updatedQuest.id ? updatedQuest : q);
+        if (oldQuest) {
+            const oldAssignees = new Set(oldQuest.assignedUserIds);
+            const newAssignees = new Set(updatedQuest.assignedUserIds);
+            const newlyAssigned = [...newAssignees].filter(id => !oldAssignees.has(id));
+            if (newlyAssigned.length > 0) {
+                addSystemNotification({
+                    type: SystemNotificationType.QuestAssigned,
+                    message: `You have been assigned a new quest: "${updatedQuest.title}"`,
+                    recipientUserIds: newlyAssigned,
+                    guildId: updatedQuest.guildId,
+                    link: 'Quests',
+                });
+            }
+        }
+        return newQuests;
+    });
+  }, [addSystemNotification]);
   const deleteQuest = useCallback((questId: string) => setQuests(prev => prev.filter(q => q.id !== questId)), []);
   const dismissQuest = useCallback((questId: string, userId: string) => { setQuests(prevQuests => prevQuests.map(q => q.id === questId ? { ...q, dismissals: [...q.dismissals.filter(d => d.userId !== userId), { userId, dismissedAt: new Date().toISOString() }] } : q)); }, []);
   const claimQuest = useCallback((questId: string, userId: string) => setQuests(prev => prev.map(q => q.id === questId ? { ...q, claimedByUserIds: [...q.claimedByUserIds, userId] } : q)), []);
@@ -534,8 +623,31 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     const newCompletion: QuestCompletion = { id: `comp-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`, questId, userId, completedAt: (options?.completionDate || new Date()).toISOString(), status: requiresApproval ? QuestCompletionStatus.Pending : QuestCompletionStatus.Approved, guildId, note: options?.note };
     setQuestCompletions(prev => [...prev, newCompletion]);
     if (!requiresApproval) { applyRewards(userId, rewards, guildId); const quest = quests.find(q => q.id === questId); addNotification({ type: 'success', message: `Quest Completed: ${quest?.title}`}); checkAndAwardTrophies(userId, guildId); } 
-    else { addNotification({ type: 'info', message: `Quest submitted for approval.` }); }
-  }, [quests, applyRewards, addNotification, checkAndAwardTrophies]);
+    else { 
+        addNotification({ type: 'info', message: `Quest submitted for approval.` }); 
+        const recipients = users.filter(u => {
+            const isAdmin = u.role === Role.DonegeonMaster;
+            const isGatekeeper = u.role === Role.Gatekeeper;
+            if (guildId) {
+                const guild = guilds.find(g => g.id === guildId);
+                return guild?.memberIds.includes(u.id) && (isAdmin || isGatekeeper);
+            }
+            return isAdmin || isGatekeeper; // Personal scope
+        }).map(u => u.id).filter(id => id !== userId);
+
+        if (recipients.length > 0) {
+            const quest = quests.find(q => q.id === questId);
+            const user = users.find(u => u.id === userId);
+            addSystemNotification({
+                type: SystemNotificationType.ApprovalRequired,
+                message: `${user?.gameName || 'A user'} submitted "${quest?.title || 'a quest'}" for approval.`,
+                recipientUserIds: recipients,
+                guildId,
+                link: 'Approvals',
+            });
+        }
+    }
+  }, [quests, applyRewards, addNotification, checkAndAwardTrophies, users, guilds, addSystemNotification]);
   const approveQuestCompletion = useCallback((completionId: string, note?: string) => { const c = questCompletions.find(c => c.id === completionId); if (c) { const q = quests.find(q => q.id === c.questId); if (q) { setQuestCompletions(prev => prev.map(comp => comp.id === completionId ? { ...comp, status: QuestCompletionStatus.Approved, note: note || comp.note } : comp)); applyRewards(c.userId, q.rewards, q.guildId); addNotification({ type: 'success', message: `Quest approved!`}); checkAndAwardTrophies(c.userId, q.guildId); } } }, [questCompletions, quests, applyRewards, addNotification, checkAndAwardTrophies]);
   const rejectQuestCompletion = useCallback((completionId: string, note?: string) => { setQuestCompletions(prev => prev.map(c => c.id === completionId ? { ...c, status: QuestCompletionStatus.Rejected, note: note || c.note } : c)); addNotification({ type: 'info', message: `Quest rejected.`}); }, [addNotification]);
   const addRewardType = useCallback((rewardType: Omit<RewardTypeDefinition, 'id' | 'isCore'>) => setRewardTypes(prev => [...prev, { ...rewardType, id: `custom-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`, isCore: false }]), []);
@@ -637,7 +749,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const addTrophy = useCallback((trophy: Omit<Trophy, 'id'>) => setTrophies(prev => [...prev, { ...trophy, id: `trophy-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`}]), []);
   const updateTrophy = useCallback((trophy: Trophy) => setTrophies(prev => prev.map(t => t.id === trophy.id ? trophy : t)), []);
   const deleteTrophy = useCallback((trophyId: string) => setTrophies(prev => prev.filter(t => t.id !== trophyId)), []);
-  const awardTrophy = useCallback((userId: string, trophyId: string, guildId?: string) => { const t = trophies.find(t => t.id === trophyId); if (t) { setUserTrophies(p => [...p, { id: `award-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`, userId, trophyId, awardedAt: new Date().toISOString(), guildId }]); addNotification({ type: 'trophy', message: `Trophy Unlocked: ${t.name}!`, icon: t.icon }); }}, [trophies, addNotification]);
 
   const applyManualAdjustment = useCallback((adj: Omit<AdminAdjustment, 'id' | 'adjustedAt'>): boolean => { const newAdj: AdminAdjustment = { ...adj, id: `adj-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`, adjustedAt: new Date().toISOString() }; setAdminAdjustments(p => [...p, newAdj]); if (newAdj.type === AdminAdjustmentType.Reward) applyRewards(newAdj.userId, newAdj.rewards, newAdj.guildId); else if (newAdj.type === AdminAdjustmentType.Setback) deductRewards(newAdj.userId, newAdj.setbacks, newAdj.guildId); else if (newAdj.type === AdminAdjustmentType.Trophy && newAdj.trophyId) awardTrophy(newAdj.userId, newAdj.trophyId, newAdj.guildId); addNotification({type: 'success', message: 'Manual adjustment applied.'}); return true; }, [applyRewards, deductRewards, awardTrophy, addNotification]);
   const addGameAsset = useCallback((asset: Omit<GameAsset, 'id'|'creatorId'|'createdAt'>) => { setGameAssets(p => [...p, { ...asset, id: `g-asset-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`, creatorId: 'admin', createdAt: new Date().toISOString() }]); addNotification({ type: 'success', message: `Asset "${asset.name}" created.` }); }, [addNotification]);
@@ -743,87 +854,37 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       };
   }, [resetInactivityTimer]);
 
-  // Automated Backups
-  useEffect(() => {
-    if (!settings.automatedBackups.enabled || !isDataLoaded) return;
-    
-    const performBackup = () => {
-        try {
-            const savedBackupsRaw = localStorage.getItem('localBackups');
-            const savedBackups = savedBackupsRaw ? JSON.parse(savedBackupsRaw) : [];
-            let autoBackups = savedBackups.filter((b: any) => b.isAuto);
-
-            const dataToBackup = { users, quests, markets, rewardTypes, questCompletions, purchaseRequests, guilds, ranks, trophies, userTrophies, adminAdjustments, gameAssets, systemLogs, settings, themes, loginHistory, chatMessages };
-            const dataStr = JSON.stringify(dataToBackup);
-            const size = new Blob([dataStr]).size;
-
-            const newBackup = {
-                id: `auto-backup-${Date.now()}`,
-                timestamp: new Date().toISOString(),
-                name: `auto_backup_${new Date().toISOString().replace(/:/g, '-').slice(0, 19)}.json`,
-                data: dataToBackup,
-                size: size,
-                isAuto: true,
-            };
-
-            autoBackups.unshift(newBackup);
-
-            // Prune old backups
-            if (autoBackups.length > settings.automatedBackups.maxBackups) {
-                autoBackups = autoBackups.slice(0, settings.automatedBackups.maxBackups);
-            }
-            
-            const manualBackups = savedBackups.filter((b: any) => !b.isAuto);
-            localStorage.setItem('localBackups', JSON.stringify([...manualBackups, ...autoBackups]));
-            console.log(`Automated backup created at ${new Date().toLocaleString()}`);
-
-        } catch (e) {
-            console.error("Failed to perform automated backup:", e);
-        }
-    };
-
-    const intervalId = setInterval(performBackup, settings.automatedBackups.frequencyHours * 60 * 60 * 1000);
-    return () => clearInterval(intervalId);
-  }, [settings.automatedBackups, appData, isDataLoaded]);
-
   // Chat functions
   const toggleChat = useCallback(() => setIsChatOpen(prev => !prev), []);
 
-  const sendMessage = useCallback((message: Omit<ChatMessage, 'id' | 'timestamp' | 'readBy' | 'senderId'>) => {
+  const sendMessage = useCallback((message: Omit<ChatMessage, 'id' | 'timestamp' | 'readBy' | 'senderId'> & { isAnnouncement?: boolean }) => {
     if (!currentUser) return;
+
+    const { isAnnouncement, ...chatMessageData } = message;
+
     const newMessage: ChatMessage = {
       id: `msg-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
       senderId: currentUser.id,
       timestamp: new Date().toISOString(),
       readBy: [currentUser.id], // Sender has read their own message
-      ...message
+      ...chatMessageData
     };
 
-    // Use functional update to get the latest state and trigger an immediate save.
-    setChatMessages(prevMessages => {
-        const newMessages = [...prevMessages, newMessage];
-        const currentState = stateRef.current;
-        
-        if (currentState) {
-            // Manually update the stateRef to ensure the save operation has the absolute latest data,
-            // even before the next render cycle completes.
-            const updatedStateForSave = { ...currentState, chatMessages: newMessages };
-            stateRef.current = updatedStateForSave;
-            
-            // Fire-and-forget the save operation.
-            window.fetch('/api/data/save', { 
-                method: 'POST', 
-                headers: { 'Content-Type': 'application/json' }, 
-                body: JSON.stringify(updatedStateForSave) 
-            }).catch(error => {
-                console.error("Failed to save chat message immediately:", error);
-                // Optional: Revert state or show an error notification.
+    if (isAnnouncement && message.guildId) {
+        const guild = guilds.find(g => g.id === message.guildId);
+        if (guild) {
+            addSystemNotification({
+                type: SystemNotificationType.Announcement,
+                message: message.message,
+                senderId: currentUser.id,
+                recipientUserIds: guild.memberIds.filter(id => id !== currentUser.id),
+                guildId: message.guildId,
             });
         }
-        
-        return newMessages; // Return the new state for React to render.
-    });
-  }, [currentUser]);
+    }
+
+    setChatMessages(prevMessages => [...prevMessages, newMessage]);
+  }, [currentUser, guilds, addSystemNotification]);
 
   const markMessagesAsRead = useCallback((params: { partnerId?: string; guildId?: string; }) => {
     if (!currentUser) return;
@@ -844,7 +905,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
   // === CONTEXT PROVIDER VALUE ===
   const stateValue: AppState = {
-    users, quests, markets, rewardTypes, questCompletions, purchaseRequests, guilds, ranks, trophies, userTrophies, adminAdjustments, gameAssets, systemLogs, settings, themes, loginHistory, chatMessages,
+    users, quests, markets, rewardTypes, questCompletions, purchaseRequests, guilds, ranks, trophies, userTrophies, adminAdjustments, gameAssets, systemLogs, settings, themes, loginHistory, chatMessages, systemNotifications,
     currentUser, isAppUnlocked, isFirstRun, activePage, appMode, notifications, isDataLoaded, activeMarketId, allTags: useMemo(() => Array.from(new Set(quests.flatMap(q => q.tags || []))).sort(), [quests]),
     isSwitchingUser, isSharedViewActive, targetedUserForLogin, isAiConfigured, isSidebarCollapsed,
     syncStatus, syncError, isChatOpen,
@@ -863,7 +924,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     deleteQuests, deleteTrophies, deleteGameAssets, updateQuestsStatus,
     uploadFile,
     updateSettings, resetSettings, setActivePage, setAppMode, addNotification, removeNotification, setActiveMarketId, toggleSidebar,
-    toggleChat, sendMessage, markMessagesAsRead
+    toggleChat, sendMessage, markMessagesAsRead,
+    addSystemNotification, markSystemNotificationsAsRead
   };
 
   return (

@@ -1,11 +1,13 @@
 
+
 import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
-import { User } from '../../types';
+import { Role, User } from '../../types';
 import Avatar from '../ui/Avatar';
 import Input from '../ui/Input';
 import { XCircleIcon } from '../ui/Icons';
 import Button from '../ui/Button';
+import ToggleSwitch from '../ui/ToggleSwitch';
 
 type ChatTarget = User | {
     id: string;
@@ -15,10 +17,11 @@ type ChatTarget = User | {
 };
 
 const ChatPanel: React.FC = () => {
-    const { currentUser, users, guilds, chatMessages, isChatOpen } = useAppState();
+    const { currentUser, users, guilds, chatMessages, isChatOpen, settings } = useAppState();
     const { toggleChat, sendMessage, markMessagesAsRead } = useAppDispatch();
     const [activeChatTarget, setActiveChatTarget] = useState<ChatTarget | null>(null);
     const [message, setMessage] = useState('');
+    const [isAnnouncement, setIsAnnouncement] = useState(false);
     const [userScrolledUp, setUserScrolledUp] = useState(false);
     const messagesContainerRef = useRef<HTMLDivElement>(null);
 
@@ -94,7 +97,10 @@ const ChatPanel: React.FC = () => {
         e.preventDefault();
         if (message.trim() && activeChatTarget) {
             if ('isGuild' in activeChatTarget && activeChatTarget.isGuild) {
-                sendMessage({ guildId: activeChatTarget.id, message });
+                sendMessage({ guildId: activeChatTarget.id, message, isAnnouncement });
+                if (isAnnouncement) {
+                    setIsAnnouncement(false);
+                }
             } else {
                 sendMessage({ recipientId: activeChatTarget.id, message });
             }
@@ -172,6 +178,17 @@ const ChatPanel: React.FC = () => {
                                     );
                                 })}
                             </div>
+                            
+                            {activeChatTarget && 'isGuild' in activeChatTarget && activeChatTarget.isGuild && currentUser.role === Role.DonegeonMaster && (
+                                <div className="p-2 border-t border-stone-700">
+                                    <ToggleSwitch 
+                                        enabled={isAnnouncement}
+                                        setEnabled={setIsAnnouncement}
+                                        label={`Send as ${settings.terminology.group} Announcement`}
+                                    />
+                                </div>
+                            )}
+
                             <form onSubmit={handleSend} className="p-3 border-t border-stone-700 flex-shrink-0 flex items-center gap-2">
                                 <Input
                                     value={message}

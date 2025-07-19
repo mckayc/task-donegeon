@@ -56,6 +56,9 @@ const storage = process.env.STORAGE_PROVIDER === 'supabase'
     });
 const upload = multer({ storage });
 
+// === Backup Configuration ===
+const BACKUP_DIR = process.env.BACKUP_PATH || path.join(__dirname, 'backups');
+
 // === Database Connection Pool ===
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
@@ -76,6 +79,9 @@ const initializeDatabase = async () => {
                     );
                 `);
                 console.log("Table 'app_data' is ready.");
+                // Ensure backup directory exists
+                await fs.mkdir(BACKUP_DIR, { recursive: true });
+                console.log(`Backup directory is ready at: ${BACKUP_DIR}`);
                 return; // Success
             } finally {
                 client.release();
@@ -130,6 +136,78 @@ app.post('/api/data/save', async (req, res, next) => {
         res.status(200).json({ message: 'Data saved successfully.' });
     } catch (err) { next(err); }
 });
+
+// --- Backup Endpoints ---
+
+// List backups
+app.get('/api/backups', async (req, res, next) => {
+    try {
+        const files = await fs.readdir(BACKUP_DIR);
+        const backupDetails = await Promise.all(
+            files
+                .filter(file => file.endsWith('.json'))
+                .map(async file => {
+                    const stats = await fs.stat(path.join(BACKUP_DIR, file));
+                    return {
+                        filename: file,
+                        createdAt: stats.birthtime,
+                        size: stats.size,
+                        isAuto: file.startsWith('auto_backup_'),
+                    };
+                })
+        );
+        res.json(backupDetails.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)));
+    } catch (err) {
+        if (err.code === 'ENOENT') {
+            return res.json([]);
+        }
+        next(err);
+    }
+});
+
+// Create a manual backup
+app.post('/api/backups', async (req, res, next) => {
+    try {
+        const dataToBackup = JSON.stringify(req.body, null, 2);
+        const timestamp = new Date().toISOString().replace(/:/g, '-').slice(0, 19);
+        const filename = `manual_backup_${timestamp}.json`;
+        await fs.writeFile(path.join(BACKUP_DIR, filename), dataToBackup);
+        res.status(201).json({ message: 'Manual backup created successfully.' });
+    } catch (err) {
+        next(err);
+    }
+});
+
+
+// Download a backup
+app.get('/api/backups/:filename', (req, res, next) => {
+    const filename = path.basename(req.params.filename); // Sanitize to prevent path traversal
+    const filePath = path.join(BACKUP_DIR, filename);
+
+    res.download(filePath, (err) => {
+        if (err) {
+            if (err.code === "ENOENT") {
+                return res.status(404).json({ error: "File not found." });
+            }
+            return next(err);
+        }
+    });
+});
+
+// Delete a backup
+app.delete('/api/backups/:filename', async (req, res, next) => {
+    try {
+        const filename = path.basename(req.params.filename); // Sanitize
+        await fs.unlink(path.join(BACKUP_DIR, filename));
+        res.status(200).json({ message: 'Backup deleted successfully.' });
+    } catch (err) {
+        if (err.code === "ENOENT") {
+            return res.status(404).json({ error: "File not found." });
+        }
+        next(err);
+    }
+});
+
 
 // Media Upload
 app.post('/api/media/upload', upload.single('file'), async (req, res, next) => {
@@ -267,12 +345,66 @@ app.use((err, req, res, next) => {
 });
 
 
+// === Automated Backup Logic ===
+const runAutomatedBackup = async () => {
+    let client;
+    try {
+        client = await pool.connect();
+        const result = await client.query('SELECT value FROM app_data WHERE key = $1', ['app_state']);
+        const appState = result.rows[0]?.value;
+        const settings = appState?.settings;
+
+        if (!settings || !settings.automatedBackups || !settings.automatedBackups.enabled) {
+            return; // Feature disabled
+        }
+
+        const files = await fs.readdir(BACKUP_DIR).catch(() => []);
+        const autoBackups = files.filter(f => f.startsWith('auto_backup_')).sort().reverse();
+
+        if (autoBackups.length > 0) {
+            const latestBackupFilename = autoBackups[0];
+            const timestampStr = latestBackupFilename.replace('auto_backup_', '').replace('.json', '');
+            const lastBackupDate = new Date(timestampStr);
+            const hoursSinceLast = (new Date() - lastBackupDate) / (1000 * 60 * 60);
+
+            if (hoursSinceLast < settings.automatedBackups.frequencyHours) {
+                return; // Not time yet
+            }
+        }
+        
+        // Time to create a new backup
+        console.log(`[Automated Backup] Creating new backup at ${new Date().toLocaleString()}`);
+        const dataToBackup = JSON.stringify(appState, null, 2);
+        const timestamp = new Date().toISOString().replace(/:/g, '-').slice(0, 19);
+        const newFilename = `auto_backup_${timestamp}.json`;
+        await fs.writeFile(path.join(BACKUP_DIR, newFilename), dataToBackup);
+
+        // Prune old backups
+        const updatedAutoBackups = [newFilename, ...autoBackups];
+        if (updatedAutoBackups.length > settings.automatedBackups.maxBackups) {
+            const backupsToDelete = updatedAutoBackups.slice(settings.automatedBackups.maxBackups);
+            console.log(`[Automated Backup] Pruning ${backupsToDelete.length} old backup(s).`);
+            for (const filename of backupsToDelete) {
+                await fs.unlink(path.join(BACKUP_DIR, filename)).catch(err => console.error(`Failed to delete old backup ${filename}`, err));
+            }
+        }
+
+    } catch (err) {
+        console.error('[Automated Backup] An error occurred:', err);
+    } finally {
+        if (client) client.release();
+    }
+};
+
+
 // === Start Server ===
 // This part is ignored by Vercel but used for local development
 if (process.env.NODE_ENV !== 'production' || process.env.VERCEL !== '1') {
     app.listen(port, async () => {
         console.log(`Task Donegeon backend listening at http://localhost:${port}`);
         await initializeDatabase();
+        // Start automated backup timer (checks every 30 minutes)
+        setInterval(runAutomatedBackup, 30 * 60 * 1000);
     });
 }
 

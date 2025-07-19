@@ -180,6 +180,9 @@ export const INITIAL_SETTINGS: AppSettings = {
         frequencyHours: 24,
         maxBackups: 7,
     },
+    loginNotifications: {
+        enabled: true,
+    },
     theme: 'emerald',
     terminology: {
       appName: 'Task Donegeon',

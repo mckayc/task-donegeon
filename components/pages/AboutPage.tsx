@@ -77,6 +77,22 @@ const RoadmapContent: React.FC = () => (
 const VersionHistoryContent: React.FC = () => (
     <div className="prose prose-invert max-w-none text-stone-300 space-y-4">
         <div>
+            <h4 className="text-lg font-bold text-stone-100">Version 0.0.82</h4>
+            <ul className="list-disc list-inside space-y-2 mt-2">
+                <li><strong>Login Notifications System:</strong> A comprehensive notification system has been added. Users now see a popup on login detailing new quest assignments, guild announcements, trophies unlocked, and items pending approval. This feature can be toggled in a new "Notifications" section in the settings.</li>
+                <li><strong>DM Announcements:</strong> Donegeon Masters can now send critical messages as "Announcements" from the chat panel, which pushes them to every guild member's login notifications and logs them permanently in the Chronicles.</li>
+            </ul>
+        </div>
+         <div>
+            <h4 className="text-lg font-bold text-stone-100">Version 0.0.81</h4>
+            <ul className="list-disc list-inside space-y-2 mt-2">
+                <li><strong>Revamped About Page:</strong> The About page has been redesigned for clarity and better organization. The problematic metadata card has been removed, and a new "Version History" section has been added to track past updates.</li>
+                 <li>
+                    <strong>GitHub Link:</strong> Added a direct link to the project's GitHub repository for easy access to the source code, feature suggestions, and bug reports.
+                </li>
+            </ul>
+        </div>
+        <div>
             <h4 className="text-lg font-bold text-stone-100">Version 0.0.80</h4>
             <ul className="list-disc list-inside space-y-2 mt-2">
                 <li><strong>UI Streamlining:</strong> Removed redundant page titles and relocated the Reward Display to the global header for a cleaner, more modern interface and constant visibility of currency and XP.</li>
@@ -93,13 +109,18 @@ const AboutPage: React.FC = () => {
 
     return (
         <div>
-            <CollapsibleSection title="What's New in Version 0.0.81" defaultOpen>
-                <div className="prose prose-invert max-w-none text-stone-300 space-y-4">
-                    <p>This version focuses on improving the user experience and providing better historical context for application updates.</p>
+            <CollapsibleSection title="What's New in Version 0.0.83" defaultOpen>
+                 <div className="prose prose-invert max-w-none text-stone-300 space-y-4">
+                    <p>This release overhauls the backup system for production-grade reliability, moving data from volatile browser storage to a persistent, user-controlled server-side location.</p>
                     <ul className="list-disc list-inside space-y-2 pl-4">
-                        <li><strong>Revamped About Page:</strong> The About page has been redesigned for clarity and better organization. The problematic metadata card has been removed, and a new "Version History" section has been added to track past updates.</li>
-                         <li>
-                            <strong>GitHub Link:</strong> Added a direct link to the project's GitHub repository for easy access to the source code, feature suggestions, and bug reports.
+                        <li>
+                            <strong>Durable Server-Side Backups:</strong> Backups are now saved directly on the server's file system. For Docker users, this means you can map a local host directory (e.g., <code>./backups</code>) to persist your data indefinitely, safe from browser cache clearing.
+                        </li>
+                        <li>
+                            <strong>Reliable Automated Backups:</strong> The automated backup scheduler now runs as a server process, ensuring backups are created at the configured interval, regardless of whether a user has the app open.
+                        </li>
+                        <li>
+                            <strong>New Management UI:</strong> The "Backup & Import" page has been completely refactored to interact with the new server-side system, allowing you to generate, download, and delete backups stored directly on the server.
                         </li>
                     </ul>
                 </div>

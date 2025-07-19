@@ -1,6 +1,6 @@
 
 
-import React, { useMemo, useEffect } from 'react';
+import React, { useMemo, useEffect, useState } from 'react';
 import Sidebar from './Sidebar';
 import Header from './Header';
 import Dashboard from '../pages/Dashboard';
@@ -39,10 +39,14 @@ import AssetLibraryPage from '../pages/management/AssetLibraryPage';
 import ThemeEditorPage from '../pages/ThemeEditorPage';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import ChatPanel from '../chat/ChatPanel';
+import LoginNotificationPopup from '../ui/LoginNotificationPopup';
 
 const MainLayout: React.FC = () => {
-  const { activePage, currentUser } = useAppState();
+  const { activePage, currentUser, settings, systemNotifications } = useAppState();
   const { setActivePage, addNotification } = useAppDispatch();
+  
+  const [showLoginNotifications, setShowLoginNotifications] = useState(false);
+  const [notificationsShownForSession, setNotificationsShownForSession] = useState(false);
   
   const ADMIN_ONLY_PAGES: Page[] = [
     'Manage Users', 'Manage Rewards', 'Manage Quests', 'Manage Items', 'Manage Markets',
@@ -50,6 +54,26 @@ const MainLayout: React.FC = () => {
     'Appearance', 'Theme Editor', 'Object Exporter', 'Asset Manager', 'Backup & Import', 'Asset Library',
   ];
   const GATEKEEPER_PAGES: Page[] = ['Approvals'];
+
+  const unreadNotifications = useMemo(() => {
+    if (!currentUser) return [];
+    return systemNotifications.filter(n => 
+        n.recipientUserIds.includes(currentUser.id) && 
+        !n.readByUserIds.includes(currentUser.id)
+    );
+  }, [systemNotifications, currentUser]);
+
+  useEffect(() => {
+    // Reset the "shown" flag when the user logs out.
+    if (!currentUser) {
+        setNotificationsShownForSession(false);
+    } 
+    // If we have a user, haven't shown notifications yet, and there are unread ones, show them.
+    else if (!notificationsShownForSession && settings.loginNotifications.enabled && unreadNotifications.length > 0) {
+        setShowLoginNotifications(true);
+        setNotificationsShownForSession(true); // Mark as shown for this session
+    }
+  }, [currentUser, unreadNotifications, settings.loginNotifications.enabled, notificationsShownForSession]);
 
   useEffect(() => {
     if (!currentUser) return;
@@ -106,17 +130,26 @@ const MainLayout: React.FC = () => {
   };
 
   return (
-    <div className="flex h-screen" style={{ backgroundColor: 'hsl(var(--color-bg-secondary))', color: 'hsl(var(--color-text-primary))' }}>
-      <Sidebar />
-      <div className="flex-1 flex flex-col overflow-hidden transition-all duration-300">
-        <Header />
-        <main className="flex-1 overflow-x-hidden overflow-y-auto p-4 md:p-8" style={{ backgroundColor: 'hsl(var(--color-bg-tertiary))' }}>
-          <VacationModeBanner />
-          {renderPage()}
-        </main>
+    <>
+      {showLoginNotifications && currentUser && (
+        <LoginNotificationPopup 
+            notifications={unreadNotifications} 
+            user={currentUser} 
+            onClose={() => setShowLoginNotifications(false)} 
+        />
+      )}
+      <div className="flex h-screen" style={{ backgroundColor: 'hsl(var(--color-bg-secondary))', color: 'hsl(var(--color-text-primary))' }}>
+        <Sidebar />
+        <div className="flex-1 flex flex-col overflow-hidden transition-all duration-300">
+          <Header />
+          <main className="flex-1 overflow-x-hidden overflow-y-auto p-4 md:p-8" style={{ backgroundColor: 'hsl(var(--color-bg-tertiary))' }}>
+            <VacationModeBanner />
+            {renderPage()}
+          </main>
+        </div>
+        <ChatPanel />
       </div>
-      <ChatPanel />
-    </div>
+    </>
   );
 };
 

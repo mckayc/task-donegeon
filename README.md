@@ -1,6 +1,6 @@
 # Task Donegeon
 
-**Version:** 0.0.81
+**Version:** 0.0.83
 
 ---
 
@@ -15,13 +15,19 @@ Task Donegeon is a gamified task and chore management application designed for f
 
 ## ✨ Features
 
-### What's New in Version 0.0.81
-- **Revamped About Page:** The About page has been redesigned for clarity and better organization. The problematic metadata card has been removed, and a new "Version History" section has been added to track past updates.
+### What's New in Version 0.0.83
+-   **Durable Server-Side Backups:** The entire backup system has been overhauled for production-grade reliability. Backups are no longer stored in the browser's volatile `localStorage`.
+    -   **Persistent Storage:** Backups are now saved directly on the server's file system. For Docker users, this means you can map a local host directory (e.g., `./backups`) to persist your data indefinitely.
+    -   **Reliable Automated Backups:** The automated backup scheduler now runs as a server-side process, ensuring backups are created reliably at the configured interval, regardless of whether a user has the app open.
+    -   **New Management UI:** The "Backup & Import" page has been completely refactored to interact with the new server-side system, allowing you to generate, download, and delete backups stored on the server.
 
 ### Version History
+- **v0.0.82:** **Login Notifications System & DM Announcements:** A comprehensive notification system has been added. Users now see a popup on login detailing new quest assignments, guild announcements from Donegeon Masters, trophies unlocked, and items pending approval. This feature can be toggled in a new "Notifications" section in the settings.
+- **v0.0.81:** Revamped About Page, direct GitHub link, and a new Version History section.
 - **v0.0.80:** UI Streamlining (Global Reward Display), Smarter Sticky Card Headers, Docker Chat Fix, Dashboard Cleanup.
 
 ### Core Features
+-   **Login Notifications & DM Announcements:** A robust system to ensure users see important updates, including high-priority messages from administrators.
 -   **Full-featured In-App Chat:** A real-time chat system allows users to message each other directly within the app, with notifications for unread messages.
 -   **Bulk Content Management:** Admins can now select multiple items on management pages to perform bulk actions like deleting or changing status.
 -   **AI Image Generation Helper:** The Asset Manager now includes an AI prompt helper with links to free AI art generators to streamline asset creation.
@@ -115,6 +121,7 @@ Once unlocked, you and other users can log in using the "Switch Profile" button.
     -   `DATABASE_URL`: `postgres://postgres:your_secret_password@localhost:5432/postgres`
     -   `STORAGE_PROVIDER`: `local`
     -   **`API_KEY`**: Your Google Gemini API Key. Without this, AI features will be disabled.
+    -   **`BACKUP_PATH`** (Optional): The path *inside the container* where backups are stored. Defaults to `/app/backend/backups`. You generally don't need to change this.
 
 4.  **Run Backend & Frontend:**
     -   In one terminal, from the `backend` directory: `npm start`
@@ -138,6 +145,7 @@ Once unlocked, you and other users can log in using the "Switch Profile" button.
         -   `SUPABASE_SERVICE_ROLE_KEY`: Your Supabase `service_role` key (from **Project Settings > API**).
         -   **`API_KEY`**: Your Google Gemini API Key.
     -   Click **Deploy**.
+    -   **Note:** The server-side backup feature is designed for Docker/local deployments with persistent storage and will not work on Vercel's ephemeral filesystem.
 
 ### Option 3: Docker Deployment
 1.  **Clone the Repository**.
@@ -147,9 +155,12 @@ Once unlocked, you and other users can log in using the "Switch Profile" button.
     -   **`API_KEY`**: Your Google Gemini API Key.
 3.  **Build and Run:**
     ```bash
+    # Create local folders for persistent storage first
+    mkdir uploads
+    mkdir backups
     docker-compose up --build
     ```
-    The app will be at `http://localhost:3002`. Uploaded files will be in the `./uploads` directory.
+    The app will be at `http://localhost:3002`. Uploaded files will be in the `./uploads` directory, and server-side backups will be in `./backups`.
 
 ### Option 4: Portainer Deployment (Updated Guide)
 1.  In Portainer, go to **Stacks** > **+ Add stack**.
@@ -158,13 +169,18 @@ Once unlocked, you and other users can log in using the "Switch Profile" button.
 4.  Scroll down to the **Environment variables** section. It's crucial to add the required secrets here. Click **Add environment variable** for each of the following:
     -   **Name:** `POSTGRES_PASSWORD`, **Value:** `your_super_secret_password_here` (Choose a strong password)
     -   **Name:** `API_KEY`, **Value:** `your_gemini_api_key_here` (If you want AI features)
-    -   You can also explicitly set `POSTGRES_USER` and `POSTGRES_DB` here if you wish to override the defaults.
-5.  Click **Deploy the stack**. The app will be available at `http://<your-server-ip>:3002`.
+5.  **Important:** To make backups persistent, go to the **Volumes** tab in Portainer and map the container path `/app/backend/backups` to a host path (e.g., `/portainer/data/task-donegeon/backups`).
+6.  Click **Deploy the stack**. The app will be available at `http://<your-server-ip>:3002`.
 
 ### Option 5: Production Deployment from Docker Hub
 1.  Create a `.env` file with the required production variables.
-2.  Run the application using the `docker-compose.prod.yml` file:
+2.  **Create local directories for persistent storage:**
+    ```bash
+    mkdir uploads
+    mkdir backups
+    ```
+3.  Run the application using the `docker-compose.prod.yml` file:
     ```bash
     docker-compose -f docker-compose.prod.yml up -d
     ```
-    This command will pull the latest pre-built image from Docker Hub and run it, along with the database service. It is the recommended way to run the app on a server.
+    This command will pull the latest pre-built image from Docker Hub and run it. Uploaded files and server-side backups will be saved to the `./uploads` and `./backups` folders on your host machine, respectively.

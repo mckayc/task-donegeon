@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { AppSettings, ThemeDefinition, SidebarConfigItem, Page, SidebarLink } from '../../types';
@@ -25,9 +24,24 @@ const AppearancePage: React.FC = () => {
     const dragOverItem = useRef<number | null>(null);
 
     useEffect(() => {
-        document.body.dataset.theme = formState.theme;
-        return () => { document.body.dataset.theme = settings.theme; };
-    }, [formState.theme, settings.theme]);
+        const applyThemeStyles = (themeId: string) => {
+            const theme = allThemes.find(t => t.id === themeId);
+            if (theme) {
+                Object.entries(theme.styles).forEach(([key, value]) => {
+                    document.documentElement.style.setProperty(key, value);
+                });
+                document.body.dataset.theme = themeId;
+            }
+        };
+
+        // Apply the preview theme from the form state
+        applyThemeStyles(formState.theme);
+
+        // Cleanup function to restore the original theme from global state when the component unmounts
+        return () => {
+            applyThemeStyles(settings.theme);
+        };
+    }, [formState.theme, settings.theme, allThemes]);
 
     const handleSave = () => {
         updateSettings(formState);

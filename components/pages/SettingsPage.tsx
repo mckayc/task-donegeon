@@ -112,15 +112,16 @@ const SettingsPage: React.FC = () => {
         });
     };
     
-    const handleToggleChange = (name: string, enabled: boolean) => {
-         const keys = name.split('.');
+    const handleToggleChange = (path: string, enabled: boolean) => {
          setFormState(prev => {
-            let newState = {...prev};
-            let currentLevel: any = newState;
+            const keys = path.split('.');
+            // Use JSON stringify/parse for a simple deep copy to prevent mutation issues
+            const newState = JSON.parse(JSON.stringify(prev));
+            let current = newState;
             for (let i = 0; i < keys.length - 1; i++) {
-                currentLevel = currentLevel[keys[i]];
+                current = current[keys[i]] = current[keys[i]] || {};
             }
-            currentLevel[keys[keys.length - 1]] = enabled;
+            current[keys[keys.length - 1]] = enabled;
             return newState;
         });
     };
@@ -164,7 +165,34 @@ const SettingsPage: React.FC = () => {
                 </div>
             </div>
 
-            <CollapsibleSection title="Shared Mode" defaultOpen>
+            <CollapsibleSection title="General Settings" defaultOpen>
+                 <div className="space-y-6">
+                    <div className="flex items-start">
+                        <ToggleSwitch enabled={formState.chat.enabled} setEnabled={(val) => handleToggleChange('chat.enabled', val)} label="Enable Sitewide Chat" />
+                        <p className="text-sm ml-6" style={{ color: 'hsl(var(--color-text-secondary))' }}>Allow users to send direct messages and participate in guild chats.</p>
+                    </div>
+
+                    <div className="pt-4 border-t flex items-start" style={{ borderColor: 'hsl(var(--color-border))' }}>
+                        <ToggleSwitch enabled={formState.forgivingSetbacks} setEnabled={(val) => handleToggleChange('forgivingSetbacks', val)} label="Forgiving Setbacks" />
+                        <p className="text-sm ml-6" style={{ color: 'hsl(var(--color-text-secondary))' }}>If enabled, time-based setbacks are only applied if a quest remains uncompleted at the end of the day.</p>
+                    </div>
+                    
+                    <div className="pt-4 border-t flex items-start" style={{ borderColor: 'hsl(var(--color-border))' }}>
+                        <ToggleSwitch enabled={formState.vacationMode.enabled} setEnabled={(val) => handleToggleChange('vacationMode.enabled', val)} label="Vacation Mode" />
+                        <div className="ml-6 flex-grow">
+                            <p className="text-sm" style={{ color: 'hsl(var(--color-text-secondary))' }}>Pause all quest deadlines and setbacks for a specified date range.</p>
+                            {formState.vacationMode.enabled && (
+                                <div className="grid grid-cols-2 gap-4 mt-4">
+                                    <Input label="Start Date" type="date" name="vacationMode.startDate" value={formState.vacationMode.startDate || ''} onChange={(e) => handleDateChange('vacationMode.startDate', e.target.value)} />
+                                    <Input label="End Date" type="date" name="vacationMode.endDate" value={formState.vacationMode.endDate || ''} onChange={(e) => handleDateChange('vacationMode.endDate', e.target.value)} />
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            </CollapsibleSection>
+
+            <CollapsibleSection title="Shared Mode">
                 <div className="space-y-6">
                     <div className="flex items-start">
                         <ToggleSwitch enabled={formState.sharedMode.enabled} setEnabled={(val) => handleToggleChange('sharedMode.enabled', val)} label="Enable Shared Mode" />
@@ -217,28 +245,6 @@ const SettingsPage: React.FC = () => {
                      <div className="pt-4 border-t flex items-start" style={{ borderColor: 'hsl(var(--color-border))' }}>
                         <ToggleSwitch enabled={formState.security.requirePasswordForAdmin} setEnabled={(val) => handleToggleChange('security.requirePasswordForAdmin', val)} label={`Require Password for ${formState.terminology.admin} & ${formState.terminology.moderator}`} />
                         <p className="text-sm ml-6" style={{ color: 'hsl(var(--color-text-secondary))' }}>If enabled, these roles must use their password to log in. If disabled, they can use their PIN like regular users.</p>
-                    </div>
-                </div>
-            </CollapsibleSection>
-
-            <CollapsibleSection title="Game Rules">
-                 <div className="space-y-6">
-                    <div className="flex items-start">
-                        <ToggleSwitch enabled={formState.forgivingSetbacks} setEnabled={(val) => handleToggleChange('forgivingSetbacks', val)} label="Forgiving Setbacks" />
-                        <p className="text-sm ml-6" style={{ color: 'hsl(var(--color-text-secondary))' }}>If enabled, time-based setbacks are only applied if a quest remains uncompleted at the end of the day.</p>
-                    </div>
-                    
-                    <div className="pt-4 border-t flex items-start" style={{ borderColor: 'hsl(var(--color-border))' }}>
-                        <ToggleSwitch enabled={formState.vacationMode.enabled} setEnabled={(val) => handleToggleChange('vacationMode.enabled', val)} label="Vacation Mode" />
-                        <div className="ml-6 flex-grow">
-                            <p className="text-sm" style={{ color: 'hsl(var(--color-text-secondary))' }}>Pause all quest deadlines and setbacks for a specified date range.</p>
-                            {formState.vacationMode.enabled && (
-                                <div className="grid grid-cols-2 gap-4 mt-4">
-                                    <Input label="Start Date" type="date" name="vacationMode.startDate" value={formState.vacationMode.startDate || ''} onChange={(e) => handleDateChange('vacationMode.startDate', e.target.value)} />
-                                    <Input label="End Date" type="date" name="vacationMode.endDate" value={formState.vacationMode.endDate || ''} onChange={(e) => handleDateChange('vacationMode.endDate', e.target.value)} />
-                                </div>
-                            )}
-                        </div>
                     </div>
                 </div>
             </CollapsibleSection>

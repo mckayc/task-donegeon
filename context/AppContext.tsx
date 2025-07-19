@@ -220,14 +220,19 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             }
             // --- END MIGRATION LOGIC ---
 
-            const loadedSettings = {
+            const savedSettings: Partial<AppSettings> = dataToSet.settings || {};
+            const loadedSettings: AppSettings = {
                 ...INITIAL_SETTINGS,
-                ...dataToSet.settings,
-                chat: {
-                    ...INITIAL_SETTINGS.chat,
-                    ...(dataToSet.settings.chat || {}),
-                }
+                ...savedSettings,
+                questDefaults: { ...INITIAL_SETTINGS.questDefaults, ...(savedSettings.questDefaults || {}) },
+                security: { ...INITIAL_SETTINGS.security, ...(savedSettings.security || {}) },
+                sharedMode: { ...INITIAL_SETTINGS.sharedMode, ...(savedSettings.sharedMode || {}) },
+                automatedBackups: { ...INITIAL_SETTINGS.automatedBackups, ...(savedSettings.automatedBackups || {}) },
+                chat: { ...INITIAL_SETTINGS.chat, ...(savedSettings.chat || {}) },
+                sidebars: { ...INITIAL_SETTINGS.sidebars, ...(savedSettings.sidebars || {}) },
+                terminology: { ...INITIAL_SETTINGS.terminology, ...(savedSettings.terminology || {}) },
             };
+            
             setUsers(dataToSet.users || []);
             setQuests(dataToSet.quests || []);
             setMarkets(dataToSet.markets || []);
@@ -338,7 +343,18 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         if (currentLocalData && JSON.stringify(currentLocalData) !== JSON.stringify(serverData)) {
             console.log("Data out of sync. Refreshing from server.");
             
-            const loadedSettings = {...INITIAL_SETTINGS, ...serverData.settings};
+            const savedSettings: Partial<AppSettings> = serverData.settings || {};
+            const loadedSettings: AppSettings = {
+                ...INITIAL_SETTINGS, ...savedSettings,
+                questDefaults: { ...INITIAL_SETTINGS.questDefaults, ...(savedSettings.questDefaults || {}) },
+                security: { ...INITIAL_SETTINGS.security, ...(savedSettings.security || {}) },
+                sharedMode: { ...INITIAL_SETTINGS.sharedMode, ...(savedSettings.sharedMode || {}) },
+                automatedBackups: { ...INITIAL_SETTINGS.automatedBackups, ...(savedSettings.automatedBackups || {}) },
+                chat: { ...INITIAL_SETTINGS.chat, ...(savedSettings.chat || {}) },
+                sidebars: { ...INITIAL_SETTINGS.sidebars, ...(savedSettings.sidebars || {}) },
+                terminology: { ...INITIAL_SETTINGS.terminology, ...(savedSettings.terminology || {}) },
+            };
+
             setUsers(serverData.users || []);
             setQuests(serverData.quests || []);
             setMarkets(serverData.markets || []);

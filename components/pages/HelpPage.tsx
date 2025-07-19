@@ -1,5 +1,3 @@
-
-
 import React, { useState } from 'react';
 import Card from '../ui/Card';
 import { useAppState } from '../../context/AppContext';
@@ -111,7 +109,7 @@ const HelpPage: React.FC = () => {
                     <h5 className="text-md font-bold text-stone-100 mt-4">Method 1: Frontend Upload (Recommended)</h5>
                     <p>This is the easiest way to add images one by one.</p>
                      <ol className="list-decimal list-inside space-y-2 pl-4">
-                        <li>Navigate to `System Tools -> Asset Manager`.</li>
+                        <li>Navigate to `System Tools -&gt; Asset Manager`.</li>
                         <li>Use the "Upload New Asset" card to select an image from your device, or simply drag and drop it onto the card.</li>
                         <li>A dialog will pop up asking for a **Category**. This is crucial for organization. For example, if you're uploading a helmet, you could enter the category "Avatar" or "Hats".</li>
                         <li>Click "Upload & Categorize". The image is sent to the server and saved in a folder matching the category you provided.</li>

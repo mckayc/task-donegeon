@@ -58,6 +58,8 @@ const AssetManagerPage: React.FC = () => {
             return acc;
         }, {} as Record<string, LocalGalleryImage[]>);
     }, [localGallery]);
+    
+    const galleryCategories = useMemo(() => Object.keys(categorizedGallery), [categorizedGallery]);
 
 
     const handleFileProcess = useCallback(async (file: File) => {
@@ -204,6 +206,7 @@ const AssetManagerPage: React.FC = () => {
                     file={fileToCategorize}
                     onClose={() => setFileToCategorize(null)}
                     onUpload={handleUploadWithCategory}
+                    existingCategories={galleryCategories}
                 />
             )}
 

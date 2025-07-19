@@ -220,7 +220,14 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             }
             // --- END MIGRATION LOGIC ---
 
-            const loadedSettings = {...INITIAL_SETTINGS, ...dataToSet.settings};
+            const loadedSettings = {
+                ...INITIAL_SETTINGS,
+                ...dataToSet.settings,
+                chat: {
+                    ...INITIAL_SETTINGS.chat,
+                    ...(dataToSet.settings.chat || {}),
+                }
+            };
             setUsers(dataToSet.users || []);
             setQuests(dataToSet.quests || []);
             setMarkets(dataToSet.markets || []);

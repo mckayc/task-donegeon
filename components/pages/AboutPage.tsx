@@ -146,7 +146,19 @@ const AboutPage: React.FC = () => {
             <Card>
                 {renderContent()}
             </Card>
-            <CollapsibleSection title="Roadmap" defaultOpen>
+
+            <CollapsibleSection title="What's New in Version 0.0.80" defaultOpen>
+                <div className="prose prose-invert max-w-none text-stone-300 space-y-4">
+                    <ul className="list-disc list-inside space-y-2 pl-4">
+                        <li><strong>UI Streamlining:</strong> Removed redundant page titles and relocated the Reward Display to the global header for a cleaner, more modern interface and constant visibility of currency and XP.</li>
+                        <li><strong>Smarter Card Headers:</strong> Card headers now intelligently become "sticky" only when they contain action buttons, optimizing screen space and improving user experience.</li>
+                        <li><strong>Docker Chat Fix:</strong> Resolved a configuration issue where the chat feature would not appear on local Docker instances due to outdated settings in the persistent volume. The app now gracefully merges new settings on startup.</li>
+                        <li><strong>Dashboard Cleanup:</strong> Removed "View All" buttons from the Rank and Trophy cards on the dashboard for a more focused, streamlined view.</li>
+                    </ul>
+                </div>
+            </CollapsibleSection>
+
+            <CollapsibleSection title="Roadmap">
                 <RoadmapContent />
             </CollapsibleSection>
         </div>

@@ -195,14 +195,7 @@ const Dashboard: React.FC = () => {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* Left Column */}
                 <div className="lg:col-span-1 space-y-6">
-                    <Card 
-                        title={terminology.level} 
-                        headerAction={
-                            <Button variant="secondary" className="text-sm py-1 px-3" onClick={() => setActivePage('Ranks')}>
-                                View All
-                            </Button>
-                        }
-                    >
+                    <Card title={terminology.level}>
                         <div className="cursor-pointer text-center" onClick={() => setActivePage('Ranks')}>
                             <div className="w-32 h-32 mx-auto mb-4 bg-stone-700 rounded-full flex items-center justify-center text-6xl border-4 border-accent">
                                {rankData.currentRank.icon}
@@ -325,11 +318,6 @@ const Dashboard: React.FC = () => {
                         <Card 
                             title={`Latest ${terminology.award}`}
                             className="md:col-span-1"
-                            headerAction={
-                                <Button variant="secondary" className="text-sm py-1 px-3" onClick={() => setActivePage('Trophies')}>
-                                    View All
-                                </Button>
-                            }
                         >
                             <div className="cursor-pointer" onClick={() => setActivePage('Trophies')}>
                                 {mostRecentTrophy ? (

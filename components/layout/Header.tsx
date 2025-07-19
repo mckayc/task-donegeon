@@ -4,6 +4,7 @@ import Avatar from '../ui/Avatar';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import FullscreenToggle from '../ui/FullscreenToggle';
 import { ChevronDownIcon } from '../ui/Icons';
+import RewardDisplay from '../ui/RewardDisplay';
 
 const Clock: React.FC = () => {
     const [time, setTime] = useState(new Date());
@@ -32,37 +33,6 @@ const Clock: React.FC = () => {
         </div>
     );
 };
-
-const QuickSwitchBar: React.FC = () => {
-    const { users, loginHistory, settings } = useAppState();
-    const { setTargetedUserForLogin, setIsSwitchingUser } = useAppDispatch();
-    
-    const sortedUsers = useMemo(() => {
-        const sharedModeUserIds = new Set(settings.sharedMode.userIds);
-        return loginHistory
-            .map(userId => users.find(u => u.id === userId && sharedModeUserIds.has(u.id)))
-            .filter((u): u is User => !!u);
-    }, [loginHistory, users, settings.sharedMode.userIds]);
-
-    const handleSwitch = (user: User) => {
-        setTargetedUserForLogin(user);
-        setIsSwitchingUser(true);
-    };
-
-    if (sortedUsers.length < 2 || !settings.sharedMode.quickUserSwitchingEnabled) return null;
-
-    return (
-        <div className="flex items-center gap-3">
-            <span className="text-xs font-bold text-stone-400 uppercase hidden lg:inline">Switch:</span>
-            {sortedUsers.slice(0, 5).map(user => (
-                 <button key={user.id} onClick={() => handleSwitch(user)} title={`Switch to ${user.gameName}`} className="group flex items-center gap-2 rounded-full hover:bg-stone-700/50 p-1 transition-colors">
-                     <Avatar user={user} className="w-9 h-9" />
-                     <span className="text-sm font-semibold text-stone-300 group-hover:text-white hidden xl:inline pr-2">{user.gameName}</span>
-                 </button>
-            ))}
-        </div>
-    );
-}
 
 const Header: React.FC = () => {
   const { currentUser, guilds, appMode, settings } = useAppState();
@@ -146,7 +116,7 @@ const Header: React.FC = () => {
 
       {/* Center Group */}
       <div className="hidden md:flex items-center justify-center flex-grow mx-4">
-        {settings.sharedMode.enabled && settings.sharedMode.quickUserSwitchingEnabled && <QuickSwitchBar />}
+        <RewardDisplay />
       </div>
       
       {/* Right Group */}

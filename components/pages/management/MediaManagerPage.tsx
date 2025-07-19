@@ -8,6 +8,7 @@ import EditGameAssetDialog from '../../admin/EditGameAssetDialog';
 import { useSettings } from '../../../context/SettingsContext';
 import AiImagePromptHelper from '../../sharing/AiImagePromptHelper';
 import UploadWithCategoryDialog from '../../admin/UploadWithCategoryDialog';
+import ImagePackImporterDialog from '../../admin/ImagePackImporterDialog';
 
 interface LocalGalleryImage {
     url: string;
@@ -24,6 +25,7 @@ const AssetManagerPage: React.FC = () => {
     const [assetToCreateUrl, setAssetToCreateUrl] = useState<string | null>(null);
     const [deletingAsset, setDeletingAsset] = useState<GameAsset | null>(null);
     const [fileToCategorize, setFileToCategorize] = useState<File | null>(null);
+    const [isImporterOpen, setIsImporterOpen] = useState(false);
 
     const [isUploading, setIsUploading] = useState(false);
     const [localGallery, setLocalGallery] = useState<LocalGalleryImage[]>([]);
@@ -143,6 +145,15 @@ const AssetManagerPage: React.FC = () => {
                     </Button>
                 </div>
             </Card>
+
+            <Card title="Import Image Packs from Library">
+                <p className="text-stone-400 text-sm mb-4">
+                    Quickly add curated sets of images to your library from the project's GitHub repository. This is great for getting started or adding new themes.
+                </p>
+                <Button onClick={() => setIsImporterOpen(true)}>
+                    Fetch Available Packs
+                </Button>
+            </Card>
             
             <Card title="AI Image Generation Helper">
                 <AiImagePromptHelper />
@@ -215,6 +226,16 @@ const AssetManagerPage: React.FC = () => {
                     assetToEdit={editingAsset}
                     newAssetUrl={assetToCreateUrl}
                     onClose={handleCloseDialog}
+                />
+            )}
+
+            {isImporterOpen && (
+                <ImagePackImporterDialog
+                    onClose={() => setIsImporterOpen(false)}
+                    onImportSuccess={() => {
+                        fetchLocalGallery();
+                        addNotification({ type: 'success', message: 'Image packs imported! Gallery updated.' });
+                    }}
                 />
             )}
 

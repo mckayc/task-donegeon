@@ -343,6 +343,103 @@ app.post('/api/ai/generate', async (req, res, next) => {
     }
 });
 
+// --- Image Pack Importer Endpoints ---
+const GITHUB_REPO = 'mckayc/task-donegeon';
+const GITHUB_BRANCH = 'master';
+const IMAGE_PACK_ROOT = 'image-packs';
+
+app.get('/api/image-packs/list', async (req, res, next) => {
+    try {
+        const repoUrl = `https://api.github.com/repos/${GITHUB_REPO}/contents/${IMAGE_PACK_ROOT}?ref=${GITHUB_BRANCH}`;
+        const response = await fetch(repoUrl);
+        if (!response.ok) {
+            throw new Error(`GitHub API error: ${response.statusText}`);
+        }
+        const packsData = await response.json();
+        
+        if (!Array.isArray(packsData)) {
+            return res.json([]);
+        }
+
+        const packPromises = packsData
+            .filter(item => item.type === 'dir')
+            .map(async (packDir) => {
+                const packContentsUrl = packDir.url;
+                const contentsResponse = await fetch(packContentsUrl);
+                const contentsData = await contentsResponse.json();
+                
+                if (!Array.isArray(contentsData)) return null;
+
+                const sampleImage = contentsData.find(item => 
+                    item.type === 'file' && 
+                    item.name.toLowerCase().startsWith('sample.')
+                );
+
+                if (sampleImage) {
+                    return {
+                        name: packDir.name,
+                        sampleImageUrl: sampleImage.download_url,
+                    };
+                }
+                return null;
+            });
+
+        const availablePacks = (await Promise.all(packPromises)).filter(Boolean);
+        res.status(200).json(availablePacks);
+
+    } catch (err) {
+        next(err);
+    }
+});
+
+app.post('/api/image-packs/import', async (req, res, next) => {
+    const { packs } = req.body;
+    if (!Array.isArray(packs) || packs.length === 0) {
+        return res.status(400).json({ error: 'No packs specified for import.' });
+    }
+
+    try {
+        for (const packName of packs) {
+            const sanitizedPackName = path.basename(packName);
+            const packUrl = `https://api.github.com/repos/${GITHUB_REPO}/contents/${IMAGE_PACK_ROOT}/${sanitizedPackName}?ref=${GITHUB_BRANCH}`;
+            
+            const packResponse = await fetch(packUrl);
+            const packContents = await packResponse.json();
+
+            if (!Array.isArray(packContents)) continue;
+
+            for (const item of packContents) {
+                if (item.type === 'dir') { // This is a category folder
+                    const categoryName = item.name;
+                    const sanitizedCategory = categoryName.replace(/[^a-zA-Z0-9-_ ]/g, '').trim();
+                    const categoryDir = path.join(UPLOADS_DIR, sanitizedCategory);
+                    await fs.mkdir(categoryDir, { recursive: true });
+
+                    const categoryContentsResponse = await fetch(item.url);
+                    const categoryContents = await categoryContentsResponse.json();
+                    
+                    if (!Array.isArray(categoryContents)) continue;
+
+                    for (const imageFile of categoryContents) {
+                        if (imageFile.type === 'file' && imageFile.download_url) {
+                            const imageResponse = await fetch(imageFile.download_url);
+                            const imageBuffer = Buffer.from(await imageResponse.arrayBuffer());
+                            
+                            const sanitizedFilename = imageFile.name.replace(/[^a-zA-Z0-9-._]/g, '_');
+                            const finalPath = path.join(categoryDir, sanitizedFilename);
+                            
+                            await fs.writeFile(finalPath, imageBuffer);
+                        }
+                    }
+                }
+            }
+        }
+        res.status(200).json({ message: 'Image packs imported successfully.' });
+    } catch (err) {
+        next(err);
+    }
+});
+
 
 // === Static File Serving ===
 // Serve React app build files

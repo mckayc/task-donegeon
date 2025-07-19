@@ -1,8 +1,8 @@
 {
-  "name": "Task Donegeon - 0.0.71 - AI Studio & UX Upgrades",
-  "version": "0.0.71",
-  "lastChange": "Upgraded AI Studio with auto-scroll, default unchecked items, and emoji generation. Fixed chat auto-scrolling. Reworked dashboard view switcher. Added 30+ new trophies. Fixed 'Copy Prompt' button.",
-  "lastChangeDate": "2024-07-21T12:00:00Z",
+  "name": "Task Donegeon - 0.0.77 - Version Bump & Docs Update",
+  "version": "0.0.77",
+  "lastChange": "Increased version number to 0.0.77 and updated documentation.",
+  "lastChangeDate": "2024-07-22T10:00:00Z",
   "description": "A gamified task and chore tracker for families and groups. Complete quests, earn currency and experience, and level up your character in a fun, medieval-themed adventure.",
   "requestFramePermissions": [
     "camera"

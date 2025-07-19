@@ -104,8 +104,6 @@ app.get('/api/metadata', async (req, res, next) => {
         const metadataPath = path.join(__dirname, '..', 'metadata.json');
         const data = await fs.readFile(metadataPath, 'utf8');
         const metadata = JSON.parse(data);
-        // Overwrite the date with the current server time for accuracy
-        metadata.lastChangeDate = new Date().toISOString();
         res.status(200).json(metadata);
     } catch (err) {
         console.error('Error reading metadata.json:', err);

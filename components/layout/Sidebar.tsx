@@ -80,7 +80,7 @@ const CollapsibleNavGroup: React.FC<CollapsibleNavGroupProps> = ({ title, childr
 
 
 const Sidebar: React.FC = () => {
-  const { currentUser, questCompletions, purchaseRequests, activePage, settings, isAiConfigured, isSidebarCollapsed, chatMessages, isChatOpen } = useAppState();
+  const { currentUser, questCompletions, purchaseRequests, activePage, settings, isAiConfigured, isSidebarCollapsed, chatMessages, isChatOpen, guilds } = useAppState();
   const { setActivePage, toggleSidebar, toggleChat } = useAppDispatch();
   const isAiAvailable = settings.enableAiFeatures && isAiConfigured;
   
@@ -89,10 +89,11 @@ const Sidebar: React.FC = () => {
   const visibleLinks = useMemo(() => settings.sidebars.main.filter(link => {
     if (!link.isVisible) return false;
     if (link.id === 'AI Studio' && !isAiAvailable) return false;
+    if (link.id === 'Chat' && !settings.chat.enabled) return false;
     if (currentUser.role === Role.DonegeonMaster) return true;
     if (currentUser.role === Role.Gatekeeper) return link.role === Role.Gatekeeper || link.role === Role.Explorer;
     return link.role === Role.Explorer;
-  }), [settings.sidebars.main, currentUser.role, isAiAvailable]);
+  }), [settings.sidebars.main, currentUser.role, isAiAvailable, settings.chat.enabled]);
 
   const pendingQuestApprovals = questCompletions.filter(c => c.status === QuestCompletionStatus.Pending).length;
   const pendingPurchaseApprovals = purchaseRequests.filter(p => p.status === PurchaseRequestStatus.Pending).length;
@@ -100,13 +101,23 @@ const Sidebar: React.FC = () => {
 
   const unreadMessagesCount = useMemo(() => {
     if (!currentUser) return 0;
-    const sendersWithUnread = new Set(
-        chatMessages
-            .filter(msg => msg.recipientId === currentUser.id && !msg.isRead)
-            .map(msg => msg.senderId)
+    
+    // 1. Unread DMs are always relevant
+    const unreadDms = chatMessages.filter(
+        msg => msg.recipientId === currentUser.id && !msg.readBy.includes(currentUser.id)
     );
-    return sendersWithUnread.size;
-  }, [chatMessages, currentUser]);
+    const uniqueSenders = new Set(unreadDms.map(msg => msg.senderId));
+    
+    // 2. Unread messages from any of the user's guilds
+    const userGuildIds = new Set(guilds.filter(g => g.memberIds.includes(currentUser.id)).map(g => g.id));
+    const unreadGuilds = new Set(
+        chatMessages
+            .filter(msg => msg.guildId && userGuildIds.has(msg.guildId) && !msg.readBy.includes(currentUser.id))
+            .map(msg => msg.guildId)
+    );
+    
+    return uniqueSenders.size + unreadGuilds.size;
+  }, [chatMessages, currentUser, guilds]);
 
 
   const renderNavItems = () => {
@@ -141,23 +152,44 @@ const Sidebar: React.FC = () => {
                     title={item.title} 
                     activePage={activePage} 
                     childPages={childPages} 
-                    badgeCount={item.title === 'Management' ? totalApprovals : 0}
+                    badgeCount={item.title === 'User Management' ? totalApprovals : 0}
                     isCollapsed={isSidebarCollapsed}
                 >
                     {groupChildren}
                 </CollapsibleNavGroup>
             );
         } else if (item.type === 'link') {
-            navTree.push(
-                <NavLink 
-                    key={item.id} 
-                    item={item} 
-                    activePage={activePage} 
-                    setActivePage={setActivePage} 
-                    badgeCount={item.id === 'Approvals' ? totalApprovals : 0}
-                    isCollapsed={isSidebarCollapsed}
-                />
-            );
+            if (item.id === 'Chat') {
+                const linkName = item.termKey ? settings.terminology[item.termKey] : item.id;
+                navTree.push(
+                    <a
+                      key={item.id}
+                      href="#"
+                      onClick={(e) => { e.preventDefault(); toggleChat(); }}
+                      className={`relative flex items-center py-3 text-lg rounded-lg transition-colors duration-200 px-4 ${isSidebarCollapsed ? 'justify-center' : ''} text-stone-300 hover:bg-stone-700/50 hover:text-white`}
+                      title={isSidebarCollapsed ? linkName : ''}
+                    >
+                      <span className={`text-xl ${!isSidebarCollapsed ? 'mr-3' : ''}`}>{item.emoji}</span>
+                      {!isSidebarCollapsed && <span>{linkName}</span>}
+                      {unreadMessagesCount > 0 && !isChatOpen && (
+                        <span className={`absolute flex items-center justify-center w-5 h-5 text-xs font-bold text-white bg-red-600 rounded-full ${isSidebarCollapsed ? 'top-1 right-1' : 'right-3 top-1/2 -translate-y-1/2'}`}>
+                            {unreadMessagesCount > 9 ? '9+' : unreadMessagesCount}
+                        </span>
+                      )}
+                    </a>
+                );
+            } else {
+                navTree.push(
+                    <NavLink 
+                        key={item.id} 
+                        item={item} 
+                        activePage={activePage} 
+                        setActivePage={setActivePage} 
+                        badgeCount={item.id === 'Approvals' ? totalApprovals : 0}
+                        isCollapsed={isSidebarCollapsed}
+                    />
+                );
+            }
             i++;
         } else {
             i++;
@@ -179,22 +211,6 @@ const Sidebar: React.FC = () => {
         {renderNavItems()}
       </nav>
       <div className="px-2 py-4 border-t" style={{ borderColor: 'hsl(var(--color-border))' }}>
-         {settings.chat.enabled && (
-             <a
-              href="#"
-              onClick={(e) => { e.preventDefault(); toggleChat(); }}
-              className={`relative flex items-center mb-2 py-3 text-lg rounded-lg transition-colors duration-200 px-4 ${ isSidebarCollapsed ? 'justify-center' : ''} text-stone-300 hover:bg-stone-700/50 hover:text-white`}
-              title={isSidebarCollapsed ? settings.terminology.link_chat : ''}
-            >
-              <span className={`text-xl ${!isSidebarCollapsed ? 'mr-3' : ''}`}>{settings.chat.chatEmoji}</span>
-              {!isSidebarCollapsed && <span>{settings.terminology.link_chat}</span>}
-              {unreadMessagesCount > 0 && !isChatOpen && (
-                <span className={`absolute flex items-center justify-center w-5 h-5 text-xs font-bold text-white bg-red-600 rounded-full ${isSidebarCollapsed ? 'top-1 right-1' : 'right-3 top-1/2 -translate-y-1/2'}`}>
-                    {unreadMessagesCount > 9 ? '9+' : unreadMessagesCount}
-                </span>
-              )}
-            </a>
-         )}
          <button 
             onClick={toggleSidebar}
             title={isSidebarCollapsed ? 'Expand Sidebar' : 'Collapse Sidebar'}

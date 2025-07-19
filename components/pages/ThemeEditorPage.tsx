@@ -31,23 +31,21 @@ const ContrastChecker: React.FC<{ styles: ThemeStyle }> = ({ styles }) => {
     ];
 
     return (
-        <Card title="Accessibility Contrast" className="mt-4">
-            <div className="mt-2 space-y-2">
-                {pairs.map(pair => {
-                    const ratio = getContrast(pair.fg, pair.bg);
-                    const rating = getWcagRating(ratio);
-                    return (
-                        <div key={pair.label} className="flex justify-between items-center text-sm">
-                            <span className="text-stone-300">{pair.label}</span>
-                            <div className="flex items-center gap-2">
-                                <span className={`font-bold ${rating === 'Fail' ? 'text-red-400' : 'text-green-400'}`}>{ratio.toFixed(2)}:1</span>
-                                <span className={`px-2 py-0.5 text-xs font-bold rounded-full ${rating === 'Fail' ? 'bg-red-500/20 text-red-300' : 'bg-green-500/20 text-green-300'}`}>{rating}</span>
-                            </div>
+        <div className="space-y-2">
+            {pairs.map(pair => {
+                const ratio = getContrast(pair.fg, pair.bg);
+                const rating = getWcagRating(ratio);
+                return (
+                    <div key={pair.label} className="flex justify-between items-center text-sm p-2 bg-stone-900/40 rounded-md">
+                        <span className="text-stone-300">{pair.label}</span>
+                        <div className="flex items-center gap-2">
+                            <span className={`font-bold ${rating === 'Fail' ? 'text-red-400' : 'text-green-400'}`}>{ratio.toFixed(2)}:1</span>
+                            <span className={`px-2 py-0.5 text-xs font-bold rounded-full ${rating === 'Fail' ? 'bg-red-500/20 text-red-300' : 'bg-green-500/20 text-green-300'}`}>{rating}</span>
                         </div>
-                    );
-                })}
-            </div>
-        </Card>
+                    </div>
+                );
+            })}
+        </div>
     );
 };
 
@@ -59,7 +57,7 @@ const ThemePreview: React.FC<{ themeData: ThemeStyle }> = ({ themeData }) => {
     const livePreviewStyles: React.CSSProperties = { ...themeData } as any;
 
     return (
-        <div style={livePreviewStyles} className="p-4 rounded-lg h-full transition-all duration-300 flex flex-col border-2 border-stone-700" data-theme>
+        <div style={livePreviewStyles} className="p-4 rounded-lg transition-all duration-300 flex flex-col border-2 border-stone-700" data-theme>
              <div className="flex-grow p-4 rounded-lg space-y-4" style={{ backgroundColor: 'hsl(var(--color-bg-tertiary))' }}>
                 <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--font-size-display)', color: 'hsl(var(--color-text-primary))' }}>
                     {settings.terminology.appName}
@@ -89,6 +87,7 @@ const ThemeEditorPage: React.FC = () => {
     const [formData, setFormData] = useState<ThemeDefinition | null>(null);
     const [deletingTheme, setDeletingTheme] = useState<ThemeDefinition | null>(null);
     const [isGeneratorOpen, setIsGeneratorOpen] = useState(false);
+    const [activeTab, setActiveTab] = useState<'general' | 'fonts' | 'colors' | 'accessibility'>('general');
     const isAiAvailable = useAppState().settings.enableAiFeatures && isAiConfigured;
 
     useEffect(() => {
@@ -154,16 +153,39 @@ const ThemeEditorPage: React.FC = () => {
         setSelectedThemeId('new');
         setIsGeneratorOpen(false);
     };
+    
+    const TabButton: React.FC<{tabName: typeof activeTab; children: React.ReactNode}> = ({tabName, children}) => (
+        <button
+            onClick={() => setActiveTab(tabName)}
+            className={`whitespace-nowrap pb-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+                activeTab === tabName
+                ? 'border-emerald-500 text-emerald-400'
+                : 'border-transparent text-stone-400 hover:text-stone-200'
+            }`}
+        >
+            {children}
+        </button>
+    );
 
     if (!formData) return <div>Loading theme data...</div>
 
     return (
-        <div className="space-y-8">
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                <div className="lg:col-span-1 lg:sticky top-24 self-start space-y-4">
-                     <ThemePreview themeData={formData.styles} />
-                     <Card title="Select Theme">
-                        <div className="grid grid-cols-3 gap-2 max-h-48 overflow-y-auto pr-2">
+        <div className="space-y-8 relative">
+            <div className="sticky top-0 z-10 -mx-8 -mt-8 px-8 pt-6 pb-4 mb-2" style={{ backgroundColor: 'hsl(var(--color-bg-tertiary))', borderBottom: '1px solid hsl(var(--color-border))' }}>
+                <div className="flex justify-between items-center">
+                     <h1 className="font-medieval text-stone-100" style={{ fontFamily: formData.styles['--font-display'] }}>Editing: {formData.name}</h1>
+                    <Button onClick={handleSave}>{(formData.id === 'new') ? 'Create & Save Theme' : 'Save Changes'}</Button>
+                </div>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <div className="lg:sticky top-24 self-start">
+                    <ThemePreview themeData={formData.styles} />
+                </div>
+                
+                <div className="space-y-6">
+                    <Card title="Select Theme">
+                        <div className="grid grid-cols-3 md:grid-cols-4 gap-2 max-h-48 overflow-y-auto pr-2">
                              <button onClick={handleCreateNew} className="w-full aspect-square rounded-lg transition-all duration-200 border-2 border-dashed border-stone-600 hover:border-emerald-500 hover:text-emerald-400 flex flex-col items-center justify-center">
                                 <span className="text-3xl">+</span>
                                 <span className="text-xs font-semibold">New Theme</span>
@@ -187,79 +209,85 @@ const ThemeEditorPage: React.FC = () => {
                                 </div>
                             ))}
                         </div>
-                     </Card>
-                </div>
+                    </Card>
 
-                <div className="lg:col-span-2 space-y-6">
                     <Card>
-                        <div className="flex justify-between items-start flex-wrap gap-4">
-                            <Input label="Theme Name" value={formData.name} onChange={e => setFormData(p => p ? ({...p, name: e.target.value}) : null)} required className="mt-4" disabled={!formData.isCustom} />
-                            {isAiAvailable && (
-                                <Button onClick={() => setIsGeneratorOpen(true)} variant="secondary" className="mt-7">
-                                    Idea Generator
-                                </Button>
+                        <div className="border-b border-stone-700 mb-6">
+                            <nav className="-mb-px flex space-x-6">
+                                <TabButton tabName="general">General</TabButton>
+                                <TabButton tabName="fonts">Fonts</TabButton>
+                                <TabButton tabName="colors">Colors</TabButton>
+                                <TabButton tabName="accessibility">Accessibility</TabButton>
+                            </nav>
+                        </div>
+                        
+                        <div>
+                            {activeTab === 'general' && (
+                                <div className="space-y-4">
+                                    <Input label="Theme Name" value={formData.name} onChange={e => setFormData(p => p ? ({...p, name: e.target.value}) : null)} required disabled={!formData.isCustom} />
+                                    {isAiAvailable && (
+                                        <Button onClick={() => setIsGeneratorOpen(true)} variant="secondary">
+                                            Generate Theme with AI
+                                        </Button>
+                                    )}
+                                </div>
                             )}
+                            {activeTab === 'fonts' && (
+                                <div className="space-y-4">
+                                    <Input as="select" label="Display Font" value={formData.styles['--font-display']} onChange={e => handleStyleChange('--font-display', e.target.value)}>
+                                        {FONT_OPTIONS.map(f => <option key={f} value={f}>{f.split(',')[0].replace(/'/g, '')}</option>)}
+                                    </Input>
+                                    <Input as="select" label="Body Font" value={formData.styles['--font-body']} onChange={e => handleStyleChange('--font-body', e.target.value)}>
+                                        {FONT_OPTIONS.map(f => <option key={f} value={f}>{f.split(',')[0].replace(/'/g, '')}</option>)}
+                                    </Input>
+                                    <div>
+                                        <label className="flex justify-between text-sm font-medium mb-1">Display Font Size <span>({formData.styles['--font-size-display']})</span></label>
+                                        <input type="range" min="1.5" max="4" step="0.1" value={parseFloat(formData.styles['--font-size-display'])} onChange={e => handleStyleChange('--font-size-display', `${e.target.value}rem`)} className="w-full h-2 bg-stone-700 rounded-lg appearance-none cursor-pointer" />
+                                    </div>
+                                    <div>
+                                        <label className="flex justify-between text-sm font-medium mb-1">Body Font Size <span>({formData.styles['--font-size-body']})</span></label>
+                                        <input type="range" min="0.8" max="1.2" step="0.05" value={parseFloat(formData.styles['--font-size-body'])} onChange={e => handleStyleChange('--font-size-body', `${e.target.value}rem`)} className="w-full h-2 bg-stone-700 rounded-lg appearance-none cursor-pointer" />
+                                    </div>
+                                </div>
+                            )}
+                             {activeTab === 'colors' && (
+                                <div className="space-y-4">
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <SimpleColorPicker label="Primary Background" hslValue={formData.styles['--color-bg-primary']} onChange={v => handleStyleChange('--color-bg-primary', v)} />
+                                        <SimpleColorPicker label="Secondary Background" hslValue={formData.styles['--color-bg-secondary']} onChange={v => handleStyleChange('--color-bg-secondary', v)} />
+                                        <SimpleColorPicker label="Tertiary Background" hslValue={formData.styles['--color-bg-tertiary']} onChange={v => handleStyleChange('--color-bg-tertiary', v)} />
+                                        <SimpleColorPicker label="Primary Text" hslValue={formData.styles['--color-text-primary']} onChange={v => handleStyleChange('--color-text-primary', v)} />
+                                        <SimpleColorPicker label="Secondary Text" hslValue={formData.styles['--color-text-secondary']} onChange={v => handleStyleChange('--color-text-secondary', v)} />
+                                        <SimpleColorPicker label="Border" hslValue={formData.styles['--color-border']} onChange={v => handleStyleChange('--color-border', v)} />
+                                    </div>
+                                    <div className="pt-4 mt-4 border-t border-stone-700/60 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                        <SimpleColorPicker label="Primary/Button" hslValue={`hsl(${formData.styles['--color-primary-hue']} ${formData.styles['--color-primary-saturation']} ${formData.styles['--color-primary-lightness']})`} 
+                                            onChange={v => {
+                                                const {h, s, l} = parseHslString(v);
+                                                handleHslPartChange('primary', 'hue', String(h));
+                                                handleHslPartChange('primary', 'saturation', `${s}%`);
+                                                handleHslPartChange('primary', 'lightness', `${l}%`);
+                                            }} />
+                                        <SimpleColorPicker label="Accent" hslValue={`hsl(${formData.styles['--color-accent-hue']} ${formData.styles['--color-accent-saturation']} ${formData.styles['--color-accent-lightness']})`} 
+                                            onChange={v => {
+                                                const {h, s, l} = parseHslString(v);
+                                                handleHslPartChange('accent', 'hue', String(h));
+                                                handleHslPartChange('accent', 'saturation', `${s}%`);
+                                                handleHslPartChange('accent', 'lightness', `${l}%`);
+                                            }} />
+                                        <SimpleColorPicker label="Accent Light" hslValue={`hsl(${formData.styles['--color-accent-light-hue']} ${formData.styles['--color-accent-light-saturation']} ${formData.styles['--color-accent-light-lightness']})`} 
+                                            onChange={v => {
+                                                const {h, s, l} = parseHslString(v);
+                                                handleHslPartChange('accent-light', 'hue', String(h));
+                                                handleHslPartChange('accent-light', 'saturation', `${s}%`);
+                                                handleHslPartChange('accent-light', 'lightness', `${l}%`);
+                                            }} />
+                                    </div>
+                                </div>
+                            )}
+                            {activeTab === 'accessibility' && <ContrastChecker styles={formData.styles} />}
                         </div>
                     </Card>
-
-                    <Card title="Fonts & Sizes">
-                        <div className="space-y-4">
-                             <Input as="select" label="Display Font" value={formData.styles['--font-display']} onChange={e => handleStyleChange('--font-display', e.target.value)}>
-                                {FONT_OPTIONS.map(f => <option key={f} value={f}>{f.split(',')[0].replace(/'/g, '')}</option>)}
-                            </Input>
-                            <Input as="select" label="Body Font" value={formData.styles['--font-body']} onChange={e => handleStyleChange('--font-body', e.target.value)}>
-                                {FONT_OPTIONS.map(f => <option key={f} value={f}>{f.split(',')[0].replace(/'/g, '')}</option>)}
-                            </Input>
-                            <div>
-                                <label className="flex justify-between text-sm font-medium mb-1">Display Font Size <span>({formData.styles['--font-size-display']})</span></label>
-                                <input type="range" min="1.5" max="4" step="0.1" value={parseFloat(formData.styles['--font-size-display'])} onChange={e => handleStyleChange('--font-size-display', `${e.target.value}rem`)} className="w-full h-2 bg-stone-700 rounded-lg appearance-none cursor-pointer" />
-                            </div>
-                             <div>
-                                <label className="flex justify-between text-sm font-medium mb-1">Body Font Size <span>({formData.styles['--font-size-body']})</span></label>
-                                <input type="range" min="0.8" max="1.2" step="0.05" value={parseFloat(formData.styles['--font-size-body'])} onChange={e => handleStyleChange('--font-size-body', `${e.target.value}rem`)} className="w-full h-2 bg-stone-700 rounded-lg appearance-none cursor-pointer" />
-                            </div>
-                        </div>
-                    </Card>
-
-                    <Card title="Colors">
-                        <div className="grid grid-cols-2 gap-4">
-                            <SimpleColorPicker label="Primary Background" hslValue={formData.styles['--color-bg-primary']} onChange={v => handleStyleChange('--color-bg-primary', v)} />
-                            <SimpleColorPicker label="Secondary Background" hslValue={formData.styles['--color-bg-secondary']} onChange={v => handleStyleChange('--color-bg-secondary', v)} />
-                            <SimpleColorPicker label="Tertiary Background" hslValue={formData.styles['--color-bg-tertiary']} onChange={v => handleStyleChange('--color-bg-tertiary', v)} />
-                            <SimpleColorPicker label="Primary Text" hslValue={formData.styles['--color-text-primary']} onChange={v => handleStyleChange('--color-text-primary', v)} />
-                            <SimpleColorPicker label="Secondary Text" hslValue={formData.styles['--color-text-secondary']} onChange={v => handleStyleChange('--color-text-secondary', v)} />
-                            <SimpleColorPicker label="Border" hslValue={formData.styles['--color-border']} onChange={v => handleStyleChange('--color-border', v)} />
-                        </div>
-                         <div className="pt-4 mt-4 border-t border-stone-700/60 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                            <SimpleColorPicker label="Primary/Button" hslValue={`hsl(${formData.styles['--color-primary-hue']} ${formData.styles['--color-primary-saturation']} ${formData.styles['--color-primary-lightness']})`} 
-                                onChange={v => {
-                                    const {h, s, l} = parseHslString(v);
-                                    handleHslPartChange('primary', 'hue', String(h));
-                                    handleHslPartChange('primary', 'saturation', `${s}%`);
-                                    handleHslPartChange('primary', 'lightness', `${l}%`);
-                                }} />
-                            <SimpleColorPicker label="Accent" hslValue={`hsl(${formData.styles['--color-accent-hue']} ${formData.styles['--color-accent-saturation']} ${formData.styles['--color-accent-lightness']})`} 
-                                onChange={v => {
-                                    const {h, s, l} = parseHslString(v);
-                                    handleHslPartChange('accent', 'hue', String(h));
-                                    handleHslPartChange('accent', 'saturation', `${s}%`);
-                                    handleHslPartChange('accent', 'lightness', `${l}%`);
-                                }} />
-                            <SimpleColorPicker label="Accent Light" hslValue={`hsl(${formData.styles['--color-accent-light-hue']} ${formData.styles['--color-accent-light-saturation']} ${formData.styles['--color-accent-light-lightness']})`} 
-                                onChange={v => {
-                                    const {h, s, l} = parseHslString(v);
-                                    handleHslPartChange('accent-light', 'hue', String(h));
-                                    handleHslPartChange('accent-light', 'saturation', `${s}%`);
-                                    handleHslPartChange('accent-light', 'lightness', `${l}%`);
-                                }} />
-                        </div>
-                    </Card>
-                    
-                    <ContrastChecker styles={formData.styles} />
-
-                    <div className="flex justify-end items-center gap-4 pt-4">
-                        <Button onClick={handleSave}>{(formData.id === 'new') ? 'Create & Save Theme' : 'Save Changes'}</Button>
-                    </div>
                 </div>
             </div>
 

@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Market } from '../../types';
 import Button from '../ui/Button';
@@ -50,18 +51,25 @@ const ManageMarketsPage: React.FC = () => {
         setIsMarketDialogOpen(true);
     };
 
-    return (
-        <div>
-            <div className="flex justify-end items-center mb-8 gap-2">
-                {isAiAvailable && (
-                    <Button onClick={() => setIsGeneratorOpen(true)} variant="secondary">
-                        Create with AI
-                    </Button>
-                )}
-                <Button onClick={handleCreateMarket}>Create New {settings.terminology.store}</Button>
-            </div>
+    const headerActions = (
+        <div className="flex items-center gap-2 flex-wrap">
+            {isAiAvailable && (
+                <Button onClick={() => setIsGeneratorOpen(true)} variant="secondary" size="sm">
+                    Create with AI
+                </Button>
+            )}
+            <Button onClick={handleCreateMarket} size="sm">
+                Create New {settings.terminology.store}
+            </Button>
+        </div>
+    );
 
-            <Card title={`All ${settings.terminology.stores}`}>
+    return (
+        <div className="space-y-6">
+            <Card
+                title={`All Created ${settings.terminology.stores}`}
+                headerAction={headerActions}
+            >
                 {markets.length > 0 ? (
                     <div className="overflow-x-auto">
                         <table className="w-full text-left">
@@ -78,8 +86,8 @@ const ManageMarketsPage: React.FC = () => {
                                         <td className="p-4 font-bold">{market.icon} {market.title}</td>
                                         <td className="p-4 text-stone-400">{market.description}</td>
                                         <td className="p-4 space-x-2">
-                                            <Button variant="secondary" className="text-sm py-1 px-3" onClick={() => handleEditMarket(market)}>Edit</Button>
-                                            <Button variant="secondary" className="text-sm py-1 px-3 !bg-red-900/50 hover:!bg-red-800/60 text-red-300" onClick={() => handleDeleteRequest(market)}>Delete</Button>
+                                            <Button size="sm" variant="secondary" onClick={() => handleEditMarket(market)}>Edit</Button>
+                                            <Button size="sm" variant="secondary" className="!bg-red-900/50 hover:!bg-red-800/60 text-red-300" onClick={() => handleDeleteRequest(market)}>Delete</Button>
                                         </td>
                                     </tr>
                                 ))}

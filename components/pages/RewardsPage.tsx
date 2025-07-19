@@ -22,9 +22,9 @@ const RewardList: React.FC<{ title: string; rewards: RewardTypeDefinition[]; onE
                             <p className="text-stone-400 text-sm mt-1">{reward.description}</p>
                         </div>
                         <div className="flex space-x-2">
-                            <Button variant="secondary" className="text-sm py-1 px-3" onClick={() => onEdit(reward)}>Edit</Button>
+                            <Button size="sm" variant="secondary" onClick={() => onEdit(reward)}>Edit</Button>
                             {!reward.isCore && (
-                                <Button variant="secondary" className="text-sm py-1 px-3 !bg-red-900/50 hover:!bg-red-800/60 text-red-300" onClick={() => onDelete(reward.id)}>Delete</Button>
+                                <Button size="sm" variant="secondary" className="!bg-red-900/50 hover:!bg-red-800/60 text-red-300" onClick={() => onDelete(reward.id)}>Delete</Button>
                             )}
                         </div>
                     </li>
@@ -74,20 +74,25 @@ const RewardsPage: React.FC = () => {
 
 
     return (
-        <div>
-            <div className="flex justify-end items-center mb-8">
-                <Button onClick={handleCreate}>Create New Reward</Button>
-            </div>
-
-            <div className="space-y-8">
-                <h2 className="text-3xl font-medieval text-emerald-400 border-b-2 border-emerald-800/50 pb-2">Currencies</h2>
-                <RewardList title="Core Currencies" rewards={coreCurrencies} onEdit={handleEdit} onDelete={handleDeleteRequest} />
-                <RewardList title="Custom Currencies" rewards={customCurrencies} onEdit={handleEdit} onDelete={handleDeleteRequest} />
-                
-                <h2 className="text-3xl font-medieval text-emerald-400 border-b-2 border-emerald-800/50 pb-2 mt-12">Experience Points (XP)</h2>
-                <RewardList title="Core XP Types" rewards={coreXPs} onEdit={handleEdit} onDelete={handleDeleteRequest} />
-                <RewardList title="Custom XP Types" rewards={customXPs} onEdit={handleEdit} onDelete={handleDeleteRequest} />
-            </div>
+        <div className="space-y-6">
+            <Card
+                title="Reward Definitions"
+                headerAction={
+                    <Button onClick={handleCreate} size="sm">
+                        Create New Reward
+                    </Button>
+                }
+            >
+                 <div className="space-y-8">
+                    <h2 className="text-3xl font-medieval text-emerald-400 border-b-2 border-emerald-800/50 pb-2">Currencies</h2>
+                    <RewardList title="Core Currencies" rewards={coreCurrencies} onEdit={handleEdit} onDelete={handleDeleteRequest} />
+                    <RewardList title="Custom Currencies" rewards={customCurrencies} onEdit={handleEdit} onDelete={handleDeleteRequest} />
+                    
+                    <h2 className="text-3xl font-medieval text-emerald-400 border-b-2 border-emerald-800/50 pb-2 mt-12">Experience Points (XP)</h2>
+                    <RewardList title="Core XP Types" rewards={coreXPs} onEdit={handleEdit} onDelete={handleDeleteRequest} />
+                    <RewardList title="Custom XP Types" rewards={customXPs} onEdit={handleEdit} onDelete={handleDeleteRequest} />
+                </div>
+            </Card>
 
             {isDialogOpen && (
                 <EditRewardTypeDialog

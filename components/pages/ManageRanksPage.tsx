@@ -48,12 +48,15 @@ const ManageRanksPage: React.FC = () => {
     };
 
     return (
-        <div>
-            <div className="flex justify-end items-center mb-8">
-                <Button onClick={handleCreate}>Create New {settings.terminology.level}</Button>
-            </div>
-
-            <Card title={`All ${settings.terminology.levels}`}>
+        <div className="space-y-6">
+            <Card
+                title={`All Created ${settings.terminology.levels}`}
+                headerAction={
+                    <Button onClick={handleCreate} size="sm">
+                        Create New {settings.terminology.level}
+                    </Button>
+                }
+            >
                 {sortedRanks.length > 0 ? (
                      <div className="overflow-x-auto">
                         <table className="w-full text-left">
@@ -72,10 +75,11 @@ const ManageRanksPage: React.FC = () => {
                                         <td className="p-4 font-bold">{rank.name}</td>
                                         <td className="p-4 text-stone-300">{rank.xpThreshold}</td>
                                         <td className="p-4 space-x-2">
-                                            <Button variant="secondary" className="text-sm py-1 px-3" onClick={() => handleEdit(rank)}>Edit</Button>
+                                            <Button size="sm" variant="secondary" onClick={() => handleEdit(rank)}>Edit</Button>
                                             <Button 
+                                                size="sm"
                                                 variant="secondary" 
-                                                className="text-sm py-1 px-3 !bg-red-900/50 hover:!bg-red-800/60 text-red-300 disabled:opacity-50 disabled:cursor-not-allowed" 
+                                                className="!bg-red-900/50 hover:!bg-red-800/60 text-red-300 disabled:opacity-50 disabled:cursor-not-allowed" 
                                                 onClick={() => handleDeleteRequest(rank)}
                                                 disabled={rank.xpThreshold === 0}
                                             >

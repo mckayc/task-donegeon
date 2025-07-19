@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Trophy } from '../../types';
 import Button from '../ui/Button';
@@ -7,6 +8,7 @@ import ConfirmDialog from '../ui/ConfirmDialog';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import EmptyState from '../ui/EmptyState';
 import TrophyIdeaGenerator from '../quests/TrophyIdeaGenerator';
+import { TrophyIcon } from '../ui/Icons';
 
 const ManageTrophiesPage: React.FC = () => {
     const { trophies, settings, isAiConfigured } = useAppState();
@@ -67,29 +69,30 @@ const ManageTrophiesPage: React.FC = () => {
         }
     };
 
+    const headerActions = (
+        <div className="flex items-center gap-2 flex-wrap">
+            {selectedTrophies.length > 0 && (
+                <>
+                    <span className="text-sm font-semibold text-stone-300 px-2">{selectedTrophies.length} selected</span>
+                    <Button size="sm" variant="secondary" className="!bg-red-900/50 hover:!bg-red-800/60 text-red-300" onClick={() => handleDeleteRequest(selectedTrophies)}>Delete</Button>
+                    <div className="border-l h-6 border-stone-600 mx-2"></div>
+                </>
+            )}
+             {isAiAvailable && (
+                <Button size="sm" onClick={() => setIsGeneratorOpen(true)} variant="secondary">
+                    Create with AI
+                </Button>
+            )}
+            <Button size="sm" onClick={handleCreate}>Create New {settings.terminology.award}</Button>
+        </div>
+    );
 
     return (
-        <div>
-             <div className="flex justify-between items-center mb-8 flex-wrap gap-4">
-                <div>
-                    {selectedTrophies.length > 0 && (
-                        <div className="flex items-center gap-2 p-2 bg-stone-900/50 rounded-lg">
-                            <span className="text-sm font-semibold text-stone-300 px-2">{selectedTrophies.length} selected</span>
-                            <Button variant="secondary" className="text-sm py-1 px-3 !bg-red-900/50 hover:!bg-red-800/60 text-red-300" onClick={() => handleDeleteRequest(selectedTrophies)}>Delete</Button>
-                        </div>
-                    )}
-                </div>
-                <div className="flex gap-2">
-                     {isAiAvailable && (
-                        <Button onClick={() => setIsGeneratorOpen(true)} variant="secondary">
-                            Create with AI
-                        </Button>
-                    )}
-                    <Button onClick={handleCreate}>Create New {settings.terminology.award}</Button>
-                </div>
-            </div>
-
-            <Card title={`All ${settings.terminology.awards}`}>
+        <div className="space-y-6">
+            <Card
+                title={`All Created ${settings.terminology.awards}`}
+                headerAction={headerActions}
+            >
                 {trophies.length > 0 ? (
                      <div className="overflow-x-auto">
                         <table className="w-full text-left">
@@ -116,8 +119,8 @@ const ManageTrophiesPage: React.FC = () => {
                                             </span>
                                         </td>
                                         <td className="p-4 space-x-2">
-                                            <Button variant="secondary" className="text-sm py-1 px-3" onClick={() => handleEdit(trophy)}>Edit</Button>
-                                            <Button variant="secondary" className="text-sm py-1 px-3 !bg-red-900/50 hover:!bg-red-800/60 text-red-300" onClick={() => handleDeleteRequest([trophy.id])}>Delete</Button>
+                                            <Button size="sm" variant="secondary" onClick={() => handleEdit(trophy)}>Edit</Button>
+                                            <Button size="sm" variant="secondary" className="!bg-red-900/50 hover:!bg-red-800/60 text-red-300" onClick={() => handleDeleteRequest([trophy.id])}>Delete</Button>
                                         </td>
                                     </tr>
                                 ))}
@@ -126,6 +129,7 @@ const ManageTrophiesPage: React.FC = () => {
                     </div>
                 ) : (
                      <EmptyState
+                        Icon={TrophyIcon}
                         title={`No ${settings.terminology.awards} Created`}
                         message={`Create ${settings.terminology.awards.toLowerCase()} for users to earn through milestones or manual grants.`}
                         actionButton={<Button onClick={handleCreate}>Create {settings.terminology.award}</Button>}

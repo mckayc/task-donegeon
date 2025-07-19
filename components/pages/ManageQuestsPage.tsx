@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { Quest, QuestType } from '../../types';
@@ -94,31 +95,32 @@ const ManageQuestsPage: React.FC = () => {
         }
     };
 
+    const headerActions = (
+        <div className="flex items-center gap-2 flex-wrap">
+            {selectedQuests.length > 0 && (
+                <>
+                    <span className="text-sm font-semibold text-stone-300 px-2">{selectedQuests.length} selected</span>
+                    <Button size="sm" variant="secondary" className="!bg-green-800/60 hover:!bg-green-700/70 text-green-200" onClick={() => setConfirmation({ action: 'activate', ids: selectedQuests })}>Mark Active</Button>
+                    <Button size="sm" variant="secondary" className="!bg-yellow-800/60 hover:!bg-yellow-700/70 text-yellow-200" onClick={() => setConfirmation({ action: 'deactivate', ids: selectedQuests })}>Mark Inactive</Button>
+                    <Button size="sm" variant="secondary" className="!bg-red-900/50 hover:!bg-red-800/60 text-red-300" onClick={() => setConfirmation({ action: 'delete', ids: selectedQuests })}>Delete</Button>
+                    <div className="border-l h-6 border-stone-600 mx-2"></div>
+                </>
+            )}
+             {isAiAvailable && (
+                <Button size="sm" onClick={() => setIsGeneratorOpen(true)} variant="secondary">
+                    Create with AI
+                </Button>
+            )}
+            <Button size="sm" onClick={handleCreate}>Create New {settings.terminology.task}</Button>
+        </div>
+    );
 
     return (
-        <div>
-             <div className="flex justify-between items-center mb-8 flex-wrap gap-4">
-                <div>
-                    {selectedQuests.length > 0 && (
-                        <div className="flex items-center gap-2 p-2 bg-stone-900/50 rounded-lg">
-                            <span className="text-sm font-semibold text-stone-300 px-2">{selectedQuests.length} selected</span>
-                            <Button variant="secondary" className="text-sm py-1 px-3 !bg-green-800/60 hover:!bg-green-700/70 text-green-200" onClick={() => setConfirmation({ action: 'activate', ids: selectedQuests })}>Mark Active</Button>
-                            <Button variant="secondary" className="text-sm py-1 px-3 !bg-yellow-800/60 hover:!bg-yellow-700/70 text-yellow-200" onClick={() => setConfirmation({ action: 'deactivate', ids: selectedQuests })}>Mark Inactive</Button>
-                            <Button variant="secondary" className="text-sm py-1 px-3 !bg-red-900/50 hover:!bg-red-800/60 text-red-300" onClick={() => setConfirmation({ action: 'delete', ids: selectedQuests })}>Delete</Button>
-                        </div>
-                    )}
-                </div>
-                 <div className="flex gap-2">
-                    {isAiAvailable && (
-                        <Button onClick={() => setIsGeneratorOpen(true)} variant="secondary">
-                            Create with AI
-                        </Button>
-                    )}
-                    <Button onClick={handleCreate}>Create New {settings.terminology.task}</Button>
-                </div>
-            </div>
-
-            <Card title={`All Created ${settings.terminology.tasks}`}>
+        <div className="space-y-6">
+            <Card
+                title={`All Created ${settings.terminology.tasks}`}
+                headerAction={headerActions}
+            >
                 {quests.length > 0 ? (
                     <div className="overflow-x-auto">
                         <table className="w-full text-left">
@@ -153,8 +155,8 @@ const ManageQuestsPage: React.FC = () => {
                                             </div>
                                         </td>
                                         <td className="p-4 space-x-2">
-                                            <Button variant="secondary" className="text-sm py-1 px-3" onClick={() => handleEdit(quest)}>Edit</Button>
-                                            <Button variant="secondary" className="text-sm py-1 px-3 !bg-red-900/50 hover:!bg-red-800/60 text-red-300" onClick={() => setConfirmation({ action: 'delete', ids: [quest.id] })}>Delete</Button>
+                                            <Button size="sm" variant="secondary" onClick={() => handleEdit(quest)}>Edit</Button>
+                                            <Button size="sm" variant="secondary" className="!bg-red-900/50 hover:!bg-red-800/60 text-red-300" onClick={() => setConfirmation({ action: 'delete', ids: [quest.id] })}>Delete</Button>
                                         </td>
                                     </tr>
                                 ))}

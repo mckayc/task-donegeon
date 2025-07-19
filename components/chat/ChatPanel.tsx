@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { User } from '../../types';
@@ -6,31 +7,58 @@ import Input from '../ui/Input';
 import { XCircleIcon } from '../ui/Icons';
 import Button from '../ui/Button';
 
+type ChatTarget = User | {
+    id: string;
+    gameName: string;
+    isGuild: true;
+    icon: string;
+};
+
 const ChatPanel: React.FC = () => {
-    const { currentUser, users, chatMessages, isChatOpen } = useAppState();
+    const { currentUser, users, guilds, chatMessages, isChatOpen } = useAppState();
     const { toggleChat, sendMessage, markMessagesAsRead } = useAppDispatch();
-    const [activeChatUser, setActiveChatUser] = useState<User | null>(null);
+    const [activeChatTarget, setActiveChatTarget] = useState<ChatTarget | null>(null);
     const [message, setMessage] = useState('');
     const [userScrolledUp, setUserScrolledUp] = useState(false);
     const messagesContainerRef = useRef<HTMLDivElement>(null);
 
+    const guildChatTargets = useMemo((): ChatTarget[] => {
+        if (!currentUser) return [];
+        const userGuilds = guilds.filter(g => g.memberIds.includes(currentUser.id));
+        return userGuilds.map(guild => ({
+            id: guild.id,
+            gameName: `${guild.name} Hall`,
+            isGuild: true,
+            icon: '🏰',
+        }));
+    }, [currentUser, guilds]);
+
     const chatPartners = useMemo(() => {
         if (!currentUser) return [];
-        return users.filter(user => user.id !== currentUser.id);
-    }, [currentUser, users]);
+        const partners: ChatTarget[] = users.filter(user => user.id !== currentUser.id);
+        return [...guildChatTargets, ...partners];
+    }, [currentUser, users, guildChatTargets]);
 
-    const unreadSenders = useMemo(() => {
-        if (!currentUser) return new Set();
-        return new Set(chatMessages.filter(msg => msg.recipientId === currentUser.id && !msg.isRead).map(msg => msg.senderId));
-    }, [chatMessages, currentUser]);
+    const unreadInfo = useMemo(() => {
+        if (!currentUser) return { dms: new Set(), guilds: new Set() };
+        const dms = new Set(chatMessages.filter(msg => msg.recipientId === currentUser.id && !msg.readBy.includes(currentUser.id)).map(msg => msg.senderId));
+        const guildsWithUnread = new Set(chatMessages.filter(msg => msg.guildId && !msg.readBy.includes(currentUser.id) && users.find(u => u.id === msg.senderId)).map(msg => msg.guildId));
+        return { dms, guilds: guildsWithUnread };
+    }, [chatMessages, currentUser, users]);
 
     const activeConversation = useMemo(() => {
-        if (!currentUser || !activeChatUser) return [];
+        if (!currentUser || !activeChatTarget) return [];
+        
+        if ('isGuild' in activeChatTarget && activeChatTarget.isGuild) {
+            return chatMessages.filter(msg => msg.guildId === activeChatTarget.id)
+                .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+        }
+
         return chatMessages.filter(msg =>
-            (msg.senderId === currentUser.id && msg.recipientId === activeChatUser.id) ||
-            (msg.senderId === activeChatUser.id && msg.recipientId === currentUser.id)
+            (msg.senderId === currentUser.id && msg.recipientId === activeChatTarget.id) ||
+            (msg.senderId === activeChatTarget.id && msg.recipientId === currentUser.id)
         ).sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
-    }, [chatMessages, currentUser, activeChatUser]);
+    }, [chatMessages, currentUser, activeChatTarget]);
 
     const scrollToBottom = useCallback(() => {
         if (messagesContainerRef.current) {
@@ -47,10 +75,14 @@ const ChatPanel: React.FC = () => {
     };
 
     useEffect(() => {
-        if (activeChatUser) {
-            markMessagesAsRead(activeChatUser.id);
+        if (activeChatTarget) {
+            if ('isGuild' in activeChatTarget && activeChatTarget.isGuild) {
+                markMessagesAsRead({ guildId: activeChatTarget.id });
+            } else {
+                markMessagesAsRead({ partnerId: activeChatTarget.id });
+            }
         }
-    }, [activeChatUser, activeConversation, markMessagesAsRead]);
+    }, [activeChatTarget, activeConversation, markMessagesAsRead]);
     
     useEffect(() => {
         if (!userScrolledUp) {
@@ -60,18 +92,21 @@ const ChatPanel: React.FC = () => {
     
     const handleSend = (e: React.FormEvent) => {
         e.preventDefault();
-        if (message.trim() && activeChatUser) {
-            sendMessage({ recipientId: activeChatUser.id, message });
+        if (message.trim() && activeChatTarget) {
+            if ('isGuild' in activeChatTarget && activeChatTarget.isGuild) {
+                sendMessage({ guildId: activeChatTarget.id, message });
+            } else {
+                sendMessage({ recipientId: activeChatTarget.id, message });
+            }
             setMessage('');
             setUserScrolledUp(false);
         }
     };
     
     useEffect(() => {
-        // When switching users, reset scroll state and scroll to bottom
         setUserScrolledUp(false);
         setTimeout(scrollToBottom, 0); 
-    }, [activeChatUser, scrollToBottom]);
+    }, [activeChatTarget, scrollToBottom]);
 
 
     if (!isChatOpen || !currentUser) return null;
@@ -87,12 +122,13 @@ const ChatPanel: React.FC = () => {
             
             <div className="flex-grow flex overflow-hidden">
                 <aside className="w-1/3 border-r border-stone-700 overflow-y-auto">
-                    {chatPartners.map(user => {
-                        const hasUnread = unreadSenders.has(user.id);
+                    {chatPartners.map(target => {
+                        const isGuild = 'isGuild' in target && target.isGuild;
+                        const hasUnread = isGuild ? unreadInfo.guilds.has(target.id) : unreadInfo.dms.has(target.id);
                         return (
-                            <button key={user.id} onClick={() => setActiveChatUser(user)} className={`w-full flex items-center gap-2 p-2 text-left hover:bg-stone-700/50 ${activeChatUser?.id === user.id ? 'bg-emerald-900/50' : ''}`}>
-                                <Avatar user={user} className="w-8 h-8 flex-shrink-0 rounded-full overflow-hidden" />
-                                <span className="text-sm font-semibold text-stone-200 truncate flex-grow">{user.gameName}</span>
+                            <button key={target.id} onClick={() => setActiveChatTarget(target)} className={`w-full flex items-center gap-2 p-2 text-left hover:bg-stone-700/50 ${activeChatTarget?.id === target.id ? 'bg-emerald-900/50' : ''}`}>
+                                {isGuild ? <span className="w-8 h-8 flex-shrink-0 rounded-full bg-stone-700 flex items-center justify-center text-lg">{target.icon}</span> : <Avatar user={target as User} className="w-8 h-8 flex-shrink-0 rounded-full overflow-hidden" />}
+                                <span className="text-sm font-semibold text-stone-200 truncate flex-grow">{target.gameName}</span>
                                 {hasUnread && <div className="w-2.5 h-2.5 bg-red-500 rounded-full flex-shrink-0"></div>}
                             </button>
                         );
@@ -100,16 +136,19 @@ const ChatPanel: React.FC = () => {
                 </aside>
 
                 <main className="w-2/3 flex flex-col">
-                    {activeChatUser ? (
+                    {activeChatTarget ? (
                         <>
                             <div className="p-3 border-b border-stone-700 flex-shrink-0">
-                                <p className="font-bold text-center text-stone-200">{activeChatUser.gameName}</p>
+                                <p className="font-bold text-center text-stone-200">{activeChatTarget.gameName}</p>
                             </div>
                             <div ref={messagesContainerRef} onScroll={handleScroll} className="flex-grow p-3 space-y-3 overflow-y-auto">
                                 {activeConversation.map(msg => {
                                     const msgDate = new Date(msg.timestamp).toLocaleDateString();
                                     const showDateSeparator = msgDate !== lastDate;
                                     lastDate = msgDate;
+                                    const isOwnMessage = msg.senderId === currentUser.id;
+                                    const sender = users.find(u => u.id === msg.senderId);
+
                                     return (
                                         <React.Fragment key={msg.id}>
                                             {showDateSeparator && (
@@ -117,8 +156,14 @@ const ChatPanel: React.FC = () => {
                                                     --- {new Date(msg.timestamp).toLocaleDateString('default', { month: 'long', day: 'numeric', year: 'numeric' })} ---
                                                 </div>
                                             )}
-                                            <div className={`flex items-end gap-2 ${msg.senderId === currentUser.id ? 'justify-end' : 'justify-start'}`}>
-                                                <div className={`max-w-xs px-3 py-2 rounded-lg ${msg.senderId === currentUser.id ? 'bg-emerald-700 text-white' : 'bg-stone-600 text-stone-100'}`}>
+                                            <div className={`flex items-end gap-2 ${isOwnMessage ? 'justify-end' : 'justify-start'}`}>
+                                                {!isOwnMessage && 'isGuild' in activeChatTarget && activeChatTarget.isGuild && sender && (
+                                                    <Avatar user={sender} className="w-8 h-8 flex-shrink-0 rounded-full overflow-hidden self-start" />
+                                                )}
+                                                <div className={`max-w-xs px-3 py-2 rounded-lg flex flex-col ${isOwnMessage ? 'bg-emerald-700 text-white' : 'bg-stone-600 text-stone-100'}`}>
+                                                    {!isOwnMessage && 'isGuild' in activeChatTarget && activeChatTarget.isGuild && sender && (
+                                                        <p className="text-xs font-bold text-accent-light mb-1">{sender.gameName}</p>
+                                                    )}
                                                     <p className="text-sm whitespace-pre-wrap">{msg.message}</p>
                                                 </div>
                                                 <span className="text-xs text-stone-500">{new Date(msg.timestamp).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}</span>

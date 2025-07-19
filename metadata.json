@@ -1,8 +1,6 @@
 {
-  "name": "Task Donegeon - 0.0.77 - Version Bump & Docs Update",
-  "version": "0.0.77",
-  "lastChange": "Increased version number to 0.0.77 and updated documentation.",
-  "lastChangeDate": "2024-07-22T10:00:00Z",
+  "name": "Task Donegeon",
+  "version": "0.0.79",
   "description": "A gamified task and chore tracker for families and groups. Complete quests, earn currency and experience, and level up your character in a fun, medieval-themed adventure.",
   "requestFramePermissions": [
     "camera"

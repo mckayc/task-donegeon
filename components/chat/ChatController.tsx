@@ -9,7 +9,7 @@ const ChatController: React.FC = () => {
         if (!currentUser) return 0;
         const sendersWithUnread = new Set(
             chatMessages
-                .filter(msg => msg.recipientId === currentUser.id && !msg.isRead)
+                .filter(msg => msg.recipientId === currentUser.id && !msg.readBy.includes(currentUser.id))
                 .map(msg => msg.senderId)
         );
         return sendersWithUnread.size;

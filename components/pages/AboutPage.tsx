@@ -7,8 +7,6 @@ interface Metadata {
   name: string;
   version: string;
   description: string;
-  lastChange: string;
-  lastChangeDate?: string;
 }
 
 const CollapsibleSection: React.FC<{ title: string; children: React.ReactNode; defaultOpen?: boolean; }> = ({ title, children, defaultOpen = false }) => {
@@ -123,13 +121,6 @@ const AboutPage: React.FC = () => {
                 
                 <div className="pt-4 border-t border-stone-700/60 text-sm">
                     <p><strong>Version:</strong> {metadata.version}</p>
-                    {metadata.lastChangeDate && (
-                        <p><strong>Last Updated:</strong> {new Date(metadata.lastChangeDate).toLocaleString()}</p>
-                    )}
-                </div>
-                 <div className="pt-4 border-t border-stone-700/60 text-sm">
-                    <h3 className="text-lg font-semibold text-stone-100 mb-2">Latest Changes</h3>
-                    <p>{metadata.lastChange}</p>
                 </div>
 
                 <div className="pt-4 border-t border-stone-700/60">

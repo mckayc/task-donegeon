@@ -100,8 +100,8 @@ interface AppDispatch {
   setActiveMarketId: (marketId: string | null) => void;
   toggleSidebar: () => void;
   toggleChat: () => void;
-  sendMessage: (message: Omit<ChatMessage, 'id' | 'timestamp' | 'isRead' | 'senderId'>) => void;
-  markMessagesAsRead: (senderId: string) => void;
+  sendMessage: (message: Omit<ChatMessage, 'id' | 'timestamp' | 'readBy' | 'senderId'>) => void;
+  markMessagesAsRead: (params: { partnerId?: string; guildId?: string; }) => void;
 }
 
 const AppStateContext = createContext<AppState | undefined>(undefined);
@@ -760,13 +760,13 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   // Chat functions
   const toggleChat = useCallback(() => setIsChatOpen(prev => !prev), []);
 
-  const sendMessage = useCallback((message: Omit<ChatMessage, 'id' | 'timestamp' | 'isRead' | 'senderId'>) => {
+  const sendMessage = useCallback((message: Omit<ChatMessage, 'id' | 'timestamp' | 'readBy' | 'senderId'>) => {
     if (!currentUser) return;
     const newMessage: ChatMessage = {
       id: `msg-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
       senderId: currentUser.id,
       timestamp: new Date().toISOString(),
-      isRead: false,
+      readBy: [currentUser.id], // Sender has read their own message
       ...message
     };
 
@@ -796,13 +796,21 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     });
   }, [currentUser]);
 
-  const markMessagesAsRead = useCallback((senderId: string) => {
+  const markMessagesAsRead = useCallback((params: { partnerId?: string; guildId?: string; }) => {
     if (!currentUser) return;
-    setChatMessages(prev => prev.map(msg =>
-      (msg.senderId === senderId && msg.recipientId === currentUser.id && !msg.isRead)
-        ? { ...msg, isRead: true }
-        : msg
-    ));
+    const { partnerId, guildId } = params;
+
+    setChatMessages(prev => prev.map(msg => {
+        // Condition for DM
+        const isUnreadDm = partnerId && msg.recipientId === currentUser.id && msg.senderId === partnerId;
+        // Condition for Guild Chat
+        const isUnreadGuildMsg = guildId && msg.guildId === guildId;
+
+        if ((isUnreadDm || isUnreadGuildMsg) && !msg.readBy.includes(currentUser.id)) {
+            return { ...msg, readBy: [...msg.readBy, currentUser.id] };
+        }
+        return msg;
+    }));
   }, [currentUser]);
 
   // === CONTEXT PROVIDER VALUE ===

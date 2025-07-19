@@ -6,6 +6,7 @@ import AddUserDialog from '../users/AddUserDialog';
 import { Role, User } from '../../types';
 import EditUserDialog from '../users/EditUserDialog';
 import ManualAdjustmentDialog from '../admin/ManualAdjustmentDialog';
+import Card from '../ui/Card';
 
 const UserManagementPage: React.FC = () => {
     const { users, settings } = useAppState();
@@ -38,12 +39,15 @@ const UserManagementPage: React.FC = () => {
     };
 
     return (
-        <div>
-            <div className="flex justify-end items-center mb-8">
-                <Button onClick={() => setIsAddUserDialogOpen(true)}>Add New Member</Button>
-            </div>
-
-            <div className="bg-stone-800/50 border border-stone-700/60 rounded-xl shadow-lg">
+        <div className="space-y-6">
+            <Card
+                title={`All ${settings.terminology.group} Members`}
+                headerAction={
+                    <Button onClick={() => setIsAddUserDialogOpen(true)} size="sm">
+                        Add New Member
+                    </Button>
+                }
+            >
                 <div className="overflow-x-auto">
                     <table className="w-full text-left">
                         <thead className="border-b border-stone-700/60">
@@ -69,11 +73,11 @@ const UserManagementPage: React.FC = () => {
                                         </span>
                                     </td>
                                     <td className="p-4 space-x-2">
-                                        <Button variant="secondary" className="text-sm py-1 px-3" onClick={() => handleEdit(user)}>Edit</Button>
+                                        <Button size="sm" variant="secondary" onClick={() => handleEdit(user)}>Edit</Button>
                                         {user.role !== Role.DonegeonMaster && (
                                             <>
-                                                <Button variant="secondary" className="text-sm py-1 px-3 !bg-amber-900/50 hover:!bg-amber-800/60 text-amber-300" onClick={() => handleAdjust(user)}>Adjust</Button>
-                                                <Button variant="secondary" className="text-sm py-1 px-3 !bg-red-900/50 hover:!bg-red-800/60 text-red-300" onClick={() => handleDelete(user.id)}>Delete</Button>
+                                                <Button size="sm" variant="secondary" className="!bg-amber-900/50 hover:!bg-amber-800/60 text-amber-300" onClick={() => handleAdjust(user)}>Adjust</Button>
+                                                <Button size="sm" variant="secondary" className="!bg-red-900/50 hover:!bg-red-800/60 text-red-300" onClick={() => handleDelete(user.id)}>Delete</Button>
                                             </>
                                         )}
                                     </td>
@@ -82,7 +86,7 @@ const UserManagementPage: React.FC = () => {
                         </tbody>
                     </table>
                 </div>
-            </div>
+            </Card>
 
             {isAddUserDialogOpen && <AddUserDialog onClose={() => setIsAddUserDialogOpen(false)} />}
             {isEditUserDialogOpen && editingUser && (

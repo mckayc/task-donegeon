@@ -42,7 +42,7 @@ if (process.env.API_KEY) {
 }
 
 // === Multer Configuration for File Uploads ===
-const UPLOADS_DIR = path.join(__dirname, 'uploads');
+const UPLOADS_DIR = path.resolve('/app', 'uploads');
 const storage = process.env.STORAGE_PROVIDER === 'supabase'
   ? multer.memoryStorage()
   : multer.diskStorage({

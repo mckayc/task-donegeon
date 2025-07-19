@@ -3,7 +3,6 @@ import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { Quest, QuestAvailability, QuestCompletionStatus, RewardCategory, Role, User, QuestType, PurchaseRequest, UserTrophy } from '../../types';
 import Card from '../ui/Card';
 import Button from '../ui/Button';
-import { TrophyIcon } from '../ui/Icons';
 import { isQuestAvailableForUser, isQuestVisibleToUserInMode, fromYMD, getQuestUserStatus, questSorter } from '../../utils/quests';
 import QuestDetailDialog from '../quests/QuestDetailDialog';
 import CompleteQuestDialog from '../quests/CompleteQuestDialog';

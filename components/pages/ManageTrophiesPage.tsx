@@ -6,7 +6,6 @@ import EditTrophyDialog from '../settings/EditTrophyDialog';
 import ConfirmDialog from '../ui/ConfirmDialog';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import EmptyState from '../ui/EmptyState';
-import { TrophyIcon } from '../ui/Icons';
 import TrophyIdeaGenerator from '../quests/TrophyIdeaGenerator';
 
 const ManageTrophiesPage: React.FC = () => {
@@ -127,7 +126,6 @@ const ManageTrophiesPage: React.FC = () => {
                     </div>
                 ) : (
                      <EmptyState
-                        Icon={TrophyIcon}
                         title={`No ${settings.terminology.awards} Created`}
                         message={`Create ${settings.terminology.awards.toLowerCase()} for users to earn through milestones or manual grants.`}
                         actionButton={<Button onClick={handleCreate}>Create {settings.terminology.award}</Button>}

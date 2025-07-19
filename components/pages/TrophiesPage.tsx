@@ -6,7 +6,6 @@ import { Role, Trophy, UserTrophy, TrophyRequirementType, QuestType, QuestComple
 import Card from '../ui/Card';
 import { fromYMD } from '../../utils/quests';
 import EmptyState from '../ui/EmptyState';
-import { TrophyIcon } from '../ui/Icons';
 
 const TrophiesPage: React.FC = () => {
     const { currentUser, trophies, userTrophies, appMode, settings, questCompletions, quests, ranks } = useAppState();
@@ -105,7 +104,6 @@ const TrophiesPage: React.FC = () => {
                     </div>
                 ) : (
                     <EmptyState
-                        Icon={TrophyIcon}
                         title={`No ${settings.terminology.awards} Earned Yet`}
                         message={`You haven't earned any ${settings.terminology.awards.toLowerCase()} in this mode yet. Keep questing!`}
                     />

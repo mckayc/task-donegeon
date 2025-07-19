@@ -1,13 +1,7 @@
-import React, { useState, useEffect, ReactNode } from 'react';
+import React, { useState, ReactNode } from 'react';
 import Card from '../ui/Card';
 import { useAppState } from '../../context/AppContext';
 import { ChevronDownIcon } from '../ui/Icons';
-
-interface Metadata {
-  name: string;
-  version: string;
-  description: string;
-}
 
 const CollapsibleSection: React.FC<{ title: string; children: React.ReactNode; defaultOpen?: boolean; }> = ({ title, children, defaultOpen = false }) => {
     const [isOpen, setIsOpen] = useState(defaultOpen);
@@ -80,50 +74,47 @@ const RoadmapContent: React.FC = () => (
     </div>
 );
 
+const VersionHistoryContent: React.FC = () => (
+    <div className="prose prose-invert max-w-none text-stone-300 space-y-4">
+        <div>
+            <h4 className="text-lg font-bold text-stone-100">Version 0.0.80</h4>
+            <ul className="list-disc list-inside space-y-2 mt-2">
+                <li><strong>UI Streamlining:</strong> Removed redundant page titles and relocated the Reward Display to the global header for a cleaner, more modern interface and constant visibility of currency and XP.</li>
+                <li><strong>Smarter Card Headers:</strong> Card headers now intelligently become "sticky" only when they contain action buttons, optimizing screen space and improving user experience.</li>
+                <li><strong>Docker Chat Fix:</strong> Resolved a configuration issue where the chat feature would not appear on local Docker instances due to outdated settings in the persistent volume. The app now gracefully merges new settings on startup.</li>
+                <li><strong>Dashboard Cleanup:</strong> Removed "View All" buttons from the Rank and Trophy cards on the dashboard for a more focused, streamlined view.</li>
+            </ul>
+        </div>
+    </div>
+);
 
 const AboutPage: React.FC = () => {
-    const { settings } = useAppState();
-    const [metadata, setMetadata] = useState<Metadata | null>(null);
-    const [error, setError] = useState<string | null>(null);
-    
     const GITHUB_URL = 'https://github.com/mckayc/task-donegeon';
 
-    useEffect(() => {
-        const fetchMetadata = async () => {
-            try {
-                const response = await fetch('/api/metadata');
-                if (!response.ok) {
-                    const errorBody = await response.text();
-                    throw new Error(`Failed to fetch application details: ${errorBody}`);
-                }
-                const data: Metadata = await response.json();
-                setMetadata(data);
-            } catch (err) {
-                const message = err instanceof Error ? err.message : 'Unknown error';
-                setError(message);
-                console.error("Error fetching metadata:", err);
-            }
-        };
-
-        fetchMetadata();
-    }, []);
-
-    const renderContent = () => {
-        if (error) {
-            return <p className="text-red-400">Could not load application details: {error}</p>;
-        }
-        if (!metadata) {
-            return <p>Loading application details...</p>;
-        }
-        return (
-            <div className="space-y-6 text-stone-300 leading-relaxed">
-                <p>{metadata.description}</p>
-                
-                <div className="pt-4 border-t border-stone-700/60 text-sm">
-                    <p><strong>Version:</strong> {metadata.version}</p>
+    return (
+        <div>
+            <CollapsibleSection title="What's New in Version 0.0.81" defaultOpen>
+                <div className="prose prose-invert max-w-none text-stone-300 space-y-4">
+                    <p>This version focuses on improving the user experience and providing better historical context for application updates.</p>
+                    <ul className="list-disc list-inside space-y-2 pl-4">
+                        <li><strong>Revamped About Page:</strong> The About page has been redesigned for clarity and better organization. The problematic metadata card has been removed, and a new "Version History" section has been added to track past updates.</li>
+                         <li>
+                            <strong>GitHub Link:</strong> Added a direct link to the project's GitHub repository for easy access to the source code, feature suggestions, and bug reports.
+                        </li>
+                    </ul>
                 </div>
+            </CollapsibleSection>
 
-                <div className="pt-4 border-t border-stone-700/60">
+            <CollapsibleSection title="Roadmap">
+                <RoadmapContent />
+            </CollapsibleSection>
+
+            <CollapsibleSection title="Version History">
+                <VersionHistoryContent />
+            </CollapsibleSection>
+
+             <Card className="mt-8">
+                <div className="space-y-4 text-stone-300 leading-relaxed">
                     <h3 className="text-lg font-semibold text-stone-100 mb-2">Contribute or Report Issues</h3>
                     <p>
                         This project is open source. You can view the code, suggest features, or report bugs on our GitHub repository.
@@ -137,30 +128,7 @@ const AboutPage: React.FC = () => {
                         Visit GitHub Repository &rarr;
                     </a>
                 </div>
-            </div>
-        );
-    }
-
-    return (
-        <div>
-            <Card>
-                {renderContent()}
             </Card>
-
-            <CollapsibleSection title="What's New in Version 0.0.80" defaultOpen>
-                <div className="prose prose-invert max-w-none text-stone-300 space-y-4">
-                    <ul className="list-disc list-inside space-y-2 pl-4">
-                        <li><strong>UI Streamlining:</strong> Removed redundant page titles and relocated the Reward Display to the global header for a cleaner, more modern interface and constant visibility of currency and XP.</li>
-                        <li><strong>Smarter Card Headers:</strong> Card headers now intelligently become "sticky" only when they contain action buttons, optimizing screen space and improving user experience.</li>
-                        <li><strong>Docker Chat Fix:</strong> Resolved a configuration issue where the chat feature would not appear on local Docker instances due to outdated settings in the persistent volume. The app now gracefully merges new settings on startup.</li>
-                        <li><strong>Dashboard Cleanup:</strong> Removed "View All" buttons from the Rank and Trophy cards on the dashboard for a more focused, streamlined view.</li>
-                    </ul>
-                </div>
-            </CollapsibleSection>
-
-            <CollapsibleSection title="Roadmap">
-                <RoadmapContent />
-            </CollapsibleSection>
         </div>
     );
 };

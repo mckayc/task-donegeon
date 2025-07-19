@@ -7,9 +7,11 @@ import Button from '../ui/Button';
 import { ChevronDownIcon } from '../ui/Icons';
 import Input from '../ui/Input';
 import ToggleSwitch from '../ui/ToggleSwitch';
+import ConfirmDialog from '../ui/ConfirmDialog';
+import { INITIAL_SETTINGS } from '../../data/initialData';
 
 
-const CollapsibleSection: React.FC<{ title: string; children: React.ReactNode; defaultOpen?: boolean; }> = ({ title, children, defaultOpen = false }) => {
+const CollapsibleSection: React.FC<{ title: string; children: React.ReactNode; defaultOpen?: boolean; onSave?: () => void; showSavedIndicator?: boolean; }> = ({ title, children, defaultOpen = false, onSave, showSavedIndicator }) => {
     const [isOpen, setIsOpen] = useState(defaultOpen);
     return (
          <div className="bg-stone-800/50 border border-stone-700/60 rounded-xl shadow-lg backdrop-blur-sm" style={{ backgroundColor: 'hsl(var(--color-bg-secondary))', borderColor: 'hsl(var(--color-border))' }}>
@@ -18,7 +20,19 @@ const CollapsibleSection: React.FC<{ title: string; children: React.ReactNode; d
                 onClick={() => setIsOpen(!isOpen)}
             >
                 <h3 className="text-2xl font-medieval text-accent">{title}</h3>
-                <ChevronDownIcon className={`w-6 h-6 text-stone-400 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+                <div className="flex items-center gap-4">
+                    {onSave && (
+                        <Button onClick={(e) => { e.stopPropagation(); onSave(); }} size="sm" variant="secondary">
+                            Save
+                        </Button>
+                    )}
+                    {showSavedIndicator && (
+                        <span className="text-sm font-semibold text-green-400 saved-animation flex items-center gap-1">
+                            ✓ Saved!
+                        </span>
+                    )}
+                    <ChevronDownIcon className={`w-6 h-6 text-stone-400 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+                </div>
             </button>
             {isOpen && <div className="p-6 border-t" style={{ borderColor: 'hsl(var(--color-border))' }}>{children}</div>}
         </div>
@@ -88,20 +102,34 @@ const terminologyLabels: { [key in keyof Terminology]: string } = {
 
 const SettingsPage: React.FC = () => {
     const { currentUser, users, settings } = useAppState();
-    const { updateSettings, addNotification } = useAppDispatch();
+    const { updateSettings, resetSettings } = useAppDispatch();
     
-    const [formState, setFormState] = useState<AppSettings>(settings);
-    
+    const [formState, setFormState] = useState<AppSettings>(() => JSON.parse(JSON.stringify(settings)));
+    const [showSaved, setShowSaved] = useState<string | null>(null);
+    const [isResetConfirmOpen, setIsResetConfirmOpen] = useState(false);
+
     if (currentUser?.role !== Role.DonegeonMaster) {
         return <div className="p-6 rounded-lg" style={{ backgroundColor: 'hsl(var(--color-bg-secondary))' }}><p>You do not have permission to view this page.</p></div>;
     }
 
+    const triggerSavedAnimation = (sectionTitle: string) => {
+        setShowSaved(sectionTitle);
+        setTimeout(() => {
+            setShowSaved(null);
+        }, 2000); // Animation lasts 2 seconds
+    };
+    
+    const handleManualSave = (sectionTitle: string) => {
+        updateSettings(formState);
+        triggerSavedAnimation(sectionTitle);
+    };
+    
     const handleFormChange = (e: ChangeEvent<HTMLInputElement>) => {
         const { name, value, type } = e.target;
         const keys = name.split('.');
         
         setFormState(prev => {
-            let newState = {...prev};
+            let newState = JSON.parse(JSON.stringify(prev));
             let currentLevel: any = newState;
             for (let i = 0; i < keys.length - 1; i++) {
                 currentLevel = currentLevel[keys[i]];
@@ -112,24 +140,23 @@ const SettingsPage: React.FC = () => {
         });
     };
     
-    const handleToggleChange = (path: string, enabled: boolean) => {
-         setFormState(prev => {
-            const keys = path.split('.');
-            // Use JSON stringify/parse for a simple deep copy to prevent mutation issues
-            const newState = JSON.parse(JSON.stringify(prev));
-            let current = newState;
-            for (let i = 0; i < keys.length - 1; i++) {
-                current = current[keys[i]] = current[keys[i]] || {};
-            }
-            current[keys[keys.length - 1]] = enabled;
-            return newState;
-        });
+    const handleToggleChange = (path: string, enabled: boolean, sectionTitle: string) => {
+        const newState = JSON.parse(JSON.stringify(formState));
+        const keys = path.split('.');
+        let current = newState;
+        for (let i = 0; i < keys.length - 1; i++) {
+            current = current[keys[i]] = current[keys[i]] || {};
+        }
+        current[keys[keys.length - 1]] = enabled;
+        setFormState(newState);
+        updateSettings(newState); // Auto-save
+        triggerSavedAnimation(sectionTitle);
     };
     
     const handleDateChange = (name: string, dateStr: string) => {
         const keys = name.split('.');
          setFormState(prev => {
-             let newState = {...prev};
+             let newState = JSON.parse(JSON.stringify(prev));
              let currentLevel: any = newState;
              for (let i = 0; i < keys.length - 1; i++) {
                  currentLevel = currentLevel[keys[i]];
@@ -139,46 +166,40 @@ const SettingsPage: React.FC = () => {
         });
     }
 
-    const handleSave = () => {
-        updateSettings(formState);
-        addNotification({ type: 'success', message: 'Settings saved successfully!' });
+    const handleSharedUserToggle = (userId: string) => {
+        const newIds = formState.sharedMode.userIds.includes(userId)
+            ? formState.sharedMode.userIds.filter(id => id !== userId)
+            : [...formState.sharedMode.userIds, userId];
+            
+        const newState = {
+            ...formState,
+            sharedMode: { ...formState.sharedMode, userIds: newIds }
+        };
+        setFormState(newState);
     };
 
-    const handleSharedUserToggle = (userId: string) => {
-        setFormState(prev => {
-            const currentIds = prev.sharedMode.userIds;
-            const newIds = currentIds.includes(userId)
-                ? currentIds.filter(id => id !== userId)
-                : [...currentIds, userId];
-            return {
-                ...prev,
-                sharedMode: { ...prev.sharedMode, userIds: newIds }
-            };
-        });
+    const handleResetConfirm = () => {
+        resetSettings();
+        setFormState(JSON.parse(JSON.stringify(INITIAL_SETTINGS)));
+        setIsResetConfirmOpen(false);
     };
     
     return (
         <div className="space-y-8 relative">
-            <div className="sticky top-0 z-10 -mx-8 -mt-8 px-8 pt-6 pb-4 mb-2" style={{ backgroundColor: 'hsl(var(--color-bg-tertiary))', borderBottom: '1px solid hsl(var(--color-border))' }}>
-                <div className="flex justify-end items-center">
-                    <Button onClick={handleSave}>Save All Settings</Button>
-                </div>
-            </div>
-
-            <CollapsibleSection title="General Settings" defaultOpen>
+            <CollapsibleSection title="General Settings" defaultOpen showSavedIndicator={showSaved === 'General Settings'}>
                  <div className="space-y-6">
                     <div className="flex items-start">
-                        <ToggleSwitch enabled={formState.chat.enabled} setEnabled={(val) => handleToggleChange('chat.enabled', val)} label="Enable Sitewide Chat" />
+                        <ToggleSwitch enabled={formState.chat.enabled} setEnabled={(val) => handleToggleChange('chat.enabled', val, 'General Settings')} label="Enable Sitewide Chat" />
                         <p className="text-sm ml-6" style={{ color: 'hsl(var(--color-text-secondary))' }}>Allow users to send direct messages and participate in guild chats.</p>
                     </div>
 
                     <div className="pt-4 border-t flex items-start" style={{ borderColor: 'hsl(var(--color-border))' }}>
-                        <ToggleSwitch enabled={formState.forgivingSetbacks} setEnabled={(val) => handleToggleChange('forgivingSetbacks', val)} label="Forgiving Setbacks" />
+                        <ToggleSwitch enabled={formState.forgivingSetbacks} setEnabled={(val) => handleToggleChange('forgivingSetbacks', val, 'General Settings')} label="Forgiving Setbacks" />
                         <p className="text-sm ml-6" style={{ color: 'hsl(var(--color-text-secondary))' }}>If enabled, time-based setbacks are only applied if a quest remains uncompleted at the end of the day.</p>
                     </div>
                     
                     <div className="pt-4 border-t flex items-start" style={{ borderColor: 'hsl(var(--color-border))' }}>
-                        <ToggleSwitch enabled={formState.vacationMode.enabled} setEnabled={(val) => handleToggleChange('vacationMode.enabled', val)} label="Vacation Mode" />
+                        <ToggleSwitch enabled={formState.vacationMode.enabled} setEnabled={(val) => handleToggleChange('vacationMode.enabled', val, 'General Settings')} label="Vacation Mode" />
                         <div className="ml-6 flex-grow">
                             <p className="text-sm" style={{ color: 'hsl(var(--color-text-secondary))' }}>Pause all quest deadlines and setbacks for a specified date range.</p>
                             {formState.vacationMode.enabled && (
@@ -192,24 +213,24 @@ const SettingsPage: React.FC = () => {
                 </div>
             </CollapsibleSection>
 
-            <CollapsibleSection title="Shared Mode">
+            <CollapsibleSection title="Shared Mode" onSave={() => handleManualSave('Shared Mode')} showSavedIndicator={showSaved === 'Shared Mode'}>
                 <div className="space-y-6">
                     <div className="flex items-start">
-                        <ToggleSwitch enabled={formState.sharedMode.enabled} setEnabled={(val) => handleToggleChange('sharedMode.enabled', val)} label="Enable Shared Mode" />
+                        <ToggleSwitch enabled={formState.sharedMode.enabled} setEnabled={(val) => handleToggleChange('sharedMode.enabled', val, 'Shared Mode')} label="Enable Shared Mode" />
                         <p className="text-sm ml-6" style={{ color: 'hsl(var(--color-text-secondary))' }}>This mode is for a device in a shared location (like a family tablet) where multiple people can view and use the app like a kiosk.</p>
                     </div>
 
                     <div className={`space-y-6 pl-8 mt-4 border-l-2 border-stone-700 ${!formState.sharedMode.enabled ? 'opacity-50 pointer-events-none' : ''}`}>
                          <div className="flex items-start">
-                            <ToggleSwitch enabled={formState.sharedMode.quickUserSwitchingEnabled} setEnabled={(val) => handleToggleChange('sharedMode.quickUserSwitchingEnabled', val)} label="Quick User Switching Bar" />
+                            <ToggleSwitch enabled={formState.sharedMode.quickUserSwitchingEnabled} setEnabled={(val) => handleToggleChange('sharedMode.quickUserSwitchingEnabled', val, 'Shared Mode')} label="Quick User Switching Bar" />
                             <p className="text-sm ml-6" style={{ color: 'hsl(var(--color-text-secondary))' }}>If enabled, a bar with user avatars will appear at the top for one-click switching.</p>
                         </div>
                          <div className="flex items-start">
-                            <ToggleSwitch enabled={formState.sharedMode.allowCompletion} setEnabled={(val) => handleToggleChange('sharedMode.allowCompletion', val)} label="Allow Completion in Shared View" />
+                            <ToggleSwitch enabled={formState.sharedMode.allowCompletion} setEnabled={(val) => handleToggleChange('sharedMode.allowCompletion', val, 'Shared Mode')} label="Allow Completion in Shared View" />
                             <p className="text-sm ml-6" style={{ color: 'hsl(var(--color-text-secondary))' }}>If enabled, a "Complete" button will appear next to tasks in the shared calendar view. Recommended to keep off for security.</p>
                         </div>
                         <div className="flex items-start">
-                             <ToggleSwitch enabled={formState.sharedMode.autoExit} setEnabled={(val) => handleToggleChange('sharedMode.autoExit', val)} label="Auto Exit to Shared View" />
+                             <ToggleSwitch enabled={formState.sharedMode.autoExit} setEnabled={(val) => handleToggleChange('sharedMode.autoExit', val, 'Shared Mode')} label="Auto Exit to Shared View" />
                              <div className="ml-6 flex-grow">
                                 <p className="text-sm" style={{ color: 'hsl(var(--color-text-secondary))' }}>Automatically return to the shared calendar view after a period of inactivity.</p>
                                 {formState.sharedMode.autoExit && (
@@ -236,25 +257,25 @@ const SettingsPage: React.FC = () => {
                 </div>
             </CollapsibleSection>
 
-            <CollapsibleSection title="Security">
+            <CollapsibleSection title="Security" showSavedIndicator={showSaved === 'Security'}>
                  <div className="space-y-6">
                      <div className="pt-4 border-t flex items-start" style={{ borderColor: 'hsl(var(--color-border))' }}>
-                        <ToggleSwitch enabled={formState.security.requirePinForUsers} setEnabled={(val) => handleToggleChange('security.requirePinForUsers', val)} label="Require PIN for Users" />
+                        <ToggleSwitch enabled={formState.security.requirePinForUsers} setEnabled={(val) => handleToggleChange('security.requirePinForUsers', val, 'Security')} label="Require PIN for Users" />
                         <p className="text-sm ml-6" style={{ color: 'hsl(var(--color-text-secondary))' }}>If disabled, users will not be prompted for a PIN when switching profiles. This is less secure but faster for trusted environments.</p>
                     </div>
                      <div className="pt-4 border-t flex items-start" style={{ borderColor: 'hsl(var(--color-border))' }}>
-                        <ToggleSwitch enabled={formState.security.requirePasswordForAdmin} setEnabled={(val) => handleToggleChange('security.requirePasswordForAdmin', val)} label={`Require Password for ${formState.terminology.admin} & ${formState.terminology.moderator}`} />
+                        <ToggleSwitch enabled={formState.security.requirePasswordForAdmin} setEnabled={(val) => handleToggleChange('security.requirePasswordForAdmin', val, 'Security')} label={`Require Password for ${formState.terminology.admin} & ${formState.terminology.moderator}`} />
                         <p className="text-sm ml-6" style={{ color: 'hsl(var(--color-text-secondary))' }}>If enabled, these roles must use their password to log in. If disabled, they can use their PIN like regular users.</p>
                     </div>
                 </div>
             </CollapsibleSection>
 
-            <CollapsibleSection title="AI Features">
+            <CollapsibleSection title="AI Features" showSavedIndicator={showSaved === 'AI Features'}>
                 <div className="space-y-6">
                     <div className="flex items-start">
                         <ToggleSwitch
                             enabled={formState.enableAiFeatures}
-                            setEnabled={(val) => handleToggleChange('enableAiFeatures', val)}
+                            setEnabled={(val) => handleToggleChange('enableAiFeatures', val, 'AI Features')}
                             label="Enable AI-Powered Features"
                         />
                         <p className="text-sm ml-6" style={{ color: 'hsl(var(--color-text-secondary))' }}>
@@ -265,24 +286,24 @@ const SettingsPage: React.FC = () => {
                 </div>
             </CollapsibleSection>
 
-            <CollapsibleSection title={`Default ${formState.terminology.task} Values`}>
+            <CollapsibleSection title={`Default ${formState.terminology.task} Values`} showSavedIndicator={showSaved === `Default ${formState.terminology.task} Values`}>
                  <div className="space-y-6">
                     <div className="flex items-start">
-                        <ToggleSwitch enabled={formState.questDefaults.requiresApproval} setEnabled={(val) => handleToggleChange('questDefaults.requiresApproval', val)} label="Requires Approval" />
+                        <ToggleSwitch enabled={formState.questDefaults.requiresApproval} setEnabled={(val) => handleToggleChange('questDefaults.requiresApproval', val, `Default ${formState.terminology.task} Values`)} label="Requires Approval" />
                         <p className="text-sm ml-6" style={{ color: 'hsl(var(--color-text-secondary))' }}>If enabled, new {formState.terminology.tasks.toLowerCase()} will default to requiring approval from a {formState.terminology.moderator} or {formState.terminology.admin}.</p>
                     </div>
                     <div className="flex items-start">
-                        <ToggleSwitch enabled={formState.questDefaults.isOptional} setEnabled={(val) => handleToggleChange('questDefaults.isOptional', val)} label="Is Optional" />
+                        <ToggleSwitch enabled={formState.questDefaults.isOptional} setEnabled={(val) => handleToggleChange('questDefaults.isOptional', val, `Default ${formState.terminology.task} Values`)} label="Is Optional" />
                         <p className="text-sm ml-6" style={{ color: 'hsl(var(--color-text-secondary))' }}>If enabled, new {formState.terminology.tasks.toLowerCase()} will default to being optional, meaning they don't count against a user if not completed.</p>
                     </div>
                     <div className="flex items-start">
-                        <ToggleSwitch enabled={formState.questDefaults.isActive} setEnabled={(val) => handleToggleChange('questDefaults.isActive', val)} label="Is Active" />
+                        <ToggleSwitch enabled={formState.questDefaults.isActive} setEnabled={(val) => handleToggleChange('questDefaults.isActive', val, `Default ${formState.terminology.task} Values`)} label="Is Active" />
                         <p className="text-sm ml-6" style={{ color: 'hsl(var(--color-text-secondary))' }}>If enabled, new {formState.terminology.tasks.toLowerCase()} will be active and visible on the board immediately upon creation.</p>
                     </div>
                 </div>
             </CollapsibleSection>
 
-             <CollapsibleSection title="Terminology">
+             <CollapsibleSection title="Terminology" onSave={() => handleManualSave('Terminology')} showSavedIndicator={showSaved === 'Terminology'}>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-4">
                     {Object.keys(formState.terminology).map(key => (
                          <Input 
@@ -296,6 +317,29 @@ const SettingsPage: React.FC = () => {
                 </div>
             </CollapsibleSection>
 
+            <CollapsibleSection title="Advanced">
+                <div className="p-4 bg-red-900/30 border border-red-700/60 rounded-lg">
+                    <h4 className="font-bold text-red-300">Reset All Settings</h4>
+                    <p className="text-sm text-red-200/80 mt-1 mb-4">
+                        If you're experiencing issues with new features not appearing (especially after an update on a local Docker install), resetting settings can help. This will revert all options on this page to their default values.
+                        <strong className="block mt-2">This will NOT delete users, quests, items, or any other created content.</strong>
+                    </p>
+                    <Button
+                        onClick={() => setIsResetConfirmOpen(true)}
+                        className="!bg-red-600 hover:!bg-red-500"
+                    >
+                        Reset All Settings to Default
+                    </Button>
+                </div>
+            </CollapsibleSection>
+
+            <ConfirmDialog
+                isOpen={isResetConfirmOpen}
+                onClose={() => setIsResetConfirmOpen(false)}
+                onConfirm={handleResetConfirm}
+                title="Confirm Settings Reset"
+                message="Are you sure you want to reset all application settings to their default values? This cannot be undone, but it will not affect your created content like users or quests."
+            />
         </div>
     );
 };

@@ -1,6 +1,6 @@
 {
   "name": "Task Donegeon - Improved UI",
-  "version": "0.0.80",
+  "version": "0.0.81",
   "description": "A gamified task and chore tracker for families and groups. Complete quests, earn currency and experience, and level up your character in a fun, medieval-themed adventure.",
   "requestFramePermissions": [
     "camera"

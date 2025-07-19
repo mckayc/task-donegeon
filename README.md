@@ -1,6 +1,6 @@
 # Task Donegeon
 
-**Version:** 0.0.80
+**Version:** 0.0.81
 
 ---
 
@@ -15,11 +15,11 @@ Task Donegeon is a gamified task and chore management application designed for f
 
 ## ✨ Features
 
-### What's New in Version 0.0.80
-- **UI Streamlining:** Removed redundant page titles and relocated the Reward Display to the global header for a cleaner, more modern interface and constant visibility of currency and XP.
-- **Smarter Card Headers:** Card headers now intelligently become "sticky" only when they contain action buttons, optimizing screen space and improving user experience.
-- **Docker Chat Fix:** Resolved a configuration issue where the chat feature would not appear on local Docker instances due to outdated settings in the persistent volume. The app now gracefully merges new settings on startup.
-- **Dashboard Cleanup:** Removed "View All" buttons from the Rank and Trophy cards on the dashboard for a more focused, streamlined view.
+### What's New in Version 0.0.81
+- **Revamped About Page:** The About page has been redesigned for clarity and better organization. The problematic metadata card has been removed, and a new "Version History" section has been added to track past updates.
+
+### Version History
+- **v0.0.80:** UI Streamlining (Global Reward Display), Smarter Sticky Card Headers, Docker Chat Fix, Dashboard Cleanup.
 
 ### Core Features
 -   **Full-featured In-App Chat:** A real-time chat system allows users to message each other directly within the app, with notifications for unread messages.

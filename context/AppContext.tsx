@@ -93,6 +93,7 @@ interface AppDispatch {
 
   // Settings & UI
   updateSettings: (settings: Partial<AppSettings>) => void;
+  resetSettings: () => void;
   setActivePage: (page: Page) => void;
   setAppMode: (mode: AppMode) => void;
   addNotification: (notification: Omit<Notification, 'id'>) => void;
@@ -713,6 +714,11 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     setSettings(prev => ({...prev, ...settingsToUpdate}));
   }, []);
 
+  const resetSettings = useCallback(() => {
+    setSettings(INITIAL_SETTINGS);
+    addNotification({ type: 'success', message: 'All application settings have been reset to their defaults.' });
+  }, [addNotification]);
+
   // Inactivity Timer for Shared Mode
   const resetInactivityTimer = useCallback(() => {
     if (inactivityTimer.current) clearTimeout(inactivityTimer.current);
@@ -856,7 +862,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     populateInitialGameData, importBlueprint, restoreFromBackup, clearAllHistory, resetAllPlayerData, deleteAllCustomContent, deleteSelectedAssets, 
     deleteQuests, deleteTrophies, deleteGameAssets, updateQuestsStatus,
     uploadFile,
-    updateSettings, setActivePage, setAppMode, addNotification, removeNotification, setActiveMarketId, toggleSidebar,
+    updateSettings, resetSettings, setActivePage, setAppMode, addNotification, removeNotification, setActiveMarketId, toggleSidebar,
     toggleChat, sendMessage, markMessagesAsRead
   };
 

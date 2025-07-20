@@ -3,7 +3,6 @@
 import React, { createContext, useState, useContext, ReactNode, useEffect, useCallback, useMemo, useRef } from 'react';
 import { AppSettings, User, Quest, RewardTypeDefinition, QuestCompletion, RewardItem, Market, PurchaseRequest, Guild, Rank, Trophy, UserTrophy, Notification, AppMode, Page, IAppData, ShareableAssetType, GameAsset, Role, QuestCompletionStatus, RewardCategory, PurchaseRequestStatus, AdminAdjustment, AdminAdjustmentType, SystemLog, QuestType, QuestAvailability, Blueprint, ImportResolution, TrophyRequirementType, ThemeDefinition, ChatMessage, SystemNotification, SystemNotificationType } from '../types';
 import { INITIAL_SETTINGS, createMockUsers, INITIAL_REWARD_TYPES, INITIAL_RANKS, INITIAL_TROPHIES, createSampleMarkets, createSampleQuests, createInitialGuilds, createSampleGameAssets, INITIAL_THEMES, createInitialQuestCompletions } from '../data/initialData';
-import { useDebounce } from '../hooks/useDebounce';
 import { toYMD } from '../utils/quests';
 
 // The single, unified state for the entire application
@@ -155,7 +154,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
   // === DATA PERSISTENCE ===
   const appData = useMemo((): IAppData => ({ users, quests, markets, rewardTypes, questCompletions, purchaseRequests, guilds, ranks, trophies, userTrophies, adminAdjustments, gameAssets, systemLogs, settings, themes, loginHistory, chatMessages, systemNotifications }), [users, quests, markets, rewardTypes, questCompletions, purchaseRequests, guilds, ranks, trophies, userTrophies, adminAdjustments, gameAssets, systemLogs, settings, themes, loginHistory, chatMessages, systemNotifications]);
-  const debouncedAppData = useDebounce(appData, 500);
     const addNotification = useCallback((notification: Omit<Notification, 'id'>) => {
     const uniqueId = `notif-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
     setNotifications(prev => [...prev, { ...notification, id: uniqueId }]);
@@ -307,15 +305,15 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   }, []);
 
   useEffect(() => {
-    if (!isDataLoaded || isRestoring) return; // Add isRestoring guard
-    if (users.length === 0 && quests.length === 0) return; // Don't save empty state during init
+    if (!isDataLoaded || isRestoring) return;
+    if (users.length === 0 && quests.length === 0) return;
 
     const saveData = async () => {
       try { 
         const response = await window.fetch('/api/data/save', { 
             method: 'POST', 
             headers: { 'Content-Type': 'application/json' }, 
-            body: JSON.stringify(debouncedAppData) 
+            body: JSON.stringify(appData) 
         }); 
         if (!response.ok) {
             const errorData = await response.json().catch(() => ({ error: 'Failed to parse error from server.'}));
@@ -328,7 +326,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       }
     };
     saveData();
-  }, [debouncedAppData, isDataLoaded, isRestoring, addNotification]);
+  }, [appData, isDataLoaded, isRestoring, addNotification]);
 
 
   // === BUSINESS LOGIC / DISPATCH FUNCTIONS ===
@@ -820,7 +818,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   }, [addNotification]);
   
   const restoreFromBackup = useCallback(async (backupData: IAppData) => {
-    setIsRestoring(true); // Prevent debounced save
+    setIsRestoring(true); // Prevent save
     try {
         await window.fetch('/api/data/save', { 
             method: 'POST', 

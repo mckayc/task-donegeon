@@ -226,6 +226,23 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             // --- END MIGRATION LOGIC ---
 
             const savedSettings: Partial<AppSettings> = dataToSet.settings || {};
+            
+            // --- SETTINGS MIGRATION LOGIC ---
+            const oldRewardValuation = savedSettings.rewardValuation as any;
+            if (oldRewardValuation && oldRewardValuation.baseCurrencyUnit) { // Detect old flat structure
+                savedSettings.rewardValuation = {
+                    currency: {
+                        enabled: oldRewardValuation.enabled,
+                        baseUnitName: oldRewardValuation.baseCurrencyUnit,
+                        baseUnitSymbol: oldRewardValuation.baseCurrencySymbol,
+                        anchorRewardId: oldRewardValuation.anchorRewardId,
+                        anchorRewardValue: oldRewardValuation.anchorRewardValue,
+                        exchangeRates: oldRewardValuation.exchangeRates || {}
+                    },
+                    experience: INITIAL_SETTINGS.rewardValuation.experience // Add new feature with defaults
+                };
+            }
+
             const loadedSettings: AppSettings = {
                 ...INITIAL_SETTINGS,
                 ...savedSettings,
@@ -237,6 +254,10 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
                 chat: { ...INITIAL_SETTINGS.chat, ...(savedSettings.chat || {}) },
                 sidebars: { ...INITIAL_SETTINGS.sidebars, ...(savedSettings.sidebars || {}) },
                 terminology: { ...INITIAL_SETTINGS.terminology, ...(savedSettings.terminology || {}) },
+                rewardValuation: {
+                    currency: { ...INITIAL_SETTINGS.rewardValuation.currency, ...(savedSettings.rewardValuation?.currency || {}) },
+                    experience: { ...INITIAL_SETTINGS.rewardValuation.experience, ...(savedSettings.rewardValuation?.experience || {}) },
+                },
             };
             
             setUsers(dataToSet.users || []);
@@ -374,6 +395,21 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             console.log("Data out of sync. Refreshing from server.");
             
             const savedSettings: Partial<AppSettings> = serverData.settings || {};
+             const oldRewardValuation = savedSettings.rewardValuation as any;
+            if (oldRewardValuation && oldRewardValuation.baseCurrencyUnit) { // Detect old flat structure
+                savedSettings.rewardValuation = {
+                    currency: {
+                        enabled: oldRewardValuation.enabled,
+                        baseUnitName: oldRewardValuation.baseCurrencyUnit,
+                        baseUnitSymbol: oldRewardValuation.baseCurrencySymbol,
+                        anchorRewardId: oldRewardValuation.anchorRewardId,
+                        anchorRewardValue: oldRewardValuation.anchorRewardValue,
+                        exchangeRates: oldRewardValuation.exchangeRates || {}
+                    },
+                    experience: INITIAL_SETTINGS.rewardValuation.experience // Add new feature with defaults
+                };
+            }
+
             const loadedSettings: AppSettings = {
                 ...INITIAL_SETTINGS, ...savedSettings,
                 questDefaults: { ...INITIAL_SETTINGS.questDefaults, ...(savedSettings.questDefaults || {}) },
@@ -384,6 +420,10 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
                 chat: { ...INITIAL_SETTINGS.chat, ...(savedSettings.chat || {}) },
                 sidebars: { ...INITIAL_SETTINGS.sidebars, ...(savedSettings.sidebars || {}) },
                 terminology: { ...INITIAL_SETTINGS.terminology, ...(savedSettings.terminology || {}) },
+                rewardValuation: {
+                    currency: { ...INITIAL_SETTINGS.rewardValuation.currency, ...(savedSettings.rewardValuation?.currency || {}) },
+                    experience: { ...INITIAL_SETTINGS.rewardValuation.experience, ...(savedSettings.rewardValuation?.experience || {}) },
+                },
             };
 
             setUsers(serverData.users || []);
@@ -877,7 +917,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
                 type: SystemNotificationType.Announcement,
                 message: message.message,
                 senderId: currentUser.id,
-                recipientUserIds: guild.memberIds.filter(id => id !== currentUser.id),
+                recipientUserIds: guild.memberIds, // Send to all members, including sender
                 guildId: message.guildId,
             });
         }

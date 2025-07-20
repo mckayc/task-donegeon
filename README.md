@@ -1,6 +1,7 @@
+
 # Task Donegeon
 
-**Version:** 0.0.85
+**Version:** 0.0.87
 
 ---
 
@@ -15,18 +16,17 @@ Task Donegeon is a gamified task and chore management application designed for f
 
 ## ✨ Features
 
-### What's New in Version 0.0.85 (July 21, 2025)
--   **Image Pack Importer:** A new feature has been added to the `Asset Manager` page, allowing administrators to dynamically import curated image packs directly from the project's GitHub repository.
-    -   **Fetch & Preview:** Admins can fetch a list of available packs, each with a sample image, and select which ones to download.
-    -   **Backend-Powered Import:** The entire download and categorization process is handled by the backend, ensuring a smooth and reliable import of dozens of images without tying up the browser.
-    -   **Leaner Application:** This approach keeps the main application and Docker image size small, as default assets are no longer bundled with the build.
+### What's New in Version 0.0.87 (July 20, 2025)
+-   **Calendar Day View Enhancement:** Added due date/time information for quests on the main 'Day' view of the calendar, improving at-a-glance scheduling clarity.
 
 ### Version History
-- **v0.0.84 (July 20, 2025):** **Categorized Frontend Uploads:** The asset management workflow has been significantly improved. Admins can now specify a category when uploading an image from the `Asset Manager`, and the backend will automatically organize the file into a corresponding sub-folder.
+- **v0.0.86 (July 19, 2025):** **Enhanced Reward Valuation Helper:** The helper text in the quest editor now shows both the anchor reward equivalent and the final "real-world" value (e.g., `(equals 5 💎 or $5.00)`), providing admins with clearer context for balancing the game's economy. The layout of the reward input has also been improved for better readability.
+- **v0.0.85 (July 19, 2025):** **Image Pack Importer:** A new feature has been added to the `Asset Manager` page, allowing administrators to dynamically import curated image packs directly from the project's GitHub repository. This keeps the main application lean while providing easy access to a library of high-quality images.
+- **v0.0.84 (July 19, 2025):** **Categorized Frontend Uploads:** The asset management workflow has been significantly improved. Admins can now specify a category when uploading an image from the `Asset Manager`, and the backend will automatically organize the file into a corresponding sub-folder.
 - **v0.0.83 (July 19, 2025):** **Durable Server-Side Backups:** The entire backup system has been overhauled for production-grade reliability. Backups are now saved directly on the server's file system, and automated backups run as a reliable server-side process.
-- **v0.0.82 (July 18, 2025):** **Login Notifications System & DM Announcements:** A comprehensive notification system has been added. Users now see a popup on login detailing new quest assignments, guild announcements from Donegeon Masters, trophies unlocked, and items pending approval. This feature can be toggled in a new "Notifications" section in the settings.
-- **v0.0.81 (July 17, 2025):** Revamped About Page, direct GitHub link, and a new Version History section.
-- **v0.0.80 (July 16, 2025):** UI Streamlining (Global Reward Display), Smarter Sticky Card Headers, Docker Chat Fix, Dashboard Cleanup.
+- **v0.0.82 (July 19, 2025):** **Login Notifications System & DM Announcements:** A comprehensive notification system has been added. Users now see a popup on login detailing new quest assignments, guild announcements from Donegeon Masters, trophies unlocked, and items pending approval. This feature can be toggled in a new "Notifications" section in the settings.
+- **v0.0.81 (July 19, 2025):** Revamped About Page, direct GitHub link, and a new Version History section.
+- **v0.0.80 (July 19, 2025):** UI Streamlining (Global Reward Display), Smarter Sticky Card Headers, Docker Chat Fix, Dashboard Cleanup.
 
 ### Core Features
 -   **Full-featured In-App Chat:** A real-time chat system allows users to message each other directly within the app, with notifications for unread messages.

@@ -1,5 +1,4 @@
 
-
 import React, { useState, useMemo } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { Quest, QuestType, QuestAvailability, User } from '../../types';
@@ -10,6 +9,19 @@ import Button from '../ui/Button';
 import PinEntryDialog from '../auth/PinEntryDialog';
 import QuestDetailDialog from '../quests/QuestDetailDialog';
 import CompleteQuestDialog from '../quests/CompleteQuestDialog';
+
+const getDueDateString = (quest: Quest): string | null => {
+    if (quest.type === QuestType.Venture && quest.lateDateTime) {
+        return `Due: ${new Date(quest.lateDateTime).toLocaleDateString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}`;
+    }
+    if (quest.type === QuestType.Duty && quest.lateTime) {
+        const [hours, minutes] = quest.lateTime.split(':').map(Number);
+        const date = new Date();
+        date.setHours(hours, minutes);
+        return `Due at: ${date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+    }
+    return null;
+};
 
 const SharedCalendarPage: React.FC = () => {
     const { settings, users, quests, questCompletions, guilds } = useAppState();
@@ -117,6 +129,7 @@ const SharedCalendarPage: React.FC = () => {
                                 {userQuests.length > 0 ? userQuests.map(({ quest }) => {
                                     const bgClass = quest.type === QuestType.Duty ? 'bg-sky-900/50 hover:bg-sky-900/80' : 'bg-amber-900/50 hover:bg-amber-900/80';
                                     const isTodo = quest.type === QuestType.Venture && quest.todoUserIds?.includes(user.id);
+                                    const dueDateString = getDueDateString(quest);
                                     return (
                                     <button
                                         type="button"
@@ -128,6 +141,7 @@ const SharedCalendarPage: React.FC = () => {
                                             {quest.icon && <span className="text-2xl">{quest.icon}</span>}
                                             <div className="overflow-hidden">
                                                 <p className="font-semibold text-stone-200 truncate" title={quest.title}>{quest.title}</p>
+                                                {dueDateString && <p className="text-xs text-stone-400 mt-1">{dueDateString}</p>}
                                             </div>
                                         </div>
                                     </button>

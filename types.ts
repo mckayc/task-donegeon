@@ -362,6 +362,20 @@ export interface SidebarHeader {
 
 export type SidebarConfigItem = SidebarLink | SidebarHeader;
 
+export interface ValuationConfig {
+  enabled: boolean;
+  baseUnitName: string;
+  baseUnitSymbol: string;
+  anchorRewardId: string;
+  anchorRewardValue: number;
+  exchangeRates: { [rewardTypeId: string]: number };
+}
+
+export interface RewardValuationSettings {
+  currency: ValuationConfig;
+  experience: ValuationConfig;
+}
+
 export interface AppSettings {
   forgivingSetbacks: boolean;
   vacationMode: {
@@ -398,6 +412,7 @@ export interface AppSettings {
   theme: string;
   terminology: Terminology;
   enableAiFeatures: boolean;
+  rewardValuation: RewardValuationSettings;
   chat: {
     enabled: boolean;
     chatEmoji: string;
@@ -520,6 +535,8 @@ export type ChronicleEvent = {
     status: string;
     icon: string;
     color: string;
-    userId?: string;
+    userId?: string; // The primary actor/user
+    recipientUserIds?: string[]; // The users this event applies to (for announcements, system logs)
     questType?: QuestType;
+    guildId?: string; // The scope of the event
 };

@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import Card from '../ui/Card';
 import { useAppState } from '../../context/AppContext';
@@ -95,6 +96,7 @@ const HelpPage: React.FC = () => {
 
                     <h4 className="text-lg font-bold text-stone-100 mt-4">Content Creation &amp; Management</h4>
                     <p>The "Manage" pages in the sidebar are your world-building tools. You can define new {terminology.tasks}, set up {terminology.stores} with custom items, create {terminology.groups}, define custom {terminology.points}, design {terminology.levels}, and invent unique {terminology.awards}.</p>
+                    <p>When setting rewards for {terminology.tasks.toLowerCase()}, you'll see a helpful indicator (e.g., `(equals 5 💎 or $5.00)`) showing its equivalent "real-world" value based on your settings, making it easier to balance your game's economy.</p>
                     
                     <h4 className="text-lg font-bold text-stone-100 mt-4">Theme Editor</h4>
                     <p>The Theme Editor (found under `Content Management` in the sidebar) is a powerful tool for customizing the entire look and feel of the application. It features a two-panel layout:</p>

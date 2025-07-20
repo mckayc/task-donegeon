@@ -1,3 +1,4 @@
+
 import React, { useMemo, useState } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { Quest, QuestCompletion, QuestType } from '../../types';
@@ -51,6 +52,17 @@ const QuestListItem: React.FC<{
     const currentConfig = statusConfig[status];
     if (!currentConfig) return null;
 
+    const dueTime = useMemo(() => {
+        if (quest.type === QuestType.Duty && quest.lateTime) {
+            return new Date(`1970-01-01T${quest.lateTime}`).toLocaleTimeString([], { hour: '2-digit', minute:'2-digit' });
+        }
+        if (quest.type === QuestType.Venture && quest.lateDateTime) {
+            return new Date(quest.lateDateTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        }
+        return null;
+    }, [quest]);
+
+
     const backgroundClass = quest.type === QuestType.Duty ? 'bg-sky-900/40 hover:bg-sky-900/60' : 'bg-amber-900/30 hover:bg-amber-900/50';
     const todoBorderClass = isTodoVenture ? 'border-2 border-purple-500' : 'border-2 border-transparent';
     const optionalClass = quest.isOptional ? "border-dashed" : "";
@@ -75,7 +87,13 @@ const QuestListItem: React.FC<{
                 </div>
                 <div className="flex-grow overflow-hidden">
                     <p className={`${currentConfig.textClass} truncate ${currentConfig.isStrikethrough ? 'line-through' : ''}`} title={quest.title}>{quest.title}</p>
-                    {quest.isOptional && <p className="text-xs text-stone-400">Optional</p>}
+                    {(dueTime || quest.isOptional) && (
+                        <p className="text-xs text-stone-400 mt-1">
+                            {quest.isOptional && 'Optional'}
+                            {quest.isOptional && dueTime && ' · '}
+                            {dueTime && `Due at ${dueTime}`}
+                        </p>
+                    )}
                 </div>
             </div>
         </button>

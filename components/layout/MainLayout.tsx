@@ -1,6 +1,6 @@
 
 
-import React, { useMemo, useEffect, useState } from 'react';
+import React, { useMemo, useEffect, useState, useRef } from 'react';
 import Sidebar from './Sidebar';
 import Header from './Header';
 import Dashboard from '../pages/Dashboard';
@@ -47,6 +47,7 @@ const MainLayout: React.FC = () => {
   
   const [showLoginNotifications, setShowLoginNotifications] = useState(false);
   const [notificationsShownForSession, setNotificationsShownForSession] = useState(false);
+  const prevUserIdRef = useRef<string | undefined>(undefined);
   
   const ADMIN_ONLY_PAGES: Page[] = [
     'Manage Users', 'Manage Rewards', 'Manage Quests', 'Manage Items', 'Manage Markets',
@@ -59,21 +60,30 @@ const MainLayout: React.FC = () => {
     if (!currentUser) return [];
     return systemNotifications.filter(n => 
         n.recipientUserIds.includes(currentUser.id) && 
-        !n.readByUserIds.includes(currentUser.id)
+        !n.readByUserIds.includes(currentUser.id) &&
+        n.senderId !== currentUser.id // Don't show popups for your own announcements
     );
   }, [systemNotifications, currentUser]);
 
   useEffect(() => {
-    // Reset the "shown" flag when the user logs out.
-    if (!currentUser) {
+    // This effect resets the "shown" flag whenever the user ID changes,
+    // effectively starting a new "notification session" for the new user.
+    if (currentUser?.id !== prevUserIdRef.current) {
         setNotificationsShownForSession(false);
-    } 
-    // If we have a user, haven't shown notifications yet, and there are unread ones, show them.
-    else if (!notificationsShownForSession && settings.loginNotifications.enabled && unreadNotifications.length > 0) {
-        setShowLoginNotifications(true);
-        setNotificationsShownForSession(true); // Mark as shown for this session
+        prevUserIdRef.current = currentUser?.id;
     }
-  }, [currentUser, unreadNotifications, settings.loginNotifications.enabled, notificationsShownForSession]);
+  }, [currentUser]);
+
+  useEffect(() => {
+    // This effect handles the logic for showing the popup.
+    if (currentUser && !notificationsShownForSession && settings.loginNotifications.enabled && unreadNotifications.length > 0) {
+        setShowLoginNotifications(true);
+        setNotificationsShownForSession(true); // Mark as shown for this session.
+    } else if (!currentUser) {
+        // Explicitly hide popup on logout, just in case.
+        setShowLoginNotifications(false);
+    }
+  }, [currentUser, notificationsShownForSession, settings.loginNotifications.enabled, unreadNotifications]);
 
   useEffect(() => {
     if (!currentUser) return;

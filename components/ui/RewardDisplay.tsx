@@ -1,6 +1,6 @@
-
 import React, { useMemo } from 'react';
 import { useAppState } from '../../context/AppContext';
+import { useRewardValue } from '../../hooks/useRewardValue';
 
 const RewardDisplay: React.FC = () => {
   const { currentUser, rewardTypes, appMode } = useAppState();
@@ -32,14 +32,23 @@ const RewardDisplay: React.FC = () => {
   }, [currentUser, rewardTypes, appMode]);
   
   if (balances.length === 0) return null;
+  
+  const BalanceItem: React.FC<{balance: typeof balances[0]}> = ({ balance }) => {
+    const realValue = useRewardValue(balance.amount, balance.id);
+    const title = `${balance.name}: ${balance.amount}${realValue ? ` (~${realValue})` : ''}`;
+
+    return (
+      <div title={title} className="flex items-center gap-2 bg-stone-800/50 px-3 py-1.5 rounded-full border border-stone-700/60">
+        <span className="text-lg">{balance.icon}</span>
+        <span className="font-semibold text-stone-200">{balance.amount}</span>
+      </div>
+    );
+  };
 
   return (
     <div className="flex items-center gap-3">
         {balances.map(balance => (
-        <div key={balance.id} className="flex items-center gap-2 bg-stone-800/50 px-3 py-1.5 rounded-full border border-stone-700/60" title={`${balance.name}: ${balance.amount}`}>
-            <span className="text-lg">{balance.icon}</span>
-            <span className="font-semibold text-stone-200">{balance.amount}</span>
-        </div>
+          <BalanceItem key={balance.id} balance={balance} />
         ))}
     </div>
   );

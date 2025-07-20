@@ -1,3 +1,4 @@
+
 import { User, Role, RewardTypeDefinition, RewardCategory, Rank, Trophy, TrophyRequirementType, QuestType, Market, Quest, QuestAvailability, Guild, AppSettings, SidebarConfigItem, GameAsset, ThemeDefinition, ThemeStyle, QuestCompletion, QuestCompletionStatus } from '../types';
 
 export const createMockUsers = (): User[] => {
@@ -245,6 +246,29 @@ export const INITIAL_SETTINGS: AppSettings = {
       link_chat: 'Chat',
     },
     enableAiFeatures: false,
+    rewardValuation: {
+      currency: {
+        enabled: true,
+        baseUnitName: 'USD',
+        baseUnitSymbol: '$',
+        anchorRewardId: 'core-gems',
+        anchorRewardValue: 1,
+        exchangeRates: { 'core-gold': 10, 'core-crystal': 20 },
+      },
+      experience: {
+        enabled: true,
+        baseUnitName: 'Screen Time',
+        baseUnitSymbol: 'hr',
+        anchorRewardId: 'core-diligence',
+        anchorRewardValue: 0.1,
+        exchangeRates: {
+          'core-strength': 0.5,
+          'core-wisdom': 0.5,
+          'core-skill': 0.3333,
+          'core-creative': 0.3333
+        },
+      }
+    },
     chat: {
         enabled: true,
         chatEmoji: '💬',

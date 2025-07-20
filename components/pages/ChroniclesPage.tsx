@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import Card from '../ui/Card';
 import { useAppState } from '../../context/AppContext';
-import { QuestCompletionStatus, Role, PurchaseRequestStatus, AdminAdjustmentType, SystemNotificationType, ChronicleEvent } from '../../types';
+import { QuestCompletionStatus, Role, PurchaseRequestStatus, AdminAdjustmentType, SystemNotificationType, ChronicleEvent, SystemLog } from '../../types';
 import Button from '../ui/Button';
 
 const ChroniclesPage: React.FC = () => {
@@ -11,8 +11,10 @@ const ChroniclesPage: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
 
   if (!currentUser) return null;
-
+  
   const sortedActivities = useMemo(() => {
+    if (!currentUser) return [];
+
     const isDM = currentUser.role === Role.DonegeonMaster;
     const isExplorer = currentUser.role === Role.Explorer;
     const currentGuildId = appMode.mode === 'guild' ? appMode.guildId : undefined;
@@ -26,91 +28,85 @@ const ChroniclesPage: React.FC = () => {
         return { name: reward?.name || 'Unknown', icon: reward?.icon || '❓' };
     };
 
-    const questActivities = questCompletions
-      .filter(c => c.guildId === currentGuildId)
-      .map(c => ({
-        id: c.id, date: c.completedAt, type: 'Quest', userId: c.userId, getUserName: () => getUserName(c.userId), text: `${getUserName(c.userId)} completed "${getQuestTitle(c.questId)}"`, title: getQuestTitle(c.questId), status: c.status, note: c.note,
-    }));
+    const questActivities: ChronicleEvent[] = questCompletions.map(c => {
+        const quest = quests.find(q => q.id === c.questId);
+        return {
+            id: c.id, date: c.completedAt, type: 'Quest', userId: c.userId, title: getQuestTitle(c.questId), status: c.status, note: c.note,
+            icon: quest?.icon || '📜', color: '#3b82f6', guildId: c.guildId, questType: quest?.type
+        };
+    });
 
-    const purchaseActivities = purchaseRequests
-      .filter(p => p.guildId === currentGuildId)
-      .map(p => ({
-        id: p.id, date: p.requestedAt, type: 'Purchase', userId: p.userId, getUserName: () => getUserName(p.userId), text: `${getUserName(p.userId)} purchased "${p.assetDetails.name}"`, title: `Purchased "${p.assetDetails.name}"`, status: p.status, note: undefined,
+    const purchaseActivities: ChronicleEvent[] = purchaseRequests.map(p => ({
+        id: p.id, date: p.requestedAt, type: 'Purchase', userId: p.userId, title: `Purchased "${p.assetDetails.name}"`, status: p.status, note: undefined,
+        icon: gameAssets.find(a => a.id === p.assetId)?.icon || '💰', color: '#a855f7', guildId: p.guildId
     }));
     
-    const trophyActivities = userTrophies
-      .filter(ut => ut.guildId === currentGuildId)
-      .map(ut => ({
-        id: ut.id, date: ut.awardedAt, type: 'Trophy', userId: ut.userId, getUserName: () => getUserName(ut.userId), text: `${getUserName(ut.userId)} was awarded the ${settings.terminology.award.toLowerCase()}: "${getTrophyName(ut.trophyId)}"`, title: `Earned: ${getTrophyName(ut.trophyId)}`, status: "Awarded" as const, note: "Congratulations!",
+    const trophyActivities: ChronicleEvent[] = userTrophies.map(ut => ({
+        id: ut.id, date: ut.awardedAt, type: 'Trophy', userId: ut.userId, title: `Earned: ${getTrophyName(ut.trophyId)}`, status: "Awarded", note: "Congratulations!",
+        icon: trophies.find(t => t.id === ut.trophyId)?.icon || '🏆', color: '#f59e0b', guildId: ut.guildId
     }));
 
-    const adjustmentActivities = adminAdjustments
-        .filter(adj => adj.guildId === currentGuildId)
-        .map(adj => {
-            let text = `received an adjustment from ${getUserName(adj.adjusterId)}`;
-            let title = `Adjustment for ${getUserName(adj.userId)}`;
-            if (adj.type === AdminAdjustmentType.Trophy) {
-                text = `was awarded the ${settings.terminology.award.toLowerCase()} "${getTrophyName(adj.trophyId || '')}" by ${getUserName(adj.adjusterId)}`;
-                title = `Trophy awarded to ${getUserName(adj.userId)}`;
-            }
-            const rewardsText = adj.rewards.map(r => `+${r.amount} ${getRewardDisplay(r.rewardTypeId).icon}`).join(', ');
-            const setbacksText = adj.setbacks.map(s => `-${s.amount} ${getRewardDisplay(s.rewardTypeId).icon}`).join(', ');
+    const adjustmentActivities: ChronicleEvent[] = adminAdjustments.map(adj => {
+        let title = `Adjustment for ${getUserName(adj.userId)}`;
+        if (adj.type === AdminAdjustmentType.Trophy) {
+            title = `Trophy awarded to ${getUserName(adj.userId)}`;
+        }
+        const rewardsText = adj.rewards.map(r => `+${r.amount} ${getRewardDisplay(r.rewardTypeId).icon}`).join(', ');
+        const setbacksText = adj.setbacks.map(s => `-${s.amount} ${getRewardDisplay(s.rewardTypeId).icon}`).join(', ');
 
-            return {
-                id: adj.id, date: adj.adjustedAt, type: 'Adjustment', userId: adj.userId, getUserName: () => getUserName(adj.userId), text, title, status: adj.type, note: `${adj.reason} \n ${rewardsText} ${setbacksText}`.trim()
-            }
-        });
+        return {
+            id: adj.id, date: adj.adjustedAt, type: 'Adjustment', userId: adj.userId, title, status: adj.type, note: `${adj.reason} \n ${rewardsText} ${setbacksText}`.trim(),
+            icon: '🛠️', color: '#64748b', guildId: adj.guildId
+        }
+    });
     
-    const systemLogActivities = systemLogs.map(log => {
+    const systemLogActivities: ChronicleEvent[] = systemLogs.flatMap((log: SystemLog): ChronicleEvent[] => {
       const quest = quests.find(q => q.id === log.questId);
-      if (!quest || quest.guildId !== currentGuildId) return null;
+      if (!quest) return [];
       
       const logType = log.type === 'QUEST_LATE' ? 'became LATE' : 'became INCOMPLETE';
       const setbacksText = log.setbacksApplied.map(s => `-${s.amount} ${getRewardDisplay(s.rewardTypeId).icon}`).join(', ');
       const title = `${settings.terminology.task} ${logType}: "${quest.title}"`
       
-      return {
-        id: log.id,
-        date: log.timestamp,
-        type: 'System',
-        userId: log.userIds.includes(currentUser.id) ? currentUser.id : 'system', 
-        getUserName: () => 'SYSTEM',
-        text: title,
-        title: title,
-        status: log.type,
-        note: `Applied to ${log.userIds.map(getUserName).join(', ')}: ${setbacksText}`,
-      }
-    }).filter((a): a is NonNullable<typeof a> => a !== null);
+      return [{
+        id: log.id, date: log.timestamp, type: 'System', userId: 'system', recipientUserIds: log.userIds, title: title,
+        status: log.type, note: `Applied to ${log.userIds.map(getUserName).join(', ')}: ${setbacksText}`,
+        icon: '⚙️', color: '#ef4444', guildId: quest.guildId,
+      }];
+    });
     
-    const announcementActivities = systemNotifications
-      .filter(n => n.type === SystemNotificationType.Announcement && n.guildId === currentGuildId)
+    const announcementActivities: ChronicleEvent[] = systemNotifications
+      .filter(n => n.type === SystemNotificationType.Announcement)
       .map(n => ({
-        id: n.id,
-        date: n.timestamp,
-        type: 'Announcement',
-        userId: n.senderId,
-        getUserName: () => (n.senderId ? getUserName(n.senderId) : 'System'),
-        text: n.message,
+        id: n.id, date: n.timestamp, type: 'Announcement' as const,
+        userId: n.senderId, recipientUserIds: n.recipientUserIds,
         title: `Announcement to ${getGuildName(n.guildId)}`,
         status: `Sent by ${n.senderId ? getUserName(n.senderId) : 'System'}`,
-        note: n.message,
-        icon: '📢',
-        color: '#a855f7',
+        note: n.message, icon: '📢', color: '#10b981', guildId: n.guildId
       }));
 
-
-    const allActivities = [...questActivities, ...purchaseActivities, ...trophyActivities, ...adjustmentActivities, ...systemLogActivities, ...announcementActivities];
+    const allActivities = [
+        ...questActivities, ...purchaseActivities, ...trophyActivities,
+        ...adjustmentActivities, ...systemLogActivities, ...announcementActivities
+    ];
     
-    let relevantActivities = allActivities;
-    if (isExplorer) {
-        relevantActivities = allActivities.filter(a => a.userId === currentUser.id);
-    } else if (isDM && viewMode === 'personal') {
-        relevantActivities = allActivities.filter(a => a.userId === currentUser.id);
+    // 1. Filter by current scope (Personal vs. Guild)
+    const scopedActivities = allActivities.filter(a => a.guildId === currentGuildId);
+
+    // 2. Filter by user relevance if not in "All Activity" mode
+    let relevantActivities = scopedActivities;
+    if (isExplorer || (isDM && viewMode === 'personal')) {
+        relevantActivities = scopedActivities.filter(a => {
+            const isActor = a.userId === currentUser.id;
+            const isRecipient = a.recipientUserIds?.includes(currentUser.id) ?? false;
+            return isActor || isRecipient;
+        });
     }
     
-    return [...relevantActivities].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    // 3. Sort final list
+    return relevantActivities.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
-  }, [questCompletions, purchaseRequests, userTrophies, adminAdjustments, systemLogs, users, quests, gameAssets, trophies, currentUser, appMode, rewardTypes, viewMode, settings, systemNotifications, guilds]);
+  }, [questCompletions, purchaseRequests, userTrophies, adminAdjustments, systemLogs, systemNotifications, users, quests, gameAssets, trophies, currentUser, appMode, rewardTypes, viewMode, settings, guilds]);
   
   const totalPages = Math.ceil(sortedActivities.length / itemsPerPage);
   const paginatedActivities = sortedActivities.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
@@ -144,6 +140,29 @@ const ChroniclesPage: React.FC = () => {
     const date = new Date(dateString);
     if (isNaN(date.getTime())) return dateString; // Invalid date
     return date.toLocaleString('default', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+  };
+  
+  const renderActivityTitle = (activity: ChronicleEvent) => {
+      const userName = activity.userId ? users.find(u => u.id === activity.userId)?.gameName || 'Unknown User' : 'System';
+
+      if (currentUser.role !== Role.Explorer) {
+           return (
+            <span className="text-stone-200" title={activity.title}>
+                <span className="text-accent-light">{userName} </span>
+                <span className="text-stone-300 font-normal">
+                {activity.type === 'Quest' && `completed "${activity.title}"`}
+                {activity.type === 'Purchase' && `purchased "${activity.title}"`}
+                {activity.type === 'Trophy' && `earned "${activity.title}"`}
+                {activity.type === 'Adjustment' && `received an adjustment`}
+                {activity.type === 'System' && `triggered: ${activity.title}`}
+                {activity.type === 'Announcement' && `sent an announcement`}
+                </span>
+            </span>
+           )
+      }
+
+      // Explorer view is simpler
+      return <span className="text-stone-200" title={activity.title}>{activity.title}</span>
   };
 
   return (
@@ -188,8 +207,7 @@ const ChroniclesPage: React.FC = () => {
                       {/* Column 1: Title & Date */}
                       <div className="flex-1 w-2/5">
                           <p className="font-semibold text-stone-200" title={activity.title}>
-                             {currentUser.role !== Role.Explorer && activity.type !== 'System' && <span className="text-accent-light">{activity.getUserName()} </span>}
-                             <span className="text-stone-300 font-normal">{activity.type === 'Quest' ? `completed ` : ''}"{activity.title}"</span>
+                             {renderActivityTitle(activity)}
                           </p>
                           <p className="text-xs text-stone-400 mt-1">{formatTimestamp(activity.date)}</p>
                       </div>

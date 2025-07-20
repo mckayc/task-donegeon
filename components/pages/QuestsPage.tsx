@@ -104,6 +104,16 @@ const QuestItem: React.FC<{ quest: Quest; now: Date; onSelect: (quest: Quest) =>
         timeStatusText = `Late in: ${formatTimeRemaining(lateDeadline, now)}`;
     }
 
+    const absoluteDueDateString = useMemo(() => {
+        if (quest.type === QuestType.Venture && quest.lateDateTime) {
+            return `Due: ${new Date(quest.lateDateTime).toLocaleString([], { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}`;
+        }
+        if (quest.type === QuestType.Duty && quest.lateTime) {
+            return `Due daily at ${new Date(`1970-01-01T${quest.lateTime}`).toLocaleTimeString([], { hour: '2-digit', minute:'2-digit' })}`;
+        }
+        return null;
+    }, [quest]);
+
     const isDuty = quest.type === QuestType.Duty;
     let baseCardClass = isDuty ? 'bg-sky-900/30' : 'bg-amber-900/30';
     const optionalClass = quest.isOptional ? 'border-dashed' : '';
@@ -148,6 +158,9 @@ const QuestItem: React.FC<{ quest: Quest; now: Date; onSelect: (quest: Quest) =>
                 <div>
                     {timeStatusText && (
                         <p className={`text-xs font-semibold ${timeStatusColor}`}>{timeStatusText}</p>
+                    )}
+                    {absoluteDueDateString && (
+                        <p className="text-xs text-stone-400">{absoluteDueDateString}</p>
                     )}
                 </div>
             </div>

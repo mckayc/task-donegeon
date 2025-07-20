@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { RewardCategory, RewardTypeDefinition } from '../../types';
@@ -6,28 +5,38 @@ import Button from '../ui/Button';
 import Card from '../ui/Card';
 import EditRewardTypeDialog from '../rewards/EditRewardTypeDialog';
 import ConfirmDialog from '../ui/ConfirmDialog';
+import { useRewardValuePerUnit } from '../../hooks/useRewardValue';
+
+const RewardItem: React.FC<{ reward: RewardTypeDefinition; onEdit: (reward: RewardTypeDefinition) => void; onDelete: (id: string) => void; }> = ({ reward, onEdit, onDelete }) => {
+    const realValue = useRewardValuePerUnit(reward.id);
+
+    return (
+        <li className="bg-stone-800/60 p-4 rounded-lg flex justify-between items-center">
+            <div>
+                <h4 className="font-bold text-lg text-stone-100 flex items-center gap-3">
+                    <span className="text-2xl">{reward.icon || (reward.category === RewardCategory.Currency ? '💰' : '⭐')}</span>
+                    <span>{reward.name}</span>
+                    <span className="text-xs font-normal px-2 py-0.5 rounded-full bg-emerald-900/50 text-emerald-300">{reward.category}</span>
+                </h4>
+                <p className="text-stone-400 text-sm mt-1">{reward.description}</p>
+                {realValue && <p className="text-xs font-semibold text-amber-300 mt-1">Value: ~ {realValue}</p>}
+            </div>
+            <div className="flex space-x-2">
+                <Button size="sm" variant="secondary" onClick={() => onEdit(reward)}>Edit</Button>
+                {!reward.isCore && (
+                    <Button size="sm" variant="secondary" className="!bg-red-900/50 hover:!bg-red-800/60 text-red-300" onClick={() => onDelete(reward.id)}>Delete</Button>
+                )}
+            </div>
+        </li>
+    );
+};
 
 const RewardList: React.FC<{ title: string; rewards: RewardTypeDefinition[]; onEdit: (reward: RewardTypeDefinition) => void; onDelete: (id: string) => void; }> = ({ title, rewards, onEdit, onDelete }) => (
     <Card title={title}>
         {rewards.length > 0 ? (
             <ul className="space-y-3">
                 {rewards.map(reward => (
-                    <li key={reward.id} className="bg-stone-800/60 p-4 rounded-lg flex justify-between items-center">
-                        <div>
-                            <h4 className="font-bold text-lg text-stone-100 flex items-center gap-3">
-                                <span className="text-2xl">{reward.icon || (reward.category === RewardCategory.Currency ? '💰' : '⭐')}</span>
-                                <span>{reward.name}</span>
-                                <span className="text-xs font-normal px-2 py-0.5 rounded-full bg-emerald-900/50 text-emerald-300">{reward.category}</span>
-                            </h4>
-                            <p className="text-stone-400 text-sm mt-1">{reward.description}</p>
-                        </div>
-                        <div className="flex space-x-2">
-                            <Button size="sm" variant="secondary" onClick={() => onEdit(reward)}>Edit</Button>
-                            {!reward.isCore && (
-                                <Button size="sm" variant="secondary" className="!bg-red-900/50 hover:!bg-red-800/60 text-red-300" onClick={() => onDelete(reward.id)}>Delete</Button>
-                            )}
-                        </div>
-                    </li>
+                   <RewardItem key={reward.id} reward={reward} onEdit={onEdit} onDelete={onDelete} />
                 ))}
             </ul>
         ) : (
@@ -75,24 +84,29 @@ const RewardsPage: React.FC = () => {
 
     return (
         <div className="space-y-6">
-            <Card
-                title="Reward Definitions"
-                headerAction={
-                    <Button onClick={handleCreate} size="sm">
-                        Create New Reward
-                    </Button>
-                }
-            >
-                 <div className="space-y-8">
+            <div className="flex justify-between items-center">
+                <h1 className="text-4xl font-medieval text-stone-100">Reward Definitions</h1>
+                <Button onClick={handleCreate}>
+                    Create New Reward
+                </Button>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Column 1: Currencies */}
+                <div className="space-y-6">
                     <h2 className="text-3xl font-medieval text-emerald-400 border-b-2 border-emerald-800/50 pb-2">Currencies</h2>
                     <RewardList title="Core Currencies" rewards={coreCurrencies} onEdit={handleEdit} onDelete={handleDeleteRequest} />
                     <RewardList title="Custom Currencies" rewards={customCurrencies} onEdit={handleEdit} onDelete={handleDeleteRequest} />
-                    
-                    <h2 className="text-3xl font-medieval text-emerald-400 border-b-2 border-emerald-800/50 pb-2 mt-12">Experience Points (XP)</h2>
+                </div>
+
+                {/* Column 2: XP */}
+                <div className="space-y-6">
+                    <h2 className="text-3xl font-medieval text-emerald-400 border-b-2 border-emerald-800/50 pb-2">Experience Points (XP)</h2>
                     <RewardList title="Core XP Types" rewards={coreXPs} onEdit={handleEdit} onDelete={handleDeleteRequest} />
                     <RewardList title="Custom XP Types" rewards={customXPs} onEdit={handleEdit} onDelete={handleDeleteRequest} />
                 </div>
-            </Card>
+            </div>
+
 
             {isDialogOpen && (
                 <EditRewardTypeDialog

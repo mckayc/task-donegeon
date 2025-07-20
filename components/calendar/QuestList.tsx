@@ -13,6 +13,19 @@ interface QuestListProps {
     onQuestSelect: (quest: Quest) => void;
 }
 
+const getDueDateString = (quest: Quest): string | null => {
+    if (quest.type === QuestType.Venture && quest.lateDateTime) {
+        return `Due: ${new Date(quest.lateDateTime).toLocaleDateString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}`;
+    }
+    if (quest.type === QuestType.Duty && quest.lateTime) {
+        const [hours, minutes] = quest.lateTime.split(':').map(Number);
+        const date = new Date();
+        date.setHours(hours, minutes);
+        return `Due at: ${date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+    }
+    return null;
+};
+
 const QuestList: React.FC<QuestListProps> = ({ title, date, quests, questCompletions, onQuestSelect }) => {
     const { currentUser } = useAppState();
     const isFuture = toYMD(date) > toYMD(new Date());
@@ -38,6 +51,7 @@ const QuestList: React.FC<QuestListProps> = ({ title, date, quests, questComplet
                     const isTodo = quest.type === QuestType.Venture && currentUser && quest.todoUserIds?.includes(currentUser.id);
                     const bgClass = quest.type === QuestType.Duty ? 'bg-sky-900/40' : 'bg-amber-900/30';
                     const borderClass = isTodo ? 'border-2 border-purple-500' : 'border-2 border-transparent';
+                    const dueDateString = getDueDateString(quest);
 
                     return (
                         <button
@@ -50,7 +64,10 @@ const QuestList: React.FC<QuestListProps> = ({ title, date, quests, questComplet
                         >
                             <div className="flex items-center gap-2 overflow-hidden text-left flex-grow">
                                 <span className="text-lg">{quest.icon}</span>
-                                <p className={`text-sm font-semibold text-stone-200 truncate ${!isAvailable ? 'line-through text-stone-400' : ''}`} title={quest.title}>{quest.title}</p>
+                                <div className="overflow-hidden">
+                                    <p className={`text-sm font-semibold text-stone-200 truncate ${!isAvailable ? 'line-through text-stone-400' : ''}`} title={quest.title}>{quest.title}</p>
+                                    {dueDateString && <p className="text-xs text-stone-400 mt-0.5 truncate">{dueDateString}</p>}
+                                </div>
                             </div>
                         </button>
                     );

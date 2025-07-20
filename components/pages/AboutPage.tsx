@@ -1,3 +1,4 @@
+
 import React, { useState, ReactNode } from 'react';
 import Card from '../ui/Card';
 import { useAppState } from '../../context/AppContext';
@@ -24,6 +25,90 @@ const CollapsibleSection: React.FC<{ title: string; children: React.ReactNode; d
     );
 };
 
+const V0_0_87_DATE = new Date(2025, 6, 20);
+const V0_0_86_DATE = new Date(2025, 6, 19);
+const V0_0_85_DATE = new Date(2025, 6, 19);
+const V0_0_84_DATE = new Date(2025, 6, 19);
+const V0_0_83_DATE = new Date(2025, 6, 19);
+const V0_0_82_DATE = new Date(2025, 6, 19);
+const V0_0_81_DATE = new Date(2025, 6, 19);
+const V0_0_80_DATE = new Date(2025, 6, 19);
+
+const VersionHistoryContent: React.FC = () => (
+    <div className="prose prose-invert max-w-none text-stone-300 space-y-4">
+        <div>
+            <h4 className="text-lg font-bold text-stone-100">
+                Version 0.0.87 ({V0_0_87_DATE.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })})
+            </h4>
+            <ul className="list-disc list-inside space-y-2 mt-2">
+                <li><strong>Calendar Day View Enhancement:</strong> Added due date/time information for quests on the main 'Day' view of the calendar, improving at-a-glance scheduling clarity.</li>
+            </ul>
+        </div>
+        <div>
+            <h4 className="text-lg font-bold text-stone-100">
+                Version 0.0.86 ({V0_0_86_DATE.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })})
+            </h4>
+            <ul className="list-disc list-inside space-y-2 mt-2">
+                <li>Enhanced the reward valuation helper in the quest editor to show both anchor and real-world values.</li>
+                <li>Improved the layout of the reward input group for better usability.</li>
+                <li>Updated default economic values for currencies and experience points.</li>
+                <li>Added an explanatory note to the "Economy & Valuation" settings page.</li>
+            </ul>
+        </div>
+        <div>
+            <h4 className="text-lg font-bold text-stone-100">
+                Version 0.0.85 ({V0_0_85_DATE.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })})
+            </h4>
+            <ul className="list-disc list-inside space-y-2 mt-2">
+                <li>A new feature has been added to the `Asset Manager` page, allowing administrators to dynamically import curated image packs directly from the project's GitHub repository. This keeps the main application lean while providing easy access to a library of high-quality images.</li>
+            </ul>
+        </div>
+         <div>
+            <h4 className="text-lg font-bold text-stone-100">
+                Version 0.0.84 ({V0_0_84_DATE.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })})
+            </h4>
+            <ul className="list-disc list-inside space-y-2 mt-2">
+                <li>The asset management workflow has been significantly improved. Admins can now specify a category when uploading an image from the `Asset Manager`, and the backend will automatically organize the file into a corresponding sub-folder.</li>
+            </ul>
+        </div>
+         <div>
+            <h4 className="text-lg font-bold text-stone-100">
+                Version 0.0.83 ({V0_0_83_DATE.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })})
+            </h4>
+            <ul className="list-disc list-inside space-y-2 mt-2">
+                <li>The entire backup system has been overhauled for production-grade reliability. Backups are now saved directly on the server's file system, and automated backups run as a reliable server-side process. This provides a durable and persistent way to manage data, especially for self-hosted Docker environments.</li>
+            </ul>
+        </div>
+         <div>
+            <h4 className="text-lg font-bold text-stone-100">
+                Version 0.0.82 ({V0_0_82_DATE.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })})
+            </h4>
+            <ul className="list-disc list-inside space-y-2 mt-2">
+                <li>A comprehensive notification system has been added. Users now see a popup on login detailing new quest assignments, guild announcements from Donegeon Masters, trophies unlocked, and items pending approval. This feature can be toggled in a new "Notifications" section in the settings.</li>
+            </ul>
+        </div>
+        <div>
+            <h4 className="text-lg font-bold text-stone-100">
+                Version 0.0.81 ({V0_0_81_DATE.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })})
+            </h4>
+            <ul className="list-disc list-inside space-y-2 mt-2">
+                <li>Revamped the "About" page with a cleaner, collapsible design.</li>
+                <li>Added a "Roadmap" section detailing future plans for the application.</li>
+                <li>Included a direct link to the project's GitHub repository.</li>
+                <li>Created this "Version History" section to track updates.</li>
+            </ul>
+        </div>
+        <div>
+            <h4 className="text-lg font-bold text-stone-100">
+                Version 0.0.80 ({V0_0_80_DATE.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })})
+            </h4>
+            <ul className="list-disc list-inside space-y-2 mt-2">
+                <li>Initial public version.</li>
+            </ul>
+        </div>
+    </div>
+);
+
 const RoadmapContent: React.FC = () => (
     <div className="prose prose-invert max-w-none text-stone-300 space-y-6">
         <p className="text-sm">Here is the planned development path for Task Donegeon, prioritized for the most impactful features first.</p>
@@ -45,13 +130,12 @@ const RoadmapContent: React.FC = () => (
             <h4 className="text-xl font-bold text-stone-100 font-medieval">Phase 2: Core Gameplay &amp; Personalization</h4>
             <p className="text-xs text-stone-400">This phase introduces major new creative outlets and systems for deeper engagement.</p>
             <ul className="list-disc list-inside space-y-2 mt-2">
-                <li><strong>Theme Creator:</strong> An admin tool to create and edit custom visual themes (colors, fonts, etc.) that can be sold in a market.</li>
                 <li><strong>User-Created Content:</strong> A system allowing Explorers to design their own quests and items, then submit them to admins for approval. This fosters creativity and allows the game world to be co-created by its members.</li>
-                <li><strong>Reward Rarity &amp; Limits:</strong> Ability to specify how many of a certain reward can be claimed, creating rare or one-of-a-kind items.</li>
+                <li><strong>Reward Rarity & Limits:</strong> Ability to specify how many of a certain reward can be claimed, creating rare or one-of-a-kind items.</li>
                 <li><strong>Automated Quest Rotation:</strong> A system for automatically rotating daily or weekly duties among guild members to ensure fair distribution of chores.</li>
             </ul>
         </div>
-        
+
         <div>
             <h4 className="text-xl font-bold text-stone-100 font-medieval">Phase 3: Advanced Systems &amp; World Expansion</h4>
             <p className="text-xs text-stone-400">This phase includes the big, game-changing features that add new dimensions to the world.</p>
@@ -61,7 +145,7 @@ const RoadmapContent: React.FC = () => (
                 <li><strong>Advanced Reporting:</strong> A dedicated reporting dashboard for admins to track user engagement, economic flow, and quest completion rates.</li>
             </ul>
         </div>
-
+        
         <div>
             <h4 className="text-xl font-bold text-stone-100 font-medieval">Phase 4: Platform Maturity &amp; Polish</h4>
             <p className="text-xs text-stone-400">This phase focuses on long-term stability, accessibility, and preparing the app for a wider audience.</p>
@@ -74,97 +158,31 @@ const RoadmapContent: React.FC = () => (
     </div>
 );
 
-const VersionHistoryContent: React.FC = () => (
-    <div className="prose prose-invert max-w-none text-stone-300 space-y-4">
-        <div>
-            <h4 className="text-lg font-bold text-stone-100">Version 0.0.84 (July 20, 2025)</h4>
-            <ul className="list-disc list-inside space-y-2 mt-2">
-                <li><strong>Categorized Frontend Uploads:</strong> When uploading an image from the `Asset Manager` page, you can now specify a category. The backend will automatically save the image into a sub-folder matching the category name, keeping uploads tidy.</li>
-            </ul>
-        </div>
-        <div>
-            <h4 className="text-lg font-bold text-stone-100">Version 0.0.83 (July 19, 2025)</h4>
-            <ul className="list-disc list-inside space-y-2 mt-2">
-                <li><strong>Durable Server-Side Backups:</strong> The entire backup system was overhauled for production-grade reliability. Backups are now saved directly on the server's file system, and automated backups run as a reliable server-side process.</li>
-            </ul>
-        </div>
-        <div>
-            <h4 className="text-lg font-bold text-stone-100">Version 0.0.82 (July 18, 2025)</h4>
-            <ul className="list-disc list-inside space-y-2 mt-2">
-                <li><strong>Login Notifications System:</strong> A comprehensive notification system has been added. Users now see a popup on login detailing new quest assignments, guild announcements, trophies unlocked, and items pending approval. This feature can be toggled in a new "Notifications" section in the settings.</li>
-                <li><strong>DM Announcements:</strong> Donegeon Masters can now send critical messages as "Announcements" from the chat panel, which pushes them to every guild member's login notifications and logs them permanently in the Chronicles.</li>
-            </ul>
-        </div>
-         <div>
-            <h4 className="text-lg font-bold text-stone-100">Version 0.0.81 (July 17, 2025)</h4>
-            <ul className="list-disc list-inside space-y-2 mt-2">
-                <li><strong>Revamped About Page:</strong> The About page has been redesigned for clarity and better organization. The problematic metadata card has been removed, and a new "Version History" section has been added to track past updates.</li>
-                 <li>
-                    <strong>GitHub Link:</strong> Added a direct link to the project's GitHub repository for easy access to the source code, feature suggestions, and bug reports.
-                </li>
-            </ul>
-        </div>
-        <div>
-            <h4 className="text-lg font-bold text-stone-100">Version 0.0.80 (July 16, 2025)</h4>
-            <ul className="list-disc list-inside space-y-2 mt-2">
-                <li><strong>UI Streamlining:</strong> Removed redundant page titles and relocated the Reward Display to the global header for a cleaner, more modern interface and constant visibility of currency and XP.</li>
-                <li><strong>Smarter Card Headers:</strong> Card headers now intelligently become "sticky" only when they contain action buttons, optimizing screen space and improving user experience.</li>
-                <li><strong>Docker Chat Fix:</strong> Resolved a configuration issue where the chat feature would not appear on local Docker instances due to outdated settings in the persistent volume. The app now gracefully merges new settings on startup.</li>
-                <li><strong>Dashboard Cleanup:</strong> Removed "View All" buttons from the Rank and Trophy cards on the dashboard for a more focused, streamlined view.</li>
-            </ul>
-        </div>
-    </div>
-);
 
 const AboutPage: React.FC = () => {
-    const GITHUB_URL = 'https://github.com/mckayc/task-donegeon';
+    const { settings } = useAppState();
 
     return (
-        <div>
-            <CollapsibleSection title="What's New in Version 0.0.85 (July 21, 2025)" defaultOpen>
-                 <div className="prose prose-invert max-w-none text-stone-300 space-y-4">
-                    <p>This release adds a powerful new way to populate your game with high-quality, pre-made images without increasing the size of the application. The new **Image Pack Importer** is now available in the `Asset Manager`.</p>
-                    <ul className="list-disc list-inside space-y-2 pl-4">
-                        <li>
-                            <strong>Fetch from GitHub:</strong> Click a button to fetch a list of available, curated image packs directly from the official Task Donegeon GitHub repository.
-                        </li>
-                        <li>
-                            <strong>Preview and Select:</strong> A new dialog allows you to see a sample image from each pack and select which ones you want to download.
-                        </li>
-                        <li>
-                            <strong>Reliable Backend Import:</strong> The server handles the entire download and organization process, importing all images from the selected packs and sorting them into the correct category folders in your `uploads` directory.
-                        </li>
-                        <li>
-                            <strong>Leaner Application Build:</strong> By fetching assets on demand, the core application and its Docker image remain small and fast to download.
-                        </li>
-                    </ul>
+        <div className="max-w-4xl mx-auto">
+            <Card>
+                <div className="text-center">
+                    <h1 className="text-5xl font-medieval text-accent">{settings.terminology.appName}</h1>
+                    <p className="text-lg text-stone-300 mt-2">A gamified task and chore tracker.</p>
+                    <div className="mt-4">
+                        <a href="https://github.com/mckayc/task-donegeon" target="_blank" rel="noopener noreferrer" className="inline-block bg-stone-700 hover:bg-stone-600 text-white font-bold py-2 px-4 rounded-lg transition-colors">
+                            View on GitHub
+                        </a>
+                    </div>
                 </div>
-            </CollapsibleSection>
+            </Card>
 
-            <CollapsibleSection title="Roadmap">
-                <RoadmapContent />
-            </CollapsibleSection>
-
-            <CollapsibleSection title="Version History">
+            <CollapsibleSection title="Version History" defaultOpen>
                 <VersionHistoryContent />
             </CollapsibleSection>
 
-             <Card className="mt-8">
-                <div className="space-y-4 text-stone-300 leading-relaxed">
-                    <h3 className="text-lg font-semibold text-stone-100 mb-2">Contribute or Report Issues</h3>
-                    <p>
-                        This project is open source. You can view the code, suggest features, or report bugs on our GitHub repository.
-                    </p>
-                    <a 
-                        href={GITHUB_URL} 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        className="inline-block mt-3 text-emerald-400 hover:text-emerald-300 font-bold underline"
-                    >
-                        Visit GitHub Repository &rarr;
-                    </a>
-                </div>
-            </Card>
+             <CollapsibleSection title="Roadmap">
+                <RoadmapContent />
+            </CollapsibleSection>
         </div>
     );
 };

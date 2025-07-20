@@ -54,6 +54,42 @@ const createReward = (data: Partial<RewardTypeDefinition>): RewardTypeDefinition
     name: 'Untitled Reward', description: '', category: RewardCategory.Currency, icon: '💎', isCore: false, ...data
 });
 
+const basicExplorerDuties = [
+    createQuest({ icon: '🛏️', title: 'Make Your Bed & Get Dressed', description: 'Start your day by making your bed and getting fully dressed.', rewards: [{ rewardTypeId: 'core-diligence', amount: 5 }], tags: ['home', 'morning'], lateTime: '09:00' }),
+    createQuest({ icon: '🍳', title: 'Breakfast & Clean Up', description: 'Eat a good breakfast and clean up your spot when you are done.', rewards: [{ rewardTypeId: 'core-diligence', amount: 5 }], tags: ['health', 'morning'], lateTime: '09:30' }),
+    createQuest({ icon: '🦷', title: 'Morning Brush', description: 'Brush your teeth thoroughly to start the day fresh.', rewards: [{ rewardTypeId: 'core-diligence', amount: 3 }], tags: ['health', 'morning'], lateTime: '10:00' }),
+    createQuest({ icon: '🧹', title: 'Tidy Up Time', description: 'Be a detective! Find 10 items that are not in their proper home and return them.', rewards: [{ rewardTypeId: 'core-diligence', amount: 10 }], tags: ['home', 'chore'] }),
+    createQuest({ icon: '🗑️', title: 'Trash Patrol', description: 'Help keep our home clean by finding and disposing of 10 pieces of trash.', rewards: [{ rewardTypeId: 'core-diligence', amount: 10 }], tags: ['home', 'chore'] }),
+    createQuest({ icon: '🧑‍🤝‍🧑', title: 'Sibling Screen-Free Play', description: 'Spend some quality time with a sibling for 20 minutes, no screens allowed! Build, create, or play a game together.', rewards: [{ rewardTypeId: 'core-gems', amount: 15 }], tags: ['social', 'family'] }),
+    createQuest({ icon: '📚', title: '20-Minute Read', description: 'Dive into a good book and explore a new world for 20 minutes.', rewards: [{ rewardTypeId: 'core-wisdom', amount: 10 }], tags: ['learning', 'reading'] }),
+    createQuest({ icon: '😴', title: 'Ready for Bed', description: 'Get ready for bed by putting on your pajamas and brushing your teeth well.', rewards: [{ rewardTypeId: 'core-diligence', amount: 5 }], tags: ['home', 'evening'], lateTime: '21:00' }),
+    createQuest({ icon: '💬', title: 'A Kind Word', description: "Brighten someone's day by giving them a sincere compliment or saying something kind.", rewards: [{ rewardTypeId: 'core-gems', amount: 5 }], tags: ['social', 'family'] }),
+];
+
+const helpingAtHomeVentures = [
+    createQuest({ icon: '🎁', title: 'Donation Drive', description: 'Go through your old toys or clothes and fill a box with items to donate to those in need.', rewards: [{ rewardTypeId: 'core-gems', amount: 30 }], tags: ['home', 'organizing', 'kindness'], type: QuestType.Venture, availabilityType: QuestAvailability.Unlimited }),
+    createQuest({ icon: '🚮', title: 'Declutter Dash', description: 'Declutter your space by filling a box with broken toys or items that can be thrown away.', rewards: [{ rewardTypeId: 'core-diligence', amount: 20 }], tags: ['home', 'organizing', 'chore'], type: QuestType.Venture, availabilityType: QuestAvailability.Unlimited }),
+    createQuest({ icon: '📦', title: 'Storage Specialist', description: "Organize items you want to keep but don't use often by packing them neatly into a storage box.", rewards: [{ rewardTypeId: 'core-diligence', amount: 20 }], tags: ['home', 'organizing'], type: QuestType.Venture, availabilityType: QuestAvailability.Unlimited }),
+    createQuest({ icon: '⚽', title: 'Outdoor Energizer', description: 'Get some fresh air and exercise by playing outside for at least half an hour.', rewards: [{ rewardTypeId: 'core-strength', amount: 15 }], tags: ['outdoors', 'fitness'], type: QuestType.Venture, availabilityType: QuestAvailability.Unlimited }),
+    createQuest({ icon: '🌟', title: 'New Skill Showcase', description: 'Watch a video or read a guide to learn a new skill (like juggling, a magic trick, or a simple recipe) and demonstrate it to a parent.', rewards: [{ rewardTypeId: 'core-skill', amount: 25 }, { rewardTypeId: 'core-wisdom', amount: 10 }], requiresApproval: true, tags: ['learning', 'creative'], type: QuestType.Venture, availabilityType: QuestAvailability.Unlimited }),
+    createQuest({ icon: '🍪', title: 'Family Baker', description: 'With help, bake a tasty treat like cookies or brownies and share them with everyone.', rewards: [{ rewardTypeId: 'core-creative', amount: 20 }, { rewardTypeId: 'core-skill', amount: 10 }], requiresApproval: true, tags: ['kitchen', 'family', 'creative'], type: QuestType.Venture, availabilityType: QuestAvailability.Unlimited }),
+    createQuest({ icon: '💌', title: 'A Note of Kindness', description: "Brighten someone's day by making a thoughtful, handmade card or writing a kind note.", rewards: [{ rewardTypeId: 'core-creative', amount: 10 }, { rewardTypeId: 'core-gems', amount: 10 }], tags: ['creative', 'family', 'kindness'], type: QuestType.Venture, availabilityType: QuestAvailability.Unlimited }),
+];
+
+const outdoorTimeQuests = [
+    createQuest({ icon: '🌳', title: '30 Minutes of Fresh Air', description: 'Get some fresh air and play outside for at least 30 minutes.', rewards: [{ rewardTypeId: 'core-strength', amount: 15 }], tags: ['outdoors', 'fitness'] }),
+    createQuest({ icon: '🚲', title: 'Neighborhood Bike Ride', description: 'Explore the neighborhood on a fun bike ride.', rewards: [{ rewardTypeId: 'core-strength', amount: 20 }], type: QuestType.Venture, availabilityType: QuestAvailability.Unlimited, tags: ['outdoors', 'fitness', 'exploration'] }),
+    createQuest({ icon: '🏞️', title: 'Park Adventure', description: 'Spend some time at a local park, maybe try the swings or slide!', rewards: [{ rewardTypeId: 'core-strength', amount: 10 }, { rewardTypeId: 'core-creative', amount: 5 }], type: QuestType.Venture, availabilityType: QuestAvailability.Unlimited, tags: ['outdoors', 'fun'] }),
+    createQuest({ icon: '🔎', title: 'Nature Scavenger Hunt', description: 'Find three different types of leaves, a cool rock, and a feather.', rewards: [{ rewardTypeId: 'core-wisdom', amount: 15 }], requiresApproval: true, type: QuestType.Venture, availabilityType: QuestAvailability.Unlimited, tags: ['outdoors', 'nature', 'learning'] }),
+];
+
+const schoolworkQuests = [
+    createQuest({ icon: '✍️', title: 'Finish All Homework', description: 'Complete all of your assigned homework for the day.', rewards: [{ rewardTypeId: 'core-wisdom', amount: 20 }], tags: ['school', 'learning'], lateTime: '19:00' }),
+    createQuest({ icon: '🎒', title: 'Pack School Bag', description: 'Make sure your school bag is packed and ready for tomorrow.', rewards: [{ rewardTypeId: 'core-diligence', amount: 5 }], tags: ['school', 'planning'], lateTime: '20:00' }),
+    createQuest({ icon: '🧠', title: 'Study Session', description: 'Spend 30 minutes studying for an upcoming test or quiz.', rewards: [{ rewardTypeId: 'core-wisdom', amount: 25 }], type: QuestType.Venture, availabilityType: QuestAvailability.Unlimited, tags: ['school', 'learning'] }),
+    createQuest({ icon: '🏗️', title: 'Project Progress', description: 'Dedicate one hour to working on a long-term school project.', rewards: [{ rewardTypeId: 'core-wisdom', amount: 30 }, { rewardTypeId: 'core-diligence', amount: 15 }], requiresApproval: true, type: QuestType.Venture, availabilityType: QuestAvailability.Unlimited, tags: ['school', 'learning', 'big project'] }),
+];
+
 const morningQuests = [
     createQuest({ icon: '🛏️', title: 'Sunrise Readiness', description: 'Make your bed and ensure your sleeping area is tidy.', rewards: [{ rewardTypeId: 'core-diligence', amount: 5 }], tags: ['home', 'morning'] }),
     createQuest({ icon: '🥣', title: 'Fuel for the Day', description: 'Eat a healthy breakfast without any distractions like phones or TV.', rewards: [{ rewardTypeId: 'core-strength', amount: 5 }], tags: ['health', 'morning'] }),
@@ -293,6 +329,7 @@ const communityContributorVentures = [
 
 export const libraryPacks: LibraryPack[] = [
     // --- QUESTS ---
+    { id: 'pack-q-basic-explorer', type: 'Quests', title: 'Basic Explorer Duties', emoji: '🛡️', description: 'A great starter pack of daily duties for new adventurers.', color: DUTY_COLOR, assets: { quests: basicExplorerDuties }},
     { id: 'pack-q-morning', type: 'Quests', title: 'Morning Routine', emoji: '☀️', description: 'A set of daily quests to start the day right.', color: DUTY_COLOR, assets: { quests: morningQuests }},
     { id: 'pack-q-kitchen', type: 'Quests', title: 'Kitchen Helper', emoji: '🧑‍🍳', description: 'A collection of kitchen-related chores.', color: DUTY_COLOR, assets: { quests: kitchenQuests }},
     { id: 'pack-q-learning', type: 'Quests', title: 'Learning & Knowledge', emoji: '🧠', description: 'Quests focused on expanding your mind.', color: DUTY_COLOR, assets: { quests: learningQuests }},
@@ -302,8 +339,12 @@ export const libraryPacks: LibraryPack[] = [
     { id: 'pack-q-evening', type: 'Quests', title: 'Evening Wind-Down', emoji: '🌙', description: 'Quests to end the day peacefully and prepared.', color: DUTY_COLOR, assets: { quests: eveningQuests }},
     { id: 'pack-q-kindness', type: 'Quests', title: 'Kindness Crusade', emoji: '💖', description: 'Quests focused on performing acts of kindness.', color: DUTY_COLOR, assets: { quests: kindnessQuests }},
     { id: 'pack-q-secret', type: 'Quests', title: 'Secret Agent Missions', emoji: '🤫', description: 'Fun, imaginative quests with a spy theme.', color: DUTY_COLOR, assets: { quests: secretAgentQuests }},
+    { id: 'pack-q-schoolwork', type: 'Quests', title: 'Schoolwork', emoji: '🏫', description: 'Duties and Ventures related to school, homework, and studying.', color: DUTY_COLOR, assets: { quests: schoolworkQuests }},
+
     
     // --- VENTURE QUESTS ---
+    { id: 'pack-q-helping-home', type: 'Quests', title: 'Helping at Home', emoji: '🏡', description: 'A pack of one-time ventures focused on helping out around the house and with family.', color: VENTURE_COLOR, assets: { quests: helpingAtHomeVentures }},
+    { id: 'pack-q-outdoor-time', type: 'Quests', title: 'Outdoor Time', emoji: '🌲', description: 'A mix of duties and ventures to encourage playing outside.', color: VENTURE_COLOR, assets: { quests: outdoorTimeQuests }},
     { id: 'pack-q-home-ventures', type: 'Quests', title: 'Home Improvement Ventures', emoji: '🛠️', description: 'Larger, one-off projects around the house.', color: VENTURE_COLOR, assets: { quests: homeImprovementVentures }},
     { id: 'pack-q-seasonal-ventures', type: 'Quests', title: 'Seasonal Ventures', emoji: '📅', description: 'One-time quests for specific times of the year.', color: VENTURE_COLOR, assets: { quests: seasonalVentures }},
     { id: 'pack-q-selfcare-ventures', type: 'Quests', title: 'Self-Care Spa Day', emoji: '🛀', description: 'One-time quests focused on relaxation and well-being.', color: VENTURE_COLOR, assets: { quests: selfCareVentures }},

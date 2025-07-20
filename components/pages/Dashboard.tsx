@@ -6,6 +6,7 @@ import Button from '../ui/Button';
 import { isQuestAvailableForUser, isQuestVisibleToUserInMode, fromYMD, getQuestUserStatus, questSorter } from '../../utils/quests';
 import QuestDetailDialog from '../quests/QuestDetailDialog';
 import CompleteQuestDialog from '../quests/CompleteQuestDialog';
+import { useRewardValue } from '../../hooks/useRewardValue';
 
 const Dashboard: React.FC = () => {
     const { currentUser, quests, rewardTypes, users, ranks, userTrophies, trophies, questCompletions, purchaseRequests, appMode, settings } = useAppState();
@@ -189,6 +190,21 @@ const Dashboard: React.FC = () => {
                 return 'text-stone-400';
         }
     };
+    
+    const CurrencyDisplay: React.FC<{currency: {id: string, name: string, icon?: string, amount: number}}> = ({ currency }) => {
+        const realValue = useRewardValue(currency.amount, currency.id);
+        const title = `${currency.name}: ${currency.amount}${realValue ? ` (${realValue})` : ''}`;
+
+        return (
+            <div title={title} className="flex items-baseline justify-between">
+                <span className="text-stone-200 flex items-center gap-2">
+                    <span>{currency.icon}</span>
+                    <span>{currency.name}</span>
+                </span>
+                <span className="font-semibold text-accent-light">{currency.amount}</span>
+            </div>
+        );
+    }
 
     return (
         <div>
@@ -215,13 +231,7 @@ const Dashboard: React.FC = () => {
                                 <h4 className="font-bold text-lg text-stone-300 mb-2 border-b border-stone-700 pb-1 capitalize">{terminology.currency}</h4>
                                 <div className="space-y-2 mt-2">
                                     {userCurrencies.length > 0 ? userCurrencies.map(c => 
-                                        <div key={c.id} className="flex items-baseline justify-between">
-                                            <span className="text-stone-200 flex items-center gap-2">
-                                                <span>{c.icon}</span>
-                                                <span>{c.name}</span>
-                                            </span>
-                                            <span className="font-semibold text-accent-light">{c.amount}</span>
-                                        </div>
+                                        <CurrencyDisplay key={c.id} currency={c} />
                                     ) : <p className="text-stone-400 text-sm italic">None</p>}
                                 </div>
                             </div>

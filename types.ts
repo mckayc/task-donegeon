@@ -336,7 +336,7 @@ export interface Terminology {
   link_chat: string;
 }
 
-export type Page = 'Dashboard' | 'Avatar' | 'Quests' | 'Marketplace' | 'Chronicles' | 'Guild' | 'Calendar' | 'Progress' | 'Trophies' | 'Ranks' | 'Manage Users' | 'Manage Rewards' | 'Manage Quests' | 'Manage Items' | 'Approvals' | 'Manage Markets' | 'Manage Guilds' | 'Settings' | 'Profile' | 'About' | 'Help Guide' | 'Manage Ranks' | 'Manage Trophies' | 'Themes' | 'Data Management' | 'Collection' | 'AI Studio' | 'Appearance'
+export type Page = 'Dashboard' | 'Avatar' | 'Quests' | 'Marketplace' | 'Chronicles' | 'Guild' | 'Calendar' | 'Progress' | 'Trophies' | 'Ranks' | 'Manage Users' | 'Manage Rewards' | 'Manage Quests' | 'Manage Goods' | 'Approvals' | 'Manage Markets' | 'Manage Guilds' | 'Settings' | 'Profile' | 'About' | 'Help Guide' | 'Manage Ranks' | 'Manage Trophies' | 'Themes' | 'Data Management' | 'Collection' | 'AI Studio' | 'Appearance'
 | 'Object Exporter' | 'Asset Manager' | 'Backup & Import' | 'Asset Library'
 | 'Theme Editor' | 'Chat'
 ;

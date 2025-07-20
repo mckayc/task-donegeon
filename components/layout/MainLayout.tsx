@@ -50,7 +50,7 @@ const MainLayout: React.FC = () => {
   const prevUserIdRef = useRef<string | undefined>(undefined);
   
   const ADMIN_ONLY_PAGES: Page[] = [
-    'Manage Users', 'Manage Rewards', 'Manage Quests', 'Manage Items', 'Manage Markets',
+    'Manage Users', 'Manage Rewards', 'Manage Quests', 'Manage Goods', 'Manage Markets',
     'Manage Guilds', 'Manage Ranks', 'Manage Trophies', 'Settings', 'AI Studio',
     'Appearance', 'Theme Editor', 'Object Exporter', 'Asset Manager', 'Backup & Import', 'Asset Library',
   ];
@@ -118,7 +118,7 @@ const MainLayout: React.FC = () => {
       case 'Manage Users': return <UserManagementPage />;
       case 'Manage Rewards': return <RewardsPage />;
       case 'Manage Quests': return <ManageQuestsPage />;
-      case 'Manage Items': return <ManageItemsPage />;
+      case 'Manage Goods': return <ManageItemsPage />;
       case 'Manage Markets': return <ManageMarketsPage />;
       case 'Manage Guilds': return <ManageGuildsPage />;
       case 'Manage Ranks': return <ManageRanksPage />;

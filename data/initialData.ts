@@ -100,8 +100,8 @@ export const INITIAL_MAIN_SIDEBAR_CONFIG: SidebarConfigItem[] = [
   // Content Management Section
   { type: 'header', id: 'header-admin-content', title: 'Content Management', level: 0, role: Role.DonegeonMaster, isVisible: true },
   { type: 'link', id: 'Manage Quests', emoji: '📜', isVisible: true, level: 1, role: Role.DonegeonMaster, termKey: 'link_manage_quests' },
-  { type: 'link', id: 'Manage Items', emoji: '⚔️', isVisible: true, level: 1, role: Role.DonegeonMaster, termKey: 'link_manage_items' },
   { type: 'link', id: 'Manage Markets', emoji: '🛒', isVisible: true, level: 1, role: Role.DonegeonMaster, termKey: 'link_manage_markets' },
+  { type: 'link', id: 'Manage Goods', emoji: '⚔️', isVisible: true, level: 1, role: Role.DonegeonMaster, termKey: 'link_manage_items' },
   { type: 'link', id: 'Manage Trophies', emoji: '🏆', isVisible: true, level: 1, role: Role.DonegeonMaster, termKey: 'link_manage_trophies' },
   { type: 'link', id: 'Manage Ranks', emoji: '🏅', isVisible: true, level: 1, role: Role.DonegeonMaster, termKey: 'link_manage_ranks' },
   { type: 'link', id: 'Manage Rewards', emoji: '💎', isVisible: true, level: 1, role: Role.DonegeonMaster, termKey: 'link_manage_rewards' },
@@ -225,7 +225,7 @@ export const INITIAL_SETTINGS: AppSettings = {
       link_ranks: 'Ranks',
       link_chronicles: 'Chronicles',
       link_manage_quests: 'Manage Quests',
-      link_manage_items: 'Manage Items',
+      link_manage_items: 'Manage Goods',
       link_manage_markets: 'Manage Markets',
       link_manage_rewards: 'Manage Rewards',
       link_manage_ranks: 'Manage Ranks',
@@ -509,7 +509,7 @@ export const createSampleQuests = (users: User[]): Quest[] => {
       assignedUserIds: donegeonMaster ? [donegeonMaster.id] : [], requiresApproval: false, claimedByUserIds: [], dismissals: [],
     },
     {
-      id: 'quest-dm-5', title: 'Stock the Shelves', description: "A marketplace needs goods. Go to 'Manage Items', create a new asset, and then list it for sale in one of the markets.", type: QuestType.Venture, icon: '📦', tags: ['tutorial', 'admin', 'tutorial-donegeon-master'],
+      id: 'quest-dm-5', title: 'Stock the Shelves', description: "A marketplace needs goods. Go to 'Manage Goods', create a new asset, and then list it for sale in one of the markets.", type: QuestType.Venture, icon: '📦', tags: ['tutorial', 'admin', 'tutorial-donegeon-master'],
       rewards: [{ rewardTypeId: 'core-wisdom', amount: 50 }], lateSetbacks: [], incompleteSetbacks: [],
       isActive: true, isOptional: false, availabilityType: QuestAvailability.Unlimited, availabilityCount: 1, weeklyRecurrenceDays: [], monthlyRecurrenceDays: [],
       assignedUserIds: donegeonMaster ? [donegeonMaster.id] : [], requiresApproval: false, claimedByUserIds: [], dismissals: [],

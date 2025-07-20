@@ -6,7 +6,7 @@ on:
   workflow_dispatch:         # manual run from the Actions tab
 
 env:
-  IMAGE_NAME: mckayc/task-donegeon:latest # I added latest. I should update this if it stops working
+  IMAGE_NAME: mckayc/task-donegeon
 
 jobs:
   build-and-push:

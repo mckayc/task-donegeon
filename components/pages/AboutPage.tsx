@@ -25,6 +25,7 @@ const CollapsibleSection: React.FC<{ title: string; children: React.ReactNode; d
     );
 };
 
+const V0_0_88_DATE = new Date(2025, 6, 20);
 const V0_0_87_DATE = new Date(2025, 6, 20);
 const V0_0_86_DATE = new Date(2025, 6, 19);
 const V0_0_85_DATE = new Date(2025, 6, 19);
@@ -36,6 +37,14 @@ const V0_0_80_DATE = new Date(2025, 6, 19);
 
 const VersionHistoryContent: React.FC = () => (
     <div className="prose prose-invert max-w-none text-stone-300 space-y-4">
+        <div>
+            <h4 className="text-lg font-bold text-stone-100">
+                Version 0.0.88 ({V0_0_88_DATE.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })})
+            </h4>
+            <ul className="list-disc list-inside space-y-2 mt-2">
+                <li><strong>Critical Docker Stability Fix:</strong> Resolved a race condition that caused chat messages to not save and the app to become unresponsive in Docker environments. The data saving mechanism is now more robust, preventing server syncs from overwriting unsaved local changes and eliminating the frequent "Failed to fetch" errors.</li>
+            </ul>
+        </div>
         <div>
             <h4 className="text-lg font-bold text-stone-100">
                 Version 0.0.87 ({V0_0_87_DATE.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })})

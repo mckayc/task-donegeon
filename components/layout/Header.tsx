@@ -115,7 +115,7 @@ const Header: React.FC = () => {
       </div>
 
       {/* Center Group */}
-      <div className="hidden md:flex items-center justify-center flex-grow mx-4">
+      <div className="hidden lg:flex items-center justify-center flex-grow mx-4">
         <RewardDisplay />
       </div>
       

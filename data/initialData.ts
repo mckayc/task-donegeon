@@ -1,4 +1,3 @@
-
 import { User, Role, RewardTypeDefinition, RewardCategory, Rank, Trophy, TrophyRequirementType, QuestType, Market, Quest, QuestAvailability, Guild, AppSettings, SidebarConfigItem, GameAsset, ThemeDefinition, ThemeStyle, QuestCompletion, QuestCompletionStatus } from '../types';
 
 export const createMockUsers = (): User[] => {
@@ -154,6 +153,7 @@ export const INITIAL_THEMES: ThemeDefinition[] = Object.entries(rawThemes).map((
 }));
 
 export const INITIAL_SETTINGS: AppSettings = {
+    favicon: '🏰',
     forgivingSetbacks: true,
     vacationMode: {
         enabled: false,

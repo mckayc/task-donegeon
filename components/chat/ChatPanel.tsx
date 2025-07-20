@@ -154,6 +154,7 @@ const ChatPanel: React.FC = () => {
                                     lastDate = msgDate;
                                     const isOwnMessage = msg.senderId === currentUser.id;
                                     const sender = users.find(u => u.id === msg.senderId);
+                                    const isMsgAnnouncement = msg.isAnnouncement && 'isGuild' in activeChatTarget && activeChatTarget.isGuild;
 
                                     return (
                                         <React.Fragment key={msg.id}>
@@ -166,8 +167,15 @@ const ChatPanel: React.FC = () => {
                                                 {!isOwnMessage && 'isGuild' in activeChatTarget && activeChatTarget.isGuild && sender && (
                                                     <Avatar user={sender} className="w-8 h-8 flex-shrink-0 rounded-full overflow-hidden self-start" />
                                                 )}
-                                                <div className={`max-w-xs px-3 py-2 rounded-lg flex flex-col ${isOwnMessage ? 'bg-emerald-700 text-white' : 'bg-stone-600 text-stone-100'}`}>
-                                                    {!isOwnMessage && 'isGuild' in activeChatTarget && activeChatTarget.isGuild && sender && (
+                                                <div className={`max-w-xs px-3 py-2 rounded-lg flex flex-col ${
+                                                    isMsgAnnouncement 
+                                                    ? 'bg-amber-800/60 border border-amber-600'
+                                                    : isOwnMessage ? 'bg-emerald-700 text-white' : 'bg-stone-600 text-stone-100'
+                                                }`}>
+                                                    {isMsgAnnouncement && (
+                                                        <div className="text-xs font-bold text-amber-200 mb-1 border-b border-amber-500/50 pb-1">📢 Announcement</div>
+                                                    )}
+                                                    {!isOwnMessage && 'isGuild' in activeChatTarget && activeChatTarget.isGuild && sender && !isMsgAnnouncement && (
                                                         <p className="text-xs font-bold text-accent-light mb-1">{sender.gameName}</p>
                                                     )}
                                                     <p className="text-sm whitespace-pre-wrap">{msg.message}</p>

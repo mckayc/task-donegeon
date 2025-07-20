@@ -1,4 +1,5 @@
 
+
 import React, { useState, ChangeEvent, ReactNode } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { Role, AppSettings, Terminology, RewardCategory, RewardTypeDefinition, ValuationConfig } from '../../types';
@@ -8,6 +9,7 @@ import Input from '../ui/Input';
 import ToggleSwitch from '../ui/ToggleSwitch';
 import ConfirmDialog from '../ui/ConfirmDialog';
 import { INITIAL_SETTINGS } from '../../data/initialData';
+import EmojiPicker from '../ui/EmojiPicker';
 
 
 const CollapsibleSection: React.FC<{ title: string; children: React.ReactNode; defaultOpen?: boolean; onSave?: () => void; showSavedIndicator?: boolean; }> = ({ title, children, defaultOpen = false, onSave, showSavedIndicator }) => {
@@ -162,6 +164,7 @@ const SettingsPage: React.FC = () => {
     const [formState, setFormState] = useState<AppSettings>(() => JSON.parse(JSON.stringify(settings)));
     const [showSaved, setShowSaved] = useState<string | null>(null);
     const [isResetConfirmOpen, setIsResetConfirmOpen] = useState(false);
+    const [isFaviconPickerOpen, setIsFaviconPickerOpen] = useState(false);
 
     if (currentUser?.role !== Role.DonegeonMaster) {
         return <div className="p-6 rounded-lg" style={{ backgroundColor: 'hsl(var(--color-bg-secondary))' }}><p>You do not have permission to view this page.</p></div>;
@@ -266,6 +269,32 @@ const SettingsPage: React.FC = () => {
                     <div className="flex items-start">
                         <ToggleSwitch enabled={formState.chat.enabled} setEnabled={(val) => handleToggleChange('chat.enabled', val, 'General Settings')} label="Enable Sitewide Chat" />
                         <p className="text-sm ml-6" style={{ color: 'hsl(var(--color-text-secondary))' }}>Allow users to send direct messages and participate in guild chats.</p>
+                    </div>
+
+                    <div className="pt-4 border-t flex items-start" style={{ borderColor: 'hsl(var(--color-border))' }}>
+                        <label className="text-sm font-medium text-stone-300 mr-3 pt-2">Favicon</label>
+                        <div className="relative">
+                            <button
+                                type="button"
+                                onClick={() => setIsFaviconPickerOpen(prev => !prev)}
+                                className="w-14 h-11 text-left px-4 py-2 bg-stone-700 border border-stone-600 rounded-md flex items-center justify-center text-2xl"
+                            >
+                                {formState.favicon}
+                            </button>
+                            {isFaviconPickerOpen && (
+                                <EmojiPicker
+                                    onSelect={(emoji) => {
+                                        const newState = { ...formState, favicon: emoji };
+                                        setFormState(newState);
+                                        updateSettings(newState); // Auto-save
+                                        triggerSavedAnimation('General Settings');
+                                        setIsFaviconPickerOpen(false);
+                                    }}
+                                    onClose={() => setIsFaviconPickerOpen(false)}
+                                />
+                            )}
+                        </div>
+                        <p className="text-sm ml-6 pt-2" style={{ color: 'hsl(var(--color-text-secondary))' }}>Choose an emoji to represent your app in the browser tab.</p>
                     </div>
 
                     <div className="pt-4 border-t flex items-start" style={{ borderColor: 'hsl(var(--color-border))' }}>

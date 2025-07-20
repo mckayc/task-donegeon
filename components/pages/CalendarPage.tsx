@@ -66,7 +66,7 @@ const CalendarPage: React.FC = () => {
         if (mode === 'chronicles') {
             switch (view) {
                 case 'day': return <ChroniclesDayView currentDate={currentDate} />;
-                case 'week': return <ChroniclesWeekView currentDate={currentDate} />;
+                case 'week': return <div className="overflow-x-auto scrollbar-hide"><ChroniclesWeekView currentDate={currentDate} /></div>;
                 case 'month': return <ChroniclesMonthView currentDate={currentDate} />;
                 default: return null;
             }
@@ -74,7 +74,7 @@ const CalendarPage: React.FC = () => {
 
         switch (view) {
             case 'month': return <MonthView currentDate={currentDate} quests={filteredQuests} questCompletions={questCompletions} />;
-            case 'week': return <WeekView currentDate={currentDate} quests={filteredQuests} questCompletions={questCompletions} />;
+            case 'week': return <div className="overflow-x-auto scrollbar-hide"><WeekView currentDate={currentDate} quests={filteredQuests} questCompletions={questCompletions} /></div>;
             case 'day': return <DayView currentDate={currentDate} quests={filteredQuests} questCompletions={questCompletions} />;
             default: return null;
         }

@@ -112,6 +112,12 @@ const initializeDatabase = async () => {
     }
 };
 
+// Initialize DB immediately when the module loads
+initializeDatabase().catch(err => {
+    console.error("Critical error during database initialization:", err);
+    process.exit(1);
+});
+
 
 // === API ROUTES ===
 
@@ -518,9 +524,8 @@ const runAutomatedBackup = async () => {
 // === Start Server ===
 // This part is ignored by Vercel but used for local development
 if (process.env.NODE_ENV !== 'production' || process.env.VERCEL !== '1') {
-    app.listen(port, async () => {
+    app.listen(port, () => {
         console.log(`Task Donegeon backend listening at http://localhost:${port}`);
-        await initializeDatabase();
         // Start automated backup timer (checks every 30 minutes)
         setInterval(runAutomatedBackup, 30 * 60 * 1000);
     });

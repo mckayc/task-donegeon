@@ -377,6 +377,7 @@ export interface RewardValuationSettings {
 }
 
 export interface AppSettings {
+  favicon: string;
   forgivingSetbacks: boolean;
   vacationMode: {
     enabled: boolean;
@@ -491,6 +492,7 @@ export interface ChatMessage {
   message: string;
   timestamp: string;
   readBy: string[]; // Array of user IDs who have read it
+  isAnnouncement?: boolean;
 }
 
 export interface IAppData {

@@ -41,6 +41,19 @@ const App: React.FC = () => {
     document.body.dataset.theme = activeThemeId;
   }, [settings.theme, currentUser, appMode, guilds, themes]);
 
+  useEffect(() => {
+    if (settings.favicon) {
+      let link = document.querySelector("link[rel~='icon']") as HTMLLinkElement | null;
+      if (!link) {
+        link = document.createElement('link');
+        link.rel = 'icon';
+        document.head.appendChild(link);
+      }
+      const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">${settings.favicon}</text></svg>`;
+      link.href = `data:image/svg+xml,${encodeURIComponent(svg)}`;
+    }
+  }, [settings.favicon]);
+
 
   if (!isDataLoaded) {
     return (

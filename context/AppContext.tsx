@@ -907,7 +907,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       senderId: currentUser.id,
       timestamp: new Date().toISOString(),
       readBy: [currentUser.id], // Sender has read their own message
-      ...chatMessageData
+      ...chatMessageData,
+      isAnnouncement: isAnnouncement || undefined,
     };
 
     if (isAnnouncement && message.guildId) {

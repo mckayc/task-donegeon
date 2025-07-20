@@ -156,6 +156,10 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   // === DATA PERSISTENCE ===
   const appData = useMemo((): IAppData => ({ users, quests, markets, rewardTypes, questCompletions, purchaseRequests, guilds, ranks, trophies, userTrophies, adminAdjustments, gameAssets, systemLogs, settings, themes, loginHistory, chatMessages, systemNotifications }), [users, quests, markets, rewardTypes, questCompletions, purchaseRequests, guilds, ranks, trophies, userTrophies, adminAdjustments, gameAssets, systemLogs, settings, themes, loginHistory, chatMessages, systemNotifications]);
   const debouncedAppData = useDebounce(appData, 500);
+    const addNotification = useCallback((notification: Omit<Notification, 'id'>) => {
+    const uniqueId = `notif-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+    setNotifications(prev => [...prev, { ...notification, id: uniqueId }]);
+  }, []);
 
   useEffect(() => {
     (async () => {
@@ -308,23 +312,26 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
     const saveData = async () => {
       try { 
-        await window.fetch('/api/data/save', { 
+        const response = await window.fetch('/api/data/save', { 
             method: 'POST', 
             headers: { 'Content-Type': 'application/json' }, 
             body: JSON.stringify(debouncedAppData) 
         }); 
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({ error: 'Failed to parse error from server.'}));
+            throw new Error(errorData.error || `Server responded with status ${response.status}`);
+        }
       } 
-      catch (error) { console.error("Failed to save data:", error); }
+      catch (error) { 
+        console.error("Failed to save data:", error);
+        addNotification({ type: 'error', message: `Data save failed: ${error instanceof Error ? error.message : 'Unknown error'}` });
+      }
     };
     saveData();
-  }, [debouncedAppData, isDataLoaded, isRestoring]); // Add isRestoring dependency
+  }, [debouncedAppData, isDataLoaded, isRestoring, addNotification]);
 
 
   // === BUSINESS LOGIC / DISPATCH FUNCTIONS ===
-  const addNotification = useCallback((notification: Omit<Notification, 'id'>) => {
-    const uniqueId = `notif-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
-    setNotifications(prev => [...prev, { ...notification, id: uniqueId }]);
-  }, []);
 
   const addSystemNotification = useCallback((notification: Omit<SystemNotification, 'id' | 'timestamp' | 'readByUserIds'>) => {
     if (!notification.recipientUserIds || notification.recipientUserIds.length === 0) return;

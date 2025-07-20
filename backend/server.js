@@ -1,4 +1,5 @@
 
+
 const express = require('express');
 const cors = require('cors');
 const { Pool } = require('pg');
@@ -139,22 +140,44 @@ app.get('/api/metadata', async (req, res, next) => {
 
 // Load data
 app.get('/api/data/load', async (req, res, next) => {
+    console.log(`[${new Date().toISOString()}] Received GET /api/data/load`);
     try {
         const result = await pool.query('SELECT key, value FROM app_data');
-        res.status(200).json(result.rows[0]?.value || {});
-    } catch (err) { next(err); }
+        const data = result.rows[0]?.value || {};
+        const chatMessagesCount = data.chatMessages?.length || 0;
+        console.log(`[${new Date().toISOString()}] Loading data success. Chat messages in DB: ${chatMessagesCount}.`);
+        res.status(200).json(data);
+    } catch (err) {
+        console.error(`[${new Date().toISOString()}] ERROR in GET /api/data/load:`, err);
+        next(err);
+    }
 });
 
 // Save data
 app.post('/api/data/save', async (req, res, next) => {
+    console.log(`[${new Date().toISOString()}] Received POST /api/data/save`);
     try {
-        const dataToSave = JSON.stringify(req.body);
+        const dataToSave = req.body;
+        if (!dataToSave || typeof dataToSave !== 'object') {
+            console.error(`[${new Date().toISOString()}] Invalid data received for saving.`);
+            return res.status(400).json({ error: 'Invalid data format. Expected a JSON object.' });
+        }
+        const chatMessagesCount = dataToSave.chatMessages?.length || 0;
+        console.log(`[${new Date().toISOString()}] Attempting to save data. Chat messages received: ${chatMessagesCount}.`);
+
+        const dataString = JSON.stringify(dataToSave);
+        
         await pool.query(
             `INSERT INTO app_data (key, value) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET value = $2;`,
-            ['app_state', dataToSave]
+            ['app_state', dataString]
         );
+
+        console.log(`[${new Date().toISOString()}] Save data success. Persisted ${chatMessagesCount} chat messages.`);
         res.status(200).json({ message: 'Data saved successfully.' });
-    } catch (err) { next(err); }
+    } catch (err) {
+        console.error(`[${new Date().toISOString()}] ERROR in POST /api/data/save:`, err);
+        next(err);
+    }
 });
 
 // --- Backup Endpoints ---

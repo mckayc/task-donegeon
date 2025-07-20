@@ -109,6 +109,17 @@ interface AppDispatch {
 const AppStateContext = createContext<AppState | undefined>(undefined);
 const AppDispatchContext = createContext<AppDispatch | undefined>(undefined);
 
+const debounce = <F extends (...args: any[]) => any>(func: F, waitFor: number) => {
+    let timeout: NodeJS.Timeout | null = null;
+    const debounced = (...args: Parameters<F>) => {
+        if (timeout !== null) {
+            clearTimeout(timeout);
+        }
+        timeout = setTimeout(() => func(...args), waitFor);
+    };
+    return debounced as (...args: Parameters<F>) => void;
+};
+
 export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   // === STATE MANAGEMENT ===
   const [users, setUsers] = useState<User[]>([]);
@@ -149,12 +160,21 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [isChatOpen, setIsChatOpen] = useState(false);
   const inactivityTimer = useRef<number | null>(null);
   const stateRef = useRef<AppState | null>(null);
+  
+  // State for debounced saving and sync management
+  const [isDirty, setIsDirty] = useState(false);
+  const isDirtyRef = useRef(isDirty);
+  isDirtyRef.current = isDirty;
+  const appDataRef = useRef<IAppData | null>(null);
+  const initialLoadCompleted = useRef(false);
 
   const isFirstRun = isDataLoaded && !users.some(u => u.role === Role.DonegeonMaster);
 
   // === DATA PERSISTENCE ===
   const appData = useMemo((): IAppData => ({ users, quests, markets, rewardTypes, questCompletions, purchaseRequests, guilds, ranks, trophies, userTrophies, adminAdjustments, gameAssets, systemLogs, settings, themes, loginHistory, chatMessages, systemNotifications }), [users, quests, markets, rewardTypes, questCompletions, purchaseRequests, guilds, ranks, trophies, userTrophies, adminAdjustments, gameAssets, systemLogs, settings, themes, loginHistory, chatMessages, systemNotifications]);
-    const addNotification = useCallback((notification: Omit<Notification, 'id'>) => {
+  appDataRef.current = appData;
+
+  const addNotification = useCallback((notification: Omit<Notification, 'id'>) => {
     const uniqueId = `notif-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
     setNotifications(prev => [...prev, { ...notification, id: uniqueId }]);
   }, []);
@@ -304,29 +324,40 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     })();
   }, []);
 
-  useEffect(() => {
-    if (!isDataLoaded || isRestoring) return;
-    if (users.length === 0 && quests.length === 0) return;
-
-    const saveData = async () => {
-      try { 
-        const response = await window.fetch('/api/data/save', { 
-            method: 'POST', 
-            headers: { 'Content-Type': 'application/json' }, 
-            body: JSON.stringify(appData) 
-        }); 
+  // Debounced save logic
+  const saveData = useCallback(async () => {
+    if (!appDataRef.current) return;
+    try {
+        const response = await window.fetch('/api/data/save', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(appDataRef.current)
+        });
         if (!response.ok) {
-            const errorData = await response.json().catch(() => ({ error: 'Failed to parse error from server.'}));
+            const errorData = await response.json().catch(() => ({ error: 'Failed to parse error from server.' }));
             throw new Error(errorData.error || `Server responded with status ${response.status}`);
         }
-      } 
-      catch (error) { 
+        console.log("Data saved successfully.");
+        setIsDirty(false); // Mark as clean on successful save
+    } catch (error) {
         console.error("Failed to save data:", error);
         addNotification({ type: 'error', message: `Data save failed: ${error instanceof Error ? error.message : 'Unknown error'}` });
+        // Keep it dirty so the next change can trigger another save attempt.
+    }
+  }, [addNotification]);
+
+  const debouncedSave = useCallback(debounce(saveData, 1000), [saveData]);
+
+  useEffect(() => {
+      if (isDataLoaded && !isRestoring) {
+          if (!initialLoadCompleted.current) {
+              initialLoadCompleted.current = true;
+              return;
+          }
+          setIsDirty(true);
+          debouncedSave();
       }
-    };
-    saveData();
-  }, [appData, isDataLoaded, isRestoring, addNotification]);
+  }, [appData, isDataLoaded, isRestoring, debouncedSave]);
 
 
   // === BUSINESS LOGIC / DISPATCH FUNCTIONS ===
@@ -360,6 +391,11 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     const syncData = async () => {
       if (document.hidden) {
         return;
+      }
+
+      if (isDirtyRef.current) {
+          console.log("Local data has unsaved changes. Skipping sync to prevent data loss.");
+          return;
       }
 
       setSyncStatus('syncing');

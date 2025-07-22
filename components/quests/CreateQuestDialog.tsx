@@ -22,7 +22,7 @@ const VENTURE_AVAILABILITIES = [QuestAvailability.Frequency, QuestAvailability.U
 
 
 const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialData, onClose }) => {
-  const { users, guilds, rewardTypes, allTags, settings } = useAppState();
+  const { users, guilds, rewardTypes, allTags, settings, questGroups } = useAppState();
   const { addQuest, updateQuest } = useAppDispatch();
 
   const getInitialFormData = () => {
@@ -46,6 +46,7 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
           monthlyRecurrenceDays: questToEdit.monthlyRecurrenceDays || [],
           assignedUserIds: [...questToEdit.assignedUserIds],
           guildId: questToEdit.guildId || '',
+          groupId: questToEdit.groupId || '',
           tags: questToEdit.tags || [],
           lateDateTime: questToEdit.lateDateTime ? questToEdit.lateDateTime.slice(0, 16) : '',
           incompleteDateTime: questToEdit.incompleteDateTime ? questToEdit.incompleteDateTime.slice(0, 16) : '',
@@ -74,6 +75,7 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
         monthlyRecurrenceDays: [] as number[],
         assignedUserIds: [] as string[],
         guildId: '',
+        groupId: '',
         tags: [] as string[],
         lateDateTime: '',
         incompleteDateTime: '',
@@ -160,6 +162,7 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
         incompleteTime: formData.hasDeadlines && formData.type === QuestType.Duty && formData.incompleteTime ? formData.incompleteTime : undefined,
         
         guildId: formData.guildId || undefined,
+        groupId: formData.groupId || undefined,
         availabilityCount: formData.availabilityType === QuestAvailability.Frequency ? formData.availabilityCount : null,
         weeklyRecurrenceDays: formData.availabilityType === QuestAvailability.Weekly ? formData.weeklyRecurrenceDays : [],
         monthlyRecurrenceDays: formData.availabilityType === QuestAvailability.Monthly ? formData.monthlyRecurrenceDays : [],
@@ -229,8 +232,8 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
              <div>
               <label className="block text-sm font-medium text-stone-300 mb-1">Image Icon</label>
               <div className="flex items-center gap-4">
-                <div className="w-16 h-16 bg-stone-700 rounded-md flex items-center justify-center flex-shrink-0">
-                  <DynamicIcon iconType={formData.iconType} icon={formData.icon} imageUrl={formData.imageUrl} className="w-12 h-12 text-4xl" altText="Selected icon" />
+                <div className="w-16 h-16 bg-stone-700 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden">
+                  <DynamicIcon iconType={formData.iconType} icon={formData.icon} imageUrl={formData.imageUrl} className="w-full h-full text-4xl" altText="Selected icon" />
                 </div>
                 <Button type="button" variant="secondary" onClick={() => setIsGalleryOpen(true)}>Select Image</Button>
               </div>
@@ -250,12 +253,21 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
             />
           </div>
 
-          <div className="p-4 bg-stone-900/50 rounded-lg">
-            <h3 className="font-semibold text-stone-200 mb-2">Scope</h3>
-            <select name="guildId" value={formData.guildId} onChange={(e) => setFormData(p => ({...p, guildId: e.target.value}))} className="w-full px-4 py-2 bg-stone-700 border border-stone-600 rounded-md">
-                <option value="">Personal (Available to individuals)</option>
-                {guilds.map(g => <option key={g.id} value={g.id}>{g.name}</option>)}
-            </select>
+          <div className="p-4 bg-stone-900/50 rounded-lg grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <h3 className="font-semibold text-stone-200 mb-2">Scope</h3>
+              <select name="guildId" value={formData.guildId} onChange={(e) => setFormData(p => ({...p, guildId: e.target.value}))} className="w-full px-4 py-2 bg-stone-700 border border-stone-600 rounded-md">
+                  <option value="">Personal (Available to individuals)</option>
+                  {guilds.map(g => <option key={g.id} value={g.id}>{g.name}</option>)}
+              </select>
+            </div>
+            <div>
+                <h3 className="font-semibold text-stone-200 mb-2">Quest Group</h3>
+                 <select name="groupId" value={formData.groupId} onChange={(e) => setFormData(p => ({...p, groupId: e.target.value}))} className="w-full px-4 py-2 bg-stone-700 border border-stone-600 rounded-md">
+                    <option value="">Uncategorized</option>
+                    {questGroups.map(g => <option key={g.id} value={g.id}>{g.name}</option>)}
+                </select>
+            </div>
           </div>
 
           <div>
@@ -329,7 +341,7 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
           <div className="p-4 bg-stone-900/50 rounded-lg space-y-4">
             <div>
               <h3 className="font-semibold text-stone-200 mb-2">Individual User Assignment</h3>
-              <p className="text-sm text-stone-400 mb-3">Leave all unchecked to assign to everyone in scope.</p>
+              <p className="text-sm text-stone-400 mb-3">Leave all unchecked to assign to everyone in scope. Note: Assigning a Quest Group will override this.</p>
               <fieldset className="disabled:opacity-50">
                 <div className="space-y-2 max-h-40 overflow-y-auto border border-stone-700 p-2 rounded-md">
                     {users.map(user => (

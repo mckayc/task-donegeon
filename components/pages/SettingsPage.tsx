@@ -78,6 +78,7 @@ const terminologyLabels: { [key in keyof Terminology]: string } = {
   link_ranks: 'Sidebar: Ranks',
   link_chronicles: 'Sidebar: Chronicles',
   link_manage_quests: 'Sidebar: Manage Quests',
+  link_manage_quest_groups: 'Sidebar: Manage Quest Groups',
   link_manage_items: 'Sidebar: Manage Items',
   link_manage_markets: 'Sidebar: Manage Markets',
   link_manage_rewards: 'Sidebar: Manage Rewards',

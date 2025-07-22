@@ -31,6 +31,18 @@ const AvatarPage: React.FC = () => {
             availableSlots: slotKeys,
         };
     }, [currentUser?.ownedAssetIds, gameAssets]);
+
+    const ownedItemsForProfilePic = useMemo(() => {
+        if (!currentUser) return [];
+        return currentUser.ownedAssetIds
+            .map(id => gameAssets.find(asset => asset.id === id))
+            .filter((asset): asset is GameAsset => !!asset) // Filter out nulls
+            .map(asset => ({
+                url: asset.url,
+                name: asset.name,
+                category: asset.category,
+            }));
+    }, [currentUser, gameAssets]);
     
     const [activeSlot, setActiveSlot] = useState<string>(availableSlots[0] || '');
 
@@ -77,7 +89,7 @@ const AvatarPage: React.FC = () => {
                             <Button onClick={() => document.getElementById('profile-pic-upload')?.click()} disabled={isUploading} className="w-full">
                                 {isUploading ? "Uploading..." : "Upload New Image"}
                             </Button>
-                            <Button variant="secondary" onClick={() => setIsGalleryOpen(true)} className="w-full">Select from Collection</Button>
+                            <Button variant="secondary" onClick={() => setIsGalleryOpen(true)} className="w-full">Select from My Collection</Button>
                              {currentUser.profilePictureUrl && (
                                 <Button variant="secondary" onClick={() => updateUser(currentUser.id, { profilePictureUrl: undefined })} className="w-full !bg-red-900/50 hover:!bg-red-800/60 text-red-300">
                                     Remove Picture
@@ -142,6 +154,7 @@ const AvatarPage: React.FC = () => {
                 <ImageSelectionDialog
                     onSelect={handleProfilePictureSelect}
                     onClose={() => setIsGalleryOpen(false)}
+                    imagePool={ownedItemsForProfilePic}
                 />
             )}
         </div>

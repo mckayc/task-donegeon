@@ -6,6 +6,7 @@ import Button from './Button';
 interface ImageSelectionDialogProps {
   onSelect: (url: string) => void;
   onClose: () => void;
+  imagePool?: LocalGalleryImage[];
 }
 
 interface LocalGalleryImage {
@@ -14,7 +15,7 @@ interface LocalGalleryImage {
     name: string;
 }
 
-const ImageSelectionDialog: React.FC<ImageSelectionDialogProps> = ({ onSelect, onClose }) => {
+const ImageSelectionDialog: React.FC<ImageSelectionDialogProps> = ({ onSelect, onClose, imagePool }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [localGallery, setLocalGallery] = useState<LocalGalleryImage[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -35,8 +36,13 @@ const ImageSelectionDialog: React.FC<ImageSelectionDialogProps> = ({ onSelect, o
     }, []);
 
     useEffect(() => {
-        fetchLocalGallery();
-    }, [fetchLocalGallery]);
+        if (imagePool) {
+            setLocalGallery(imagePool);
+            setIsLoading(false);
+        } else {
+            fetchLocalGallery();
+        }
+    }, [imagePool, fetchLocalGallery]);
 
   const filteredImages = useMemo(() => {
     if (!searchTerm.trim()) {

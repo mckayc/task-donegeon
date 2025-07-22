@@ -144,6 +144,7 @@ const MarketplacePage: React.FC = () => {
     const appState = useAppState();
     const { markets, appMode, activeMarketId, settings, currentUser } = appState;
     const { setActiveMarketId } = useAppDispatch();
+    const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null);
     
     const visibleMarkets = React.useMemo(() => {
         if (!currentUser) return [];
@@ -183,13 +184,26 @@ const MarketplacePage: React.FC = () => {
                         <button key={market.id} onClick={() => setActiveMarketId(market.id)} className="text-left">
                             <Card className="h-full hover:bg-stone-700/50 hover:border-accent transition-colors duration-200">
                                 <div className="flex flex-col items-center text-center">
-                                    <DynamicIcon 
-                                        iconType={market.iconType} 
-                                        icon={market.icon} 
-                                        imageUrl={market.imageUrl} 
-                                        className="w-16 h-16 text-5xl mb-4"
-                                        altText={`${market.title} icon`}
-                                    />
+                                    <div className="w-16 h-16 mb-4 rounded-full overflow-hidden">
+                                        <button
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                if (market.iconType === 'image' && market.imageUrl) {
+                                                    setPreviewImageUrl(market.imageUrl);
+                                                }
+                                            }}
+                                            disabled={market.iconType !== 'image' || !market.imageUrl}
+                                            className="w-full h-full disabled:cursor-default"
+                                        >
+                                            <DynamicIcon 
+                                                iconType={market.iconType} 
+                                                icon={market.icon} 
+                                                imageUrl={market.imageUrl} 
+                                                className="w-full h-full text-5xl"
+                                                altText={`${market.title} icon`}
+                                            />
+                                        </button>
+                                    </div>
                                     <h3 className="text-xl font-bold text-accent-light">{market.title}</h3>
                                     <p className="text-stone-400 mt-2 flex-grow">{market.description}</p>
                                 </div>
@@ -201,6 +215,14 @@ const MarketplacePage: React.FC = () => {
                  <Card>
                     <p className="text-stone-400 text-center">There are no {settings.terminology.stores.toLowerCase()} available in this mode.</p>
                 </Card>
+            )}
+
+            {previewImageUrl && (
+                <ImagePreviewDialog
+                    imageUrl={previewImageUrl}
+                    altText="Market icon preview"
+                    onClose={() => setPreviewImageUrl(null)}
+                />
             )}
         </div>
     );

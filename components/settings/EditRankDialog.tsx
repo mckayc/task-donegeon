@@ -112,12 +112,12 @@ const EditRankDialog: React.FC<EditRankDialogProps> = ({ rank, onClose }) => {
             <div>
               <label className="block text-sm font-medium text-stone-300 mb-1">Image Icon</label>
               <div className="flex items-center gap-4">
-                <div className="w-16 h-16 bg-stone-700 rounded-md flex items-center justify-center flex-shrink-0">
+                <div className="w-16 h-16 bg-stone-700 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden">
                   <DynamicIcon 
                     iconType={formData.iconType} 
                     icon={formData.icon} 
                     imageUrl={formData.imageUrl}
-                    className="w-12 h-12 text-4xl"
+                    className="w-full h-full text-4xl"
                     altText="Selected icon"
                   />
                 </div>

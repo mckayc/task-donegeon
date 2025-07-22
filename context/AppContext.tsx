@@ -1,5 +1,5 @@
 import React, { createContext, useState, useContext, ReactNode, useEffect, useCallback, useMemo, useRef } from 'react';
-import { AppSettings, User, Quest, RewardTypeDefinition, QuestCompletion, RewardItem, Market, PurchaseRequest, Guild, Rank, Trophy, UserTrophy, Notification, AppMode, Page, IAppData, ShareableAssetType, GameAsset, Role, QuestCompletionStatus, RewardCategory, PurchaseRequestStatus, AdminAdjustment, AdminAdjustmentType, SystemLog, QuestType, QuestAvailability, Blueprint, ImportResolution, TrophyRequirementType, ThemeDefinition, ChatMessage, SystemNotification, SystemNotificationType, MarketStatus } from '../types';
+import { AppSettings, User, Quest, RewardTypeDefinition, QuestCompletion, RewardItem, Market, PurchaseRequest, Guild, Rank, Trophy, UserTrophy, Notification, AppMode, Page, IAppData, ShareableAssetType, GameAsset, Role, QuestCompletionStatus, RewardCategory, PurchaseRequestStatus, AdminAdjustment, AdminAdjustmentType, SystemLog, QuestType, QuestAvailability, Blueprint, ImportResolution, TrophyRequirementType, ThemeDefinition, ChatMessage, SystemNotification, SystemNotificationType, MarketStatus, QuestGroup } from '../types';
 import { INITIAL_SETTINGS, createMockUsers, INITIAL_REWARD_TYPES, INITIAL_RANKS, INITIAL_TROPHIES, createSampleMarkets, createSampleQuests, createInitialGuilds, createSampleGameAssets, INITIAL_THEMES, createInitialQuestCompletions } from '../data/initialData';
 import { toYMD } from '../utils/quests';
 import { analyzeBlueprintForConflicts } from '../utils/sharing';
@@ -52,6 +52,10 @@ interface AppDispatch {
   completeQuest: (questId: string, userId: string, rewards: RewardItem[], requiresApproval: boolean, guildId?: string, options?: { note?: string; completionDate?: Date }) => void;
   approveQuestCompletion: (completionId: string, note?: string) => void;
   rejectQuestCompletion: (completionId: string, note?: string) => void;
+  addQuestGroup: (group: Omit<QuestGroup, 'id'>) => void;
+  updateQuestGroup: (group: QuestGroup) => void;
+  deleteQuestGroup: (groupId: string) => void;
+  assignQuestGroupToUsers: (groupId: string, userIds: string[]) => void;
   addRewardType: (rewardType: Omit<RewardTypeDefinition, 'id' | 'isCore'>) => void;
   updateRewardType: (rewardType: RewardTypeDefinition) => void;
   deleteRewardType: (rewardTypeId: string) => void;
@@ -130,6 +134,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   // === STATE MANAGEMENT ===
   const [users, setUsers] = useState<User[]>([]);
   const [quests, setQuests] = useState<Quest[]>([]);
+  const [questGroups, setQuestGroups] = useState<QuestGroup[]>([]);
   const [markets, setMarkets] = useState<Market[]>([]);
   const [rewardTypes, setRewardTypes] = useState<RewardTypeDefinition[]>([]);
   const [questCompletions, setQuestCompletions] = useState<QuestCompletion[]>([]);
@@ -177,7 +182,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const isFirstRun = isDataLoaded && settings.contentVersion < 1;
 
   // === DATA PERSISTENCE ===
-  const appData = useMemo((): IAppData => ({ users, quests, markets, rewardTypes, questCompletions, purchaseRequests, guilds, ranks, trophies, userTrophies, adminAdjustments, gameAssets, systemLogs, settings, themes, loginHistory, chatMessages, systemNotifications }), [users, quests, markets, rewardTypes, questCompletions, purchaseRequests, guilds, ranks, trophies, userTrophies, adminAdjustments, gameAssets, systemLogs, settings, themes, loginHistory, chatMessages, systemNotifications]);
+  const appData = useMemo((): IAppData => ({ users, quests, questGroups, markets, rewardTypes, questCompletions, purchaseRequests, guilds, ranks, trophies, userTrophies, adminAdjustments, gameAssets, systemLogs, settings, themes, loginHistory, chatMessages, systemNotifications }), [users, quests, questGroups, markets, rewardTypes, questCompletions, purchaseRequests, guilds, ranks, trophies, userTrophies, adminAdjustments, gameAssets, systemLogs, settings, themes, loginHistory, chatMessages, systemNotifications]);
   appDataRef.current = appData;
 
   const addNotification = useCallback((notification: Omit<Notification, 'id'>) => {
@@ -208,6 +213,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
                 purchaseRequests: [], guilds: [], ranks: INITIAL_RANKS, trophies: [], userTrophies: [],
                 adminAdjustments: [], gameAssets: [], systemLogs: [], settings: INITIAL_SETTINGS,
                 themes: INITIAL_THEMES, loginHistory: [], chatMessages: [], systemNotifications: [],
+                questGroups: [],
             };
         }
 
@@ -230,6 +236,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             
             setUsers(dataToSet.users || []);
             setQuests(dataToSet.quests || []);
+            setQuestGroups(dataToSet.questGroups || []);
             setMarkets(dataToSet.markets || []);
             setRewardTypes(dataToSet.rewardTypes || []);
             setQuestCompletions(dataToSet.questCompletions || []);
@@ -360,6 +367,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         const currentLocalData = stateRef.current ? {
             users: stateRef.current.users,
             quests: stateRef.current.quests,
+            questGroups: stateRef.current.questGroups,
             markets: stateRef.current.markets,
             rewardTypes: stateRef.current.rewardTypes,
             questCompletions: stateRef.current.questCompletions,
@@ -398,6 +406,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
             setUsers(serverData.users || []);
             setQuests(serverData.quests || []);
+            setQuestGroups(serverData.questGroups || []);
             setMarkets(serverData.markets || []);
             setRewardTypes(serverData.rewardTypes || []);
             setQuestCompletions(serverData.questCompletions || []);
@@ -929,6 +938,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     setSystemLogs([]);
     setAdminAdjustments([]);
     setPurchaseRequests([]);
+    setQuestGroups([]);
     
     // 4. Choice-specific setup
     if (setupChoice === 'guided') {
@@ -944,7 +954,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             setMarkets([exchangeMarket]);
         }
     } else if (setupChoice === 'import' && blueprint) {
-        const freshState: IAppData = { users: [adminUser], quests: [], rewardTypes: INITIAL_REWARD_TYPES, ranks: INITIAL_RANKS, trophies: INITIAL_TROPHIES, userTrophies: [], markets: [], gameAssets: [], questCompletions: [], purchaseRequests: [], guilds: [], adminAdjustments: [], systemLogs: [], settings: INITIAL_SETTINGS, themes: INITIAL_THEMES, loginHistory: [], chatMessages: [], systemNotifications: [] };
+        const freshState: IAppData = { users: [adminUser], quests: [], questGroups: [], rewardTypes: INITIAL_REWARD_TYPES, ranks: INITIAL_RANKS, trophies: INITIAL_TROPHIES, userTrophies: [], markets: [], gameAssets: [], questCompletions: [], purchaseRequests: [], guilds: [], adminAdjustments: [], systemLogs: [], settings: INITIAL_SETTINGS, themes: INITIAL_THEMES, loginHistory: [], chatMessages: [], systemNotifications: [] };
         const resolutions = analyzeBlueprintForConflicts(blueprint, freshState);
         const allKeepResolutions = resolutions.map(r => ({ ...r, resolution: 'keep' as const }));
         importBlueprint(blueprint, allKeepResolutions);
@@ -983,12 +993,47 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
   const clearAllHistory = useCallback(() => { setQuestCompletions([]); setPurchaseRequests([]); setAdminAdjustments([]); setSystemLogs([]); addNotification({ type: 'success', message: 'All historical data has been cleared.' }); }, [addNotification]);
   const resetAllPlayerData = useCallback(() => { setUsers(prev => prev.map(u => u.role !== Role.DonegeonMaster ? { ...u, personalPurse: {}, personalExperience: {}, guildBalances: {}, ownedAssetIds: [], avatar: {} } : u)); setUserTrophies(prev => prev.filter(ut => users.find(u => u.id === ut.userId)?.role === Role.DonegeonMaster)); addNotification({ type: 'success', message: "All player data has been reset." }); }, [users, addNotification]);
-  const deleteAllCustomContent = useCallback(() => { setQuests([]); setMarkets([]); setGameAssets([]); setRewardTypes(p => p.filter(rt => rt.isCore)); setRanks(p => p.filter(r => r.xpThreshold === 0)); setTrophies([]); setGuilds(p => p.filter(g => g.isDefault)); addNotification({ type: 'success', message: 'All custom content has been deleted.' }); }, [addNotification]);
+  const deleteAllCustomContent = useCallback(() => { setQuests([]); setQuestGroups([]); setMarkets([]); setGameAssets([]); setRewardTypes(p => p.filter(rt => rt.isCore)); setRanks(p => p.filter(r => r.xpThreshold === 0)); setTrophies([]); setGuilds(p => p.filter(g => g.isDefault)); addNotification({ type: 'success', message: 'All custom content has been deleted.' }); }, [addNotification]);
   const deleteSelectedAssets = useCallback((selection: Record<ShareableAssetType, string[]>) => { (Object.keys(selection) as ShareableAssetType[]).forEach(assetType => { const ids = new Set(selection[assetType]); if (ids.size > 0) { switch (assetType) { case 'quests': setQuests(p => p.filter(i => !ids.has(i.id))); break; case 'markets': setMarkets(p => p.filter(i => !ids.has(i.id))); break; case 'rewardTypes': setRewardTypes(p => p.filter(i => !ids.has(i.id))); break; case 'ranks': setRanks(p => p.filter(i => !ids.has(i.id))); break; case 'trophies': setTrophies(p => p.filter(i => !ids.has(i.id))); break; case 'gameAssets': setGameAssets(p => p.filter(i => !ids.has(i.id))); break; } } }); addNotification({ type: 'success', message: 'Selected assets have been deleted.' }); }, [addNotification]);
   const deleteQuests = useCallback((questIds: string[]) => { setQuests(prev => prev.filter(q => !questIds.includes(q.id))); addNotification({ type: 'info', message: `${questIds.length} quest(s) deleted.` }); }, [addNotification]);
   const deleteTrophies = useCallback((trophyIds: string[]) => { setTrophies(prev => prev.filter(t => !trophyIds.includes(t.id))); addNotification({ type: 'info', message: `${trophyIds.length} trophy(s) deleted.` }); }, [addNotification]);
   const deleteGameAssets = useCallback((assetIds: string[]) => { setGameAssets(prev => prev.filter(ga => !assetIds.includes(ga.id))); addNotification({ type: 'info', message: `${assetIds.length} asset(s) deleted.` }); }, [addNotification]);
   const updateQuestsStatus = useCallback((questIds: string[], isActive: boolean) => { setQuests(prev => prev.map(q => questIds.includes(q.id) ? { ...q, isActive } : q)); addNotification({ type: 'success', message: `${questIds.length} quest(s) updated.` }); }, [addNotification]);
+
+  // Quest Group Management
+  const addQuestGroup = useCallback((group: Omit<QuestGroup, 'id'>) => { const newGroup: QuestGroup = { ...group, id: `q-group-${Date.now()}-${Math.random().toString(36).substring(2, 9)}` }; setQuestGroups(prev => [...prev, newGroup]); addNotification({ type: 'success', message: `Quest group "${newGroup.name}" created.` }); }, [addNotification]);
+  const updateQuestGroup = useCallback((group: QuestGroup) => { setQuestGroups(prev => prev.map(g => g.id === group.id ? group : g)); addNotification({ type: 'success', message: `Quest group "${group.name}" updated.` }); }, [addNotification]);
+  const deleteQuestGroup = useCallback((groupId: string) => { setQuestGroups(prev => prev.filter(g => g.id !== groupId)); setQuests(prevQuests => prevQuests.map(q => q.groupId === groupId ? { ...q, groupId: undefined } : q)); addNotification({ type: 'info', message: 'Quest group deleted.' }); }, [addNotification]);
+  const assignQuestGroupToUsers = useCallback((groupId: string, userIds: string[]) => {
+    const group = questGroups.find(g => g.id === groupId);
+    if (!group) return;
+
+    setQuests(prevQuests => {
+        const groupQuests = prevQuests.filter(q => q.groupId === groupId);
+
+        if (groupQuests.length > 0) {
+            userIds.forEach(userId => {
+                const newlyAssignedQuests = groupQuests.filter(q => !q.assignedUserIds.includes(userId));
+                if (newlyAssignedQuests.length > 0) {
+                    addSystemNotification({
+                        type: SystemNotificationType.QuestAssigned,
+                        message: `You have been assigned ${newlyAssignedQuests.length} new quest(s) from the "${group.name}" group.`,
+                        recipientUserIds: [userId],
+                        link: 'Quests',
+                    });
+                }
+            });
+        }
+
+        return prevQuests.map(q => {
+            if (q.groupId === groupId) {
+                const newAssignees = Array.from(new Set([...q.assignedUserIds, ...userIds]));
+                return { ...q, assignedUserIds: newAssignees };
+            }
+            return q;
+        });
+    });
+  }, [addSystemNotification, questGroups]);
 
   // Theme Management
   const addTheme = useCallback((theme: Omit<ThemeDefinition, 'id'>) => {
@@ -1098,7 +1143,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
   // === CONTEXT PROVIDER VALUE ===
   const stateValue: AppState = {
-    users, quests, markets, rewardTypes, questCompletions, purchaseRequests, guilds, ranks, trophies, userTrophies, adminAdjustments, gameAssets, systemLogs, settings, themes, loginHistory, chatMessages, systemNotifications,
+    users, quests, questGroups, markets, rewardTypes, questCompletions, purchaseRequests, guilds, ranks, trophies, userTrophies, adminAdjustments, gameAssets, systemLogs, settings, themes, loginHistory, chatMessages, systemNotifications,
     currentUser, isAppUnlocked, isFirstRun, activePage, appMode, notifications, isDataLoaded, activeMarketId, allTags: useMemo(() => Array.from(new Set(quests.flatMap(q => q.tags || []))).sort(), [quests]),
     isSwitchingUser, isSharedViewActive, targetedUserForLogin, isAiConfigured, isSidebarCollapsed,
     syncStatus, syncError, isChatOpen,
@@ -1110,6 +1155,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const dispatchValue: AppDispatch = {
     addUser, updateUser, deleteUser, setCurrentUser, markUserAsOnboarded, setAppUnlocked, setIsSwitchingUser, setTargetedUserForLogin, exitToSharedView, setIsSharedViewActive: _setIsSharedViewActive,
     addQuest, updateQuest, deleteQuest, cloneQuest, dismissQuest, claimQuest, releaseQuest, markQuestAsTodo, unmarkQuestAsTodo, completeQuest, approveQuestCompletion, rejectQuestCompletion,
+    addQuestGroup, updateQuestGroup, deleteQuestGroup, assignQuestGroupToUsers,
     addRewardType, updateRewardType, deleteRewardType, cloneRewardType, addMarket, updateMarket, deleteMarket, cloneMarket, deleteMarkets, updateMarketsStatus, purchaseMarketItem, cancelPurchaseRequest, approvePurchaseRequest, rejectPurchaseRequest,
     addGuild, updateGuild, deleteGuild, setRanks, addTrophy, updateTrophy, deleteTrophy, awardTrophy, applyManualAdjustment, addGameAsset, updateGameAsset, deleteGameAsset, cloneGameAsset,
     addTheme, updateTheme, deleteTheme,

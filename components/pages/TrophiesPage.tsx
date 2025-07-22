@@ -1,13 +1,15 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useAppState } from '../../context/AppContext';
 import { Role, Trophy, UserTrophy, TrophyRequirementType, QuestType, QuestCompletionStatus, Quest, AppMode, User } from '../../types';
 import Card from '../ui/Card';
 import { fromYMD } from '../../utils/quests';
 import EmptyState from '../ui/EmptyState';
 import DynamicIcon from '../ui/DynamicIcon';
+import ImagePreviewDialog from '../ui/ImagePreviewDialog';
 
 const TrophiesPage: React.FC = () => {
     const { currentUser, trophies, userTrophies, appMode, settings, questCompletions, quests, ranks } = useAppState();
+    const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null);
 
     const RequirementStatus: React.FC<{ trophy: Trophy }> = ({ trophy }) => {
         if (!currentUser || trophy.isManual) return null;
@@ -60,8 +62,14 @@ const TrophiesPage: React.FC = () => {
 
     const TrophyCard: React.FC<{ trophy: Trophy & { awardedAt?: string }, isEarned: boolean }> = ({ trophy, isEarned }) => (
         <div className={`bg-stone-800/70 p-4 rounded-lg flex flex-col items-center text-center transition-all duration-200 ${!isEarned ? 'opacity-60' : ''}`}>
-            <div className={`w-20 h-20 mb-4 rounded-full flex items-center justify-center ${isEarned ? 'bg-amber-900/50' : 'bg-stone-700'}`}>
-                <DynamicIcon iconType={trophy.iconType} icon={trophy.icon} imageUrl={trophy.imageUrl} className="w-12 h-12 text-4xl" altText={`${trophy.name} trophy icon`} />
+            <div className={`w-20 h-20 mb-4 rounded-full flex items-center justify-center overflow-hidden ${isEarned ? 'bg-amber-900/50' : 'bg-stone-700'}`}>
+                <button
+                    onClick={() => trophy.iconType === 'image' && trophy.imageUrl && setPreviewImageUrl(trophy.imageUrl)}
+                    disabled={trophy.iconType !== 'image' || !trophy.imageUrl}
+                    className="w-full h-full disabled:cursor-default"
+                >
+                    <DynamicIcon iconType={trophy.iconType} icon={trophy.icon} imageUrl={trophy.imageUrl} className="w-full h-full text-4xl" altText={`${trophy.name} trophy icon`} />
+                </button>
             </div>
             <h4 className={`font-bold text-lg ${isEarned ? 'text-amber-300' : 'text-stone-300'}`}>{trophy.name}</h4>
             <p className="text-stone-400 text-sm mt-1 flex-grow">{trophy.description}</p>
@@ -118,6 +126,14 @@ const TrophiesPage: React.FC = () => {
                     <p className="text-stone-400 text-center py-4">Congratulations! You have earned all available {settings.terminology.awards.toLowerCase()}!</p>
                 )}
             </Card>
+
+            {previewImageUrl && (
+                <ImagePreviewDialog
+                    imageUrl={previewImageUrl}
+                    altText="Trophy icon preview"
+                    onClose={() => setPreviewImageUrl(null)}
+                />
+            )}
         </div>
     );
 };

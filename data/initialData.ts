@@ -101,6 +101,7 @@ export const INITIAL_MAIN_SIDEBAR_CONFIG: SidebarConfigItem[] = [
   // Content Management Section
   { type: 'header', id: 'header-admin-content', title: 'Content Management', level: 0, role: Role.DonegeonMaster, isVisible: true },
   { type: 'link', id: 'Manage Quests', emoji: '📜', isVisible: true, level: 1, role: Role.DonegeonMaster, termKey: 'link_manage_quests' },
+  { type: 'link', id: 'Manage Quest Groups', emoji: '📂', isVisible: true, level: 1, role: Role.DonegeonMaster, termKey: 'link_manage_quest_groups' },
   { type: 'link', id: 'Manage Markets', emoji: '🛒', isVisible: true, level: 1, role: Role.DonegeonMaster, termKey: 'link_manage_markets' },
   { type: 'link', id: 'Manage Goods', emoji: '⚔️', isVisible: true, level: 1, role: Role.DonegeonMaster, termKey: 'link_manage_items' },
   { type: 'link', id: 'Manage Trophies', emoji: '🏆', isVisible: true, level: 1, role: Role.DonegeonMaster, termKey: 'link_manage_trophies' },
@@ -227,6 +228,7 @@ export const INITIAL_SETTINGS: AppSettings = {
       link_ranks: 'Ranks',
       link_chronicles: 'Chronicles',
       link_manage_quests: 'Manage Quests',
+      link_manage_quest_groups: 'Manage Quest Groups',
       link_manage_items: 'Manage Goods',
       link_manage_markets: 'Manage Markets',
       link_manage_rewards: 'Manage Rewards',

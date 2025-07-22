@@ -99,10 +99,18 @@ export interface Quest {
   monthlyRecurrenceDays: number[]; // For Monthly type
   assignedUserIds: string[];
   guildId?: string;
+  groupId?: string;
   requiresApproval: boolean;
   claimedByUserIds: string[];
   dismissals: { userId: string; dismissedAt: string; }[];
   todoUserIds?: string[];
+}
+
+export interface QuestGroup {
+  id: string;
+  name: string;
+  description: string;
+  icon: string;
 }
 
 export enum QuestCompletionStatus {
@@ -370,6 +378,7 @@ export interface Terminology {
   link_ranks: string;
   link_chronicles: string;
   link_manage_quests: string;
+  link_manage_quest_groups: string;
   link_manage_items: string;
   link_manage_markets: string;
   link_manage_rewards: string;
@@ -393,7 +402,7 @@ export interface Terminology {
 
 export type Page = 'Dashboard' | 'Avatar' | 'Quests' | 'Marketplace' | 'Chronicles' | 'Guild' | 'Calendar' | 'Progress' | 'Trophies' | 'Ranks' | 'Manage Users' | 'Manage Rewards' | 'Manage Quests' | 'Manage Goods' | 'Approvals' | 'Manage Markets' | 'Manage Guilds' | 'Settings' | 'Profile' | 'About' | 'Help Guide' | 'Manage Ranks' | 'Manage Trophies' | 'Themes' | 'Data Management' | 'Collection' | 'AI Studio' | 'Appearance'
 | 'Object Exporter' | 'Asset Manager' | 'Backup & Import' | 'Asset Library'
-| 'Theme Editor' | 'Chat'
+| 'Theme Editor' | 'Chat' | 'Manage Quest Groups'
 ;
 
 export interface SidebarLink {
@@ -549,6 +558,7 @@ export interface ChatMessage {
 export interface IAppData {
   users: User[];
   quests: Quest[];
+  questGroups: QuestGroup[];
   markets: Market[];
   rewardTypes: RewardTypeDefinition[];
   questCompletions: QuestCompletion[];

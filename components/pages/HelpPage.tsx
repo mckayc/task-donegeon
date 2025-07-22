@@ -137,6 +137,20 @@ const HelpPage: React.FC = () => {
                         </li>
                     </ul>
 
+                    <h5 className="text-md font-bold text-stone-100 mt-4">Method 3: Importing from the Library (For Docker/Local Installs)</h5>
+                    <p>The "Import from Library" button on the `Asset Manager` page opens a powerful tool for adding curated content packs directly from the project's central repository.</p>
+                    <ol className="list-decimal list-inside space-y-2 pl-4">
+                        <li><strong>Select a Pack:</strong> You'll first see a list of available image packs. Click one to view its contents.</li>
+                        <li><strong>Review and Compare:</strong> The app fetches the list of all files inside the pack and compares them against your existing local image gallery.</li>
+                        <li><strong>Smart Selection:</strong> The next screen shows you all the files, intelligently categorized:
+                            <ul className="list-disc list-inside space-y-1 pl-6 mt-2">
+                                <li><strong className="text-green-400">New Files</strong> are highlighted in green and checked by default, ready for import.</li>
+                                <li><strong className="text-red-400">Duplicate Files</strong> are highlighted in red with their checkbox disabled to prevent accidental re-downloads.</li>
+                            </ul>
+                        </li>
+                        <li><strong>Granular Import:</strong> You can uncheck any new files you don't want. When you click "Import," only the selected new files are downloaded and added to your gallery. This gives you precise control over your asset library.</li>
+                    </ol>
+
                     <p className="font-bold mt-4">Best Practices for Images:</p>
                     <ul className="list-disc list-inside space-y-2 pl-4">
                         <li><strong>Supported Formats:</strong> The app supports standard web image formats like <code>PNG</code>, <code>JPG</code>, <code>GIF</code>, <code>SVG</code>, and <code>WebP</code>.</li>

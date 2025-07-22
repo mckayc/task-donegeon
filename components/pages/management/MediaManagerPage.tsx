@@ -5,7 +5,6 @@ import Button from '../../ui/Button';
 import Card from '../../ui/Card';
 import ConfirmDialog from '../../ui/ConfirmDialog';
 import EditGameAssetDialog from '../../admin/EditGameAssetDialog';
-import { useSettings } from '../../../context/SettingsContext';
 import AiImagePromptHelper from '../../sharing/AiImagePromptHelper';
 import UploadWithCategoryDialog from '../../admin/UploadWithCategoryDialog';
 import ImagePackImporterDialog from '../../admin/ImagePackImporterDialog';
@@ -17,13 +16,10 @@ interface LocalGalleryImage {
 }
 
 const AssetManagerPage: React.FC = () => {
-    const { gameAssets } = useAppState();
-    const { addNotification, uploadFile, deleteGameAsset } = useAppDispatch();
+    const { addNotification, uploadFile } = useAppDispatch();
     const [isDragging, setIsDragging] = useState(false);
     
-    const [editingAsset, setEditingAsset] = useState<GameAsset | null>(null);
     const [assetToCreateData, setAssetToCreateData] = useState<{ url: string; name: string; category: string; } | null>(null);
-    const [deletingAsset, setDeletingAsset] = useState<GameAsset | null>(null);
     const [fileToCategorize, setFileToCategorize] = useState<File | null>(null);
     const [isImporterOpen, setIsImporterOpen] = useState(false);
 
@@ -120,16 +116,7 @@ const AssetManagerPage: React.FC = () => {
         });
     };
     
-    const copyToClipboard = (text: string) => {
-        navigator.clipboard.writeText(text).then(() => {
-            addNotification({ type: 'success', message: 'URL copied to clipboard!'});
-        }, () => {
-            addNotification({ type: 'error', message: 'Failed to copy URL.'});
-        });
-    };
-    
     const handleCloseDialog = () => {
-        setEditingAsset(null);
         setAssetToCreateData(null);
     }
 
@@ -166,7 +153,7 @@ const AssetManagerPage: React.FC = () => {
 
             <Card title="Local Image Gallery">
                 <p className="text-stone-400 text-sm mb-4">
-                    Images from your <code>/uploads</code> folder are shown here. Use sub-folders for automatic categorization. For avatar items, use folders named <code>Avatar-SlotName</code> (e.g., <code>Avatar-hat</code>).
+                    Images from your <code>/uploads</code> folder are shown here. Use sub-folders for automatic categorization. Clicking an image will open the 'Create Asset' dialog.
                 </p>
                 {isGalleryLoading ? (
                     <div className="text-center py-4 text-stone-400">Loading gallery...</div>
@@ -192,30 +179,6 @@ const AssetManagerPage: React.FC = () => {
                     <p className="text-stone-400 text-center py-4">No images found in the gallery. Upload some!</p>
                 )}
             </Card>
-
-
-            <div>
-                <h2 className="text-2xl font-bold text-stone-100 mb-4">Saved Asset Library</h2>
-                {gameAssets.length > 0 ? (
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-                        {gameAssets.map(asset => (
-                            <div key={asset.id} className="bg-stone-800/50 rounded-lg p-3 group relative">
-                                <div className="aspect-square w-full bg-stone-700/50 rounded-md mb-2 flex items-center justify-center overflow-hidden">
-                                    <img src={asset.url} alt={asset.name} className="w-full h-full object-contain" />
-                                </div>
-                                <p className="text-xs text-stone-300 truncate" title={asset.name}>{asset.name}</p>
-                                <div className="absolute inset-0 bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2 p-2">
-                                    <Button variant="secondary" className="text-xs py-1 px-2 w-full" onClick={() => setEditingAsset(asset)}>Edit Details</Button>
-                                    <Button variant="secondary" className="text-xs py-1 px-2 w-full !bg-blue-900/70 hover:!bg-blue-800/80 text-blue-200" onClick={() => copyToClipboard(asset.url)}>Copy URL</Button>
-                                    <Button className="!bg-red-600 hover:!bg-red-500 text-xs py-1 px-2 w-full" onClick={() => setDeletingAsset(asset)}>Delete</Button>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                ) : (
-                    <p className="text-stone-400 text-center py-8">No assets have been saved yet.</p>
-                )}
-            </div>
             
             {fileToCategorize && (
                 <UploadWithCategoryDialog
@@ -226,9 +189,9 @@ const AssetManagerPage: React.FC = () => {
                 />
             )}
 
-            {(editingAsset || assetToCreateData) && (
+            {assetToCreateData && (
                 <EditGameAssetDialog
-                    assetToEdit={editingAsset}
+                    assetToEdit={null}
                     initialData={assetToCreateData}
                     onClose={handleCloseDialog}
                 />
@@ -243,17 +206,6 @@ const AssetManagerPage: React.FC = () => {
                     }}
                 />
             )}
-
-            <ConfirmDialog
-                isOpen={!!deletingAsset}
-                onClose={() => setDeletingAsset(null)}
-                onConfirm={() => {
-                    if (deletingAsset) deleteGameAsset(deletingAsset.id);
-                    setDeletingAsset(null);
-                }}
-                title="Delete Asset"
-                message={`Are you sure you want to delete the asset "${deletingAsset?.name}"? This action cannot be undone.`}
-            />
         </div>
     );
 };

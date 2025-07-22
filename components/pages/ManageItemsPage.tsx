@@ -71,31 +71,8 @@ const ManageItemsPage: React.FC = () => {
         setIsCreateDialogOpen(true);
     };
 
-    const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
-        if (e.target.checked) {
-            setSelectedAssets(gameAssets.map(a => a.id));
-        } else {
-            setSelectedAssets([]);
-        }
-    };
-
-    const handleSelectOne = (id: string, isChecked: boolean) => {
-        if (isChecked) {
-            setSelectedAssets(prev => [...prev, id]);
-        } else {
-            setSelectedAssets(prev => prev.filter(assetId => assetId !== id));
-        }
-    };
-
     const headerActions = (
         <div className="flex items-center gap-2 flex-wrap">
-            {selectedAssets.length > 0 && (
-                 <>
-                    <span className="text-sm font-semibold text-stone-300 px-2">{selectedAssets.length} selected</span>
-                    <Button size="sm" variant="secondary" className="!bg-red-900/50 hover:!bg-red-800/60 text-red-300" onClick={() => handleDeleteRequest(selectedAssets)}>Delete</Button>
-                    <div className="border-l h-6 border-stone-600 mx-2"></div>
-                </>
-            )}
             {isAiAvailable && (
                 <Button size="sm" onClick={() => setIsGeneratorOpen(true)} variant="secondary">
                     Create with AI
@@ -112,50 +89,30 @@ const ManageItemsPage: React.FC = () => {
                 headerAction={headerActions}
             >
                 {gameAssets.length > 0 ? (
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-left">
-                            <thead className="border-b border-stone-700/60">
-                                <tr>
-                                    <th className="p-4 w-12"><input type="checkbox" onChange={handleSelectAll} checked={selectedAssets.length === gameAssets.length && gameAssets.length > 0} className="h-4 w-4 rounded text-emerald-600 bg-stone-700 border-stone-600 focus:ring-emerald-500" /></th>
-                                    <th className="p-4 font-semibold">Preview</th>
-                                    <th className="p-4 font-semibold">Name</th>
-                                    <th className="p-4 font-semibold">Category</th>
-                                    <th className="p-4 font-semibold">For Sale</th>
-                                    <th className="p-4 font-semibold">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {gameAssets.map(asset => (
-                                    <tr key={asset.id} className="border-b border-stone-700/40 last:border-b-0">
-                                        <td className="p-4"><input type="checkbox" checked={selectedAssets.includes(asset.id)} onChange={e => handleSelectOne(asset.id, e.target.checked)} className="h-4 w-4 rounded text-emerald-600 bg-stone-700 border-stone-600 focus:ring-emerald-500" /></td>
-                                        <td className="p-4">
-                                            <div className="w-12 h-12 bg-stone-700 rounded-md overflow-hidden">
-                                                <img src={asset.url} alt={asset.name} className="w-full h-full object-contain" />
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                        {gameAssets.map(asset => (
+                            <div key={asset.id} className="bg-stone-900/40 rounded-lg border border-stone-700/60 flex flex-col group">
+                                <div className="aspect-square w-full bg-stone-700/50 rounded-t-md flex items-center justify-center overflow-hidden relative">
+                                    <img src={asset.url} alt={asset.name} className="w-full h-full object-contain" />
+                                     <div className="absolute top-1 right-1">
+                                        <button onClick={() => setOpenDropdownId(openDropdownId === asset.id ? null : asset.id)} className="p-1.5 rounded-full bg-black/40 hover:bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity">
+                                            <EllipsisVerticalIcon className="w-5 h-5 text-white" />
+                                        </button>
+                                        {openDropdownId === asset.id && (
+                                            <div ref={dropdownRef} className="absolute right-0 mt-2 w-36 bg-stone-900 border border-stone-700 rounded-lg shadow-xl z-20">
+                                                <a href="#" onClick={(e) => { e.preventDefault(); handleEdit(asset); setOpenDropdownId(null); }} className="block px-4 py-2 text-sm text-stone-300 hover:bg-stone-700/50">Edit</a>
+                                                <button onClick={() => { cloneGameAsset(asset.id); setOpenDropdownId(null); }} className="w-full text-left block px-4 py-2 text-sm text-stone-300 hover:bg-stone-700/50">Clone</button>
+                                                <button onClick={() => { handleDeleteRequest([asset.id]); setOpenDropdownId(null); }} className="w-full text-left block px-4 py-2 text-sm text-red-400 hover:bg-stone-700/50">Delete</button>
                                             </div>
-                                        </td>
-                                        <td className="p-4 font-bold">{asset.name}</td>
-                                        <td className="p-4 text-stone-300">{asset.category}</td>
-                                        <td className="p-4">
-                                            <span className={`px-2 py-1 text-xs font-semibold rounded-full ${asset.isForSale ? 'bg-green-500/20 text-green-300' : 'bg-stone-500/20 text-stone-300'}`}>
-                                                {asset.isForSale ? 'Yes' : 'No'}
-                                            </span>
-                                        </td>
-                                        <td className="p-4 relative">
-                                            <button onClick={() => setOpenDropdownId(openDropdownId === asset.id ? null : asset.id)} className="p-2 rounded-full hover:bg-stone-700/50">
-                                                <EllipsisVerticalIcon className="w-5 h-5 text-stone-300" />
-                                            </button>
-                                            {openDropdownId === asset.id && (
-                                                <div ref={dropdownRef} className="absolute right-10 top-0 mt-2 w-36 bg-stone-900 border border-stone-700 rounded-lg shadow-xl z-20">
-                                                    <a href="#" onClick={(e) => { e.preventDefault(); handleEdit(asset); setOpenDropdownId(null); }} className="block px-4 py-2 text-sm text-stone-300 hover:bg-stone-700/50">Edit</a>
-                                                    <button onClick={() => { cloneGameAsset(asset.id); setOpenDropdownId(null); }} className="w-full text-left block px-4 py-2 text-sm text-stone-300 hover:bg-stone-700/50">Clone</button>
-                                                    <button onClick={() => { handleDeleteRequest([asset.id]); setOpenDropdownId(null); }} className="w-full text-left block px-4 py-2 text-sm text-red-400 hover:bg-stone-700/50">Delete</button>
-                                                </div>
-                                            )}
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
+                                        )}
+                                    </div>
+                                </div>
+                                <div className="p-3">
+                                    <p className="font-bold text-stone-200 truncate" title={asset.name}>{asset.name}</p>
+                                    <p className="text-xs text-stone-400">{asset.category}</p>
+                                </div>
+                            </div>
+                        ))}
                     </div>
                 ) : (
                     <EmptyState

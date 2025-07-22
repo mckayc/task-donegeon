@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect, useCallback } from 'react';
 import { useAppState } from '../../context/AppContext';
 import Input from './Input';
 import Button from './Button';
@@ -8,31 +8,45 @@ interface ImageSelectionDialogProps {
   onClose: () => void;
 }
 
-const ImageSelectionDialog: React.FC<ImageSelectionDialogProps> = ({ onSelect, onClose }) => {
-  const { gameAssets } = useAppState();
-  const [searchTerm, setSearchTerm] = useState('');
+interface LocalGalleryImage {
+    url: string;
+    category: string;
+    name: string;
+}
 
-  const uniqueImages = useMemo(() => {
-    const seenUrls = new Set<string>();
-    return gameAssets
-      .filter(asset => {
-        if (!asset.url || seenUrls.has(asset.url)) {
-          return false;
+const ImageSelectionDialog: React.FC<ImageSelectionDialogProps> = ({ onSelect, onClose }) => {
+  const [searchTerm, setSearchTerm] = useState('');
+  const [localGallery, setLocalGallery] = useState<LocalGalleryImage[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  const fetchLocalGallery = useCallback(async () => {
+        setIsLoading(true);
+        try {
+            const response = await fetch('/api/media/local-gallery');
+            if (response.ok) {
+                const data = await response.json();
+                setLocalGallery(data);
+            }
+        } catch (error) {
+            console.error("Failed to fetch local gallery for selection", error);
+        } finally {
+            setIsLoading(false);
         }
-        seenUrls.add(asset.url);
-        return true;
-      })
-      .map(asset => ({ url: asset.url, name: asset.name }));
-  }, [gameAssets]);
+    }, []);
+
+    useEffect(() => {
+        fetchLocalGallery();
+    }, [fetchLocalGallery]);
 
   const filteredImages = useMemo(() => {
     if (!searchTerm.trim()) {
-      return uniqueImages;
+      return localGallery;
     }
-    return uniqueImages.filter(image =>
-      image.name.toLowerCase().includes(searchTerm.toLowerCase())
+    return localGallery.filter(image =>
+      image.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      image.category.toLowerCase().includes(searchTerm.toLowerCase())
     );
-  }, [uniqueImages, searchTerm]);
+  }, [localGallery, searchTerm]);
 
   const handleImageSelect = (url: string) => {
     onSelect(url);
@@ -44,7 +58,7 @@ const ImageSelectionDialog: React.FC<ImageSelectionDialogProps> = ({ onSelect, o
         <div className="p-6 border-b border-stone-700/60 flex-shrink-0">
           <h2 className="text-2xl font-medieval text-accent">Select Existing Image</h2>
           <Input
-            placeholder="Search by asset name..."
+            placeholder="Search by name or category..."
             value={searchTerm}
             onChange={e => setSearchTerm(e.target.value)}
             className="mt-4"
@@ -52,7 +66,9 @@ const ImageSelectionDialog: React.FC<ImageSelectionDialogProps> = ({ onSelect, o
         </div>
 
         <div className="flex-grow p-6 overflow-y-auto scrollbar-hide">
-          {filteredImages.length > 0 ? (
+          {isLoading ? (
+             <div className="flex items-center justify-center h-full"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-400"></div></div>
+          ) : filteredImages.length > 0 ? (
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
               {filteredImages.map((image, index) => (
                 <button

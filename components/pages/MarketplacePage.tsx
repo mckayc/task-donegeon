@@ -35,6 +35,84 @@ const MarketItemView: React.FC<{ market: Market }> = ({ market }) => {
         }
     }, [itemsForSale, sortBy]);
 
+    const ItemCard: React.FC<{ asset: GameAsset }> = ({ asset }) => {
+        const canAffordAny = useMemo(() => {
+            if (!currentUser) return false;
+            const balances = appMode.mode === 'personal'
+                ? { purse: currentUser.personalPurse, experience: currentUser.personalExperience }
+                : currentUser.guildBalances[market.guildId] || { purse: {}, experience: {} };
+            
+            const getBalance = (rewardTypeId: string): number => {
+                const rewardDef = rewardTypes.find(rt => rt.id === rewardTypeId);
+                if (!rewardDef) return 0;
+                return (rewardDef.category === 'Currency' ? balances.purse[rewardTypeId] : balances.experience[rewardTypeId]) || 0;
+            };
+
+            return asset.costGroups.some(group => 
+                group.every(costItem => getBalance(costItem.rewardTypeId) >= costItem.amount)
+            );
+        }, [currentUser, appMode, market.guildId, asset, rewardTypes]);
+
+        const userPurchaseCount = currentUser.ownedAssetIds.filter(id => id === asset.id).length;
+        const isSoldOut = asset.purchaseLimit !== null && asset.purchaseLimitType === 'Total' && asset.purchaseCount >= asset.purchaseLimit;
+        const isUserLimitReached = asset.purchaseLimit !== null && asset.purchaseLimitType === 'PerUser' && userPurchaseCount >= asset.purchaseLimit;
+        const canPurchase = !isSoldOut && !isUserLimitReached;
+
+        let buttonText = 'Purchase';
+        if (isSoldOut) buttonText = 'Sold Out';
+        else if (isUserLimitReached) buttonText = 'Limit Reached';
+        else if (!canAffordAny) buttonText = "Can't Afford";
+
+        return (
+             <div className={`bg-violet-900/30 border-2 border-violet-700/60 rounded-xl shadow-lg flex flex-col h-full ${!canPurchase || !canAffordAny ? 'opacity-60' : ''}`}>
+                <div className="p-4 border-b border-white/10">
+                    <button
+                        onClick={() => setPreviewImageUrl(asset.url)}
+                        className="w-full h-32 bg-black/20 rounded-md mb-3 flex items-center justify-center overflow-hidden group focus:outline-none focus:ring-2 focus:ring-emerald-500 ring-offset-2 ring-offset-violet-900/30"
+                        aria-label={`View larger image of ${asset.name}`}
+                    >
+                        <img src={asset.url} alt={asset.name} className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-200" />
+                    </button>
+                    <h4 className="font-bold text-lg text-stone-100">{asset.name}</h4>
+                    <p className="text-stone-300 text-sm mt-1">{asset.description}</p>
+                </div>
+
+                <div className="p-4 flex-grow space-y-4">
+                    {asset.costGroups.length > 0 && (
+                        <div>
+                            <p className="text-xs font-semibold text-amber-400/80 uppercase tracking-wider">Cost</p>
+                            <div className="space-y-2 mt-1">
+                                {asset.costGroups.map((group, index) => (
+                                    <div key={index}>
+                                        <div className="flex flex-wrap gap-x-3 gap-y-1 text-sm font-semibold">
+                                            {group.map(r => {
+                                                const info = getRewardInfo(r.rewardTypeId);
+                                                return <span key={r.rewardTypeId} className="text-amber-300 flex items-center gap-1" title={info.name}>{r.amount} <span className="text-base">{info.icon}</span></span>
+                                            })}
+                                        </div>
+                                        {index < asset.costGroups.length - 1 && <p className="text-center text-xs font-bold text-stone-400 my-1">OR</p>}
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+                </div>
+                
+                 <div className="text-xs text-stone-400 px-4 pb-2">
+                    {asset.purchaseLimit !== null && asset.purchaseLimitType === 'Total' && <span>Limit: {asset.purchaseLimit} total ({asset.purchaseLimit - asset.purchaseCount} left)</span>}
+                    {asset.purchaseLimit !== null && asset.purchaseLimitType === 'PerUser' && <span>Limit: {asset.purchaseLimit} per person (You own: {userPurchaseCount})</span>}
+                    {asset.requiresApproval && <span className="block text-sky-300 font-semibold">Requires Approval</span>}
+                </div>
+
+                <div className="p-3 mt-auto bg-black/20 border-t border-white/10 flex items-center justify-end gap-2">
+                     <Button className="text-sm py-1 px-3" onClick={() => setItemToPurchase(asset)} disabled={!canPurchase || !canAffordAny}>
+                        {buttonText}
+                    </Button>
+                </div>
+            </div>
+        )
+    };
+
     return (
         <>
             <Card 
@@ -57,65 +135,7 @@ const MarketItemView: React.FC<{ market: Market }> = ({ market }) => {
                 <p className="text-stone-400 mb-6 -mt-2">{market.description}</p>
                 {sortedItems.length > 0 ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                        {sortedItems.map(asset => {
-                            const userPurchaseCount = currentUser.ownedAssetIds.filter(id => id === asset.id).length;
-                            const isSoldOut = asset.purchaseLimit !== null && asset.purchaseLimitType === 'Total' && asset.purchaseCount >= asset.purchaseLimit;
-                            const isUserLimitReached = asset.purchaseLimit !== null && asset.purchaseLimitType === 'PerUser' && userPurchaseCount >= asset.purchaseLimit;
-                            const canPurchase = !isSoldOut && !isUserLimitReached;
-
-                            return (
-                                 <div key={asset.id} className={`bg-violet-900/30 border-2 border-violet-700/60 rounded-xl shadow-lg flex flex-col h-full ${!canPurchase ? 'opacity-60' : ''}`}>
-                                    <div className="p-4 border-b border-white/10">
-                                        <button
-                                            onClick={() => setPreviewImageUrl(asset.url)}
-                                            className="w-full h-32 bg-black/20 rounded-md mb-3 flex items-center justify-center overflow-hidden group focus:outline-none focus:ring-2 focus:ring-emerald-500 ring-offset-2 ring-offset-violet-900/30"
-                                            aria-label={`View larger image of ${asset.name}`}
-                                        >
-                                            <img src={asset.url} alt={asset.name} className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-200" />
-                                        </button>
-                                        <h4 className="font-bold text-lg text-stone-100">{asset.name}</h4>
-                                        <p className="text-stone-300 text-sm mt-1">{asset.description}</p>
-                                    </div>
-
-                                    <div className="p-4 flex-grow space-y-4">
-                                        {asset.costGroups.length > 0 && (
-                                            <div>
-                                                <p className="text-xs font-semibold text-amber-400/80 uppercase tracking-wider">Cost</p>
-                                                <div className="space-y-2 mt-1">
-                                                    {asset.costGroups.map((group, index) => (
-                                                        <div key={index}>
-                                                            <div className="flex flex-wrap gap-x-3 gap-y-1 text-sm font-semibold">
-                                                                {group.map(r => {
-                                                                    const info = getRewardInfo(r.rewardTypeId);
-                                                                    return <span key={r.rewardTypeId} className="text-amber-300 flex items-center gap-1" title={info.name}>{r.amount} <span className="text-base">{info.icon}</span></span>
-                                                                })}
-                                                            </div>
-                                                            {index < asset.costGroups.length - 1 && <p className="text-center text-xs font-bold text-stone-400 my-1">OR</p>}
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                            </div>
-                                        )}
-                                    </div>
-                                    
-                                     <div className="text-xs text-stone-400 px-4 pb-2">
-                                        {asset.purchaseLimit !== null && asset.purchaseLimitType === 'Total' && <span>Limit: {asset.purchaseLimit} total ({asset.purchaseLimit - asset.purchaseCount} left)</span>}
-                                        {asset.purchaseLimit !== null && asset.purchaseLimitType === 'PerUser' && <span>Limit: {asset.purchaseLimit} per person (You own: {userPurchaseCount})</span>}
-                                        {asset.requiresApproval && <span className="block text-sky-300 font-semibold">Requires Approval</span>}
-                                    </div>
-
-                                    <div className="p-3 mt-auto bg-black/20 border-t border-white/10 flex items-center justify-end gap-2">
-                                         {isSoldOut ? (
-                                            <Button className="text-sm py-1 px-3" disabled>Sold Out</Button>
-                                        ) : isUserLimitReached ? (
-                                            <Button className="text-sm py-1 px-3" disabled>Limit Reached</Button>
-                                        ) : (
-                                            <Button className="text-sm py-1 px-3" onClick={() => setItemToPurchase(asset)}>Purchase</Button>
-                                        )}
-                                    </div>
-                                </div>
-                            )
-                        })}
+                        {sortedItems.map(asset => <ItemCard key={asset.id} asset={asset} />)}
                     </div>
                 ) : (
                     <p className="text-stone-400 text-center">This {settings.terminology.store.toLowerCase()} has no items for sale.</p>

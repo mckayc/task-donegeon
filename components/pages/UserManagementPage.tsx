@@ -7,6 +7,7 @@ import EditUserDialog from '../users/EditUserDialog';
 import ManualAdjustmentDialog from '../admin/ManualAdjustmentDialog';
 import Card from '../ui/Card';
 import { EllipsisVerticalIcon } from '../ui/Icons';
+import ConfirmDialog from '../ui/ConfirmDialog';
 
 const UserManagementPage: React.FC = () => {
     const { users, settings, currentUser } = useAppState();
@@ -15,6 +16,7 @@ const UserManagementPage: React.FC = () => {
     const [isEditUserDialogOpen, setIsEditUserDialogOpen] = useState(false);
     const [editingUser, setEditingUser] = useState<User | null>(null);
     const [adjustingUser, setAdjustingUser] = useState<User | null>(null);
+    const [deletingUser, setDeletingUser] = useState<User | null>(null);
     const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
     const dropdownRef = useRef<HTMLDivElement | null>(null);
 
@@ -33,8 +35,15 @@ const UserManagementPage: React.FC = () => {
         setIsEditUserDialogOpen(true);
     };
 
-    const handleDelete = (userId: string) => {
-        deleteUser(userId);
+    const handleDeleteRequest = (user: User) => {
+        setDeletingUser(user);
+    };
+    
+    const handleConfirmDelete = () => {
+        if (deletingUser) {
+            deleteUser(deletingUser.id);
+        }
+        setDeletingUser(null);
     };
 
     const handleAdjust = (user: User) => {
@@ -94,7 +103,7 @@ const UserManagementPage: React.FC = () => {
                                                 {user.id !== currentUser?.id && (
                                                     <>
                                                         <button onClick={() => { handleAdjust(user); setOpenDropdownId(null); }} className="w-full text-left block px-4 py-2 text-sm text-stone-300 hover:bg-stone-700/50">Adjust</button>
-                                                        <button onClick={() => { handleDelete(user.id); setOpenDropdownId(null); }} className="w-full text-left block px-4 py-2 text-sm text-red-400 hover:bg-stone-700/50">Delete</button>
+                                                        <button onClick={() => { handleDeleteRequest(user); setOpenDropdownId(null); }} className="w-full text-left block px-4 py-2 text-sm text-red-400 hover:bg-stone-700/50">Delete</button>
                                                     </>
                                                 )}
                                             </div>
@@ -121,6 +130,15 @@ const UserManagementPage: React.FC = () => {
                 <ManualAdjustmentDialog
                     user={adjustingUser}
                     onClose={() => setAdjustingUser(null)}
+                />
+            )}
+            {deletingUser && (
+                <ConfirmDialog
+                    isOpen={!!deletingUser}
+                    onClose={() => setDeletingUser(null)}
+                    onConfirm={handleConfirmDelete}
+                    title={`Delete ${roleName(deletingUser.role)}`}
+                    message={`Are you sure you want to delete ${deletingUser.role === Role.DonegeonMaster ? `the ${settings.terminology.admin.toLowerCase()}` : `the ${settings.terminology.user.toLowerCase()}`} "${deletingUser.gameName}"? This action is permanent.`}
                 />
             )}
         </div>

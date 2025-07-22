@@ -3,10 +3,11 @@ import { useAppState, useAppDispatch } from '../../context/AppContext';
 import Button from '../ui/Button';
 import Card from '../ui/Card';
 import Input from '../ui/Input';
-import { Role } from '../../types';
+import { Role, User } from '../../types';
+import UserFormFields from '../users/UserFormFields';
 
 const ProfilePage: React.FC = () => {
-    const { currentUser } = useAppState();
+    const { currentUser, users } = useAppState();
     const { updateUser, addNotification } = useAppDispatch();
     
     if (!currentUser) {
@@ -14,6 +15,11 @@ const ProfilePage: React.FC = () => {
     }
 
     const [formData, setFormData] = useState({
+        firstName: currentUser.firstName || '',
+        lastName: currentUser.lastName || '',
+        username: currentUser.username || '',
+        email: currentUser.email || '',
+        birthday: currentUser.birthday || '',
         gameName: currentUser.gameName || '',
         password: '',
         confirmPassword: '',
@@ -32,12 +38,31 @@ const ProfilePage: React.FC = () => {
         e.preventDefault();
         setError('');
 
-        const updatePayload: { gameName?: string; password?: string, pin?: string } = {};
+        const updatePayload: Partial<User> = {};
 
-        if (formData.gameName.trim() && formData.gameName !== currentUser.gameName) {
-            updatePayload.gameName = formData.gameName;
+        // Check for basic info changes
+        if (formData.firstName.trim() && formData.firstName !== currentUser.firstName) updatePayload.firstName = formData.firstName;
+        if (formData.lastName.trim() && formData.lastName !== currentUser.lastName) updatePayload.lastName = formData.lastName;
+        if (formData.birthday.trim() && formData.birthday !== currentUser.birthday) updatePayload.birthday = formData.birthday;
+        if (formData.gameName.trim() && formData.gameName !== currentUser.gameName) updatePayload.gameName = formData.gameName;
+
+        // Validation for username and email
+        if (formData.username.trim() && formData.username !== currentUser.username) {
+            if (users.some(u => u.id !== currentUser.id && u.username.toLowerCase() === formData.username.toLowerCase())) {
+                setError("Username is already taken by another user.");
+                return;
+            }
+            updatePayload.username = formData.username;
+        }
+        if (formData.email.trim() && formData.email !== currentUser.email) {
+             if (users.some(u => u.id !== currentUser.id && u.email.toLowerCase() === formData.email.toLowerCase())) {
+                setError("Email is already in use by another user.");
+                return;
+            }
+            updatePayload.email = formData.email;
         }
 
+        // Validation for password
         if (canEditPassword && formData.password) {
             if (formData.password.length < 6) {
                 setError("New password must be at least 6 characters long.");
@@ -50,6 +75,7 @@ const ProfilePage: React.FC = () => {
             updatePayload.password = formData.password;
         }
         
+        // Validation for PIN
         if (formData.pin !== currentUser.pin) {
             if (formData.pin) { // Setting or changing a PIN
                  if (formData.pin.length < 4 || formData.pin.length > 10 || !/^\d+$/.test(formData.pin)) {
@@ -82,14 +108,13 @@ const ProfilePage: React.FC = () => {
                     <div>
                         <h3 className="text-xl font-bold text-stone-200 mb-4">Account Details</h3>
                         <div className="space-y-4">
-                            <Input 
-                                label="Game Name (Nickname)"
-                                id="gameName"
-                                name="gameName"
-                                value={formData.gameName}
-                                onChange={handleChange}
-                                required
-                            />
+                            <UserFormFields formData={formData} handleChange={handleChange} isEditMode={true} />
+                        </div>
+                    </div>
+                    
+                    <div className="pt-4 border-t border-stone-700/60">
+                        <h3 className="text-xl font-bold text-stone-200 mb-4">Security</h3>
+                         <div className="space-y-4">
                              <Input 
                                 label="New PIN (4-10 digits, optional)"
                                 id="pin"
@@ -105,13 +130,13 @@ const ProfilePage: React.FC = () => {
                                 type="password"
                                 value={formData.confirmPin}
                                 onChange={handleChange}
-                                disabled={!formData.pin}
+                                disabled={!formData.pin || formData.pin === currentUser.pin}
                             />
                             {canEditPassword && (
                                 <>
                                     <div className="pt-4 border-t border-stone-700/60"></div>
                                     <Input 
-                                        label="New Password (optional)"
+                                        label="New Password (optional, min 6 char)"
                                         id="password"
                                         name="password"
                                         type="password"

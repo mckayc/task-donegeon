@@ -796,77 +796,102 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         return;
     }
 
-    if (deductRewards(user.id, cost, market.guildId)) {
-        let wasModified = false;
-        const updatedUser = { ...user };
-
-        // Handle direct payouts (currency exchange)
-        if (asset.payouts && asset.payouts.length > 0) {
-            applyRewards(user.id, asset.payouts, market.guildId);
-            addNotification({ type: 'success', message: `Exchanged for ${asset.name}!` });
-            wasModified = true;
-        }
-
-        // Handle linked theme unlocks
-        if (asset.linkedThemeId && !updatedUser.ownedThemes.includes(asset.linkedThemeId)) {
-            updatedUser.ownedThemes = [...updatedUser.ownedThemes, asset.linkedThemeId];
-            addNotification({ type: 'success', message: `Theme Unlocked: ${asset.name}!` });
-            wasModified = true;
-        }
+    if (asset.requiresApproval) {
+        const newRequest: PurchaseRequest = {
+            id: `purchase-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+            userId: user.id, assetId, requestedAt: new Date().toISOString(), status: PurchaseRequestStatus.Pending,
+            assetDetails: { name: asset.name, description: asset.description, cost }, guildId: market.guildId,
+        };
+        setPurchaseRequests(p => [...p, newRequest]);
+        addNotification({ type: 'info', message: 'Purchase requested. Awaiting approval.' });
         
-        // Handle regular item purchases (if not a pure exchange)
-        if (!asset.payouts || asset.payouts.length === 0) {
-             updatedUser.ownedAssetIds = [...updatedUser.ownedAssetIds, asset.id];
-             addNotification({ type: 'success', message: `Purchased "${asset.name}"!` });
-             wasModified = true;
-        }
+        const recipients = users.filter(u => {
+            const isAdmin = u.role === Role.DonegeonMaster;
+            if (market.guildId) {
+                const guild = guilds.find(g => g.id === market.guildId);
+                return guild?.memberIds.includes(u.id) && isAdmin;
+            }
+            return isAdmin;
+        }).map(u => u.id).filter(id => id !== user.id);
 
-        if (wasModified) {
-            updateUser(user.id, updatedUser);
+        if (recipients.length > 0) {
+            addSystemNotification({
+                type: SystemNotificationType.ApprovalRequired,
+                message: `${user.gameName} requested to purchase "${asset.name}".`,
+                recipientUserIds: recipients, guildId: market.guildId, link: 'Approvals',
+            });
         }
-
-        setPurchaseRequests(p => [...p, { id: `purchase-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`, userId: user.id, assetId, requestedAt: new Date().toISOString(), status: PurchaseRequestStatus.Completed, assetDetails: { name: asset.name, description: asset.description, cost: cost }, guildId: market.guildId }]);
     } else {
-      addNotification({ type: 'error', message: 'You cannot afford this item.' });
+        if (deductRewards(user.id, cost, market.guildId)) {
+            let wasModified = false;
+            const updatedUser = { ...user };
+
+            if (asset.payouts && asset.payouts.length > 0) {
+                applyRewards(user.id, asset.payouts, market.guildId);
+                addNotification({ type: 'success', message: `Exchanged for ${asset.name}!` });
+                wasModified = true;
+            }
+            if (asset.linkedThemeId && !updatedUser.ownedThemes.includes(asset.linkedThemeId)) {
+                updatedUser.ownedThemes = [...updatedUser.ownedThemes, asset.linkedThemeId];
+                addNotification({ type: 'success', message: `Theme Unlocked: ${asset.name}!` });
+                wasModified = true;
+            }
+            if (!asset.payouts || asset.payouts.length === 0) {
+                 updatedUser.ownedAssetIds = [...updatedUser.ownedAssetIds, asset.id];
+                 addNotification({ type: 'success', message: `Purchased "${asset.name}"!` });
+                 wasModified = true;
+            }
+
+            if (wasModified) updateUser(user.id, updatedUser);
+
+            setPurchaseRequests(p => [...p, { id: `purchase-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`, userId: user.id, assetId, requestedAt: new Date().toISOString(), status: PurchaseRequestStatus.Completed, assetDetails: { name: asset.name, description: asset.description, cost: cost }, guildId: market.guildId }]);
+        } else {
+          addNotification({ type: 'error', message: 'You cannot afford this item.' });
+        }
     }
-  }, [markets, gameAssets, deductRewards, addNotification, applyRewards, updateUser]);
+  }, [markets, gameAssets, deductRewards, addNotification, applyRewards, updateUser, users, guilds, addSystemNotification]);
 
   const cancelPurchaseRequest = useCallback((purchaseId: string) => setPurchaseRequests(prev => prev.map(p => p.id === purchaseId ? { ...p, status: PurchaseRequestStatus.Cancelled } : p)), []);
   
   const approvePurchaseRequest = useCallback((purchaseId: string) => {
     const r = purchaseRequests.find(p => p.id === purchaseId);
     if (!r) return;
+    const asset = gameAssets.find(a => a.id === r.assetId);
+    if (!asset) return;
     
-    // deductRewards returns true on success and updates state internally
     if(deductRewards(r.userId, r.assetDetails.cost, r.guildId)){
-      
-      // After deduction, we need to add the asset. We use functional updates
-      // to ensure we're modifying the latest state.
       setUsers(prevUsers => {
         const newUsers = prevUsers.map(u => {
           if (u.id === r.userId) {
-            return { ...u, ownedAssetIds: [...u.ownedAssetIds, r.assetId] };
+            const updatedUser = { ...u };
+            if (asset.linkedThemeId && !updatedUser.ownedThemes.includes(asset.linkedThemeId)) {
+                updatedUser.ownedThemes = [...updatedUser.ownedThemes, asset.linkedThemeId];
+            }
+            if (!asset.payouts || asset.payouts.length === 0) {
+                updatedUser.ownedAssetIds = [...updatedUser.ownedAssetIds, r.assetId];
+            }
+            return updatedUser;
           }
           return u;
         });
         
-        // If the updated user is the current user, we must also update the currentUser state.
         if (currentUser?.id === r.userId) {
           const updatedCurrentUser = newUsers.find(u => u.id === r.userId);
-          if (updatedCurrentUser) {
-            _setCurrentUser(updatedCurrentUser);
-          }
+          if (updatedCurrentUser) _setCurrentUser(updatedCurrentUser);
         }
-        
         return newUsers;
       });
+
+      if (asset.payouts && asset.payouts.length > 0) {
+        applyRewards(r.userId, asset.payouts, r.guildId);
+      }
 
       setPurchaseRequests(p => p.map(pr => pr.id === purchaseId ? { ...pr, status: PurchaseRequestStatus.Completed } : pr));
       addNotification({type: 'success', message: 'Purchase approved.'});
     } else {
       addNotification({type: 'error', message: "User can't afford this."});
     }
-  }, [purchaseRequests, deductRewards, addNotification, currentUser]);
+  }, [purchaseRequests, deductRewards, gameAssets, addNotification, currentUser, applyRewards]);
   
   const rejectPurchaseRequest = useCallback((purchaseId: string) => { setPurchaseRequests(prev => prev.map(p => p.id === purchaseId ? { ...p, status: PurchaseRequestStatus.Rejected } : p)); addNotification({ type: 'info', message: 'Purchase request rejected.' }); }, [addNotification]);
   const addGuild = useCallback((guild: Omit<Guild, 'id'>) => setGuilds(prev => [...prev, { ...guild, id: `guild-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`}]), []);

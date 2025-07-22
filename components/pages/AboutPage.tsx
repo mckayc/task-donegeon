@@ -25,6 +25,7 @@ const CollapsibleSection: React.FC<{ title: string; children: React.ReactNode; d
     );
 };
 
+const V0_0_89_DATE = new Date(2025, 6, 21);
 const V0_0_88_DATE = new Date(2025, 6, 20);
 const V0_0_87_DATE = new Date(2025, 6, 20);
 const V0_0_86_DATE = new Date(2025, 6, 19);
@@ -37,6 +38,14 @@ const V0_0_80_DATE = new Date(2025, 6, 19);
 
 const VersionHistoryContent: React.FC = () => (
     <div className="prose prose-invert max-w-none text-stone-300 space-y-4">
+        <div>
+            <h4 className="text-lg font-bold text-stone-100">
+                Version 0.0.89 ({V0_0_89_DATE.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })})
+            </h4>
+            <ul className="list-disc list-inside space-y-2 mt-2">
+                <li><strong>Enhanced Chronicles:</strong> The activity feed now displays the currency and amount spent for each item purchase, providing a clearer transaction history.</li>
+            </ul>
+        </div>
         <div>
             <h4 className="text-lg font-bold text-stone-100">
                 Version 0.0.88 ({V0_0_88_DATE.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })})

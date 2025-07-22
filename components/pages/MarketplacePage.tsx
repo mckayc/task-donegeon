@@ -1,15 +1,15 @@
-
-
 import React, { useState, useMemo } from 'react';
 import Card from '../ui/Card';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import Button from '../ui/Button';
-import { PurchaseRequestStatus, RewardCategory, Market, GameAsset } from '../../types';
+import { PurchaseRequestStatus, RewardCategory, Market, GameAsset, RewardItem } from '../../types';
+import PurchaseDialog from '../markets/PurchaseDialog';
+import ExchangeView from '../markets/ExchangeView';
 
 const MarketItemView: React.FC<{ market: Market }> = ({ market }) => {
     const { rewardTypes, currentUser, purchaseRequests, appMode, settings, gameAssets } = useAppState();
-    const { purchaseMarketItem, cancelPurchaseRequest } = useAppDispatch();
-    const [sortBy, setSortBy] = useState<'default' | 'title-asc' | 'title-desc' | 'cost-low' | 'cost-high'>('default');
+    const [sortBy, setSortBy] = useState<'default' | 'title-asc' | 'title-desc'>('default');
+    const [itemToPurchase, setItemToPurchase] = useState<GameAsset | null>(null);
 
     if (!currentUser) return null;
 
@@ -22,130 +22,94 @@ const MarketItemView: React.FC<{ market: Market }> = ({ market }) => {
         return { name: rewardDef?.name || 'Unknown Reward', icon: rewardDef?.icon || '❓' };
     };
 
-    const currentBalances = useMemo(() => {
-        if (appMode.mode === 'personal') {
-            return { purse: currentUser.personalPurse, experience: currentUser.personalExperience };
-        }
-        return currentUser.guildBalances[appMode.guildId] || { purse: {}, experience: {} };
-    }, [currentUser, appMode]);
-
-    const getBalance = (rewardTypeId: string) => {
-        const rewardDef = rewardTypes.find(rt => rt.id === rewardTypeId);
-        if (!rewardDef) return 0;
-        return rewardDef.category === RewardCategory.Currency
-            ? currentBalances.purse[rewardTypeId] || 0
-            : currentBalances.experience[rewardTypeId] || 0;
-    };
-
-    const canAfford = (cost: { rewardTypeId: string; amount: number }[]) => {
-        return cost.every(c => getBalance(c.rewardTypeId) >= c.amount);
-    };
-
     const sortedItems = useMemo(() => {
-        const getSortCost = (item: GameAsset): number => {
-            if (item.cost.length === 0) return 0;
-            const goldCost = item.cost.find(c => c.rewardTypeId === 'core-gold');
-            if (goldCost) return goldCost.amount * 1000;
-            return item.cost[0]?.amount || 0;
-        };
-
         const items = [...itemsForSale];
-
         switch (sortBy) {
-            case 'title-asc':
-                return items.sort((a, b) => a.name.localeCompare(b.name));
-            case 'title-desc':
-                return items.sort((a, b) => b.name.localeCompare(a.name));
-            case 'cost-low':
-                return items.sort((a, b) => getSortCost(a) - getSortCost(b));
-            case 'cost-high':
-                return items.sort((a, b) => getSortCost(b) - getSortCost(a));
-            case 'default':
-            default:
-                return items;
+            case 'title-asc': return items.sort((a, b) => a.name.localeCompare(b.name));
+            case 'title-desc': return items.sort((a, b) => b.name.localeCompare(a.name));
+            default: return items;
         }
     }, [itemsForSale, sortBy]);
 
     return (
-        <Card 
-            headerAction={
-                <div className="flex items-center gap-2">
-                    <label htmlFor="sort-market-items" className="text-sm font-medium text-stone-400">Sort by:</label>
-                    <select
-                        id="sort-market-items"
-                        value={sortBy}
-                        onChange={e => setSortBy(e.target.value as any)}
-                        className="px-3 py-1.5 bg-stone-700 border border-stone-600 rounded-md focus:ring-emerald-500 focus:border-emerald-500 transition text-sm"
-                    >
-                        <option value="default">Default</option>
-                        <option value="title-asc">Name (A-Z)</option>
-                        <option value="title-desc">Name (Z-A)</option>
-                        <option value="cost-low">Cost (Low-High)</option>
-                        <option value="cost-high">Cost (High-Low)</option>
-                    </select>
-                </div>
-            }
-        >
-            <p className="text-stone-400 mb-6 -mt-2">{market.description}</p>
-            {sortedItems.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                    {sortedItems.map(asset => {
-                        const existingRequest = purchaseRequests.find(p => 
-                            p.userId === currentUser.id && 
-                            p.assetId === asset.id && 
-                            p.status === PurchaseRequestStatus.Pending &&
-                            p.guildId === market.guildId
-                        );
-                        
-                        const isOwned = currentUser.ownedAssetIds.includes(asset.id);
-                        const costRewards = asset.cost.map(c => ({...getRewardInfo(c.rewardTypeId), amount: c.amount, rewardTypeId: c.rewardTypeId }));
-
-                        return (
-                             <div key={asset.id} className="bg-violet-900/30 border-2 border-violet-700/60 rounded-xl shadow-lg flex flex-col h-full">
-                                <div className="p-4 border-b border-white/10">
-                                    <div className="w-full h-32 bg-black/20 rounded-md mb-3 flex items-center justify-center overflow-hidden">
-                                        <img src={asset.url} alt={asset.name} className="w-full h-full object-contain" />
-                                    </div>
-                                    <h4 className="font-bold text-lg text-stone-100">{asset.name}</h4>
-                                    <p className="text-stone-300 text-sm mt-1">{asset.description}</p>
-                                </div>
-
-                                <div className="p-4 flex-grow space-y-4">
-                                    {costRewards.length > 0 && (
-                                        <div>
-                                            <p className="text-xs font-semibold text-amber-400/80 uppercase tracking-wider">Cost</p>
-                                            <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm font-semibold mt-1">
-                                                {costRewards.map(r => (
-                                                    <span key={r.rewardTypeId} className="text-amber-300 flex items-center gap-1" title={r.name}>
-                                                        {r.amount} <span className="text-base">{r.icon}</span> 
-                                                        <span className="text-xs text-stone-400 font-normal">(Have: {getBalance(r.rewardTypeId)})</span>
-                                                    </span>
-                                                ))}
-                                            </div>
+        <>
+            <Card 
+                headerAction={
+                    <div className="flex items-center gap-2">
+                        <label htmlFor="sort-market-items" className="text-sm font-medium text-stone-400">Sort by:</label>
+                        <select
+                            id="sort-market-items"
+                            value={sortBy}
+                            onChange={e => setSortBy(e.target.value as any)}
+                            className="px-3 py-1.5 bg-stone-700 border border-stone-600 rounded-md focus:ring-emerald-500 focus:border-emerald-500 transition text-sm"
+                        >
+                            <option value="default">Default</option>
+                            <option value="title-asc">Name (A-Z)</option>
+                            <option value="title-desc">Name (Z-A)</option>
+                        </select>
+                    </div>
+                }
+            >
+                <p className="text-stone-400 mb-6 -mt-2">{market.description}</p>
+                {sortedItems.length > 0 ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                        {sortedItems.map(asset => {
+                            const isOwned = currentUser.ownedAssetIds.includes(asset.id);
+                            
+                            return (
+                                 <div key={asset.id} className="bg-violet-900/30 border-2 border-violet-700/60 rounded-xl shadow-lg flex flex-col h-full">
+                                    <div className="p-4 border-b border-white/10">
+                                        <div className="w-full h-32 bg-black/20 rounded-md mb-3 flex items-center justify-center overflow-hidden">
+                                            <img src={asset.url} alt={asset.name} className="w-full h-full object-contain" />
                                         </div>
-                                    )}
-                                </div>
+                                        <h4 className="font-bold text-lg text-stone-100">{asset.name}</h4>
+                                        <p className="text-stone-300 text-sm mt-1">{asset.description}</p>
+                                    </div>
 
-                                <div className="p-3 mt-auto bg-black/20 border-t border-white/10 flex items-center justify-end gap-2">
-                                     {existingRequest ? (
-                                        <>
-                                            <Button className="text-sm py-1 px-3" disabled>Pending</Button>
-                                            <Button variant="secondary" className="text-sm py-1 px-3 !bg-orange-800/60 hover:!bg-orange-700/70 text-orange-200" onClick={() => cancelPurchaseRequest(existingRequest.id)}>Cancel</Button>
-                                        </>
-                                    ) : isOwned ? (
-                                        <Button className="text-sm py-1 px-3" disabled>Owned</Button>
-                                    ) : (
-                                        <Button className="text-sm py-1 px-3" disabled={!canAfford(asset.cost)} onClick={() => purchaseMarketItem(asset.id, market.id, currentUser)}>Purchase</Button>
-                                    )}
+                                    <div className="p-4 flex-grow space-y-4">
+                                        {asset.costGroups.length > 0 && (
+                                            <div>
+                                                <p className="text-xs font-semibold text-amber-400/80 uppercase tracking-wider">Cost</p>
+                                                <div className="space-y-2 mt-1">
+                                                    {asset.costGroups.map((group, index) => (
+                                                        <div key={index}>
+                                                            <div className="flex flex-wrap gap-x-3 gap-y-1 text-sm font-semibold">
+                                                                {group.map(r => {
+                                                                    const info = getRewardInfo(r.rewardTypeId);
+                                                                    return <span key={r.rewardTypeId} className="text-amber-300 flex items-center gap-1" title={info.name}>{r.amount} <span className="text-base">{info.icon}</span></span>
+                                                                })}
+                                                            </div>
+                                                            {index < asset.costGroups.length - 1 && <p className="text-center text-xs font-bold text-stone-400 my-1">OR</p>}
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    <div className="p-3 mt-auto bg-black/20 border-t border-white/10 flex items-center justify-end gap-2">
+                                         {isOwned ? (
+                                            <Button className="text-sm py-1 px-3" disabled>Owned</Button>
+                                        ) : (
+                                            <Button className="text-sm py-1 px-3" onClick={() => setItemToPurchase(asset)}>Purchase</Button>
+                                        )}
+                                    </div>
                                 </div>
-                            </div>
-                        )
-                    })}
-                </div>
-            ) : (
-                <p className="text-stone-400 text-center">This {settings.terminology.store.toLowerCase()} has no items for sale.</p>
+                            )
+                        })}
+                    </div>
+                ) : (
+                    <p className="text-stone-400 text-center">This {settings.terminology.store.toLowerCase()} has no items for sale.</p>
+                )}
+            </Card>
+            {itemToPurchase && (
+                <PurchaseDialog
+                    asset={itemToPurchase}
+                    marketId={market.id}
+                    onClose={() => setItemToPurchase(null)}
+                />
             )}
-        </Card>
+        </>
     );
 };
 
@@ -165,6 +129,12 @@ const MarketplacePage: React.FC = () => {
 
 
     if (activeMarket) {
+        // Dedicated view for the exchange
+        if (activeMarket.id === 'market-bank') {
+            return <ExchangeView market={activeMarket} />;
+        }
+        
+        // Standard view for all other markets
         return (
             <div>
                  <Button variant="secondary" onClick={() => setActiveMarketId(null)} className="mb-6">

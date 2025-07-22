@@ -17,8 +17,8 @@ const getDependencies = (assets: (Quest | GameAsset)[]): Set<string> => {
             extractFromRewardItems(asset.rewards);
             extractFromRewardItems(asset.lateSetbacks);
             extractFromRewardItems(asset.incompleteSetbacks);
-        } else if ('cost' in asset) { // It's a GameAsset
-             extractFromRewardItems(asset.cost);
+        } else if ('costGroups' in asset) { // It's a GameAsset
+             asset.costGroups.forEach(group => extractFromRewardItems(group));
         }
     });
 

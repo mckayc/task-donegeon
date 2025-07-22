@@ -30,16 +30,30 @@ const ChroniclesPage: React.FC = () => {
 
     const questActivities: ChronicleEvent[] = questCompletions.map(c => {
         const quest = quests.find(q => q.id === c.questId);
+        let finalNote = c.note || '';
+
+        if (c.status === QuestCompletionStatus.Approved && quest && quest.rewards.length > 0) {
+            const rewardsText = quest.rewards.map(r => `+${r.amount} ${getRewardDisplay(r.rewardTypeId).icon}`).join(' ');
+            if (finalNote) {
+                finalNote += `\n(${rewardsText})`;
+            } else {
+                finalNote = rewardsText;
+            }
+        }
+        
         return {
-            id: c.id, date: c.completedAt, type: 'Quest', userId: c.userId, title: getQuestTitle(c.questId), status: c.status, note: c.note,
+            id: c.id, date: c.completedAt, type: 'Quest', userId: c.userId, title: getQuestTitle(c.questId), status: c.status, note: finalNote,
             icon: quest?.icon || '📜', color: '#3b82f6', guildId: c.guildId, questType: quest?.type
         };
     });
 
-    const purchaseActivities: ChronicleEvent[] = purchaseRequests.map(p => ({
-        id: p.id, date: p.requestedAt, type: 'Purchase', userId: p.userId, title: `Purchased "${p.assetDetails.name}"`, status: p.status, note: undefined,
-        icon: gameAssets.find(a => a.id === p.assetId)?.icon || '💰', color: '#a855f7', guildId: p.guildId
-    }));
+    const purchaseActivities: ChronicleEvent[] = purchaseRequests.map(p => {
+        const costText = p.assetDetails.cost.map(c => `-${c.amount} ${getRewardDisplay(c.rewardTypeId).icon}`).join(' ');
+        return {
+            id: p.id, date: p.requestedAt, type: 'Purchase', userId: p.userId, title: `Purchased "${p.assetDetails.name}"`, status: p.status, note: costText,
+            icon: gameAssets.find(a => a.id === p.assetId)?.icon || '💰', color: '#a855f7', guildId: p.guildId
+        };
+    });
     
     const trophyActivities: ChronicleEvent[] = userTrophies.map(ut => ({
         id: ut.id, date: ut.awardedAt, type: 'Trophy', userId: ut.userId, title: `Earned: ${getTrophyName(ut.trophyId)}`, status: "Awarded", note: "Congratulations!",
@@ -204,19 +218,19 @@ const ChroniclesPage: React.FC = () => {
             <ul className="space-y-4">
               {paginatedActivities.map(activity => (
                   <li key={activity.id} className="flex items-start gap-4 p-3 bg-stone-800/60 rounded-lg">
-                      {/* Column 1: Title & Date */}
-                      <div className="flex-1 w-2/5">
-                          <p className="font-semibold text-stone-200" title={activity.title}>
+                      <div className="w-8 flex-shrink-0 text-center text-2xl pt-1" style={{ color: activity.color }}>
+                          {activity.icon}
+                      </div>
+                      <div className="flex-grow min-w-0">
+                          <p className="font-semibold text-stone-200">
                              {renderActivityTitle(activity)}
                           </p>
                           <p className="text-xs text-stone-400 mt-1">{formatTimestamp(activity.date)}</p>
                       </div>
-                      {/* Column 2: Note */}
-                      <div className="w-2/5 text-sm text-stone-400 italic" title={activity.note}>
+                      <div className="w-2/5 flex-shrink-0 text-sm text-stone-400 italic" title={activity.note}>
                           {activity.note ? <p className="whitespace-pre-wrap">"{activity.note}"</p> : ''}
                       </div>
-                      {/* Column 3: Status */}
-                      <div className={`w-1/5 text-right font-semibold ${statusColor(activity.status)}`}>
+                      <div className={`w-28 flex-shrink-0 text-right font-semibold ${statusColor(activity.status)}`}>
                           {activity.status}
                       </div>
                   </li>

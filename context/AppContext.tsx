@@ -58,7 +58,7 @@ interface AppDispatch {
   addMarket: (market: Omit<Market, 'id'>) => void;
   updateMarket: (market: Market) => void;
   deleteMarket: (marketId: string) => void;
-  purchaseMarketItem: (assetId: string, marketId: string, user: User) => void;
+  purchaseMarketItem: (assetId: string, marketId: string, user: User, costGroupIndex: number) => void;
   cancelPurchaseRequest: (purchaseId: string) => void;
   approvePurchaseRequest: (purchaseId: string) => void;
   rejectPurchaseRequest: (purchaseId: string) => void;
@@ -89,6 +89,7 @@ interface AppDispatch {
   deleteGameAssets: (assetIds: string[]) => void;
   updateQuestsStatus: (questIds: string[], isActive: boolean) => void;
   uploadFile: (file: File, category?: string) => Promise<{ url: string } | null>;
+  executeExchange: (userId: string, payItem: RewardItem, receiveItem: RewardItem, guildId?: string) => void;
 
   // Settings & UI
   updateSettings: (settings: Partial<AppSettings>) => void;
@@ -110,7 +111,7 @@ const AppStateContext = createContext<AppState | undefined>(undefined);
 const AppDispatchContext = createContext<AppDispatch | undefined>(undefined);
 
 const debounce = <F extends (...args: any[]) => any>(func: F, waitFor: number) => {
-    let timeout: NodeJS.Timeout | null = null;
+    let timeout: ReturnType<typeof setTimeout> | null = null;
     const debounced = (...args: Parameters<F>) => {
         if (timeout !== null) {
             clearTimeout(timeout);
@@ -249,22 +250,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
             const savedSettings: Partial<AppSettings> = dataToSet.settings || {};
             
-            // --- SETTINGS MIGRATION LOGIC ---
-            const oldRewardValuation = savedSettings.rewardValuation as any;
-            if (oldRewardValuation && oldRewardValuation.baseCurrencyUnit) { // Detect old flat structure
-                savedSettings.rewardValuation = {
-                    currency: {
-                        enabled: oldRewardValuation.enabled,
-                        baseUnitName: oldRewardValuation.baseCurrencyUnit,
-                        baseUnitSymbol: oldRewardValuation.baseCurrencySymbol,
-                        anchorRewardId: oldRewardValuation.anchorRewardId,
-                        anchorRewardValue: oldRewardValuation.anchorRewardValue,
-                        exchangeRates: oldRewardValuation.exchangeRates || {}
-                    },
-                    experience: INITIAL_SETTINGS.rewardValuation.experience // Add new feature with defaults
-                };
-            }
-
             const loadedSettings: AppSettings = {
                 ...INITIAL_SETTINGS,
                 ...savedSettings,
@@ -276,10 +261,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
                 chat: { ...INITIAL_SETTINGS.chat, ...(savedSettings.chat || {}) },
                 sidebars: { ...INITIAL_SETTINGS.sidebars, ...(savedSettings.sidebars || {}) },
                 terminology: { ...INITIAL_SETTINGS.terminology, ...(savedSettings.terminology || {}) },
-                rewardValuation: {
-                    currency: { ...INITIAL_SETTINGS.rewardValuation.currency, ...(savedSettings.rewardValuation?.currency || {}) },
-                    experience: { ...INITIAL_SETTINGS.rewardValuation.experience, ...(savedSettings.rewardValuation?.experience || {}) },
-                },
+                rewardValuation: { ...INITIAL_SETTINGS.rewardValuation, ...(savedSettings.rewardValuation || {}) },
             };
             
             setUsers(dataToSet.users || []);
@@ -436,20 +418,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             console.log("Data out of sync. Refreshing from server.");
             
             const savedSettings: Partial<AppSettings> = serverData.settings || {};
-             const oldRewardValuation = savedSettings.rewardValuation as any;
-            if (oldRewardValuation && oldRewardValuation.baseCurrencyUnit) { // Detect old flat structure
-                savedSettings.rewardValuation = {
-                    currency: {
-                        enabled: oldRewardValuation.enabled,
-                        baseUnitName: oldRewardValuation.baseCurrencyUnit,
-                        baseUnitSymbol: oldRewardValuation.baseCurrencySymbol,
-                        anchorRewardId: oldRewardValuation.anchorRewardId,
-                        anchorRewardValue: oldRewardValuation.anchorRewardValue,
-                        exchangeRates: oldRewardValuation.exchangeRates || {}
-                    },
-                    experience: INITIAL_SETTINGS.rewardValuation.experience // Add new feature with defaults
-                };
-            }
 
             const loadedSettings: AppSettings = {
                 ...INITIAL_SETTINGS, ...savedSettings,
@@ -461,10 +429,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
                 chat: { ...INITIAL_SETTINGS.chat, ...(savedSettings.chat || {}) },
                 sidebars: { ...INITIAL_SETTINGS.sidebars, ...(savedSettings.sidebars || {}) },
                 terminology: { ...INITIAL_SETTINGS.terminology, ...(savedSettings.terminology || {}) },
-                rewardValuation: {
-                    currency: { ...INITIAL_SETTINGS.rewardValuation.currency, ...(savedSettings.rewardValuation?.currency || {}) },
-                    experience: { ...INITIAL_SETTINGS.rewardValuation.experience, ...(savedSettings.rewardValuation?.experience || {}) },
-                },
+                rewardValuation: { ...INITIAL_SETTINGS.rewardValuation, ...(savedSettings.rewardValuation || {}) },
             };
 
             setUsers(serverData.users || []);
@@ -781,12 +746,18 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     return true;
   }, [users, rewardTypes, currentUser]);
   
-  const purchaseMarketItem = useCallback((assetId: string, marketId: string, user: User) => {
+  const purchaseMarketItem = useCallback((assetId: string, marketId: string, user: User, costGroupIndex: number) => {
     const market = markets.find(m => m.id === marketId);
     const asset = gameAssets.find(ga => ga.id === assetId);
     if (!market || !asset) return;
     
-    if (deductRewards(user.id, asset.cost, market.guildId)) {
+    const cost = asset.costGroups[costGroupIndex];
+    if (!cost) {
+        addNotification({ type: 'error', message: 'Invalid cost option selected.' });
+        return;
+    }
+
+    if (deductRewards(user.id, cost, market.guildId)) {
         let wasModified = false;
         const updatedUser = { ...user };
 
@@ -815,7 +786,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             updateUser(user.id, updatedUser);
         }
 
-        setPurchaseRequests(p => [...p, { id: `purchase-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`, userId: user.id, assetId, requestedAt: new Date().toISOString(), status: PurchaseRequestStatus.Completed, assetDetails: { name: asset.name, description: asset.description, cost: asset.cost }, guildId: market.guildId }]);
+        setPurchaseRequests(p => [...p, { id: `purchase-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`, userId: user.id, assetId, requestedAt: new Date().toISOString(), status: PurchaseRequestStatus.Completed, assetDetails: { name: asset.name, description: asset.description, cost: cost }, guildId: market.guildId }]);
     } else {
       addNotification({ type: 'error', message: 'You cannot afford this item.' });
     }
@@ -836,6 +807,16 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const updateGameAsset = useCallback((asset: GameAsset) => setGameAssets(prev => prev.map(ga => ga.id === asset.id ? asset : ga)), []);
   const deleteGameAsset = useCallback((assetId: string) => { setGameAssets(prev => prev.filter(ga => ga.id !== assetId)); addNotification({ type: 'info', message: 'Asset deleted.' }); }, [addNotification]);
   const uploadFile = useCallback(async (file: File, category: string = 'Miscellaneous'): Promise<{ url: string } | null> => { const fd = new FormData(); fd.append('file', file); fd.append('category', category); try { const r = await window.fetch('/api/media/upload', { method: 'POST', body: fd }); if (!r.ok) { const e = await r.json(); throw new Error(e.error || 'Upload failed'); } return await r.json(); } catch (e) { const m = e instanceof Error ? e.message : 'Unknown error'; addNotification({ type: 'error', message: `Upload failed: ${m}` }); return null; } }, [addNotification]);
+  
+  const executeExchange = useCallback((userId: string, payItem: RewardItem, receiveItem: RewardItem, guildId?: string) => {
+    // This function assumes payItem.amount already includes any fees and is a whole number.
+    // receiveItem.amount should also be a whole number.
+    if (deductRewards(userId, [payItem], guildId)) {
+        applyRewards(userId, [receiveItem], guildId);
+    } else {
+        addNotification({ type: 'error', message: 'Exchange failed due to insufficient funds.' });
+    }
+  }, [deductRewards, applyRewards, addNotification]);
   
   const populateInitialGameData = useCallback((adminUser: User) => {
     addNotification({ type: 'info', message: 'Your Donegeon is being populated!' });
@@ -1005,6 +986,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     populateInitialGameData, importBlueprint, restoreFromBackup, clearAllHistory, resetAllPlayerData, deleteAllCustomContent, deleteSelectedAssets, 
     deleteQuests, deleteTrophies, deleteGameAssets, updateQuestsStatus,
     uploadFile,
+    executeExchange,
     updateSettings, resetSettings, setActivePage, setAppMode, addNotification, removeNotification, setActiveMarketId, toggleSidebar,
     toggleChat, sendMessage, markMessagesAsRead,
     addSystemNotification, markSystemNotificationsAsRead

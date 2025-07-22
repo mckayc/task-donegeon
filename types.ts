@@ -126,7 +126,7 @@ export interface GameAsset {
   category: string;
   avatarSlot?: string;
   isForSale: boolean;
-  cost: RewardItem[];
+  costGroups: RewardItem[][];
   payouts?: RewardItem[];
   marketIds: string[];
   creatorId: string;
@@ -362,19 +362,14 @@ export interface SidebarHeader {
 
 export type SidebarConfigItem = SidebarLink | SidebarHeader;
 
-export interface ValuationConfig {
+export interface RewardValuationSettings {
   enabled: boolean;
-  baseUnitName: string;
-  baseUnitSymbol: string;
-  anchorRewardId: string;
-  anchorRewardValue: number;
-  exchangeRates: { [rewardTypeId: string]: number };
+  anchorRewardId: string; // Must be a currency ID
+  exchangeRates: { [rewardTypeId: string]: number }; // Rates for ALL other rewards against the anchor
+  currencyExchangeFeePercent: number;
+  xpExchangeFeePercent: number;
 }
 
-export interface RewardValuationSettings {
-  currency: ValuationConfig;
-  experience: ValuationConfig;
-}
 
 export interface AppSettings {
   favicon: string;

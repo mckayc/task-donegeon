@@ -34,7 +34,7 @@ const createQuest = (data: Partial<Quest>): Quest => ({
 const createAsset = (data: Partial<GameAsset>): GameAsset => ({
     id: `lib-ga-${data.name?.toLowerCase().replace(/ /g, '-')}-${Math.random().toString(36).substring(7)}`,
     name: 'Untitled Asset', description: '', url: 'https://placehold.co/150x150/84cc16/FFFFFF?text=Item',
-    icon: '📦', category: 'Misc', isForSale: false, cost: [], marketIds: [], purchaseLimit: null, purchaseCount: 0,
+    icon: '📦', category: 'Misc', isForSale: false, costGroups: [], marketIds: [], purchaseLimit: null, purchaseCount: 0,
     creatorId: 'library', createdAt: new Date().toISOString(),
     ...data
 });

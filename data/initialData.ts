@@ -247,27 +247,19 @@ export const INITIAL_SETTINGS: AppSettings = {
     },
     enableAiFeatures: false,
     rewardValuation: {
-      currency: {
-        enabled: true,
-        baseUnitName: 'USD',
-        baseUnitSymbol: '$',
-        anchorRewardId: 'core-gems',
-        anchorRewardValue: 1,
-        exchangeRates: { 'core-gold': 10, 'core-crystal': 20 },
+      enabled: true,
+      anchorRewardId: 'core-gold',
+      exchangeRates: {
+        'core-gems': 0.1,
+        'core-crystal': 20,
+        'core-strength': 10,
+        'core-diligence': 10,
+        'core-wisdom': 5,
+        'core-skill': 5,
+        'core-creative': 5,
       },
-      experience: {
-        enabled: true,
-        baseUnitName: 'Screen Time',
-        baseUnitSymbol: 'hr',
-        anchorRewardId: 'core-diligence',
-        anchorRewardValue: 0.1,
-        exchangeRates: {
-          'core-strength': 0.5,
-          'core-wisdom': 0.5,
-          'core-skill': 0.3333,
-          'core-creative': 0.3333
-        },
-      }
+      currencyExchangeFeePercent: 5,
+      xpExchangeFeePercent: 10,
     },
     chat: {
         enabled: true,
@@ -386,12 +378,13 @@ export const INITIAL_TROPHIES: Trophy[] = [
 
 export const createSampleMarkets = (): Market[] => ([
   { id: 'market-tutorial', title: 'Tutorial Market', description: 'A place to complete your first quests.', icon: '🎓', status: 'open' },
-  { id: 'market-bank', title: 'The Royal Bank', description: 'Exchange your various currencies here for a small fee.', icon: '🏦', status: 'open' },
+  { id: 'market-bank', title: 'The Exchange Post', description: 'Exchange your various currencies and experience points.', icon: '⚖️', status: 'open' },
   { id: 'market-experiences', title: 'The Guild of Adventurers', description: 'Spend your hard-earned gems on real-world experiences and privileges.', icon: '🎟️', status: 'open' },
   { id: 'market-candy', title: 'The Sugar Cube', description: 'A delightful shop for purchasing sweet treats with your crystals.', icon: '🍬', status: 'open' },
 ]);
 
-export const createSampleGameAssets = (): GameAsset[] => ([
+export const createSampleGameAssets = (): GameAsset[] => {
+    const allAssets: GameAsset[] = [
     { 
         id: 'ga-theme-sapphire', 
         name: 'Sapphire Theme Unlock', 
@@ -401,7 +394,7 @@ export const createSampleGameAssets = (): GameAsset[] => ([
         category: 'Theme', 
         avatarSlot: undefined, 
         isForSale: true, 
-        cost: [{rewardTypeId: 'core-gold', amount: 50}], 
+        costGroups: [[{rewardTypeId: 'core-gold', amount: 50}]], 
         marketIds: ['market-tutorial'], 
         creatorId: 'user-1', 
         createdAt: new Date().toISOString(), 
@@ -409,13 +402,34 @@ export const createSampleGameAssets = (): GameAsset[] => ([
         purchaseCount: 0,
         linkedThemeId: 'sapphire',
     },
-    { id: 'ga-bank-gold-to-gems', name: 'Exchange 10 Gold for 1 Gem', description: 'Exchange your Gold for valuable Gems.', url: 'https://placehold.co/150/4ade80/FFFFFF?text=10G%3D1Gem', icon: '🤝', category: 'Currency Exchange', isForSale: true, cost: [{rewardTypeId: 'core-gold', amount: 10}], payouts: [{rewardTypeId: 'core-gems', amount: 1}], marketIds: ['market-bank'], creatorId: 'system', createdAt: new Date().toISOString(), purchaseLimit: null, purchaseCount: 0 },
-    { id: 'ga-bank-gems-to-gold', name: 'Exchange 1 Gem for 8 Gold', description: 'Exchange your Gems for Gold at a slight loss.', url: 'https://placehold.co/150/f43f5e/FFFFFF?text=1Gem%3D8G', icon: '🤝', category: 'Currency Exchange', isForSale: true, cost: [{rewardTypeId: 'core-gems', amount: 1}], payouts: [{rewardTypeId: 'core-gold', amount: 8}], marketIds: ['market-bank'], creatorId: 'system', createdAt: new Date().toISOString(), purchaseLimit: null, purchaseCount: 0 },
-    { id: 'ga-exp-movie', name: 'Movie Night Choice', description: 'You get to pick the movie for the next family movie night.', url: 'https://placehold.co/150/f97316/FFFFFF?text=Movie', icon: '🎬', category: 'Real-World Reward', isForSale: true, cost: [{rewardTypeId: 'core-gems', amount: 10}], marketIds: ['market-experiences'], creatorId: 'system', createdAt: new Date().toISOString(), purchaseLimit: 1, purchaseCount: 0 },
-    { id: 'ga-exp-game-hour', name: 'One Hour of Gaming', description: 'A voucher for one hour of video games.', url: 'https://placehold.co/150/3b82f6/FFFFFF?text=1+Hour', icon: '🎮', category: 'Real-World Reward', isForSale: true, cost: [{rewardTypeId: 'core-gems', amount: 5}], marketIds: ['market-experiences'], creatorId: 'system', createdAt: new Date().toISOString(), purchaseLimit: null, purchaseCount: 0 },
-    { id: 'ga-candy-chocolate', name: 'Chocolate Bar', description: 'A delicious bar of chocolate.', url: 'https://placehold.co/150/78350f/FFFFFF?text=Chocolate', icon: '🍫', category: 'Treat', isForSale: true, cost: [{rewardTypeId: 'core-crystal', amount: 20}], marketIds: ['market-candy'], creatorId: 'system', createdAt: new Date().toISOString(), purchaseLimit: null, purchaseCount: 0 },
-    { id: 'ga-candy-lollipop', name: 'Lollipop', description: 'A sweet, colorful lollipop.', url: 'https://placehold.co/150/ec4899/FFFFFF?text=Lollipop', icon: '🍭', category: 'Treat', isForSale: true, cost: [{rewardTypeId: 'core-crystal', amount: 10}], marketIds: ['market-candy'], creatorId: 'system', createdAt: new Date().toISOString(), purchaseLimit: null, purchaseCount: 0 },
-]);
+    { id: 'ga-exp-movie', name: 'Movie Night Choice', description: 'You get to pick the movie for the next family movie night.', url: 'https://placehold.co/150/f97316/FFFFFF?text=Movie', icon: '🎬', category: 'Real-World Reward', isForSale: true, costGroups: [[{rewardTypeId: 'core-gems', amount: 10}]], marketIds: ['market-experiences'], creatorId: 'system', createdAt: new Date().toISOString(), purchaseLimit: 1, purchaseCount: 0 },
+    { id: 'ga-exp-game-hour', name: 'One Hour of Gaming', description: 'A voucher for one hour of video games.', url: 'https://placehold.co/150/3b82f6/FFFFFF?text=1+Hour', icon: '🎮', category: 'Real-World Reward', isForSale: true, costGroups: [[{rewardTypeId: 'core-gems', amount: 5}]], marketIds: ['market-experiences'], creatorId: 'system', createdAt: new Date().toISOString(), purchaseLimit: null, purchaseCount: 0 },
+    { id: 'ga-candy-chocolate', name: 'Chocolate Bar', description: 'A delicious bar of chocolate.', url: 'https://placehold.co/150/78350f/FFFFFF?text=Chocolate', icon: '🍫', category: 'Treat', isForSale: true, costGroups: [[{rewardTypeId: 'core-crystal', amount: 20}]], marketIds: ['market-candy'], creatorId: 'system', createdAt: new Date().toISOString(), purchaseLimit: null, purchaseCount: 0 },
+    { id: 'ga-candy-lollipop', name: 'Lollipop', description: 'A sweet, colorful lollipop.', url: 'https://placehold.co/150/ec4899/FFFFFF?text=Lollipop', icon: '🍭', category: 'Treat', isForSale: true, costGroups: [[{rewardTypeId: 'core-crystal', amount: 10}]], marketIds: ['market-candy'], creatorId: 'system', createdAt: new Date().toISOString(), purchaseLimit: null, purchaseCount: 0 },
+    {
+        id: 'ga-special-item',
+        name: 'Mysterious Amulet',
+        description: 'An amulet that can be bought with different resources.',
+        url: 'https://placehold.co/150/8b5cf6/FFFFFF?text=Amulet',
+        icon: '🧿',
+        category: 'Trinket',
+        isForSale: true,
+        costGroups: [
+            [{rewardTypeId: 'core-wisdom', amount: 5}, {rewardTypeId: 'core-skill', amount: 3}],
+            [{rewardTypeId: 'core-crystal', amount: 1}, {rewardTypeId: 'core-gold', amount: 1}]
+        ],
+        marketIds: ['market-experiences'],
+        creatorId: 'system',
+        createdAt: new Date().toISOString(),
+        purchaseLimit: 1,
+        purchaseCount: 0
+    }
+  ];
+  
+  const exchangeAssetIds = new Set(['ga-bank-gold-to-gems', 'ga-bank-gems-to-gold', 'ga-bank-gold-to-strength', 'ga-bank-strength-to-gold', 'ga-bank-gems-to-wisdom', 'ga-bank-wisdom-to-gems']);
+
+  return allAssets.filter(asset => !exchangeAssetIds.has(asset.id));
+};
 
 export const createInitialGuilds = (users: User[]): Guild[] => ([
   { id: 'guild-1', name: 'The First Guild', purpose: 'The default guild for all new adventurers.', memberIds: users.map(u => u.id), isDefault: true },
@@ -452,93 +466,44 @@ export const createSampleQuests = (users: User[]): Quest[] => {
       isActive: true, isOptional: false, availabilityType: QuestAvailability.Unlimited, availabilityCount: 1, weeklyRecurrenceDays: [], monthlyRecurrenceDays: [],
       assignedUserIds: explorer ? [explorer.id] : [], requiresApproval: false, claimedByUserIds: [], dismissals: [],
     },
-    {
-      id: 'quest-explorer-4', title: 'Customize Your Look', description: "Every hero needs a unique look. Visit the 'Avatar' page from the sidebar to see your character customization options.", type: QuestType.Venture, icon: '🧑‍🎤', tags: ['tutorial', 'tutorial-explorer'],
-      rewards: [{ rewardTypeId: 'core-creative', amount: 10 }], lateSetbacks: [], incompleteSetbacks: [],
-      isActive: true, isOptional: false, availabilityType: QuestAvailability.Unlimited, availabilityCount: 1, weeklyRecurrenceDays: [], monthlyRecurrenceDays: [],
-      assignedUserIds: explorer ? [explorer.id] : [], requiresApproval: false, claimedByUserIds: [], dismissals: [],
-    },
-    {
-      id: 'quest-explorer-5', title: 'Behold Your Accolades', description: "See what honors you can earn. Visit the 'Trophies' page from the sidebar to view all available awards.", type: QuestType.Venture, icon: '🏆', tags: ['tutorial', 'tutorial-explorer'],
-      rewards: [{ rewardTypeId: 'core-wisdom', amount: 10 }], lateSetbacks: [], incompleteSetbacks: [],
-      isActive: true, isOptional: false, availabilityType: QuestAvailability.Unlimited, availabilityCount: 1, weeklyRecurrenceDays: [], monthlyRecurrenceDays: [],
-      assignedUserIds: explorer ? [explorer.id] : [], requiresApproval: false, claimedByUserIds: [], dismissals: [],
-    },
     // For Gatekeeper
     {
-      id: 'quest-gatekeeper-1', title: 'Approve a Quest', description: "An explorer has submitted a quest for approval. Go to the 'Approvals' page (under Manage Guild) and verify their work.", type: QuestType.Venture, icon: '✅', tags: ['tutorial', 'tutorial-gatekeeper'],
-      rewards: [{ rewardTypeId: 'core-wisdom', amount: 50 }], lateSetbacks: [], incompleteSetbacks: [],
+      id: 'quest-gatekeeper-1', title: 'The First Approval', description: "An Explorer has submitted a quest for approval. Go to the 'Approvals' page and either approve or reject it.", type: QuestType.Venture, icon: '✅', tags: ['tutorial', 'tutorial-gatekeeper'],
+      rewards: [{ rewardTypeId: 'core-wisdom', amount: 25 }], lateSetbacks: [], incompleteSetbacks: [],
       isActive: true, isOptional: false, availabilityType: QuestAvailability.Unlimited, availabilityCount: 1, weeklyRecurrenceDays: [], monthlyRecurrenceDays: [],
       assignedUserIds: gatekeeper ? [gatekeeper.id] : [], requiresApproval: false, claimedByUserIds: [], dismissals: [],
     },
     {
-      id: 'quest-gatekeeper-2', title: 'Observe the Timestream', description: "A Gatekeeper must be aware of all events. Visit the 'Chronicles' page to see the history of all completed quests and actions.", type: QuestType.Venture, icon: '📜', tags: ['tutorial', 'tutorial-gatekeeper'],
-      rewards: [{ rewardTypeId: 'core-wisdom', amount: 20 }], lateSetbacks: [], incompleteSetbacks: [],
+      id: 'quest-gatekeeper-2', title: 'Review the Troops', description: "Visit the 'Guild' page to review all members of your guild.", type: QuestType.Venture, icon: '🏰', tags: ['tutorial', 'tutorial-gatekeeper'],
+      rewards: [{ rewardTypeId: 'core-wisdom', amount: 10 }], lateSetbacks: [], incompleteSetbacks: [],
       isActive: true, isOptional: false, availabilityType: QuestAvailability.Unlimited, availabilityCount: 1, weeklyRecurrenceDays: [], monthlyRecurrenceDays: [],
       assignedUserIds: gatekeeper ? [gatekeeper.id] : [], requiresApproval: false, claimedByUserIds: [], dismissals: [],
-    },
-    {
-      id: 'quest-gatekeeper-3', title: 'Bestow a Boon', description: "As a Gatekeeper, you can reward adventurers. Go to 'Manage Users', find the Explorer, click 'Adjust', and give them a small bonus of your choice for their hard work.", type: QuestType.Venture, icon: '✨', tags: ['tutorial', 'tutorial-gatekeeper'],
-      rewards: [{ rewardTypeId: 'core-wisdom', amount: 30 }], lateSetbacks: [], incompleteSetbacks: [],
-      isActive: true, isOptional: false, availabilityType: QuestAvailability.Unlimited, availabilityCount: 1, weeklyRecurrenceDays: [], monthlyRecurrenceDays: [],
-      assignedUserIds: gatekeeper ? [gatekeeper.id] : [], requiresApproval: true, claimedByUserIds: [], dismissals: [],
     },
     // For Donegeon Master
     {
-      id: 'quest-dm-1', title: 'Create a Venture', description: "Go to 'Manage Quests' (under Content Management) and create a new one-time quest (a Venture) for your adventurers.", type: QuestType.Venture, icon: '📜', tags: ['tutorial', 'tutorial-donegeon-master'],
+      id: 'quest-dm-1', title: 'Create a Quest', description: "Go to 'Manage Quests' and create a new quest of any type. Assign it to the Explorer.", type: QuestType.Venture, icon: '🛠️', tags: ['tutorial', 'tutorial-donegeon-master'],
       rewards: [{ rewardTypeId: 'core-wisdom', amount: 50 }], lateSetbacks: [], incompleteSetbacks: [],
       isActive: true, isOptional: false, availabilityType: QuestAvailability.Unlimited, availabilityCount: 1, weeklyRecurrenceDays: [], monthlyRecurrenceDays: [],
       assignedUserIds: donegeonMaster ? [donegeonMaster.id] : [], requiresApproval: false, claimedByUserIds: [], dismissals: [],
     },
     {
-      id: 'quest-dm-2', title: 'Rename an Explorer', description: "Go to 'Manage Users' (under Manage Guild), select the Explorer, and edit their 'Game Name' to something new.", type: QuestType.Venture, icon: '✍️', tags: ['tutorial', 'tutorial-donegeon-master'],
+      id: 'quest-dm-2', title: 'Customize the Donegeon', description: "Visit the 'Settings' page and change the app's name in the 'Terminology' section.", type: QuestType.Venture, icon: '⚙️', tags: ['tutorial', 'tutorial-donegeon-master'],
       rewards: [{ rewardTypeId: 'core-wisdom', amount: 25 }], lateSetbacks: [], incompleteSetbacks: [],
       isActive: true, isOptional: false, availabilityType: QuestAvailability.Unlimited, availabilityCount: 1, weeklyRecurrenceDays: [], monthlyRecurrenceDays: [],
       assignedUserIds: donegeonMaster ? [donegeonMaster.id] : [], requiresApproval: false, claimedByUserIds: [], dismissals: [],
     },
     {
-      id: 'quest-dm-3', title: 'Expand the Armory', description: "Visit 'Backup & Import' > 'Asset Library' from the sidebar and import one of the pre-made content packs to add new content to your game instantly.", type: QuestType.Venture, icon: '📚', tags: ['tutorial', 'admin', 'tutorial-donegeon-master'],
-      rewards: [{ rewardTypeId: 'core-wisdom', amount: 20 }], lateSetbacks: [], incompleteSetbacks: [],
-      isActive: true, isOptional: false, availabilityType: QuestAvailability.Unlimited, availabilityCount: 1, weeklyRecurrenceDays: [], monthlyRecurrenceDays: [],
-      assignedUserIds: donegeonMaster ? [donegeonMaster.id] : [], requiresApproval: false, claimedByUserIds: [], dismissals: [],
-    },
-    {
-      id: 'quest-dm-4', title: 'Establish a Daily Duty', description: "A Donegeon needs routine. Go to 'Manage Quests' (under Content Management) and create a new recurring 'Duty', such as 'Morning Bed Making', and assign it to the Explorer.", type: QuestType.Venture, icon: '🔄', tags: ['tutorial', 'admin', 'tutorial-donegeon-master'],
-      rewards: [{ rewardTypeId: 'core-wisdom', amount: 50 }], lateSetbacks: [], incompleteSetbacks: [],
-      isActive: true, isOptional: false, availabilityType: QuestAvailability.Unlimited, availabilityCount: 1, weeklyRecurrenceDays: [], monthlyRecurrenceDays: [],
-      assignedUserIds: donegeonMaster ? [donegeonMaster.id] : [], requiresApproval: false, claimedByUserIds: [], dismissals: [],
-    },
-    {
-      id: 'quest-dm-5', title: 'Stock the Shelves', description: "A marketplace needs goods. Go to 'Manage Goods', create a new asset, and then list it for sale in one of the markets.", type: QuestType.Venture, icon: '📦', tags: ['tutorial', 'admin', 'tutorial-donegeon-master'],
-      rewards: [{ rewardTypeId: 'core-wisdom', amount: 50 }], lateSetbacks: [], incompleteSetbacks: [],
-      isActive: true, isOptional: false, availabilityType: QuestAvailability.Unlimited, availabilityCount: 1, weeklyRecurrenceDays: [], monthlyRecurrenceDays: [],
-      assignedUserIds: donegeonMaster ? [donegeonMaster.id] : [], requiresApproval: false, claimedByUserIds: [], dismissals: [],
-    },
-    {
-      id: 'quest-dm-6', title: 'Make Your Mark', description: "Personalize your world. Go to 'Settings' > 'Terminology' and change the 'App Name' to something unique.", type: QuestType.Venture, icon: '🖋️', tags: ['tutorial', 'admin', 'tutorial-donegeon-master'],
-      rewards: [{ rewardTypeId: 'core-wisdom', amount: 30 }], lateSetbacks: [], incompleteSetbacks: [],
+      id: 'quest-dm-3', title: 'Manual Adjustment', description: "An adventurer did something great outside the app! Go to 'Manage Users' and use the 'Adjust' button on the Explorer to grant them a bonus reward.", type: QuestType.Venture, icon: '✨', tags: ['tutorial', 'tutorial-donegeon-master'],
+      rewards: [{ rewardTypeId: 'core-wisdom', amount: 25 }], lateSetbacks: [], incompleteSetbacks: [],
       isActive: true, isOptional: false, availabilityType: QuestAvailability.Unlimited, availabilityCount: 1, weeklyRecurrenceDays: [], monthlyRecurrenceDays: [],
       assignedUserIds: donegeonMaster ? [donegeonMaster.id] : [], requiresApproval: false, claimedByUserIds: [], dismissals: [],
     },
   ];
-
   return quests;
 };
 
 
 export const createInitialQuestCompletions = (users: User[], quests: Quest[]): QuestCompletion[] => {
-    const explorer = users.find(u => u.role === Role.Explorer);
-    const questToComplete = quests.find(q => q.id === 'quest-gatekeeper-approval-setup');
-
-    if (explorer && questToComplete) {
-        return [{
-            id: `comp-initial-${Date.now()}`,
-            questId: questToComplete.id,
-            userId: explorer.id,
-            completedAt: new Date().toISOString(),
-            status: QuestCompletionStatus.Pending,
-            note: "I've completed this to test the approval system. Please approve!"
-        }];
-    }
+    // This function can be used to populate some initial "completed" quests for demonstration
     return [];
 };

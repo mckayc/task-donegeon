@@ -38,9 +38,14 @@ const MarketItemView: React.FC<{ market: Market }> = ({ market }) => {
     const ItemCard: React.FC<{ asset: GameAsset }> = ({ asset }) => {
         const canAffordAny = useMemo(() => {
             if (!currentUser) return false;
-            const balances = appMode.mode === 'personal'
-                ? { purse: currentUser.personalPurse, experience: currentUser.personalExperience }
-                : currentUser.guildBalances[market.guildId] || { purse: {}, experience: {} };
+            
+            let balances: { purse: { [key: string]: number }, experience: { [key: string]: number } };
+            
+            if (appMode.mode === 'guild') {
+                balances = currentUser.guildBalances[appMode.guildId] || { purse: {}, experience: {} };
+            } else {
+                balances = { purse: currentUser.personalPurse, experience: currentUser.personalExperience };
+            }
             
             const getBalance = (rewardTypeId: string): number => {
                 const rewardDef = rewardTypes.find(rt => rt.id === rewardTypeId);
@@ -51,7 +56,7 @@ const MarketItemView: React.FC<{ market: Market }> = ({ market }) => {
             return asset.costGroups.some(group => 
                 group.every(costItem => getBalance(costItem.rewardTypeId) >= costItem.amount)
             );
-        }, [currentUser, appMode, market.guildId, asset, rewardTypes]);
+        }, [currentUser, appMode, asset, rewardTypes]);
 
         const userPurchaseCount = currentUser.ownedAssetIds.filter(id => id === asset.id).length;
         const isSoldOut = asset.purchaseLimit !== null && asset.purchaseLimitType === 'Total' && asset.purchaseCount >= asset.purchaseLimit;

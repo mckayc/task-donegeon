@@ -312,12 +312,27 @@ const EditGameAssetDialog: React.FC<EditGameAssetDialogProps> = ({ assetToEdit, 
                       <div>
                           <h4 className="font-semibold text-stone-200 mb-2">Available In</h4>
                           <div className="space-y-2 max-h-32 overflow-y-auto border border-stone-700 p-2 rounded-md">
-                              {markets.map(market => (
-                                  <div key={market.id} className="flex items-center">
-                                      <input type="checkbox" id={`market-${market.id}`} checked={formData.marketIds.includes(market.id)} onChange={() => handleMarketToggle(market.id)} className="h-4 w-4 rounded text-emerald-600 bg-stone-700 border-stone-500 focus:ring-emerald-500" />
-                                      <label htmlFor={`market-${market.id}`} className="ml-3 text-stone-300">{market.title}</label>
-                                  </div>
-                              ))}
+                              {markets.map(market => {
+                                  const isExchange = market.id === 'market-bank';
+                                  return (
+                                    <div key={market.id} className={`flex items-center ${isExchange ? 'opacity-50' : ''}`} title={isExchange ? 'Goods cannot be sold in the Exchange Post.' : ''}>
+                                        <input
+                                            type="checkbox"
+                                            id={`market-${market.id}`}
+                                            checked={formData.marketIds.includes(market.id)}
+                                            onChange={() => handleMarketToggle(market.id)}
+                                            className="h-4 w-4 rounded text-emerald-600 bg-stone-700 border-stone-500 focus:ring-emerald-500 disabled:cursor-not-allowed"
+                                            disabled={isExchange}
+                                        />
+                                        <label
+                                            htmlFor={`market-${market.id}`}
+                                            className={`ml-3 text-stone-300 ${isExchange ? 'cursor-not-allowed' : ''}`}
+                                        >
+                                            {market.title}
+                                        </label>
+                                    </div>
+                                  );
+                              })}
                           </div>
                       </div>
                   </>

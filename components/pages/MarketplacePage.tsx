@@ -6,11 +6,13 @@ import { PurchaseRequestStatus, RewardCategory, Market, GameAsset, RewardItem } 
 import PurchaseDialog from '../markets/PurchaseDialog';
 import ExchangeView from '../markets/ExchangeView';
 import { isMarketOpenForUser } from '../../utils/markets';
+import ImagePreviewDialog from '../ui/ImagePreviewDialog';
 
 const MarketItemView: React.FC<{ market: Market }> = ({ market }) => {
     const { rewardTypes, currentUser, purchaseRequests, appMode, settings, gameAssets } = useAppState();
     const [sortBy, setSortBy] = useState<'default' | 'title-asc' | 'title-desc'>('default');
     const [itemToPurchase, setItemToPurchase] = useState<GameAsset | null>(null);
+    const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null);
 
     if (!currentUser) return null;
 
@@ -63,9 +65,13 @@ const MarketItemView: React.FC<{ market: Market }> = ({ market }) => {
                             return (
                                  <div key={asset.id} className={`bg-violet-900/30 border-2 border-violet-700/60 rounded-xl shadow-lg flex flex-col h-full ${!canPurchase ? 'opacity-60' : ''}`}>
                                     <div className="p-4 border-b border-white/10">
-                                        <div className="w-full h-32 bg-black/20 rounded-md mb-3 flex items-center justify-center overflow-hidden">
-                                            <img src={asset.url} alt={asset.name} className="w-full h-full object-contain" />
-                                        </div>
+                                        <button
+                                            onClick={() => setPreviewImageUrl(asset.url)}
+                                            className="w-full h-32 bg-black/20 rounded-md mb-3 flex items-center justify-center overflow-hidden group focus:outline-none focus:ring-2 focus:ring-emerald-500 ring-offset-2 ring-offset-violet-900/30"
+                                            aria-label={`View larger image of ${asset.name}`}
+                                        >
+                                            <img src={asset.url} alt={asset.name} className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-200" />
+                                        </button>
                                         <h4 className="font-bold text-lg text-stone-100">{asset.name}</h4>
                                         <p className="text-stone-300 text-sm mt-1">{asset.description}</p>
                                     </div>
@@ -119,6 +125,13 @@ const MarketItemView: React.FC<{ market: Market }> = ({ market }) => {
                     asset={itemToPurchase}
                     marketId={market.id}
                     onClose={() => setItemToPurchase(null)}
+                />
+            )}
+            {previewImageUrl && (
+                <ImagePreviewDialog
+                    imageUrl={previewImageUrl}
+                    altText="Market item preview"
+                    onClose={() => setPreviewImageUrl(null)}
                 />
             )}
         </>

@@ -91,25 +91,36 @@ const ManageItemsPage: React.FC = () => {
                 {gameAssets.length > 0 ? (
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
                         {gameAssets.map(asset => (
-                            <div key={asset.id} className="bg-stone-900/40 rounded-lg border border-stone-700/60 flex flex-col group">
-                                <div className="aspect-square w-full bg-stone-700/50 rounded-t-md flex items-center justify-center overflow-hidden relative">
-                                    <img src={asset.url} alt={asset.name} className="w-full h-full object-contain" />
-                                     <div className="absolute top-1 right-1">
-                                        <button onClick={() => setOpenDropdownId(openDropdownId === asset.id ? null : asset.id)} className="p-1.5 rounded-full bg-black/40 hover:bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity">
-                                            <EllipsisVerticalIcon className="w-5 h-5 text-white" />
-                                        </button>
-                                        {openDropdownId === asset.id && (
-                                            <div ref={dropdownRef} className="absolute right-0 mt-2 w-36 bg-stone-900 border border-stone-700 rounded-lg shadow-xl z-20">
-                                                <a href="#" onClick={(e) => { e.preventDefault(); handleEdit(asset); setOpenDropdownId(null); }} className="block px-4 py-2 text-sm text-stone-300 hover:bg-stone-700/50">Edit</a>
-                                                <button onClick={() => { cloneGameAsset(asset.id); setOpenDropdownId(null); }} className="w-full text-left block px-4 py-2 text-sm text-stone-300 hover:bg-stone-700/50">Clone</button>
-                                                <button onClick={() => { handleDeleteRequest([asset.id]); setOpenDropdownId(null); }} className="w-full text-left block px-4 py-2 text-sm text-red-400 hover:bg-stone-700/50">Delete</button>
-                                            </div>
-                                        )}
+                             <div key={asset.id} className="relative group">
+                                <button
+                                    onClick={() => handleEdit(asset)}
+                                    className="w-full text-left bg-stone-900/40 rounded-lg border border-stone-700/60 flex flex-col hover:border-accent transition-all duration-200"
+                                >
+                                    <div className="aspect-square w-full bg-stone-700/50 rounded-t-md flex items-center justify-center overflow-hidden">
+                                        <img src={asset.url} alt={asset.name} className="w-full h-full object-contain" />
                                     </div>
-                                </div>
-                                <div className="p-3">
-                                    <p className="font-bold text-stone-200 truncate" title={asset.name}>{asset.name}</p>
-                                    <p className="text-xs text-stone-400">{asset.category}</p>
+                                    <div className="p-3">
+                                        <p className="font-bold text-stone-200 truncate" title={asset.name}>{asset.name}</p>
+                                        <p className="text-xs text-stone-400">{asset.category}</p>
+                                    </div>
+                                </button>
+                                <div className="absolute top-2 right-2">
+                                    <button
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            setOpenDropdownId(openDropdownId === asset.id ? null : asset.id);
+                                        }}
+                                        className="p-1.5 rounded-full bg-black/40 hover:bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity"
+                                    >
+                                        <EllipsisVerticalIcon className="w-5 h-5 text-white" />
+                                    </button>
+                                    {openDropdownId === asset.id && (
+                                        <div ref={dropdownRef} className="absolute right-0 mt-2 w-36 bg-stone-900 border border-stone-700 rounded-lg shadow-xl z-20">
+                                            <a href="#" onClick={(e) => { e.preventDefault(); handleEdit(asset); setOpenDropdownId(null); }} className="block px-4 py-2 text-sm text-stone-300 hover:bg-stone-700/50">Edit</a>
+                                            <button onClick={() => { cloneGameAsset(asset.id); setOpenDropdownId(null); }} className="w-full text-left block px-4 py-2 text-sm text-stone-300 hover:bg-stone-700/50">Clone</button>
+                                            <button onClick={() => { handleDeleteRequest([asset.id]); setOpenDropdownId(null); }} className="w-full text-left block px-4 py-2 text-sm text-red-400 hover:bg-stone-700/50">Delete</button>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         ))}

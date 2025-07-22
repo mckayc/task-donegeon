@@ -823,7 +823,42 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   }, [markets, gameAssets, deductRewards, addNotification, applyRewards, updateUser]);
 
   const cancelPurchaseRequest = useCallback((purchaseId: string) => setPurchaseRequests(prev => prev.map(p => p.id === purchaseId ? { ...p, status: PurchaseRequestStatus.Cancelled } : p)), []);
-  const approvePurchaseRequest = useCallback((purchaseId: string) => { const r = purchaseRequests.find(p => p.id === purchaseId); if (!r) return; if(deductRewards(r.userId, r.assetDetails.cost, r.guildId)){ setUsers(p => p.map(u => u.id === r.userId ? { ...u, ownedAssetIds: [...u.ownedAssetIds, r.assetId] } : u)); setPurchaseRequests(p => p.map(pr => pr.id === purchaseId ? { ...pr, status: PurchaseRequestStatus.Completed } : pr)); addNotification({type: 'success', message: 'Purchase approved.'});} else { addNotification({type: 'error', message: "User can't afford this."});} }, [purchaseRequests, deductRewards, addNotification]);
+  
+  const approvePurchaseRequest = useCallback((purchaseId: string) => {
+    const r = purchaseRequests.find(p => p.id === purchaseId);
+    if (!r) return;
+    
+    // deductRewards returns true on success and updates state internally
+    if(deductRewards(r.userId, r.assetDetails.cost, r.guildId)){
+      
+      // After deduction, we need to add the asset. We use functional updates
+      // to ensure we're modifying the latest state.
+      setUsers(prevUsers => {
+        const newUsers = prevUsers.map(u => {
+          if (u.id === r.userId) {
+            return { ...u, ownedAssetIds: [...u.ownedAssetIds, r.assetId] };
+          }
+          return u;
+        });
+        
+        // If the updated user is the current user, we must also update the currentUser state.
+        if (currentUser?.id === r.userId) {
+          const updatedCurrentUser = newUsers.find(u => u.id === r.userId);
+          if (updatedCurrentUser) {
+            _setCurrentUser(updatedCurrentUser);
+          }
+        }
+        
+        return newUsers;
+      });
+
+      setPurchaseRequests(p => p.map(pr => pr.id === purchaseId ? { ...pr, status: PurchaseRequestStatus.Completed } : pr));
+      addNotification({type: 'success', message: 'Purchase approved.'});
+    } else {
+      addNotification({type: 'error', message: "User can't afford this."});
+    }
+  }, [purchaseRequests, deductRewards, addNotification, currentUser]);
+  
   const rejectPurchaseRequest = useCallback((purchaseId: string) => { setPurchaseRequests(prev => prev.map(p => p.id === purchaseId ? { ...p, status: PurchaseRequestStatus.Rejected } : p)); addNotification({ type: 'info', message: 'Purchase request rejected.' }); }, [addNotification]);
   const addGuild = useCallback((guild: Omit<Guild, 'id'>) => setGuilds(prev => [...prev, { ...guild, id: `guild-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`}]), []);
   const updateGuild = useCallback((guild: Guild) => setGuilds(prev => prev.map(g => g.id === guild.id ? guild : g)), []);

@@ -9,7 +9,7 @@ import Card from '../ui/Card';
 import { EllipsisVerticalIcon } from '../ui/Icons';
 
 const UserManagementPage: React.FC = () => {
-    const { users, settings } = useAppState();
+    const { users, settings, currentUser } = useAppState();
     const { deleteUser } = useAppDispatch();
     const [isAddUserDialogOpen, setIsAddUserDialogOpen] = useState(false);
     const [isEditUserDialogOpen, setIsEditUserDialogOpen] = useState(false);
@@ -91,7 +91,7 @@ const UserManagementPage: React.FC = () => {
                                         {openDropdownId === user.id && (
                                             <div ref={dropdownRef} className="absolute right-10 top-0 mt-2 w-36 bg-stone-900 border border-stone-700 rounded-lg shadow-xl z-20">
                                                 <a href="#" onClick={(e) => { e.preventDefault(); handleEdit(user); setOpenDropdownId(null); }} className="block px-4 py-2 text-sm text-stone-300 hover:bg-stone-700/50">Edit</a>
-                                                {user.role !== Role.DonegeonMaster && (
+                                                {user.id !== currentUser?.id && (
                                                     <>
                                                         <button onClick={() => { handleAdjust(user); setOpenDropdownId(null); }} className="w-full text-left block px-4 py-2 text-sm text-stone-300 hover:bg-stone-700/50">Adjust</button>
                                                         <button onClick={() => { handleDelete(user.id); setOpenDropdownId(null); }} className="w-full text-left block px-4 py-2 text-sm text-red-400 hover:bg-stone-700/50">Delete</button>

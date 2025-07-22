@@ -1,6 +1,4 @@
 
-
-
 const express = require('express');
 const cors = require('cors');
 const { Pool } = require('pg');
@@ -26,7 +24,18 @@ const app = express();
 const port = process.env.PORT || 3001;
 
 // === Middleware ===
-app.use(cors());
+const allowedOrigins = ['https://taskdonegeon.mckayc.com', 'http://localhost:3000', 'http://localhost:3002'];
+const corsOptions = {
+  origin: function (origin, callback) {
+    if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  optionsSuccessStatus: 200
+};
+app.use(cors(corsOptions));
 app.use(express.json({ limit: '10mb' }));
 
 // === Supabase Client (if applicable) ===

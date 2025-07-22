@@ -47,12 +47,61 @@ const ChroniclesPage: React.FC = () => {
         };
     });
 
-    const purchaseActivities: ChronicleEvent[] = purchaseRequests.map(p => {
+    const purchaseActivities: ChronicleEvent[] = purchaseRequests.flatMap(p => {
         const costText = p.assetDetails.cost.map(c => `-${c.amount} ${getRewardDisplay(c.rewardTypeId).icon}`).join(' ');
-        return {
-            id: p.id, date: p.requestedAt, type: 'Purchase', userId: p.userId, title: `Purchase: "${p.assetDetails.name}"`, status: p.status, note: costText,
-            icon: gameAssets.find(a => a.id === p.assetId)?.icon || '💰', color: '#a855f7', guildId: p.guildId
-        };
+        const asset = gameAssets.find(a => a.id === p.assetId);
+        const icon = asset?.icon || '💰';
+        
+        // Instant purchase (no approval) - single event
+        if (p.status === PurchaseRequestStatus.Completed && !p.actedAt) {
+            return [{
+                id: p.id, date: p.requestedAt, type: 'Purchase', userId: p.userId,
+                title: `Purchased: "${p.assetDetails.name}"`, status: PurchaseRequestStatus.Completed,
+                note: costText, icon, color: '#22c55e', guildId: p.guildId
+            }];
+        }
+
+        const events: ChronicleEvent[] = [];
+
+        // Request Event (for all approval-based purchases)
+        events.push({
+            id: p.id, date: p.requestedAt, type: 'Purchase', userId: p.userId,
+            title: `Requested Purchase: "${p.assetDetails.name}"`,
+            status: p.status === PurchaseRequestStatus.Pending ? PurchaseRequestStatus.Pending : 'Requested',
+            note: costText, icon, color: '#eab308', guildId: p.guildId,
+        });
+
+        // Action Event (if it has been approved, rejected, or cancelled)
+        if (p.actedAt && p.status !== PurchaseRequestStatus.Pending) {
+            let actionTitle: string, actionColor: string, actionNote: string;
+            switch(p.status) {
+                case PurchaseRequestStatus.Completed:
+                    actionTitle = `Purchase Approved: "${p.assetDetails.name}"`;
+                    actionColor = '#22c55e';
+                    actionNote = asset?.payouts && asset.payouts.length > 0 ? 'Exchange successful.' : 'Item added to collection.';
+                    break;
+                case PurchaseRequestStatus.Rejected:
+                    actionTitle = `Purchase Rejected: "${p.assetDetails.name}"`;
+                    actionColor = '#ef4444';
+                    actionNote = 'Funds have been returned.';
+                    break;
+                case PurchaseRequestStatus.Cancelled:
+                     actionTitle = `Purchase Cancelled: "${p.assetDetails.name}"`;
+                     actionColor = '#ef4444';
+                     actionNote = 'Funds have been returned.';
+                     break;
+                default:
+                    return events; // Should not happen
+            }
+            
+            events.push({
+                id: `${p.id}-action`, date: p.actedAt, type: 'Purchase', userId: p.userId,
+                title: actionTitle, status: p.status, note: actionNote,
+                icon, color: actionColor, guildId: p.guildId
+            });
+        }
+        
+        return events;
     });
     
     const trophyActivities: ChronicleEvent[] = userTrophies.map(ut => ({
@@ -133,6 +182,7 @@ const ChroniclesPage: React.FC = () => {
       case AdminAdjustmentType.Reward:
       case AdminAdjustmentType.Trophy:
         return 'text-green-400';
+      case "Requested":
       case QuestCompletionStatus.Pending:
       case PurchaseRequestStatus.Pending:
         return 'text-yellow-400';
@@ -160,22 +210,42 @@ const ChroniclesPage: React.FC = () => {
       const userName = activity.userId ? users.find(u => u.id === activity.userId)?.gameName || 'Unknown User' : 'System';
 
       if (currentUser.role !== Role.Explorer) {
+            let actionText = '';
+            switch(activity.type) {
+                case 'Quest':
+                    actionText = `completed "${activity.title}"`;
+                    break;
+                case 'Purchase':
+                    // The title is now self-descriptive (e.g., "Requested Purchase: ...", "Purchase Approved: ...")
+                    actionText = activity.title; 
+                    break;
+                case 'Trophy':
+                    actionText = `earned "${activity.title}"`;
+                    break;
+                case 'Adjustment':
+                    actionText = `received an adjustment`;
+                    break;
+                case 'System':
+                    actionText = `triggered: ${activity.title}`;
+                    break;
+                case 'Announcement':
+                    actionText = `sent an announcement`;
+                    break;
+                default:
+                    actionText = activity.title;
+            }
+
            return (
             <span className="text-stone-200" title={activity.title}>
                 <span className="text-accent-light">{userName} </span>
                 <span className="text-stone-300 font-normal">
-                {activity.type === 'Quest' && `completed "${activity.title}"`}
-                {activity.type === 'Purchase' && `requested to purchase "${gameAssets.find(a => a.id === activity.title.split('"')[1])?.name || 'an item'}"`}
-                {activity.type === 'Trophy' && `earned "${activity.title}"`}
-                {activity.type === 'Adjustment' && `received an adjustment`}
-                {activity.type === 'System' && `triggered: ${activity.title}`}
-                {activity.type === 'Announcement' && `sent an announcement`}
+                    {actionText}
                 </span>
             </span>
            )
       }
 
-      // Explorer view is simpler
+      // Explorer view is simpler and can now also just use the full title
       return <span className="text-stone-200" title={activity.title}>{activity.title}</span>
   };
 

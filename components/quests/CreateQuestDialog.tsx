@@ -12,7 +12,13 @@ import DynamicIcon from '../ui/DynamicIcon';
 
 interface QuestDialogProps {
   questToEdit?: Quest;
-  initialData?: { title: string, description: string, type?: QuestType };
+  initialData?: { 
+    title: string; 
+    description: string; 
+    type?: QuestType,
+    tags?: string[],
+    suggestedRewards?: { rewardTypeName: string, amount: number }[]
+  };
   onClose: () => void;
 }
 
@@ -55,6 +61,18 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
           hasDeadlines: !!(questToEdit.lateDateTime || questToEdit.incompleteDateTime || questToEdit.lateTime || questToEdit.incompleteTime),
         };
       }
+
+      // Map AI suggested rewards to actual reward items
+      const suggestedRewardItems: RewardItem[] = initialData?.suggestedRewards
+        ?.map(reward => {
+            const foundType = rewardTypes.find(rt => rt.name.toLowerCase() === reward.rewardTypeName.toLowerCase().replace(' xp', ''));
+            if (foundType) {
+                return { rewardTypeId: foundType.id, amount: reward.amount };
+            }
+            return null;
+        })
+        .filter((r): r is RewardItem => r !== null) || [];
+
       // New quest
       return {
         title: initialData?.title || '',
@@ -63,7 +81,7 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
         iconType: 'emoji' as 'emoji' | 'image',
         icon: '📝',
         imageUrl: '',
-        rewards: [] as RewardItem[],
+        rewards: suggestedRewardItems,
         lateSetbacks: [] as RewardItem[],
         incompleteSetbacks: [] as RewardItem[],
         isActive: settings.questDefaults.isActive,
@@ -76,7 +94,7 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
         assignedUserIds: [] as string[],
         guildId: '',
         groupId: '',
-        tags: [] as string[],
+        tags: initialData?.tags || [],
         lateDateTime: '',
         incompleteDateTime: '',
         lateTime: '',

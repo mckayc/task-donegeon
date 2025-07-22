@@ -1,4 +1,5 @@
 
+
 import React, { useState, useMemo } from 'react';
 import { Role, Page, QuestCompletionStatus, PurchaseRequestStatus, Terminology, SidebarConfigItem, SidebarLink } from '../../types';
 import { ChevronDownIcon, ArrowLeftIcon, ArrowRightIcon } from '../ui/Icons';
@@ -88,8 +89,8 @@ const Sidebar: React.FC = () => {
 
   const visibleLinks = useMemo(() => settings.sidebars.main.filter(link => {
     if (!link.isVisible) return false;
-    if (link.id === 'AI Studio' && !isAiAvailable) return false;
-    if (link.id === 'Chat' && !settings.chat.enabled) return false;
+    if (link.type === 'link' && link.id === 'AI Studio' && !isAiAvailable) return false;
+    if (link.type === 'link' && link.id === 'Chat' && !settings.chat.enabled) return false;
     if (currentUser.role === Role.DonegeonMaster) return true;
     if (currentUser.role === Role.Gatekeeper) return link.role === Role.Gatekeeper || link.role === Role.Explorer;
     return link.role === Role.Explorer;
@@ -190,6 +191,9 @@ const Sidebar: React.FC = () => {
                     />
                 );
             }
+            i++;
+        } else if (item.type === 'separator') {
+            navTree.push(<div key={item.id} className="border-t border-stone-700/60 my-2"></div>);
             i++;
         } else {
             i++;

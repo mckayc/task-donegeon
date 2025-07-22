@@ -1,5 +1,3 @@
-
-
 import React, { useState } from 'react';
 import { GenerateContentResponse, Type } from "@google/genai";
 import Button from '../ui/Button';
@@ -12,6 +10,12 @@ import ToggleSwitch from '../ui/ToggleSwitch';
 interface QuestIdea {
   title: string;
   description: string;
+  icon: string;
+  tags: string[];
+  suggestedRewards: {
+      rewardTypeName: string;
+      amount: number;
+  }[];
 }
 
 interface QuestIdeaGeneratorProps {
@@ -20,7 +24,7 @@ interface QuestIdeaGeneratorProps {
 }
 
 const QuestIdeaGenerator: React.FC<QuestIdeaGeneratorProps> = ({ onUseIdea, onClose }) => {
-    const { settings } = useAppState();
+    const { settings, rewardTypes } = useAppState();
     const [prompt, setPrompt] = useState('');
     const [questType, setQuestType] = useState<QuestType>(QuestType.Venture);
     const [isLoading, setIsLoading] = useState(false);
@@ -36,7 +40,8 @@ const QuestIdeaGenerator: React.FC<QuestIdeaGeneratorProps> = ({ onUseIdea, onCl
         setError('');
         setGeneratedQuests([]);
 
-        const fullPrompt = `Generate 5 quest ideas for a gamified task app called ${settings.terminology.appName}. The quests should be of type "${questType}". Duties are recurring tasks and Ventures are one-time projects. The quests should be practical, actionable, and based on the theme: "${prompt}".`;
+        const rewardNames = rewardTypes.map(rt => rt.name).join(', ');
+        const fullPrompt = `Generate 5 quest ideas for a gamified task app called ${settings.terminology.appName}. The quests should be of type "${questType}". Duties are recurring tasks and Ventures are one-time projects. The quests should be practical, actionable, and based on the theme: "${prompt}". For each quest, also suggest 2-3 relevant tags (e.g., 'cleaning', 'outdoors', 'creative') and a suggested reward based on the task's likely effort. Use reward names from this list: ${rewardNames}.`;
 
         try {
             const response = await fetch('/api/ai/generate', {
@@ -56,16 +61,24 @@ const QuestIdeaGenerator: React.FC<QuestIdeaGeneratorProps> = ({ onUseIdea, onCl
                                     items: {
                                         type: Type.OBJECT,
                                         properties: {
-                                            title: {
-                                                type: Type.STRING,
-                                                description: 'A short, engaging title for the quest.'
-                                            },
-                                            description: {
-                                                type: Type.STRING,
-                                                description: 'A brief, one-sentence description of the quest.'
-                                            },
+                                            title: { type: Type.STRING, description: 'A short, engaging title for the quest.' },
+                                            description: { type: Type.STRING, description: 'A brief, one-sentence description of the quest.' },
+                                            icon: { type: Type.STRING, description: 'A single, relevant emoji.' },
+                                            tags: { type: Type.ARRAY, description: 'An array of 2-3 relevant string tags.', items: { type: Type.STRING } },
+                                            suggestedRewards: {
+                                                type: Type.ARRAY,
+                                                description: 'An array of suggested rewards.',
+                                                items: {
+                                                    type: Type.OBJECT,
+                                                    properties: {
+                                                        rewardTypeName: { type: Type.STRING, description: 'The name of the reward type.' },
+                                                        amount: { type: Type.INTEGER, description: 'The suggested amount of the reward.' },
+                                                    },
+                                                    required: ['rewardTypeName', 'amount']
+                                                }
+                                            }
                                         },
-                                        required: ['title', 'description']
+                                        required: ['title', 'description', 'icon', 'tags', 'suggestedRewards']
                                     }
                                 }
                             },
@@ -151,10 +164,14 @@ const QuestIdeaGenerator: React.FC<QuestIdeaGeneratorProps> = ({ onUseIdea, onCl
                     {generatedQuests.length > 0 && (
                         <div className="space-y-3 pt-4">
                             {generatedQuests.map((quest, index) => (
-                                <div key={index} className="bg-stone-900/50 p-4 rounded-lg flex justify-between items-center gap-4">
-                                    <div>
-                                        <h4 className="font-bold text-stone-100">{quest.title}</h4>
-                                        <p className="text-sm text-stone-400">{quest.description}</p>
+                                <div key={index} className="bg-stone-900/50 p-4 rounded-lg flex justify-between items-start gap-4">
+                                    <div className="flex-grow">
+                                        <h4 className="font-bold text-stone-100 flex items-center gap-2">{quest.icon} {quest.title}</h4>
+                                        <p className="text-sm text-stone-400 mt-1">{quest.description}</p>
+                                        <div className="flex flex-wrap gap-2 mt-2">
+                                            {quest.tags?.map(tag => <span key={tag} className="text-xs bg-blue-900/50 text-blue-300 px-2 py-0.5 rounded-full">{tag}</span>)}
+                                            {quest.suggestedRewards?.map(r => <span key={r.rewardTypeName} className="text-xs bg-yellow-900/50 text-yellow-300 px-2 py-0.5 rounded-full">+{r.amount} {r.rewardTypeName}</span>)}
+                                        </div>
                                     </div>
                                     <Button variant="secondary" className="text-sm py-1 px-3 flex-shrink-0" onClick={() => onUseIdea({...quest, type: questType})}>
                                         Use Idea

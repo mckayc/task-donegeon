@@ -137,7 +137,7 @@ const AppearancePage: React.FC = () => {
                                 <ToggleSwitch enabled={item.isVisible} setEnabled={(val) => handleSidebarItemChange(index, 'isVisible', val)} label="" />
                             </>
                         ) : (
-                            <h4 className="font-bold text-accent flex-grow pl-2">{item.title}</h4>
+                            item.type === 'header' && <h4 className="font-bold text-accent flex-grow pl-2">{item.title}</h4>
                         )}
                      </div>
                 ))}

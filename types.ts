@@ -212,6 +212,7 @@ export interface PurchaseRequest {
   userId: string;
   assetId: string;
   requestedAt: string;
+  actedAt?: string;
   status: PurchaseRequestStatus;
   assetDetails: {
       name: string;
@@ -424,7 +425,15 @@ export interface SidebarHeader {
     isVisible: boolean;
 }
 
-export type SidebarConfigItem = SidebarLink | SidebarHeader;
+export interface SidebarSeparator {
+    type: 'separator';
+    id: string;
+    level: 0;
+    role: Role;
+    isVisible: boolean;
+}
+
+export type SidebarConfigItem = SidebarLink | SidebarHeader | SidebarSeparator;
 
 export interface RewardValuationSettings {
   enabled: boolean;
@@ -605,3 +614,14 @@ export type ChronicleEvent = {
     questType?: QuestType;
     guildId?: string; // The scope of the event
 };
+
+export interface BulkQuestUpdates {
+    isActive?: boolean;
+    isOptional?: boolean;
+    requiresApproval?: boolean;
+    groupId?: string | null; // null to set as uncategorized
+    addTags?: string[];
+    removeTags?: string[];
+    assignUsers?: string[];
+    unassignUsers?: string[];
+}

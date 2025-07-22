@@ -118,8 +118,13 @@ export const INITIAL_MAIN_SIDEBAR_CONFIG: SidebarConfigItem[] = [
   { type: 'link', id: 'Asset Library', emoji: '📚', isVisible: true, level: 1, role: Role.DonegeonMaster, termKey: 'link_asset_library' },
   { type: 'link', id: 'AI Studio', emoji: '✨', isVisible: true, level: 1, role: Role.DonegeonMaster, termKey: 'link_ai_studio' },
   
+  { type: 'separator', id: 'sep-system-settings', level: 0, role: Role.DonegeonMaster, isVisible: true },
+
   // Top Level
   { type: 'link', id: 'Settings', emoji: '⚙️', isVisible: true, level: 0, role: Role.DonegeonMaster, termKey: 'link_settings' },
+  
+  { type: 'separator', id: 'sep-settings-chat', level: 0, role: Role.Explorer, isVisible: true },
+
   { type: 'link', id: 'Chat', emoji: '💬', isVisible: true, level: 0, role: Role.Explorer, termKey: 'link_chat' },
 
   // Help Section

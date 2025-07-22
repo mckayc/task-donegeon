@@ -9,6 +9,7 @@ import QuestIdeaGenerator from '../quests/QuestIdeaGenerator';
 import { QuestsIcon, EllipsisVerticalIcon } from '../ui/Icons';
 import EmptyState from '../ui/EmptyState';
 import Input from '../ui/Input';
+import BulkEditQuestsDialog from '../quests/BulkEditQuestsDialog';
 
 const ManageQuestsPage: React.FC = () => {
     const { quests, settings, isAiConfigured, questGroups } = useAppState();
@@ -17,8 +18,9 @@ const ManageQuestsPage: React.FC = () => {
     const [editingQuest, setEditingQuest] = useState<Quest | null>(null);
     const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
     const [isGeneratorOpen, setIsGeneratorOpen] = useState(false);
+    const [isBulkEditDialogOpen, setIsBulkEditDialogOpen] = useState(false);
     const [confirmation, setConfirmation] = useState<{ action: 'delete' | 'activate' | 'deactivate', ids: string[] } | null>(null);
-    const [initialCreateData, setInitialCreateData] = useState<{ title: string; description: string; type: QuestType } | null>(null);
+    const [initialCreateData, setInitialCreateData] = useState<{ title: string; description: string; type: QuestType, tags?: string[], rewards?: any[] } | null>(null);
     const [selectedQuests, setSelectedQuests] = useState<string[]>([]);
     const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
     const dropdownRef = useRef<HTMLDivElement | null>(null);
@@ -118,7 +120,7 @@ const ManageQuestsPage: React.FC = () => {
         setInitialCreateData(null);
     }
     
-    const handleUseIdea = (idea: { title: string; description: string; type: QuestType }) => {
+    const handleUseIdea = (idea: { title: string; description: string; type: QuestType, tags?: string[], rewards?: any[] }) => {
         setIsGeneratorOpen(false);
         setInitialCreateData(idea);
         setEditingQuest(null);
@@ -199,6 +201,7 @@ const ManageQuestsPage: React.FC = () => {
                     {selectedQuests.length > 0 && (
                         <div className="flex items-center gap-2 p-2 bg-stone-900/50 rounded-lg">
                             <span className="text-sm font-semibold text-stone-300 px-2">{selectedQuests.length} selected</span>
+                            <Button size="sm" variant="secondary" onClick={() => setIsBulkEditDialogOpen(true)}>Bulk Edit</Button>
                             <Button size="sm" variant="secondary" className="!bg-green-800/60 hover:!bg-green-700/70 text-green-200" onClick={() => setConfirmation({ action: 'activate', ids: selectedQuests })}>Mark Active</Button>
                             <Button size="sm" variant="secondary" className="!bg-yellow-800/60 hover:!bg-yellow-700/70 text-yellow-200" onClick={() => setConfirmation({ action: 'deactivate', ids: selectedQuests })}>Mark Inactive</Button>
                             <Button size="sm" variant="secondary" className="!bg-red-900/50 hover:!bg-red-800/60 text-red-300" onClick={() => setConfirmation({ action: 'delete', ids: selectedQuests })}>Delete</Button>
@@ -273,6 +276,8 @@ const ManageQuestsPage: React.FC = () => {
             {isCreateDialogOpen && <CreateQuestDialog questToEdit={editingQuest || undefined} initialData={initialCreateData || undefined} onClose={handleCloseDialog} />}
             
             {isGeneratorOpen && <QuestIdeaGenerator onUseIdea={handleUseIdea} onClose={() => setIsGeneratorOpen(false)} />}
+
+            {isBulkEditDialogOpen && <BulkEditQuestsDialog questIds={selectedQuests} onClose={() => setIsBulkEditDialogOpen(false)} />}
 
             <ConfirmDialog
                 isOpen={!!confirmation}

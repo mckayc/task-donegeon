@@ -1,6 +1,6 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
-import { Quest, QuestType } from '../../types';
+import { Quest, QuestType, QuestGroup } from '../../types';
 import Button from '../ui/Button';
 import Card from '../ui/Card';
 import CreateQuestDialog from '../quests/CreateQuestDialog';
@@ -8,9 +8,10 @@ import ConfirmDialog from '../ui/ConfirmDialog';
 import QuestIdeaGenerator from '../quests/QuestIdeaGenerator';
 import { QuestsIcon, EllipsisVerticalIcon } from '../ui/Icons';
 import EmptyState from '../ui/EmptyState';
+import Input from '../ui/Input';
 
 const ManageQuestsPage: React.FC = () => {
-    const { quests, settings, isAiConfigured } = useAppState();
+    const { quests, settings, isAiConfigured, questGroups } = useAppState();
     const { deleteQuests, updateQuestsStatus, cloneQuest } = useAppDispatch();
     
     const [editingQuest, setEditingQuest] = useState<Quest | null>(null);
@@ -22,6 +23,10 @@ const ManageQuestsPage: React.FC = () => {
     const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
     const dropdownRef = useRef<HTMLDivElement | null>(null);
     
+    const [activeTab, setActiveTab] = useState('All');
+    const [searchTerm, setSearchTerm] = useState('');
+    const [sortBy, setSortBy] = useState<'title-asc' | 'title-desc' | 'status-asc' | 'status-desc'>('title-asc');
+
     const isAiAvailable = settings.enableAiFeatures && isAiConfigured;
 
     useEffect(() => {
@@ -33,6 +38,48 @@ const ManageQuestsPage: React.FC = () => {
         document.addEventListener('mousedown', handleClickOutside);
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
+
+    const tabs = useMemo(() => ['All', 'Uncategorized', ...questGroups.map(g => g.name)], [questGroups]);
+    
+    useEffect(() => {
+        setSelectedQuests([]);
+    }, [activeTab, searchTerm, sortBy]);
+    
+    const filteredAndSortedQuests = useMemo(() => {
+        let filtered = [...quests];
+
+        // Filter by tab
+        if (activeTab === 'Uncategorized') {
+            filtered = filtered.filter(q => !q.groupId);
+        } else if (activeTab !== 'All') {
+            const group = questGroups.find(g => g.name === activeTab);
+            if (group) {
+                filtered = filtered.filter(q => q.groupId === group.id);
+            }
+        }
+
+        // Filter by search term
+        if (searchTerm) {
+            filtered = filtered.filter(q => 
+                q.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                q.description.toLowerCase().includes(searchTerm.toLowerCase())
+            );
+        }
+
+        // Sort
+        filtered.sort((a, b) => {
+            switch (sortBy) {
+                case 'title-asc': return a.title.localeCompare(b.title);
+                case 'title-desc': return b.title.localeCompare(a.title);
+                case 'status-asc': return (a.isActive ? 1 : 0) - (b.isActive ? 1 : 0);
+                case 'status-desc': return (b.isActive ? 1 : 0) - (a.isActive ? 1 : 0);
+                default: return 0;
+            }
+        });
+        
+        return filtered;
+    }, [quests, questGroups, activeTab, searchTerm, sortBy]);
+    
 
     const handleEdit = (quest: Quest) => {
         setInitialCreateData(null);
@@ -80,7 +127,7 @@ const ManageQuestsPage: React.FC = () => {
 
     const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.checked) {
-            setSelectedQuests(quests.map(q => q.id));
+            setSelectedQuests(filteredAndSortedQuests.map(q => q.id));
         } else {
             setSelectedQuests([]);
         }
@@ -108,15 +155,6 @@ const ManageQuestsPage: React.FC = () => {
 
     const headerActions = (
         <div className="flex items-center gap-2 flex-wrap">
-            {selectedQuests.length > 0 && (
-                <>
-                    <span className="text-sm font-semibold text-stone-300 px-2">{selectedQuests.length} selected</span>
-                    <Button size="sm" variant="secondary" className="!bg-green-800/60 hover:!bg-green-700/70 text-green-200" onClick={() => setConfirmation({ action: 'activate', ids: selectedQuests })}>Mark Active</Button>
-                    <Button size="sm" variant="secondary" className="!bg-yellow-800/60 hover:!bg-yellow-700/70 text-yellow-200" onClick={() => setConfirmation({ action: 'deactivate', ids: selectedQuests })}>Mark Inactive</Button>
-                    <Button size="sm" variant="secondary" className="!bg-red-900/50 hover:!bg-red-800/60 text-red-300" onClick={() => setConfirmation({ action: 'delete', ids: selectedQuests })}>Delete</Button>
-                    <div className="border-l h-6 border-stone-600 mx-2"></div>
-                </>
-            )}
              {isAiAvailable && (
                 <Button size="sm" onClick={() => setIsGeneratorOpen(true)} variant="secondary">
                     Create with AI
@@ -132,12 +170,48 @@ const ManageQuestsPage: React.FC = () => {
                 title={`All Created ${settings.terminology.tasks}`}
                 headerAction={headerActions}
             >
-                {quests.length > 0 ? (
+                <div className="border-b border-stone-700 mb-4">
+                    <nav className="-mb-px flex space-x-4 overflow-x-auto">
+                        {tabs.map(tab => (
+                            <button
+                                key={tab}
+                                onClick={() => setActiveTab(tab)}
+                                className={`capitalize whitespace-nowrap pb-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+                                    activeTab === tab
+                                    ? 'border-emerald-500 text-emerald-400'
+                                    : 'border-transparent text-stone-400 hover:text-stone-200 hover:border-stone-500'
+                                }`}
+                            >
+                                {tab}
+                            </button>
+                        ))}
+                    </nav>
+                </div>
+
+                 <div className="flex flex-wrap gap-4 mb-4">
+                    <Input placeholder="Search quests..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="max-w-xs" />
+                    <Input as="select" value={sortBy} onChange={e => setSortBy(e.target.value as any)}>
+                        <option value="title-asc">Title (A-Z)</option>
+                        <option value="title-desc">Title (Z-A)</option>
+                        <option value="status-asc">Status (Inactive first)</option>
+                        <option value="status-desc">Status (Active first)</option>
+                    </Input>
+                    {selectedQuests.length > 0 && (
+                        <div className="flex items-center gap-2 p-2 bg-stone-900/50 rounded-lg">
+                            <span className="text-sm font-semibold text-stone-300 px-2">{selectedQuests.length} selected</span>
+                            <Button size="sm" variant="secondary" className="!bg-green-800/60 hover:!bg-green-700/70 text-green-200" onClick={() => setConfirmation({ action: 'activate', ids: selectedQuests })}>Mark Active</Button>
+                            <Button size="sm" variant="secondary" className="!bg-yellow-800/60 hover:!bg-yellow-700/70 text-yellow-200" onClick={() => setConfirmation({ action: 'deactivate', ids: selectedQuests })}>Mark Inactive</Button>
+                            <Button size="sm" variant="secondary" className="!bg-red-900/50 hover:!bg-red-800/60 text-red-300" onClick={() => setConfirmation({ action: 'delete', ids: selectedQuests })}>Delete</Button>
+                        </div>
+                    )}
+                </div>
+
+                {filteredAndSortedQuests.length > 0 ? (
                     <div className="overflow-x-auto">
                         <table className="w-full text-left">
                             <thead className="border-b border-stone-700/60">
                                 <tr>
-                                    <th className="p-4 w-12"><input type="checkbox" onChange={handleSelectAll} checked={selectedQuests.length === quests.length && quests.length > 0} className="h-4 w-4 rounded text-emerald-600 bg-stone-700 border-stone-600 focus:ring-emerald-500" /></th>
+                                    <th className="p-4 w-12"><input type="checkbox" onChange={handleSelectAll} checked={selectedQuests.length === filteredAndSortedQuests.length && filteredAndSortedQuests.length > 0} className="h-4 w-4 rounded text-emerald-600 bg-stone-700 border-stone-600 focus:ring-emerald-500" /></th>
                                     <th className="p-4 font-semibold">Title</th>
                                     <th className="p-4 font-semibold">Type</th>
                                     <th className="p-4 font-semibold">Status</th>
@@ -146,7 +220,7 @@ const ManageQuestsPage: React.FC = () => {
                                 </tr>
                             </thead>
                             <tbody>
-                                {quests.map(quest => (
+                                {filteredAndSortedQuests.map(quest => (
                                     <tr key={quest.id} className="border-b border-stone-700/40 last:border-b-0">
                                         <td className="p-4"><input type="checkbox" checked={selectedQuests.includes(quest.id)} onChange={e => handleSelectOne(quest.id, e.target.checked)} className="h-4 w-4 rounded text-emerald-600 bg-stone-700 border-stone-600 focus:ring-emerald-500" /></td>
                                         <td className="p-4 font-bold">{quest.title}</td>
@@ -185,8 +259,8 @@ const ManageQuestsPage: React.FC = () => {
                 ) : (
                     <EmptyState 
                         Icon={QuestsIcon}
-                        title={`No ${settings.terminology.tasks} Created Yet`}
-                        message={`Create your first ${settings.terminology.task.toLowerCase()} to get your adventurers started.`}
+                        title={`No ${settings.terminology.tasks} Found`}
+                        message={searchTerm ? "No quests match your search." : `Create your first ${settings.terminology.task.toLowerCase()} to get your adventurers started.`}
                         actionButton={<Button onClick={handleCreate}>Create {settings.terminology.task}</Button>}
                     />
                 )}

@@ -196,7 +196,16 @@ const ManageItemsPage: React.FC = () => {
                                         </button>
                                     </div>
                                     <div className="p-3">
-                                        <p className="font-bold text-stone-200 truncate" title={asset.name}>{asset.name}</p>
+                                        <button 
+                                            onClick={(e) => {
+                                                e.preventDefault(); 
+                                                e.stopPropagation(); 
+                                                handleEdit(asset);
+                                            }} 
+                                            className="w-full text-left"
+                                        >
+                                            <p className="font-bold text-stone-200 truncate hover:underline hover:text-accent transition-colors" title={asset.name}>{asset.name}</p>
+                                        </button>
                                         <p className="text-xs text-stone-400">{asset.category}</p>
                                     </div>
                                 </label>

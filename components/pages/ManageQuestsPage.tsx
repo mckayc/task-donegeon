@@ -223,7 +223,11 @@ const ManageQuestsPage: React.FC = () => {
                                 {filteredAndSortedQuests.map(quest => (
                                     <tr key={quest.id} className="border-b border-stone-700/40 last:border-b-0">
                                         <td className="p-4"><input type="checkbox" checked={selectedQuests.includes(quest.id)} onChange={e => handleSelectOne(quest.id, e.target.checked)} className="h-4 w-4 rounded text-emerald-600 bg-stone-700 border-stone-600 focus:ring-emerald-500" /></td>
-                                        <td className="p-4 font-bold">{quest.title}</td>
+                                        <td className="p-4 font-bold">
+                                            <button onClick={() => handleEdit(quest)} className="hover:underline hover:text-accent transition-colors text-left">
+                                                {quest.title}
+                                            </button>
+                                        </td>
                                         <td className="p-4 text-stone-400">{quest.type}</td>
                                         <td className="p-4">
                                             <span className={`px-2 py-1 text-xs font-semibold rounded-full ${quest.isActive ? 'bg-green-500/20 text-green-300' : 'bg-stone-500/20 text-stone-300'}`}>

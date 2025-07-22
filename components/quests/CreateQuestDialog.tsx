@@ -23,7 +23,7 @@ const VENTURE_AVAILABILITIES = [QuestAvailability.Frequency, QuestAvailability.U
 
 const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialData, onClose }) => {
   const { users, guilds, rewardTypes, allTags, settings, questGroups } = useAppState();
-  const { addQuest, updateQuest } = useAppDispatch();
+  const { addQuest, updateQuest, addQuestGroup } = useAppDispatch();
 
   const getInitialFormData = () => {
       if (questToEdit) {
@@ -89,6 +89,8 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
   const [error, setError] = useState('');
   const [isEmojiPickerOpen, setIsEmojiPickerOpen] = useState(false);
   const [isGalleryOpen, setIsGalleryOpen] = useState(false);
+  const [isCreatingNewGroup, setIsCreatingNewGroup] = useState(false);
+  const [newGroupName, setNewGroupName] = useState('');
 
   useEffect(() => {
     if (!formData.hasDeadlines) {
@@ -154,15 +156,21 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
     }
     setError('');
 
+    let finalGroupId = formData.groupId;
+    if (isCreatingNewGroup && newGroupName.trim()) {
+        const newGroup = addQuestGroup({ name: newGroupName.trim(), description: '', icon: '📂' });
+        finalGroupId = newGroup.id;
+    }
+
     const finalQuestData = {
         ...formData,
+        groupId: finalGroupId || undefined,
         lateDateTime: formData.hasDeadlines && formData.type === QuestType.Venture && formData.lateDateTime ? new Date(formData.lateDateTime).toISOString() : undefined,
         incompleteDateTime: formData.hasDeadlines && formData.type === QuestType.Venture && formData.incompleteDateTime ? new Date(formData.incompleteDateTime).toISOString() : undefined,
         lateTime: formData.hasDeadlines && formData.type === QuestType.Duty && formData.lateTime ? formData.lateTime : undefined,
         incompleteTime: formData.hasDeadlines && formData.type === QuestType.Duty && formData.incompleteTime ? formData.incompleteTime : undefined,
         
         guildId: formData.guildId || undefined,
-        groupId: formData.groupId || undefined,
         availabilityCount: formData.availabilityType === QuestAvailability.Frequency ? formData.availabilityCount : null,
         weeklyRecurrenceDays: formData.availabilityType === QuestAvailability.Weekly ? formData.weeklyRecurrenceDays : [],
         monthlyRecurrenceDays: formData.availabilityType === QuestAvailability.Monthly ? formData.monthlyRecurrenceDays : [],
@@ -182,6 +190,17 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
     onClose();
   };
   
+  const handleGroupChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+      const { value } = e.target;
+      if (value === '--new--') {
+          setIsCreatingNewGroup(true);
+          setFormData(p => ({...p, groupId: ''}));
+      } else {
+          setIsCreatingNewGroup(false);
+          setFormData(p => ({...p, groupId: value}));
+      }
+  };
+
   const dialogTitle = questToEdit ? `Edit ${settings.terminology.task}` : `Create New ${settings.terminology.task}`;
   const submitButtonText = questToEdit ? 'Save Changes' : `Create ${settings.terminology.task}`;
   const currentAvailabilityOptions = formData.type === QuestType.Duty ? DUTY_AVAILABILITIES : VENTURE_AVAILABILITIES;
@@ -263,10 +282,20 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
             </div>
             <div>
                 <h3 className="font-semibold text-stone-200 mb-2">Quest Group</h3>
-                 <select name="groupId" value={formData.groupId} onChange={(e) => setFormData(p => ({...p, groupId: e.target.value}))} className="w-full px-4 py-2 bg-stone-700 border border-stone-600 rounded-md">
+                 <select name="groupId" value={isCreatingNewGroup ? '--new--' : formData.groupId} onChange={handleGroupChange} className="w-full px-4 py-2 bg-stone-700 border border-stone-600 rounded-md">
                     <option value="">Uncategorized</option>
                     {questGroups.map(g => <option key={g.id} value={g.id}>{g.name}</option>)}
+                    <option value="--new--">Create New Group...</option>
                 </select>
+                 {isCreatingNewGroup && (
+                    <Input
+                        label="New Group Name"
+                        value={newGroupName}
+                        onChange={(e) => setNewGroupName(e.target.value)}
+                        className="mt-2"
+                        autoFocus
+                    />
+                )}
             </div>
           </div>
 

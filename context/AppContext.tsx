@@ -52,7 +52,7 @@ interface AppDispatch {
   completeQuest: (questId: string, userId: string, rewards: RewardItem[], requiresApproval: boolean, guildId?: string, options?: { note?: string; completionDate?: Date }) => void;
   approveQuestCompletion: (completionId: string, note?: string) => void;
   rejectQuestCompletion: (completionId: string, note?: string) => void;
-  addQuestGroup: (group: Omit<QuestGroup, 'id'>) => void;
+  addQuestGroup: (group: Omit<QuestGroup, 'id'>) => QuestGroup;
   updateQuestGroup: (group: QuestGroup) => void;
   deleteQuestGroup: (groupId: string) => void;
   assignQuestGroupToUsers: (groupId: string, userIds: string[]) => void;
@@ -1001,7 +1001,12 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const updateQuestsStatus = useCallback((questIds: string[], isActive: boolean) => { setQuests(prev => prev.map(q => questIds.includes(q.id) ? { ...q, isActive } : q)); addNotification({ type: 'success', message: `${questIds.length} quest(s) updated.` }); }, [addNotification]);
 
   // Quest Group Management
-  const addQuestGroup = useCallback((group: Omit<QuestGroup, 'id'>) => { const newGroup: QuestGroup = { ...group, id: `q-group-${Date.now()}-${Math.random().toString(36).substring(2, 9)}` }; setQuestGroups(prev => [...prev, newGroup]); addNotification({ type: 'success', message: `Quest group "${newGroup.name}" created.` }); }, [addNotification]);
+  const addQuestGroup = useCallback((group: Omit<QuestGroup, 'id'>): QuestGroup => {
+    const newGroup: QuestGroup = { ...group, id: `q-group-${Date.now()}-${Math.random().toString(36).substring(2, 9)}` };
+    setQuestGroups(prev => [...prev, newGroup]);
+    addNotification({ type: 'success', message: `Quest group "${newGroup.name}" created.` });
+    return newGroup;
+  }, [addNotification]);
   const updateQuestGroup = useCallback((group: QuestGroup) => { setQuestGroups(prev => prev.map(g => g.id === group.id ? group : g)); addNotification({ type: 'success', message: `Quest group "${group.name}" updated.` }); }, [addNotification]);
   const deleteQuestGroup = useCallback((groupId: string) => { setQuestGroups(prev => prev.filter(g => g.id !== groupId)); setQuests(prevQuests => prevQuests.map(q => q.groupId === groupId ? { ...q, groupId: undefined } : q)); addNotification({ type: 'info', message: 'Quest group deleted.' }); }, [addNotification]);
   const assignQuestGroupToUsers = useCallback((groupId: string, userIds: string[]) => {

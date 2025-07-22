@@ -797,29 +797,33 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     }
 
     if (asset.requiresApproval) {
-        const newRequest: PurchaseRequest = {
-            id: `purchase-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
-            userId: user.id, assetId, requestedAt: new Date().toISOString(), status: PurchaseRequestStatus.Pending,
-            assetDetails: { name: asset.name, description: asset.description, cost }, guildId: market.guildId,
-        };
-        setPurchaseRequests(p => [...p, newRequest]);
-        addNotification({ type: 'info', message: 'Purchase requested. Awaiting approval.' });
-        
-        const recipients = users.filter(u => {
-            const isAdmin = u.role === Role.DonegeonMaster;
-            if (market.guildId) {
-                const guild = guilds.find(g => g.id === market.guildId);
-                return guild?.memberIds.includes(u.id) && isAdmin;
-            }
-            return isAdmin;
-        }).map(u => u.id).filter(id => id !== user.id);
+        if (deductRewards(user.id, cost, market.guildId)) {
+            const newRequest: PurchaseRequest = {
+                id: `purchase-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+                userId: user.id, assetId, requestedAt: new Date().toISOString(), status: PurchaseRequestStatus.Pending,
+                assetDetails: { name: asset.name, description: asset.description, cost }, guildId: market.guildId,
+            };
+            setPurchaseRequests(p => [...p, newRequest]);
+            addNotification({ type: 'info', message: 'Purchase requested. Funds have been held.' });
+            
+            const recipients = users.filter(u => {
+                const isAdmin = u.role === Role.DonegeonMaster;
+                if (market.guildId) {
+                    const guild = guilds.find(g => g.id === market.guildId);
+                    return guild?.memberIds.includes(u.id) && isAdmin;
+                }
+                return isAdmin;
+            }).map(u => u.id).filter(id => id !== user.id);
 
-        if (recipients.length > 0) {
-            addSystemNotification({
-                type: SystemNotificationType.ApprovalRequired,
-                message: `${user.gameName} requested to purchase "${asset.name}".`,
-                recipientUserIds: recipients, guildId: market.guildId, link: 'Approvals',
-            });
+            if (recipients.length > 0) {
+                addSystemNotification({
+                    type: SystemNotificationType.ApprovalRequired,
+                    message: `${user.gameName} requested to purchase "${asset.name}".`,
+                    recipientUserIds: recipients, guildId: market.guildId, link: 'Approvals',
+                });
+            }
+        } else {
+            addNotification({ type: 'error', message: 'You cannot afford this item.' });
         }
     } else {
         if (deductRewards(user.id, cost, market.guildId)) {
@@ -851,7 +855,14 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     }
   }, [markets, gameAssets, deductRewards, addNotification, applyRewards, updateUser, users, guilds, addSystemNotification]);
 
-  const cancelPurchaseRequest = useCallback((purchaseId: string) => setPurchaseRequests(prev => prev.map(p => p.id === purchaseId ? { ...p, status: PurchaseRequestStatus.Cancelled } : p)), []);
+  const cancelPurchaseRequest = useCallback((purchaseId: string) => {
+    const r = purchaseRequests.find(p => p.id === purchaseId);
+    if (r && r.status === PurchaseRequestStatus.Pending) {
+        applyRewards(r.userId, r.assetDetails.cost, r.guildId);
+        addNotification({ type: 'info', message: 'Purchase cancelled. Funds returned.' });
+    }
+    setPurchaseRequests(prev => prev.map(p => p.id === purchaseId ? { ...p, status: PurchaseRequestStatus.Cancelled } : p));
+  }, [purchaseRequests, applyRewards, addNotification]);
   
   const approvePurchaseRequest = useCallback((purchaseId: string) => {
     const r = purchaseRequests.find(p => p.id === purchaseId);
@@ -859,41 +870,44 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     const asset = gameAssets.find(a => a.id === r.assetId);
     if (!asset) return;
     
-    if(deductRewards(r.userId, r.assetDetails.cost, r.guildId)){
-      setUsers(prevUsers => {
-        const newUsers = prevUsers.map(u => {
-          if (u.id === r.userId) {
-            const updatedUser = { ...u };
-            if (asset.linkedThemeId && !updatedUser.ownedThemes.includes(asset.linkedThemeId)) {
-                updatedUser.ownedThemes = [...updatedUser.ownedThemes, asset.linkedThemeId];
-            }
-            if (!asset.payouts || asset.payouts.length === 0) {
-                updatedUser.ownedAssetIds = [...updatedUser.ownedAssetIds, r.assetId];
-            }
-            return updatedUser;
+    setUsers(prevUsers => {
+      const newUsers = prevUsers.map(u => {
+        if (u.id === r.userId) {
+          const updatedUser = { ...u };
+          if (asset.linkedThemeId && !updatedUser.ownedThemes.includes(asset.linkedThemeId)) {
+              updatedUser.ownedThemes = [...updatedUser.ownedThemes, asset.linkedThemeId];
           }
-          return u;
-        });
-        
-        if (currentUser?.id === r.userId) {
-          const updatedCurrentUser = newUsers.find(u => u.id === r.userId);
-          if (updatedCurrentUser) _setCurrentUser(updatedCurrentUser);
+          if (!asset.payouts || asset.payouts.length === 0) {
+              updatedUser.ownedAssetIds = [...updatedUser.ownedAssetIds, r.assetId];
+          }
+          return updatedUser;
         }
-        return newUsers;
+        return u;
       });
-
-      if (asset.payouts && asset.payouts.length > 0) {
-        applyRewards(r.userId, asset.payouts, r.guildId);
+      
+      if (currentUser?.id === r.userId) {
+        const updatedCurrentUser = newUsers.find(u => u.id === r.userId);
+        if (updatedCurrentUser) _setCurrentUser(updatedCurrentUser);
       }
+      return newUsers;
+    });
 
-      setPurchaseRequests(p => p.map(pr => pr.id === purchaseId ? { ...pr, status: PurchaseRequestStatus.Completed } : pr));
-      addNotification({type: 'success', message: 'Purchase approved.'});
-    } else {
-      addNotification({type: 'error', message: "User can't afford this."});
+    if (asset.payouts && asset.payouts.length > 0) {
+      applyRewards(r.userId, asset.payouts, r.guildId);
     }
-  }, [purchaseRequests, deductRewards, gameAssets, addNotification, currentUser, applyRewards]);
+
+    setPurchaseRequests(p => p.map(pr => pr.id === purchaseId ? { ...pr, status: PurchaseRequestStatus.Completed } : pr));
+    addNotification({type: 'success', message: 'Purchase approved.'});
+  }, [purchaseRequests, gameAssets, addNotification, currentUser, applyRewards]);
   
-  const rejectPurchaseRequest = useCallback((purchaseId: string) => { setPurchaseRequests(prev => prev.map(p => p.id === purchaseId ? { ...p, status: PurchaseRequestStatus.Rejected } : p)); addNotification({ type: 'info', message: 'Purchase request rejected.' }); }, [addNotification]);
+  const rejectPurchaseRequest = useCallback((purchaseId: string) => {
+    const r = purchaseRequests.find(p => p.id === purchaseId);
+    if (r && r.status === PurchaseRequestStatus.Pending) {
+        applyRewards(r.userId, r.assetDetails.cost, r.guildId);
+        addNotification({ type: 'info', message: 'Purchase rejected. Funds returned.' });
+    }
+    setPurchaseRequests(prev => prev.map(p => p.id === purchaseId ? { ...p, status: PurchaseRequestStatus.Rejected } : p));
+  }, [purchaseRequests, applyRewards, addNotification]);
   const addGuild = useCallback((guild: Omit<Guild, 'id'>) => setGuilds(prev => [...prev, { ...guild, id: `guild-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`}]), []);
   const updateGuild = useCallback((guild: Guild) => setGuilds(prev => prev.map(g => g.id === guild.id ? guild : g)), []);
   const deleteGuild = useCallback((guildId: string) => setGuilds(prev => prev.filter(g => g.id !== guildId)), []);

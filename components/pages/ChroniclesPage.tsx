@@ -50,7 +50,7 @@ const ChroniclesPage: React.FC = () => {
     const purchaseActivities: ChronicleEvent[] = purchaseRequests.map(p => {
         const costText = p.assetDetails.cost.map(c => `-${c.amount} ${getRewardDisplay(c.rewardTypeId).icon}`).join(' ');
         return {
-            id: p.id, date: p.requestedAt, type: 'Purchase', userId: p.userId, title: `Purchased "${p.assetDetails.name}"`, status: p.status, note: costText,
+            id: p.id, date: p.requestedAt, type: 'Purchase', userId: p.userId, title: `Purchase: "${p.assetDetails.name}"`, status: p.status, note: costText,
             icon: gameAssets.find(a => a.id === p.assetId)?.icon || '💰', color: '#a855f7', guildId: p.guildId
         };
     });
@@ -165,7 +165,7 @@ const ChroniclesPage: React.FC = () => {
                 <span className="text-accent-light">{userName} </span>
                 <span className="text-stone-300 font-normal">
                 {activity.type === 'Quest' && `completed "${activity.title}"`}
-                {activity.type === 'Purchase' && `purchased "${activity.title}"`}
+                {activity.type === 'Purchase' && `requested to purchase "${gameAssets.find(a => a.id === activity.title.split('"')[1])?.name || 'an item'}"`}
                 {activity.type === 'Trophy' && `earned "${activity.title}"`}
                 {activity.type === 'Adjustment' && `received an adjustment`}
                 {activity.type === 'System' && `triggered: ${activity.title}`}

@@ -1,8 +1,8 @@
 import React from 'react';
 import { SystemNotification, SystemNotificationType, User } from '../../types';
 import Button from './Button';
-import Card from './Card';
 import { useAppDispatch } from '../../context/AppContext';
+import { XCircleIcon } from './Icons';
 
 // Icons for different notification types
 const getIconForType = (type: SystemNotificationType) => {
@@ -41,7 +41,14 @@ const LoginNotificationPopup: React.FC<LoginNotificationPopupProps> = ({ notific
 
     return (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-[100] p-4">
-            <Card title={`Welcome Back, ${user.gameName}!`} className="max-w-2xl w-full max-h-[80vh] flex flex-col bg-stone-900/80">
+            <div className="relative bg-stone-900/80 border border-stone-700/60 rounded-xl shadow-lg max-w-2xl w-full max-h-[80vh] flex flex-col backdrop-blur-sm">
+                <div className="px-6 py-4 border-b border-stone-700/60 flex items-center justify-between rounded-t-xl flex-shrink-0">
+                    <h3 className="text-xl font-medieval text-emerald-400">Welcome Back, {user.gameName}!</h3>
+                     <button onClick={handleDismiss} className="text-stone-400 hover:text-white">
+                        <XCircleIcon className="w-6 h-6" />
+                    </button>
+                </div>
+
                 <div className="p-6 space-y-6 overflow-y-auto scrollbar-hide flex-grow">
                     <p className="text-stone-300 text-center">Here's what you missed:</p>
                     {Object.entries(groupedNotifications).map(([type, notifs]) => (
@@ -60,10 +67,10 @@ const LoginNotificationPopup: React.FC<LoginNotificationPopupProps> = ({ notific
                         </div>
                     ))}
                 </div>
-                <div className="p-4 border-t border-stone-700/60 text-center">
+                <div className="p-4 border-t border-stone-700/60 text-center flex-shrink-0">
                     <Button onClick={handleDismiss}>Got It, Let's Go!</Button>
                 </div>
-            </Card>
+            </div>
         </div>
     );
 };

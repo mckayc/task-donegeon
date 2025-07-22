@@ -1,6 +1,6 @@
 {
-  "name": "Task Donegeon - 0.0.92 - Prep for www",
-  "version": "0.0.92",
+  "name": "Task Donegeon - 0.0.93 - Escrow & UI Fixes",
+  "version": "0.0.93",
   "description": "A gamified task and chore tracker for families and groups. Complete quests, earn currency and experience, and level up your character in a fun, medieval-themed adventure.",
   "requestFramePermissions": [
     "camera"

@@ -7,6 +7,7 @@ import PurchaseDialog from '../markets/PurchaseDialog';
 import ExchangeView from '../markets/ExchangeView';
 import { isMarketOpenForUser } from '../../utils/markets';
 import ImagePreviewDialog from '../ui/ImagePreviewDialog';
+import DynamicIcon from '../ui/DynamicIcon';
 
 const MarketItemView: React.FC<{ market: Market }> = ({ market }) => {
     const { rewardTypes, currentUser, purchaseRequests, appMode, settings, gameAssets } = useAppState();
@@ -182,7 +183,13 @@ const MarketplacePage: React.FC = () => {
                         <button key={market.id} onClick={() => setActiveMarketId(market.id)} className="text-left">
                             <Card className="h-full hover:bg-stone-700/50 hover:border-accent transition-colors duration-200">
                                 <div className="flex flex-col items-center text-center">
-                                    <span className="text-5xl mb-4">{market.icon || '🛒'}</span>
+                                    <DynamicIcon 
+                                        iconType={market.iconType} 
+                                        icon={market.icon} 
+                                        imageUrl={market.imageUrl} 
+                                        className="w-16 h-16 text-5xl mb-4"
+                                        altText={`${market.title} icon`}
+                                    />
                                     <h3 className="text-xl font-bold text-accent-light">{market.title}</h3>
                                     <p className="text-stone-400 mt-2 flex-grow">{market.description}</p>
                                 </div>

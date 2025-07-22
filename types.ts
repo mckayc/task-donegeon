@@ -57,7 +57,9 @@ export interface RewardTypeDefinition {
   category: RewardCategory;
   description: string;
   isCore: boolean;
-  icon?: string;
+  iconType: 'emoji' | 'image';
+  icon: string;
+  imageUrl?: string;
 }
 
 export interface RewardItem {
@@ -78,7 +80,9 @@ export interface Quest {
   title: string;
   description: string;
   type: QuestType;
-  icon?: string;
+  iconType: 'emoji' | 'image';
+  icon: string;
+  imageUrl?: string;
   tags: string[];
   lateDateTime?: string; // For Ventures with deadlines
   incompleteDateTime?: string; // For Ventures with deadlines
@@ -181,7 +185,9 @@ export interface Market {
   id:string;
   title: string;
   description: string;
-  icon?: string;
+  iconType: 'emoji' | 'image';
+  icon: string;
+  imageUrl?: string;
   guildId?: string;
   status: MarketStatus;
 }
@@ -220,7 +226,9 @@ export interface Rank {
   id:string;
   name: string;
   xpThreshold: number;
-  icon?: string;
+  iconType: 'emoji' | 'image';
+  icon: string;
+  imageUrl?: string;
 }
 
 export enum TrophyRequirementType {
@@ -244,7 +252,9 @@ export interface Trophy {
     id: string;
     name: string;
     description: string;
+    iconType: 'emoji' | 'image';
     icon: string;
+    imageUrl?: string;
     isManual: boolean;
     requirements: TrophyRequirement[];
 }
@@ -289,7 +299,9 @@ export interface Notification {
   id: string;
   message: string;
   type: 'success' | 'error' | 'info' | 'trophy';
+  iconType?: 'emoji' | 'image';
   icon?: string;
+  imageUrl?: string;
 }
 
 export enum SystemNotificationType {
@@ -309,7 +321,9 @@ export interface SystemNotification {
     readByUserIds: string[];
     link?: Page; // Optional link to a relevant page
     guildId?: string;
+    iconType?: 'emoji' | 'image';
     icon?: string;
+    imageUrl?: string;
 }
 
 export interface Terminology {
@@ -572,7 +586,9 @@ export type ChronicleEvent = {
     title: string;
     note?: string;
     status: string;
+    iconType?: 'emoji' | 'image';
     icon: string;
+    imageUrl?: string;
     color: string;
     userId?: string; // The primary actor/user
     recipientUserIds?: string[]; // The users this event applies to (for announcements, system logs)

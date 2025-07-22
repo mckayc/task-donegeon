@@ -1,10 +1,8 @@
-
-
 import React, { useState, useMemo } from 'react';
 import { BlueprintAssets, TrophyRequirementType } from '../../types';
 import Button from '../ui/Button';
 import { useAppDispatch } from '../../context/AppContext';
-import { LibraryPack } from '../../data/assetLibrary';
+import { LibraryPack } from '../../types';
 
 interface AssetLibraryImportDialogProps {
   pack: LibraryPack;

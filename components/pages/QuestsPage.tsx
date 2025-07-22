@@ -4,9 +4,10 @@ import Button from '../ui/Button';
 import CreateQuestDialog from '../quests/CreateQuestDialog';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { Role, QuestType, Quest, QuestAvailability } from '../../types';
-import { isQuestAvailableForUser, questSorter } from '../../utils/quests';
+import { isQuestAvailableForUser, questSorter, isQuestVisibleToUserInMode } from '../../utils/quests';
 import CompleteQuestDialog from '../quests/CompleteQuestDialog';
 import QuestDetailDialog from '../quests/QuestDetailDialog';
+import DynamicIcon from '../ui/DynamicIcon';
 
 const getAvailabilityText = (quest: Quest, completionsCount: number): string => {
     switch (quest.availabilityType) {
@@ -123,7 +124,7 @@ const QuestItem: React.FC<{ quest: Quest; now: Date; onSelect: (quest: Quest) =>
             {/* Header */}
             <div className="p-4 border-b border-white/10 flex items-start gap-4">
                 <div className={`w-12 h-12 rounded-lg flex items-center justify-center flex-shrink-0 text-3xl ${isDuty ? 'bg-sky-900/70' : 'bg-amber-900/70'}`}>
-                    {quest.icon || '📝'}
+                    <DynamicIcon iconType={quest.iconType} icon={quest.icon} imageUrl={quest.imageUrl} className="w-8 h-8 text-3xl" altText={`${quest.title} icon`} />
                 </div>
                 <div className="flex-grow">
                     <h4 className="font-bold text-lg text-stone-100 flex items-center gap-2 flex-wrap">
@@ -178,102 +179,72 @@ const FilterButton: React.FC<{ type: 'all' | QuestType, children: React.ReactNod
 );
 
 const QuestsPage: React.FC = () => {
-    const [isCreateQuestDialogOpen, setIsCreateQuestDialogOpen] = useState(false);
-    const [completingQuest, setCompletingQuest] = useState<Quest | null>(null);
-    const [selectedQuest, setSelectedQuest] = useState<Quest | null>(null);
-    const [filter, setFilter] = useState<'all' | QuestType>('all');
     const { currentUser, quests, questCompletions, appMode, settings } = useAppState();
     const { markQuestAsTodo, unmarkQuestAsTodo } = useAppDispatch();
+    const [filter, setFilter] = useState<'all' | QuestType>('all');
+    const [selectedQuest, setSelectedQuest] = useState<Quest | null>(null);
+    const [completingQuest, setCompletingQuest] = useState<Quest | null>(null);
     const [now, setNow] = useState(new Date());
 
     useEffect(() => {
-        const timer = setInterval(() => setNow(new Date()), 60000); // Update every minute
+        const timer = setInterval(() => setNow(new Date()), 60000); // Update time every minute
         return () => clearInterval(timer);
     }, []);
 
-    const handleStartCompletion = (quest: Quest) => {
-        setSelectedQuest(null);
-        setCompletingQuest(quest);
-    };
-
-    const handleToggleTodo = (quest: Quest) => {
-        if (!currentUser || quest.type !== QuestType.Venture) return;
-        const isCurrentlyTodo = quest.todoUserIds?.includes(currentUser.id);
-
-        if (isCurrentlyTodo) {
-            unmarkQuestAsTodo(quest.id, currentUser.id);
-        } else {
-            markQuestAsTodo(quest.id, currentUser.id);
-        }
-        
-        // Update the dialog's state immediately for better UX
-        setSelectedQuest(prev => {
-            if (!prev) return null;
-            const newTodoUserIds = isCurrentlyTodo
-                ? (prev.todoUserIds || []).filter(id => id !== currentUser.id)
-                : [...(prev.todoUserIds || []), currentUser.id];
-            return { ...prev, todoUserIds: newTodoUserIds };
-        });
-    };
-
-    const availableQuests = useMemo(() => {
+    const visibleQuests = useMemo(() => {
         if (!currentUser) return [];
-        
-        const currentGuildId = appMode.mode === 'guild' ? appMode.guildId : undefined;
-        
-        return quests.filter(quest => 
-            quest.isActive &&
-            (quest.assignedUserIds.length === 0 || quest.assignedUserIds.includes(currentUser.id)) &&
-            quest.guildId === currentGuildId
-        );
-    }, [currentUser, quests, appMode]);
+        return quests
+            .filter(quest => isQuestVisibleToUserInMode(quest, currentUser.id, appMode))
+            .filter(quest => filter === 'all' || quest.type === filter)
+            .sort(questSorter(currentUser, questCompletions, now));
+    }, [quests, currentUser, appMode, filter, questCompletions, now]);
 
-    const filteredAndSortedQuests = useMemo(() => {
-        if(!currentUser) return [];
-        const questsToProcess = filter === 'all' ? availableQuests : availableQuests.filter(q => q.type === filter);
-        return [...questsToProcess].sort(questSorter(currentUser, questCompletions, now));
-    }, [availableQuests, filter, currentUser, now, questCompletions]);
-    
-    if (!currentUser) return null;
+    const handleStartCompletion = (questToComplete: Quest) => {
+        setSelectedQuest(null);
+        setCompletingQuest(questToComplete);
+    };
+
+    const handleToggleTodo = (questToToggle: Quest) => {
+        if (!currentUser || questToToggle.type !== QuestType.Venture) return;
+        const isTodo = questToToggle.todoUserIds?.includes(currentUser.id);
+        if (isTodo) {
+            unmarkQuestAsTodo(questToToggle.id, currentUser.id);
+        } else {
+            markQuestAsTodo(questToToggle.id, currentUser.id);
+        }
+        setSelectedQuest(prev => prev ? {...prev, todoUserIds: isTodo ? (prev.todoUserIds || []).filter(id => id !== currentUser.id) : [...(prev.todoUserIds || []), currentUser.id]} : null);
+    };
 
     return (
-        <div>
-            <div className="flex justify-between items-center mb-6 flex-wrap gap-4">
-                <div className="flex space-x-2 p-1 bg-stone-900/50 rounded-lg max-w-sm">
-                    <FilterButton type="all" activeFilter={filter} setFilter={setFilter}>All {settings.terminology.tasks}</FilterButton>
-                    <FilterButton type={QuestType.Duty} activeFilter={filter} setFilter={setFilter}>{settings.terminology.recurringTasks}</FilterButton>
-                    <FilterButton type={QuestType.Venture} activeFilter={filter} setFilter={setFilter}>{settings.terminology.singleTasks}</FilterButton>
-                </div>
-                <div className="flex items-center gap-4">
-                    {currentUser?.role === Role.DonegeonMaster && (
-                        <Button onClick={() => setIsCreateQuestDialogOpen(true)}>Create {settings.terminology.task}</Button>
-                    )}
-                </div>
+        <div className="space-y-6">
+            <div className="grid grid-cols-3 gap-2 max-w-sm">
+                <FilterButton type="all" activeFilter={filter} setFilter={setFilter}>All</FilterButton>
+                <FilterButton type={QuestType.Duty} activeFilter={filter} setFilter={setFilter}>{settings.terminology.recurringTasks}</FilterButton>
+                <FilterButton type={QuestType.Venture} activeFilter={filter} setFilter={setFilter}>{settings.terminology.singleTasks}</FilterButton>
             </div>
+            {visibleQuests.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                    {visibleQuests.map(quest => (
+                        <QuestItem key={quest.id} quest={quest} now={now} onSelect={setSelectedQuest} />
+                    ))}
+                </div>
+            ) : (
+                <Card><p className="text-center text-stone-400">No {filter !== 'all' ? filter.toLowerCase() : ''} quests found for this view.</p></Card>
+            )}
 
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                {filteredAndSortedQuests.length > 0 ? (
-                    filteredAndSortedQuests.map(quest => (
-                        <QuestItem key={quest.id} quest={quest} onSelect={setSelectedQuest} now={now} />
-                    ))
-                ) : (
-                    <Card className="md:col-span-2 xl:col-span-3">
-                        <p className="text-stone-400 text-center py-8">
-                            No {settings.terminology.tasks.toLowerCase()} match the current filter. Adventure awaits elsewhere!
-                        </p>
-                    </Card>
-                )}
-            </div>
-
-            {isCreateQuestDialogOpen && <CreateQuestDialog onClose={() => setIsCreateQuestDialogOpen(false)} />}
-            {completingQuest && <CompleteQuestDialog quest={completingQuest} onClose={() => setCompletingQuest(null)} />}
-            {selectedQuest && (
-                <QuestDetailDialog 
-                    quest={selectedQuest} 
-                    onClose={() => setSelectedQuest(null)} 
+            {selectedQuest && currentUser && (
+                <QuestDetailDialog
+                    quest={selectedQuest}
+                    onClose={() => setSelectedQuest(null)}
                     onComplete={() => handleStartCompletion(selectedQuest)}
                     onToggleTodo={() => handleToggleTodo(selectedQuest)}
-                    isTodo={!!(currentUser && selectedQuest.type === QuestType.Venture && selectedQuest.todoUserIds?.includes(currentUser.id))}
+                    isTodo={!!(selectedQuest.todoUserIds?.includes(currentUser.id))}
+                />
+            )}
+            {completingQuest && (
+                <CompleteQuestDialog
+                    quest={completingQuest}
+                    onClose={() => setCompletingQuest(null)}
                 />
             )}
         </div>

@@ -3,6 +3,7 @@ import { useAppState } from '../../context/AppContext';
 import { Rank } from '../../types';
 import Card from '../ui/Card';
 import { RankIcon } from '../ui/Icons';
+import DynamicIcon from '../ui/DynamicIcon';
 
 const RanksPage: React.FC = () => {
     const { currentUser, ranks, appMode } = useAppState();
@@ -61,7 +62,15 @@ const RanksPage: React.FC = () => {
         <div className="space-y-8">
             <Card title="Your Current Rank">
                 <div className="flex flex-col sm:flex-row items-center gap-6">
-                    <div className="text-7xl">{currentRank.icon}</div>
+                    <div className="w-20 h-20 flex items-center justify-center">
+                        <DynamicIcon 
+                            iconType={currentRank.iconType} 
+                            icon={currentRank.icon} 
+                            imageUrl={currentRank.imageUrl} 
+                            className="w-20 h-20 text-7xl" 
+                            altText={`${currentRank.name} rank icon`}
+                        />
+                    </div>
                     <div className="flex-grow w-full text-center sm:text-left">
                         <h3 className="text-3xl font-bold text-accent-light">{currentRank.name}</h3>
                         <p className="text-stone-400">Total XP: {totalXp}</p>
@@ -79,7 +88,15 @@ const RanksPage: React.FC = () => {
                 <ul className="space-y-3">
                     {sortedRanks.map(rank => (
                         <li key={rank.id} className={`p-4 rounded-lg flex items-center gap-4 ${rank.id === currentRank.id ? 'bg-emerald-900/50 border-l-4 border-emerald-400' : 'bg-stone-800/60'}`}>
-                            <div className="text-4xl">{rank.icon}</div>
+                            <div className="w-12 h-12 flex items-center justify-center">
+                               <DynamicIcon 
+                                   iconType={rank.iconType} 
+                                   icon={rank.icon} 
+                                   imageUrl={rank.imageUrl} 
+                                   className="w-10 h-10 text-4xl" 
+                                   altText={`${rank.name} rank icon`}
+                                />
+                            </div>
                             <div>
                                 <h4 className="font-bold text-lg text-stone-100">{rank.name}</h4>
                                 <p className="text-sm text-stone-400">Requires: {rank.xpThreshold} XP</p>

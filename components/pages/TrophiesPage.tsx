@@ -1,11 +1,10 @@
-
-
 import React, { useMemo } from 'react';
 import { useAppState } from '../../context/AppContext';
 import { Role, Trophy, UserTrophy, TrophyRequirementType, QuestType, QuestCompletionStatus, Quest, AppMode, User } from '../../types';
 import Card from '../ui/Card';
 import { fromYMD } from '../../utils/quests';
 import EmptyState from '../ui/EmptyState';
+import DynamicIcon from '../ui/DynamicIcon';
 
 const TrophiesPage: React.FC = () => {
     const { currentUser, trophies, userTrophies, appMode, settings, questCompletions, quests, ranks } = useAppState();
@@ -62,7 +61,7 @@ const TrophiesPage: React.FC = () => {
     const TrophyCard: React.FC<{ trophy: Trophy & { awardedAt?: string }, isEarned: boolean }> = ({ trophy, isEarned }) => (
         <div className={`bg-stone-800/70 p-4 rounded-lg flex flex-col items-center text-center transition-all duration-200 ${!isEarned ? 'opacity-60' : ''}`}>
             <div className={`w-20 h-20 mb-4 rounded-full flex items-center justify-center ${isEarned ? 'bg-amber-900/50' : 'bg-stone-700'}`}>
-                <span className="text-4xl">{trophy.icon}</span>
+                <DynamicIcon iconType={trophy.iconType} icon={trophy.icon} imageUrl={trophy.imageUrl} className="w-12 h-12 text-4xl" altText={`${trophy.name} trophy icon`} />
             </div>
             <h4 className={`font-bold text-lg ${isEarned ? 'text-amber-300' : 'text-stone-300'}`}>{trophy.name}</h4>
             <p className="text-stone-400 text-sm mt-1 flex-grow">{trophy.description}</p>

@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 import { useAppState } from '../../context/AppContext';
 import { useRewardValue } from '../../hooks/useRewardValue';
+import DynamicIcon from './DynamicIcon';
 
 const RewardDisplay: React.FC = () => {
   const { currentUser, rewardTypes, appMode } = useAppState();
@@ -23,9 +24,7 @@ const RewardDisplay: React.FC = () => {
     }
     
     return rewardTypes.map(rt => {
-        const amount = rt.isCore
-          ? (rt.category === 'Currency' ? currentPurse[rt.id] : currentExperience[rt.id]) || 0
-          : 0;
+        const amount = (rt.category === 'Currency' ? currentPurse[rt.id] : currentExperience[rt.id]) || 0;
         return { ...rt, amount };
     }).filter(b => b.amount > 0);
 
@@ -39,7 +38,13 @@ const RewardDisplay: React.FC = () => {
 
     return (
       <div title={title} className="flex items-center gap-2 bg-stone-800/50 px-3 py-1.5 rounded-full border border-stone-700/60">
-        <span className="text-lg">{balance.icon}</span>
+        <DynamicIcon 
+          iconType={balance.iconType} 
+          icon={balance.icon} 
+          imageUrl={balance.imageUrl} 
+          className="w-5 h-5 text-lg" 
+          altText={balance.name}
+        />
         <span className="font-semibold text-stone-200">{balance.amount}</span>
       </div>
     );

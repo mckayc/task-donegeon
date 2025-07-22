@@ -1,8 +1,6 @@
-
-
 import React, { useState, ChangeEvent, ReactNode } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
-import { Role, AppSettings, Terminology, RewardCategory, RewardTypeDefinition, ValuationConfig } from '../../types';
+import { Role, AppSettings, Terminology, RewardCategory, RewardTypeDefinition } from '../../types';
 import Button from '../ui/Button';
 import { ChevronDownIcon } from '../ui/Icons';
 import Input from '../ui/Input';
@@ -80,6 +78,7 @@ const terminologyLabels: { [key in keyof Terminology]: string } = {
   link_ranks: 'Sidebar: Ranks',
   link_chronicles: 'Sidebar: Chronicles',
   link_manage_quests: 'Sidebar: Manage Quests',
+  link_manage_quest_groups: 'Sidebar: Manage Quest Groups',
   link_manage_items: 'Sidebar: Manage Items',
   link_manage_markets: 'Sidebar: Manage Markets',
   link_manage_rewards: 'Sidebar: Manage Rewards',
@@ -96,66 +95,11 @@ const terminologyLabels: { [key in keyof Terminology]: string } = {
   link_backup_import: 'Sidebar: Backup & Import',
   link_asset_library: 'Sidebar: Asset Library',
   link_settings: 'Sidebar: Settings',
-  link_about: 'Sidebar: About',
+  link_about: 'About',
   link_help_guide: 'Sidebar: Help Guide',
   link_chat: 'Sidebar: Chat',
 };
 
-const ValuationSettingsBlock: React.FC<{
-    type: 'currency' | 'experience';
-    config: ValuationConfig;
-    rewards: RewardTypeDefinition[];
-    onFormChange: (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => void;
-    onToggleChange: (path: string, enabled: boolean) => void;
-    onExchangeRateChange: (rewardTypeId: string, value: string) => void;
-}> = ({ type, config, rewards, onFormChange, onToggleChange, onExchangeRateChange }) => {
-    
-    const anchorReward = rewards.find(c => c.id === config.anchorRewardId);
-    const otherRewards = rewards.filter(rt => rt.id !== config.anchorRewardId);
-
-    return (
-        <div className="space-y-6 bg-stone-900/40 p-4 rounded-lg">
-            <h3 className="font-bold text-xl text-stone-200 capitalize">{type} Valuation</h3>
-            <div className="flex items-start">
-                <ToggleSwitch
-                    enabled={config.enabled}
-                    setEnabled={(val) => onToggleChange(`rewardValuation.${type}.enabled`, val)}
-                    label={`Enable ${type} Valuation`}
-                />
-            </div>
-
-            <div className={`space-y-6 pt-6 mt-6 border-t border-stone-700 ${!config.enabled ? 'opacity-50 pointer-events-none' : ''}`}>
-                <div className="grid grid-cols-1 gap-4">
-                    <Input label="Base Unit Name" name={`rewardValuation.${type}.baseUnitName`} value={config.baseUnitName} onChange={onFormChange} />
-                    <Input label="Base Unit Symbol" name={`rewardValuation.${type}.baseUnitSymbol`} value={config.baseUnitSymbol} onChange={onFormChange} />
-                </div>
-                <div className="grid grid-cols-1 gap-4">
-                    <Input as="select" label="Anchor Reward" name={`rewardValuation.${type}.anchorRewardId`} value={config.anchorRewardId} onChange={onFormChange}>
-                        {rewards.map(rt => <option key={rt.id} value={rt.id}>{rt.name}</option>)}
-                    </Input>
-                    <Input label="Anchor Value" type="number" name={`rewardValuation.${type}.anchorRewardValue`} value={config.anchorRewardValue} onChange={onFormChange} step="0.01" />
-                </div>
-                <p className="text-xs -mt-3 text-stone-400">
-                    How many '{config.baseUnitName || 'Base Units'}' is 1 '{anchorReward?.name || 'Anchor'}' worth?
-                </p>
-
-                <div>
-                    <h4 className="font-semibold text-stone-200 mb-2">Exchange Rates</h4>
-                    <p className="text-sm text-stone-400 mb-3">Define how other rewards convert to your anchor.</p>
-                    <div className="space-y-3 max-h-48 overflow-y-auto pr-2">
-                        {otherRewards.map(rt => (
-                            <div key={rt.id} className="flex items-center gap-2 p-2 bg-stone-900/60 rounded-md">
-                                <label htmlFor={`exchange-${rt.id}`} className="text-stone-300 flex-grow">1 {anchorReward?.name || 'Anchor'} = </label>
-                                <Input id={`exchange-${rt.id}`} type="number" step="any" value={config.exchangeRates[rt.id] || ''} onChange={(e) => onExchangeRateChange(rt.id, e.target.value)} className="w-24" />
-                                <span className="text-stone-300 w-24">{rt.name}</span>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            </div>
-        </div>
-    );
-};
 
 const SettingsPage: React.FC = () => {
     const { currentUser, users, settings, rewardTypes } = useAppState();
@@ -198,18 +142,15 @@ const SettingsPage: React.FC = () => {
         });
     };
 
-     const handleExchangeRateChange = (type: 'currency' | 'experience', rewardTypeId: string, value: string) => {
+     const handleExchangeRateChange = (rewardTypeId: string, value: string) => {
         const numericValue = parseFloat(value) || 0;
         setFormState(prev => {
-            const newRates = { ...prev.rewardValuation[type].exchangeRates, [rewardTypeId]: numericValue };
+            const newRates = { ...prev.rewardValuation.exchangeRates, [rewardTypeId]: numericValue };
             return {
                 ...prev,
                 rewardValuation: {
                     ...prev.rewardValuation,
-                    [type]: {
-                        ...prev.rewardValuation[type],
-                        exchangeRates: newRates
-                    }
+                    exchangeRates: newRates
                 }
             };
         });
@@ -260,7 +201,8 @@ const SettingsPage: React.FC = () => {
     };
     
     const currencyRewards = rewardTypes.filter(rt => rt.category === RewardCategory.Currency);
-    const xpRewards = rewardTypes.filter(rt => rt.category === RewardCategory.XP);
+    const otherRewards = rewardTypes.filter(rt => rt.id !== formState.rewardValuation.anchorRewardId);
+    const anchorReward = rewardTypes.find(rt => rt.id === formState.rewardValuation.anchorRewardId);
 
     return (
         <div className="space-y-8 relative">
@@ -402,26 +344,35 @@ const SettingsPage: React.FC = () => {
             </CollapsibleSection>
 
              <CollapsibleSection title="Economy & Valuation" onSave={() => handleManualSave('Economy & Valuation')} showSavedIndicator={showSaved === 'Economy & Valuation'}>
-                <p className="text-sm text-stone-400 mb-6 -mt-2 bg-stone-900/40 p-3 rounded-md border border-stone-700/60">
-                    Anchor rewards help you to more easily set an appropriate reward when creating a quest. This can really come in handy if you have a high value reward (like a trip to Disneyland). This is only seen by admins and will not be seen by other users.
-                </p>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <ValuationSettingsBlock
-                        type="currency"
-                        config={formState.rewardValuation.currency}
-                        rewards={currencyRewards}
-                        onFormChange={handleFormChange}
-                        onToggleChange={(path, val) => handleToggleChange(path, val, 'Economy & Valuation')}
-                        onExchangeRateChange={(rewardTypeId, value) => handleExchangeRateChange('currency', rewardTypeId, value)}
+                <div className="space-y-4">
+                     <ToggleSwitch
+                        enabled={formState.rewardValuation.enabled}
+                        setEnabled={(val) => handleToggleChange('rewardValuation.enabled', val, 'Economy & Valuation')}
+                        label="Enable Economy Valuation & Exchanges"
                     />
-                     <ValuationSettingsBlock
-                        type="experience"
-                        config={formState.rewardValuation.experience}
-                        rewards={xpRewards}
-                        onFormChange={handleFormChange}
-                        onToggleChange={(path, val) => handleToggleChange(path, val, 'Economy & Valuation')}
-                        onExchangeRateChange={(rewardTypeId, value) => handleExchangeRateChange('experience', rewardTypeId, value)}
-                    />
+                    <div className={`grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 mt-4 border-t border-stone-700/60 ${!formState.rewardValuation.enabled ? 'opacity-50 pointer-events-none' : ''}`}>
+                        {/* Left Column: Anchor & Fees */}
+                        <div className="space-y-4">
+                             <Input as="select" label="Anchor Currency" name="rewardValuation.anchorRewardId" value={formState.rewardValuation.anchorRewardId} onChange={handleFormChange}>
+                                {currencyRewards.map(rt => <option key={rt.id} value={rt.id}>{rt.name}</option>)}
+                            </Input>
+                            <Input label="Currency Exchange Fee (%)" type="number" step="0.1" name="rewardValuation.currencyExchangeFeePercent" value={formState.rewardValuation.currencyExchangeFeePercent} onChange={handleFormChange} />
+                            <Input label="XP Exchange Fee (%)" type="number" step="0.1" name="rewardValuation.xpExchangeFeePercent" value={formState.rewardValuation.xpExchangeFeePercent} onChange={handleFormChange} />
+                        </div>
+                        {/* Right Column: Exchange Rates */}
+                        <div className="space-y-3">
+                            <h4 className="font-semibold text-stone-200">Exchange Rates</h4>
+                            <p className="text-sm text-stone-400 -mt-2">How many of each reward is equal to 1 <span className="font-bold">{anchorReward?.name || 'Anchor'}</span>?</p>
+                            <div className="space-y-2 max-h-48 overflow-y-auto pr-2">
+                                {otherRewards.map(rt => (
+                                    <div key={rt.id} className="flex items-center gap-2 p-2 bg-stone-900/60 rounded-md">
+                                        <label htmlFor={`exchange-${rt.id}`} className="text-stone-300 flex-grow">{rt.name} ({rt.icon})</label>
+                                        <Input id={`exchange-${rt.id}`} type="number" step="any" value={formState.rewardValuation.exchangeRates[rt.id] || ''} onChange={(e) => handleExchangeRateChange(rt.id, e.target.value)} className="w-28" />
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </CollapsibleSection>
 

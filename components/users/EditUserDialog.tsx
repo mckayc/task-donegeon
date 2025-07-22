@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { Role, User } from '../../types';
@@ -12,7 +11,7 @@ interface EditUserDialogProps {
 }
 
 const EditUserDialog: React.FC<EditUserDialogProps> = ({ user, onClose }) => {
-  const { users } = useAppState();
+  const { users, currentUser } = useAppState();
   const { updateUser } = useAppDispatch();
   const [formData, setFormData] = useState({
     firstName: user.firstName,
@@ -59,7 +58,9 @@ const EditUserDialog: React.FC<EditUserDialogProps> = ({ user, onClose }) => {
     onClose();
   };
 
-  const canChangeRole = user.role !== Role.DonegeonMaster;
+  const donegeonMasters = users.filter(u => u.role === Role.DonegeonMaster);
+  const isLastDonegeonMaster = user.role === Role.DonegeonMaster && donegeonMasters.length === 1;
+  const canChangeRole = currentUser?.role === Role.DonegeonMaster && !isLastDonegeonMaster;
 
   return (
     <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
@@ -77,11 +78,11 @@ const EditUserDialog: React.FC<EditUserDialogProps> = ({ user, onClose }) => {
                 className="w-full px-4 py-2 bg-stone-700 border border-stone-600 rounded-md disabled:opacity-50"
                 disabled={!canChangeRole}
             >
-              {canChangeRole && <option value={Role.Explorer}>Explorer</option>}
-              {canChangeRole && <option value={Role.Gatekeeper}>Gatekeeper</option>}
-              {!canChangeRole && <option value={Role.DonegeonMaster}>Donegeon Master</option>}
+              <option value={Role.Explorer}>Explorer</option>
+              <option value={Role.Gatekeeper}>Gatekeeper</option>
+              <option value={Role.DonegeonMaster}>Donegeon Master</option>
             </select>
-            {!canChangeRole && <p className="text-xs text-stone-400 mt-1">The Donegeon Master's role cannot be changed.</p>}
+            {!canChangeRole && <p className="text-xs text-stone-400 mt-1">The last Donegeon Master's role cannot be changed.</p>}
           </div>
           <div>
             <Input label="PIN (4-10 digits, optional)" id="edit-pin" name="pin" type="text" value={formData.pin} onChange={handleChange} />

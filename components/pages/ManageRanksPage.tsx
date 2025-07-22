@@ -1,6 +1,4 @@
-
-
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { Rank } from '../../types';
 import Button from '../ui/Button';
 import Card from '../ui/Card';
@@ -8,7 +6,7 @@ import EditRankDialog from '../settings/EditRankDialog';
 import ConfirmDialog from '../ui/ConfirmDialog';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import EmptyState from '../ui/EmptyState';
-import { RankIcon } from '../ui/Icons';
+import { RankIcon, EllipsisVerticalIcon } from '../ui/Icons';
 
 const ManageRanksPage: React.FC = () => {
     const { ranks, settings } = useAppState();
@@ -16,6 +14,18 @@ const ManageRanksPage: React.FC = () => {
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [editingRank, setEditingRank] = useState<Rank | null>(null);
     const [deletingRank, setDeletingRank] = useState<Rank | null>(null);
+    const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
+    const dropdownRef = useRef<HTMLDivElement | null>(null);
+
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+                setOpenDropdownId(null);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
 
     const sortedRanks = useMemo(() => {
         return [...ranks].sort((a, b) => a.xpThreshold - b.xpThreshold);
@@ -74,17 +84,22 @@ const ManageRanksPage: React.FC = () => {
                                         <td className="p-4 text-2xl">{rank.icon}</td>
                                         <td className="p-4 font-bold">{rank.name}</td>
                                         <td className="p-4 text-stone-300">{rank.xpThreshold}</td>
-                                        <td className="p-4 space-x-2">
-                                            <Button size="sm" variant="secondary" onClick={() => handleEdit(rank)}>Edit</Button>
-                                            <Button 
-                                                size="sm"
-                                                variant="secondary" 
-                                                className="!bg-red-900/50 hover:!bg-red-800/60 text-red-300 disabled:opacity-50 disabled:cursor-not-allowed" 
-                                                onClick={() => handleDeleteRequest(rank)}
-                                                disabled={rank.xpThreshold === 0}
-                                            >
-                                                Delete
-                                            </Button>
+                                        <td className="p-4 relative">
+                                            <button onClick={() => setOpenDropdownId(openDropdownId === rank.id ? null : rank.id)} className="p-2 rounded-full hover:bg-stone-700/50">
+                                                <EllipsisVerticalIcon className="w-5 h-5 text-stone-300" />
+                                            </button>
+                                            {openDropdownId === rank.id && (
+                                                <div ref={dropdownRef} className="absolute right-10 top-0 mt-2 w-36 bg-stone-900 border border-stone-700 rounded-lg shadow-xl z-20">
+                                                    <a href="#" onClick={(e) => { e.preventDefault(); handleEdit(rank); setOpenDropdownId(null); }} className="block px-4 py-2 text-sm text-stone-300 hover:bg-stone-700/50">Edit</a>
+                                                    <button 
+                                                        onClick={() => { handleDeleteRequest(rank); setOpenDropdownId(null); }} 
+                                                        className="w-full text-left block px-4 py-2 text-sm text-red-400 hover:bg-stone-700/50 disabled:opacity-50 disabled:text-stone-500"
+                                                        disabled={rank.xpThreshold === 0}
+                                                    >
+                                                        Delete
+                                                    </button>
+                                                </div>
+                                            )}
                                         </td>
                                     </tr>
                                 ))}

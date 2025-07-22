@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { Quest, QuestType, RewardItem, RewardCategory, QuestAvailability } from '../../types';
@@ -8,6 +7,8 @@ import ToggleSwitch from '../ui/ToggleSwitch';
 import RewardInputGroup from '../forms/RewardInputGroup';
 import EmojiPicker from '../ui/EmojiPicker';
 import TagInput from '../ui/TagInput';
+import ImageSelectionDialog from '../ui/ImageSelectionDialog';
+import DynamicIcon from '../ui/DynamicIcon';
 
 interface QuestDialogProps {
   questToEdit?: Quest;
@@ -21,8 +22,8 @@ const VENTURE_AVAILABILITIES = [QuestAvailability.Frequency, QuestAvailability.U
 
 
 const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialData, onClose }) => {
-  const { users, guilds, rewardTypes, allTags, settings } = useAppState();
-  const { addQuest, updateQuest } = useAppDispatch();
+  const { users, guilds, rewardTypes, allTags, settings, questGroups } = useAppState();
+  const { addQuest, updateQuest, addQuestGroup } = useAppDispatch();
 
   const getInitialFormData = () => {
       if (questToEdit) {
@@ -30,7 +31,9 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
           title: questToEdit.title,
           description: questToEdit.description,
           type: questToEdit.type,
+          iconType: questToEdit.iconType || 'emoji',
           icon: questToEdit.icon || '📝',
+          imageUrl: questToEdit.imageUrl || '',
           rewards: [...questToEdit.rewards],
           lateSetbacks: questToEdit.lateSetbacks ? [...questToEdit.lateSetbacks] : [],
           incompleteSetbacks: questToEdit.incompleteSetbacks ? [...questToEdit.incompleteSetbacks] : [],
@@ -43,6 +46,7 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
           monthlyRecurrenceDays: questToEdit.monthlyRecurrenceDays || [],
           assignedUserIds: [...questToEdit.assignedUserIds],
           guildId: questToEdit.guildId || '',
+          groupId: questToEdit.groupId || '',
           tags: questToEdit.tags || [],
           lateDateTime: questToEdit.lateDateTime ? questToEdit.lateDateTime.slice(0, 16) : '',
           incompleteDateTime: questToEdit.incompleteDateTime ? questToEdit.incompleteDateTime.slice(0, 16) : '',
@@ -56,7 +60,9 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
         title: initialData?.title || '',
         description: initialData?.description || '',
         type: initialData?.type || QuestType.Duty,
+        iconType: 'emoji' as 'emoji' | 'image',
         icon: '📝',
+        imageUrl: '',
         rewards: [] as RewardItem[],
         lateSetbacks: [] as RewardItem[],
         incompleteSetbacks: [] as RewardItem[],
@@ -69,6 +75,7 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
         monthlyRecurrenceDays: [] as number[],
         assignedUserIds: [] as string[],
         guildId: '',
+        groupId: '',
         tags: [] as string[],
         lateDateTime: '',
         incompleteDateTime: '',
@@ -81,6 +88,9 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
   const [formData, setFormData] = useState(getInitialFormData);
   const [error, setError] = useState('');
   const [isEmojiPickerOpen, setIsEmojiPickerOpen] = useState(false);
+  const [isGalleryOpen, setIsGalleryOpen] = useState(false);
+  const [isCreatingNewGroup, setIsCreatingNewGroup] = useState(false);
+  const [newGroupName, setNewGroupName] = useState('');
 
   useEffect(() => {
     if (!formData.hasDeadlines) {
@@ -146,8 +156,15 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
     }
     setError('');
 
+    let finalGroupId = formData.groupId;
+    if (isCreatingNewGroup && newGroupName.trim()) {
+        const newGroup = addQuestGroup({ name: newGroupName.trim(), description: '', icon: '📂' });
+        finalGroupId = newGroup.id;
+    }
+
     const finalQuestData = {
         ...formData,
+        groupId: finalGroupId || undefined,
         lateDateTime: formData.hasDeadlines && formData.type === QuestType.Venture && formData.lateDateTime ? new Date(formData.lateDateTime).toISOString() : undefined,
         incompleteDateTime: formData.hasDeadlines && formData.type === QuestType.Venture && formData.incompleteDateTime ? new Date(formData.incompleteDateTime).toISOString() : undefined,
         lateTime: formData.hasDeadlines && formData.type === QuestType.Duty && formData.lateTime ? formData.lateTime : undefined,
@@ -173,11 +190,23 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
     onClose();
   };
   
+  const handleGroupChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+      const { value } = e.target;
+      if (value === '--new--') {
+          setIsCreatingNewGroup(true);
+          setFormData(p => ({...p, groupId: ''}));
+      } else {
+          setIsCreatingNewGroup(false);
+          setFormData(p => ({...p, groupId: value}));
+      }
+  };
+
   const dialogTitle = questToEdit ? `Edit ${settings.terminology.task}` : `Create New ${settings.terminology.task}`;
   const submitButtonText = questToEdit ? 'Save Changes' : `Create ${settings.terminology.task}`;
   const currentAvailabilityOptions = formData.type === QuestType.Duty ? DUTY_AVAILABILITIES : VENTURE_AVAILABILITIES;
 
   return (
+    <>
     <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
       <div className="bg-stone-800 border border-stone-700 rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] flex flex-col">
         <div className="p-8 border-b border-stone-700/60">
@@ -191,29 +220,44 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
           </div>
 
           <div className="flex gap-4 items-end">
-            <div className="relative">
-              <label className="block text-sm font-medium text-stone-300 mb-1">Icon</label>
-              <button
-                type="button"
-                onClick={() => setIsEmojiPickerOpen(prev => !prev)}
-                className="w-16 h-11 text-left px-4 py-2 bg-stone-700 border border-stone-600 rounded-md flex items-center justify-center text-2xl"
-              >
-                {formData.icon}
-              </button>
-              {isEmojiPickerOpen && (
-                <EmojiPicker
-                  onSelect={(emoji) => {
-                    setFormData(p => ({ ...p, icon: emoji }));
-                    setIsEmojiPickerOpen(false);
-                  }}
-                  onClose={() => setIsEmojiPickerOpen(false)}
-                />
-              )}
-            </div>
             <div className="flex-grow">
               <Input label={`${settings.terminology.task} Title`} id="title" name="title" value={formData.title} onChange={(e) => setFormData(p => ({...p, title: e.target.value}))} required />
             </div>
           </div>
+           <div>
+            <label className="block text-sm font-medium text-stone-300 mb-1">Icon Type</label>
+            <div className="flex gap-4 p-2 bg-stone-700/50 rounded-md">
+                <label className="flex items-center gap-2 cursor-pointer">
+                    <input type="radio" value="emoji" name="iconType" checked={formData.iconType === 'emoji'} onChange={() => setFormData(p => ({...p, iconType: 'emoji'}))} className="h-4 w-4 text-emerald-600 bg-stone-700 border-stone-500"/>
+                    <span>Emoji</span>
+                </label>
+                 <label className="flex items-center gap-2 cursor-pointer">
+                    <input type="radio" value="image" name="iconType" checked={formData.iconType === 'image'} onChange={() => setFormData(p => ({...p, iconType: 'image'}))} className="h-4 w-4 text-emerald-600 bg-stone-700 border-stone-500" />
+                    <span>Image</span>
+                </label>
+            </div>
+          </div>
+          {formData.iconType === 'emoji' ? (
+            <div>
+              <label className="block text-sm font-medium text-stone-300 mb-1">Icon (Emoji)</label>
+              <div className="relative">
+                <button type="button" onClick={() => setIsEmojiPickerOpen(prev => !prev)} className="w-full text-left px-4 py-2 bg-stone-700 border border-stone-600 rounded-md flex items-center gap-2">
+                  <span className="text-2xl">{formData.icon}</span> <span className="text-stone-300">Click to change</span>
+                </button>
+                {isEmojiPickerOpen && <EmojiPicker onSelect={(emoji) => { setFormData(p => ({ ...p, icon: emoji })); setIsEmojiPickerOpen(false); }} onClose={() => setIsEmojiPickerOpen(false)} />}
+              </div>
+            </div>
+          ) : (
+             <div>
+              <label className="block text-sm font-medium text-stone-300 mb-1">Image Icon</label>
+              <div className="flex items-center gap-4">
+                <div className="w-16 h-16 bg-stone-700 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden">
+                  <DynamicIcon iconType={formData.iconType} icon={formData.icon} imageUrl={formData.imageUrl} className="w-full h-full text-4xl" altText="Selected icon" />
+                </div>
+                <Button type="button" variant="secondary" onClick={() => setIsGalleryOpen(true)}>Select Image</Button>
+              </div>
+            </div>
+          )}
           <div>
             <label htmlFor="description" className="block text-sm font-medium text-stone-300 mb-1">Description</label>
             <textarea id="description" name="description" rows={3} value={formData.description} onChange={(e) => setFormData(p => ({...p, description: e.target.value}))} className="w-full px-4 py-2 bg-stone-700 border border-stone-600 rounded-md"/>
@@ -228,12 +272,31 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
             />
           </div>
 
-          <div className="p-4 bg-stone-900/50 rounded-lg">
-            <h3 className="font-semibold text-stone-200 mb-2">Scope</h3>
-            <select name="guildId" value={formData.guildId} onChange={(e) => setFormData(p => ({...p, guildId: e.target.value}))} className="w-full px-4 py-2 bg-stone-700 border border-stone-600 rounded-md">
-                <option value="">Personal (Available to individuals)</option>
-                {guilds.map(g => <option key={g.id} value={g.id}>{g.name}</option>)}
-            </select>
+          <div className="p-4 bg-stone-900/50 rounded-lg grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <h3 className="font-semibold text-stone-200 mb-2">Scope</h3>
+              <select name="guildId" value={formData.guildId} onChange={(e) => setFormData(p => ({...p, guildId: e.target.value}))} className="w-full px-4 py-2 bg-stone-700 border border-stone-600 rounded-md">
+                  <option value="">Personal (Available to individuals)</option>
+                  {guilds.map(g => <option key={g.id} value={g.id}>{g.name}</option>)}
+              </select>
+            </div>
+            <div>
+                <h3 className="font-semibold text-stone-200 mb-2">Quest Group</h3>
+                 <select name="groupId" value={isCreatingNewGroup ? '--new--' : formData.groupId} onChange={handleGroupChange} className="w-full px-4 py-2 bg-stone-700 border border-stone-600 rounded-md">
+                    <option value="">Uncategorized</option>
+                    {questGroups.map(g => <option key={g.id} value={g.id}>{g.name}</option>)}
+                    <option value="--new--">Create New Group...</option>
+                </select>
+                 {isCreatingNewGroup && (
+                    <Input
+                        label="New Group Name"
+                        value={newGroupName}
+                        onChange={(e) => setNewGroupName(e.target.value)}
+                        className="mt-2"
+                        autoFocus
+                    />
+                )}
+            </div>
           </div>
 
           <div>
@@ -307,7 +370,7 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
           <div className="p-4 bg-stone-900/50 rounded-lg space-y-4">
             <div>
               <h3 className="font-semibold text-stone-200 mb-2">Individual User Assignment</h3>
-              <p className="text-sm text-stone-400 mb-3">Leave all unchecked to assign to everyone in scope.</p>
+              <p className="text-sm text-stone-400 mb-3">Leave all unchecked to assign to everyone in scope. Note: Assigning a Quest Group will override this.</p>
               <fieldset className="disabled:opacity-50">
                 <div className="space-y-2 max-h-40 overflow-y-auto border border-stone-700 p-2 rounded-md">
                     {users.map(user => (
@@ -331,6 +394,16 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
         </div>
       </div>
     </div>
+    {isGalleryOpen && (
+      <ImageSelectionDialog 
+        onSelect={(url) => {
+          setFormData(p => ({...p, imageUrl: url}));
+          setIsGalleryOpen(false);
+        }}
+        onClose={() => setIsGalleryOpen(false)}
+      />
+    )}
+    </>
   );
 };
 

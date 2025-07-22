@@ -1,9 +1,8 @@
-
-
 import React, { createContext, useState, useContext, ReactNode, useEffect, useCallback, useMemo, useRef } from 'react';
-import { AppSettings, User, Quest, RewardTypeDefinition, QuestCompletion, RewardItem, Market, PurchaseRequest, Guild, Rank, Trophy, UserTrophy, Notification, AppMode, Page, IAppData, ShareableAssetType, GameAsset, Role, QuestCompletionStatus, RewardCategory, PurchaseRequestStatus, AdminAdjustment, AdminAdjustmentType, SystemLog, QuestType, QuestAvailability, Blueprint, ImportResolution, TrophyRequirementType, ThemeDefinition, ChatMessage, SystemNotification, SystemNotificationType } from '../types';
+import { AppSettings, User, Quest, RewardTypeDefinition, QuestCompletion, RewardItem, Market, PurchaseRequest, Guild, Rank, Trophy, UserTrophy, Notification, AppMode, Page, IAppData, ShareableAssetType, GameAsset, Role, QuestCompletionStatus, RewardCategory, PurchaseRequestStatus, AdminAdjustment, AdminAdjustmentType, SystemLog, QuestType, QuestAvailability, Blueprint, ImportResolution, TrophyRequirementType, ThemeDefinition, ChatMessage, SystemNotification, SystemNotificationType, MarketStatus, QuestGroup } from '../types';
 import { INITIAL_SETTINGS, createMockUsers, INITIAL_REWARD_TYPES, INITIAL_RANKS, INITIAL_TROPHIES, createSampleMarkets, createSampleQuests, createInitialGuilds, createSampleGameAssets, INITIAL_THEMES, createInitialQuestCompletions } from '../data/initialData';
 import { toYMD } from '../utils/quests';
+import { analyzeBlueprintForConflicts } from '../utils/sharing';
 
 // The single, unified state for the entire application
 interface AppState extends IAppData {
@@ -44,6 +43,7 @@ interface AppDispatch {
   addQuest: (quest: Omit<Quest, 'id' | 'claimedByUserIds' | 'dismissals'>) => void;
   updateQuest: (updatedQuest: Quest) => void;
   deleteQuest: (questId: string) => void;
+  cloneQuest: (questId: string) => void;
   dismissQuest: (questId: string, userId: string) => void;
   claimQuest: (questId: string, userId: string) => void;
   releaseQuest: (questId: string, userId: string) => void;
@@ -52,13 +52,21 @@ interface AppDispatch {
   completeQuest: (questId: string, userId: string, rewards: RewardItem[], requiresApproval: boolean, guildId?: string, options?: { note?: string; completionDate?: Date }) => void;
   approveQuestCompletion: (completionId: string, note?: string) => void;
   rejectQuestCompletion: (completionId: string, note?: string) => void;
+  addQuestGroup: (group: Omit<QuestGroup, 'id'>) => QuestGroup;
+  updateQuestGroup: (group: QuestGroup) => void;
+  deleteQuestGroup: (groupId: string) => void;
+  assignQuestGroupToUsers: (groupId: string, userIds: string[]) => void;
   addRewardType: (rewardType: Omit<RewardTypeDefinition, 'id' | 'isCore'>) => void;
   updateRewardType: (rewardType: RewardTypeDefinition) => void;
   deleteRewardType: (rewardTypeId: string) => void;
+  cloneRewardType: (rewardTypeId: string) => void;
   addMarket: (market: Omit<Market, 'id'>) => void;
   updateMarket: (market: Market) => void;
   deleteMarket: (marketId: string) => void;
-  purchaseMarketItem: (assetId: string, marketId: string, user: User) => void;
+  cloneMarket: (marketId: string) => void;
+  deleteMarkets: (marketIds: string[]) => void;
+  updateMarketsStatus: (marketIds: string[], statusType: 'open' | 'closed') => void;
+  purchaseMarketItem: (assetId: string, marketId: string, user: User, costGroupIndex: number) => void;
   cancelPurchaseRequest: (purchaseId: string) => void;
   approvePurchaseRequest: (purchaseId: string) => void;
   rejectPurchaseRequest: (purchaseId: string) => void;
@@ -74,10 +82,11 @@ interface AppDispatch {
   addGameAsset: (asset: Omit<GameAsset, 'id' | 'creatorId' | 'createdAt'>) => void;
   updateGameAsset: (asset: GameAsset) => void;
   deleteGameAsset: (assetId: string) => void;
+  cloneGameAsset: (assetId: string) => void;
   addTheme: (theme: Omit<ThemeDefinition, 'id'>) => void;
   updateTheme: (theme: ThemeDefinition) => void;
   deleteTheme: (themeId: string) => void;
-  populateInitialGameData: (adminUser: User) => void;
+  completeFirstRun: (adminUserData: Omit<User, 'id' | 'personalPurse' | 'personalExperience' | 'guildBalances' | 'avatar' | 'ownedAssetIds' | 'ownedThemes' | 'hasBeenOnboarded'>, setupChoice: 'guided' | 'scratch' | 'import', blueprint?: Blueprint | null) => void;
   importBlueprint: (blueprint: Blueprint, resolutions: ImportResolution[]) => void;
   restoreFromBackup: (backupData: IAppData) => void;
   clearAllHistory: () => void;
@@ -89,6 +98,7 @@ interface AppDispatch {
   deleteGameAssets: (assetIds: string[]) => void;
   updateQuestsStatus: (questIds: string[], isActive: boolean) => void;
   uploadFile: (file: File, category?: string) => Promise<{ url: string } | null>;
+  executeExchange: (userId: string, payItem: RewardItem, receiveItem: RewardItem, guildId?: string) => void;
 
   // Settings & UI
   updateSettings: (settings: Partial<AppSettings>) => void;
@@ -110,7 +120,7 @@ const AppStateContext = createContext<AppState | undefined>(undefined);
 const AppDispatchContext = createContext<AppDispatch | undefined>(undefined);
 
 const debounce = <F extends (...args: any[]) => any>(func: F, waitFor: number) => {
-    let timeout: NodeJS.Timeout | null = null;
+    let timeout: ReturnType<typeof setTimeout> | null = null;
     const debounced = (...args: Parameters<F>) => {
         if (timeout !== null) {
             clearTimeout(timeout);
@@ -124,6 +134,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   // === STATE MANAGEMENT ===
   const [users, setUsers] = useState<User[]>([]);
   const [quests, setQuests] = useState<Quest[]>([]);
+  const [questGroups, setQuestGroups] = useState<QuestGroup[]>([]);
   const [markets, setMarkets] = useState<Market[]>([]);
   const [rewardTypes, setRewardTypes] = useState<RewardTypeDefinition[]>([]);
   const [questCompletions, setQuestCompletions] = useState<QuestCompletion[]>([]);
@@ -143,7 +154,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
   // UI State
   const [currentUser, _setCurrentUser] = useState<User | null>(null);
-  const [isAppUnlocked, _setAppUnlocked] = useState<boolean>(() => sessionStorage.getItem('isAppUnlocked') === 'true');
+  const [isAppUnlocked, _setAppUnlocked] = useState<boolean>(() => localStorage.getItem('isAppUnlocked') === 'true');
   const [activePage, setActivePage] = useState<Page>('Dashboard');
   const [appMode, setAppMode] = useState<AppMode>({ mode: 'personal' });
   const [notifications, setNotifications] = useState<Notification[]>([]);
@@ -168,10 +179,10 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const appDataRef = useRef<IAppData | null>(null);
   const initialLoadCompleted = useRef(false);
 
-  const isFirstRun = isDataLoaded && !users.some(u => u.role === Role.DonegeonMaster);
+  const isFirstRun = isDataLoaded && settings.contentVersion < 1;
 
   // === DATA PERSISTENCE ===
-  const appData = useMemo((): IAppData => ({ users, quests, markets, rewardTypes, questCompletions, purchaseRequests, guilds, ranks, trophies, userTrophies, adminAdjustments, gameAssets, systemLogs, settings, themes, loginHistory, chatMessages, systemNotifications }), [users, quests, markets, rewardTypes, questCompletions, purchaseRequests, guilds, ranks, trophies, userTrophies, adminAdjustments, gameAssets, systemLogs, settings, themes, loginHistory, chatMessages, systemNotifications]);
+  const appData = useMemo((): IAppData => ({ users, quests, questGroups, markets, rewardTypes, questCompletions, purchaseRequests, guilds, ranks, trophies, userTrophies, adminAdjustments, gameAssets, systemLogs, settings, themes, loginHistory, chatMessages, systemNotifications }), [users, quests, questGroups, markets, rewardTypes, questCompletions, purchaseRequests, guilds, ranks, trophies, userTrophies, adminAdjustments, gameAssets, systemLogs, settings, themes, loginHistory, chatMessages, systemNotifications]);
   appDataRef.current = appData;
 
   const addNotification = useCallback((notification: Omit<Notification, 'id'>) => {
@@ -186,85 +197,29 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             const response = await window.fetch('/api/data/load');
             if (response.ok) {
                 const data = await response.json();
-                if (data && data.users && data.users.length > 0) {
+                if (data && data.users) { // Basic check for valid data structure
                     console.log("Loading data from server.");
                     dataToSet = data;
                 }
             }
         } catch (error) {
-            console.error("Could not load data from server, will attempt to seed.", error);
+            console.error("Could not load data from server, will proceed without initial data.", error);
         }
 
         if (!dataToSet) {
-            console.log("Seeding with initial data for first run.");
+            console.log("No existing data found. Awaiting first-run setup.");
             dataToSet = {
-                users: [],
-                quests: [],
-                markets: [],
-                rewardTypes: INITIAL_REWARD_TYPES,
-                questCompletions: [],
-                purchaseRequests: [],
-                guilds: [],
-                ranks: INITIAL_RANKS,
-                trophies: [],
-                userTrophies: [],
-                adminAdjustments: [],
-                gameAssets: [],
-                systemLogs: [],
-                settings: INITIAL_SETTINGS,
-                themes: INITIAL_THEMES,
-                loginHistory: [],
-                chatMessages: [],
-                systemNotifications: [],
+                users: [], quests: [], markets: [], rewardTypes: INITIAL_REWARD_TYPES, questCompletions: [],
+                purchaseRequests: [], guilds: [], ranks: INITIAL_RANKS, trophies: [], userTrophies: [],
+                adminAdjustments: [], gameAssets: [], systemLogs: [], settings: INITIAL_SETTINGS,
+                themes: INITIAL_THEMES, loginHistory: [], chatMessages: [], systemNotifications: [],
+                questGroups: [],
             };
         }
 
         if (dataToSet) {
-            // --- MIGRATION LOGIC FOR NEW MARKETS AND ITEMS ---
-            const sampleMarkets = createSampleMarkets();
-            const sampleAssets = createSampleGameAssets();
-
-            const requiredMarkets = sampleMarkets.filter(m => m.id !== 'market-tutorial'); // Don't add tutorial market to existing setups
-            const marketIdsToAdd = new Set(requiredMarkets.map(m => m.id));
-            const requiredAssets = sampleAssets.filter(a => a.marketIds.some(mid => marketIdsToAdd.has(mid)));
-
-            const existingMarketIds = new Set((dataToSet.markets || []).map(m => m.id));
-            const marketsToAdd = requiredMarkets.filter(m => !existingMarketIds.has(m.id));
-
-            if (marketsToAdd.length > 0) {
-                console.log(`Applying migration: Adding ${marketsToAdd.length} new market(s).`);
-                if (!dataToSet.markets) dataToSet.markets = [];
-                dataToSet.markets.push(...marketsToAdd);
-            }
-            
-            const existingAssetIds = new Set((dataToSet.gameAssets || []).map(a => a.id));
-            const assetsToAdd = requiredAssets.filter(a => !existingAssetIds.has(a.id));
-            
-            if (assetsToAdd.length > 0) {
-                console.log(`Applying migration: Adding ${assetsToAdd.length} new game asset(s).`);
-                if (!dataToSet.gameAssets) dataToSet.gameAssets = [];
-                dataToSet.gameAssets.push(...assetsToAdd);
-            }
-            // --- END MIGRATION LOGIC ---
-
             const savedSettings: Partial<AppSettings> = dataToSet.settings || {};
             
-            // --- SETTINGS MIGRATION LOGIC ---
-            const oldRewardValuation = savedSettings.rewardValuation as any;
-            if (oldRewardValuation && oldRewardValuation.baseCurrencyUnit) { // Detect old flat structure
-                savedSettings.rewardValuation = {
-                    currency: {
-                        enabled: oldRewardValuation.enabled,
-                        baseUnitName: oldRewardValuation.baseCurrencyUnit,
-                        baseUnitSymbol: oldRewardValuation.baseCurrencySymbol,
-                        anchorRewardId: oldRewardValuation.anchorRewardId,
-                        anchorRewardValue: oldRewardValuation.anchorRewardValue,
-                        exchangeRates: oldRewardValuation.exchangeRates || {}
-                    },
-                    experience: INITIAL_SETTINGS.rewardValuation.experience // Add new feature with defaults
-                };
-            }
-
             const loadedSettings: AppSettings = {
                 ...INITIAL_SETTINGS,
                 ...savedSettings,
@@ -276,14 +231,12 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
                 chat: { ...INITIAL_SETTINGS.chat, ...(savedSettings.chat || {}) },
                 sidebars: { ...INITIAL_SETTINGS.sidebars, ...(savedSettings.sidebars || {}) },
                 terminology: { ...INITIAL_SETTINGS.terminology, ...(savedSettings.terminology || {}) },
-                rewardValuation: {
-                    currency: { ...INITIAL_SETTINGS.rewardValuation.currency, ...(savedSettings.rewardValuation?.currency || {}) },
-                    experience: { ...INITIAL_SETTINGS.rewardValuation.experience, ...(savedSettings.rewardValuation?.experience || {}) },
-                },
+                rewardValuation: { ...INITIAL_SETTINGS.rewardValuation, ...(savedSettings.rewardValuation || {}) },
             };
             
             setUsers(dataToSet.users || []);
             setQuests(dataToSet.quests || []);
+            setQuestGroups(dataToSet.questGroups || []);
             setMarkets(dataToSet.markets || []);
             setRewardTypes(dataToSet.rewardTypes || []);
             setQuestCompletions(dataToSet.questCompletions || []);
@@ -414,6 +367,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         const currentLocalData = stateRef.current ? {
             users: stateRef.current.users,
             quests: stateRef.current.quests,
+            questGroups: stateRef.current.questGroups,
             markets: stateRef.current.markets,
             rewardTypes: stateRef.current.rewardTypes,
             questCompletions: stateRef.current.questCompletions,
@@ -436,20 +390,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             console.log("Data out of sync. Refreshing from server.");
             
             const savedSettings: Partial<AppSettings> = serverData.settings || {};
-             const oldRewardValuation = savedSettings.rewardValuation as any;
-            if (oldRewardValuation && oldRewardValuation.baseCurrencyUnit) { // Detect old flat structure
-                savedSettings.rewardValuation = {
-                    currency: {
-                        enabled: oldRewardValuation.enabled,
-                        baseUnitName: oldRewardValuation.baseCurrencyUnit,
-                        baseUnitSymbol: oldRewardValuation.baseCurrencySymbol,
-                        anchorRewardId: oldRewardValuation.anchorRewardId,
-                        anchorRewardValue: oldRewardValuation.anchorRewardValue,
-                        exchangeRates: oldRewardValuation.exchangeRates || {}
-                    },
-                    experience: INITIAL_SETTINGS.rewardValuation.experience // Add new feature with defaults
-                };
-            }
 
             const loadedSettings: AppSettings = {
                 ...INITIAL_SETTINGS, ...savedSettings,
@@ -461,14 +401,12 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
                 chat: { ...INITIAL_SETTINGS.chat, ...(savedSettings.chat || {}) },
                 sidebars: { ...INITIAL_SETTINGS.sidebars, ...(savedSettings.sidebars || {}) },
                 terminology: { ...INITIAL_SETTINGS.terminology, ...(savedSettings.terminology || {}) },
-                rewardValuation: {
-                    currency: { ...INITIAL_SETTINGS.rewardValuation.currency, ...(savedSettings.rewardValuation?.currency || {}) },
-                    experience: { ...INITIAL_SETTINGS.rewardValuation.experience, ...(savedSettings.rewardValuation?.experience || {}) },
-                },
+                rewardValuation: { ...INITIAL_SETTINGS.rewardValuation, ...(savedSettings.rewardValuation || {}) },
             };
 
             setUsers(serverData.users || []);
             setQuests(serverData.quests || []);
+            setQuestGroups(serverData.questGroups || []);
             setMarkets(serverData.markets || []);
             setRewardTypes(serverData.rewardTypes || []);
             setQuestCompletions(serverData.questCompletions || []);
@@ -646,7 +584,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   }, [currentUser]);
   const deleteUser = useCallback((userId: string) => { setUsers(prev => prev.filter(u => u.id !== userId)); setGuilds(prev => prev.map(g => ({ ...g, memberIds: g.memberIds.filter(id => id !== userId) }))); setQuests(prev => prev.map(q => ({ ...q, assignedUserIds: q.assignedUserIds.filter(id => id !== userId) }))); }, []);
   const markUserAsOnboarded = useCallback((userId: string) => updateUser(userId, { hasBeenOnboarded: true }), [updateUser]);
-  const setAppUnlocked = useCallback((isUnlocked: boolean) => { sessionStorage.setItem('isAppUnlocked', String(isUnlocked)); _setAppUnlocked(isUnlocked); }, []);
+  const setAppUnlocked = useCallback((isUnlocked: boolean) => { localStorage.setItem('isAppUnlocked', String(isUnlocked)); _setAppUnlocked(isUnlocked); }, []);
   
   // GameData
   const addQuest = useCallback((quest: Omit<Quest, 'id' | 'claimedByUserIds' | 'dismissals'>) => {
@@ -673,6 +611,21 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         }
     }
   }, [addSystemNotification, guilds]);
+  const cloneQuest = useCallback((questId: string) => {
+    const questToClone = quests.find(q => q.id === questId);
+    if (!questToClone) return;
+
+    const newQuest: Quest = {
+        ...JSON.parse(JSON.stringify(questToClone)), // Deep copy
+        id: `quest-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+        title: `${questToClone.title} (Copy)`,
+        claimedByUserIds: [],
+        dismissals: [],
+        todoUserIds: [],
+    };
+    setQuests(prev => [...prev, newQuest]);
+    addNotification({ type: 'success', message: `Cloned quest: ${newQuest.title}` });
+  }, [quests, addNotification]);
   const updateQuest = useCallback((updatedQuest: Quest) => {
     setQuests(prev => {
         const oldQuest = prev.find(q => q.id === updatedQuest.id);
@@ -734,9 +687,60 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const addRewardType = useCallback((rewardType: Omit<RewardTypeDefinition, 'id' | 'isCore'>) => setRewardTypes(prev => [...prev, { ...rewardType, id: `custom-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`, isCore: false }]), []);
   const updateRewardType = useCallback((rewardType: RewardTypeDefinition) => setRewardTypes(prev => prev.map(rt => rt.id === rewardType.id ? rewardType : rt)), []);
   const deleteRewardType = useCallback((rewardTypeId: string) => setRewardTypes(prev => prev.filter(rt => rt.id !== rewardTypeId)), []);
+  const cloneRewardType = useCallback((rewardTypeId: string) => {
+    const rewardToClone = rewardTypes.find(rt => rt.id === rewardTypeId);
+    if (!rewardToClone || rewardToClone.isCore) {
+        addNotification({ type: 'error', message: 'Core rewards cannot be cloned.' });
+        return;
+    }
+    const newReward: RewardTypeDefinition = {
+        ...JSON.parse(JSON.stringify(rewardToClone)),
+        id: `custom-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+        name: `${rewardToClone.name} (Copy)`,
+        isCore: false,
+    };
+    setRewardTypes(prev => [...prev, newReward]);
+    addNotification({ type: 'success', message: `Cloned reward: ${newReward.name}` });
+  }, [rewardTypes, addNotification]);
   const addMarket = useCallback((market: Omit<Market, 'id'>) => setMarkets(prev => [...prev, { ...market, id: `market-${Date.now()}-${Math.random().toString(36).substring(2, 9)}` }]), []);
   const updateMarket = useCallback((market: Market) => setMarkets(prev => prev.map(m => m.id === market.id ? market : m)), []);
   const deleteMarket = useCallback((marketId: string) => setMarkets(prev => prev.filter(m => m.id !== marketId)), []);
+  const cloneMarket = useCallback((marketId: string) => {
+    if (marketId === 'market-bank') {
+        addNotification({ type: 'error', message: 'The Exchange Post cannot be cloned.' });
+        return;
+    }
+    const marketToClone = markets.find(m => m.id === marketId);
+    if (!marketToClone) return;
+    const newMarket: Market = {
+        ...JSON.parse(JSON.stringify(marketToClone)),
+        id: `market-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+        title: `${marketToClone.title} (Copy)`,
+    };
+    setMarkets(prev => [...prev, newMarket]);
+    addNotification({ type: 'success', message: `Cloned market: ${newMarket.title}` });
+  }, [markets, addNotification]);
+  const deleteMarkets = useCallback((marketIds: string[]) => {
+      const idsToDelete = new Set(marketIds.filter(id => id !== 'market-bank'));
+      if (marketIds.includes('market-bank')) {
+          addNotification({ type: 'error', message: 'The Exchange Post cannot be deleted.' });
+      }
+      setMarkets(prev => prev.filter(m => !idsToDelete.has(m.id)));
+      if (idsToDelete.size > 0) {
+        addNotification({ type: 'info', message: `${idsToDelete.size} market(s) deleted.` });
+      }
+  }, [addNotification]);
+  const updateMarketsStatus = useCallback((marketIds: string[], statusType: 'open' | 'closed') => {
+      const idsToUpdate = new Set(marketIds);
+      const newStatus: MarketStatus = { type: statusType };
+      setMarkets(prev => prev.map(m => {
+          if (idsToUpdate.has(m.id) && m.status.type !== 'conditional') {
+              return { ...m, status: newStatus };
+          }
+          return m;
+      }));
+      addNotification({ type: 'success', message: `${marketIds.length} market(s) updated.` });
+  }, [addNotification]);
   
   const deductRewards = useCallback((userId: string, cost: RewardItem[], guildId?: string): boolean => {
     const user = users.find(u => u.id === userId);
@@ -781,12 +785,18 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     return true;
   }, [users, rewardTypes, currentUser]);
   
-  const purchaseMarketItem = useCallback((assetId: string, marketId: string, user: User) => {
+  const purchaseMarketItem = useCallback((assetId: string, marketId: string, user: User, costGroupIndex: number) => {
     const market = markets.find(m => m.id === marketId);
     const asset = gameAssets.find(ga => ga.id === assetId);
     if (!market || !asset) return;
     
-    if (deductRewards(user.id, asset.cost, market.guildId)) {
+    const cost = asset.costGroups[costGroupIndex];
+    if (!cost) {
+        addNotification({ type: 'error', message: 'Invalid cost option selected.' });
+        return;
+    }
+
+    if (deductRewards(user.id, cost, market.guildId)) {
         let wasModified = false;
         const updatedUser = { ...user };
 
@@ -815,14 +825,49 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             updateUser(user.id, updatedUser);
         }
 
-        setPurchaseRequests(p => [...p, { id: `purchase-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`, userId: user.id, assetId, requestedAt: new Date().toISOString(), status: PurchaseRequestStatus.Completed, assetDetails: { name: asset.name, description: asset.description, cost: asset.cost }, guildId: market.guildId }]);
+        setPurchaseRequests(p => [...p, { id: `purchase-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`, userId: user.id, assetId, requestedAt: new Date().toISOString(), status: PurchaseRequestStatus.Completed, assetDetails: { name: asset.name, description: asset.description, cost: cost }, guildId: market.guildId }]);
     } else {
       addNotification({ type: 'error', message: 'You cannot afford this item.' });
     }
   }, [markets, gameAssets, deductRewards, addNotification, applyRewards, updateUser]);
 
   const cancelPurchaseRequest = useCallback((purchaseId: string) => setPurchaseRequests(prev => prev.map(p => p.id === purchaseId ? { ...p, status: PurchaseRequestStatus.Cancelled } : p)), []);
-  const approvePurchaseRequest = useCallback((purchaseId: string) => { const r = purchaseRequests.find(p => p.id === purchaseId); if (!r) return; if(deductRewards(r.userId, r.assetDetails.cost, r.guildId)){ setUsers(p => p.map(u => u.id === r.userId ? { ...u, ownedAssetIds: [...u.ownedAssetIds, r.assetId] } : u)); setPurchaseRequests(p => p.map(pr => pr.id === purchaseId ? { ...pr, status: PurchaseRequestStatus.Completed } : pr)); addNotification({type: 'success', message: 'Purchase approved.'});} else { addNotification({type: 'error', message: "User can't afford this."});} }, [purchaseRequests, deductRewards, addNotification]);
+  
+  const approvePurchaseRequest = useCallback((purchaseId: string) => {
+    const r = purchaseRequests.find(p => p.id === purchaseId);
+    if (!r) return;
+    
+    // deductRewards returns true on success and updates state internally
+    if(deductRewards(r.userId, r.assetDetails.cost, r.guildId)){
+      
+      // After deduction, we need to add the asset. We use functional updates
+      // to ensure we're modifying the latest state.
+      setUsers(prevUsers => {
+        const newUsers = prevUsers.map(u => {
+          if (u.id === r.userId) {
+            return { ...u, ownedAssetIds: [...u.ownedAssetIds, r.assetId] };
+          }
+          return u;
+        });
+        
+        // If the updated user is the current user, we must also update the currentUser state.
+        if (currentUser?.id === r.userId) {
+          const updatedCurrentUser = newUsers.find(u => u.id === r.userId);
+          if (updatedCurrentUser) {
+            _setCurrentUser(updatedCurrentUser);
+          }
+        }
+        
+        return newUsers;
+      });
+
+      setPurchaseRequests(p => p.map(pr => pr.id === purchaseId ? { ...pr, status: PurchaseRequestStatus.Completed } : pr));
+      addNotification({type: 'success', message: 'Purchase approved.'});
+    } else {
+      addNotification({type: 'error', message: "User can't afford this."});
+    }
+  }, [purchaseRequests, deductRewards, addNotification, currentUser]);
+  
   const rejectPurchaseRequest = useCallback((purchaseId: string) => { setPurchaseRequests(prev => prev.map(p => p.id === purchaseId ? { ...p, status: PurchaseRequestStatus.Rejected } : p)); addNotification({ type: 'info', message: 'Purchase request rejected.' }); }, [addNotification]);
   const addGuild = useCallback((guild: Omit<Guild, 'id'>) => setGuilds(prev => [...prev, { ...guild, id: `guild-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`}]), []);
   const updateGuild = useCallback((guild: Guild) => setGuilds(prev => prev.map(g => g.id === guild.id ? guild : g)), []);
@@ -835,24 +880,101 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const addGameAsset = useCallback((asset: Omit<GameAsset, 'id'|'creatorId'|'createdAt'>) => { setGameAssets(p => [...p, { ...asset, id: `g-asset-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`, creatorId: 'admin', createdAt: new Date().toISOString() }]); addNotification({ type: 'success', message: `Asset "${asset.name}" created.` }); }, [addNotification]);
   const updateGameAsset = useCallback((asset: GameAsset) => setGameAssets(prev => prev.map(ga => ga.id === asset.id ? asset : ga)), []);
   const deleteGameAsset = useCallback((assetId: string) => { setGameAssets(prev => prev.filter(ga => ga.id !== assetId)); addNotification({ type: 'info', message: 'Asset deleted.' }); }, [addNotification]);
+  const cloneGameAsset = useCallback((assetId: string) => {
+    const assetToClone = gameAssets.find(a => a.id === assetId);
+    if (!assetToClone) return;
+
+    const newAsset: GameAsset = {
+        ...JSON.parse(JSON.stringify(assetToClone)),
+        id: `g-asset-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+        name: `${assetToClone.name} (Copy)`,
+        purchaseCount: 0,
+        createdAt: new Date().toISOString(),
+    };
+    setGameAssets(prev => [...prev, newAsset]);
+    addNotification({ type: 'success', message: `Cloned asset: ${newAsset.name}` });
+  }, [gameAssets, addNotification]);
   const uploadFile = useCallback(async (file: File, category: string = 'Miscellaneous'): Promise<{ url: string } | null> => { const fd = new FormData(); fd.append('file', file); fd.append('category', category); try { const r = await window.fetch('/api/media/upload', { method: 'POST', body: fd }); if (!r.ok) { const e = await r.json(); throw new Error(e.error || 'Upload failed'); } return await r.json(); } catch (e) { const m = e instanceof Error ? e.message : 'Unknown error'; addNotification({ type: 'error', message: `Upload failed: ${m}` }); return null; } }, [addNotification]);
   
-  const populateInitialGameData = useCallback((adminUser: User) => {
-    addNotification({ type: 'info', message: 'Your Donegeon is being populated!' });
-    const sA = createMockUsers().filter(u => u.role !== Role.DonegeonMaster);
-    const aIU = [adminUser, ...sA];
-    setUsers(aIU);
-    const newQuests = createSampleQuests(aIU);
-    setQuests(newQuests);
-    setMarkets(createSampleMarkets());
-    setGameAssets(createSampleGameAssets());
+  const executeExchange = useCallback((userId: string, payItem: RewardItem, receiveItem: RewardItem, guildId?: string) => {
+    // This function assumes payItem.amount already includes any fees and is a whole number.
+    // receiveItem.amount should also be a whole number.
+    if (deductRewards(userId, [payItem], guildId)) {
+        applyRewards(userId, [receiveItem], guildId);
+    } else {
+        addNotification({ type: 'error', message: 'Exchange failed due to insufficient funds.' });
+    }
+  }, [deductRewards, applyRewards, addNotification]);
+  
+  const importBlueprint = useCallback((blueprint: Blueprint, resolutions: ImportResolution[]) => { const idMap = new Map<string, string>(); const genId = (p: string) => `${p}-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`; resolutions.forEach(res => { if (res.resolution !== 'skip') idMap.set(res.id, genId(res.type.slice(0, 2))); }); const newAssets: Partial<IAppData> = { quests: [], rewardTypes: [], ranks: [], trophies: [], markets: [] }; resolutions.forEach(res => { if (res.resolution === 'skip') return; const a = blueprint.assets[res.type]?.find(a => a.id === res.id); if (a) { const nA = { ...a, id: idMap.get(a.id)! }; if (res.resolution === 'rename' && res.newName) { if('title' in nA) nA.title = res.newName; else nA.name = res.newName; } newAssets[res.type]?.push(nA as any); } }); newAssets.quests?.forEach(q => { q.rewards = q.rewards.map(r => ({ ...r, rewardTypeId: idMap.get(r.rewardTypeId) || r.rewardTypeId })); q.lateSetbacks = q.lateSetbacks.map(r => ({ ...r, rewardTypeId: idMap.get(r.rewardTypeId) || r.rewardTypeId })); q.incompleteSetbacks = q.incompleteSetbacks.map(r => ({ ...r, rewardTypeId: idMap.get(r.rewardTypeId) || r.rewardTypeId })); }); newAssets.trophies?.forEach(t => t.requirements.forEach(r => { if(r.type === TrophyRequirementType.AchieveRank) r.value = idMap.get(r.value) || r.value; })); setQuests(p => [...p, ...(newAssets.quests || [])]); setRewardTypes(p => p.filter(rt => rt.isCore).concat(newAssets.rewardTypes || [])); setRanks(p => [...p, ...(newAssets.ranks || [])]); setTrophies(p => [...p, ...(newAssets.trophies || [])]); setMarkets(p => [...p, ...(newAssets.markets || [])]); addNotification({ type: 'success', message: `Imported from ${blueprint.name}!`}); }, [addNotification]);
+  
+  const completeFirstRun = useCallback((adminUserData: Omit<User, 'id' | 'personalPurse' | 'personalExperience' | 'guildBalances' | 'avatar' | 'ownedAssetIds' | 'ownedThemes' | 'hasBeenOnboarded'>, setupChoice: 'guided' | 'scratch' | 'import', blueprint?: Blueprint | null) => {
+    // 1. Create the admin user object
+    const adminUser: User = { 
+        ...adminUserData, 
+        id: `user-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`, 
+        avatar: {}, 
+        ownedAssetIds: [], 
+        personalPurse: {}, 
+        personalExperience: {}, 
+        guildBalances: {}, 
+        ownedThemes: ['emerald', 'rose', 'sky'], 
+        hasBeenOnboarded: false 
+    };
+
+    // 2. Set core data that's always present
+    setUsers([adminUser]);
+    setGuilds(createInitialGuilds([adminUser]));
     setRewardTypes(INITIAL_REWARD_TYPES);
-    setGuilds(createInitialGuilds(aIU));
     setRanks(INITIAL_RANKS);
     setTrophies(INITIAL_TROPHIES);
-    setQuestCompletions(createInitialQuestCompletions(aIU, newQuests));
-  }, [addNotification]);
-  
+    setThemes(INITIAL_THEMES);
+    
+    // 3. Clear any potential old sample data from a failed previous run
+    setQuests([]);
+    setMarkets([]);
+    setGameAssets([]);
+    setQuestCompletions([]);
+    setSystemLogs([]);
+    setAdminAdjustments([]);
+    setPurchaseRequests([]);
+    setQuestGroups([]);
+    
+    // 4. Choice-specific setup
+    if (setupChoice === 'guided') {
+        const sampleQuests = createSampleQuests([adminUser]);
+        setQuests(sampleQuests);
+        setMarkets(createSampleMarkets());
+        setGameAssets(createSampleGameAssets());
+        setQuestCompletions(createInitialQuestCompletions([adminUser], sampleQuests));
+        addNotification({ type: 'info', message: 'Your Donegeon is being populated with sample data!' });
+    } else if (setupChoice === 'scratch') {
+        const exchangeMarket = createSampleMarkets().find(m => m.id === 'market-bank');
+        if (exchangeMarket) {
+            setMarkets([exchangeMarket]);
+        }
+    } else if (setupChoice === 'import' && blueprint) {
+        const freshState: IAppData = { users: [adminUser], quests: [], questGroups: [], rewardTypes: INITIAL_REWARD_TYPES, ranks: INITIAL_RANKS, trophies: INITIAL_TROPHIES, userTrophies: [], markets: [], gameAssets: [], questCompletions: [], purchaseRequests: [], guilds: [], adminAdjustments: [], systemLogs: [], settings: INITIAL_SETTINGS, themes: INITIAL_THEMES, loginHistory: [], chatMessages: [], systemNotifications: [] };
+        const resolutions = analyzeBlueprintForConflicts(blueprint, freshState);
+        const allKeepResolutions = resolutions.map(r => ({ ...r, resolution: 'keep' as const }));
+        importBlueprint(blueprint, allKeepResolutions);
+        
+        // Ensure Exchange Post exists if not in blueprint
+        setMarkets(prev => {
+            if (!prev.some(m => m.id === 'market-bank')) {
+                 const exchangeMarket = createSampleMarkets().find(m => m.id === 'market-bank');
+                 if (exchangeMarket) return [...prev, exchangeMarket];
+            }
+            return prev;
+        });
+    }
+    
+    // 5. Finalize
+    setSettings(prev => ({...prev, contentVersion: 1}));
+    setCurrentUser(adminUser);
+
+  }, [setCurrentUser, importBlueprint, addNotification]);
+
   const restoreFromBackup = useCallback(async (backupData: IAppData) => {
     setIsRestoring(true); // Prevent save
     try {
@@ -869,15 +991,54 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     }
   }, [addNotification]);
 
-  const importBlueprint = useCallback((blueprint: Blueprint, resolutions: ImportResolution[]) => { const idMap = new Map<string, string>(); const genId = (p: string) => `${p}-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`; resolutions.forEach(res => { if (res.resolution !== 'skip') idMap.set(res.id, genId(res.type.slice(0, 2))); }); const newAssets: Partial<IAppData> = { quests: [], rewardTypes: [], ranks: [], trophies: [], markets: [] }; resolutions.forEach(res => { if (res.resolution === 'skip') return; const a = blueprint.assets[res.type]?.find(a => a.id === res.id); if (a) { const nA = { ...a, id: idMap.get(a.id)! }; if (res.resolution === 'rename' && res.newName) { if('title' in nA) nA.title = res.newName; else nA.name = res.newName; } newAssets[res.type]?.push(nA as any); } }); newAssets.quests?.forEach(q => { q.rewards = q.rewards.map(r => ({ ...r, rewardTypeId: idMap.get(r.rewardTypeId) || r.rewardTypeId })); q.lateSetbacks = q.lateSetbacks.map(r => ({ ...r, rewardTypeId: idMap.get(r.rewardTypeId) || r.rewardTypeId })); q.incompleteSetbacks = q.incompleteSetbacks.map(r => ({ ...r, rewardTypeId: idMap.get(r.rewardTypeId) || r.rewardTypeId })); }); newAssets.trophies?.forEach(t => t.requirements.forEach(r => { if(r.type === TrophyRequirementType.AchieveRank) r.value = idMap.get(r.value) || r.value; })); setQuests(p => [...p, ...(newAssets.quests || [])]); setRewardTypes(p => [...p, ...(newAssets.rewardTypes || [])]); setRanks(p => [...p, ...(newAssets.ranks || [])]); setTrophies(p => [...p, ...(newAssets.trophies || [])]); setMarkets(p => [...p, ...(newAssets.markets || [])]); addNotification({ type: 'success', message: `Imported from ${blueprint.name}!`}); }, [addNotification]);
   const clearAllHistory = useCallback(() => { setQuestCompletions([]); setPurchaseRequests([]); setAdminAdjustments([]); setSystemLogs([]); addNotification({ type: 'success', message: 'All historical data has been cleared.' }); }, [addNotification]);
   const resetAllPlayerData = useCallback(() => { setUsers(prev => prev.map(u => u.role !== Role.DonegeonMaster ? { ...u, personalPurse: {}, personalExperience: {}, guildBalances: {}, ownedAssetIds: [], avatar: {} } : u)); setUserTrophies(prev => prev.filter(ut => users.find(u => u.id === ut.userId)?.role === Role.DonegeonMaster)); addNotification({ type: 'success', message: "All player data has been reset." }); }, [users, addNotification]);
-  const deleteAllCustomContent = useCallback(() => { setQuests([]); setMarkets([]); setGameAssets([]); setRewardTypes(p => p.filter(rt => rt.isCore)); setRanks(p => p.filter(r => r.xpThreshold === 0)); setTrophies([]); setGuilds(p => p.filter(g => g.isDefault)); addNotification({ type: 'success', message: 'All custom content has been deleted.' }); }, [addNotification]);
+  const deleteAllCustomContent = useCallback(() => { setQuests([]); setQuestGroups([]); setMarkets([]); setGameAssets([]); setRewardTypes(p => p.filter(rt => rt.isCore)); setRanks(p => p.filter(r => r.xpThreshold === 0)); setTrophies([]); setGuilds(p => p.filter(g => g.isDefault)); addNotification({ type: 'success', message: 'All custom content has been deleted.' }); }, [addNotification]);
   const deleteSelectedAssets = useCallback((selection: Record<ShareableAssetType, string[]>) => { (Object.keys(selection) as ShareableAssetType[]).forEach(assetType => { const ids = new Set(selection[assetType]); if (ids.size > 0) { switch (assetType) { case 'quests': setQuests(p => p.filter(i => !ids.has(i.id))); break; case 'markets': setMarkets(p => p.filter(i => !ids.has(i.id))); break; case 'rewardTypes': setRewardTypes(p => p.filter(i => !ids.has(i.id))); break; case 'ranks': setRanks(p => p.filter(i => !ids.has(i.id))); break; case 'trophies': setTrophies(p => p.filter(i => !ids.has(i.id))); break; case 'gameAssets': setGameAssets(p => p.filter(i => !ids.has(i.id))); break; } } }); addNotification({ type: 'success', message: 'Selected assets have been deleted.' }); }, [addNotification]);
   const deleteQuests = useCallback((questIds: string[]) => { setQuests(prev => prev.filter(q => !questIds.includes(q.id))); addNotification({ type: 'info', message: `${questIds.length} quest(s) deleted.` }); }, [addNotification]);
   const deleteTrophies = useCallback((trophyIds: string[]) => { setTrophies(prev => prev.filter(t => !trophyIds.includes(t.id))); addNotification({ type: 'info', message: `${trophyIds.length} trophy(s) deleted.` }); }, [addNotification]);
   const deleteGameAssets = useCallback((assetIds: string[]) => { setGameAssets(prev => prev.filter(ga => !assetIds.includes(ga.id))); addNotification({ type: 'info', message: `${assetIds.length} asset(s) deleted.` }); }, [addNotification]);
   const updateQuestsStatus = useCallback((questIds: string[], isActive: boolean) => { setQuests(prev => prev.map(q => questIds.includes(q.id) ? { ...q, isActive } : q)); addNotification({ type: 'success', message: `${questIds.length} quest(s) updated.` }); }, [addNotification]);
+
+  // Quest Group Management
+  const addQuestGroup = useCallback((group: Omit<QuestGroup, 'id'>): QuestGroup => {
+    const newGroup: QuestGroup = { ...group, id: `q-group-${Date.now()}-${Math.random().toString(36).substring(2, 9)}` };
+    setQuestGroups(prev => [...prev, newGroup]);
+    addNotification({ type: 'success', message: `Quest group "${newGroup.name}" created.` });
+    return newGroup;
+  }, [addNotification]);
+  const updateQuestGroup = useCallback((group: QuestGroup) => { setQuestGroups(prev => prev.map(g => g.id === group.id ? group : g)); addNotification({ type: 'success', message: `Quest group "${group.name}" updated.` }); }, [addNotification]);
+  const deleteQuestGroup = useCallback((groupId: string) => { setQuestGroups(prev => prev.filter(g => g.id !== groupId)); setQuests(prevQuests => prevQuests.map(q => q.groupId === groupId ? { ...q, groupId: undefined } : q)); addNotification({ type: 'info', message: 'Quest group deleted.' }); }, [addNotification]);
+  const assignQuestGroupToUsers = useCallback((groupId: string, userIds: string[]) => {
+    const group = questGroups.find(g => g.id === groupId);
+    if (!group) return;
+
+    setQuests(prevQuests => {
+        const groupQuests = prevQuests.filter(q => q.groupId === groupId);
+
+        if (groupQuests.length > 0) {
+            userIds.forEach(userId => {
+                const newlyAssignedQuests = groupQuests.filter(q => !q.assignedUserIds.includes(userId));
+                if (newlyAssignedQuests.length > 0) {
+                    addSystemNotification({
+                        type: SystemNotificationType.QuestAssigned,
+                        message: `You have been assigned ${newlyAssignedQuests.length} new quest(s) from the "${group.name}" group.`,
+                        recipientUserIds: [userId],
+                        link: 'Quests',
+                    });
+                }
+            });
+        }
+
+        return prevQuests.map(q => {
+            if (q.groupId === groupId) {
+                const newAssignees = Array.from(new Set([...q.assignedUserIds, ...userIds]));
+                return { ...q, assignedUserIds: newAssignees };
+            }
+            return q;
+        });
+    });
+  }, [addSystemNotification, questGroups]);
 
   // Theme Management
   const addTheme = useCallback((theme: Omit<ThemeDefinition, 'id'>) => {
@@ -987,7 +1148,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
   // === CONTEXT PROVIDER VALUE ===
   const stateValue: AppState = {
-    users, quests, markets, rewardTypes, questCompletions, purchaseRequests, guilds, ranks, trophies, userTrophies, adminAdjustments, gameAssets, systemLogs, settings, themes, loginHistory, chatMessages, systemNotifications,
+    users, quests, questGroups, markets, rewardTypes, questCompletions, purchaseRequests, guilds, ranks, trophies, userTrophies, adminAdjustments, gameAssets, systemLogs, settings, themes, loginHistory, chatMessages, systemNotifications,
     currentUser, isAppUnlocked, isFirstRun, activePage, appMode, notifications, isDataLoaded, activeMarketId, allTags: useMemo(() => Array.from(new Set(quests.flatMap(q => q.tags || []))).sort(), [quests]),
     isSwitchingUser, isSharedViewActive, targetedUserForLogin, isAiConfigured, isSidebarCollapsed,
     syncStatus, syncError, isChatOpen,
@@ -998,13 +1159,15 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
   const dispatchValue: AppDispatch = {
     addUser, updateUser, deleteUser, setCurrentUser, markUserAsOnboarded, setAppUnlocked, setIsSwitchingUser, setTargetedUserForLogin, exitToSharedView, setIsSharedViewActive: _setIsSharedViewActive,
-    addQuest, updateQuest, deleteQuest, dismissQuest, claimQuest, releaseQuest, markQuestAsTodo, unmarkQuestAsTodo, completeQuest, approveQuestCompletion, rejectQuestCompletion,
-    addRewardType, updateRewardType, deleteRewardType, addMarket, updateMarket, deleteMarket, purchaseMarketItem, cancelPurchaseRequest, approvePurchaseRequest, rejectPurchaseRequest,
-    addGuild, updateGuild, deleteGuild, setRanks, addTrophy, updateTrophy, deleteTrophy, awardTrophy, applyManualAdjustment, addGameAsset, updateGameAsset, deleteGameAsset,
+    addQuest, updateQuest, deleteQuest, cloneQuest, dismissQuest, claimQuest, releaseQuest, markQuestAsTodo, unmarkQuestAsTodo, completeQuest, approveQuestCompletion, rejectQuestCompletion,
+    addQuestGroup, updateQuestGroup, deleteQuestGroup, assignQuestGroupToUsers,
+    addRewardType, updateRewardType, deleteRewardType, cloneRewardType, addMarket, updateMarket, deleteMarket, cloneMarket, deleteMarkets, updateMarketsStatus, purchaseMarketItem, cancelPurchaseRequest, approvePurchaseRequest, rejectPurchaseRequest,
+    addGuild, updateGuild, deleteGuild, setRanks, addTrophy, updateTrophy, deleteTrophy, awardTrophy, applyManualAdjustment, addGameAsset, updateGameAsset, deleteGameAsset, cloneGameAsset,
     addTheme, updateTheme, deleteTheme,
-    populateInitialGameData, importBlueprint, restoreFromBackup, clearAllHistory, resetAllPlayerData, deleteAllCustomContent, deleteSelectedAssets, 
+    completeFirstRun, importBlueprint, restoreFromBackup, clearAllHistory, resetAllPlayerData, deleteAllCustomContent, deleteSelectedAssets, 
     deleteQuests, deleteTrophies, deleteGameAssets, updateQuestsStatus,
     uploadFile,
+    executeExchange,
     updateSettings, resetSettings, setActivePage, setAppMode, addNotification, removeNotification, setActiveMarketId, toggleSidebar,
     toggleChat, sendMessage, markMessagesAsRead,
     addSystemNotification, markSystemNotificationsAsRead

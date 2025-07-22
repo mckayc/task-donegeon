@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { Role } from '../../types';
 import Button from '../ui/Button';
@@ -25,6 +24,19 @@ const AddUserDialog: React.FC<AddUserDialogProps> = ({ onClose }) => {
     password: '',
   });
   const [error, setError] = useState('');
+  const [showPasswordFields, setShowPasswordFields] = useState(false);
+
+  const isPasswordRequired = formData.role === Role.DonegeonMaster;
+
+  useEffect(() => {
+    if (isPasswordRequired) {
+      setShowPasswordFields(true);
+    } else {
+      // If user switches away from DM, hide the optional password field again for a cleaner form
+      setShowPasswordFields(false);
+    }
+  }, [isPasswordRequired]);
+
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -39,9 +51,12 @@ const AddUserDialog: React.FC<AddUserDialogProps> = ({ onClose }) => {
         setError('PIN must be 4-10 numbers.');
         return;
     }
-    if (formData.password.length < 6) {
-        setError("Password must be at least 6 characters.");
-        return;
+
+    if (isPasswordRequired || formData.password) {
+        if (formData.password.length < 6) {
+            setError("Password must be at least 6 characters.");
+            return;
+        }
     }
 
     if (users.some(u => u.username.toLowerCase() === formData.username.toLowerCase())) {
@@ -57,6 +72,7 @@ const AddUserDialog: React.FC<AddUserDialogProps> = ({ onClose }) => {
         ...formData,
         role: formData.role as Role,
         pin: formData.pin, // PIN can be an empty string if not required
+        password: formData.password || undefined,
     };
 
     addUser(newUserPayload);
@@ -69,14 +85,33 @@ const AddUserDialog: React.FC<AddUserDialogProps> = ({ onClose }) => {
         <h2 className="text-3xl font-medieval text-accent mb-6">Add New {settings.terminology.group} Member</h2>
         <form onSubmit={handleSubmit} className="space-y-4">
           <UserFormFields formData={formData} handleChange={handleChange} />
-           <div>
-            <Input label="Password (min 6 characters)" id="password" name="password" type="password" value={formData.password} onChange={handleChange} required />
-          </div>
+           
+          { (showPasswordFields) ? (
+            <div>
+              <Input 
+                label={`Password ${isPasswordRequired ? '(min 6 characters)' : '(optional, min 6 characters)'}`} 
+                id="password" 
+                name="password" 
+                type="password" 
+                value={formData.password} 
+                onChange={handleChange} 
+                required={isPasswordRequired} 
+              />
+            </div>
+          ) : (
+            <div className="text-center py-2">
+                <button type="button" onClick={() => setShowPasswordFields(true)} className="text-sm font-semibold text-accent hover:opacity-80">
+                    + Add optional password
+                </button>
+            </div>
+          )}
+
           <div>
             <label htmlFor="role" className="block text-sm font-medium text-stone-300 mb-1">Role</label>
             <select id="role" name="role" value={formData.role} onChange={handleChange} className="w-full px-4 py-2 bg-stone-700 border border-stone-600 rounded-md focus:ring-emerald-500 focus:border-emerald-500 transition">
               <option value={Role.Explorer}>{settings.terminology.user}</option>
               <option value={Role.Gatekeeper}>{settings.terminology.moderator}</option>
+              <option value={Role.DonegeonMaster}>{settings.terminology.admin}</option>
             </select>
           </div>
           <div>

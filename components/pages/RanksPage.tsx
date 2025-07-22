@@ -1,11 +1,14 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useAppState } from '../../context/AppContext';
 import { Rank } from '../../types';
 import Card from '../ui/Card';
 import { RankIcon } from '../ui/Icons';
+import DynamicIcon from '../ui/DynamicIcon';
+import ImagePreviewDialog from '../ui/ImagePreviewDialog';
 
 const RanksPage: React.FC = () => {
     const { currentUser, ranks, appMode } = useAppState();
+    const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null);
 
     const { currentRank, nextRank, totalXp, progressPercentage, sortedRanks } = useMemo(() => {
         if (!currentUser || !ranks || ranks.length === 0) {
@@ -61,7 +64,21 @@ const RanksPage: React.FC = () => {
         <div className="space-y-8">
             <Card title="Your Current Rank">
                 <div className="flex flex-col sm:flex-row items-center gap-6">
-                    <div className="text-7xl">{currentRank.icon}</div>
+                    <div className="w-32 h-32 flex items-center justify-center rounded-full overflow-hidden border-4 border-accent bg-stone-700">
+                        <button
+                            onClick={() => currentRank.iconType === 'image' && currentRank.imageUrl && setPreviewImageUrl(currentRank.imageUrl)}
+                            disabled={currentRank.iconType !== 'image' || !currentRank.imageUrl}
+                            className="w-full h-full disabled:cursor-default"
+                        >
+                            <DynamicIcon 
+                                iconType={currentRank.iconType} 
+                                icon={currentRank.icon} 
+                                imageUrl={currentRank.imageUrl} 
+                                className="w-full h-full text-7xl" 
+                                altText={`${currentRank.name} rank icon`}
+                            />
+                        </button>
+                    </div>
                     <div className="flex-grow w-full text-center sm:text-left">
                         <h3 className="text-3xl font-bold text-accent-light">{currentRank.name}</h3>
                         <p className="text-stone-400">Total XP: {totalXp}</p>
@@ -79,7 +96,21 @@ const RanksPage: React.FC = () => {
                 <ul className="space-y-3">
                     {sortedRanks.map(rank => (
                         <li key={rank.id} className={`p-4 rounded-lg flex items-center gap-4 ${rank.id === currentRank.id ? 'bg-emerald-900/50 border-l-4 border-emerald-400' : 'bg-stone-800/60'}`}>
-                            <div className="text-4xl">{rank.icon}</div>
+                            <div className="w-12 h-12 flex items-center justify-center rounded-full overflow-hidden bg-stone-700/50">
+                               <button
+                                    onClick={() => rank.iconType === 'image' && rank.imageUrl && setPreviewImageUrl(rank.imageUrl)}
+                                    disabled={rank.iconType !== 'image' || !rank.imageUrl}
+                                    className="w-full h-full disabled:cursor-default"
+                                >
+                                   <DynamicIcon 
+                                       iconType={rank.iconType} 
+                                       icon={rank.icon} 
+                                       imageUrl={rank.imageUrl} 
+                                       className="w-full h-full text-4xl" 
+                                       altText={`${rank.name} rank icon`}
+                                    />
+                                </button>
+                            </div>
                             <div>
                                 <h4 className="font-bold text-lg text-stone-100">{rank.name}</h4>
                                 <p className="text-sm text-stone-400">Requires: {rank.xpThreshold} XP</p>
@@ -88,6 +119,14 @@ const RanksPage: React.FC = () => {
                     ))}
                 </ul>
             </Card>
+
+            {previewImageUrl && (
+                <ImagePreviewDialog
+                    imageUrl={previewImageUrl}
+                    altText="Rank icon preview"
+                    onClose={() => setPreviewImageUrl(null)}
+                />
+            )}
         </div>
     );
 };

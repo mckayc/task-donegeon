@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { Role, User } from '../../types';
@@ -22,10 +21,16 @@ const AppLockScreen: React.FC = () => {
     setError('');
 
     const admin = adminUsers.find(u => u.id === selectedAdminId);
-    const isValidPassword = admin && admin.password === password;
+    if (!admin) {
+        setError('Could not find the selected administrator.');
+        setIsChecking(false);
+        return;
+    }
+
+    const isValidPassword = admin.password === password;
 
     setTimeout(() => { // Simulate network delay slightly
-        if (isValidPassword && admin) {
+        if (isValidPassword) {
             setAppUnlocked(true);
             setCurrentUser(admin);
         } else {
@@ -36,21 +41,32 @@ const AppLockScreen: React.FC = () => {
     }, 500);
   };
 
+  const selectedAdminUser = adminUsers.find(u => u.id === selectedAdminId);
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-stone-900 p-4">
       <div className="max-w-md w-full bg-stone-800 border border-stone-700 rounded-2xl shadow-2xl p-8 md:p-12">
         <div className="text-center mb-6">
           <h1 className="font-medieval text-accent">{settings.terminology.appName}</h1>
-          <p className="text-stone-300 mt-2">Enter a Master Password to unlock.</p>
+          <p className="text-stone-300 mt-2">
+            {adminUsers.length > 1 
+                ? `Welcome, ${selectedAdminUser?.gameName || 'Administrator'}. Enter your password to unlock.` 
+                : 'Enter the Master Password to unlock.'
+            }
+          </p>
         </div>
         <form onSubmit={handleSubmit} className="space-y-4">
           {adminUsers.length > 1 && (
             <Input
               as="select"
-              label="Select Administrator"
+              label={`Select ${settings.terminology.admin}`}
               id="admin-select"
               value={selectedAdminId}
-              onChange={(e) => setSelectedAdminId(e.target.value)}
+              onChange={(e) => {
+                setSelectedAdminId(e.target.value);
+                setError('');
+                setPassword('');
+              }}
             >
               {adminUsers.map(admin => (
                 <option key={admin.id} value={admin.id}>{admin.gameName}</option>

@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { Role, User } from '../../types';
@@ -98,14 +97,17 @@ const RegisterForm: React.FC<{ onSwitchMode: () => void }> = ({ onSwitchMode }) 
         e.preventDefault();
         setError('');
 
-        if (formData.password !== formData.confirmPassword) {
-            setError("Passwords do not match.");
-            return;
+        if (formData.password || formData.confirmPassword) {
+            if (formData.password !== formData.confirmPassword) {
+                setError("Passwords do not match.");
+                return;
+            }
+            if (formData.password.length < 6) {
+                setError("Password must be at least 6 characters long.");
+                return;
+            }
         }
-        if (formData.password.length < 6) {
-            setError("Password must be at least 6 characters long.");
-            return;
-        }
+
         if (users.some(u => u.username.toLowerCase() === formData.username.toLowerCase())) {
             setError("Username is already taken.");
             return;
@@ -118,6 +120,7 @@ const RegisterForm: React.FC<{ onSwitchMode: () => void }> = ({ onSwitchMode }) 
         const { confirmPassword, ...newUserPayload } = formData;
         const newUser: Omit<User, 'id' | 'personalPurse' | 'personalExperience' | 'guildBalances' | 'avatar' | 'ownedAssetIds' | 'ownedThemes' | 'hasBeenOnboarded'> = {
             ...newUserPayload,
+            password: formData.password || undefined,
             role: Role.Explorer,
             pin: '',
         };
@@ -132,8 +135,8 @@ const RegisterForm: React.FC<{ onSwitchMode: () => void }> = ({ onSwitchMode }) 
             <form onSubmit={handleSubmit} className="space-y-4">
                 <UserFormFields formData={formData} handleChange={handleChange} />
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <Input label="Password" id="reg-password" name="password" type="password" value={formData.password} onChange={handleChange} required />
-                    <Input label="Confirm Password" id="reg-confirmPassword" name="confirmPassword" type="password" value={formData.confirmPassword} onChange={handleChange} required />
+                    <Input label="Password (optional, min 6 char)" id="reg-password" name="password" type="password" value={formData.password} onChange={handleChange} />
+                    <Input label="Confirm Password" id="reg-confirmPassword" name="confirmPassword" type="password" value={formData.confirmPassword} onChange={handleChange} />
                 </div>
 
                 {error && <p className="text-red-400 text-center">{error}</p>}

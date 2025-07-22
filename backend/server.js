@@ -1,5 +1,6 @@
 
 
+
 const express = require('express');
 const cors = require('cors');
 const { Pool } = require('pg');
@@ -377,7 +378,30 @@ const GITHUB_REPO = 'mckayc/task-donegeon';
 const GITHUB_BRANCH = 'master';
 const IMAGE_PACK_ROOT = 'image-packs';
 
-app.get('/api/image-packs/list', async (req, res, next) => {
+// Helper to get all local file basenames for comparison
+const getLocalFileBasenames = async (dir) => {
+    let basenames = new Set();
+    try {
+        const dirents = await fs.readdir(dir, { withFileTypes: true });
+        for (const dirent of dirents) {
+            const res = path.resolve(dir, dirent.name);
+            if (dirent.isDirectory()) {
+                const nestedBasenames = await getLocalFileBasenames(res);
+                nestedBasenames.forEach(b => basenames.add(b));
+            } else {
+                basenames.add(dirent.name);
+            }
+        }
+    } catch (err) {
+        if (err.code !== 'ENOENT') {
+            console.error("Error reading local gallery for comparison:", err);
+        }
+    }
+    return basenames;
+};
+
+
+app.get('/api/image-packs', async (req, res, next) => {
     try {
         const repoUrl = `https://api.github.com/repos/${GITHUB_REPO}/contents/${IMAGE_PACK_ROOT}?ref=${GITHUB_BRANCH}`;
         const response = await fetch(repoUrl);
@@ -421,49 +445,82 @@ app.get('/api/image-packs/list', async (req, res, next) => {
     }
 });
 
+app.get('/api/image-packs/:packName', async (req, res, next) => {
+    const { packName } = req.params;
+    const sanitizedPackName = path.basename(packName); // Sanitize
+
+    try {
+        const localBasenames = await getLocalFileBasenames(UPLOADS_DIR);
+        
+        const packUrl = `https://api.github.com/repos/${GITHUB_REPO}/contents/${IMAGE_PACK_ROOT}/${sanitizedPackName}?ref=${GITHUB_BRANCH}`;
+        const packResponse = await fetch(packUrl);
+        if (!packResponse.ok) throw new Error(`Could not find pack '${sanitizedPackName}' on GitHub.`);
+        const packContents = await packResponse.json();
+
+        let filesToCompare = [];
+
+        for (const item of packContents) {
+            if (item.type === 'dir') { // Category
+                const categoryContentsResponse = await fetch(item.url);
+                const categoryContents = await categoryContentsResponse.json();
+                for (const file of categoryContents) {
+                    if (file.type === 'file') {
+                        filesToCompare.push({
+                            category: item.name,
+                            name: file.name,
+                            url: file.download_url,
+                            exists: localBasenames.has(file.name)
+                        });
+                    }
+                }
+            } else if (item.type === 'file') { // File in root of pack
+                 filesToCompare.push({
+                    category: 'Miscellaneous',
+                    name: item.name,
+                    url: item.download_url,
+                    exists: localBasenames.has(item.name)
+                });
+            }
+        }
+        
+        res.json(filesToCompare);
+
+    } catch (err) {
+        next(err);
+    }
+});
+
+
 app.post('/api/image-packs/import', async (req, res, next) => {
-    const { packs } = req.body;
-    if (!Array.isArray(packs) || packs.length === 0) {
-        return res.status(400).json({ error: 'No packs specified for import.' });
+    const { files } = req.body; // Expecting an array of { category, name, url }
+    if (!Array.isArray(files) || files.length === 0) {
+        return res.status(400).json({ error: 'No files specified for import.' });
     }
 
     try {
-        for (const packName of packs) {
-            const sanitizedPackName = path.basename(packName);
-            const packUrl = `https://api.github.com/repos/${GITHUB_REPO}/contents/${IMAGE_PACK_ROOT}/${sanitizedPackName}?ref=${GITHUB_BRANCH}`;
-            
-            const packResponse = await fetch(packUrl);
-            const packContents = await packResponse.json();
+        let importedCount = 0;
+        for (const file of files) {
+            const { category, name, url } = file;
+            if (!category || !name || !url) continue;
 
-            if (!Array.isArray(packContents)) continue;
+            const sanitizedCategory = category.replace(/[^a-zA-Z0-9-_ ]/g, '').trim();
+            const categoryDir = path.join(UPLOADS_DIR, sanitizedCategory);
+            await fs.mkdir(categoryDir, { recursive: true });
 
-            for (const item of packContents) {
-                if (item.type === 'dir') { // This is a category folder
-                    const categoryName = item.name;
-                    const sanitizedCategory = categoryName.replace(/[^a-zA-Z0-9-_ ]/g, '').trim();
-                    const categoryDir = path.join(UPLOADS_DIR, sanitizedCategory);
-                    await fs.mkdir(categoryDir, { recursive: true });
-
-                    const categoryContentsResponse = await fetch(item.url);
-                    const categoryContents = await categoryContentsResponse.json();
-                    
-                    if (!Array.isArray(categoryContents)) continue;
-
-                    for (const imageFile of categoryContents) {
-                        if (imageFile.type === 'file' && imageFile.download_url) {
-                            const imageResponse = await fetch(imageFile.download_url);
-                            const imageBuffer = Buffer.from(await imageResponse.arrayBuffer());
-                            
-                            const sanitizedFilename = imageFile.name.replace(/[^a-zA-Z0-9-._]/g, '_');
-                            const finalPath = path.join(categoryDir, sanitizedFilename);
-                            
-                            await fs.writeFile(finalPath, imageBuffer);
-                        }
-                    }
-                }
+            const imageResponse = await fetch(url);
+            if (!imageResponse.ok) {
+                console.warn(`Failed to download ${name} from ${url}`);
+                continue;
             }
+            const imageBuffer = Buffer.from(await imageResponse.arrayBuffer());
+            
+            const sanitizedFilename = name.replace(/[^a-zA-Z0-9-._]/g, '_');
+            const finalPath = path.join(categoryDir, sanitizedFilename);
+            
+            await fs.writeFile(finalPath, imageBuffer);
+            importedCount++;
         }
-        res.status(200).json({ message: 'Image packs imported successfully.' });
+        res.status(200).json({ message: `${importedCount} images imported successfully.` });
     } catch (err) {
         next(err);
     }

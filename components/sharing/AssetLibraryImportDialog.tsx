@@ -1,10 +1,8 @@
-
-
 import React, { useState, useMemo } from 'react';
 import { BlueprintAssets, TrophyRequirementType } from '../../types';
 import Button from '../ui/Button';
 import { useAppDispatch } from '../../context/AppContext';
-import { LibraryPack } from '../../data/assetLibrary';
+import { LibraryPack } from '../../types';
 
 interface AssetLibraryImportDialogProps {
   pack: LibraryPack;
@@ -124,7 +122,7 @@ const AssetLibraryImportDialog: React.FC<AssetLibraryImportDialogProps> = ({ pac
                 const newAsset = { 
                     ...rest, 
                     marketIds: (ga.marketIds || []).map(mid => marketIdMap.get(mid) || mid), 
-                    cost: (ga.cost || []).map(c => ({...c, rewardTypeId: rewardIdMap.get(c.rewardTypeId) || c.rewardTypeId }))
+                    costGroups: (ga.costGroups || []).map(group => group.map(c => ({...c, rewardTypeId: rewardIdMap.get(c.rewardTypeId) || c.rewardTypeId })))
                 };
                 addGameAsset(newAsset); importedCount++;
             }

@@ -57,7 +57,9 @@ export interface RewardTypeDefinition {
   category: RewardCategory;
   description: string;
   isCore: boolean;
-  icon?: string;
+  iconType: 'emoji' | 'image';
+  icon: string;
+  imageUrl?: string;
 }
 
 export interface RewardItem {
@@ -78,7 +80,9 @@ export interface Quest {
   title: string;
   description: string;
   type: QuestType;
-  icon?: string;
+  iconType: 'emoji' | 'image';
+  icon: string;
+  imageUrl?: string;
   tags: string[];
   lateDateTime?: string; // For Ventures with deadlines
   incompleteDateTime?: string; // For Ventures with deadlines
@@ -95,10 +99,18 @@ export interface Quest {
   monthlyRecurrenceDays: number[]; // For Monthly type
   assignedUserIds: string[];
   guildId?: string;
+  groupId?: string;
   requiresApproval: boolean;
   claimedByUserIds: string[];
   dismissals: { userId: string; dismissedAt: string; }[];
   todoUserIds?: string[];
+}
+
+export interface QuestGroup {
+  id: string;
+  name: string;
+  description: string;
+  icon: string;
 }
 
 export enum QuestCompletionStatus {
@@ -126,23 +138,66 @@ export interface GameAsset {
   category: string;
   avatarSlot?: string;
   isForSale: boolean;
-  cost: RewardItem[];
+  costGroups: RewardItem[][];
   payouts?: RewardItem[];
   marketIds: string[];
   creatorId: string;
   createdAt: string;
   purchaseLimit: number | null; // null for infinite
+  purchaseLimitType: 'Total' | 'PerUser';
   purchaseCount: number;
+  requiresApproval: boolean;
   linkedThemeId?: string; // Links this asset to a theme that gets unlocked on purchase
 }
+
+export enum MarketConditionType {
+    MinRank = 'MIN_RANK',
+    DayOfWeek = 'DAY_OF_WEEK',
+    DateRange = 'DATE_RANGE',
+    QuestCompleted = 'QUEST_COMPLETED',
+}
+
+interface BaseMarketCondition {
+    type: MarketConditionType;
+}
+
+export interface MinRankCondition extends BaseMarketCondition {
+    type: MarketConditionType.MinRank;
+    rankId: string;
+}
+
+export interface DayOfWeekCondition extends BaseMarketCondition {
+    type: MarketConditionType.DayOfWeek;
+    days: number[]; // 0 for Sunday, 6 for Saturday
+}
+
+export interface DateRangeCondition extends BaseMarketCondition {
+    type: MarketConditionType.DateRange;
+    start: string; // YYYY-MM-DD
+    end: string;   // YYYY-MM-DD
+}
+
+export interface QuestCompletedCondition extends BaseMarketCondition {
+    type: MarketConditionType.QuestCompleted;
+    questId: string;
+}
+
+export type MarketCondition = MinRankCondition | DayOfWeekCondition | DateRangeCondition | QuestCompletedCondition;
+
+export type MarketStatus =
+  | { type: 'open' }
+  | { type: 'closed' }
+  | { type: 'conditional', conditions: MarketCondition[], logic: 'all' | 'any' }; // 'all' for AND, 'any' for OR
 
 export interface Market {
   id:string;
   title: string;
   description: string;
-  icon?: string;
+  iconType: 'emoji' | 'image';
+  icon: string;
+  imageUrl?: string;
   guildId?: string;
-  status: 'open' | 'closed';
+  status: MarketStatus;
 }
 
 export enum PurchaseRequestStatus {
@@ -179,7 +234,9 @@ export interface Rank {
   id:string;
   name: string;
   xpThreshold: number;
-  icon?: string;
+  iconType: 'emoji' | 'image';
+  icon: string;
+  imageUrl?: string;
 }
 
 export enum TrophyRequirementType {
@@ -203,7 +260,9 @@ export interface Trophy {
     id: string;
     name: string;
     description: string;
+    iconType: 'emoji' | 'image';
     icon: string;
+    imageUrl?: string;
     isManual: boolean;
     requirements: TrophyRequirement[];
 }
@@ -248,7 +307,9 @@ export interface Notification {
   id: string;
   message: string;
   type: 'success' | 'error' | 'info' | 'trophy';
+  iconType?: 'emoji' | 'image';
   icon?: string;
+  imageUrl?: string;
 }
 
 export enum SystemNotificationType {
@@ -268,7 +329,9 @@ export interface SystemNotification {
     readByUserIds: string[];
     link?: Page; // Optional link to a relevant page
     guildId?: string;
+    iconType?: 'emoji' | 'image';
     icon?: string;
+    imageUrl?: string;
 }
 
 export interface Terminology {
@@ -315,6 +378,7 @@ export interface Terminology {
   link_ranks: string;
   link_chronicles: string;
   link_manage_quests: string;
+  link_manage_quest_groups: string;
   link_manage_items: string;
   link_manage_markets: string;
   link_manage_rewards: string;
@@ -338,7 +402,7 @@ export interface Terminology {
 
 export type Page = 'Dashboard' | 'Avatar' | 'Quests' | 'Marketplace' | 'Chronicles' | 'Guild' | 'Calendar' | 'Progress' | 'Trophies' | 'Ranks' | 'Manage Users' | 'Manage Rewards' | 'Manage Quests' | 'Manage Goods' | 'Approvals' | 'Manage Markets' | 'Manage Guilds' | 'Settings' | 'Profile' | 'About' | 'Help Guide' | 'Manage Ranks' | 'Manage Trophies' | 'Themes' | 'Data Management' | 'Collection' | 'AI Studio' | 'Appearance'
 | 'Object Exporter' | 'Asset Manager' | 'Backup & Import' | 'Asset Library'
-| 'Theme Editor' | 'Chat'
+| 'Theme Editor' | 'Chat' | 'Manage Quest Groups'
 ;
 
 export interface SidebarLink {
@@ -362,21 +426,17 @@ export interface SidebarHeader {
 
 export type SidebarConfigItem = SidebarLink | SidebarHeader;
 
-export interface ValuationConfig {
+export interface RewardValuationSettings {
   enabled: boolean;
-  baseUnitName: string;
-  baseUnitSymbol: string;
-  anchorRewardId: string;
-  anchorRewardValue: number;
-  exchangeRates: { [rewardTypeId: string]: number };
+  anchorRewardId: string; // Must be a currency ID
+  exchangeRates: { [rewardTypeId: string]: number }; // Rates for ALL other rewards against the anchor
+  currencyExchangeFeePercent: number;
+  xpExchangeFeePercent: number;
 }
 
-export interface RewardValuationSettings {
-  currency: ValuationConfig;
-  experience: ValuationConfig;
-}
 
 export interface AppSettings {
+  contentVersion: number;
   favicon: string;
   forgivingSetbacks: boolean;
   vacationMode: {
@@ -498,6 +558,7 @@ export interface ChatMessage {
 export interface IAppData {
   users: User[];
   quests: Quest[];
+  questGroups: QuestGroup[];
   markets: Market[];
   rewardTypes: RewardTypeDefinition[];
   questCompletions: QuestCompletion[];
@@ -535,7 +596,9 @@ export type ChronicleEvent = {
     title: string;
     note?: string;
     status: string;
+    iconType?: 'emoji' | 'image';
     icon: string;
+    imageUrl?: string;
     color: string;
     userId?: string; // The primary actor/user
     recipientUserIds?: string[]; // The users this event applies to (for announcements, system logs)

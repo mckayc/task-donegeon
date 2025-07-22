@@ -43,7 +43,7 @@ const Header: React.FC = () => {
 
   const handleLogout = () => {
     localStorage.removeItem('lastUserId');
-    sessionStorage.removeItem('isAppUnlocked');
+    localStorage.removeItem('isAppUnlocked');
     setCurrentUser(null);
     setAppUnlocked(false);
     setProfileDropdownOpen(false);

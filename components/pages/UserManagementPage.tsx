@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import Button from '../ui/Button';
 import AddUserDialog from '../users/AddUserDialog';
@@ -7,6 +6,7 @@ import { Role, User } from '../../types';
 import EditUserDialog from '../users/EditUserDialog';
 import ManualAdjustmentDialog from '../admin/ManualAdjustmentDialog';
 import Card from '../ui/Card';
+import { EllipsisVerticalIcon } from '../ui/Icons';
 
 const UserManagementPage: React.FC = () => {
     const { users, settings } = useAppState();
@@ -15,6 +15,18 @@ const UserManagementPage: React.FC = () => {
     const [isEditUserDialogOpen, setIsEditUserDialogOpen] = useState(false);
     const [editingUser, setEditingUser] = useState<User | null>(null);
     const [adjustingUser, setAdjustingUser] = useState<User | null>(null);
+    const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
+    const dropdownRef = useRef<HTMLDivElement | null>(null);
+
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+                setOpenDropdownId(null);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
 
     const handleEdit = (user: User) => {
         setEditingUser(user);
@@ -72,13 +84,20 @@ const UserManagementPage: React.FC = () => {
                                             {roleName(user.role)}
                                         </span>
                                     </td>
-                                    <td className="p-4 space-x-2">
-                                        <Button size="sm" variant="secondary" onClick={() => handleEdit(user)}>Edit</Button>
-                                        {user.role !== Role.DonegeonMaster && (
-                                            <>
-                                                <Button size="sm" variant="secondary" className="!bg-amber-900/50 hover:!bg-amber-800/60 text-amber-300" onClick={() => handleAdjust(user)}>Adjust</Button>
-                                                <Button size="sm" variant="secondary" className="!bg-red-900/50 hover:!bg-red-800/60 text-red-300" onClick={() => handleDelete(user.id)}>Delete</Button>
-                                            </>
+                                    <td className="p-4 relative">
+                                        <button onClick={() => setOpenDropdownId(openDropdownId === user.id ? null : user.id)} className="p-2 rounded-full hover:bg-stone-700/50">
+                                            <EllipsisVerticalIcon className="w-5 h-5 text-stone-300" />
+                                        </button>
+                                        {openDropdownId === user.id && (
+                                            <div ref={dropdownRef} className="absolute right-10 top-0 mt-2 w-36 bg-stone-900 border border-stone-700 rounded-lg shadow-xl z-20">
+                                                <a href="#" onClick={(e) => { e.preventDefault(); handleEdit(user); setOpenDropdownId(null); }} className="block px-4 py-2 text-sm text-stone-300 hover:bg-stone-700/50">Edit</a>
+                                                {user.role !== Role.DonegeonMaster && (
+                                                    <>
+                                                        <button onClick={() => { handleAdjust(user); setOpenDropdownId(null); }} className="w-full text-left block px-4 py-2 text-sm text-stone-300 hover:bg-stone-700/50">Adjust</button>
+                                                        <button onClick={() => { handleDelete(user.id); setOpenDropdownId(null); }} className="w-full text-left block px-4 py-2 text-sm text-red-400 hover:bg-stone-700/50">Delete</button>
+                                                    </>
+                                                )}
+                                            </div>
                                         )}
                                     </td>
                                 </tr>

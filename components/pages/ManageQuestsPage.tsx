@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { Quest, QuestType } from '../../types';
 import Button from '../ui/Button';
@@ -7,12 +6,12 @@ import Card from '../ui/Card';
 import CreateQuestDialog from '../quests/CreateQuestDialog';
 import ConfirmDialog from '../ui/ConfirmDialog';
 import QuestIdeaGenerator from '../quests/QuestIdeaGenerator';
-import { QuestsIcon } from '../ui/Icons';
+import { QuestsIcon, EllipsisVerticalIcon } from '../ui/Icons';
 import EmptyState from '../ui/EmptyState';
 
 const ManageQuestsPage: React.FC = () => {
     const { quests, settings, isAiConfigured } = useAppState();
-    const { deleteQuests, updateQuestsStatus } = useAppDispatch();
+    const { deleteQuests, updateQuestsStatus, cloneQuest } = useAppDispatch();
     
     const [editingQuest, setEditingQuest] = useState<Quest | null>(null);
     const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
@@ -20,8 +19,20 @@ const ManageQuestsPage: React.FC = () => {
     const [confirmation, setConfirmation] = useState<{ action: 'delete' | 'activate' | 'deactivate', ids: string[] } | null>(null);
     const [initialCreateData, setInitialCreateData] = useState<{ title: string; description: string; type: QuestType } | null>(null);
     const [selectedQuests, setSelectedQuests] = useState<string[]>([]);
+    const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
+    const dropdownRef = useRef<HTMLDivElement | null>(null);
     
     const isAiAvailable = settings.enableAiFeatures && isAiConfigured;
+
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+                setOpenDropdownId(null);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
 
     const handleEdit = (quest: Quest) => {
         setInitialCreateData(null);
@@ -154,9 +165,17 @@ const ManageQuestsPage: React.FC = () => {
                                                 ))}
                                             </div>
                                         </td>
-                                        <td className="p-4 space-x-2">
-                                            <Button size="sm" variant="secondary" onClick={() => handleEdit(quest)}>Edit</Button>
-                                            <Button size="sm" variant="secondary" className="!bg-red-900/50 hover:!bg-red-800/60 text-red-300" onClick={() => setConfirmation({ action: 'delete', ids: [quest.id] })}>Delete</Button>
+                                        <td className="p-4 relative">
+                                            <button onClick={() => setOpenDropdownId(openDropdownId === quest.id ? null : quest.id)} className="p-2 rounded-full hover:bg-stone-700/50">
+                                                <EllipsisVerticalIcon className="w-5 h-5 text-stone-300" />
+                                            </button>
+                                            {openDropdownId === quest.id && (
+                                                <div ref={dropdownRef} className="absolute right-10 top-0 mt-2 w-36 bg-stone-900 border border-stone-700 rounded-lg shadow-xl z-20">
+                                                    <a href="#" onClick={(e) => { e.preventDefault(); handleEdit(quest); setOpenDropdownId(null); }} className="block px-4 py-2 text-sm text-stone-300 hover:bg-stone-700/50">Edit</a>
+                                                    <button onClick={() => { cloneQuest(quest.id); setOpenDropdownId(null); }} className="w-full text-left block px-4 py-2 text-sm text-stone-300 hover:bg-stone-700/50">Clone</button>
+                                                    <button onClick={() => { setConfirmation({ action: 'delete', ids: [quest.id] }); setOpenDropdownId(null); }} className="w-full text-left block px-4 py-2 text-sm text-red-400 hover:bg-stone-700/50">Delete</button>
+                                                </div>
+                                            )}
                                         </td>
                                     </tr>
                                 ))}

@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { GameAsset } from '../../types';
 import Button from '../ui/Button';
@@ -7,12 +6,12 @@ import Card from '../ui/Card';
 import ConfirmDialog from '../ui/ConfirmDialog';
 import EditGameAssetDialog from '../admin/EditGameAssetDialog';
 import EmptyState from '../ui/EmptyState';
-import { ItemManagerIcon } from '../ui/Icons';
+import { ItemManagerIcon, EllipsisVerticalIcon } from '../ui/Icons';
 import ItemIdeaGenerator from '../quests/ItemIdeaGenerator';
 
 const ManageItemsPage: React.FC = () => {
     const { gameAssets, settings, isAiConfigured } = useAppState();
-    const { deleteGameAssets } = useAppDispatch();
+    const { deleteGameAssets, cloneGameAsset } = useAppDispatch();
     
     const [editingAsset, setEditingAsset] = useState<GameAsset | null>(null);
     const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
@@ -20,8 +19,20 @@ const ManageItemsPage: React.FC = () => {
     const [isGeneratorOpen, setIsGeneratorOpen] = useState(false);
     const [initialCreateData, setInitialCreateData] = useState<{ name: string; description: string; category: string; icon: string; } | null>(null);
     const [selectedAssets, setSelectedAssets] = useState<string[]>([]);
+    const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
+    const dropdownRef = useRef<HTMLDivElement | null>(null);
 
     const isAiAvailable = settings.enableAiFeatures && isAiConfigured;
+
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+                setOpenDropdownId(null);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
 
     const handleEdit = (asset: GameAsset) => {
         setEditingAsset(asset);
@@ -129,9 +140,17 @@ const ManageItemsPage: React.FC = () => {
                                                 {asset.isForSale ? 'Yes' : 'No'}
                                             </span>
                                         </td>
-                                        <td className="p-4 space-x-2">
-                                            <Button size="sm" variant="secondary" onClick={() => handleEdit(asset)}>Edit</Button>
-                                            <Button size="sm" variant="secondary" className="!bg-red-900/50 hover:!bg-red-800/60 text-red-300" onClick={() => handleDeleteRequest([asset.id])}>Delete</Button>
+                                        <td className="p-4 relative">
+                                            <button onClick={() => setOpenDropdownId(openDropdownId === asset.id ? null : asset.id)} className="p-2 rounded-full hover:bg-stone-700/50">
+                                                <EllipsisVerticalIcon className="w-5 h-5 text-stone-300" />
+                                            </button>
+                                            {openDropdownId === asset.id && (
+                                                <div ref={dropdownRef} className="absolute right-10 top-0 mt-2 w-36 bg-stone-900 border border-stone-700 rounded-lg shadow-xl z-20">
+                                                    <a href="#" onClick={(e) => { e.preventDefault(); handleEdit(asset); setOpenDropdownId(null); }} className="block px-4 py-2 text-sm text-stone-300 hover:bg-stone-700/50">Edit</a>
+                                                    <button onClick={() => { cloneGameAsset(asset.id); setOpenDropdownId(null); }} className="w-full text-left block px-4 py-2 text-sm text-stone-300 hover:bg-stone-700/50">Clone</button>
+                                                    <button onClick={() => { handleDeleteRequest([asset.id]); setOpenDropdownId(null); }} className="w-full text-left block px-4 py-2 text-sm text-red-400 hover:bg-stone-700/50">Delete</button>
+                                                </div>
+                                            )}
                                         </td>
                                     </tr>
                                 ))}

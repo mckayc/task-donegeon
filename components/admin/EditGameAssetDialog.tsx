@@ -36,13 +36,16 @@ const EditGameAssetDialog: React.FC<EditGameAssetDialogProps> = ({ assetToEdit, 
     category: 'Avatar',
     avatarSlot: '',
     isForSale: false,
+    requiresApproval: false,
     costGroups: [[]] as RewardItem[][],
     payouts: [] as RewardItem[],
     marketIds: [] as string[],
     purchaseLimit: null as number | null,
+    purchaseLimitType: 'Total' as 'Total' | 'PerUser',
     purchaseCount: 0,
     allowExchange: false,
   });
+  const [limitTypeOption, setLimitTypeOption] = useState<'unlimited' | 'total' | 'perUser'>('unlimited');
   const [customCategory, setCustomCategory] = useState('');
   const [error, setError] = useState('');
   const [isUploading, setIsUploading] = useState(false);
@@ -58,13 +61,20 @@ const EditGameAssetDialog: React.FC<EditGameAssetDialogProps> = ({ assetToEdit, 
         category: PREDEFINED_CATEGORIES.includes(assetToEdit.category) ? assetToEdit.category : 'Other',
         avatarSlot: assetToEdit.avatarSlot || '',
         isForSale: assetToEdit.isForSale,
+        requiresApproval: assetToEdit.requiresApproval,
         costGroups: assetToEdit.costGroups.length > 0 ? [...assetToEdit.costGroups.map(group => [...group])] : [[]],
         payouts: assetToEdit.payouts ? [...assetToEdit.payouts] : [],
         marketIds: [...assetToEdit.marketIds],
         purchaseLimit: assetToEdit.purchaseLimit,
+        purchaseLimitType: assetToEdit.purchaseLimitType || 'Total',
         purchaseCount: assetToEdit.purchaseCount,
         allowExchange: !!(assetToEdit.payouts && assetToEdit.payouts.length > 0),
       });
+
+      if (assetToEdit.purchaseLimit === null) setLimitTypeOption('unlimited');
+      else if (assetToEdit.purchaseLimitType === 'PerUser') setLimitTypeOption('perUser');
+      else setLimitTypeOption('total');
+
       if (!PREDEFINED_CATEGORIES.includes(assetToEdit.category)) {
           setCustomCategory(assetToEdit.category);
       }
@@ -158,11 +168,23 @@ const EditGameAssetDialog: React.FC<EditGameAssetDialogProps> = ({ assetToEdit, 
     }
     setError('');
 
+    let finalLimit: number | null = 1;
+    let finalLimitType: 'Total' | 'PerUser' = 'Total';
+
+    if (limitTypeOption === 'unlimited') {
+        finalLimit = null;
+    } else {
+        finalLimit = formData.purchaseLimit || 1;
+        finalLimitType = limitTypeOption === 'perUser' ? 'PerUser' : 'Total';
+    }
+
+
     const payload = {
       ...formData,
       category: finalCategory,
       avatarSlot: formData.category.toLowerCase() === 'avatar' ? formData.avatarSlot : undefined,
-      purchaseLimit: formData.isForSale ? formData.purchaseLimit : null,
+      purchaseLimit: finalLimit,
+      purchaseLimitType: finalLimitType,
       payouts: formData.isForSale && formData.allowExchange ? formData.payouts.filter(p => p.amount > 0 && p.rewardTypeId) : undefined,
       costGroups: formData.costGroups.map(g => g.filter(c => c.amount > 0 && c.rewardTypeId)).filter(g => g.length > 0),
     };
@@ -256,10 +278,17 @@ const EditGameAssetDialog: React.FC<EditGameAssetDialogProps> = ({ assetToEdit, 
               
               {formData.isForSale && (
                   <>
+                      <ToggleSwitch enabled={formData.requiresApproval} setEnabled={(val) => setFormData(p => ({...p, requiresApproval: val}))} label="Requires Approval" />
+
                       <div>
-                          <ToggleSwitch enabled={formData.purchaseLimit === null} setEnabled={(val) => setFormData(p => ({...p, purchaseLimit: val ? null : 1}))} label="Unlimited Purchases" />
-                          {formData.purchaseLimit !== null && (
-                              <div className="mt-2"><Input label="Purchase Limit" type="number" min="1" value={formData.purchaseLimit} onChange={(e) => setFormData(p => ({...p, purchaseLimit: parseInt(e.target.value) || 1}))} /></div>
+                          <h4 className="font-semibold text-stone-300 mb-2">Purchase Limit</h4>
+                          <div className="flex items-center gap-4">
+                              <label><input type="radio" name="limit" checked={limitTypeOption === 'unlimited'} onChange={() => setLimitTypeOption('unlimited')} /> Unlimited</label>
+                              <label><input type="radio" name="limit" checked={limitTypeOption === 'total'} onChange={() => setLimitTypeOption('total')} /> Total</label>
+                              <label><input type="radio" name="limit" checked={limitTypeOption === 'perUser'} onChange={() => setLimitTypeOption('perUser')} /> Per User</label>
+                          </div>
+                          {limitTypeOption !== 'unlimited' && (
+                              <div className="mt-2"><Input label="Limit Amount" type="number" min="1" value={formData.purchaseLimit || 1} onChange={(e) => setFormData(p => ({...p, purchaseLimit: parseInt(e.target.value) || 1}))} /></div>
                           )}
                       </div>
                       

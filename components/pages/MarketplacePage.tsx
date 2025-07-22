@@ -5,6 +5,7 @@ import Button from '../ui/Button';
 import { PurchaseRequestStatus, RewardCategory, Market, GameAsset, RewardItem } from '../../types';
 import PurchaseDialog from '../markets/PurchaseDialog';
 import ExchangeView from '../markets/ExchangeView';
+import { isMarketOpenForUser } from '../../utils/markets';
 
 const MarketItemView: React.FC<{ market: Market }> = ({ market }) => {
     const { rewardTypes, currentUser, purchaseRequests, appMode, settings, gameAssets } = useAppState();
@@ -54,10 +55,13 @@ const MarketItemView: React.FC<{ market: Market }> = ({ market }) => {
                 {sortedItems.length > 0 ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
                         {sortedItems.map(asset => {
-                            const isOwned = currentUser.ownedAssetIds.includes(asset.id);
-                            
+                            const userPurchaseCount = currentUser.ownedAssetIds.filter(id => id === asset.id).length;
+                            const isSoldOut = asset.purchaseLimit !== null && asset.purchaseLimitType === 'Total' && asset.purchaseCount >= asset.purchaseLimit;
+                            const isUserLimitReached = asset.purchaseLimit !== null && asset.purchaseLimitType === 'PerUser' && userPurchaseCount >= asset.purchaseLimit;
+                            const canPurchase = !isSoldOut && !isUserLimitReached;
+
                             return (
-                                 <div key={asset.id} className="bg-violet-900/30 border-2 border-violet-700/60 rounded-xl shadow-lg flex flex-col h-full">
+                                 <div key={asset.id} className={`bg-violet-900/30 border-2 border-violet-700/60 rounded-xl shadow-lg flex flex-col h-full ${!canPurchase ? 'opacity-60' : ''}`}>
                                     <div className="p-4 border-b border-white/10">
                                         <div className="w-full h-32 bg-black/20 rounded-md mb-3 flex items-center justify-center overflow-hidden">
                                             <img src={asset.url} alt={asset.name} className="w-full h-full object-contain" />
@@ -86,10 +90,18 @@ const MarketItemView: React.FC<{ market: Market }> = ({ market }) => {
                                             </div>
                                         )}
                                     </div>
+                                    
+                                     <div className="text-xs text-stone-400 px-4 pb-2">
+                                        {asset.purchaseLimit !== null && asset.purchaseLimitType === 'Total' && <span>Limit: {asset.purchaseLimit} total ({asset.purchaseLimit - asset.purchaseCount} left)</span>}
+                                        {asset.purchaseLimit !== null && asset.purchaseLimitType === 'PerUser' && <span>Limit: {asset.purchaseLimit} per person (You own: {userPurchaseCount})</span>}
+                                        {asset.requiresApproval && <span className="block text-sky-300 font-semibold">Requires Approval</span>}
+                                    </div>
 
                                     <div className="p-3 mt-auto bg-black/20 border-t border-white/10 flex items-center justify-end gap-2">
-                                         {isOwned ? (
-                                            <Button className="text-sm py-1 px-3" disabled>Owned</Button>
+                                         {isSoldOut ? (
+                                            <Button className="text-sm py-1 px-3" disabled>Sold Out</Button>
+                                        ) : isUserLimitReached ? (
+                                            <Button className="text-sm py-1 px-3" disabled>Limit Reached</Button>
                                         ) : (
                                             <Button className="text-sm py-1 px-3" onClick={() => setItemToPurchase(asset)}>Purchase</Button>
                                         )}
@@ -115,13 +127,17 @@ const MarketItemView: React.FC<{ market: Market }> = ({ market }) => {
 
 
 const MarketplacePage: React.FC = () => {
-    const { markets, appMode, activeMarketId, settings } = useAppState();
+    const appState = useAppState();
+    const { markets, appMode, activeMarketId, settings, currentUser } = appState;
     const { setActiveMarketId } = useAppDispatch();
     
     const visibleMarkets = React.useMemo(() => {
+        if (!currentUser) return [];
         const currentGuildId = appMode.mode === 'guild' ? appMode.guildId : undefined;
-        return markets.filter(market => market.guildId === currentGuildId && market.status === 'open');
-    }, [markets, appMode]);
+        return markets.filter(market => 
+            market.guildId === currentGuildId && isMarketOpenForUser(market, currentUser, appState)
+        );
+    }, [markets, appMode, currentUser, appState]);
 
     const activeMarket = React.useMemo(() => {
         return markets.find(m => m.id === activeMarketId);

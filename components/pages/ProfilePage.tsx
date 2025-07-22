@@ -1,15 +1,14 @@
-
 import React, { useState } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import Button from '../ui/Button';
 import Card from '../ui/Card';
 import Input from '../ui/Input';
+import { Role } from '../../types';
 
 const ProfilePage: React.FC = () => {
     const { currentUser } = useAppState();
     const { updateUser, addNotification } = useAppDispatch();
     
-    // This check ensures we don't proceed if the user isn't logged in.
     if (!currentUser) {
         return <Card><p>User not found. Please log in again.</p></Card>;
     }
@@ -18,8 +17,12 @@ const ProfilePage: React.FC = () => {
         gameName: currentUser.gameName || '',
         password: '',
         confirmPassword: '',
+        pin: currentUser.pin || '',
+        confirmPin: '',
     });
     const [error, setError] = useState('');
+
+    const canEditPassword = currentUser.role === Role.DonegeonMaster || currentUser.role === Role.Gatekeeper;
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -29,13 +32,13 @@ const ProfilePage: React.FC = () => {
         e.preventDefault();
         setError('');
 
-        const updatePayload: { gameName?: string; password?: string } = {};
+        const updatePayload: { gameName?: string; password?: string, pin?: string } = {};
 
-        if (formData.gameName.trim() !== '' && formData.gameName !== currentUser.gameName) {
+        if (formData.gameName.trim() && formData.gameName !== currentUser.gameName) {
             updatePayload.gameName = formData.gameName;
         }
 
-        if (formData.password) {
+        if (canEditPassword && formData.password) {
             if (formData.password.length < 6) {
                 setError("New password must be at least 6 characters long.");
                 return;
@@ -47,11 +50,26 @@ const ProfilePage: React.FC = () => {
             updatePayload.password = formData.password;
         }
         
+        if (formData.pin !== currentUser.pin) {
+            if (formData.pin) { // Setting or changing a PIN
+                 if (formData.pin.length < 4 || formData.pin.length > 10 || !/^\d+$/.test(formData.pin)) {
+                    setError("PIN must be 4-10 digits.");
+                    return;
+                }
+                if (formData.pin !== formData.confirmPin) {
+                    setError("PINs do not match.");
+                    return;
+                }
+                updatePayload.pin = formData.pin;
+            } else { // Clearing a PIN
+                updatePayload.pin = '';
+            }
+        }
+        
         if (Object.keys(updatePayload).length > 0) {
             updateUser(currentUser.id, updatePayload);
             addNotification({type: 'success', message: 'Profile updated successfully!'});
-            // Clear password fields after successful update
-            setFormData(p => ({...p, password: '', confirmPassword: ''}));
+            setFormData(p => ({...p, password: '', confirmPassword: '', confirmPin: ''}));
         } else {
             addNotification({type: 'info', message: 'No changes were made.'});
         }
@@ -72,23 +90,45 @@ const ProfilePage: React.FC = () => {
                                 onChange={handleChange}
                                 required
                             />
-                            <Input 
-                                label="New Password (optional)"
-                                id="password"
-                                name="password"
+                             <Input 
+                                label="New PIN (4-10 digits, optional)"
+                                id="pin"
+                                name="pin"
                                 type="password"
-                                value={formData.password}
+                                value={formData.pin}
                                 onChange={handleChange}
                             />
                             <Input 
-                                label="Confirm New Password"
-                                id="confirmPassword"
-                                name="confirmPassword"
+                                label="Confirm New PIN"
+                                id="confirmPin"
+                                name="confirmPin"
                                 type="password"
-                                value={formData.confirmPassword}
+                                value={formData.confirmPin}
                                 onChange={handleChange}
-                                disabled={!formData.password}
+                                disabled={!formData.pin}
                             />
+                            {canEditPassword && (
+                                <>
+                                    <div className="pt-4 border-t border-stone-700/60"></div>
+                                    <Input 
+                                        label="New Password (optional)"
+                                        id="password"
+                                        name="password"
+                                        type="password"
+                                        value={formData.password}
+                                        onChange={handleChange}
+                                    />
+                                    <Input 
+                                        label="Confirm New Password"
+                                        id="confirmPassword"
+                                        name="confirmPassword"
+                                        type="password"
+                                        value={formData.confirmPassword}
+                                        onChange={handleChange}
+                                        disabled={!formData.password}
+                                    />
+                                </>
+                            )}
                         </div>
                     </div>
 

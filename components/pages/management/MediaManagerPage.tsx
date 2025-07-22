@@ -156,7 +156,7 @@ const AssetManagerPage: React.FC = () => {
                     Quickly add curated sets of images to your library from the project's GitHub repository. This is great for getting started or adding new themes.
                 </p>
                 <Button onClick={() => setIsImporterOpen(true)}>
-                    Fetch Available Packs
+                    Import from Library
                 </Button>
             </Card>
             

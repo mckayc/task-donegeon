@@ -1,4 +1,4 @@
-import { User, Role, RewardTypeDefinition, RewardCategory, Rank, Trophy, TrophyRequirementType, QuestType, Market, Quest, QuestAvailability, Guild, AppSettings, SidebarConfigItem, GameAsset, ThemeDefinition, ThemeStyle, QuestCompletion, QuestCompletionStatus } from '../types';
+import { User, Role, RewardTypeDefinition, RewardCategory, Rank, Trophy, TrophyRequirementType, QuestType, Market, Quest, QuestAvailability, Guild, AppSettings, SidebarConfigItem, GameAsset, ThemeDefinition, ThemeStyle, QuestCompletion, QuestCompletionStatus, MarketStatus } from '../types';
 
 export const createMockUsers = (): User[] => {
     const usersData: Omit<User, 'id' | 'personalPurse' | 'personalExperience' | 'guildBalances' | 'avatar' | 'ownedAssetIds' | 'ownedThemes' | 'hasBeenOnboarded'>[] = [
@@ -153,6 +153,7 @@ export const INITIAL_THEMES: ThemeDefinition[] = Object.entries(rawThemes).map((
 }));
 
 export const INITIAL_SETTINGS: AppSettings = {
+    contentVersion: 0,
     favicon: '🏰',
     forgivingSetbacks: true,
     vacationMode: {
@@ -377,10 +378,10 @@ export const INITIAL_TROPHIES: Trophy[] = [
 ];
 
 export const createSampleMarkets = (): Market[] => ([
-  { id: 'market-tutorial', title: 'Tutorial Market', description: 'A place to complete your first quests.', icon: '🎓', status: 'open' },
-  { id: 'market-bank', title: 'The Exchange Post', description: 'Exchange your various currencies and experience points.', icon: '⚖️', status: 'open' },
-  { id: 'market-experiences', title: 'The Guild of Adventurers', description: 'Spend your hard-earned gems on real-world experiences and privileges.', icon: '🎟️', status: 'open' },
-  { id: 'market-candy', title: 'The Sugar Cube', description: 'A delightful shop for purchasing sweet treats with your crystals.', icon: '🍬', status: 'open' },
+  { id: 'market-tutorial', title: 'Tutorial Market', description: 'A place to complete your first quests.', icon: '🎓', status: { type: 'open' } },
+  { id: 'market-bank', title: 'The Exchange Post', description: 'Exchange your various currencies and experience points.', icon: '⚖️', status: { type: 'open' } },
+  { id: 'market-experiences', title: 'The Guild of Adventurers', description: 'Spend your hard-earned gems on real-world experiences and privileges.', icon: '🎟️', status: { type: 'open' } },
+  { id: 'market-candy', title: 'The Sugar Cube', description: 'A delightful shop for purchasing sweet treats with your crystals.', icon: '🍬', status: { type: 'open' } },
 ]);
 
 export const createSampleGameAssets = (): GameAsset[] => {
@@ -398,14 +399,16 @@ export const createSampleGameAssets = (): GameAsset[] => {
         marketIds: ['market-tutorial'], 
         creatorId: 'user-1', 
         createdAt: new Date().toISOString(), 
-        purchaseLimit: 1, 
+        purchaseLimit: 1,
+        purchaseLimitType: 'PerUser',
         purchaseCount: 0,
+        requiresApproval: false,
         linkedThemeId: 'sapphire',
     },
-    { id: 'ga-exp-movie', name: 'Movie Night Choice', description: 'You get to pick the movie for the next family movie night.', url: 'https://placehold.co/150/f97316/FFFFFF?text=Movie', icon: '🎬', category: 'Real-World Reward', isForSale: true, costGroups: [[{rewardTypeId: 'core-gems', amount: 10}]], marketIds: ['market-experiences'], creatorId: 'system', createdAt: new Date().toISOString(), purchaseLimit: 1, purchaseCount: 0 },
-    { id: 'ga-exp-game-hour', name: 'One Hour of Gaming', description: 'A voucher for one hour of video games.', url: 'https://placehold.co/150/3b82f6/FFFFFF?text=1+Hour', icon: '🎮', category: 'Real-World Reward', isForSale: true, costGroups: [[{rewardTypeId: 'core-gems', amount: 5}]], marketIds: ['market-experiences'], creatorId: 'system', createdAt: new Date().toISOString(), purchaseLimit: null, purchaseCount: 0 },
-    { id: 'ga-candy-chocolate', name: 'Chocolate Bar', description: 'A delicious bar of chocolate.', url: 'https://placehold.co/150/78350f/FFFFFF?text=Chocolate', icon: '🍫', category: 'Treat', isForSale: true, costGroups: [[{rewardTypeId: 'core-crystal', amount: 20}]], marketIds: ['market-candy'], creatorId: 'system', createdAt: new Date().toISOString(), purchaseLimit: null, purchaseCount: 0 },
-    { id: 'ga-candy-lollipop', name: 'Lollipop', description: 'A sweet, colorful lollipop.', url: 'https://placehold.co/150/ec4899/FFFFFF?text=Lollipop', icon: '🍭', category: 'Treat', isForSale: true, costGroups: [[{rewardTypeId: 'core-crystal', amount: 10}]], marketIds: ['market-candy'], creatorId: 'system', createdAt: new Date().toISOString(), purchaseLimit: null, purchaseCount: 0 },
+    { id: 'ga-exp-movie', name: 'Movie Night Choice', description: 'You get to pick the movie for the next family movie night.', url: 'https://placehold.co/150/f97316/FFFFFF?text=Movie', icon: '🎬', category: 'Real-World Reward', isForSale: true, costGroups: [[{rewardTypeId: 'core-gems', amount: 10}]], marketIds: ['market-experiences'], creatorId: 'system', createdAt: new Date().toISOString(), purchaseLimit: 1, purchaseLimitType: 'PerUser', purchaseCount: 0, requiresApproval: true },
+    { id: 'ga-exp-game-hour', name: 'One Hour of Gaming', description: 'A voucher for one hour of video games.', url: 'https://placehold.co/150/3b82f6/FFFFFF?text=1+Hour', icon: '🎮', category: 'Real-World Reward', isForSale: true, costGroups: [[{rewardTypeId: 'core-gems', amount: 5}]], marketIds: ['market-experiences'], creatorId: 'system', createdAt: new Date().toISOString(), purchaseLimit: null, purchaseLimitType: 'Total', purchaseCount: 0, requiresApproval: false },
+    { id: 'ga-candy-chocolate', name: 'Chocolate Bar', description: 'A delicious bar of chocolate.', url: 'https://placehold.co/150/78350f/FFFFFF?text=Chocolate', icon: '🍫', category: 'Treat', isForSale: true, costGroups: [[{rewardTypeId: 'core-crystal', amount: 20}]], marketIds: ['market-candy'], creatorId: 'system', createdAt: new Date().toISOString(), purchaseLimit: 10, purchaseLimitType: 'Total', purchaseCount: 0, requiresApproval: false },
+    { id: 'ga-candy-lollipop', name: 'Lollipop', description: 'A sweet, colorful lollipop.', url: 'https://placehold.co/150/ec4899/FFFFFF?text=Lollipop', icon: '🍭', category: 'Treat', isForSale: true, costGroups: [[{rewardTypeId: 'core-crystal', amount: 10}]], marketIds: ['market-candy'], creatorId: 'system', createdAt: new Date().toISOString(), purchaseLimit: null, purchaseLimitType: 'Total', purchaseCount: 0, requiresApproval: false },
     {
         id: 'ga-special-item',
         name: 'Mysterious Amulet',
@@ -422,7 +425,9 @@ export const createSampleGameAssets = (): GameAsset[] => {
         creatorId: 'system',
         createdAt: new Date().toISOString(),
         purchaseLimit: 1,
-        purchaseCount: 0
+        purchaseLimitType: 'PerUser',
+        purchaseCount: 0,
+        requiresApproval: false,
     }
   ];
   

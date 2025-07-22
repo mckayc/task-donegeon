@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Trophy } from '../../types';
 import Button from '../ui/Button';
 import Card from '../ui/Card';
@@ -8,7 +7,7 @@ import ConfirmDialog from '../ui/ConfirmDialog';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import EmptyState from '../ui/EmptyState';
 import TrophyIdeaGenerator from '../quests/TrophyIdeaGenerator';
-import { TrophyIcon } from '../ui/Icons';
+import { TrophyIcon, EllipsisVerticalIcon } from '../ui/Icons';
 
 const ManageTrophiesPage: React.FC = () => {
     const { trophies, settings, isAiConfigured } = useAppState();
@@ -19,8 +18,20 @@ const ManageTrophiesPage: React.FC = () => {
     const [isGeneratorOpen, setIsGeneratorOpen] = useState(false);
     const [initialCreateData, setInitialCreateData] = useState<{ name: string; description: string; icon: string; } | null>(null);
     const [selectedTrophies, setSelectedTrophies] = useState<string[]>([]);
+    const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
+    const dropdownRef = useRef<HTMLDivElement | null>(null);
 
     const isAiAvailable = settings.enableAiFeatures && isAiConfigured;
+
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+                setOpenDropdownId(null);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
 
     const handleCreate = () => {
         setEditingTrophy(null);
@@ -118,9 +129,16 @@ const ManageTrophiesPage: React.FC = () => {
                                                 {trophy.isManual ? 'Manual' : 'Automatic'}
                                             </span>
                                         </td>
-                                        <td className="p-4 space-x-2">
-                                            <Button size="sm" variant="secondary" onClick={() => handleEdit(trophy)}>Edit</Button>
-                                            <Button size="sm" variant="secondary" className="!bg-red-900/50 hover:!bg-red-800/60 text-red-300" onClick={() => handleDeleteRequest([trophy.id])}>Delete</Button>
+                                        <td className="p-4 relative">
+                                            <button onClick={() => setOpenDropdownId(openDropdownId === trophy.id ? null : trophy.id)} className="p-2 rounded-full hover:bg-stone-700/50">
+                                                <EllipsisVerticalIcon className="w-5 h-5 text-stone-300" />
+                                            </button>
+                                            {openDropdownId === trophy.id && (
+                                                <div ref={dropdownRef} className="absolute right-10 top-0 mt-2 w-36 bg-stone-900 border border-stone-700 rounded-lg shadow-xl z-20">
+                                                    <a href="#" onClick={(e) => { e.preventDefault(); handleEdit(trophy); setOpenDropdownId(null); }} className="block px-4 py-2 text-sm text-stone-300 hover:bg-stone-700/50">Edit</a>
+                                                    <button onClick={() => { handleDeleteRequest([trophy.id]); setOpenDropdownId(null); }} className="w-full text-left block px-4 py-2 text-sm text-red-400 hover:bg-stone-700/50">Delete</button>
+                                                </div>
+                                            )}
                                         </td>
                                     </tr>
                                 ))}

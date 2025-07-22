@@ -1,4 +1,5 @@
-import { Quest, QuestType, QuestAvailability, GameAsset, Market, RewardTypeDefinition, Trophy, TrophyRequirementType, RewardCategory, BlueprintAssets } from '../types';
+
+import { Quest, QuestType, QuestAvailability, GameAsset, Market, RewardTypeDefinition, Trophy, TrophyRequirementType, RewardCategory, BlueprintAssets, MarketStatus, RewardItem } from '../types';
 
 export type LibraryPackType = 'Quests' | 'Items' | 'Markets' | 'Trophies' | 'Rewards';
 
@@ -34,14 +35,15 @@ const createQuest = (data: Partial<Quest>): Quest => ({
 const createAsset = (data: Partial<GameAsset>): GameAsset => ({
     id: `lib-ga-${data.name?.toLowerCase().replace(/ /g, '-')}-${Math.random().toString(36).substring(7)}`,
     name: 'Untitled Asset', description: '', url: 'https://placehold.co/150x150/84cc16/FFFFFF?text=Item',
-    icon: '📦', category: 'Misc', isForSale: false, costGroups: [], marketIds: [], purchaseLimit: null, purchaseCount: 0,
+    icon: '📦', category: 'Misc', isForSale: false, costGroups: [], marketIds: [], purchaseLimit: null, purchaseLimitType: 'Total', purchaseCount: 0,
+    requiresApproval: false,
     creatorId: 'library', createdAt: new Date().toISOString(),
     ...data
 });
 
 const createMarket = (data: Partial<Market>): Market => ({
     id: `lib-m-${data.title?.toLowerCase().replace(/ /g, '-')}-${Math.random().toString(36).substring(7)}`,
-    title: 'Untitled Market', description: '', icon: '🛒', status: 'open', ...data
+    title: 'Untitled Market', description: '', icon: '🛒', status: { type: 'open' }, ...data
 });
 
 const createTrophy = (data: Partial<Trophy>): Trophy => ({
@@ -623,80 +625,6 @@ export const libraryPacks: LibraryPack[] = [
         createReward({ name: 'Discipline', description: 'XP for showing self-control.', category: RewardCategory.XP, icon: '🧘' }),
         createReward({ name: 'Gratitude', description: 'XP for showing appreciation.', category: RewardCategory.XP, icon: '🙏' }),
         createReward({ name: 'Humility', description: 'XP for being humble and not bragging.', category: RewardCategory.XP, icon: '🙇‍♂️' }),
-        createReward({ name: 'Perseverance', description: 'XP for not giving up on a difficult task.', category: RewardCategory.XP, icon: '💪' }),
-        createReward({ name: 'Responsibility', description: 'XP for taking ownership of your actions.', category: RewardCategory.XP, icon: '✔️' }),
-        createReward({ name: 'Compassion', description: 'XP for showing care for others.', category: RewardCategory.XP, icon: '❤️' }),
-    ]}},
-    { id: 'pack-r-hobby', type: 'Rewards', title: 'Hobby XP', emoji: '🪁', description: 'XP types for various hobbies.', color: REWARD_COLOR, assets: { rewardTypes: [
-        createReward({ name: 'Art XP', description: 'Experience from drawing, painting, and sculpting.', category: RewardCategory.XP, icon: '🎨' }),
-        createReward({ name: 'Gaming XP', description: 'Experience from skilled video gaming.', category: RewardCategory.XP, icon: '🎮' }),
-        createReward({ name: 'Collector XP', description: 'Experience from organizing and maintaining a collection.', category: RewardCategory.XP, icon: '📦' }),
-        createReward({ name: 'Cooking XP', description: 'Experience from trying new recipes.', category: RewardCategory.XP, icon: '🧑‍🍳' }),
-        createReward({ name: 'Builder XP', description: 'Experience from building and construction hobbies.', category: RewardCategory.XP, icon: '🧱' }),
-        createReward({ name: 'Music XP', description: 'Experience from practicing a musical instrument.', category: RewardCategory.XP, icon: '🎵' }),
-        createReward({ name: 'Reading XP', description: 'Experience from reading books.', category: RewardCategory.XP, icon: '📚' }),
-        createReward({ name: 'Sports XP', description: 'Experience from playing sports.', category: RewardCategory.XP, icon: '⚽' }),
-        createReward({ name: 'Gardening XP', description: 'Experience from gardening.', category: RewardCategory.XP, icon: '🌱' }),
-        createReward({ name: 'Coding XP', description: 'Experience from programming.', category: RewardCategory.XP, icon: '💻' }),
-    ]}},
-    { id: 'pack-r-school', type: 'Rewards', title: 'School Subjects', emoji: '🏫', description: 'XP types based on school subjects.', color: REWARD_COLOR, assets: { rewardTypes: [
-        createReward({ name: 'Math XP', description: 'Experience from math homework and practice.', category: RewardCategory.XP, icon: '🧮' }),
-        createReward({ name: 'Science XP', description: 'Experience from science projects and learning.', category: RewardCategory.XP, icon: '🔬' }),
-        createReward({ name: 'History XP', description: 'Experience from history lessons.', category: RewardCategory.XP, icon: '📜' }),
-        createReward({ name: 'Language Arts XP', description: 'Experience from reading and writing assignments.', category: RewardCategory.XP, icon: '✍️' }),
-        createReward({ name: 'Art Class XP', description: 'Experience from school art projects.', category: RewardCategory.XP, icon: '🖼️' }),
-        createReward({ name: 'Music Class XP', description: 'Experience from music class.', category: RewardCategory.XP, icon: '🎼' }),
-        createReward({ name: 'P.E. XP', description: 'Experience from physical education class.', category: RewardCategory.XP, icon: '🤸' }),
-        createReward({ name: 'Computer Class XP', description: 'Experience from computer class.', category: RewardCategory.XP, icon: '🖱️' }),
-        createReward({ name: 'Social Studies XP', description: 'Experience from social studies.', category: RewardCategory.XP, icon: '🌍' }),
-        createReward({ name: 'Foreign Language XP', description: 'Experience from foreign language class.', category: RewardCategory.XP, icon: '🇪🇸' }),
-    ]}},
-    { id: 'pack-r-silly', type: 'Rewards', title: 'Silly Currencies', emoji: '🤪', description: 'Just for fun currencies.', color: REWARD_COLOR, assets: { rewardTypes: [
-        createReward({ name: 'Goofballs', description: 'For being silly.', category: RewardCategory.Currency, icon: '🤪' }),
-        createReward({ name: 'Mischief Tokens', description: 'For harmless pranks.', category: RewardCategory.Currency, icon: '😈' }),
-        createReward({ name: 'Dad Jokes', description: 'Earned by telling a truly awful dad joke.', category: RewardCategory.Currency, icon: '👨‍👧‍👦' }),
-        createReward({ name: 'Unicorn Tears', description: 'Magical, glittery tears.', category: RewardCategory.Currency, icon: '🦄' }),
-        createReward({ name: 'Shiny Rocks', description: 'They\'re just shiny rocks, but you love them.', category: RewardCategory.Currency, icon: '🗿' }),
-        createReward({ name: 'Bottle Caps', description: 'A post-apocalyptic currency.', category: RewardCategory.Currency, icon: '🍾' }),
-        createReward({ name: 'Fuzzballs', description: 'Found in the dryer.', category: RewardCategory.Currency, icon: '☁️' }),
-        createReward({ name: 'Squeaky Toys', description: 'Annoyingly fun.', category: RewardCategory.Currency, icon: '🦆' }),
-        createReward({ name: 'Goldfish Crackers', description: 'The snack that smiles back.', category: RewardCategory.Currency, icon: '🐠' }),
-        createReward({ name: 'Coupons for Hugs', description: 'Redeemable for one hug.', category: RewardCategory.Currency, icon: '🤗' }),
-    ]}},
-    { id: 'pack-r-elemental', type: 'Rewards', title: 'Elemental Essences', emoji: '🔥', description: 'XP based on elements.', color: REWARD_COLOR, assets: { rewardTypes: [
-        createReward({ name: 'Fire Essence', description: 'XP from passionate and energetic activities.', category: RewardCategory.XP, icon: '🔥' }),
-        createReward({ name: 'Water Essence', description: 'XP from calm and fluid activities.', category: RewardCategory.XP, icon: '💧' }),
-        createReward({ name: 'Earth Essence', description: 'XP from grounding and nature-based activities.', category: RewardCategory.XP, icon: '🌍' }),
-        createReward({ name: 'Air Essence', description: 'XP from intellectual and communicative activities.', category: RewardCategory.XP, icon: '💨' }),
-        createReward({ name: 'Light Essence', description: 'XP from good and helpful deeds.', category: RewardCategory.XP, icon: '☀️' }),
-        createReward({ name: 'Shadow Essence', description: 'XP from stealthy and clever activities.', category: RewardCategory.XP, icon: '🌑' }),
-        createReward({ name: 'Lightning Essence', description: 'XP from fast and energetic activities.', category: RewardCategory.XP, icon: '⚡' }),
-        createReward({ name: 'Ice Essence', description: 'XP from precise and patient activities.', category: RewardCategory.XP, icon: '❄️' }),
-        createReward({ name: 'Nature Essence', description: 'XP from caring for plants and animals.', category: RewardCategory.XP, icon: '🌿' }),
-        createReward({ name: 'Metal Essence', description: 'XP from building and crafting.', category: RewardCategory.XP, icon: '🔩' }),
-    ]}},
-    { id: 'pack-r-guild', type: 'Rewards', title: 'Guild Currencies', emoji: '🛡️', description: 'Currencies for guild activities.', color: REWARD_COLOR, assets: { rewardTypes: [
-        createReward({ name: 'Guild Seals', description: 'Official currency of the guild.', category: RewardCategory.Currency, icon: '🛡️' }),
-        createReward({ name: 'Contribution Points', description: 'Earned by helping the guild.', category: RewardCategory.Currency, icon: '🤝' }),
-        createReward({ name: 'Raid Tokens', description: 'For completing guild-wide quests.', category: RewardCategory.Currency, icon: '⚔️' }),
-        createReward({ name: 'Bounty Slips', description: 'For completing specific guild tasks.', category: RewardCategory.Currency, icon: '📜' }),
-        createReward({ name: 'Favor Tokens', description: 'Can be traded with other guild members.', category: RewardCategory.Currency, icon: '👋' }),
-        createReward({ name: 'Decor Tokens', description: 'Used to decorate the guild hall.', category: RewardCategory.Currency, icon: '🎈' }),
-        createReward({ name: 'Feast Vouchers', description: 'Contributes to a guild feast.', category: RewardCategory.Currency, icon: '🍗' }),
-        createReward({ name: 'War Bonds', description: 'For guild vs. guild activities.', category: RewardCategory.Currency, icon: '💥' }),
-        createReward({ name: 'Research Notes', description: 'Contributes to guild-wide buffs.', category: RewardCategory.Currency, icon: '🔬' }),
-        createReward({ name: 'Ancient Coins', description: 'A rare currency for special guild items.', category: RewardCategory.Currency, icon: '🪙' }),
-    ]}},
-    { id: 'pack-r-dnd', type: 'Rewards', title: 'D&D Stats XP', emoji: '🎲', description: 'XP based on the classic D&D stats.', color: REWARD_COLOR, assets: { rewardTypes: [
-        createReward({ name: 'Strength XP', description: 'For feats of physical power.', category: RewardCategory.XP, icon: '💪' }),
-        createReward({ name: 'Dexterity XP', description: 'For tasks requiring agility and finesse.', category: RewardCategory.XP, icon: '🤸' }),
-        createReward({ name: 'Constitution XP', description: 'For endurance and healthy habits.', category: RewardCategory.XP, icon: '❤️‍🩹' }),
-        createReward({ name: 'Intelligence XP', description: 'For learning and problem-solving.', category: RewardCategory.XP, icon: '🧠' }),
-        createReward({ name: 'Wisdom XP', description: 'For showing insight and making good judgements.', category: RewardCategory.XP, icon: '🦉' }),
-        createReward({ name: 'Charisma XP', description: 'For social grace and leadership.', category: RewardCategory.XP, icon: '🎭' }),
-        createReward({ name: 'Luck XP', description: 'For when things just go your way.', category: RewardCategory.XP, icon: '🍀' }),
-        createReward({ name: 'Perception XP', description: 'For noticing things others miss.', category: RewardCategory.XP, icon: '👁️' }),
-        createReward({ name: 'Stealth XP', description: 'For being sneaky and quiet.', category: RewardCategory.XP, icon: '🥷' }),
-        createReward({ name: 'Survival XP', description: 'For thriving in the great outdoors.', category: RewardCategory.XP, icon: '🏕️' }),
+        createReward({ name: 'Perseverance', description: 'For not giving up on a difficult task.', category: RewardCategory.XP, icon: '💪' }),
     ]}},
 ];

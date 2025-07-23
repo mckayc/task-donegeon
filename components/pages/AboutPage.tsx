@@ -1,4 +1,3 @@
-
 import React, { useState, ReactNode } from 'react';
 import Card from '../ui/Card';
 import { useAppState } from '../../context/AppContext';
@@ -25,6 +24,7 @@ const CollapsibleSection: React.FC<{ title: string; children: React.ReactNode; d
     );
 };
 
+const V0_0_95_DATE = new Date(2025, 6, 22);
 const V0_0_94_DATE = new Date(2025, 6, 26);
 const V0_0_93_DATE = new Date(2025, 6, 25);
 const V0_0_92_DATE = new Date(2025, 6, 24);
@@ -43,6 +43,18 @@ const V0_0_80_DATE = new Date(2025, 6, 19);
 
 const VersionHistoryContent: React.FC = () => (
     <div className="prose prose-invert max-w-none text-stone-300 space-y-4">
+        <div>
+            <h4 className="text-lg font-bold text-stone-100">
+                Version 0.0.95 ({V0_0_95_DATE.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })})
+            </h4>
+            <ul className="list-disc list-inside space-y-2 mt-2">
+                <li><strong>Smarter AI Studio:</strong> The AI Studio is now more integrated with the game's mechanics. When generating quest ideas, it will now also suggest relevant categories (tags) and appropriate rewards, pre-filling the new quest form to save administrators time.</li>
+                <li><strong>Powerful Bulk Editing for Quests:</strong> A new bulk editing system has been introduced on the "Manage Quests" page. Administrators can now select multiple quests and simultaneously update their status, group assignments, tags, and assigned users from a single dialog.</li>
+                <li><strong>Enhanced Collapsed Sidebar:</strong> The user experience for the collapsed sidebar has been significantly upgraded with a new fly-out menu system. Hovering over any icon now instantly reveals a panel showing the full name of the link or its contents, making navigation faster and more intuitive.</li>
+                <li><strong>Default Quest Categories:</strong> To help administrators get started, the app now includes a default set of common quest categories (e.g., "Cleaning," "Learning," "Yardwork"). These appear automatically in tag selection fields.</li>
+                <li><strong>UI Bug Fixes:</strong> Corrected a recurring issue where a "0" badge would incorrectly appear on collapsed sidebar menus that had no notifications.</li>
+            </ul>
+        </div>
         <div>
             <h4 className="text-lg font-bold text-stone-100">
                 Version 0.0.94 ({V0_0_94_DATE.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })})

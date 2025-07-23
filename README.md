@@ -1,7 +1,6 @@
-
 # Task Donegeon
 
-**Version:** 0.0.94
+**Version:** 0.0.95
 
 ---
 
@@ -16,12 +15,15 @@ Task Donegeon is a gamified task and chore management application designed for f
 
 ## ✨ Features
 
-### What's New in Version 0.0.94 (July 26, 2025)
--   **Default Quest Categories:** To help new administrators get started faster, the app now includes a default set of common quest categories (e.g., "Cleaning", "Learning", "Yardwork"). These appear automatically in the tag selection inputs alongside any custom tags you create.
--   **Improved Collapsed Sidebar Navigation:** The collapsed sidebar is now more functional. Collapsible menu groups remain visible as icons with expand/collapse arrows, allowing you to access nested links without needing to expand the entire sidebar.
--   **UI Bug Fix:** Fixed a minor UI bug where a badge with a "0" would incorrectly appear on collapsed sidebar menu groups that had no notifications.
+### What's New in Version 0.0.95 (July 22, 2025)
+-   **Smarter AI Studio:** The AI Studio is now more integrated with the game's mechanics. When generating quest ideas, it will now also suggest relevant categories (tags) and appropriate rewards, pre-filling the new quest form to save administrators time.
+-   **Powerful Bulk Editing for Quests:** A new bulk editing system has been introduced on the "Manage Quests" page. Administrators can now select multiple quests and simultaneously update their status, group assignments, tags, and assigned users from a single dialog.
+-   **Enhanced Collapsed Sidebar:** The user experience for the collapsed sidebar has been significantly upgraded with a new fly-out menu system. Hovering over any icon now instantly reveals a panel showing the full name of the link or its contents, making navigation faster and more intuitive.
+-   **Default Quest Categories:** To help administrators get started, the app now includes a default set of common quest categories (e.g., "Cleaning," "Learning," "Yardwork"). These appear automatically in tag selection fields.
+-   **UI Bug Fixes:** Corrected a recurring issue where a "0" badge would incorrectly appear on collapsed sidebar menus that had no notifications.
 
 ### Version History
+- **v0.0.94 (July 26, 2025):** Added default quest categories and improved the collapsed sidebar with expandable menus.
 - **v0.0.93 (July 25, 2025):** Implemented a purchase escrow system, integrated purchase requests into the Chronicles, and improved the login notification popup with a scrollbar and close button.
 - **v0.0.92 (July 24, 2025):** Added in-dialog Quest Group creation and made item titles on management pages clickable for quick editing.
 - **v0.0.91 (July 23, 2025):** Redesigned "Manage Goods" and "Manage Quests" pages with tabs, sorting, and search. Added a new "Quest Group" system for organization and bulk assignment.

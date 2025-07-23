@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { Trophy, TrophyRequirement, TrophyRequirementType, QuestType } from '../../types';
 import Button from '../ui/Button';
@@ -12,36 +12,47 @@ interface EditTrophyDialogProps {
   trophy: Trophy | null;
   initialData?: { name: string; description: string; icon: string; };
   onClose: () => void;
+  mode?: 'create' | 'edit' | 'ai-creation';
+  onTryAgain?: () => void;
+  isGenerating?: boolean;
 }
 
-const EditTrophyDialog: React.FC<EditTrophyDialogProps> = ({ trophy, initialData, onClose }) => {
+const EditTrophyDialog: React.FC<EditTrophyDialogProps> = ({ trophy, initialData, onClose, mode = (trophy ? 'edit' : 'create'), onTryAgain, isGenerating }) => {
   const { ranks, allTags } = useAppState();
   const { addTrophy, updateTrophy } = useAppDispatch();
-  const [formData, setFormData] = useState({ 
-    name: initialData?.name || '', 
-    description: initialData?.description || '', 
-    iconType: 'emoji' as 'emoji' | 'image',
-    icon: initialData?.icon || '🏆',
-    imageUrl: '', 
-    isManual: true, 
-    requirements: [] as TrophyRequirement[]
-  });
-  const [isEmojiPickerOpen, setIsEmojiPickerOpen] = useState(false);
-  const [isGalleryOpen, setIsGalleryOpen] = useState(false);
 
-  useEffect(() => {
-    if (trophy) {
-      setFormData({ 
+  const getInitialFormData = useCallback(() => {
+    if (mode === 'edit' && trophy) {
+      return { 
         name: trophy.name, 
         description: trophy.description, 
-        iconType: trophy.iconType || 'emoji',
+        iconType: trophy.iconType || 'emoji' as 'emoji' | 'image',
         icon: trophy.icon, 
         imageUrl: trophy.imageUrl || '',
         isManual: trophy.isManual, 
         requirements: [...trophy.requirements] 
-      });
+      };
     }
-  }, [trophy]);
+    // For create or ai-creation
+    return { 
+      name: initialData?.name || '', 
+      description: initialData?.description || '', 
+      iconType: 'emoji' as 'emoji' | 'image',
+      icon: initialData?.icon || '🏆',
+      imageUrl: '', 
+      isManual: true, 
+      requirements: [] as TrophyRequirement[]
+    };
+  }, [trophy, initialData, mode]);
+
+  const [formData, setFormData] = useState(getInitialFormData);
+  const [isEmojiPickerOpen, setIsEmojiPickerOpen] = useState(false);
+  const [isGalleryOpen, setIsGalleryOpen] = useState(false);
+
+  useEffect(() => {
+    setFormData(getInitialFormData());
+  }, [initialData, getInitialFormData]);
+
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -77,7 +88,7 @@ const EditTrophyDialog: React.FC<EditTrophyDialogProps> = ({ trophy, initialData
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (trophy) {
+    if (trophy && mode === 'edit') {
       updateTrophy({ ...trophy, ...formData });
     } else {
       addTrophy(formData);
@@ -196,10 +207,24 @@ const EditTrophyDialog: React.FC<EditTrophyDialogProps> = ({ trophy, initialData
                 </div>
             )}
         </div>
-
+          
           <div className="flex justify-end space-x-4 pt-4">
-            <Button type="button" variant="secondary" onClick={onClose}>Cancel</Button>
-            <Button type="submit">{trophy ? 'Save Changes' : 'Create Trophy'}</Button>
+            {mode === 'ai-creation' ? (
+                 <div className="w-full flex justify-between items-center">
+                    <Button type="button" variant="secondary" onClick={onClose}>Cancel</Button>
+                    <div className="flex items-center gap-4">
+                        <Button type="button" variant="secondary" onClick={onTryAgain} disabled={isGenerating}>
+                            {isGenerating ? 'Generating...' : 'Try Again'}
+                        </Button>
+                        <Button type="submit">Create Trophy</Button>
+                    </div>
+                </div>
+            ) : (
+                 <>
+                    <Button type="button" variant="secondary" onClick={onClose}>Cancel</Button>
+                    <Button type="submit">{trophy ? 'Save Changes' : 'Create Trophy'}</Button>
+                 </>
+            )}
           </div>
         </form>
       </div>

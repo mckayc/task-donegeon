@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { GameAsset, RewardItem, RewardCategory } from '../../types';
 import Button from '../ui/Button';
@@ -11,6 +11,9 @@ interface EditGameAssetDialogProps {
   assetToEdit: GameAsset | null;
   initialData: { url: string; name: string; category: string; description?: string; } | null;
   onClose: () => void;
+  mode?: 'create' | 'edit' | 'ai-creation';
+  onTryAgain?: () => void;
+  isGenerating?: boolean;
 }
 
 const InfoIcon: React.FC<{className?: string}> = ({ className }) => (
@@ -25,36 +28,13 @@ const PREDEFINED_CATEGORIES = [
     'Armor (Cosmetic)', 'Consumable', 'Real-World Reward', 'Trophy Display', 'Miscellaneous'
 ];
 
-const EditGameAssetDialog: React.FC<EditGameAssetDialogProps> = ({ assetToEdit, initialData, onClose }) => {
+const EditGameAssetDialog: React.FC<EditGameAssetDialogProps> = ({ assetToEdit, initialData, onClose, mode = (assetToEdit ? 'edit' : 'create'), onTryAgain, isGenerating }) => {
   const { addGameAsset, updateGameAsset, uploadFile, addNotification } = useAppDispatch();
   const { markets, rewardTypes } = useAppState();
 
-  const [formData, setFormData] = useState({
-    name: '',
-    description: '',
-    url: '',
-    category: 'Avatar',
-    avatarSlot: '',
-    isForSale: false,
-    requiresApproval: false,
-    costGroups: [[]] as RewardItem[][],
-    payouts: [] as RewardItem[],
-    marketIds: [] as string[],
-    purchaseLimit: null as number | null,
-    purchaseLimitType: 'Total' as 'Total' | 'PerUser',
-    purchaseCount: 0,
-    allowExchange: false,
-  });
-  const [limitTypeOption, setLimitTypeOption] = useState<'unlimited' | 'total' | 'perUser'>('unlimited');
-  const [customCategory, setCustomCategory] = useState('');
-  const [error, setError] = useState('');
-  const [isUploading, setIsUploading] = useState(false);
-  const [isGalleryOpen, setIsGalleryOpen] = useState(false);
-  const [isInfoVisible, setIsInfoVisible] = useState(false);
-
-  useEffect(() => {
-    if (assetToEdit) {
-      setFormData({
+  const getInitialFormData = useCallback(() => {
+    if (mode === 'edit' && assetToEdit) {
+      return {
         name: assetToEdit.name,
         description: assetToEdit.description,
         url: assetToEdit.url,
@@ -69,16 +49,18 @@ const EditGameAssetDialog: React.FC<EditGameAssetDialogProps> = ({ assetToEdit, 
         purchaseLimitType: assetToEdit.purchaseLimitType || 'Total',
         purchaseCount: assetToEdit.purchaseCount,
         allowExchange: !!(assetToEdit.payouts && assetToEdit.payouts.length > 0),
-      });
+      };
+    }
+    
+    // Default for create or ai-creation
+    let baseData = {
+        name: '', description: '', url: '', category: 'Avatar', avatarSlot: '',
+        isForSale: false, requiresApproval: false, costGroups: [[]] as RewardItem[][],
+        payouts: [] as RewardItem[], marketIds: [] as string[], purchaseLimit: null as number | null,
+        purchaseLimitType: 'Total' as 'Total' | 'PerUser', purchaseCount: 0, allowExchange: false,
+    };
 
-      if (assetToEdit.purchaseLimit === null) setLimitTypeOption('unlimited');
-      else if (assetToEdit.purchaseLimitType === 'PerUser') setLimitTypeOption('perUser');
-      else setLimitTypeOption('total');
-
-      if (!PREDEFINED_CATEGORIES.includes(assetToEdit.category)) {
-          setCustomCategory(assetToEdit.category);
-      }
-    } else if (initialData) {
+    if (initialData) {
         const { url, name, category: rawCategory, description } = initialData;
         let finalCategory = rawCategory;
         let finalAvatarSlot = '';
@@ -88,23 +70,42 @@ const EditGameAssetDialog: React.FC<EditGameAssetDialogProps> = ({ assetToEdit, 
             finalCategory = 'Avatar';
             finalAvatarSlot = parts.slice(1).join('-').toLowerCase();
         }
-
         const isPredefined = PREDEFINED_CATEGORIES.includes(finalCategory);
 
-        setFormData(prev => ({
-            ...prev,
-            url,
-            name,
+        baseData = {
+            ...baseData,
+            url, name,
             description: description || '',
             category: isPredefined ? finalCategory : 'Other',
             avatarSlot: finalAvatarSlot,
-        }));
-
-        if (!isPredefined) {
-            setCustomCategory(finalCategory);
-        }
+        };
     }
-  }, [assetToEdit, initialData]);
+    return baseData;
+  }, [assetToEdit, initialData, mode]);
+  
+  const [formData, setFormData] = useState(getInitialFormData);
+  const [limitTypeOption, setLimitTypeOption] = useState<'unlimited' | 'total' | 'perUser'>('unlimited');
+  const [customCategory, setCustomCategory] = useState('');
+  const [error, setError] = useState('');
+  const [isUploading, setIsUploading] = useState(false);
+  const [isGalleryOpen, setIsGalleryOpen] = useState(false);
+  const [isInfoVisible, setIsInfoVisible] = useState(false);
+  
+  useEffect(() => {
+    const data = getInitialFormData();
+    setFormData(data);
+    
+    if (data.purchaseLimit === null) setLimitTypeOption('unlimited');
+    else if (data.purchaseLimitType === 'PerUser') setLimitTypeOption('perUser');
+    else setLimitTypeOption('total');
+
+    if (!PREDEFINED_CATEGORIES.includes(data.category)) {
+        setCustomCategory(data.category);
+    } else {
+        setCustomCategory('');
+    }
+  }, [initialData, assetToEdit, getInitialFormData]);
+
 
   const handleCostGroupChange = (groupIndex: number) => (itemIndex: number, field: keyof RewardItem, value: string | number) => {
     const newCostGroups = [...formData.costGroups.map(group => [...group])];
@@ -220,6 +221,7 @@ const EditGameAssetDialog: React.FC<EditGameAssetDialogProps> = ({ assetToEdit, 
         <div className="bg-stone-800 border border-stone-700 rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] flex flex-col">
           <div className="p-8 border-b border-stone-700/60">
               <h2 className="text-3xl font-medieval text-accent">{dialogTitle}</h2>
+              {mode === 'ai-creation' && <p className="text-stone-400 mt-1">Review and adjust the AI-generated details below.</p>}
           </div>
           <form id="asset-dialog-form" onSubmit={handleSubmit} className="flex-1 space-y-4 p-8 overflow-y-auto scrollbar-hide">
             <div className="flex gap-6 items-start">
@@ -342,10 +344,22 @@ const EditGameAssetDialog: React.FC<EditGameAssetDialogProps> = ({ assetToEdit, 
             {error && <p className="text-red-400 text-center">{error}</p>}
           </form>
            <div className="p-6 border-t border-stone-700/60 mt-auto">
-              <div className="flex justify-end space-x-4">
-                <Button type="button" variant="secondary" onClick={onClose}>Cancel</Button>
-                <Button type="submit" form="asset-dialog-form">{assetToEdit ? 'Save Changes' : 'Create Asset'}</Button>
-              </div>
+              {mode === 'ai-creation' ? (
+                <div className="flex justify-between items-center">
+                    <Button type="button" variant="secondary" onClick={onClose}>Cancel</Button>
+                    <div className="flex items-center gap-4">
+                        <Button type="button" variant="secondary" onClick={onTryAgain} disabled={isGenerating}>
+                            {isGenerating ? 'Generating...' : 'Try Again'}
+                        </Button>
+                        <Button type="submit" form="asset-dialog-form">Create Asset</Button>
+                    </div>
+                </div>
+              ) : (
+                <div className="flex justify-end space-x-4">
+                    <Button type="button" variant="secondary" onClick={onClose}>Cancel</Button>
+                    <Button type="submit" form="asset-dialog-form">{assetToEdit ? 'Save Changes' : 'Create Asset'}</Button>
+                </div>
+              )}
           </div>
         </div>
       </div>

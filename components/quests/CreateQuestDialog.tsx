@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { Quest, QuestType, RewardItem, RewardCategory, QuestAvailability } from '../../types';
 import Button from '../ui/Button';
@@ -12,16 +12,11 @@ import DynamicIcon from '../ui/DynamicIcon';
 
 interface QuestDialogProps {
   questToEdit?: Quest;
-  initialData?: { 
-    title: string; 
-    description: string; 
-    type?: QuestType,
-    tags?: string[],
-    suggestedRewards?: { rewardTypeName: string, amount: number }[],
-    groupName?: string;
-    isNewGroup?: boolean;
-  };
+  initialData?: any; // Loosened type to accept raw AI data
   onClose: () => void;
+  mode?: 'create' | 'edit' | 'ai-creation';
+  onTryAgain?: () => void;
+  isGenerating?: boolean;
 }
 
 const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -29,12 +24,12 @@ const DUTY_AVAILABILITIES = [QuestAvailability.Daily, QuestAvailability.Weekly, 
 const VENTURE_AVAILABILITIES = [QuestAvailability.Frequency, QuestAvailability.Unlimited];
 
 
-const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialData, onClose }) => {
+const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialData, onClose, mode = (questToEdit ? 'edit' : 'create'), onTryAgain, isGenerating }) => {
   const { users, guilds, rewardTypes, allTags, settings, questGroups } = useAppState();
   const { addQuest, updateQuest, addQuestGroup } = useAppDispatch();
 
-  const getInitialFormData = () => {
-      if (questToEdit) {
+  const getInitialFormData = useCallback(() => {
+      if (mode === 'edit' && questToEdit) {
         return {
           title: questToEdit.title,
           description: questToEdit.description,
@@ -66,27 +61,27 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
 
       // Map AI suggested rewards to actual reward items
       const suggestedRewardItems: RewardItem[] = initialData?.suggestedRewards
-        ?.map(reward => {
+        ?.map((reward: { rewardTypeName: string; amount: number; }) => {
             const foundType = rewardTypes.find(rt => rt.name.toLowerCase() === reward.rewardTypeName.toLowerCase().replace(' xp', ''));
             if (foundType) {
                 return { rewardTypeId: foundType.id, amount: reward.amount };
             }
             return null;
         })
-        .filter((r): r is RewardItem => r !== null) || [];
+        .filter((r: RewardItem | null): r is RewardItem => r !== null) || [];
       
       const isCreatingNewAIGroup = initialData?.isNewGroup && !!initialData.groupName;
       const suggestedGroupId = !isCreatingNewAIGroup && initialData?.groupName
         ? questGroups.find(g => g.name.toLowerCase() === initialData.groupName?.toLowerCase())?.id || ''
         : '';
 
-      // New quest
+      // New quest or AI creation
       return {
         title: initialData?.title || '',
         description: initialData?.description || '',
         type: initialData?.type || QuestType.Duty,
         iconType: 'emoji' as 'emoji' | 'image',
-        icon: '📝',
+        icon: initialData?.icon || '📝',
         imageUrl: '',
         rewards: suggestedRewardItems,
         lateSetbacks: [] as RewardItem[],
@@ -94,7 +89,7 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
         isActive: settings.questDefaults.isActive,
         requiresApproval: settings.questDefaults.requiresApproval,
         isOptional: settings.questDefaults.isOptional,
-        availabilityType: QuestAvailability.Daily,
+        availabilityType: (initialData?.type === QuestType.Venture) ? QuestAvailability.Unlimited : QuestAvailability.Daily,
         availabilityCount: 1,
         weeklyRecurrenceDays: [] as number[],
         monthlyRecurrenceDays: [] as number[],
@@ -108,7 +103,7 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
         incompleteTime: '',
         hasDeadlines: false,
       };
-  };
+  }, [questToEdit, initialData, mode, rewardTypes, questGroups, settings.questDefaults]);
 
   const [formData, setFormData] = useState(getInitialFormData);
   const [error, setError] = useState('');
@@ -116,6 +111,14 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
   const [isGalleryOpen, setIsGalleryOpen] = useState(false);
   const [isCreatingNewGroup, setIsCreatingNewGroup] = useState(initialData?.isNewGroup && !!initialData.groupName);
   const [newGroupName, setNewGroupName] = useState(initialData?.isNewGroup ? initialData.groupName || '' : '');
+  
+  useEffect(() => {
+    // This effect ensures the form updates when a new AI suggestion is passed in
+    setFormData(getInitialFormData());
+    setIsCreatingNewGroup(initialData?.isNewGroup && !!initialData.groupName);
+    setNewGroupName(initialData?.isNewGroup ? initialData.groupName || '' : '');
+  }, [initialData, getInitialFormData]);
+
 
   useEffect(() => {
     if (!formData.hasDeadlines) {
@@ -140,7 +143,7 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
     if (newType === QuestType.Duty && !DUTY_AVAILABILITIES.includes(currentAvail)) {
         setFormData(p => ({...p, availabilityType: QuestAvailability.Daily}));
     } else if (newType === QuestType.Venture && !VENTURE_AVAILABILITIES.includes(currentAvail)) {
-        setFormData(p => ({...p, availabilityType: QuestAvailability.Frequency}));
+        setFormData(p => ({...p, availabilityType: QuestAvailability.Unlimited}));
     }
 
   }, [formData.type, questToEdit]);
@@ -207,7 +210,7 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
     // Remove UI-only state before submitting
     const { hasDeadlines, ...questPayload } = finalQuestData;
 
-    if (questToEdit) {
+    if (mode === 'edit' && questToEdit) {
         updateQuest({ ...questToEdit, ...questPayload });
     } else {
         addQuest(questPayload as Omit<Quest, 'id' | 'claimedByUserIds' | 'dismissals'>);
@@ -226,8 +229,7 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
       }
   };
 
-  const dialogTitle = questToEdit ? `Edit ${settings.terminology.task}` : `Create New ${settings.terminology.task}`;
-  const submitButtonText = questToEdit ? 'Save Changes' : `Create ${settings.terminology.task}`;
+  const dialogTitle = mode === 'edit' ? `Edit ${settings.terminology.task}` : `Create New ${settings.terminology.task}`;
   const currentAvailabilityOptions = formData.type === QuestType.Duty ? DUTY_AVAILABILITIES : VENTURE_AVAILABILITIES;
 
   return (
@@ -236,6 +238,7 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
       <div className="bg-stone-800 border border-stone-700 rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] flex flex-col">
         <div className="p-8 border-b border-stone-700/60">
             <h2 className="text-3xl font-medieval text-accent">{dialogTitle}</h2>
+            {mode === 'ai-creation' && <p className="text-stone-400 mt-1">Review and adjust the AI-generated details below.</p>}
         </div>
         
         <form id="quest-form" onSubmit={handleSubmit} className="flex-1 space-y-4 p-8 overflow-y-auto scrollbar-hide">
@@ -412,10 +415,22 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
         
         <div className="p-6 border-t border-stone-700/60">
             {error && <p className="text-red-400 text-center mb-4">{error}</p>}
-            <div className="flex justify-end space-x-4">
-                <Button type="button" variant="secondary" onClick={onClose}>Cancel</Button>
-                <Button type="submit" form="quest-form">{submitButtonText}</Button>
-            </div>
+            {mode === 'ai-creation' ? (
+                <div className="flex justify-between items-center">
+                    <Button type="button" variant="secondary" onClick={onClose}>Cancel</Button>
+                    <div className="flex items-center gap-4">
+                        <Button type="button" variant="secondary" onClick={onTryAgain} disabled={isGenerating}>
+                            {isGenerating ? 'Generating...' : 'Try Again'}
+                        </Button>
+                        <Button type="submit" form="quest-form">Create Quest</Button>
+                    </div>
+                </div>
+            ) : (
+                <div className="flex justify-end space-x-4">
+                    <Button type="button" variant="secondary" onClick={onClose}>Cancel</Button>
+                    <Button type="submit" form="quest-form">{mode === 'edit' ? 'Save Changes' : `Create ${settings.terminology.task}`}</Button>
+                </div>
+            )}
         </div>
       </div>
     </div>

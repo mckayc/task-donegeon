@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { Market, MarketStatus, MarketCondition, MarketConditionType } from '../../types';
 import Button from '../ui/Button';
@@ -11,45 +11,49 @@ interface EditMarketDialogProps {
   market: Market | null;
   initialData?: { title: string; description: string; icon: string; };
   onClose: () => void;
+  mode?: 'create' | 'edit' | 'ai-creation';
+  onTryAgain?: () => void;
+  isGenerating?: boolean;
 }
 
 const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
-const EditMarketDialog: React.FC<EditMarketDialogProps> = ({ market, initialData, onClose }) => {
+const EditMarketDialog: React.FC<EditMarketDialogProps> = ({ market, initialData, onClose, mode = (market ? 'edit' : 'create'), onTryAgain, isGenerating }) => {
   const { guilds, ranks, quests } = useAppState();
   const { addMarket, updateMarket } = useAppDispatch();
-  const [formData, setFormData] = useState({ 
-      title: '', 
-      description: '', 
-      guildId: '', 
-      iconType: 'emoji' as 'emoji' | 'image',
-      icon: '🛒',
-      imageUrl: '',
-      status: { type: 'open' } as MarketStatus,
-  });
+  
+  const getInitialFormData = useCallback(() => {
+    if (mode === 'edit' && market) {
+        return { 
+            title: market.title, 
+            description: market.description, 
+            guildId: market.guildId || '',
+            iconType: market.iconType || 'emoji' as 'emoji' | 'image',
+            icon: market.icon || '🛒',
+            imageUrl: market.imageUrl || '',
+            status: market.status,
+        };
+    }
+    // For create or ai-creation
+    return { 
+        title: initialData?.title || '', 
+        description: initialData?.description || '', 
+        guildId: '', 
+        iconType: 'emoji' as 'emoji' | 'image',
+        icon: initialData?.icon || '🛒',
+        imageUrl: '',
+        status: { type: 'open' } as MarketStatus,
+    };
+  }, [market, initialData, mode]);
+
+  const [formData, setFormData] = useState(getInitialFormData);
   const [isEmojiPickerOpen, setIsEmojiPickerOpen] = useState(false);
   const [isGalleryOpen, setIsGalleryOpen] = useState(false);
-
+  
   useEffect(() => {
-    if (market) {
-      setFormData({ 
-        title: market.title, 
-        description: market.description, 
-        guildId: market.guildId || '',
-        iconType: market.iconType || 'emoji',
-        icon: market.icon || '🛒',
-        imageUrl: market.imageUrl || '',
-        status: market.status,
-      });
-    } else if (initialData) {
-        setFormData(prev => ({
-            ...prev,
-            title: initialData.title,
-            description: initialData.description,
-            icon: initialData.icon,
-        }));
-    }
-  }, [market, initialData]);
+    setFormData(getInitialFormData());
+  }, [initialData, getInitialFormData]);
+
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -90,7 +94,7 @@ const EditMarketDialog: React.FC<EditMarketDialogProps> = ({ market, initialData
         guildId: formData.guildId || undefined, 
         status: formData.status
     };
-    if (market) {
+    if (market && mode === 'edit') {
       updateMarket({ ...market, ...payload });
     } else {
       addMarket(payload);
@@ -230,8 +234,22 @@ const EditMarketDialog: React.FC<EditMarketDialogProps> = ({ market, initialData
             )}
           </div>
           <div className="flex justify-end space-x-4 pt-4">
-            <Button type="button" variant="secondary" onClick={onClose}>Cancel</Button>
-            <Button type="submit">{market ? 'Save Changes' : 'Create Market'}</Button>
+             {mode === 'ai-creation' ? (
+                 <div className="w-full flex justify-between items-center">
+                    <Button type="button" variant="secondary" onClick={onClose}>Cancel</Button>
+                    <div className="flex items-center gap-4">
+                        <Button type="button" variant="secondary" onClick={onTryAgain} disabled={isGenerating}>
+                            {isGenerating ? 'Generating...' : 'Try Again'}
+                        </Button>
+                        <Button type="submit">Create Market</Button>
+                    </div>
+                </div>
+             ) : (
+                <>
+                    <Button type="button" variant="secondary" onClick={onClose}>Cancel</Button>
+                    <Button type="submit">{market ? 'Save Changes' : 'Create Market'}</Button>
+                </>
+             )}
           </div>
         </form>
       </div>

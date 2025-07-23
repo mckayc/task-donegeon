@@ -73,8 +73,9 @@ const HelpPage: React.FC = () => {
                 </CollapsibleSection>
                 
                 <CollapsibleSection title={`A Tour of the Donegeon (For Everyone)`}>
-                    <p>Here's a breakdown of the pages you'll use most often, accessible from the sidebar.</p>
+                    <p>Here's a breakdown of the pages you'll use most often.</p>
                     <ul className="list-disc list-inside space-y-2 pl-4">
+                        <li><strong>Sidebar:</strong> Your main navigation panel on the left. It can be collapsed to save space. When collapsed, you can still access nested menus by clicking their group icons and expand/collapse arrows.</li>
                         <li><strong>Dashboard:</strong> Your main hub. Get a quick overview of your current {terminology.level}, recent activities, inventory of {terminology.points}, and a list of high-priority {terminology.tasks}. Click on any task to open its details and complete it.</li>
                         <li><strong>{terminology.tasks.toString()}:</strong> This is the main board showing all available {terminology.recurringTasks} and {terminology.singleTasks}. Click on any card to see its full details and complete it.</li>
                         <li><strong>{terminology.shoppingCenter}:</strong> Browse the {terminology.stores} set up by your {terminology.admin}. Spend your hard-earned currency on virtual items (like avatar outfits or themes) or real-world rewards.</li>
@@ -95,7 +96,7 @@ const HelpPage: React.FC = () => {
                     <p><em>Example Use Case: A user gets a great report card. You can use the "Adjust" button to grant them 100 bonus XP and a special "Good Grades" trophy you created.</em></p>
 
                     <h4 className="text-lg font-bold text-stone-100 mt-4">Content Creation &amp; Management</h4>
-                    <p>The "Manage" pages in the sidebar are your world-building tools. You can define new {terminology.tasks}, set up {terminology.stores} with custom items, create {terminology.groups}, define custom {terminology.points}, design {terminology.levels}, and invent unique {terminology.awards}.</p>
+                    <p>The "Manage" pages in the sidebar are your world-building tools. You can define new {terminology.tasks}, set up {terminology.stores} with custom items, create {terminology.groups}, define custom {terminology.points}, design {terminology.levels}, and invent unique {terminology.awards}. To help you get started, the app comes with a set of default categories (tags) for quests, such as 'Cleaning' and 'Yardwork'.</p>
                     <p>When setting rewards for {terminology.tasks.toLowerCase()}, you'll see a helpful indicator (e.g., `(equals 5 💎 or $5.00)`) showing its equivalent "real-world" value based on your settings, making it easier to balance your game's economy.</p>
                     
                     <h4 className="text-lg font-bold text-stone-100 mt-4">Theme Editor</h4>

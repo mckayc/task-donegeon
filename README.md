@@ -1,7 +1,7 @@
 
 # Task Donegeon
 
-**Version:** 0.0.93
+**Version:** 0.0.94
 
 ---
 
@@ -16,12 +16,13 @@ Task Donegeon is a gamified task and chore management application designed for f
 
 ## ✨ Features
 
-### What's New in Version 0.0.93 (July 25, 2025)
--   **Purchase Escrow System:** When an item requiring approval is purchased, the funds are now immediately deducted and held in escrow. This prevents users from spending those funds elsewhere. If the purchase is rejected or cancelled, the funds are automatically refunded.
--   **Chronicles Integration for Purchases:** All purchase requests (pending, completed, rejected) now appear correctly in the Chronicles activity feed with a clear title and a note showing the cost.
--   **Improved Login Notifications:** The notification popup that appears on login is now scrollable to accommodate a large number of updates, and it includes an "X" button for quick dismissal.
+### What's New in Version 0.0.94 (July 26, 2025)
+-   **Default Quest Categories:** To help new administrators get started faster, the app now includes a default set of common quest categories (e.g., "Cleaning", "Learning", "Yardwork"). These appear automatically in the tag selection inputs alongside any custom tags you create.
+-   **Improved Collapsed Sidebar Navigation:** The collapsed sidebar is now more functional. Collapsible menu groups remain visible as icons with expand/collapse arrows, allowing you to access nested links without needing to expand the entire sidebar.
+-   **UI Bug Fix:** Fixed a minor UI bug where a badge with a "0" would incorrectly appear on collapsed sidebar menu groups that had no notifications.
 
 ### Version History
+- **v0.0.93 (July 25, 2025):** Implemented a purchase escrow system, integrated purchase requests into the Chronicles, and improved the login notification popup with a scrollbar and close button.
 - **v0.0.92 (July 24, 2025):** Added in-dialog Quest Group creation and made item titles on management pages clickable for quick editing.
 - **v0.0.91 (July 23, 2025):** Redesigned "Manage Goods" and "Manage Quests" pages with tabs, sorting, and search. Added a new "Quest Group" system for organization and bulk assignment.
 - **v0.0.90 (July 22, 2025):** **Smarter Asset Pack Importer:** The "Import from Library" feature was overhauled to intelligently compare local and remote files, preventing duplicate downloads and giving admins granular import control.

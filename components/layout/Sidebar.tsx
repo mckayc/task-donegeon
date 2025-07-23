@@ -1,5 +1,3 @@
-
-
 import React, { useState, useMemo } from 'react';
 import { Role, Page, QuestCompletionStatus, PurchaseRequestStatus, Terminology, SidebarConfigItem, SidebarLink } from '../../types';
 import { ChevronDownIcon, ArrowLeftIcon, ArrowRightIcon } from '../ui/Icons';
@@ -37,6 +35,7 @@ const NavLink: React.FC<{ item: SidebarLink, activePage: Page, setActivePage: (p
 
 interface CollapsibleNavGroupProps {
     title: string;
+    emoji?: string;
     children: React.ReactNode;
     activePage: Page;
     childPages: Page[];
@@ -44,12 +43,33 @@ interface CollapsibleNavGroupProps {
     isCollapsed: boolean;
 }
 
-const CollapsibleNavGroup: React.FC<CollapsibleNavGroupProps> = ({ title, children, activePage, childPages, badgeCount, isCollapsed }) => {
+const CollapsibleNavGroup: React.FC<CollapsibleNavGroupProps> = ({ title, emoji, children, activePage, childPages, badgeCount, isCollapsed }) => {
     const isGroupActive = childPages.includes(activePage);
     const [isOpen, setIsOpen] = useState(isGroupActive);
 
     if (isCollapsed) {
-        return <div className="border-t border-stone-700/60 my-2"></div>;
+        return (
+            <div className="border-t border-stone-700/60 my-2 pt-2">
+                <button
+                    onClick={() => setIsOpen(!isOpen)}
+                    className="relative w-full flex flex-col items-center justify-center py-2 text-lg rounded-lg text-stone-400 hover:bg-stone-700/50 hover:text-white"
+                    title={title}
+                >
+                    {emoji && <span className="text-2xl">{emoji}</span>}
+                    <ChevronDownIcon className={`w-4 h-4 mt-1 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+                    {badgeCount > 0 && !isOpen && (
+                         <span className="absolute flex items-center justify-center w-5 h-5 text-xs font-bold text-white bg-red-600 rounded-full top-1 right-1">
+                            {badgeCount > 9 ? '9+' : badgeCount}
+                        </span>
+                    )}
+                </button>
+                 {isOpen && (
+                    <div className="mt-1 space-y-1">
+                        {children}
+                    </div>
+                )}
+            </div>
+        );
     }
 
     return (
@@ -59,10 +79,11 @@ const CollapsibleNavGroup: React.FC<CollapsibleNavGroupProps> = ({ title, childr
                 className="w-full flex items-center justify-between px-4 py-3 text-lg rounded-lg text-stone-300 hover:bg-stone-700/50 hover:text-white"
             >
                 <div className="flex items-center">
+                    {emoji && <span className="text-xl mr-3">{emoji}</span>}
                     <span className="font-semibold text-accent-light">{title}</span>
                 </div>
                 <div className="flex items-center gap-2">
-                    {badgeCount && badgeCount > 0 && !isOpen ? (
+                    {badgeCount > 0 && !isOpen ? (
                          <span className="flex items-center justify-center w-5 h-5 text-xs font-bold text-white bg-red-600 rounded-full">
                             {badgeCount > 9 ? '9+' : badgeCount}
                         </span>
@@ -129,17 +150,20 @@ const Sidebar: React.FC = () => {
         if (item.type === 'header') {
             const groupChildren: React.ReactNode[] = [];
             const childPages: Page[] = [];
+            let groupBadgeCount = 0;
             i++;
             while (i < visibleLinks.length && visibleLinks[i].level > item.level) {
                 const childItem = visibleLinks[i];
                 if(childItem.type === 'link') {
+                    const badgeCount = childItem.id === 'Approvals' ? totalApprovals : 0;
+                    if (badgeCount > 0) groupBadgeCount += badgeCount;
                     groupChildren.push(
                         <NavLink 
                             key={childItem.id} 
                             item={childItem} 
                             activePage={activePage} 
                             setActivePage={setActivePage} 
-                            badgeCount={childItem.id === 'Approvals' ? totalApprovals : 0}
+                            badgeCount={badgeCount}
                             isCollapsed={isSidebarCollapsed}
                         />
                     );
@@ -151,9 +175,10 @@ const Sidebar: React.FC = () => {
                 <CollapsibleNavGroup 
                     key={item.id} 
                     title={item.title} 
+                    emoji={item.emoji}
                     activePage={activePage} 
                     childPages={childPages} 
-                    badgeCount={item.title === 'User Management' ? totalApprovals : 0}
+                    badgeCount={groupBadgeCount}
                     isCollapsed={isSidebarCollapsed}
                 >
                     {groupChildren}

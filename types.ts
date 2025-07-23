@@ -419,6 +419,7 @@ export interface SidebarLink {
 export interface SidebarHeader {
     type: 'header';
     title: string;
+    emoji?: string;
     id: string; // Unique ID for key prop
     level: 0; // Headers are always top-level
     role: Role; // For visibility filtering

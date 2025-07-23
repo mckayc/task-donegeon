@@ -99,6 +99,8 @@ const terminologyLabels: { [key in keyof Terminology]: string } = {
   link_about: 'About',
   link_help_guide: 'Sidebar: Help Guide',
   link_chat: 'Sidebar: Chat',
+  link_data_management: 'Sidebar: Data Management',
+  link_data_reset: 'Sidebar: Data Reset',
 };
 
 

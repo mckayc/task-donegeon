@@ -96,6 +96,7 @@ interface AppDispatch {
   resetAllPlayerData: () => void;
   deleteAllCustomContent: () => void;
   deleteSelectedAssets: (selection: Record<ShareableAssetType, string[]>) => void;
+  factoryReset: () => void;
   deleteQuests: (questIds: string[]) => void;
   deleteTrophies: (trophyIds: string[]) => void;
   deleteGameAssets: (assetIds: string[]) => void;
@@ -1138,6 +1139,41 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const resetAllPlayerData = useCallback(() => { setUsers(prev => prev.map(u => u.role !== Role.DonegeonMaster ? { ...u, personalPurse: {}, personalExperience: {}, guildBalances: {}, ownedAssetIds: [], avatar: {} } : u)); setUserTrophies(prev => prev.filter(ut => users.find(u => u.id === ut.userId)?.role === Role.DonegeonMaster)); addNotification({ type: 'success', message: "All player data has been reset." }); }, [users, addNotification]);
   const deleteAllCustomContent = useCallback(() => { setQuests([]); setQuestGroups([]); setMarkets([]); setGameAssets([]); setRewardTypes(p => p.filter(rt => rt.isCore)); setRanks(p => p.filter(r => r.xpThreshold === 0)); setTrophies([]); setGuilds(p => p.filter(g => g.isDefault)); addNotification({ type: 'success', message: 'All custom content has been deleted.' }); }, [addNotification]);
   const deleteSelectedAssets = useCallback((selection: Record<ShareableAssetType, string[]>) => { (Object.keys(selection) as ShareableAssetType[]).forEach(assetType => { const ids = new Set(selection[assetType]); if (ids.size > 0) { switch (assetType) { case 'quests': setQuests(p => p.filter(i => !ids.has(i.id))); break; case 'markets': setMarkets(p => p.filter(i => !ids.has(i.id))); break; case 'rewardTypes': setRewardTypes(p => p.filter(i => !ids.has(i.id))); break; case 'ranks': setRanks(p => p.filter(i => !ids.has(i.id))); break; case 'trophies': setTrophies(p => p.filter(i => !ids.has(i.id))); break; case 'gameAssets': setGameAssets(p => p.filter(i => !ids.has(i.id))); break; } } }); addNotification({ type: 'success', message: 'Selected assets have been deleted.' }); }, [addNotification]);
+  
+  const factoryReset = useCallback(() => {
+    // Clear all data state, keeping initial data where appropriate
+    setUsers([]);
+    setQuests([]);
+    setQuestGroups(INITIAL_QUEST_GROUPS);
+    setMarkets([]);
+    setRewardTypes(INITIAL_REWARD_TYPES);
+    setQuestCompletions([]);
+    setPurchaseRequests([]);
+    setGuilds([]);
+    setRanks(INITIAL_RANKS);
+    setTrophies(INITIAL_TROPHIES);
+    setUserTrophies([]);
+    setAdminAdjustments([]);
+    setGameAssets([]);
+    setSystemLogs([]);
+    setThemes(INITIAL_THEMES);
+    setLoginHistory([]);
+    setChatMessages([]);
+    setSystemNotifications([]);
+    setScheduledEvents([]);
+
+    // Clear UI state
+    _setCurrentUser(null);
+    _setAppUnlocked(false);
+    localStorage.removeItem('lastUserId');
+    localStorage.removeItem('isAppUnlocked');
+
+    // Reset settings to trigger first run
+    setSettings({ ...INITIAL_SETTINGS, contentVersion: 0 });
+
+    addNotification({ type: 'success', message: 'Factory reset complete. Welcome back!' });
+  }, [addNotification]);
+
   const deleteQuests = useCallback((questIds: string[]) => { setQuests(prev => prev.filter(q => !questIds.includes(q.id))); addNotification({ type: 'info', message: `${questIds.length} quest(s) deleted.` }); }, [addNotification]);
   const deleteTrophies = useCallback((trophyIds: string[]) => { setTrophies(prev => prev.filter(t => !trophyIds.includes(t.id))); addNotification({ type: 'info', message: `${trophyIds.length} trophy(s) deleted.` }); }, [addNotification]);
   const deleteGameAssets = useCallback((assetIds: string[]) => { setGameAssets(prev => prev.filter(ga => !assetIds.includes(ga.id))); addNotification({ type: 'info', message: `${assetIds.length} asset(s) deleted.` }); }, [addNotification]);
@@ -1351,6 +1387,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     addTheme, updateTheme, deleteTheme,
     addScheduledEvent, updateScheduledEvent, deleteScheduledEvent,
     completeFirstRun, importBlueprint, restoreFromBackup, clearAllHistory, resetAllPlayerData, deleteAllCustomContent, deleteSelectedAssets, 
+    factoryReset,
     deleteQuests, deleteTrophies, deleteGameAssets, updateQuestsStatus, bulkUpdateQuests,
     uploadFile,
     executeExchange,

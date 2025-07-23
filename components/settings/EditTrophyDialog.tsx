@@ -15,22 +15,25 @@ interface EditTrophyDialogProps {
   mode?: 'create' | 'edit' | 'ai-creation';
   onTryAgain?: () => void;
   isGenerating?: boolean;
+  onSave?: (updatedData: any) => void;
 }
 
-const EditTrophyDialog: React.FC<EditTrophyDialogProps> = ({ trophy, initialData, onClose, mode = (trophy ? 'edit' : 'create'), onTryAgain, isGenerating }) => {
+const EditTrophyDialog: React.FC<EditTrophyDialogProps> = ({ trophy, initialData, onClose, mode = (trophy ? 'edit' : 'create'), onTryAgain, isGenerating, onSave }) => {
   const { ranks, allTags } = useAppState();
   const { addTrophy, updateTrophy } = useAppDispatch();
 
   const getInitialFormData = useCallback(() => {
-    if (mode === 'edit' && trophy) {
+    const data = trophy || initialData;
+    if (mode !== 'create' && data) {
+      const d = data as Partial<Trophy> & { name: string; description: string; icon: string; };
       return { 
-        name: trophy.name, 
-        description: trophy.description, 
-        iconType: trophy.iconType || 'emoji' as 'emoji' | 'image',
-        icon: trophy.icon, 
-        imageUrl: trophy.imageUrl || '',
-        isManual: trophy.isManual, 
-        requirements: [...trophy.requirements] 
+        name: d.name, 
+        description: d.description, 
+        iconType: d.iconType || 'emoji' as 'emoji' | 'image',
+        icon: d.icon, 
+        imageUrl: d.imageUrl || '',
+        isManual: typeof d.isManual === 'boolean' ? d.isManual : true, 
+        requirements: [...(d.requirements || [])] 
       };
     }
     // For create or ai-creation
@@ -88,10 +91,18 @@ const EditTrophyDialog: React.FC<EditTrophyDialogProps> = ({ trophy, initialData
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    const payload = { ...formData };
+    
+    if (onSave) {
+      onSave(payload);
+      onClose();
+      return;
+    }
+    
     if (trophy && mode === 'edit') {
-      updateTrophy({ ...trophy, ...formData });
+      updateTrophy({ ...trophy, ...payload });
     } else {
-      addTrophy(formData);
+      addTrophy(payload);
     }
     onClose();
   };
@@ -222,7 +233,7 @@ const EditTrophyDialog: React.FC<EditTrophyDialogProps> = ({ trophy, initialData
             ) : (
                  <>
                     <Button type="button" variant="secondary" onClick={onClose}>Cancel</Button>
-                    <Button type="submit">{trophy ? 'Save Changes' : 'Create Trophy'}</Button>
+                    <Button type="submit">{onSave ? 'Save Changes' : (trophy ? 'Save Changes' : 'Create Trophy')}</Button>
                  </>
             )}
           </div>

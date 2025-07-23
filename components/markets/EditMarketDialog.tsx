@@ -14,24 +14,27 @@ interface EditMarketDialogProps {
   mode?: 'create' | 'edit' | 'ai-creation';
   onTryAgain?: () => void;
   isGenerating?: boolean;
+  onSave?: (updatedData: any) => void;
 }
 
 const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
-const EditMarketDialog: React.FC<EditMarketDialogProps> = ({ market, initialData, onClose, mode = (market ? 'edit' : 'create'), onTryAgain, isGenerating }) => {
+const EditMarketDialog: React.FC<EditMarketDialogProps> = ({ market, initialData, onClose, mode = (market ? 'edit' : 'create'), onTryAgain, isGenerating, onSave }) => {
   const { guilds, ranks, quests } = useAppState();
   const { addMarket, updateMarket } = useAppDispatch();
   
   const getInitialFormData = useCallback(() => {
-    if (mode === 'edit' && market) {
+    const data = market || initialData;
+    if (mode !== 'create' && data) {
+        const d = data as Partial<Market> & { title: string; description: string; icon: string; };
         return { 
-            title: market.title, 
-            description: market.description, 
-            guildId: market.guildId || '',
-            iconType: market.iconType || 'emoji' as 'emoji' | 'image',
-            icon: market.icon || '🛒',
-            imageUrl: market.imageUrl || '',
-            status: market.status,
+            title: d.title, 
+            description: d.description, 
+            guildId: d.guildId || '',
+            iconType: d.iconType || 'emoji' as 'emoji' | 'image',
+            icon: d.icon || '🛒',
+            imageUrl: d.imageUrl || '',
+            status: d.status || { type: 'open' },
         };
     }
     // For create or ai-creation
@@ -94,6 +97,13 @@ const EditMarketDialog: React.FC<EditMarketDialogProps> = ({ market, initialData
         guildId: formData.guildId || undefined, 
         status: formData.status
     };
+    
+    if (onSave) {
+        onSave(payload);
+        onClose();
+        return;
+    }
+
     if (market && mode === 'edit') {
       updateMarket({ ...market, ...payload });
     } else {
@@ -247,7 +257,7 @@ const EditMarketDialog: React.FC<EditMarketDialogProps> = ({ market, initialData
              ) : (
                 <>
                     <Button type="button" variant="secondary" onClick={onClose}>Cancel</Button>
-                    <Button type="submit">{market ? 'Save Changes' : 'Create Market'}</Button>
+                    <Button type="submit">{onSave ? 'Save Changes' : (market ? 'Save Changes' : 'Create Market')}</Button>
                 </>
              )}
           </div>

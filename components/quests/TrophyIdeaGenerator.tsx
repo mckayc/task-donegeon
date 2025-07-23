@@ -32,7 +32,7 @@ const TrophyIdeaGenerator: React.FC<TrophyIdeaGeneratorProps> = ({ onUseIdea, on
         setError('');
         setGeneratedTrophies([]);
 
-        const fullPrompt = `Generate 5 trophy ideas for a gamified task app called ${settings.terminology.appName}. The trophies should be based on the theme: "${prompt}".`;
+        const fullPrompt = `Generate 5 trophy ideas for a gamified task app called ${settings.terminology.appName}. The trophies should be based on the theme: "${prompt}". For each trophy, provide a single, relevant Unicode emoji for its icon.`;
 
         try {
             const response = await fetch('/api/ai/generate', {

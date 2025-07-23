@@ -33,7 +33,7 @@ const ItemIdeaGenerator: React.FC<ItemIdeaGeneratorProps> = ({ onUseIdea, onClos
         setError('');
         setGeneratedItems([]);
 
-        const fullPrompt = `Generate 5 item ideas for a gamified task app called ${settings.terminology.appName}. The items should be based on the theme: "${prompt}".`;
+        const fullPrompt = `Generate 5 item ideas for a gamified task app called ${settings.terminology.appName}. The items should be based on the theme: "${prompt}". For each item, provide a single, relevant Unicode emoji for its icon.`;
 
         try {
             const response = await fetch('/api/ai/generate', {

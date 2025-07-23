@@ -181,88 +181,93 @@ const AiStudioPage: React.FC = () => {
     };
     
     return (
-        <div className="space-y-6">
-            <Card title="AI Studio Setup">
-                {!isAiAvailable ? (
-                    <div className="text-amber-300 bg-amber-900/40 p-4 rounded-md border border-amber-700/60">
-                        <p className="font-bold mb-2">AI Features Disabled</p>
-                        <p className="text-sm">The AI Studio is currently disabled in the main application settings. An administrator can enable it from the Settings page.</p>
-                    </div>
-                ) : (
-                    <>
-                        <div className="flex items-center gap-4 mb-4">
-                            <span className="font-semibold text-stone-200">API Key Status:</span>
-                            {apiStatus === 'testing' && <span className="text-yellow-400">Testing...</span>}
-                            {apiStatus === 'valid' && <span className="flex items-center gap-2 text-green-400 font-bold"><CheckCircleIcon className="w-5 h-5" /> Connected</span>}
-                            {apiStatus === 'invalid' && <span className="flex items-center gap-2 text-red-400 font-bold"><XCircleIcon className="w-5 h-5" /> Invalid / Not Found</span>}
-                            {apiStatus === 'unknown' && <span className="text-stone-400">Unknown</span>}
-                            <Button variant="secondary" onClick={testApiKey} disabled={apiStatus === 'testing'} className="text-xs py-1 px-3">
-                                Test API Key
+        <>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+                {/* Left Column */}
+                <div className="space-y-6">
+                    <Card title="Asset Generator">
+                        <div className="space-y-4">
+                            <div>
+                                <label className="block text-sm font-medium text-stone-300 mb-2">1. Select Asset Type</label>
+                                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                                    {Object.entries(assetTypeConfig).map(([key, config]) => (
+                                        <button
+                                            key={key}
+                                            onClick={() => setAssetType(key as AssetType)}
+                                            className={`p-4 rounded-lg text-center transition-all duration-200 border-2 ${
+                                                assetType === key
+                                                    ? 'bg-emerald-800/60 border-emerald-500 ring-2 ring-emerald-500/50 scale-105'
+                                                    : 'bg-stone-900/50 border-transparent hover:border-emerald-600'
+                                            }`}
+                                        >
+                                            <div className="text-4xl">{config.icon}</div>
+                                            <p className="font-semibold text-sm text-stone-200 mt-2 capitalize">{settings.terminology[config.termKey]}</p>
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            <div>
+                                <label htmlFor="ai-prompt" className="block text-sm font-medium text-stone-300 mb-2">2. Enter Prompt / Theme</label>
+                                <textarea
+                                    id="ai-prompt"
+                                    rows={4}
+                                    placeholder={`e.g., 'Weekly kitchen chores for kids', 'Magical forest artifacts', 'Sports achievements'`}
+                                    value={prompt}
+                                    onChange={e => setPrompt(e.target.value)}
+                                    className="w-full px-4 py-2 bg-stone-700 border border-stone-600 rounded-md"
+                                />
+                            </div>
+                        </div>
+                        {error && <p className="text-red-400 text-center mt-4">{error}</p>}
+                        <div className="text-right mt-4">
+                            <Button onClick={handleGenerate} disabled={isLoading || !isAiAvailable || !prompt.trim()}>
+                                {isLoading ? 'Generating...' : 'Generate'}
                             </Button>
                         </div>
-                        {apiStatus === 'invalid' && apiError && <p className="text-red-400 text-sm bg-red-900/30 p-3 rounded-md">{apiError}</p>}
-                        {(apiStatus === 'unknown' || apiStatus === 'invalid') && <ApiInstructions />}
-                    </>
-                )}
-            </Card>
-            
-            <Card title="Generation Context">
-                <p className="text-sm text-stone-400 mb-2">Provide some general context about your group or goals. This will be included with every prompt to help the AI generate more relevant content.</p>
-                <textarea
-                    value={context}
-                    onChange={e => setContext(e.target.value)}
-                    placeholder="e.g., A family with two kids, ages 8 and 12, focusing on household chores and homework."
-                    rows={3}
-                    className="w-full px-4 py-2 bg-stone-700 border border-stone-600 rounded-md"
-                />
-                <div className="text-right mt-2">
-                    <Button variant="secondary" onClick={handleSaveContext} className="text-xs py-1 px-3">Save Context</Button>
+                    </Card>
                 </div>
-            </Card>
 
-            <Card title="Asset Generator">
-                <div className="space-y-4">
-                    <div>
-                        <label className="block text-sm font-medium text-stone-300 mb-2">1. Select Asset Type</label>
-                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-                            {Object.entries(assetTypeConfig).map(([key, config]) => (
-                                <button
-                                    key={key}
-                                    onClick={() => setAssetType(key as AssetType)}
-                                    className={`p-4 rounded-lg text-center transition-all duration-200 border-2 ${
-                                        assetType === key
-                                            ? 'bg-emerald-800/60 border-emerald-500 ring-2 ring-emerald-500/50 scale-105'
-                                            : 'bg-stone-900/50 border-transparent hover:border-emerald-600'
-                                    }`}
-                                >
-                                    <div className="text-4xl">{config.icon}</div>
-                                    <p className="font-semibold text-sm text-stone-200 mt-2 capitalize">{settings.terminology[config.termKey]}</p>
-                                    <p className="text-xs text-stone-400">{config.description}</p>
-                                </button>
-                            ))}
-                        </div>
-                    </div>
-
-                    <div>
-                        <label htmlFor="ai-prompt" className="block text-sm font-medium text-stone-300 mb-2">2. Enter Prompt / Theme</label>
-                         <textarea
-                            id="ai-prompt"
-                            rows={3}
-                            placeholder={`e.g., 'Weekly kitchen chores for kids', 'Magical forest artifacts', 'Sports achievements'`}
-                            value={prompt}
-                            onChange={e => setPrompt(e.target.value)}
+                {/* Right Column */}
+                <div className="space-y-6">
+                    <Card title="Generation Context">
+                        <p className="text-sm text-stone-400 mb-2">Provide some general context about your group or goals. This will be included with every prompt to help the AI generate more relevant content.</p>
+                        <textarea
+                            value={context}
+                            onChange={e => setContext(e.target.value)}
+                            placeholder="e.g., A family with two kids, ages 8 and 12, focusing on household chores and homework."
+                            rows={4}
                             className="w-full px-4 py-2 bg-stone-700 border border-stone-600 rounded-md"
                         />
-                    </div>
+                        <div className="text-right mt-2">
+                            <Button variant="secondary" onClick={handleSaveContext} className="text-xs py-1 px-3">Save Context</Button>
+                        </div>
+                    </Card>
+                    <Card title="AI Studio Setup">
+                        {!isAiAvailable ? (
+                            <div className="text-amber-300 bg-amber-900/40 p-4 rounded-md border border-amber-700/60">
+                                <p className="font-bold mb-2">AI Features Disabled</p>
+                                <p className="text-sm">The AI Studio is currently disabled in the main application settings. An administrator can enable it from the Settings page.</p>
+                            </div>
+                        ) : (
+                            <>
+                                <div className="flex items-center gap-4 mb-4">
+                                    <span className="font-semibold text-stone-200">API Key Status:</span>
+                                    {apiStatus === 'testing' && <span className="text-yellow-400">Testing...</span>}
+                                    {apiStatus === 'valid' && <span className="flex items-center gap-2 text-green-400 font-bold"><CheckCircleIcon className="w-5 h-5" /> Connected</span>}
+                                    {apiStatus === 'invalid' && <span className="flex items-center gap-2 text-red-400 font-bold"><XCircleIcon className="w-5 h-5" /> Invalid / Not Found</span>}
+                                    {apiStatus === 'unknown' && <span className="text-stone-400">Unknown</span>}
+                                    <Button variant="secondary" onClick={testApiKey} disabled={apiStatus === 'testing'} className="text-xs py-1 px-3">
+                                        Test API Key
+                                    </Button>
+                                </div>
+                                {apiStatus === 'invalid' && apiError && <p className="text-red-400 text-sm bg-red-900/30 p-3 rounded-md">{apiError}</p>}
+                                {(apiStatus === 'unknown' || apiStatus === 'invalid') && <ApiInstructions />}
+                            </>
+                        )}
+                    </Card>
                 </div>
-                {error && <p className="text-red-400 text-center mt-4">{error}</p>}
-                <div className="text-right mt-4">
-                    <Button onClick={handleGenerate} disabled={isLoading || !isAiAvailable || !prompt.trim()}>
-                        <SparklesIcon className="w-5 h-5 mr-2" />
-                        {isLoading ? 'Generating...' : 'Generate'}
-                    </Button>
-                </div>
-            </Card>
+            </div>
 
             {dialogToShow && aiGeneratedData && (
                 <>
@@ -314,7 +319,7 @@ const AiStudioPage: React.FC = () => {
                     )}
                 </>
             )}
-        </div>
+        </>
     );
 };
 

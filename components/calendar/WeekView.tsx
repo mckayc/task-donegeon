@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { Quest, QuestCompletion, QuestType } from '../../types';
+import { Quest, QuestCompletion, QuestType, ScheduledEvent } from '../../types';
 import { isQuestScheduledForDay, questSorter, toYMD } from '../../utils/quests';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { useCalendarVentures } from '../../hooks/useCalendarVentures';
@@ -11,9 +11,18 @@ interface WeekViewProps {
     currentDate: Date;
     quests: Quest[];
     questCompletions: QuestCompletion[];
+    scheduledEvents: ScheduledEvent[];
+    onEventSelect: (event: ScheduledEvent) => void;
 }
 
-const WeekView: React.FC<WeekViewProps> = ({ currentDate, quests, questCompletions }) => {
+const getTextColorForBg = (bgColorHsl: string) => {
+    const parts = bgColorHsl.trim().replace(/%/g, '').split(' ').map(Number);
+    if (parts.length < 3) return 'text-black';
+    const l = parts[2];
+    return l > 50 ? 'text-stone-900' : 'text-stone-100';
+};
+
+const WeekView: React.FC<WeekViewProps> = ({ currentDate, quests, questCompletions, scheduledEvents, onEventSelect }) => {
     const { currentUser } = useAppState();
     const { markQuestAsTodo, unmarkQuestAsTodo } = useAppDispatch();
     const [selectedQuest, setSelectedQuest] = useState<{quest: Quest, date: Date} | null>(null);
@@ -64,7 +73,9 @@ const WeekView: React.FC<WeekViewProps> = ({ currentDate, quests, questCompletio
                         day={day}
                         quests={quests}
                         questCompletions={questCompletions}
+                        scheduledEvents={scheduledEvents}
                         onSelectQuest={(quest) => setSelectedQuest({ quest, date: day })}
+                        onEventSelect={onEventSelect}
                     />
                 ))}
             </div>
@@ -89,18 +100,28 @@ const WeekView: React.FC<WeekViewProps> = ({ currentDate, quests, questCompletio
 };
 
 // Memoize DayColumn to prevent re-renders when other days' data changes.
-const DayColumn = React.memo(({ day, quests, questCompletions, onSelectQuest }: { day: Date, quests: Quest[], questCompletions: QuestCompletion[], onSelectQuest: (quest: Quest) => void }) => {
+const DayColumn = React.memo(({ day, quests, questCompletions, scheduledEvents, onSelectQuest, onEventSelect }: { day: Date, quests: Quest[], questCompletions: QuestCompletion[], scheduledEvents: ScheduledEvent[], onSelectQuest: (quest: Quest) => void, onEventSelect: (event: ScheduledEvent) => void }) => {
     const calendarVentures = useCalendarVentures(day);
-    const { currentUser } = useAppState();
+    const { currentUser, appMode, scheduledEvents: allScheduledEvents } = useAppState();
 
     const sortedQuests = useMemo(() => {
         if (!currentUser) return [];
         const scheduledDuties = quests.filter(q => q.type === QuestType.Duty && isQuestScheduledForDay(q, day));
         const allQuestsForDay = [...scheduledDuties, ...calendarVentures];
         const uniqueQuests = Array.from(new Set(allQuestsForDay.map(q => q.id))).map(id => allQuestsForDay.find(q => q.id === id)!);
-        return uniqueQuests.sort(questSorter(currentUser, questCompletions, day));
-    }, [currentUser, day, quests, questCompletions, calendarVentures]);
+        return uniqueQuests.sort(questSorter(currentUser, questCompletions, allScheduledEvents, day));
+    }, [currentUser, day, quests, questCompletions, calendarVentures, allScheduledEvents]);
     
+    const dailyEvents = useMemo(() => {
+        const dateKey = toYMD(day);
+        const currentGuildId = appMode.mode === 'guild' ? appMode.guildId : undefined;
+        return scheduledEvents.filter(event => {
+            const scopeMatch = !event.guildId || event.guildId === currentGuildId;
+            const dateMatch = dateKey >= event.startDate && dateKey <= event.endDate;
+            return scopeMatch && dateMatch;
+        });
+    }, [day, scheduledEvents, appMode]);
+
     const isToday = toYMD(day) === toYMD(new Date());
 
     return (
@@ -109,8 +130,22 @@ const DayColumn = React.memo(({ day, quests, questCompletions, onSelectQuest }: 
                 <p>{day.toLocaleDateString('default', { weekday: 'short' })}</p>
                 <p className="text-2xl">{day.getDate()}</p>
             </div>
-            <div className="p-2 space-y-4 overflow-y-auto scrollbar-hide flex-grow h-[65vh]">
-            <QuestList
+            <div className="p-2 space-y-2 overflow-y-auto scrollbar-hide flex-grow h-[65vh]">
+                {dailyEvents.map(event => {
+                    const textColor = getTextColorForBg(event.color || '');
+                    return (
+                        <button
+                            key={event.id}
+                            onClick={() => onEventSelect(event)}
+                            className={`w-full text-left text-xs px-1.5 py-1 rounded font-bold truncate flex items-center gap-1 ${textColor}`}
+                            style={{ backgroundColor: `hsl(${event.color})` }}
+                        >
+                           <span>{event.icon || '🎉'}</span>
+                           <span className="truncate">{event.title}</span>
+                        </button>
+                    )
+                })}
+                <QuestList
                     date={day}
                     quests={sortedQuests}
                     questCompletions={questCompletions}

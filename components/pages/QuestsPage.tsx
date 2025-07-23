@@ -46,12 +46,13 @@ const formatTimeRemaining = (targetDate: Date, now: Date): string => {
 };
 
 const QuestItem: React.FC<{ quest: Quest; now: Date; onSelect: (quest: Quest) => void; onImagePreview: (url: string) => void; }> = ({ quest, now, onSelect, onImagePreview }) => {
-    const { rewardTypes, currentUser, questCompletions, settings } = useAppState();
+    const { rewardTypes, currentUser, questCompletions, settings, questGroups, scheduledEvents, appMode } = useAppState();
     
     if (!currentUser) return null;
 
-    const isAvailable = useMemo(() => isQuestAvailableForUser(quest, questCompletions.filter(c => c.userId === currentUser.id), now), [quest, questCompletions, currentUser.id, now]);
+    const isAvailable = useMemo(() => isQuestAvailableForUser(quest, questCompletions.filter(c => c.userId === currentUser.id), now, scheduledEvents, appMode), [quest, questCompletions, currentUser.id, now, scheduledEvents, appMode]);
     const isTodo = quest.type === QuestType.Venture && quest.todoUserIds?.includes(currentUser.id);
+    const questGroup = useMemo(() => quest.groupId ? questGroups.find(g => g.id === quest.groupId) : null, [quest.groupId, questGroups]);
 
     const getRewardInfo = (id: string) => {
         const rewardDef = rewardTypes.find(rt => rt.id === id);
@@ -168,7 +169,11 @@ const QuestItem: React.FC<{ quest: Quest; now: Date; onSelect: (quest: Quest) =>
 
             {/* Footer */}
             <div className="p-3 mt-auto bg-black/20 border-t border-white/10 flex items-center justify-between gap-2">
-                <div>
+                <div className="flex items-center gap-2 text-xs text-stone-400 overflow-hidden">
+                    <span title={questGroup ? questGroup.name : 'Uncategorized'}>📂</span>
+                    <span className="truncate">{questGroup ? questGroup.name : 'Uncategorized'}</span>
+                </div>
+                <div className="text-right">
                     {timeStatusText && (
                         <p className={`text-xs font-semibold ${timeStatusColor}`}>{timeStatusText}</p>
                     )}
@@ -191,7 +196,7 @@ const FilterButton: React.FC<{ type: 'all' | QuestType, children: React.ReactNod
 );
 
 const QuestsPage: React.FC = () => {
-    const { currentUser, quests, questCompletions, appMode, settings } = useAppState();
+    const { currentUser, quests, questCompletions, appMode, settings, scheduledEvents } = useAppState();
     const { markQuestAsTodo, unmarkQuestAsTodo } = useAppDispatch();
     const [filter, setFilter] = useState<'all' | QuestType>('all');
     const [selectedQuest, setSelectedQuest] = useState<Quest | null>(null);
@@ -225,8 +230,8 @@ const QuestsPage: React.FC = () => {
     const sortedQuests = useMemo(() => {
         const today = now;
         const visibleQuests = quests.filter(quest => isQuestVisibleToUserInMode(quest, currentUser.id, appMode));
-        return visibleQuests.sort(questSorter(currentUser, questCompletions, today));
-    }, [quests, currentUser, appMode, questCompletions, now]);
+        return visibleQuests.sort(questSorter(currentUser, questCompletions, scheduledEvents, today));
+    }, [quests, currentUser, appMode, questCompletions, now, scheduledEvents]);
     
     const filteredSortedQuests = useMemo(() => {
         if (filter === 'all') return sortedQuests;

@@ -27,7 +27,7 @@ const getDueDateString = (quest: Quest): string | null => {
 };
 
 const QuestList: React.FC<QuestListProps> = ({ title, date, quests, questCompletions, onQuestSelect }) => {
-    const { currentUser } = useAppState();
+    const { currentUser, scheduledEvents, appMode } = useAppState();
     const isFuture = toYMD(date) > toYMD(new Date());
 
     if (quests.length === 0) {
@@ -47,7 +47,7 @@ const QuestList: React.FC<QuestListProps> = ({ title, date, quests, questComplet
             {title && <h3 className="text-xl font-bold text-stone-300 mb-2">{title}</h3>}
             <div className="space-y-2">
                 {quests.map(quest => {
-                    const isAvailable = isQuestAvailableForUser(quest, questCompletions, date);
+                    const isAvailable = isQuestAvailableForUser(quest, questCompletions, date, scheduledEvents, appMode);
                     const isTodo = quest.type === QuestType.Venture && currentUser && quest.todoUserIds?.includes(currentUser.id);
                     const bgClass = quest.type === QuestType.Duty ? 'bg-sky-900/40' : 'bg-amber-900/30';
                     const borderClass = isTodo ? 'border-2 border-purple-500' : 'border-2 border-transparent';

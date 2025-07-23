@@ -1,6 +1,6 @@
 # Task Donegeon
 
-**Version:** 0.0.96
+**Version:** 0.0.97
 
 ---
 
@@ -15,12 +15,14 @@ Task Donegeon is a gamified task and chore management application designed for f
 
 ## ✨ Features
 
-### What's New in Version 0.0.96 (July 22, 2025)
--   **Default Quest Groups:** The app now ships with a default set of Quest Groups (e.g., "Household Chores," "School & Learning") to provide an immediate organizational structure for new and existing games without any groups.
--   **AI-Powered Group Suggestions:** The Quest Idea Generator in the AI Studio is now aware of all existing Quest Groups and will suggest the most appropriate group for each generated quest idea.
--   **Streamlined Quest Creation:** When creating a quest from an AI-generated idea, the "Create Quest" form is now pre-filled with the suggested Quest Group, saving administrative time and improving workflow.
+### What's New in Version 0.0.97 (July 23, 2025)
+-   **New "Vacation" Event Type:** Replaced the old global vacation mode setting with a more flexible "Vacation" event type.
+-   **Calendar-Driven Vacations:** Admins can now schedule vacation periods directly on the calendar for either personal use or for an entire guild.
+-   **Automatic Penalty Pausing:** While a "Vacation" event is active, the system automatically pauses all late/incomplete penalties for scheduled quests, allowing users to take a break without consequences.
+-   **Streamlined Settings:** Removed the old vacation mode toggle from the Settings page to create a single, intuitive workflow through the calendar.
 
 ### Version History
+- **v0.0.96 (July 22, 2025):** Default Quest Groups, AI-powered group suggestions, streamlined quest creation.
 - **v0.0.95 (July 22, 2025):** Smarter AI Studio, powerful bulk editing for quests, enhanced collapsed sidebar with fly-out menus, and default quest categories.
 - **v0.0.94 (July 26, 2025):** Added default quest categories and improved the collapsed sidebar with expandable menus.
 - **v0.0.93 (July 25, 2025):** Implemented a purchase escrow system, integrated purchase requests into the Chronicles, and improved the login notification popup with a scrollbar and close button.

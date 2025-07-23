@@ -335,6 +335,26 @@ export interface SystemNotification {
     imageUrl?: string;
 }
 
+export interface ScheduledEvent {
+    id: string;
+    title: string;
+    description: string;
+    startDate: string; // YYYY-MM-DD
+    endDate: string;   // YYYY-MM-DD
+    isAllDay: boolean;
+    eventType: 'Announcement' | 'BonusXP' | 'MarketSale' | 'Vacation';
+    guildId?: string;
+    icon?: string;
+    color?: string;
+    modifiers: {
+        xpMultiplier?: number;
+        affectedRewardIds?: string[]; // Empty means all XP
+        marketId?: string;
+        assetIds?: string[]; // Empty means all items in market
+        discountPercent?: number;
+    };
+}
+
 export interface Terminology {
   appName: string;
   // Singular
@@ -385,6 +405,7 @@ export interface Terminology {
   link_manage_rewards: string;
   link_manage_ranks: string;
   link_manage_trophies: string;
+  link_manage_events: string;
   link_theme_editor: string;
   link_approvals: string;
   link_manage_users: string;
@@ -403,7 +424,7 @@ export interface Terminology {
 
 export type Page = 'Dashboard' | 'Avatar' | 'Quests' | 'Marketplace' | 'Chronicles' | 'Guild' | 'Calendar' | 'Progress' | 'Trophies' | 'Ranks' | 'Manage Users' | 'Manage Rewards' | 'Manage Quests' | 'Manage Goods' | 'Approvals' | 'Manage Markets' | 'Manage Guilds' | 'Settings' | 'Profile' | 'About' | 'Help Guide' | 'Manage Ranks' | 'Manage Trophies' | 'Themes' | 'Data Management' | 'Collection' | 'AI Studio' | 'Appearance'
 | 'Object Exporter' | 'Asset Manager' | 'Backup & Import' | 'Asset Library'
-| 'Theme Editor' | 'Chat' | 'Manage Quest Groups'
+| 'Theme Editor' | 'Chat' | 'Manage Quest Groups' | 'Manage Events'
 ;
 
 export interface SidebarLink {
@@ -449,11 +470,6 @@ export interface AppSettings {
   contentVersion: number;
   favicon: string;
   forgivingSetbacks: boolean;
-  vacationMode: {
-    enabled: boolean;
-    startDate?: string;
-    endDate?: string;
-  };
   questDefaults: {
     requiresApproval: boolean;
     isOptional: boolean;
@@ -494,10 +510,11 @@ export interface AppSettings {
   };
 }
 
-export type ShareableAssetType = 'quests' | 'rewardTypes' | 'ranks' | 'trophies' | 'markets' | 'gameAssets';
+export type ShareableAssetType = 'quests' | 'rewardTypes' | 'ranks' | 'trophies' | 'markets' | 'gameAssets' | 'questGroups';
 
 export interface BlueprintAssets {
   quests: Quest[];
+  questGroups?: QuestGroup[];
   rewardTypes: RewardTypeDefinition[];
   ranks: Rank[];
   trophies: Trophy[];
@@ -585,9 +602,10 @@ export interface IAppData {
   loginHistory: string[];
   chatMessages: ChatMessage[];
   systemNotifications: SystemNotification[];
+  scheduledEvents: ScheduledEvent[];
 }
 
-export type LibraryPackType = 'Quests' | 'Items' | 'Markets' | 'Trophies' | 'Rewards';
+export type LibraryPackType = 'Quests' | 'Markets' | 'Items' | 'Trophies' | 'Rewards' | 'Quest Groups';
 
 export interface LibraryPack {
   id: string;
@@ -602,7 +620,7 @@ export interface LibraryPack {
 export type ChronicleEvent = {
     id: string;
     date: string;
-    type: 'Quest' | 'Purchase' | 'Trophy' | 'Adjustment' | 'System' | 'Announcement';
+    type: 'Quest' | 'Purchase' | 'Trophy' | 'Adjustment' | 'System' | 'Announcement' | 'ScheduledEvent';
     title: string;
     note?: string;
     status: string;

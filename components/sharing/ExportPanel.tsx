@@ -1,5 +1,3 @@
-
-
 import React, { useState } from 'react';
 import { useAppState } from '../../context/AppContext';
 import { ShareableAssetType, Terminology } from '../../types';
@@ -12,6 +10,7 @@ const ExportPanel: React.FC = () => {
     const { settings } = appState;
     const [selected, setSelected] = useState<{ [key in ShareableAssetType]: string[] }>({
         quests: [],
+        questGroups: [],
         rewardTypes: [],
         ranks: [],
         trophies: [],
@@ -55,6 +54,7 @@ const ExportPanel: React.FC = () => {
 
     const assetTypes: { key: ShareableAssetType, label: keyof Terminology, data: any[] }[] = [
         { key: 'quests', label: 'tasks', data: appState.quests },
+        { key: 'questGroups', label: 'link_manage_quest_groups', data: appState.questGroups },
         { key: 'rewardTypes', label: 'points', data: appState.rewardTypes.filter(rt => !rt.isCore) },
         { key: 'ranks', label: 'levels', data: appState.ranks },
         { key: 'trophies', label: 'awards', data: appState.trophies },

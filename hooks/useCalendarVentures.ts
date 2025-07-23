@@ -4,7 +4,7 @@ import { Quest, QuestType } from '../types';
 import { isQuestAvailableForUser, toYMD } from '../utils/quests';
 
 export const useCalendarVentures = (date: Date) => {
-    const { quests, currentUser, questCompletions, appMode } = useAppState();
+    const { quests, currentUser, questCompletions, appMode, scheduledEvents } = useAppState();
 
     return useMemo(() => {
         if (!currentUser || !date) return [];
@@ -27,11 +27,11 @@ export const useCalendarVentures = (date: Date) => {
             if (!isCandidate) return false;
 
             // Finally, check if it's actually available to be completed.
-            return isQuestAvailableForUser(q, userCompletionsForMode, date);
+            return isQuestAvailableForUser(q, userCompletionsForMode, date, scheduledEvents, appMode);
         });
 
         // Return unique list
         return Array.from(new Set(venturesToShow.map(q => q.id))).map(id => venturesToShow.find(q => q.id === id)!);
 
-    }, [quests, currentUser, questCompletions, appMode, date]);
+    }, [quests, currentUser, questCompletions, appMode, date, scheduledEvents]);
 };

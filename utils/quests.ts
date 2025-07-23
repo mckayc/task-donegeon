@@ -1,4 +1,4 @@
-import { Quest, QuestCompletion, QuestAvailability, QuestCompletionStatus, AppMode, User, QuestType } from '../types';
+import { Quest, QuestCompletion, QuestAvailability, QuestCompletionStatus, AppMode, User, QuestType, ScheduledEvent } from '../types';
 
 /**
  * Consistently formats a Date object into a 'YYYY-MM-DD' string, ignoring timezone.
@@ -18,6 +18,22 @@ export const fromYMD = (ymd: string): Date => {
   const [year, month, day] = ymd.split('-').map(Number);
   return new Date(year, month - 1, day);
 };
+
+/**
+ * Checks if a vacation event is active for a given scope on a specific date.
+ */
+export const isVacationActiveOnDate = (date: Date, scheduledEvents: ScheduledEvent[], guildId?: string): boolean => {
+    const dateKey = toYMD(date);
+    return scheduledEvents.some(event => {
+        if (event.eventType !== 'Vacation') return false;
+        // Scope match: event is global (no guildId) or matches the current guildId.
+        const scopeMatch = !event.guildId || event.guildId === guildId;
+        if (!scopeMatch) return false;
+        // Date match
+        return dateKey >= event.startDate && dateKey <= event.endDate;
+    });
+};
+
 
 /**
  * Checks if a quest is scheduled to appear on a specific day, based on its type and recurrence rules.
@@ -58,21 +74,26 @@ export const isQuestVisibleToUserInMode = (
 
 /**
  * Checks if a quest is currently available for completion based on its recurrence rules
- * and the user's completion history.
+ * and the user's completion history. Now accounts for vacation periods.
  */
 export const isQuestAvailableForUser = (
   quest: Quest,
   userCompletions: QuestCompletion[],
-  today: Date
+  today: Date,
+  scheduledEvents: ScheduledEvent[],
+  appMode: AppMode
 ): boolean => {
   const questUserCompletions = userCompletions.filter(
     (c) => c.questId === quest.id && (c.status === QuestCompletionStatus.Approved || c.status === QuestCompletionStatus.Pending)
   );
 
+  const guildId = appMode.mode === 'guild' ? appMode.guildId : undefined;
+  const onVacation = isVacationActiveOnDate(today, scheduledEvents, guildId);
+
   // Venture-specific logic for early completion and deadlines
   if (quest.type === QuestType.Venture) {
-    if (quest.incompleteDateTime && today > new Date(quest.incompleteDateTime)) {
-      return false; // Past the final deadline
+    if (!onVacation && quest.incompleteDateTime && today > new Date(quest.incompleteDateTime)) {
+      return false; // Past the final deadline, and not on vacation
     }
     if (quest.availabilityType === QuestAvailability.Unlimited) {
       return questUserCompletions.length === 0;
@@ -86,7 +107,7 @@ export const isQuestAvailableForUser = (
   
   // Duty-specific logic
   if (quest.type === QuestType.Duty) {
-    if (quest.incompleteTime) {
+    if (!onVacation && quest.incompleteTime) {
       const isScheduledToday =
           quest.availabilityType === QuestAvailability.Daily ||
           (quest.availabilityType === QuestAvailability.Weekly && quest.weeklyRecurrenceDays.includes(today.getDay())) ||
@@ -143,10 +164,10 @@ export const isQuestAvailableForUser = (
  * 3. Time-based priority (Due soon > To-Do > other)
  * 4. Title (alphabetical)
  */
-const getQuestSortKey = (quest: Quest, user: User, date: Date, allCompletions: QuestCompletion[]): [number, number, number, string] => {
-    // Priority 0: Completion Status
+const getQuestSortKey = (quest: Quest, user: User, date: Date, allCompletions: QuestCompletion[], scheduledEvents: ScheduledEvent[]): [number, number, number, string] => {
+    const questAppMode: AppMode = quest.guildId ? { mode: 'guild', guildId: quest.guildId } : { mode: 'personal' };
     const userCompletionsForQuest = allCompletions.filter(c => c.questId === quest.id && c.userId === user.id);
-    const isAvailable = isQuestAvailableForUser(quest, userCompletionsForQuest, date);
+    const isAvailable = isQuestAvailableForUser(quest, userCompletionsForQuest, date, scheduledEvents, questAppMode);
     const completionPriority = isAvailable ? 0 : 1;
 
     // Priority 1: Type (Duty = 0, Venture = 1)
@@ -184,9 +205,9 @@ const getQuestSortKey = (quest: Quest, user: User, date: Date, allCompletions: Q
  * @param date The date context for sorting (e.g., today's date).
  * @returns A comparator function for Array.prototype.sort().
  */
-export const questSorter = (user: User, allCompletions: QuestCompletion[], date: Date = new Date()) => (a: Quest, b: Quest) => {
-    const keyA = getQuestSortKey(a, user, date, allCompletions);
-    const keyB = getQuestSortKey(b, user, date, allCompletions);
+export const questSorter = (user: User, allCompletions: QuestCompletion[], scheduledEvents: ScheduledEvent[], date: Date = new Date()) => (a: Quest, b: Quest) => {
+    const keyA = getQuestSortKey(a, user, date, allCompletions, scheduledEvents);
+    const keyB = getQuestSortKey(b, user, date, allCompletions, scheduledEvents);
 
     for (let i = 0; i < keyA.length; i++) {
         if (keyA[i] < keyB[i]) return -1;

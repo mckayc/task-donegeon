@@ -1,11 +1,10 @@
-
 import { useMemo } from 'react';
 import { useAppState } from '../context/AppContext';
 import { QuestType } from '../types';
 import { isQuestAvailableForUser } from '../utils/quests';
 
 export const useAvailableVentures = () => {
-    const { quests, currentUser, questCompletions, appMode } = useAppState();
+    const { quests, currentUser, questCompletions, appMode, scheduledEvents } = useAppState();
 
     const top10AvailableVentures = useMemo(() => {
         if (!currentUser) return [];
@@ -19,7 +18,7 @@ export const useAvailableVentures = () => {
             q.type === QuestType.Venture &&
             q.guildId === currentGuildId &&
             (q.assignedUserIds.length === 0 || q.assignedUserIds.includes(currentUser.id)) &&
-            isQuestAvailableForUser(q, userCompletionsForMode, new Date())
+            isQuestAvailableForUser(q, userCompletionsForMode, new Date(), scheduledEvents, appMode)
         );
 
         availableVentures.sort((a, b) => {
@@ -37,7 +36,7 @@ export const useAvailableVentures = () => {
         });
 
         return availableVentures.slice(0, 10);
-    }, [quests, currentUser, appMode, questCompletions]);
+    }, [quests, currentUser, appMode, questCompletions, scheduledEvents]);
 
     return top10AvailableVentures;
 }

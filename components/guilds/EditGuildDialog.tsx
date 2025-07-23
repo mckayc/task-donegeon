@@ -27,8 +27,16 @@ const EditGuildDialog: React.FC<EditGuildDialogProps> = ({ guild, onClose }) => 
           memberIds: [...guild.memberIds],
           themeId: guild.themeId || '',
       });
+    } else {
+      // Default to all users for new guilds
+      setFormData({
+        name: '',
+        purpose: '',
+        memberIds: users.map(u => u.id),
+        themeId: '',
+      });
     }
-  }, [guild]);
+  }, [guild, users]);
 
   const availableThemes = useMemo(() => {
       const lockedThemeIds = new Set(

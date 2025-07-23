@@ -1,5 +1,3 @@
-
-
 import React, { useState } from 'react';
 import { useAppState } from '../../context/AppContext';
 import { Blueprint, ImportResolution, ShareableAssetType, Terminology } from '../../types';
@@ -15,6 +13,7 @@ interface BlueprintPreviewDialogProps {
 
 const terminologyMap: { [key in ShareableAssetType]: keyof Terminology } = {
     quests: 'tasks',
+    questGroups: 'link_manage_quest_groups',
     rewardTypes: 'points',
     ranks: 'levels',
     trophies: 'awards',

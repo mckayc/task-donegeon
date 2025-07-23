@@ -1,7 +1,6 @@
-
 import React, { useState, useMemo } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
-import { Quest, QuestType, QuestAvailability, User } from '../../types';
+import { Quest, QuestType, QuestAvailability, User, AppMode } from '../../types';
 import { isQuestAvailableForUser, toYMD, isQuestScheduledForDay, questSorter } from '../../utils/quests';
 import Card from '../ui/Card';
 import Avatar from '../ui/Avatar';
@@ -24,7 +23,7 @@ const getDueDateString = (quest: Quest): string | null => {
 };
 
 const SharedCalendarPage: React.FC = () => {
-    const { settings, users, quests, questCompletions, guilds } = useAppState();
+    const { settings, users, quests, questCompletions, guilds, scheduledEvents } = useAppState();
     const { markQuestAsTodo, unmarkQuestAsTodo } = useAppDispatch();
     const [currentDate, setCurrentDate] = useState(new Date());
     const [verifyingQuest, setVerifyingQuest] = useState<{ quest: Quest; user: User } | null>(null);
@@ -33,7 +32,7 @@ const SharedCalendarPage: React.FC = () => {
 
     const sharedUsers = useMemo(() => {
         const userMap = new Map(users.map(u => [u.id, u]));
-        const userIdsToShow = settings.sharedMode.userIds.length > 0 ? settings.sharedMode.userIds : users.map(u => u.id);
+        const userIdsToShow = settings.sharedMode.userIds;
         return userIdsToShow.map(id => userMap.get(id)).filter((u): u is User => !!u);
     }, [users, settings.sharedMode.userIds]);
 
@@ -66,18 +65,19 @@ const SharedCalendarPage: React.FC = () => {
                  
                  const isRelevantToday = isDutyToday || isVentureDueToday || isTodoForUser;
                  
-                 if (isRelevantToday && isQuestAvailableForUser(quest, userCompletions, currentDate)) {
+                 const questAppMode: AppMode = quest.guildId ? { mode: 'guild', guildId: quest.guildId } : { mode: 'personal' };
+                 if (isRelevantToday && isQuestAvailableForUser(quest, userCompletions, currentDate, scheduledEvents, questAppMode)) {
                      userQuests.push(quest);
                  }
             });
             
             const uniqueQuests = Array.from(new Set(userQuests.map(q => q.id))).map(id => userQuests.find(q => q.id === id)!);
-            uniqueQuests.sort(questSorter(user, userCompletions, currentDate));
+            uniqueQuests.sort(questSorter(user, userCompletions, scheduledEvents, currentDate));
             questsMap.set(user.id, uniqueQuests.map(q => ({quest: q, user})));
         });
 
         return questsMap;
-    }, [quests, currentDate, sharedUsers, users, guilds, questCompletions]);
+    }, [quests, currentDate, sharedUsers, users, guilds, questCompletions, scheduledEvents]);
 
     const handleCompleteClick = (quest: Quest, user: User) => {
         if (!settings.sharedMode.allowCompletion) return;

@@ -32,7 +32,7 @@ const MarketIdeaGenerator: React.FC<MarketIdeaGeneratorProps> = ({ onUseIdea, on
         setError('');
         setGeneratedMarkets([]);
 
-        const fullPrompt = `Generate 5 market ideas for a gamified task app called ${settings.terminology.appName}. The markets should be based on the theme: "${prompt}".`;
+        const fullPrompt = `Generate 5 market ideas for a gamified task app called ${settings.terminology.appName}. The markets should be based on the theme: "${prompt}". For each market, provide a single, relevant Unicode emoji for its icon.`;
 
         try {
             const response = await fetch('/api/ai/generate', {

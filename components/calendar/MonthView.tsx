@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { Quest, QuestCompletion, QuestAvailability, QuestType, QuestCompletionStatus } from '../../types';
+import { Quest, QuestCompletion, QuestAvailability, QuestType, QuestCompletionStatus, ScheduledEvent } from '../../types';
 import { toYMD } from '../../utils/quests';
 import DailyDetailDialog from './DailyDetailDialog';
 import { useAppState } from '../../context/AppContext';
@@ -8,9 +8,18 @@ interface MonthViewProps {
     currentDate: Date;
     quests: Quest[];
     questCompletions: QuestCompletion[];
+    scheduledEvents: ScheduledEvent[];
+    onEventSelect: (event: ScheduledEvent) => void;
 }
 
-const MonthView: React.FC<MonthViewProps> = ({ currentDate, quests, questCompletions }) => {
+const getTextColorForBg = (bgColorHsl: string) => {
+    const parts = bgColorHsl.trim().replace(/%/g, '').split(' ').map(Number);
+    if (parts.length < 3) return 'text-black';
+    const l = parts[2];
+    return l > 50 ? 'text-stone-900' : 'text-stone-100';
+};
+
+const MonthView: React.FC<MonthViewProps> = ({ currentDate, quests, questCompletions, scheduledEvents, onEventSelect }) => {
     const [selectedDate, setSelectedDate] = useState<Date | null>(null);
     const { currentUser, appMode } = useAppState();
 
@@ -101,6 +110,28 @@ const MonthView: React.FC<MonthViewProps> = ({ currentDate, quests, questComplet
         }
         return map;
     }, [questsByDate, completionsByDate, pendingCompletionsByDate]);
+    
+    const eventsByDate = useMemo(() => {
+        const map = new Map<string, ScheduledEvent[]>();
+        const currentGuildId = appMode.mode === 'guild' ? appMode.guildId : undefined;
+
+        scheduledEvents.forEach(event => {
+            // Show event if it's global (no guildId) OR if its guildId matches the current view.
+            const scopeMatch = !event.guildId || event.guildId === currentGuildId;
+            if (!scopeMatch) return;
+
+            const start = new Date(event.startDate + 'T00:00:00');
+            const end = new Date(event.endDate + 'T00:00:00');
+            
+            for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+                const dateKey = toYMD(d);
+                const collection = map.get(dateKey) || [];
+                collection.push(event);
+                map.set(dateKey, collection);
+            }
+        });
+        return map;
+    }, [scheduledEvents, appMode]);
 
     const startDay = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
     const endDay = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
@@ -121,6 +152,7 @@ const MonthView: React.FC<MonthViewProps> = ({ currentDate, quests, questComplet
                     const isToday = day && toYMD(day) === toYMD(today);
                     const dateKey = day ? toYMD(day) : '';
                     const dailyQuestsToShow = visibleQuestsByDate.get(dateKey) || [];
+                    const dailyEvents = eventsByDate.get(dateKey) || [];
                     const dailyCompletions = completionsByDate.get(dateKey) || [];
                     const dailyPending = pendingCompletionsByDate.get(dateKey) || [];
                     const totalIndicators = dailyCompletions.length + dailyPending.length;
@@ -141,7 +173,21 @@ const MonthView: React.FC<MonthViewProps> = ({ currentDate, quests, questComplet
                         >
                             {day && <span className="font-bold">{day.getDate()}</span>}
                             <div className="mt-1 space-y-1">
-                                {dailyQuestsToShow.slice(0, 4).map(quest => (
+                                {dailyEvents.map(event => {
+                                    const textColor = getTextColorForBg(event.color || '');
+                                    return (
+                                        <button
+                                            key={event.id}
+                                            onClick={(e) => { e.stopPropagation(); onEventSelect(event); }}
+                                            className={`w-full text-left text-xs px-1.5 py-1 rounded font-bold truncate flex items-center gap-1 ${textColor}`}
+                                            style={{ backgroundColor: `hsl(${event.color})` }}
+                                        >
+                                            <span>{event.icon || '🎉'}</span>
+                                            <span className="truncate">{event.title}</span>
+                                        </button>
+                                    )
+                                })}
+                                {dailyQuestsToShow.slice(0, 2).map(quest => (
                                     <div
                                         key={quest.id}
                                         className={`w-full text-left text-xs px-1.5 py-1 rounded-md truncate flex items-center gap-1.5 ${quest.type === QuestType.Duty ? 'bg-sky-900/50 text-sky-300' : 'bg-amber-900/50 text-amber-300'} ${quest.isOptional ? 'opacity-70' : ''}`}
@@ -150,7 +196,7 @@ const MonthView: React.FC<MonthViewProps> = ({ currentDate, quests, questComplet
                                         <span title={quest.title} className="truncate">{quest.title}</span>
                                     </div>
                                 ))}
-                                {dailyQuestsToShow.length > 4 && <div className="text-xs text-stone-500 pl-1.5">...and more</div>}
+                                {dailyQuestsToShow.length > 2 && <div className="text-xs text-stone-500 pl-1.5">...and more</div>}
                             </div>
                             {(dailyCompletions.length > 0 || dailyPending.length > 0) && (
                                 <div className="absolute bottom-2 left-2 flex flex-wrap items-center gap-1">

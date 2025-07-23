@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
-import { useAppState } from '../../context/AppContext';
-import { Quest, QuestType, QuestCompletion, QuestCompletionStatus, QuestAvailability } from '../../types';
+import { useAppState, useAppDispatch } from '../../context/AppContext';
+import { Quest, Role, ScheduledEvent } from '../../types';
 import Card from '../ui/Card';
 import { toYMD } from '../../utils/quests';
 import MonthView from '../calendar/MonthView';
@@ -9,6 +9,9 @@ import DayView from '../calendar/DayView';
 import ChroniclesDayView from '../calendar/ChroniclesDayView';
 import ChroniclesMonthView from '../calendar/ChroniclesMonthView';
 import ChroniclesWeekView from '../calendar/ChroniclesWeekView';
+import Button from '../ui/Button';
+import ScheduleEventDialog from '../admin/ScheduleEventDialog';
+import EventDetailDialog from '../calendar/EventDetailDialog';
 
 type CalendarView = 'month' | 'week' | 'day';
 type CalendarMode = 'quests' | 'chronicles';
@@ -23,10 +26,13 @@ const ViewButton: React.FC<{ type: CalendarView, currentView: CalendarView, setV
 );
 
 const CalendarPage: React.FC = () => {
-    const { quests, currentUser, questCompletions, appMode } = useAppState();
-    const [view, setView] = useState<CalendarView>('day');
+    const { quests, currentUser, questCompletions, appMode, scheduledEvents } = useAppState();
+    const { setActivePage } = useAppDispatch();
+    const [view, setView] = useState<CalendarView>('month');
     const [mode, setMode] = useState<CalendarMode>('quests');
     const [currentDate, setCurrentDate] = useState(new Date());
+    const [editingEvent, setEditingEvent] = useState<ScheduledEvent | null>(null);
+    const [viewingEvent, setViewingEvent] = useState<ScheduledEvent | null>(null);
     
     if (!currentUser) return null;
 
@@ -62,6 +68,14 @@ const CalendarPage: React.FC = () => {
         }
     };
 
+    const handleEventSelect = (event: ScheduledEvent) => {
+        if (currentUser.role === Role.DonegeonMaster) {
+            setEditingEvent(event);
+        } else {
+            setViewingEvent(event);
+        }
+    };
+
     const renderContent = () => {
         if (mode === 'chronicles') {
             switch (view) {
@@ -73,9 +87,9 @@ const CalendarPage: React.FC = () => {
         }
 
         switch (view) {
-            case 'month': return <MonthView currentDate={currentDate} quests={filteredQuests} questCompletions={questCompletions} />;
-            case 'week': return <div className="overflow-x-auto scrollbar-hide"><WeekView currentDate={currentDate} quests={filteredQuests} questCompletions={questCompletions} /></div>;
-            case 'day': return <DayView currentDate={currentDate} quests={filteredQuests} questCompletions={questCompletions} />;
+            case 'month': return <MonthView currentDate={currentDate} quests={filteredQuests} questCompletions={questCompletions} scheduledEvents={scheduledEvents} onEventSelect={handleEventSelect} />;
+            case 'week': return <div className="overflow-x-auto scrollbar-hide"><WeekView currentDate={currentDate} quests={filteredQuests} questCompletions={questCompletions} scheduledEvents={scheduledEvents} onEventSelect={handleEventSelect} /></div>;
+            case 'day': return <DayView currentDate={currentDate} quests={filteredQuests} questCompletions={questCompletions} scheduledEvents={scheduledEvents} onEventSelect={handleEventSelect} />;
             default: return null;
         }
     };
@@ -90,6 +104,9 @@ const CalendarPage: React.FC = () => {
                         <button onClick={() => changeDate(1)} className="p-2 rounded-full hover:bg-stone-700 transition">&gt;</button>
                     </div>
                     <div className="flex items-center gap-4">
+                        {currentUser.role === Role.DonegeonMaster && (
+                            <Button size="sm" onClick={() => setActivePage('Manage Events')}>Events</Button>
+                        )}
                         <div className="flex space-x-2 p-1 bg-stone-900/50 rounded-lg">
                             <button onClick={() => setMode('quests')} className={`px-3 py-1 rounded-md font-semibold text-sm transition-colors ${mode === 'quests' ? 'btn-primary' : 'text-stone-300 hover:bg-stone-700'}`}>Quests</button>
                             <button onClick={() => setMode('chronicles')} className={`px-3 py-1 rounded-md font-semibold text-sm transition-colors ${mode === 'chronicles' ? 'btn-primary' : 'text-stone-300 hover:bg-stone-700'}`}>Chronicles</button>
@@ -103,6 +120,13 @@ const CalendarPage: React.FC = () => {
                 </div>
                 {renderContent()}
             </Card>
+
+            {editingEvent && (
+                <ScheduleEventDialog event={editingEvent} onClose={() => setEditingEvent(null)} />
+            )}
+            {viewingEvent && (
+                <EventDetailDialog event={viewingEvent} onClose={() => setViewingEvent(null)} />
+            )}
         </div>
     );
 };

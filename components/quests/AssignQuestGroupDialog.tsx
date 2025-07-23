@@ -11,7 +11,7 @@ interface AssignQuestGroupDialogProps {
 const AssignQuestGroupDialog: React.FC<AssignQuestGroupDialogProps> = ({ group, onClose }) => {
     const { users } = useAppState();
     const { assignQuestGroupToUsers, addNotification } = useAppDispatch();
-    const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
+    const [selectedUserIds, setSelectedUserIds] = useState<string[]>(() => users.map(u => u.id));
 
     const handleToggleUser = (userId: string) => {
         setSelectedUserIds(prev =>

@@ -14,6 +14,7 @@ interface EditGameAssetDialogProps {
   mode?: 'create' | 'edit' | 'ai-creation';
   onTryAgain?: () => void;
   isGenerating?: boolean;
+  onSave?: (updatedData: any) => void;
 }
 
 const InfoIcon: React.FC<{className?: string}> = ({ className }) => (
@@ -28,27 +29,29 @@ const PREDEFINED_CATEGORIES = [
     'Armor (Cosmetic)', 'Consumable', 'Real-World Reward', 'Trophy Display', 'Miscellaneous'
 ];
 
-const EditGameAssetDialog: React.FC<EditGameAssetDialogProps> = ({ assetToEdit, initialData, onClose, mode = (assetToEdit ? 'edit' : 'create'), onTryAgain, isGenerating }) => {
+const EditGameAssetDialog: React.FC<EditGameAssetDialogProps> = ({ assetToEdit, initialData, onClose, mode = (assetToEdit ? 'edit' : 'create'), onTryAgain, isGenerating, onSave }) => {
   const { addGameAsset, updateGameAsset, uploadFile, addNotification } = useAppDispatch();
   const { markets, rewardTypes } = useAppState();
 
   const getInitialFormData = useCallback(() => {
-    if (mode === 'edit' && assetToEdit) {
+    const data = assetToEdit || initialData;
+    if (mode !== 'create' && data) {
+      const d = data as Partial<GameAsset> & { url: string; name: string; category: string; description?: string; };
       return {
-        name: assetToEdit.name,
-        description: assetToEdit.description,
-        url: assetToEdit.url,
-        category: PREDEFINED_CATEGORIES.includes(assetToEdit.category) ? assetToEdit.category : 'Other',
-        avatarSlot: assetToEdit.avatarSlot || '',
-        isForSale: assetToEdit.isForSale,
-        requiresApproval: assetToEdit.requiresApproval,
-        costGroups: assetToEdit.costGroups.length > 0 ? [...assetToEdit.costGroups.map(group => [...group])] : [[]],
-        payouts: assetToEdit.payouts ? [...assetToEdit.payouts] : [],
-        marketIds: [...assetToEdit.marketIds],
-        purchaseLimit: assetToEdit.purchaseLimit,
-        purchaseLimitType: assetToEdit.purchaseLimitType || 'Total',
-        purchaseCount: assetToEdit.purchaseCount,
-        allowExchange: !!(assetToEdit.payouts && assetToEdit.payouts.length > 0),
+        name: d.name,
+        description: d.description || '',
+        url: d.url,
+        category: PREDEFINED_CATEGORIES.includes(d.category) ? d.category : 'Other',
+        avatarSlot: d.avatarSlot || '',
+        isForSale: typeof d.isForSale === 'boolean' ? d.isForSale : false,
+        requiresApproval: typeof d.requiresApproval === 'boolean' ? d.requiresApproval : false,
+        costGroups: d.costGroups?.length > 0 ? [...d.costGroups.map(group => [...group])] : [[]],
+        payouts: d.payouts ? [...d.payouts] : [],
+        marketIds: [...(d.marketIds || [])],
+        purchaseLimit: typeof d.purchaseLimit === 'number' ? d.purchaseLimit : null,
+        purchaseLimitType: d.purchaseLimitType || 'Total',
+        purchaseCount: d.purchaseCount || 0,
+        allowExchange: !!(d.payouts && d.payouts.length > 0),
       };
     }
     
@@ -191,6 +194,12 @@ const EditGameAssetDialog: React.FC<EditGameAssetDialogProps> = ({ assetToEdit, 
     };
     
     const { allowExchange, ...finalPayload } = payload;
+    
+    if (onSave) {
+        onSave(finalPayload);
+        onClose();
+        return;
+    }
 
     if (assetToEdit) {
       updateGameAsset({ ...assetToEdit, ...finalPayload });
@@ -357,7 +366,7 @@ const EditGameAssetDialog: React.FC<EditGameAssetDialogProps> = ({ assetToEdit, 
               ) : (
                 <div className="flex justify-end space-x-4">
                     <Button type="button" variant="secondary" onClick={onClose}>Cancel</Button>
-                    <Button type="submit" form="asset-dialog-form">{assetToEdit ? 'Save Changes' : 'Create Asset'}</Button>
+                    <Button type="submit" form="asset-dialog-form">{onSave ? 'Save Changes' : (assetToEdit ? 'Save Changes' : 'Create Asset')}</Button>
                 </div>
               )}
           </div>

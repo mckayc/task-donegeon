@@ -2,15 +2,16 @@ import React, { useState, useMemo } from 'react';
 import Card from '../ui/Card';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import Button from '../ui/Button';
-import { PurchaseRequestStatus, RewardCategory, Market, GameAsset, RewardItem } from '../../types';
+import { PurchaseRequestStatus, RewardCategory, Market, GameAsset, RewardItem, ScheduledEvent } from '../../types';
 import PurchaseDialog from '../markets/PurchaseDialog';
 import ExchangeView from '../markets/ExchangeView';
 import { isMarketOpenForUser } from '../../utils/markets';
 import ImagePreviewDialog from '../ui/ImagePreviewDialog';
 import DynamicIcon from '../ui/DynamicIcon';
+import { toYMD } from '../../utils/quests';
 
 const MarketItemView: React.FC<{ market: Market }> = ({ market }) => {
-    const { rewardTypes, currentUser, purchaseRequests, appMode, settings, gameAssets } = useAppState();
+    const { rewardTypes, currentUser, purchaseRequests, appMode, settings, gameAssets, scheduledEvents } = useAppState();
     const [sortBy, setSortBy] = useState<'default' | 'title-asc' | 'title-desc'>('default');
     const [itemToPurchase, setItemToPurchase] = useState<GameAsset | null>(null);
     const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null);
@@ -34,8 +35,40 @@ const MarketItemView: React.FC<{ market: Market }> = ({ market }) => {
             default: return items;
         }
     }, [itemsForSale, sortBy]);
+    
+    const activeSaleEvent = useMemo(() => {
+        const todayYMD = toYMD(new Date());
+        return scheduledEvents.find(event => 
+            event.eventType === 'MarketSale' &&
+            event.modifiers.marketId === market.id &&
+            todayYMD >= event.startDate &&
+            todayYMD <= event.endDate &&
+            event.guildId === market.guildId
+        );
+    }, [scheduledEvents, market.id, market.guildId]);
 
     const ItemCard: React.FC<{ asset: GameAsset }> = ({ asset }) => {
+        const saleForThisItem = useMemo(() => {
+            if (!activeSaleEvent) return null;
+            if (!activeSaleEvent.modifiers.assetIds || activeSaleEvent.modifiers.assetIds.length === 0 || activeSaleEvent.modifiers.assetIds.includes(asset.id)) {
+                return activeSaleEvent;
+            }
+            return null;
+        }, [asset.id]);
+
+        const getDiscountedCostGroups = (costGroups: RewardItem[][], sale: ScheduledEvent | null): RewardItem[][] => {
+            if (!sale || !sale.modifiers.discountPercent) return costGroups;
+            const discount = sale.modifiers.discountPercent / 100;
+            return costGroups.map(group =>
+                group.map(cost => ({
+                    ...cost,
+                    amount: Math.max(0, Math.ceil(cost.amount * (1 - discount)))
+                }))
+            );
+        };
+
+        const finalCostGroups = useMemo(() => getDiscountedCostGroups(asset.costGroups, saleForThisItem), [saleForThisItem]);
+        
         const canAffordAny = useMemo(() => {
             if (!currentUser) return false;
             
@@ -53,10 +86,10 @@ const MarketItemView: React.FC<{ market: Market }> = ({ market }) => {
                 return (rewardDef.category === 'Currency' ? balances.purse[rewardTypeId] : balances.experience[rewardTypeId]) || 0;
             };
 
-            return asset.costGroups.some(group => 
+            return finalCostGroups.some(group => 
                 group.every(costItem => getBalance(costItem.rewardTypeId) >= costItem.amount)
             );
-        }, [currentUser, appMode, asset, rewardTypes]);
+        }, [currentUser, appMode, finalCostGroups, rewardTypes]);
 
         const userPurchaseCount = currentUser.ownedAssetIds.filter(id => id === asset.id).length;
         const isSoldOut = asset.purchaseLimit !== null && asset.purchaseLimitType === 'Total' && asset.purchaseCount >= asset.purchaseLimit;
@@ -69,7 +102,12 @@ const MarketItemView: React.FC<{ market: Market }> = ({ market }) => {
         else if (!canAffordAny) buttonText = "Can't Afford";
 
         return (
-             <div className={`bg-violet-900/30 border-2 border-violet-700/60 rounded-xl shadow-lg flex flex-col h-full ${!canPurchase || !canAffordAny ? 'opacity-60' : ''}`}>
+             <div className={`relative bg-violet-900/30 border-2 border-violet-700/60 rounded-xl shadow-lg flex flex-col h-full ${!canPurchase || !canAffordAny ? 'opacity-60' : ''}`}>
+                {saleForThisItem && (
+                    <div className="absolute top-2 right-2 bg-red-600 text-white text-xs font-bold px-2 py-1 rounded-full z-10">
+                        {saleForThisItem.modifiers.discountPercent}% OFF
+                    </div>
+                )}
                 <div className="p-4 border-b border-white/10">
                     <button
                         onClick={() => setPreviewImageUrl(asset.url)}
@@ -90,9 +128,15 @@ const MarketItemView: React.FC<{ market: Market }> = ({ market }) => {
                                 {asset.costGroups.map((group, index) => (
                                     <div key={index}>
                                         <div className="flex flex-wrap gap-x-3 gap-y-1 text-sm font-semibold">
-                                            {group.map(r => {
+                                            {group.map((r, rIndex) => {
                                                 const info = getRewardInfo(r.rewardTypeId);
-                                                return <span key={r.rewardTypeId} className="text-amber-300 flex items-center gap-1" title={info.name}>{r.amount} <span className="text-base">{info.icon}</span></span>
+                                                const finalCost = finalCostGroups[index][rIndex].amount;
+                                                return (
+                                                    <span key={r.rewardTypeId} className={`text-amber-300 flex items-center gap-1 ${saleForThisItem ? 'line-through text-amber-300/60' : ''}`} title={info.name}>
+                                                        {r.amount} <span className="text-base">{info.icon}</span>
+                                                        {saleForThisItem && <span className="text-green-400 font-bold no-underline ml-1">{finalCost} {info.icon}</span>}
+                                                    </span>
+                                                )
                                             })}
                                         </div>
                                         {index < asset.costGroups.length - 1 && <p className="text-center text-xs font-bold text-stone-400 my-1">OR</p>}

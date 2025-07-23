@@ -1,5 +1,3 @@
-
-
 import React, { useMemo, useState, useEffect } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { User } from '../../types';
@@ -31,7 +29,7 @@ const SharedHeader: React.FC = () => {
 
   const sharedUsers = useMemo(() => {
     const userMap = new Map(users.map(u => [u.id, u]));
-    const userIdsToShow = settings.sharedMode.userIds.length > 0 ? settings.sharedMode.userIds : users.map(u => u.id);
+    const userIdsToShow = settings.sharedMode.userIds;
     return userIdsToShow.map(id => userMap.get(id)).filter((u): u is User => !!u);
   }, [users, settings.sharedMode.userIds]);
 

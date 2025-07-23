@@ -1,6 +1,6 @@
 {
-  "name": "Task Donegeon - 0.0.96 - AI Quest restructure",
-  "version": "0.0.96",
+  "name": "Task Donegeon - 0.0.97 - Works as app now - calendar functions",
+  "version": "0.0.97",
   "description": "A gamified task and chore tracker for families and groups. Complete quests, earn currency and experience, and level up your character in a fun, medieval-themed adventure.",
   "requestFramePermissions": [
     "camera"

@@ -1,4 +1,4 @@
-import React, { useState, ChangeEvent, ReactNode } from 'react';
+import React, { useState, ChangeEvent, ReactNode, useEffect } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { Role, AppSettings, Terminology, RewardCategory, RewardTypeDefinition } from '../../types';
 import Button from '../ui/Button';
@@ -79,11 +79,12 @@ const terminologyLabels: { [key in keyof Terminology]: string } = {
   link_chronicles: 'Sidebar: Chronicles',
   link_manage_quests: 'Sidebar: Manage Quests',
   link_manage_quest_groups: 'Sidebar: Manage Quest Groups',
-  link_manage_items: 'Sidebar: Manage Items',
+  link_manage_items: 'Sidebar: Manage Goods',
   link_manage_markets: 'Sidebar: Manage Markets',
   link_manage_rewards: 'Sidebar: Manage Rewards',
   link_manage_ranks: 'Sidebar: Manage Ranks',
   link_manage_trophies: 'Sidebar: Manage Trophies',
+  link_manage_events: 'Sidebar: Manage Events',
   link_theme_editor: 'Sidebar: Theme Editor',
   link_approvals: 'Sidebar: Approvals',
   link_manage_users: 'Sidebar: Manage Users',
@@ -102,17 +103,43 @@ const terminologyLabels: { [key in keyof Terminology]: string } = {
 
 
 const SettingsPage: React.FC = () => {
-    const { currentUser, users, settings, rewardTypes } = useAppState();
-    const { updateSettings, resetSettings } = useAppDispatch();
+    const { currentUser, users, settings, rewardTypes, isAiConfigured } = useAppState();
+    const { updateSettings, resetSettings, addNotification } = useAppDispatch();
     
     const [formState, setFormState] = useState<AppSettings>(() => JSON.parse(JSON.stringify(settings)));
     const [showSaved, setShowSaved] = useState<string | null>(null);
     const [isResetConfirmOpen, setIsResetConfirmOpen] = useState(false);
     const [isFaviconPickerOpen, setIsFaviconPickerOpen] = useState(false);
+    
+    const [apiKeyStatus, setApiKeyStatus] = useState<'unknown' | 'testing' | 'valid' | 'invalid'>(isAiConfigured ? 'valid' : 'unknown');
+    const [apiKeyError, setApiKeyError] = useState<string | null>(null);
 
-    if (currentUser?.role !== Role.DonegeonMaster) {
-        return <div className="p-6 rounded-lg" style={{ backgroundColor: 'hsl(var(--color-bg-secondary))' }}><p>You do not have permission to view this page.</p></div>;
-    }
+    useEffect(() => {
+        // Self-correct if AI is enabled in settings but the server key is bad/missing
+        if (formState.enableAiFeatures) {
+            const verifyKeyOnLoad = async () => {
+                try {
+                    const response = await fetch('/api/ai/test', { method: 'POST' });
+                    if (!response.ok) {
+                        const data = await response.json();
+                        throw new Error(data.error || 'Server-side API key is no longer valid.');
+                    }
+                    setApiKeyStatus('valid');
+                } catch(e) {
+                     const message = e instanceof Error ? e.message : 'Unknown error during verification.';
+                     setApiKeyStatus('invalid');
+                     setApiKeyError(message);
+                     // Correct the state
+                     const newState = { ...formState, enableAiFeatures: false };
+                     setFormState(newState);
+                     updateSettings(newState);
+                     addNotification({ type: 'error', message: 'AI features disabled due to invalid API key.' });
+                }
+            };
+            verifyKeyOnLoad();
+        }
+    }, [formState.enableAiFeatures]); // Only needs to re-run if this specific setting changes
+
 
     const triggerSavedAnimation = (sectionTitle: string) => {
         setShowSaved(sectionTitle);
@@ -164,24 +191,55 @@ const SettingsPage: React.FC = () => {
             current = current[keys[i]] = current[keys[i]] || {};
         }
         current[keys[keys.length - 1]] = enabled;
+
+        if (path === 'sharedMode.enabled' && enabled && newState.sharedMode.userIds.length === 0) {
+            newState.sharedMode.userIds = users.map(u => u.id);
+        }
+
         setFormState(newState);
         updateSettings(newState); // Auto-save
         triggerSavedAnimation(sectionTitle);
     };
     
-    const handleDateChange = (name: string, dateStr: string) => {
-        const keys = name.split('.');
-         setFormState(prev => {
-             let newState = JSON.parse(JSON.stringify(prev));
-             let currentLevel: any = newState;
-             for (let i = 0; i < keys.length - 1; i++) {
-                 currentLevel = currentLevel[keys[i]];
-             }
-            currentLevel[keys[keys.length-1]] = dateStr ? new Date(dateStr).toISOString().split('T')[0] : undefined
-            return newState;
-        });
-    }
-
+    const testAndSetAiFeatures = async (enable: boolean) => {
+        if (!enable) {
+            // Toggling off is simple
+            const newState = { ...formState, enableAiFeatures: false };
+            setFormState(newState);
+            updateSettings(newState);
+            setApiKeyStatus('unknown');
+            setApiKeyError(null);
+            triggerSavedAnimation('AI Features');
+            return;
+        }
+    
+        // Toggling on requires a test
+        setApiKeyStatus('testing');
+        setApiKeyError(null);
+        try {
+            const response = await fetch('/api/ai/test', { method: 'POST' });
+            const data = await response.json();
+            if (response.ok && data.success) {
+                setApiKeyStatus('valid');
+                const newState = { ...formState, enableAiFeatures: true };
+                setFormState(newState);
+                updateSettings(newState);
+                addNotification({ type: 'success', message: 'AI features enabled successfully!' });
+            } else {
+                setApiKeyStatus('invalid');
+                setApiKeyError(data.error || 'An unknown error occurred during testing.');
+                const newState = { ...formState, enableAiFeatures: false };
+                setFormState(newState);
+            }
+        } catch(e) {
+            setApiKeyStatus('invalid');
+            const message = e instanceof Error ? e.message : 'Could not connect to the server to test the API key.';
+            setApiKeyError(message);
+            const newState = { ...formState, enableAiFeatures: false };
+            setFormState(newState);
+        }
+    };
+    
     const handleSharedUserToggle = (userId: string) => {
         const newIds = formState.sharedMode.userIds.includes(userId)
             ? formState.sharedMode.userIds.filter(id => id !== userId)
@@ -203,6 +261,10 @@ const SettingsPage: React.FC = () => {
     const currencyRewards = rewardTypes.filter(rt => rt.category === RewardCategory.Currency);
     const otherRewards = rewardTypes.filter(rt => rt.id !== formState.rewardValuation.anchorRewardId);
     const anchorReward = rewardTypes.find(rt => rt.id === formState.rewardValuation.anchorRewardId);
+    
+    if (currentUser?.role !== Role.DonegeonMaster) {
+        return <div className="p-6 rounded-lg" style={{ backgroundColor: 'hsl(var(--color-bg-secondary))' }}><p>You do not have permission to view this page.</p></div>;
+    }
 
     return (
         <div className="space-y-8 relative">
@@ -242,19 +304,6 @@ const SettingsPage: React.FC = () => {
                     <div className="pt-4 border-t flex items-start" style={{ borderColor: 'hsl(var(--color-border))' }}>
                         <ToggleSwitch enabled={formState.forgivingSetbacks} setEnabled={(val) => handleToggleChange('forgivingSetbacks', val, 'General Settings')} label="Forgiving Setbacks" />
                         <p className="text-sm ml-6" style={{ color: 'hsl(var(--color-text-secondary))' }}>If enabled, time-based setbacks are only applied if a quest remains uncompleted at the end of the day.</p>
-                    </div>
-                    
-                    <div className="pt-4 border-t flex items-start" style={{ borderColor: 'hsl(var(--color-border))' }}>
-                        <ToggleSwitch enabled={formState.vacationMode.enabled} setEnabled={(val) => handleToggleChange('vacationMode.enabled', val, 'General Settings')} label="Vacation Mode" />
-                        <div className="ml-6 flex-grow">
-                            <p className="text-sm" style={{ color: 'hsl(var(--color-text-secondary))' }}>Pause all quest deadlines and setbacks for a specified date range.</p>
-                            {formState.vacationMode.enabled && (
-                                <div className="grid grid-cols-2 gap-4 mt-4">
-                                    <Input label="Start Date" type="date" name="vacationMode.startDate" value={formState.vacationMode.startDate || ''} onChange={(e) => handleDateChange('vacationMode.startDate', e.target.value)} />
-                                    <Input label="End Date" type="date" name="vacationMode.endDate" value={formState.vacationMode.endDate || ''} onChange={(e) => handleDateChange('vacationMode.endDate', e.target.value)} />
-                                </div>
-                            )}
-                        </div>
                     </div>
                 </div>
             </CollapsibleSection>
@@ -300,7 +349,7 @@ const SettingsPage: React.FC = () => {
 
                         <div>
                             <h4 className="font-semibold text-stone-200 mb-2">Users in Shared Mode</h4>
-                            <p className="text-xs text-stone-400 mb-2">If no users are selected, Shared Mode will include all users by default.</p>
+                            <p className="text-xs text-stone-400 mb-2">Select which users will be available to log into from the Shared Mode screen.</p>
                              <div className="space-y-2 max-h-40 overflow-y-auto border border-stone-700 p-2 rounded-md">
                                 {users.map(user => (
                                     <div key={user.id} className="flex items-center">
@@ -327,18 +376,32 @@ const SettingsPage: React.FC = () => {
                 </div>
             </CollapsibleSection>
 
-            <CollapsibleSection title="AI Features" showSavedIndicator={showSaved === 'AI Features'}>
-                <div className="space-y-6">
+            <CollapsibleSection title="AI Features">
+                <div className="space-y-4">
                     <div className="flex items-start">
                         <ToggleSwitch
                             enabled={formState.enableAiFeatures}
-                            setEnabled={(val) => handleToggleChange('enableAiFeatures', val, 'AI Features')}
+                            setEnabled={testAndSetAiFeatures}
                             label="Enable AI-Powered Features"
                         />
-                        <p className="text-sm ml-6" style={{ color: 'hsl(var(--color-text-secondary))' }}>
-                            Allow the use of Gemini AI to power features like the Quest Idea Generator.
-                            This requires a valid Gemini API key to be configured by the server administrator.
-                        </p>
+                        <div className="ml-6 flex-grow">
+                             <p className="text-sm" style={{ color: 'hsl(var(--color-text-secondary))' }}>
+                                Allow the use of Gemini AI to power features like the Quest Idea Generator.
+                                This requires a valid Gemini API key to be configured by the server administrator.
+                            </p>
+                             {apiKeyStatus === 'testing' && <p className="text-sm text-yellow-400 mt-2">Testing API key...</p>}
+                             {apiKeyStatus === 'invalid' && (
+                                <div className="mt-4 p-4 bg-red-900/30 border border-red-700/60 rounded-lg">
+                                    <h4 className="font-bold text-red-300">AI Setup Failed</h4>
+                                    <p className="text-sm text-red-200/80 mt-1 mb-2">
+                                        {apiKeyError}
+                                    </p>
+                                    <p className="text-xs text-stone-400">
+                                        The server administrator must set the <code>API_KEY</code> environment variable in the <code>.env</code> file (for Docker) or in the Vercel project settings.
+                                    </p>
+                                </div>
+                            )}
+                        </div>
                     </div>
                 </div>
             </CollapsibleSection>

@@ -7,6 +7,8 @@ const multer = require('multer');
 const { createClient } = require('@supabase/supabase-js');
 const fs = require('fs').promises;
 const { GoogleGenAI } = require('@google/genai');
+const http = require('http');
+const WebSocket = require('ws');
 
 // --- Environment Variable Checks ---
 const requiredEnv = ['DATABASE_URL', 'STORAGE_PROVIDER'];
@@ -22,6 +24,25 @@ for (const envVar of requiredEnv) {
 
 const app = express();
 const port = process.env.PORT || 3001;
+const server = http.createServer(app);
+const wss = new WebSocket.Server({ server });
+
+// === WebSocket Logic ===
+wss.on('connection', ws => {
+  console.log('Client connected to WebSocket');
+  ws.on('close', () => {
+    console.log('Client disconnected from WebSocket');
+  });
+});
+
+const broadcast = (data) => {
+  wss.clients.forEach(client => {
+    if (client.readyState === WebSocket.OPEN) {
+      client.send(JSON.stringify(data));
+    }
+  });
+};
+
 
 // === Middleware ===
 const allowedOrigins = ['https://taskdonegeon.mckayc.com', 'http://localhost:3000', 'http://localhost:3002'];
@@ -183,6 +204,10 @@ app.post('/api/data/save', async (req, res, next) => {
         );
 
         console.log(`[${new Date().toISOString()}] Save data success. Persisted ${chatMessagesCount} chat messages.`);
+        
+        // Broadcast update to all connected clients
+        broadcast({ type: 'DATA_UPDATED' });
+
         res.status(200).json({ message: 'Data saved successfully.' });
     } catch (err) {
         console.error(`[${new Date().toISOString()}] ERROR in POST /api/data/save:`, err);
@@ -346,12 +371,12 @@ app.get('/api/ai/status', (req, res) => {
 
 app.post('/api/ai/test', async (req, res, next) => {
     if (!ai) {
-        return res.status(400).json({ success: false, error: "AI features are not configured on the server." });
+        return res.status(400).json({ success: false, error: "AI features are not configured on the server. The API_KEY environment variable is not set." });
     }
     try {
         // Perform a simple, low-cost API call to validate the key
         const response = await ai.models.generateContent({ model: 'gemini-2.5-flash', contents: 'test' });
-        // Check if response is valid, though just not erroring is usually enough
+        // Check if response is valid, though not erroring is usually enough
         if (response && response.text) {
              res.json({ success: true });
         } else {
@@ -359,7 +384,6 @@ app.post('/api/ai/test', async (req, res, next) => {
         }
     } catch (error) {
         console.error("AI API Key Test Failed:", error.message);
-        // Check for specific authentication-related errors if possible, otherwise send a generic message.
         // Google's API often returns a 400 or 403 with specific error messages in the body for bad keys.
         res.status(400).json({ success: false, error: 'API key is invalid or permissions are insufficient.' });
     }
@@ -486,7 +510,7 @@ app.get('/api/image-packs/:packName', async (req, res, next) => {
                  filesToCompare.push({
                     category: 'Miscellaneous',
                     name: item.name,
-                    url: item.download_url,
+                    url: file.download_url,
                     exists: localBasenames.has(item.name)
                 });
             }
@@ -613,7 +637,7 @@ const runAutomatedBackup = async () => {
 // === Start Server ===
 // This part is ignored by Vercel but used for local development
 if (process.env.NODE_ENV !== 'production' || process.env.VERCEL !== '1') {
-    app.listen(port, () => {
+    server.listen(port, () => {
         console.log(`Task Donegeon backend listening at http://localhost:${port}`);
         // Start automated backup timer (checks every 30 minutes)
         setInterval(runAutomatedBackup, 30 * 60 * 1000);

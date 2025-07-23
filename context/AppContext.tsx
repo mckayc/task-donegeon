@@ -1,5 +1,5 @@
 import React, { createContext, useState, useContext, ReactNode, useEffect, useCallback, useMemo, useRef } from 'react';
-import { AppSettings, User, Quest, RewardTypeDefinition, QuestCompletion, RewardItem, Market, PurchaseRequest, Guild, Rank, Trophy, UserTrophy, Notification, AppMode, Page, IAppData, ShareableAssetType, GameAsset, Role, QuestCompletionStatus, RewardCategory, PurchaseRequestStatus, AdminAdjustment, AdminAdjustmentType, SystemLog, QuestType, QuestAvailability, Blueprint, ImportResolution, TrophyRequirementType, ThemeDefinition, ChatMessage, SystemNotification, SystemNotificationType, MarketStatus, QuestGroup, BulkQuestUpdates } from '../types';
+import { AppSettings, User, Quest, RewardTypeDefinition, QuestCompletion, RewardItem, Market, PurchaseRequest, Guild, Rank, Trophy, UserTrophy, Notification, AppMode, Page, IAppData, ShareableAssetType, GameAsset, Role, QuestCompletionStatus, RewardCategory, PurchaseRequestStatus, AdminAdjustment, AdminAdjustmentType, SystemLog, QuestType, QuestAvailability, Blueprint, ImportResolution, TrophyRequirementType, ThemeDefinition, ChatMessage, SystemNotification, SystemNotificationType, MarketStatus, QuestGroup, BulkQuestUpdates, ScheduledEvent } from '../types';
 import { INITIAL_SETTINGS, createMockUsers, INITIAL_REWARD_TYPES, INITIAL_RANKS, INITIAL_TROPHIES, createSampleMarkets, createSampleQuests, createInitialGuilds, createSampleGameAssets, INITIAL_THEMES, createInitialQuestCompletions, INITIAL_TAGS, INITIAL_QUEST_GROUPS } from '../data/initialData';
 import { toYMD } from '../utils/quests';
 import { analyzeBlueprintForConflicts } from '../utils/sharing';
@@ -86,6 +86,9 @@ interface AppDispatch {
   addTheme: (theme: Omit<ThemeDefinition, 'id'>) => void;
   updateTheme: (theme: ThemeDefinition) => void;
   deleteTheme: (themeId: string) => void;
+  addScheduledEvent: (event: Omit<ScheduledEvent, 'id'>) => void;
+  updateScheduledEvent: (event: ScheduledEvent) => void;
+  deleteScheduledEvent: (eventId: string) => void;
   completeFirstRun: (adminUserData: Omit<User, 'id' | 'personalPurse' | 'personalExperience' | 'guildBalances' | 'avatar' | 'ownedAssetIds' | 'ownedThemes' | 'hasBeenOnboarded'>, setupChoice: 'guided' | 'scratch' | 'import', blueprint?: Blueprint | null) => void;
   importBlueprint: (blueprint: Blueprint, resolutions: ImportResolution[]) => void;
   restoreFromBackup: (backupData: IAppData) => void;
@@ -152,6 +155,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [loginHistory, setLoginHistory] = useState<string[]>([]);
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [systemNotifications, setSystemNotifications] = useState<SystemNotification[]>([]);
+  const [scheduledEvents, setScheduledEvents] = useState<ScheduledEvent[]>([]);
 
   // UI State
   const [currentUser, _setCurrentUser] = useState<User | null>(null);
@@ -183,7 +187,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const isFirstRun = isDataLoaded && settings.contentVersion < 1;
 
   // === DATA PERSISTENCE ===
-  const appData = useMemo((): IAppData => ({ users, quests, questGroups, markets, rewardTypes, questCompletions, purchaseRequests, guilds, ranks, trophies, userTrophies, adminAdjustments, gameAssets, systemLogs, settings, themes, loginHistory, chatMessages, systemNotifications }), [users, quests, questGroups, markets, rewardTypes, questCompletions, purchaseRequests, guilds, ranks, trophies, userTrophies, adminAdjustments, gameAssets, systemLogs, settings, themes, loginHistory, chatMessages, systemNotifications]);
+  const appData = useMemo((): IAppData => ({ users, quests, questGroups, markets, rewardTypes, questCompletions, purchaseRequests, guilds, ranks, trophies, userTrophies, adminAdjustments, gameAssets, systemLogs, settings, themes, loginHistory, chatMessages, systemNotifications, scheduledEvents }), [users, quests, questGroups, markets, rewardTypes, questCompletions, purchaseRequests, guilds, ranks, trophies, userTrophies, adminAdjustments, gameAssets, systemLogs, settings, themes, loginHistory, chatMessages, systemNotifications, scheduledEvents]);
   appDataRef.current = appData;
 
   const addNotification = useCallback((notification: Omit<Notification, 'id'>) => {
@@ -214,7 +218,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
                 purchaseRequests: [], guilds: [], ranks: INITIAL_RANKS, trophies: [], userTrophies: [],
                 adminAdjustments: [], gameAssets: [], systemLogs: [], settings: INITIAL_SETTINGS,
                 themes: INITIAL_THEMES, loginHistory: [], chatMessages: [], systemNotifications: [],
-                questGroups: INITIAL_QUEST_GROUPS,
+                questGroups: INITIAL_QUEST_GROUPS, scheduledEvents: [],
             };
         }
 
@@ -259,6 +263,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             setLoginHistory(dataToSet.loginHistory || []);
             setChatMessages(dataToSet.chatMessages || []);
             setSystemNotifications(dataToSet.systemNotifications || []);
+            setScheduledEvents(dataToSet.scheduledEvents || []);
 
             const lastUserId = localStorage.getItem('lastUserId');
             if (lastUserId && dataToSet.users) {
@@ -390,6 +395,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             loginHistory: stateRef.current.loginHistory,
             chatMessages: stateRef.current.chatMessages,
             systemNotifications: stateRef.current.systemNotifications,
+            scheduledEvents: stateRef.current.scheduledEvents,
         } : null;
 
         if (currentLocalData && JSON.stringify(currentLocalData) !== JSON.stringify(serverData)) {
@@ -432,6 +438,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             setLoginHistory(serverData.loginHistory || []);
             setChatMessages(serverData.chatMessages || []);
             setSystemNotifications(serverData.systemNotifications || []);
+            setScheduledEvents(serverData.scheduledEvents || []);
 
             if (stateRef.current?.currentUser) {
               const updatedUser = (serverData.users || []).find(u => u.id === stateRef.current!.currentUser!.id);
@@ -665,7 +672,39 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const completeQuest = useCallback((questId: string, userId: string, rewards: RewardItem[], requiresApproval: boolean, guildId?: string, options?: { note?: string; completionDate?: Date }) => {
     const newCompletion: QuestCompletion = { id: `comp-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`, questId, userId, completedAt: (options?.completionDate || new Date()).toISOString(), status: requiresApproval ? QuestCompletionStatus.Pending : QuestCompletionStatus.Approved, guildId, note: options?.note };
     setQuestCompletions(prev => [...prev, newCompletion]);
-    if (!requiresApproval) { applyRewards(userId, rewards, guildId); const quest = quests.find(q => q.id === questId); addNotification({ type: 'success', message: `Quest Completed: ${quest?.title}`}); checkAndAwardTrophies(userId, guildId); } 
+    if (!requiresApproval) {
+        const completionDate = options?.completionDate || new Date();
+        const dateYMD = toYMD(completionDate);
+        let finalRewards = [...rewards];
+
+        // Check for Bonus XP events
+        const activeBonusXpEvent = scheduledEvents.find(event => 
+            event.eventType === 'BonusXP' &&
+            dateYMD >= event.startDate &&
+            dateYMD <= event.endDate &&
+            event.guildId === guildId
+        );
+
+        if (activeBonusXpEvent && activeBonusXpEvent.modifiers.xpMultiplier) {
+            const multiplier = activeBonusXpEvent.modifiers.xpMultiplier;
+            const affectedIds = new Set(activeBonusXpEvent.modifiers.affectedRewardIds || []);
+            
+            finalRewards = finalRewards.map(reward => {
+                const rewardDef = rewardTypes.find(rt => rt.id === reward.rewardTypeId);
+                if (rewardDef?.category === RewardCategory.XP && (affectedIds.size === 0 || affectedIds.has(reward.rewardTypeId))) {
+                    const newAmount = Math.round(reward.amount * multiplier);
+                    addNotification({ type: 'info', message: `+${newAmount - reward.amount} bonus ${rewardDef.name} from "${activeBonusXpEvent.title}"!` });
+                    return { ...reward, amount: newAmount };
+                }
+                return reward;
+            });
+        }
+        
+        applyRewards(userId, finalRewards, guildId); 
+        const quest = quests.find(q => q.id === questId); 
+        addNotification({ type: 'success', message: `Quest Completed: ${quest?.title}`}); 
+        checkAndAwardTrophies(userId, guildId);
+    } 
     else { 
         addNotification({ type: 'info', message: `Quest submitted for approval.` }); 
         const recipients = users.filter(u => {
@@ -690,9 +729,9 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             });
         }
     }
-  }, [quests, applyRewards, addNotification, checkAndAwardTrophies, users, guilds, addSystemNotification]);
-  const approveQuestCompletion = useCallback((completionId: string, note?: string) => { const c = questCompletions.find(c => c.id === completionId); if (c) { const q = quests.find(q => q.id === c.questId); if (q) { setQuestCompletions(prev => prev.map(comp => comp.id === completionId ? { ...comp, note: note || comp.note } : comp)); applyRewards(c.userId, q.rewards, q.guildId); addNotification({ type: 'success', message: `Quest approved!`}); checkAndAwardTrophies(c.userId, q.guildId); } } }, [questCompletions, quests, applyRewards, addNotification, checkAndAwardTrophies]);
-  const rejectQuestCompletion = useCallback((completionId: string, note?: string) => { setQuestCompletions(prev => prev.map(c => c.id === completionId ? { ...c, note: note || c.note } : c)); addNotification({ type: 'info', message: `Quest rejected.`}); }, [addNotification]);
+  }, [quests, applyRewards, addNotification, checkAndAwardTrophies, users, guilds, addSystemNotification, scheduledEvents, rewardTypes]);
+  const approveQuestCompletion = useCallback((completionId: string, note?: string) => { const c = questCompletions.find(c => c.id === completionId); if (c) { const q = quests.find(q => q.id === c.questId); if (q) { setQuestCompletions(prev => prev.map(comp => comp.id === completionId ? { ...comp, status: QuestCompletionStatus.Approved, note: note || comp.note } : comp)); const completionDate = new Date(c.completedAt); const rewards = q.rewards; const guildId = q.guildId; completeQuest(q.id, c.userId, rewards, false, guildId, {completionDate}); } } }, [questCompletions, quests, completeQuest]);
+  const rejectQuestCompletion = useCallback((completionId: string, note?: string) => { setQuestCompletions(prev => prev.map(c => c.id === completionId ? { ...c, status: QuestCompletionStatus.Rejected, note: note || c.note } : c)); addNotification({ type: 'info', message: `Quest rejected.`}); }, [addNotification]);
   const addRewardType = useCallback((rewardType: Omit<RewardTypeDefinition, 'id' | 'isCore'>) => setRewardTypes(prev => [...prev, { ...rewardType, id: `custom-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`, isCore: false }]), []);
   const updateRewardType = useCallback((rewardType: RewardTypeDefinition) => setRewardTypes(prev => prev.map(rt => rt.id === rewardType.id ? rewardType : rt)), []);
   const deleteRewardType = useCallback((rewardTypeId: string) => setRewardTypes(prev => prev.filter(rt => rt.id !== rewardTypeId)), []);
@@ -805,12 +844,33 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         return;
     }
 
+    // Check for market sale events
+    const todayYMD = toYMD(new Date());
+    const activeSaleEvent = scheduledEvents.find(event => 
+        event.eventType === 'MarketSale' &&
+        event.modifiers.marketId === marketId &&
+        todayYMD >= event.startDate &&
+        todayYMD <= event.endDate &&
+        event.guildId === market.guildId &&
+        (!event.modifiers.assetIds || event.modifiers.assetIds.length === 0 || event.modifiers.assetIds.includes(assetId))
+    );
+
+    let finalCost = cost;
+    if (activeSaleEvent && activeSaleEvent.modifiers.discountPercent) {
+        const discount = activeSaleEvent.modifiers.discountPercent / 100;
+        finalCost = cost.map(c => ({
+            ...c,
+            amount: Math.max(0, Math.ceil(c.amount * (1 - discount)))
+        }));
+        addNotification({type: 'info', message: `${activeSaleEvent.title}: ${activeSaleEvent.modifiers.discountPercent}% discount applied!`})
+    }
+
     if (asset.requiresApproval) {
-        if (deductRewards(user.id, cost, market.guildId)) {
+        if (deductRewards(user.id, finalCost, market.guildId)) {
             const newRequest: PurchaseRequest = {
                 id: `purchase-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
                 userId: user.id, assetId, requestedAt: new Date().toISOString(), status: PurchaseRequestStatus.Pending,
-                assetDetails: { name: asset.name, description: asset.description, cost }, guildId: market.guildId,
+                assetDetails: { name: asset.name, description: asset.description, cost: finalCost }, guildId: market.guildId,
             };
             setPurchaseRequests(p => [...p, newRequest]);
             addNotification({ type: 'info', message: 'Purchase requested. Funds have been held.' });
@@ -835,7 +895,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             addNotification({ type: 'error', message: 'You cannot afford this item.' });
         }
     } else {
-        if (deductRewards(user.id, cost, market.guildId)) {
+        if (deductRewards(user.id, finalCost, market.guildId)) {
             let wasModified = false;
             const updatedUser = { ...user };
 
@@ -857,12 +917,12 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
             if (wasModified) updateUser(user.id, updatedUser);
 
-            setPurchaseRequests(p => [...p, { id: `purchase-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`, userId: user.id, assetId, requestedAt: new Date().toISOString(), status: PurchaseRequestStatus.Completed, assetDetails: { name: asset.name, description: asset.description, cost: cost }, guildId: market.guildId }]);
+            setPurchaseRequests(p => [...p, { id: `purchase-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`, userId: user.id, assetId, requestedAt: new Date().toISOString(), status: PurchaseRequestStatus.Completed, assetDetails: { name: asset.name, description: asset.description, cost: finalCost }, guildId: market.guildId }]);
         } else {
           addNotification({ type: 'error', message: 'You cannot afford this item.' });
         }
     }
-  }, [markets, gameAssets, deductRewards, addNotification, applyRewards, updateUser, users, guilds, addSystemNotification]);
+  }, [markets, gameAssets, deductRewards, addNotification, applyRewards, updateUser, users, guilds, addSystemNotification, scheduledEvents]);
 
   const cancelPurchaseRequest = useCallback((purchaseId: string) => {
     const r = purchaseRequests.find(p => p.id === purchaseId);
@@ -987,6 +1047,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     setSystemLogs([]);
     setAdminAdjustments([]);
     setPurchaseRequests([]);
+    setScheduledEvents([]);
     
     // 4. Choice-specific setup
     if (setupChoice === 'guided') {
@@ -1002,7 +1063,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             setMarkets([exchangeMarket]);
         }
     } else if (setupChoice === 'import' && blueprint) {
-        const freshState: IAppData = { users: [adminUser], quests: [], questGroups: [], rewardTypes: INITIAL_REWARD_TYPES, ranks: INITIAL_RANKS, trophies: INITIAL_TROPHIES, userTrophies: [], markets: [], gameAssets: [], questCompletions: [], purchaseRequests: [], guilds: [], adminAdjustments: [], systemLogs: [], settings: INITIAL_SETTINGS, themes: INITIAL_THEMES, loginHistory: [], chatMessages: [], systemNotifications: [] };
+        const freshState: IAppData = { users: [adminUser], quests: [], questGroups: [], rewardTypes: INITIAL_REWARD_TYPES, ranks: INITIAL_RANKS, trophies: INITIAL_TROPHIES, userTrophies: [], markets: [], gameAssets: [], questCompletions: [], purchaseRequests: [], guilds: [], adminAdjustments: [], systemLogs: [], settings: INITIAL_SETTINGS, themes: INITIAL_THEMES, loginHistory: [], chatMessages: [], systemNotifications: [], scheduledEvents: [] };
         const resolutions = analyzeBlueprintForConflicts(blueprint, freshState);
         const allKeepResolutions = resolutions.map(r => ({ ...r, resolution: 'keep' as const }));
         importBlueprint(blueprint, allKeepResolutions);
@@ -1129,6 +1190,21 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     addNotification({ type: 'info', message: 'Theme deleted.' });
   }, [addNotification]);
   
+  // Scheduled Events
+  const addScheduledEvent = useCallback((event: Omit<ScheduledEvent, 'id'>) => {
+    const newEvent = { ...event, id: `event-${Date.now()}-${Math.random().toString(36).substring(2, 9)}` };
+    setScheduledEvents(prev => [...prev, newEvent]);
+    addNotification({ type: 'success', message: 'Event scheduled!' });
+  }, [addNotification]);
+  const updateScheduledEvent = useCallback((event: ScheduledEvent) => {
+    setScheduledEvents(prev => prev.map(e => e.id === event.id ? event : e));
+    addNotification({ type: 'success', message: 'Event updated!' });
+  }, [addNotification]);
+  const deleteScheduledEvent = useCallback((eventId: string) => {
+    setScheduledEvents(prev => prev.filter(e => e.id !== eventId));
+    addNotification({ type: 'info', message: 'Event deleted.' });
+  }, [addNotification]);
+  
   const toggleSidebar = useCallback(() => {
     setIsSidebarCollapsed(prev => {
         const newState = !prev;
@@ -1222,7 +1298,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
   // === CONTEXT PROVIDER VALUE ===
   const stateValue: AppState = {
-    users, quests, questGroups, markets, rewardTypes, questCompletions, purchaseRequests, guilds, ranks, trophies, userTrophies, adminAdjustments, gameAssets, systemLogs, settings, themes, loginHistory, chatMessages, systemNotifications,
+    users, quests, questGroups, markets, rewardTypes, questCompletions, purchaseRequests, guilds, ranks, trophies, userTrophies, adminAdjustments, gameAssets, systemLogs, settings, themes, loginHistory, chatMessages, systemNotifications, scheduledEvents,
     currentUser, isAppUnlocked, isFirstRun, activePage, appMode, notifications, isDataLoaded, activeMarketId, 
     allTags: useMemo(() => Array.from(new Set([...INITIAL_TAGS, ...quests.flatMap(q => q.tags || [])])).sort(), [quests]),
     isSwitchingUser, isSharedViewActive, targetedUserForLogin, isAiConfigured, isSidebarCollapsed,
@@ -1239,6 +1315,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     addRewardType, updateRewardType, deleteRewardType, cloneRewardType, addMarket, updateMarket, deleteMarket, cloneMarket, deleteMarkets, updateMarketsStatus, purchaseMarketItem, cancelPurchaseRequest, approvePurchaseRequest, rejectPurchaseRequest,
     addGuild, updateGuild, deleteGuild, setRanks, addTrophy, updateTrophy, deleteTrophy, awardTrophy, applyManualAdjustment, addGameAsset, updateGameAsset, deleteGameAsset, cloneGameAsset,
     addTheme, updateTheme, deleteTheme,
+    addScheduledEvent, updateScheduledEvent, deleteScheduledEvent,
     completeFirstRun, importBlueprint, restoreFromBackup, clearAllHistory, resetAllPlayerData, deleteAllCustomContent, deleteSelectedAssets, 
     deleteQuests, deleteTrophies, deleteGameAssets, updateQuestsStatus, bulkUpdateQuests,
     uploadFile,

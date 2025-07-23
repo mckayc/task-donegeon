@@ -17,6 +17,7 @@ interface QuestDialogProps {
   mode?: 'create' | 'edit' | 'ai-creation';
   onTryAgain?: () => void;
   isGenerating?: boolean;
+  onSave?: (updatedData: any) => void;
 }
 
 const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -24,38 +25,39 @@ const DUTY_AVAILABILITIES = [QuestAvailability.Daily, QuestAvailability.Weekly, 
 const VENTURE_AVAILABILITIES = [QuestAvailability.Frequency, QuestAvailability.Unlimited];
 
 
-const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialData, onClose, mode = (questToEdit ? 'edit' : 'create'), onTryAgain, isGenerating }) => {
+const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialData, onClose, mode = (questToEdit ? 'edit' : 'create'), onTryAgain, isGenerating, onSave }) => {
   const { users, guilds, rewardTypes, allTags, settings, questGroups } = useAppState();
   const { addQuest, updateQuest, addQuestGroup } = useAppDispatch();
 
   const getInitialFormData = useCallback(() => {
-      if (mode === 'edit' && questToEdit) {
+      const data = questToEdit || initialData;
+      if (mode !== 'create' && data) {
         return {
-          title: questToEdit.title,
-          description: questToEdit.description,
-          type: questToEdit.type,
-          iconType: questToEdit.iconType || 'emoji',
-          icon: questToEdit.icon || '📝',
-          imageUrl: questToEdit.imageUrl || '',
-          rewards: [...questToEdit.rewards],
-          lateSetbacks: questToEdit.lateSetbacks ? [...questToEdit.lateSetbacks] : [],
-          incompleteSetbacks: questToEdit.incompleteSetbacks ? [...questToEdit.incompleteSetbacks] : [],
-          isActive: questToEdit.isActive,
-          isOptional: questToEdit.isOptional || false,
-          requiresApproval: questToEdit.requiresApproval,
-          availabilityType: questToEdit.availabilityType,
-          availabilityCount: questToEdit.availabilityCount || 1,
-          weeklyRecurrenceDays: questToEdit.weeklyRecurrenceDays || [],
-          monthlyRecurrenceDays: questToEdit.monthlyRecurrenceDays || [],
-          assignedUserIds: [...questToEdit.assignedUserIds],
-          guildId: questToEdit.guildId || '',
-          groupId: questToEdit.groupId || '',
-          tags: questToEdit.tags || [],
-          lateDateTime: questToEdit.lateDateTime ? questToEdit.lateDateTime.slice(0, 16) : '',
-          incompleteDateTime: questToEdit.incompleteDateTime ? questToEdit.incompleteDateTime.slice(0, 16) : '',
-          lateTime: questToEdit.lateTime || '',
-          incompleteTime: questToEdit.incompleteTime || '',
-          hasDeadlines: !!(questToEdit.lateDateTime || questToEdit.incompleteDateTime || questToEdit.lateTime || questToEdit.incompleteTime),
+          title: data.title,
+          description: data.description,
+          type: data.type,
+          iconType: data.iconType || 'emoji',
+          icon: data.icon || '📝',
+          imageUrl: data.imageUrl || '',
+          rewards: [...(data.rewards || [])],
+          lateSetbacks: data.lateSetbacks ? [...data.lateSetbacks] : [],
+          incompleteSetbacks: data.incompleteSetbacks ? [...data.incompleteSetbacks] : [],
+          isActive: data.isActive,
+          isOptional: data.isOptional || false,
+          requiresApproval: data.requiresApproval,
+          availabilityType: data.availabilityType,
+          availabilityCount: data.availabilityCount || 1,
+          weeklyRecurrenceDays: data.weeklyRecurrenceDays || [],
+          monthlyRecurrenceDays: data.monthlyRecurrenceDays || [],
+          assignedUserIds: [...(data.assignedUserIds || [])],
+          guildId: data.guildId || '',
+          groupId: data.groupId || '',
+          tags: data.tags || [],
+          lateDateTime: data.lateDateTime ? data.lateDateTime.slice(0, 16) : '',
+          incompleteDateTime: data.incompleteDateTime ? data.incompleteDateTime.slice(0, 16) : '',
+          lateTime: data.lateTime || '',
+          incompleteTime: data.incompleteTime || '',
+          hasDeadlines: !!(data.lateDateTime || data.incompleteDateTime || data.lateTime || data.incompleteTime),
         };
       }
 
@@ -93,7 +95,7 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
         availabilityCount: 1,
         weeklyRecurrenceDays: [] as number[],
         monthlyRecurrenceDays: [] as number[],
-        assignedUserIds: [] as string[],
+        assignedUserIds: users.map(u => u.id),
         guildId: '',
         groupId: suggestedGroupId,
         tags: initialData?.tags || [],
@@ -103,7 +105,7 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
         incompleteTime: '',
         hasDeadlines: false,
       };
-  }, [questToEdit, initialData, mode, rewardTypes, questGroups, settings.questDefaults]);
+  }, [questToEdit, initialData, mode, rewardTypes, questGroups, settings.questDefaults, users]);
 
   const [formData, setFormData] = useState(getInitialFormData);
   const [error, setError] = useState('');
@@ -209,6 +211,12 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
 
     // Remove UI-only state before submitting
     const { hasDeadlines, ...questPayload } = finalQuestData;
+
+    if (onSave) {
+        onSave(questPayload);
+        onClose();
+        return;
+    }
 
     if (mode === 'edit' && questToEdit) {
         updateQuest({ ...questToEdit, ...questPayload });
@@ -398,7 +406,7 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
           <div className="p-4 bg-stone-900/50 rounded-lg space-y-4">
             <div>
               <h3 className="font-semibold text-stone-200 mb-2">Individual User Assignment</h3>
-              <p className="text-sm text-stone-400 mb-3">Leave all unchecked to assign to everyone in scope. Note: Assigning a Quest Group will override this.</p>
+              <p className="text-sm text-stone-400 mb-3">Select the users who will be assigned this quest. Note: Assigning a Quest Group will override this.</p>
               <fieldset className="disabled:opacity-50">
                 <div className="space-y-2 max-h-40 overflow-y-auto border border-stone-700 p-2 rounded-md">
                     {users.map(user => (
@@ -428,7 +436,7 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
             ) : (
                 <div className="flex justify-end space-x-4">
                     <Button type="button" variant="secondary" onClick={onClose}>Cancel</Button>
-                    <Button type="submit" form="quest-form">{mode === 'edit' ? 'Save Changes' : `Create ${settings.terminology.task}`}</Button>
+                    <Button type="submit" form="quest-form">{onSave ? 'Save Changes' : (mode === 'edit' ? 'Save Changes' : `Create ${settings.terminology.task}`)}</Button>
                 </div>
             )}
         </div>

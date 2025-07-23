@@ -9,7 +9,7 @@ import CompleteQuestDialog from '../quests/CompleteQuestDialog';
 import { useRewardValue } from '../../hooks/useRewardValue';
 
 const Dashboard: React.FC = () => {
-    const { currentUser, quests, rewardTypes, users, ranks, userTrophies, trophies, questCompletions, purchaseRequests, appMode, settings } = useAppState();
+    const { currentUser, quests, rewardTypes, users, ranks, userTrophies, trophies, questCompletions, purchaseRequests, appMode, settings, scheduledEvents } = useAppState();
     const { completeQuest, setActivePage, markQuestAsTodo, unmarkQuestAsTodo } = useAppDispatch();
     
     const [selectedQuest, setSelectedQuest] = useState<Quest | null>(null);
@@ -160,11 +160,11 @@ const Dashboard: React.FC = () => {
         const today = new Date();
         const completableQuests = quests.filter(quest => {
             return isQuestVisibleToUserInMode(quest, currentUser.id, appMode) &&
-                   isQuestAvailableForUser(quest, questCompletions, today);
+                   isQuestAvailableForUser(quest, questCompletions, today, scheduledEvents, appMode);
         });
 
-        return completableQuests.sort(questSorter(currentUser, questCompletions, today));
-    }, [quests, currentUser, questCompletions, appMode]);
+        return completableQuests.sort(questSorter(currentUser, questCompletions, scheduledEvents, today));
+    }, [quests, currentUser, questCompletions, appMode, scheduledEvents]);
 
     const getDueDateString = (quest: Quest): string | null => {
         if (quest.type === QuestType.Venture && quest.lateDateTime) {

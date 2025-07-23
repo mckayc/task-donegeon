@@ -349,11 +349,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   }, [currentUser]);
 
   const refreshDataFromServer = useCallback(async (source: 'poll' | 'websocket' | 'visibility') => {
-    if (isDirtyRef.current) {
-        console.log(`[Sync] Triggered by ${source}, but local data has unsaved changes. Skipping sync to prevent data loss.`);
-        return;
-    }
-
     setSyncStatus('syncing');
     setSyncError(null);
 
@@ -365,80 +360,77 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         }
 
         const serverData: IAppData = await response.json();
-        const currentLocalData = stateRef.current ? {
-            users: stateRef.current.users,
-            quests: stateRef.current.quests,
-            questGroups: stateRef.current.questGroups,
-            markets: stateRef.current.markets,
-            rewardTypes: stateRef.current.rewardTypes,
-            questCompletions: stateRef.current.questCompletions,
-            purchaseRequests: stateRef.current.purchaseRequests,
-            guilds: stateRef.current.guilds,
-            ranks: stateRef.current.ranks,
-            trophies: stateRef.current.trophies,
-            userTrophies: stateRef.current.userTrophies,
-            adminAdjustments: stateRef.current.adminAdjustments,
-            gameAssets: stateRef.current.gameAssets,
-            systemLogs: stateRef.current.systemLogs,
-            settings: stateRef.current.settings,
-            themes: stateRef.current.themes,
-            loginHistory: stateRef.current.loginHistory,
-            chatMessages: stateRef.current.chatMessages,
-            systemNotifications: stateRef.current.systemNotifications,
-            scheduledEvents: stateRef.current.scheduledEvents,
-        } : null;
-
-        if (currentLocalData && JSON.stringify(currentLocalData) !== JSON.stringify(serverData)) {
-            console.log(`[Sync] Data out of sync from ${source}. Refreshing from server.`);
-            
-            const savedSettings: Partial<AppSettings> = serverData.settings || {};
-            const loadedSettings: AppSettings = {
-                ...INITIAL_SETTINGS, ...savedSettings,
-                questDefaults: { ...INITIAL_SETTINGS.questDefaults, ...(savedSettings.questDefaults || {}) },
-                security: { ...INITIAL_SETTINGS.security, ...(savedSettings.security || {}) },
-                sharedMode: { ...INITIAL_SETTINGS.sharedMode, ...(savedSettings.sharedMode || {}) },
-                automatedBackups: { ...INITIAL_SETTINGS.automatedBackups, ...(savedSettings.automatedBackups || {}) },
-                loginNotifications: { ...INITIAL_SETTINGS.loginNotifications, ...(savedSettings.loginNotifications || {}) },
-                chat: { ...INITIAL_SETTINGS.chat, ...(savedSettings.chat || {}) },
-                sidebars: { ...INITIAL_SETTINGS.sidebars, ...(savedSettings.sidebars || {}) },
-                terminology: { ...INITIAL_SETTINGS.terminology, ...(savedSettings.terminology || {}) },
-                rewardValuation: { ...INITIAL_SETTINGS.rewardValuation, ...(savedSettings.rewardValuation || {}) },
-            };
-
-            setUsers(serverData.users || []);
-            setQuests(serverData.quests || []);
-            if (serverData.questGroups !== undefined) {
-                setQuestGroups(serverData.questGroups);
-            }
-            setMarkets(serverData.markets || []);
-            setRewardTypes(serverData.rewardTypes || []);
-            setQuestCompletions(serverData.questCompletions || []);
-            setPurchaseRequests(serverData.purchaseRequests || []);
-            setGuilds(serverData.guilds || []);
-            setRanks(serverData.ranks || []);
-            setTrophies(serverData.trophies || []);
-            setUserTrophies(serverData.userTrophies || []);
-            setAdminAdjustments(serverData.adminAdjustments || []);
-            setGameAssets(serverData.gameAssets || []);
-            setSystemLogs(serverData.systemLogs || []);
-            setSettings(loadedSettings);
-            setThemes(serverData.themes || INITIAL_THEMES);
-            setLoginHistory(serverData.loginHistory || []);
-            setChatMessages(serverData.chatMessages || []);
-            setSystemNotifications(serverData.systemNotifications || []);
-            setScheduledEvents(serverData.scheduledEvents || []);
-
-            if (stateRef.current?.currentUser) {
-              const updatedUser = (serverData.users || []).find(u => u.id === stateRef.current!.currentUser!.id);
-              if (updatedUser) {
-                _setCurrentUser(updatedUser);
-              }
-            }
-            setSyncStatus('success');
-        } else {
+        
+        // Compare stringified versions to quickly check for differences.
+        if (stateRef.current && JSON.stringify(stateRef.current) === JSON.stringify(serverData)) {
             console.log(`[Sync] Triggered by ${source}, but data is already in sync.`);
             setSyncStatus('success');
+            return;
         }
+        
+        console.log(`[Sync] Data out of sync from ${source}. Refreshing from server.`);
+        
+        const savedSettings: Partial<AppSettings> = serverData.settings || {};
+        const loadedSettings: AppSettings = {
+            ...INITIAL_SETTINGS, ...savedSettings,
+            questDefaults: { ...INITIAL_SETTINGS.questDefaults, ...(savedSettings.questDefaults || {}) },
+            security: { ...INITIAL_SETTINGS.security, ...(savedSettings.security || {}) },
+            sharedMode: { ...INITIAL_SETTINGS.sharedMode, ...(savedSettings.sharedMode || {}) },
+            automatedBackups: { ...INITIAL_SETTINGS.automatedBackups, ...(savedSettings.automatedBackups || {}) },
+            loginNotifications: { ...INITIAL_SETTINGS.loginNotifications, ...(savedSettings.loginNotifications || {}) },
+            chat: { ...INITIAL_SETTINGS.chat, ...(savedSettings.chat || {}) },
+            sidebars: { ...INITIAL_SETTINGS.sidebars, ...(savedSettings.sidebars || {}) },
+            terminology: { ...INITIAL_SETTINGS.terminology, ...(savedSettings.terminology || {}) },
+            rewardValuation: { ...INITIAL_SETTINGS.rewardValuation, ...(savedSettings.rewardValuation || {}) },
+        };
+
+        // Set all data from server, except chat messages which we will merge.
+        setUsers(serverData.users || []);
+        setQuests(serverData.quests || []);
+        if (serverData.questGroups !== undefined) {
+            setQuestGroups(serverData.questGroups);
+        }
+        setMarkets(serverData.markets || []);
+        setRewardTypes(serverData.rewardTypes || []);
+        setQuestCompletions(serverData.questCompletions || []);
+        setPurchaseRequests(serverData.purchaseRequests || []);
+        setGuilds(serverData.guilds || []);
+        setRanks(serverData.ranks || []);
+        setTrophies(serverData.trophies || []);
+        setUserTrophies(serverData.userTrophies || []);
+        setAdminAdjustments(serverData.adminAdjustments || []);
+        setGameAssets(serverData.gameAssets || []);
+        setSystemLogs(serverData.systemLogs || []);
+        setSettings(loadedSettings);
+        setThemes(serverData.themes || INITIAL_THEMES);
+        setLoginHistory(serverData.loginHistory || []);
+        setSystemNotifications(serverData.systemNotifications || []);
+        setScheduledEvents(serverData.scheduledEvents || []);
+
+        // Merge optimistic chat messages if the local state is dirty
+        let finalChatMessages = serverData.chatMessages || [];
+        if (isDirtyRef.current && stateRef.current?.chatMessages) {
+            const serverMessageIds = new Set(finalChatMessages.map(m => m.id));
+            const localOnlyMessages = stateRef.current.chatMessages.filter(
+                m => !serverMessageIds.has(m.id)
+            );
+            if (localOnlyMessages.length > 0) {
+                console.log(`[Sync] Merging ${localOnlyMessages.length} local-only chat message(s).`);
+                finalChatMessages = [...finalChatMessages, ...localOnlyMessages].sort(
+                    (a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+                );
+            }
+        }
+        setChatMessages(finalChatMessages);
+
+        if (stateRef.current?.currentUser) {
+          const updatedUser = (serverData.users || []).find(u => u.id === stateRef.current!.currentUser!.id);
+          if (updatedUser) {
+            _setCurrentUser(updatedUser);
+          }
+        }
+        setSyncStatus('success');
+
     } catch (error) {
         console.error(`[Sync] Data sync failed (triggered by ${source}):`, error);
         setSyncStatus('error');

@@ -19,6 +19,7 @@ interface QuestDialogProps {
     tags?: string[],
     suggestedRewards?: { rewardTypeName: string, amount: number }[],
     groupName?: string;
+    isNewGroup?: boolean;
   };
   onClose: () => void;
 }
@@ -74,7 +75,8 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
         })
         .filter((r): r is RewardItem => r !== null) || [];
       
-      const suggestedGroupId = initialData?.groupName
+      const isCreatingNewAIGroup = initialData?.isNewGroup && !!initialData.groupName;
+      const suggestedGroupId = !isCreatingNewAIGroup && initialData?.groupName
         ? questGroups.find(g => g.name.toLowerCase() === initialData.groupName?.toLowerCase())?.id || ''
         : '';
 
@@ -112,8 +114,8 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
   const [error, setError] = useState('');
   const [isEmojiPickerOpen, setIsEmojiPickerOpen] = useState(false);
   const [isGalleryOpen, setIsGalleryOpen] = useState(false);
-  const [isCreatingNewGroup, setIsCreatingNewGroup] = useState(false);
-  const [newGroupName, setNewGroupName] = useState('');
+  const [isCreatingNewGroup, setIsCreatingNewGroup] = useState(initialData?.isNewGroup && !!initialData.groupName);
+  const [newGroupName, setNewGroupName] = useState(initialData?.isNewGroup ? initialData.groupName || '' : '');
 
   useEffect(() => {
     if (!formData.hasDeadlines) {

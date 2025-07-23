@@ -237,7 +237,12 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             
             setUsers(dataToSet.users || []);
             setQuests(dataToSet.quests || []);
-            setQuestGroups(dataToSet.questGroups && dataToSet.questGroups.length > 0 ? dataToSet.questGroups : INITIAL_QUEST_GROUPS);
+
+            const loadedGroups = dataToSet.questGroups || [];
+            const loadedGroupIds = new Set(loadedGroups.map(g => g.id));
+            const missingInitialGroups = INITIAL_QUEST_GROUPS.filter(g => !loadedGroupIds.has(g.id));
+            setQuestGroups([...loadedGroups, ...missingInitialGroups]);
+
             setMarkets(dataToSet.markets || []);
             setRewardTypes(dataToSet.rewardTypes || []);
             setQuestCompletions(dataToSet.questCompletions || []);

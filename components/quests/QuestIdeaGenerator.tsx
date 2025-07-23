@@ -17,6 +17,7 @@ interface QuestIdea {
       amount: number;
   }[];
   groupName?: string;
+  isNewGroup?: boolean;
 }
 
 interface QuestIdeaGeneratorProps {
@@ -43,7 +44,9 @@ const QuestIdeaGenerator: React.FC<QuestIdeaGeneratorProps> = ({ onUseIdea, onCl
 
         const rewardNames = rewardTypes.map(rt => rt.name).join(', ');
         const groupNames = questGroups.map(g => g.name).join(', ');
-        const fullPrompt = `Generate 5 quest ideas for a gamified task app called ${settings.terminology.appName}. The quests should be of type "${questType}". Duties are recurring tasks and Ventures are one-time projects. The quests should be practical, actionable, and based on the theme: "${prompt}". For each quest, also suggest 2-3 relevant tags (e.g., 'cleaning', 'outdoors', 'creative'), a suggested reward based on the task's likely effort (using reward names from this list: ${rewardNames}), and the most appropriate quest group name from this list: ${groupNames}.`;
+        const fullPrompt = `Generate 5 quest ideas for a gamified task app called ${settings.terminology.appName}. The quests should be of type "${questType}". Duties are recurring tasks and Ventures are one-time projects. The quests should be practical, actionable, and based on the theme: "${prompt}". For each quest, also suggest 2-3 relevant tags (e.g., 'cleaning', 'outdoors', 'creative'), a suggested reward based on the task's likely effort (using reward names from this list: ${rewardNames}).
+        
+        Here is a list of existing Quest Groups: "${groupNames}". For each idea, suggest the most appropriate group from this list. If none of the existing groups seem appropriate, suggest a suitable new group name and indicate it's a new group by setting the isNewGroup flag to true.`;
 
         try {
             const response = await fetch('/api/ai/generate', {
@@ -79,9 +82,10 @@ const QuestIdeaGenerator: React.FC<QuestIdeaGeneratorProps> = ({ onUseIdea, onCl
                                                     required: ['rewardTypeName', 'amount']
                                                 }
                                             },
-                                            groupName: { type: Type.STRING, description: 'The most appropriate group name for the quest.'}
+                                            groupName: { type: Type.STRING, description: 'The most appropriate group name for the quest. This can be an existing group name or a new one.'},
+                                            isNewGroup: { type: Type.BOOLEAN, description: 'Set to true if the groupName is a new suggestion, not from the existing list.' }
                                         },
-                                        required: ['title', 'description', 'icon', 'tags', 'suggestedRewards', 'groupName']
+                                        required: ['title', 'description', 'icon', 'tags', 'suggestedRewards', 'groupName', 'isNewGroup']
                                     }
                                 }
                             },
@@ -172,7 +176,7 @@ const QuestIdeaGenerator: React.FC<QuestIdeaGeneratorProps> = ({ onUseIdea, onCl
                                         <h4 className="font-bold text-stone-100 flex items-center gap-2">{quest.icon} {quest.title}</h4>
                                         <p className="text-sm text-stone-400 mt-1">{quest.description}</p>
                                         <div className="flex flex-wrap gap-2 mt-2">
-                                            {quest.groupName && <span className="text-xs bg-purple-900/50 text-purple-300 px-2 py-0.5 rounded-full">{quest.groupName}</span>}
+                                            {quest.groupName && <span className={`text-xs px-2 py-0.5 rounded-full ${quest.isNewGroup ? 'bg-green-900/50 text-green-300' : 'bg-purple-900/50 text-purple-300'}`}>{quest.isNewGroup ? `New Group: ${quest.groupName}` : quest.groupName}</span>}
                                             {quest.tags?.map(tag => <span key={tag} className="text-xs bg-blue-900/50 text-blue-300 px-2 py-0.5 rounded-full">{tag}</span>)}
                                             {quest.suggestedRewards?.map(r => <span key={r.rewardTypeName} className="text-xs bg-yellow-900/50 text-yellow-300 px-2 py-0.5 rounded-full">+{r.amount} {r.rewardTypeName}</span>)}
                                         </div>

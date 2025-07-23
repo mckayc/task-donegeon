@@ -57,7 +57,7 @@ const CollapsibleNavGroup: React.FC<CollapsibleNavGroupProps> = ({ title, emoji,
                 >
                     {emoji && <span className="text-2xl">{emoji}</span>}
                     <ChevronDownIcon className={`w-4 h-4 mt-1 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
-                    {badgeCount > 0 && !isOpen && (
+                    {badgeCount && badgeCount > 0 && !isOpen && (
                          <span className="absolute flex items-center justify-center w-5 h-5 text-xs font-bold text-white bg-red-600 rounded-full top-1 right-1">
                             {badgeCount > 9 ? '9+' : badgeCount}
                         </span>
@@ -83,7 +83,7 @@ const CollapsibleNavGroup: React.FC<CollapsibleNavGroupProps> = ({ title, emoji,
                     <span className="font-semibold text-accent-light">{title}</span>
                 </div>
                 <div className="flex items-center gap-2">
-                    {badgeCount > 0 && !isOpen ? (
+                    {badgeCount && badgeCount > 0 && !isOpen ? (
                          <span className="flex items-center justify-center w-5 h-5 text-xs font-bold text-white bg-red-600 rounded-full">
                             {badgeCount > 9 ? '9+' : badgeCount}
                         </span>

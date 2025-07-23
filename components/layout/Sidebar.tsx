@@ -1,10 +1,39 @@
-import React, { useState, useMemo } from 'react';
-import { Role, Page, QuestCompletionStatus, PurchaseRequestStatus, Terminology, SidebarConfigItem, SidebarLink } from '../../types';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
+import { Role, Page, QuestCompletionStatus, PurchaseRequestStatus, Terminology, SidebarConfigItem, SidebarLink, SidebarHeader } from '../../types';
 import { ChevronDownIcon, ArrowLeftIcon, ArrowRightIcon } from '../ui/Icons';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 
+const FlyoutPanel: React.FC<{ title: string; items?: SidebarLink[]; isVisible: boolean }> = ({ title, items, isVisible }) => {
+    const { settings } = useAppState();
+    const { setActivePage } = useAppDispatch();
+    
+    if (!isVisible) return null;
+
+    return (
+        <div className="absolute left-full top-0 ml-2 z-20 w-60 bg-stone-900 border border-stone-700 rounded-lg shadow-xl py-2">
+            <h4 className="font-bold text-accent px-4 pb-2 border-b border-stone-700">{title}</h4>
+            <div className="mt-2">
+                {items ? items.map(item => (
+                     <a
+                        key={item.id}
+                        href="#"
+                        onClick={(e) => { e.preventDefault(); setActivePage(item.id); }}
+                        className="flex items-center px-4 py-2 text-stone-300 hover:bg-stone-700/50"
+                     >
+                        {item.emoji} <span className="ml-2">{item.termKey ? settings.terminology[item.termKey] : item.id}</span>
+                     </a>
+                )) : (
+                    <div className="px-4 py-1 text-stone-200">{title}</div>
+                )}
+            </div>
+        </div>
+    );
+};
+
+
 const NavLink: React.FC<{ item: SidebarLink, activePage: Page, setActivePage: (page: Page) => void, badgeCount?: number, isCollapsed: boolean }> = ({ item, activePage, setActivePage, badgeCount = 0, isCollapsed }) => {
     const { settings } = useAppState();
+    const [isHovered, setIsHovered] = useState(false);
     const linkName = item.termKey ? settings.terminology[item.termKey] : item.id;
 
     const isNested = item.level > 0;
@@ -13,6 +42,8 @@ const NavLink: React.FC<{ item: SidebarLink, activePage: Page, setActivePage: (p
     return (
         <a
           href="#"
+          onMouseEnter={() => setIsHovered(true)}
+          onMouseLeave={() => setIsHovered(false)}
           onClick={(e) => { e.preventDefault(); setActivePage(item.id); }}
           className={`relative flex items-center py-3 text-lg rounded-lg transition-colors duration-200 ${isNested ? 'pl-12' : 'px-4'} ${ isCollapsed ? 'justify-center' : ''} ${
             isActive
@@ -24,40 +55,45 @@ const NavLink: React.FC<{ item: SidebarLink, activePage: Page, setActivePage: (p
         >
           <span className={`text-xl ${!isCollapsed ? 'mr-3' : ''}`}>{item.emoji}</span>
           {!isCollapsed && <span>{linkName}</span>}
-          {badgeCount > 0 && (
+          {(badgeCount ?? 0) > 0 && (
             <span className={`absolute flex items-center justify-center w-5 h-5 text-xs font-bold text-white bg-red-600 rounded-full ${isCollapsed ? 'top-1 right-1' : 'right-3 top-1/2 -translate-y-1/2'}`}>
                 {badgeCount > 9 ? '9+' : badgeCount}
             </span>
           )}
+          {isCollapsed && <FlyoutPanel title={linkName} isVisible={isHovered} />}
         </a>
     );
 };
 
 interface CollapsibleNavGroupProps {
-    title: string;
-    emoji?: string;
-    children: React.ReactNode;
+    header: SidebarHeader;
+    childItems: SidebarLink[];
     activePage: Page;
-    childPages: Page[];
-    badgeCount?: number;
+    badgeCount: number;
     isCollapsed: boolean;
 }
 
-const CollapsibleNavGroup: React.FC<CollapsibleNavGroupProps> = ({ title, emoji, children, activePage, childPages, badgeCount, isCollapsed }) => {
-    const isGroupActive = childPages.includes(activePage);
+const CollapsibleNavGroup: React.FC<CollapsibleNavGroupProps> = ({ header, childItems, activePage, badgeCount, isCollapsed }) => {
+    const { setActivePage } = useAppDispatch();
+    const isGroupActive = childItems.some(child => child.id === activePage);
     const [isOpen, setIsOpen] = useState(isGroupActive);
+    const [isHovered, setIsHovered] = useState(false);
 
     if (isCollapsed) {
         return (
-            <div className="border-t border-stone-700/60 my-2 pt-2">
+            <div 
+                className="border-t border-stone-700/60 my-2 pt-2 relative"
+                onMouseEnter={() => setIsHovered(true)}
+                onMouseLeave={() => setIsHovered(false)}
+            >
                 <button
                     onClick={() => setIsOpen(!isOpen)}
                     className="relative w-full flex flex-col items-center justify-center py-2 text-lg rounded-lg text-stone-400 hover:bg-stone-700/50 hover:text-white"
-                    title={title}
+                    title={header.title}
                 >
-                    {emoji && <span className="text-2xl">{emoji}</span>}
+                    {header.emoji && <span className="text-2xl">{header.emoji}</span>}
                     <ChevronDownIcon className={`w-4 h-4 mt-1 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
-                    {badgeCount && badgeCount > 0 && !isOpen && (
+                    {(badgeCount ?? 0) > 0 && !isOpen && (
                          <span className="absolute flex items-center justify-center w-5 h-5 text-xs font-bold text-white bg-red-600 rounded-full top-1 right-1">
                             {badgeCount > 9 ? '9+' : badgeCount}
                         </span>
@@ -65,9 +101,12 @@ const CollapsibleNavGroup: React.FC<CollapsibleNavGroupProps> = ({ title, emoji,
                 </button>
                  {isOpen && (
                     <div className="mt-1 space-y-1">
-                        {children}
+                        {childItems.map(item => (
+                            <NavLink key={item.id} item={item} activePage={activePage} setActivePage={setActivePage} isCollapsed={true} />
+                        ))}
                     </div>
                 )}
+                 <FlyoutPanel title={header.title} items={childItems} isVisible={isHovered && !isOpen} />
             </div>
         );
     }
@@ -79,11 +118,11 @@ const CollapsibleNavGroup: React.FC<CollapsibleNavGroupProps> = ({ title, emoji,
                 className="w-full flex items-center justify-between px-4 py-3 text-lg rounded-lg text-stone-300 hover:bg-stone-700/50 hover:text-white"
             >
                 <div className="flex items-center">
-                    {emoji && <span className="text-xl mr-3">{emoji}</span>}
-                    <span className="font-semibold text-accent-light">{title}</span>
+                    {header.emoji && <span className="text-xl mr-3">{header.emoji}</span>}
+                    <span className="font-semibold text-accent-light">{header.title}</span>
                 </div>
                 <div className="flex items-center gap-2">
-                    {badgeCount && badgeCount > 0 && !isOpen ? (
+                    {(badgeCount ?? 0) > 0 && !isOpen ? (
                          <span className="flex items-center justify-center w-5 h-5 text-xs font-bold text-white bg-red-600 rounded-full">
                             {badgeCount > 9 ? '9+' : badgeCount}
                         </span>
@@ -93,7 +132,9 @@ const CollapsibleNavGroup: React.FC<CollapsibleNavGroupProps> = ({ title, emoji,
             </button>
             {isOpen && (
                 <div className="mt-1 space-y-1">
-                    {children}
+                    {childItems.map(item => (
+                        <NavLink key={item.id} item={item} activePage={activePage} setActivePage={setActivePage} isCollapsed={false} />
+                    ))}
                 </div>
             )}
         </div>
@@ -148,41 +189,33 @@ const Sidebar: React.FC = () => {
     while (i < visibleLinks.length) {
         const item = visibleLinks[i];
         if (item.type === 'header') {
-            const groupChildren: React.ReactNode[] = [];
-            const childPages: Page[] = [];
-            let groupBadgeCount = 0;
+            const childItems: SidebarLink[] = [];
             i++;
             while (i < visibleLinks.length && visibleLinks[i].level > item.level) {
                 const childItem = visibleLinks[i];
                 if(childItem.type === 'link') {
-                    const badgeCount = childItem.id === 'Approvals' ? totalApprovals : 0;
-                    if (badgeCount > 0) groupBadgeCount += badgeCount;
-                    groupChildren.push(
-                        <NavLink 
-                            key={childItem.id} 
-                            item={childItem} 
-                            activePage={activePage} 
-                            setActivePage={setActivePage} 
-                            badgeCount={badgeCount}
-                            isCollapsed={isSidebarCollapsed}
-                        />
-                    );
-                    childPages.push(childItem.id);
+                    childItems.push(childItem);
                 }
                 i++;
             }
+            
+            const groupBadgeCount = childItems.reduce((sum, child) => {
+                if (child.id === 'Approvals') {
+                    return sum + totalApprovals;
+                }
+                // Can be extended for other badges in the future
+                return sum;
+            }, 0);
+            
             navTree.push(
                 <CollapsibleNavGroup 
                     key={item.id} 
-                    title={item.title} 
-                    emoji={item.emoji}
+                    header={item}
+                    childItems={childItems}
                     activePage={activePage} 
-                    childPages={childPages} 
                     badgeCount={groupBadgeCount}
                     isCollapsed={isSidebarCollapsed}
-                >
-                    {groupChildren}
-                </CollapsibleNavGroup>
+                />
             );
         } else if (item.type === 'link') {
             if (item.id === 'Chat') {

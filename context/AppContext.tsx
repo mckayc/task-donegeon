@@ -407,7 +407,10 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
             setUsers(serverData.users || []);
             setQuests(serverData.quests || []);
-            setQuestGroups(serverData.questGroups || []);
+            // FIX: Check if `questGroups` exists on server data before updating, to prevent wipes from old clients.
+            if (serverData.questGroups !== undefined) {
+                setQuestGroups(serverData.questGroups);
+            }
             setMarkets(serverData.markets || []);
             setRewardTypes(serverData.rewardTypes || []);
             setQuestCompletions(serverData.questCompletions || []);

@@ -348,33 +348,23 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     }));
   }, [currentUser]);
 
-  // Polling for data sync
-  useEffect(() => {
-    if (!currentUser || isFirstRun || !isDataLoaded) return;
-
-    const syncData = async () => {
-      if (document.hidden) {
+  const refreshDataFromServer = useCallback(async (source: 'poll' | 'websocket' | 'visibility') => {
+    if (isDirtyRef.current) {
+        console.log(`[Sync] Triggered by ${source}, but local data has unsaved changes. Skipping sync to prevent data loss.`);
         return;
-      }
+    }
 
-      if (isDirtyRef.current) {
-          console.log("Local data has unsaved changes. Skipping sync to prevent data loss.");
-          return;
-      }
+    setSyncStatus('syncing');
+    setSyncError(null);
 
-      setSyncStatus('syncing');
-      setSyncError(null);
-
-      try {
+    try {
         const response = await window.fetch('/api/data/load');
         if (!response.ok) {
-          const errorText = await response.text();
-          console.error(`Sync failed: Server returned status ${response.status}`);
-          throw new Error(`Server error: ${response.status} ${errorText || ''}`);
+            const errorText = await response.text();
+            throw new Error(`Server error: ${response.status} ${errorText || ''}`);
         }
 
         const serverData: IAppData = await response.json();
-        
         const currentLocalData = stateRef.current ? {
             users: stateRef.current.users,
             quests: stateRef.current.quests,
@@ -399,10 +389,9 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         } : null;
 
         if (currentLocalData && JSON.stringify(currentLocalData) !== JSON.stringify(serverData)) {
-            console.log("Data out of sync. Refreshing from server.");
+            console.log(`[Sync] Data out of sync from ${source}. Refreshing from server.`);
             
             const savedSettings: Partial<AppSettings> = serverData.settings || {};
-
             const loadedSettings: AppSettings = {
                 ...INITIAL_SETTINGS, ...savedSettings,
                 questDefaults: { ...INITIAL_SETTINGS.questDefaults, ...(savedSettings.questDefaults || {}) },
@@ -418,7 +407,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
             setUsers(serverData.users || []);
             setQuests(serverData.quests || []);
-            // FIX: Check if `questGroups` exists on server data before updating, to prevent wipes from old clients.
             if (serverData.questGroups !== undefined) {
                 setQuestGroups(serverData.questGroups);
             }
@@ -448,23 +436,77 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             }
             setSyncStatus('success');
         } else {
+            console.log(`[Sync] Triggered by ${source}, but data is already in sync.`);
             setSyncStatus('success');
         }
-      } catch (error) {
-        console.error("Data sync failed:", error);
+    } catch (error) {
+        console.error(`[Sync] Data sync failed (triggered by ${source}):`, error);
         setSyncStatus('error');
         setSyncError(error instanceof Error ? error.message : 'An unknown error occurred during sync.');
+    }
+  }, []); // Setters are stable, state is accessed via ref. No dependencies needed.
+
+  // Real-time sync via WebSocket with polling as a fallback
+  useEffect(() => {
+    if (!currentUser || isFirstRun || !isDataLoaded) return;
+
+    // --- WebSocket for real-time updates ---
+    let ws: WebSocket | null = null;
+    const connectWebSocket = () => {
+        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const wsUrl = `${protocol}//${window.location.host}`;
+        ws = new WebSocket(wsUrl);
+
+        ws.onopen = () => console.log('[WebSocket] Connection established.');
+        
+        ws.onmessage = (event) => {
+            try {
+                const message = JSON.parse(event.data);
+                if (message.type === 'DATA_UPDATED') {
+                    refreshDataFromServer('websocket');
+                }
+            } catch (error) {
+                console.error('[WebSocket] Error parsing message:', error);
+            }
+        };
+
+        ws.onclose = () => {
+            console.log('[WebSocket] Connection closed. Attempting to reconnect in 5s...');
+            setTimeout(connectWebSocket, 5000);
+        };
+
+        ws.onerror = (error) => {
+            console.error('[WebSocket] Error:', error);
+            ws?.close(); // Triggers onclose, which handles reconnection
+        };
+    };
+    connectWebSocket();
+
+    // --- Polling and visibility change as fallback/secondary sync ---
+    const syncDataPoll = () => {
+      if (!document.hidden) {
+        refreshDataFromServer('poll');
+      }
+    };
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        refreshDataFromServer('visibility');
       }
     };
 
-    const intervalId = setInterval(syncData, 15000); // Poll every 15 seconds
-    document.addEventListener('visibilitychange', syncData);
+    const intervalId = setInterval(syncDataPoll, 15000);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
 
+    // --- Cleanup ---
     return () => {
+      if (ws) {
+        ws.onclose = null; // Prevent reconnect on component unmount
+        ws.close();
+      }
       clearInterval(intervalId);
-      document.removeEventListener('visibilitychange', syncData);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
-  }, [currentUser, isFirstRun, isDataLoaded, addNotification]);
+  }, [currentUser, isFirstRun, isDataLoaded, refreshDataFromServer]);
 
 
   const removeNotification = useCallback((notificationId: string) => {

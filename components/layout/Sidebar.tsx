@@ -145,7 +145,15 @@ const CollapsibleNavGroup: React.FC<CollapsibleNavGroupProps> = ({ header, child
 const Sidebar: React.FC = () => {
   const { currentUser, questCompletions, purchaseRequests, activePage, settings, isAiConfigured, isSidebarCollapsed, chatMessages, isChatOpen, guilds } = useAppState();
   const { setActivePage, toggleSidebar, toggleChat } = useAppDispatch();
+  const [version, setVersion] = useState('');
   const isAiAvailable = settings.enableAiFeatures && isAiConfigured;
+
+  useEffect(() => {
+      fetch('/metadata.json')
+          .then(response => response.json())
+          .then(data => setVersion(data.version || ''))
+          .catch(error => console.error('Error fetching metadata:', error));
+  }, []);
   
   if (!currentUser) return null;
 
@@ -281,6 +289,11 @@ const Sidebar: React.FC = () => {
             {isSidebarCollapsed ? <ArrowRightIcon className="w-6 h-6" /> : <ArrowLeftIcon className="w-6 h-6" />}
          </button>
       </div>
+       {!isSidebarCollapsed && (
+        <div className="text-center text-xs text-stone-500 pb-2 px-2">
+          {version ? `v${version}` : ''}
+        </div>
+      )}
     </div>
   );
 };

@@ -171,11 +171,11 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
   };
 
   const handleWeeklyDayToggle = (dayIndex: number) => {
-    setFormData(prev => ({ ...prev, weeklyRecurrenceDays: prev.weeklyRecurrenceDays.includes(dayIndex) ? prev.weeklyRecurrenceDays.filter(d => d !== dayIndex) : [...prev.weeklyRecurrenceDays, dayIndex].sort() }));
+    setFormData(prev => ({ ...prev, weeklyRecurrenceDays: prev.weeklyRecurrenceDays.includes(dayIndex) ? prev.weeklyRecurrenceDays.filter((d: number) => d !== dayIndex) : [...prev.weeklyRecurrenceDays, dayIndex].sort() }));
   };
 
   const handleMonthlyDayToggle = (day: number) => {
-    setFormData(prev => ({ ...prev, monthlyRecurrenceDays: prev.monthlyRecurrenceDays.includes(day) ? prev.monthlyRecurrenceDays.filter(d => d !== day) : [...prev.monthlyRecurrenceDays, day].sort((a,b)=>a-b) }));
+    setFormData(prev => ({ ...prev, monthlyRecurrenceDays: prev.monthlyRecurrenceDays.includes(day) ? prev.monthlyRecurrenceDays.filter((d: number) => d !== day) : [...prev.monthlyRecurrenceDays, day].sort((a,b)=>a-b) }));
   };
 
   const handleSubmit = (e: React.FormEvent) => {

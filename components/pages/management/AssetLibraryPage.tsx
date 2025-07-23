@@ -101,7 +101,6 @@ const PackDetailView: React.FC<{ pack: LibraryPack; onBack: () => void; }> = ({ 
     const handleSaveEditedAsset = (updatedData: any) => {
         if (!assetToEdit) return;
         setLivePackAssets(prev => {
-            if (!prev) return null;
             const newAssets = { ...prev };
             const assetList = (newAssets[assetToEdit.type] as any[]) || [];
             const assetIndex = assetList.findIndex(a => a.id === assetToEdit.data.id);
@@ -139,10 +138,10 @@ const PackDetailView: React.FC<{ pack: LibraryPack; onBack: () => void; }> = ({ 
             type: 'rewardTypes' | 'markets', 
             addFunc: (item: Omit<T, 'id'>) => void
         ) => {
-            livePackAssets[type]?.forEach(asset => {
+            (livePackAssets as any)[type]?.forEach((asset: T) => {
                 if (selectedIds.includes(asset.id)) {
                     const { id, ...rest } = asset;
-                    addFunc(rest as Omit<T, 'id'>);
+                    addFunc(rest as any);
                     importedCount++;
                 }
             });

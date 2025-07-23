@@ -17,7 +17,8 @@ interface QuestDialogProps {
     description: string; 
     type?: QuestType,
     tags?: string[],
-    suggestedRewards?: { rewardTypeName: string, amount: number }[]
+    suggestedRewards?: { rewardTypeName: string, amount: number }[],
+    groupName?: string;
   };
   onClose: () => void;
 }
@@ -72,6 +73,10 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
             return null;
         })
         .filter((r): r is RewardItem => r !== null) || [];
+      
+      const suggestedGroupId = initialData?.groupName
+        ? questGroups.find(g => g.name.toLowerCase() === initialData.groupName?.toLowerCase())?.id || ''
+        : '';
 
       // New quest
       return {
@@ -93,7 +98,7 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
         monthlyRecurrenceDays: [] as number[],
         assignedUserIds: [] as string[],
         guildId: '',
-        groupId: '',
+        groupId: suggestedGroupId,
         tags: initialData?.tags || [],
         lateDateTime: '',
         incompleteDateTime: '',

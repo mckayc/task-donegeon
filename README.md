@@ -1,6 +1,6 @@
 # Task Donegeon
 
-**Version:** 0.0.95
+**Version:** 0.0.96
 
 ---
 
@@ -15,14 +15,13 @@ Task Donegeon is a gamified task and chore management application designed for f
 
 ## ✨ Features
 
-### What's New in Version 0.0.95 (July 22, 2025)
--   **Smarter AI Studio:** The AI Studio is now more integrated with the game's mechanics. When generating quest ideas, it will now also suggest relevant categories (tags) and appropriate rewards, pre-filling the new quest form to save administrators time.
--   **Powerful Bulk Editing for Quests:** A new bulk editing system has been introduced on the "Manage Quests" page. Administrators can now select multiple quests and simultaneously update their status, group assignments, tags, and assigned users from a single dialog.
--   **Enhanced Collapsed Sidebar:** The user experience for the collapsed sidebar has been significantly upgraded with a new fly-out menu system. Hovering over any icon now instantly reveals a panel showing the full name of the link or its contents, making navigation faster and more intuitive.
--   **Default Quest Categories:** To help administrators get started, the app now includes a default set of common quest categories (e.g., "Cleaning," "Learning," "Yardwork"). These appear automatically in tag selection fields.
--   **UI Bug Fixes:** Corrected a recurring issue where a "0" badge would incorrectly appear on collapsed sidebar menus that had no notifications.
+### What's New in Version 0.0.96 (July 22, 2025)
+-   **Default Quest Groups:** The app now ships with a default set of Quest Groups (e.g., "Household Chores," "School & Learning") to provide an immediate organizational structure for new and existing games without any groups.
+-   **AI-Powered Group Suggestions:** The Quest Idea Generator in the AI Studio is now aware of all existing Quest Groups and will suggest the most appropriate group for each generated quest idea.
+-   **Streamlined Quest Creation:** When creating a quest from an AI-generated idea, the "Create Quest" form is now pre-filled with the suggested Quest Group, saving administrative time and improving workflow.
 
 ### Version History
+- **v0.0.95 (July 22, 2025):** Smarter AI Studio, powerful bulk editing for quests, enhanced collapsed sidebar with fly-out menus, and default quest categories.
 - **v0.0.94 (July 26, 2025):** Added default quest categories and improved the collapsed sidebar with expandable menus.
 - **v0.0.93 (July 25, 2025):** Implemented a purchase escrow system, integrated purchase requests into the Chronicles, and improved the login notification popup with a scrollbar and close button.
 - **v0.0.92 (July 24, 2025):** Added in-dialog Quest Group creation and made item titles on management pages clickable for quick editing.

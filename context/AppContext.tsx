@@ -1,6 +1,6 @@
 import React, { createContext, useState, useContext, ReactNode, useEffect, useCallback, useMemo, useRef } from 'react';
 import { AppSettings, User, Quest, RewardTypeDefinition, QuestCompletion, RewardItem, Market, PurchaseRequest, Guild, Rank, Trophy, UserTrophy, Notification, AppMode, Page, IAppData, ShareableAssetType, GameAsset, Role, QuestCompletionStatus, RewardCategory, PurchaseRequestStatus, AdminAdjustment, AdminAdjustmentType, SystemLog, QuestType, QuestAvailability, Blueprint, ImportResolution, TrophyRequirementType, ThemeDefinition, ChatMessage, SystemNotification, SystemNotificationType, MarketStatus, QuestGroup, BulkQuestUpdates } from '../types';
-import { INITIAL_SETTINGS, createMockUsers, INITIAL_REWARD_TYPES, INITIAL_RANKS, INITIAL_TROPHIES, createSampleMarkets, createSampleQuests, createInitialGuilds, createSampleGameAssets, INITIAL_THEMES, createInitialQuestCompletions, INITIAL_TAGS } from '../data/initialData';
+import { INITIAL_SETTINGS, createMockUsers, INITIAL_REWARD_TYPES, INITIAL_RANKS, INITIAL_TROPHIES, createSampleMarkets, createSampleQuests, createInitialGuilds, createSampleGameAssets, INITIAL_THEMES, createInitialQuestCompletions, INITIAL_TAGS, INITIAL_QUEST_GROUPS } from '../data/initialData';
 import { toYMD } from '../utils/quests';
 import { analyzeBlueprintForConflicts } from '../utils/sharing';
 
@@ -214,7 +214,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
                 purchaseRequests: [], guilds: [], ranks: INITIAL_RANKS, trophies: [], userTrophies: [],
                 adminAdjustments: [], gameAssets: [], systemLogs: [], settings: INITIAL_SETTINGS,
                 themes: INITIAL_THEMES, loginHistory: [], chatMessages: [], systemNotifications: [],
-                questGroups: [],
+                questGroups: INITIAL_QUEST_GROUPS,
             };
         }
 
@@ -237,7 +237,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             
             setUsers(dataToSet.users || []);
             setQuests(dataToSet.quests || []);
-            setQuestGroups(dataToSet.questGroups || []);
+            setQuestGroups(dataToSet.questGroups && dataToSet.questGroups.length > 0 ? dataToSet.questGroups : INITIAL_QUEST_GROUPS);
             setMarkets(dataToSet.markets || []);
             setRewardTypes(dataToSet.rewardTypes || []);
             setQuestCompletions(dataToSet.questCompletions || []);
@@ -683,8 +683,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         }
     }
   }, [quests, applyRewards, addNotification, checkAndAwardTrophies, users, guilds, addSystemNotification]);
-  const approveQuestCompletion = useCallback((completionId: string, note?: string) => { const c = questCompletions.find(c => c.id === completionId); if (c) { const q = quests.find(q => q.id === c.questId); if (q) { setQuestCompletions(prev => prev.map(comp => comp.id === completionId ? { ...comp, status: QuestCompletionStatus.Approved, note: note || comp.note } : comp)); applyRewards(c.userId, q.rewards, q.guildId); addNotification({ type: 'success', message: `Quest approved!`}); checkAndAwardTrophies(c.userId, q.guildId); } } }, [questCompletions, quests, applyRewards, addNotification, checkAndAwardTrophies]);
-  const rejectQuestCompletion = useCallback((completionId: string, note?: string) => { setQuestCompletions(prev => prev.map(c => c.id === completionId ? { ...c, status: QuestCompletionStatus.Rejected, note: note || c.note } : c)); addNotification({ type: 'info', message: `Quest rejected.`}); }, [addNotification]);
+  const approveQuestCompletion = useCallback((completionId: string, note?: string) => { const c = questCompletions.find(c => c.id === completionId); if (c) { const q = quests.find(q => q.id === c.questId); if (q) { setQuestCompletions(prev => prev.map(comp => comp.id === completionId ? { ...comp, note: note || comp.note } : comp)); applyRewards(c.userId, q.rewards, q.guildId); addNotification({ type: 'success', message: `Quest approved!`}); checkAndAwardTrophies(c.userId, q.guildId); } } }, [questCompletions, quests, applyRewards, addNotification, checkAndAwardTrophies]);
+  const rejectQuestCompletion = useCallback((completionId: string, note?: string) => { setQuestCompletions(prev => prev.map(c => c.id === completionId ? { ...c, note: note || c.note } : c)); addNotification({ type: 'info', message: `Quest rejected.`}); }, [addNotification]);
   const addRewardType = useCallback((rewardType: Omit<RewardTypeDefinition, 'id' | 'isCore'>) => setRewardTypes(prev => [...prev, { ...rewardType, id: `custom-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`, isCore: false }]), []);
   const updateRewardType = useCallback((rewardType: RewardTypeDefinition) => setRewardTypes(prev => prev.map(rt => rt.id === rewardType.id ? rewardType : rt)), []);
   const deleteRewardType = useCallback((rewardTypeId: string) => setRewardTypes(prev => prev.filter(rt => rt.id !== rewardTypeId)), []);
@@ -969,6 +969,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     setRanks(INITIAL_RANKS);
     setTrophies(INITIAL_TROPHIES);
     setThemes(INITIAL_THEMES);
+    setQuestGroups(INITIAL_QUEST_GROUPS);
     
     // 3. Clear any potential old sample data from a failed previous run
     setQuests([]);
@@ -978,7 +979,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     setSystemLogs([]);
     setAdminAdjustments([]);
     setPurchaseRequests([]);
-    setQuestGroups([]);
     
     // 4. Choice-specific setup
     if (setupChoice === 'guided') {

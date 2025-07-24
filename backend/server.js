@@ -108,9 +108,11 @@ const pool = new Pool({
   connectionTimeoutMillis: 5000,
 });
 
+let dbReady = false;
+
 const initializeDatabase = async () => {
     let retries = 5;
-    while (retries) {
+    while (retries > 0) {
         try {
             const client = await pool.connect();
             try {
@@ -123,25 +125,50 @@ const initializeDatabase = async () => {
                 console.log("Table 'app_data' is ready.");
                 await fs.mkdir(BACKUP_DIR, { recursive: true });
                 console.log(`Backup directory is ready at: ${BACKUP_DIR}`);
-                return;
+                dbReady = true;
+                return; // Success
             } finally {
                 client.release();
             }
         } catch (err) {
-            console.error('Database initialization failed, retrying...', err.message);
+            console.error(`Database initialization failed, ${retries - 1} retries left...`, err.message);
             retries -= 1;
-            if (retries === 0) {
-                console.error('Could not connect to database after several retries. Exiting.');
-                process.exit(1);
-            }
             await new Promise(res => setTimeout(res, 5000));
         }
     }
+    console.error('Could not connect to database after several retries. The server will run in a degraded state.');
+    dbReady = false;
 };
-initializeDatabase().catch(err => {
-    console.error("Critical error during database initialization:", err);
-    process.exit(1);
-});
+
+initializeDatabase();
+
+const checkDbConnection = async () => {
+    let client;
+    try {
+        client = await pool.connect();
+        await client.query('SELECT NOW()');
+        dbReady = true;
+        return true;
+    } catch (err) {
+        console.error("Database connection check failed:", err.message);
+        dbReady = false;
+        return false;
+    } finally {
+        if (client) client.release();
+    }
+}
+
+const dbHealthCheckMiddleware = async (req, res, next) => {
+    if (dbReady) return next();
+    
+    const isConnected = await checkDbConnection();
+    if (isConnected) {
+        return next();
+    }
+    
+    res.status(503).json({ error: 'Database is currently unavailable. Please try again later.' });
+};
+
 
 const loadData = async () => {
     const result = await pool.query('SELECT value FROM app_data WHERE key = $1', ['app_state']);
@@ -157,11 +184,6 @@ const saveData = async (data) => {
 };
 
 // === API Action Handler ===
-// This helper function ensures every API action is atomic:
-// 1. Load the latest state from the database.
-// 2. Perform the action on the data object in memory.
-// 3. Save the entire updated state back to the database.
-// 4. Broadcast to all clients that data has changed.
 const handleApiAction = async (res, action) => {
     try {
         const data = await loadData();
@@ -220,7 +242,14 @@ const applySetbacks = (user, setbacksToApply, rewardTypes, guildId) => {
 };
 
 
-app.get('/api/health', (req, res) => res.status(200).json({ status: 'ok' }));
+app.get('/api/health', async (req, res) => {
+    const isConnected = await checkDbConnection();
+    if (isConnected) {
+        res.status(200).json({ status: 'ok' });
+    } else {
+        res.status(503).json({ status: 'error', message: 'Database connection failed' });
+    }
+});
 
 app.get('/api/metadata', async (req, res, next) => {
     try {
@@ -230,6 +259,12 @@ app.get('/api/metadata', async (req, res, next) => {
         next(err);
     }
 });
+
+// === Apply DB Health Check Middleware to all subsequent API routes ===
+// Routes that don't need the DB (like AI status) can be placed before this line.
+app.get('/api/ai/status', (req, res) => res.json({ isConfigured: !!ai }));
+app.use('/api', dbHealthCheckMiddleware);
+
 
 app.get('/api/data', async (req, res, next) => {
     try {
@@ -462,7 +497,6 @@ app.get('/api/backups/:filename', (req, res, next) => { const filename = path.ba
 app.delete('/api/backups/:filename', async (req, res, next) => { try { const filename = path.basename(req.params.filename); await fs.unlink(path.join(BACKUP_DIR, filename)); res.status(200).json({ message: 'Backup deleted successfully.' }); } catch (err) { if (err.code === "ENOENT") { return res.status(404).json({ error: "File not found." }); } next(err); } });
 app.post('/api/media/upload', upload.single('file'), async (req, res, next) => { if (!req.file) return res.status(400).json({ error: 'No file uploaded.' }); try { let fileUrl; if (process.env.STORAGE_PROVIDER === 'supabase') { const category = req.body.category || 'Miscellaneous'; const sanitizedCategory = category.replace(/[^a-zA-Z0-9-_ ]/g, '').trim(); const sanitizedFilename = req.file.originalname.replace(/[^a-zA-Z0-9-._]/g, '_'); const filePath = sanitizedCategory ? `${sanitizedCategory}/${Date.now()}-${sanitizedFilename}` : `${Date.now()}-${sanitizedFilename}`; const { data, error } = await supabase.storage .from('media-assets') .upload(filePath, req.file.buffer, { contentType: req.file.mimetype, upsert: false, }); if (error) throw error; const { data: { publicUrl } } = supabase.storage.from('media-assets').getPublicUrl(data.path); fileUrl = publicUrl; } else { const relativePath = path.relative(UPLOADS_DIR, req.file.path).replace(/\\/g, '/'); fileUrl = `/uploads/${relativePath}`; } res.status(201).json({ url: fileUrl, name: req.file.originalname, type: req.file.mimetype, size: req.file.size }); } catch (err) { next(err); } });
 app.get('/api/media/local-gallery', async (req, res, next) => { if (process.env.STORAGE_PROVIDER !== 'local') { return res.status(200).json([]); } const walk = async (dir, parentCategory = null) => { let dirents; try { dirents = await fs.readdir(dir, { withFileTypes: true }); } catch (e) { if (e.code === 'ENOENT') { await fs.mkdir(dir, { recursive: true }); return []; } throw e; } let imageFiles = []; for (const dirent of dirents) { const fullPath = path.join(dir, dirent.name); if (dirent.isDirectory()) { const nestedFiles = await walk(fullPath, dirent.name); imageFiles = imageFiles.concat(nestedFiles); } else if (/\.(png|jpg|jpeg|gif|webp|svg)$/i.test(dirent.name)) { const relativePath = path.relative(UPLOADS_DIR, fullPath).replace(/\\/g, '/'); imageFiles.push({ url: `/uploads/${relativePath}`, category: parentCategory ? (parentCategory.charAt(0).toUpperCase() + parentCategory.slice(1)) : 'Miscellaneous', name: dirent.name.replace(/\.[^/.]+$/, ""), }); } } return imageFiles; }; try { const allImageFiles = await walk(UPLOADS_DIR); res.status(200).json(allImageFiles); } catch (err) { next(err); } });
-app.get('/api/ai/status', (req, res) => { res.json({ isConfigured: !!ai }); });
 app.post('/api/ai/test', async (req, res, next) => { if (!ai) { return res.status(400).json({ success: false, error: "AI features are not configured on the server. The API_KEY environment variable is not set." }); } try { const response = await ai.models.generateContent({ model: 'gemini-2.5-flash', contents: 'test' }); if (response && response.text) { res.json({ success: true }); } else { throw new Error("Received an empty or invalid response from the API."); } } catch (error) { console.error("AI API Key Test Failed:", error.message); res.status(400).json({ success: false, error: 'API key is invalid or permissions are insufficient.' }); } });
 app.post('/api/ai/generate', async (req, res, next) => { if (!ai) return res.status(503).json({ error: "AI features are not configured on the server." }); const { model, prompt, generationConfig } = req.body; try { const response = await ai.models.generateContent({ model, contents: prompt, config: generationConfig, }); res.json({ text: response.text }); } catch (err) { next(err); } });
 

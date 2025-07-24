@@ -9,7 +9,6 @@ const fs = require('fs').promises;
 const { GoogleGenAI } = require('@google/genai');
 const http = require('http');
 const WebSocket = require('ws');
-const { Role } = require('../dist/assets/types-d8f5baf2');
 
 // --- Environment Variable Checks ---
 const requiredEnv = ['DATABASE_URL', 'STORAGE_PROVIDER'];

@@ -9,7 +9,6 @@ const fs = require('fs').promises;
 const { GoogleGenAI } = require('@google/genai');
 const http = require('http');
 const WebSocket = require('ws');
-const { Role } = require('../dist/assets/types-d8f5baf2');
 
 // --- Environment Variable Checks ---
 const requiredEnv = ['DATABASE_URL', 'STORAGE_PROVIDER'];
@@ -37,13 +36,13 @@ wss.on('connection', ws => {
 });
 
 const broadcast = (data) => {
-  const jsonData = JSON.stringify(data);
   wss.clients.forEach(client => {
     if (client.readyState === WebSocket.OPEN) {
-      client.send(jsonData);
+      client.send(JSON.stringify(data));
     }
   });
 };
+
 
 // === Middleware ===
 const allowedOrigins = ['https://taskdonegeon.mckayc.com', 'http://localhost:3000', 'http://localhost:3002'];
@@ -81,6 +80,7 @@ const storage = process.env.STORAGE_PROVIDER === 'supabase'
   : multer.diskStorage({
       destination: async (req, file, cb) => {
         const category = req.body.category || 'Miscellaneous';
+        // Sanitize category to prevent path traversal and invalid folder names
         const sanitizedCategory = category.replace(/[^a-zA-Z0-9-_ ]/g, '').trim();
         const finalDir = path.join(UPLOADS_DIR, sanitizedCategory);
         try {
@@ -91,6 +91,7 @@ const storage = process.env.STORAGE_PROVIDER === 'supabase'
         }
       },
       filename: (req, file, cb) => {
+        // Sanitize filename
         const sanitizedFilename = file.originalname.replace(/[^a-zA-Z0-9-._]/g, '_');
         cb(null, `${Date.now()}-${sanitizedFilename}`);
       }
@@ -98,16 +99,19 @@ const storage = process.env.STORAGE_PROVIDER === 'supabase'
 
 const upload = multer({
     storage,
-    limits: { fileSize: 10 * 1024 * 1024 }
+    limits: { fileSize: 10 * 1024 * 1024 } // 10MB file size limit
 });
 
+// === Backup Configuration ===
 const BACKUP_DIR = process.env.BACKUP_PATH || path.join(__dirname, 'backups');
 
+// === Database Connection Pool ===
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   connectionTimeoutMillis: 5000,
 });
 
+// === Database Initialization ===
 const initializeDatabase = async () => {
     let retries = 5;
     while (retries) {
@@ -121,9 +125,10 @@ const initializeDatabase = async () => {
                     );
                 `);
                 console.log("Table 'app_data' is ready.");
+                // Ensure backup directory exists
                 await fs.mkdir(BACKUP_DIR, { recursive: true });
                 console.log(`Backup directory is ready at: ${BACKUP_DIR}`);
-                return;
+                return; // Success
             } finally {
                 client.release();
             }
@@ -138,263 +143,507 @@ const initializeDatabase = async () => {
         }
     }
 };
+
+// Initialize DB immediately when the module loads
 initializeDatabase().catch(err => {
     console.error("Critical error during database initialization:", err);
     process.exit(1);
 });
 
-const loadData = async () => {
-    const result = await pool.query('SELECT value FROM app_data WHERE key = $1', ['app_state']);
-    return result.rows[0]?.value || { users: [], quests: [], markets: [], rewardTypes: [], questCompletions: [], purchaseRequests: [], guilds: [], ranks: [], trophies: [], userTrophies: [], adminAdjustments: [], gameAssets: [], systemLogs: [], settings: {}, themes: [], loginHistory: [], chatMessages: [], systemNotifications: [], scheduledEvents: [] };
-};
 
-const saveData = async (data) => {
-    const dataString = JSON.stringify(data);
-    await pool.query(
-        `INSERT INTO app_data (key, value) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET value = $2;`,
-        ['app_state', dataString]
-    );
-};
+// === API ROUTES ===
 
-// === API Action Handler ===
-// This helper function ensures every API action is atomic:
-// 1. Load the latest state from the database.
-// 2. Perform the action on the data object in memory.
-// 3. Save the entire updated state back to the database.
-// 4. Broadcast to all clients that data has changed.
-const handleApiAction = async (res, action) => {
-    try {
-        const data = await loadData();
-        const result = action(data);
-        await saveData(data);
-        broadcast({ type: 'DATA_UPDATED' });
-        res.status(200).json(result || { success: true });
-    } catch (err) {
-        console.error("API Action Error:", err);
-        res.status(err.statusCode || 500).json({ error: err.message });
-    }
-};
-
-const applyRewards = (user, rewardsToApply, rewardTypes, guildId) => {
-    rewardsToApply.forEach(reward => {
-        const rewardDef = rewardTypes.find(rd => rd.id === reward.rewardTypeId);
-        if (!rewardDef) return;
-        const target = guildId ? (user.guildBalances[guildId] = user.guildBalances[guildId] || { purse: {}, experience: {} }) : user;
-        const sheet = rewardDef.category === 'Currency' ? (guildId ? target.purse : 'personalPurse') : (guildId ? target.experience : 'personalExperience');
-        
-        if (guildId) {
-            target[sheet][reward.rewardTypeId] = (target[sheet][reward.rewardTypeId] || 0) + reward.amount;
-        } else {
-            user[sheet][reward.rewardTypeId] = (user[sheet][reward.rewardTypeId] || 0) + reward.amount;
-        }
-    });
-};
-
-
+// Health check
 app.get('/api/health', (req, res) => res.status(200).json({ status: 'ok' }));
 
+// Get app metadata
 app.get('/api/metadata', async (req, res, next) => {
     try {
         const metadataPath = path.join(__dirname, '..', 'metadata.json');
-        res.sendFile(metadataPath);
+        const data = await fs.readFile(metadataPath, 'utf8');
+        const metadata = JSON.parse(data);
+        res.status(200).json(metadata);
     } catch (err) {
+        console.error('Error reading metadata.json:', err);
         next(err);
     }
 });
 
-app.get('/api/data', async (req, res, next) => {
+// Load data
+app.get('/api/data/load', async (req, res, next) => {
+    console.log(`[${new Date().toISOString()}] Received GET /api/data/load`);
     try {
-        const data = await loadData();
+        const result = await pool.query('SELECT key, value FROM app_data');
+        const data = result.rows[0]?.value || {};
+        const chatMessagesCount = data.chatMessages?.length || 0;
+        console.log(`[${new Date().toISOString()}] Loading data success. Chat messages in DB: ${chatMessagesCount}.`);
         res.status(200).json(data);
     } catch (err) {
+        console.error(`[${new Date().toISOString()}] ERROR in GET /api/data/load:`, err);
+        next(err);
+    }
+});
+
+// Save data
+app.post('/api/data/save', async (req, res, next) => {
+    console.log(`[${new Date().toISOString()}] Received POST /api/data/save`);
+    try {
+        const dataToSave = req.body;
+        if (!dataToSave || typeof dataToSave !== 'object') {
+            console.error(`[${new Date().toISOString()}] Invalid data received for saving.`);
+            return res.status(400).json({ error: 'Invalid data format. Expected a JSON object.' });
+        }
+        const chatMessagesCount = dataToSave.chatMessages?.length || 0;
+        console.log(`[${new Date().toISOString()}] Attempting to save data. Chat messages received: ${chatMessagesCount}.`);
+
+        const dataString = JSON.stringify(dataToSave);
+        
+        await pool.query(
+            `INSERT INTO app_data (key, value) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET value = $2;`,
+            ['app_state', dataString]
+        );
+
+        console.log(`[${new Date().toISOString()}] Save data success. Persisted ${chatMessagesCount} chat messages.`);
+        
+        // Broadcast update to all connected clients
+        broadcast({ type: 'DATA_UPDATED' });
+
+        res.status(200).json({ message: 'Data saved successfully.' });
+    } catch (err) {
+        console.error(`[${new Date().toISOString()}] ERROR in POST /api/data/save:`, err);
+        next(err);
+    }
+});
+
+// --- Backup Endpoints ---
+
+// List backups
+app.get('/api/backups', async (req, res, next) => {
+    try {
+        const files = await fs.readdir(BACKUP_DIR);
+        const backupDetails = await Promise.all(
+            files
+                .filter(file => file.endsWith('.json'))
+                .map(async file => {
+                    const stats = await fs.stat(path.join(BACKUP_DIR, file));
+                    return {
+                        filename: file,
+                        createdAt: stats.birthtime,
+                        size: stats.size,
+                        isAuto: file.startsWith('auto_backup_'),
+                    };
+                })
+        );
+        res.json(backupDetails.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)));
+    } catch (err) {
+        if (err.code === 'ENOENT') {
+            return res.json([]);
+        }
+        next(err);
+    }
+});
+
+// Create a manual backup
+app.post('/api/backups', async (req, res, next) => {
+    try {
+        const dataToBackup = JSON.stringify(req.body, null, 2);
+        const timestamp = new Date().toISOString().replace(/:/g, '-').slice(0, 19);
+        const filename = `manual_backup_${timestamp}.json`;
+        await fs.writeFile(path.join(BACKUP_DIR, filename), dataToBackup);
+        res.status(201).json({ message: 'Manual backup created successfully.' });
+    } catch (err) {
         next(err);
     }
 });
 
 
-// === GRANULAR API ENDPOINTS ===
+// Download a backup
+app.get('/api/backups/:filename', (req, res, next) => {
+    const filename = path.basename(req.params.filename); // Sanitize to prevent path traversal
+    const filePath = path.join(BACKUP_DIR, filename);
 
-// --- Users ---
-app.post('/api/users', async (req, res) => handleApiAction(res, data => {
-    const newUser = {
-        ...req.body,
-        id: `user-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
-        avatar: {},
-        ownedAssetIds: [],
-        personalPurse: {},
-        personalExperience: {},
-        guildBalances: {},
-        ownedThemes: ['emerald', 'rose', 'sky'],
-        hasBeenOnboarded: false
-    };
-    data.users.push(newUser);
-    const defaultGuild = data.guilds.find(g => g.isDefault);
-    if (defaultGuild) defaultGuild.memberIds.push(newUser.id);
-    const roleTag = `tutorial-${newUser.role.toLowerCase().replace(/ /g, '-')}`;
-    data.quests.forEach(q => {
-        if (q.tags.includes(roleTag) && !q.assignedUserIds.includes(newUser.id)) {
-            q.assignedUserIds.push(newUser.id);
+    res.download(filePath, (err) => {
+        if (err) {
+            if (err.code === "ENOENT") {
+                return res.status(404).json({ error: "File not found." });
+            }
+            return next(err);
         }
     });
-    return { user: newUser };
-}));
-app.put('/api/users/:id', async (req, res) => handleApiAction(res, data => {
-    const userIndex = data.users.findIndex(u => u.id === req.params.id);
-    if (userIndex === -1) throw { statusCode: 404, message: 'User not found' };
-    data.users[userIndex] = { ...data.users[userIndex], ...req.body };
-}));
-app.delete('/api/users/:id', async (req, res) => handleApiAction(res, data => {
-    const userId = req.params.id;
-    data.users = data.users.filter(u => u.id !== userId);
-    data.guilds.forEach(g => { g.memberIds = g.memberIds.filter(id => id !== userId); });
-    data.quests.forEach(q => { q.assignedUserIds = q.assignedUserIds.filter(id => id !== userId); });
-}));
-
-
-// --- Quests ---
-app.post('/api/quests', async (req, res) => handleApiAction(res, data => {
-    const newQuest = {
-        ...req.body,
-        id: `quest-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
-        claimedByUserIds: [],
-        dismissals: [],
-        todoUserIds: []
-    };
-    data.quests.push(newQuest);
-}));
-app.put('/api/quests/:id', async (req, res) => handleApiAction(res, data => {
-    const questIndex = data.quests.findIndex(q => q.id === req.params.id);
-    if (questIndex === -1) throw { statusCode: 404, message: 'Quest not found' };
-    data.quests[questIndex] = req.body;
-}));
-app.post('/api/quests/:id/clone', async (req, res) => handleApiAction(res, data => {
-    const questToClone = data.quests.find(q => q.id === req.params.id);
-    if (!questToClone) throw { statusCode: 404, message: 'Quest not found' };
-    const newQuest = {
-        ...JSON.parse(JSON.stringify(questToClone)),
-        id: `quest-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
-        title: `${questToClone.title} (Copy)`,
-        claimedByUserIds: [], dismissals: [], todoUserIds: [],
-    };
-    data.quests.push(newQuest);
-}));
-app.post('/api/quests/:id/actions', async (req, res) => handleApiAction(res, data => {
-    const { action, userId } = req.body;
-    const quest = data.quests.find(q => q.id === req.params.id);
-    if (!quest) throw { statusCode: 404, message: 'Quest not found' };
-    switch (action) {
-        case 'dismiss':
-            quest.dismissals = [...quest.dismissals.filter(d => d.userId !== userId), { userId, dismissedAt: new Date().toISOString() }];
-            break;
-        case 'claim':
-            quest.claimedByUserIds = [...quest.claimedByUserIds, userId];
-            break;
-        case 'release':
-            quest.claimedByUserIds = quest.claimedByUserIds.filter(id => id !== userId);
-            break;
-        case 'mark_todo':
-            quest.todoUserIds = Array.from(new Set([...(quest.todoUserIds || []), userId]));
-            break;
-        case 'unmark_todo':
-            quest.todoUserIds = (quest.todoUserIds || []).filter(id => id !== userId);
-            break;
-        default:
-            throw { statusCode: 400, message: 'Invalid quest action' };
-    }
-}));
-app.post('/api/quests/bulk-update', async (req, res) => handleApiAction(res, data => {
-    const { questIds, updates } = req.body;
-    const questIdSet = new Set(questIds);
-    data.quests.forEach(quest => {
-        if (questIdSet.has(quest.id)) {
-            if (updates.isActive !== undefined) quest.isActive = updates.isActive;
-            if (updates.isOptional !== undefined) quest.isOptional = updates.isOptional;
-            if (updates.requiresApproval !== undefined) quest.requiresApproval = updates.requiresApproval;
-            if (updates.groupId !== undefined) quest.groupId = updates.groupId === null ? undefined : updates.groupId;
-            if (updates.addTags) quest.tags = Array.from(new Set([...quest.tags, ...updates.addTags]));
-            if (updates.removeTags) quest.tags = quest.tags.filter(tag => !updates.removeTags.includes(tag));
-            if (updates.assignUsers) quest.assignedUserIds = Array.from(new Set([...quest.assignedUserIds, ...updates.assignUsers]));
-            if (updates.unassignUsers) quest.assignedUserIds = quest.assignedUserIds.filter(id => !updates.unassignUsers.includes(id));
-        }
-    });
-}));
-app.post('/api/quests/delete-many', async (req, res) => handleApiAction(res, data => {
-    const { questIds } = req.body;
-    data.quests = data.quests.filter(q => !questIds.includes(q.id));
-}));
-
-
-// --- Other assets with similar CRUD patterns ---
-['reward-types', 'markets', 'guilds', 'trophies', 'game-assets', 'scheduled-events', 'quest-groups'].forEach(asset => {
-    const assetKey = asset.replace('-', '');
-    const dataKey = assetKey === 'gameassets' ? 'gameAssets' : assetKey === 'questgroups' ? 'questGroups' : `${assetKey}`;
-    
-    app.post(`/api/${asset}`, async (req, res) => handleApiAction(res, data => {
-        const newItem = {...req.body, id: `${asset}-${Date.now()}`};
-        data[dataKey].push(newItem);
-        if (asset === 'quest-groups') return { newGroup: newItem };
-    }));
-    app.put(`/api/${asset}/:id`, async (req, res) => handleApiAction(res, data => {
-        const itemIndex = data[dataKey].findIndex(i => i.id === req.params.id);
-        if (itemIndex === -1) throw { statusCode: 404, message: 'Item not found' };
-        data[dataKey][itemIndex] = {...data[dataKey][itemIndex], ...req.body};
-    }));
-    app.delete(`/api/${asset}/:id`, async (req, res) => handleApiAction(res, data => {
-        data[dataKey] = data[dataKey].filter(i => i.id !== req.params.id);
-        if(asset === 'quest-groups') {
-            data.quests.forEach(q => { if(q.groupId === req.params.id) q.groupId = undefined; });
-        }
-    }));
 });
 
-// --- Settings ---
-app.put('/api/settings', async (req, res) => handleApiAction(res, data => {
-    data.settings = { ...data.settings, ...req.body };
-}));
-
-// --- Chat ---
-app.post('/api/chat/messages', async (req, res) => {
+// Delete a backup
+app.delete('/api/backups/:filename', async (req, res, next) => {
     try {
-        const data = await loadData();
-        const { senderId, recipientId, guildId, message, isAnnouncement } = req.body;
-        const newMessage = {
-            id: `msg-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
-            senderId, recipientId, guildId, message,
-            timestamp: new Date().toISOString(),
-            readBy: [senderId],
-            isAnnouncement: isAnnouncement || undefined,
-        };
-        if (!data.chatMessages) data.chatMessages = [];
-        data.chatMessages.push(newMessage);
-        await saveData(data);
-        broadcast({ type: 'NEW_CHAT_MESSAGE', payload: newMessage });
-        res.status(201).json(newMessage);
+        const filename = path.basename(req.params.filename); // Sanitize
+        await fs.unlink(path.join(BACKUP_DIR, filename));
+        res.status(200).json({ message: 'Backup deleted successfully.' });
     } catch (err) {
-        res.status(err.statusCode || 500).json({ error: err.message });
+        if (err.code === "ENOENT") {
+            return res.status(404).json({ error: "File not found." });
+        }
+        next(err);
     }
 });
 
-// ... The rest of the endpoints for backups, AI, media, etc. remain largely the same ...
 
-app.get('/api/backups', async (req, res, next) => { try { const files = await fs.readdir(BACKUP_DIR); const backupDetails = await Promise.all( files .filter(file => file.endsWith('.json')) .map(async file => { const stats = await fs.stat(path.join(BACKUP_DIR, file)); return { filename: file, createdAt: stats.birthtime, size: stats.size, isAuto: file.startsWith('auto_backup_'), }; }) ); res.json(backupDetails.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))); } catch (err) { if (err.code === 'ENOENT') { return res.json([]); } next(err); } });
-app.post('/api/backups', async (req, res, next) => { try { const dataToBackup = JSON.stringify(req.body, null, 2); const timestamp = new Date().toISOString().replace(/:/g, '-').slice(0, 19); const filename = `manual_backup_${timestamp}.json`; await fs.writeFile(path.join(BACKUP_DIR, filename), dataToBackup); res.status(201).json({ message: 'Manual backup created successfully.' }); } catch (err) { next(err); } });
-app.get('/api/backups/:filename', (req, res, next) => { const filename = path.basename(req.params.filename); const filePath = path.join(BACKUP_DIR, filename); res.download(filePath, (err) => { if (err) { if (err.code === "ENOENT") { return res.status(404).json({ error: "File not found." }); } return next(err); } }); });
-app.delete('/api/backups/:filename', async (req, res, next) => { try { const filename = path.basename(req.params.filename); await fs.unlink(path.join(BACKUP_DIR, filename)); res.status(200).json({ message: 'Backup deleted successfully.' }); } catch (err) { if (err.code === "ENOENT") { return res.status(404).json({ error: "File not found." }); } next(err); } });
-app.post('/api/media/upload', upload.single('file'), async (req, res, next) => { if (!req.file) return res.status(400).json({ error: 'No file uploaded.' }); try { let fileUrl; if (process.env.STORAGE_PROVIDER === 'supabase') { const category = req.body.category || 'Miscellaneous'; const sanitizedCategory = category.replace(/[^a-zA-Z0-9-_ ]/g, '').trim(); const sanitizedFilename = req.file.originalname.replace(/[^a-zA-Z0-9-._]/g, '_'); const filePath = sanitizedCategory ? `${sanitizedCategory}/${Date.now()}-${sanitizedFilename}` : `${Date.now()}-${sanitizedFilename}`; const { data, error } = await supabase.storage .from('media-assets') .upload(filePath, req.file.buffer, { contentType: req.file.mimetype, upsert: false, }); if (error) throw error; const { data: { publicUrl } } = supabase.storage.from('media-assets').getPublicUrl(data.path); fileUrl = publicUrl; } else { const relativePath = path.relative(UPLOADS_DIR, req.file.path).replace(/\\/g, '/'); fileUrl = `/uploads/${relativePath}`; } res.status(201).json({ url: fileUrl, name: req.file.originalname, type: req.file.mimetype, size: req.file.size }); } catch (err) { next(err); } });
-app.get('/api/media/local-gallery', async (req, res, next) => { if (process.env.STORAGE_PROVIDER !== 'local') { return res.status(200).json([]); } const walk = async (dir, parentCategory = null) => { let dirents; try { dirents = await fs.readdir(dir, { withFileTypes: true }); } catch (e) { if (e.code === 'ENOENT') { await fs.mkdir(dir, { recursive: true }); return []; } throw e; } let imageFiles = []; for (const dirent of dirents) { const fullPath = path.join(dir, dirent.name); if (dirent.isDirectory()) { const nestedFiles = await walk(fullPath, dirent.name); imageFiles = imageFiles.concat(nestedFiles); } else if (/\.(png|jpg|jpeg|gif|webp|svg)$/i.test(dirent.name)) { const relativePath = path.relative(UPLOADS_DIR, fullPath).replace(/\\/g, '/'); imageFiles.push({ url: `/uploads/${relativePath}`, category: parentCategory ? (parentCategory.charAt(0).toUpperCase() + parentCategory.slice(1)) : 'Miscellaneous', name: dirent.name.replace(/\.[^/.]+$/, ""), }); } } return imageFiles; }; try { const allImageFiles = await walk(UPLOADS_DIR); res.status(200).json(allImageFiles); } catch (err) { next(err); } });
-app.get('/api/ai/status', (req, res) => { res.json({ isConfigured: !!ai }); });
-app.post('/api/ai/test', async (req, res, next) => { if (!ai) { return res.status(400).json({ success: false, error: "AI features are not configured on the server. The API_KEY environment variable is not set." }); } try { const response = await ai.models.generateContent({ model: 'gemini-2.5-flash', contents: 'test' }); if (response && response.text) { res.json({ success: true }); } else { throw new Error("Received an empty or invalid response from the API."); } } catch (error) { console.error("AI API Key Test Failed:", error.message); res.status(400).json({ success: false, error: 'API key is invalid or permissions are insufficient.' }); } });
-app.post('/api/ai/generate', async (req, res, next) => { if (!ai) return res.status(503).json({ error: "AI features are not configured on the server." }); const { model, prompt, generationConfig } = req.body; try { const response = await ai.models.generateContent({ model, contents: prompt, config: generationConfig, }); res.json({ text: response.text }); } catch (err) { next(err); } });
+// Media Upload
+app.post('/api/media/upload', upload.single('file'), async (req, res, next) => {
+    if (!req.file) return res.status(400).json({ error: 'No file uploaded.' });
 
+    try {
+        let fileUrl;
+        if (process.env.STORAGE_PROVIDER === 'supabase') {
+            const category = req.body.category || 'Miscellaneous';
+            const sanitizedCategory = category.replace(/[^a-zA-Z0-9-_ ]/g, '').trim();
+            const sanitizedFilename = req.file.originalname.replace(/[^a-zA-Z0-9-._]/g, '_');
+            const filePath = sanitizedCategory ? `${sanitizedCategory}/${Date.now()}-${sanitizedFilename}` : `${Date.now()}-${sanitizedFilename}`;
+
+            const { data, error } = await supabase.storage
+                .from('media-assets')
+                .upload(filePath, req.file.buffer, {
+                    contentType: req.file.mimetype,
+                    upsert: false,
+                });
+            if (error) throw error;
+            const { data: { publicUrl } } = supabase.storage.from('media-assets').getPublicUrl(data.path);
+            fileUrl = publicUrl;
+        } else {
+            // Construct URL based on the final path, including the category subfolder
+            const relativePath = path.relative(UPLOADS_DIR, req.file.path).replace(/\\/g, '/');
+            fileUrl = `/uploads/${relativePath}`;
+        }
+        res.status(201).json({ url: fileUrl, name: req.file.originalname, type: req.file.mimetype, size: req.file.size });
+    } catch (err) {
+        next(err);
+    }
+});
+
+// Local Image Gallery
+app.get('/api/media/local-gallery', async (req, res, next) => {
+    if (process.env.STORAGE_PROVIDER !== 'local') {
+        return res.status(200).json([]); // Only for local storage
+    }
+    
+    const walk = async (dir, parentCategory = null) => {
+        let dirents;
+        try {
+            dirents = await fs.readdir(dir, { withFileTypes: true });
+        } catch (e) {
+            if (e.code === 'ENOENT') { // Directory doesn't exist yet
+                await fs.mkdir(dir, { recursive: true });
+                return [];
+            }
+            throw e; // Other errors
+        }
+
+        let imageFiles = [];
+        for (const dirent of dirents) {
+            const fullPath = path.join(dir, dirent.name);
+            if (dirent.isDirectory()) {
+                const nestedFiles = await walk(fullPath, dirent.name);
+                imageFiles = imageFiles.concat(nestedFiles);
+            } else if (/\.(png|jpg|jpeg|gif|webp|svg)$/i.test(dirent.name)) {
+                const relativePath = path.relative(UPLOADS_DIR, fullPath).replace(/\\/g, '/');
+                imageFiles.push({
+                    url: `/uploads/${relativePath}`,
+                    category: parentCategory ? (parentCategory.charAt(0).toUpperCase() + parentCategory.slice(1)) : 'Miscellaneous',
+                    name: dirent.name.replace(/\.[^/.]+$/, ""),
+                });
+            }
+        }
+        return imageFiles;
+    };
+
+    try {
+        const allImageFiles = await walk(UPLOADS_DIR);
+        res.status(200).json(allImageFiles);
+    } catch (err) {
+        next(err);
+    }
+});
+
+
+// --- AI Endpoints ---
+app.get('/api/ai/status', (req, res) => {
+  res.json({ isConfigured: !!ai });
+});
+
+app.post('/api/ai/test', async (req, res, next) => {
+    if (!ai) {
+        return res.status(400).json({ success: false, error: "AI features are not configured on the server. The API_KEY environment variable is not set." });
+    }
+    try {
+        // Perform a simple, low-cost API call to validate the key
+        const response = await ai.models.generateContent({ model: 'gemini-2.5-flash', contents: 'test' });
+        // Check if response is valid, though not erroring is usually enough
+        if (response && response.text) {
+             res.json({ success: true });
+        } else {
+            throw new Error("Received an empty or invalid response from the API.");
+        }
+    } catch (error) {
+        console.error("AI API Key Test Failed:", error.message);
+        // Google's API often returns a 400 or 403 with specific error messages in the body for bad keys.
+        res.status(400).json({ success: false, error: 'API key is invalid or permissions are insufficient.' });
+    }
+});
+
+app.post('/api/ai/generate', async (req, res, next) => {
+    if (!ai) return res.status(503).json({ error: "AI features are not configured on the server." });
+    
+    const { model, prompt, generationConfig } = req.body;
+    
+    try {
+        const response = await ai.models.generateContent({
+            model,
+            contents: prompt,
+            config: generationConfig,
+        });
+        res.json({ text: response.text });
+    } catch (err) {
+        next(err);
+    }
+});
+
+// --- Image Pack Importer Endpoints ---
+const GITHUB_REPO = 'mckayc/task-donegeon';
+const GITHUB_BRANCH = 'master';
+const IMAGE_PACK_ROOT = 'image-packs';
+
+// Helper to get all local file basenames for comparison
+const getLocalFileBasenames = async (dir) => {
+    let basenames = new Set();
+    try {
+        const dirents = await fs.readdir(dir, { withFileTypes: true });
+        for (const dirent of dirents) {
+            const res = path.resolve(dir, dirent.name);
+            if (dirent.isDirectory()) {
+                const nestedBasenames = await getLocalFileBasenames(res);
+                nestedBasenames.forEach(b => basenames.add(b));
+            } else {
+                basenames.add(dirent.name);
+            }
+        }
+    } catch (err) {
+        if (err.code !== 'ENOENT') {
+            console.error("Error reading local gallery for comparison:", err);
+        }
+    }
+    return basenames;
+};
+
+
+app.get('/api/image-packs', async (req, res, next) => {
+    try {
+        const repoUrl = `https://api.github.com/repos/${GITHUB_REPO}/contents/${IMAGE_PACK_ROOT}?ref=${GITHUB_BRANCH}`;
+        const response = await fetch(repoUrl);
+        if (!response.ok) {
+            throw new Error(`GitHub API error: ${response.statusText}`);
+        }
+        const packsData = await response.json();
+        
+        if (!Array.isArray(packsData)) {
+            return res.json([]);
+        }
+
+        const packPromises = packsData
+            .filter(item => item.type === 'dir')
+            .map(async (packDir) => {
+                const packContentsUrl = packDir.url;
+                const contentsResponse = await fetch(packContentsUrl);
+                const contentsData = await contentsResponse.json();
+                
+                if (!Array.isArray(contentsData)) return null;
+
+                const sampleImage = contentsData.find(item => 
+                    item.type === 'file' && 
+                    item.name.toLowerCase().startsWith('sample.')
+                );
+
+                if (sampleImage) {
+                    return {
+                        name: packDir.name,
+                        sampleImageUrl: sampleImage.download_url,
+                    };
+                }
+                return null;
+            });
+
+        const availablePacks = (await Promise.all(packPromises)).filter(Boolean);
+        res.status(200).json(availablePacks);
+
+    } catch (err) {
+        next(err);
+    }
+});
+
+app.get('/api/image-packs/:packName', async (req, res, next) => {
+    const { packName } = req.params;
+    const sanitizedPackName = path.basename(packName); // Sanitize
+
+    try {
+        const localBasenames = await getLocalFileBasenames(UPLOADS_DIR);
+        
+        const packUrl = `https://api.github.com/repos/${GITHUB_REPO}/contents/${IMAGE_PACK_ROOT}/${sanitizedPackName}?ref=${GITHUB_BRANCH}`;
+        const packResponse = await fetch(packUrl);
+        if (!packResponse.ok) throw new Error(`Could not find pack '${sanitizedPackName}' on GitHub.`);
+        const packContents = await packResponse.json();
+
+        let filesToCompare = [];
+
+        for (const item of packContents) {
+            if (item.type === 'dir') { // Category
+                const categoryContentsResponse = await fetch(item.url);
+                const categoryContents = await categoryContentsResponse.json();
+                for (const file of categoryContents) {
+                    if (file.type === 'file') {
+                        filesToCompare.push({
+                            category: item.name,
+                            name: file.name,
+                            url: file.download_url,
+                            exists: localBasenames.has(file.name)
+                        });
+                    }
+                }
+            } else if (item.type === 'file') { // File in root of pack
+                 filesToCompare.push({
+                    category: 'Miscellaneous',
+                    name: item.name,
+                    url: file.download_url,
+                    exists: localBasenames.has(item.name)
+                });
+            }
+        }
+        
+        res.json(filesToCompare);
+
+    } catch (err) {
+        next(err);
+    }
+});
+
+
+app.post('/api/image-packs/import', async (req, res, next) => {
+    const { files } = req.body; // Expecting an array of { category, name, url }
+    if (!Array.isArray(files) || files.length === 0) {
+        return res.status(400).json({ error: 'No files specified for import.' });
+    }
+
+    try {
+        let importedCount = 0;
+        for (const file of files) {
+            const { category, name, url } = file;
+            if (!category || !name || !url) continue;
+
+            const sanitizedCategory = category.replace(/[^a-zA-Z0-9-_ ]/g, '').trim();
+            const categoryDir = path.join(UPLOADS_DIR, sanitizedCategory);
+            await fs.mkdir(categoryDir, { recursive: true });
+
+            const imageResponse = await fetch(url);
+            if (!imageResponse.ok) {
+                console.warn(`Failed to download ${name} from ${url}`);
+                continue;
+            }
+            const imageBuffer = Buffer.from(await imageResponse.arrayBuffer());
+            
+            const sanitizedFilename = name.replace(/[^a-zA-Z0-9-._]/g, '_');
+            const finalPath = path.join(categoryDir, sanitizedFilename);
+            
+            await fs.writeFile(finalPath, imageBuffer);
+            importedCount++;
+        }
+        res.status(200).json({ message: `${importedCount} images imported successfully.` });
+    } catch (err) {
+        next(err);
+    }
+});
+
+
+// === Static File Serving ===
+// Serve React app build files
 app.use(express.static(path.join(__dirname, '../dist')));
-if (process.env.STORAGE_PROVIDER === 'local') { app.use('/uploads', express.static(UPLOADS_DIR)); }
-app.get('*', (req, res) => res.sendFile(path.join(__dirname, '../dist/index.html')));
-app.use((err, req, res, next) => { console.error('An error occurred:', err.stack); res.status(500).json({ error: 'Internal Server Error', message: err.message, stack: process.env.NODE_ENV === 'development' ? err.stack : undefined, }); });
+// Serve local uploads if using local storage
+if (process.env.STORAGE_PROVIDER === 'local') {
+    app.use('/uploads', express.static(UPLOADS_DIR));
+}
 
+
+// === Final Catchall & Error Handling ===
+app.get('*', (req, res) => res.sendFile(path.join(__dirname, '../dist/index.html')));
+
+app.use((err, req, res, next) => {
+  console.error('An error occurred:', err.stack);
+  res.status(500).json({
+    error: 'Internal Server Error',
+    message: err.message,
+    stack: process.env.NODE_ENV === 'development' ? err.stack : undefined,
+  });
+});
+
+
+// === Automated Backup Logic ===
+const runAutomatedBackup = async () => {
+    let client;
+    try {
+        client = await pool.connect();
+        const result = await client.query('SELECT value FROM app_data WHERE key = $1', ['app_state']);
+        const appState = result.rows[0]?.value;
+        const settings = appState?.settings;
+
+        if (!settings || !settings.automatedBackups || !settings.automatedBackups.enabled) {
+            return; // Feature disabled
+        }
+
+        const files = await fs.readdir(BACKUP_DIR).catch(() => []);
+        const autoBackups = files.filter(f => f.startsWith('auto_backup_')).sort().reverse();
+
+        if (autoBackups.length > 0) {
+            const latestBackupFilename = autoBackups[0];
+            const timestampStr = latestBackupFilename.replace('auto_backup_', '').replace('.json', '');
+            const lastBackupDate = new Date(timestampStr);
+            const hoursSinceLast = (new Date() - lastBackupDate) / (1000 * 60 * 60);
+
+            if (hoursSinceLast < settings.automatedBackups.frequencyHours) {
+                return; // Not time yet
+            }
+        }
+        
+        // Time to create a new backup
+        console.log(`[Automated Backup] Creating new backup at ${new Date().toLocaleString()}`);
+        const dataToBackup = JSON.stringify(appState, null, 2);
+        const timestamp = new Date().toISOString().replace(/:/g, '-').slice(0, 19);
+        const newFilename = `auto_backup_${timestamp}.json`;
+        await fs.writeFile(path.join(BACKUP_DIR, newFilename), dataToBackup);
+
+        // Prune old backups
+        const updatedAutoBackups = [newFilename, ...autoBackups];
+        if (updatedAutoBackups.length > settings.automatedBackups.maxBackups) {
+            const backupsToDelete = updatedAutoBackups.slice(settings.automatedBackups.maxBackups);
+            console.log(`[Automated Backup] Pruning ${backupsToDelete.length} old backup(s).`);
+            for (const filename of backupsToDelete) {
+                await fs.unlink(path.join(BACKUP_DIR, filename)).catch(err => console.error(`Failed to delete old backup ${filename}`, err));
+            }
+        }
+
+    } catch (err) {
+        console.error('[Automated Backup] An error occurred:', err);
+    } finally {
+        if (client) client.release();
+    }
+};
+
+
+// === Start Server ===
+// This part is ignored by Vercel but used for local development
 if (process.env.NODE_ENV !== 'production' || process.env.VERCEL !== '1') {
     server.listen(port, () => {
         console.log(`Task Donegeon backend listening at http://localhost:${port}`);
+        // Start automated backup timer (checks every 30 minutes)
+        setInterval(runAutomatedBackup, 30 * 60 * 1000);
     });
 }
 
+
+// Export the app for Vercel
 module.exports = app;

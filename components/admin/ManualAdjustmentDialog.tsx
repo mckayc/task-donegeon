@@ -1,3 +1,6 @@
+
+
+
 import React, { useState } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { User, RewardItem, RewardCategory, AdminAdjustmentType, Trophy } from '../../types';
@@ -38,7 +41,7 @@ const ManualAdjustmentDialog: React.FC<ManualAdjustmentDialogProps> = ({ user, o
     setter(items.filter((_, i) => i !== indexToRemove));
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     
@@ -68,7 +71,7 @@ const ManualAdjustmentDialog: React.FC<ManualAdjustmentDialogProps> = ({ user, o
         return;
     }
     
-    const success = await applyManualAdjustment(adjustmentPayload);
+    const success = applyManualAdjustment(adjustmentPayload);
 
     if (success) {
         onClose();

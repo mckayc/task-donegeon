@@ -5,9 +5,9 @@ const urlsToCache = [
   // Note: Add other core assets like CSS, JS bundles if they are not dynamically named
 ];
 
-// Install a service worker
+// Force the waiting service worker to become the active service worker.
 self.addEventListener('install', event => {
-  // Perform install steps
+  self.skipWaiting();
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then(cache => {
@@ -63,7 +63,7 @@ self.addEventListener('fetch', event => {
   );
 });
 
-// Update a service worker
+// Take control of all clients and clean up old caches.
 self.addEventListener('activate', event => {
   const cacheWhitelist = [CACHE_NAME];
   event.waitUntil(
@@ -75,6 +75,6 @@ self.addEventListener('activate', event => {
           }
         })
       );
-    })
+    }).then(() => self.clients.claim())
   );
 });

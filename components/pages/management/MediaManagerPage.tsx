@@ -15,7 +15,7 @@ interface LocalGalleryImage {
     name: string;
 }
 
-const AssetManagerPage: React.FC = () => {
+const MediaManagerPage: React.FC = () => {
     const { addNotification, uploadFile } = useAppDispatch();
     const [isDragging, setIsDragging] = useState(false);
     
@@ -210,4 +210,4 @@ const AssetManagerPage: React.FC = () => {
     );
 };
 
-export default AssetManagerPage;
+export default MediaManagerPage;

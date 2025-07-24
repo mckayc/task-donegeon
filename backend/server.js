@@ -370,6 +370,35 @@ app.get('/api/metadata', async (req, res, next) => {
 // === Apply DB Health Check Middleware to all subsequent API routes ===
 // Routes that don't need the DB (like AI status) can be placed before this line.
 app.get('/api/ai/status', (req, res) => res.json({ isConfigured: !!ai }));
+
+app.get('/api/pre-run-check', async (req, res, next) => {
+    try {
+        const client = await pool.connect();
+        try {
+            const result = await client.query("SELECT value FROM app_data WHERE key = 'settings'");
+            if (result.rows.length > 0) {
+                const settings = result.rows[0].value;
+                res.json({
+                    dataExists: true,
+                    version: settings.contentVersion || 0,
+                    appName: settings.terminology?.appName || 'Task Donegeon'
+                });
+            } else {
+                res.json({ dataExists: false });
+            }
+        } finally {
+            client.release();
+        }
+    } catch (err) {
+        // If table doesn't exist, etc., assume no data
+        if (err.code === '42P01') { // undefined_table
+             res.json({ dataExists: false });
+        } else {
+            next(err);
+        }
+    }
+});
+
 app.use('/api', dbHealthCheckMiddleware);
 
 app.post('/api/first-run', async (req, res) => {

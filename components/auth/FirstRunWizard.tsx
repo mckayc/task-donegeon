@@ -1,15 +1,21 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { Role, User, Blueprint } from '../../types';
 import Button from '../ui/Button';
 import Input from '../ui/Input';
 import UserFormFields from '../users/UserFormFields';
+import Card from '../ui/Card';
+
+type WizardStep = 'checking' | 'warning' | 'createAdmin' | 'setupChoice';
 
 const FirstRunWizard: React.FC = () => {
-  const { completeFirstRun } = useAppDispatch();
+  const { completeFirstRun, bypassFirstRunCheck } = useAppDispatch();
   const { settings } = useAppState();
 
-  const [step, setStep] = useState<'createAdmin' | 'setupChoice'>('createAdmin');
+  const [step, setStep] = useState<WizardStep>('checking');
+  const [existingDataInfo, setExistingDataInfo] = useState<{version: number, appName: string} | null>(null);
+  const [appVersion, setAppVersion] = useState('');
+
   const [adminData, setAdminData] = useState<Omit<User, 'id' | 'personalPurse' | 'personalExperience' | 'guildBalances' | 'avatar' | 'ownedAssetIds' | 'ownedThemes' | 'hasBeenOnboarded'> | null>(null);
 
   const [formData, setFormData] = useState({
@@ -26,6 +32,29 @@ const FirstRunWizard: React.FC = () => {
   });
   const [error, setError] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    const checkExistingData = async () => {
+        try {
+            const response = await fetch('/api/pre-run-check');
+            const data = await response.json();
+            
+            // Also fetch current app version for comparison display
+            fetch('/metadata.json').then(res => res.json()).then(meta => setAppVersion(meta.version));
+
+            if (data.dataExists) {
+                setExistingDataInfo({ version: data.version, appName: data.appName });
+                setStep('warning');
+            } else {
+                setStep('createAdmin');
+            }
+        } catch (e) {
+            setError("Could not connect to the server to check for existing data. Please refresh.");
+            // We'll stay in the 'checking' state with an error message.
+        }
+    };
+    checkExistingData();
+  }, []);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -81,6 +110,51 @@ const FirstRunWizard: React.FC = () => {
     };
     reader.readAsText(file);
   };
+  
+  const handleGoToLogin = () => {
+      // This tells the AppContext to ignore the first-run flag and proceed to the lock screen.
+      bypassFirstRunCheck();
+  };
+
+  if (step === 'checking') {
+      return (
+          <div className="min-h-screen flex items-center justify-center bg-stone-900">
+              {error ? (
+                  <Card title="Connection Error">
+                      <p className="text-red-400">{error}</p>
+                  </Card>
+              ) : (
+                  <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-emerald-400"></div>
+              )}
+          </div>
+      );
+  }
+
+  if (step === 'warning') {
+      return (
+          <div className="min-h-screen flex items-center justify-center bg-stone-900 p-4">
+              <Card title="Existing Data Detected!" className="max-w-xl text-center">
+                   <p className="text-2xl text-amber-400 font-semibold mb-4">Warning!</p>
+                   <p className="text-stone-300 mb-6">
+                        The application has detected existing data from a previous installation of <span className="font-bold">{existingDataInfo?.appName || 'Task Donegeon'}</span>. Proceeding with setup will <strong className="text-red-400">permanently delete all existing users, quests, and settings.</strong>
+                   </p>
+                   <div className="text-sm text-stone-400 bg-stone-900/50 p-3 rounded-md mb-6">
+                        <p>Detected Data Version: <span className="font-mono">{existingDataInfo?.version || 'Unknown'}</span></p>
+                        <p>Current App Version: <span className="font-mono">{appVersion || '...'}</span></p>
+                   </div>
+                   <p className="text-stone-300 mb-8">
+                       If you wish to keep your data, please use the "Go to Login" option. If you want to start over, you can reset the application.
+                   </p>
+                   <div className="flex justify-center gap-4">
+                        <Button variant="secondary" onClick={handleGoToLogin}>Go to Login (Safe)</Button>
+                        <Button onClick={() => setStep('createAdmin')} className="!bg-red-600 hover:!bg-red-500">
+                            Reset & Start Fresh
+                        </Button>
+                   </div>
+              </Card>
+          </div>
+      );
+  }
 
   if (step === 'createAdmin') {
     return (

@@ -38,6 +38,7 @@ interface AppDispatch {
   setTargetedUserForLogin: (user: User | null) => void;
   exitToSharedView: () => void;
   setIsSharedViewActive: (isActive: boolean) => void;
+  bypassFirstRunCheck: () => void;
 
   // Game Data
   addQuest: (quest: Omit<Quest, 'id' | 'claimedByUserIds' | 'dismissals'>) => Promise<void>;
@@ -162,9 +163,10 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [syncStatus, setSyncStatus] = useState<'idle' | 'syncing' | 'success' | 'error'>('idle');
   const [syncError, setSyncError] = useState<string | null>(null);
   const [isChatOpen, setIsChatOpen] = useState(false);
+  const [acknowledgedOldData, setAcknowledgedOldData] = useState(false);
   const inactivityTimer = useRef<number | null>(null);
   
-  const isFirstRun = isDataLoaded && settings.contentVersion < 1;
+  const isFirstRun = isDataLoaded && settings.contentVersion < 1 && !acknowledgedOldData;
   
   const addNotification = useCallback((notification: Omit<Notification, 'id'>) => {
     const uniqueId = `notif-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
@@ -207,17 +209,21 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     setSystemNotifications(dataToSet.systemNotifications || []);
     setScheduledEvents(dataToSet.scheduledEvents || []);
 
-    const lastUserId = localStorage.getItem('lastUserId');
-    if (lastUserId && dataToSet.users) {
-        const lastUser = dataToSet.users.find((u: User) => u.id === lastUserId);
-        if (lastUser) _setCurrentUser(lastUser);
-    } else if (currentUser) {
-        const updatedCurrentUser = (dataToSet.users || []).find((u: User) => u.id === currentUser.id);
-        _setCurrentUser(updatedCurrentUser || null);
-    }
+    _setCurrentUser(prevUser => {
+        if (!prevUser) {
+            const lastUserId = localStorage.getItem('lastUserId');
+            if (lastUserId && dataToSet.users) {
+                return dataToSet.users.find((u: User) => u.id === lastUserId) || null;
+            }
+            return null;
+        } else {
+            const updatedCurrentUser = (dataToSet.users || []).find((u: User) => u.id === prevUser.id);
+            return updatedCurrentUser || null;
+        }
+    });
 
     _setIsSharedViewActive(loadedSettings.sharedMode.enabled && !localStorage.getItem('lastUserId'));
-  }, [currentUser]);
+  }, []);
 
   const refetchData = useCallback(async () => {
     setSyncStatus('syncing');
@@ -426,7 +432,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   
   // The rest of the dispatch functions would be implemented here in a similar fashion...
   const notImplemented = useCallback(async () => { addNotification({type: 'error', message: 'This feature is not fully wired up yet.'}); }, [addNotification]);
-
+  const bypassFirstRunCheck = useCallback(() => setAcknowledgedOldData(true), []);
   const removeNotification = useCallback((notificationId: string) => { setNotifications(prev => prev.filter(n => n.id !== notificationId)); }, []);
   const setCurrentUser = (user: User | null) => { _setCurrentUser(user); _setIsSharedViewActive(false); if (user) { setActivePage('Dashboard'); localStorage.setItem('lastUserId', user.id); setLoginHistory(prev => [user.id, ...prev.filter(id => id !== user.id).slice(0, 9)]); } else { localStorage.removeItem('lastUserId'); } };
   const exitToSharedView = useCallback(() => { _setCurrentUser(null); _setIsSharedViewActive(true); localStorage.removeItem('lastUserId'); }, []);
@@ -440,7 +446,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
   // === CONTEXT PROVIDER VALUE ===
   const stateValue: AppState = { users, quests, questGroups, markets, rewardTypes, questCompletions, purchaseRequests, guilds, ranks, trophies, userTrophies, adminAdjustments, gameAssets, systemLogs, settings, themes, loginHistory, chatMessages, systemNotifications, scheduledEvents, currentUser, isAppUnlocked, isFirstRun, activePage, appMode, notifications, isDataLoaded, activeMarketId, allTags: useMemo(() => Array.from(new Set([...INITIAL_TAGS, ...quests.flatMap(q => q.tags || [])])).sort(), [quests]), isSwitchingUser, isSharedViewActive, targetedUserForLogin, isAiConfigured, isSidebarCollapsed, syncStatus, syncError, isChatOpen, };
-  const dispatchValue: AppDispatch = { addUser: addUser as any, updateUser, deleteUser, setCurrentUser, markUserAsOnboarded, setAppUnlocked, setIsSwitchingUser, setTargetedUserForLogin, exitToSharedView, setIsSharedViewActive: _setIsSharedViewActive, addQuest, updateQuest, deleteQuest, cloneQuest, dismissQuest, claimQuest, releaseQuest, markQuestAsTodo, unmarkQuestAsTodo, completeQuest, approveQuestCompletion, rejectQuestCompletion, addQuestGroup: addQuestGroup as any, updateQuestGroup, deleteQuestGroup, assignQuestGroupToUsers, addRewardType: notImplemented, updateRewardType: notImplemented, deleteRewardType: notImplemented, cloneRewardType: notImplemented, addMarket: notImplemented, updateMarket: notImplemented, deleteMarket: notImplemented, cloneMarket: notImplemented, deleteMarkets: notImplemented, updateMarketsStatus: notImplemented, purchaseMarketItem, cancelPurchaseRequest: notImplemented, approvePurchaseRequest: notImplemented, rejectPurchaseRequest: notImplemented, addGuild: notImplemented, updateGuild: notImplemented, deleteGuild: notImplemented, setRanks: notImplemented, addTrophy: notImplemented, updateTrophy: notImplemented, deleteTrophy: notImplemented, awardTrophy: notImplemented, applyManualAdjustment, addGameAsset: notImplemented, updateGameAsset: notImplemented, deleteGameAsset: notImplemented, cloneGameAsset: notImplemented, addTheme: notImplemented, updateTheme: notImplemented, deleteTheme: notImplemented, addScheduledEvent: notImplemented, updateScheduledEvent: notImplemented, deleteScheduledEvent: notImplemented, completeFirstRun, importBlueprint: notImplemented, restoreFromBackup, clearAllHistory: notImplemented, resetAllPlayerData: notImplemented, deleteAllCustomContent: notImplemented, deleteSelectedAssets: notImplemented, deleteQuests, deleteTrophies: notImplemented, deleteGameAssets: notImplemented, updateQuestsStatus: (questIds, isActive) => bulkUpdateQuests(questIds, { isActive }), bulkUpdateQuests, uploadFile, executeExchange: notImplemented, updateSettings, resetSettings: notImplemented, setActivePage, setAppMode, addNotification, removeNotification, setActiveMarketId, toggleSidebar, toggleChat, sendMessage, markMessagesAsRead: notImplemented, addSystemNotification: notImplemented, markSystemNotificationsAsRead: notImplemented };
+  const dispatchValue: AppDispatch = { addUser: addUser as any, updateUser, deleteUser, setCurrentUser, markUserAsOnboarded, setAppUnlocked, setIsSwitchingUser, setTargetedUserForLogin, exitToSharedView, setIsSharedViewActive: _setIsSharedViewActive, bypassFirstRunCheck, addQuest, updateQuest, deleteQuest, cloneQuest, dismissQuest, claimQuest, releaseQuest, markQuestAsTodo, unmarkQuestAsTodo, completeQuest, approveQuestCompletion, rejectQuestCompletion, addQuestGroup: addQuestGroup as any, updateQuestGroup, deleteQuestGroup, assignQuestGroupToUsers, addRewardType: notImplemented, updateRewardType: notImplemented, deleteRewardType: notImplemented, cloneRewardType: notImplemented, addMarket: notImplemented, updateMarket: notImplemented, deleteMarket: notImplemented, cloneMarket: notImplemented, deleteMarkets: notImplemented, updateMarketsStatus: notImplemented, purchaseMarketItem, cancelPurchaseRequest: notImplemented, approvePurchaseRequest: notImplemented, rejectPurchaseRequest: notImplemented, addGuild: notImplemented, updateGuild: notImplemented, deleteGuild: notImplemented, setRanks: notImplemented, addTrophy: notImplemented, updateTrophy: notImplemented, deleteTrophy: notImplemented, awardTrophy: notImplemented, applyManualAdjustment, addGameAsset: notImplemented, updateGameAsset: notImplemented, deleteGameAsset: notImplemented, cloneGameAsset: notImplemented, addTheme: notImplemented, updateTheme: notImplemented, deleteTheme: notImplemented, addScheduledEvent: notImplemented, updateScheduledEvent: notImplemented, deleteScheduledEvent: notImplemented, completeFirstRun, importBlueprint: notImplemented, restoreFromBackup, clearAllHistory: notImplemented, resetAllPlayerData: notImplemented, deleteAllCustomContent: notImplemented, deleteSelectedAssets: notImplemented, deleteQuests, deleteTrophies: notImplemented, deleteGameAssets: notImplemented, updateQuestsStatus: (questIds, isActive) => bulkUpdateQuests(questIds, { isActive }), bulkUpdateQuests, uploadFile, executeExchange: notImplemented, updateSettings, resetSettings: notImplemented, setActivePage, setAppMode, addNotification, removeNotification, setActiveMarketId, toggleSidebar, toggleChat, sendMessage, markMessagesAsRead: notImplemented, addSystemNotification: notImplemented, markSystemNotificationsAsRead: notImplemented };
 
   return (
     <AppStateContext.Provider value={stateValue}>

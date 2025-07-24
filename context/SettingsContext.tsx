@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { AppSettings, Page, AppMode } from '../types';
 import { useAppState, useAppDispatch } from './AppContext';

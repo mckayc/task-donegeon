@@ -3,12 +3,13 @@ import Button from '../../ui/Button';
 import Card from '../../ui/Card';
 import { libraryPacks } from '../../../data/assetLibrary';
 import { LibraryPack, BlueprintAssets, TrophyRequirementType, QuestGroup, Quest, GameAsset, Market, Trophy, RewardTypeDefinition, QuestType, User } from '../../../types';
-import { useAppState, useAppDispatch } from '../../../context/AppContext';
+import { useAppState, useAppDispatch } from '../../context/AppContext';
 import Input from '../../ui/Input';
 import CreateQuestDialog from '../../quests/CreateQuestDialog';
 import EditGameAssetDialog from '../../admin/EditGameAssetDialog';
 import EditTrophyDialog from '../../settings/EditTrophyDialog';
 import EditMarketDialog from '../../markets/EditMarketDialog';
+import UserMultiSelect from '../../ui/UserMultiSelect';
 
 const packTypes = ['All', 'Quests', 'Markets', 'Items', 'Trophies', 'Rewards'];
 
@@ -62,6 +63,7 @@ const PackDetailView: React.FC<{ pack: LibraryPack; onBack: () => void; }> = ({ 
     
     const [livePackAssets, setLivePackAssets] = useState<Partial<BlueprintAssets>>(() => JSON.parse(JSON.stringify(pack.assets)));
     const [assetToEdit, setAssetToEdit] = useState<{data: any, type: keyof BlueprintAssets} | null>(null);
+    const [userIdsForImport, setUserIdsForImport] = useState<string[]>(() => users.map(u => u.id));
 
     const allAssets = useMemo((): SelectableAsset[] => {
         const assets: SelectableAsset[] = [];
@@ -170,7 +172,7 @@ const PackDetailView: React.FC<{ pack: LibraryPack; onBack: () => void; }> = ({ 
                 const { id, assignedUserIds, ...rest } = q;
                 const newQuest = { 
                     ...rest,
-                    assignedUserIds: users.map((u: User) => u.id),
+                    assignedUserIds: userIdsForImport,
                     guildId: appMode.mode === 'guild' ? appMode.guildId : undefined,
                     groupId: q.groupId ? idMaps.questGroups.get(q.groupId) : undefined,
                     rewards: q.rewards.map(r => ({ ...r, rewardTypeId: idMaps.rewardTypes.get(r.rewardTypeId) || r.rewardTypeId })),
@@ -227,6 +229,18 @@ const PackDetailView: React.FC<{ pack: LibraryPack; onBack: () => void; }> = ({ 
                 </div>
 
                 <div className="space-y-6 max-h-[60vh] overflow-y-auto pr-4 scrollbar-hide">
+                    {pack.assets.quests && pack.assets.quests.length > 0 && (
+                        <div className="p-4 bg-stone-900/40 rounded-lg border border-stone-700/60">
+                            <UserMultiSelect
+                                allUsers={users}
+                                selectedUserIds={userIdsForImport}
+                                onSelectionChange={setUserIdsForImport}
+                                label="Assign Imported Quests to Users"
+                            />
+                             <p className="text-xs text-stone-400 mt-2">By default, all quests from this pack will be assigned to the selected users.</p>
+                        </div>
+                    )}
+
                     <div className="flex justify-between items-center mb-2 sticky top-0 bg-stone-800 py-2">
                         <h4 className="font-bold text-stone-200">Pack Contents</h4>
                         <Button variant="secondary" onClick={handleSelectAll} className="text-xs py-1 px-2">

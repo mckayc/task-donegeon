@@ -1,5 +1,3 @@
-
-
 const express = require('express');
 const cors = require('cors');
 const { Pool } = require('pg');
@@ -10,7 +8,7 @@ const fs = require('fs').promises;
 const { GoogleGenAI } = require('@google/genai');
 const http = require('http');
 const WebSocket = require('ws');
-const { createMockUsers, INITIAL_REWARD_TYPES, INITIAL_RANKS, INITIAL_TROPHIES, createSampleMarkets, createSampleQuests, createInitialGuilds, createSampleGameAssets, INITIAL_THEMES, createInitialQuestCompletions, INITIAL_SETTINGS, INITIAL_QUEST_GROUPS } = require('../dist/assets/initialData-3f8a452a.js');
+const { createMockUsers, INITIAL_REWARD_TYPES, INITIAL_RANKS, INITIAL_TROPHIES, createSampleMarkets, createSampleQuests, createInitialGuilds, createSampleGameAssets, INITIAL_THEMES, createInitialQuestCompletions, INITIAL_SETTINGS, INITIAL_QUEST_GROUPS } = require('./data.js');
 
 
 // --- Environment Variable Checks ---

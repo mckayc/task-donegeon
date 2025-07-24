@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { useSettings } from '../../context/SettingsContext';
 import { useAppState, useAppDispatch } from '../../context/AppContext';

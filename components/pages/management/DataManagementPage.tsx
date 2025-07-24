@@ -1,13 +1,12 @@
 
-
 import React, { useState, useMemo } from 'react';
-import * as Icons from '../../ui/Icons';
+import * as Icons from '../../../ui/Icons';
 import ObjectExporterPage from './ObjectExporterPage';
 import BackupAndImportPage from './BackupAndImportPage';
 import AssetLibraryPage from './AssetLibraryPage';
 import AssetManagerPage from './MediaManagerPage';
-import { useAppState } from '../../context/AppContext';
-import { Page, SidebarConfigItem, SidebarLink } from '../../types';
+import { useAppState } from '../../../context/AppContext';
+import { Page, SidebarConfigItem, SidebarLink } from '../../../types';
 
 type ManagementPage = 'Object Exporter' | 'Asset Manager' | 'Backup & Import' | 'Asset Library';
 
@@ -22,11 +21,11 @@ const DataManagementPage: React.FC = () => {
     const { settings } = useAppState();
     
     const visibleItems = useMemo((): SidebarConfigItem[] => {
-        return settings.sidebars.dataManagement.filter(item => item.isVisible);
+        return settings.sidebars.dataManagement.filter((item: SidebarConfigItem) => item.isVisible);
     }, [settings.sidebars.dataManagement]);
 
     const initialPage = useMemo((): Page => {
-        const firstLink = visibleItems.find(item => item.type === 'link') as SidebarLink | undefined;
+        const firstLink = visibleItems.find((item): item is SidebarLink => item.type === 'link');
         return firstLink?.id ?? 'Object Exporter';
     }, [visibleItems]);
 
@@ -58,7 +57,7 @@ const DataManagementPage: React.FC = () => {
                                     onClick={() => setActivePage(item.id)}
                                     className={`w-full flex items-center p-3 text-left rounded-lg transition-colors ${activePage === item.id ? 'bg-emerald-600/20 text-emerald-300' : 'text-stone-300 hover:bg-stone-700/50'}`}
                                 >
-                                    {Icon && <Icon />}
+                                    {Icon && <Icon className="w-6 h-6 mr-3" />}
                                     <span className="capitalize">{item.id}</span>
                                 </button>
                             );

@@ -179,13 +179,42 @@ const applyRewards = (user, rewardsToApply, rewardTypes, guildId) => {
     rewardsToApply.forEach(reward => {
         const rewardDef = rewardTypes.find(rd => rd.id === reward.rewardTypeId);
         if (!rewardDef) return;
-        const target = guildId ? (user.guildBalances[guildId] = user.guildBalances[guildId] || { purse: {}, experience: {} }) : user;
-        const sheet = rewardDef.category === 'Currency' ? (guildId ? target.purse : 'personalPurse') : (guildId ? target.experience : 'personalExperience');
         
         if (guildId) {
-            target[sheet][reward.rewardTypeId] = (target[sheet][reward.rewardTypeId] || 0) + reward.amount;
+            const guildBalance = user.guildBalances[guildId] = user.guildBalances[guildId] || { purse: {}, experience: {} };
+            if (rewardDef.category === 'Currency') {
+                guildBalance.purse[reward.rewardTypeId] = (guildBalance.purse[reward.rewardTypeId] || 0) + reward.amount;
+            } else { // XP
+                guildBalance.experience[reward.rewardTypeId] = (guildBalance.experience[reward.rewardTypeId] || 0) + reward.amount;
+            }
+        } else { // Personal
+            if (rewardDef.category === 'Currency') {
+                user.personalPurse[reward.rewardTypeId] = (user.personalPurse[reward.rewardTypeId] || 0) + reward.amount;
+            } else { // XP
+                user.personalExperience[reward.rewardTypeId] = (user.personalExperience[reward.rewardTypeId] || 0) + reward.amount;
+            }
+        }
+    });
+};
+
+const applySetbacks = (user, setbacksToApply, rewardTypes, guildId) => {
+    setbacksToApply.forEach(setback => {
+        const rewardDef = rewardTypes.find(rd => rd.id === setback.rewardTypeId);
+        if (!rewardDef) return;
+
+        if (guildId) {
+            const guildBalance = user.guildBalances[guildId] = user.guildBalances[guildId] || { purse: {}, experience: {} };
+            if (rewardDef.category === 'Currency') {
+                guildBalance.purse[setback.rewardTypeId] = Math.max(0, (guildBalance.purse[setback.rewardTypeId] || 0) - setback.amount);
+            } else {
+                guildBalance.experience[setback.rewardTypeId] = Math.max(0, (guildBalance.experience[setback.rewardTypeId] || 0) - setback.amount);
+            }
         } else {
-            user[sheet][reward.rewardTypeId] = (user[sheet][reward.rewardTypeId] || 0) + reward.amount;
+            if (rewardDef.category === 'Currency') {
+                user.personalPurse[setback.rewardTypeId] = Math.max(0, (user.personalPurse[setback.rewardTypeId] || 0) - setback.amount);
+            } else {
+                user.personalExperience[setback.rewardTypeId] = Math.max(0, (user.personalExperience[setback.rewardTypeId] || 0) - setback.amount);
+            }
         }
     });
 };
@@ -250,6 +279,46 @@ app.delete('/api/users/:id', async (req, res) => handleApiAction(res, data => {
     data.quests.forEach(q => { q.assignedUserIds = q.assignedUserIds.filter(id => id !== userId); });
 }));
 
+// --- Adjustments ---
+app.post('/api/adjustments', async (req, res) => handleApiAction(res, data => {
+    const { userId, type, rewards, setbacks, trophyId, reason, adjusterId, guildId } = req.body;
+    const user = data.users.find(u => u.id === userId);
+    if (!user) throw { statusCode: 404, message: 'User not found' };
+
+    const newAdjustment = {
+        id: `adj-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+        adjustedAt: new Date().toISOString(),
+        userId,
+        adjusterId,
+        type,
+        reason,
+        guildId: guildId || undefined,
+        rewards: [],
+        setbacks: [],
+        trophyId,
+    };
+
+    if (type === 'Reward' && rewards) {
+        applyRewards(user, rewards, data.rewardTypes, guildId);
+        newAdjustment.rewards = rewards;
+    } else if (type === 'Setback' && setbacks) {
+        applySetbacks(user, setbacks, data.rewardTypes, guildId);
+        newAdjustment.setbacks = setbacks;
+    } else if (type === 'Trophy' && trophyId) {
+        const alreadyHasTrophy = data.userTrophies.some(ut => ut.userId === userId && ut.trophyId === trophyId && ut.guildId === (guildId || undefined));
+        if (!alreadyHasTrophy) {
+            data.userTrophies.push({
+                id: `ut-${Date.now()}`,
+                userId,
+                trophyId,
+                awardedAt: new Date().toISOString(),
+                guildId: guildId || undefined
+            });
+        }
+    }
+
+    data.adminAdjustments.push(newAdjustment);
+}));
 
 // --- Quests ---
 app.post('/api/quests', async (req, res) => handleApiAction(res, data => {

@@ -134,7 +134,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [questCompletions, setQuestCompletions] = useState<QuestCompletion[]>([]);
   const [purchaseRequests, setPurchaseRequests] = useState<PurchaseRequest[]>([]);
   const [guilds, setGuilds] = useState<Guild[]>([]);
-  const [ranks, setRanks] = useState<Rank[]>([]);
+  const [ranks, _setRanks] = useState<Rank[]>([]);
   const [trophies, setTrophies] = useState<Trophy[]>([]);
   const [userTrophies, setUserTrophies] = useState<UserTrophy[]>([]);
   const [adminAdjustments, setAdminAdjustments] = useState<AdminAdjustment[]>([]);
@@ -196,7 +196,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     setQuestCompletions(dataToSet.questCompletions || []);
     setPurchaseRequests(dataToSet.purchaseRequests || []);
     setGuilds(dataToSet.guilds || []);
-    setRanks(dataToSet.ranks || []);
+    _setRanks(dataToSet.ranks || []);
     setTrophies(dataToSet.trophies || []);
     setUserTrophies(dataToSet.userTrophies || []);
     setAdminAdjustments(dataToSet.adminAdjustments || []);
@@ -258,57 +258,93 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     initialFetch();
   }, [refetchData]);
   
-  // WebSocket for real-time updates
+  // WebSocket for real-time updates with reconnection logic
   useEffect(() => {
-    if (!isDataLoaded || isFirstRun) return;
+      if (!isDataLoaded || isFirstRun) return;
 
-    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const wsUrl = `${protocol}//${window.location.host}`;
-    const ws = new WebSocket(wsUrl);
+      let ws: WebSocket | null = null;
+      let reconnectInterval: NodeJS.Timeout | null = null;
+      let reconnectAttempts = 0;
 
-    ws.onopen = () => console.log('WebSocket connected');
-    ws.onclose = () => console.log('WebSocket disconnected');
+      const connect = () => {
+          const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+          const wsUrl = `${protocol}//${window.location.host}`;
+          ws = new WebSocket(wsUrl);
 
-    ws.onmessage = (event) => {
-        const message = JSON.parse(event.data);
+          ws.onopen = () => {
+              console.log('WebSocket connected');
+              addNotification({ type: 'success', message: 'Real-time connection established.' });
+              reconnectAttempts = 0;
+              if (reconnectInterval) {
+                  clearInterval(reconnectInterval);
+                  reconnectInterval = null;
+              }
+          };
 
-        // Granular state updates based on broadcast type
-        switch (message.type) {
-            case 'USERS_UPDATED': setUsers(message.payload); break;
-            case 'QUESTS_UPDATED': setQuests(message.payload); break;
-            case 'QUESTGROUPS_UPDATED': setQuestGroups(message.payload); break;
-            case 'MARKETS_UPDATED': setMarkets(message.payload); break;
-            case 'REWARDTYPES_UPDATED': setRewardTypes(message.payload); break;
-            case 'QUESTCOMPLETIONS_UPDATED': setQuestCompletions(message.payload); break;
-            case 'PURCHASEREQUESTS_UPDATED': setPurchaseRequests(message.payload); break;
-            case 'GUILDS_UPDATED': setGuilds(message.payload); break;
-            case 'RANKS_UPDATED': setRanks(message.payload); break;
-            case 'TROPHIES_UPDATED': setTrophies(message.payload); break;
-            case 'USERTROPHIES_UPDATED': setUserTrophies(message.payload); break;
-            case 'ADMINADJUSTMENTS_UPDATED': setAdminAdjustments(message.payload); break;
-            case 'GAMEASSETS_UPDATED': setGameAssets(message.payload); break;
-            case 'SYSTEMLOGS_UPDATED': setSystemLogs(message.payload); break;
-            case 'SETTINGS_UPDATED': setSettings(prev => ({...prev, ...message.payload})); break;
-            case 'THEMES_UPDATED': setThemes(message.payload); break;
-            case 'LOGINHISTORY_UPDATED': setLoginHistory(message.payload); break;
-            case 'SYSTEMNOTIFICATIONS_UPDATED': setSystemNotifications(message.payload); break;
-            case 'SCHEDULEDEVENTS_UPDATED': setScheduledEvents(message.payload); break;
-            case 'NEW_CHAT_MESSAGE':
-                setChatMessages(prev => {
-                    if (prev.some(msg => msg.id === message.payload.id)) return prev;
-                    return [...prev, message.payload];
-                });
-                break;
-            case 'FULL_REFRESH_REQUESTED':
-                refetchData();
-                break;
-            default:
-                console.warn('Received unknown WebSocket message type:', message.type);
-        }
-    };
+          ws.onclose = () => {
+              console.log('WebSocket disconnected');
+              ws = null;
+              if (!reconnectInterval) {
+                  reconnectInterval = setInterval(() => {
+                      reconnectAttempts++;
+                      const delay = Math.min(1000 * Math.pow(2, reconnectAttempts), 30000); // Exponential backoff up to 30s
+                      console.log(`Attempting to reconnect WebSocket (attempt ${reconnectAttempts})...`);
+                      addNotification({ type: 'info', message: 'Connection lost. Attempting to reconnect...' });
+                      connect();
+                  }, 5000); // Initial retry delay
+              }
+          };
 
-    return () => ws.close();
-  }, [isDataLoaded, isFirstRun, refetchData]);
+          ws.onmessage = (event) => {
+              const message = JSON.parse(event.data);
+
+              switch (message.type) {
+                  case 'USERS_UPDATED': setUsers(message.payload); break;
+                  case 'QUESTS_UPDATED': setQuests(message.payload); break;
+                  case 'QUESTGROUPS_UPDATED': setQuestGroups(message.payload); break;
+                  case 'MARKETS_UPDATED': setMarkets(message.payload); break;
+                  case 'REWARDTYPES_UPDATED': setRewardTypes(message.payload); break;
+                  case 'QUESTCOMPLETIONS_UPDATED': setQuestCompletions(message.payload); break;
+                  case 'PURCHASEREQUESTS_UPDATED': setPurchaseRequests(message.payload); break;
+                  case 'GUILDS_UPDATED': setGuilds(message.payload); break;
+                  case 'RANKS_UPDATED': _setRanks(message.payload); break;
+                  case 'TROPHIES_UPDATED': setTrophies(message.payload); break;
+                  case 'USERTROPHIES_UPDATED': setUserTrophies(message.payload); break;
+                  case 'ADMINADJUSTMENTS_UPDATED': setAdminAdjustments(message.payload); break;
+                  case 'GAMEASSETS_UPDATED': setGameAssets(message.payload); break;
+                  case 'SYSTEMLOGS_UPDATED': setSystemLogs(message.payload); break;
+                  case 'SETTINGS_UPDATED': setSettings(prev => ({...prev, ...message.payload})); break;
+                  case 'THEMES_UPDATED': setThemes(message.payload); break;
+                  case 'LOGINHISTORY_UPDATED': setLoginHistory(message.payload); break;
+                  case 'SYSTEMNOTIFICATIONS_UPDATED': setSystemNotifications(message.payload); break;
+                  case 'SCHEDULEDEVENTS_UPDATED': setScheduledEvents(message.payload); break;
+                  case 'NEW_CHAT_MESSAGE':
+                      setChatMessages(prev => {
+                          if (prev.some(msg => msg.id === message.payload.id)) return prev;
+                          return [...prev, message.payload];
+                      });
+                      break;
+                  case 'FULL_REFRESH_REQUESTED':
+                      refetchData();
+                      break;
+                  default:
+                      console.warn('Received unknown WebSocket message type:', message.type);
+              }
+          };
+      };
+
+      connect();
+
+      return () => {
+          if (reconnectInterval) {
+              clearInterval(reconnectInterval);
+          }
+          if (ws) {
+              ws.close();
+          }
+      };
+  }, [isDataLoaded, isFirstRun, refetchData, addNotification]);
+
 
   // === API CALL WRAPPER ===
   const apiCall = useCallback(async (endpoint: string, method: string, body?: any) => {
@@ -359,9 +395,14 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   }, [apiCall, addNotification]);
   
   const purchaseMarketItem = useCallback(async (assetId: string, marketId: string, user: User, costGroupIndex: number) => {
-      await apiCall(`/api/assets/${assetId}/purchase`, 'POST', { userId: user.id, marketId, costGroupIndex });
-      addNotification({ type: 'success', message: `Purchase successful!` });
-  }, [apiCall, addNotification]);
+      const guildId = appMode.mode === 'guild' ? appMode.guildId : undefined;
+      const requiresApproval = gameAssets.find(a => a.id === assetId)?.requiresApproval;
+      await apiCall(`/api/assets/${assetId}/purchase`, 'POST', { userId: user.id, marketId, costGroupIndex, guildId });
+      addNotification({ 
+          type: requiresApproval ? 'info' : 'success', 
+          message: requiresApproval ? `Purchase requested.` : `Purchase successful!` 
+      });
+  }, [apiCall, addNotification, appMode, gameAssets]);
   
   const sendMessage = useCallback(async (message: Omit<ChatMessage, 'id' | 'timestamp' | 'readBy' | 'senderId'> & { isAnnouncement?: boolean }) => {
     if (!currentUser) return;
@@ -391,23 +432,15 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       const { user } = await apiCall('/api/users', 'POST', userData);
       return user as User;
   }, [apiCall]);
-  const updateUser = useCallback(async (userId: string, updatedData: Partial<User>) => {
-      await apiCall(`/api/users/${userId}`, 'PUT', updatedData);
-  }, [apiCall]);
-  const deleteUser = useCallback(async (userId: string) => {
-      await apiCall(`/api/users/${userId}`, 'DELETE');
-  }, [apiCall]);
-  const markUserAsOnboarded = useCallback(async (userId: string) => {
-      await updateUser(userId, { hasBeenOnboarded: true });
-  }, [updateUser]);
+  const updateUser = useCallback(async (userId: string, updatedData: Partial<User>) => { await apiCall(`/api/users/${userId}`, 'PUT', updatedData); }, [apiCall]);
+  const deleteUser = useCallback(async (userId: string) => { await apiCall(`/api/users/${userId}`, 'DELETE'); }, [apiCall]);
+  const markUserAsOnboarded = useCallback(async (userId: string) => { await updateUser(userId, { hasBeenOnboarded: true }); }, [updateUser]);
 
   const addQuest = useCallback(async (quest: Omit<Quest, 'id' | 'claimedByUserIds' | 'dismissals'>) => { await apiCall('/api/quests', 'POST', quest); }, [apiCall]);
   const updateQuest = useCallback(async (quest: Quest) => { await apiCall(`/api/quests/${quest.id}`, 'PUT', quest); }, [apiCall]);
   const deleteQuest = useCallback(async (questId: string) => { await apiCall(`/api/quests/${questId}`, 'DELETE'); }, [apiCall]);
   const cloneQuest = useCallback(async (questId: string) => { await apiCall(`/api/quests/${questId}/clone`, 'POST'); }, [apiCall]);
-  const questAction = useCallback(async (questId: string, action: string, userId: string) => {
-    await apiCall(`/api/quests/${questId}/actions`, 'POST', { action, userId });
-  }, [apiCall]);
+  const questAction = useCallback(async (questId: string, action: string, userId: string) => { await apiCall(`/api/quests/${questId}/actions`, 'POST', { action, userId }); }, [apiCall]);
   const dismissQuest = useCallback((questId: string, userId: string) => questAction(questId, 'dismiss', userId), [questAction]);
   const claimQuest = useCallback((questId: string, userId: string) => questAction(questId, 'claim', userId), [questAction]);
   const releaseQuest = useCallback((questId: string, userId: string) => questAction(questId, 'release', userId), [questAction]);
@@ -417,13 +450,65 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const approveQuestCompletion = useCallback(async (id: string, note?: string) => { await apiCall(`/api/quest-completions/${id}`, 'PUT', { status: 'Approved', note }); }, [apiCall]);
   const rejectQuestCompletion = useCallback(async (id: string, note?: string) => { await apiCall(`/api/quest-completions/${id}`, 'PUT', { status: 'Rejected', note }); }, [apiCall]);
 
-  const addQuestGroup = useCallback(async (group: Omit<QuestGroup, 'id'>) => {
-      const { newGroup } = await apiCall('/api/questGroups', 'POST', group);
-      return newGroup as QuestGroup;
-  }, [apiCall]);
+  const addQuestGroup = useCallback(async (group: Omit<QuestGroup, 'id'>) => { const { newGroup } = await apiCall('/api/questGroups', 'POST', group); return newGroup as QuestGroup; }, [apiCall]);
   const updateQuestGroup = useCallback(async (group: QuestGroup) => { await apiCall(`/api/questGroups/${group.id}`, 'PUT', group); }, [apiCall]);
   const deleteQuestGroup = useCallback(async (id: string) => { await apiCall(`/api/questGroups/${id}`, 'DELETE'); }, [apiCall]);
   const assignQuestGroupToUsers = useCallback(async (id: string, userIds: string[]) => { await apiCall(`/api/quest-groups/${id}/assign`, 'POST', { userIds }); }, [apiCall]);
+  
+  const addRewardType = useCallback(async (rewardType: Omit<RewardTypeDefinition, 'id' | 'isCore'>) => { await apiCall('/api/rewardTypes', 'POST', rewardType); }, [apiCall]);
+  const updateRewardType = useCallback(async (rewardType: RewardTypeDefinition) => { await apiCall(`/api/rewardTypes/${rewardType.id}`, 'PUT', rewardType); }, [apiCall]);
+  const deleteRewardType = useCallback(async (id: string) => { await apiCall(`/api/rewardTypes/${id}`, 'DELETE'); }, [apiCall]);
+  const cloneRewardType = useCallback(async (id: string) => { await apiCall(`/api/rewardTypes/${id}/clone`, 'POST'); }, [apiCall]);
+
+  const addMarket = useCallback(async (market: Omit<Market, 'id'>) => { await apiCall('/api/markets', 'POST', market); }, [apiCall]);
+  const updateMarket = useCallback(async (market: Market) => { await apiCall(`/api/markets/${market.id}`, 'PUT', market); }, [apiCall]);
+  const deleteMarket = useCallback(async (id: string) => { await apiCall(`/api/markets/${id}`, 'DELETE'); }, [apiCall]);
+  const cloneMarket = useCallback(async (id: string) => { await apiCall(`/api/markets/${id}/clone`, 'POST'); }, [apiCall]);
+  const deleteMarkets = useCallback(async (ids: string[]) => { await apiCall('/api/markets/delete-many', 'POST', { marketIds: ids }); }, [apiCall]);
+  const updateMarketsStatus = useCallback(async (ids: string[], statusType: 'open' | 'closed') => { await apiCall('/api/markets/bulk-status', 'POST', { marketIds: ids, status: statusType }); }, [apiCall]);
+
+  const cancelPurchaseRequest = useCallback(async (id: string) => { await apiCall(`/api/purchase-requests/${id}`, 'PUT', { status: 'Cancelled' }); }, [apiCall]);
+  const approvePurchaseRequest = useCallback(async (id: string) => { await apiCall(`/api/purchase-requests/${id}`, 'PUT', { status: 'Completed' }); }, [apiCall]);
+  const rejectPurchaseRequest = useCallback(async (id: string) => { await apiCall(`/api/purchase-requests/${id}`, 'PUT', { status: 'Rejected' }); }, [apiCall]);
+
+  const addGuild = useCallback(async (guild: Omit<Guild, 'id'>) => { await apiCall('/api/guilds', 'POST', guild); }, [apiCall]);
+  const updateGuild = useCallback(async (guild: Guild) => { await apiCall(`/api/guilds/${guild.id}`, 'PUT', guild); }, [apiCall]);
+  const deleteGuild = useCallback(async (id: string) => { await apiCall(`/api/guilds/${id}`, 'DELETE'); }, [apiCall]);
+
+  const setRanks = useCallback(async (newRanks: Rank[]) => { await apiCall('/api/ranks', 'PUT', { ranks: newRanks }); }, [apiCall]);
+
+  const addTrophy = useCallback(async (trophy: Omit<Trophy, 'id'>) => { await apiCall('/api/trophies', 'POST', trophy); }, [apiCall]);
+  const updateTrophy = useCallback(async (trophy: Trophy) => { await apiCall(`/api/trophies/${trophy.id}`, 'PUT', trophy); }, [apiCall]);
+  const deleteTrophy = useCallback(async (id: string) => { await apiCall(`/api/trophies/${id}`, 'DELETE'); }, [apiCall]);
+  const awardTrophy = useCallback(async (userId: string, trophyId: string, guildId?: string) => { await apiCall('/api/trophies/award', 'POST', { userId, trophyId, guildId }); }, [apiCall]);
+
+  const addGameAsset = useCallback(async (asset: Omit<GameAsset, 'id' | 'creatorId' | 'createdAt'>) => { await apiCall('/api/gameAssets', 'POST', asset); }, [apiCall]);
+  const updateGameAsset = useCallback(async (asset: GameAsset) => { await apiCall(`/api/gameAssets/${asset.id}`, 'PUT', asset); }, [apiCall]);
+  const deleteGameAsset = useCallback(async (id: string) => { await apiCall(`/api/gameAssets/${id}`, 'DELETE'); }, [apiCall]);
+  const cloneGameAsset = useCallback(async (id: string) => { await apiCall(`/api/gameAssets/${id}/clone`, 'POST'); }, [apiCall]);
+
+  const addTheme = useCallback(async (theme: Omit<ThemeDefinition, 'id'>) => { await apiCall('/api/themes', 'POST', theme); }, [apiCall]);
+  const updateTheme = useCallback(async (theme: ThemeDefinition) => { await apiCall(`/api/themes/${theme.id}`, 'PUT', theme); }, [apiCall]);
+  const deleteTheme = useCallback(async (id: string) => { await apiCall(`/api/themes/${id}`, 'DELETE'); }, [apiCall]);
+  
+  const addScheduledEvent = useCallback(async (event: Omit<ScheduledEvent, 'id'>) => { await apiCall('/api/scheduledEvents', 'POST', event); }, [apiCall]);
+  const updateScheduledEvent = useCallback(async (event: ScheduledEvent) => { await apiCall(`/api/scheduledEvents/${event.id}`, 'PUT', event); }, [apiCall]);
+  const deleteScheduledEvent = useCallback(async (id: string) => { await apiCall(`/api/scheduledEvents/${id}`, 'DELETE'); }, [apiCall]);
+  
+  const importBlueprint = useCallback(async (blueprint: Blueprint, resolutions: ImportResolution[]) => { await apiCall('/api/import-blueprint', 'POST', { blueprint, resolutions }); }, [apiCall]);
+  const clearAllHistory = useCallback(async () => { await apiCall('/api/data/clear-history', 'POST'); }, [apiCall]);
+  const resetAllPlayerData = useCallback(async () => { await apiCall('/api/data/reset-player-data', 'POST'); }, [apiCall]);
+  const deleteAllCustomContent = useCallback(async () => { await apiCall('/api/data/delete-custom-content', 'POST'); }, [apiCall]);
+  const deleteSelectedAssets = useCallback(async (selection: Record<ShareableAssetType, string[]>) => { await apiCall('/api/data/delete-selected', 'POST', { selection }); }, [apiCall]);
+  const deleteTrophies = useCallback(async (trophyIds: string[]) => { await apiCall('/api/trophies/delete-many', 'POST', { trophyIds }); }, [apiCall]);
+  const deleteGameAssets = useCallback(async (assetIds: string[]) => { await apiCall('/api/gameAssets/delete-many', 'POST', { assetIds }); }, [apiCall]);
+  
+  const executeExchange = useCallback(async (userId: string, payItem: RewardItem, receiveItem: RewardItem, guildId?: string) => { await apiCall('/api/economy/exchange', 'POST', { userId, payItem, receiveItem, guildId }); }, [apiCall]);
+  const addSystemNotification = useCallback(async (notification: Omit<SystemNotification, 'id' | 'timestamp' | 'readByUserIds'>) => { await apiCall('/api/system-notifications', 'POST', notification); }, [apiCall]);
+  const markSystemNotificationsAsRead = useCallback(async (notificationIds: string[]) => { await apiCall('/api/system-notifications/read', 'POST', { notificationIds }); }, [apiCall]);
+  const resetSettings = useCallback(async () => { await apiCall('/api/settings/reset', 'POST'); }, [apiCall]);
+
+
   const applyManualAdjustment = useCallback(async (adjustment: Omit<AdminAdjustment, 'id' | 'adjustedAt'>): Promise<boolean> => {
       try {
           await apiCall('/api/adjustments', 'POST', adjustment);
@@ -435,13 +520,10 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       }
   }, [apiCall, addNotification]);
   
-  // And so on for all other actions...
   const updateSettings = useCallback(async (newSettings: Partial<AppSettings>) => { await apiCall('/api/settings', 'PUT', newSettings); }, [apiCall]);
   const bulkUpdateQuests = useCallback(async (questIds: string[], updates: BulkQuestUpdates) => { await apiCall('/api/quests/bulk-update', 'POST', { questIds, updates }); }, [apiCall]);
   const deleteQuests = useCallback(async (questIds: string[]) => { await apiCall('/api/quests/delete-many', 'POST', { questIds }); }, [apiCall]);
   
-  // The rest of the dispatch functions would be implemented here in a similar fashion...
-  const notImplemented = useCallback(async () => { addNotification({type: 'error', message: 'This feature is not fully wired up yet.'}); }, [addNotification]);
   const bypassFirstRunCheck = useCallback(() => setAcknowledgedOldData(true), []);
   const removeNotification = useCallback((notificationId: string) => { setNotifications(prev => prev.filter(n => n.id !== notificationId)); }, []);
   const setCurrentUser = (user: User | null) => { _setCurrentUser(user); _setIsSharedViewActive(false); if (user) { setActivePage('Dashboard'); localStorage.setItem('lastUserId', user.id); setLoginHistory(prev => [user.id, ...prev.filter(id => id !== user.id).slice(0, 9)]); } else { localStorage.removeItem('lastUserId'); } };
@@ -456,7 +538,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
   // === CONTEXT PROVIDER VALUE ===
   const stateValue: AppState = { users, quests, questGroups, markets, rewardTypes, questCompletions, purchaseRequests, guilds, ranks, trophies, userTrophies, adminAdjustments, gameAssets, systemLogs, settings, themes, loginHistory, chatMessages, systemNotifications, scheduledEvents, currentUser, isAppUnlocked, isFirstRun, activePage, appMode, notifications, isDataLoaded, activeMarketId, allTags: useMemo(() => Array.from(new Set([...INITIAL_TAGS, ...quests.flatMap(q => q.tags || [])])).sort(), [quests]), isSwitchingUser, isSharedViewActive, targetedUserForLogin, isAiConfigured, isSidebarCollapsed, syncStatus, syncError, isChatOpen, };
-  const dispatchValue: AppDispatch = { addUser: addUser as any, updateUser, deleteUser, setCurrentUser, markUserAsOnboarded, setAppUnlocked, setIsSwitchingUser, setTargetedUserForLogin, exitToSharedView, setIsSharedViewActive: _setIsSharedViewActive, bypassFirstRunCheck, addQuest, updateQuest, deleteQuest, cloneQuest, dismissQuest, claimQuest, releaseQuest, markQuestAsTodo, unmarkQuestAsTodo, completeQuest, approveQuestCompletion, rejectQuestCompletion, addQuestGroup: addQuestGroup as any, updateQuestGroup, deleteQuestGroup, assignQuestGroupToUsers, addRewardType: notImplemented, updateRewardType: notImplemented, deleteRewardType: notImplemented, cloneRewardType: notImplemented, addMarket: notImplemented, updateMarket: notImplemented, deleteMarket: notImplemented, cloneMarket: notImplemented, deleteMarkets: notImplemented, updateMarketsStatus: notImplemented, purchaseMarketItem, cancelPurchaseRequest: notImplemented, approvePurchaseRequest: notImplemented, rejectPurchaseRequest: notImplemented, addGuild: notImplemented, updateGuild: notImplemented, deleteGuild: notImplemented, setRanks: notImplemented, addTrophy: notImplemented, updateTrophy: notImplemented, deleteTrophy: notImplemented, awardTrophy: notImplemented, applyManualAdjustment, addGameAsset: notImplemented, updateGameAsset: notImplemented, deleteGameAsset: notImplemented, cloneGameAsset: notImplemented, addTheme: notImplemented, updateTheme: notImplemented, deleteTheme: notImplemented, addScheduledEvent: notImplemented, updateScheduledEvent: notImplemented, deleteScheduledEvent: notImplemented, completeFirstRun, importBlueprint: notImplemented, restoreFromBackup, clearAllHistory: notImplemented, resetAllPlayerData: notImplemented, deleteAllCustomContent: notImplemented, deleteSelectedAssets: notImplemented, deleteQuests, deleteTrophies: notImplemented, deleteGameAssets: notImplemented, updateQuestsStatus: (questIds, isActive) => bulkUpdateQuests(questIds, { isActive }), bulkUpdateQuests, uploadFile, executeExchange: notImplemented, updateSettings, resetSettings: notImplemented, setActivePage, setAppMode, addNotification, removeNotification, setActiveMarketId, toggleSidebar, toggleChat, sendMessage, markMessagesAsRead, addSystemNotification: notImplemented, markSystemNotificationsAsRead: notImplemented };
+  const dispatchValue: AppDispatch = { addUser: addUser as any, updateUser, deleteUser, setCurrentUser, markUserAsOnboarded, setAppUnlocked, setIsSwitchingUser, setTargetedUserForLogin, exitToSharedView, setIsSharedViewActive: _setIsSharedViewActive, bypassFirstRunCheck, addQuest, updateQuest, deleteQuest, cloneQuest, dismissQuest, claimQuest, releaseQuest, markQuestAsTodo, unmarkQuestAsTodo, completeQuest, approveQuestCompletion, rejectQuestCompletion, addQuestGroup: addQuestGroup as any, updateQuestGroup, deleteQuestGroup, assignQuestGroupToUsers, addRewardType, updateRewardType, deleteRewardType, cloneRewardType, addMarket, updateMarket, deleteMarket, cloneMarket, deleteMarkets, updateMarketsStatus, purchaseMarketItem, cancelPurchaseRequest, approvePurchaseRequest, rejectPurchaseRequest, addGuild, updateGuild, deleteGuild, setRanks, addTrophy, updateTrophy, deleteTrophy, awardTrophy, applyManualAdjustment, addGameAsset, updateGameAsset, deleteGameAsset, cloneGameAsset, addTheme, updateTheme, deleteTheme, addScheduledEvent, updateScheduledEvent, deleteScheduledEvent, completeFirstRun, importBlueprint, restoreFromBackup, clearAllHistory, resetAllPlayerData, deleteAllCustomContent, deleteSelectedAssets, deleteQuests, deleteTrophies, deleteGameAssets, updateQuestsStatus: (questIds, isActive) => bulkUpdateQuests(questIds, { isActive }), bulkUpdateQuests, uploadFile, executeExchange, updateSettings, resetSettings, setActivePage, setAppMode, addNotification, removeNotification, setActiveMarketId, toggleSidebar, toggleChat, sendMessage, markMessagesAsRead, addSystemNotification, markSystemNotificationsAsRead };
 
   return (
     <AppStateContext.Provider value={stateValue}>

@@ -116,12 +116,31 @@ const server = http.createServer(app);
 const wss = new WebSocket.Server({ server });
 
 // === WebSocket Logic ===
+function heartbeat() {
+  this.isAlive = true;
+}
+
 wss.on('connection', ws => {
+  ws.isAlive = true;
+  ws.on('pong', heartbeat);
   console.log('Client connected to WebSocket');
   ws.on('close', () => {
     console.log('Client disconnected from WebSocket');
   });
 });
+
+const interval = setInterval(() => {
+  wss.clients.forEach(ws => {
+    if (ws.isAlive === false) return ws.terminate();
+    ws.isAlive = false;
+    ws.ping();
+  });
+}, 30000);
+
+wss.on('close', () => {
+  clearInterval(interval);
+});
+
 
 const broadcast = (data) => {
   const jsonData = JSON.stringify(data);
@@ -439,7 +458,28 @@ app.post('/api/first-run', async (req, res) => {
                 guilds: sampleGuilds, ranks: INITIAL_RANKS, trophies: [], userTrophies: [], adminAdjustments: [], gameAssets: [], systemLogs: [],
                 settings: { ...INITIAL_SETTINGS, contentVersion: 1 }, themes: INITIAL_THEMES, loginHistory: [], chatMessages: [], systemNotifications: [], scheduledEvents: []
              };
-        } else {
+        } else if (setupChoice === 'import' && blueprint) {
+            const allUsers = [newAdminUser];
+            const sampleGuilds = createInitialGuilds(allUsers);
+            newAppData = {
+                users: allUsers,
+                quests: blueprint.assets.quests || [],
+                questGroups: blueprint.assets.questGroups || [],
+                markets: blueprint.assets.markets || [],
+                rewardTypes: [...INITIAL_REWARD_TYPES, ...(blueprint.assets.rewardTypes || [])],
+                questCompletions: [], purchaseRequests: [],
+                guilds: sampleGuilds,
+                ranks: blueprint.assets.ranks || INITIAL_RANKS,
+                trophies: blueprint.assets.trophies || [],
+                userTrophies: [], adminAdjustments: [],
+                gameAssets: blueprint.assets.gameAssets || [],
+                systemLogs: [],
+                settings: { ...INITIAL_SETTINGS, contentVersion: 1 },
+                themes: INITIAL_THEMES,
+                loginHistory: [], chatMessages: [], systemNotifications: [], scheduledEvents: []
+            };
+        }
+        else {
             throw new Error('Invalid setup choice provided.');
         }
         
@@ -570,18 +610,20 @@ app.post('/api/quests/bulk-update', questHandler(['quests']));
 app.post('/api/quests/delete-many', questHandler(['quests']));
 
 
-// --- Other simple assets ---
-['rewardTypes', 'markets', 'guilds', 'trophies', 'gameAssets', 'scheduledEvents', 'questGroups'].forEach(assetKey => {
+// --- Generic CRUD for Simple Assets ---
+['rewardTypes', 'markets', 'guilds', 'trophies', 'gameAssets', 'scheduledEvents', 'questGroups', 'themes'].forEach(assetKey => {
     const plural = assetKey;
+    const singular = plural.endsWith('s') ? plural.slice(0, -1) : plural;
+    
     app.post(`/api/${plural}`, (req, res) => handleMultiSliceApiAction(res, [plural], data => {
-        const newItem = {...req.body, id: `${plural.slice(0, -1)}-${Date.now()}`};
+        const newItem = {...req.body, id: `${singular}-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`};
         data[plural].push(newItem);
         if (plural === 'questGroups') return { newGroup: newItem };
     }));
     app.put(`/api/${plural}/:id`, (req, res) => handleMultiSliceApiAction(res, [plural], data => {
         const itemIndex = data[plural].findIndex(i => i.id === req.params.id);
-        if (itemIndex === -1) throw { statusCode: 404, message: 'Item not found' };
-        data[plural][itemIndex] = {...data[plural][itemIndex], ...req.body};
+        if (itemIndex === -1) throw { statusCode: 404, message: `${singular} not found` };
+        data[plural][itemIndex] = {...data[plural][itemIndex], ...req.body, id: req.params.id};
     }));
     app.delete(`/api/${plural}/:id`, (req, res) => handleMultiSliceApiAction(res, [plural, 'quests'], data => {
         data[plural] = data[plural].filter(i => i.id !== req.params.id);
@@ -589,12 +631,26 @@ app.post('/api/quests/delete-many', questHandler(['quests']));
             data.quests.forEach(q => { if(q.groupId === req.params.id) q.groupId = undefined; });
         }
     }));
+    app.post(`/api/${plural}/:id/clone`, (req, res) => handleMultiSliceApiAction(res, [plural], data => {
+        const itemIndex = data[plural].findIndex(i => i.id === req.params.id);
+        if (itemIndex === -1) throw { statusCode: 404, message: `${singular} not found` };
+        const original = data[plural][itemIndex];
+        const newItem = {...JSON.parse(JSON.stringify(original)), id: `${singular}-${Date.now()}`};
+        newItem.name = `${original.name || original.title} (Copy)`;
+        if(newItem.title) newItem.title = `${original.title} (Copy)`;
+        data[plural].push(newItem);
+    }));
 });
+
 
 // --- Settings ---
 app.put('/api/settings', async (req, res) => handleMultiSliceApiAction(res, ['settings'], data => {
     data.settings = { ...data.settings, ...req.body };
 }));
+app.post('/api/settings/reset', async (req, res) => handleMultiSliceApiAction(res, ['settings'], data => {
+    data.settings = { ...INITIAL_SETTINGS, contentVersion: data.settings.contentVersion };
+}));
+
 
 // --- Chat ---
 app.post('/api/chat/messages', async (req, res) => {
@@ -624,7 +680,6 @@ app.post('/api/chat/messages', async (req, res) => {
         res.status(err.statusCode || 500).json({ error: err.message });
     }
 });
-
 app.post('/api/chat/read', async (req, res) => handleMultiSliceApiAction(res, ['chatMessages'], data => {
     const { userId, partnerId, guildId } = req.body;
     if (!userId) throw { statusCode: 400, message: 'User ID is required' };
@@ -640,6 +695,63 @@ app.post('/api/chat/read', async (req, res) => handleMultiSliceApiAction(res, ['
             }
         }
     });
+}));
+
+// --- Bulk/Complex Actions ---
+app.post('/api/markets/delete-many', (req, res) => handleMultiSliceApiAction(res, ['markets'], data => { data.markets = data.markets.filter(m => !req.body.marketIds.includes(m.id)); }));
+app.post('/api/markets/bulk-status', (req, res) => handleMultiSliceApiAction(res, ['markets'], data => { const { marketIds, status } = req.body; data.markets.forEach(m => { if(marketIds.includes(m.id)) m.status = { type: status }; }); }));
+app.put('/api/ranks', (req, res) => handleMultiSliceApiAction(res, ['ranks'], data => { data.ranks = req.body.ranks; }));
+app.post('/api/trophies/award', (req, res) => handleMultiSliceApiAction(res, ['userTrophies'], data => { const { userId, trophyId, guildId } = req.body; data.userTrophies.push({ id: `ut-${Date.now()}`, userId, trophyId, awardedAt: new Date().toISOString(), guildId: guildId || undefined }); }));
+app.post('/api/trophies/delete-many', (req, res) => handleMultiSliceApiAction(res, ['trophies'], data => { data.trophies = data.trophies.filter(t => !req.body.trophyIds.includes(t.id)); }));
+app.post('/api/gameAssets/delete-many', (req, res) => handleMultiSliceApiAction(res, ['gameAssets'], data => { data.gameAssets = data.gameAssets.filter(a => !req.body.assetIds.includes(a.id)); }));
+
+app.put('/api/purchase-requests/:id', async (req, res) => handleMultiSliceApiAction(res, ['purchaseRequests', 'users', 'gameAssets', 'themes'], data => {
+    const { status } = req.body;
+    const requestIndex = data.purchaseRequests.findIndex(p => p.id === req.params.id);
+    if (requestIndex === -1) throw { statusCode: 404, message: 'Purchase request not found' };
+    const request = data.purchaseRequests[requestIndex];
+    if (request.status !== 'Pending') throw { statusCode: 400, message: 'Request is not pending' };
+    
+    if (status === 'Completed') {
+        const user = data.users.find(u => u.id === request.userId);
+        const asset = data.gameAssets.find(a => a.id === request.assetId);
+        if (!user || !asset) throw { statusCode: 404, message: 'User or Asset not found' };
+
+        applySetbacks(user, request.assetDetails.cost, data.rewardTypes, request.guildId);
+        user.ownedAssetIds.push(asset.id);
+        if (asset.linkedThemeId && !user.ownedThemes.includes(asset.linkedThemeId)) {
+            user.ownedThemes.push(asset.linkedThemeId);
+        }
+        asset.purchaseCount = (asset.purchaseCount || 0) + 1;
+    }
+    
+    request.status = status;
+    request.actedAt = new Date().toISOString();
+}));
+
+
+app.post('/api/assets/:id/purchase', async (req, res) => handleMultiSliceApiAction(res, ['purchaseRequests', 'users', 'gameAssets', 'themes', 'userTrophies'], data => {
+    const { userId, marketId, costGroupIndex, guildId } = req.body;
+    const asset = data.gameAssets.find(a => a.id === req.params.id);
+    const user = data.users.find(u => u.id === userId);
+    if (!asset || !user) throw { statusCode: 404, message: 'Asset or User not found' };
+    
+    const cost = asset.costGroups[costGroupIndex];
+    if (!cost) throw { statusCode: 400, message: 'Invalid cost option' };
+
+    if (asset.requiresApproval) {
+        data.purchaseRequests.push({
+            id: `pr-${Date.now()}`, userId, assetId: asset.id, requestedAt: new Date().toISOString(), status: 'Pending',
+            assetDetails: { name: asset.name, description: asset.description, cost }, guildId: guildId || undefined
+        });
+    } else {
+        applySetbacks(user, cost, data.rewardTypes, guildId);
+        user.ownedAssetIds.push(asset.id);
+        if (asset.linkedThemeId && !user.ownedThemes.includes(asset.linkedThemeId)) {
+            user.ownedThemes.push(asset.linkedThemeId);
+        }
+        asset.purchaseCount = (asset.purchaseCount || 0) + 1;
+    }
 }));
 
 

@@ -47,7 +47,7 @@ const ObjectExporterPage: React.FC = () => {
         generateBlueprint(
             blueprintName,
             blueprintDesc,
-            appState.currentUser?.gameName || 'Unknown Author',
+            settings.terminology.appName,
             selected,
             appState
         );

@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { User } from '../types';
 import { useAppState, useAppDispatch } from './AppContext';
@@ -17,7 +16,7 @@ export interface AuthState {
 // The dispatch functions provided by this context
 export interface AuthDispatch {
   setAppUnlocked: (isUnlocked: boolean) => void;
-  addUser: (user: Omit<User, 'id' | 'personalPurse' | 'personalExperience' | 'guildBalances' | 'avatar' | 'ownedAssetIds' | 'ownedThemes' | 'hasBeenOnboarded'>) => User;
+  addUser: (user: Omit<User, 'id' | 'personalPurse' | 'personalExperience' | 'guildBalances' | 'avatar' | 'ownedAssetIds' | 'ownedThemes' | 'hasBeenOnboarded'>) => Promise<User | undefined>;
   updateUser: (userId: string, updatedData: Partial<User>) => void;
   deleteUser: (userId: string) => void;
   setCurrentUser: (user: User | null) => void;

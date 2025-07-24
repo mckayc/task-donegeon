@@ -1,10 +1,11 @@
 
+
 import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { Role, User } from '../../types';
 import Avatar from '../ui/Avatar';
 import Input from '../ui/Input';
-import { ArrowLeftIcon, XCircleIcon } from '../ui/Icons';
+import { XCircleIcon } from '../ui/Icons';
 import Button from '../ui/Button';
 import ToggleSwitch from '../ui/ToggleSwitch';
 
@@ -75,10 +76,6 @@ const ChatPanel: React.FC = () => {
             setUserScrolledUp(!atBottom);
         }
     };
-    
-    const handleBackToList = () => {
-        setActiveChatTarget(null);
-    };
 
     useEffect(() => {
         if (activeChatTarget) {
@@ -123,25 +120,14 @@ const ChatPanel: React.FC = () => {
     let lastDate: string | null = null;
 
     return (
-        <div className="fixed inset-0 md:inset-auto md:bottom-6 md:right-6 z-50 md:w-[600px] md:h-[700px] bg-stone-800 border border-stone-700 md:rounded-xl shadow-2xl flex flex-col">
-            {/* Unified Header - Content changes based on view */}
-            <header className="p-4 border-b border-stone-700 flex items-center justify-between flex-shrink-0">
-                {activeChatTarget ? (
-                    <>
-                        <button onClick={handleBackToList} className="md:hidden text-stone-400 hover:text-white p-2 -ml-2">
-                            <ArrowLeftIcon className="w-6 h-6" />
-                        </button>
-                        <h3 className="font-bold text-lg text-stone-100 flex-grow text-center">{activeChatTarget.gameName}</h3>
-                    </>
-                ) : (
-                    <h3 className="font-bold text-lg text-stone-100 flex-grow">Chat</h3>
-                )}
-                <button onClick={toggleChat} className="text-stone-400 hover:text-white p-2 -mr-2"><XCircleIcon className="w-6 h-6"/></button>
+        <div className="fixed bottom-6 right-6 z-50 w-[600px] h-[700px] bg-stone-800 border border-stone-700 rounded-xl shadow-2xl flex flex-col">
+            <header className="p-4 border-b border-stone-700 flex justify-between items-center flex-shrink-0">
+                <h3 className="font-bold text-lg text-stone-100">Chat</h3>
+                <button onClick={toggleChat} className="text-stone-400 hover:text-white"><XCircleIcon className="w-6 h-6"/></button>
             </header>
             
             <div className="flex-grow flex overflow-hidden">
-                {/* Contact List */}
-                <aside className={`w-full md:w-1/3 border-r border-stone-700 overflow-y-auto flex-col ${activeChatTarget ? 'hidden' : 'flex'} md:flex`}>
+                <aside className="w-1/3 border-r border-stone-700 overflow-y-auto">
                     {chatPartners.map(target => {
                         const isGuild = 'isGuild' in target && target.isGuild;
                         const hasUnread = isGuild ? unreadInfo.guilds.has(target.id) : unreadInfo.dms.has(target.id);
@@ -155,10 +141,12 @@ const ChatPanel: React.FC = () => {
                     })}
                 </aside>
 
-                {/* Chat View */}
-                <main className={`w-full md:w-2/3 flex-col ${!activeChatTarget ? 'hidden' : 'flex'} md:flex`}>
+                <main className="w-2/3 flex flex-col">
                     {activeChatTarget ? (
                         <>
+                            <div className="p-3 border-b border-stone-700 flex-shrink-0">
+                                <p className="font-bold text-center text-stone-200">{activeChatTarget.gameName}</p>
+                            </div>
                             <div ref={messagesContainerRef} onScroll={handleScroll} className="flex-grow p-3 space-y-3 overflow-y-auto">
                                 {activeConversation.map(msg => {
                                     const msgDate = new Date(msg.timestamp).toLocaleDateString();
@@ -221,7 +209,7 @@ const ChatPanel: React.FC = () => {
                             </form>
                         </>
                     ) : (
-                        <div className="hidden md:flex items-center justify-center h-full text-center text-stone-400 p-4">
+                        <div className="flex items-center justify-center h-full text-center text-stone-400 p-4">
                             Select a user to start chatting.
                         </div>
                     )}

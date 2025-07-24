@@ -48,14 +48,14 @@ const ChatPanel: React.FC = () => {
     const messagesContainerRef = useRef<HTMLDivElement>(null);
 
     // Draggable & Resizable State
-    const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+    const [isMobile, setIsMobile] = useState(window.innerWidth < 1024);
     const [size, setSize] = useLocalStorage('chat-panel-size', { width: 600, height: 700 });
     const [position, setPosition] = useLocalStorage('chat-panel-position', { x: window.innerWidth - 624, y: window.innerHeight - 724 });
     const panelRef = useRef<HTMLDivElement>(null);
     const dragRef = useRef({ isDragging: false, isResizing: false, initialX: 0, initialY: 0, initialWidth: 0, initialHeight: 0 });
 
     useEffect(() => {
-        const handleResize = () => setIsMobile(window.innerWidth < 768);
+        const handleResize = () => setIsMobile(window.innerWidth < 1024);
         window.addEventListener('resize', handleResize);
         return () => window.removeEventListener('resize', handleResize);
     }, []);
@@ -80,23 +80,32 @@ const ChatPanel: React.FC = () => {
     const handleMouseUp = useCallback(() => {
         dragRef.current.isDragging = false;
         dragRef.current.isResizing = false;
+        document.body.style.userSelect = '';
         window.removeEventListener('mousemove', handleMouseMove);
         window.removeEventListener('mouseup', handleMouseUp);
-        document.body.style.userSelect = '';
     }, [handleMouseMove]);
-
-    useEffect(() => {
-        if (dragRef.current.isDragging || dragRef.current.isResizing) {
-            window.addEventListener('mousemove', handleMouseMove);
-            window.addEventListener('mouseup', handleMouseUp);
-            document.body.style.userSelect = 'none';
-        }
-        return () => {
-            window.removeEventListener('mousemove', handleMouseMove);
-            window.removeEventListener('mouseup', handleMouseUp);
-            document.body.style.userSelect = '';
-        };
-    }, [handleMouseMove, handleMouseUp]);
+    
+    const handleDragMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+        if (isMobile || (e.target as HTMLElement).closest('button')) return;
+        dragRef.current.isDragging = true;
+        dragRef.current.initialX = e.clientX - position.x;
+        dragRef.current.initialY = e.clientY - position.y;
+        document.body.style.userSelect = 'none';
+        window.addEventListener('mousemove', handleMouseMove);
+        window.addEventListener('mouseup', handleMouseUp);
+    };
+    
+    const handleResizeMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+        e.stopPropagation();
+        dragRef.current.isResizing = true;
+        dragRef.current.initialX = e.clientX;
+        dragRef.current.initialY = e.clientY;
+        dragRef.current.initialWidth = size.width;
+        dragRef.current.initialHeight = size.height;
+        document.body.style.userSelect = 'none';
+        window.addEventListener('mousemove', handleMouseMove);
+        window.addEventListener('mouseup', handleMouseUp);
+    };
 
 
     const guildChatTargets = useMemo((): ChatTarget[] => {
@@ -193,22 +202,6 @@ const ChatPanel: React.FC = () => {
     
     let lastDate: string | null = null;
     
-    const handleDragMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
-        if ((e.target as HTMLElement).closest('button')) return; // Ignore clicks on buttons in the header
-        dragRef.current.isDragging = true;
-        dragRef.current.initialX = e.clientX - position.x;
-        dragRef.current.initialY = e.clientY - position.y;
-    };
-    
-    const handleResizeMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
-        e.stopPropagation();
-        dragRef.current.isResizing = true;
-        dragRef.current.initialX = e.clientX;
-        dragRef.current.initialY = e.clientY;
-        dragRef.current.initialWidth = size.width;
-        dragRef.current.initialHeight = size.height;
-    };
-
     return (
         <div
             ref={panelRef}

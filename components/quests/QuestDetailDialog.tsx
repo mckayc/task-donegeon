@@ -3,6 +3,7 @@ import { Quest, RewardCategory, RewardItem, QuestType } from '../../types';
 import { useAppState } from '../../context/AppContext';
 import Button from '../ui/Button';
 import ToggleSwitch from '../ui/ToggleSwitch';
+import { isQuestAvailableForUser } from '../../utils/quests';
 
 interface QuestDetailDialogProps {
   quest: Quest;
@@ -14,7 +15,11 @@ interface QuestDetailDialogProps {
 }
 
 const QuestDetailDialog: React.FC<QuestDetailDialogProps> = ({ quest, onClose, onComplete, onToggleTodo, isTodo, dialogTitle }) => {
-    const { rewardTypes, settings } = useAppState();
+    const { rewardTypes, settings, currentUser, questCompletions, appMode, scheduledEvents } = useAppState();
+    
+    if (!currentUser) return null;
+
+    const isAvailable = isQuestAvailableForUser(quest, questCompletions.filter(c => c.userId === currentUser.id), new Date(), scheduledEvents, appMode);
 
     const getRewardInfo = (id: string) => {
         const rewardDef = rewardTypes.find(rt => rt.id === id);
@@ -107,7 +112,9 @@ const QuestDetailDialog: React.FC<QuestDetailDialogProps> = ({ quest, onClose, o
                             />
                         )}
                         {onComplete && (
-                            <Button onClick={onComplete}>Complete</Button>
+                            <Button onClick={onComplete} disabled={!isAvailable}>
+                                {isAvailable ? 'Complete' : 'Unavailable'}
+                            </Button>
                         )}
                     </div>
                 </div>

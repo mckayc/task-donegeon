@@ -102,7 +102,7 @@ const CollapsibleNavGroup: React.FC<CollapsibleNavGroupProps> = ({ header, child
                  {isOpen && (
                     <div className="mt-1 space-y-1">
                         {childItems.map(item => (
-                            <NavLink key={item.id} item={item} activePage={activePage} setActivePage={setActivePage} isCollapsed={true} />
+                            <NavLink key={item.id} item={item} activePage={activePage} setActivePage={setActivePage} isCollapsed={true} badgeCount={item.id === 'Approvals' ? badgeCount : 0} />
                         ))}
                     </div>
                 )}
@@ -133,7 +133,7 @@ const CollapsibleNavGroup: React.FC<CollapsibleNavGroupProps> = ({ header, child
             {isOpen && (
                 <div className="mt-1 space-y-1">
                     {childItems.map(item => (
-                        <NavLink key={item.id} item={item} activePage={activePage} setActivePage={setActivePage} isCollapsed={false} />
+                        <NavLink key={item.id} item={item} activePage={activePage} setActivePage={setActivePage} isCollapsed={false} badgeCount={item.id === 'Approvals' ? badgeCount : 0} />
                     ))}
                 </div>
             )}

@@ -815,7 +815,7 @@ app.put('/api/purchase-requests/:id', async (req, res) => handleMultiSliceApiAct
         const asset = data.gameAssets.find(a => a.id === request.assetId);
         if (!user || !asset) throw { statusCode: 404, message: 'User or Asset not found' };
 
-        applySetbacks(user, request.assetDetails.cost, data.rewardTypes, request.guildId);
+        // No need to deduct funds, they are already in escrow (implicitly). Just award the item.
         user.ownedAssetIds.push(asset.id);
         if (asset.linkedThemeId && !user.ownedThemes.includes(asset.linkedThemeId)) {
             user.ownedThemes.push(asset.linkedThemeId);

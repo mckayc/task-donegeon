@@ -101,12 +101,12 @@ const PackDetailView: React.FC<{ pack: LibraryPack; onBack: () => void; }> = ({ 
     const handleSaveEditedAsset = (updatedData: any) => {
         if (!assetToEdit) return;
         setLivePackAssets(prev => {
-            if (!prev) return null;
             const newAssets = { ...prev };
-            const assetList = (newAssets[assetToEdit.type] as any[]) || [];
+            const assetList = [...((newAssets[assetToEdit.type] as any[]) || [])]; // Create a new array to modify
             const assetIndex = assetList.findIndex(a => a.id === assetToEdit.data.id);
             if (assetIndex > -1) {
                 assetList[assetIndex] = { ...assetList[assetIndex], ...updatedData };
+                (newAssets as any)[assetToEdit.type] = assetList; // Assign the modified array back
             }
             return newAssets;
         });
@@ -138,22 +138,23 @@ const PackDetailView: React.FC<{ pack: LibraryPack; onBack: () => void; }> = ({ 
                 }
             }
         }
-
-        const processAssets = <T extends { id: string }>(
-            type: 'rewardTypes' | 'markets', 
-            addFunc: (item: Omit<T, 'id'>) => void
-        ) => {
-            livePackAssets[type]?.forEach(asset => {
-                if (selectedIds.includes(asset.id)) {
-                    const { id, ...rest } = asset;
-                    addFunc(rest as Omit<T, 'id'>);
-                    importedCount++;
-                }
-            });
-        };
         
-        processAssets<RewardTypeDefinition>('rewardTypes', addRewardType);
-        processAssets<Market>('markets', addMarket);
+        // 2. Process simple assets
+        livePackAssets.rewardTypes?.forEach(asset => {
+            if (selectedIds.includes(asset.id)) {
+                const { id, ...rest } = asset;
+                addRewardType(rest);
+                importedCount++;
+            }
+        });
+
+        livePackAssets.markets?.forEach(asset => {
+            if (selectedIds.includes(asset.id)) {
+                const { id, ...rest } = asset;
+                addMarket(rest);
+                importedCount++;
+            }
+        });
         
         livePackAssets.trophies?.forEach(t => { 
             if (selectedIds.includes(t.id)) { 

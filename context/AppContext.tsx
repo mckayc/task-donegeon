@@ -1,4 +1,3 @@
-
 import React, { createContext, useState, useContext, ReactNode, useEffect, useCallback, useMemo, useRef } from 'react';
 import { AppSettings, User, Quest, RewardTypeDefinition, QuestCompletion, RewardItem, Market, PurchaseRequest, Guild, Rank, Trophy, UserTrophy, Notification, AppMode, Page, IAppData, ShareableAssetType, GameAsset, Role, QuestCompletionStatus, RewardCategory, PurchaseRequestStatus, AdminAdjustment, AdminAdjustmentType, SystemLog, QuestType, QuestAvailability, Blueprint, ImportResolution, TrophyRequirementType, ThemeDefinition, ChatMessage, SystemNotification, SystemNotificationType, MarketStatus, QuestGroup, BulkQuestUpdates, ScheduledEvent } from '../types';
 import { INITIAL_SETTINGS, createMockUsers, INITIAL_REWARD_TYPES, INITIAL_RANKS, INITIAL_TROPHIES, createSampleMarkets, createSampleQuests, createInitialGuilds, createSampleGameAssets, INITIAL_THEMES, createInitialQuestCompletions, INITIAL_TAGS, INITIAL_QUEST_GROUPS } from '../data/initialData';
@@ -325,48 +324,48 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     }
   }, [currentUser, addNotification]);
   
-  const addUser = useCallback(async (userData) => {
+  const addUser = useCallback(async (userData: Omit<User, 'id' | 'personalPurse' | 'personalExperience' | 'guildBalances' | 'avatar' | 'ownedAssetIds' | 'ownedThemes' | 'hasBeenOnboarded'>) => {
       const { user } = await apiCall('/api/users', 'POST', userData);
       return user as User;
   }, [apiCall]);
-  const updateUser = useCallback(async (userId, updatedData) => {
+  const updateUser = useCallback(async (userId: string, updatedData: Partial<User>) => {
       await apiCall(`/api/users/${userId}`, 'PUT', updatedData);
   }, [apiCall]);
-  const deleteUser = useCallback(async (userId) => {
+  const deleteUser = useCallback(async (userId: string) => {
       await apiCall(`/api/users/${userId}`, 'DELETE');
   }, [apiCall]);
-  const markUserAsOnboarded = useCallback(async (userId) => {
+  const markUserAsOnboarded = useCallback(async (userId: string) => {
       await updateUser(userId, { hasBeenOnboarded: true });
   }, [updateUser]);
 
-  const addQuest = useCallback(async (quest) => { await apiCall('/api/quests', 'POST', quest); }, [apiCall]);
-  const updateQuest = useCallback(async (quest) => { await apiCall(`/api/quests/${quest.id}`, 'PUT', quest); }, [apiCall]);
-  const deleteQuest = useCallback(async (questId) => { await apiCall(`/api/quests/${questId}`, 'DELETE'); }, [apiCall]);
-  const cloneQuest = useCallback(async (questId) => { await apiCall(`/api/quests/${questId}/clone`, 'POST'); }, [apiCall]);
+  const addQuest = useCallback(async (quest: Omit<Quest, 'id' | 'claimedByUserIds' | 'dismissals'>) => { await apiCall('/api/quests', 'POST', quest); }, [apiCall]);
+  const updateQuest = useCallback(async (quest: Quest) => { await apiCall(`/api/quests/${quest.id}`, 'PUT', quest); }, [apiCall]);
+  const deleteQuest = useCallback(async (questId: string) => { await apiCall(`/api/quests/${questId}`, 'DELETE'); }, [apiCall]);
+  const cloneQuest = useCallback(async (questId: string) => { await apiCall(`/api/quests/${questId}/clone`, 'POST'); }, [apiCall]);
   const questAction = useCallback(async (questId: string, action: string, userId: string) => {
     await apiCall(`/api/quests/${questId}/actions`, 'POST', { action, userId });
   }, [apiCall]);
-  const dismissQuest = useCallback((questId, userId) => questAction(questId, 'dismiss', userId), [questAction]);
-  const claimQuest = useCallback((questId, userId) => questAction(questId, 'claim', userId), [questAction]);
-  const releaseQuest = useCallback((questId, userId) => questAction(questId, 'release', userId), [questAction]);
-  const markQuestAsTodo = useCallback((questId, userId) => questAction(questId, 'mark_todo', userId), [questAction]);
-  const unmarkQuestAsTodo = useCallback((questId, userId) => questAction(questId, 'unmark_todo', userId), [questAction]);
+  const dismissQuest = useCallback((questId: string, userId: string) => questAction(questId, 'dismiss', userId), [questAction]);
+  const claimQuest = useCallback((questId: string, userId: string) => questAction(questId, 'claim', userId), [questAction]);
+  const releaseQuest = useCallback((questId: string, userId: string) => questAction(questId, 'release', userId), [questAction]);
+  const markQuestAsTodo = useCallback((questId: string, userId: string) => questAction(questId, 'mark_todo', userId), [questAction]);
+  const unmarkQuestAsTodo = useCallback((questId: string, userId: string) => questAction(questId, 'unmark_todo', userId), [questAction]);
   
-  const approveQuestCompletion = useCallback(async (id, note) => { await apiCall(`/api/quest-completions/${id}`, 'PUT', { status: 'Approved', note }); }, [apiCall]);
-  const rejectQuestCompletion = useCallback(async (id, note) => { await apiCall(`/api/quest-completions/${id}`, 'PUT', { status: 'Rejected', note }); }, [apiCall]);
+  const approveQuestCompletion = useCallback(async (id: string, note?: string) => { await apiCall(`/api/quest-completions/${id}`, 'PUT', { status: 'Approved', note }); }, [apiCall]);
+  const rejectQuestCompletion = useCallback(async (id: string, note?: string) => { await apiCall(`/api/quest-completions/${id}`, 'PUT', { status: 'Rejected', note }); }, [apiCall]);
 
-  const addQuestGroup = useCallback(async (group) => {
+  const addQuestGroup = useCallback(async (group: Omit<QuestGroup, 'id'>) => {
       const { newGroup } = await apiCall('/api/quest-groups', 'POST', group);
       return newGroup as QuestGroup;
   }, [apiCall]);
-  const updateQuestGroup = useCallback(async (group) => { await apiCall(`/api/quest-groups/${group.id}`, 'PUT', group); }, [apiCall]);
-  const deleteQuestGroup = useCallback(async (id) => { await apiCall(`/api/quest-groups/${id}`, 'DELETE'); }, [apiCall]);
-  const assignQuestGroupToUsers = useCallback(async (id, userIds) => { await apiCall(`/api/quest-groups/${id}/assign`, 'POST', { userIds }); }, [apiCall]);
+  const updateQuestGroup = useCallback(async (group: QuestGroup) => { await apiCall(`/api/quest-groups/${group.id}`, 'PUT', group); }, [apiCall]);
+  const deleteQuestGroup = useCallback(async (id: string) => { await apiCall(`/api/quest-groups/${id}`, 'DELETE'); }, [apiCall]);
+  const assignQuestGroupToUsers = useCallback(async (id: string, userIds: string[]) => { await apiCall(`/api/quest-groups/${id}/assign`, 'POST', { userIds }); }, [apiCall]);
   
   // And so on for all other actions...
-  const updateSettings = useCallback(async (newSettings) => { await apiCall('/api/settings', 'PUT', newSettings); }, [apiCall]);
-  const bulkUpdateQuests = useCallback(async (questIds, updates) => { await apiCall('/api/quests/bulk-update', 'POST', { questIds, updates }); }, [apiCall]);
-  const deleteQuests = useCallback(async (questIds) => { await apiCall('/api/quests/delete-many', 'POST', { questIds }); }, [apiCall]);
+  const updateSettings = useCallback(async (newSettings: Partial<AppSettings>) => { await apiCall('/api/settings', 'PUT', newSettings); }, [apiCall]);
+  const bulkUpdateQuests = useCallback(async (questIds: string[], updates: BulkQuestUpdates) => { await apiCall('/api/quests/bulk-update', 'POST', { questIds, updates }); }, [apiCall]);
+  const deleteQuests = useCallback(async (questIds: string[]) => { await apiCall('/api/quests/delete-many', 'POST', { questIds }); }, [apiCall]);
   
   // The rest of the dispatch functions would be implemented here in a similar fashion...
   const notImplemented = useCallback(async () => { addNotification({type: 'error', message: 'This feature is not fully wired up yet.'}); }, [addNotification]);
@@ -385,7 +384,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
   // === CONTEXT PROVIDER VALUE ===
   const stateValue: AppState = { users, quests, questGroups, markets, rewardTypes, questCompletions, purchaseRequests, guilds, ranks, trophies, userTrophies, adminAdjustments, gameAssets, systemLogs, settings, themes, loginHistory, chatMessages, systemNotifications, scheduledEvents, currentUser, isAppUnlocked, isFirstRun, activePage, appMode, notifications, isDataLoaded, activeMarketId, allTags: useMemo(() => Array.from(new Set([...INITIAL_TAGS, ...quests.flatMap(q => q.tags || [])])).sort(), [quests]), isSwitchingUser, isSharedViewActive, targetedUserForLogin, isAiConfigured, isSidebarCollapsed, syncStatus, syncError, isChatOpen, };
-  const dispatchValue: AppDispatch = { addUser: addUser as any, updateUser, deleteUser, setCurrentUser, markUserAsOnboarded, setAppUnlocked, setIsSwitchingUser, setTargetedUserForLogin, exitToSharedView, setIsSharedViewActive: _setIsSharedViewActive, addQuest, updateQuest, deleteQuest, cloneQuest, dismissQuest, claimQuest, releaseQuest, markQuestAsTodo, unmarkQuestAsTodo, completeQuest, approveQuestCompletion, rejectQuestCompletion, addQuestGroup: addQuestGroup as any, updateQuestGroup, deleteQuestGroup, assignQuestGroupToUsers: notImplemented, addRewardType: notImplemented, updateRewardType: notImplemented, deleteRewardType: notImplemented, cloneRewardType: notImplemented, addMarket: notImplemented, updateMarket: notImplemented, deleteMarket: notImplemented, cloneMarket: notImplemented, deleteMarkets: notImplemented, updateMarketsStatus: notImplemented, purchaseMarketItem, cancelPurchaseRequest: notImplemented, approvePurchaseRequest: notImplemented, rejectPurchaseRequest: notImplemented, addGuild: notImplemented, updateGuild: notImplemented, deleteGuild: notImplemented, setRanks: notImplemented, addTrophy: notImplemented, updateTrophy: notImplemented, deleteTrophy: notImplemented, awardTrophy: notImplemented, applyManualAdjustment: notImplementedPromise, addGameAsset: notImplemented, updateGameAsset: notImplemented, deleteGameAsset: notImplemented, cloneGameAsset: notImplemented, addTheme: notImplemented, updateTheme: notImplemented, deleteTheme: notImplemented, addScheduledEvent: notImplemented, updateScheduledEvent: notImplemented, deleteScheduledEvent: notImplemented, completeFirstRun: notImplemented, importBlueprint: notImplemented, restoreFromBackup, clearAllHistory: notImplemented, resetAllPlayerData: notImplemented, deleteAllCustomContent: notImplemented, deleteSelectedAssets: notImplemented, deleteQuests, deleteTrophies: notImplemented, deleteGameAssets: notImplemented, updateQuestsStatus: (questIds, isActive) => bulkUpdateQuests(questIds, { isActive }), bulkUpdateQuests, uploadFile, executeExchange: notImplemented, updateSettings, resetSettings: notImplemented, setActivePage, setAppMode, addNotification, removeNotification, setActiveMarketId, toggleSidebar, toggleChat, sendMessage, markMessagesAsRead: notImplemented, addSystemNotification: notImplemented, markSystemNotificationsAsRead: notImplemented };
+  const dispatchValue: AppDispatch = { addUser: addUser as any, updateUser, deleteUser, setCurrentUser, markUserAsOnboarded, setAppUnlocked, setIsSwitchingUser, setTargetedUserForLogin, exitToSharedView, setIsSharedViewActive: _setIsSharedViewActive, addQuest, updateQuest, deleteQuest, cloneQuest, dismissQuest, claimQuest, releaseQuest, markQuestAsTodo, unmarkQuestAsTodo, completeQuest, approveQuestCompletion, rejectQuestCompletion, addQuestGroup: addQuestGroup as any, updateQuestGroup, deleteQuestGroup, assignQuestGroupToUsers, addRewardType: notImplemented, updateRewardType: notImplemented, deleteRewardType: notImplemented, cloneRewardType: notImplemented, addMarket: notImplemented, updateMarket: notImplemented, deleteMarket: notImplemented, cloneMarket: notImplemented, deleteMarkets: notImplemented, updateMarketsStatus: notImplemented, purchaseMarketItem, cancelPurchaseRequest: notImplemented, approvePurchaseRequest: notImplemented, rejectPurchaseRequest: notImplemented, addGuild: notImplemented, updateGuild: notImplemented, deleteGuild: notImplemented, setRanks: notImplemented, addTrophy: notImplemented, updateTrophy: notImplemented, deleteTrophy: notImplemented, awardTrophy: notImplemented, applyManualAdjustment: notImplementedPromise, addGameAsset: notImplemented, updateGameAsset: notImplemented, deleteGameAsset: notImplemented, cloneGameAsset: notImplemented, addTheme: notImplemented, updateTheme: notImplemented, deleteTheme: notImplemented, addScheduledEvent: notImplemented, updateScheduledEvent: notImplemented, deleteScheduledEvent: notImplemented, completeFirstRun: notImplemented, importBlueprint: notImplemented, restoreFromBackup, clearAllHistory: notImplemented, resetAllPlayerData: notImplemented, deleteAllCustomContent: notImplemented, deleteSelectedAssets: notImplemented, deleteQuests, deleteTrophies: notImplemented, deleteGameAssets: notImplemented, updateQuestsStatus: (questIds, isActive) => bulkUpdateQuests(questIds, { isActive }), bulkUpdateQuests, uploadFile, executeExchange: notImplemented, updateSettings, resetSettings: notImplemented, setActivePage, setAppMode, addNotification, removeNotification, setActiveMarketId, toggleSidebar, toggleChat, sendMessage, markMessagesAsRead: notImplemented, addSystemNotification: notImplemented, markSystemNotificationsAsRead: notImplemented };
 
   return (
     <AppStateContext.Provider value={stateValue}>

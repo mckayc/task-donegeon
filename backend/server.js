@@ -1,4 +1,5 @@
 
+
 const express = require('express');
 const cors = require('cors');
 const { Pool } = require('pg');
@@ -9,6 +10,8 @@ const fs = require('fs').promises;
 const { GoogleGenAI } = require('@google/genai');
 const http = require('http');
 const WebSocket = require('ws');
+const { createMockUsers, INITIAL_REWARD_TYPES, INITIAL_RANKS, INITIAL_TROPHIES, createSampleMarkets, createSampleQuests, createInitialGuilds, createSampleGameAssets, INITIAL_THEMES, createInitialQuestCompletions, INITIAL_SETTINGS, INITIAL_QUEST_GROUPS } = require('../dist/assets/initialData-3f8a452a.js');
+
 
 // --- Environment Variable Checks ---
 const requiredEnv = ['DATABASE_URL', 'STORAGE_PROVIDER'];
@@ -263,6 +266,93 @@ app.get('/api/metadata', async (req, res, next) => {
 // Routes that don't need the DB (like AI status) can be placed before this line.
 app.get('/api/ai/status', (req, res) => res.json({ isConfigured: !!ai }));
 app.use('/api', dbHealthCheckMiddleware);
+
+app.post('/api/first-run', async (req, res) => {
+    try {
+        const { adminUserData, setupChoice, blueprint } = req.body;
+        
+        // This is an atomic operation: clear existing data before seeding.
+        await pool.query('DELETE FROM app_data WHERE key = $1', ['app_state']);
+
+        const newAdminUser = {
+            ...adminUserData,
+            id: `user-${Date.now()}`,
+            avatar: {},
+            ownedAssetIds: [],
+            personalPurse: {},
+            personalExperience: {},
+            guildBalances: {},
+            ownedThemes: ['emerald', 'rose', 'sky'],
+            hasBeenOnboarded: false
+        };
+
+        let newAppData;
+
+        if (setupChoice === 'guided') {
+            const allUsers = [newAdminUser];
+            const sampleQuests = createSampleQuests(allUsers);
+            const sampleGuilds = createInitialGuilds(allUsers);
+            newAppData = {
+                users: allUsers,
+                quests: sampleQuests,
+                questGroups: INITIAL_QUEST_GROUPS,
+                markets: createSampleMarkets(),
+                rewardTypes: INITIAL_REWARD_TYPES,
+                questCompletions: createInitialQuestCompletions(allUsers, sampleQuests),
+                purchaseRequests: [],
+                guilds: sampleGuilds,
+                ranks: INITIAL_RANKS,
+                trophies: INITIAL_TROPHIES,
+                userTrophies: [],
+                adminAdjustments: [],
+                gameAssets: createSampleGameAssets(),
+                systemLogs: [],
+                settings: { ...INITIAL_SETTINGS, contentVersion: 1 },
+                themes: INITIAL_THEMES,
+                loginHistory: [], chatMessages: [], systemNotifications: [], scheduledEvents: []
+            };
+        } else if (setupChoice === 'scratch') {
+             const allUsers = [newAdminUser];
+             const sampleGuilds = createInitialGuilds(allUsers);
+             newAppData = {
+                users: allUsers,
+                quests: [], questGroups: [], markets: [],
+                rewardTypes: INITIAL_REWARD_TYPES, questCompletions: [], purchaseRequests: [],
+                guilds: sampleGuilds, ranks: INITIAL_RANKS, trophies: [], userTrophies: [],
+                adminAdjustments: [], gameAssets: [], systemLogs: [],
+                settings: { ...INITIAL_SETTINGS, contentVersion: 1 },
+                themes: INITIAL_THEMES,
+                loginHistory: [], chatMessages: [], systemNotifications: [], scheduledEvents: []
+             };
+        } else if (setupChoice === 'import' && blueprint) {
+            // This case needs more logic for merging/resolving, but for now we'll do a simple import
+            newAdminUser.hasBeenOnboarded = true;
+            newAppData = {
+                users: [newAdminUser],
+                quests: blueprint.assets.quests || [],
+                questGroups: blueprint.assets.questGroups || [],
+                markets: blueprint.assets.markets || [],
+                rewardTypes: blueprint.assets.rewardTypes || [],
+                ranks: blueprint.assets.ranks || [],
+                trophies: blueprint.assets.trophies || [],
+                gameAssets: blueprint.assets.gameAssets || [],
+                settings: { ...INITIAL_SETTINGS, contentVersion: 1 },
+                // Defaults for things not in blueprint
+                questCompletions: [], purchaseRequests: [], guilds: createInitialGuilds([newAdminUser]),
+                userTrophies: [], adminAdjustments: [], systemLogs: [],
+                themes: INITIAL_THEMES, loginHistory: [], chatMessages: [], systemNotifications: [], scheduledEvents: []
+            };
+        } else {
+            throw new Error('Invalid setup choice provided.');
+        }
+
+        await saveData(newAppData);
+        res.status(201).json({ user: newAdminUser });
+    } catch (err) {
+        console.error("First Run Error:", err);
+        res.status(500).json({ error: 'Failed to complete first run setup.' });
+    }
+});
 
 
 app.get('/api/data', async (req, res, next) => {

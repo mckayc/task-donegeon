@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useAppState, useAppDispatch } from '../../../context/AppContext';
-import { IAppData, Blueprint, ImportResolution } from '../../../types';
+import { IAppData, Blueprint, ImportResolution, AutomatedBackupProfile } from '../../../types';
 import { analyzeBlueprintForConflicts } from '../../../utils/sharing';
 import Button from '../../ui/Button';
 import Card from '../../ui/Card';
@@ -19,6 +19,14 @@ const BackupAndImportPage: React.FC = () => {
     const [importResolutions, setImportResolutions] = useState<ImportResolution[]>([]);
     const [confirmation, setConfirmation] = useState<{ action: 'restore' | 'restore-defaults' | 'clear-history' | 'reset-players' | 'factory-reset', title: string, message: string } | null>(null);
     const [autoBackupSettings, setAutoBackupSettings] = useState(settings.automatedBackups);
+
+    const handleProfileChange = (index: number, field: keyof AutomatedBackupProfile, value: string | boolean | number) => {
+        setAutoBackupSettings(prev => {
+            const newProfiles = [...prev.profiles] as [AutomatedBackupProfile, AutomatedBackupProfile, AutomatedBackupProfile];
+            newProfiles[index] = { ...newProfiles[index], [field]: value };
+            return { ...prev, profiles: newProfiles };
+        });
+    };
 
     const handleRestoreFileSelect = (file: File) => {
         setFileToRestore(file);
@@ -99,14 +107,28 @@ const BackupAndImportPage: React.FC = () => {
                     </div>
                     <div className="pt-4 border-t border-stone-700/60">
                         <h4 className="font-semibold text-stone-200">Automatic Backups</h4>
-                         <div className="space-y-4 mt-3">
-                            <ToggleSwitch enabled={autoBackupSettings.enabled} setEnabled={(val) => setAutoBackupSettings(p => ({...p, enabled: val}))} label="Enable Automated Backups" />
-                            <div className={`grid grid-cols-2 gap-4 ${!autoBackupSettings.enabled ? 'opacity-50 pointer-events-none' : ''}`}>
-                                <Input label="Frequency (hours)" type="number" min="1" value={autoBackupSettings.frequencyHours} onChange={e => setAutoBackupSettings(p => ({...p, frequencyHours: parseInt(e.target.value) || 24}))} />
-                                <Input label="Backups to Keep" type="number" min="1" value={autoBackupSettings.maxBackups} onChange={e => setAutoBackupSettings(p => ({...p, maxBackups: parseInt(e.target.value) || 7}))} />
-                            </div>
+                        <p className="text-sm text-stone-400 mt-1 mb-3">Configure up to 3 automated backup schedules. Backups are stored on the server.</p>
+                        <div className="space-y-4">
+                            {autoBackupSettings.profiles.map((profile, index) => (
+                                <div key={index} className="p-3 bg-stone-900/40 rounded-lg border border-stone-700/60">
+                                    <ToggleSwitch
+                                        enabled={profile.enabled}
+                                        setEnabled={(val) => handleProfileChange(index, 'enabled', val)}
+                                        label={`Profile ${index + 1}: ${profile.frequency.charAt(0).toUpperCase() + profile.frequency.slice(1)} Backups`}
+                                    />
+                                    <div className={`grid grid-cols-2 gap-4 mt-2 ${!profile.enabled ? 'opacity-50 pointer-events-none' : ''}`}>
+                                        <Input as="select" label="Frequency" value={profile.frequency} onChange={e => handleProfileChange(index, 'frequency', e.target.value)}>
+                                            <option value="hourly">Hourly</option>
+                                            <option value="daily">Daily</option>
+                                            <option value="weekly">Weekly</option>
+                                            <option value="monthly">Monthly</option>
+                                        </Input>
+                                        <Input label="Number to Keep" type="number" min="1" value={profile.keep} onChange={e => handleProfileChange(index, 'keep', parseInt(e.target.value, 10) || 1)} />
+                                    </div>
+                                </div>
+                            ))}
                             <div className="text-right">
-                                <Button onClick={handleSaveAutoBackupSettings} variant="secondary">Save Settings</Button>
+                                <Button onClick={handleSaveAutoBackupSettings} variant="secondary">Save Backup Settings</Button>
                             </div>
                         </div>
                     </div>

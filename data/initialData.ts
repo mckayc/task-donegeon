@@ -200,9 +200,11 @@ export const INITIAL_SETTINGS: AppSettings = {
         userIds: [],
     },
     automatedBackups: {
-        enabled: false,
-        frequencyHours: 24,
-        maxBackups: 7,
+        profiles: [
+            { enabled: false, frequency: 'daily', keep: 7 },
+            { enabled: false, frequency: 'weekly', keep: 4 },
+            { enabled: false, frequency: 'monthly', keep: 3 }
+        ]
     },
     loginNotifications: {
         enabled: true,

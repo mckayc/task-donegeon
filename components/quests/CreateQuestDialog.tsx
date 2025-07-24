@@ -171,14 +171,14 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
   };
 
   const handleWeeklyDayToggle = (dayIndex: number) => {
-    setFormData(prev => ({ ...prev, weeklyRecurrenceDays: prev.weeklyRecurrenceDays.includes(dayIndex) ? prev.weeklyRecurrenceDays.filter((d: number) => d !== dayIndex) : [...prev.weeklyRecurrenceDays, dayIndex].sort() }));
+    setFormData(prev => ({ ...prev, weeklyRecurrenceDays: prev.weeklyRecurrenceDays.includes(dayIndex) ? prev.weeklyRecurrenceDays.filter(d => d !== dayIndex) : [...prev.weeklyRecurrenceDays, dayIndex].sort() }));
   };
 
   const handleMonthlyDayToggle = (day: number) => {
-    setFormData(prev => ({ ...prev, monthlyRecurrenceDays: prev.monthlyRecurrenceDays.includes(day) ? prev.monthlyRecurrenceDays.filter((d: number) => d !== day) : [...prev.monthlyRecurrenceDays, day].sort((a,b)=>a-b) }));
+    setFormData(prev => ({ ...prev, monthlyRecurrenceDays: prev.monthlyRecurrenceDays.includes(day) ? prev.monthlyRecurrenceDays.filter(d => d !== day) : [...prev.monthlyRecurrenceDays, day].sort((a,b)=>a-b) }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.title.trim()) {
         setError('Title is required.');
@@ -188,8 +188,10 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
 
     let finalGroupId = formData.groupId;
     if (isCreatingNewGroup && newGroupName.trim()) {
-        const newGroup = addQuestGroup({ name: newGroupName.trim(), description: '', icon: '📂' });
-        finalGroupId = newGroup.id;
+        const newGroup = await addQuestGroup({ name: newGroupName.trim(), description: '', icon: '📂' });
+        if(newGroup) {
+            finalGroupId = newGroup.id;
+        }
     }
 
     const finalQuestData = {

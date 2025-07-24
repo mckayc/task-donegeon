@@ -101,6 +101,7 @@ const PackDetailView: React.FC<{ pack: LibraryPack; onBack: () => void; }> = ({ 
     const handleSaveEditedAsset = (updatedData: any) => {
         if (!assetToEdit) return;
         setLivePackAssets(prev => {
+            if (!prev) return null;
             const newAssets = { ...prev };
             const assetList = (newAssets[assetToEdit.type] as any[]) || [];
             const assetIndex = assetList.findIndex(a => a.id === assetToEdit.data.id);
@@ -112,7 +113,7 @@ const PackDetailView: React.FC<{ pack: LibraryPack; onBack: () => void; }> = ({ 
         setAssetToEdit(null);
     };
 
-    const handleInstall = () => {
+    const handleInstall = async () => {
         let importedCount = 0;
         const idMaps = {
             rewardTypes: new Map<string, string>(),
@@ -122,26 +123,30 @@ const PackDetailView: React.FC<{ pack: LibraryPack; onBack: () => void; }> = ({ 
         };
 
         // 1. Process Quest Groups specifically to handle name conflicts and get new IDs
-        livePackAssets.questGroups?.forEach(packGroup => {
-            const existingGroup = allQuestGroupsFromState.find(g => g.name.toLowerCase() === packGroup.name.toLowerCase());
-            if (existingGroup) {
-                idMaps.questGroups.set(packGroup.id, existingGroup.id);
-            } else {
-                const { id, ...rest } = packGroup;
-                const newGroup = addQuestGroup(rest); // This function returns the new group with its generated ID
-                idMaps.questGroups.set(packGroup.id, newGroup.id);
-                importedCount++;
+        if (livePackAssets.questGroups) {
+            for (const packGroup of livePackAssets.questGroups) {
+                const existingGroup = allQuestGroupsFromState.find(g => g.name.toLowerCase() === packGroup.name.toLowerCase());
+                if (existingGroup) {
+                    idMaps.questGroups.set(packGroup.id, existingGroup.id);
+                } else {
+                    const { id, ...rest } = packGroup;
+                    const newGroup = await addQuestGroup(rest); // This function returns the new group with its generated ID
+                    if (newGroup) {
+                        idMaps.questGroups.set(packGroup.id, newGroup.id);
+                        importedCount++;
+                    }
+                }
             }
-        });
+        }
 
         const processAssets = <T extends { id: string }>(
             type: 'rewardTypes' | 'markets', 
             addFunc: (item: Omit<T, 'id'>) => void
         ) => {
-            (livePackAssets as any)[type]?.forEach((asset: T) => {
+            livePackAssets[type]?.forEach(asset => {
                 if (selectedIds.includes(asset.id)) {
                     const { id, ...rest } = asset;
-                    addFunc(rest as any);
+                    addFunc(rest as Omit<T, 'id'>);
                     importedCount++;
                 }
             });

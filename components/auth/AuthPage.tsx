@@ -93,7 +93,7 @@ const RegisterForm: React.FC<{ onSwitchMode: () => void }> = ({ onSwitchMode }) 
         setFormData({ ...formData, [e.target.name]: e.target.value });
     };
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setError('');
 
@@ -125,8 +125,10 @@ const RegisterForm: React.FC<{ onSwitchMode: () => void }> = ({ onSwitchMode }) 
             pin: '',
         };
 
-        const createdUser = addUser(newUser);
-        setCurrentUser(createdUser);
+        const createdUser = await addUser(newUser);
+        if (createdUser) {
+            setCurrentUser(createdUser);
+        }
     };
 
     return (

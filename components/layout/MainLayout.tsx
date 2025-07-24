@@ -32,7 +32,10 @@ import CollectionPage from '../pages/CollectionPage';
 import ManageItemsPage from '../pages/ManageItemsPage';
 import AiStudioPage from '../pages/AiStudioPage';
 import AppearancePage from '../pages/AppearancePage';
-import DataManagementPage from '../pages/DataManagementPage';
+import ObjectExporterPage from '../pages/management/ObjectExporterPage';
+import AssetManagerPage from '../pages/management/MediaManagerPage';
+import BackupAndImportPage from '../pages/management/BackupAndImportPage';
+import AssetLibraryPage from '../pages/management/AssetLibraryPage';
 import ThemeEditorPage from '../pages/ThemeEditorPage';
 import ManageQuestGroupsPage from '../pages/ManageQuestGroupsPage';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
@@ -51,7 +54,8 @@ const MainLayout: React.FC = () => {
   const ADMIN_ONLY_PAGES: Page[] = [
     'Manage Users', 'Manage Rewards', 'Manage Quests', 'Manage Quest Groups', 'Manage Goods', 'Manage Markets',
     'Manage Guilds', 'Manage Ranks', 'Manage Trophies', 'Settings', 'AI Studio',
-    'Appearance', 'Theme Editor', 'Data Management', 'Manage Events',
+    'Appearance', 'Theme Editor', 'Object Exporter', 'Asset Manager', 'Backup & Import', 'Asset Library',
+    'Manage Events',
   ];
   const GATEKEEPER_PAGES: Page[] = ['Approvals'];
 
@@ -129,7 +133,10 @@ const MainLayout: React.FC = () => {
       case 'Settings': return <SettingsPage />;
       case 'Appearance': return <AppearancePage />;
       case 'Theme Editor': return <ThemeEditorPage />;
-      case 'Data Management': return <DataManagementPage />;
+      case 'Object Exporter': return <ObjectExporterPage />;
+      case 'Asset Manager': return <AssetManagerPage />;
+      case 'Backup & Import': return <BackupAndImportPage />;
+      case 'Asset Library': return <AssetLibraryPage />;
       case 'Profile': return <ProfilePage />;
       case 'About': return <AboutPage />;
       case 'Help Guide': return <HelpPage />;

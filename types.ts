@@ -420,14 +420,11 @@ export interface Terminology {
   link_about: string;
   link_help_guide: string;
   link_chat: string;
-  link_data_management: string;
-  link_data_reset: string;
 }
 
 export type Page = 'Dashboard' | 'Avatar' | 'Quests' | 'Marketplace' | 'Chronicles' | 'Guild' | 'Calendar' | 'Progress' | 'Trophies' | 'Ranks' | 'Manage Users' | 'Manage Rewards' | 'Manage Quests' | 'Manage Goods' | 'Approvals' | 'Manage Markets' | 'Manage Guilds' | 'Settings' | 'Profile' | 'About' | 'Help Guide' | 'Manage Ranks' | 'Manage Trophies' | 'Themes' | 'Data Management' | 'Collection' | 'AI Studio' | 'Appearance'
 | 'Object Exporter' | 'Asset Manager' | 'Backup & Import' | 'Asset Library'
 | 'Theme Editor' | 'Chat' | 'Manage Quest Groups' | 'Manage Events'
-| 'Data Reset'
 ;
 
 export interface SidebarLink {

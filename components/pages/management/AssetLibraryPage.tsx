@@ -167,7 +167,7 @@ const PackDetailView: React.FC<{ pack: LibraryPack; onBack: () => void; }> = ({ 
         
         livePackAssets.quests?.forEach(q => {
             if (selectedIds.includes(q.id)) {
-                const { id, ...rest } = q;
+                const { id, assignedUserIds, ...rest } = q;
                 const newQuest = { 
                     ...rest,
                     assignedUserIds: users.map(u => u.id),

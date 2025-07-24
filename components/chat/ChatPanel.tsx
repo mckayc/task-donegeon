@@ -1,6 +1,3 @@
-
-
-
 import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { Role, User } from '../../types';
@@ -17,6 +14,30 @@ type ChatTarget = User | {
     icon: string;
 };
 
+const useLocalStorage = (key: string, initialValue: any) => {
+    const [storedValue, setStoredValue] = useState(() => {
+        try {
+            const item = window.localStorage.getItem(key);
+            return item ? JSON.parse(item) : initialValue;
+        } catch (error) {
+            console.log(error);
+            return initialValue;
+        }
+    });
+
+    const setValue = (value: any) => {
+        try {
+            const valueToStore = value instanceof Function ? value(storedValue) : value;
+            setStoredValue(valueToStore);
+            window.localStorage.setItem(key, JSON.stringify(valueToStore));
+        } catch (error) {
+            console.log(error);
+        }
+    };
+
+    return [storedValue, setValue];
+};
+
 const ChatPanel: React.FC = () => {
     const { currentUser, users, guilds, chatMessages, isChatOpen, settings } = useAppState();
     const { toggleChat, sendMessage, markMessagesAsRead } = useAppDispatch();
@@ -25,6 +46,58 @@ const ChatPanel: React.FC = () => {
     const [isAnnouncement, setIsAnnouncement] = useState(false);
     const [userScrolledUp, setUserScrolledUp] = useState(false);
     const messagesContainerRef = useRef<HTMLDivElement>(null);
+
+    // Draggable & Resizable State
+    const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+    const [size, setSize] = useLocalStorage('chat-panel-size', { width: 600, height: 700 });
+    const [position, setPosition] = useLocalStorage('chat-panel-position', { x: window.innerWidth - 624, y: window.innerHeight - 724 });
+    const panelRef = useRef<HTMLDivElement>(null);
+    const dragRef = useRef({ isDragging: false, isResizing: false, initialX: 0, initialY: 0, initialWidth: 0, initialHeight: 0 });
+
+    useEffect(() => {
+        const handleResize = () => setIsMobile(window.innerWidth < 768);
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
+
+    const handleMouseMove = useCallback((e: MouseEvent) => {
+        if (dragRef.current.isDragging) {
+            setPosition({
+                x: e.clientX - dragRef.current.initialX,
+                y: e.clientY - dragRef.current.initialY
+            });
+        }
+        if (dragRef.current.isResizing) {
+            const newWidth = dragRef.current.initialWidth + (e.clientX - dragRef.current.initialX);
+            const newHeight = dragRef.current.initialHeight + (e.clientY - dragRef.current.initialY);
+            setSize({
+                width: Math.max(400, newWidth),
+                height: Math.max(500, newHeight)
+            });
+        }
+    }, [setPosition, setSize]);
+
+    const handleMouseUp = useCallback(() => {
+        dragRef.current.isDragging = false;
+        dragRef.current.isResizing = false;
+        window.removeEventListener('mousemove', handleMouseMove);
+        window.removeEventListener('mouseup', handleMouseUp);
+        document.body.style.userSelect = '';
+    }, [handleMouseMove]);
+
+    useEffect(() => {
+        if (dragRef.current.isDragging || dragRef.current.isResizing) {
+            window.addEventListener('mousemove', handleMouseMove);
+            window.addEventListener('mouseup', handleMouseUp);
+            document.body.style.userSelect = 'none';
+        }
+        return () => {
+            window.removeEventListener('mousemove', handleMouseMove);
+            window.removeEventListener('mouseup', handleMouseUp);
+            document.body.style.userSelect = '';
+        };
+    }, [handleMouseMove, handleMouseUp]);
+
 
     const guildChatTargets = useMemo((): ChatTarget[] => {
         if (!currentUser) return [];
@@ -119,16 +192,44 @@ const ChatPanel: React.FC = () => {
     if (!isChatOpen || !currentUser) return null;
     
     let lastDate: string | null = null;
+    
+    const handleDragMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+        if ((e.target as HTMLElement).closest('button')) return; // Ignore clicks on buttons in the header
+        dragRef.current.isDragging = true;
+        dragRef.current.initialX = e.clientX - position.x;
+        dragRef.current.initialY = e.clientY - position.y;
+    };
+    
+    const handleResizeMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+        e.stopPropagation();
+        dragRef.current.isResizing = true;
+        dragRef.current.initialX = e.clientX;
+        dragRef.current.initialY = e.clientY;
+        dragRef.current.initialWidth = size.width;
+        dragRef.current.initialHeight = size.height;
+    };
 
     return (
-        <div className="fixed z-50 inset-0 md:inset-auto md:bottom-6 md:right-6 md:w-[600px] md:h-[700px] bg-stone-800 border border-stone-700 rounded-none md:rounded-xl shadow-2xl flex flex-col">
-            <header className="p-4 border-b border-stone-700 flex justify-between items-center flex-shrink-0">
+        <div
+            ref={panelRef}
+            className={`fixed z-50 bg-stone-800 border border-stone-700 shadow-2xl flex flex-col
+                        ${isMobile ? 'inset-0 rounded-none' : 'rounded-xl'}`}
+            style={!isMobile ? {
+                width: `${size.width}px`,
+                height: `${size.height}px`,
+                transform: `translate(${position.x}px, ${position.y}px)`
+            } : {}}
+        >
+            <header 
+                onMouseDown={handleDragMouseDown}
+                className={`p-4 border-b border-stone-700 flex justify-between items-center flex-shrink-0 ${!isMobile ? 'cursor-move' : ''}`}
+            >
                 <h3 className="font-bold text-lg text-stone-100">Chat</h3>
                 <button onClick={toggleChat} className="text-stone-400 hover:text-white"><XCircleIcon className="w-6 h-6"/></button>
             </header>
             
             <div className="flex-grow flex md:flex-row flex-col overflow-hidden relative">
-                <aside className={`w-full md:w-1/3 border-r border-stone-700 overflow-y-auto transition-transform duration-300 absolute md:static inset-0 ${activeChatTarget ? '-translate-x-full md:translate-x-0' : 'translate-x-0'}`}>
+                <aside className={`w-full md:w-1/3 border-r border-stone-700 overflow-y-auto transition-transform duration-300 absolute md:static inset-0 bg-stone-800 ${activeChatTarget ? '-translate-x-full md:translate-x-0' : 'translate-x-0'}`}>
                     {chatPartners.map(target => {
                         const isGuild = 'isGuild' in target && target.isGuild;
                         const hasUnread = isGuild ? unreadInfo.guilds.has(target.id) : unreadInfo.dms.has(target.id);
@@ -219,6 +320,15 @@ const ChatPanel: React.FC = () => {
                     )}
                 </main>
             </div>
+             {!isMobile && (
+                <div
+                    onMouseDown={handleResizeMouseDown}
+                    className="absolute bottom-0 right-0 w-4 h-4 cursor-se-resize"
+                    style={{
+                        backgroundImage: `url("data:image/svg+xml,%3csvg width='10' height='10' xmlns='http://www.w3.org/2000/svg'%3e%3cpath d='M 0 10 L 10 0 M 5 10 L 10 5 M 8 10 L 10 8' stroke='%2344403c' stroke-width='2'/%3e%3c/svg%3e")`
+                    }}
+                />
+            )}
         </div>
     );
 };

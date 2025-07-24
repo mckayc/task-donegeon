@@ -70,29 +70,6 @@ const BackupAndImportPage: React.FC = () => {
             message: 'Are you sure you want to restore from this local backup file? This will overwrite ALL current data in the application.'
         });
     };
-
-    const handleConfirmRestore = () => {
-        if (!confirmation?.data) return;
-
-        if(confirmation.action === 'restore-local' && fileToRestore) {
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                try {
-                    const content = e.target?.result as string;
-                    const data = JSON.parse(content) as IAppData;
-                    restoreFromBackup(data);
-                } catch (err) {
-                    addNotification({type: 'error', message: `Failed to parse backup file: ${err instanceof Error ? err.message : 'Unknown error'}`});
-                }
-            };
-            reader.readAsText(fileToRestore);
-            setFileToRestore(null);
-        } else if (confirmation.action === 'restore-server') {
-            // Placeholder for future dispatch function
-            addNotification({ type: 'info', message: `Restoring from ${confirmation.data.filename}...` });
-        }
-        setConfirmation(null);
-    };
     
     const handleBlueprintFileSelect = (file: File) => {
         const reader = new FileReader();
@@ -119,12 +96,53 @@ const BackupAndImportPage: React.FC = () => {
         setBlueprintToImport(null);
     };
 
-    const handleActionConfirm = () => {
+    const handleActionConfirm = async () => {
         if (!confirmation) return;
         switch (confirmation.action) {
-            case 'restore-local': handleConfirmRestore(); break;
-            case 'restore-server': console.log("Restoring from server", confirmation.data.filename); break; // To be implemented with dispatch
-            case 'delete-server-backup': console.log("Deleting", confirmation.data.filename); break; // To be implemented
+            case 'restore-local':
+                if (fileToRestore) {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        try {
+                            const content = e.target?.result as string;
+                            const data = JSON.parse(content) as IAppData;
+                            restoreFromBackup(data);
+                        } catch (err) {
+                            addNotification({type: 'error', message: `Failed to parse backup file: ${err instanceof Error ? err.message : 'Unknown error'}`});
+                        }
+                    };
+                    reader.readAsText(fileToRestore);
+                    setFileToRestore(null);
+                }
+                break;
+            case 'restore-server':
+                try {
+                    const res = await fetch(`/api/backups/restore/${confirmation.data.filename}`, { method: 'POST' });
+                    const data = await res.json();
+                    if (res.ok) {
+                        addNotification({ type: 'success', message: data.message });
+                        setTimeout(() => window.location.reload(), 1500);
+                    } else {
+                        throw new Error(data.error);
+                    }
+                } catch(e) {
+                    addNotification({ type: 'error', message: `Restore failed: ${e instanceof Error ? e.message : 'Unknown'}` });
+                }
+                break;
+            case 'delete-server-backup':
+                 try {
+                    const res = await fetch(`/api/backups/${confirmation.data.filename}`, { method: 'DELETE' });
+                    const data = await res.json();
+                    if (res.ok) {
+                        addNotification({ type: 'success', message: data.message });
+                        fetchServerBackups();
+                    } else {
+                        throw new Error(data.error);
+                    }
+                } catch (e) {
+                    addNotification({ type: 'error', message: `Delete failed: ${e instanceof Error ? e.message : 'Unknown'}` });
+                }
+                break;
             case 'restore-defaults': restoreDefaultObjects('trophies'); break;
             case 'clear-history': clearAllHistory(); break;
             case 'reset-players': resetAllPlayerData(); break;
@@ -139,8 +157,19 @@ const BackupAndImportPage: React.FC = () => {
     };
 
     const handleCreateServerBackup = async () => {
-        // To be implemented via dispatch
-        addNotification({type: 'info', message: 'Server-side backup creation not yet implemented.'});
+        addNotification({ type: 'info', message: 'Creating server-side backup...' });
+        try {
+            const response = await fetch('/api/backups/create', { method: 'POST' });
+            const data = await response.json();
+            if (response.ok) {
+                addNotification({ type: 'success', message: data.message });
+                fetchServerBackups(); // Refresh the list
+            } else {
+                throw new Error(data.error || 'Failed to create backup.');
+            }
+        } catch (err) {
+            addNotification({ type: 'error', message: err instanceof Error ? err.message : 'Unknown error' });
+        }
     }
     
     return (
@@ -148,9 +177,9 @@ const BackupAndImportPage: React.FC = () => {
             <Card title="Backup & Restore">
                  <div className="space-y-4 grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
-                        <h4 className="font-semibold text-stone-200">Server-Side Backup</h4>
-                        <p className="text-sm text-stone-400 mb-3">Create a secure backup of your entire game state directly on the server. Recommended for reliability.</p>
-                        <Button onClick={handleCreateServerBackup}>Create Server-Side Backup</Button>
+                        <h4 className="font-semibold text-stone-200">Manual Server Backup</h4>
+                        <p className="text-sm text-stone-400 mb-3">Create a secure backup of your entire game state directly on the server. This is the recommended method for reliability.</p>
+                        <Button onClick={handleCreateServerBackup}>Create Manual Backup</Button>
                     </div>
                     <div>
                         <h4 className="font-semibold text-stone-200">Restore from Local File</h4>
@@ -183,7 +212,7 @@ const BackupAndImportPage: React.FC = () => {
                         ))}
                     </div>
                 ) : (
-                    <p className="text-stone-400">No server-side backups found.</p>
+                    <p className="text-stone-400 text-center py-4">No server-side backups found. Click "Create Manual Backup" to make one.</p>
                 )}
             </Card>
 
@@ -200,26 +229,22 @@ const BackupAndImportPage: React.FC = () => {
                  <div className="p-4 bg-red-900/30 border border-red-700/60 rounded-lg space-y-6">
                     <h4 className="font-bold text-red-300">Danger Zone</h4>
                      <p className="text-sm text-red-200/80">These actions are permanent and can result in data loss. Use with extreme caution.</p>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-6">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-x-6 gap-y-8">
                         <div>
-                            <h5 className="font-semibold text-red-200">Restore Default Objects</h5>
-                            <p className="text-xs text-red-200/70 mt-1 mb-2">Adds any missing default items (like the initial set of Trophies) back into the game without affecting your existing custom content. Useful after an update.</p>
-                            <Button className="!bg-red-700 hover:!bg-red-600 w-full" onClick={() => setConfirmation({ action: 'restore-defaults', title: 'Restore Defaults', message: 'Are you sure? This will add any missing default items like trophies back into the game.'})}>Restore Defaults</Button>
+                            <Button className="!bg-red-700 hover:!bg-red-600 w-full" onClick={() => setConfirmation({ action: 'restore-defaults', title: 'Restore Defaults', message: 'Are you sure? This will add any missing default items like trophies back into the game.'})}>Restore Default Objects</Button>
+                            <p className="text-xs text-red-200/70 mt-2">Adds any missing default items (like the initial set of Trophies) back into the game without affecting your existing custom content. Useful after an update.</p>
                         </div>
                         <div>
-                            <h5 className="font-semibold text-red-200">Clear All History</h5>
-                            <p className="text-xs text-red-200/70 mt-1 mb-2">Deletes all quest completions, purchase requests, and system logs. This does NOT delete users, quests, items, or other created content.</p>
-                            <Button className="!bg-red-700 hover:!bg-red-600 w-full" onClick={() => setConfirmation({ action: 'clear-history', title: 'Clear History', message: 'Are you sure? This deletes all completions, purchases, and logs, but keeps users and content.'})}>Clear History</Button>
+                            <Button className="!bg-red-700 hover:!bg-red-600 w-full" onClick={() => setConfirmation({ action: 'clear-history', title: 'Clear History', message: 'Are you sure? This deletes all completions, purchases, and logs, but keeps users and content.'})}>Clear All History</Button>
+                            <p className="text-xs text-red-200/70 mt-2">Deletes all quest completions, purchase requests, and system logs. This does NOT delete users, quests, items, or other created content.</p>
                         </div>
                         <div>
-                            <h5 className="font-semibold text-red-200">Reset All Player Data</h5>
-                             <p className="text-xs text-red-200/70 mt-1 mb-2">Wipes all player progress, including currency, XP, owned items, and trophies. User accounts themselves are NOT deleted.</p>
-                            <Button className="!bg-red-700 hover:!bg-red-600 w-full" onClick={() => setConfirmation({ action: 'reset-players', title: 'Reset Player Data', message: 'Are you sure? This wipes all player progress (currency, XP, items) but keeps user accounts.'})}>Reset Players</Button>
+                            <Button className="!bg-red-700 hover:!bg-red-600 w-full" onClick={() => setConfirmation({ action: 'reset-players', title: 'Reset Player Data', message: 'Are you sure? This wipes all player progress (currency, XP, items) but keeps user accounts.'})}>Reset All Player Data</Button>
+                            <p className="text-xs text-red-200/70 mt-2">Wipes all player progress, including currency, XP, owned items, and trophies. User accounts themselves are NOT deleted.</p>
                         </div>
                         <div>
-                            <h5 className="font-semibold text-red-200">Factory Reset Content</h5>
-                            <p className="text-xs text-red-200/70 mt-1 mb-2">Deletes ALL user-created content (quests, items, markets, trophies, rewards, etc.) but keeps user accounts. This is irreversible.</p>
-                            <Button className="!bg-red-700 hover:!bg-red-600 w-full" onClick={() => setConfirmation({ action: 'factory-reset', title: 'Factory Reset', message: 'Are you sure? This deletes ALL user-created content (quests, items, etc.). It cannot be undone.'})}>Factory Reset</Button>
+                            <Button className="!bg-red-700 hover:!bg-red-600 w-full" onClick={() => setConfirmation({ action: 'factory-reset', title: 'Factory Reset', message: 'Are you sure? This deletes ALL user-created content (quests, items, etc.). It cannot be undone.'})}>Factory Reset Content</Button>
+                            <p className="text-xs text-red-200/70 mt-2">Deletes ALL user-created content (quests, items, markets, trophies, rewards, etc.) but keeps user accounts. This is irreversible.</p>
                         </div>
                     </div>
                 </div>

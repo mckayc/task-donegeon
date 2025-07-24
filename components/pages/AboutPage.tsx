@@ -24,6 +24,7 @@ const CollapsibleSection: React.FC<{ title: string; children: React.ReactNode; d
     );
 };
 
+const V0_0_98_DATE = new Date(2025, 6, 23);
 const V0_0_97_DATE = new Date(2025, 6, 23);
 const V0_0_96_DATE = new Date(2025, 6, 22);
 const V0_0_95_DATE = new Date(2025, 6, 22);
@@ -45,6 +46,16 @@ const V0_0_80_DATE = new Date(2025, 6, 19);
 
 const VersionHistoryContent: React.FC = () => (
     <div className="prose prose-invert max-w-none text-stone-300 space-y-4">
+        <div>
+            <h4 className="text-lg font-bold text-stone-100">
+                Version 0.0.98 ({V0_0_98_DATE.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })})
+            </h4>
+            <ul className="list-disc list-inside space-y-2 mt-2">
+                <li><strong>Bug Fix:</strong> Resolved an issue where the unread message indicator for chat would not disappear correctly after reading messages.</li>
+                <li><strong>Bug Fix:</strong> Fixed a critical server error that prevented users from completing quests.</li>
+                <li><strong>Stability:</strong> General improvements to backend stability.</li>
+            </ul>
+        </div>
         <div>
             <h4 className="text-lg font-bold text-stone-100">
                 Version 0.0.97 ({V0_0_97_DATE.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })})

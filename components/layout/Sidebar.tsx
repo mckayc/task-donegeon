@@ -165,17 +165,15 @@ const Sidebar: React.FC = () => {
   const unreadMessagesCount = useMemo(() => {
     if (!currentUser) return 0;
     
-    // 1. Unread DMs are always relevant
     const unreadDms = chatMessages.filter(
         msg => msg.recipientId === currentUser.id && !msg.readBy.includes(currentUser.id)
     );
     const uniqueSenders = new Set(unreadDms.map(msg => msg.senderId));
     
-    // 2. Unread messages from any of the user's guilds
     const userGuildIds = new Set(guilds.filter(g => g.memberIds.includes(currentUser.id)).map(g => g.id));
     const unreadGuilds = new Set(
         chatMessages
-            .filter(msg => msg.guildId && userGuildIds.has(msg.guildId) && !msg.readBy.includes(currentUser.id))
+            .filter(msg => msg.guildId && userGuildIds.has(msg.guildId) && !msg.readBy.includes(currentUser.id) && msg.senderId !== currentUser.id)
             .map(msg => msg.guildId)
     );
     

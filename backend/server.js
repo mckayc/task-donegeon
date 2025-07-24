@@ -609,6 +609,35 @@ app.post('/api/quests/:id/actions', questHandler(['quests']));
 app.post('/api/quests/bulk-update', questHandler(['quests']));
 app.post('/api/quests/delete-many', questHandler(['quests']));
 
+// Quest Completion
+app.post('/api/quests/:id/complete', async (req, res) => handleMultiSliceApiAction(res, ['questCompletions', 'users'], data => {
+    const { userId, note, completionDate } = req.body;
+    const questId = req.params.id;
+
+    const quest = data.quests.find(q => q.id === questId);
+    const user = data.users.find(u => u.id === userId);
+
+    if (!quest || !user) {
+        throw { statusCode: 404, message: 'Quest or User not found' };
+    }
+
+    const newCompletion = {
+        id: `qc-${Date.now()}`,
+        questId,
+        userId,
+        completedAt: completionDate ? new Date(completionDate).toISOString() : new Date().toISOString(),
+        status: quest.requiresApproval ? 'Pending' : 'Approved',
+        note: note || undefined,
+        guildId: quest.guildId || undefined
+    };
+
+    data.questCompletions.push(newCompletion);
+
+    if (newCompletion.status === 'Approved') {
+        applyRewards(user, quest.rewards, data.rewardTypes, quest.guildId);
+    }
+}));
+
 
 // --- Generic CRUD for Simple Assets ---
 ['rewardTypes', 'markets', 'guilds', 'trophies', 'gameAssets', 'scheduledEvents', 'questGroups', 'themes'].forEach(assetKey => {

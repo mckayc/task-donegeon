@@ -298,7 +298,7 @@ const Dashboard: React.FC = () => {
                                     );
                                 })}
                             </ul>
-                        ) : ( <p className="text-stone-400">{`No pressing ${terminology.tasks.toLowerCase()} at the moment. Check the main ${terminology.tasks} page for more!`}</p> )}
+                        ) : ( <p className="text-stone-400">{`No pressing ${terminology.tasks.toLowerCase()} at the moment. Check the main ${terminology.link_quests} page for more!`}</p> )}
                     </Card>
 
                     <Card title={`Recent ${terminology.history}`}>

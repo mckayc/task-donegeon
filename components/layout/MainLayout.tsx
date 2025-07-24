@@ -42,6 +42,7 @@ import { useAppState, useAppDispatch } from '../../context/AppContext';
 import ChatPanel from '../chat/ChatPanel';
 import LoginNotificationPopup from '../ui/LoginNotificationPopup';
 import ManageEventsPage from '../pages/management/ManageEventsPage';
+import BackupAndImportPage from '../pages/management/BackupAndImportPage';
 
 const MainLayout: React.FC = () => {
   const { activePage, currentUser, settings, systemNotifications } = useAppState();
@@ -55,7 +56,7 @@ const MainLayout: React.FC = () => {
     'Manage Users', 'Manage Rewards', 'Manage Quests', 'Manage Quest Groups', 'Manage Goods', 'Manage Markets',
     'Manage Guilds', 'Manage Ranks', 'Manage Trophies', 'Settings', 'AI Studio',
     'Appearance', 'Theme Editor', 'Object Exporter', 'Asset Manager', 'Data Management', 'Asset Library',
-    'Manage Events',
+    'Manage Events', 'Backup & Import',
   ];
   const GATEKEEPER_PAGES: Page[] = ['Approvals'];
 
@@ -136,7 +137,7 @@ const MainLayout: React.FC = () => {
       case 'Object Exporter': return <ObjectExporterPage />;
       case 'Asset Manager': return <AssetManagerPage />;
       case 'Data Management': return <DataManagementPage />;
-      case 'Backup & Import': return <DataManagementPage />;
+      case 'Backup & Import': return <BackupAndImportPage />;
       case 'Asset Library': return <AssetLibraryPage />;
       case 'Profile': return <ProfilePage />;
       case 'About': return <AboutPage />;

@@ -133,10 +133,19 @@ const broadcast = (data) => {
 };
 
 // === Middleware ===
-const allowedOrigins = ['https://taskdonegeon.mckayc.com', 'http://localhost:3000', 'http://localhost:3002'];
 const corsOptions = {
   origin: function (origin, callback) {
-    if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+    const allowedOrigins = ['https://taskdonegeon.mckayc.com', 'http://localhost:3000', 'http://localhost:3002'];
+    if (process.env.VERCEL_URL) {
+        allowedOrigins.push(`https://${process.env.VERCEL_URL}`);
+    }
+    
+    // Allow Vercel preview URLs
+    if (origin && origin.endsWith('.vercel.app')) {
+        allowedOrigins.push(origin);
+    }
+    
+    if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
       callback(new Error('Not allowed by CORS'));
@@ -615,6 +624,23 @@ app.post('/api/chat/messages', async (req, res) => {
         res.status(err.statusCode || 500).json({ error: err.message });
     }
 });
+
+app.post('/api/chat/read', async (req, res) => handleMultiSliceApiAction(res, ['chatMessages'], data => {
+    const { userId, partnerId, guildId } = req.body;
+    if (!userId) throw { statusCode: 400, message: 'User ID is required' };
+
+    data.chatMessages.forEach(msg => {
+        const isUnread = !msg.readBy.includes(userId);
+        if (isUnread) {
+            if (partnerId && ((msg.senderId === partnerId && msg.recipientId === userId))) {
+                msg.readBy.push(userId);
+            }
+            if (guildId && msg.guildId === guildId && msg.senderId !== userId) {
+                msg.readBy.push(userId);
+            }
+        }
+    });
+}));
 
 
 app.get('/api/backups', async (req, res, next) => { try { const files = await fs.readdir(BACKUP_DIR); const backupDetails = await Promise.all( files .filter(file => file.endsWith('.json')) .map(async file => { const stats = await fs.stat(path.join(BACKUP_DIR, file)); return { filename: file, createdAt: stats.birthtime, size: stats.size, isAuto: file.startsWith('auto_backup_'), }; }) ); res.json(backupDetails.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))); } catch (err) { if (err.code === 'ENOENT') { return res.json([]); } next(err); } });

@@ -1,4 +1,5 @@
 
+
 import React from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import Button from '../ui/Button';
@@ -14,7 +15,7 @@ const OnboardingWizard: React.FC = () => {
     };
 
     return (
-        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-[100] p-4">
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-[110] p-4">
             <div className="max-w-lg w-full bg-stone-800 border border-stone-700 rounded-2xl shadow-2xl p-8 text-center">
                 <h1 className="text-4xl font-medieval text-accent mb-4">Welcome, {currentUser.gameName}!</h1>
                 <p className="text-stone-300 mb-6">

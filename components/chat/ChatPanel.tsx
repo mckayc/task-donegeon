@@ -1,11 +1,12 @@
 
 
+
 import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { Role, User } from '../../types';
 import Avatar from '../ui/Avatar';
 import Input from '../ui/Input';
-import { XCircleIcon } from '../ui/Icons';
+import { XCircleIcon, ArrowLeftIcon } from '../ui/Icons';
 import Button from '../ui/Button';
 import ToggleSwitch from '../ui/ToggleSwitch';
 
@@ -120,14 +121,14 @@ const ChatPanel: React.FC = () => {
     let lastDate: string | null = null;
 
     return (
-        <div className="fixed bottom-6 right-6 z-50 w-[600px] h-[700px] bg-stone-800 border border-stone-700 rounded-xl shadow-2xl flex flex-col">
+        <div className="fixed z-50 inset-0 md:inset-auto md:bottom-6 md:right-6 md:w-[600px] md:h-[700px] bg-stone-800 border border-stone-700 rounded-none md:rounded-xl shadow-2xl flex flex-col">
             <header className="p-4 border-b border-stone-700 flex justify-between items-center flex-shrink-0">
                 <h3 className="font-bold text-lg text-stone-100">Chat</h3>
                 <button onClick={toggleChat} className="text-stone-400 hover:text-white"><XCircleIcon className="w-6 h-6"/></button>
             </header>
             
-            <div className="flex-grow flex overflow-hidden">
-                <aside className="w-1/3 border-r border-stone-700 overflow-y-auto">
+            <div className="flex-grow flex md:flex-row flex-col overflow-hidden relative">
+                <aside className={`w-full md:w-1/3 border-r border-stone-700 overflow-y-auto transition-transform duration-300 absolute md:static inset-0 ${activeChatTarget ? '-translate-x-full md:translate-x-0' : 'translate-x-0'}`}>
                     {chatPartners.map(target => {
                         const isGuild = 'isGuild' in target && target.isGuild;
                         const hasUnread = isGuild ? unreadInfo.guilds.has(target.id) : unreadInfo.dms.has(target.id);
@@ -141,10 +142,13 @@ const ChatPanel: React.FC = () => {
                     })}
                 </aside>
 
-                <main className="w-2/3 flex flex-col">
+                <main className={`w-full md:w-2/3 flex flex-col absolute inset-0 md:static transition-transform duration-300 bg-stone-800 ${activeChatTarget ? 'translate-x-0' : 'translate-x-full md:translate-x-0'}`}>
                     {activeChatTarget ? (
                         <>
-                            <div className="p-3 border-b border-stone-700 flex-shrink-0">
+                            <div className="p-3 border-b border-stone-700 flex-shrink-0 flex items-center justify-center relative">
+                                <button onClick={() => setActiveChatTarget(null)} className="md:hidden absolute left-4 text-stone-400 hover:text-white">
+                                    <ArrowLeftIcon className="w-6 h-6" />
+                                </button>
                                 <p className="font-bold text-center text-stone-200">{activeChatTarget.gameName}</p>
                             </div>
                             <div ref={messagesContainerRef} onScroll={handleScroll} className="flex-grow p-3 space-y-3 overflow-y-auto">
@@ -210,7 +214,7 @@ const ChatPanel: React.FC = () => {
                         </>
                     ) : (
                         <div className="flex items-center justify-center h-full text-center text-stone-400 p-4">
-                            Select a user to start chatting.
+                            Select a user or guild to start chatting.
                         </div>
                     )}
                 </main>

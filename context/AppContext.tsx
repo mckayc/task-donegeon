@@ -93,6 +93,7 @@ interface AppDispatch {
   completeFirstRun: (adminUserData: Omit<User, 'id' | 'personalPurse' | 'personalExperience' | 'guildBalances' | 'avatar' | 'ownedAssetIds' | 'ownedThemes' | 'hasBeenOnboarded'>, setupChoice: 'guided' | 'scratch' | 'import', blueprint?: Blueprint | null) => Promise<void>;
   importBlueprint: (blueprint: Blueprint, resolutions: ImportResolution[]) => Promise<void>;
   restoreFromBackup: (backupData: IAppData) => Promise<void>;
+  restoreDefaultObjects: (type: 'trophies') => Promise<void>;
   clearAllHistory: () => Promise<void>;
   resetAllPlayerData: () => Promise<void>;
   deleteAllCustomContent: () => Promise<void>;
@@ -297,31 +298,38 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
           ws.onmessage = (event) => {
               const message = JSON.parse(event.data);
+              const { payload } = message;
 
               switch (message.type) {
-                  case 'USERS_UPDATED': setUsers(message.payload); break;
-                  case 'QUESTS_UPDATED': setQuests(message.payload); break;
-                  case 'QUESTGROUPS_UPDATED': setQuestGroups(message.payload); break;
-                  case 'MARKETS_UPDATED': setMarkets(message.payload); break;
-                  case 'REWARDTYPES_UPDATED': setRewardTypes(message.payload); break;
-                  case 'QUESTCOMPLETIONS_UPDATED': setQuestCompletions(message.payload); break;
-                  case 'PURCHASEREQUESTS_UPDATED': setPurchaseRequests(message.payload); break;
-                  case 'GUILDS_UPDATED': setGuilds(message.payload); break;
-                  case 'RANKS_UPDATED': _setRanks(message.payload); break;
-                  case 'TROPHIES_UPDATED': setTrophies(message.payload); break;
-                  case 'USERTROPHIES_UPDATED': setUserTrophies(message.payload); break;
-                  case 'ADMINADJUSTMENTS_UPDATED': setAdminAdjustments(message.payload); break;
-                  case 'GAMEASSETS_UPDATED': setGameAssets(message.payload); break;
-                  case 'SYSTEMLOGS_UPDATED': setSystemLogs(message.payload); break;
-                  case 'SETTINGS_UPDATED': setSettings(prev => ({...prev, ...message.payload})); break;
-                  case 'THEMES_UPDATED': setThemes(message.payload); break;
-                  case 'LOGINHISTORY_UPDATED': setLoginHistory(message.payload); break;
-                  case 'SYSTEMNOTIFICATIONS_UPDATED': setSystemNotifications(message.payload); break;
-                  case 'SCHEDULEDEVENTS_UPDATED': setScheduledEvents(message.payload); break;
+                  case 'USERS_UPDATED':
+                      setUsers(payload);
+                      _setCurrentUser(prevUser => {
+                          if (!prevUser) return null;
+                          return payload.find((u: User) => u.id === prevUser.id) || null;
+                      });
+                      break;
+                  case 'QUESTS_UPDATED': setQuests(payload); break;
+                  case 'QUESTGROUPS_UPDATED': setQuestGroups(payload); break;
+                  case 'MARKETS_UPDATED': setMarkets(payload); break;
+                  case 'REWARDTYPES_UPDATED': setRewardTypes(payload); break;
+                  case 'QUESTCOMPLETIONS_UPDATED': setQuestCompletions(payload); break;
+                  case 'PURCHASEREQUESTS_UPDATED': setPurchaseRequests(payload); break;
+                  case 'GUILDS_UPDATED': setGuilds(payload); break;
+                  case 'RANKS_UPDATED': _setRanks(payload); break;
+                  case 'TROPHIES_UPDATED': setTrophies(payload); break;
+                  case 'USERTROPHIES_UPDATED': setUserTrophies(payload); break;
+                  case 'ADMINADJUSTMENTS_UPDATED': setAdminAdjustments(payload); break;
+                  case 'GAMEASSETS_UPDATED': setGameAssets(payload); break;
+                  case 'SYSTEMLOGS_UPDATED': setSystemLogs(payload); break;
+                  case 'SETTINGS_UPDATED': setSettings(prev => ({...prev, ...payload})); break;
+                  case 'THEMES_UPDATED': setThemes(payload); break;
+                  case 'LOGINHISTORY_UPDATED': setLoginHistory(payload); break;
+                  case 'SYSTEMNOTIFICATIONS_UPDATED': setSystemNotifications(payload); break;
+                  case 'SCHEDULEDEVENTS_UPDATED': setScheduledEvents(payload); break;
                   case 'NEW_CHAT_MESSAGE':
                       setChatMessages(prev => {
-                          if (prev.some(msg => msg.id === message.payload.id)) return prev;
-                          return [...prev, message.payload];
+                          if (prev.some(msg => msg.id === payload.id)) return prev;
+                          return [...prev, payload];
                       });
                       break;
                   case 'FULL_REFRESH_REQUESTED':
@@ -496,6 +504,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const deleteScheduledEvent = useCallback(async (id: string) => { await apiCall(`/api/scheduledEvents/${id}`, 'DELETE'); }, [apiCall]);
   
   const importBlueprint = useCallback(async (blueprint: Blueprint, resolutions: ImportResolution[]) => { await apiCall('/api/import-blueprint', 'POST', { blueprint, resolutions }); }, [apiCall]);
+  const restoreDefaultObjects = useCallback(async (type: 'trophies') => { await apiCall('/api/data/restore-defaults', 'POST', { type }); addNotification({type: 'success', message: 'Missing default objects have been restored!'})}, [apiCall, addNotification]);
   const clearAllHistory = useCallback(async () => { await apiCall('/api/data/clear-history', 'POST'); }, [apiCall]);
   const resetAllPlayerData = useCallback(async () => { await apiCall('/api/data/reset-player-data', 'POST'); }, [apiCall]);
   const deleteAllCustomContent = useCallback(async () => { await apiCall('/api/data/delete-custom-content', 'POST'); }, [apiCall]);
@@ -538,7 +547,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
   // === CONTEXT PROVIDER VALUE ===
   const stateValue: AppState = { users, quests, questGroups, markets, rewardTypes, questCompletions, purchaseRequests, guilds, ranks, trophies, userTrophies, adminAdjustments, gameAssets, systemLogs, settings, themes, loginHistory, chatMessages, systemNotifications, scheduledEvents, currentUser, isAppUnlocked, isFirstRun, activePage, appMode, notifications, isDataLoaded, activeMarketId, allTags: useMemo(() => Array.from(new Set([...INITIAL_TAGS, ...quests.flatMap(q => q.tags || [])])).sort(), [quests]), isSwitchingUser, isSharedViewActive, targetedUserForLogin, isAiConfigured, isSidebarCollapsed, syncStatus, syncError, isChatOpen, };
-  const dispatchValue: AppDispatch = { addUser: addUser as any, updateUser, deleteUser, setCurrentUser, markUserAsOnboarded, setAppUnlocked, setIsSwitchingUser, setTargetedUserForLogin, exitToSharedView, setIsSharedViewActive: _setIsSharedViewActive, bypassFirstRunCheck, addQuest, updateQuest, deleteQuest, cloneQuest, dismissQuest, claimQuest, releaseQuest, markQuestAsTodo, unmarkQuestAsTodo, completeQuest, approveQuestCompletion, rejectQuestCompletion, addQuestGroup: addQuestGroup as any, updateQuestGroup, deleteQuestGroup, assignQuestGroupToUsers, addRewardType, updateRewardType, deleteRewardType, cloneRewardType, addMarket, updateMarket, deleteMarket, cloneMarket, deleteMarkets, updateMarketsStatus, purchaseMarketItem, cancelPurchaseRequest, approvePurchaseRequest, rejectPurchaseRequest, addGuild, updateGuild, deleteGuild, setRanks, addTrophy, updateTrophy, deleteTrophy, awardTrophy, applyManualAdjustment, addGameAsset, updateGameAsset, deleteGameAsset, cloneGameAsset, addTheme, updateTheme, deleteTheme, addScheduledEvent, updateScheduledEvent, deleteScheduledEvent, completeFirstRun, importBlueprint, restoreFromBackup, clearAllHistory, resetAllPlayerData, deleteAllCustomContent, deleteSelectedAssets, deleteQuests, deleteTrophies, deleteGameAssets, updateQuestsStatus: (questIds, isActive) => bulkUpdateQuests(questIds, { isActive }), bulkUpdateQuests, uploadFile, executeExchange, updateSettings, resetSettings, setActivePage, setAppMode, addNotification, removeNotification, setActiveMarketId, toggleSidebar, toggleChat, sendMessage, markMessagesAsRead, addSystemNotification, markSystemNotificationsAsRead };
+  const dispatchValue: AppDispatch = { addUser: addUser as any, updateUser, deleteUser, setCurrentUser, markUserAsOnboarded, setAppUnlocked, setIsSwitchingUser, setTargetedUserForLogin, exitToSharedView, setIsSharedViewActive: _setIsSharedViewActive, bypassFirstRunCheck, addQuest, updateQuest, deleteQuest, cloneQuest, dismissQuest, claimQuest, releaseQuest, markQuestAsTodo, unmarkQuestAsTodo, completeQuest, approveQuestCompletion, rejectQuestCompletion, addQuestGroup: addQuestGroup as any, updateQuestGroup, deleteQuestGroup, assignQuestGroupToUsers, addRewardType, updateRewardType, deleteRewardType, cloneRewardType, addMarket, updateMarket, deleteMarket, cloneMarket, deleteMarkets, updateMarketsStatus, purchaseMarketItem, cancelPurchaseRequest, approvePurchaseRequest, rejectPurchaseRequest, addGuild, updateGuild, deleteGuild, setRanks, addTrophy, updateTrophy, deleteTrophy, awardTrophy, applyManualAdjustment, addGameAsset, updateGameAsset, deleteGameAsset, cloneGameAsset, addTheme, updateTheme, deleteTheme, addScheduledEvent, updateScheduledEvent, deleteScheduledEvent, completeFirstRun, importBlueprint, restoreFromBackup, restoreDefaultObjects, clearAllHistory, resetAllPlayerData, deleteAllCustomContent, deleteSelectedAssets, deleteQuests, deleteTrophies, deleteGameAssets, updateQuestsStatus: (questIds, isActive) => bulkUpdateQuests(questIds, { isActive }), bulkUpdateQuests, uploadFile, executeExchange, updateSettings, resetSettings, setActivePage, setAppMode, addNotification, removeNotification, setActiveMarketId, toggleSidebar, toggleChat, sendMessage, markMessagesAsRead, addSystemNotification, markSystemNotificationsAsRead };
 
   return (
     <AppStateContext.Provider value={stateValue}>

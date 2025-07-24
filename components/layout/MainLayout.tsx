@@ -34,7 +34,7 @@ import AiStudioPage from '../pages/AiStudioPage';
 import AppearancePage from '../pages/AppearancePage';
 import ObjectExporterPage from '../pages/management/ObjectExporterPage';
 import AssetManagerPage from '../pages/management/MediaManagerPage';
-import BackupAndImportPage from '../pages/management/BackupAndImportPage';
+import DataManagementPage from '../pages/management/DataManagementPage';
 import AssetLibraryPage from '../pages/management/AssetLibraryPage';
 import ThemeEditorPage from '../pages/ThemeEditorPage';
 import ManageQuestGroupsPage from '../pages/ManageQuestGroupsPage';
@@ -54,7 +54,7 @@ const MainLayout: React.FC = () => {
   const ADMIN_ONLY_PAGES: Page[] = [
     'Manage Users', 'Manage Rewards', 'Manage Quests', 'Manage Quest Groups', 'Manage Goods', 'Manage Markets',
     'Manage Guilds', 'Manage Ranks', 'Manage Trophies', 'Settings', 'AI Studio',
-    'Appearance', 'Theme Editor', 'Object Exporter', 'Asset Manager', 'Backup & Import', 'Asset Library',
+    'Appearance', 'Theme Editor', 'Object Exporter', 'Asset Manager', 'Data Management', 'Asset Library',
     'Manage Events',
   ];
   const GATEKEEPER_PAGES: Page[] = ['Approvals'];
@@ -135,7 +135,7 @@ const MainLayout: React.FC = () => {
       case 'Theme Editor': return <ThemeEditorPage />;
       case 'Object Exporter': return <ObjectExporterPage />;
       case 'Asset Manager': return <AssetManagerPage />;
-      case 'Backup & Import': return <BackupAndImportPage />;
+      case 'Data Management': return <DataManagementPage />;
       case 'Asset Library': return <AssetLibraryPage />;
       case 'Profile': return <ProfilePage />;
       case 'About': return <AboutPage />;

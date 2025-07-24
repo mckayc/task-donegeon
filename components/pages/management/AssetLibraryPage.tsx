@@ -3,7 +3,7 @@ import Button from '../../ui/Button';
 import Card from '../../ui/Card';
 import { libraryPacks } from '../../../data/assetLibrary';
 import { LibraryPack, BlueprintAssets, TrophyRequirementType, QuestGroup, Quest, GameAsset, Market, Trophy, RewardTypeDefinition, QuestType } from '../../../types';
-import { useAppState, useAppDispatch } from '../../../context/AppContext';
+import { useAppState, useAppDispatch } from '../../context/AppContext';
 import Input from '../../ui/Input';
 import CreateQuestDialog from '../../quests/CreateQuestDialog';
 import EditGameAssetDialog from '../../admin/EditGameAssetDialog';
@@ -57,7 +57,7 @@ const PackCard: React.FC<{ pack: LibraryPack; onSelect: () => void; }> = ({ pack
 };
 
 const PackDetailView: React.FC<{ pack: LibraryPack; onBack: () => void; }> = ({ pack, onBack }) => {
-    const { settings, questGroups: allQuestGroupsFromState, users } = useAppState();
+    const { settings, questGroups: allQuestGroupsFromState, users, appMode } = useAppState();
     const { addQuest, addGameAsset, addTrophy, addRewardType, addMarket, addQuestGroup, addNotification } = useAppDispatch();
     
     const [livePackAssets, setLivePackAssets] = useState<Partial<BlueprintAssets>>(() => JSON.parse(JSON.stringify(pack.assets)));
@@ -171,6 +171,7 @@ const PackDetailView: React.FC<{ pack: LibraryPack; onBack: () => void; }> = ({ 
                 const newQuest = { 
                     ...rest,
                     assignedUserIds: users.map(u => u.id),
+                    guildId: appMode.mode === 'guild' ? appMode.guildId : undefined,
                     groupId: q.groupId ? idMaps.questGroups.get(q.groupId) : undefined,
                     rewards: q.rewards.map(r => ({ ...r, rewardTypeId: idMaps.rewardTypes.get(r.rewardTypeId) || r.rewardTypeId })),
                     lateSetbacks: q.lateSetbacks.map(r => ({ ...r, rewardTypeId: idMaps.rewardTypes.get(r.rewardTypeId) || r.rewardTypeId })),

@@ -1,12 +1,11 @@
-
 import React, { useState, useMemo } from 'react';
-import * as Icons from '../../../ui/Icons';
+import * as Icons from '../../ui/Icons';
 import ObjectExporterPage from './ObjectExporterPage';
 import BackupAndImportPage from './BackupAndImportPage';
 import AssetLibraryPage from './AssetLibraryPage';
 import AssetManagerPage from './MediaManagerPage';
-import { useAppState } from '../../../context/AppContext';
-import { Page, SidebarConfigItem, SidebarLink } from '../../../types';
+import { useAppState } from '../../context/AppContext';
+import { Page, SidebarConfigItem, SidebarLink } from '../../types';
 
 type ManagementPage = 'Object Exporter' | 'Asset Manager' | 'Backup & Import' | 'Asset Library';
 

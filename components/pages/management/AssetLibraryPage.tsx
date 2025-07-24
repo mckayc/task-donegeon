@@ -2,8 +2,8 @@ import React, { useState, useMemo, useEffect } from 'react';
 import Button from '../../ui/Button';
 import Card from '../../ui/Card';
 import { libraryPacks } from '../../../data/assetLibrary';
-import { LibraryPack, BlueprintAssets, TrophyRequirementType, QuestGroup, Quest, GameAsset, Market, Trophy, RewardTypeDefinition, QuestType } from '../../../types';
-import { useAppState, useAppDispatch } from '../../context/AppContext';
+import { LibraryPack, BlueprintAssets, TrophyRequirementType, QuestGroup, Quest, GameAsset, Market, Trophy, RewardTypeDefinition, QuestType, User } from '../../../types';
+import { useAppState, useAppDispatch } from '../../../context/AppContext';
 import Input from '../../ui/Input';
 import CreateQuestDialog from '../../quests/CreateQuestDialog';
 import EditGameAssetDialog from '../../admin/EditGameAssetDialog';
@@ -125,7 +125,7 @@ const PackDetailView: React.FC<{ pack: LibraryPack; onBack: () => void; }> = ({ 
         // 1. Process Quest Groups specifically to handle name conflicts and get new IDs
         if (livePackAssets.questGroups) {
             for (const packGroup of livePackAssets.questGroups) {
-                const existingGroup = allQuestGroupsFromState.find(g => g.name.toLowerCase() === packGroup.name.toLowerCase());
+                const existingGroup = allQuestGroupsFromState.find((g: QuestGroup) => g.name.toLowerCase() === packGroup.name.toLowerCase());
                 if (existingGroup) {
                     idMaps.questGroups.set(packGroup.id, existingGroup.id);
                 } else {
@@ -170,7 +170,7 @@ const PackDetailView: React.FC<{ pack: LibraryPack; onBack: () => void; }> = ({ 
                 const { id, assignedUserIds, ...rest } = q;
                 const newQuest = { 
                     ...rest,
-                    assignedUserIds: users.map(u => u.id),
+                    assignedUserIds: users.map((u: User) => u.id),
                     guildId: appMode.mode === 'guild' ? appMode.guildId : undefined,
                     groupId: q.groupId ? idMaps.questGroups.get(q.groupId) : undefined,
                     rewards: q.rewards.map(r => ({ ...r, rewardTypeId: idMaps.rewardTypes.get(r.rewardTypeId) || r.rewardTypeId })),

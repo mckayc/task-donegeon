@@ -95,43 +95,48 @@ const Dashboard: React.FC = () => {
             date: string;
             note?: string;
             status: string;
+            icon?: string;
+        };
+
+        const getRewardInfo = (id: string) => {
+            const rewardDef = rewardTypes.find(rt => rt.id === id);
+            return { name: rewardDef?.name || 'Unknown Reward', icon: rewardDef?.icon || '❓' };
         };
 
         const allActivities: Activity[] = [
             ...questCompletions
                 .filter(c => c.userId === currentUser.id && c.guildId === currentGuildId)
-                .map(c => ({
-                    id: c.id,
-                    type: 'Quest' as const,
-                    title: quests.find(q => q.id === c.questId)?.title || `Unknown ${terminology.task}`,
-                    date: c.completedAt,
-                    note: c.note,
-                    status: c.status,
-                })),
+                .map(c => {
+                    const quest = quests.find(q => q.id === c.questId);
+                    let rewardsNote = c.note || '';
+                    if (c.status === QuestCompletionStatus.Approved && quest && quest.rewards.length > 0) {
+                        const rewardsText = quest.rewards.map(r => `+${r.amount} ${getRewardInfo(r.rewardTypeId).icon}`).join(' ');
+                        rewardsNote = rewardsNote ? `${rewardsNote} (${rewardsText})` : rewardsText;
+                    }
+                    return {
+                        id: c.id, type: 'Quest' as const, title: quest?.title || `Unknown ${terminology.task}`,
+                        date: c.completedAt, note: rewardsNote, status: c.status, icon: quest?.icon,
+                    };
+                }),
             ...purchaseRequests
                 .filter(p => p.userId === currentUser.id && p.guildId === currentGuildId)
                 .map(p => ({
-                    id: p.id,
-                    type: 'Purchase' as const,
-                    title: `Purchased "${p.assetDetails.name}"`,
-                    date: p.requestedAt,
-                    note: undefined,
-                    status: p.status,
+                    id: p.id, type: 'Purchase' as const, title: `Purchased "${p.assetDetails.name}"`,
+                    date: p.requestedAt, note: undefined, status: p.status, icon: '🛒',
                 })),
             ...userTrophies
                 .filter(ut => ut.userId === currentUser.id && ut.guildId === currentGuildId)
-                .map(ut => ({
-                    id: ut.id,
-                    type: 'Trophy' as const,
-                    title: `Earned ${terminology.award}: "${trophies.find(t => t.id === ut.trophyId)?.name || ''}"`,
-                    date: ut.awardedAt,
-                    note: undefined,
-                    status: 'Awarded!',
-                }))
+                .map(ut => {
+                    const trophy = trophies.find(t => t.id === ut.trophyId);
+                    return {
+                        id: ut.id, type: 'Trophy' as const, title: `Earned ${terminology.award}: "${trophy?.name || ''}"`,
+                        date: ut.awardedAt, note: undefined, status: 'Awarded!', icon: trophy?.icon,
+                    };
+                })
         ];
 
         return allActivities.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).slice(0, 5);
-    }, [questCompletions, purchaseRequests, userTrophies, quests, trophies, currentUser.id, appMode, terminology]);
+    }, [questCompletions, purchaseRequests, userTrophies, quests, trophies, currentUser.id, appMode, terminology, rewardTypes]);
 
     const leaderboard = useMemo(() => {
         const currentGuildId = appMode.mode === 'guild' ? appMode.guildId : undefined;
@@ -293,7 +298,7 @@ const Dashboard: React.FC = () => {
                                     );
                                 })}
                             </ul>
-                        ) : ( <p className="text-stone-400">No pressing ${terminology.tasks.toLowerCase()} at the moment. Check the main ${terminology.tasks} page for more!</p> )}
+                        ) : ( <p className="text-stone-400">{`No pressing ${terminology.tasks.toLowerCase()} at the moment. Check the main ${terminology.tasks} page for more!`}</p> )}
                     </Card>
 
                     <Card title={`Recent ${terminology.history}`}>
@@ -302,12 +307,15 @@ const Dashboard: React.FC = () => {
                                 <ul className="space-y-3">
                                     {recentActivities.map(activity => (
                                         <li key={activity.id} className="flex items-start gap-4 p-3 bg-stone-800/50 rounded-lg">
+                                            <div className="text-xl mt-0.5">{activity.icon}</div>
                                             <div className="flex-1">
                                                 <p className="font-semibold text-stone-200">{activity.title}</p>
                                                 <p className="text-xs text-stone-400 mt-1">{new Date(activity.date).toLocaleString()}</p>
-                                            </div>
-                                            <div className="w-1/3 text-sm text-stone-400 italic truncate" title={activity.note}>
-                                                {activity.note ? `"${activity.note}"` : ''}
+                                                {activity.note && (
+                                                    <div className="w-full text-sm text-stone-400 italic mt-1" title={activity.note}>
+                                                        "{activity.note}"
+                                                    </div>
+                                                )}
                                             </div>
                                             <div className={`w-1/5 text-right font-semibold ${statusColorClass(activity.status)}`}>
                                                 {activity.status}
@@ -316,7 +324,7 @@ const Dashboard: React.FC = () => {
                                     ))}
                                 </ul>
                             ) : (
-                                 <p className="text-stone-400">No recent activity. Go complete a ${terminology.task.toLowerCase()}!</p>
+                                 <p className="text-stone-400">{`No recent activity. Go complete a ${terminology.task.toLowerCase()}!`}</p>
                             )}
                         </div>
                     </Card>
@@ -336,7 +344,7 @@ const Dashboard: React.FC = () => {
                                         <p className="mt-2 text-lg font-semibold text-amber-300">{mostRecentTrophy.name}</p>
                                         <p className="text-sm text-stone-400">{mostRecentTrophy.description}</p>
                                     </div>
-                                ) : ( <p className="text-stone-400 text-center">No ${terminology.awards.toLowerCase()} earned yet in this mode.</p> )}
+                                ) : ( <p className="text-stone-400 text-center">{`No ${terminology.awards.toLowerCase()} earned yet in this mode.`}</p> )}
                             </div>
                         </Card>
                          <Card title={`Top Adventurers (Total ${terminology.xp})`} className="md:col-span-2">

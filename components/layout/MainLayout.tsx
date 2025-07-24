@@ -136,6 +136,7 @@ const MainLayout: React.FC = () => {
       case 'Object Exporter': return <ObjectExporterPage />;
       case 'Asset Manager': return <AssetManagerPage />;
       case 'Data Management': return <DataManagementPage />;
+      case 'Backup & Import': return <DataManagementPage />;
       case 'Asset Library': return <AssetLibraryPage />;
       case 'Profile': return <ProfilePage />;
       case 'About': return <AboutPage />;

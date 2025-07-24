@@ -600,6 +600,37 @@ app.post('/api/adjustments', async (req, res) => handleMultiSliceApiAction(res, 
     data.adminAdjustments.push(newAdjustment);
 }));
 
+// --- Economy ---
+app.post('/api/economy/exchange', async (req, res) => handleMultiSliceApiAction(res, ['users'], data => {
+    const { userId, payItem, receiveItem, guildId } = req.body;
+    const user = data.users.find(u => u.id === userId);
+    if (!user) throw { statusCode: 404, message: 'User not found' };
+
+    const fromRewardDef = data.rewardTypes.find(rt => rt.id === payItem.rewardTypeId);
+    const toRewardDef = data.rewardTypes.find(rt => rt.id === receiveItem.rewardTypeId);
+    if (!fromRewardDef || !toRewardDef) throw { statusCode: 404, message: 'Reward type not found' };
+
+    let sourceBalance;
+    let targetBalance;
+
+    if (guildId) {
+        user.guildBalances[guildId] = user.guildBalances[guildId] || { purse: {}, experience: {} };
+        sourceBalance = fromRewardDef.category === 'Currency' ? user.guildBalances[guildId].purse : user.guildBalances[guildId].experience;
+        targetBalance = toRewardDef.category === 'Currency' ? user.guildBalances[guildId].purse : user.guildBalances[guildId].experience;
+    } else {
+        sourceBalance = fromRewardDef.category === 'Currency' ? user.personalPurse : user.personalExperience;
+        targetBalance = toRewardDef.category === 'Currency' ? user.personalPurse : user.personalExperience;
+    }
+    
+    if ((sourceBalance[payItem.rewardTypeId] || 0) < payItem.amount) {
+        throw { statusCode: 400, message: 'Insufficient funds for exchange.' };
+    }
+
+    sourceBalance[payItem.rewardTypeId] -= payItem.amount;
+    targetBalance[receiveItem.rewardTypeId] = (targetBalance[receiveItem.rewardTypeId] || 0) + receiveItem.amount;
+}));
+
+
 // --- Quests ---
 const questHandler = (sliceKeys) => (req, res) => handleMultiSliceApiAction(res, sliceKeys, (data) => {
     const { action, userId } = req.body; const questId = req.params.id;

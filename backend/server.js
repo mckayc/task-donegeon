@@ -256,27 +256,47 @@ const dbHealthCheckMiddleware = async (req, res, next) => {
     res.status(503).json({ error: 'Database is currently unavailable. Please try again later.' });
 };
 
+const ALL_DATA_KEYS = [
+    'users', 'quests', 'questGroups', 'markets', 'rewardTypes', 'questCompletions',
+    'purchaseRequests', 'guilds', 'ranks', 'trophies', 'userTrophies', 'adminAdjustments',
+    'gameAssets', 'systemLogs', 'settings', 'themes', 'loginHistory', 'chatMessages',
+    'systemNotifications', 'scheduledEvents'
+];
 
 const loadData = async () => {
-    const result = await pool.query('SELECT value FROM app_data WHERE key = $1', ['app_state']);
-    return result.rows[0]?.value || { users: [], quests: [], markets: [], rewardTypes: [], questCompletions: [], purchaseRequests: [], guilds: [], ranks: [], trophies: [], userTrophies: [], adminAdjustments: [], gameAssets: [], systemLogs: [], settings: {}, themes: [], loginHistory: [], chatMessages: [], systemNotifications: [], scheduledEvents: [] };
+    const result = await pool.query('SELECT key, value FROM app_data');
+    const data = {};
+    ALL_DATA_KEYS.forEach(key => { data[key] = []; }); // Initialize all keys
+    data.settings = {}; // Settings is an object
+
+    result.rows.forEach(row => {
+        data[row.key] = row.value;
+    });
+    return data;
 };
 
-const saveData = async (data) => {
-    const dataString = JSON.stringify(data);
+const saveDataSlice = async (key, sliceData) => {
+    const dataString = JSON.stringify(sliceData);
     await pool.query(
         `INSERT INTO app_data (key, value) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET value = $2;`,
-        ['app_state', dataString]
+        [key, dataString]
     );
 };
 
 // === API Action Handler ===
-const handleApiAction = async (res, action) => {
+const handleMultiSliceApiAction = async (res, sliceKeys, action) => {
     try {
         const data = await loadData();
         const result = action(data);
-        await saveData(data);
-        broadcast({ type: 'DATA_UPDATED' });
+        
+        const uniqueSliceKeys = [...new Set(sliceKeys)];
+        const savePromises = uniqueSliceKeys.map(key => saveDataSlice(key, data[key]));
+        await Promise.all(savePromises);
+
+        uniqueSliceKeys.forEach(key => {
+            broadcast({ type: `${key.toUpperCase()}_UPDATED`, payload: data[key] });
+        });
+        
         res.status(200).json(result || { success: true });
     } catch (err) {
         console.error("API Action Error:", err);
@@ -356,82 +376,38 @@ app.post('/api/first-run', async (req, res) => {
     try {
         const { adminUserData, setupChoice, blueprint } = req.body;
         
-        // This is an atomic operation: clear existing data before seeding.
-        await pool.query('DELETE FROM app_data WHERE key = $1', ['app_state']);
+        await pool.query('TRUNCATE TABLE app_data;');
 
         const newAdminUser = {
             ...adminUserData,
             id: `user-${Date.now()}`,
-            avatar: {},
-            ownedAssetIds: [],
-            personalPurse: {},
-            personalExperience: {},
-            guildBalances: {},
-            ownedThemes: ['emerald', 'rose', 'sky'],
-            hasBeenOnboarded: false
+            avatar: {}, ownedAssetIds: [], personalPurse: {}, personalExperience: {},
+            guildBalances: {}, ownedThemes: ['emerald', 'rose', 'sky'], hasBeenOnboarded: false
         };
 
         let newAppData;
-
         if (setupChoice === 'guided') {
-            const allUsers = [newAdminUser];
-            const sampleQuests = createSampleQuests(allUsers);
-            const sampleGuilds = createInitialGuilds(allUsers);
+            const allUsers = [newAdminUser]; const sampleQuests = createSampleQuests(allUsers); const sampleGuilds = createInitialGuilds(allUsers);
             newAppData = {
-                users: allUsers,
-                quests: sampleQuests,
-                questGroups: INITIAL_QUEST_GROUPS,
-                markets: createSampleMarkets(),
-                rewardTypes: INITIAL_REWARD_TYPES,
-                questCompletions: createInitialQuestCompletions(allUsers, sampleQuests),
-                purchaseRequests: [],
-                guilds: sampleGuilds,
-                ranks: INITIAL_RANKS,
-                trophies: INITIAL_TROPHIES,
-                userTrophies: [],
-                adminAdjustments: [],
-                gameAssets: createSampleGameAssets(),
-                systemLogs: [],
-                settings: { ...INITIAL_SETTINGS, contentVersion: 1 },
-                themes: INITIAL_THEMES,
-                loginHistory: [], chatMessages: [], systemNotifications: [], scheduledEvents: []
+                users: allUsers, quests: sampleQuests, questGroups: INITIAL_QUEST_GROUPS, markets: createSampleMarkets(), rewardTypes: INITIAL_REWARD_TYPES,
+                questCompletions: createInitialQuestCompletions(allUsers, sampleQuests), purchaseRequests: [], guilds: sampleGuilds, ranks: INITIAL_RANKS,
+                trophies: INITIAL_TROPHIES, userTrophies: [], adminAdjustments: [], gameAssets: createSampleGameAssets(), systemLogs: [],
+                settings: { ...INITIAL_SETTINGS, contentVersion: 1 }, themes: INITIAL_THEMES, loginHistory: [], chatMessages: [], systemNotifications: [], scheduledEvents: []
             };
         } else if (setupChoice === 'scratch') {
-             const allUsers = [newAdminUser];
-             const sampleGuilds = createInitialGuilds(allUsers);
+             const allUsers = [newAdminUser]; const sampleGuilds = createInitialGuilds(allUsers);
              newAppData = {
-                users: allUsers,
-                quests: [], questGroups: [], markets: [],
-                rewardTypes: INITIAL_REWARD_TYPES, questCompletions: [], purchaseRequests: [],
-                guilds: sampleGuilds, ranks: INITIAL_RANKS, trophies: [], userTrophies: [],
-                adminAdjustments: [], gameAssets: [], systemLogs: [],
-                settings: { ...INITIAL_SETTINGS, contentVersion: 1 },
-                themes: INITIAL_THEMES,
-                loginHistory: [], chatMessages: [], systemNotifications: [], scheduledEvents: []
+                users: allUsers, quests: [], questGroups: [], markets: [], rewardTypes: INITIAL_REWARD_TYPES, questCompletions: [], purchaseRequests: [],
+                guilds: sampleGuilds, ranks: INITIAL_RANKS, trophies: [], userTrophies: [], adminAdjustments: [], gameAssets: [], systemLogs: [],
+                settings: { ...INITIAL_SETTINGS, contentVersion: 1 }, themes: INITIAL_THEMES, loginHistory: [], chatMessages: [], systemNotifications: [], scheduledEvents: []
              };
-        } else if (setupChoice === 'import' && blueprint) {
-            // This case needs more logic for merging/resolving, but for now we'll do a simple import
-            newAdminUser.hasBeenOnboarded = true;
-            newAppData = {
-                users: [newAdminUser],
-                quests: blueprint.assets.quests || [],
-                questGroups: blueprint.assets.questGroups || [],
-                markets: blueprint.assets.markets || [],
-                rewardTypes: blueprint.assets.rewardTypes || [],
-                ranks: blueprint.assets.ranks || [],
-                trophies: blueprint.assets.trophies || [],
-                gameAssets: blueprint.assets.gameAssets || [],
-                settings: { ...INITIAL_SETTINGS, contentVersion: 1 },
-                // Defaults for things not in blueprint
-                questCompletions: [], purchaseRequests: [], guilds: createInitialGuilds([newAdminUser]),
-                userTrophies: [], adminAdjustments: [], systemLogs: [],
-                themes: INITIAL_THEMES, loginHistory: [], chatMessages: [], systemNotifications: [], scheduledEvents: []
-            };
         } else {
             throw new Error('Invalid setup choice provided.');
         }
+        
+        const savePromises = Object.entries(newAppData).map(([key, value]) => saveDataSlice(key, value));
+        await Promise.all(savePromises);
 
-        await saveData(newAppData);
         res.status(201).json({ user: newAdminUser });
     } catch (err) {
         console.error("First Run Error:", err);
@@ -448,40 +424,41 @@ app.get('/api/data', async (req, res, next) => {
         next(err);
     }
 });
+app.post('/api/data', async (req, res) => {
+    try {
+        const dataToRestore = req.body;
+        await pool.query('TRUNCATE TABLE app_data;');
+        const savePromises = Object.entries(dataToRestore).map(([key, value]) => saveDataSlice(key, value));
+        await Promise.all(savePromises);
+        broadcast({ type: 'FULL_REFRESH_REQUESTED' });
+        res.status(200).json({ success: true });
+    } catch (err) {
+        console.error("Restore Error:", err);
+        res.status(500).json({ error: 'Failed to restore data.' });
+    }
+});
 
 
 // === GRANULAR API ENDPOINTS ===
 
 // --- Users ---
-app.post('/api/users', async (req, res) => handleApiAction(res, data => {
+app.post('/api/users', async (req, res) => handleMultiSliceApiAction(res, ['users', 'guilds', 'quests'], data => {
     const newUser = {
-        ...req.body,
-        id: `user-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
-        avatar: {},
-        ownedAssetIds: [],
-        personalPurse: {},
-        personalExperience: {},
-        guildBalances: {},
-        ownedThemes: ['emerald', 'rose', 'sky'],
-        hasBeenOnboarded: false
+        ...req.body, id: `user-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+        avatar: {}, ownedAssetIds: [], personalPurse: {}, personalExperience: {},
+        guildBalances: {}, ownedThemes: ['emerald', 'rose', 'sky'], hasBeenOnboarded: false
     };
     data.users.push(newUser);
     const defaultGuild = data.guilds.find(g => g.isDefault);
     if (defaultGuild) defaultGuild.memberIds.push(newUser.id);
-    const roleTag = `tutorial-${newUser.role.toLowerCase().replace(/ /g, '-')}`;
-    data.quests.forEach(q => {
-        if (q.tags.includes(roleTag) && !q.assignedUserIds.includes(newUser.id)) {
-            q.assignedUserIds.push(newUser.id);
-        }
-    });
     return { user: newUser };
 }));
-app.put('/api/users/:id', async (req, res) => handleApiAction(res, data => {
+app.put('/api/users/:id', async (req, res) => handleMultiSliceApiAction(res, ['users'], data => {
     const userIndex = data.users.findIndex(u => u.id === req.params.id);
     if (userIndex === -1) throw { statusCode: 404, message: 'User not found' };
     data.users[userIndex] = { ...data.users[userIndex], ...req.body };
 }));
-app.delete('/api/users/:id', async (req, res) => handleApiAction(res, data => {
+app.delete('/api/users/:id', async (req, res) => handleMultiSliceApiAction(res, ['users', 'guilds', 'quests'], data => {
     const userId = req.params.id;
     data.users = data.users.filter(u => u.id !== userId);
     data.guilds.forEach(g => { g.memberIds = g.memberIds.filter(id => id !== userId); });
@@ -489,144 +466,95 @@ app.delete('/api/users/:id', async (req, res) => handleApiAction(res, data => {
 }));
 
 // --- Adjustments ---
-app.post('/api/adjustments', async (req, res) => handleApiAction(res, data => {
+app.post('/api/adjustments', async (req, res) => handleMultiSliceApiAction(res, ['adminAdjustments', 'users', 'userTrophies'], data => {
     const { userId, type, rewards, setbacks, trophyId, reason, adjusterId, guildId } = req.body;
     const user = data.users.find(u => u.id === userId);
     if (!user) throw { statusCode: 404, message: 'User not found' };
 
     const newAdjustment = {
-        id: `adj-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
-        adjustedAt: new Date().toISOString(),
-        userId,
-        adjusterId,
-        type,
-        reason,
-        guildId: guildId || undefined,
-        rewards: [],
-        setbacks: [],
-        trophyId,
+        id: `adj-${Date.now()}`, adjustedAt: new Date().toISOString(),
+        userId, adjusterId, type, reason, guildId: guildId || undefined,
+        rewards: [], setbacks: [], trophyId,
     };
 
-    if (type === 'Reward' && rewards) {
-        applyRewards(user, rewards, data.rewardTypes, guildId);
-        newAdjustment.rewards = rewards;
-    } else if (type === 'Setback' && setbacks) {
-        applySetbacks(user, setbacks, data.rewardTypes, guildId);
-        newAdjustment.setbacks = setbacks;
-    } else if (type === 'Trophy' && trophyId) {
+    if (type === 'Reward' && rewards) { applyRewards(user, rewards, data.rewardTypes, guildId); newAdjustment.rewards = rewards; }
+    else if (type === 'Setback' && setbacks) { applySetbacks(user, setbacks, data.rewardTypes, guildId); newAdjustment.setbacks = setbacks; }
+    else if (type === 'Trophy' && trophyId) {
         const alreadyHasTrophy = data.userTrophies.some(ut => ut.userId === userId && ut.trophyId === trophyId && ut.guildId === (guildId || undefined));
-        if (!alreadyHasTrophy) {
-            data.userTrophies.push({
-                id: `ut-${Date.now()}`,
-                userId,
-                trophyId,
-                awardedAt: new Date().toISOString(),
-                guildId: guildId || undefined
-            });
-        }
+        if (!alreadyHasTrophy) { data.userTrophies.push({ id: `ut-${Date.now()}`, userId, trophyId, awardedAt: new Date().toISOString(), guildId: guildId || undefined }); }
     }
-
     data.adminAdjustments.push(newAdjustment);
 }));
 
 // --- Quests ---
-app.post('/api/quests', async (req, res) => handleApiAction(res, data => {
-    const newQuest = {
-        ...req.body,
-        id: `quest-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
-        claimedByUserIds: [],
-        dismissals: [],
-        todoUserIds: []
-    };
-    data.quests.push(newQuest);
-}));
-app.put('/api/quests/:id', async (req, res) => handleApiAction(res, data => {
-    const questIndex = data.quests.findIndex(q => q.id === req.params.id);
-    if (questIndex === -1) throw { statusCode: 404, message: 'Quest not found' };
-    data.quests[questIndex] = req.body;
-}));
-app.post('/api/quests/:id/clone', async (req, res) => handleApiAction(res, data => {
-    const questToClone = data.quests.find(q => q.id === req.params.id);
-    if (!questToClone) throw { statusCode: 404, message: 'Quest not found' };
-    const newQuest = {
-        ...JSON.parse(JSON.stringify(questToClone)),
-        id: `quest-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
-        title: `${questToClone.title} (Copy)`,
-        claimedByUserIds: [], dismissals: [], todoUserIds: [],
-    };
-    data.quests.push(newQuest);
-}));
-app.post('/api/quests/:id/actions', async (req, res) => handleApiAction(res, data => {
-    const { action, userId } = req.body;
-    const quest = data.quests.find(q => q.id === req.params.id);
-    if (!quest) throw { statusCode: 404, message: 'Quest not found' };
-    switch (action) {
-        case 'dismiss':
-            quest.dismissals = [...quest.dismissals.filter(d => d.userId !== userId), { userId, dismissedAt: new Date().toISOString() }];
+const questHandler = (sliceKeys) => (req, res) => handleMultiSliceApiAction(res, sliceKeys, (data) => {
+    const { action, userId } = req.body; const questId = req.params.id;
+    const questIndex = data.quests.findIndex(q => q.id === questId);
+    if (questIndex === -1 && questId) throw { statusCode: 404, message: 'Quest not found' };
+
+    switch (req.path) {
+        case '/api/quests': data.quests.push({ ...req.body, id: `quest-${Date.now()}`, claimedByUserIds: [], dismissals: [], todoUserIds: [] }); break;
+        case `/api/quests/${questId}`: data.quests[questIndex] = req.body; break;
+        case `/api/quests/${questId}/clone`: const qtc = data.quests[questIndex]; data.quests.push({ ...JSON.parse(JSON.stringify(qtc)), id: `quest-${Date.now()}`, title: `${qtc.title} (Copy)`}); break;
+        case `/api/quests/${questId}/actions`:
+            const quest = data.quests[questIndex];
+            switch(action) {
+                case 'dismiss': quest.dismissals = [...quest.dismissals.filter(d => d.userId !== userId), { userId, dismissedAt: new Date().toISOString() }]; break;
+                case 'claim': quest.claimedByUserIds.push(userId); break;
+                case 'release': quest.claimedByUserIds = quest.claimedByUserIds.filter(id => id !== userId); break;
+                case 'mark_todo': quest.todoUserIds = [...(quest.todoUserIds || []), userId]; break;
+                case 'unmark_todo': quest.todoUserIds = (quest.todoUserIds || []).filter(id => id !== userId); break;
+            }
             break;
-        case 'claim':
-            quest.claimedByUserIds = [...quest.claimedByUserIds, userId];
+        case '/api/quests/bulk-update':
+            const { questIds, updates } = req.body;
+            data.quests.forEach(q => {
+                if (questIds.includes(q.id)) {
+                    if (updates.isActive !== undefined) q.isActive = updates.isActive;
+                    if (updates.isOptional !== undefined) q.isOptional = updates.isOptional;
+                    if (updates.requiresApproval !== undefined) q.requiresApproval = updates.requiresApproval;
+                    if (updates.groupId !== undefined) q.groupId = updates.groupId === null ? undefined : updates.groupId;
+                    if (updates.addTags) q.tags = [...new Set([...q.tags, ...updates.addTags])];
+                    if (updates.removeTags) q.tags = q.tags.filter(tag => !updates.removeTags.includes(tag));
+                    if (updates.assignUsers) q.assignedUserIds = [...new Set([...q.assignedUserIds, ...updates.assignUsers])];
+                    if (updates.unassignUsers) q.assignedUserIds = q.assignedUserIds.filter(id => !updates.unassignUsers.includes(id));
+                }
+            });
             break;
-        case 'release':
-            quest.claimedByUserIds = quest.claimedByUserIds.filter(id => id !== userId);
-            break;
-        case 'mark_todo':
-            quest.todoUserIds = Array.from(new Set([...(quest.todoUserIds || []), userId]));
-            break;
-        case 'unmark_todo':
-            quest.todoUserIds = (quest.todoUserIds || []).filter(id => id !== userId);
-            break;
-        default:
-            throw { statusCode: 400, message: 'Invalid quest action' };
+        case '/api/quests/delete-many': data.quests = data.quests.filter(q => !req.body.questIds.includes(q.id)); break;
     }
-}));
-app.post('/api/quests/bulk-update', async (req, res) => handleApiAction(res, data => {
-    const { questIds, updates } = req.body;
-    const questIdSet = new Set(questIds);
-    data.quests.forEach(quest => {
-        if (questIdSet.has(quest.id)) {
-            if (updates.isActive !== undefined) quest.isActive = updates.isActive;
-            if (updates.isOptional !== undefined) quest.isOptional = updates.isOptional;
-            if (updates.requiresApproval !== undefined) quest.requiresApproval = updates.requiresApproval;
-            if (updates.groupId !== undefined) quest.groupId = updates.groupId === null ? undefined : updates.groupId;
-            if (updates.addTags) quest.tags = Array.from(new Set([...quest.tags, ...updates.addTags]));
-            if (updates.removeTags) quest.tags = quest.tags.filter(tag => !updates.removeTags.includes(tag));
-            if (updates.assignUsers) quest.assignedUserIds = Array.from(new Set([...quest.assignedUserIds, ...updates.assignUsers]));
-            if (updates.unassignUsers) quest.assignedUserIds = quest.assignedUserIds.filter(id => !updates.unassignUsers.includes(id));
-        }
-    });
-}));
-app.post('/api/quests/delete-many', async (req, res) => handleApiAction(res, data => {
-    const { questIds } = req.body;
-    data.quests = data.quests.filter(q => !questIds.includes(q.id));
-}));
+});
+app.post('/api/quests', questHandler(['quests']));
+app.put('/api/quests/:id', questHandler(['quests']));
+app.post('/api/quests/:id/clone', questHandler(['quests']));
+app.post('/api/quests/:id/actions', questHandler(['quests']));
+app.post('/api/quests/bulk-update', questHandler(['quests']));
+app.post('/api/quests/delete-many', questHandler(['quests']));
 
 
-// --- Other assets with similar CRUD patterns ---
-['reward-types', 'markets', 'guilds', 'trophies', 'game-assets', 'scheduled-events', 'quest-groups'].forEach(asset => {
-    const assetKey = asset.replace('-', '');
-    const dataKey = assetKey === 'gameassets' ? 'gameAssets' : assetKey === 'questgroups' ? 'questGroups' : `${assetKey}`;
-    
-    app.post(`/api/${asset}`, async (req, res) => handleApiAction(res, data => {
-        const newItem = {...req.body, id: `${asset}-${Date.now()}`};
-        data[dataKey].push(newItem);
-        if (asset === 'quest-groups') return { newGroup: newItem };
+// --- Other simple assets ---
+['rewardTypes', 'markets', 'guilds', 'trophies', 'gameAssets', 'scheduledEvents', 'questGroups'].forEach(assetKey => {
+    const plural = assetKey;
+    app.post(`/api/${plural}`, (req, res) => handleMultiSliceApiAction(res, [plural], data => {
+        const newItem = {...req.body, id: `${plural.slice(0, -1)}-${Date.now()}`};
+        data[plural].push(newItem);
+        if (plural === 'questGroups') return { newGroup: newItem };
     }));
-    app.put(`/api/${asset}/:id`, async (req, res) => handleApiAction(res, data => {
-        const itemIndex = data[dataKey].findIndex(i => i.id === req.params.id);
+    app.put(`/api/${plural}/:id`, (req, res) => handleMultiSliceApiAction(res, [plural], data => {
+        const itemIndex = data[plural].findIndex(i => i.id === req.params.id);
         if (itemIndex === -1) throw { statusCode: 404, message: 'Item not found' };
-        data[dataKey][itemIndex] = {...data[dataKey][itemIndex], ...req.body};
+        data[plural][itemIndex] = {...data[plural][itemIndex], ...req.body};
     }));
-    app.delete(`/api/${asset}/:id`, async (req, res) => handleApiAction(res, data => {
-        data[dataKey] = data[dataKey].filter(i => i.id !== req.params.id);
-        if(asset === 'quest-groups') {
+    app.delete(`/api/${plural}/:id`, (req, res) => handleMultiSliceApiAction(res, [plural, 'quests'], data => {
+        data[plural] = data[plural].filter(i => i.id !== req.params.id);
+        if(plural === 'questGroups') {
             data.quests.forEach(q => { if(q.groupId === req.params.id) q.groupId = undefined; });
         }
     }));
 });
 
 // --- Settings ---
-app.put('/api/settings', async (req, res) => handleApiAction(res, data => {
+app.put('/api/settings', async (req, res) => handleMultiSliceApiAction(res, ['settings'], data => {
     data.settings = { ...data.settings, ...req.body };
 }));
 
@@ -643,14 +571,10 @@ app.post('/api/chat/messages', async (req, res) => {
         };
 
         const query = `
-            UPDATE app_data
-            SET value = jsonb_set(
-                value,
-                '{chatMessages}',
-                COALESCE(value->'chatMessages', '[]'::jsonb) || $1::jsonb,
-                true
-            )
-            WHERE key = 'app_state';
+            INSERT INTO app_data (key, value)
+            VALUES ('chatMessages', jsonb_build_array($1::jsonb))
+            ON CONFLICT (key) DO UPDATE
+            SET value = app_data.value || $1::jsonb;
         `;
         
         await pool.query(query, [JSON.stringify(newMessage)]);
@@ -663,7 +587,6 @@ app.post('/api/chat/messages', async (req, res) => {
     }
 });
 
-// ... The rest of the endpoints for backups, AI, media, etc. remain largely the same ...
 
 app.get('/api/backups', async (req, res, next) => { try { const files = await fs.readdir(BACKUP_DIR); const backupDetails = await Promise.all( files .filter(file => file.endsWith('.json')) .map(async file => { const stats = await fs.stat(path.join(BACKUP_DIR, file)); return { filename: file, createdAt: stats.birthtime, size: stats.size, isAuto: file.startsWith('auto_backup_'), }; }) ); res.json(backupDetails.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))); } catch (err) { if (err.code === 'ENOENT') { return res.json([]); } next(err); } });
 app.post('/api/backups', async (req, res, next) => { try { const dataToBackup = JSON.stringify(req.body, null, 2); const timestamp = new Date().toISOString().replace(/:/g, '-').slice(0, 19); const filename = `manual_backup_${timestamp}.json`; await fs.writeFile(path.join(BACKUP_DIR, filename), dataToBackup); res.status(201).json({ message: 'Manual backup created successfully.' }); } catch (err) { next(err); } });

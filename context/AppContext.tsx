@@ -265,23 +265,44 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
     ws.onmessage = (event) => {
         const message = JSON.parse(event.data);
-        if (message.type === 'DATA_UPDATED') {
-            addNotification({type: 'info', message: 'Data synced from another session.'});
-            refetchData();
-        } else if (message.type === 'NEW_CHAT_MESSAGE') {
-            // Instantly add the new message to the chat state
-            setChatMessages(prev => {
-                // Prevent duplicates if the message somehow already exists
-                if (prev.some(msg => msg.id === message.payload.id)) {
-                    return prev;
-                }
-                return [...prev, message.payload];
-            });
+
+        // Granular state updates based on broadcast type
+        switch (message.type) {
+            case 'USERS_UPDATED': setUsers(message.payload); break;
+            case 'QUESTS_UPDATED': setQuests(message.payload); break;
+            case 'QUESTGROUPS_UPDATED': setQuestGroups(message.payload); break;
+            case 'MARKETS_UPDATED': setMarkets(message.payload); break;
+            case 'REWARDTYPES_UPDATED': setRewardTypes(message.payload); break;
+            case 'QUESTCOMPLETIONS_UPDATED': setQuestCompletions(message.payload); break;
+            case 'PURCHASEREQUESTS_UPDATED': setPurchaseRequests(message.payload); break;
+            case 'GUILDS_UPDATED': setGuilds(message.payload); break;
+            case 'RANKS_UPDATED': setRanks(message.payload); break;
+            case 'TROPHIES_UPDATED': setTrophies(message.payload); break;
+            case 'USERTROPHIES_UPDATED': setUserTrophies(message.payload); break;
+            case 'ADMINADJUSTMENTS_UPDATED': setAdminAdjustments(message.payload); break;
+            case 'GAMEASSETS_UPDATED': setGameAssets(message.payload); break;
+            case 'SYSTEMLOGS_UPDATED': setSystemLogs(message.payload); break;
+            case 'SETTINGS_UPDATED': setSettings(prev => ({...prev, ...message.payload})); break;
+            case 'THEMES_UPDATED': setThemes(message.payload); break;
+            case 'LOGINHISTORY_UPDATED': setLoginHistory(message.payload); break;
+            case 'SYSTEMNOTIFICATIONS_UPDATED': setSystemNotifications(message.payload); break;
+            case 'SCHEDULEDEVENTS_UPDATED': setScheduledEvents(message.payload); break;
+            case 'NEW_CHAT_MESSAGE':
+                setChatMessages(prev => {
+                    if (prev.some(msg => msg.id === message.payload.id)) return prev;
+                    return [...prev, message.payload];
+                });
+                break;
+            case 'FULL_REFRESH_REQUESTED':
+                refetchData();
+                break;
+            default:
+                console.warn('Received unknown WebSocket message type:', message.type);
         }
     };
 
     return () => ws.close();
-  }, [isDataLoaded, isFirstRun, refetchData, addNotification]);
+  }, [isDataLoaded, isFirstRun, refetchData]);
 
   // === API CALL WRAPPER ===
   const apiCall = useCallback(async (endpoint: string, method: string, body?: any) => {
@@ -338,7 +359,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   
   const sendMessage = useCallback(async (message: Omit<ChatMessage, 'id' | 'timestamp' | 'readBy' | 'senderId'> & { isAnnouncement?: boolean }) => {
     if (!currentUser) return;
-    // This doesn't use apiCall because it doesn't need a DATA_UPDATED broadcast
+    // This doesn't use apiCall because it uses a more efficient direct DB write and broadcasts its own specific event.
     try {
         await fetch('/api/chat/messages', {
             method: 'POST',
@@ -381,11 +402,11 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const rejectQuestCompletion = useCallback(async (id: string, note?: string) => { await apiCall(`/api/quest-completions/${id}`, 'PUT', { status: 'Rejected', note }); }, [apiCall]);
 
   const addQuestGroup = useCallback(async (group: Omit<QuestGroup, 'id'>) => {
-      const { newGroup } = await apiCall('/api/quest-groups', 'POST', group);
+      const { newGroup } = await apiCall('/api/questGroups', 'POST', group);
       return newGroup as QuestGroup;
   }, [apiCall]);
-  const updateQuestGroup = useCallback(async (group: QuestGroup) => { await apiCall(`/api/quest-groups/${group.id}`, 'PUT', group); }, [apiCall]);
-  const deleteQuestGroup = useCallback(async (id: string) => { await apiCall(`/api/quest-groups/${id}`, 'DELETE'); }, [apiCall]);
+  const updateQuestGroup = useCallback(async (group: QuestGroup) => { await apiCall(`/api/questGroups/${group.id}`, 'PUT', group); }, [apiCall]);
+  const deleteQuestGroup = useCallback(async (id: string) => { await apiCall(`/api/questGroups/${id}`, 'DELETE'); }, [apiCall]);
   const assignQuestGroupToUsers = useCallback(async (id: string, userIds: string[]) => { await apiCall(`/api/quest-groups/${id}/assign`, 'POST', { userIds }); }, [apiCall]);
   const applyManualAdjustment = useCallback(async (adjustment: Omit<AdminAdjustment, 'id' | 'adjustedAt'>): Promise<boolean> => {
       try {

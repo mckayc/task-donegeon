@@ -25,8 +25,7 @@ const BackupAndImportPage: React.FC = () => {
     const [blueprintToImport, setBlueprintToImport] = useState<Blueprint | null>(null);
     const [importResolutions, setImportResolutions] = useState<ImportResolution[]>([]);
     const [confirmation, setConfirmation] = useState<{ action: string, title: string, message: string, data?: any } | null>(null);
-    const [autoBackupSettings, setAutoBackupSettings] = useState(settings.automatedBackups);
-
+    
     const [serverBackups, setServerBackups] = useState<ServerBackup[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
@@ -51,16 +50,6 @@ const BackupAndImportPage: React.FC = () => {
         fetchServerBackups();
     }, [fetchServerBackups]);
 
-
-    const handleProfileChange = (index: number, field: keyof AutomatedBackupProfile, value: string | boolean | number) => {
-        setAutoBackupSettings(prev => {
-            const newProfiles = [...prev.profiles] as [AutomatedBackupProfile, AutomatedBackupProfile, AutomatedBackupProfile];
-            const profileToUpdate = { ...newProfiles[index] };
-            (profileToUpdate as any)[field] = value;
-            newProfiles[index] = profileToUpdate;
-            return { ...prev, profiles: newProfiles };
-        });
-    };
 
     const handleRestoreFileSelect = (file: File) => {
         setFileToRestore(file);
@@ -151,11 +140,6 @@ const BackupAndImportPage: React.FC = () => {
         setConfirmation(null);
     };
     
-    const handleSaveAutoBackupSettings = () => {
-        updateSettings({ automatedBackups: autoBackupSettings });
-        addNotification({type: 'success', message: 'Automatic backup settings saved.'});
-    };
-
     const handleCreateServerBackup = async () => {
         addNotification({ type: 'info', message: 'Creating server-side backup...' });
         try {

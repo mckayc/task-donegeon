@@ -1008,11 +1008,95 @@ app.post('/api/assets/:id/purchase', async (req, res) => handleMultiSliceApiActi
 }));
 
 
-app.get('/api/backups', async (req, res, next) => { try { const files = await fs.readdir(BACKUP_DIR); const backupDetails = await Promise.all( files .filter(file => file.endsWith('.json')) .map(async file => { const stats = await fs.stat(path.join(BACKUP_DIR, file)); return { filename: file, createdAt: stats.birthtime, size: stats.size, isAuto: file.startsWith('auto_backup_'), }; }) ); res.json(backupDetails.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))); } catch (err) { if (err.code === 'ENOENT') { return res.json([]); } next(err); } });
-app.post('/api/backups/create', async (req, res, next) => { try { const dataToBackup = await loadData(); const dataString = JSON.stringify(dataToBackup, null, 2); const timestamp = new Date().toISOString().replace(/:/g, '-').slice(0, 19); const filename = `manual_backup_${timestamp}.json`; await fs.writeFile(path.join(BACKUP_DIR, filename), dataString); res.status(201).json({ message: `Manual backup '${filename}' created successfully.` }); } catch (err) { next(err); } });
-app.post('/api/backups/restore/:filename', async (req, res, next) => { try { const filename = path.basename(req.params.filename); const filePath = path.join(BACKUP_DIR, filename); try { await fs.access(filePath); } catch { return res.status(404).json({ error: "Backup file not found." }); } const backupContent = await fs.readFile(filePath, 'utf-8'); const dataToRestore = JSON.parse(backupContent); await pool.query('TRUNCATE TABLE app_data;'); const savePromises = Object.entries(dataToRestore).map(([key, value]) => saveDataSlice(key, value)); await Promise.all(savePromises); broadcast({ type: 'FULL_REFRESH_REQUESTED' }); res.status(200).json({ success: true, message: `Successfully restored from ${filename}. App will reload.` }); } catch (err) { next(err); } });
-app.get('/api/backups/:filename', (req, res, next) => { const filename = path.basename(req.params.filename); const filePath = path.join(BACKUP_DIR, filename); res.download(filePath, (err) => { if (err) { if (err.code === "ENOENT") { return res.status(404).json({ error: "File not found." }); } return next(err); } }); });
-app.delete('/api/backups/:filename', async (req, res, next) => { try { const filename = path.basename(req.params.filename); await fs.unlink(path.join(BACKUP_DIR, filename)); res.status(200).json({ message: 'Backup deleted successfully.' }); } catch (err) { if (err.code === "ENOENT") { return res.status(404).json({ error: "File not found." }); } next(err); } });
+// --- Server Backups ---
+app.get('/api/backups', async (req, res, next) => {
+    try {
+        const files = await fs.readdir(BACKUP_DIR);
+        const backupDetails = await Promise.all(
+            files
+                .filter(file => file.endsWith('.json'))
+                .map(async file => {
+                    const stats = await fs.stat(path.join(BACKUP_DIR, file));
+                    return {
+                        filename: file,
+                        createdAt: stats.birthtime,
+                        size: stats.size,
+                        isAuto: file.startsWith('auto_backup_'),
+                    };
+                })
+        );
+        res.json(backupDetails.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)));
+    } catch (err) {
+        if (err.code === 'ENOENT') {
+            return res.json([]);
+        }
+        next(err);
+    }
+});
+
+app.post('/api/backups/create', async (req, res, next) => {
+    try {
+        const dataToBackup = await loadData();
+        const dataString = JSON.stringify(dataToBackup, null, 2);
+        const timestamp = new Date().toISOString().replace(/:/g, '-').slice(0, 19);
+        const filename = `manual_backup_${timestamp}.json`;
+        await fs.writeFile(path.join(BACKUP_DIR, filename), dataString);
+        res.status(201).json({ message: `Manual backup '${filename}' created successfully.` });
+    } catch (err) {
+        next(err);
+    }
+});
+
+app.post('/api/backups/restore/:filename', async (req, res, next) => {
+    try {
+        const filename = path.basename(req.params.filename); // Sanitize filename
+        const filePath = path.join(BACKUP_DIR, filename);
+        try {
+            await fs.access(filePath);
+        } catch {
+            return res.status(404).json({ error: "Backup file not found." });
+        }
+        const backupContent = await fs.readFile(filePath, 'utf-8');
+        const dataToRestore = JSON.parse(backupContent);
+        
+        await pool.query('TRUNCATE TABLE app_data;');
+        const savePromises = Object.entries(dataToRestore).map(([key, value]) => saveDataSlice(key, value));
+        await Promise.all(savePromises);
+        
+        broadcast({ type: 'FULL_REFRESH_REQUESTED' });
+        res.status(200).json({ success: true, message: `Successfully restored from ${filename}. App will reload.` });
+    } catch (err) {
+        next(err);
+    }
+});
+
+app.get('/api/backups/:filename', (req, res, next) => {
+    const filename = path.basename(req.params.filename); // Sanitize filename
+    const filePath = path.join(BACKUP_DIR, filename);
+    res.download(filePath, (err) => {
+        if (err) {
+            if (err.code === "ENOENT") {
+                return res.status(404).json({ error: "File not found." });
+            }
+            return next(err);
+        }
+    });
+});
+
+app.delete('/api/backups/:filename', async (req, res, next) => {
+    try {
+        const filename = path.basename(req.params.filename); // Sanitize filename
+        await fs.unlink(path.join(BACKUP_DIR, filename));
+        res.status(200).json({ message: 'Backup deleted successfully.' });
+    } catch (err) {
+        if (err.code === "ENOENT") {
+            return res.status(404).json({ error: "File not found." });
+        }
+        next(err);
+    }
+});
+
+
 app.post('/api/media/upload', upload.single('file'), async (req, res, next) => { if (!req.file) return res.status(400).json({ error: 'No file uploaded.' }); try { let fileUrl; if (process.env.STORAGE_PROVIDER === 'supabase') { const category = req.body.category || 'Miscellaneous'; const sanitizedCategory = category.replace(/[^a-zA-Z0-9-_ ]/g, '').trim(); const sanitizedFilename = req.file.originalname.replace(/[^a-zA-Z0-9-._]/g, '_'); const filePath = sanitizedCategory ? `${sanitizedCategory}/${Date.now()}-${sanitizedFilename}` : `${Date.now()}-${sanitizedFilename}`; const { data, error } = await supabase.storage .from('media-assets') .upload(filePath, req.file.buffer, { contentType: req.file.mimetype, upsert: false, }); if (error) throw error; const { data: { publicUrl } } = supabase.storage.from('media-assets').getPublicUrl(data.path); fileUrl = publicUrl; } else { const relativePath = path.relative(UPLOADS_DIR, req.file.path).replace(/\\/g, '/'); fileUrl = `/uploads/${relativePath}`; } res.status(201).json({ url: fileUrl, name: req.file.originalname, type: req.file.mimetype, size: req.file.size }); } catch (err) { next(err); } });
 app.get('/api/media/local-gallery', async (req, res, next) => { if (process.env.STORAGE_PROVIDER !== 'local') { return res.status(200).json([]); } const walk = async (dir, parentCategory = null) => { let dirents; try { dirents = await fs.readdir(dir, { withFileTypes: true }); } catch (e) { if (e.code === 'ENOENT') { await fs.mkdir(dir, { recursive: true }); return []; } throw e; } let imageFiles = []; for (const dirent of dirents) { const fullPath = path.join(dir, dirent.name); if (dirent.isDirectory()) { const nestedFiles = await walk(fullPath, dirent.name); imageFiles = imageFiles.concat(nestedFiles); } else if (/\.(png|jpg|jpeg|gif|webp|svg)$/i.test(dirent.name)) { const relativePath = path.relative(UPLOADS_DIR, fullPath).replace(/\\/g, '/'); imageFiles.push({ url: `/uploads/${relativePath}`, category: parentCategory ? (parentCategory.charAt(0).toUpperCase() + parentCategory.slice(1)) : 'Miscellaneous', name: dirent.name.replace(/\.[^/.]+$/, ""), }); } } return imageFiles; }; try { const allImageFiles = await walk(UPLOADS_DIR); res.status(200).json(allImageFiles); } catch (err) { next(err); } });
 app.post('/api/ai/test', async (req, res, next) => { if (!ai) { return res.status(400).json({ success: false, error: "AI features are not configured on the server. The API_KEY environment variable is not set." }); } try { const response = await ai.models.generateContent({ model: 'gemini-2.5-flash', contents: 'test' }); if (response && response.text) { res.json({ success: true }); } else { throw new Error("Received an empty or invalid response from the API."); } } catch (error) { console.error("AI API Key Test Failed:", error.message); res.status(400).json({ success: false, error: 'API key is invalid or permissions are insufficient.' }); } });

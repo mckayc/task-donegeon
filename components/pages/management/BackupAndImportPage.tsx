@@ -23,7 +23,9 @@ const BackupAndImportPage: React.FC = () => {
     const handleProfileChange = (index: number, field: keyof AutomatedBackupProfile, value: string | boolean | number) => {
         setAutoBackupSettings(prev => {
             const newProfiles = [...prev.profiles] as [AutomatedBackupProfile, AutomatedBackupProfile, AutomatedBackupProfile];
-            newProfiles[index] = { ...newProfiles[index], [field]: value };
+            const profileToUpdate = { ...newProfiles[index] };
+            (profileToUpdate as any)[field] = value;
+            newProfiles[index] = profileToUpdate;
             return { ...prev, profiles: newProfiles };
         });
     };
@@ -108,15 +110,15 @@ const BackupAndImportPage: React.FC = () => {
                     <div className="pt-4 border-t border-stone-700/60">
                         <h4 className="font-semibold text-stone-200">Automatic Backups</h4>
                         <p className="text-sm text-stone-400 mt-1 mb-3">Configure up to 3 automated backup schedules. Backups are stored on the server.</p>
-                        <div className="space-y-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                             {autoBackupSettings.profiles.map((profile, index) => (
                                 <div key={index} className="p-3 bg-stone-900/40 rounded-lg border border-stone-700/60">
                                     <ToggleSwitch
                                         enabled={profile.enabled}
                                         setEnabled={(val) => handleProfileChange(index, 'enabled', val)}
-                                        label={`Profile ${index + 1}: ${profile.frequency.charAt(0).toUpperCase() + profile.frequency.slice(1)} Backups`}
+                                        label={`Profile ${index + 1}`}
                                     />
-                                    <div className={`grid grid-cols-2 gap-4 mt-2 ${!profile.enabled ? 'opacity-50 pointer-events-none' : ''}`}>
+                                    <div className={`space-y-3 mt-3 pt-3 border-t border-stone-600 ${!profile.enabled ? 'opacity-50 pointer-events-none' : ''}`}>
                                         <Input as="select" label="Frequency" value={profile.frequency} onChange={e => handleProfileChange(index, 'frequency', e.target.value)}>
                                             <option value="hourly">Hourly</option>
                                             <option value="daily">Daily</option>
@@ -127,9 +129,9 @@ const BackupAndImportPage: React.FC = () => {
                                     </div>
                                 </div>
                             ))}
-                            <div className="text-right">
-                                <Button onClick={handleSaveAutoBackupSettings} variant="secondary">Save Backup Settings</Button>
-                            </div>
+                        </div>
+                        <div className="text-right mt-4">
+                            <Button onClick={handleSaveAutoBackupSettings} variant="secondary">Save Backup Settings</Button>
                         </div>
                     </div>
                 </div>

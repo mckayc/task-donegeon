@@ -465,6 +465,16 @@ export interface RewardValuationSettings {
   xpExchangeFeePercent: number;
 }
 
+export interface AutomatedBackupProfile {
+    enabled: boolean;
+    frequency: 'hourly' | 'daily' | 'weekly' | 'monthly';
+    keep: number;
+}
+
+export interface AutomatedBackups {
+    // A fixed array of 3 profiles for the UI
+    profiles: [AutomatedBackupProfile, AutomatedBackupProfile, AutomatedBackupProfile];
+}
 
 export interface AppSettings {
   contentVersion: number;
@@ -488,11 +498,7 @@ export interface AppSettings {
     autoExitMinutes: number;
     userIds: string[];
   };
-  automatedBackups: {
-    enabled: boolean;
-    frequencyHours: number; // e.g., 24 for daily
-    maxBackups: number; // e.g., 7 for a week's worth
-  };
+  automatedBackups: AutomatedBackups;
   loginNotifications: {
     enabled: boolean;
   };

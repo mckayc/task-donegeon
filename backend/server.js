@@ -617,31 +617,53 @@ const startServer = async () => {
         }
     });
 
-    const createCrudEndpoints = (entityName, broadcaster) => {
-        const pluralEntity = entityName.endsWith('s') ? entityName : `${entityName}s`;
-        app.post(`/api/${pluralEntity}`, async (req, res) => { const data = await db.getData(); const newItem = { ...req.body, id: `${entityName}-${Date.now()}` }; data[pluralEntity] = [...(data[pluralEntity] || []), newItem]; await saveDataAndBroadcast(data); res.status(201).json({ [`new${entityName.charAt(0).toUpperCase() + entityName.slice(1)}`]: newItem }); });
-        app.put(`/api/${pluralEntity}/:id`, async (req, res) => { const { id } = req.params; const data = await db.getData(); data[pluralEntity] = (data[pluralEntity] || []).map(item => item.id === id ? { ...item, ...req.body } : item); await saveDataAndBroadcast(data); res.json({ message: `${entityName} updated` }); });
-        app.delete(`/api/${pluralEntity}/:id`, async (req, res) => { const { id } = req.params; const data = await db.getData(); data[pluralEntity] = (data[pluralEntity] || []).filter(item => item.id !== id); if (entityName === 'questGroup') { data.quests = data.quests.map(q => q.groupId === id ? { ...q, groupId: undefined } : q); broadcasters.quests(data.quests); } await saveDataAndBroadcast(data); res.json({ message: `${entityName} deleted` }); });
-    };
+    app.post('/api/quests/:questId/complete', async (req, res) => {
+        const { questId } = req.params;
+        const { userId, note, completionDate } = req.body;
+        const data = await db.getData();
+        const quest = data.quests.find(q => q.id === questId);
+        const user = data.users.find(u => u.id === userId);
 
-    createCrudEndpoints('user', broadcasters.users);
-    createCrudEndpoints('quest', broadcasters.quests);
-    createCrudEndpoints('questGroup', broadcasters.questGroups);
-    createCrudEndpoints('market', broadcasters.markets);
-    createCrudEndpoints('rewardType', broadcasters.rewardTypes);
-    createCrudEndpoints('guild', broadcasters.guilds);
-    createCrudEndpoints('trophy', broadcasters.trophies);
-    createCrudEndpoints('gameAsset', broadcasters.gameAssets);
-    createCrudEndpoints('theme', broadcasters.themes);
-    createCrudEndpoints('systemNotification', broadcasters.systemNotifications);
-    createCrudEndpoints('scheduledEvent', broadcasters.scheduledEvents);
+        if (!quest || !user) return res.status(404).json({ error: 'Quest or user not found.' });
 
-    // Placeholder complex endpoints
-    app.post('/api/quests/:id/actions', async (req, res) => res.json({ message: 'Action completed.' }));
-    app.post('/api/quests/:id/complete', async (req, res) => res.json({ message: 'Quest completion processed.' }));
-    app.put('/api/quest-completions/:id', async (req, res) => res.json({ message: 'Completion status updated.' }));
-    app.put('/api/purchase-requests/:id', async (req, res) => res.json({ message: 'Purchase request updated.' }));
-    app.post('/api/assets/:id/purchase', async (req, res) => res.json({ message: 'Purchase processed.' }));
+        const newCompletion = {
+            id: `qc-${Date.now()}`,
+            questId,
+            userId,
+            completedAt: completionDate ? new Date(completionDate).toISOString() : new Date().toISOString(),
+            status: quest.requiresApproval ? 'Pending' : 'Approved',
+            note: note || '',
+            guildId: quest.guildId,
+        };
+
+        data.questCompletions.push(newCompletion);
+
+        if (newCompletion.status === 'Approved') {
+            // Apply rewards logic
+            quest.rewards.forEach(reward => {
+                const rewardType = data.rewardTypes.find(rt => rt.id === reward.rewardTypeId);
+                if (!rewardType) return;
+                
+                let balanceTarget;
+                if (quest.guildId) {
+                    if (!user.guildBalances[quest.guildId]) user.guildBalances[quest.guildId] = { purse: {}, experience: {} };
+                    balanceTarget = rewardType.category === 'Currency' ? user.guildBalances[quest.guildId].purse : user.guildBalances[quest.guildId].experience;
+                } else {
+                    balanceTarget = rewardType.category === 'Currency' ? user.personalPurse : user.personalExperience;
+                }
+                
+                balanceTarget[reward.rewardTypeId] = (balanceTarget[reward.rewardTypeId] || 0) + reward.amount;
+            });
+        }
+
+        await saveDataAndBroadcast(data);
+        res.json({ message: 'Quest completion processed.', completion: newCompletion });
+    });
+    
+    // Catch-all for other simple endpoints, can be replaced with full implementations later
+    app.all('/api/*', (req, res) => {
+        res.status(404).json({ error: `API endpoint ${req.method} ${req.path} not found or not yet implemented.` });
+    });
 
     try {
         await fs.mkdir(UPLOADS_DIR, { recursive: true });

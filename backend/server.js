@@ -387,7 +387,6 @@ const createInitialQuestCompletions = (users, quests) => {
 
 // === END INLINED DATA ===
 
-
 // Configuration
 const PORT = process.env.PORT || 3001;
 const UPLOADS_DIR = process.env.UPLOADS_DIR || path.join(__dirname, '../uploads');
@@ -401,10 +400,7 @@ app.use(cors());
 app.use(express.json({ limit: '10mb' }));
 app.use('/uploads', express.static(UPLOADS_DIR));
 
-
-// Database setup
-let db;
-
+// --- DB CLASS DEFINITION ---
 class PostgresDB {
     constructor() {
         this.pool = new Pool({
@@ -459,6 +455,14 @@ class PostgresDB {
     }
 }
 
+// --- DB INITIALIZATION ---
+let db;
+if (process.env.DATABASE_URL) {
+    db = new PostgresDB();
+} else {
+    console.error("FATAL: DATABASE_URL environment variable is not set. Please configure it in your .env file or hosting environment.");
+    process.exit(1);
+}
 
 // WebSocket broadcast function
 function broadcast(data) {
@@ -574,7 +578,7 @@ app.post('/api/first-run', async (req, res) => {
         };
 
         let data = {
-            users: [newAdmin],
+            users: [],
             quests: [],
             questGroups: [],
             markets: [],
@@ -595,6 +599,13 @@ app.post('/api/first-run', async (req, res) => {
             systemNotifications: [],
             scheduledEvents: []
         };
+        
+        if (setupChoice === 'guided') {
+            const otherMockUsers = createMockUsers().filter(u => u.role !== Role.DonegeonMaster);
+            data.users = [newAdmin, ...otherMockUsers];
+        } else {
+            data.users = [newAdmin];
+        }
 
         data.rewardTypes = INITIAL_REWARD_TYPES;
         data.ranks = INITIAL_RANKS;
@@ -711,14 +722,6 @@ app.post('/api/assets/:id/purchase', async (req, res) => {
 });
 
 const startServer = async () => {
-    
-    if (process.env.DATABASE_URL) {
-        db = new PostgresDB();
-    } else {
-        console.error("FATAL: DATABASE_URL environment variable is not set. Please configure it in your .env file or hosting environment.");
-        process.exit(1);
-    }
-
     try {
         await fs.mkdir(UPLOADS_DIR, { recursive: true });
         await fs.mkdir(BACKUPS_DIR, { recursive: true });

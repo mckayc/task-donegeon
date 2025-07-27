@@ -263,9 +263,9 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     const fullUpdate = useCallback((newData: Partial<IAppData>) => {
         if (!isMounted.current) return;
         setState(prev => {
-            // Find the latest version of the currentUser from the incoming data
+            // Find the latest version of the currentUser from the incoming data to prevent stale state.
             const updatedCurrentUser = prev.currentUser
-                ? newData.users?.find(u => u.id === prev.currentUser.id) || prev.currentUser
+                ? (newData.users || prev.users).find(u => u.id === prev.currentUser!.id) || null
                 : null;
             
             return {

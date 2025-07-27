@@ -265,7 +265,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     const fullUpdate = useCallback((newData: IAppData) => {
         if (!isMounted.current) return;
         setState(prev => {
-            const currentUserId = prev.currentUser ? prev.currentUser.id : null;
+            const currentUserId = prev.currentUser?.id;
             const updatedCurrentUser = currentUserId
                 ? (newData.users || prev.users).find(u => u.id === currentUserId) || null
                 : null;

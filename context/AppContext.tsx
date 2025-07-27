@@ -264,10 +264,18 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       if (!isDataLoaded || isFirstRun) return;
 
       let ws: WebSocket | null = null;
-      let reconnectInterval: number | null = null;
+      let reconnectTimeout: ReturnType<typeof setTimeout> | null = null;
       let reconnectAttempts = 0;
 
       const connect = () => {
+          // Guard against invalid host which causes a crash.
+          if (!window.location.host) {
+              console.warn("WebSocket connection skipped: window.location.host is not yet available.");
+              // Optionally, try again in a moment
+              reconnectTimeout = setTimeout(connect, 1000);
+              return;
+          }
+
           const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
           const wsUrl = `${protocol}//${window.location.host}`;
           ws = new WebSocket(wsUrl);
@@ -275,25 +283,31 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
           ws.onopen = () => {
               console.log('WebSocket connected');
               addNotification({ type: 'success', message: 'Real-time connection established.' });
-              reconnectAttempts = 0;
-              if (reconnectInterval) {
-                  window.clearInterval(reconnectInterval);
-                  reconnectInterval = null;
+              reconnectAttempts = 0; // Reset on successful connection
+              if (reconnectTimeout) {
+                  clearTimeout(reconnectTimeout);
+                  reconnectTimeout = null;
               }
           };
 
+          ws.onerror = (error) => {
+              console.error('WebSocket error:', error);
+              // onclose will be called automatically after an error.
+          };
+          
           ws.onclose = () => {
               console.log('WebSocket disconnected');
               ws = null;
-              if (!reconnectInterval) {
-                  reconnectInterval = window.setInterval(() => {
-                      reconnectAttempts++;
-                      const delay = Math.min(1000 * Math.pow(2, reconnectAttempts), 30000); // Exponential backoff up to 30s
-                      console.log(`Attempting to reconnect WebSocket (attempt ${reconnectAttempts})...`);
-                      addNotification({ type: 'info', message: 'Connection lost. Attempting to reconnect...' });
-                      connect();
-                  }, 5000); // Initial retry delay
-              }
+              if (reconnectTimeout) return; // Reconnection already scheduled
+
+              reconnectAttempts++;
+              const delay = Math.min(1000 * Math.pow(2, reconnectAttempts), 30000); // Exponential backoff
+
+              reconnectTimeout = setTimeout(() => {
+                  console.log(`Attempting to reconnect WebSocket (attempt ${reconnectAttempts})...`);
+                  addNotification({ type: 'info', message: 'Connection lost. Attempting to reconnect...' });
+                  connect();
+              }, delay);
           };
 
           ws.onmessage = (event) => {
@@ -344,10 +358,12 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       connect();
 
       return () => {
-          if (reconnectInterval) {
-              window.clearInterval(reconnectInterval);
+          if (reconnectTimeout) {
+              clearTimeout(reconnectTimeout);
           }
           if (ws) {
+              // Prevent onclose from triggering a reconnect attempt after unmount
+              ws.onclose = null;
               ws.close();
           }
       };

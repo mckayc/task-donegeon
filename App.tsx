@@ -41,7 +41,7 @@ const App: React.FC = () => {
     if (activeThemeId) {
       document.body.dataset.theme = activeThemeId;
     }
-  }, [settings.theme, currentUser, appMode, guilds, themes]);
+  }, [settings.theme, currentUser?.id, currentUser?.theme, appMode, guilds, themes]);
 
   useEffect(() => {
     if (settings.favicon) {

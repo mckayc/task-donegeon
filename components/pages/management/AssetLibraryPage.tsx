@@ -124,7 +124,7 @@ const PackDetailView: React.FC<{ pack: LibraryPack; onBack: () => void; }> = ({ 
             questGroups: new Map<string, string>(),
         };
 
-        // 1. Process Quest Groups specifically to handle name conflicts and get new IDs
+        // 1. Process Quest Groups
         if (livePackAssets.questGroups) {
             for (const packGroup of livePackAssets.questGroups) {
                 const existingGroup = allQuestGroupsFromState.find((g: QuestGroup) => g.name.toLowerCase() === packGroup.name.toLowerCase());
@@ -141,13 +141,16 @@ const PackDetailView: React.FC<{ pack: LibraryPack; onBack: () => void; }> = ({ 
             }
         }
         
-        // 2. Process assets sequentially to avoid server race conditions
+        // 2. Process other dependencies sequentially to avoid race conditions and get new IDs
         if (livePackAssets.rewardTypes) {
             for (const asset of livePackAssets.rewardTypes) {
                 if (selectedIds.includes(asset.id)) {
                     const { id, ...rest } = asset;
-                    await addRewardType(rest);
-                    importedCount++;
+                    const newAsset = await addRewardType(rest);
+                    if (newAsset) {
+                        idMaps.rewardTypes.set(id, newAsset.id);
+                        importedCount++;
+                    }
                 }
             }
         }
@@ -156,8 +159,11 @@ const PackDetailView: React.FC<{ pack: LibraryPack; onBack: () => void; }> = ({ 
             for (const asset of livePackAssets.markets) {
                 if (selectedIds.includes(asset.id)) {
                     const { id, ...rest } = asset;
-                    await addMarket(rest);
-                    importedCount++;
+                    const newAsset = await addMarket(rest);
+                    if (newAsset) {
+                        idMaps.markets.set(id, newAsset.id);
+                        importedCount++;
+                    }
                 }
             }
         }
@@ -167,12 +173,17 @@ const PackDetailView: React.FC<{ pack: LibraryPack; onBack: () => void; }> = ({ 
                 if (selectedIds.includes(t.id)) { 
                     const { id, ...rest } = t; 
                     const newTrophy = { ...rest, requirements: (t.requirements || []).map(req => ({ ...req })) };
-                    await addTrophy(newTrophy as Omit<Trophy, 'id'>); 
-                    importedCount++; 
+                    // Note: trophy requirements might reference quest IDs, but we can't map them yet. This is a limitation for now.
+                    const newAsset = await addTrophy(newTrophy as Omit<Trophy, 'id'>); 
+                    if (newAsset) {
+                        idMaps.trophies.set(id, newAsset.id);
+                        importedCount++;
+                    }
                 }
             }
         }
         
+        // 3. Process primary assets using the new ID maps
         if (livePackAssets.quests) {
             for (const q of livePackAssets.quests) {
                 if (selectedIds.includes(q.id)) {
@@ -182,9 +193,9 @@ const PackDetailView: React.FC<{ pack: LibraryPack; onBack: () => void; }> = ({ 
                         assignedUserIds: userIdsForImport,
                         guildId: appMode.mode === 'guild' ? appMode.guildId : undefined,
                         groupId: q.groupId ? idMaps.questGroups.get(q.groupId) : undefined,
-                        rewards: q.rewards.map(r => ({ ...r, rewardTypeId: idMaps.rewardTypes.get(r.rewardTypeId) || r.rewardTypeId })),
-                        lateSetbacks: q.lateSetbacks.map(r => ({ ...r, rewardTypeId: idMaps.rewardTypes.get(r.rewardTypeId) || r.rewardTypeId })),
-                        incompleteSetbacks: q.incompleteSetbacks.map(r => ({ ...r, rewardTypeId: idMaps.rewardTypes.get(r.rewardTypeId) || r.rewardTypeId })),
+                        rewards: (q.rewards || []).map(r => ({ ...r, rewardTypeId: idMaps.rewardTypes.get(r.rewardTypeId) || r.rewardTypeId })),
+                        lateSetbacks: (q.lateSetbacks || []).map(r => ({ ...r, rewardTypeId: idMaps.rewardTypes.get(r.rewardTypeId) || r.rewardTypeId })),
+                        incompleteSetbacks: (q.incompleteSetbacks || []).map(r => ({ ...r, rewardTypeId: idMaps.rewardTypes.get(r.rewardTypeId) || r.rewardTypeId })),
                     };
                     await addQuest(newQuest as Omit<Quest, 'id' | 'claimedByUserIds' | 'dismissals'>); 
                     importedCount++;
@@ -201,7 +212,7 @@ const PackDetailView: React.FC<{ pack: LibraryPack; onBack: () => void; }> = ({ 
                         marketIds: (ga.marketIds || []).map(mid => idMaps.markets.get(mid) || mid), 
                         costGroups: (ga.costGroups || []).map(group => group.map(c => ({...c, rewardTypeId: idMaps.rewardTypes.get(c.rewardTypeId) || c.rewardTypeId })))
                     };
-                    await addGameAsset(newAsset as Omit<GameAsset, 'id' | 'creatorId' | 'createdAt'>); 
+                    await addGameAsset(newAsset as Omit<GameAsset, 'id' | 'creatorId' | 'createdAt' | 'purchaseCount'>); 
                     importedCount++;
                 }
             }
@@ -210,6 +221,7 @@ const PackDetailView: React.FC<{ pack: LibraryPack; onBack: () => void; }> = ({ 
         addNotification({type: 'success', message: `Successfully installed ${importedCount} assets from ${pack.title}!`});
         onBack();
     };
+
 
     const typeTitles: {[key: string]: string} = { 
         Duties: settings.terminology.recurringTasks,

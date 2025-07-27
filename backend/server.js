@@ -779,10 +779,30 @@ const startServer = async () => {
             readBy: [req.body.senderId]
         };
         data.chatMessages.push(newMessage);
-        // Special broadcast for chat
-        broadcast({ type: 'NEW_CHAT_MESSAGE', payload: newMessage });
-        // Also save to DB, but don't re-broadcast everything
-        await db.saveData(data);
+    
+        if (newMessage.isAnnouncement && newMessage.guildId) {
+            const guild = data.guilds.find(g => g.id === newMessage.guildId);
+            if (guild) {
+                const sender = data.users.find(u => u.id === newMessage.senderId);
+                const newNotification = {
+                    id: `sn-${Date.now()}`,
+                    senderId: newMessage.senderId,
+                    message: `New announcement in ${guild.name}: "${newMessage.message}"`,
+                    type: 'Announcement',
+                    timestamp: new Date().toISOString(),
+                    recipientUserIds: guild.memberIds,
+                    readByUserIds: [newMessage.senderId],
+                    guildId: newMessage.guildId,
+                    icon: '📢',
+                };
+                data.systemNotifications.push(newNotification);
+            }
+            await saveDataAndBroadcast(data);
+        } else {
+            broadcast({ type: 'NEW_CHAT_MESSAGE', payload: newMessage });
+            await db.saveData(data);
+        }
+        
         res.status(201).json(newMessage);
     }));
 

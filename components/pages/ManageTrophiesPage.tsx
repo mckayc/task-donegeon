@@ -11,7 +11,7 @@ import { TrophyIcon, EllipsisVerticalIcon } from '../ui/Icons';
 
 const ManageTrophiesPage: React.FC = () => {
     const { trophies, settings, isAiConfigured } = useAppState();
-    const { deleteTrophies } = useAppDispatch();
+    const { deleteTrophies, cloneTrophy } = useAppDispatch();
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [editingTrophy, setEditingTrophy] = useState<Trophy | null>(null);
     const [deletingIds, setDeletingIds] = useState<string[]>([]);
@@ -136,6 +136,7 @@ const ManageTrophiesPage: React.FC = () => {
                                             {openDropdownId === trophy.id && (
                                                 <div ref={dropdownRef} className="absolute right-10 top-0 mt-2 w-36 bg-stone-900 border border-stone-700 rounded-lg shadow-xl z-20">
                                                     <a href="#" onClick={(e) => { e.preventDefault(); handleEdit(trophy); setOpenDropdownId(null); }} className="block px-4 py-2 text-sm text-stone-300 hover:bg-stone-700/50">Edit</a>
+                                                    <button onClick={() => { cloneTrophy(trophy.id); setOpenDropdownId(null); }} className="w-full text-left block px-4 py-2 text-sm text-stone-300 hover:bg-stone-700/50">Clone</button>
                                                     <button onClick={() => { handleDeleteRequest([trophy.id]); setOpenDropdownId(null); }} className="w-full text-left block px-4 py-2 text-sm text-red-400 hover:bg-stone-700/50">Delete</button>
                                                 </div>
                                             )}

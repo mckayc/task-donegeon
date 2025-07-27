@@ -153,19 +153,39 @@ const ChatPanel: React.FC = () => {
         }
     }, [activeConversation, userScrolledUp, scrollToBottom]);
     
-    const handleSend = (e: React.FormEvent) => {
+    const handleSend = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (message.trim() && activeChatTarget) {
-            if ('isGuild' in activeChatTarget && activeChatTarget.isGuild) {
-                sendMessage({ guildId: activeChatTarget.id, message, isAnnouncement });
-                if (isAnnouncement) {
-                    setIsAnnouncement(false);
-                }
-            } else {
-                sendMessage({ recipientId: activeChatTarget.id, message });
+        if (!message.trim() || !activeChatTarget) return;
+    
+        const currentMessage = message;
+        const currentIsAnnouncement = isAnnouncement;
+        
+        // Optimistically clear UI
+        setMessage('');
+        if (currentIsAnnouncement) {
+            setIsAnnouncement(false);
+        }
+        setUserScrolledUp(false);
+    
+        const payload: any = { message: currentMessage };
+        if ('isGuild' in activeChatTarget && activeChatTarget.isGuild) {
+            payload.guildId = activeChatTarget.id;
+            payload.isAnnouncement = currentIsAnnouncement;
+        } else {
+            payload.recipientId = activeChatTarget.id;
+        }
+        
+        try {
+            await sendMessage(payload);
+            // On success, the websocket will handle the UI update.
+        } catch (error) {
+            // On failure, restore the message and toggle
+            setMessage(currentMessage);
+            if (payload.isAnnouncement) {
+                setIsAnnouncement(true);
             }
-            setMessage('');
-            setUserScrolledUp(false);
+            // Notification is handled by apiRequest
+            console.error("Failed to send message:", error);
         }
     };
     

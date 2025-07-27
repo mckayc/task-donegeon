@@ -85,6 +85,11 @@ interface AppDispatch {
   deleteGameAssets: (assetIds: string[]) => Promise<void>;
   cloneGameAsset: (assetId: string) => Promise<void>;
   
+  // Themes
+  addTheme: (theme: Omit<ThemeDefinition, 'id'>) => Promise<void>;
+  updateTheme: (theme: ThemeDefinition) => Promise<void>;
+  deleteTheme: (themeId: string) => Promise<void>;
+
   // Settings
   updateSettings: (newSettings: Partial<AppSettings>) => void;
   resetSettings: () => void;
@@ -172,6 +177,9 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     });
 
     const isMounted = useRef(true);
+    const ws = useRef<WebSocket | null>(null);
+    const reconnectTimeoutId = useRef<number | null>(null);
+
     useEffect(() => {
       isMounted.current = true;
       return () => { isMounted.current = false; }
@@ -203,7 +211,69 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         setState(prev => ({ ...prev, ...newData }));
     }, []);
 
-    // Effect for initial data load and WebSocket connection
+    const connectWebSocket = useCallback(() => {
+        if (typeof window === 'undefined' || !window.location.host) {
+            console.warn('WebSocket connection skipped: Not a browser environment or host is missing.');
+            if (reconnectTimeoutId.current) clearTimeout(reconnectTimeoutId.current);
+            reconnectTimeoutId.current = window.setTimeout(connectWebSocket, 1000);
+            return;
+        }
+
+        const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const wsUrl = `${wsProtocol}//${window.location.host}`;
+        const socket = new WebSocket(wsUrl);
+        ws.current = socket;
+
+        let reconnectAttempts = 0;
+
+        const reconnect = () => {
+            if (socket.readyState === WebSocket.OPEN || socket.readyState === WebSocket.CONNECTING) return;
+            reconnectAttempts++;
+            const delay = Math.min(1000 * Math.pow(2, reconnectAttempts), 30000);
+            console.log(`WebSocket disconnected. Retrying in ${delay / 1000}s...`);
+            setState(prev => ({ ...prev, syncStatus: 'syncing' }));
+            if (reconnectTimeoutId.current) clearTimeout(reconnectTimeoutId.current);
+            reconnectTimeoutId.current = window.setTimeout(connectWebSocket, delay);
+        };
+
+        socket.onopen = () => {
+            console.log('WebSocket connected.');
+            reconnectAttempts = 0;
+            setState(prev => ({ ...prev, syncStatus: 'success', syncError: null }));
+        };
+
+        socket.onmessage = (event) => {
+            try {
+                const message = JSON.parse(event.data);
+                const keyMap: { [key: string]: keyof IAppData } = {
+                    'USERS_UPDATED': 'users', 'QUESTS_UPDATED': 'quests', 'QUESTGROUPS_UPDATED': 'questGroups',
+                    'MARKETS_UPDATED': 'markets', 'REWARDTYPES_UPDATED': 'rewardTypes', 'QUESTCOMPLETIONS_UPDATED': 'questCompletions',
+                    'PURCHASEREQUESTS_UPDATED': 'purchaseRequests', 'GUILDS_UPDATED': 'guilds', 'RANKS_UPDATED': 'ranks',
+                    'TROPHIES_UPDATED': 'trophies', 'USERTROPHIES_UPDATED': 'userTrophies', 'ADMINADJUSTMENTS_UPDATED': 'adminAdjustments',
+                    'GAMEASSETS_UPDATED': 'gameAssets', 'SYSTEMLOGS_UPDATED': 'systemLogs', 'SETTINGS_UPDATED': 'settings',
+                    'THEMES_UPDATED': 'themes', 'LOGINHISTORY_UPDATED': 'loginHistory', 'SYSTEMNOTIFICATIONS_UPDATED': 'systemNotifications',
+                    'SCHEDULEDEVENTS_UPDATED': 'scheduledEvents',
+                };
+                const key = keyMap[message.type];
+                if (key) {
+                    fullUpdate({ [key]: message.payload });
+                } else if (message.type === 'NEW_CHAT_MESSAGE') {
+                    setState(prev => ({ ...prev, chatMessages: [...prev.chatMessages, message.payload] }));
+                }
+            } catch (e) { console.error('Error parsing WebSocket message:', e); }
+        };
+
+        socket.onerror = (error) => {
+            console.error('WebSocket error:', error);
+            setState(prev => ({ ...prev, syncStatus: 'error', syncError: 'WebSocket connection failed.' }));
+            socket.close();
+        };
+
+        socket.onclose = () => {
+            if (isMounted.current) reconnect();
+        };
+    }, [fullUpdate]);
+
     useEffect(() => {
         const loadData = async () => {
             try {
@@ -217,12 +287,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
                 if (isMounted.current) {
                   setState(prev => ({
-                      ...prev,
-                      ...data,
-                      isFirstRun,
-                      isDataLoaded: true,
-                      currentUser: lastUser || null,
-                      isAppUnlocked: !!lastUser,
+                      ...prev, ...data, isFirstRun, isDataLoaded: true,
+                      currentUser: lastUser || null, isAppUnlocked: !!lastUser,
                       isAiConfigured: aiStatus.isConfigured,
                   }));
                 }
@@ -235,51 +301,19 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         };
 
         loadData();
-
-        // WebSocket setup
-        const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-        const ws = new WebSocket(`${wsProtocol}//${window.location.host}`);
-
-        ws.onmessage = (event) => {
-            const message = JSON.parse(event.data);
-            const keyMap: { [key: string]: keyof IAppData } = {
-                'USERS_UPDATED': 'users',
-                'QUESTS_UPDATED': 'quests',
-                'QUESTGROUPS_UPDATED': 'questGroups',
-                'MARKETS_UPDATED': 'markets',
-                'REWARDTYPES_UPDATED': 'rewardTypes',
-                'QUESTCOMPLETIONS_UPDATED': 'questCompletions',
-                'PURCHASEREQUESTS_UPDATED': 'purchaseRequests',
-                'GUILDS_UPDATED': 'guilds',
-                'RANKS_UPDATED': 'ranks',
-                'TROPHIES_UPDATED': 'trophies',
-                'USERTROPHIES_UPDATED': 'userTrophies',
-                'ADMINADJUSTMENTS_UPDATED': 'adminAdjustments',
-                'GAMEASSETS_UPDATED': 'gameAssets',
-                'SYSTEMLOGS_UPDATED': 'systemLogs',
-                'SETTINGS_UPDATED': 'settings',
-                'THEMES_UPDATED': 'themes',
-                'LOGINHISTORY_UPDATED': 'loginHistory',
-                'SYSTEMNOTIFICATIONS_UPDATED': 'systemNotifications',
-                'SCHEDULEDEVENTS_UPDATED': 'scheduledEvents',
-            };
-
-            const key = keyMap[message.type];
-            if (key) {
-                fullUpdate({ [key]: message.payload });
-            } else if (message.type === 'NEW_CHAT_MESSAGE') {
-                fullUpdate({ chatMessages: [...state.chatMessages, message.payload] });
-            }
-        };
+        connectWebSocket();
 
         return () => {
-            ws.close();
+            if (ws.current) {
+                ws.current.onclose = null; // Prevent reconnection on unmount
+                ws.current.close();
+            }
+            if (reconnectTimeoutId.current) {
+                clearTimeout(reconnectTimeoutId.current);
+            }
         };
-    }, []); // Empty dependency array means this runs once on mount
+    }, [connectWebSocket, apiRequest]);
 
-    // Most dispatch functions will be implemented here using useCallback.
-    // This is a simplified example. For brevity, not all 20+ functions will be fully typed out here
-    // but the pattern is the same.
     const addNotification = useCallback((notification: Omit<Notification, 'id'>) => {
         const id = `notif-${Date.now()}`;
         setState(s => ({ ...s, notifications: [...s.notifications, { ...notification, id }] }));
@@ -417,6 +451,16 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         // All other functions follow a similar pattern of updating state and calling updateAndSave
         // This is a representative sample.
         // ... A full implementation would be here...
+        addTheme: async (theme) => {
+            const newTheme = { ...theme, id: `theme-${Date.now()}` };
+            await updateAndSave({ themes: [...state.themes, newTheme] });
+        },
+        updateTheme: async (updatedTheme) => {
+            await updateAndSave({ themes: state.themes.map(t => t.id === updatedTheme.id ? updatedTheme : t) });
+        },
+        deleteTheme: async (themeId) => {
+            await updateAndSave({ themes: state.themes.filter(t => t.id !== themeId) });
+        },
     } as unknown as AppDispatch), [state, updateAndSave, addNotification, removeNotification, apiRequest]);
 
     return (

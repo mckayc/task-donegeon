@@ -484,45 +484,10 @@ const startServer = async () => {
             }
         });
     }
-
-    // Global broadcast helpers
-    const createBroadcaster = (type) => (data) => broadcast({ type, payload: data });
-
-    const broadcasters = {
-        users: createBroadcaster('USERS_UPDATED'),
-        quests: createBroadcaster('QUESTS_UPDATED'),
-        questGroups: createBroadcaster('QUESTGROUPS_UPDATED'),
-        markets: createBroadcaster('MARKETS_UPDATED'),
-        rewardTypes: createBroadcaster('REWARDTYPES_UPDATED'),
-        questCompletions: createBroadcaster('QUESTCOMPLETIONS_UPDATED'),
-        purchaseRequests: createBroadcaster('PURCHASEREQUESTS_UPDATED'),
-        guilds: createBroadcaster('GUILDS_UPDATED'),
-        ranks: createBroadcaster('RANKS_UPDATED'),
-        trophies: createBroadcaster('TROPHIES_UPDATED'),
-        userTrophies: createBroadcaster('USERTROPHIES_UPDATED'),
-        adminAdjustments: createBroadcaster('ADMINADJUSTMENTS_UPDATED'),
-        gameAssets: createBroadcaster('GAMEASSETS_UPDATED'),
-        systemLogs: createBroadcaster('SYSTEMLOGS_UPDATED'),
-        settings: createBroadcaster('SETTINGS_UPDATED'),
-        themes: createBroadcaster('THEMES_UPDATED'),
-        loginHistory: createBroadcaster('LOGINHISTORY_UPDATED'),
-        chatMessages: (newMessage) => broadcast({ type: 'NEW_CHAT_MESSAGE', payload: newMessage }),
-        systemNotifications: createBroadcaster('SYSTEMNOTIFICATIONS_UPDATED'),
-        scheduledEvents: createBroadcaster('SCHEDULEDEVENTS_UPDATED'),
-    };
-
-    function broadcastDataUpdate(data) {
-        if (!data) return;
-        Object.keys(broadcasters).forEach(key => {
-            if (data[key] && key !== 'chatMessages') {
-                broadcasters[key](data[key]);
-            }
-        });
-    }
-
+    
     const saveDataAndBroadcast = async (data) => {
         await db.saveData(data);
-        broadcastDataUpdate(data);
+        broadcast({ type: 'FULL_STATE_UPDATE', payload: data });
     };
     
     // Wrapper for handling data fetching and saving for API endpoints

@@ -1,4 +1,5 @@
 
+
 import React, { createContext, useState, useContext, ReactNode, useEffect, useCallback, useMemo, useRef } from 'react';
 import { AppSettings, User, Quest, RewardTypeDefinition, QuestCompletion, RewardItem, Market, PurchaseRequest, Guild, Rank, Trophy, UserTrophy, Notification, AppMode, Page, IAppData, ShareableAssetType, GameAsset, Role, QuestCompletionStatus, RewardCategory, PurchaseRequestStatus, AdminAdjustment, AdminAdjustmentType, SystemLog, QuestType, QuestAvailability, Blueprint, ImportResolution, TrophyRequirementType, ThemeDefinition, ChatMessage, SystemNotification, SystemNotificationType, MarketStatus, QuestGroup, BulkQuestUpdates, ScheduledEvent } from '../types';
 import { INITIAL_SETTINGS, createMockUsers, INITIAL_REWARD_TYPES, INITIAL_RANKS, INITIAL_TROPHIES, createSampleMarkets, createSampleQuests, createInitialGuilds, createSampleGameAssets, INITIAL_THEMES, createInitialQuestCompletions, INITIAL_TAGS, INITIAL_QUEST_GROUPS } from '../data/initialData';
@@ -260,19 +261,44 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     }, [apiRequest]);
 
 
-    const fullUpdate = useCallback((newData: Partial<IAppData>) => {
+    const fullUpdate = useCallback((newData: IAppData) => {
         if (!isMounted.current) return;
         setState(prev => {
-            // Find the latest version of the currentUser from the incoming data to prevent stale state.
             const updatedCurrentUser = prev.currentUser
                 ? (newData.users || prev.users).find(u => u.id === prev.currentUser!.id) || null
                 : null;
             
+            // Create a new object containing only the data properties from the server payload
+            const dataState: IAppData = {
+                users: newData.users,
+                quests: newData.quests,
+                questGroups: newData.questGroups,
+                markets: newData.markets,
+                rewardTypes: newData.rewardTypes,
+                questCompletions: newData.questCompletions,
+                purchaseRequests: newData.purchaseRequests,
+                guilds: newData.guilds,
+                ranks: newData.ranks,
+                trophies: newData.trophies,
+                userTrophies: newData.userTrophies,
+                adminAdjustments: newData.adminAdjustments,
+                gameAssets: newData.gameAssets,
+                systemLogs: newData.systemLogs,
+                settings: newData.settings,
+                themes: newData.themes,
+                loginHistory: newData.loginHistory,
+                chatMessages: newData.chatMessages,
+                systemNotifications: newData.systemNotifications,
+                scheduledEvents: newData.scheduledEvents,
+            };
+
             return {
-                ...prev,
-                ...newData,
-                currentUser: updatedCurrentUser, // Refresh currentUser to prevent stale state
-                isDataLoaded: true
+                ...prev, // Keep all old state (UI and data)
+                ...dataState, // Overwrite only the data part with fresh data
+                currentUser: updatedCurrentUser, // Use the fresh user
+                isDataLoaded: true,
+                syncStatus: 'success',
+                syncError: null,
             };
         });
     }, []);

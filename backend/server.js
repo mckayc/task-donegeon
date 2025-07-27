@@ -1107,6 +1107,92 @@ if (process.env.STORAGE_PROVIDER === 'local') { app.use('/uploads', express.stat
 app.get('*', (req, res) => res.sendFile(path.join(__dirname, '../dist/index.html')));
 app.use((err, req, res, next) => { console.error('An error occurred:', err.stack); res.status(500).json({ error: 'Internal Server Error', message: err.message, stack: process.env.NODE_ENV === 'development' ? err.stack : undefined, }); });
 
+// === Automated Backups ===
+const createBackupFile = async (frequency) => {
+    try {
+        const dataToBackup = await loadData();
+        const dataString = JSON.stringify(dataToBackup); // No pretty-printing for smaller file size
+        const timestamp = new Date().toISOString().replace(/:/g, '-').slice(0, 19);
+        const filename = `auto_backup_${frequency}_${timestamp}.json`;
+        await fs.writeFile(path.join(BACKUP_DIR, filename), dataString);
+        console.log(`Automated backup created: ${filename}`);
+        return true;
+    } catch (err) {
+        console.error(`Failed to create automated backup for frequency ${frequency}:`, err);
+        return false;
+    }
+};
+
+const cleanupBackups = async (frequency, keep) => {
+    try {
+        const files = await fs.readdir(BACKUP_DIR);
+        const profileBackups = files
+            .filter(file => file.startsWith(`auto_backup_${frequency}_`) && file.endsWith('.json'))
+            .sort((a, b) => b.localeCompare(a)); // Sort descending by filename (timestamp)
+
+        if (profileBackups.length > keep) {
+            const filesToDelete = profileBackups.slice(keep);
+            for (const file of filesToDelete) {
+                await fs.unlink(path.join(BACKUP_DIR, file));
+                console.log(`Cleaned up old backup: ${file}`);
+            }
+        }
+    } catch (err) {
+        console.error(`Failed to cleanup backups for frequency ${frequency}:`, err);
+    }
+};
+
+const runAutomatedBackups = async () => {
+    if (!dbReady) return;
+    console.log('Checking for automated backup tasks...');
+    try {
+        const settingsResult = await pool.query("SELECT value FROM app_data WHERE key = 'settings'");
+        if (settingsResult.rows.length === 0) return;
+
+        const settings = settingsResult.rows[0].value;
+        if (!settings.automatedBackups || !settings.automatedBackups.profiles) return;
+        
+        const allBackups = await fs.readdir(BACKUP_DIR).catch(() => []);
+        
+        for (const profile of settings.automatedBackups.profiles) {
+            if (!profile.enabled) continue;
+
+            const profileBackups = allBackups.filter(file => file.startsWith(`auto_backup_${profile.frequency}_`)).sort().reverse();
+            const lastBackupFile = profileBackups[0];
+            let lastBackupTime = 0;
+
+            if (lastBackupFile) {
+                const timestampStr = lastBackupFile.split('_').pop().replace('.json', '');
+                lastBackupTime = new Date(timestampStr).getTime();
+            }
+
+            const now = Date.now();
+            const frequencyMillis = {
+                hourly: 3600 * 1000,
+                daily: 24 * 3600 * 1000,
+                weekly: 7 * 24 * 3600 * 1000,
+                monthly: 30 * 24 * 3600 * 1000,
+            };
+
+            if (now - lastBackupTime > frequencyMillis[profile.frequency]) {
+                console.log(`Running backup for frequency: ${profile.frequency}`);
+                const success = await createBackupFile(profile.frequency);
+                if (success) {
+                    await cleanupBackups(profile.frequency, profile.keep);
+                }
+            }
+        }
+    } catch (err) {
+        if (err.code !== '42P01') { // Ignore "relation does not exist" on first run
+             console.error('Error during automated backup check:', err);
+        }
+    }
+};
+
+// Run the check shortly after start and then every hour
+setTimeout(runAutomatedBackups, 30 * 1000); // 30 seconds after start
+setInterval(runAutomatedBackups, 3600 * 1000); // Every hour
+
 if (process.env.NODE_ENV !== 'production' || process.env.VERCEL !== '1') {
     server.listen(port, () => {
         console.log(`Task Donegeon backend listening at http://localhost:${port}`);

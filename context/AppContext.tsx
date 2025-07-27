@@ -264,7 +264,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       if (!isDataLoaded || isFirstRun) return;
 
       let ws: WebSocket | null = null;
-      let reconnectInterval: NodeJS.Timeout | null = null;
+      let reconnectInterval: number | null = null;
       let reconnectAttempts = 0;
 
       const connect = () => {

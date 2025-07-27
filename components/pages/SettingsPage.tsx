@@ -1,6 +1,7 @@
+
 import React, { useState, ChangeEvent, ReactNode, useEffect } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
-import { Role, AppSettings, Terminology, RewardCategory, RewardTypeDefinition } from '../../types';
+import { Role, AppSettings, Terminology, RewardCategory, RewardTypeDefinition, AutomatedBackupProfile } from '../../types';
 import Button from '../ui/Button';
 import { ChevronDownIcon } from '../ui/Icons';
 import Input from '../ui/Input';
@@ -10,10 +11,10 @@ import { INITIAL_SETTINGS } from '../../data/initialData';
 import EmojiPicker from '../ui/EmojiPicker';
 
 
-const CollapsibleSection: React.FC<{ title: string; children: React.ReactNode; defaultOpen?: boolean; onSave?: () => void; showSavedIndicator?: boolean; }> = ({ title, children, defaultOpen = false, onSave, showSavedIndicator }) => {
+const CollapsibleSection: React.FC<{ title: string; children: React.ReactNode; defaultOpen?: boolean; onSave?: () => void; showSavedIndicator?: boolean; className?: string; }> = ({ title, children, defaultOpen = false, onSave, showSavedIndicator, className }) => {
     const [isOpen, setIsOpen] = useState(defaultOpen);
     return (
-         <div className="bg-stone-800/50 border border-stone-700/60 rounded-xl shadow-lg backdrop-blur-sm" style={{ backgroundColor: 'hsl(var(--color-bg-secondary))', borderColor: 'hsl(var(--color-border))' }}>
+         <div className={`relative bg-stone-800/50 border border-stone-700/60 rounded-xl shadow-lg backdrop-blur-sm ${className || ''}`} style={{ backgroundColor: 'hsl(var(--color-bg-secondary))', borderColor: 'hsl(var(--color-border))' }}>
             <button
                 className="w-full flex justify-between items-center text-left px-6 py-4 hover:bg-stone-700/30 transition-colors"
                 onClick={() => setIsOpen(!isOpen)}
@@ -268,7 +269,7 @@ const SettingsPage: React.FC = () => {
 
     return (
         <div className="space-y-8 relative">
-            <CollapsibleSection title="General Settings" defaultOpen showSavedIndicator={showSaved === 'General Settings'}>
+            <CollapsibleSection title="General Settings" defaultOpen showSavedIndicator={showSaved === 'General Settings'} className={isFaviconPickerOpen ? 'z-10' : ''}>
                  <div className="space-y-6">
                     <div className="flex items-start">
                         <ToggleSwitch enabled={formState.chat.enabled} setEnabled={(val) => handleToggleChange('chat.enabled', val, 'General Settings')} label="Enable Sitewide Chat" />
@@ -305,6 +306,30 @@ const SettingsPage: React.FC = () => {
                         <ToggleSwitch enabled={formState.forgivingSetbacks} setEnabled={(val) => handleToggleChange('forgivingSetbacks', val, 'General Settings')} label="Forgiving Setbacks" />
                         <p className="text-sm ml-6" style={{ color: 'hsl(var(--color-text-secondary))' }}>If enabled, time-based setbacks are only applied if a quest remains uncompleted at the end of the day.</p>
                     </div>
+                </div>
+            </CollapsibleSection>
+
+            <CollapsibleSection title="Automated Server Backups" showSavedIndicator={showSaved === 'Automated Server Backups'}>
+                <p className="text-sm text-stone-400 mb-4">Configure automatic backups to the server's file system. This is highly recommended for Docker/self-hosted instances.</p>
+                <div className="space-y-4">
+                    {formState.automatedBackups.profiles.map((profile, index) => (
+                        <div key={index} className="p-4 bg-stone-900/40 rounded-lg border border-stone-700/60">
+                             <ToggleSwitch
+                                enabled={profile.enabled}
+                                setEnabled={(val) => handleToggleChange(`automatedBackups.profiles.${index}.enabled`, val, 'Automated Server Backups')}
+                                label={`Profile ${index + 1}: Enabled`}
+                            />
+                            <div className={`grid grid-cols-2 gap-4 mt-4 ${!profile.enabled ? 'opacity-50 pointer-events-none' : ''}`}>
+                                <Input as="select" label="Frequency" name={`automatedBackups.profiles.${index}.frequency`} value={profile.frequency} onChange={handleFormChange}>
+                                    <option value="hourly">Hourly</option>
+                                    <option value="daily">Daily</option>
+                                    <option value="weekly">Weekly</option>
+                                    <option value="monthly">Monthly</option>
+                                </Input>
+                                <Input label="Keep" type="number" name={`automatedBackups.profiles.${index}.keep`} value={profile.keep} onChange={handleFormChange} />
+                            </div>
+                        </div>
+                    ))}
                 </div>
             </CollapsibleSection>
 

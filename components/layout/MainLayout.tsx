@@ -52,14 +52,6 @@ const MainLayout: React.FC = () => {
   const [notificationsShownForSession, setNotificationsShownForSession] = useState(false);
   const prevUserIdRef = useRef<string | undefined>(undefined);
   
-  const ADMIN_ONLY_PAGES: Page[] = [
-    'Manage Users', 'Manage Rewards', 'Manage Quests', 'Manage Quest Groups', 'Manage Goods', 'Manage Markets',
-    'Manage Guilds', 'Manage Ranks', 'Manage Trophies', 'Settings', 'AI Studio',
-    'Appearance', 'Theme Editor', 'Object Exporter', 'Asset Manager', 'Data Management', 'Asset Library',
-    'Manage Events', 'Backup & Import',
-  ];
-  const GATEKEEPER_PAGES: Page[] = ['Approvals'];
-
   const unreadNotifications = useMemo(() => {
     if (!currentUser) return [];
     return systemNotifications.filter(n => 
@@ -90,19 +82,32 @@ const MainLayout: React.FC = () => {
   }, [currentUser, notificationsShownForSession, settings.loginNotifications.enabled, unreadNotifications]);
 
   useEffect(() => {
-    if (!currentUser) return;
+    if (!currentUser || !settings.sidebars.main) return;
 
-    const isPageAdminOnly = ADMIN_ONLY_PAGES.includes(activePage);
-    const isPageForGatekeepers = GATEKEEPER_PAGES.includes(activePage);
+    // Find the configuration for the active page from the settings, which is the single source of truth.
+    const pageConfig = settings.sidebars.main.find(item => item.type === 'link' && item.id === activePage);
 
-    if (isPageAdminOnly && currentUser.role !== Role.DonegeonMaster) {
-      addNotification({ type: 'error', message: 'You do not have permission to view this page.' });
-      setActivePage('Dashboard');
-    } else if (isPageForGatekeepers && currentUser.role === Role.Explorer) {
-      addNotification({ type: 'error', message: 'You do not have permission to view this page.' });
-      setActivePage('Dashboard');
+    if (!pageConfig) {
+      return;
     }
-  }, [activePage, currentUser, setActivePage, addNotification]);
+
+    const requiredRole = pageConfig.role;
+    const userRole = currentUser.role;
+
+    let hasPermission = false;
+    if (userRole === Role.DonegeonMaster) {
+        hasPermission = true;
+    } else if (userRole === Role.Gatekeeper) {
+        hasPermission = (requiredRole === Role.Gatekeeper || requiredRole === Role.Explorer);
+    } else if (userRole === Role.Explorer) {
+        hasPermission = (requiredRole === Role.Explorer);
+    }
+
+    if (!hasPermission) {
+        addNotification({ type: 'error', message: 'You do not have permission to view this page.' });
+        setActivePage('Dashboard');
+    }
+  }, [activePage, currentUser, settings.sidebars.main, setActivePage, addNotification]);
 
 
   const renderPage = () => {

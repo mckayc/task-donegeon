@@ -525,15 +525,13 @@ const startServer = async () => {
         }
     });
 
-    app.post('/api/data', async (req, res) => {
-        try {
-            const data = req.body;
-            await saveDataAndBroadcast(data);
-            res.status(200).json({ message: 'Data saved successfully' });
-        } catch (e) {
-            res.status(500).json({ error: 'Failed to save data' });
-        }
-    });
+    app.post('/api/data', withData(async (req, res, data) => {
+        const clientData = req.body;
+        // A simple merge to prevent overwriting server-side only data if any.
+        const mergedData = { ...data, ...clientData };
+        await saveDataAndBroadcast(mergedData);
+        res.status(200).json({ message: 'Data saved successfully' });
+    }));
 
     app.get('/api/pre-run-check', async (req, res) => {
         try {
@@ -647,7 +645,7 @@ const startServer = async () => {
             const newItem = { ...req.body, id: `${idPrefix}-${Date.now()}` };
             data[plural].push(newItem);
             await saveDataAndBroadcast(data);
-            res.status(201).json({ [`new${resourceName.charAt(0).toUpperCase() + resourceName.slice(1)}`]: newItem });
+            res.status(201).json(newItem);
         }));
 
         app.put(`/api/${plural}/:id`, withData(async (req, res, data) => {
@@ -677,6 +675,28 @@ const startServer = async () => {
     createCrudEndpoints(app, 'theme', 'th');
     createCrudEndpoints(app, 'scheduledEvent', 'se');
     createCrudEndpoints(app, 'systemNotification', 'sn');
+
+    // More complex CRUDs
+    app.post('/api/users', withData(async(req, res, data) => {
+      const newUser = { ...req.body, id: `user-${Date.now()}` };
+      data.users.push(newUser);
+      await saveDataAndBroadcast(data);
+      res.status(201).json(newUser);
+    }));
+
+    app.put('/api/users/:userId', withData(async (req, res, data) => {
+        const { userId } = req.params;
+        const updatedData = req.body;
+        const userIndex = data.users.findIndex(u => u.id === userId);
+
+        if (userIndex === -1) {
+            return res.status(404).json({ error: 'User not found.' });
+        }
+        data.users[userIndex] = { ...data.users[userIndex], ...updatedData };
+        await saveDataAndBroadcast(data);
+        res.json(data.users[userIndex]);
+    }));
+
 
     // Quests (more complex)
     app.post('/api/quests', withData(async (req, res, data) => {
@@ -812,7 +832,7 @@ const startServer = async () => {
                 contents: prompt,
                 config: generationConfig,
             });
-            res.json(response);
+            res.json({ text: response.text });
         } catch (e) {
             res.status(500).json({ error: e.message });
         }

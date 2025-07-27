@@ -224,6 +224,14 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             const changes = updater(prev);
             const optimisticState = { ...prev, ...changes };
     
+            // Separate the data part to be saved
+            const {
+                isAppUnlocked, isFirstRun, currentUser, activePage, appMode, notifications, isDataLoaded,
+                activeMarketId, allTags, isSwitchingUser, isSharedViewActive, targetedUserForLogin,
+                isAiConfigured, isSidebarCollapsed, syncStatus, syncError, isChatOpen,
+                ...dataToSave
+            } = optimisticState;
+
             // Fire-and-forget the async save operation
             (async () => {
                 if (!isMounted.current) return;
@@ -231,7 +239,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
                     setState(s => ({...s, syncStatus: 'syncing'}));
                     await apiRequest('/api/data', {
                         method: 'POST',
-                        body: JSON.stringify(optimisticState),
+                        body: JSON.stringify(dataToSave),
                     });
                     if (isMounted.current) {
                         setState(s => ({ ...s, syncStatus: 'success' }));
@@ -254,7 +262,19 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
     const fullUpdate = useCallback((newData: Partial<IAppData>) => {
         if (!isMounted.current) return;
-        setState(prev => ({ ...prev, ...newData, isDataLoaded: true }));
+        setState(prev => {
+            // Find the latest version of the currentUser from the incoming data
+            const updatedCurrentUser = prev.currentUser
+                ? newData.users?.find(u => u.id === prev.currentUser.id) || prev.currentUser
+                : null;
+            
+            return {
+                ...prev,
+                ...newData,
+                currentUser: updatedCurrentUser, // Refresh currentUser to prevent stale state
+                isDataLoaded: true
+            };
+        });
     }, []);
 
     const connectWebSocket = useCallback(() => {
@@ -353,13 +373,9 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
     const dispatch: AppDispatch = useMemo(() => ({
         // Auth
-        addUser: async (userData: Omit<User, 'id' | 'personalPurse' | 'personalExperience' | 'guildBalances' | 'avatar' | 'ownedAssetIds' | 'ownedThemes' | 'hasBeenOnboarded'>) => {
-            const newUser = { ...userData, id: `user-${Date.now()}`, personalPurse: {}, personalExperience: {}, guildBalances: {}, avatar: {}, ownedAssetIds: [], ownedThemes: ['emerald', 'rose', 'sky'], hasBeenOnboarded: false };
-            updateAndSave(s => ({ users: [...s.users, newUser] }));
-            return newUser;
-        },
-        updateUser: (userId: string, updatedData: Partial<User>) => updateAndSave(s => ({ users: s.users.map(u => u.id === userId ? { ...u, ...updatedData } : u) })),
-        deleteUser: (userId: string) => updateAndSave(s => ({ users: s.users.filter(u => u.id !== userId) })),
+        addUser: (userData: Omit<User, 'id' | 'personalPurse' | 'personalExperience' | 'guildBalances' | 'avatar' | 'ownedAssetIds' | 'ownedThemes' | 'hasBeenOnboarded'>) => apiRequest('/api/users', { method: 'POST', body: JSON.stringify(userData) }),
+        updateUser: (userId: string, updatedData: Partial<User>) => apiRequest(`/api/users/${userId}`, { method: 'PUT', body: JSON.stringify(updatedData) }),
+        deleteUser: (userId: string) => apiRequest(`/api/users/${userId}`, { method: 'DELETE' }),
         setCurrentUser: (user: User | null) => { 
             setState(s => ({...s, currentUser: user}));
             if (user) localStorage.setItem('lastUserId', user.id);

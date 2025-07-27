@@ -16,10 +16,10 @@ const Clock: React.FC = () => {
     }, []);
 
     const statusConfig = useMemo(() => ({
-        idle: { borderColor: 'border-stone-700/60', pulse: false, title: 'Ready.' },
-        syncing: { borderColor: 'border-blue-500', pulse: true, title: 'Syncing data...' },
-        success: { borderColor: 'border-green-500', pulse: false, title: 'Data is up to date.' },
-        error: { borderColor: 'border-red-500', pulse: false, title: `Sync Error: ${syncError || 'An unknown error occurred.'}` },
+        idle: { color: 'text-stone-400', pulse: false, text: 'Ready', title: 'Ready.' },
+        syncing: { color: 'text-blue-400', pulse: true, text: 'Syncing...', title: 'Syncing data...' },
+        success: { color: 'text-green-400', pulse: false, text: 'Synced', title: 'Data is up to date.' },
+        error: { color: 'text-red-400', pulse: false, text: 'Connection Error', title: `Sync Error: ${syncError || 'An unknown error occurred.'}` },
     }), [syncError]);
 
     const currentStatus = statusConfig[syncStatus];
@@ -27,9 +27,13 @@ const Clock: React.FC = () => {
     return (
         <div
             title={currentStatus.title}
-            className={`hidden lg:block bg-stone-800/50 px-4 py-2 rounded-full border-2 font-mono text-lg font-semibold text-stone-300 flex items-center gap-3 transition-colors duration-500 ${currentStatus.borderColor} ${currentStatus.pulse ? 'animate-pulse' : ''}`}
+            className={`hidden lg:flex items-center gap-3 bg-stone-800/50 px-4 py-2 rounded-full border-2 transition-colors duration-500 border-transparent`}
         >
-            <span>{time.toLocaleTimeString()}</span>
+            <span className={`text-xs font-semibold uppercase flex items-center gap-1.5 ${currentStatus.color}`}>
+                <span className={`w-2 h-2 rounded-full ${currentStatus.pulse ? 'animate-pulse' : ''}`} style={{ backgroundColor: 'currentColor' }}></span>
+                {currentStatus.text}
+            </span>
+            <span className="font-mono text-lg font-semibold text-stone-300">{time.toLocaleTimeString()}</span>
         </div>
     );
 };

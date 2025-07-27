@@ -1,3 +1,4 @@
+
 import { useAppState } from '../context/AppContext';
 import { RewardCategory, RewardTypeDefinition } from '../types';
 

@@ -5,9 +5,9 @@ const path = require('path');
 const multer = require('multer');
 const { createClient } = require('@supabase/supabase-js');
 const fs = require('fs').promises;
-const { GoogleGenAI } = require('@google/genai');
 const http = require('http');
 const WebSocket = require('ws');
+const { GoogleGenAI } = require('@google/genai');
 
 // === START INLINED DATA from data.js ===
 // NOTE: This data is manually copied from the frontend's data/initialData.ts.
@@ -392,7 +392,6 @@ const PORT = process.env.PORT || 3001;
 const UPLOADS_DIR = process.env.UPLOADS_DIR || path.join(__dirname, '../uploads');
 const BACKUPS_DIR = process.env.BACKUP_PATH || path.join(__dirname, 'backups');
 
-
 // --- DB CLASS DEFINITION ---
 class PostgresDB {
     constructor() {
@@ -525,6 +524,21 @@ const startServer = async () => {
         await db.saveData(data);
         broadcastDataUpdate(data);
     };
+    
+    // Wrapper for handling data fetching and saving for API endpoints
+    const withData = (handler) => async (req, res) => {
+        try {
+            const data = await db.getData();
+            if (!data) {
+                return res.status(503).json({ error: "Application data not initialized." });
+            }
+            await handler(req, res, data);
+        } catch (error) {
+            console.error(`Error in endpoint ${req.path}:`, error);
+            res.status(500).json({ error: error.message || 'An internal server error occurred.' });
+        }
+    };
+    
 
     wss.on('connection', ws => {
         console.log('Client connected');
@@ -617,10 +631,9 @@ const startServer = async () => {
         }
     });
 
-    app.post('/api/quests/:questId/complete', async (req, res) => {
+    app.post('/api/quests/:questId/complete', withData(async (req, res, data) => {
         const { questId } = req.params;
         const { userId, note, completionDate } = req.body;
-        const data = await db.getData();
         const quest = data.quests.find(q => q.id === questId);
         const user = data.users.find(u => u.id === userId);
 
@@ -655,15 +668,200 @@ const startServer = async () => {
                 balanceTarget[reward.rewardTypeId] = (balanceTarget[reward.rewardTypeId] || 0) + reward.amount;
             });
         }
-
+        
         await saveDataAndBroadcast(data);
         res.json({ message: 'Quest completion processed.', completion: newCompletion });
+    }));
+    
+    // --- BATCH 2: OTHER ENDPOINTS ---
+
+    // Generic CRUD wrapper
+    const createCrudEndpoints = (app, resourceName, idPrefix) => {
+        const plural = resourceName.endsWith('s') ? resourceName : `${resourceName}s`;
+        app.post(`/api/${plural}`, withData(async (req, res, data) => {
+            const newItem = { ...req.body, id: `${idPrefix}-${Date.now()}` };
+            data[plural].push(newItem);
+            await saveDataAndBroadcast(data);
+            res.status(201).json({ [`new${resourceName.charAt(0).toUpperCase() + resourceName.slice(1)}`]: newItem });
+        }));
+
+        app.put(`/api/${plural}/:id`, withData(async (req, res, data) => {
+            const { id } = req.params;
+            const index = data[plural].findIndex(item => item.id === id);
+            if (index === -1) return res.status(404).json({ error: `${resourceName} not found` });
+            data[plural][index] = { ...data[plural][index], ...req.body };
+            await saveDataAndBroadcast(data);
+            res.json(data[plural][index]);
+        }));
+
+        app.delete(`/api/${plural}/:id`, withData(async (req, res, data) => {
+            const { id } = req.params;
+            data[plural] = data[plural].filter(item => item.id !== id);
+            await saveDataAndBroadcast(data);
+            res.status(204).send();
+        }));
+    };
+    
+    // Create CRUD endpoints for simple models
+    createCrudEndpoints(app, 'questGroup', 'qg');
+    createCrudEndpoints(app, 'rewardType', 'rt');
+    createCrudEndpoints(app, 'market', 'mkt');
+    createCrudEndpoints(app, 'guild', 'g');
+    createCrudEndpoints(app, 'trophy', 't');
+    createCrudEndpoints(app, 'gameAsset', 'ga');
+    createCrudEndpoints(app, 'theme', 'th');
+    createCrudEndpoints(app, 'scheduledEvent', 'se');
+    createCrudEndpoints(app, 'systemNotification', 'sn');
+
+    // Quests (more complex)
+    app.post('/api/quests', withData(async (req, res, data) => {
+        const newQuest = { ...req.body, id: `quest-${Date.now()}`, claimedByUserIds: [], dismissals: [] };
+        data.quests.push(newQuest);
+        await saveDataAndBroadcast(data);
+        res.status(201).json(newQuest);
+    }));
+    app.put('/api/quests/:id', withData(async (req, res, data) => {
+        const { id } = req.params;
+        const index = data.quests.findIndex(q => q.id === id);
+        if (index === -1) return res.status(404).json({ error: 'Quest not found' });
+        data.quests[index] = { ...data.quests[index], ...req.body };
+        await saveDataAndBroadcast(data);
+        res.json(data.quests[index]);
+    }));
+    app.delete('/api/quests/:id', withData(async (req, res, data) => {
+        const { id } = req.params;
+        data.quests = data.quests.filter(q => q.id !== id);
+        await saveDataAndBroadcast(data);
+        res.status(204).send();
+    }));
+
+    // Quest Actions
+    app.post('/api/quests/:questId/actions', withData(async (req, res, data) => {
+        const { questId } = req.params;
+        const { action, userId } = req.body;
+        const quest = data.quests.find(q => q.id === questId);
+        if (!quest) return res.status(404).json({ error: 'Quest not found' });
+
+        quest.todoUserIds = quest.todoUserIds || [];
+
+        switch (action) {
+            case 'mark_todo':
+                if (!quest.todoUserIds.includes(userId)) quest.todoUserIds.push(userId);
+                break;
+            case 'unmark_todo':
+                quest.todoUserIds = quest.todoUserIds.filter(id => id !== userId);
+                break;
+            // Other actions like claim/release can be added here
+        }
+        await saveDataAndBroadcast(data);
+        res.json({ message: 'Action successful' });
+    }));
+    
+    // Economy
+    app.post('/api/economy/exchange', withData(async (req, res, data) => {
+        const { userId, payItem, receiveItem, guildId } = req.body;
+        const user = data.users.find(u => u.id === userId);
+        if (!user) return res.status(404).json({ error: 'User not found' });
+        
+        const payRewardType = data.rewardTypes.find(rt => rt.id === payItem.rewardTypeId);
+        const receiveRewardType = data.rewardTypes.find(rt => rt.id === receiveItem.rewardTypeId);
+        if (!payRewardType || !receiveRewardType) return res.status(400).json({ error: 'Invalid reward types' });
+
+        const payBalance = guildId ? user.guildBalances[guildId] : { purse: user.personalPurse, experience: user.personalExperience };
+        const payTarget = payRewardType.category === 'Currency' ? payBalance.purse : payBalance.experience;
+        
+        if ((payTarget[payItem.rewardTypeId] || 0) < payItem.amount) {
+            return res.status(400).json({ error: 'Insufficient funds' });
+        }
+        
+        payTarget[payItem.rewardTypeId] -= payItem.amount;
+        
+        const receiveBalance = guildId ? user.guildBalances[guildId] : { purse: user.personalPurse, experience: user.personalExperience };
+        const receiveTarget = receiveRewardType.category === 'Currency' ? receiveBalance.purse : receiveBalance.experience;
+        
+        receiveTarget[receiveItem.rewardTypeId] = (receiveTarget[receiveItem.rewardTypeId] || 0) + receiveItem.amount;
+
+        await saveDataAndBroadcast(data);
+        res.json({ message: 'Exchange successful' });
+    }));
+
+    // Chat
+    app.post('/api/chat/messages', withData(async (req, res, data) => {
+        const newMessage = {
+            ...req.body,
+            id: `msg-${Date.now()}`,
+            timestamp: new Date().toISOString(),
+            readBy: [req.body.senderId]
+        };
+        data.chatMessages.push(newMessage);
+        // Special broadcast for chat
+        broadcast({ type: 'NEW_CHAT_MESSAGE', payload: newMessage });
+        // Also save to DB, but don't re-broadcast everything
+        await db.saveData(data);
+        res.status(201).json(newMessage);
+    }));
+
+    app.post('/api/chat/read', withData(async (req, res, data) => {
+        const { userId, partnerId, guildId } = req.body;
+        data.chatMessages.forEach(msg => {
+            const isUnread = !msg.readBy.includes(userId);
+            if (isUnread) {
+                if (guildId && msg.guildId === guildId) msg.readBy.push(userId);
+                else if (partnerId && ((msg.senderId === partnerId && msg.recipientId === userId) || (msg.senderId === userId && msg.recipientId === partnerId))) msg.readBy.push(userId);
+            }
+        });
+        await saveDataAndBroadcast(data);
+        res.json({ message: 'Messages marked as read' });
+    }));
+
+    // AI
+    let genAI;
+    if (process.env.API_KEY) {
+        genAI = new GoogleGenAI({apiKey: process.env.API_KEY});
+    }
+
+    app.get('/api/ai/status', (req, res) => {
+        res.json({ isConfigured: !!genAI });
+    });
+
+    app.post('/api/ai/test', async (req, res) => {
+        if (!genAI) {
+            return res.status(400).json({ success: false, error: 'API_KEY is not configured on the server.' });
+        }
+        try {
+            await genAI.models.generateContent({ model: 'gemini-2.5-flash', contents: 'test' });
+            res.json({ success: true });
+        } catch (e) {
+            res.status(500).json({ success: false, error: 'API key is invalid or the service is unavailable.' });
+        }
+    });
+
+    app.post('/api/ai/generate', async (req, res) => {
+        if (!genAI) {
+            return res.status(400).json({ error: 'AI features are not configured on the server.' });
+        }
+        try {
+            const { model, prompt, generationConfig } = req.body;
+            const response = await genAI.models.generateContent({
+                model: model,
+                contents: prompt,
+                config: generationConfig,
+            });
+            res.json(response);
+        } catch (e) {
+            res.status(500).json({ error: e.message });
+        }
     });
     
-    // Catch-all for other simple endpoints, can be replaced with full implementations later
-    app.all('/api/*', (req, res) => {
-        res.status(404).json({ error: `API endpoint ${req.method} ${req.path} not found or not yet implemented.` });
-    });
+    // Backups
+    app.post('/api/backups/create', withData(async (req, res, data) => {
+        const timestamp = new Date().toISOString().replace(/:/g, '-').slice(0, 19);
+        const filename = `manual_backup_${timestamp}.json`;
+        const filepath = path.join(BACKUPS_DIR, filename);
+        await fs.writeFile(filepath, JSON.stringify(data, null, 2));
+        res.status(201).json({ message: `Backup created successfully: ${filename}` });
+    }));
+
 
     try {
         await fs.mkdir(UPLOADS_DIR, { recursive: true });
@@ -683,4 +881,7 @@ const startServer = async () => {
     });
 };
 
-startServer();
+startServer().catch(err => {
+    console.error("Failed to start server:", err);
+    process.exit(1);
+});

@@ -1,3 +1,4 @@
+
 import React, { useMemo, useState } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { Quest, QuestAvailability, QuestCompletionStatus, RewardCategory, Role, User, QuestType, PurchaseRequest, UserTrophy } from '../../types';
@@ -49,7 +50,7 @@ const Dashboard: React.FC = () => {
 
     const rankData = useMemo(() => {
         const sortedRanks = [...ranks].sort((a, b) => a.xpThreshold - b.xpThreshold);
-        const totalXp = Object.values(currentBalances.experience).reduce((sum: number, amount: number) => sum + amount, 0);
+        const totalXp = (Object.values(currentBalances.experience) as number[]).reduce((sum, amount) => sum + amount, 0);
         
         let currentRank = sortedRanks[0];
         let nextRank = sortedRanks[1] || null;
@@ -62,9 +63,9 @@ const Dashboard: React.FC = () => {
             }
         }
         
-        const xpForNextRank = nextRank ? nextRank.xpThreshold - currentRank.xpThreshold : 0;
-        const xpIntoCurrentRank = totalXp - currentRank.xpThreshold;
-        const progressPercentage = nextRank ? Math.min(100, (xpIntoCurrentRank / xpForNextRank) * 100) : 100;
+        const xpForNextRank = nextRank ? nextRank.xpThreshold - (currentRank?.xpThreshold || 0) : 0;
+        const xpIntoCurrentRank = totalXp - (currentRank?.xpThreshold || 0);
+        const progressPercentage = nextRank && xpForNextRank > 0 ? Math.min(100, (xpIntoCurrentRank / xpForNextRank) * 100) : 100;
         const currentLevel = sortedRanks.findIndex(r => r.id === currentRank.id) + 1;
         
         return { totalXp, currentRank, nextRank, progressPercentage, currentLevel };
@@ -144,9 +145,9 @@ const Dashboard: React.FC = () => {
             .map(user => {
                 let userTotalXp = 0;
                 if (currentGuildId) {
-                    userTotalXp = Object.values(user.guildBalances[currentGuildId]?.experience || {}).reduce((sum: number, amount: number) => sum + amount, 0);
+                    userTotalXp = (Object.values(user.guildBalances[currentGuildId]?.experience || {}) as number[]).reduce((sum, amount) => sum + amount, 0);
                 } else {
-                    userTotalXp = Object.values(user.personalExperience).reduce((sum: number, amount: number) => sum + amount, 0);
+                    userTotalXp = (Object.values(user.personalExperience) as number[]).reduce((sum, amount) => sum + amount, 0);
                 }
                 return { name: user.gameName, xp: userTotalXp };
             })

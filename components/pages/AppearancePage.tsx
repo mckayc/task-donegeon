@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { AppSettings, ThemeDefinition, SidebarConfigItem, Page, SidebarLink } from '../../types';
@@ -30,7 +31,9 @@ const AppearancePage: React.FC = () => {
                 Object.entries(theme.styles).forEach(([key, value]) => {
                     document.documentElement.style.setProperty(key, value);
                 });
-                document.body.dataset.theme = themeId;
+                if (themeId) {
+                  document.body.dataset.theme = themeId;
+                }
             }
         };
 

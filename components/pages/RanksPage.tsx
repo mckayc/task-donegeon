@@ -1,3 +1,4 @@
+
 import React, { useMemo, useState } from 'react';
 import { useAppState } from '../../context/AppContext';
 import { Rank } from '../../types';
@@ -19,7 +20,7 @@ const RanksPage: React.FC = () => {
             ? currentUser.personalExperience
             : currentUser.guildBalances[appMode.guildId]?.experience || {};
         
-        const currentTotalXp = Object.values(currentBalances).reduce((sum: number, amount: number) => sum + amount, 0);
+        const currentTotalXp = (Object.values(currentBalances) as number[]).reduce((sum, amount) => sum + amount, 0);
         
         const allRanks = [...ranks].sort((a, b) => a.xpThreshold - b.xpThreshold);
         
@@ -95,7 +96,7 @@ const RanksPage: React.FC = () => {
             <Card title="All Ranks">
                 <ul className="space-y-3">
                     {sortedRanks.map(rank => (
-                        <li key={rank.id} className={`p-4 rounded-lg flex items-center gap-4 ${rank.id === currentRank.id ? 'bg-emerald-900/50 border-l-4 border-emerald-400' : 'bg-stone-800/60'}`}>
+                        <li key={rank.id} className={`p-4 rounded-lg flex items-center gap-4 ${rank.id === currentRank?.id ? 'bg-emerald-900/50 border-l-4 border-emerald-400' : 'bg-stone-800/60'}`}>
                             <div className="w-12 h-12 flex items-center justify-center rounded-full overflow-hidden bg-stone-700/50">
                                <button
                                     onClick={() => rank.iconType === 'image' && rank.imageUrl && setPreviewImageUrl(rank.imageUrl)}

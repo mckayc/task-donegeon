@@ -20,7 +20,9 @@ const ThemesPage: React.FC = () => {
             Object.entries(theme.styles).forEach(([key, value]) => {
                 document.documentElement.style.setProperty(key, value);
             });
-            document.body.dataset.theme = themeId;
+            if (themeId) {
+                document.body.dataset.theme = themeId;
+            }
         }
     };
 
@@ -30,7 +32,7 @@ const ThemesPage: React.FC = () => {
 
         // Cleanup function to revert to the actual saved theme when navigating away
         return () => {
-            let activeThemeId = settings.theme;
+            let activeThemeId: string | undefined = settings.theme;
             if (appMode.mode === 'guild') {
                 const guild = guilds.find(g => g.id === appMode.guildId);
                 if (guild?.themeId) {
@@ -43,7 +45,9 @@ const ThemesPage: React.FC = () => {
                     activeThemeId = currentUser.theme;
                 }
             }
-            applyThemeStyles(activeThemeId);
+            if(activeThemeId) {
+                applyThemeStyles(activeThemeId);
+            }
         };
     }, [selectedThemeId, themes, currentUser, settings, appMode, guilds]);
 

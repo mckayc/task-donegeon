@@ -397,7 +397,7 @@ const BACKUPS_DIR = process.env.BACKUP_PATH || path.join(__dirname, 'backups');
 class PostgresDB {
     constructor() {
         const connectionString = process.env.DATABASE_URL || '';
-        const useSsl = process.env.DB_SSL !== 'false';
+        const useSsl = process.env.DB_SSL === 'true';
         console.log(`Database SSL mode: ${useSsl}`);
         
         this.pool = new Pool({

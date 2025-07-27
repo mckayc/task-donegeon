@@ -345,99 +345,99 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
     const dispatch: AppDispatch = useMemo(() => ({
         // Auth
-        addUser: async (userData) => {
+        addUser: async (userData: Omit<User, 'id' | 'personalPurse' | 'personalExperience' | 'guildBalances' | 'avatar' | 'ownedAssetIds' | 'ownedThemes' | 'hasBeenOnboarded'>) => {
             const newUser = { ...userData, id: `user-${Date.now()}`, personalPurse: {}, personalExperience: {}, guildBalances: {}, avatar: {}, ownedAssetIds: [], ownedThemes: ['emerald', 'rose', 'sky'], hasBeenOnboarded: false };
             await updateAndSave(s => ({ users: [...s.users, newUser] }));
             return newUser;
         },
-        updateUser: (userId, updatedData) => updateAndSave(s => ({ users: s.users.map(u => u.id === userId ? { ...u, ...updatedData } : u) })),
-        deleteUser: (userId) => updateAndSave(s => ({ users: s.users.filter(u => u.id !== userId) })),
-        setCurrentUser: (user) => { 
+        updateUser: (userId: string, updatedData: Partial<User>) => updateAndSave(s => ({ users: s.users.map(u => u.id === userId ? { ...u, ...updatedData } : u) })),
+        deleteUser: (userId: string) => updateAndSave(s => ({ users: s.users.filter(u => u.id !== userId) })),
+        setCurrentUser: (user: User | null) => { 
             setState(s => ({...s, currentUser: user}));
             if (user) localStorage.setItem('lastUserId', user.id);
             else localStorage.removeItem('lastUserId');
         },
-        markUserAsOnboarded: (userId) => dispatch.updateUser(userId, { hasBeenOnboarded: true }),
-        setAppUnlocked: (isUnlocked) => setState(s => ({ ...s, isAppUnlocked: isUnlocked })),
-        setIsSwitchingUser: (isSwitching) => setState(s => ({ ...s, isSwitchingUser: isSwitching })),
-        setTargetedUserForLogin: (user) => setState(s => ({ ...s, targetedUserForLogin: user })),
+        markUserAsOnboarded: (userId: string) => dispatch.updateUser(userId, { hasBeenOnboarded: true }),
+        setAppUnlocked: (isUnlocked: boolean) => setState(s => ({ ...s, isAppUnlocked: isUnlocked })),
+        setIsSwitchingUser: (isSwitching: boolean) => setState(s => ({ ...s, isSwitchingUser: isSwitching })),
+        setTargetedUserForLogin: (user: User | null) => setState(s => ({ ...s, targetedUserForLogin: user })),
         exitToSharedView: () => {
              setState(s => ({...s, currentUser: null, isAppUnlocked: true, isSharedViewActive: true }));
              localStorage.removeItem('lastUserId');
         },
-        setIsSharedViewActive: (isActive) => setState(s => ({ ...s, isSharedViewActive: isActive })),
+        setIsSharedViewActive: (isActive: boolean) => setState(s => ({ ...s, isSharedViewActive: isActive })),
         bypassFirstRunCheck: () => setState(s => ({...s, isFirstRun: false})),
 
         // Game Data
-        addQuest: (quest) => apiRequest('/api/quests', { method: 'POST', body: JSON.stringify(quest) }),
-        updateQuest: (updatedQuest) => apiRequest(`/api/quests/${updatedQuest.id}`, { method: 'PUT', body: JSON.stringify(updatedQuest) }),
-        deleteQuest: (questId) => apiRequest(`/api/quests/${questId}`, { method: 'DELETE' }),
-        cloneQuest: (questId) => updateAndSave(s => {
+        addQuest: (quest: Omit<Quest, 'id' | 'claimedByUserIds' | 'dismissals'>) => apiRequest('/api/quests', { method: 'POST', body: JSON.stringify(quest) }),
+        updateQuest: (updatedQuest: Quest) => apiRequest(`/api/quests/${updatedQuest.id}`, { method: 'PUT', body: JSON.stringify(updatedQuest) }),
+        deleteQuest: (questId: string) => apiRequest(`/api/quests/${questId}`, { method: 'DELETE' }),
+        cloneQuest: (questId: string) => updateAndSave(s => {
             const questToClone = s.quests.find(q => q.id === questId);
             if (!questToClone) return {};
             const newQuest = { ...questToClone, id: `quest-${Date.now()}`, title: `${questToClone.title} (Copy)` };
             return { quests: [...s.quests, newQuest] };
         }),
-        dismissQuest: (questId, userId) => updateAndSave(s => ({ quests: s.quests.map(q => q.id === questId ? {...q, dismissals: [...q.dismissals, {userId, dismissedAt: new Date().toISOString()}]} : q) })),
-        claimQuest: (questId, userId) => updateAndSave(s => ({ quests: s.quests.map(q => q.id === questId ? {...q, claimedByUserIds: [...q.claimedByUserIds, userId]} : q) })),
-        releaseQuest: (questId, userId) => updateAndSave(s => ({ quests: s.quests.map(q => q.id === questId ? {...q, claimedByUserIds: q.claimedByUserIds.filter(id => id !== userId)} : q) })),
-        markQuestAsTodo: (questId, userId) => apiRequest(`/api/quests/${questId}/actions`, { method: 'POST', body: JSON.stringify({ action: 'mark_todo', userId }) }),
-        unmarkQuestAsTodo: (questId, userId) => apiRequest(`/api/quests/${questId}/actions`, { method: 'POST', body: JSON.stringify({ action: 'unmark_todo', userId }) }),
-        completeQuest: (questId, userId, rewards, requiresApproval, guildId, options) => apiRequest(`/api/quests/${questId}/complete`, { method: 'POST', body: JSON.stringify({ userId, note: options?.note, completionDate: options?.completionDate }) }),
-        approveQuestCompletion: (completionId, note) => updateAndSave(s => {
+        dismissQuest: (questId: string, userId: string) => updateAndSave(s => ({ quests: s.quests.map(q => q.id === questId ? {...q, dismissals: [...q.dismissals, {userId, dismissedAt: new Date().toISOString()}]} : q) })),
+        claimQuest: (questId: string, userId: string) => updateAndSave(s => ({ quests: s.quests.map(q => q.id === questId ? {...q, claimedByUserIds: [...q.claimedByUserIds, userId]} : q) })),
+        releaseQuest: (questId: string, userId: string) => updateAndSave(s => ({ quests: s.quests.map(q => q.id === questId ? {...q, claimedByUserIds: q.claimedByUserIds.filter(id => id !== userId)} : q) })),
+        markQuestAsTodo: (questId: string, userId: string) => apiRequest(`/api/quests/${questId}/actions`, { method: 'POST', body: JSON.stringify({ action: 'mark_todo', userId }) }),
+        unmarkQuestAsTodo: (questId: string, userId: string) => apiRequest(`/api/quests/${questId}/actions`, { method: 'POST', body: JSON.stringify({ action: 'unmark_todo', userId }) }),
+        completeQuest: (questId: string, userId: string, rewards: RewardItem[], requiresApproval: boolean, guildId?: string, options?: { note?: string; completionDate?: Date }) => apiRequest(`/api/quests/${questId}/complete`, { method: 'POST', body: JSON.stringify({ userId, note: options?.note, completionDate: options?.completionDate }) }),
+        approveQuestCompletion: (completionId: string, note?: string) => updateAndSave(s => {
             // Complex logic: find completion, change status, find user, find quest, apply rewards...
             // This is a prime candidate for a dedicated server endpoint later.
             return {}; // Placeholder
         }),
-        rejectQuestCompletion: (completionId, note) => updateAndSave(s => ({ questCompletions: s.questCompletions.map(c => c.id === completionId ? { ...c, status: QuestCompletionStatus.Rejected, note } : c) })),
-        addQuestGroup: (group) => apiRequest('/api/questGroups', { method: 'POST', body: JSON.stringify(group) }),
-        updateQuestGroup: (group) => apiRequest(`/api/questGroups/${group.id}`, { method: 'PUT', body: JSON.stringify(group) }),
-        deleteQuestGroup: (groupId) => apiRequest(`/api/questGroups/${groupId}`, { method: 'DELETE' }),
-        assignQuestGroupToUsers: (groupId, userIds) => updateAndSave(s => ({ quests: s.quests.map(q => q.groupId === groupId ? { ...q, assignedUserIds: [...new Set([...q.assignedUserIds, ...userIds])] } : q) })),
-        addRewardType: (rewardType) => apiRequest('/api/rewardTypes', { method: 'POST', body: JSON.stringify(rewardType) }),
-        updateRewardType: (rewardType) => apiRequest(`/api/rewardTypes/${rewardType.id}`, { method: 'PUT', body: JSON.stringify(rewardType) }),
-        deleteRewardType: (rewardTypeId) => apiRequest(`/api/rewardTypes/${rewardTypeId}`, { method: 'DELETE' }),
-        cloneRewardType: (rewardTypeId) => updateAndSave(s => {
+        rejectQuestCompletion: (completionId: string, note?: string) => updateAndSave(s => ({ questCompletions: s.questCompletions.map(c => c.id === completionId ? { ...c, status: QuestCompletionStatus.Rejected, note } : c) })),
+        addQuestGroup: (group: Omit<QuestGroup, 'id'>) => apiRequest('/api/questGroups', { method: 'POST', body: JSON.stringify(group) }),
+        updateQuestGroup: (group: QuestGroup) => apiRequest(`/api/questGroups/${group.id}`, { method: 'PUT', body: JSON.stringify(group) }),
+        deleteQuestGroup: (groupId: string) => apiRequest(`/api/questGroups/${groupId}`, { method: 'DELETE' }),
+        assignQuestGroupToUsers: (groupId: string, userIds: string[]) => updateAndSave(s => ({ quests: s.quests.map(q => q.groupId === groupId ? { ...q, assignedUserIds: [...new Set([...q.assignedUserIds, ...userIds])] } : q) })),
+        addRewardType: (rewardType: Omit<RewardTypeDefinition, 'id' | 'isCore'>) => apiRequest('/api/rewardTypes', { method: 'POST', body: JSON.stringify(rewardType) }),
+        updateRewardType: (rewardType: RewardTypeDefinition) => apiRequest(`/api/rewardTypes/${rewardType.id}`, { method: 'PUT', body: JSON.stringify(rewardType) }),
+        deleteRewardType: (rewardTypeId: string) => apiRequest(`/api/rewardTypes/${rewardTypeId}`, { method: 'DELETE' }),
+        cloneRewardType: (rewardTypeId: string) => updateAndSave(s => {
             const typeToClone = s.rewardTypes.find(rt => rt.id === rewardTypeId);
             if (!typeToClone) return {};
             const newType = { ...typeToClone, isCore: false, id: `rt-${Date.now()}`, name: `${typeToClone.name} (Copy)` };
             return { rewardTypes: [...s.rewardTypes, newType] };
         }),
-        addMarket: (market) => apiRequest('/api/markets', { method: 'POST', body: JSON.stringify(market) }),
-        updateMarket: (market) => apiRequest(`/api/markets/${market.id}`, { method: 'PUT', body: JSON.stringify(market) }),
-        deleteMarket: (marketId) => apiRequest(`/api/markets/${marketId}`, { method: 'DELETE' }),
-        cloneMarket: (marketId) => updateAndSave(s => {
+        addMarket: (market: Omit<Market, 'id'>) => apiRequest('/api/markets', { method: 'POST', body: JSON.stringify(market) }),
+        updateMarket: (market: Market) => apiRequest(`/api/markets/${market.id}`, { method: 'PUT', body: JSON.stringify(market) }),
+        deleteMarket: (marketId: string) => apiRequest(`/api/markets/${marketId}`, { method: 'DELETE' }),
+        cloneMarket: (marketId: string) => updateAndSave(s => {
             const marketToClone = s.markets.find(m => m.id === marketId);
             if (!marketToClone) return {};
             const newMarket = { ...marketToClone, id: `mkt-${Date.now()}`, title: `${marketToClone.title} (Copy)` };
             return { markets: [...s.markets, newMarket] };
         }),
-        deleteMarkets: (marketIds) => updateAndSave(s => ({ markets: s.markets.filter(m => !marketIds.includes(m.id)) })),
-        updateMarketsStatus: (marketIds, status) => updateAndSave(s => ({ markets: s.markets.map(m => marketIds.includes(m.id) ? { ...m, status: { type: status } as MarketStatus } : m) })),
-        purchaseMarketItem: (assetId, marketId, user, costGroupIndex) => updateAndSave(s => {
+        deleteMarkets: (marketIds: string[]) => updateAndSave(s => ({ markets: s.markets.filter(m => !marketIds.includes(m.id)) })),
+        updateMarketsStatus: (marketIds: string[], status: 'open' | 'closed') => updateAndSave(s => ({ markets: s.markets.map(m => marketIds.includes(m.id) ? { ...m, status: { type: status } as MarketStatus } : m) })),
+        purchaseMarketItem: (assetId: string, marketId: string, user: User, costGroupIndex: number) => updateAndSave(s => {
             // Complex logic...
             return {};
         }),
-        approvePurchaseRequest: (purchaseId) => updateAndSave(s => ({ purchaseRequests: s.purchaseRequests.map(p => p.id === purchaseId ? { ...p, status: PurchaseRequestStatus.Completed, actedAt: new Date().toISOString() } : p) })),
-        rejectPurchaseRequest: (purchaseId) => updateAndSave(s => ({ purchaseRequests: s.purchaseRequests.map(p => p.id === purchaseId ? { ...p, status: PurchaseRequestStatus.Rejected, actedAt: new Date().toISOString() } : p) })),
-        cancelPurchaseRequest: (purchaseId) => updateAndSave(s => ({ purchaseRequests: s.purchaseRequests.map(p => p.id === purchaseId ? { ...p, status: PurchaseRequestStatus.Cancelled, actedAt: new Date().toISOString() } : p) })),
-        addGuild: (guild) => apiRequest('/api/guilds', { method: 'POST', body: JSON.stringify(guild) }),
-        updateGuild: (guild) => apiRequest(`/api/guilds/${guild.id}`, { method: 'PUT', body: JSON.stringify(guild) }),
-        deleteGuild: (guildId) => apiRequest(`/api/guilds/${guildId}`, { method: 'DELETE' }),
-        addTrophy: (trophy) => apiRequest('/api/trophies', { method: 'POST', body: JSON.stringify(trophy) }),
-        updateTrophy: (trophy) => apiRequest(`/api/trophies/${trophy.id}`, { method: 'PUT', body: JSON.stringify(trophy) }),
-        deleteTrophy: (trophyId) => apiRequest(`/api/trophies/${trophyId}`, { method: 'DELETE' }),
-        deleteTrophies: (trophyIds) => updateAndSave(s => ({ trophies: s.trophies.filter(t => !trophyIds.includes(t.id)) })),
-        awardTrophy: (userId, trophyId, guildId) => updateAndSave(s => ({ userTrophies: [...s.userTrophies, { id: `ut-${Date.now()}`, userId, trophyId, awardedAt: new Date().toISOString(), guildId }] })),
-        applyManualAdjustment: async (adjustment) => {
+        approvePurchaseRequest: (purchaseId: string) => updateAndSave(s => ({ purchaseRequests: s.purchaseRequests.map(p => p.id === purchaseId ? { ...p, status: PurchaseRequestStatus.Completed, actedAt: new Date().toISOString() } : p) })),
+        rejectPurchaseRequest: (purchaseId: string) => updateAndSave(s => ({ purchaseRequests: s.purchaseRequests.map(p => p.id === purchaseId ? { ...p, status: PurchaseRequestStatus.Rejected, actedAt: new Date().toISOString() } : p) })),
+        cancelPurchaseRequest: (purchaseId: string) => updateAndSave(s => ({ purchaseRequests: s.purchaseRequests.map(p => p.id === purchaseId ? { ...p, status: PurchaseRequestStatus.Cancelled, actedAt: new Date().toISOString() } : p) })),
+        addGuild: (guild: Omit<Guild, 'id'>) => apiRequest('/api/guilds', { method: 'POST', body: JSON.stringify(guild) }),
+        updateGuild: (guild: Guild) => apiRequest(`/api/guilds/${guild.id}`, { method: 'PUT', body: JSON.stringify(guild) }),
+        deleteGuild: (guildId: string) => apiRequest(`/api/guilds/${guildId}`, { method: 'DELETE' }),
+        addTrophy: (trophy: Omit<Trophy, 'id'>) => apiRequest('/api/trophies', { method: 'POST', body: JSON.stringify(trophy) }),
+        updateTrophy: (trophy: Trophy) => apiRequest(`/api/trophies/${trophy.id}`, { method: 'PUT', body: JSON.stringify(trophy) }),
+        deleteTrophy: (trophyId: string) => apiRequest(`/api/trophies/${trophyId}`, { method: 'DELETE' }),
+        deleteTrophies: (trophyIds: string[]) => updateAndSave(s => ({ trophies: s.trophies.filter(t => !trophyIds.includes(t.id)) })),
+        awardTrophy: (userId: string, trophyId: string, guildId?: string) => updateAndSave(s => ({ userTrophies: [...s.userTrophies, { id: `ut-${Date.now()}`, userId, trophyId, awardedAt: new Date().toISOString(), guildId }] })),
+        applyManualAdjustment: async (adjustment: Omit<AdminAdjustment, 'id' | 'adjustedAt'>) => {
             await updateAndSave(s => ({ adminAdjustments: [...s.adminAdjustments, { ...adjustment, id: `adj-${Date.now()}`, adjustedAt: new Date().toISOString() }] }));
             return true;
         },
-        addGameAsset: (asset) => apiRequest('/api/gameAssets', { method: 'POST', body: JSON.stringify(asset) }),
-        updateGameAsset: (asset) => apiRequest(`/api/gameAssets/${asset.id}`, { method: 'PUT', body: JSON.stringify(asset) }),
-        deleteGameAsset: (assetId) => apiRequest(`/api/gameAssets/${assetId}`, { method: 'DELETE' }),
-        deleteGameAssets: (assetIds) => updateAndSave(s => ({ gameAssets: s.gameAssets.filter(a => !assetIds.includes(a.id)) })),
-        cloneGameAsset: (assetId) => updateAndSave(s => {
+        addGameAsset: (asset: Omit<GameAsset, 'id' | 'creatorId' | 'createdAt' | 'purchaseCount'>) => apiRequest('/api/gameAssets', { method: 'POST', body: JSON.stringify(asset) }),
+        updateGameAsset: (asset: GameAsset) => apiRequest(`/api/gameAssets/${asset.id}`, { method: 'PUT', body: JSON.stringify(asset) }),
+        deleteGameAsset: (assetId: string) => apiRequest(`/api/gameAssets/${assetId}`, { method: 'DELETE' }),
+        deleteGameAssets: (assetIds: string[]) => updateAndSave(s => ({ gameAssets: s.gameAssets.filter(a => !assetIds.includes(a.id)) })),
+        cloneGameAsset: (assetId: string) => updateAndSave(s => {
             const assetToClone = s.gameAssets.find(a => a.id === assetId);
             if (!assetToClone) return {};
             const newAsset = { ...assetToClone, id: `ga-${Date.now()}`, name: `${assetToClone.name} (Copy)` };
@@ -445,54 +445,54 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         }),
         
         // Themes
-        addTheme: (theme) => apiRequest('/api/themes', { method: 'POST', body: JSON.stringify(theme) }),
-        updateTheme: (theme) => apiRequest(`/api/themes/${theme.id}`, { method: 'PUT', body: JSON.stringify(theme) }),
-        deleteTheme: (themeId) => apiRequest(`/api/themes/${themeId}`, { method: 'DELETE' }),
+        addTheme: (theme: Omit<ThemeDefinition, 'id'>) => apiRequest('/api/themes', { method: 'POST', body: JSON.stringify(theme) }),
+        updateTheme: (theme: ThemeDefinition) => apiRequest(`/api/themes/${theme.id}`, { method: 'PUT', body: JSON.stringify(theme) }),
+        deleteTheme: (themeId: string) => apiRequest(`/api/themes/${themeId}`, { method: 'DELETE' }),
 
         // Settings
-        updateSettings: (newSettings) => updateAndSave(s => ({ settings: { ...s.settings, ...newSettings } })),
+        updateSettings: (newSettings: Partial<AppSettings>) => updateAndSave(s => ({ settings: { ...s.settings, ...newSettings } })),
         resetSettings: () => updateAndSave(() => ({ settings: INITIAL_SETTINGS })),
         
         // UI
-        setActivePage: (page) => setState(s => ({ ...s, activePage: page })),
-        setAppMode: (mode) => setState(s => ({ ...s, appMode: mode })),
+        setActivePage: (page: Page) => setState(s => ({ ...s, activePage: page })),
+        setAppMode: (mode: AppMode) => setState(s => ({ ...s, appMode: mode })),
         addNotification,
         removeNotification,
-        setActiveMarketId: (marketId) => setState(s => ({ ...s, activeMarketId: marketId })),
+        setActiveMarketId: (marketId: string | null) => setState(s => ({ ...s, activeMarketId: marketId })),
         toggleSidebar: () => setState(s => ({...s, isSidebarCollapsed: !s.isSidebarCollapsed})),
         toggleChat: () => setState(s => ({...s, isChatOpen: !s.isChatOpen})),
 
         // Data Management
-        importBlueprint: (blueprint, resolutions) => updateAndSave(s => { /* complex logic */ return {}; }),
-        restoreFromBackup: (backupData) => updateAndSave(() => ({...backupData})),
-        restoreDefaultObjects: (objectType) => updateAndSave(s => ({ trophies: [...s.trophies, ...INITIAL_TROPHIES.filter(it => !s.trophies.some(t => t.id === it.id))] })),
+        importBlueprint: (blueprint: Blueprint, resolutions: ImportResolution[]) => updateAndSave(s => { /* complex logic */ return {}; }),
+        restoreFromBackup: (backupData: IAppData) => updateAndSave(() => ({...backupData})),
+        restoreDefaultObjects: (objectType: 'trophies') => updateAndSave(s => ({ trophies: [...s.trophies, ...INITIAL_TROPHIES.filter(it => !s.trophies.some(t => t.id === it.id))] })),
         clearAllHistory: () => updateAndSave(() => ({ questCompletions: [], purchaseRequests: [], systemLogs: [], adminAdjustments: [] })),
         resetAllPlayerData: () => updateAndSave(s => ({ users: s.users.map(u => ({...u, personalPurse: {}, personalExperience: {}, guildBalances: {}, ownedAssetIds: [], userTrophies: []})) })),
         deleteAllCustomContent: () => updateAndSave(s => ({ quests: [], markets: [], gameAssets: [], trophies: s.trophies.filter(t => INITIAL_TROPHIES.some(it => it.id === t.id)) })),
         
         // First Run
-        completeFirstRun: (adminUserData, setupChoice, blueprint) => apiRequest('/api/first-run', { method: 'POST', body: JSON.stringify({ adminUserData, setupChoice, blueprint }) }),
+        completeFirstRun: (adminUserData: Omit<User, 'id' | 'personalPurse' | 'personalExperience' | 'guildBalances' | 'avatar' | 'ownedAssetIds' | 'ownedThemes' | 'hasBeenOnboarded'>, setupChoice: 'guided' | 'scratch' | 'import', blueprint: Blueprint | null) => apiRequest('/api/first-run', { method: 'POST', body: JSON.stringify({ adminUserData, setupChoice, blueprint }) }),
         
         // Ranks
-        setRanks: (ranks) => updateAndSave(() => ({ ranks })),
+        setRanks: (ranks: Rank[]) => updateAndSave(() => ({ ranks })),
 
         // Chat
-        sendMessage: (message) => apiRequest('/api/chat/messages', { method: 'POST', body: JSON.stringify({ ...message, senderId: state.currentUser?.id }) }),
-        markMessagesAsRead: (options) => apiRequest('/api/chat/read', { method: 'POST', body: JSON.stringify({ ...options, userId: state.currentUser?.id }) }),
+        sendMessage: (message: Partial<ChatMessage>) => apiRequest('/api/chat/messages', { method: 'POST', body: JSON.stringify({ ...message, senderId: state.currentUser?.id }) }),
+        markMessagesAsRead: (options: { partnerId?: string; guildId?: string }) => apiRequest('/api/chat/read', { method: 'POST', body: JSON.stringify({ ...options, userId: state.currentUser?.id }) }),
 
         // System Notifications
-        addSystemNotification: (notification) => apiRequest('/api/systemNotifications', { method: 'POST', body: JSON.stringify(notification) }),
-        markSystemNotificationsAsRead: (notificationIds) => apiRequest('/api/systemNotifications/read', { method: 'POST', body: JSON.stringify({ notificationIds, userId: state.currentUser?.id }) }),
+        addSystemNotification: (notification: Omit<SystemNotification, 'id' | 'timestamp' | 'readByUserIds'>) => apiRequest('/api/systemNotifications', { method: 'POST', body: JSON.stringify(notification) }),
+        markSystemNotificationsAsRead: (notificationIds: string[]) => apiRequest('/api/systemNotifications/read', { method: 'POST', body: JSON.stringify({ notificationIds, userId: state.currentUser?.id }) }),
 
         // Scheduled Events
-        addScheduledEvent: (event) => apiRequest('/api/scheduledEvents', { method: 'POST', body: JSON.stringify(event) }),
-        updateScheduledEvent: (event) => apiRequest(`/api/scheduledEvents/${event.id}`, { method: 'PUT', body: JSON.stringify(event) }),
-        deleteScheduledEvent: (eventId) => apiRequest(`/api/scheduledEvents/${eventId}`, { method: 'DELETE' }),
+        addScheduledEvent: (event: Omit<ScheduledEvent, 'id'>) => apiRequest('/api/scheduledEvents', { method: 'POST', body: JSON.stringify(event) }),
+        updateScheduledEvent: (event: ScheduledEvent) => apiRequest(`/api/scheduledEvents/${event.id}`, { method: 'PUT', body: JSON.stringify(event) }),
+        deleteScheduledEvent: (eventId: string) => apiRequest(`/api/scheduledEvents/${eventId}`, { method: 'DELETE' }),
         
         // Bulk Actions
-        deleteQuests: (questIds) => updateAndSave(s => ({ quests: s.quests.filter(q => !questIds.includes(q.id)) })),
-        updateQuestsStatus: (questIds, isActive) => updateAndSave(s => ({ quests: s.quests.map(q => questIds.includes(q.id) ? { ...q, isActive } : q) })),
-        bulkUpdateQuests: (questIds, updates) => updateAndSave(s => {
+        deleteQuests: (questIds: string[]) => updateAndSave(s => ({ quests: s.quests.filter(q => !questIds.includes(q.id)) })),
+        updateQuestsStatus: (questIds: string[], isActive: boolean) => updateAndSave(s => ({ quests: s.quests.map(q => questIds.includes(q.id) ? { ...q, isActive } : q) })),
+        bulkUpdateQuests: (questIds: string[], updates: BulkQuestUpdates) => updateAndSave(s => {
             return {
                 quests: s.quests.map(q => {
                     if (!questIds.includes(q.id)) return q;
@@ -511,13 +511,13 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         }),
 
         // Assets
-        uploadFile: async (file, category) => {
+        uploadFile: async (file: File, category?: string) => {
             const formData = new FormData();
             formData.append('file', file);
             if(category) formData.append('category', category);
             return apiRequest('/api/media/upload', { method: 'POST', body: formData, headers: {} }); // Let browser set Content-Type for FormData
         },
-        executeExchange: (userId, payItem, receiveItem, guildId) => apiRequest('/api/economy/exchange', { method: 'POST', body: JSON.stringify({ userId, payItem, receiveItem, guildId }) }),
+        executeExchange: (userId: string, payItem: RewardItem, receiveItem: RewardItem, guildId?: string) => apiRequest('/api/economy/exchange', { method: 'POST', body: JSON.stringify({ userId, payItem, receiveItem, guildId }) }),
     } as unknown as AppDispatch), [state, updateAndSave, addNotification, removeNotification, apiRequest]);
 
     return (

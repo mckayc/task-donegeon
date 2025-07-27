@@ -24,6 +24,7 @@ const CollapsibleSection: React.FC<{ title: string; children: React.ReactNode; d
     );
 };
 
+const V0_0_99_DATE = new Date(2025, 6, 27);
 const V0_0_98_DATE = new Date(2025, 6, 23);
 const V0_0_97_DATE = new Date(2025, 6, 23);
 const V0_0_96_DATE = new Date(2025, 6, 22);
@@ -46,6 +47,15 @@ const V0_0_80_DATE = new Date(2025, 6, 19);
 
 const VersionHistoryContent: React.FC = () => (
     <div className="prose prose-invert max-w-none text-stone-300 space-y-4">
+        <div>
+            <h4 className="text-lg font-bold text-stone-100">
+                Version 0.0.99 ({V0_0_99_DATE.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })})
+            </h4>
+            <ul className="list-disc list-inside space-y-2 mt-2">
+                <li><strong>New Feature: Theme Variety & Marketplace:</strong> Added a collection of 13 new, distinct themes, each with unique fonts and color palettes, to provide users with a much wider range of customization options.</li>
+                <li><strong>New Store: "The Gilded Brush (Themes)":</strong> Created a dedicated marketplace where users can browse and purchase these new themes using their in-game currency, making customization a rewarding part of the game.</li>
+            </ul>
+        </div>
         <div>
             <h4 className="text-lg font-bold text-stone-100">
                 Version 0.0.98 ({V0_0_98_DATE.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })})

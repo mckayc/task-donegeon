@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { useAppState, useAppDispatch } from '../../../context/AppContext';
-import { IAppData, Blueprint, ImportResolution, AutomatedBackupProfile } from '../../../types';
+import { IAppData, Blueprint, ImportResolution, AutomatedBackupProfile, AutomatedBackups } from '../../../types';
 import { analyzeBlueprintForConflicts } from '../../../utils/sharing';
 import Button from '../../ui/Button';
 import Card from '../../ui/Card';
@@ -28,6 +28,7 @@ const BackupAndImportPage: React.FC = () => {
     
     const [serverBackups, setServerBackups] = useState<ServerBackup[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [automatedBackupsForm, setAutomatedBackupsForm] = useState<AutomatedBackups>(() => JSON.parse(JSON.stringify(settings.automatedBackups)));
 
     const fetchServerBackups = useCallback(async () => {
         setIsLoading(true);
@@ -49,6 +50,19 @@ const BackupAndImportPage: React.FC = () => {
     useEffect(() => {
         fetchServerBackups();
     }, [fetchServerBackups]);
+
+    const handleBackupProfileChange = (index: number, field: keyof AutomatedBackupProfile, value: string | boolean | number) => {
+        setAutomatedBackupsForm(prev => {
+            const newProfiles = [...prev.profiles] as [AutomatedBackupProfile, AutomatedBackupProfile, AutomatedBackupProfile];
+            newProfiles[index] = { ...newProfiles[index], [field]: value };
+            return { ...prev, profiles: newProfiles };
+        });
+    };
+
+    const handleSaveAutomatedBackups = () => {
+        updateSettings({ automatedBackups: automatedBackupsForm });
+        addNotification({ type: 'success', message: 'Automated backup settings saved.' });
+    };
 
 
     const handleRestoreFileSelect = (file: File) => {
@@ -198,6 +212,44 @@ const BackupAndImportPage: React.FC = () => {
                 ) : (
                     <p className="text-stone-400 text-center py-4">No server-side backups found. Click "Create Manual Backup" to make one.</p>
                 )}
+            </Card>
+
+            <Card title="Automated Server Backups">
+                <p className="text-sm text-stone-400 mb-4">Configure automatic backups to the server's file system. This is highly recommended for Docker/self-hosted instances.</p>
+                <div className="space-y-4">
+                    {automatedBackupsForm.profiles.map((profile, index) => (
+                        <div key={index} className="p-4 bg-stone-900/40 rounded-lg border border-stone-700/60">
+                             <ToggleSwitch
+                                enabled={profile.enabled}
+                                setEnabled={(val) => handleBackupProfileChange(index, 'enabled', val)}
+                                label={`Profile ${index + 1}: Enabled`}
+                            />
+                            <div className={`grid grid-cols-2 gap-4 mt-4 ${!profile.enabled ? 'opacity-50 pointer-events-none' : ''}`}>
+                                <Input
+                                    as="select"
+                                    label="Frequency"
+                                    value={profile.frequency}
+                                    onChange={e => handleBackupProfileChange(index, 'frequency', e.target.value)}
+                                >
+                                    <option value="hourly">Hourly</option>
+                                    <option value="daily">Daily</option>
+                                    <option value="weekly">Weekly</option>
+                                    <option value="monthly">Monthly</option>
+                                </Input>
+                                <Input
+                                    label="Keep (number of backups)"
+                                    type="number"
+                                    min="1"
+                                    value={profile.keep}
+                                    onChange={e => handleBackupProfileChange(index, 'keep', parseInt(e.target.value) || 1)}
+                                />
+                            </div>
+                        </div>
+                    ))}
+                </div>
+                <div className="text-right mt-6">
+                    <Button onClick={handleSaveAutomatedBackups}>Save Automated Backup Settings</Button>
+                </div>
             </Card>
 
             <Card title="Import Content">

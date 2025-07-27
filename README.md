@@ -1,6 +1,6 @@
 # Task Donegeon
 
-**Version:** 0.0.98
+**Version:** 0.0.99
 
 ---
 
@@ -15,12 +15,12 @@ Task Donegeon is a gamified task and chore management application designed for f
 
 ## ✨ Features
 
-### What's New in Version 0.0.98 (July 23, 2025)
--   **Bug Fix:** Resolved an issue where the unread message indicator for chat would not disappear correctly after reading messages.
--   **Bug Fix:** Fixed a critical server error that prevented users from completing quests.
--   **Stability:** General improvements to backend stability.
+### What's New in Version 0.0.99 (July 27, 2025)
+-   **New Feature: Theme Variety & Marketplace:** Added a collection of 13 new, distinct themes, each with unique fonts and color palettes, to provide users with a much wider range of customization options.
+-   **New Store: "The Gilded Brush (Themes)":** Created a dedicated marketplace where users can browse and purchase these new themes using their in-game currency, making customization a rewarding part of the game.
 
 ### Version History
+- **v0.0.98 (July 23, 2025):** Bug fixes for chat indicator and quest completion server error, plus backend stability improvements.
 - **v0.0.97 (July 23, 2025):** New "Vacation" Event Type, Calendar-Driven Vacations, Automatic Penalty Pausing, Streamlined Settings.
 - **v0.0.96 (July 22, 2025):** Default Quest Groups, AI-powered group suggestions, streamlined quest creation.
 - **v0.0.95 (July 22, 2025):** Smarter AI Studio, powerful bulk editing for quests, enhanced collapsed sidebar with fly-out menus, and default quest categories.

@@ -277,7 +277,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
               addNotification({ type: 'success', message: 'Real-time connection established.' });
               reconnectAttempts = 0;
               if (reconnectInterval) {
-                  clearInterval(reconnectInterval);
+                  window.clearInterval(reconnectInterval);
                   reconnectInterval = null;
               }
           };
@@ -286,7 +286,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
               console.log('WebSocket disconnected');
               ws = null;
               if (!reconnectInterval) {
-                  reconnectInterval = setInterval(() => {
+                  reconnectInterval = window.setInterval(() => {
                       reconnectAttempts++;
                       const delay = Math.min(1000 * Math.pow(2, reconnectAttempts), 30000); // Exponential backoff up to 30s
                       console.log(`Attempting to reconnect WebSocket (attempt ${reconnectAttempts})...`);
@@ -345,7 +345,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
       return () => {
           if (reconnectInterval) {
-              clearInterval(reconnectInterval);
+              window.clearInterval(reconnectInterval);
           }
           if (ws) {
               ws.close();
@@ -539,8 +539,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const exitToSharedView = useCallback(() => { _setCurrentUser(null); _setIsSharedViewActive(true); localStorage.removeItem('lastUserId'); }, []);
   const setAppUnlocked = useCallback((isUnlocked: boolean) => { localStorage.setItem('isAppUnlocked', String(isUnlocked)); _setAppUnlocked(isUnlocked); }, []);
   const toggleSidebar = useCallback(() => { setIsSidebarCollapsed(prev => { const newState = !prev; localStorage.setItem('isSidebarCollapsed', String(newState)); return newState; }); }, []);
-  const resetInactivityTimer = useCallback(() => { if (inactivityTimer.current) clearTimeout(inactivityTimer.current); if (settings.sharedMode.enabled && settings.sharedMode.autoExit && currentUser) { inactivityTimer.current = window.setTimeout( exitToSharedView, settings.sharedMode.autoExitMinutes * 60 * 1000 ); } }, [settings.sharedMode, currentUser, exitToSharedView]);
-  useEffect(() => { window.addEventListener('mousemove', resetInactivityTimer); window.addEventListener('keydown', resetInactivityTimer); window.addEventListener('click', resetInactivityTimer); resetInactivityTimer(); return () => { window.removeEventListener('mousemove', resetInactivityTimer); window.removeEventListener('keydown', resetInactivityTimer); window.removeEventListener('click', resetInactivityTimer); if (inactivityTimer.current) clearTimeout(inactivityTimer.current); }; }, [resetInactivityTimer]);
+  const resetInactivityTimer = useCallback(() => { if (inactivityTimer.current) window.clearTimeout(inactivityTimer.current); if (settings.sharedMode.enabled && settings.sharedMode.autoExit && currentUser) { inactivityTimer.current = window.setTimeout( exitToSharedView, settings.sharedMode.autoExitMinutes * 60 * 1000 ); } }, [settings.sharedMode, currentUser, exitToSharedView]);
+  useEffect(() => { window.addEventListener('mousemove', resetInactivityTimer); window.addEventListener('keydown', resetInactivityTimer); window.addEventListener('click', resetInactivityTimer); resetInactivityTimer(); return () => { window.removeEventListener('mousemove', resetInactivityTimer); window.removeEventListener('keydown', resetInactivityTimer); window.removeEventListener('click', resetInactivityTimer); if (inactivityTimer.current) window.clearTimeout(inactivityTimer.current); }; }, [resetInactivityTimer]);
   const toggleChat = useCallback(() => setIsChatOpen(prev => !prev), []);
   const uploadFile = useCallback(async (file: File, category: string = 'Miscellaneous'): Promise<{ url: string } | null> => { const fd = new FormData(); fd.append('file', file); fd.append('category', category); try { const r = await window.fetch('/api/media/upload', { method: 'POST', body: fd }); if (!r.ok) { const e = await r.json(); throw new Error(e.error || 'Upload failed'); } return await r.json(); } catch (e) { const m = e instanceof Error ? e.message : 'Unknown error'; addNotification({ type: 'error', message: `Upload failed: ${m}` }); return null; } }, [addNotification]);
   const restoreFromBackup = useCallback(async (backupData: IAppData) => { try { await apiCall('/api/data', 'POST', backupData); addNotification({ type: 'success', message: 'Restore successful! The app will now reload.' }); setTimeout(() => window.location.reload(), 1500); } catch (e) { /* apiCall handles notification */ } }, [apiCall, addNotification]);

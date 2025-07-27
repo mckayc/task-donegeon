@@ -396,13 +396,14 @@ const BACKUPS_DIR = process.env.BACKUP_PATH || path.join(__dirname, 'backups');
 // --- DB CLASS DEFINITION ---
 class PostgresDB {
     constructor() {
-        const isProduction = process.env.NODE_ENV === 'production';
-        // Cloud databases (Vercel, Supabase) use SSL. A local Docker postgres instance typically does not.
-        // A simple way to distinguish is to check if the connection string points to localhost.
-        const useSsl = isProduction && process.env.DATABASE_URL && !process.env.DATABASE_URL.includes('localhost');
+        const connectionString = process.env.DATABASE_URL || '';
+        // This logic correctly disables SSL for connections to 'localhost', which is
+        // common for local development and some Docker setups. For all other connections,
+        // including Docker service names and remote databases on Vercel/Supabase, SSL is enabled.
+        const isLocal = connectionString.includes('localhost');
         this.pool = new Pool({
-            connectionString: process.env.DATABASE_URL,
-            ssl: useSsl ? { rejectUnauthorized: false } : false,
+            connectionString: connectionString,
+            ssl: isLocal ? false : { rejectUnauthorized: false },
         });
     }
 

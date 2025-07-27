@@ -265,8 +265,9 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     const fullUpdate = useCallback((newData: IAppData) => {
         if (!isMounted.current) return;
         setState(prev => {
-            const updatedCurrentUser = prev.currentUser
-                ? (newData.users || prev.users).find(u => u.id === prev.currentUser!.id) || null
+            const currentUserId = prev.currentUser ? prev.currentUser.id : null;
+            const updatedCurrentUser = currentUserId
+                ? (newData.users || prev.users).find(u => u.id === currentUserId) || null
                 : null;
             
             // Create a new object containing only the data properties from the server payload

@@ -397,13 +397,12 @@ const BACKUPS_DIR = process.env.BACKUP_PATH || path.join(__dirname, 'backups');
 class PostgresDB {
     constructor() {
         const connectionString = process.env.DATABASE_URL || '';
-        // This logic correctly disables SSL for connections to 'localhost', which is
-        // common for local development and some Docker setups. For all other connections,
-        // including Docker service names and remote databases on Vercel/Supabase, SSL is enabled.
-        const isLocal = connectionString.includes('localhost');
+        const useSsl = process.env.DB_SSL !== 'false';
+        console.log(`Database SSL mode: ${useSsl}`);
+        
         this.pool = new Pool({
             connectionString: connectionString,
-            ssl: isLocal ? false : { rejectUnauthorized: false },
+            ssl: useSsl ? { rejectUnauthorized: false } : false,
         });
     }
 

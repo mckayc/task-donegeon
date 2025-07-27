@@ -132,7 +132,7 @@ const PackDetailView: React.FC<{ pack: LibraryPack; onBack: () => void; }> = ({ 
                     idMaps.questGroups.set(packGroup.id, existingGroup.id);
                 } else {
                     const { id, ...rest } = packGroup;
-                    const newGroup = await addQuestGroup(rest); // This function returns the new group with its generated ID
+                    const newGroup = await addQuestGroup(rest);
                     if (newGroup) {
                         idMaps.questGroups.set(packGroup.id, newGroup.id);
                         importedCount++;
@@ -141,61 +141,71 @@ const PackDetailView: React.FC<{ pack: LibraryPack; onBack: () => void; }> = ({ 
             }
         }
         
-        // 2. Process simple assets
-        livePackAssets.rewardTypes?.forEach(asset => {
-            if (selectedIds.includes(asset.id)) {
-                const { id, ...rest } = asset;
-                addRewardType(rest);
-                importedCount++;
+        // 2. Process assets sequentially to avoid server race conditions
+        if (livePackAssets.rewardTypes) {
+            for (const asset of livePackAssets.rewardTypes) {
+                if (selectedIds.includes(asset.id)) {
+                    const { id, ...rest } = asset;
+                    await addRewardType(rest);
+                    importedCount++;
+                }
             }
-        });
+        }
 
-        livePackAssets.markets?.forEach(asset => {
-            if (selectedIds.includes(asset.id)) {
-                const { id, ...rest } = asset;
-                addMarket(rest);
-                importedCount++;
+        if (livePackAssets.markets) {
+            for (const asset of livePackAssets.markets) {
+                if (selectedIds.includes(asset.id)) {
+                    const { id, ...rest } = asset;
+                    await addMarket(rest);
+                    importedCount++;
+                }
             }
-        });
+        }
         
-        livePackAssets.trophies?.forEach(t => { 
-            if (selectedIds.includes(t.id)) { 
-                const { id, ...rest } = t; 
-                const newTrophy = { ...rest, requirements: (t.requirements || []).map(req => ({ ...req })) };
-                addTrophy(newTrophy as Omit<Trophy, 'id'>); 
-                importedCount++; 
+        if (livePackAssets.trophies) {
+            for (const t of livePackAssets.trophies) { 
+                if (selectedIds.includes(t.id)) { 
+                    const { id, ...rest } = t; 
+                    const newTrophy = { ...rest, requirements: (t.requirements || []).map(req => ({ ...req })) };
+                    await addTrophy(newTrophy as Omit<Trophy, 'id'>); 
+                    importedCount++; 
+                }
             }
-        });
+        }
         
-        livePackAssets.quests?.forEach(q => {
-            if (selectedIds.includes(q.id)) {
-                const { id, assignedUserIds, ...rest } = q;
-                const newQuest = { 
-                    ...rest,
-                    assignedUserIds: userIdsForImport,
-                    guildId: appMode.mode === 'guild' ? appMode.guildId : undefined,
-                    groupId: q.groupId ? idMaps.questGroups.get(q.groupId) : undefined,
-                    rewards: q.rewards.map(r => ({ ...r, rewardTypeId: idMaps.rewardTypes.get(r.rewardTypeId) || r.rewardTypeId })),
-                    lateSetbacks: q.lateSetbacks.map(r => ({ ...r, rewardTypeId: idMaps.rewardTypes.get(r.rewardTypeId) || r.rewardTypeId })),
-                    incompleteSetbacks: q.incompleteSetbacks.map(r => ({ ...r, rewardTypeId: idMaps.rewardTypes.get(r.rewardTypeId) || r.rewardTypeId })),
-                };
-                addQuest(newQuest as Omit<Quest, 'id' | 'claimedByUserIds' | 'dismissals'>); 
-                importedCount++;
+        if (livePackAssets.quests) {
+            for (const q of livePackAssets.quests) {
+                if (selectedIds.includes(q.id)) {
+                    const { id, assignedUserIds, ...rest } = q;
+                    const newQuest = { 
+                        ...rest,
+                        assignedUserIds: userIdsForImport,
+                        guildId: appMode.mode === 'guild' ? appMode.guildId : undefined,
+                        groupId: q.groupId ? idMaps.questGroups.get(q.groupId) : undefined,
+                        rewards: q.rewards.map(r => ({ ...r, rewardTypeId: idMaps.rewardTypes.get(r.rewardTypeId) || r.rewardTypeId })),
+                        lateSetbacks: q.lateSetbacks.map(r => ({ ...r, rewardTypeId: idMaps.rewardTypes.get(r.rewardTypeId) || r.rewardTypeId })),
+                        incompleteSetbacks: q.incompleteSetbacks.map(r => ({ ...r, rewardTypeId: idMaps.rewardTypes.get(r.rewardTypeId) || r.rewardTypeId })),
+                    };
+                    await addQuest(newQuest as Omit<Quest, 'id' | 'claimedByUserIds' | 'dismissals'>); 
+                    importedCount++;
+                }
             }
-        });
+        }
         
-        livePackAssets.gameAssets?.forEach(ga => {
-            if (selectedIds.includes(ga.id)) {
-                const { id, ...rest } = ga;
-                const newAsset = { 
-                    ...rest, 
-                    marketIds: (ga.marketIds || []).map(mid => idMaps.markets.get(mid) || mid), 
-                    costGroups: (ga.costGroups || []).map(group => group.map(c => ({...c, rewardTypeId: idMaps.rewardTypes.get(c.rewardTypeId) || c.rewardTypeId })))
-                };
-                addGameAsset(newAsset as Omit<GameAsset, 'id' | 'creatorId' | 'createdAt'>); 
-                importedCount++;
+        if (livePackAssets.gameAssets) {
+            for (const ga of livePackAssets.gameAssets) {
+                if (selectedIds.includes(ga.id)) {
+                    const { id, ...rest } = ga;
+                    const newAsset = { 
+                        ...rest, 
+                        marketIds: (ga.marketIds || []).map(mid => idMaps.markets.get(mid) || mid), 
+                        costGroups: (ga.costGroups || []).map(group => group.map(c => ({...c, rewardTypeId: idMaps.rewardTypes.get(c.rewardTypeId) || c.rewardTypeId })))
+                    };
+                    await addGameAsset(newAsset as Omit<GameAsset, 'id' | 'creatorId' | 'createdAt'>); 
+                    importedCount++;
+                }
             }
-        });
+        }
 
         addNotification({type: 'success', message: `Successfully installed ${importedCount} assets from ${pack.title}!`});
         onBack();

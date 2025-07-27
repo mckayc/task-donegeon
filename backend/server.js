@@ -392,13 +392,6 @@ const PORT = process.env.PORT || 3001;
 const UPLOADS_DIR = process.env.UPLOADS_DIR || path.join(__dirname, '../uploads');
 const BACKUPS_DIR = process.env.BACKUP_PATH || path.join(__dirname, 'backups');
 
-const app = express();
-const server = http.createServer(app);
-const wss = new WebSocket.Server({ server });
-
-app.use(cors());
-app.use(express.json({ limit: '10mb' }));
-app.use('/uploads', express.static(UPLOADS_DIR));
 
 // --- DB CLASS DEFINITION ---
 class PostgresDB {
@@ -407,20 +400,23 @@ class PostgresDB {
             connectionString: process.env.DATABASE_URL,
             ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
         });
-        this.initializeSchema();
     }
 
-    async initializeSchema() {
+    async init() {
         try {
-            await this.pool.query(`
+            const client = await this.pool.connect();
+            console.log("Database connection successful.");
+            await client.query(`
                 CREATE TABLE IF NOT EXISTS app_data (
                     key TEXT PRIMARY KEY,
                     value JSONB NOT NULL
                 );
             `);
+            client.release();
             console.log("Database schema verified.");
         } catch (e) {
-            console.error("Failed to initialize database schema:", e);
+            console.error("FATAL: Could not initialize database connection.", e);
+            throw e;
         }
     }
 
@@ -438,7 +434,6 @@ class PostgresDB {
         const query = 'INSERT INTO app_data (key, value) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET value = $2';
         try {
             await this.pool.query(query, ['full_app_state', JSON.stringify(data)]);
-            broadcastDataUpdate(data);
         } catch (e) {
             console.error("Error saving data to Postgres:", e);
             throw e;
@@ -455,273 +450,195 @@ class PostgresDB {
     }
 }
 
-// --- DB INITIALIZATION ---
-let db;
-if (process.env.DATABASE_URL) {
-    db = new PostgresDB();
-} else {
-    console.error("FATAL: DATABASE_URL environment variable is not set. Please configure it in your .env file or hosting environment.");
-    process.exit(1);
-}
-
-// WebSocket broadcast function
-function broadcast(data) {
-    wss.clients.forEach(client => {
-        if (client.readyState === WebSocket.OPEN) {
-            client.send(JSON.stringify(data));
-        }
-    });
-}
-
-// Global broadcast helpers
-const createBroadcaster = (type) => (data) => broadcast({ type, payload: data });
-
-const broadcasters = {
-    users: createBroadcaster('USERS_UPDATED'),
-    quests: createBroadcaster('QUESTS_UPDATED'),
-    questGroups: createBroadcaster('QUESTGROUPS_UPDATED'),
-    markets: createBroadcaster('MARKETS_UPDATED'),
-    rewardTypes: createBroadcaster('REWARDTYPES_UPDATED'),
-    questCompletions: createBroadcaster('QUESTCOMPLETIONS_UPDATED'),
-    purchaseRequests: createBroadcaster('PURCHASEREQUESTS_UPDATED'),
-    guilds: createBroadcaster('GUILDS_UPDATED'),
-    ranks: createBroadcaster('RANKS_UPDATED'),
-    trophies: createBroadcaster('TROPHIES_UPDATED'),
-    userTrophies: createBroadcaster('USERTROPHIES_UPDATED'),
-    adminAdjustments: createBroadcaster('ADMINADJUSTMENTS_UPDATED'),
-    gameAssets: createBroadcaster('GAMEASSETS_UPDATED'),
-    systemLogs: createBroadcaster('SYSTEMLOGS_UPDATED'),
-    settings: createBroadcaster('SETTINGS_UPDATED'),
-    themes: createBroadcaster('THEMES_UPDATED'),
-    loginHistory: createBroadcaster('LOGINHISTORY_UPDATED'),
-    chatMessages: (newMessage) => broadcast({ type: 'NEW_CHAT_MESSAGE', payload: newMessage }),
-    systemNotifications: createBroadcaster('SYSTEMNOTIFICATIONS_UPDATED'),
-    scheduledEvents: createBroadcaster('SCHEDULEDEVENTS_UPDATED'),
-};
-
-function broadcastDataUpdate(data) {
-    if (!data) return;
-    Object.keys(broadcasters).forEach(key => {
-        if (data[key] && key !== 'chatMessages') {
-            broadcasters[key](data[key]);
-        }
-    });
-}
-
-wss.on('connection', ws => {
-    console.log('Client connected');
-    ws.on('close', () => console.log('Client disconnected'));
-});
-
-
-// API ROUTES
-app.get('/api/data', async (req, res) => {
-    try {
-        const data = await db.getData();
-        if (!data) {
-            res.json({ users: [], settings: { contentVersion: 0 } });
-            return;
-        }
-        res.json(data);
-    } catch (e) {
-        console.error("Error fetching data:", e);
-        res.status(500).json({ error: 'Failed to fetch application data.' });
-    }
-});
-
-app.post('/api/data', async (req, res) => {
-    try {
-        const data = req.body;
-        await db.saveData(data);
-        res.status(200).json({ message: 'Data saved successfully' });
-    } catch (e) {
-        res.status(500).json({ error: 'Failed to save data' });
-    }
-});
-
-
-// Pre-run check
-app.get('/api/pre-run-check', async (req, res) => {
-    try {
-        const data = await db.getData();
-        const dataExists = data && data.users && data.users.length > 0;
-        if (dataExists) {
-            res.json({ dataExists: true, version: data.settings?.contentVersion || 0, appName: data.settings?.terminology?.appName || 'Task Donegeon' });
-        } else {
-            res.json({ dataExists: false });
-        }
-    } catch (e) {
-        // This likely means the table doesn't exist, which is equivalent to no data.
-        console.log("Pre-run check failed, assuming no data:", e.message);
-        res.json({ dataExists: false });
-    }
-});
-
-
-// First Run Setup
-app.post('/api/first-run', async (req, res) => {
-    try {
-        const { adminUserData, setupChoice, blueprint } = req.body;
-
-        await db.clearAllData();
-
-        const newAdmin = {
-            ...adminUserData,
-            id: `user-${Date.now()}`,
-            personalPurse: {},
-            personalExperience: {},
-            guildBalances: {},
-            avatar: {},
-            ownedAssetIds: [],
-            ownedThemes: ['emerald', 'rose', 'sky'],
-            hasBeenOnboarded: true,
-        };
-
-        let data = {
-            users: [],
-            quests: [],
-            questGroups: [],
-            markets: [],
-            rewardTypes: [],
-            questCompletions: [],
-            purchaseRequests: [],
-            guilds: [],
-            ranks: [],
-            trophies: [],
-            userTrophies: [],
-            adminAdjustments: [],
-            gameAssets: [],
-            systemLogs: [],
-            settings: INITIAL_SETTINGS,
-            themes: INITIAL_THEMES,
-            loginHistory: [],
-            chatMessages: [],
-            systemNotifications: [],
-            scheduledEvents: []
-        };
-        
-        if (setupChoice === 'guided') {
-            const otherMockUsers = createMockUsers().filter(u => u.role !== Role.DonegeonMaster);
-            data.users = [newAdmin, ...otherMockUsers];
-        } else {
-            data.users = [newAdmin];
-        }
-
-        data.rewardTypes = INITIAL_REWARD_TYPES;
-        data.ranks = INITIAL_RANKS;
-        data.guilds = createInitialGuilds(data.users);
-        data.markets.push(...createSampleMarkets().filter(m => m.id === 'market-bank'));
-
-        if (setupChoice === 'guided') {
-            data.trophies = INITIAL_TROPHIES;
-            data.markets.push(...createSampleMarkets().filter(m => m.id !== 'market-bank'));
-            data.quests = createSampleQuests(data.users);
-            data.gameAssets = createSampleGameAssets();
-            data.questGroups = INITIAL_QUEST_GROUPS;
-        } else if (setupChoice === 'import' && blueprint && blueprint.assets) {
-            const { assets } = blueprint;
-            data.quests.push(...(assets.quests || []));
-            data.questGroups.push(...(assets.questGroups || []));
-            data.markets.push(...(assets.markets || []));
-            data.gameAssets.push(...(assets.gameAssets || []));
-
-            const existingRewardIds = new Set(data.rewardTypes.map(rt => rt.id));
-            data.rewardTypes.push(...(assets.rewardTypes || []).filter(rt => !existingRewardIds.has(rt.id)));
-            
-            const existingRankIds = new Set(data.ranks.map(r => r.id));
-            data.ranks.push(...(assets.ranks || []).filter(r => !existingRankIds.has(r.id)));
-
-            const existingTrophyIds = new Set(data.trophies.map(t => t.id));
-            data.trophies.push(...(assets.trophies || []).filter(t => !existingTrophyIds.has(t.id)));
-        }
-
-        await db.saveData(data);
-        res.status(201).json({ message: 'Setup complete!', user: newAdmin });
-
-    } catch (e) {
-        console.error("Error during first run setup:", e);
-        res.status(500).json({ error: 'Failed to initialize application data. The server may not be connected to the database correctly.' });
-    }
-});
-
-
-// Generic CRUD factory
-const createCrudEndpoints = (app, db, entityName, broadcaster) => {
-    const pluralEntity = entityName.endsWith('s') ? entityName : `${entityName}s`;
-
-    app.get(`/api/${pluralEntity}`, async (req, res) => {
-        const data = await db.getData();
-        res.json(data[pluralEntity] || []);
-    });
-
-    app.post(`/api/${pluralEntity}`, async (req, res) => {
-        const data = await db.getData();
-        const newItem = { ...req.body, id: `${entityName}-${Date.now()}` };
-        data[pluralEntity] = [...(data[pluralEntity] || []), newItem];
-        await db.saveData(data);
-        broadcaster(data[pluralEntity]);
-        res.status(201).json({ [`new${entityName.charAt(0).toUpperCase() + entityName.slice(1)}`]: newItem });
-    });
-
-    app.put(`/api/${pluralEntity}/:id`, async (req, res) => {
-        const { id } = req.params;
-        const data = await db.getData();
-        data[pluralEntity] = (data[pluralEntity] || []).map(item => item.id === id ? { ...item, ...req.body } : item);
-        await db.saveData(data);
-        broadcaster(data[pluralEntity]);
-        res.json({ message: `${entityName} updated` });
-    });
-
-    app.delete(`/api/${pluralEntity}/:id`, async (req, res) => {
-        const { id } = req.params;
-        const data = await db.getData();
-        data[pluralEntity] = (data[pluralEntity] || []).filter(item => item.id !== id);
-        
-        if (entityName === 'questGroup') {
-            data.quests = data.quests.map(q => q.groupId === id ? { ...q, groupId: undefined } : q);
-            broadcasters.quests(data.quests);
-        }
-
-        await db.saveData(data);
-        broadcaster(data[pluralEntity]);
-        res.json({ message: `${entityName} deleted` });
-    });
-};
-
-createCrudEndpoints(app, db, 'user', broadcasters.users);
-createCrudEndpoints(app, db, 'quest', broadcasters.quests);
-createCrudEndpoints(app, db, 'questGroup', broadcasters.questGroups);
-createCrudEndpoints(app, db, 'market', broadcasters.markets);
-createCrudEndpoints(app, db, 'rewardType', broadcasters.rewardTypes);
-createCrudEndpoints(app, db, 'guild', broadcasters.guilds);
-createCrudEndpoints(app, db, 'trophy', broadcasters.trophies);
-createCrudEndpoints(app, db, 'gameAsset', broadcasters.gameAssets);
-createCrudEndpoints(app, db, 'theme', broadcasters.themes);
-createCrudEndpoints(app, db, 'systemNotification', broadcasters.systemNotifications);
-createCrudEndpoints(app, db, 'scheduledEvent', broadcasters.scheduledEvents);
-
-// Complex endpoints that aren't simple CRUD
-app.post('/api/quests/:id/actions', async (req, res) => {
-    res.json({ message: 'Action completed.' });
-});
-
-app.post('/api/quests/:id/complete', async (req, res) => {
-    res.json({ message: 'Quest completion processed.' });
-});
-
-app.put('/api/quest-completions/:id', async (req, res) => {
-    res.json({ message: 'Completion status updated.' });
-});
-
-app.put('/api/purchase-requests/:id', async (req, res) => {
-    res.json({ message: 'Purchase request updated.' });
-});
-
-app.post('/api/assets/:id/purchase', async (req, res) => {
-    res.json({ message: 'Purchase processed.' });
-});
 
 const startServer = async () => {
+    // --- DB INITIALIZATION ---
+    if (!process.env.DATABASE_URL) {
+        console.error("FATAL: DATABASE_URL environment variable is not set.");
+        process.exit(1);
+    }
+    const db = new PostgresDB();
+    try {
+        await db.init();
+    } catch (e) {
+        console.error("Exiting due to database connection failure.");
+        process.exit(1);
+    }
+
+    const app = express();
+    const server = http.createServer(app);
+    const wss = new WebSocket.Server({ server });
+
+    app.use(cors());
+    app.use(express.json({ limit: '10mb' }));
+    app.use('/uploads', express.static(UPLOADS_DIR));
+    
+    // WebSocket broadcast function
+    function broadcast(data) {
+        wss.clients.forEach(client => {
+            if (client.readyState === WebSocket.OPEN) {
+                client.send(JSON.stringify(data));
+            }
+        });
+    }
+
+    // Global broadcast helpers
+    const createBroadcaster = (type) => (data) => broadcast({ type, payload: data });
+
+    const broadcasters = {
+        users: createBroadcaster('USERS_UPDATED'),
+        quests: createBroadcaster('QUESTS_UPDATED'),
+        questGroups: createBroadcaster('QUESTGROUPS_UPDATED'),
+        markets: createBroadcaster('MARKETS_UPDATED'),
+        rewardTypes: createBroadcaster('REWARDTYPES_UPDATED'),
+        questCompletions: createBroadcaster('QUESTCOMPLETIONS_UPDATED'),
+        purchaseRequests: createBroadcaster('PURCHASEREQUESTS_UPDATED'),
+        guilds: createBroadcaster('GUILDS_UPDATED'),
+        ranks: createBroadcaster('RANKS_UPDATED'),
+        trophies: createBroadcaster('TROPHIES_UPDATED'),
+        userTrophies: createBroadcaster('USERTROPHIES_UPDATED'),
+        adminAdjustments: createBroadcaster('ADMINADJUSTMENTS_UPDATED'),
+        gameAssets: createBroadcaster('GAMEASSETS_UPDATED'),
+        systemLogs: createBroadcaster('SYSTEMLOGS_UPDATED'),
+        settings: createBroadcaster('SETTINGS_UPDATED'),
+        themes: createBroadcaster('THEMES_UPDATED'),
+        loginHistory: createBroadcaster('LOGINHISTORY_UPDATED'),
+        chatMessages: (newMessage) => broadcast({ type: 'NEW_CHAT_MESSAGE', payload: newMessage }),
+        systemNotifications: createBroadcaster('SYSTEMNOTIFICATIONS_UPDATED'),
+        scheduledEvents: createBroadcaster('SCHEDULEDEVENTS_UPDATED'),
+    };
+
+    function broadcastDataUpdate(data) {
+        if (!data) return;
+        Object.keys(broadcasters).forEach(key => {
+            if (data[key] && key !== 'chatMessages') {
+                broadcasters[key](data[key]);
+            }
+        });
+    }
+
+    const saveDataAndBroadcast = async (data) => {
+        await db.saveData(data);
+        broadcastDataUpdate(data);
+    };
+
+    wss.on('connection', ws => {
+        console.log('Client connected');
+        ws.on('close', () => console.log('Client disconnected'));
+    });
+
+    // API ROUTES
+    app.get('/api/data', async (req, res) => {
+        try {
+            const data = await db.getData();
+            if (!data) {
+                res.json({ users: [], settings: { contentVersion: 0 } });
+                return;
+            }
+            res.json(data);
+        } catch (e) {
+            console.error("Error fetching data:", e);
+            res.status(500).json({ error: 'Failed to fetch application data.' });
+        }
+    });
+
+    app.post('/api/data', async (req, res) => {
+        try {
+            const data = req.body;
+            await saveDataAndBroadcast(data);
+            res.status(200).json({ message: 'Data saved successfully' });
+        } catch (e) {
+            res.status(500).json({ error: 'Failed to save data' });
+        }
+    });
+
+    app.get('/api/pre-run-check', async (req, res) => {
+        try {
+            const data = await db.getData();
+            const dataExists = data && data.users && data.users.length > 0;
+            if (dataExists) {
+                res.json({ dataExists: true, version: data.settings?.contentVersion || 0, appName: data.settings?.terminology?.appName || 'Task Donegeon' });
+            } else {
+                res.json({ dataExists: false });
+            }
+        } catch (e) {
+            console.log("Pre-run check failed, assuming no data:", e.message);
+            res.json({ dataExists: false });
+        }
+    });
+
+    app.post('/api/first-run', async (req, res) => {
+        try {
+            const { adminUserData, setupChoice, blueprint } = req.body;
+            await db.clearAllData();
+            const newAdmin = { ...adminUserData, id: `user-${Date.now()}`, personalPurse: {}, personalExperience: {}, guildBalances: {}, avatar: {}, ownedAssetIds: [], ownedThemes: ['emerald', 'rose', 'sky'], hasBeenOnboarded: true, };
+            let data = { users: [], quests: [], questGroups: [], markets: [], rewardTypes: [], questCompletions: [], purchaseRequests: [], guilds: [], ranks: [], trophies: [], userTrophies: [], adminAdjustments: [], gameAssets: [], systemLogs: [], settings: INITIAL_SETTINGS, themes: INITIAL_THEMES, loginHistory: [], chatMessages: [], systemNotifications: [], scheduledEvents: [] };
+            
+            if (setupChoice === 'guided') {
+                const otherMockUsers = createMockUsers().filter(u => u.role !== Role.DonegeonMaster);
+                data.users = [newAdmin, ...otherMockUsers];
+            } else {
+                data.users = [newAdmin];
+            }
+
+            data.rewardTypes = INITIAL_REWARD_TYPES;
+            data.ranks = INITIAL_RANKS;
+            data.guilds = createInitialGuilds(data.users);
+            data.markets.push(...createSampleMarkets().filter(m => m.id === 'market-bank'));
+
+            if (setupChoice === 'guided') {
+                data.trophies = INITIAL_TROPHIES;
+                data.markets.push(...createSampleMarkets().filter(m => m.id !== 'market-bank'));
+                data.quests = createSampleQuests(data.users);
+                data.gameAssets = createSampleGameAssets();
+                data.questGroups = INITIAL_QUEST_GROUPS;
+            } else if (setupChoice === 'import' && blueprint && blueprint.assets) {
+                const { assets } = blueprint;
+                data.quests.push(...(assets.quests || []));
+                data.questGroups.push(...(assets.questGroups || []));
+                data.markets.push(...(assets.markets || []));
+                data.gameAssets.push(...(assets.gameAssets || []));
+                const existingRewardIds = new Set(data.rewardTypes.map(rt => rt.id));
+                data.rewardTypes.push(...(assets.rewardTypes || []).filter(rt => !existingRewardIds.has(rt.id)));
+                const existingRankIds = new Set(data.ranks.map(r => r.id));
+                data.ranks.push(...(assets.ranks || []).filter(r => !existingRankIds.has(r.id)));
+                const existingTrophyIds = new Set(data.trophies.map(t => t.id));
+                data.trophies.push(...(assets.trophies || []).filter(t => !existingTrophyIds.has(t.id)));
+            }
+            await saveDataAndBroadcast(data);
+            res.status(201).json({ message: 'Setup complete!', user: newAdmin });
+        } catch (e) {
+            console.error("Error during first run setup:", e);
+            res.status(500).json({ error: 'Failed to initialize application data. The server may not be connected to the database correctly.' });
+        }
+    });
+
+    const createCrudEndpoints = (entityName, broadcaster) => {
+        const pluralEntity = entityName.endsWith('s') ? entityName : `${entityName}s`;
+        app.post(`/api/${pluralEntity}`, async (req, res) => { const data = await db.getData(); const newItem = { ...req.body, id: `${entityName}-${Date.now()}` }; data[pluralEntity] = [...(data[pluralEntity] || []), newItem]; await saveDataAndBroadcast(data); res.status(201).json({ [`new${entityName.charAt(0).toUpperCase() + entityName.slice(1)}`]: newItem }); });
+        app.put(`/api/${pluralEntity}/:id`, async (req, res) => { const { id } = req.params; const data = await db.getData(); data[pluralEntity] = (data[pluralEntity] || []).map(item => item.id === id ? { ...item, ...req.body } : item); await saveDataAndBroadcast(data); res.json({ message: `${entityName} updated` }); });
+        app.delete(`/api/${pluralEntity}/:id`, async (req, res) => { const { id } = req.params; const data = await db.getData(); data[pluralEntity] = (data[pluralEntity] || []).filter(item => item.id !== id); if (entityName === 'questGroup') { data.quests = data.quests.map(q => q.groupId === id ? { ...q, groupId: undefined } : q); broadcasters.quests(data.quests); } await saveDataAndBroadcast(data); res.json({ message: `${entityName} deleted` }); });
+    };
+
+    createCrudEndpoints('user', broadcasters.users);
+    createCrudEndpoints('quest', broadcasters.quests);
+    createCrudEndpoints('questGroup', broadcasters.questGroups);
+    createCrudEndpoints('market', broadcasters.markets);
+    createCrudEndpoints('rewardType', broadcasters.rewardTypes);
+    createCrudEndpoints('guild', broadcasters.guilds);
+    createCrudEndpoints('trophy', broadcasters.trophies);
+    createCrudEndpoints('gameAsset', broadcasters.gameAssets);
+    createCrudEndpoints('theme', broadcasters.themes);
+    createCrudEndpoints('systemNotification', broadcasters.systemNotifications);
+    createCrudEndpoints('scheduledEvent', broadcasters.scheduledEvents);
+
+    // Placeholder complex endpoints
+    app.post('/api/quests/:id/actions', async (req, res) => res.json({ message: 'Action completed.' }));
+    app.post('/api/quests/:id/complete', async (req, res) => res.json({ message: 'Quest completion processed.' }));
+    app.put('/api/quest-completions/:id', async (req, res) => res.json({ message: 'Completion status updated.' }));
+    app.put('/api/purchase-requests/:id', async (req, res) => res.json({ message: 'Purchase request updated.' }));
+    app.post('/api/assets/:id/purchase', async (req, res) => res.json({ message: 'Purchase processed.' }));
+
     try {
         await fs.mkdir(UPLOADS_DIR, { recursive: true });
         await fs.mkdir(BACKUPS_DIR, { recursive: true });
@@ -731,11 +648,9 @@ const startServer = async () => {
     }
     
     app.use(express.static(path.join(__dirname, '../dist')));
-    
     app.get('*', (req, res) => {
         res.sendFile(path.join(__dirname, '../dist/index.html'));
     });
-    
     
     server.listen(PORT, () => {
         console.log(`Server listening on port ${PORT}`);

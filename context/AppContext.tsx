@@ -219,28 +219,36 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     
     // A function to optimistically update state, then persist the entire state to the backend.
     // Use this for operations that don't have a dedicated backend endpoint.
-    const updateAndSave = useCallback(async (updater: (prevState: AppState) => Partial<IAppData>) => {
-        let optimisticState: AppState;
+    const updateAndSave = useCallback((updater: (prevState: AppState) => Partial<IAppData>) => {
         setState(prev => {
             const changes = updater(prev);
-            optimisticState = { ...prev, ...changes };
+            const optimisticState = { ...prev, ...changes };
+    
+            // Fire-and-forget the async save operation
+            (async () => {
+                if (!isMounted.current) return;
+                try {
+                    setState(s => ({...s, syncStatus: 'syncing'}));
+                    await apiRequest('/api/data', {
+                        method: 'POST',
+                        body: JSON.stringify(optimisticState),
+                    });
+                    if (isMounted.current) {
+                        setState(s => ({ ...s, syncStatus: 'success' }));
+                    }
+                } catch (error) {
+                    if (isMounted.current) {
+                        if (error instanceof Error) {
+                            setState(s => ({...s, syncStatus: 'error', syncError: error.message }));
+                        }
+                    }
+                    console.error("Failed to save state, optimistic update may be out of sync.", error);
+                    // TODO: Implement state rollback on failure. Could restore `prev`.
+                }
+            })();
+    
             return optimisticState;
         });
-
-        try {
-            setState(s => ({...s, syncStatus: 'syncing'}));
-            // We pass the new state to the server
-            await apiRequest('/api/data', {
-                method: 'POST',
-                body: JSON.stringify(optimisticState),
-            });
-            setState(s => ({...s, syncStatus: 'success'}));
-        } catch (error) {
-            if (error instanceof Error) {
-              setState(s => ({...s, syncStatus: 'error', syncError: error.message }));
-            }
-            // TODO: Implement state rollback on failure
-        }
     }, [apiRequest]);
 
 
@@ -347,7 +355,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         // Auth
         addUser: async (userData: Omit<User, 'id' | 'personalPurse' | 'personalExperience' | 'guildBalances' | 'avatar' | 'ownedAssetIds' | 'ownedThemes' | 'hasBeenOnboarded'>) => {
             const newUser = { ...userData, id: `user-${Date.now()}`, personalPurse: {}, personalExperience: {}, guildBalances: {}, avatar: {}, ownedAssetIds: [], ownedThemes: ['emerald', 'rose', 'sky'], hasBeenOnboarded: false };
-            await updateAndSave(s => ({ users: [...s.users, newUser] }));
+            updateAndSave(s => ({ users: [...s.users, newUser] }));
             return newUser;
         },
         updateUser: (userId: string, updatedData: Partial<User>) => updateAndSave(s => ({ users: s.users.map(u => u.id === userId ? { ...u, ...updatedData } : u) })),
@@ -430,7 +438,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         deleteTrophies: (trophyIds: string[]) => updateAndSave(s => ({ trophies: s.trophies.filter(t => !trophyIds.includes(t.id)) })),
         awardTrophy: (userId: string, trophyId: string, guildId?: string) => updateAndSave(s => ({ userTrophies: [...s.userTrophies, { id: `ut-${Date.now()}`, userId, trophyId, awardedAt: new Date().toISOString(), guildId }] })),
         applyManualAdjustment: async (adjustment: Omit<AdminAdjustment, 'id' | 'adjustedAt'>) => {
-            await updateAndSave(s => ({ adminAdjustments: [...s.adminAdjustments, { ...adjustment, id: `adj-${Date.now()}`, adjustedAt: new Date().toISOString() }] }));
+            updateAndSave(s => ({ adminAdjustments: [...s.adminAdjustments, { ...adjustment, id: `adj-${Date.now()}`, adjustedAt: new Date().toISOString() }] }));
             return true;
         },
         addGameAsset: (asset: Omit<GameAsset, 'id' | 'creatorId' | 'createdAt' | 'purchaseCount'>) => apiRequest('/api/gameAssets', { method: 'POST', body: JSON.stringify(asset) }),

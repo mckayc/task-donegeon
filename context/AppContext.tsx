@@ -167,7 +167,13 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [acknowledgedOldData, setAcknowledgedOldData] = useState(false);
   const inactivityTimer = useRef<number | null>(null);
   
-  const isFirstRun = isDataLoaded && settings.contentVersion < 1 && !acknowledgedOldData;
+  const isFirstRun = useMemo(() => {
+    if (!isDataLoaded || acknowledgedOldData) {
+      return false;
+    }
+    // A first run is true if there are no users OR if legacy data is detected.
+    return users.length === 0 || settings.contentVersion < 1;
+  }, [isDataLoaded, acknowledgedOldData, users.length, settings.contentVersion]);
   
   const addNotification = useCallback((notification: Omit<Notification, 'id'>) => {
     const uniqueId = `notif-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;

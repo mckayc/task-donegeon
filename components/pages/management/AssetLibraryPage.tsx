@@ -3,7 +3,7 @@ import Button from '../../ui/Button';
 import Card from '../../ui/Card';
 import { libraryPacks } from '../../../data/assetLibrary';
 import { LibraryPack, BlueprintAssets, TrophyRequirementType, QuestGroup, Quest, GameAsset, Market, Trophy, RewardTypeDefinition, QuestType, User } from '../../../types';
-import { useAppState, useAppDispatch } from '../../../context/AppContext';
+import { useAppState, useAppDispatch } from '../../context/AppContext';
 import Input from '../../ui/Input';
 import CreateQuestDialog from '../../quests/CreateQuestDialog';
 import EditGameAssetDialog from '../../admin/EditGameAssetDialog';
@@ -122,83 +122,116 @@ const PackDetailView: React.FC<{ pack: LibraryPack; onBack: () => void; }> = ({ 
             markets: new Map<string, string>(),
             trophies: new Map<string, string>(),
             questGroups: new Map<string, string>(),
+            ranks: new Map<string, string>(),
+            quests: new Map<string, string>(),
         };
 
-        // 1. Process Quest Groups
+        // Pass 1: Base data types with few dependencies
         if (livePackAssets.questGroups) {
             for (const packGroup of livePackAssets.questGroups) {
-                const existingGroup = allQuestGroupsFromState.find((g: QuestGroup) => g.name.toLowerCase() === packGroup.name.toLowerCase());
-                if (existingGroup) {
-                    idMaps.questGroups.set(packGroup.id, existingGroup.id);
-                } else {
-                    const { id, ...rest } = packGroup;
-                    const newGroup = await addQuestGroup(rest);
-                    if (newGroup) {
-                        idMaps.questGroups.set(packGroup.id, newGroup.id);
-                        importedCount++;
+                try {
+                    const existingGroup = allQuestGroupsFromState.find((g: QuestGroup) => g.name.toLowerCase() === packGroup.name.toLowerCase());
+                    if (existingGroup) {
+                        idMaps.questGroups.set(packGroup.id, existingGroup.id);
+                    } else {
+                        const { id, ...rest } = packGroup;
+                        const newGroup = await addQuestGroup(rest);
+                        if (newGroup) {
+                            idMaps.questGroups.set(packGroup.id, newGroup.id);
+                            importedCount++;
+                        }
+                    }
+                } catch (e) {
+                    addNotification({ type: 'error', message: `Failed to import Quest Group "${packGroup.name}"` });
+                }
+            }
+        }
+        
+        if (livePackAssets.rewardTypes) {
+            for (const asset of livePackAssets.rewardTypes) {
+                if (selectedIds.includes(asset.id)) {
+                    try {
+                        const { id, ...rest } = asset;
+                        const newAsset = await addRewardType(rest);
+                        if (newAsset) {
+                            idMaps.rewardTypes.set(id, newAsset.id);
+                            importedCount++;
+                        }
+                    } catch (e) {
+                        addNotification({ type: 'error', message: `Failed to import Reward Type "${asset.name}"` });
+                    }
+                }
+            }
+        }
+
+        // Pass 2: Quests (depends on Groups and Rewards)
+        if (livePackAssets.quests) {
+            for (const q of livePackAssets.quests) {
+                if (selectedIds.includes(q.id)) {
+                    try {
+                        const { id, assignedUserIds, ...rest } = q;
+                        const newQuestPayload = {
+                            ...rest,
+                            assignedUserIds: userIdsForImport,
+                            guildId: appMode.mode === 'guild' ? appMode.guildId : undefined,
+                            groupId: q.groupId ? idMaps.questGroups.get(q.groupId) : undefined,
+                            rewards: (q.rewards || []).map(r => ({ ...r, rewardTypeId: idMaps.rewardTypes.get(r.rewardTypeId) || r.rewardTypeId })),
+                            lateSetbacks: (q.lateSetbacks || []).map(r => ({ ...r, rewardTypeId: idMaps.rewardTypes.get(r.rewardTypeId) || r.rewardTypeId })),
+                            incompleteSetbacks: (q.incompleteSetbacks || []).map(r => ({ ...r, rewardTypeId: idMaps.rewardTypes.get(r.rewardTypeId) || r.rewardTypeId })),
+                        };
+                        const newQuest = await addQuest(newQuestPayload as Omit<Quest, 'id' | 'claimedByUserIds' | 'dismissals'>);
+                        if (newQuest) {
+                            idMaps.quests.set(id, newQuest.id);
+                            importedCount++;
+                        }
+                    } catch (e) {
+                        addNotification({ type: 'error', message: `Failed to import Quest "${q.title}"` });
                     }
                 }
             }
         }
         
-        // 2. Process other dependencies sequentially to avoid race conditions and get new IDs
-        if (livePackAssets.rewardTypes) {
-            for (const asset of livePackAssets.rewardTypes) {
-                if (selectedIds.includes(asset.id)) {
-                    const { id, ...rest } = asset;
-                    const newAsset = await addRewardType(rest);
-                    if (newAsset) {
-                        idMaps.rewardTypes.set(id, newAsset.id);
-                        importedCount++;
-                    }
-                }
-            }
-        }
-
+        // Pass 3: Assets that depend on previous assets
         if (livePackAssets.markets) {
             for (const asset of livePackAssets.markets) {
                 if (selectedIds.includes(asset.id)) {
-                    const { id, ...rest } = asset;
-                    const newAsset = await addMarket(rest);
-                    if (newAsset) {
-                        idMaps.markets.set(id, newAsset.id);
-                        importedCount++;
+                    try {
+                        const { id, ...rest } = asset;
+                        const newMarketPayload = { ...rest };
+                        if (newMarketPayload.status.type === 'conditional') {
+                            newMarketPayload.status.conditions = newMarketPayload.status.conditions.map(cond => {
+                                if (cond.type === 'QUEST_COMPLETED') {
+                                    return { ...cond, questId: idMaps.quests.get(cond.questId) || cond.questId };
+                                }
+                                return cond;
+                            });
+                        }
+                        const newAsset = await addMarket(newMarketPayload);
+                        if (newAsset) {
+                            idMaps.markets.set(id, newAsset.id);
+                            importedCount++;
+                        }
+                    } catch (e) {
+                         addNotification({ type: 'error', message: `Failed to import Market "${asset.title}"` });
                     }
                 }
             }
         }
         
         if (livePackAssets.trophies) {
-            for (const t of livePackAssets.trophies) { 
-                if (selectedIds.includes(t.id)) { 
-                    const { id, ...rest } = t; 
-                    const newTrophy = { ...rest, requirements: (t.requirements || []).map(req => ({ ...req })) };
-                    // Note: trophy requirements might reference quest IDs, but we can't map them yet. This is a limitation for now.
-                    const newAsset = await addTrophy(newTrophy as Omit<Trophy, 'id'>); 
-                    if (newAsset) {
-                        idMaps.trophies.set(id, newAsset.id);
-                        importedCount++;
+            for (const t of livePackAssets.trophies) {
+                if (selectedIds.includes(t.id)) {
+                    try {
+                        const { id, ...rest } = t;
+                        const newTrophyPayload = { ...rest, requirements: (t.requirements || []).map(req => ({ ...req })) };
+                        const newAsset = await addTrophy(newTrophyPayload as Omit<Trophy, 'id'>);
+                        if (newAsset) {
+                            idMaps.trophies.set(id, newAsset.id);
+                            importedCount++;
+                        }
+                    } catch (e) {
+                         addNotification({ type: 'error', message: `Failed to import Trophy "${t.name}"` });
                     }
-                }
-            }
-        }
-        
-        // 3. Process primary assets using the new ID maps
-        if (livePackAssets.quests) {
-            for (const q of livePackAssets.quests) {
-                if (selectedIds.includes(q.id)) {
-                    const { id, assignedUserIds, ...rest } = q;
-                    const newQuest = { 
-                        ...rest,
-                        assignedUserIds: userIdsForImport,
-                        guildId: appMode.mode === 'guild' ? appMode.guildId : undefined,
-                        groupId: q.groupId ? idMaps.questGroups.get(q.groupId) : undefined,
-                        rewards: (q.rewards || []).map(r => ({ ...r, rewardTypeId: idMaps.rewardTypes.get(r.rewardTypeId) || r.rewardTypeId })),
-                        lateSetbacks: (q.lateSetbacks || []).map(r => ({ ...r, rewardTypeId: idMaps.rewardTypes.get(r.rewardTypeId) || r.rewardTypeId })),
-                        incompleteSetbacks: (q.incompleteSetbacks || []).map(r => ({ ...r, rewardTypeId: idMaps.rewardTypes.get(r.rewardTypeId) || r.rewardTypeId })),
-                    };
-                    await addQuest(newQuest as Omit<Quest, 'id' | 'claimedByUserIds' | 'dismissals'>); 
-                    importedCount++;
                 }
             }
         }
@@ -206,19 +239,23 @@ const PackDetailView: React.FC<{ pack: LibraryPack; onBack: () => void; }> = ({ 
         if (livePackAssets.gameAssets) {
             for (const ga of livePackAssets.gameAssets) {
                 if (selectedIds.includes(ga.id)) {
-                    const { id, ...rest } = ga;
-                    const newAsset = { 
-                        ...rest, 
-                        marketIds: (ga.marketIds || []).map(mid => idMaps.markets.get(mid) || mid), 
-                        costGroups: (ga.costGroups || []).map(group => group.map(c => ({...c, rewardTypeId: idMaps.rewardTypes.get(c.rewardTypeId) || c.rewardTypeId })))
-                    };
-                    await addGameAsset(newAsset as Omit<GameAsset, 'id' | 'creatorId' | 'createdAt' | 'purchaseCount'>); 
-                    importedCount++;
+                    try {
+                        const { id, ...rest } = ga;
+                        const newAssetPayload = {
+                            ...rest,
+                            marketIds: (ga.marketIds || []).map(mid => idMaps.markets.get(mid) || mid),
+                            costGroups: (ga.costGroups || []).map(group => group.map(c => ({...c, rewardTypeId: idMaps.rewardTypes.get(c.rewardTypeId) || c.rewardTypeId })))
+                        };
+                        await addGameAsset(newAssetPayload as Omit<GameAsset, 'id' | 'creatorId' | 'createdAt' | 'purchaseCount'>);
+                        importedCount++;
+                    } catch (e) {
+                         addNotification({ type: 'error', message: `Failed to import Item "${ga.name}"` });
+                    }
                 }
             }
         }
 
-        addNotification({type: 'success', message: `Successfully installed ${importedCount} assets from ${pack.title}!`});
+        addNotification({type: 'success', message: `Finished installing assets from ${pack.title}. Imported ${importedCount} items.`});
         onBack();
     };
 

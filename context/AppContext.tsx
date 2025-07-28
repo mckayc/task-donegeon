@@ -263,7 +263,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     }, [apiRequest]);
 
 
-    const fullUpdate = useCallback((newData: IAppData) => {
+    const fullUpdate = useCallback((newData: Partial<IAppData>) => {
         if (!isMounted.current) return;
         setState(prev => {
             const currentUserId = prev.currentUser?.id;
@@ -271,34 +271,33 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
                 ? (newData.users || prev.users).find(u => u.id === currentUserId) || null
                 : null;
             
-            // Create a new object containing only the data properties from the server payload
-            const dataState: IAppData = {
-                users: newData.users,
-                quests: newData.quests,
-                questGroups: newData.questGroups,
-                markets: newData.markets,
-                rewardTypes: newData.rewardTypes,
-                questCompletions: newData.questCompletions,
-                purchaseRequests: newData.purchaseRequests,
-                guilds: newData.guilds,
-                ranks: newData.ranks,
-                trophies: newData.trophies,
-                userTrophies: newData.userTrophies,
-                adminAdjustments: newData.adminAdjustments,
-                gameAssets: newData.gameAssets,
-                systemLogs: newData.systemLogs,
-                settings: newData.settings,
-                themes: newData.themes,
-                loginHistory: newData.loginHistory,
-                chatMessages: newData.chatMessages,
-                systemNotifications: newData.systemNotifications,
-                scheduledEvents: newData.scheduledEvents,
+            const dataState = {
+                users: newData.users ?? prev.users,
+                quests: newData.quests ?? prev.quests,
+                questGroups: newData.questGroups ?? prev.questGroups,
+                markets: newData.markets ?? prev.markets,
+                rewardTypes: newData.rewardTypes ?? prev.rewardTypes,
+                questCompletions: newData.questCompletions ?? prev.questCompletions,
+                purchaseRequests: newData.purchaseRequests ?? prev.purchaseRequests,
+                guilds: newData.guilds ?? prev.guilds,
+                ranks: newData.ranks ?? prev.ranks,
+                trophies: newData.trophies ?? prev.trophies,
+                userTrophies: newData.userTrophies ?? prev.userTrophies,
+                adminAdjustments: newData.adminAdjustments ?? prev.adminAdjustments,
+                gameAssets: newData.gameAssets ?? prev.gameAssets,
+                systemLogs: newData.systemLogs ?? prev.systemLogs,
+                settings: newData.settings ?? prev.settings,
+                themes: newData.themes ?? prev.themes,
+                loginHistory: newData.loginHistory ?? prev.loginHistory,
+                chatMessages: newData.chatMessages ?? prev.chatMessages,
+                systemNotifications: newData.systemNotifications ?? prev.systemNotifications,
+                scheduledEvents: newData.scheduledEvents ?? prev.scheduledEvents,
             };
 
             return {
-                ...prev, // Keep all old state (UI and data)
-                ...dataState, // Overwrite only the data part with fresh data
-                currentUser: updatedCurrentUser, // Use the fresh user
+                ...prev,
+                ...dataState,
+                currentUser: updatedCurrentUser,
                 isDataLoaded: true,
                 syncStatus: 'success',
                 syncError: null,
@@ -364,19 +363,51 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         setState(prev => ({ ...prev, isDataLoaded: false, syncStatus: 'syncing', syncError: null }));
         try {
             const data = await apiRequest('/api/data');
-            const isFirstRun = data.users.length === 0 && data.settings.contentVersion < 2;
-
+            
+            const isFirstRun = (!data.users || data.users.length === 0) && (!data.settings || data.settings.contentVersion < 2);
+            
             const lastUserId = localStorage.getItem('lastUserId');
-            const lastUser = isFirstRun ? null : data.users.find((u: User) => u.id === lastUserId);
+            const lastUser = isFirstRun ? null : (data.users || []).find((u: User) => u.id === lastUserId);
             
             const aiStatus = await apiRequest('/api/ai/status');
 
             if (isMounted.current) {
-                setState(prev => ({
-                    ...prev, ...data, isFirstRun, isDataLoaded: true, syncStatus: 'success',
-                    currentUser: lastUser || null, isAppUnlocked: !!lastUser,
-                    isAiConfigured: aiStatus.isConfigured,
-                }));
+                setState(prev => {
+                    const dataState = {
+                        users: data.users || [],
+                        quests: data.quests || [],
+                        questGroups: data.questGroups || [],
+                        markets: data.markets || [],
+                        rewardTypes: data.rewardTypes || [],
+                        questCompletions: data.questCompletions || [],
+                        purchaseRequests: data.purchaseRequests || [],
+                        guilds: data.guilds || [],
+                        ranks: data.ranks || [],
+                        trophies: data.trophies || [],
+                        userTrophies: data.userTrophies || [],
+                        adminAdjustments: data.adminAdjustments || [],
+                        gameAssets: data.gameAssets || [],
+                        systemLogs: data.systemLogs || [],
+                        settings: data.settings || prev.settings,
+                        themes: data.themes || [],
+                        loginHistory: data.loginHistory || [],
+                        chatMessages: data.chatMessages || [],
+                        systemNotifications: data.systemNotifications || [],
+                        scheduledEvents: data.scheduledEvents || [],
+                    };
+                    
+                    return {
+                        ...prev,
+                        ...dataState,
+                        isFirstRun,
+                        isDataLoaded: true,
+                        syncStatus: 'success',
+                        syncError: null,
+                        currentUser: lastUser || null,
+                        isAppUnlocked: !!lastUser,
+                        isAiConfigured: aiStatus.isConfigured,
+                    };
+                });
             }
         } catch (error) {
             console.error("Failed to load initial data:", error);

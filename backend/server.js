@@ -1,5 +1,6 @@
 
 
+
 const express = require('express');
 const cors = require('cors');
 const { Pool } = require('pg');
@@ -14,6 +15,12 @@ const app = express();
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
 
+// Request Logger Middleware
+app.use((req, res, next) => {
+    console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
+    next();
+});
+
 // Serve static files from the 'dist' directory (Vite build output)
 app.use(express.static(path.join(__dirname, '..', 'dist')));
 // Serve uploaded media files
@@ -24,10 +31,8 @@ app.use('/uploads', express.static(UPLOAD_DIR));
 // === DATABASE SETUP ===
 let pool;
 try {
+    console.log("Attempting to create PostgreSQL pool...");
     let sslConfig;
-    // Enable SSL specifically for Supabase or if the connection string demands it.
-    // For other environments (like local Docker), 'undefined' lets the pg driver
-    // default to a non-SSL connection, which is correct.
     if (process.env.DATABASE_URL && (process.env.DATABASE_URL.includes('supabase') || process.env.DATABASE_URL.includes('sslmode=require'))) {
         sslConfig = { rejectUnauthorized: false };
     }
@@ -36,19 +41,32 @@ try {
         connectionString: process.env.DATABASE_URL,
         ssl: sslConfig,
     });
+    console.log("PostgreSQL pool created successfully.");
+
+    // Added a listener for idle client errors
+    pool.on('error', (err, client) => {
+        console.error('Unexpected error on idle client', err);
+        process.exit(-1);
+    });
+
 } catch (error) {
     console.error("Failed to create PostgreSQL pool:", error);
 }
 
 const initializeDb = async () => {
-    if (!pool) return;
+    if (!pool) {
+        console.error("Database pool is not available. Skipping DB initialization.");
+        return;
+    }
     try {
+        console.log("Initializing database... Checking for app_data table.");
         await pool.query(`
             CREATE TABLE IF NOT EXISTS app_data (
                 key TEXT PRIMARY KEY,
                 value JSONB NOT NULL
             );
         `);
+        console.log("Table check complete. Verifying initial data.");
         const res = await pool.query("SELECT value FROM app_data WHERE key = 'appState'");
         if (res.rows.length === 0) {
             console.log("No existing data found. Seeding database with guided setup...");
@@ -91,6 +109,8 @@ const initializeDb = async () => {
             };
             await pool.query("INSERT INTO app_data (key, value) VALUES ('appState', $1)", [JSON.stringify(initialData)]);
             console.log("Database seeded with initial guided setup.");
+        } else {
+             console.log("Existing data found. Initialization complete.");
         }
     } catch (error) {
         console.error("Error initializing database:", error);
@@ -109,9 +129,10 @@ const loadData = async () => {
     if (!pool) throw new Error("Database not connected.");
     const res = await pool.query("SELECT value FROM app_data WHERE key = 'appState'");
     if (res.rows.length === 0) {
+        console.warn("No data found in loadData, attempting to re-initialize...");
         await initializeDb(); // Attempt to initialize if it failed on start
         const secondAttempt = await pool.query("SELECT value FROM app_data WHERE key = 'appState'");
-        if (secondAttempt.rows.length === 0) throw new Error("No data found in database.");
+        if (secondAttempt.rows.length === 0) throw new Error("No data found in database after re-initialization attempt.");
         return secondAttempt.rows[0].value;
     }
     return res.rows[0].value;
@@ -121,8 +142,8 @@ const loadData = async () => {
 const server = http.createServer(app);
 const wss = new WebSocket.Server({ server });
 wss.on('connection', ws => {
-    console.log('Client connected');
-    ws.on('close', () => console.log('Client disconnected'));
+    console.log('Client connected via WebSocket');
+    ws.on('close', () => console.log('Client disconnected from WebSocket'));
 });
 const broadcast = (data) => {
     wss.clients.forEach(client => {
@@ -161,7 +182,7 @@ const BACKUP_DIR = process.env.BACKUP_PATH || path.join(__dirname, 'backups');
 fs.mkdir(BACKUP_DIR, { recursive: true }).catch(console.error);
 
 // === GENERIC CRUD HANDLER ===
-const handleRequest = async (res, logic) => {
+const handleRequest = async (req, res, logic) => {
     try {
         const data = await loadData();
         const result = await logic(data);
@@ -173,7 +194,7 @@ const handleRequest = async (res, logic) => {
              res.status(204).send();
         }
     } catch (error) {
-        console.error("API Error:", error);
+        console.error(`API Error on ${req.method} ${req.path}:`, error);
         res.status(500).json({ error: error.message || 'An internal server error occurred.' });
     }
 };
@@ -198,7 +219,7 @@ app.get('/api/pre-run-check', async (req, res) => {
     }
 });
 
-app.post('/api/first-run', (req, res) => handleRequest(res, async (data) => {
+app.post('/api/first-run', (req, res) => handleRequest(req, res, async (data) => {
     const { adminUserData, setupChoice, blueprint } = req.body;
     if (data.users.length > 0) throw new Error('First run has already been completed.');
     
@@ -247,49 +268,50 @@ app.get('/api/data', async (req, res) => {
         const data = await loadData();
         res.json(data);
     } catch (error) {
-        res.status(500).json({ error: 'Failed to load data.' });
+        console.error("Error in GET /api/data:", error);
+        res.status(500).json({ error: 'Failed to load data. ' + error.message });
     }
 });
 
-app.post('/api/data', (req, res) => handleRequest(res, async (data) => {
+app.post('/api/data', (req, res) => handleRequest(req, res, async (data) => {
     Object.assign(data, req.body);
 }));
 
 // --- USERS ---
-app.post('/api/users', (req, res) => handleRequest(res, (data) => {
+app.post('/api/users', (req, res) => handleRequest(req, res, (data) => {
     const newUser = { ...req.body, id: `user-${Date.now()}`, avatar: {}, ownedAssetIds: [], personalPurse: {}, personalExperience: {}, guildBalances: {}, ownedThemes: ['emerald', 'rose', 'sky'], hasBeenOnboarded: false };
     data.users.push(newUser);
     return { status: 201, body: newUser };
 }));
-app.put('/api/users/:id', (req, res) => handleRequest(res, (data) => {
+app.put('/api/users/:id', (req, res) => handleRequest(req, res, (data) => {
     const index = data.users.findIndex(u => u.id === req.params.id);
     if (index === -1) throw new Error('User not found.');
     data.users[index] = { ...data.users[index], ...req.body };
 }));
-app.delete('/api/users/:id', (req, res) => handleRequest(res, (data) => {
+app.delete('/api/users/:id', (req, res) => handleRequest(req, res, (data) => {
     data.users = data.users.filter(u => u.id !== req.params.id);
 }));
 
 // --- GENERIC CRUD ---
 const createCrudEndpoints = (resource, prefix) => {
-    app.post(`/api/${resource}`, (req, res) => handleRequest(res, (data) => {
+    app.post(`/api/${resource}`, (req, res) => handleRequest(req, res, (data) => {
         const newItem = { ...req.body, id: `${prefix}-${Date.now()}` };
         data[resource].push(newItem);
         return { status: 201, body: newItem };
     }));
-    app.put(`/api/${resource}/:id`, (req, res) => handleRequest(res, (data) => {
+    app.put(`/api/${resource}/:id`, (req, res) => handleRequest(req, res, (data) => {
         const index = data[resource].findIndex(i => i.id === req.params.id);
         if (index === -1) throw new Error(`${resource} not found.`);
         data[resource][index] = { ...data[resource][index], ...req.body };
     }));
-    app.delete(`/api/${resource}/:id`, (req, res) => handleRequest(res, (data) => {
+    app.delete(`/api/${resource}/:id`, (req, res) => handleRequest(req, res, (data) => {
         data[resource] = data[resource].filter(i => i.id !== req.params.id);
     }));
 };
 ['quests', 'questGroups', 'rewardTypes', 'markets', 'guilds', 'trophies', 'themes', 'scheduledEvents'].forEach(r => createCrudEndpoints(r, r.slice(0, 3)));
 
 // --- SPECIAL ENDPOINTS ---
-app.post('/api/quests/:id/actions', (req, res) => handleRequest(res, (data) => {
+app.post('/api/quests/:id/actions', (req, res) => handleRequest(req, res, (data) => {
     const quest = data.quests.find(q => q.id === req.params.id);
     if (!quest) throw new Error('Quest not found.');
     quest.todoUserIds = quest.todoUserIds || [];
@@ -299,7 +321,7 @@ app.post('/api/quests/:id/actions', (req, res) => handleRequest(res, (data) => {
         quest.todoUserIds = quest.todoUserIds.filter(id => id !== req.body.userId);
     }
 }));
-app.post('/api/quests/:id/complete', (req, res) => handleRequest(res, (data) => {
+app.post('/api/quests/:id/complete', (req, res) => handleRequest(req, res, (data) => {
     const { userId, note, completionDate } = req.body;
     const quest = data.quests.find(q => q.id === req.params.id);
     if (!quest) throw new Error('Quest not found.');
@@ -328,21 +350,21 @@ app.post('/api/quests/:id/complete', (req, res) => handleRequest(res, (data) => 
     }
 }));
 
-app.post('/api/gameAssets', (req, res) => handleRequest(res, (data) => {
+app.post('/api/gameAssets', (req, res) => handleRequest(req, res, (data) => {
     const newAsset = { ...req.body, id: `ga-${Date.now()}`, creatorId: 'system', createdAt: new Date().toISOString(), purchaseCount: 0 };
     data.gameAssets.push(newAsset);
     return { status: 201, body: newAsset };
 }));
-app.put('/api/gameAssets/:id', (req, res) => handleRequest(res, (data) => {
+app.put('/api/gameAssets/:id', (req, res) => handleRequest(req, res, (data) => {
     const index = data.gameAssets.findIndex(i => i.id === req.params.id);
     if (index === -1) throw new Error('gameAsset not found.');
     data.gameAssets[index] = { ...data.gameAssets[index], ...req.body };
 }));
-app.delete('/api/gameAssets/:id', (req, res) => handleRequest(res, (data) => {
+app.delete('/api/gameAssets/:id', (req, res) => handleRequest(req, res, (data) => {
     data.gameAssets = data.gameAssets.filter(i => i.id !== req.params.id);
 }));
 
-app.post('/api/economy/exchange', (req, res) => handleRequest(res, (data) => {
+app.post('/api/economy/exchange', (req, res) => handleRequest(req, res, (data) => {
     const { userId, payItem, receiveItem, guildId } = req.body;
     const user = data.users.find(u => u.id === userId);
     if (!user) throw new Error('User not found.');
@@ -364,13 +386,13 @@ app.post('/api/economy/exchange', (req, res) => handleRequest(res, (data) => {
 }));
 
 // --- CHAT & NOTIFICATIONS ---
-app.post('/api/chat/messages', (req, res) => handleRequest(res, (data) => {
+app.post('/api/chat/messages', (req, res) => handleRequest(req, res, (data) => {
     const newMessage = { ...req.body, id: `msg-${Date.now()}`, timestamp: new Date().toISOString(), readBy: [req.body.senderId] };
     data.chatMessages.push(newMessage);
     broadcast({ type: 'NEW_CHAT_MESSAGE', payload: newMessage });
     return { status: 201, body: newMessage };
 }));
-app.post('/api/chat/read', (req, res) => handleRequest(res, (data) => {
+app.post('/api/chat/read', (req, res) => handleRequest(req, res, (data) => {
     const { userId, partnerId, guildId } = req.body;
     data.chatMessages.forEach(msg => {
         const isDmMatch = partnerId && ((msg.senderId === partnerId && msg.recipientId === userId));
@@ -380,12 +402,12 @@ app.post('/api/chat/read', (req, res) => handleRequest(res, (data) => {
         }
     });
 }));
-app.post('/api/systemNotifications', (req, res) => handleRequest(res, (data) => {
+app.post('/api/systemNotifications', (req, res) => handleRequest(req, res, (data) => {
     const newNotif = { ...req.body, id: `sysnotif-${Date.now()}`, timestamp: new Date().toISOString(), readByUserIds: [] };
     data.systemNotifications.push(newNotif);
     return { status: 201, body: newNotif };
 }));
-app.post('/api/systemNotifications/read', (req, res) => handleRequest(res, (data) => {
+app.post('/api/systemNotifications/read', (req, res) => handleRequest(req, res, (data) => {
     const { notificationIds, userId } = req.body;
     data.systemNotifications.forEach(n => {
         if (notificationIds.includes(n.id) && !n.readByUserIds.includes(userId)) {
@@ -399,7 +421,7 @@ app.post('/api/media/upload', upload.single('file'), (req, res) => {
     if (!req.file) return res.status(400).json({ error: 'No file uploaded.' });
     const category = req.body.category || 'Miscellaneous';
     res.json({ url: `/uploads/${encodeURIComponent(category)}/${encodeURIComponent(req.file.filename)}` });
-});
+}));
 app.get('/api/media/local-gallery', async (req, res) => {
     try {
         const categories = await fs.readdir(UPLOAD_DIR);
@@ -462,11 +484,10 @@ app.delete('/api/backups/:filename', async (req, res) => {
         res.json({ message: 'Backup deleted.' });
     } catch (e) { res.status(500).json({ error: 'Delete failed.' }); }
 });
-app.post('/api/backups/restore/:filename', (req, res) => handleRequest(res, async () => {
+app.post('/api/backups/restore/:filename', (req, res) => handleRequest(req, res, async () => {
     const backupData = await fs.readFile(path.join(BACKUP_DIR, req.params.filename), 'utf-8');
-    // A restore is just a POST to /api/data, but need to load the file first.
     const dataToRestore = JSON.parse(backupData);
-    await saveData(dataToRestore); // Manually save, don't use handleRequest's auto-save on an empty object
+    await saveData(dataToRestore);
     broadcast({ type: 'FULL_STATE_UPDATE', payload: dataToRestore });
     res.json({ message: 'Restore successful.' });
 }));
@@ -481,5 +502,5 @@ app.get('*', (req, res) => {
 const PORT = process.env.PORT || 3001;
 server.listen(PORT, async () => {
     await initializeDb();
-    console.log(`Server running on port ${PORT}`);
+    console.log(`Server listening on http://localhost:${PORT}`);
 });

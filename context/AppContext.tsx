@@ -1,5 +1,7 @@
 
 
+
+
 import React, { createContext, useState, useContext, ReactNode, useEffect, useCallback, useMemo, useRef } from 'react';
 import { AppSettings, User, Quest, RewardTypeDefinition, QuestCompletion, RewardItem, Market, PurchaseRequest, Guild, Rank, Trophy, UserTrophy, Notification, AppMode, Page, IAppData, ShareableAssetType, GameAsset, Role, QuestCompletionStatus, RewardCategory, PurchaseRequestStatus, AdminAdjustment, AdminAdjustmentType, SystemLog, QuestType, QuestAvailability, Blueprint, ImportResolution, TrophyRequirementType, ThemeDefinition, ChatMessage, SystemNotification, SystemNotificationType, MarketStatus, QuestGroup, BulkQuestUpdates, ScheduledEvent } from '../types';
 import { INITIAL_SETTINGS, createMockUsers, INITIAL_REWARD_TYPES, INITIAL_RANKS, INITIAL_TROPHIES, createSampleMarkets, createSampleQuests, createInitialGuilds, createSampleGameAssets, INITIAL_THEMES, createInitialQuestCompletions, INITIAL_TAGS, INITIAL_QUEST_GROUPS } from '../data/initialData';
@@ -112,6 +114,7 @@ interface AppDispatch {
   clearAllHistory: () => Promise<void>;
   resetAllPlayerData: () => Promise<void>;
   deleteAllCustomContent: () => Promise<void>;
+  retryDataLoad: () => void;
   
   // First Run
   completeFirstRun: (adminUserData: Omit<User, 'id' | 'personalPurse' | 'personalExperience' | 'guildBalances' | 'avatar' | 'ownedAssetIds' | 'ownedThemes' | 'hasBeenOnboarded'>, setupChoice: 'guided' | 'scratch' | 'import', blueprint: Blueprint | null) => Promise<void>;
@@ -181,6 +184,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     const isMounted = useRef(true);
     const ws = useRef<WebSocket | null>(null);
     const reconnectTimeoutId = useRef<number | null>(null);
+    const [retryCount, setRetryCount] = useState(0); // Add state to trigger reload
 
     useEffect(() => {
       isMounted.current = true;
@@ -358,33 +362,36 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         };
     }, [fullUpdate]);
 
-    useEffect(() => {
-        const loadData = async () => {
-            try {
-                const data = await apiRequest('/api/data');
-                const isFirstRun = data.users.length === 0 && data.settings.contentVersion < 2;
+    const loadInitialData = useCallback(async () => {
+        if (!isMounted.current) return;
+        setState(prev => ({ ...prev, isDataLoaded: false, syncStatus: 'syncing', syncError: null }));
+        try {
+            const data = await apiRequest('/api/data');
+            const isFirstRun = data.users.length === 0 && data.settings.contentVersion < 2;
 
-                const lastUserId = localStorage.getItem('lastUserId');
-                const lastUser = isFirstRun ? null : data.users.find((u: User) => u.id === lastUserId);
-                
-                const aiStatus = await apiRequest('/api/ai/status');
+            const lastUserId = localStorage.getItem('lastUserId');
+            const lastUser = isFirstRun ? null : data.users.find((u: User) => u.id === lastUserId);
+            
+            const aiStatus = await apiRequest('/api/ai/status');
 
-                if (isMounted.current) {
-                  setState(prev => ({
-                      ...prev, ...data, isFirstRun, isDataLoaded: true,
-                      currentUser: lastUser || null, isAppUnlocked: !!lastUser,
-                      isAiConfigured: aiStatus.isConfigured,
-                  }));
-                }
-            } catch (error) {
-                console.error("Failed to load initial data:", error);
-                 if (isMounted.current) {
-                  setState(prev => ({ ...prev, isDataLoaded: true, syncStatus: 'error', syncError: 'Failed to connect to server.' }));
-                 }
+            if (isMounted.current) {
+                setState(prev => ({
+                    ...prev, ...data, isFirstRun, isDataLoaded: true, syncStatus: 'success',
+                    currentUser: lastUser || null, isAppUnlocked: !!lastUser,
+                    isAiConfigured: aiStatus.isConfigured,
+                }));
             }
-        };
+        } catch (error) {
+            console.error("Failed to load initial data:", error);
+            if (isMounted.current) {
+                const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred.';
+                setState(prev => ({ ...prev, isDataLoaded: false, syncStatus: 'error', syncError: `Failed to connect to server: ${errorMessage}` }));
+            }
+        }
+    }, [apiRequest]);
 
-        loadData();
+    useEffect(() => {
+        loadInitialData();
         connectWebSocket();
 
         return () => {
@@ -396,7 +403,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
                 clearTimeout(reconnectTimeoutId.current);
             }
         };
-    }, [connectWebSocket, apiRequest]);
+    }, [connectWebSocket, loadInitialData, retryCount]);
 
 
     const dispatch: AppDispatch = useMemo(() => ({
@@ -759,7 +766,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         clearAllHistory: () => updateAndSave(() => ({ questCompletions: [], purchaseRequests: [], systemLogs: [], adminAdjustments: [] })),
         resetAllPlayerData: () => updateAndSave(s => ({ users: s.users.map(u => ({...u, personalPurse: {}, personalExperience: {}, guildBalances: {}, ownedAssetIds: [], userTrophies: []})) })),
         deleteAllCustomContent: () => updateAndSave(s => ({ quests: [], markets: [], gameAssets: [], trophies: s.trophies.filter(t => INITIAL_TROPHIES.some(it => it.id === t.id)) })),
-        
+        retryDataLoad: () => setRetryCount(c => c + 1),
+
         // First Run
         completeFirstRun: (adminUserData: Omit<User, 'id' | 'personalPurse' | 'personalExperience' | 'guildBalances' | 'avatar' | 'ownedAssetIds' | 'ownedThemes' | 'hasBeenOnboarded'>, setupChoice: 'guided' | 'scratch' | 'import', blueprint: Blueprint | null) => apiRequest('/api/first-run', { method: 'POST', body: JSON.stringify({ adminUserData, setupChoice, blueprint }) }),
         
@@ -808,7 +816,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             return apiRequest('/api/media/upload', { method: 'POST', body: formData, headers: {} }); // Let browser set Content-Type for FormData
         },
         executeExchange: (userId: string, payItem: RewardItem, receiveItem: RewardItem, guildId?: string) => apiRequest('/api/economy/exchange', { method: 'POST', body: JSON.stringify({ userId, payItem, receiveItem, guildId }) }),
-    } as unknown as AppDispatch), [state, updateAndSave, addNotification, removeNotification, apiRequest]);
+    } as unknown as AppDispatch), [state, updateAndSave, addNotification, removeNotification, apiRequest, loadInitialData]);
 
     return (
         <AppStateContext.Provider value={state}>

@@ -408,106 +408,106 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
 
     const dispatch: AppDispatch = useMemo(() => ({
-        addUser: (userData) => apiRequest('/api/users', { method: 'POST', body: JSON.stringify(userData) }),
-        updateUser: (userId, updatedData) => apiRequest(`/api/users/${userId}`, { method: 'PUT', body: JSON.stringify(updatedData) }),
-        deleteUser: (userId) => apiRequest(`/api/users/${userId}`, { method: 'DELETE' }),
-        setCurrentUser: (user) => { 
+        addUser: (userData: Omit<User, 'id' | 'personalPurse' | 'personalExperience' | 'guildBalances' | 'avatar' | 'ownedAssetIds' | 'ownedThemes' | 'hasBeenOnboarded'>) => apiRequest('/api/users', { method: 'POST', body: JSON.stringify(userData) }),
+        updateUser: (userId: string, updatedData: Partial<User>) => apiRequest(`/api/users/${userId}`, { method: 'PUT', body: JSON.stringify(updatedData) }),
+        deleteUser: (userId: string) => apiRequest(`/api/users/${userId}`, { method: 'DELETE' }),
+        setCurrentUser: (user: User | null) => { 
             setState(s => ({...s, currentUser: user}));
             if (user) localStorage.setItem('lastUserId', user.id);
             else localStorage.removeItem('lastUserId');
         },
-        markUserAsOnboarded: (userId) => dispatch.updateUser(userId, { hasBeenOnboarded: true }),
-        setAppUnlocked: (isUnlocked) => setState(s => ({ ...s, isAppUnlocked: isUnlocked })),
-        setIsSwitchingUser: (isSwitching) => setState(s => ({ ...s, isSwitchingUser: isSwitching })),
-        setTargetedUserForLogin: (user) => setState(s => ({ ...s, targetedUserForLogin: user })),
+        markUserAsOnboarded: (userId: string) => apiRequest(`/api/users/${userId}`, { method: 'PUT', body: JSON.stringify({ hasBeenOnboarded: true }) }),
+        setAppUnlocked: (isUnlocked: boolean) => setState(s => ({ ...s, isAppUnlocked: isUnlocked })),
+        setIsSwitchingUser: (isSwitching: boolean) => setState(s => ({ ...s, isSwitchingUser: isSwitching })),
+        setTargetedUserForLogin: (user: User | null) => setState(s => ({ ...s, targetedUserForLogin: user })),
         exitToSharedView: () => {
              setState(s => ({...s, currentUser: null, isAppUnlocked: true, isSharedViewActive: true }));
              localStorage.removeItem('lastUserId');
         },
-        setIsSharedViewActive: (isActive) => setState(s => ({ ...s, isSharedViewActive: isActive })),
+        setIsSharedViewActive: (isActive: boolean) => setState(s => ({ ...s, isSharedViewActive: isActive })),
         bypassFirstRunCheck: () => setState(s => ({...s, isFirstRun: false})),
 
-        addQuest: (quest) => apiRequest('/api/quests', { method: 'POST', body: JSON.stringify(quest) }),
-        updateQuest: (updatedQuest) => apiRequest(`/api/quests/${updatedQuest.id}`, { method: 'PUT', body: JSON.stringify(updatedQuest) }),
-        deleteQuest: (questId) => apiRequest(`/api/quests/${questId}`, { method: 'DELETE' }),
-        cloneQuest: (questId) => apiRequest(`/api/quests/${questId}/clone`, { method: 'POST' }),
-        dismissQuest: (questId, userId) => apiRequest(`/api/quests/${questId}/dismiss`, { method: 'POST', body: JSON.stringify({ userId }) }),
-        claimQuest: (questId, userId) => apiRequest(`/api/quests/${questId}/claim`, { method: 'POST', body: JSON.stringify({ userId }) }),
-        releaseQuest: (questId, userId) => apiRequest(`/api/quests/${questId}/release`, { method: 'POST', body: JSON.stringify({ userId }) }),
-        markQuestAsTodo: (questId, userId) => apiRequest(`/api/quests/${questId}/actions`, { method: 'POST', body: JSON.stringify({ action: 'mark_todo', userId }) }),
-        unmarkQuestAsTodo: (questId, userId) => apiRequest(`/api/quests/${questId}/actions`, { method: 'POST', body: JSON.stringify({ action: 'unmark_todo', userId }) }),
-        completeQuest: (questId, userId, rewards, requiresApproval, guildId, options) => apiRequest(`/api/quests/${questId}/complete`, { method: 'POST', body: JSON.stringify({ userId, note: options?.note, completionDate: options?.completionDate }) }),
-        approveQuestCompletion: (completionId, note) => apiRequest(`/api/approvals/quest/${completionId}/approve`, { method: 'POST', body: JSON.stringify({ note }) }),
-        rejectQuestCompletion: (completionId, note) => apiRequest(`/api/approvals/quest/${completionId}/reject`, { method: 'POST', body: JSON.stringify({ note }) }),
+        addQuest: (quest: Omit<Quest, 'id' | 'claimedByUserIds' | 'dismissals'>) => apiRequest('/api/quests', { method: 'POST', body: JSON.stringify(quest) }),
+        updateQuest: (updatedQuest: Quest) => apiRequest(`/api/quests/${updatedQuest.id}`, { method: 'PUT', body: JSON.stringify(updatedQuest) }),
+        deleteQuest: (questId: string) => apiRequest(`/api/quests/${questId}`, { method: 'DELETE' }),
+        cloneQuest: (questId: string) => apiRequest(`/api/quests/${questId}/clone`, { method: 'POST' }),
+        dismissQuest: (questId: string, userId: string) => apiRequest(`/api/quests/${questId}/dismiss`, { method: 'POST', body: JSON.stringify({ userId }) }),
+        claimQuest: (questId: string, userId: string) => apiRequest(`/api/quests/${questId}/claim`, { method: 'POST', body: JSON.stringify({ userId }) }),
+        releaseQuest: (questId: string, userId: string) => apiRequest(`/api/quests/${questId}/release`, { method: 'POST', body: JSON.stringify({ userId }) }),
+        markQuestAsTodo: (questId: string, userId: string) => apiRequest(`/api/quests/${questId}/actions`, { method: 'POST', body: JSON.stringify({ action: 'mark_todo', userId }) }),
+        unmarkQuestAsTodo: (questId: string, userId: string) => apiRequest(`/api/quests/${questId}/actions`, { method: 'POST', body: JSON.stringify({ action: 'unmark_todo', userId }) }),
+        completeQuest: (questId: string, userId: string, rewards: RewardItem[], requiresApproval: boolean, guildId?: string, options?: { note?: string; completionDate?: Date }) => apiRequest(`/api/quests/${questId}/complete`, { method: 'POST', body: JSON.stringify({ userId, note: options?.note, completionDate: options?.completionDate }) }),
+        approveQuestCompletion: (completionId: string, note?: string) => apiRequest(`/api/approvals/quest/${completionId}/approve`, { method: 'POST', body: JSON.stringify({ note }) }),
+        rejectQuestCompletion: (completionId: string, note?: string) => apiRequest(`/api/approvals/quest/${completionId}/reject`, { method: 'POST', body: JSON.stringify({ note }) }),
         
-        addQuestGroup: (group) => apiRequest('/api/questGroups', { method: 'POST', body: JSON.stringify(group) }),
-        updateQuestGroup: (group) => apiRequest(`/api/questGroups/${group.id}`, { method: 'PUT', body: JSON.stringify(group) }),
-        deleteQuestGroup: (groupId) => apiRequest(`/api/questGroups/${groupId}`, { method: 'DELETE' }),
-        assignQuestGroupToUsers: (groupId, userIds) => apiRequest(`/api/questGroups/${groupId}/assign`, { method: 'POST', body: JSON.stringify({ userIds }) }),
+        addQuestGroup: (group: Omit<QuestGroup, 'id'>) => apiRequest('/api/questGroups', { method: 'POST', body: JSON.stringify(group) }),
+        updateQuestGroup: (group: QuestGroup) => apiRequest(`/api/questGroups/${group.id}`, { method: 'PUT', body: JSON.stringify(group) }),
+        deleteQuestGroup: (groupId: string) => apiRequest(`/api/questGroups/${groupId}`, { method: 'DELETE' }),
+        assignQuestGroupToUsers: (groupId: string, userIds: string[]) => apiRequest(`/api/questGroups/${groupId}/assign`, { method: 'POST', body: JSON.stringify({ userIds }) }),
         
-        addRewardType: (rewardType) => apiRequest('/api/rewardTypes', { method: 'POST', body: JSON.stringify(rewardType) }),
-        updateRewardType: (rewardType) => apiRequest(`/api/rewardTypes/${rewardType.id}`, { method: 'PUT', body: JSON.stringify(rewardType) }),
-        deleteRewardType: (rewardTypeId) => apiRequest(`/api/rewardTypes/${rewardTypeId}`, { method: 'DELETE' }),
-        cloneRewardType: (rewardTypeId) => apiRequest(`/api/rewardTypes/${rewardTypeId}/clone`, { method: 'POST' }),
+        addRewardType: (rewardType: Omit<RewardTypeDefinition, 'id' | 'isCore'>) => apiRequest('/api/rewardTypes', { method: 'POST', body: JSON.stringify(rewardType) }),
+        updateRewardType: (rewardType: RewardTypeDefinition) => apiRequest(`/api/rewardTypes/${rewardType.id}`, { method: 'PUT', body: JSON.stringify(rewardType) }),
+        deleteRewardType: (rewardTypeId: string) => apiRequest(`/api/rewardTypes/${rewardTypeId}`, { method: 'DELETE' }),
+        cloneRewardType: (rewardTypeId: string) => apiRequest(`/api/rewardTypes/${rewardTypeId}/clone`, { method: 'POST' }),
 
-        addMarket: (market) => apiRequest('/api/markets', { method: 'POST', body: JSON.stringify(market) }),
-        updateMarket: (market) => apiRequest(`/api/markets/${market.id}`, { method: 'PUT', body: JSON.stringify(market) }),
-        deleteMarket: (marketId) => apiRequest(`/api/markets/${marketId}`, { method: 'DELETE' }),
-        cloneMarket: (marketId) => apiRequest(`/api/markets/${marketId}/clone`, { method: 'POST' }),
-        deleteMarkets: (marketIds) => apiRequest('/api/markets/bulk-delete', { method: 'POST', body: JSON.stringify({ marketIds }) }),
-        updateMarketsStatus: (marketIds, status) => apiRequest('/api/markets/bulk-status', { method: 'POST', body: JSON.stringify({ marketIds, status }) }),
+        addMarket: (market: Omit<Market, 'id'>) => apiRequest('/api/markets', { method: 'POST', body: JSON.stringify(market) }),
+        updateMarket: (market: Market) => apiRequest(`/api/markets/${market.id}`, { method: 'PUT', body: JSON.stringify(market) }),
+        deleteMarket: (marketId: string) => apiRequest(`/api/markets/${marketId}`, { method: 'DELETE' }),
+        cloneMarket: (marketId: string) => apiRequest(`/api/markets/${marketId}/clone`, { method: 'POST' }),
+        deleteMarkets: (marketIds: string[]) => apiRequest('/api/markets/bulk-delete', { method: 'POST', body: JSON.stringify({ marketIds }) }),
+        updateMarketsStatus: (marketIds: string[], status: 'open' | 'closed') => apiRequest('/api/markets/bulk-status', { method: 'POST', body: JSON.stringify({ marketIds, status }) }),
         
-        purchaseMarketItem: (assetId, marketId, user, costGroupIndex) => apiRequest('/api/market/purchase', { method: 'POST', body: JSON.stringify({ assetId, marketId, userId: user.id, costGroupIndex }) }),
-        approvePurchaseRequest: (purchaseId) => apiRequest(`/api/approvals/purchase/${purchaseId}/approve`, { method: 'POST' }),
-        rejectPurchaseRequest: (purchaseId) => apiRequest(`/api/approvals/purchase/${purchaseId}/reject`, { method: 'POST' }),
-        cancelPurchaseRequest: (purchaseId) => apiRequest(`/api/approvals/purchase/${purchaseId}/cancel`, { method: 'POST' }),
+        purchaseMarketItem: (assetId: string, marketId: string, user: User, costGroupIndex: number) => apiRequest('/api/market/purchase', { method: 'POST', body: JSON.stringify({ assetId, marketId, userId: user.id, costGroupIndex }) }),
+        approvePurchaseRequest: (purchaseId: string) => apiRequest(`/api/approvals/purchase/${purchaseId}/approve`, { method: 'POST' }),
+        rejectPurchaseRequest: (purchaseId: string) => apiRequest(`/api/approvals/purchase/${purchaseId}/reject`, { method: 'POST' }),
+        cancelPurchaseRequest: (purchaseId: string) => apiRequest(`/api/approvals/purchase/${purchaseId}/cancel`, { method: 'POST' }),
         
-        addGuild: (guild) => apiRequest('/api/guilds', { method: 'POST', body: JSON.stringify(guild) }),
-        updateGuild: (guild) => apiRequest(`/api/guilds/${guild.id}`, { method: 'PUT', body: JSON.stringify(guild) }),
-        deleteGuild: (guildId) => apiRequest(`/api/guilds/${guildId}`, { method: 'DELETE' }),
+        addGuild: (guild: Omit<Guild, 'id'>) => apiRequest('/api/guilds', { method: 'POST', body: JSON.stringify(guild) }),
+        updateGuild: (guild: Guild) => apiRequest(`/api/guilds/${guild.id}`, { method: 'PUT', body: JSON.stringify(guild) }),
+        deleteGuild: (guildId: string) => apiRequest(`/api/guilds/${guildId}`, { method: 'DELETE' }),
 
-        addTrophy: (trophy) => apiRequest('/api/trophies', { method: 'POST', body: JSON.stringify(trophy) }),
-        updateTrophy: (trophy) => apiRequest(`/api/trophies/${trophy.id}`, { method: 'PUT', body: JSON.stringify(trophy) }),
-        deleteTrophy: (trophyId) => apiRequest(`/api/trophies/${trophyId}`, { method: 'DELETE' }),
-        cloneTrophy: (trophyId) => apiRequest(`/api/trophies/${trophyId}/clone`, { method: 'POST' }),
-        deleteTrophies: (trophyIds) => apiRequest('/api/trophies/bulk-delete', { method: 'POST', body: JSON.stringify({ trophyIds }) }),
-        awardTrophy: (userId, trophyId, guildId) => apiRequest('/api/trophies/award', { method: 'POST', body: JSON.stringify({ userId, trophyId, guildId }) }),
+        addTrophy: (trophy: Omit<Trophy, 'id'>) => apiRequest('/api/trophies', { method: 'POST', body: JSON.stringify(trophy) }),
+        updateTrophy: (trophy: Trophy) => apiRequest(`/api/trophies/${trophy.id}`, { method: 'PUT', body: JSON.stringify(trophy) }),
+        deleteTrophy: (trophyId: string) => apiRequest(`/api/trophies/${trophyId}`, { method: 'DELETE' }),
+        cloneTrophy: (trophyId: string) => apiRequest(`/api/trophies/${trophyId}/clone`, { method: 'POST' }),
+        deleteTrophies: (trophyIds: string[]) => apiRequest('/api/trophies/bulk-delete', { method: 'POST', body: JSON.stringify({ trophyIds }) }),
+        awardTrophy: (userId: string, trophyId: string, guildId?: string) => apiRequest('/api/trophies/award', { method: 'POST', body: JSON.stringify({ userId, trophyId, guildId }) }),
         
-        applyManualAdjustment: async (adjustment) => {
+        applyManualAdjustment: async (adjustment: Omit<AdminAdjustment, 'id' | 'adjustedAt'>) => {
             await apiRequest('/api/admin/adjustment', { method: 'POST', body: JSON.stringify(adjustment) });
             return true;
         },
         
-        addGameAsset: (asset) => apiRequest('/api/gameAssets', { method: 'POST', body: JSON.stringify(asset) }),
-        updateGameAsset: (asset) => apiRequest(`/api/gameAssets/${asset.id}`, { method: 'PUT', body: JSON.stringify(asset) }),
-        deleteGameAsset: (assetId) => apiRequest(`/api/gameAssets/${assetId}`, { method: 'DELETE' }),
-        deleteGameAssets: (assetIds) => apiRequest('/api/gameAssets/bulk-delete', { method: 'POST', body: JSON.stringify({ assetIds }) }),
-        cloneGameAsset: (assetId) => apiRequest(`/api/gameAssets/${assetId}/clone`, { method: 'POST' }),
+        addGameAsset: (asset: Omit<GameAsset, 'id' | 'creatorId' | 'createdAt' | 'purchaseCount'>) => apiRequest('/api/gameAssets', { method: 'POST', body: JSON.stringify(asset) }),
+        updateGameAsset: (asset: GameAsset) => apiRequest(`/api/gameAssets/${asset.id}`, { method: 'PUT', body: JSON.stringify(asset) }),
+        deleteGameAsset: (assetId: string) => apiRequest(`/api/gameAssets/${assetId}`, { method: 'DELETE' }),
+        deleteGameAssets: (assetIds: string[]) => apiRequest('/api/gameAssets/bulk-delete', { method: 'POST', body: JSON.stringify({ assetIds }) }),
+        cloneGameAsset: (assetId: string) => apiRequest(`/api/gameAssets/${assetId}/clone`, { method: 'POST' }),
         
-        addTheme: (theme) => apiRequest('/api/themes', { method: 'POST', body: JSON.stringify(theme) }),
-        updateTheme: (theme) => apiRequest(`/api/themes/${theme.id}`, { method: 'PUT', body: JSON.stringify(theme) }),
-        deleteTheme: (themeId) => apiRequest(`/api/themes/${themeId}`, { method: 'DELETE' }),
+        addTheme: (theme: Omit<ThemeDefinition, 'id'>) => apiRequest('/api/themes', { method: 'POST', body: JSON.stringify(theme) }),
+        updateTheme: (theme: ThemeDefinition) => apiRequest(`/api/themes/${theme.id}`, { method: 'PUT', body: JSON.stringify(theme) }),
+        deleteTheme: (themeId: string) => apiRequest(`/api/themes/${themeId}`, { method: 'DELETE' }),
 
-        updateSettings: (newSettings) => apiRequest('/api/settings', { method: 'PUT', body: JSON.stringify(newSettings) }),
+        updateSettings: (newSettings: Partial<AppSettings>) => apiRequest('/api/settings', { method: 'PUT', body: JSON.stringify(newSettings) }),
         resetSettings: () => apiRequest('/api/settings/reset', { method: 'POST' }),
         
-        setActivePage: (page) => setState(s => ({ ...s, activePage: page })),
-        setAppMode: (mode) => setState(s => ({ ...s, appMode: mode })),
+        setActivePage: (page: Page) => setState(s => ({ ...s, activePage: page })),
+        setAppMode: (mode: AppMode) => setState(s => ({ ...s, appMode: mode })),
         addNotification,
         removeNotification,
-        setActiveMarketId: (marketId) => setState(s => ({ ...s, activeMarketId: marketId })),
+        setActiveMarketId: (marketId: string | null) => setState(s => ({ ...s, activeMarketId: marketId })),
         toggleSidebar: () => setState(s => ({...s, isSidebarCollapsed: !s.isSidebarCollapsed})),
         toggleChat: () => setState(s => ({...s, isChatOpen: !s.isChatOpen})),
 
-        importBlueprint: (blueprint, resolutions) => apiRequest('/api/import/blueprint', { method: 'POST', body: JSON.stringify({ blueprint, resolutions }) }),
-        restoreFromBackup: (backupData) => apiRequest('/api/import/backup', { method: 'POST', body: JSON.stringify(backupData) }),
-        restoreDefaultObjects: (objectType) => apiRequest('/api/data/restore-defaults', { method: 'POST', body: JSON.stringify({ objectType }) }),
+        importBlueprint: (blueprint: Blueprint, resolutions: ImportResolution[]) => apiRequest('/api/import/blueprint', { method: 'POST', body: JSON.stringify({ blueprint, resolutions }) }),
+        restoreFromBackup: (backupData: any) => apiRequest('/api/import/backup', { method: 'POST', body: JSON.stringify(backupData) }),
+        restoreDefaultObjects: (objectType: 'trophies') => apiRequest('/api/data/restore-defaults', { method: 'POST', body: JSON.stringify({ objectType }) }),
         clearAllHistory: () => apiRequest('/api/data/clear-history', { method: 'POST' }),
         resetAllPlayerData: () => apiRequest('/api/data/reset-players', { method: 'POST' }),
         deleteAllCustomContent: () => apiRequest('/api/data/delete-custom', { method: 'POST' }),
         retryDataLoad: () => setRetryCount(c => c + 1),
 
-        completeFirstRun: async (adminUserData, setupChoice, blueprint) => {
+        completeFirstRun: async (adminUserData: Omit<User, 'id' | 'personalPurse' | 'personalExperience' | 'guildBalances' | 'avatar' | 'ownedAssetIds' | 'ownedThemes' | 'hasBeenOnboarded'>, setupChoice: 'guided' | 'scratch' | 'import', blueprint: Blueprint | null) => {
             const result = await apiRequest('/api/first-run', { method: 'POST', body: JSON.stringify({ adminUserData, setupChoice, blueprint }) });
             if (result && result.user) {
                 localStorage.setItem('lastUserId', result.user.id);
@@ -517,23 +517,23 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             }
         },
         
-        setRanks: (ranks) => apiRequest('/api/ranks', { method: 'PUT', body: JSON.stringify({ ranks }) }),
+        setRanks: (ranks: Rank[]) => apiRequest('/api/ranks', { method: 'PUT', body: JSON.stringify({ ranks }) }),
 
-        sendMessage: (message) => apiRequest('/api/chat/messages', { method: 'POST', body: JSON.stringify({ ...message, senderId: state.currentUser?.id }) }),
-        markMessagesAsRead: (options) => apiRequest('/api/chat/read', { method: 'POST', body: JSON.stringify({ ...options, userId: state.currentUser?.id }) }),
+        sendMessage: (message: Partial<ChatMessage>) => apiRequest('/api/chat/messages', { method: 'POST', body: JSON.stringify({ ...message, senderId: state.currentUser?.id }) }),
+        markMessagesAsRead: (options: { partnerId?: string; guildId?: string }) => apiRequest('/api/chat/read', { method: 'POST', body: JSON.stringify({ ...options, userId: state.currentUser?.id }) }),
 
-        addSystemNotification: (notification) => apiRequest('/api/systemNotifications', { method: 'POST', body: JSON.stringify(notification) }),
-        markSystemNotificationsAsRead: (notificationIds) => apiRequest('/api/systemNotifications/read', { method: 'POST', body: JSON.stringify({ notificationIds, userId: state.currentUser?.id }) }),
+        addSystemNotification: (notification: Omit<SystemNotification, 'id' | 'timestamp' | 'readByUserIds'>) => apiRequest('/api/systemNotifications', { method: 'POST', body: JSON.stringify(notification) }),
+        markSystemNotificationsAsRead: (notificationIds: string[]) => apiRequest('/api/systemNotifications/read', { method: 'POST', body: JSON.stringify({ notificationIds, userId: state.currentUser?.id }) }),
 
-        addScheduledEvent: (event) => apiRequest('/api/scheduledEvents', { method: 'POST', body: JSON.stringify(event) }),
-        updateScheduledEvent: (event) => apiRequest(`/api/scheduledEvents/${event.id}`, { method: 'PUT', body: JSON.stringify(event) }),
-        deleteScheduledEvent: (eventId) => apiRequest(`/api/scheduledEvents/${eventId}`, { method: 'DELETE' }),
+        addScheduledEvent: (event: Omit<ScheduledEvent, 'id'>) => apiRequest('/api/scheduledEvents', { method: 'POST', body: JSON.stringify(event) }),
+        updateScheduledEvent: (event: ScheduledEvent) => apiRequest(`/api/scheduledEvents/${event.id}`, { method: 'PUT', body: JSON.stringify(event) }),
+        deleteScheduledEvent: (eventId: string) => apiRequest(`/api/scheduledEvents/${eventId}`, { method: 'DELETE' }),
         
-        deleteQuests: (questIds) => apiRequest('/api/quests/bulk-delete', { method: 'POST', body: JSON.stringify({ questIds }) }),
-        updateQuestsStatus: (questIds, isActive) => apiRequest('/api/quests/bulk-status', { method: 'POST', body: JSON.stringify({ questIds, isActive }) }),
-        bulkUpdateQuests: (questIds, updates) => apiRequest('/api/quests/bulk-update', { method: 'POST', body: JSON.stringify({ questIds, updates }) }),
+        deleteQuests: (questIds: string[]) => apiRequest('/api/quests/bulk-delete', { method: 'POST', body: JSON.stringify({ questIds }) }),
+        updateQuestsStatus: (questIds: string[], isActive: boolean) => apiRequest('/api/quests/bulk-status', { method: 'POST', body: JSON.stringify({ questIds, isActive }) }),
+        bulkUpdateQuests: (questIds: string[], updates: BulkQuestUpdates) => apiRequest('/api/quests/bulk-update', { method: 'POST', body: JSON.stringify({ questIds, updates }) }),
 
-        uploadFile: async (file, category) => {
+        uploadFile: async (file: File, category?: string) => {
             const formData = new FormData();
             formData.append('file', file);
             if(category) formData.append('category', category);
@@ -545,8 +545,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             }
             return response.json();
         },
-        executeExchange: (userId, payItem, receiveItem, guildId) => apiRequest('/api/economy/exchange', { method: 'POST', body: JSON.stringify({ userId, payItem, receiveItem, guildId }) }),
-    } as unknown as AppDispatch), [state, addNotification, removeNotification, apiRequest, loadInitialData]);
+        executeExchange: (userId: string, payItem: RewardItem, receiveItem: RewardItem, guildId?: string) => apiRequest('/api/economy/exchange', { method: 'POST', body: JSON.stringify({ userId, payItem, receiveItem, guildId }) }),
+    } as AppDispatch), [state, addNotification, removeNotification, apiRequest, loadInitialData]);
 
     return (
         <AppStateContext.Provider value={state}>

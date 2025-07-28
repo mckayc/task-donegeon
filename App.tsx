@@ -1,6 +1,7 @@
 
 
-import React, { useEffect } from 'react';
+
+import React, { useEffect, useMemo } from 'react';
 import { useAppState } from './context/AppContext';
 import FirstRunWizard from './components/auth/FirstRunWizard';
 import MainLayout from './components/layout/MainLayout';
@@ -13,6 +14,13 @@ import SharedLayout from './components/layout/SharedLayout';
 
 const App: React.FC = () => {
   const { isAppUnlocked, isFirstRun, currentUser, isSwitchingUser, isDataLoaded, settings, isSharedViewActive, appMode, guilds, themes } = useAppState();
+
+  const isSharedModeEnabledForDevice = useMemo(() => {
+    const deviceMode = localStorage.getItem('deviceMode');
+    if (deviceMode === 'shared') return true;
+    if (deviceMode === 'personal') return false;
+    return settings.sharedMode.enabled;
+  }, [settings.sharedMode.enabled]);
 
   useEffect(() => {
     let activeThemeId: string | undefined = settings.theme; // Default to system theme
@@ -80,7 +88,7 @@ const App: React.FC = () => {
         if (isSwitchingUser) { return <SwitchUser />; }
         
         // If not switching, and shared mode is active, show the shared layout.
-        if (settings.sharedMode.enabled && isSharedViewActive) {
+        if (isSharedModeEnabledForDevice && isSharedViewActive) {
           return <SharedLayout />;
         }
 

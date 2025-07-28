@@ -143,14 +143,8 @@ wss.on('connection', ws => {
     console.log('Client connected via WebSocket');
     ws.on('close', () => console.log('Client disconnected from WebSocket'));
 });
-const broadcast = (data) => {
-    wss.clients.forEach(client => {
-        if (client.readyState === WebSocket.OPEN) {
-            client.send(JSON.stringify(data));
-        }
-    });
-};
-const broadcastUpdate = async (sourceWs = null) => {
+
+const broadcastUpdate = async () => {
     const data = await loadData();
     const message = { type: 'FULL_STATE_UPDATE', payload: data };
     wss.clients.forEach(client => {
@@ -387,7 +381,12 @@ app.post('/api/economy/exchange', (req, res) => handleRequest(req, res, (data) =
 app.post('/api/chat/messages', (req, res) => handleRequest(req, res, (data) => {
     const newMessage = { ...req.body, id: `msg-${Date.now()}`, timestamp: new Date().toISOString(), readBy: [req.body.senderId] };
     data.chatMessages.push(newMessage);
-    broadcast({ type: 'NEW_CHAT_MESSAGE', payload: newMessage });
+    const message = { type: 'NEW_CHAT_MESSAGE', payload: newMessage };
+    wss.clients.forEach(client => {
+        if (client.readyState === WebSocket.OPEN) {
+            client.send(JSON.stringify(message));
+        }
+    });
     return { status: 201, body: newMessage };
 }));
 app.post('/api/chat/read', (req, res) => handleRequest(req, res, (data) => {
@@ -464,6 +463,7 @@ app.get('/api/backups', async (req, res) => {
         res.json(backups.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)));
     } catch { res.json([]); }
 });
+
 app.post('/api/backups/create', async (req, res) => {
     try {
         const data = await loadData();
@@ -475,22 +475,25 @@ app.post('/api/backups/create', async (req, res) => {
         res.status(500).json({ error: 'Backup failed.' }); 
     }
 });
+
 app.get('/api/backups/:filename', (req, res) => {
     const filePath = path.join(BACKUP_DIR, req.params.filename);
     res.download(filePath);
 });
+
 app.delete('/api/backups/:filename', async (req, res) => {
     try {
         await fs.unlink(path.join(BACKUP_DIR, req.params.filename));
         res.json({ message: 'Backup deleted.' });
     } catch (e) { res.status(500).json({ error: 'Delete failed.' }); }
 });
+
 app.post('/api/backups/restore/:filename', async (req, res) => {
     try {
         const backupData = await fs.readFile(path.join(BACKUP_DIR, req.params.filename), 'utf-8');
         const dataToRestore = JSON.parse(backupData);
         await saveData(dataToRestore);
-        await broadcastUpdate(); // This will load and send the new state
+        await broadcastUpdate();
         res.json({ message: 'Restore successful.' });
     } catch (e) {
         console.error('Backup restore failed:', e);

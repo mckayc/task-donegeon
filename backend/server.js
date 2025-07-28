@@ -23,12 +23,20 @@ app.use('/uploads', express.static(UPLOAD_DIR));
 // === DATABASE SETUP ===
 let pool;
 try {
+    let sslConfig;
+    // Enable SSL specifically for Supabase or if the connection string demands it.
+    // For other environments (like local Docker), 'undefined' lets the pg driver
+    // default to a non-SSL connection, which is correct.
+    if (process.env.DATABASE_URL && (process.env.DATABASE_URL.includes('supabase') || process.env.DATABASE_URL.includes('sslmode=require'))) {
+        sslConfig = { rejectUnauthorized: false };
+    }
+
     pool = new Pool({
         connectionString: process.env.DATABASE_URL,
-        ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
+        ssl: sslConfig,
     });
 } catch (error) {
-    console.error("Failed to connect to PostgreSQL:", error);
+    console.error("Failed to create PostgreSQL pool:", error);
 }
 
 const initializeDb = async () => {

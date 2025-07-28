@@ -51,15 +51,46 @@ const initializeDb = async () => {
         `);
         const res = await pool.query("SELECT value FROM app_data WHERE key = 'appState'");
         if (res.rows.length === 0) {
-            const { INITIAL_SETTINGS, INITIAL_THEMES } = require('./initialData');
+            console.log("No existing data found. Seeding database with guided setup...");
+            const { 
+                createMockUsers, 
+                INITIAL_REWARD_TYPES, 
+                INITIAL_RANKS, 
+                INITIAL_TROPHIES, 
+                createSampleMarkets, 
+                createSampleQuests, 
+                createInitialGuilds, 
+                createSampleGameAssets, 
+                INITIAL_THEMES,
+                INITIAL_QUEST_GROUPS,
+                INITIAL_SETTINGS
+            } = require('./initialData');
+
+            const mockUsers = createMockUsers();
             const initialData = {
-                users: [], quests: [], questGroups: [], markets: [], rewardTypes: [], questCompletions: [],
-                purchaseRequests: [], guilds: [], ranks: [], trophies: [], userTrophies: [],
-                adminAdjustments: [], gameAssets: [], systemLogs: [], settings: INITIAL_SETTINGS,
-                themes: INITIAL_THEMES, loginHistory: [], chatMessages: [], systemNotifications: [], scheduledEvents: [],
+                users: mockUsers,
+                quests: createSampleQuests(mockUsers),
+                questGroups: INITIAL_QUEST_GROUPS,
+                markets: createSampleMarkets(),
+                rewardTypes: INITIAL_REWARD_TYPES,
+                questCompletions: [],
+                purchaseRequests: [],
+                guilds: createInitialGuilds(mockUsers),
+                ranks: INITIAL_RANKS,
+                trophies: INITIAL_TROPHIES,
+                userTrophies: [],
+                adminAdjustments: [],
+                gameAssets: createSampleGameAssets(),
+                systemLogs: [],
+                settings: { ...INITIAL_SETTINGS, contentVersion: 2 },
+                themes: INITIAL_THEMES,
+                loginHistory: [],
+                chatMessages: [],
+                systemNotifications: [],
+                scheduledEvents: [],
             };
             await pool.query("INSERT INTO app_data (key, value) VALUES ('appState', $1)", [JSON.stringify(initialData)]);
-            console.log("Database seeded with initial structure.");
+            console.log("Database seeded with initial guided setup.");
         }
     } catch (error) {
         console.error("Error initializing database:", error);

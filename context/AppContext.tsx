@@ -143,7 +143,6 @@ interface AppDispatch {
 
 }
 
-// This is where the magic happens. We'll implement the provider and hooks here.
 const AppStateContext = createContext<AppState | undefined>(undefined);
 const AppDispatchContext = createContext<AppDispatch | undefined>(undefined);
 
@@ -163,10 +162,26 @@ export const useAppDispatch = (): AppDispatch => {
     return context;
 };
 
-// Placeholder for now. Actual implementation would involve API calls.
+const mergeSettings = (newSettings: Partial<AppSettings> | undefined | null, baseSettings: AppSettings): AppSettings => {
+    if (!newSettings) return baseSettings;
+    // This creates a new object with the base settings, then overwrites with new settings,
+    // then deeply merges nested objects to prevent losing properties on partial updates.
+    return {
+        ...baseSettings,
+        ...newSettings,
+        questDefaults: { ...baseSettings.questDefaults, ...(newSettings.questDefaults || {}) },
+        security: { ...baseSettings.security, ...(newSettings.security || {}) },
+        sharedMode: { ...baseSettings.sharedMode, ...(newSettings.sharedMode || {}) },
+        automatedBackups: { ...baseSettings.automatedBackups, ...(newSettings.automatedBackups || {}) },
+        loginNotifications: { ...baseSettings.loginNotifications, ...(newSettings.loginNotifications || {}) },
+        rewardValuation: { ...baseSettings.rewardValuation, ...(newSettings.rewardValuation || {}) },
+        chat: { ...baseSettings.chat, ...(newSettings.chat || {}) },
+        sidebars: { ...baseSettings.sidebars, ...(newSettings.sidebars || {}) },
+    };
+};
+
 export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     const [state, setState] = useState<AppState>({
-        // Default empty state
         users: [], quests: [], questGroups: [], markets: [], rewardTypes: [], questCompletions: [],
         purchaseRequests: [], guilds: [], ranks: [], trophies: [], userTrophies: [],
         adminAdjustments: [], gameAssets: [], systemLogs: [], settings: INITIAL_SETTINGS,
@@ -181,7 +196,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     const isMounted = useRef(true);
     const ws = useRef<WebSocket | null>(null);
     const reconnectTimeoutId = useRef<number | null>(null);
-    const [retryCount, setRetryCount] = useState(0); // Add state to trigger reload
+    const [retryCount, setRetryCount] = useState(0);
 
     useEffect(() => {
       isMounted.current = true;
@@ -198,7 +213,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         setState(s => ({ ...s, notifications: s.notifications.filter(n => n.id !== notificationId) }));
     }, []);
 
-    // Generic API handler
     const apiRequest = useCallback(async (endpoint: string, options: RequestInit = {}) => {
         try {
             const response = await fetch(endpoint, {
@@ -209,7 +223,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
                 const errorData = await response.json();
                 throw new Error(errorData.error || 'API request failed');
             }
-             if (response.status === 204) return null; // Handle No Content response
+             if (response.status === 204) return null;
             return response.json();
         } catch (error) {
             console.error(`API Error on ${endpoint}:`, error);
@@ -220,14 +234,11 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         }
     }, [addNotification]);
     
-    // A function to optimistically update state, then persist the entire state to the backend.
-    // Use this for operations that don't have a dedicated backend endpoint.
     const updateAndSave = useCallback((updater: (prevState: AppState) => Partial<IAppData>) => {
         setState(prev => {
             const changes = updater(prev);
             const optimisticState = { ...prev, ...changes };
     
-            // Separate the data part to be saved
             const {
                 isAppUnlocked, isFirstRun, currentUser, activePage, appMode, notifications, isDataLoaded,
                 activeMarketId, allTags, isSwitchingUser, isSharedViewActive, targetedUserForLogin,
@@ -235,7 +246,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
                 ...dataToSave
             } = optimisticState;
 
-            // Fire-and-forget the async save operation
             (async () => {
                 if (!isMounted.current) return;
                 try {
@@ -254,7 +264,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
                         }
                     }
                     console.error("Failed to save state, optimistic update may be out of sync.", error);
-                    // TODO: Implement state rollback on failure. Could restore `prev`.
                 }
             })();
     
@@ -286,7 +295,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
                 adminAdjustments: newData.adminAdjustments ?? prev.adminAdjustments,
                 gameAssets: newData.gameAssets ?? prev.gameAssets,
                 systemLogs: newData.systemLogs ?? prev.systemLogs,
-                settings: newData.settings ?? prev.settings,
+                settings: mergeSettings(newData.settings, prev.settings),
                 themes: newData.themes ?? prev.themes,
                 loginHistory: newData.loginHistory ?? prev.loginHistory,
                 chatMessages: newData.chatMessages ?? prev.chatMessages,
@@ -388,7 +397,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
                         adminAdjustments: data.adminAdjustments || [],
                         gameAssets: data.gameAssets || [],
                         systemLogs: data.systemLogs || [],
-                        settings: data.settings || prev.settings,
+                        settings: mergeSettings(data.settings, INITIAL_SETTINGS),
                         themes: data.themes || [],
                         loginHistory: data.loginHistory || [],
                         chatMessages: data.chatMessages || [],
@@ -424,7 +433,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
         return () => {
             if (ws.current) {
-                ws.current.onclose = null; // Prevent reconnection on unmount
+                ws.current.onclose = null;
                 ws.current.close();
             }
             if (reconnectTimeoutId.current) {
@@ -435,7 +444,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
 
     const dispatch: AppDispatch = useMemo(() => ({
-        // Auth
         addUser: (userData: Omit<User, 'id' | 'personalPurse' | 'personalExperience' | 'guildBalances' | 'avatar' | 'ownedAssetIds' | 'ownedThemes' | 'hasBeenOnboarded'>) => apiRequest('/api/users', { method: 'POST', body: JSON.stringify(userData) }),
         updateUser: (userId: string, updatedData: Partial<User>) => apiRequest(`/api/users/${userId}`, { method: 'PUT', body: JSON.stringify(updatedData) }),
         deleteUser: (userId: string) => apiRequest(`/api/users/${userId}`, { method: 'DELETE' }),
@@ -455,7 +463,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         setIsSharedViewActive: (isActive: boolean) => setState(s => ({ ...s, isSharedViewActive: isActive })),
         bypassFirstRunCheck: () => setState(s => ({...s, isFirstRun: false})),
 
-        // Game Data
         addQuest: (quest: Omit<Quest, 'id' | 'claimedByUserIds' | 'dismissals'>) => apiRequest('/api/quests', { method: 'POST', body: JSON.stringify(quest) }),
         updateQuest: (updatedQuest: Quest) => apiRequest(`/api/quests/${updatedQuest.id}`, { method: 'PUT', body: JSON.stringify(updatedQuest) }),
         deleteQuest: (questId: string) => apiRequest(`/api/quests/${questId}`, { method: 'DELETE' }),
@@ -534,10 +541,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
                 return {};
             }
             
-            // Create a deep copy of the user to avoid direct state mutation
             const updatedUser = JSON.parse(JSON.stringify(purchasingUser));
 
-            // Deduct cost
             costGroup.forEach(cost => {
                 const rewardDef = s.rewardTypes.find(rt => rt.id === cost.rewardTypeId);
                 if (!rewardDef) return;
@@ -572,7 +577,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             let updatedAsset = { ...asset };
             if (!asset.requiresApproval) {
                 newPurchaseRequest.actedAt = new Date().toISOString();
-                // Grant item
                 updatedUser.ownedAssetIds.push(asset.id);
                 updatedAsset.purchaseCount += 1;
                 if(asset.linkedThemeId && !updatedUser.ownedThemes.includes(asset.linkedThemeId)) {
@@ -598,16 +602,13 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             const asset = s.gameAssets.find(a => a.id === request.assetId);
 
             if (!user || !asset) {
-                // Mark as rejected if user or asset is gone
                 const newPurchaseRequests = s.purchaseRequests.map(p => p.id === purchaseId ? { ...p, status: PurchaseRequestStatus.Rejected, actedAt: new Date().toISOString() } : p);
                 return { purchaseRequests: newPurchaseRequests };
             }
 
-            // Mark as completed
             request.status = PurchaseRequestStatus.Completed;
             request.actedAt = new Date().toISOString();
 
-            // Grant item
             user.ownedAssetIds.push(asset.id);
             asset.purchaseCount += 1;
             if(asset.linkedThemeId && !user.ownedThemes.includes(asset.linkedThemeId)) {
@@ -630,12 +631,10 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
             const user = s.users.find(u => u.id === request.userId);
 
-            // Mark as rejected
             request.status = PurchaseRequestStatus.Rejected;
             request.actedAt = new Date().toISOString();
             
             if (user) {
-                // Refund cost
                 request.assetDetails.cost.forEach(cost => {
                     const rewardDef = s.rewardTypes.find(rt => rt.id === cost.rewardTypeId);
                     if (!rewardDef) return;
@@ -666,12 +665,10 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
             const user = s.users.find(u => u.id === request.userId);
 
-            // Mark as cancelled
             request.status = PurchaseRequestStatus.Cancelled;
             request.actedAt = new Date().toISOString();
             
             if (user) {
-                // Refund cost
                 request.assetDetails.cost.forEach(cost => {
                     const rewardDef = s.rewardTypes.find(rt => rt.id === cost.rewardTypeId);
                     if (!rewardDef) return;
@@ -725,16 +722,13 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             return { gameAssets: [...s.gameAssets, newAsset] };
         }),
         
-        // Themes
         addTheme: (theme: Omit<ThemeDefinition, 'id'>) => apiRequest('/api/themes', { method: 'POST', body: JSON.stringify(theme) }),
         updateTheme: (theme: ThemeDefinition) => apiRequest(`/api/themes/${theme.id}`, { method: 'PUT', body: JSON.stringify(theme) }),
         deleteTheme: (themeId: string) => apiRequest(`/api/themes/${themeId}`, { method: 'DELETE' }),
 
-        // Settings
         updateSettings: (newSettings: Partial<AppSettings>) => updateAndSave(s => ({ settings: { ...s.settings, ...newSettings } })),
         resetSettings: () => updateAndSave(() => ({ settings: INITIAL_SETTINGS })),
         
-        // UI
         setActivePage: (page: Page) => setState(s => ({ ...s, activePage: page })),
         setAppMode: (mode: AppMode) => setState(s => ({ ...s, appMode: mode })),
         addNotification,
@@ -743,7 +737,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         toggleSidebar: () => setState(s => ({...s, isSidebarCollapsed: !s.isSidebarCollapsed})),
         toggleChat: () => setState(s => ({...s, isChatOpen: !s.isChatOpen})),
 
-        // Data Management
         importBlueprint: (blueprint: Blueprint, resolutions: ImportResolution[]) => updateAndSave(s => { /* complex logic */ return {}; }),
         restoreFromBackup: (backupData: IAppData) => updateAndSave(() => ({...backupData})),
         restoreDefaultObjects: (objectType: 'trophies') => updateAndSave(s => ({ trophies: [...s.trophies, ...INITIAL_TROPHIES.filter(it => !s.trophies.some(t => t.id === it.id))] })),
@@ -752,26 +745,20 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         deleteAllCustomContent: () => updateAndSave(s => ({ quests: [], markets: [], gameAssets: [], trophies: s.trophies.filter(t => INITIAL_TROPHIES.some(it => it.id === t.id)) })),
         retryDataLoad: () => setRetryCount(c => c + 1),
 
-        // First Run
         completeFirstRun: (adminUserData: Omit<User, 'id' | 'personalPurse' | 'personalExperience' | 'guildBalances' | 'avatar' | 'ownedAssetIds' | 'ownedThemes' | 'hasBeenOnboarded'>, setupChoice: 'guided' | 'scratch' | 'import', blueprint: Blueprint | null) => apiRequest('/api/first-run', { method: 'POST', body: JSON.stringify({ adminUserData, setupChoice, blueprint }) }),
         
-        // Ranks
         setRanks: (ranks: Rank[]) => updateAndSave(() => ({ ranks })),
 
-        // Chat
         sendMessage: (message: Partial<ChatMessage>) => apiRequest('/api/chat/messages', { method: 'POST', body: JSON.stringify({ ...message, senderId: state.currentUser?.id }) }),
         markMessagesAsRead: (options: { partnerId?: string; guildId?: string }) => apiRequest('/api/chat/read', { method: 'POST', body: JSON.stringify({ ...options, userId: state.currentUser?.id }) }),
 
-        // System Notifications
         addSystemNotification: (notification: Omit<SystemNotification, 'id' | 'timestamp' | 'readByUserIds'>) => apiRequest('/api/systemNotifications', { method: 'POST', body: JSON.stringify(notification) }),
         markSystemNotificationsAsRead: (notificationIds: string[]) => apiRequest('/api/systemNotifications/read', { method: 'POST', body: JSON.stringify({ notificationIds, userId: state.currentUser?.id }) }),
 
-        // Scheduled Events
         addScheduledEvent: (event: Omit<ScheduledEvent, 'id'>) => apiRequest('/api/scheduledEvents', { method: 'POST', body: JSON.stringify(event) }),
         updateScheduledEvent: (event: ScheduledEvent) => apiRequest(`/api/scheduledEvents/${event.id}`, { method: 'PUT', body: JSON.stringify(event) }),
         deleteScheduledEvent: (eventId: string) => apiRequest(`/api/scheduledEvents/${eventId}`, { method: 'DELETE' }),
         
-        // Bulk Actions
         deleteQuests: (questIds: string[]) => updateAndSave(s => ({ quests: s.quests.filter(q => !questIds.includes(q.id)) })),
         updateQuestsStatus: (questIds: string[], isActive: boolean) => updateAndSave(s => ({ quests: s.quests.map(q => questIds.includes(q.id) ? { ...q, isActive } : q) })),
         bulkUpdateQuests: (questIds: string[], updates: BulkQuestUpdates) => updateAndSave(s => {
@@ -792,12 +779,11 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             }
         }),
 
-        // Assets
         uploadFile: async (file: File, category?: string) => {
             const formData = new FormData();
             formData.append('file', file);
             if(category) formData.append('category', category);
-            return apiRequest('/api/media/upload', { method: 'POST', body: formData, headers: {} }); // Let browser set Content-Type for FormData
+            return apiRequest('/api/media/upload', { method: 'POST', body: formData, headers: {} });
         },
         executeExchange: (userId: string, payItem: RewardItem, receiveItem: RewardItem, guildId?: string) => apiRequest('/api/economy/exchange', { method: 'POST', body: JSON.stringify({ userId, payItem, receiveItem, guildId }) }),
     } as unknown as AppDispatch), [state, updateAndSave, addNotification, removeNotification, apiRequest, loadInitialData]);

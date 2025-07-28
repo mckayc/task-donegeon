@@ -1,4 +1,5 @@
 
+
 const express = require('express');
 const cors = require('cors');
 const { Pool } = require('pg');
@@ -50,7 +51,7 @@ const initializeDb = async () => {
         `);
         const res = await pool.query("SELECT value FROM app_data WHERE key = 'appState'");
         if (res.rows.length === 0) {
-            const { INITIAL_SETTINGS, INITIAL_THEMES } = require('../data/initialData');
+            const { INITIAL_SETTINGS, INITIAL_THEMES } = require('./initialData');
             const initialData = {
                 users: [], quests: [], questGroups: [], markets: [], rewardTypes: [], questCompletions: [],
                 purchaseRequests: [], guilds: [], ranks: [], trophies: [], userTrophies: [],
@@ -170,7 +171,7 @@ app.post('/api/first-run', (req, res) => handleRequest(res, async (data) => {
     const { adminUserData, setupChoice, blueprint } = req.body;
     if (data.users.length > 0) throw new Error('First run has already been completed.');
     
-    const { createMockUsers, INITIAL_REWARD_TYPES, INITIAL_RANKS, INITIAL_TROPHIES, createSampleMarkets, createSampleQuests, createInitialGuilds, createSampleGameAssets, INITIAL_THEMES, INITIAL_QUEST_GROUPS } = require('../data/initialData');
+    const { createMockUsers, INITIAL_REWARD_TYPES, INITIAL_RANKS, INITIAL_TROPHIES, createSampleMarkets, createSampleQuests, createInitialGuilds, createSampleGameAssets, INITIAL_THEMES, INITIAL_QUEST_GROUPS } = require('./initialData');
 
     const adminUser = {
         ...adminUserData, id: `user-1`, avatar: {}, ownedAssetIds: [], personalPurse: {}, personalExperience: {},

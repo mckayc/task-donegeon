@@ -9,6 +9,35 @@ const { Pool } = require('pg');
 const multer = require('multer');
 const { GoogleGenAI } = require('@google/genai');
 
+// --- INITIAL DATA (merged from initialData.js) ---
+const { Role, RewardCategory, QuestType, QuestAvailability, TrophyRequirementType, INITIAL_QUEST_GROUPS, createMockUsers, INITIAL_REWARD_TYPES, INITIAL_RANKS, INITIAL_SETTINGS, INITIAL_THEMES, INITIAL_TROPHIES, createSampleMarkets, createSampleGameAssets, createInitialGuilds, createSampleQuests } = require('./data/initialData.js');
+
+const getInitialData = () => {
+  const mockUsers = createMockUsers();
+  return {
+    users: mockUsers,
+    quests: createSampleQuests(mockUsers),
+    questGroups: INITIAL_QUEST_GROUPS,
+    markets: createSampleMarkets(),
+    rewardTypes: INITIAL_REWARD_TYPES,
+    questCompletions: [],
+    purchaseRequests: [],
+    guilds: createInitialGuilds(mockUsers),
+    ranks: INITIAL_RANKS,
+    trophies: INITIAL_TROPHIES,
+    userTrophies: [],
+    adminAdjustments: [],
+    gameAssets: createSampleGameAssets(),
+    systemLogs: [],
+    settings: { ...INITIAL_SETTINGS, contentVersion: 2 },
+    themes: INITIAL_THEMES,
+    loginHistory: [],
+    chatMessages: [],
+    systemNotifications: [],
+    scheduledEvents: [],
+  };
+};
+
 // --- CONSTANTS ---
 const UPLOAD_DIR = path.join(__dirname, 'uploads');
 const BACKUP_DIR = process.env.BACKUP_PATH || path.join(__dirname, 'backups');
@@ -40,25 +69,7 @@ const initializeDb = async () => {
         const res = await pool.query("SELECT value FROM app_data WHERE key = 'appState'");
         if (res.rows.length === 0) {
             console.log("No existing data found. Seeding database with guided setup...");
-            const initialDataContent = require('./initialData');
-            const mockUsers = initialDataContent.createMockUsers();
-            const initialData = {
-                users: mockUsers,
-                quests: initialDataContent.createSampleQuests(mockUsers),
-                questGroups: initialDataContent.INITIAL_QUEST_GROUPS,
-                markets: initialDataContent.createSampleMarkets(),
-                rewardTypes: initialDataContent.INITIAL_REWARD_TYPES,
-                questCompletions: [], purchaseRequests: [],
-                guilds: initialDataContent.createInitialGuilds(mockUsers),
-                ranks: initialDataContent.INITIAL_RANKS,
-                trophies: initialDataContent.INITIAL_TROPHIES,
-                userTrophies: [], adminAdjustments: [],
-                gameAssets: initialDataContent.createSampleGameAssets(),
-                systemLogs: [],
-                settings: { ...initialDataContent.INITIAL_SETTINGS, contentVersion: 2 },
-                themes: initialDataContent.INITIAL_THEMES,
-                loginHistory: [], chatMessages: [], systemNotifications: [], scheduledEvents: [],
-            };
+            const initialData = getInitialData();
             await pool.query("INSERT INTO app_data (key, value) VALUES ('appState', $1)", [JSON.stringify(initialData)]);
             console.log("Database seeded.");
         } else {
@@ -162,9 +173,67 @@ app.put('/api/users/:id', apiHandler((data, req) => {
 }));
 app.delete('/api/users/:id', apiHandler((data, req) => { data.users = data.users.filter(u => u.id !== req.params.id); }));
 
-// Quest Routes
+// Quest & Approval Routes
 app.post('/api/quests/:id/actions', apiHandler((data, req) => { /* ... unchanged ... */ }));
 app.post('/api/quests/:id/complete', apiHandler((data, req) => { /* ... unchanged ... */ }));
+
+app.post('/api/approvals/quest/:id/approve', apiHandler((data, req) => {
+    const { id } = req.params;
+    const { note } = req.body;
+    
+    const completionIndex = data.questCompletions.findIndex(c => c.id === id);
+    if (completionIndex === -1) throw new Error('Quest completion not found.');
+    
+    const completion = data.questCompletions[completionIndex];
+    if (completion.status !== 'Pending') throw new Error('Quest is not pending approval.');
+
+    const userIndex = data.users.findIndex(u => u.id === completion.userId);
+    if (userIndex === -1) {
+        completion.status = 'Rejected';
+        completion.note = "User no longer exists.";
+        return;
+    }
+
+    const quest = data.quests.find(q => q.id === completion.questId);
+    if (!quest) {
+        completion.status = 'Rejected';
+        completion.note = "Quest no longer exists.";
+        return;
+    }
+    
+    const user = data.users[userIndex];
+    quest.rewards.forEach(reward => {
+        const rewardType = data.rewardTypes.find(rt => rt.id === reward.rewardTypeId);
+        if (!rewardType) return;
+        
+        let balanceTarget;
+        if (quest.guildId) {
+            if (!user.guildBalances[quest.guildId]) {
+                user.guildBalances[quest.guildId] = { purse: {}, experience: {} };
+            }
+            balanceTarget = rewardType.category === 'Currency' ? user.guildBalances[quest.guildId].purse : user.guildBalances[quest.guildId].experience;
+        } else {
+            balanceTarget = rewardType.category === 'Currency' ? user.personalPurse : user.personalExperience;
+        }
+        
+        balanceTarget[reward.rewardTypeId] = (balanceTarget[reward.rewardTypeId] || 0) + reward.amount;
+    });
+
+    completion.status = 'Approved';
+    if (note) completion.note = note;
+}));
+
+app.post('/api/approvals/quest/:id/reject', apiHandler((data, req) => {
+    const { id } = req.params;
+    const { note } = req.body;
+
+    const completionIndex = data.questCompletions.findIndex(c => c.id === id);
+    if (completionIndex === -1) throw new Error('Quest completion not found.');
+    
+    const completion = data.questCompletions[completionIndex];
+    completion.status = 'Rejected';
+    if (note) completion.note = note;
+}));
 
 // Chat & Notification Routes
 app.post('/api/chat/messages', apiHandler((data, req) => { /* ... unchanged ... */ }));

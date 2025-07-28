@@ -1,6 +1,4 @@
 
-
-
 const express = require('express');
 const cors = require('cors');
 const { Pool } = require('pg');
@@ -395,7 +393,7 @@ app.post('/api/chat/messages', (req, res) => handleRequest(req, res, (data) => {
 app.post('/api/chat/read', (req, res) => handleRequest(req, res, (data) => {
     const { userId, partnerId, guildId } = req.body;
     data.chatMessages.forEach(msg => {
-        const isDmMatch = partnerId && ((msg.senderId === partnerId && msg.recipientId === userId));
+        const isDmMatch = partnerId && (msg.senderId === partnerId && msg.recipientId === userId);
         const isGuildMatch = guildId && msg.guildId === guildId;
         if ((isDmMatch || isGuildMatch) && !msg.readBy.includes(userId)) {
             msg.readBy.push(userId);
@@ -471,8 +469,11 @@ app.post('/api/backups/create', async (req, res) => {
         const data = await loadData();
         const filename = `backup_${new Date().toISOString().replace(/:/g, '-')}.json`;
         await fs.writeFile(path.join(BACKUP_DIR, filename), JSON.stringify(data, null, 2));
-        res.json({ message: 'Backup created.' });
-    } catch (e) { res.status(500).json({ error: 'Backup failed.' }); }
+        res.status(201).json({ message: 'Backup created.' });
+    } catch (e) { 
+        console.error('Backup creation failed:', e);
+        res.status(500).json({ error: 'Backup failed.' }); 
+    }
 });
 app.get('/api/backups/:filename', (req, res) => {
     const filePath = path.join(BACKUP_DIR, req.params.filename);
@@ -484,13 +485,18 @@ app.delete('/api/backups/:filename', async (req, res) => {
         res.json({ message: 'Backup deleted.' });
     } catch (e) { res.status(500).json({ error: 'Delete failed.' }); }
 });
-app.post('/api/backups/restore/:filename', (req, res) => handleRequest(req, res, async () => {
-    const backupData = await fs.readFile(path.join(BACKUP_DIR, req.params.filename), 'utf-8');
-    const dataToRestore = JSON.parse(backupData);
-    await saveData(dataToRestore);
-    broadcast({ type: 'FULL_STATE_UPDATE', payload: dataToRestore });
-    res.json({ message: 'Restore successful.' });
-}));
+app.post('/api/backups/restore/:filename', async (req, res) => {
+    try {
+        const backupData = await fs.readFile(path.join(BACKUP_DIR, req.params.filename), 'utf-8');
+        const dataToRestore = JSON.parse(backupData);
+        await saveData(dataToRestore);
+        await broadcastUpdate(); // This will load and send the new state
+        res.json({ message: 'Restore successful.' });
+    } catch (e) {
+        console.error('Backup restore failed:', e);
+        res.status(500).json({ error: 'Restore failed.' });
+    }
+});
 
 
 // Fallback for SPA

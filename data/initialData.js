@@ -1,5 +1,5 @@
 
-const { Role, RewardCategory, TrophyRequirementType, QuestType, QuestAvailability, QuestCompletionStatus } = require('../types.js');
+const { Role, RewardCategory, TrophyRequirementType, QuestType, QuestAvailability, QuestCompletionStatus } = require('../backend/types.js');
 
 const INITIAL_QUEST_GROUPS = [
     { id: 'qg-household', name: 'Household Chores', description: 'General tasks related to keeping the house clean and tidy.', icon: '🏡' },

@@ -10,7 +10,7 @@ const multer = require('multer');
 const { GoogleGenAI } = require('@google/genai');
 
 // --- INITIAL DATA HELPERS (used for first run) ---
-const { Role, QuestType, RewardCategory, QuestAvailability, TrophyRequirementType } = require('../types.js');
+const { Role, QuestType, RewardCategory, QuestAvailability, TrophyRequirementType } = require('./types.js');
 const {
     INITIAL_QUEST_GROUPS,
     INITIAL_REWARD_TYPES,
@@ -21,7 +21,7 @@ const {
     createSampleMarkets,
     createSampleGameAssets,
     createSampleQuests,
-} = require('../data/initialData');
+} = require('../data/initialData.js');
 
 const getGuidedSetupData = () => {
   // We pass an empty user array because the actual admin user will be added by the first-run handler.

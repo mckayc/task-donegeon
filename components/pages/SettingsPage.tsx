@@ -6,7 +6,7 @@ import { ChevronDownIcon } from '../ui/Icons';
 import Input from '../ui/Input';
 import ToggleSwitch from '../ui/ToggleSwitch';
 import ConfirmDialog from '../ui/ConfirmDialog';
-import { INITIAL_SETTINGS } from '../../data/initialData';
+import { INITIAL_SETTINGS } from '../../data/initialData.ts';
 import EmojiPicker from '../ui/EmojiPicker';
 
 

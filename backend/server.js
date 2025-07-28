@@ -5,7 +5,7 @@ const path = require('path');
 const http = require('http');
 const fs = require('fs').promises;
 const WebSocket = require('ws');
-const { Pool } = require('pg');
+const sqlite3 = require('sqlite3').verbose();
 const multer = require('multer');
 const { GoogleGenAI } = require('@google/genai');
 
@@ -54,55 +54,74 @@ const getGuidedSetupData = () => {
 const UPLOAD_DIR = path.join(__dirname, 'uploads');
 const BACKUP_DIR = process.env.BACKUP_PATH || path.join(__dirname, 'backups');
 const AI_MODEL = 'gemini-2.5-flash';
+const DB_DIR = path.join(__dirname, 'data');
+const DB_PATH = path.join(DB_DIR, 'task-donegeon.db');
 
 // --- DATABASE LOGIC ---
-let pool;
-try {
-    console.log("Attempting to create PostgreSQL pool...");
-    const sslConfig = (process.env.DATABASE_URL && (process.env.DATABASE_URL.includes('supabase') || process.env.DATABASE_URL.includes('sslmode=require')))
-        ? { rejectUnauthorized: false }
-        : undefined;
+let db;
 
-    pool = new Pool({ connectionString: process.env.DATABASE_URL, ssl: sslConfig });
-    console.log("PostgreSQL pool created successfully.");
-    pool.on('error', (err, client) => {
-        console.error('Unexpected error on idle client', err);
-        process.exit(-1);
-    });
-} catch (error) {
-    console.error("Failed to create PostgreSQL pool:", error);
-}
-
-const initializeDb = async () => {
-    if (!pool) return console.error("Database pool is not available. Skipping DB initialization.");
+const initializeDb = () => {
+  return new Promise(async (resolve, reject) => {
     try {
-        console.log("Initializing database table...");
-        await pool.query(`CREATE TABLE IF NOT EXISTS app_data (key TEXT PRIMARY KEY, value JSONB NOT NULL);`);
-        console.log("Database table checked/created.");
+      await fs.mkdir(DB_DIR, { recursive: true });
+      db = new sqlite3.Database(DB_PATH, async (err) => {
+        if (err) {
+          console.error("Error connecting to SQLite:", err);
+          return reject(err);
+        }
+        console.log('Connected to the SQLite database.');
+        // Use serialize to ensure sequential execution
+        db.serialize(() => {
+          db.run(`CREATE TABLE IF NOT EXISTS app_data (key TEXT PRIMARY KEY, value TEXT NOT NULL)`, (err) => {
+            if (err) {
+               console.error("Error creating table:", err);
+              return reject(err);
+            }
+            console.log("Database table 'app_data' is ready.");
+            resolve();
+          });
+        });
+      });
     } catch (error) {
-        console.error("Error initializing database:", error);
-        throw error;
+       console.error("Error during DB directory creation:", error);
+      reject(error);
     }
+  });
 };
 
 const loadData = async () => {
-    if (!pool) throw new Error("Database not connected.");
-    const res = await pool.query("SELECT value FROM app_data WHERE key = 'appState'");
-    if (res.rows.length === 0) {
-      console.log("No data found in DB. This is a first run.");
-      // Return a minimal object that signals a first run to the frontend.
-      return { users: [], settings: null };
-    }
-    return res.rows[0].value;
+  return new Promise((resolve, reject) => {
+    if (!db) return reject(new Error("Database is not initialized."));
+    db.get("SELECT value FROM app_data WHERE key = ?", ['appState'], (err, row) => {
+      if (err) {
+        return reject(err);
+      }
+      if (!row) {
+        console.log("No data found in DB. This is a first run.");
+        return resolve({ users: [], settings: null });
+      }
+      try {
+        resolve(JSON.parse(row.value));
+      } catch (parseError) {
+        reject(parseError);
+      }
+    });
+  });
 };
 
 const saveData = async (data) => {
-    if (!pool) throw new Error("Database not connected.");
-    await pool.query(
-        "INSERT INTO app_data (key, value) VALUES ('appState', $1) ON CONFLICT (key) DO UPDATE SET value = $1",
-        [JSON.stringify(data)]
-    );
+  return new Promise((resolve, reject) => {
+     if (!db) return reject(new Error("Database is not initialized."));
+    const jsonData = JSON.stringify(data);
+    db.run("INSERT OR REPLACE INTO app_data (key, value) VALUES (?, ?)", ['appState', jsonData], function(err) {
+      if (err) {
+        return reject(err);
+      }
+      resolve();
+    });
+  });
 };
+
 
 // --- WEBSOCKET LOGIC ---
 let wss;
@@ -147,239 +166,382 @@ const app = express();
 const server = http.createServer(app);
 fs.mkdir(UPLOAD_DIR, { recursive: true }).catch(console.error);
 fs.mkdir(BACKUP_DIR, { recursive: true }).catch(console.error);
-initWebSocket(server);
+
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
 app.use((req, res, next) => { console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`); next(); });
 app.use('/uploads', express.static(UPLOAD_DIR));
 app.use(express.static(path.join(__dirname, '..', 'dist')));
 
-// --- API ROUTES ---
+// --- API ROUTES---
 
-// Data Routes
-app.get('/api/pre-run-check', async (req, res) => { /* ... unchanged ... */ });
-app.post('/api/first-run', apiHandler(async (data, req) => {
-    const { adminUserData, setupChoice, blueprint } = req.body;
+// --- DATA & FIRST RUN ---
+app.get('/api/data', async (req, res) => {
+  try {
+    const data = await loadData();
+    res.json(data);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
 
-    const adminUser = {
-        ...adminUserData,
-        id: `user-${Date.now()}`,
-        avatar: {},
-        ownedAssetIds: [],
-        personalPurse: {},
-        personalExperience: {},
-        guildBalances: {},
-        ownedThemes: ['emerald', 'rose', 'sky'],
-        hasBeenOnboarded: true,
-    };
-
-    let newData;
-    if (setupChoice === 'guided') {
-        newData = getGuidedSetupData();
-        newData.users = [adminUser];
-        if (newData.guilds[0]) {
-            newData.guilds[0].memberIds = [adminUser.id];
-        }
-        newData.quests.forEach(q => {
-            if (q.tags.includes('tutorial-donegeon-master')) {
-                q.assignedUserIds = [adminUser.id];
-            } else {
-                q.assignedUserIds = [];
-            }
-        });
-    } else if (setupChoice === 'scratch') {
-        newData = {
-            users: [adminUser],
-            quests: [], questGroups: [], markets: [],
-            rewardTypes: INITIAL_REWARD_TYPES,
-            questCompletions: [], purchaseRequests: [],
-            guilds: [{ id: 'guild-1', name: 'Primary Guild', purpose: 'The main guild.', memberIds: [adminUser.id], isDefault: true }],
-            ranks: INITIAL_RANKS, trophies: [], userTrophies: [],
-            adminAdjustments: [], gameAssets: [], systemLogs: [],
-            settings: { ...INITIAL_SETTINGS, contentVersion: 2 },
-            themes: INITIAL_THEMES,
-            loginHistory: [], chatMessages: [], systemNotifications: [], scheduledEvents: [],
-        };
-    } else if (setupChoice === 'import' && blueprint) {
-        newData = {
-            ...blueprint.assets,
-            users: [adminUser],
-            questCompletions: [], purchaseRequests: [], userTrophies: [], adminAdjustments: [], systemLogs: [],
-            settings: { ...INITIAL_SETTINGS, contentVersion: 2 },
-            themes: INITIAL_THEMES,
-            loginHistory: [], chatMessages: [], systemNotifications: [], scheduledEvents: [],
-        };
-    } else {
-        throw new Error("Invalid setup choice provided.");
-    }
-    
-    Object.keys(data).forEach(key => delete data[key]);
-    Object.assign(data, newData);
-
-    return { status: 201, body: { user: adminUser } };
-}));
-
-app.get('/api/data', async (req, res) => { 
+app.post('/api/first-run', async (req, res) => {
     try {
-        const data = await loadData();
-        res.json(data);
+        const { adminUserData, setupChoice, blueprint } = req.body;
+        let newData;
+        if (setupChoice === 'scratch') {
+            newData = { ...getGuidedSetupData(), quests: [], markets: [], gameAssets: [] };
+        } else if (setupChoice === 'import' && blueprint) {
+            newData = { ...getGuidedSetupData(), ...blueprint.assets };
+        } else { // 'guided' is the default
+            newData = getGuidedSetupData();
+        }
+
+        const adminId = `user-${Date.now()}`;
+        const newAdmin = {
+            ...adminUserData,
+            id: adminId,
+            avatar: {},
+            ownedAssetIds: [],
+            personalPurse: {},
+            personalExperience: {},
+            guildBalances: {},
+            ownedThemes: ['emerald', 'rose', 'sky'],
+            hasBeenOnboarded: false,
+        };
+
+        newData.users = [newAdmin];
+        // Add new admin to the default guild
+        if(newData.guilds && newData.guilds[0]) {
+            newData.guilds[0].memberIds.push(adminId);
+        }
+        
+        await saveData(newData);
+        await broadcastUpdate();
+        res.status(200).json({ user: newAdmin });
     } catch (error) {
-        res.status(500).json({ error: 'Failed to load data.' });
+        console.error("First run error:", error);
+        res.status(500).json({ error: error.message });
     }
 });
-app.post('/api/data', apiHandler((data, req) => { Object.assign(data, req.body); }));
 
-// User Routes
-app.post('/api/users', apiHandler((data, req) => {
-    const newUser = { ...req.body, id: `user-${Date.now()}`, avatar: {}, ownedAssetIds: [], personalPurse: {}, personalExperience: {}, guildBalances: {}, ownedThemes: ['emerald', 'rose', 'sky'], hasBeenOnboarded: false };
-    data.users.push(newUser);
-    return { status: 201, body: newUser };
-}));
-app.put('/api/users/:id', apiHandler((data, req) => {
-    const index = data.users.findIndex(u => u.id === req.params.id);
-    if (index === -1) throw new Error('User not found.');
-    data.users[index] = { ...data.users[index], ...req.body };
-}));
-app.delete('/api/users/:id', apiHandler((data, req) => { data.users = data.users.filter(u => u.id !== req.params.id); }));
 
-// Quest & Approval Routes
-app.post('/api/quests/:id/actions', apiHandler((data, req) => { /* ... unchanged ... */ }));
-app.post('/api/quests/:id/complete', apiHandler((data, req) => { /* ... unchanged ... */ }));
-
-app.post('/api/approvals/quest/:id/approve', apiHandler((data, req) => {
-    const { id } = req.params;
-    const { note } = req.body;
-    
-    const completionIndex = data.questCompletions.findIndex(c => c.id === id);
-    if (completionIndex === -1) throw new Error('Quest completion not found.');
-    
-    const completion = data.questCompletions[completionIndex];
-    if (completion.status !== 'Pending') throw new Error('Quest is not pending approval.');
-
-    const userIndex = data.users.findIndex(u => u.id === completion.userId);
-    if (userIndex === -1) {
-        completion.status = 'Rejected';
-        completion.note = "User no longer exists.";
-        return;
-    }
-
-    const quest = data.quests.find(q => q.id === completion.questId);
-    if (!quest) {
-        completion.status = 'Rejected';
-        completion.note = "Quest no longer exists.";
-        return;
-    }
-    
-    const user = data.users[userIndex];
-    quest.rewards.forEach(reward => {
-        const rewardType = data.rewardTypes.find(rt => rt.id === reward.rewardTypeId);
-        if (!rewardType) return;
-        
-        let balanceTarget;
-        if (quest.guildId) {
-            if (!user.guildBalances[quest.guildId]) {
-                user.guildBalances[quest.guildId] = { purse: {}, experience: {} };
-            }
-            balanceTarget = rewardType.category === 'Currency' ? user.guildBalances[quest.guildId].purse : user.guildBalances[quest.guildId].experience;
-        } else {
-            balanceTarget = rewardType.category === 'Currency' ? user.personalPurse : user.personalExperience;
+// --- GENERIC CRUD HELPER ---
+const createCrudRoutes = (app, dataKey, idPrefix) => {
+    // Add new item
+    app.post(`/api/${dataKey}`, apiHandler((data, req) => {
+        const newItem = { ...req.body, id: `${idPrefix}-${Date.now()}` };
+        if(dataKey === 'users') { // Special handling for new users
+            newItem.avatar = {};
+            newItem.ownedAssetIds = [];
+            newItem.personalPurse = {};
+            newItem.personalExperience = {};
+            newItem.guildBalances = {};
+            newItem.ownedThemes = ['emerald', 'rose', 'sky'];
+            newItem.hasBeenOnboarded = false;
+        } else if (dataKey === 'gameAssets') {
+             newItem.creatorId = req.body.creatorId || 'admin'; // Or get from auth later
+             newItem.createdAt = new Date().toISOString();
+             newItem.purchaseCount = 0;
         }
-        
-        balanceTarget[reward.rewardTypeId] = (balanceTarget[reward.rewardTypeId] || 0) + reward.amount;
-    });
+        data[dataKey] = [...(data[dataKey] || []), newItem];
+        return { status: 201, body: newItem };
+    }));
 
-    completion.status = 'Approved';
-    if (note) completion.note = note;
-}));
+    // Update item
+    app.put(`/api/${dataKey}/:id`, apiHandler((data, req) => {
+        const { id } = req.params;
+        data[dataKey] = data[dataKey].map(item => item.id === id ? { ...item, ...req.body } : item);
+    }));
 
-app.post('/api/approvals/quest/:id/reject', apiHandler((data, req) => {
+    // Delete item
+    app.delete(`/api/${dataKey}/:id`, apiHandler((data, req) => {
+        const { id } = req.params;
+        data[dataKey] = data[dataKey].filter(item => item.id !== id);
+    }));
+};
+
+createCrudRoutes(app, 'users', 'user');
+createCrudRoutes(app, 'quests', 'quest');
+createCrudRoutes(app, 'questGroups', 'qg');
+createCrudRoutes(app, 'rewardTypes', 'rt');
+createCrudRoutes(app, 'markets', 'mkt');
+createCrudRoutes(app, 'guilds', 'gld');
+createCrudRoutes(app, 'trophies', 't');
+createCrudRoutes(app, 'gameAssets', 'ga');
+createCrudRoutes(app, 'themes', 'thm');
+createCrudRoutes(app, 'scheduledEvents', 'evt');
+createCrudRoutes(app, 'systemNotifications', 'sn');
+
+// --- COMPLEX ACTIONS ---
+
+app.post('/api/quests/:id/complete', apiHandler((data, req) => {
     const { id } = req.params;
-    const { note } = req.body;
+    const { userId, note, completionDate } = req.body;
+    const quest = data.quests.find(q => q.id === id);
+    if (!quest) return { status: 404, body: { error: "Quest not found" } };
 
-    const completionIndex = data.questCompletions.findIndex(c => c.id === id);
-    if (completionIndex === -1) throw new Error('Quest completion not found.');
-    
-    const completion = data.questCompletions[completionIndex];
-    completion.status = 'Rejected';
-    if (note) completion.note = note;
+    const newCompletion = {
+        id: `qc-${Date.now()}`,
+        questId: id,
+        userId,
+        completedAt: completionDate ? new Date(completionDate).toISOString() : new Date().toISOString(),
+        status: quest.requiresApproval ? 'Pending' : 'Approved',
+        note: note,
+        guildId: quest.guildId
+    };
+
+    data.questCompletions.push(newCompletion);
+
+    if (newCompletion.status === 'Approved') {
+        // Apply rewards
+        const user = data.users.find(u => u.id === userId);
+        if (user) {
+            let targetPurse, targetExperience;
+            if (quest.guildId) {
+                if (!user.guildBalances[quest.guildId]) user.guildBalances[quest.guildId] = { purse: {}, experience: {} };
+                targetPurse = user.guildBalances[quest.guildId].purse;
+                targetExperience = user.guildBalances[quest.guildId].experience;
+            } else {
+                targetPurse = user.personalPurse;
+                targetExperience = user.personalExperience;
+            }
+            quest.rewards.forEach(reward => {
+                const type = data.rewardTypes.find(rt => rt.id === reward.rewardTypeId)?.category;
+                if (type === 'Currency') {
+                    targetPurse[reward.rewardTypeId] = (targetPurse[reward.rewardTypeId] || 0) + reward.amount;
+                } else if (type === 'XP') {
+                    targetExperience[reward.rewardTypeId] = (targetExperience[reward.rewardTypeId] || 0) + reward.amount;
+                }
+            });
+        }
+    }
 }));
 
-// Chat & Notification Routes
-app.post('/api/chat/messages', apiHandler((data, req) => { /* ... unchanged ... */ }));
-app.post('/api/chat/read', apiHandler((data, req) => { /* ... unchanged ... */ }));
-app.post('/api/systemNotifications', apiHandler((data, req) => { /* ... unchanged ... */ }));
-app.post('/api/systemNotifications/read', apiHandler((data, req) => { /* ... unchanged ... */ }));
+app.post('/api/approvals/quest/:id/:action', apiHandler((data, req) => {
+    const { id, action } = req.params; // action is 'approve' or 'reject'
+    const completion = data.questCompletions.find(c => c.id === id);
+    if (!completion) return { status: 404, body: { error: 'Completion record not found' } };
 
-// Media Routes
+    if (action === 'approve') {
+        completion.status = 'Approved';
+        const quest = data.quests.find(q => q.id === completion.questId);
+        const user = data.users.find(u => u.id === completion.userId);
+        if (quest && user) {
+            // Apply rewards logic (same as in quest completion)
+            let targetPurse, targetExperience;
+            if (quest.guildId) {
+                if (!user.guildBalances[quest.guildId]) user.guildBalances[quest.guildId] = { purse: {}, experience: {} };
+                targetPurse = user.guildBalances[quest.guildId].purse;
+                targetExperience = user.guildBalances[quest.guildId].experience;
+            } else {
+                targetPurse = user.personalPurse;
+                targetExperience = user.personalExperience;
+            }
+             quest.rewards.forEach(reward => {
+                const type = data.rewardTypes.find(rt => rt.id === reward.rewardTypeId)?.category;
+                if (type === 'Currency') {
+                    targetPurse[reward.rewardTypeId] = (targetPurse[reward.rewardTypeId] || 0) + reward.amount;
+                } else if (type === 'XP') {
+                    targetExperience[reward.rewardTypeId] = (targetExperience[reward.rewardTypeId] || 0) + reward.amount;
+                }
+            });
+        }
+    } else if (action === 'reject') {
+        completion.status = 'Rejected';
+    }
+}));
+
+app.post('/api/quests/:id/actions', apiHandler((data, req) => {
+    const { id } = req.params;
+    const { action, userId } = req.body;
+    const quest = data.quests.find(q => q.id === id);
+    if (!quest) return { status: 404, body: { error: 'Quest not found' } };
+
+    if (!quest.todoUserIds) quest.todoUserIds = [];
+
+    if (action === 'mark_todo') {
+        if (!quest.todoUserIds.includes(userId)) quest.todoUserIds.push(userId);
+    } else if (action === 'unmark_todo') {
+        quest.todoUserIds = quest.todoUserIds.filter(uid => uid !== userId);
+    }
+}));
+
+
+// --- CHAT ---
+app.post('/api/chat/messages', apiHandler((data, req) => {
+    const { senderId, recipientId, guildId, message, isAnnouncement } = req.body;
+    const newMessage = {
+        id: `msg-${Date.now()}`,
+        senderId,
+        recipientId,
+        guildId,
+        message,
+        isAnnouncement,
+        timestamp: new Date().toISOString(),
+        readBy: [senderId],
+    };
+    data.chatMessages = [...(data.chatMessages || []), newMessage];
+    broadcast({ type: 'NEW_CHAT_MESSAGE', payload: newMessage });
+}));
+
+app.post('/api/chat/read', apiHandler((data, req) => {
+    const { userId, partnerId, guildId } = req.body;
+    data.chatMessages.forEach(msg => {
+        const isUnread = !msg.readBy.includes(userId);
+        if (isUnread) {
+            if (partnerId && ((msg.senderId === partnerId && msg.recipientId === userId) || (msg.senderId === userId && msg.recipientId === partnerId))) {
+                msg.readBy.push(userId);
+            }
+            if (guildId && msg.guildId === guildId) {
+                msg.readBy.push(userId);
+            }
+        }
+    });
+}));
+
+// --- SETTINGS ---
+app.put('/api/settings', apiHandler((data, req) => {
+    data.settings = { ...data.settings, ...req.body };
+}));
+
+
+// --- MEDIA ---
 const storage = multer.diskStorage({
-    destination: async (req, file, cb) => {
-        const category = req.body.category || 'Miscellaneous';
-        const categoryPath = path.join(UPLOAD_DIR, category);
-        await fs.mkdir(categoryPath, { recursive: true });
-        cb(null, categoryPath);
+    destination: (req, file, cb) => {
+        const category = req.body.category || 'miscellaneous';
+        const dir = path.join(UPLOAD_DIR, category);
+        fs.mkdir(dir, { recursive: true }).then(() => cb(null, dir)).catch(err => cb(err, dir));
     },
     filename: (req, file, cb) => {
-        cb(null, `${Date.now()}-${file.originalname.replace(/\s/g, '_')}`);
+        cb(null, `${Date.now()}-${file.originalname}`);
     }
 });
 const upload = multer({ storage });
-app.post('/api/media/upload', upload.single('file'), (req, res) => { /* ... unchanged ... */ });
-app.get('/api/media/local-gallery', async (req, res) => { /* ... unchanged ... */ });
 
-// AI Routes
-const ai = process.env.API_KEY ? new GoogleGenAI({ apiKey: process.env.API_KEY }) : null;
-app.get('/api/ai/status', (req, res) => res.json({ isConfigured: !!ai }));
-app.post('/api/ai/test', async (req, res) => { /* ... unchanged ... */ });
-app.post('/api/ai/generate', async (req, res) => { /* ... unchanged ... */ });
+app.post('/api/media/upload', upload.single('file'), (req, res) => {
+    if (!req.file) {
+        return res.status(400).json({ error: 'No file uploaded.' });
+    }
+    const category = req.body.category || 'miscellaneous';
+    const url = `/uploads/${category}/${req.file.filename}`;
+    res.json({ url });
+});
 
-// Backup Routes
-app.get('/api/backups', async (req, res) => { /* ... unchanged ... */ });
-app.post('/api/backups/create', async (req, res) => { /* ... unchanged ... */ });
-app.get('/api/backups/:filename', (req, res) => { /* ... unchanged ... */ });
-app.delete('/api/backups/:filename', async (req, res) => { /* ... unchanged ... */ });
-app.post('/api/backups/restore/:filename', apiHandler(async (data, req) => { /* ... unchanged ... */ }));
+app.get('/api/media/local-gallery', async (req, res) => {
+    try {
+        const categories = await fs.readdir(UPLOAD_DIR, { withFileTypes: true });
+        let allImages = [];
 
-// Economy Routes
-app.post('/api/economy/exchange', apiHandler((data, req) => { /* ... unchanged ... */ }));
+        for (const category of categories) {
+            if (category.isDirectory()) {
+                const files = await fs.readdir(path.join(UPLOAD_DIR, category.name));
+                files.forEach(file => {
+                    allImages.push({
+                        url: `/uploads/${category.name}/${file}`,
+                        category: category.name,
+                        name: file
+                    });
+                });
+            }
+        }
+        res.json(allImages);
+    } catch (error) {
+        console.error("Error fetching local gallery:", error);
+        res.status(500).json({ error: "Could not read image gallery." });
+    }
+});
 
-// Generic CRUD Routes
-const createCrudEndpoints = (resourceName, prefix) => {
-    app.post(`/api/${resourceName}`, apiHandler((data, req) => {
-        const newItem = { ...req.body, id: `${prefix}-${Date.now()}` };
-        if(resourceName === 'gameAssets') Object.assign(newItem, { creatorId: 'system', createdAt: new Date().toISOString(), purchaseCount: 0 });
-        data[resourceName].push(newItem);
-        return { status: 201, body: newItem };
-    }));
-    app.put(`/api/${resourceName}/:id`, apiHandler((data, req) => {
-        const index = data[resourceName].findIndex(i => i.id === req.params.id);
-        if (index === -1) throw new Error(`${resourceName} not found.`);
-        data[resourceName][index] = { ...data[resourceName][index], ...req.body };
-    }));
-    app.delete(`/api/${resourceName}/:id`, apiHandler((data, req) => {
-        data[resourceName] = data[resourceName].filter(i => i.id !== req.params.id);
-    }));
-};
-[
-    { resource: 'questGroups', prefix: 'qg' }, { resource: 'rewardTypes', prefix: 'rt' },
-    { resource: 'markets', prefix: 'mkt' }, { resource: 'guilds', prefix: 'g' },
-    { resource: 'trophies', prefix: 't' }, { resource: 'themes', prefix: 'th' },
-    { resource: 'scheduledEvents', prefix: 'se' }, { resource: 'gameAssets', prefix: 'ga' },
-    { resource: 'quests', prefix: 'q' }
-].forEach(({ resource, prefix }) => createCrudEndpoints(resource, prefix));
+// --- AI ---
+let ai;
+try {
+    if (process.env.API_KEY) {
+        ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+    }
+} catch (e) { console.error("Could not initialize GoogleGenAI:", e.message); }
+
+app.get('/api/ai/status', (req, res) => {
+    res.json({ isConfigured: !!ai });
+});
+
+app.post('/api/ai/test', async (req, res) => {
+    if (!ai) {
+        return res.status(400).json({ success: false, error: 'API key not configured on the server.' });
+    }
+    try {
+        // A simple test to see if we can instantiate the model
+        await ai.models.generateContent({ model: AI_MODEL, contents: 'test' });
+        res.json({ success: true });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+app.post('/api/ai/generate', async (req, res) => {
+    if (!ai) return res.status(503).json({ error: 'AI service is not configured.' });
+    try {
+        const { prompt, generationConfig, model } = req.body;
+        const response = await ai.models.generateContent({
+          model: model || AI_MODEL,
+          contents: prompt,
+          config: generationConfig,
+        });
+        res.json(response);
+    } catch (error) {
+        console.error("AI Generation Error:", error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// --- ECONOMY ---
+app.post('/api/economy/exchange', apiHandler((data, req) => {
+    const { userId, payItem, receiveItem, guildId } = req.body;
+    const user = data.users.find(u => u.id === userId);
+    if (!user) return { status: 404, body: { error: 'User not found.' } };
+
+    const payRewardDef = data.rewardTypes.find(rt => rt.id === payItem.rewardTypeId);
+    if (!payRewardDef) return { status: 400, body: { error: 'Paying reward type not found.' } };
+
+    let targetPayBalance;
+    if (guildId) {
+        if (!user.guildBalances[guildId]) user.guildBalances[guildId] = { purse: {}, experience: {} };
+        targetPayBalance = payRewardDef.category === 'Currency' ? user.guildBalances[guildId].purse : user.guildBalances[guildId].experience;
+    } else {
+        targetPayBalance = payRewardDef.category === 'Currency' ? user.personalPurse : user.personalExperience;
+    }
+    
+    if ((targetPayBalance[payItem.rewardTypeId] || 0) < payItem.amount) {
+        return { status: 400, body: { error: 'Insufficient funds.' } };
+    }
+    targetPayBalance[payItem.rewardTypeId] -= payItem.amount;
+    
+    // Add receive item
+    const receiveRewardDef = data.rewardTypes.find(rt => rt.id === receiveItem.rewardTypeId);
+    if (!receiveRewardDef) return { status: 400, body: { error: 'Receiving reward type not found.' } };
+    
+     let targetReceiveBalance;
+    if (guildId) {
+        if (!user.guildBalances[guildId]) user.guildBalances[guildId] = { purse: {}, experience: {} };
+        targetReceiveBalance = receiveRewardDef.category === 'Currency' ? user.guildBalances[guildId].purse : user.guildBalances[guildId].experience;
+    } else {
+        targetReceiveBalance = receiveRewardDef.category === 'Currency' ? user.personalPurse : user.personalExperience;
+    }
+    targetReceiveBalance[receiveItem.rewardTypeId] = (targetReceiveBalance[receiveItem.rewardTypeId] || 0) + receiveItem.amount;
+
+}));
 
 
-// --- FALLBACK AND SERVER START ---
+// Fallback for SPA
 app.get('*', (req, res) => {
     res.sendFile(path.join(__dirname, '..', 'dist', 'index.html'));
 });
 
+// --- SERVER START ---
 const PORT = process.env.PORT || 3001;
-server.listen(PORT, async () => {
-    try {
-        await initializeDb();
-        console.log(`Server listening on http://localhost:${PORT}`);
-    } catch (error) {
-        console.error("Failed to start server due to DB initialization failure:", error);
-        process.exit(1);
-    }
+initializeDb().then(() => {
+    initWebSocket(server);
+    server.listen(PORT, () => console.log(`Server listening on port ${PORT}`));
+}).catch(err => {
+    console.error("Failed to initialize server:", err);
+    process.exit(1);
 });

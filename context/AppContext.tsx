@@ -436,7 +436,51 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         markQuestAsTodo: (questId: string, userId: string) => apiRequest(`/api/quests/${questId}/actions`, { method: 'POST', body: JSON.stringify({ action: 'mark_todo', userId }) }),
         unmarkQuestAsTodo: (questId: string, userId: string) => apiRequest(`/api/quests/${questId}/actions`, { method: 'POST', body: JSON.stringify({ action: 'unmark_todo', userId }) }),
         completeQuest: (questId: string, userId: string, rewards: RewardItem[], requiresApproval: boolean, guildId?: string, options?: { note?: string; completionDate?: Date }) => apiRequest(`/api/quests/${questId}/complete`, { method: 'POST', body: JSON.stringify({ userId, note: options?.note, completionDate: options?.completionDate }) }),
-        approveQuestCompletion: (completionId: string, note?: string) => updateAndSave(s => ({ questCompletions: s.questCompletions.map(c => c.id === completionId ? { ...c, status: QuestCompletionStatus.Approved, note } : c) })),
+        approveQuestCompletion: (completionId: string, note?: string) => updateAndSave(s => {
+            const completion = s.questCompletions.find(c => c.id === completionId);
+            if (!completion || completion.status !== QuestCompletionStatus.Pending) {
+                console.error("Completion not found or not pending:", completionId);
+                return {};
+            }
+
+            const user = s.users.find(u => u.id === completion.userId);
+            const quest = s.quests.find(q => q.id === completion.questId);
+
+            if (!user || !quest) {
+                console.error("User or Quest not found for completion:", completionId);
+                // Mark as rejected if user or quest is gone to clear the queue
+                const newCompletions = s.questCompletions.map(c => c.id === completionId ? { ...c, status: QuestCompletionStatus.Rejected, note: "User or Quest no longer exists." } : c);
+                return { questCompletions: newCompletions };
+            }
+            
+            const updatedUser = JSON.parse(JSON.stringify(user));
+
+            // Apply rewards
+            quest.rewards.forEach(reward => {
+                const rewardType = s.rewardTypes.find(rt => rt.id === reward.rewardTypeId);
+                if (!rewardType) return;
+                
+                let balanceTarget;
+                if (quest.guildId) {
+                    if (!updatedUser.guildBalances[quest.guildId]) {
+                        updatedUser.guildBalances[quest.guildId] = { purse: {}, experience: {} };
+                    }
+                    balanceTarget = rewardType.category === RewardCategory.Currency ? updatedUser.guildBalances[quest.guildId].purse : updatedUser.guildBalances[quest.guildId].experience;
+                } else {
+                    balanceTarget = rewardType.category === RewardCategory.Currency ? updatedUser.personalPurse : updatedUser.personalExperience;
+                }
+                
+                balanceTarget[reward.rewardTypeId] = (balanceTarget[reward.rewardTypeId] || 0) + reward.amount;
+            });
+
+            const newUsers = s.users.map(u => u.id === updatedUser.id ? updatedUser : u);
+            const newCompletions = s.questCompletions.map(c => c.id === completionId ? { ...c, status: QuestCompletionStatus.Approved, note } : c);
+
+            return {
+                users: newUsers,
+                questCompletions: newCompletions,
+            };
+        }),
         rejectQuestCompletion: (completionId: string, note?: string) => updateAndSave(s => ({ questCompletions: s.questCompletions.map(c => c.id === completionId ? { ...c, status: QuestCompletionStatus.Rejected, note } : c) })),
         addQuestGroup: (group: Omit<QuestGroup, 'id'>) => apiRequest('/api/questGroups', { method: 'POST', body: JSON.stringify(group) }),
         updateQuestGroup: (group: QuestGroup) => apiRequest(`/api/questGroups/${group.id}`, { method: 'PUT', body: JSON.stringify(group) }),

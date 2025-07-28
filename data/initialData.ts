@@ -194,7 +194,7 @@ export const INITIAL_SETTINGS: AppSettings = {
     sharedMode: {
         enabled: false,
         quickUserSwitchingEnabled: true,
-        allowCompletion: false,
+        allowCompletion: true,
         autoExit: false,
         autoExitMinutes: 2,
         userIds: [],

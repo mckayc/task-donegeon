@@ -9,6 +9,30 @@ const http = require('http');
 const WebSocket = require('ws');
 const { GoogleGenAI } = require('@google/genai');
 
+// === GITHUB IMAGE PACK CONFIG ===
+const GITHUB_REPO = 'mckayc/task-donegeon';
+const GITHUB_PACKS_PATH = 'image_packs';
+
+// Helper to fetch from GitHub API
+async function fetchGitHub(apiPath) {
+    const url = `https://api.github.com/repos/${GITHUB_REPO}/contents/${apiPath}`;
+    // Using native fetch, available in Node.js 18+
+    const response = await fetch(url, {
+        headers: {
+            'Accept': 'application/vnd.github.v3+json',
+            // No token needed for public repos, but good practice to have for rate limiting
+            // 'Authorization': `token ${process.env.GITHUB_TOKEN}` 
+        }
+    });
+    if (!response.ok) {
+        const errorBody = await response.text();
+        console.error(`GitHub API request failed for ${url}: ${response.statusText}`, errorBody);
+        throw new Error(`GitHub API request failed: ${response.statusText}`);
+    }
+    return response.json();
+}
+
+
 // === START INLINED DATA from data.js ===
 // NOTE: This data is manually copied from the frontend's data/initialData.ts.
 // If you update the frontend initial data, you MUST update this section as well.
@@ -125,7 +149,7 @@ const INITIAL_SETTINGS = {
     sharedMode: {
         enabled: false,
         quickUserSwitchingEnabled: true,
-        allowCompletion: false,
+        allowCompletion: true,
         autoExit: false,
         autoExitMinutes: 2,
         userIds: [],
@@ -678,8 +702,27 @@ const startServer = async () => {
 
     // More complex CRUDs
     app.post('/api/users', withData(async(req, res, data) => {
-      const newUser = { ...req.body, id: `user-${Date.now()}` };
+      const newUser = {
+        ...req.body,
+        id: `user-${Date.now()}`,
+        personalPurse: {},
+        personalExperience: {},
+        guildBalances: {},
+        avatar: {},
+        ownedAssetIds: [],
+        ownedThemes: ['emerald', 'rose', 'sky'],
+        hasBeenOnboarded: false,
+      };
       data.users.push(newUser);
+
+      // Also add the new user to the default guild
+      const defaultGuild = data.guilds.find(g => g.isDefault);
+      if (defaultGuild) {
+          if (!defaultGuild.memberIds.includes(newUser.id)) {
+              defaultGuild.memberIds.push(newUser.id);
+          }
+      }
+
       await saveDataAndBroadcast(data);
       res.status(201).json(newUser);
     }));
@@ -855,6 +898,96 @@ const startServer = async () => {
             res.json({ text: response.text });
         } catch (e) {
             res.status(500).json({ error: e.message });
+        }
+    });
+
+    // Image Packs from GitHub
+    app.get('/api/image-packs', async (req, res) => {
+        try {
+            const packsData = await fetchGitHub(GITHUB_PACKS_PATH);
+            const packDirs = packsData.filter(item => item.type === 'dir');
+
+            const availablePacks = await Promise.all(packDirs.map(async (packDir) => {
+                const files = await fetchGitHub(packDir.path);
+                const firstImage = files.find(file => file.type === 'file' && /\.(png|jpg|jpeg|gif|svg|webp)$/i.test(file.name));
+                return {
+                    name: packDir.name,
+                    sampleImageUrl: firstImage ? firstImage.download_url : 'https://placehold.co/150/1c1917/FFFFFF?text=No+Preview',
+                };
+            }));
+
+            res.json(availablePacks);
+        } catch (error) {
+            console.error('Error fetching image packs:', error);
+            res.status(500).json({ error: 'Could not fetch image packs from repository.' });
+        }
+    });
+
+    app.get('/api/image-packs/:packName', async (req, res) => {
+        const { packName } = req.params;
+        try {
+            const packFiles = [];
+            
+            async function getFilesRecursively(dirPath) {
+                const items = await fetchGitHub(dirPath);
+                for (const item of items) {
+                    if (item.type === 'dir') {
+                        await getFilesRecursively(item.path);
+                    } else if (/\.(png|jpg|jpeg|gif|svg|webp)$/i.test(item.name)) {
+                        const category = path.dirname(item.path).split('/').slice(2).join('/') || 'Miscellaneous';
+                        const localPath = path.join(UPLOADS_DIR, category, item.name);
+                        
+                        let exists = false;
+                        try {
+                            await fs.access(localPath);
+                            exists = true;
+                        } catch (e) { /* File doesn't exist */ }
+
+                        packFiles.push({
+                            name: item.name,
+                            category: category,
+                            url: item.download_url,
+                            exists: exists,
+                        });
+                    }
+                }
+            }
+
+            await getFilesRecursively(`${GITHUB_PACKS_PATH}/${packName}`);
+            res.json(packFiles);
+        } catch (error) {
+            console.error(`Error fetching pack details for ${packName}:`, error);
+            res.status(500).json({ error: `Could not fetch details for pack ${packName}.` });
+        }
+    });
+
+    app.post('/api/image-packs/import', async (req, res) => {
+        const { files } = req.body;
+        if (!files || !Array.isArray(files)) {
+            return res.status(400).json({ error: 'Invalid file list provided.' });
+        }
+
+        try {
+            let importedCount = 0;
+            for (const file of files) {
+                const categoryDir = path.join(UPLOADS_DIR, file.category);
+                const localPath = path.join(categoryDir, file.name);
+
+                await fs.mkdir(categoryDir, { recursive: true });
+
+                const response = await fetch(file.url);
+                if (!response.ok) {
+                    console.warn(`Failed to download ${file.name} from ${file.url}`);
+                    continue;
+                }
+                const buffer = await response.arrayBuffer();
+                await fs.writeFile(localPath, Buffer.from(buffer));
+                importedCount++;
+            }
+            res.json({ message: `${importedCount} files imported successfully.` });
+        } catch (error) {
+            console.error('Error importing image files:', error);
+            res.status(500).json({ error: 'An error occurred during file import.' });
         }
     });
     

@@ -24,6 +24,7 @@ const CollapsibleSection: React.FC<{ title: string; children: React.ReactNode; d
     );
 };
 
+const V0_1_0_DATE = new Date(2025, 6, 27);
 const V0_0_99_DATE = new Date(2025, 6, 27);
 const V0_0_98_DATE = new Date(2025, 6, 23);
 const V0_0_97_DATE = new Date(2025, 6, 23);
@@ -47,6 +48,14 @@ const V0_0_80_DATE = new Date(2025, 6, 19);
 
 const VersionHistoryContent: React.FC = () => (
     <div className="prose prose-invert max-w-none text-stone-300 space-y-4">
+        <div>
+            <h4 className="text-lg font-bold text-stone-100">
+                Version 0.1.0 ({V0_1_0_DATE.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })})
+            </h4>
+            <ul className="list-disc list-inside space-y-2 mt-2">
+                <li><strong>Critical Bug Fix: Quest Approval Rewards:</strong> Fixed a critical bug where approving a pending quest completion did not grant the associated rewards to the user. Approvals now correctly process all currency and XP rewards.</li>
+            </ul>
+        </div>
         <div>
             <h4 className="text-lg font-bold text-stone-100">
                 Version 0.0.99 ({V0_0_99_DATE.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })})

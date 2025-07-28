@@ -275,18 +275,18 @@ export const INITIAL_SETTINGS: AppSettings = {
     enableAiFeatures: false,
     rewardValuation: {
       enabled: true,
-      anchorRewardId: 'core-gold',
+      anchorRewardId: 'core-gems',
       exchangeRates: {
-        'core-gems': 0.1,
-        'core-crystal': 20,
-        'core-strength': 10,
-        'core-diligence': 10,
-        'core-wisdom': 5,
-        'core-skill': 5,
-        'core-creative': 5,
+        'core-gold': 5,
+        'core-crystal': 10,
+        'core-strength': 20,
+        'core-diligence': 20,
+        'core-wisdom': 20,
+        'core-skill': 20,
+        'core-creative': 20,
       },
-      currencyExchangeFeePercent: 5,
-      xpExchangeFeePercent: 10,
+      currencyExchangeFeePercent: 10,
+      xpExchangeFeePercent: 20,
     },
     chat: {
         enabled: true,
@@ -488,7 +488,7 @@ export const createSampleQuests = (users: User[]): Quest[] => {
     // For Explorer
     {
       id: 'quest-explorer-1', title: 'Change Your Theme', description: "First, visit the Marketplace and buy the 'Sapphire Theme Unlock' from the Tutorial Market. Then, go to the 'Themes' page from the sidebar to activate it!", type: QuestType.Venture, iconType: 'emoji', icon: '🎨', tags: ['tutorial', 'tutorial-explorer'],
-      rewards: [{ rewardTypeId: 'core-wisdom', amount: 50 }], lateSetbacks: [], incompleteSetbacks: [],
+      rewards: [{ rewardTypeId: 'core-wisdom', amount: 50 }, { rewardTypeId: 'core-crystal', amount: 25 }], lateSetbacks: [], incompleteSetbacks: [],
       isActive: true, isOptional: false, availabilityType: QuestAvailability.Unlimited, availabilityCount: 1, weeklyRecurrenceDays: [], monthlyRecurrenceDays: [],
       assignedUserIds: explorer ? [explorer.id] : [], requiresApproval: false, claimedByUserIds: [], dismissals: [], groupId: 'qg-personal'
     },

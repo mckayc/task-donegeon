@@ -1,6 +1,3 @@
-
-
-
 import React, { useState, ChangeEvent, ReactNode, useEffect } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { Role, AppSettings, Terminology, RewardCategory, RewardTypeDefinition, AutomatedBackupProfile } from '../../types';
@@ -100,7 +97,7 @@ const terminologyLabels: { [key in keyof Terminology]: string } = {
   link_asset_library: 'Sidebar: Asset Library',
   link_settings: 'Sidebar: Settings',
   link_about: 'About',
-  link_help_guide: 'Sidebar: Help Guide',
+  link_help_guide: 'Help Guide',
   link_chat: 'Sidebar: Chat',
 };
 

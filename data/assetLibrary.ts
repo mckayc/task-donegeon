@@ -97,11 +97,11 @@ export const libraryPacks: LibraryPack[] = [
     assets: {
       questGroups: [createQuestGroup({id: 'qg-household', name: 'Household Chores', icon: '🏡'})],
       quests: [
-        createQuest({ title: 'Make Bed', description: 'Start the day right by making your bed.', type: QuestType.Duty, availabilityType: QuestAvailability.Daily, icon: '🛏️', rewards: [{ rewardTypeId: 'core-diligence', amount: 5 }], tags: ['Bedroom', 'Cleaning'], groupId: 'qg-household' }),
-        createQuest({ title: 'Tidy Room', description: 'Spend 10 minutes tidying up your personal space.', type: QuestType.Duty, availabilityType: QuestAvailability.Daily, icon: '🧹', rewards: [{ rewardTypeId: 'core-diligence', amount: 10 }], tags: ['Bedroom', 'Cleaning', 'Organization'], groupId: 'qg-household' }),
-        createQuest({ title: 'Take Out Trash', description: 'Collect trash from all bins and take it to the curb.', type: QuestType.Duty, availabilityType: QuestAvailability.Weekly, weeklyRecurrenceDays: [2], icon: '🗑️', rewards: [{ rewardTypeId: 'core-strength', amount: 15 }], tags: ['Kitchen', 'Cleaning'], groupId: 'qg-household' }),
-        createQuest({ title: 'Set the Table', description: 'Set the table for dinner.', type: QuestType.Duty, availabilityType: QuestAvailability.Daily, icon: '🍽️', rewards: [{ rewardTypeId: 'core-diligence', amount: 5 }], tags: ['Kitchen', 'Helping'], groupId: 'qg-household' }),
-        createQuest({ title: 'Help with Dishes', description: 'Help load or unload the dishwasher, or wash dishes by hand.', type: QuestType.Duty, availabilityType: QuestAvailability.Daily, icon: '🧼', rewards: [{ rewardTypeId: 'core-diligence', amount: 10 }], tags: ['Kitchen', 'Helping'], groupId: 'qg-household' }),
+        createQuest({ title: 'Make Bed', description: 'Start the day right by making your bed.', type: QuestType.Duty, availabilityType: QuestAvailability.Daily, icon: '🛏️', rewards: [{ rewardTypeId: 'core-diligence', amount: 10 }], tags: ['Bedroom', 'Cleaning'], groupId: 'qg-household' }),
+        createQuest({ title: 'Tidy Room', description: 'Spend 10 minutes tidying up your personal space.', type: QuestType.Duty, availabilityType: QuestAvailability.Daily, icon: '🧹', rewards: [{ rewardTypeId: 'core-diligence', amount: 20 }, { rewardTypeId: 'core-crystal', amount: 5 }], tags: ['Bedroom', 'Cleaning', 'Organization'], groupId: 'qg-household' }),
+        createQuest({ title: 'Take Out Trash', description: 'Collect trash from all bins and take it to the curb.', type: QuestType.Duty, availabilityType: QuestAvailability.Weekly, weeklyRecurrenceDays: [2], icon: '🗑️', rewards: [{ rewardTypeId: 'core-strength', amount: 20 }, { rewardTypeId: 'core-gold', amount: 1 }], tags: ['Kitchen', 'Cleaning'], groupId: 'qg-household' }),
+        createQuest({ title: 'Set the Table', description: 'Set the table for dinner.', type: QuestType.Duty, availabilityType: QuestAvailability.Daily, icon: '🍽️', rewards: [{ rewardTypeId: 'core-diligence', amount: 10 }], tags: ['Kitchen', 'Helping'], groupId: 'qg-household' }),
+        createQuest({ title: 'Help with Dishes', description: 'Help load or unload the dishwasher, or wash dishes by hand.', type: QuestType.Duty, availabilityType: QuestAvailability.Daily, icon: '🧼', rewards: [{ rewardTypeId: 'core-diligence', amount: 20 }, { rewardTypeId: 'core-crystal', amount: 5 }], tags: ['Kitchen', 'Helping'], groupId: 'qg-household' }),
       ],
     },
   },
@@ -116,10 +116,10 @@ export const libraryPacks: LibraryPack[] = [
       questGroups: [createQuestGroup({id: 'qg-school', name: 'School & Learning', icon: '📚'})],
       quests: [
         createQuest({ title: 'Finish Homework', description: 'Complete all assigned homework for the day.', type: QuestType.Duty, availabilityType: QuestAvailability.Daily, icon: '✏️', rewards: [{ rewardTypeId: 'core-wisdom', amount: 20 }], tags: ['School', 'Learning'], groupId: 'qg-school' }),
-        createQuest({ title: 'Read for 20 Minutes', description: 'Read a book for at least 20 minutes.', type: QuestType.Duty, availabilityType: QuestAvailability.Daily, icon: '📖', rewards: [{ rewardTypeId: 'core-wisdom', amount: 15 }], tags: ['School', 'Learning'], groupId: 'qg-school' }),
-        createQuest({ title: 'Study for a Test', description: 'Spend 30 minutes studying for an upcoming test or quiz.', type: QuestType.Venture, icon: '🧠', rewards: [{ rewardTypeId: 'core-wisdom', amount: 25 }], tags: ['School', 'Learning'], groupId: 'qg-school' }),
+        createQuest({ title: 'Read for 20 Minutes', description: 'Read a book for at least 20 minutes.', type: QuestType.Duty, availabilityType: QuestAvailability.Daily, icon: '📖', rewards: [{ rewardTypeId: 'core-wisdom', amount: 20 }], tags: ['School', 'Learning'], groupId: 'qg-school' }),
+        createQuest({ title: 'Study for a Test', description: 'Spend 30 minutes studying for an upcoming test or quiz.', type: QuestType.Venture, icon: '🧠', rewards: [{ rewardTypeId: 'core-wisdom', amount: 40 }], tags: ['School', 'Learning'], groupId: 'qg-school' }),
         createQuest({ title: 'Organize Backpack', description: 'Clean out and organize your backpack for the week.', type: QuestType.Duty, availabilityType: QuestAvailability.Weekly, weeklyRecurrenceDays: [0], icon: '🎒', rewards: [{ rewardTypeId: 'core-diligence', amount: 10 }], tags: ['School', 'Organization'], groupId: 'qg-school' }),
-        createQuest({ title: 'Teach Someone Something New', description: 'Share a cool fact or explain a concept you learned to a family member.', type: QuestType.Venture, icon: '🧑‍🏫', rewards: [{ rewardTypeId: 'core-wisdom', amount: 15 }], tags: ['Learning', 'Family Time'], groupId: 'qg-school' }),
+        createQuest({ title: 'Teach Someone Something New', description: 'Share a cool fact or explain a concept you learned to a family member.', type: QuestType.Venture, icon: '🧑‍🏫', rewards: [{ rewardTypeId: 'core-wisdom', amount: 10 }, { rewardTypeId: 'core-gems', amount: 1 }], tags: ['Learning', 'Family Time'], groupId: 'qg-school' }),
       ],
     },
   },
@@ -134,10 +134,10 @@ export const libraryPacks: LibraryPack[] = [
       questGroups: [createQuestGroup({id: 'qg-outdoor', name: 'Outdoor & Adventure', icon: '🌳'})],
       quests: [
         createQuest({ title: 'Water the Plants', description: 'Give all the indoor and outdoor plants a drink of water.', type: QuestType.Duty, availabilityType: QuestAvailability.Daily, icon: '💧', rewards: [{ rewardTypeId: 'core-diligence', amount: 10 }], tags: ['Yardwork', 'Helping'], groupId: 'qg-outdoor' }),
-        createQuest({ title: 'Rake Leaves', description: 'Rake the leaves in a section of the yard.', type: QuestType.Venture, icon: '🍂', rewards: [{ rewardTypeId: 'core-strength', amount: 30 }], tags: ['Yardwork'], groupId: 'qg-outdoor' }),
+        createQuest({ title: 'Rake Leaves', description: 'Rake the leaves in a section of the yard.', type: QuestType.Venture, icon: '🍂', rewards: [{ rewardTypeId: 'core-strength', amount: 40 }, { rewardTypeId: 'core-gold', amount: 4 }], tags: ['Yardwork'], groupId: 'qg-outdoor' }),
         createQuest({ title: 'Pull Weeds', description: 'Spend 15 minutes pulling weeds from the garden or flower beds.', type: QuestType.Venture, icon: '🌿', rewards: [{ rewardTypeId: 'core-diligence', amount: 20 }], tags: ['Yardwork'], groupId: 'qg-outdoor' }),
-        createQuest({ title: 'Play Outside for 30 Minutes', description: 'Get some fresh air! Ride a bike, play a sport, or just run around.', type: QuestType.Duty, availabilityType: QuestAvailability.Daily, icon: '⚽', rewards: [{ rewardTypeId: 'core-strength', amount: 15 }], tags: ['Health'], groupId: 'qg-outdoor' }),
-        createQuest({ title: 'Help with the Harvest', description: 'Help pick ripe vegetables or fruits from the garden.', type: QuestType.Venture, icon: '🍎', rewards: [{ rewardTypeId: 'core-diligence', amount: 15 }], tags: ['Yardwork', 'Helping'], groupId: 'qg-outdoor' }),
+        createQuest({ title: 'Play Outside for 30 Minutes', description: 'Get some fresh air! Ride a bike, play a sport, or just run around.', type: QuestType.Duty, availabilityType: QuestAvailability.Daily, icon: '⚽', rewards: [{ rewardTypeId: 'core-strength', amount: 20 }], tags: ['Health'], groupId: 'qg-outdoor' }),
+        createQuest({ title: 'Help with the Harvest', description: 'Help pick ripe vegetables or fruits from the garden.', type: QuestType.Venture, icon: '🍎', rewards: [{ rewardTypeId: 'core-diligence', amount: 10 }, { rewardTypeId: 'core-gems', amount: 1 }], tags: ['Yardwork', 'Helping'], groupId: 'qg-outdoor' }),
       ],
     },
   },
@@ -151,11 +151,11 @@ export const libraryPacks: LibraryPack[] = [
     assets: {
       questGroups: [createQuestGroup({id: 'qg-kindness', name: 'Kindness & Service', icon: '💖'})],
       quests: [
-        createQuest({ title: 'Give a Compliment', description: 'Give a sincere compliment to someone.', type: QuestType.Duty, availabilityType: QuestAvailability.Daily, icon: '😊', rewards: [{ rewardTypeId: 'core-gems', amount: 5 }], tags: ['Helping', 'Family Time'], groupId: 'qg-kindness' }),
-        createQuest({ title: 'Help Without Being Asked', description: 'Find a way to help a family member without them having to ask you.', type: QuestType.Duty, availabilityType: QuestAvailability.Daily, icon: '🤝', rewards: [{ rewardTypeId: 'core-gems', amount: 15 }], tags: ['Helping', 'Family Time'], groupId: 'qg-kindness' }),
-        createQuest({ title: 'Write a Thank You Note', description: 'Write a short note to someone thanking them for something they did.', type: QuestType.Venture, icon: '💌', rewards: [{ rewardTypeId: 'core-gems', amount: 10 }], tags: ['Helping', 'Creative'], groupId: 'qg-kindness' }),
-        createQuest({ title: 'Share Your Toys', description: 'Willingly share your toys or games with a sibling or friend.', type: QuestType.Duty, availabilityType: QuestAvailability.Daily, icon: '🧸', rewards: [{ rewardTypeId: 'core-gems', amount: 5 }], tags: ['Family Time'], groupId: 'qg-kindness' }),
-        createQuest({ title: 'Donate to Charity', description: 'Pick out old toys or clothes to donate to those in need.', type: QuestType.Venture, icon: '💝', rewards: [{ rewardTypeId: 'core-gems', amount: 25 }], tags: ['Helping', 'Organization'], groupId: 'qg-kindness' }),
+        createQuest({ title: 'Give a Compliment', description: 'Give a sincere compliment to someone.', type: QuestType.Duty, availabilityType: QuestAvailability.Daily, icon: '😊', rewards: [{ rewardTypeId: 'core-gems', amount: 1 }], tags: ['Helping', 'Family Time'], groupId: 'qg-kindness' }),
+        createQuest({ title: 'Help Without Being Asked', description: 'Find a way to help a family member without them having to ask you.', type: QuestType.Duty, availabilityType: QuestAvailability.Daily, icon: '🤝', rewards: [{ rewardTypeId: 'core-gems', amount: 3 }], tags: ['Helping', 'Family Time'], groupId: 'qg-kindness' }),
+        createQuest({ title: 'Write a Thank You Note', description: 'Write a short note to someone thanking them for something they did.', type: QuestType.Venture, icon: '💌', rewards: [{ rewardTypeId: 'core-gems', amount: 2 }], tags: ['Helping', 'Creative'], groupId: 'qg-kindness' }),
+        createQuest({ title: 'Share Your Toys', description: 'Willingly share your toys or games with a sibling or friend.', type: QuestType.Duty, availabilityType: QuestAvailability.Daily, icon: '🧸', rewards: [{ rewardTypeId: 'core-gems', amount: 1 }], tags: ['Family Time'], groupId: 'qg-kindness' }),
+        createQuest({ title: 'Donate to Charity', description: 'Pick out old toys or clothes to donate to those in need.', type: QuestType.Venture, icon: '💝', rewards: [{ rewardTypeId: 'core-gems', amount: 5 }], tags: ['Helping', 'Organization'], groupId: 'qg-kindness' }),
       ],
     },
   },
@@ -171,8 +171,8 @@ export const libraryPacks: LibraryPack[] = [
       quests: [
         createQuest({ title: 'Feed the Pet(s)', description: 'Provide the correct amount of food for your pet(s) at their mealtime.', type: QuestType.Duty, availabilityType: QuestAvailability.Daily, icon: '밥', rewards: [{ rewardTypeId: 'core-diligence', amount: 10 }], tags: ['Pets', 'Helping'], groupId: 'qg-pets' }),
         createQuest({ title: 'Fresh Water for Pet(s)', description: 'Empty, rinse, and refill your pet\'s water bowl with fresh water.', type: QuestType.Duty, availabilityType: QuestAvailability.Daily, icon: '💧', rewards: [{ rewardTypeId: 'core-diligence', amount: 5 }], tags: ['Pets', 'Helping'], groupId: 'qg-pets' }),
-        createQuest({ title: 'Walk the Dog', description: 'Take the dog for a walk of at least 15 minutes.', type: QuestType.Duty, availabilityType: QuestAvailability.Daily, icon: '🐕', rewards: [{ rewardTypeId: 'core-strength', amount: 15 }], tags: ['Pets', 'Health'], groupId: 'qg-pets' }),
-        createQuest({ title: 'Clean the Litter Box', description: 'Scoop the litter box and dispose of the waste properly.', type: QuestType.Duty, availabilityType: QuestAvailability.Daily, icon: '🐈', rewards: [{ rewardTypeId: 'core-diligence', amount: 15 }], tags: ['Pets', 'Cleaning'], groupId: 'qg-pets' }),
+        createQuest({ title: 'Walk the Dog', description: 'Take the dog for a walk of at least 15 minutes.', type: QuestType.Duty, availabilityType: QuestAvailability.Daily, icon: '🐕', rewards: [{ rewardTypeId: 'core-strength', amount: 20 }], tags: ['Pets', 'Health'], groupId: 'qg-pets' }),
+        createQuest({ title: 'Clean the Litter Box', description: 'Scoop the litter box and dispose of the waste properly.', type: QuestType.Duty, availabilityType: QuestAvailability.Daily, icon: '🐈', rewards: [{ rewardTypeId: 'core-diligence', amount: 20 }, { rewardTypeId: 'core-gold', amount: 1 }], tags: ['Pets', 'Cleaning'], groupId: 'qg-pets' }),
         createQuest({ title: 'Playtime with Pet', description: 'Spend 10 minutes actively playing with your pet.', type: QuestType.Venture, icon: '🎾', rewards: [{ rewardTypeId: 'core-skill', amount: 10 }], tags: ['Pets', 'Family Time'], groupId: 'qg-pets' }),
       ]
     }
@@ -204,8 +204,8 @@ export const libraryPacks: LibraryPack[] = [
     color: 'border-sky-500',
     assets: {
       quests: [
-        createQuest({ title: 'Save Your Allowance', description: 'Put at least 10% of your allowance into savings.', type: QuestType.Venture, icon: '🐷', rewards: [{ rewardTypeId: 'core-wisdom', amount: 15 }], tags: ['Learning', 'Finance'] }),
-        createQuest({ title: 'Track Your Spending', description: 'For one week, write down everything you spend money on.', type: QuestType.Venture, icon: '🧾', rewards: [{ rewardTypeId: 'core-diligence', amount: 25 }], tags: ['Learning', 'Finance'] }),
+        createQuest({ title: 'Save Your Allowance', description: 'Put at least 10% of your allowance into savings.', type: QuestType.Venture, icon: '🐷', rewards: [{ rewardTypeId: 'core-wisdom', amount: 20 }], tags: ['Learning', 'Finance'] }),
+        createQuest({ title: 'Track Your Spending', description: 'For one week, write down everything you spend money on.', type: QuestType.Venture, icon: '🧾', rewards: [{ rewardTypeId: 'core-diligence', amount: 30 }], tags: ['Learning', 'Finance'] }),
         createQuest({ title: 'Research a Big Purchase', description: 'Before asking for an expensive item, research different options and prices.', type: QuestType.Venture, icon: '🔍', rewards: [{ rewardTypeId: 'core-wisdom', amount: 20 }], tags: ['Learning', 'Finance'] }),
         createQuest({ title: 'Learn About Compound Interest', description: 'Watch a short video or read an article about how compound interest works.', type: QuestType.Venture, icon: '📈', rewards: [{ rewardTypeId: 'core-wisdom', amount: 10 }], tags: ['Learning', 'Finance'] }),
       ]
@@ -224,7 +224,7 @@ export const libraryPacks: LibraryPack[] = [
         createQuest({ title: 'Wash Vegetables', description: 'Help wash and prepare vegetables for a meal.', type: QuestType.Venture, icon: '🥕', rewards: [{ rewardTypeId: 'core-diligence', amount: 10 }], tags: ['Kitchen', 'Helping'] }),
         createQuest({ title: 'Measure Ingredients', description: 'Help measure out the ingredients for a recipe.', type: QuestType.Venture, icon: '🥣', rewards: [{ rewardTypeId: 'core-skill', amount: 15 }], tags: ['Kitchen', 'Helping', 'Learning'] }),
         createQuest({ title: 'Stir the Pot', description: 'With supervision, help stir ingredients in a pot or bowl.', type: QuestType.Venture, icon: '🍳', rewards: [{ rewardTypeId: 'core-skill', amount: 5 }], tags: ['Kitchen', 'Helping'] }),
-        createQuest({ title: 'Help Clean Up After Baking', description: 'Wipe counters, put away ingredients, and help with baking dishes.', type: QuestType.Venture, icon: '✨', rewards: [{ rewardTypeId: 'core-diligence', amount: 15 }], tags: ['Kitchen', 'Helping', 'Cleaning'] }),
+        createQuest({ title: 'Help Clean Up After Baking', description: 'Wipe counters, put away ingredients, and help with baking dishes.', type: QuestType.Venture, icon: '✨', rewards: [{ rewardTypeId: 'core-diligence', amount: 20 }], tags: ['Kitchen', 'Helping', 'Cleaning'] }),
       ]
     }
   },
@@ -253,10 +253,10 @@ export const libraryPacks: LibraryPack[] = [
     color: 'border-sky-500',
     assets: {
       quests: [
-        createQuest({ title: 'Draw a Picture', description: 'Spend 15 minutes drawing or coloring a picture.', type: QuestType.Venture, icon: '🖍️', rewards: [{ rewardTypeId: 'core-creative', amount: 10 }], tags: ['Creative', 'Art'] }),
-        createQuest({ title: 'Build with LEGOs', description: 'Create something cool with LEGOs or other building blocks for 20 minutes.', type: QuestType.Venture, icon: '🧱', rewards: [{ rewardTypeId: 'core-creative', amount: 15 }], tags: ['Creative', 'Building'] }),
-        createQuest({ title: 'Write a Short Story', description: 'Write a story that is at least one paragraph long.', type: QuestType.Venture, icon: '📜', rewards: [{ rewardTypeId: 'core-creative', amount: 20 }], tags: ['Creative', 'Writing'] }),
-        createQuest({ title: 'Learn a New Song', description: 'Practice a song on an instrument or learn the lyrics to a new song.', type: QuestType.Venture, icon: '🎶', rewards: [{ rewardTypeId: 'core-skill', amount: 15 }], tags: ['Creative', 'Music'] }),
+        createQuest({ title: 'Draw a Picture', description: 'Spend 15 minutes drawing or coloring a picture.', type: QuestType.Venture, icon: '🖍️', rewards: [{ rewardTypeId: 'core-creative', amount: 20 }], tags: ['Creative', 'Art'] }),
+        createQuest({ title: 'Build with LEGOs', description: 'Create something cool with LEGOs or other building blocks for 20 minutes.', type: QuestType.Venture, icon: '🧱', rewards: [{ rewardTypeId: 'core-creative', amount: 20 }], tags: ['Creative', 'Building'] }),
+        createQuest({ title: 'Write a Short Story', description: 'Write a story that is at least one paragraph long.', type: QuestType.Venture, icon: '📜', rewards: [{ rewardTypeId: 'core-creative', amount: 30 }], tags: ['Creative', 'Writing'] }),
+        createQuest({ title: 'Learn a New Song', description: 'Practice a song on an instrument or learn the lyrics to a new song.', type: QuestType.Venture, icon: '🎶', rewards: [{ rewardTypeId: 'core-skill', amount: 20 }], tags: ['Creative', 'Music'] }),
       ]
     }
   },
@@ -269,10 +269,10 @@ export const libraryPacks: LibraryPack[] = [
     color: 'border-sky-500',
     assets: {
       quests: [
-        createQuest({ title: 'Help Decorate', description: 'Help put up holiday decorations for 30 minutes.', type: QuestType.Venture, icon: '✨', rewards: [{ rewardTypeId: 'core-creative', amount: 20 }], tags: ['Holiday', 'Helping'] }),
+        createQuest({ title: 'Help Decorate', description: 'Help put up holiday decorations for 30 minutes.', type: QuestType.Venture, icon: '✨', rewards: [{ rewardTypeId: 'core-creative', amount: 20 }, { rewardTypeId: 'core-gems', amount: 2 }], tags: ['Holiday', 'Helping'] }),
         createQuest({ title: 'Wrap a Present', description: 'Help wrap a gift for a family member or friend.', type: QuestType.Venture, icon: '🎁', rewards: [{ rewardTypeId: 'core-skill', amount: 10 }], tags: ['Holiday', 'Helping'] }),
-        createQuest({ title: 'Bake Holiday Treats', description: 'Help bake cookies or other treats for the holiday.', type: QuestType.Venture, icon: '🍪', rewards: [{ rewardTypeId: 'core-creative', amount: 15 }], tags: ['Holiday', 'Kitchen'] }),
-        createQuest({ title: 'Shovel a Neighbor\'s Walkway', description: 'As an act of kindness, shovel the snow from a neighbor\'s walkway.', type: QuestType.Venture, icon: '❄️', rewards: [{ rewardTypeId: 'core-gems', amount: 30 }], tags: ['Holiday', 'Helping', 'Outdoors'] }),
+        createQuest({ title: 'Bake Holiday Treats', description: 'Help bake cookies or other treats for the holiday.', type: QuestType.Venture, icon: '🍪', rewards: [{ rewardTypeId: 'core-creative', amount: 30 }, { rewardTypeId: 'core-gems', amount: 2 }], tags: ['Holiday', 'Kitchen'] }),
+        createQuest({ title: 'Shovel a Neighbor\'s Walkway', description: 'As an act of kindness, shovel the snow from a neighbor\'s walkway.', type: QuestType.Venture, icon: '❄️', rewards: [{ rewardTypeId: 'core-strength', amount: 40 }, { rewardTypeId: 'core-gems', amount: 5 }], tags: ['Holiday', 'Helping', 'Outdoors'] }),
       ]
     }
   },
@@ -285,10 +285,10 @@ export const libraryPacks: LibraryPack[] = [
     color: 'border-sky-500',
     assets: {
       quests: [
-        createQuest({ title: 'Play a Board Game', description: 'Play a full game of a board game or card game with the family.', type: QuestType.Venture, icon: '🎲', rewards: [{ rewardTypeId: 'core-wisdom', amount: 15 }], tags: ['Family Time', 'Screen-Free'] }),
+        createQuest({ title: 'Play a Board Game', description: 'Play a full game of a board game or card game with the family.', type: QuestType.Venture, icon: '🎲', rewards: [{ rewardTypeId: 'core-wisdom', amount: 10 }, { rewardTypeId: 'core-gems', amount: 1 }], tags: ['Family Time', 'Screen-Free'] }),
         createQuest({ title: 'Read a Physical Book', description: 'Read a book that is not on a screen for 20 minutes.', type: QuestType.Venture, icon: '📖', rewards: [{ rewardTypeId: 'core-wisdom', amount: 10 }], tags: ['Learning', 'Screen-Free'] }),
         createQuest({ title: 'Do a Puzzle', description: 'Spend 20 minutes working on a jigsaw puzzle.', type: QuestType.Venture, icon: '🧩', rewards: [{ rewardTypeId: 'core-diligence', amount: 10 }], tags: ['Family Time', 'Screen-Free'] }),
-        createQuest({ title: 'Help with a Project', description: 'Help a parent or sibling with a real-world project (like building furniture or cooking).', type: QuestType.Venture, icon: '🛠️', rewards: [{ rewardTypeId: 'core-skill', amount: 20 }], tags: ['Helping', 'Screen-Free'] }),
+        createQuest({ title: 'Help with a Project', description: 'Help a parent or sibling with a real-world project (like building furniture or cooking).', type: QuestType.Venture, icon: '🛠️', rewards: [{ rewardTypeId: 'core-skill', amount: 20 }, { rewardTypeId: 'core-gems', amount: 2 }], tags: ['Helping', 'Screen-Free'] }),
       ]
     }
   },
@@ -302,8 +302,8 @@ export const libraryPacks: LibraryPack[] = [
     assets: {
       quests: [
         createQuest({ title: 'Visit the Library', description: 'Go to the local library and check out a book.', type: QuestType.Venture, icon: '🏛️', rewards: [{ rewardTypeId: 'core-wisdom', amount: 20 }], tags: ['Learning', 'Outdoors'] }),
-        createQuest({ title: 'Finish a Book', description: 'Read a book from start to finish.', type: QuestType.Venture, icon: '✅', rewards: [{ rewardTypeId: 'core-wisdom', amount: 50 }], tags: ['Learning'] }),
-        createQuest({ title: 'Read to Someone', description: 'Read a book out loud to a younger sibling or a parent.', type: QuestType.Venture, icon: '🗣️', rewards: [{ rewardTypeId: 'core-gems', amount: 15 }], tags: ['Family Time', 'Learning'] }),
+        createQuest({ title: 'Finish a Book', description: 'Read a book from start to finish.', type: QuestType.Venture, icon: '✅', rewards: [{ rewardTypeId: 'core-wisdom', amount: 60 }], tags: ['Learning'] }),
+        createQuest({ title: 'Read to Someone', description: 'Read a book out loud to a younger sibling or a parent.', type: QuestType.Venture, icon: '🗣️', rewards: [{ rewardTypeId: 'core-gems', amount: 3 }], tags: ['Family Time', 'Learning'] }),
         createQuest({ title: 'Organize a Bookshelf', description: 'Tidy up and organize one of the bookshelves in the house.', type: QuestType.Venture, icon: ' bookshelf', rewards: [{ rewardTypeId: 'core-diligence', amount: 15 }], tags: ['Organization', 'Cleaning'] }),
       ]
     }
@@ -333,9 +333,9 @@ export const libraryPacks: LibraryPack[] = [
     color: 'border-sky-500',
     assets: {
       quests: [
-        createQuest({ title: 'Secretly Tidy a Room', description: 'Tidy up a common area (like the living room) without anyone seeing you do it.', type: QuestType.Venture, icon: '🤫', rewards: [{ rewardTypeId: 'core-gems', amount: 20 }], tags: ['Cleaning', 'Helping', 'Stealth'] }),
-        createQuest({ title: 'Leave a Kind Note', description: 'Leave an anonymous, kind note for a family member to find.', type: QuestType.Venture, icon: '💌', rewards: [{ rewardTypeId: 'core-gems', amount: 10 }], tags: ['Kindness', 'Stealth'] }),
-        createQuest({ title: 'Do a Chore for a Sibling', description: 'Do one of your sibling\'s chores for them, without telling them it was you.', type: QuestType.Venture, icon: '🎁', rewards: [{ rewardTypeId: 'core-gems', amount: 25 }], tags: ['Helping', 'Stealth'] }),
+        createQuest({ title: 'Secretly Tidy a Room', description: 'Tidy up a common area (like the living room) without anyone seeing you do it.', type: QuestType.Venture, icon: '🤫', rewards: [{ rewardTypeId: 'core-gems', amount: 4 }], tags: ['Cleaning', 'Helping', 'Stealth'] }),
+        createQuest({ title: 'Leave a Kind Note', description: 'Leave an anonymous, kind note for a family member to find.', type: QuestType.Venture, icon: '💌', rewards: [{ rewardTypeId: 'core-gems', amount: 2 }], tags: ['Kindness', 'Stealth'] }),
+        createQuest({ title: 'Do a Chore for a Sibling', description: 'Do one of your sibling\'s chores for them, without telling them it was you.', type: QuestType.Venture, icon: '🎁', rewards: [{ rewardTypeId: 'core-gems', amount: 5 }], tags: ['Helping', 'Stealth'] }),
         createQuest({ title: 'Refill the TP', description: 'If you use the last of the toilet paper, replace the roll without being told.', type: QuestType.Venture, icon: '🧻', rewards: [{ rewardTypeId: 'core-diligence', amount: 5 }], tags: ['Helping', 'Stealth'] }),
       ]
     }

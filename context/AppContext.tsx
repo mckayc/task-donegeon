@@ -373,7 +373,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         try {
             const data = await apiRequest('/api/data');
             
-            const isFirstRun = (!data.users || data.users.length === 0) && (!data.settings || data.settings.contentVersion < 2);
+            // A null settings object is the definitive flag for a first run.
+            const isFirstRun = !data.settings;
             
             const lastUserId = localStorage.getItem('lastUserId');
             const lastUser = isFirstRun ? null : (data.users || []).find((u: User) => u.id === lastUserId);
@@ -745,7 +746,16 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         deleteAllCustomContent: () => updateAndSave(s => ({ quests: [], markets: [], gameAssets: [], trophies: s.trophies.filter(t => INITIAL_TROPHIES.some(it => it.id === t.id)) })),
         retryDataLoad: () => setRetryCount(c => c + 1),
 
-        completeFirstRun: (adminUserData: Omit<User, 'id' | 'personalPurse' | 'personalExperience' | 'guildBalances' | 'avatar' | 'ownedAssetIds' | 'ownedThemes' | 'hasBeenOnboarded'>, setupChoice: 'guided' | 'scratch' | 'import', blueprint: Blueprint | null) => apiRequest('/api/first-run', { method: 'POST', body: JSON.stringify({ adminUserData, setupChoice, blueprint }) }),
+        completeFirstRun: async (adminUserData, setupChoice, blueprint) => {
+            const result = await apiRequest('/api/first-run', { method: 'POST', body: JSON.stringify({ adminUserData, setupChoice, blueprint }) });
+            if (result && result.user) {
+                localStorage.setItem('lastUserId', result.user.id);
+                // A full reload is the cleanest way to reset the app state after setup.
+                window.location.reload();
+            } else {
+                addNotification({ type: 'error', message: 'First run setup failed on the server.' });
+            }
+        },
         
         setRanks: (ranks: Rank[]) => updateAndSave(() => ({ ranks })),
 

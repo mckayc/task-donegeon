@@ -100,22 +100,22 @@ This phase focuses on long-term stability, accessibility, and preparing the app 
 ## 🛠️ Tech Stack
 
 -   **Frontend:** React (with Hooks & Context API), TypeScript, Vite, TailwindCSS
--   **Backend:** Node.js with Express.js, PostgreSQL, Google Gemini
--   **Deployment:** Docker, Vercel (Frontend & Serverless Functions), Supabase (Database & Storage)
+-   **Backend:** Node.js with Express.js, **SQLite**, Google Gemini
+-   **Deployment:** Docker
 
 ## 🚀 Getting Started
 
 When you run the application for the first time, it will be automatically seeded with a default set of users and data. You will be presented with a lock screen.
 
 **Login as the administrator to unlock the app:**
--   **Username**: Select `admin` from the dropdown (if shown).
+-   **Username**: `admin`
 -   **Password**: `123456`
 
 Once unlocked, you and other users can log in using the "Switch Profile" button. Other pre-seeded accounts have the password `123456` if they are an admin/moderator role, or a PIN of `1234` if they are a standard user.
 
 ## ⚙️ Installation and Running
 
-### Option 1: Local Development (Recommended for contributing)
+### Option 1: Local Development (Recommended)
 1.  **Clone & Install:**
     ```bash
     git clone https://github.com/mckayc/task-donegeon.git
@@ -125,79 +125,41 @@ Once unlocked, you and other users can log in using the "Switch Profile" button.
     npm install
     cd ..
     ```
-2.  **Run PostgreSQL with Docker:**
-    ```bash
-    docker run --name task-donegeon-db -e POSTGRES_PASSWORD=your_secret_password -p 5432:5432 -d postgres
-    ```
-3.  **Configure `.env` File:**
-    Copy `.env.example` to `.env` and fill in the variables.
-    -   `DATABASE_URL`: `postgres://postgres:your_secret_password@localhost:5432/postgres`
-    -   `STORAGE_PROVIDER`: `local`
-    -   **`API_KEY`**: Your Google Gemini API Key. Without this, AI features will be disabled.
-    -   **`BACKUP_PATH`** (Optional): The path *inside the container* where backups are stored. Defaults to `/app/backend/backups`. You generally don't need to change this.
+2.  **Configure `.env` File (Optional):**
+    If you want to use the AI features, copy `.env.example` to `.env` and fill in your Google Gemini API key.
+    -   **`API_KEY`**: `your_gemini_api_key_here`
 
-4.  **Run Backend & Frontend:**
+3.  **Run Backend & Frontend:**
     -   In one terminal, from the `backend` directory: `npm start`
     -   In another terminal, from the root directory: `npm run dev`
+    
+    The application will be running at `http://localhost:5173`. A `data.db` file will be created automatically in the `backend` directory to store all application data.
 
-### Option 2: Vercel & Supabase Deployment (Recommended for production)
-1.  **Fork the Repository** to your own GitHub account.
-
-2.  **Set up Supabase Project:**
-    -   Create a new Supabase project.
-    -   Go to **Project Settings > Database** and copy the **URI** connection string.
-    -   Go to the **SQL Editor** and run: `CREATE TABLE app_data (key TEXT PRIMARY KEY, value JSONB NOT NULL);`
-    -   Go to **Storage**, click **New bucket**, name it `media-assets`, and check the box to make it a **Public bucket**.
-
-3.  **Set up and Deploy on Vercel:**
-    -   Import your forked repository on Vercel.
-    -   Under **Environment Variables**, add the following:
-        -   `DATABASE_URL`: Your full Supabase URI connection string.
-        -   `STORAGE_PROVIDER`: `supabase`
-        -   `SUPABASE_URL`: Your Supabase project URL (from **Project Settings > API**).
-        -   `SUPABASE_SERVICE_ROLE_KEY`: Your Supabase `service_role` key (from **Project Settings > API**).
-        -   **`API_KEY`**: Your Google Gemini API Key.
-    -   Click **Deploy**.
-    -   **Note:** The server-side backup feature is designed for Docker/local deployments with persistent storage and will not work on Vercel's ephemeral filesystem.
-
-### Option 3: Docker Deployment
+### Option 2: Docker Deployment
 1.  **Clone the Repository**.
-2.  **Configure `.env` File:** Copy `.env.example` to `.env` and set all variables.
-    -   `POSTGRES_PASSWORD`: A strong, unique password.
-    -   `STORAGE_PROVIDER`: `local`
-    -   **`API_KEY`**: Your Google Gemini API Key.
-3.  **Build and Run:**
-    ```bash
-    # Create local folders for persistent storage first
-    mkdir uploads
-    mkdir backups
-    # Ensure uploads folder has correct permissions for the container user (UID 1000)
-    sudo chown -R 1000:1000 ./uploads
-    docker-compose up --build
-    ```
-    The app will be at `http://localhost:3002`. Uploaded files will be in the `./uploads` directory, and server-side backups will be in `./backups`.
-
-### Option 4: Portainer Deployment (Updated Guide)
-1.  In Portainer, go to **Stacks** > **+ Add stack**.
-2.  Give the stack a **Name** (e.g., `task-donegeon`).
-3.  **Paste** the contents of `docker-compose.prod.yml` into the Web editor.
-4.  Scroll down to the **Environment variables** section. It's crucial to add the required secrets here. Click **Add environment variable** for each of the following:
-    -   **Name:** `POSTGRES_PASSWORD`, **Value:** `your_super_secret_password_here` (Choose a strong password)
-    -   **Name:** `API_KEY`, **Value:** `your_gemini_api_key_here` (If you want AI features)
-5.  **Important:** To make backups and uploads persistent, go to the **Volumes** tab in Portainer and map the container paths (e.g., `/app/backend/backups`, `/app/uploads`) to a host path (e.g., `/portainer/data/task-donegeon/backups`).
-6.  Click **Deploy the stack**. The app will be available at `http://<your-server-ip>:3002`.
-
-### Option 5: Production Deployment from Docker Hub
-1.  Create a `.env` file with the required production variables.
-2.  **Create local directories for persistent storage:**
+2.  **Configure `.env` File (Optional):**
+    If you want to use the AI features, copy `.env.example` to `.env` and set your `API_KEY`.
+3.  **Create local directories for persistent storage:**
     ```bash
     mkdir uploads
     mkdir backups
-    # Set correct ownership for container user
+    # Ensure folders have correct permissions for the container user (UID 1000)
     sudo chown -R 1000:1000 ./uploads ./backups
     ```
-3.  Run the application using the `docker-compose.prod.yml` file:
+4.  **Build and Run:**
     ```bash
-    docker-compose -f docker-compose.prod.yml up -d
+    docker-compose up --build -d
     ```
-    This command will pull the latest pre-built image from Docker Hub and run it. Uploaded files and server-side backups will be saved to the `./uploads` and `./backups` folders on your host machine, respectively.
+    The app will be at `http://localhost:3002`. Your database, uploaded files, and server-side backups will be persistent in the `./backend/data.db`, `./uploads`, and `./backups` folders on your host machine.
+
+### Option 3: Portainer Deployment
+1.  In Portainer, go to **Stacks** > **+ Add stack**.
+2.  Give the stack a **Name** (e.g., `task-donegeon`).
+3.  **Paste** the contents of `docker-compose.yml` into the Web editor.
+4.  Scroll down to the **Environment variables** section (if you want AI features). Click **Add environment variable**:
+    -   **Name:** `API_KEY`, **Value:** `your_gemini_api_key_here`
+5.  **Important:** To make your data persistent, go to the **Volumes** tab in Portainer and map the container paths to a host path.
+    -   `./uploads:/app/uploads`
+    -   `./backups:/app/backend/backups`
+    -   `./backend/data.db:/app/backend/data.db`
+6.  Click **Deploy the stack**. The app will be available at `http://<your-server-ip>:3002`.

@@ -78,7 +78,7 @@ const ChroniclesPage: React.FC = () => {
                 case PurchaseRequestStatus.Completed:
                     actionTitle = `Purchase Approved: "${p.assetDetails.name}"`;
                     actionColor = '#22c55e';
-                    actionNote = asset?.payouts && asset.payouts.length > 0 ? 'Exchange successful.' : 'Item added to collection.';
+                    actionNote = `Paid: ${costText}. ` + (asset?.payouts && asset.payouts.length > 0 ? 'Exchange successful.' : 'Item added to collection.');
                     break;
                 case PurchaseRequestStatus.Rejected:
                     actionTitle = `Purchase Rejected: "${p.assetDetails.name}"`;

@@ -432,6 +432,50 @@ app.use('/api/questGroups', createCrudHandler('questGroups'));
 app.use('/api/scheduledEvents', createCrudHandler('scheduledEvents'));
 
 // More complex endpoints
+app.post('/api/quests/:id/actions', async (req, res) => {
+    const { id: questId } = req.params;
+    const { action, userId } = req.body;
+    
+    let quest = appDataCache.quests.find(q => q.id === questId);
+    if (!quest) return res.status(404).json({ error: 'Quest not found' });
+
+    quest.todoUserIds = quest.todoUserIds || [];
+    const isTodo = quest.todoUserIds.includes(userId);
+
+    if (action === 'mark_todo' && !isTodo) {
+        quest.todoUserIds.push(userId);
+    } else if (action === 'unmark_todo' && isTodo) {
+        quest.todoUserIds = quest.todoUserIds.filter(id => id !== userId);
+    }
+
+    const newData = { ...appDataCache, quests: appDataCache.quests.map(q => q.id === questId ? quest : q) };
+    await saveData(newData);
+    res.status(200).json(quest);
+});
+
+const applyRewards = (user, quest, rewardTypes) => {
+    const updatedUser = JSON.parse(JSON.stringify(user));
+
+    quest.rewards.forEach(reward => {
+        const rewardType = rewardTypes.find(rt => rt.id === reward.rewardTypeId);
+        if (!rewardType) return;
+        
+        let balanceTarget;
+        if (quest.guildId) {
+            if (!updatedUser.guildBalances[quest.guildId]) {
+                updatedUser.guildBalances[quest.guildId] = { purse: {}, experience: {} };
+            }
+            balanceTarget = rewardType.category === RewardCategory.Currency ? updatedUser.guildBalances[quest.guildId].purse : updatedUser.guildBalances[quest.guildId].experience;
+        } else {
+            balanceTarget = rewardType.category === RewardCategory.Currency ? updatedUser.personalPurse : updatedUser.personalExperience;
+        }
+        
+        balanceTarget[reward.rewardTypeId] = (balanceTarget[reward.rewardTypeId] || 0) + reward.amount;
+    });
+
+    return updatedUser;
+};
+
 app.post('/api/quests/:id/complete', async (req, res) => {
     const { id } = req.params;
     const { userId, note, completionDate } = req.body;
@@ -448,10 +492,70 @@ app.post('/api/quests/:id/complete', async (req, res) => {
         guildId: quest.guildId,
     };
 
-    const newData = { ...appDataCache, questCompletions: [...appDataCache.questCompletions, newCompletion] };
+    let newData = { ...appDataCache, questCompletions: [...appDataCache.questCompletions, newCompletion] };
+
+    // If no approval is needed, apply rewards immediately
+    if (newCompletion.status === 'Approved') {
+        const user = newData.users.find(u => u.id === userId);
+        if (user) {
+            const updatedUser = applyRewards(user, quest, newData.rewardTypes);
+            newData.users = newData.users.map(u => u.id === userId ? updatedUser : u);
+        }
+    }
+    
     await saveData(newData);
     res.status(201).json(newCompletion);
 });
+
+app.post('/api/completions/:id/approve', async (req, res) => {
+    const { id } = req.params;
+    const { note } = req.body;
+    
+    const completion = appDataCache.questCompletions.find(c => c.id === id);
+    if (!completion || completion.status !== 'Pending') {
+        return res.status(404).json({ error: 'Pending completion not found.' });
+    }
+
+    const quest = appDataCache.quests.find(q => q.id === completion.questId);
+    const user = appDataCache.users.find(u => u.id === completion.userId);
+
+    if (!quest || !user) {
+        return res.status(404).json({ error: 'Associated quest or user not found.' });
+    }
+
+    const updatedUser = applyRewards(user, quest, appDataCache.rewardTypes);
+    const updatedCompletion = { ...completion, status: 'Approved', note: note || completion.note };
+    
+    const newData = {
+        ...appDataCache,
+        users: appDataCache.users.map(u => u.id === user.id ? updatedUser : u),
+        questCompletions: appDataCache.questCompletions.map(c => c.id === id ? updatedCompletion : c),
+    };
+    
+    await saveData(newData);
+    res.status(200).json(updatedCompletion);
+});
+
+app.post('/api/completions/:id/reject', async (req, res) => {
+    const { id } = req.params;
+    const { note } = req.body;
+    
+    const completion = appDataCache.questCompletions.find(c => c.id === id);
+    if (!completion || completion.status !== 'Pending') {
+        return res.status(404).json({ error: 'Pending completion not found.' });
+    }
+    
+    const updatedCompletion = { ...completion, status: 'Rejected', note: note || completion.note };
+
+    const newData = {
+        ...appDataCache,
+        questCompletions: appDataCache.questCompletions.map(c => c.id === id ? updatedCompletion : c),
+    };
+
+    await saveData(newData);
+    res.status(200).json(updatedCompletion);
+});
+
 
 app.post('/api/first-run', async (req, res) => {
     const { adminUserData, setupChoice, blueprint } = req.body;

@@ -36,7 +36,7 @@ export const createMockUsers = (): User[] => {
     }));
 
     // Give explorer starting gold for the tutorial quest
-    const explorer = initialUsers.find(u => u.username === 'explorer');
+    const explorer = initialUsers.find((u: User) => u.username === 'explorer');
     if (explorer) {
         explorer.personalPurse = { 'core-gold': 100 };
     }
@@ -476,13 +476,13 @@ export const createSampleGameAssets = (): GameAsset[] => {
 };
 
 export const createInitialGuilds = (users: User[]): Guild[] => ([
-  { id: 'guild-1', name: 'The First Guild', purpose: 'The default guild for all new adventurers.', memberIds: users.map(u => u.id), isDefault: true },
+  { id: 'guild-1', name: 'The First Guild', purpose: 'The default guild for all new adventurers.', memberIds: users.map((u: User) => u.id), isDefault: true },
 ]);
 
 export const createSampleQuests = (users: User[]): Quest[] => {
-  const explorer = users.find(u => u.role === Role.Explorer);
-  const gatekeeper = users.find(u => u.role === Role.Gatekeeper);
-  const donegeonMaster = users.find(u => u.role === Role.DonegeonMaster);
+  const explorer = users.find((u: User) => u.role === Role.Explorer);
+  const gatekeeper = users.find((u: User) => u.role === Role.Gatekeeper);
+  const donegeonMaster = users.find((u: User) => u.role === Role.DonegeonMaster);
 
   const quests: Quest[] = [
     // For Explorer
@@ -580,11 +580,11 @@ export function createInitialData(setupChoice = 'guided', adminUserData?: any, b
         const guilds = createInitialGuilds(users);
         const finalRewardTypes = [
             ...INITIAL_REWARD_TYPES,
-            ...(blueprint.assets.rewardTypes || []).filter(rt => !INITIAL_REWARD_TYPES.some(coreRt => coreRt.id === rt.id))
+            ...(blueprint.assets.rewardTypes || []).filter((rt: RewardTypeDefinition) => !INITIAL_REWARD_TYPES.some(coreRt => coreRt.id === rt.id))
         ];
         let finalMarkets = blueprint.assets.markets || [];
-        if (!finalMarkets.some(m => m.id === 'market-bank')) {
-            const bankMarket = createSampleMarkets().find(m => m.id === 'market-bank');
+        if (!finalMarkets.some((m: Market) => m.id === 'market-bank')) {
+            const bankMarket = createSampleMarkets().find((m: Market) => m.id === 'market-bank');
             if (bankMarket) finalMarkets.push(bankMarket);
         }
         return {
@@ -646,8 +646,8 @@ export function createInitialData(setupChoice = 'guided', adminUserData?: any, b
 }
 
 export function createInitialQuestCompletions(quests: Quest[], users: User[]): QuestCompletion[] {
-  const explorer = users.find(u => u.username === 'explorer');
-  const gatekeeper = users.find(u => u.username === 'gatekeeper');
+  const explorer = users.find((u: User) => u.username === 'explorer');
+  const gatekeeper = users.find((u: User) => u.username === 'gatekeeper');
   
   if (!explorer || !gatekeeper) return [];
 

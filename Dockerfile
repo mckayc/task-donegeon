@@ -54,6 +54,9 @@ WORKDIR /app
 # Running as a non-root user is a critical security best practice.
 RUN addgroup -S appgroup && adduser -S appuser -G appgroup
 
+# Install 'su-exec' for securely dropping privileges in our entrypoint script.
+RUN apk add --no-cache su-exec
+
 # Create directories for file uploads and backups.
 RUN mkdir -p /app/uploads /app/backend/backups
 
@@ -67,15 +70,21 @@ COPY --from=dependencies /usr/src/app/backend/node_modules ./backend/node_module
 COPY backend/server.js ./backend/
 COPY backend/package.json ./backend/
 
-# Change ownership of all application files to our new non-root user.
-# This is important for security.
-RUN chown -R appuser:appgroup /app
+# Copy the entrypoint script and make it executable.
+COPY entrypoint.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/entrypoint.sh
 
-# Switch to the non-root user. From this point on, all commands run as 'appuser'.
-USER appuser
+# Change ownership of all application files to our new non-root user.
+# The entrypoint will handle permissions for volume mounts at runtime.
+RUN chown -R appuser:appgroup /app
 
 # Expose the port that the backend server will listen on inside the container.
 EXPOSE 3001
 
+# Set the entrypoint to our script. This runs as root on container start.
+ENTRYPOINT ["entrypoint.sh"]
+
 # Define the command that will run when the container starts.
+# This is passed as arguments ("$@") to the entrypoint script, which will
+# then execute it as the non-root 'appuser'.
 CMD ["node", "backend/server.js"]

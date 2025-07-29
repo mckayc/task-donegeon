@@ -1,5 +1,6 @@
 
-const { Role, RewardCategory, TrophyRequirementType, QuestType, QuestAvailability, QuestCompletionStatus } = require('./types.js');
+const path = require('path');
+const { Role, RewardCategory, TrophyRequirementType, QuestType, QuestAvailability, QuestCompletionStatus } = require(path.join(__dirname, 'types.js'));
 
 const INITIAL_QUEST_GROUPS = [
     { id: 'qg-household', name: 'Household Chores', description: 'General tasks related to keeping the house clean and tidy.', icon: '🏡' },
@@ -149,14 +150,14 @@ const rawThemes = {
   eerie: { '--font-display': "'Metamorphous', serif", '--font-body': "'Roboto', sans-serif", '--font-size-display': '2.75rem', '--font-size-body': '1rem', '--color-bg-primary': "120 10% 8%", '--color-bg-secondary': "120 8% 12%", '--color-bg-tertiary': "120 5% 18%", '--color-text-primary': "120 30% 88%", '--color-text-secondary': "120 15% 65%", '--color-border': "120 10% 30%", '--color-primary-hue': "120", '--color-primary-saturation': "40%", '--color-primary-lightness': "45%", '--color-accent-hue': "80", '--color-accent-saturation': "50%", '--color-accent-lightness': "55%", '--color-accent-light-hue': "30", '--color-accent-light-saturation': "40%", '--color-accent-light-lightness': "50%" },
 };
 
-export const INITIAL_THEMES: ThemeDefinition[] = Object.entries(rawThemes).map(([id, styles]) => ({
+const INITIAL_THEMES = Object.entries(rawThemes).map(([id, styles]) => ({
   id,
   name: id.charAt(0).toUpperCase() + id.slice(1),
   isCustom: false,
   styles
 }));
 
-export const INITIAL_SETTINGS: AppSettings = {
+const INITIAL_SETTINGS = {
     contentVersion: 2,
     favicon: '🏰',
     forgivingSetbacks: true,
@@ -282,7 +283,7 @@ export const INITIAL_SETTINGS: AppSettings = {
     }
 };
 
-export const INITIAL_TROPHIES: Trophy[] = [
+const INITIAL_TROPHIES = [
     { id: 'trophy-1', name: 'First Quest', description: 'Complete your first quest.', iconType: 'emoji', icon: '🎉', isManual: false, requirements: [{type: TrophyRequirementType.CompleteQuestType, value: QuestType.Duty, count: 1}] },
     { id: 'trophy-2', name: 'First Customization', description: 'Change your theme for the first time.', iconType: 'emoji', icon: '🎨', isManual: true, requirements: [] },
     { id: 'trophy-3', name: 'The Adjudicator', description: 'Approve or reject a pending quest.', iconType: 'emoji', icon: '⚖️', isManual: true, requirements: [] },
@@ -382,7 +383,7 @@ export const INITIAL_TROPHIES: Trophy[] = [
     { id: 'trophy-97', name: 'The Penny Pincher', description: 'For saving up your allowance for a goal.', iconType: 'emoji', icon: '🐷', isManual: true, requirements: [] },
 ];
 
-export const createSampleMarkets = (): Market[] => ([
+const createSampleMarkets = (): Market[] => ([
   { id: 'market-tutorial', title: 'Tutorial Market', description: 'A place to complete your first quests.', iconType: 'emoji', icon: '🎓', status: { type: 'open' } },
   { id: 'market-themes', title: 'The Gilded Brush (Themes)', description: 'Purchase new visual themes to customize your entire application.', iconType: 'emoji', icon: '🎨', status: { type: 'open' } },
   { id: 'market-bank', title: 'The Exchange Post', description: 'Exchange your various currencies and experience points.', iconType: 'emoji', icon: '⚖️', status: { type: 'open' } },
@@ -390,7 +391,7 @@ export const createSampleMarkets = (): Market[] => ([
   { id: 'market-candy', title: 'The Sugar Cube', description: 'A delightful shop for purchasing sweet treats with your crystals.', iconType: 'emoji', icon: '🍬', status: { type: 'open' } },
 ]);
 
-export const createSampleGameAssets = (): GameAsset[] => {
+const createSampleGameAssets = (): GameAsset[] => {
     const allAssets: GameAsset[] = [
     { 
         id: 'ga-theme-sapphire', 
@@ -454,16 +455,16 @@ export const createSampleGameAssets = (): GameAsset[] => {
   return allAssets.filter(asset => !exchangeAssetIds.has(asset.id));
 };
 
-export const createInitialGuilds = (users: User[]): Guild[] => ([
+const createInitialGuilds = (users) => ([
   { id: 'guild-1', name: 'The First Guild', purpose: 'The default guild for all new adventurers.', memberIds: users.map(u => u.id), isDefault: true },
 ]);
 
-export const createSampleQuests = (users: User[]): Quest[] => {
+const createSampleQuests = (users) => {
   const explorer = users.find(u => u.role === Role.Explorer);
   const gatekeeper = users.find(u => u.role === Role.Gatekeeper);
   const donegeonMaster = users.find(u => u.role === Role.DonegeonMaster);
 
-  const quests: Quest[] = [
+  const quests = [
     // For Explorer
     {
       id: 'quest-explorer-1', title: 'Change Your Theme', description: "First, visit the Marketplace and buy the 'Sapphire Theme Unlock' from the Tutorial Market. Then, go to the 'Themes' page from the sidebar to activate it!", type: QuestType.Venture, iconType: 'emoji', icon: '🎨', tags: ['tutorial', 'tutorial-explorer'],
@@ -526,7 +527,22 @@ export const createSampleQuests = (users: User[]): Quest[] => {
 };
 
 
-export const createInitialQuestCompletions = (users: User[], quests: Quest[]): QuestCompletion[] => {
+const createInitialQuestCompletions = (users, quests) => {
     // This function can be used to populate some initial "completed" quests for demonstration
     return [];
+};
+
+module.exports = {
+    INITIAL_QUEST_GROUPS,
+    createMockUsers,
+    INITIAL_REWARD_TYPES,
+    INITIAL_RANKS,
+    INITIAL_THEMES,
+    INITIAL_SETTINGS,
+    INITIAL_TROPHIES,
+    createSampleMarkets,
+    createSampleGameAssets,
+    createSampleQuests,
+    createInitialQuestCompletions,
+    INITIAL_TAGS,
 };

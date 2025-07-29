@@ -1,5 +1,44 @@
 
-const { Role, RewardCategory, TrophyRequirementType, QuestType, QuestAvailability, QuestCompletionStatus } = require('./backendTypes.js');
+
+// TYPE DEFINITIONS - MOVED HERE FOR ROBUSTNESS IN DOCKER/VERCEL
+const Role = {
+  DonegeonMaster: 'Donegeon Master',
+  Gatekeeper: 'Gatekeeper',
+  Explorer: 'Explorer',
+};
+
+const QuestType = {
+  Duty: 'Duty',
+  Venture: 'Venture',
+};
+
+const RewardCategory = {
+  Currency: 'Currency',
+  XP: 'XP',
+};
+
+const QuestAvailability = {
+    Daily: 'Daily',
+    Weekly: 'Weekly',
+    Monthly: 'Monthly',
+    Frequency: 'Frequency',
+    Unlimited: 'Unlimited',
+};
+
+const QuestCompletionStatus = {
+  Pending: 'Pending',
+  Approved: 'Approved',
+  Rejected: 'Rejected',
+}
+
+const TrophyRequirementType = {
+    CompleteQuestType: 'COMPLETE_QUEST_TYPE',
+    EarnTotalReward: 'EARN_TOTAL_REWARD',
+    AchieveRank: 'ACHIEVE_RANK',
+    CompleteQuestTag: 'COMPLETE_QUEST_TAG',
+};
+// END TYPE DEFINITIONS
+
 
 const INITIAL_QUEST_GROUPS = [
     { id: 'qg-household', name: 'Household Chores', description: 'General tasks related to keeping the house clean and tidy.', icon: '🏡' },
@@ -150,6 +189,14 @@ const rawThemes = {
 };
 
 module.exports = {
+    // Export types
+    Role,
+    QuestType,
+    RewardCategory,
+    QuestAvailability,
+    QuestCompletionStatus,
+    TrophyRequirementType,
+    // Export initial data
     INITIAL_QUEST_GROUPS,
     createMockUsers,
     INITIAL_REWARD_TYPES,

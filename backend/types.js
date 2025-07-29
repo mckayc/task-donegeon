@@ -1,3 +1,3 @@
-// This file is now obsolete.
-// Its contents have been moved to backendTypes.js to resolve a module naming conflict.
+// This file is obsolete.
+// All backend type definitions are now located in backend/initialData.js to resolve module pathing issues.
 // This file can be safely deleted.

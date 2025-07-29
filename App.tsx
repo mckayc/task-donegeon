@@ -1,11 +1,11 @@
 
 
+
 import React, { useEffect } from 'react';
 import { useAppState } from './context/AppContext';
 import FirstRunWizard from './components/auth/FirstRunWizard';
 import MainLayout from './components/layout/MainLayout';
 import SwitchUser from './components/auth/SwitchUser';
-import AuthPage from './components/auth/AuthPage';
 import NotificationContainer from './components/ui/NotificationContainer';
 import AppLockScreen from './components/auth/AppLockScreen';
 import OnboardingWizard from './components/auth/OnboardingWizard';
@@ -84,7 +84,7 @@ const App: React.FC = () => {
           return <SharedLayout />;
         }
 
-        if (!currentUser) { return <AuthPage />; }
+        if (!currentUser) { return <SwitchUser />; }
       
         return <MainLayout />;
       })()}

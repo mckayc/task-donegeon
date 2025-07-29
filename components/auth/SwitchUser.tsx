@@ -1,6 +1,3 @@
-
-
-
 import React, { useState, useEffect } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { User, Role } from '../../types';
@@ -85,7 +82,6 @@ const SwitchUser: React.FC = () => {
         } else {
             setSelectedUser(null);
             setError('');
-            setIsSwitchingUser(false);
         }
     };
 
@@ -201,7 +197,9 @@ const SwitchUser: React.FC = () => {
                 ))}
             </div>
              <div className="mt-12">
-                <Button variant="secondary" onClick={goBack}>Cancel</Button>
+                {anyCurrentUser && (
+                    <Button variant="secondary" onClick={goBack}>Cancel</Button>
+                )}
             </div>
         </div>
     );

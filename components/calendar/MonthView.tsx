@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { Quest, QuestCompletion, QuestAvailability, QuestType, QuestCompletionStatus, ScheduledEvent } from '../../types';
+import { Quest, QuestCompletion, QuestAvailability, QuestType, QuestCompletionStatus, ScheduledEvent } from '../../frontendTypes';
 import { toYMD } from '../../utils/quests';
 import DailyDetailDialog from './DailyDetailDialog';
 import { useAppState } from '../../context/AppContext';

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
-import { GameAsset, RewardItem, RewardCategory } from '../../types';
+import { GameAsset, RewardItem, RewardCategory } from '../../frontendTypes';
 import Button from '../ui/Button';
 import Input from '../ui/Input';
 import RewardInputGroup from '../forms/RewardInputGroup';
@@ -29,7 +29,7 @@ const PREDEFINED_CATEGORIES = [
     'Armor (Cosmetic)', 'Consumable', 'Real-World Reward', 'Trophy Display', 'Miscellaneous'
 ];
 
-const EditGameAssetDialog: React.FC<EditGameAssetDialogProps> = ({ assetToEdit, initialData, onClose, mode = (assetToEdit ? 'edit' : 'create'), onTryAgain, isGenerating, onSave }) => {
+export const EditGameAssetDialog: React.FC<EditGameAssetDialogProps> = ({ assetToEdit, initialData, onClose, mode = (assetToEdit ? 'edit' : 'create'), onTryAgain, isGenerating, onSave }) => {
   const { addGameAsset, updateGameAsset, uploadFile, addNotification } = useAppDispatch();
   const { markets, rewardTypes } = useAppState();
 
@@ -306,89 +306,62 @@ const EditGameAssetDialog: React.FC<EditGameAssetDialogProps> = ({ assetToEdit, 
                       <div className="space-y-3">
                         <h4 className="font-semibold text-stone-200">Cost Options</h4>
                         {formData.costGroups.map((group, groupIndex) => (
-                           <div key={groupIndex} className="p-3 border border-stone-700/60 rounded-lg">
-                               <RewardInputGroup category='cost' items={group} onChange={handleCostGroupChange(groupIndex)} onAdd={handleAddRewardToGroup(groupIndex)} onRemove={handleRemoveRewardFromGroup(groupIndex)} />
-                               {formData.costGroups.length > 1 && <Button type="button" variant="secondary" className="!bg-red-900/50 hover:!bg-red-800/60 text-red-300 text-xs py-1 px-2 mt-2" onClick={() => removeCostGroup(groupIndex)}>Remove Cost Option</Button>}
-                           </div>
+                            <div key={groupIndex} className="p-3 bg-stone-800/50 rounded-md">
+                                <div className="flex justify-between items-center mb-2">
+                                    <h5 className="text-sm font-semibold">Option {groupIndex + 1}</h5>
+                                    {formData.costGroups.length > 1 && (
+                                        <button type="button" onClick={() => removeCostGroup(groupIndex)} className="text-red-400 hover:text-red-300">&times;</button>
+                                    )}
+                                </div>
+                                <RewardInputGroup
+                                    category="cost"
+                                    items={group}
+                                    onChange={handleCostGroupChange(groupIndex)}
+                                    onAdd={handleAddRewardToGroup(groupIndex)}
+                                    onRemove={handleRemoveRewardFromGroup(groupIndex)}
+                                />
+                            </div>
                         ))}
-                         <Button type="button" variant="secondary" onClick={addCostGroup} className="text-sm py-1 px-3">+ Add Cost Option (OR)</Button>
+                        <Button type="button" variant="secondary" onClick={addCostGroup} className="text-sm py-1 px-2">+ Add Cost Option</Button>
                       </div>
 
-                      <div>
-                          <ToggleSwitch enabled={formData.allowExchange} setEnabled={(val) => setFormData(p => ({...p, allowExchange: val}))} label="Allow Exchange (Item has Payouts)" />
-                      </div>
-                      {formData.allowExchange && (
-                          <RewardInputGroup category='payout' items={formData.payouts} onChange={handlePayoutChange} onAdd={handleAddPayout} onRemove={handleRemovePayout} />
-                      )}
-                      <div>
-                          <h4 className="font-semibold text-stone-200 mb-2">Available In</h4>
-                          <div className="space-y-2 max-h-32 overflow-y-auto border border-stone-700 p-2 rounded-md">
-                              {markets.map(market => {
-                                  const isExchange = market.id === 'market-bank';
-                                  return (
-                                    <div key={market.id} className={`flex items-center ${isExchange ? 'opacity-50' : ''}`} title={isExchange ? 'Goods cannot be sold in the Exchange Post.' : ''}>
-                                        <input
-                                            type="checkbox"
-                                            id={`market-${market.id}`}
-                                            checked={formData.marketIds.includes(market.id)}
-                                            onChange={() => handleMarketToggle(market.id)}
-                                            className="h-4 w-4 rounded text-emerald-600 bg-stone-700 border-stone-500 focus:ring-emerald-500 disabled:cursor-not-allowed"
-                                            disabled={isExchange}
-                                        />
-                                        <label
-                                            htmlFor={`market-${market.id}`}
-                                            className={`ml-3 text-stone-300 ${isExchange ? 'cursor-not-allowed' : ''}`}
-                                        >
-                                            {market.title}
-                                        </label>
-                                    </div>
-                                  );
-                              })}
+                      <div className="pt-4 border-t border-stone-700/60">
+                          <h4 className="font-semibold text-stone-300 mb-2">Available in Markets</h4>
+                          <div className="grid grid-cols-2 gap-2">
+                              {markets.map(market => (
+                                  <label key={market.id} className="flex items-center gap-2">
+                                      <input type="checkbox" checked={formData.marketIds.includes(market.id)} onChange={() => handleMarketToggle(market.id)} className="h-4 w-4 rounded text-emerald-600 bg-stone-700 border-stone-600 focus:ring-emerald-500" />
+                                      <span>{market.title}</span>
+                                  </label>
+                              ))}
                           </div>
+                      </div>
+
+                      <div className="pt-4 border-t border-stone-700/60">
+                          <ToggleSwitch enabled={formData.allowExchange} setEnabled={val => setFormData(p => ({...p, allowExchange: val}))} label="Allow Exchange/Payout" />
+                             {formData.allowExchange && (
+                                 <div className="mt-2">
+                                     <RewardInputGroup category="payout" items={formData.payouts} onChange={handlePayoutChange} onAdd={handleAddPayout} onRemove={handleRemovePayout} />
+                                 </div>
+                             )}
                       </div>
                   </>
               )}
             </div>
-
-            {error && <p className="text-red-400 text-center">{error}</p>}
           </form>
-           <div className="p-6 border-t border-stone-700/60 mt-auto">
-              {mode === 'ai-creation' ? (
-                <div className="flex justify-between items-center">
-                    <Button type="button" variant="secondary" onClick={onClose}>Cancel</Button>
-                    <div className="flex items-center gap-4">
-                        <Button type="button" variant="secondary" onClick={onTryAgain} disabled={isGenerating}>
-                            {isGenerating ? 'Generating...' : 'Try Again'}
-                        </Button>
-                        <Button type="submit" form="asset-dialog-form">Create Asset</Button>
-                    </div>
-                </div>
-              ) : (
-                <div className="flex justify-end space-x-4">
-                    <Button type="button" variant="secondary" onClick={onClose}>Cancel</Button>
-                    <Button type="submit" form="asset-dialog-form">{onSave ? 'Save Changes' : (assetToEdit ? 'Save Changes' : 'Create Asset')}</Button>
-                </div>
-              )}
+          <div className="p-6 border-t border-stone-700/60 mt-auto">
+              {error && <p className="text-red-400 text-center mb-4">{error}</p>}
+              <div className="flex justify-end space-x-4">
+                  <Button type="button" variant="secondary" onClick={onClose}>Cancel</Button>
+                  <Button type="submit" form="asset-dialog-form">{assetToEdit ? 'Save Changes' : 'Create Asset'}</Button>
+              </div>
           </div>
         </div>
       </div>
-      
-      {isInfoVisible && (
-        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-[60]" onClick={() => setIsInfoVisible(false)}>
-            <div className="bg-stone-900 border border-stone-700 rounded-lg p-6 max-w-lg w-full" onClick={e => e.stopPropagation()}>
-                <h3 className="font-bold text-lg text-stone-200 mb-4">Asset Information</h3>
-                <Input label="Image URL" readOnly value={formData.url} onFocus={e => (e.target as HTMLInputElement).select()} />
-                <div className="text-right mt-4">
-                    <Button variant="secondary" onClick={() => setIsInfoVisible(false)}>Close</Button>
-                </div>
-            </div>
-        </div>
-      )}
-
       {isGalleryOpen && (
           <ImageSelectionDialog 
               onSelect={(url) => {
-                  setFormData(p => ({...p, url}));
+                  setFormData(p => ({...p, url: url}));
                   setIsGalleryOpen(false);
               }}
               onClose={() => setIsGalleryOpen(false)}
@@ -397,5 +370,3 @@ const EditGameAssetDialog: React.FC<EditGameAssetDialogProps> = ({ assetToEdit, 
     </>
   );
 };
-
-export default EditGameAssetDialog;

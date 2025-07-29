@@ -4,10 +4,10 @@ import Input from '../ui/Input';
 import { SparklesIcon, CheckCircleIcon, XCircleIcon } from '../ui/Icons';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { GenerateContentResponse, Type } from '@google/genai';
-import { QuestType, Terminology } from '../../types';
+import { QuestType, Terminology } from '../../frontendTypes';
 import Card from '../ui/Card';
-import CreateQuestDialog from '../quests/CreateQuestDialog';
-import EditGameAssetDialog from '../admin/EditGameAssetDialog';
+import { CreateQuestDialog } from '../quests/CreateQuestDialog';
+import { EditGameAssetDialog } from '../admin/EditGameAssetDialog';
 import EditTrophyDialog from '../settings/EditTrophyDialog';
 import EditMarketDialog from '../markets/EditMarketDialog';
 

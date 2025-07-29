@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
-import { Trophy, User } from '../../types';
+import { Trophy, User } from '../../frontendTypes';
 import Button from '../ui/Button';
 
 interface AwardTrophyDialogProps {

@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { Quest, QuestCompletion, QuestType, QuestAvailability } from '../../types';
+import { Quest, QuestCompletion, QuestType, QuestAvailability } from '../../frontendTypes';
 import { isQuestAvailableForUser, toYMD } from '../../utils/quests';
 import Button from '../ui/Button';
 import { useAppDispatch, useAppState } from '../../context/AppContext';

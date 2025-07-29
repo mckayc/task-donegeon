@@ -1,10 +1,8 @@
-
-
 import React, { useState } from 'react';
 import Card from '../ui/Card';
 import Button from '../ui/Button';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
-import { QuestCompletionStatus, Role, PurchaseRequestStatus } from '../../types';
+import { QuestCompletionStatus, Role, PurchaseRequestStatus } from '../../frontendTypes';
 import Input from '../ui/Input';
 
 const ApprovalsPage: React.FC = () => {

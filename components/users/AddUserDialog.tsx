@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
-import { Role } from '../../types';
+import { Role } from '../../frontendTypes';
 import Button from '../ui/Button';
 import Input from '../ui/Input';
 import UserFormFields from './UserFormFields';

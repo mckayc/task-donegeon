@@ -9,7 +9,7 @@ import MarketplacePage from '../pages/MarketplacePage';
 import ChroniclesPage from '../pages/ChroniclesPage';
 import GuildPage from '../pages/GuildPage';
 import UserManagementPage from '../pages/UserManagementPage';
-import { Page, Role } from '../../types';
+import { Page, Role } from '../../frontendTypes';
 import RewardsPage from '../pages/RewardsPage';
 import ManageQuestsPage from '../pages/ManageQuestsPage';
 import ApprovalsPage from '../pages/ApprovalsPage';

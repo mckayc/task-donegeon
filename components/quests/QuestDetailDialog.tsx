@@ -1,5 +1,5 @@
 import React from 'react';
-import { Quest, RewardCategory, RewardItem, QuestType } from '../../types';
+import { Quest, RewardCategory, RewardItem, QuestType } from '../../frontendTypes';
 import { useAppState } from '../../context/AppContext';
 import Button from '../ui/Button';
 import ToggleSwitch from '../ui/ToggleSwitch';

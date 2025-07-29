@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
-import { ScheduledEvent, RewardCategory } from '../../types';
+import { ScheduledEvent, RewardCategory } from '../../frontendTypes';
 import Button from '../ui/Button';
 import Input from '../ui/Input';
 import EmojiPicker from '../ui/EmojiPicker';
@@ -36,7 +36,8 @@ const ScheduleEventDialog: React.FC<ScheduleEventDialogProps> = ({ event, onClos
 
     useEffect(() => {
         if (event) {
-            setFormData({ ...event });
+            const { id, ...rest } = event;
+            setFormData(rest);
         } else {
             // Default new event to today
             const today = new Date().toISOString().split('T')[0];

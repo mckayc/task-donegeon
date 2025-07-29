@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
-import { Rank } from '../../types';
+import { Rank } from '../../frontendTypes';
 import Button from '../ui/Button';
 import Input from '../ui/Input';
 import EmojiPicker from '../ui/EmojiPicker';

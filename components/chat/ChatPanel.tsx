@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
-import { Role, User } from '../../types';
+import { Role, User } from '../../frontendTypes';
 import Avatar from '../ui/Avatar';
 import Input from '../ui/Input';
 import { XCircleIcon, ArrowLeftIcon } from '../ui/Icons';

@@ -1,10 +1,10 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
-import { GameAsset } from '../../types';
+import { GameAsset } from '../../frontendTypes';
 import Button from '../ui/Button';
 import Card from '../ui/Card';
 import ConfirmDialog from '../ui/ConfirmDialog';
-import EditGameAssetDialog from '../admin/EditGameAssetDialog';
+import { EditGameAssetDialog } from '../admin/EditGameAssetDialog';
 import EmptyState from '../ui/EmptyState';
 import { ItemManagerIcon, EllipsisVerticalIcon } from '../ui/Icons';
 import ItemIdeaGenerator from '../quests/ItemIdeaGenerator';

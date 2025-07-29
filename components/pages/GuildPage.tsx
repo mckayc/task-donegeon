@@ -1,9 +1,8 @@
-
 import React, { useState } from 'react';
 import Card from '../ui/Card';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import Button from '../ui/Button';
-import { Guild, User } from '../../types';
+import { Guild, User } from '../../frontendTypes';
 import GuildMemberProfilePage from '../guilds/GuildMemberProfilePage';
 import Avatar from '../ui/Avatar';
 

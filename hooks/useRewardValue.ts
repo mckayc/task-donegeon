@@ -1,6 +1,5 @@
-
 import { useAppState } from '../context/AppContext';
-import { RewardCategory, RewardTypeDefinition } from '../types';
+import { RewardCategory, RewardTypeDefinition } from '../frontendTypes';
 
 /**
  * Calculates the value of a given amount of a reward type in terms of the anchor currency.

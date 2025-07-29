@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
-import { BulkQuestUpdates } from '../../types';
+import { BulkQuestUpdates } from '../../frontendTypes';
 import Button from '../ui/Button';
 import Input from '../ui/Input';
 import TagInput from '../ui/TagInput';

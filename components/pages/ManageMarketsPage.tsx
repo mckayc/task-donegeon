@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Market } from '../../types';
+import { Market } from '../../frontendTypes';
 import Button from '../ui/Button';
 import Card from '../ui/Card';
 import EditMarketDialog from '../markets/EditMarketDialog';

@@ -1,9 +1,9 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
-import { Quest, QuestType, QuestGroup } from '../../types';
+import { Quest, QuestType, QuestGroup } from '../../frontendTypes';
 import Button from '../ui/Button';
 import Card from '../ui/Card';
-import CreateQuestDialog from '../quests/CreateQuestDialog';
+import { CreateQuestDialog } from '../quests/CreateQuestDialog';
 import ConfirmDialog from '../ui/ConfirmDialog';
 import QuestIdeaGenerator from '../quests/QuestIdeaGenerator';
 import { QuestsIcon, EllipsisVerticalIcon } from '../ui/Icons';

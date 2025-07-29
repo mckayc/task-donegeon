@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { useAppState } from '../../context/AppContext';
-import { Role, Trophy, UserTrophy, TrophyRequirementType, QuestType, QuestCompletionStatus, Quest, AppMode, User } from '../../types';
+import { Role, Trophy, UserTrophy, TrophyRequirementType, QuestType, QuestCompletionStatus, Quest, AppMode, User } from '../../frontendTypes';
 import Card from '../ui/Card';
 import { fromYMD } from '../../utils/quests';
 import EmptyState from '../ui/EmptyState';

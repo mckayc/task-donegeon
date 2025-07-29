@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { Guild, Rank, User, Trophy } from '../../types';
+import { Guild, Rank, User, Trophy } from '../../frontendTypes';
 import { useAppState } from '../../context/AppContext';
 import Card from '../ui/Card';
 import Button from '../ui/Button';
@@ -20,7 +20,7 @@ const GuildMemberProfilePage: React.FC<GuildMemberProfilePageProps> = ({ user, g
 
     const rankData = useMemo(() => {
         const sortedRanks = [...ranks].sort((a, b) => a.xpThreshold - b.xpThreshold);
-        const totalXp = Object.values(personalBalances.experience).reduce((sum: number, amount: number) => sum + amount, 0);
+        const totalXp = (Object.values(personalBalances.experience) as number[]).reduce((sum, amount) => sum + amount, 0);
         
         let currentRank: Rank | null = sortedRanks[0] || null;
         for (let i = sortedRanks.length - 1; i >= 0; i--) {

@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Trophy } from '../../types';
+import { Trophy } from '../../frontendTypes';
 import Button from '../ui/Button';
 import Card from '../ui/Card';
 import EditTrophyDialog from '../settings/EditTrophyDialog';

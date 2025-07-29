@@ -1,7 +1,8 @@
 
+
 import React, { useMemo, useState } from 'react';
 import { useAppState } from '../../context/AppContext';
-import { Rank } from '../../types';
+import { Rank } from '../../frontendTypes';
 import Card from '../ui/Card';
 import { RankIcon } from '../ui/Icons';
 import DynamicIcon from '../ui/DynamicIcon';

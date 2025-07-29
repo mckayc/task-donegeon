@@ -1,6 +1,7 @@
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
-import { Quest, QuestType, RewardItem, RewardCategory, QuestAvailability } from '../../types';
+import { Quest, QuestType, RewardItem, RewardCategory, QuestAvailability } from '../../frontendTypes';
 import Button from '../ui/Button';
 import Input from '../ui/Input';
 import ToggleSwitch from '../ui/ToggleSwitch';
@@ -25,7 +26,7 @@ const DUTY_AVAILABILITIES = [QuestAvailability.Daily, QuestAvailability.Weekly, 
 const VENTURE_AVAILABILITIES = [QuestAvailability.Frequency, QuestAvailability.Unlimited];
 
 
-const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialData, onClose, mode = (questToEdit ? 'edit' : 'create'), onTryAgain, isGenerating, onSave }) => {
+export const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialData, onClose, mode = (questToEdit ? 'edit' : 'create'), onTryAgain, isGenerating, onSave }) => {
   const { users, guilds, rewardTypes, allTags, settings, questGroups } = useAppState();
   const { addQuest, updateQuest, addQuestGroup } = useAppDispatch();
 
@@ -360,70 +361,75 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
                      </div>
                  ))}
              </div>
-             {formData.availabilityType === QuestAvailability.Weekly && formData.type === QuestType.Duty && (
-                <div className="mt-3">
-                    <p className="text-sm text-stone-300 mb-2">Repeat on these days:</p>
-                    <div className="flex flex-wrap gap-2">{WEEKDAYS.map((day, index) => (<button type="button" key={day} onClick={() => handleWeeklyDayToggle(index)} className={`px-3 py-1.5 rounded-md text-sm font-semibold transition-colors ${formData.weeklyRecurrenceDays.includes(index) ? 'btn-primary' : 'bg-stone-700 hover:bg-stone-600'}`}>{day}</button>))}</div>
+             {formData.availabilityType === QuestAvailability.Frequency && (
+                <div className="mt-4">
+                  <Input label="Completions Allowed" type="number" min="1" value={formData.availabilityCount} onChange={(e) => setFormData(p => ({...p, availabilityCount: parseInt(e.target.value) || 1}))} />
                 </div>
              )}
-              {formData.availabilityType === QuestAvailability.Monthly && formData.type === QuestType.Duty && (
-                <div className="mt-3">
-                    <p className="text-sm text-stone-300 mb-2">Repeat on these dates:</p>
-                    <div className="grid grid-cols-7 gap-1">{Array.from({length: 31}, (_, i) => i + 1).map(day => (<button type="button" key={day} onClick={() => handleMonthlyDayToggle(day)} className={`h-9 w-9 flex items-center justify-center rounded-md text-sm font-semibold transition-colors ${formData.monthlyRecurrenceDays.includes(day) ? 'btn-primary' : 'bg-stone-700 hover:bg-stone-600'}`}>{day}</button>))}</div>
+             {formData.availabilityType === QuestAvailability.Weekly && (
+                <div className="mt-4">
+                  <label className="block text-sm font-medium text-stone-300 mb-2">Recurrence Days</label>
+                  <div className="flex flex-wrap gap-2">
+                    {WEEKDAYS.map((day, index) => (
+                      <button type="button" key={day} onClick={() => handleWeeklyDayToggle(index)} className={`px-3 py-1.5 rounded-md text-sm font-semibold transition-colors ${formData.weeklyRecurrenceDays.includes(index) ? 'btn-primary' : 'bg-stone-700 hover:bg-stone-600'}`}>{day}</button>
+                    ))}
+                  </div>
                 </div>
              )}
-             {formData.availabilityType === QuestAvailability.Frequency && formData.type === QuestType.Venture && (
-                <div className="mt-3"><Input label="Number of completions available" type="number" min="1" value={formData.availabilityCount || 1} onChange={(e) => setFormData(p => ({...p, availabilityCount: parseInt(e.target.value)}))} /></div>
+             {formData.availabilityType === QuestAvailability.Monthly && (
+                <div className="mt-4">
+                  <label className="block text-sm font-medium text-stone-300 mb-2">Recurrence Days (Dates)</label>
+                  <div className="grid grid-cols-7 gap-1">
+                    {Array.from({ length: 31 }, (_, i) => i + 1).map(day => (
+                      <button type="button" key={day} onClick={() => handleMonthlyDayToggle(day)} className={`w-10 h-10 rounded-full text-sm font-semibold transition-colors ${formData.monthlyRecurrenceDays.includes(day) ? 'btn-primary' : 'bg-stone-700 hover:bg-stone-600'}`}>{day}</button>
+                    ))}
+                  </div>
+                </div>
              )}
           </div>
 
-          <div className="p-4 bg-stone-900/50 rounded-lg space-y-4">
-            <div className="flex justify-between items-center">
-              <h3 className="font-semibold text-lg text-stone-200">Deadlines & Time-based {settings.terminology.negativePoints}</h3>
-              <ToggleSwitch enabled={formData.hasDeadlines} setEnabled={(val) => setFormData(p => ({...p, hasDeadlines: val}))} label="Enable" />
-            </div>
-            
+          <div className="p-4 bg-stone-900/50 rounded-lg">
+            <ToggleSwitch enabled={formData.hasDeadlines} setEnabled={(val) => setFormData(p => ({...p, hasDeadlines: val}))} label="Has Deadlines & Setbacks" />
             {formData.hasDeadlines && (
-              <>
-                <p className="text-sm text-stone-400 -mt-2">Set specific times for when a {settings.terminology.task.toLowerCase()} becomes late or incomplete, and assign {settings.terminology.negativePoints.toLowerCase()} for each.</p>
-                 {formData.type === QuestType.Venture ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <Input label="Becomes LATE at" type="datetime-local" value={formData.lateDateTime} onChange={e => setFormData(p => ({...p, lateDateTime: e.target.value}))} />
-                        <Input label="Becomes INCOMPLETE at" type="datetime-local" value={formData.incompleteDateTime} onChange={e => setFormData(p => ({...p, incompleteDateTime: e.target.value}))} />
-                    </div>
-                ) : ( // Duty
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <Input label="Becomes LATE at (Daily Time)" type="time" value={formData.lateTime} onChange={e => setFormData(p => ({...p, lateTime: e.target.value}))} />
-                        <Input label="Becomes INCOMPLETE at (Daily Time)" type="time" value={formData.incompleteTime} onChange={e => setFormData(p => ({...p, incompleteTime: e.target.value}))} />
-                    </div>
+              <div className="mt-4 pt-4 border-t border-stone-700/60 space-y-4">
+                {formData.type === QuestType.Venture ? (
+                  <>
+                    <Input label="Late Deadline" type="datetime-local" value={formData.lateDateTime} onChange={(e) => setFormData(p => ({...p, lateDateTime: e.target.value}))} />
+                    <Input label="Incomplete Deadline" type="datetime-local" value={formData.incompleteDateTime} onChange={(e) => setFormData(p => ({...p, incompleteDateTime: e.target.value}))} />
+                  </>
+                ) : (
+                  <>
+                    <Input label="Late Time" type="time" value={formData.lateTime} onChange={(e) => setFormData(p => ({...p, lateTime: e.target.value}))} />
+                    <Input label="Incomplete Time" type="time" value={formData.incompleteTime} onChange={(e) => setFormData(p => ({...p, incompleteTime: e.target.value}))} />
+                  </>
                 )}
                 <RewardInputGroup category='lateSetbacks' items={formData.lateSetbacks} onChange={handleRewardChange('lateSetbacks')} onAdd={handleAddRewardForCategory('lateSetbacks')} onRemove={handleRemoveReward('lateSetbacks')} />
                 <RewardInputGroup category='incompleteSetbacks' items={formData.incompleteSetbacks} onChange={handleRewardChange('incompleteSetbacks')} onAdd={handleAddRewardForCategory('incompleteSetbacks')} onRemove={handleRemoveReward('incompleteSetbacks')} />
-              </>
+              </div>
             )}
           </div>
-
+          
           <RewardInputGroup category='rewards' items={formData.rewards} onChange={handleRewardChange('rewards')} onAdd={handleAddRewardForCategory('rewards')} onRemove={handleRemoveReward('rewards')} />
 
-          <div className="p-4 bg-stone-900/50 rounded-lg space-y-4">
-            <div>
-              <h3 className="font-semibold text-stone-200 mb-2">Individual User Assignment</h3>
-              <p className="text-sm text-stone-400 mb-3">Select the users who will be assigned this quest. Note: Assigning a Quest Group will override this.</p>
-              <fieldset className="disabled:opacity-50">
-                <div className="space-y-2 max-h-40 overflow-y-auto border border-stone-700 p-2 rounded-md">
-                    {users.map(user => (
-                        <div key={user.id} className="flex items-center">
-                            <input type="checkbox" id={`user-${user.id}`} name={`user-${user.id}`} checked={formData.assignedUserIds.includes(user.id)} onChange={() => handleUserAssignmentChange(user.id)} className="h-4 w-4 text-emerald-600 bg-stone-700 border-stone-500 rounded focus:ring-emerald-500" />
-                            <label htmlFor={`user-${user.id}`} className="ml-3 text-stone-300">{user.gameName} ({user.role})</label>
-                        </div>
-                    ))}
+          <div className="p-4 bg-stone-900/50 rounded-lg">
+            <h3 className="font-semibold text-stone-200 mb-3">Assigned Users</h3>
+            <div className="space-y-2 max-h-40 overflow-y-auto">
+                <div className="flex items-center">
+                    <input type="checkbox" id="assign-all-users" checked={formData.assignedUserIds.length === users.length} onChange={() => setFormData(p => ({...p, assignedUserIds: p.assignedUserIds.length === users.length ? [] : users.map(u => u.id)}))} className="h-4 w-4 text-emerald-600 bg-stone-700 border-stone-500 rounded focus:ring-emerald-500" />
+                    <label htmlFor="assign-all-users" className="ml-3 text-stone-300 font-semibold">All Users</label>
                 </div>
-              </fieldset>
+                {users.map(user => (
+                    <div key={user.id} className="flex items-center">
+                        <input type="checkbox" id={`assign-user-${user.id}`} checked={formData.assignedUserIds.includes(user.id)} onChange={() => handleUserAssignmentChange(user.id)} className="h-4 w-4 text-emerald-600 bg-stone-700 border-stone-500 rounded focus:ring-emerald-500" />
+                        <label htmlFor={`assign-user-${user.id}`} className="ml-3 text-stone-300">{user.gameName} ({user.role})</label>
+                    </div>
+                ))}
             </div>
+            <p className="text-xs text-stone-400 mt-2">If no users are assigned, the quest will be available to all users within the selected scope.</p>
           </div>
         </form>
         
-        <div className="p-6 border-t border-stone-700/60">
+        <div className="p-6 border-t border-stone-700/60 mt-auto">
             {error && <p className="text-red-400 text-center mb-4">{error}</p>}
             {mode === 'ai-creation' ? (
                 <div className="flex justify-between items-center">
@@ -438,7 +444,7 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
             ) : (
                 <div className="flex justify-end space-x-4">
                     <Button type="button" variant="secondary" onClick={onClose}>Cancel</Button>
-                    <Button type="submit" form="quest-form">{onSave ? 'Save Changes' : (mode === 'edit' ? 'Save Changes' : `Create ${settings.terminology.task}`)}</Button>
+                    <Button type="submit" form="quest-form">{onSave ? 'Save Changes' : (questToEdit ? 'Save Changes' : 'Create Quest')}</Button>
                 </div>
             )}
         </div>
@@ -456,5 +462,3 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
     </>
   );
 };
-
-export default CreateQuestDialog;

@@ -1,12 +1,12 @@
 import React, { useState, ChangeEvent, ReactNode, useEffect } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
-import { Role, AppSettings, Terminology, RewardCategory, RewardTypeDefinition, AutomatedBackupProfile } from '../../types';
+import { Role, AppSettings, Terminology, RewardCategory, RewardTypeDefinition, AutomatedBackupProfile } from '../../frontendTypes';
 import Button from '../ui/Button';
 import { ChevronDownIcon } from '../ui/Icons';
 import Input from '../ui/Input';
 import ToggleSwitch from '../ui/ToggleSwitch';
 import ConfirmDialog from '../ui/ConfirmDialog';
-import { INITIAL_SETTINGS } from '../../data/initialData';
+import { INITIAL_SETTINGS } from '../../data/frontend/initialData';
 import EmojiPicker from '../ui/EmojiPicker';
 
 
@@ -515,12 +515,12 @@ const SettingsPage: React.FC = () => {
 
              <CollapsibleSection title="Terminology" onSave={() => handleManualSave('Terminology')} showSavedIndicator={showSaved === 'Terminology'}>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-4">
-                    {Object.keys(formState.terminology).map(key => (
+                    {(Object.keys(formState.terminology) as Array<keyof Terminology>).map(key => (
                          <Input 
                             key={key}
-                            label={terminologyLabels[key as keyof Terminology]}
+                            label={terminologyLabels[key]}
                             name={`terminology.${key}`}
-                            value={formState.terminology[key as keyof Terminology]}
+                            value={formState.terminology[key]}
                             onChange={handleFormChange}
                          />
                     ))}

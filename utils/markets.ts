@@ -1,4 +1,4 @@
-import { Market, User, IAppData, MarketConditionType, MarketCondition, QuestCompletionStatus } from '../types';
+import { Market, User, IAppData, MarketConditionType, MarketCondition, QuestCompletionStatus } from '../frontendTypes';
 import { toYMD } from './quests';
 
 export const isMarketOpenForUser = (market: Market, user: User, allData: IAppData): boolean => {
@@ -14,7 +14,7 @@ export const isMarketOpenForUser = (market: Market, user: User, allData: IAppDat
             const checkCondition = (condition: MarketCondition): boolean => {
                 switch (condition.type) {
                     case MarketConditionType.MinRank:
-                        const totalXp = Object.values(user.personalExperience).reduce((sum, amount) => sum + amount, 0);
+                        const totalXp = (Object.values(user.personalExperience) as number[]).reduce((sum, amount) => sum + amount, 0);
                         const userRank = allData.ranks.slice().sort((a, b) => b.xpThreshold - a.xpThreshold).find(r => totalXp >= r.xpThreshold);
                         const requiredRank = allData.ranks.find(r => r.id === condition.rankId);
                         if (!userRank || !requiredRank) return false;

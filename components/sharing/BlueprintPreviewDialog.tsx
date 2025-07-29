@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useAppState } from '../../context/AppContext';
-import { Blueprint, ImportResolution, ShareableAssetType, Terminology } from '../../types';
+import { Blueprint, ImportResolution, ShareableAssetType, Terminology } from '../../frontendTypes';
 import Button from '../ui/Button';
 import Input from '../ui/Input';
 

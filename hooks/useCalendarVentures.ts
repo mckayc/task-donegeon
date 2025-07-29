@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { useAppState } from '../context/AppContext';
-import { Quest, QuestType } from '../types';
+import { Quest, QuestType } from '../frontendTypes';
 import { isQuestAvailableForUser, toYMD } from '../utils/quests';
 
 export const useCalendarVentures = (date: Date) => {

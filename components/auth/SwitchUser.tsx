@@ -1,9 +1,8 @@
 
 
-
 import React, { useState, useEffect } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
-import { User, Role } from '../../types';
+import { User, Role } from '../../frontendTypes';
 import Button from '../ui/Button';
 import Keypad from '../ui/Keypad';
 import Avatar from '../ui/Avatar';

@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
-import { QuestGroup } from '../../types';
+import { QuestGroup } from '../../frontendTypes';
 import Button from '../ui/Button';
 import Card from '../ui/Card';
 import { EllipsisVerticalIcon, QuestsIcon } from '../ui/Icons';
@@ -40,8 +40,8 @@ const ManageQuestGroupsPage: React.FC = () => {
         setIsDialogOpen(true);
     };
 
-    const handleAssign = (group: QuestGroup) => {
-        setAssigningGroup(group);
+    const handleDeleteRequest = (group: QuestGroup) => {
+        setDeletingGroup(group);
     };
 
     const handleConfirmDelete = () => {
@@ -50,18 +50,23 @@ const ManageQuestGroupsPage: React.FC = () => {
         }
         setDeletingGroup(null);
     };
+    
+    const handleAssignRequest = (group: QuestGroup) => {
+        setAssigningGroup(group);
+    };
 
     return (
         <div className="space-y-6">
             <Card
-                title="All Quest Groups"
-                headerAction={<Button onClick={handleCreate} size="sm">Create New Group</Button>}
+                title="Manage Quest Groups"
+                headerAction={<Button onClick={handleCreate}>Create New Group</Button>}
             >
                 {questGroups.length > 0 ? (
                     <div className="overflow-x-auto">
                         <table className="w-full text-left">
                             <thead className="border-b border-stone-700/60">
                                 <tr>
+                                    <th className="p-4 font-semibold">Icon</th>
                                     <th className="p-4 font-semibold">Name</th>
                                     <th className="p-4 font-semibold">Description</th>
                                     <th className="p-4 font-semibold">Actions</th>
@@ -70,17 +75,18 @@ const ManageQuestGroupsPage: React.FC = () => {
                             <tbody>
                                 {questGroups.map(group => (
                                     <tr key={group.id} className="border-b border-stone-700/40 last:border-b-0">
-                                        <td className="p-4 font-bold">{group.icon} {group.name}</td>
+                                        <td className="p-4 text-2xl">{group.icon}</td>
+                                        <td className="p-4 font-bold">{group.name}</td>
                                         <td className="p-4 text-stone-400">{group.description}</td>
                                         <td className="p-4 relative">
                                             <button onClick={() => setOpenDropdownId(openDropdownId === group.id ? null : group.id)} className="p-2 rounded-full hover:bg-stone-700/50">
                                                 <EllipsisVerticalIcon className="w-5 h-5 text-stone-300" />
                                             </button>
                                             {openDropdownId === group.id && (
-                                                <div ref={dropdownRef} className="absolute right-10 top-0 mt-2 w-36 bg-stone-900 border border-stone-700 rounded-lg shadow-xl z-20">
-                                                    <a href="#" onClick={(e) => { e.preventDefault(); handleAssign(group); setOpenDropdownId(null); }} className="block px-4 py-2 text-sm text-stone-300 hover:bg-stone-700/50">Assign</a>
+                                                <div ref={dropdownRef} className="absolute right-10 top-0 mt-2 w-40 bg-stone-900 border border-stone-700 rounded-lg shadow-xl z-20">
                                                     <a href="#" onClick={(e) => { e.preventDefault(); handleEdit(group); setOpenDropdownId(null); }} className="block px-4 py-2 text-sm text-stone-300 hover:bg-stone-700/50">Edit</a>
-                                                    <button onClick={() => { setDeletingGroup(group); setOpenDropdownId(null); }} className="w-full text-left block px-4 py-2 text-sm text-red-400 hover:bg-stone-700/50">Delete</button>
+                                                    <button onClick={() => { handleAssignRequest(group); setOpenDropdownId(null); }} className="w-full text-left block px-4 py-2 text-sm text-stone-300 hover:bg-stone-700/50">Assign to Users</button>
+                                                    <button onClick={() => { handleDeleteRequest(group); setOpenDropdownId(null); }} className="w-full text-left block px-4 py-2 text-sm text-red-400 hover:bg-stone-700/50">Delete</button>
                                                 </div>
                                             )}
                                         </td>
@@ -92,9 +98,9 @@ const ManageQuestGroupsPage: React.FC = () => {
                 ) : (
                     <EmptyState
                         Icon={QuestsIcon}
-                        title="No Quest Groups Created Yet"
-                        message="Create groups to organize your quests and assign them to users in bulk."
-                        actionButton={<Button onClick={handleCreate}>Create Quest Group</Button>}
+                        title="No Quest Groups Found"
+                        message="Organize your quests into groups to manage them more easily."
+                        actionButton={<Button onClick={handleCreate}>Create a Group</Button>}
                     />
                 )}
             </Card>
@@ -107,7 +113,7 @@ const ManageQuestGroupsPage: React.FC = () => {
                 onClose={() => setDeletingGroup(null)}
                 onConfirm={handleConfirmDelete}
                 title="Delete Quest Group"
-                message={`Are you sure you want to delete the group "${deletingGroup?.name}"? Quests in this group will become uncategorized. This action cannot be undone.`}
+                message={`Are you sure you want to delete the group "${deletingGroup?.name}"? Quests in this group will become uncategorized.`}
             />
         </div>
     );

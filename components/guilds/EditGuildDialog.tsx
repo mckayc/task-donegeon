@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
-import { Guild } from '../../types';
+import { Guild } from '../../frontendTypes';
 import Button from '../ui/Button';
 import Input from '../ui/Input';
 

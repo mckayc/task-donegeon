@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
-import { Quest, QuestType, QuestAvailability, User, AppMode } from '../../types';
+import { Quest, QuestType, QuestAvailability, User, AppMode } from '../../frontendTypes';
 import { isQuestAvailableForUser, toYMD, isQuestScheduledForDay, questSorter } from '../../utils/quests';
 import Card from '../ui/Card';
 import Avatar from '../ui/Avatar';

@@ -1,7 +1,8 @@
 
+
 import React, { useState, useRef } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
-import { Role, User, Blueprint } from '../../types';
+import { Role, User, Blueprint } from '../../frontendTypes';
 import Button from '../ui/Button';
 import Input from '../ui/Input';
 import UserFormFields from '../users/UserFormFields';

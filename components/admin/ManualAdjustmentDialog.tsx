@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
-import { User, RewardItem, RewardCategory, AdminAdjustmentType, Trophy } from '../../types';
+import { User, RewardItem, RewardCategory, AdminAdjustmentType, Trophy } from '../../frontendTypes';
 import Button from '../ui/Button';
 import RewardInputGroup from '../forms/RewardInputGroup';
 

@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
-import { GameAsset, RewardItem } from '../../types';
+import { GameAsset, RewardItem } from '../../frontendTypes';
 import Button from '../ui/Button';
 
 interface PurchaseDialogProps {

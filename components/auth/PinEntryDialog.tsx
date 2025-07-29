@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { User } from '../../types';
+import { User } from '../../frontendTypes';
 import Button from '../ui/Button';
 import Keypad from '../ui/Keypad';
 import Avatar from '../ui/Avatar';

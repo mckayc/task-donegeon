@@ -1,7 +1,7 @@
 
 
 import React from 'react';
-import { User } from '../../types';
+import { User } from '../../frontendTypes';
 import { useAppState } from '../../context/AppContext';
 
 interface AvatarProps {

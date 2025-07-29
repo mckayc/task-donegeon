@@ -1,9 +1,9 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import Card from '../ui/Card';
 import Button from '../ui/Button';
-import CreateQuestDialog from '../quests/CreateQuestDialog';
+import { CreateQuestDialog } from '../quests/CreateQuestDialog';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
-import { Role, QuestType, Quest, QuestAvailability } from '../../types';
+import { Role, QuestType, Quest, QuestAvailability } from '../../frontendTypes';
 import { isQuestAvailableForUser, questSorter, isQuestVisibleToUserInMode } from '../../utils/quests';
 import CompleteQuestDialog from '../quests/CompleteQuestDialog';
 import QuestDetailDialog from '../quests/QuestDetailDialog';
@@ -189,7 +189,7 @@ const QuestItem: React.FC<{ quest: Quest; now: Date; onSelect: (quest: Quest) =>
 const FilterButton: React.FC<{ type: 'all' | QuestType, children: React.ReactNode, activeFilter: 'all' | QuestType, setFilter: (filter: 'all' | QuestType) => void }> = ({ type, children, activeFilter, setFilter }) => (
     <button
         onClick={() => setFilter(type)}
-        className={`w-full p-2 rounded-md font-semibold text-sm transition-colors ${activeFilter === type ? 'btn-primary' : 'text-stone-300 hover:bg-stone-700'}`}
+        className={`w-full p-2 rounded-md font-semibold text-sm transition-colors ${activeFilter === type ? 'btn-primary' : 'text-stone-300 hover:bg-stone-700/50'}`}
     >
         {children}
     </button>
@@ -198,28 +198,31 @@ const FilterButton: React.FC<{ type: 'all' | QuestType, children: React.ReactNod
 const QuestsPage: React.FC = () => {
     const { currentUser, quests, questCompletions, appMode, settings, scheduledEvents } = useAppState();
     const { markQuestAsTodo, unmarkQuestAsTodo } = useAppDispatch();
-    const [filter, setFilter] = useState<'all' | QuestType>('all');
     const [selectedQuest, setSelectedQuest] = useState<Quest | null>(null);
     const [completingQuest, setCompletingQuest] = useState<Quest | null>(null);
+    const [activeFilter, setFilter] = useState<'all' | QuestType>('all');
     const [now, setNow] = useState(new Date());
     const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null);
 
     useEffect(() => {
-        const timer = setInterval(() => setNow(new Date()), 60000); // Update every minute
+        const timer = setInterval(() => setNow(new Date()), 60000); // Update 'now' every minute
         return () => clearInterval(timer);
     }, []);
 
-    if (!currentUser) return null;
+    if (!currentUser) return <div>Loading...</div>;
+    
+    const { terminology } = settings;
 
-    const handleToggleTodo = (quest: Quest) => {
-        if (!currentUser) return;
-        const isTodo = quest.todoUserIds?.includes(currentUser.id);
-        if (isTodo) {
-            unmarkQuestAsTodo(quest.id, currentUser.id);
-        } else {
-            markQuestAsTodo(quest.id, currentUser.id);
-        }
-        setSelectedQuest(prev => prev ? {...prev, todoUserIds: isTodo ? (prev.todoUserIds || []).filter(id => id !== currentUser.id) : [...(prev.todoUserIds || []), currentUser.id]} : null);
+    const visibleQuests = useMemo(() => {
+        const today = new Date();
+        return quests
+            .filter(quest => isQuestVisibleToUserInMode(quest, currentUser.id, appMode))
+            .filter(quest => activeFilter === 'all' || quest.type === activeFilter)
+            .sort(questSorter(currentUser, questCompletions, scheduledEvents, today));
+    }, [quests, currentUser, appMode, activeFilter, questCompletions, scheduledEvents]);
+
+    const handleSelectQuest = (quest: Quest) => {
+        setSelectedQuest(quest);
     };
 
     const handleStartCompletion = (quest: Quest) => {
@@ -227,46 +230,56 @@ const QuestsPage: React.FC = () => {
         setSelectedQuest(null);
     };
 
-    const sortedQuests = useMemo(() => {
-        const today = now;
-        const visibleQuests = quests.filter(quest => isQuestVisibleToUserInMode(quest, currentUser.id, appMode));
-        return visibleQuests.sort(questSorter(currentUser, questCompletions, scheduledEvents, today));
-    }, [quests, currentUser, appMode, questCompletions, now, scheduledEvents]);
-    
-    const filteredSortedQuests = useMemo(() => {
-        if (filter === 'all') return sortedQuests;
-        return sortedQuests.filter(q => q.type === filter);
-    }, [sortedQuests, filter]);
+    const handleToggleTodo = () => {
+        if (!selectedQuest || !currentUser) return;
+        const quest = selectedQuest;
+        const isCurrentlyTodo = quest.todoUserIds?.includes(currentUser.id);
 
+        if (isCurrentlyTodo) {
+            unmarkQuestAsTodo(quest.id, currentUser.id);
+        } else {
+            markQuestAsTodo(quest.id, currentUser.id);
+        }
+        
+        // Update the dialog's state immediately for better UX
+        setSelectedQuest(prev => {
+            if (!prev) return null;
+            const newTodoUserIds = isCurrentlyTodo
+                ? (prev.todoUserIds || []).filter(id => id !== currentUser.id)
+                : [...(prev.todoUserIds || []), currentUser.id];
+            return { ...prev, todoUserIds: newTodoUserIds };
+        });
+    };
+    
     return (
         <div className="space-y-6">
             <Card>
-                <div className="grid grid-cols-3 gap-2 max-w-sm mx-auto p-1 bg-stone-900/50 rounded-lg">
-                    <FilterButton type="all" activeFilter={filter} setFilter={setFilter}>All Quests</FilterButton>
-                    <FilterButton type={QuestType.Duty} activeFilter={filter} setFilter={setFilter}>{settings.terminology.recurringTasks}</FilterButton>
-                    <FilterButton type={QuestType.Venture} activeFilter={filter} setFilter={setFilter}>{settings.terminology.singleTasks}</FilterButton>
+                <div className="grid grid-cols-3 gap-2 p-1 bg-stone-900/50 rounded-lg max-w-sm mx-auto mb-8">
+                    <FilterButton type="all" activeFilter={activeFilter} setFilter={setFilter}>All</FilterButton>
+                    <FilterButton type={QuestType.Duty} activeFilter={activeFilter} setFilter={setFilter}>{terminology.recurringTask}</FilterButton>
+                    <FilterButton type={QuestType.Venture} activeFilter={activeFilter} setFilter={setFilter}>{terminology.singleTask}</FilterButton>
                 </div>
-            </Card>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {filteredSortedQuests.map(quest => (
-                    <QuestItem 
-                        key={quest.id} 
-                        quest={quest} 
-                        now={now} 
-                        onSelect={setSelectedQuest} 
-                        onImagePreview={setPreviewImageUrl}
-                    />
-                ))}
-            </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {visibleQuests.map(quest => (
+                        <QuestItem key={quest.id} quest={quest} now={now} onSelect={handleSelectQuest} onImagePreview={setPreviewImageUrl} />
+                    ))}
+                </div>
+
+                {visibleQuests.length === 0 && (
+                     <p className="text-center text-stone-400 py-8">
+                        No {activeFilter !== 'all' ? activeFilter.toLowerCase() : ''} {terminology.tasks.toLowerCase()} available right now.
+                    </p>
+                )}
+            </Card>
 
             {selectedQuest && (
                 <QuestDetailDialog
                     quest={selectedQuest}
                     onClose={() => setSelectedQuest(null)}
                     onComplete={() => handleStartCompletion(selectedQuest)}
-                    onToggleTodo={() => handleToggleTodo(selectedQuest)}
-                    isTodo={!!(currentUser && selectedQuest.type === QuestType.Venture && selectedQuest.todoUserIds?.includes(currentUser.id))}
+                    onToggleTodo={handleToggleTodo}
+                    isTodo={!!(currentUser && selectedQuest.todoUserIds?.includes(currentUser.id))}
                 />
             )}
             {completingQuest && (
@@ -278,7 +291,7 @@ const QuestsPage: React.FC = () => {
             {previewImageUrl && (
                 <ImagePreviewDialog
                     imageUrl={previewImageUrl}
-                    altText="Quest icon preview"
+                    altText="Quest image preview"
                     onClose={() => setPreviewImageUrl(null)}
                 />
             )}

@@ -1,7 +1,6 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
-import { AppSettings, ThemeDefinition, SidebarConfigItem, Page, SidebarLink } from '../../types';
+import { AppSettings, ThemeDefinition, SidebarConfigItem, Page, SidebarLink } from '../../frontendTypes';
 import Button from '../ui/Button';
 import Input from '../ui/Input';
 import Card from '../ui/Card';

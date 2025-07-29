@@ -4,7 +4,7 @@ import Button from '../ui/Button';
 import Input from '../ui/Input';
 import { SparklesIcon } from '../ui/Icons';
 import { useAppState } from '../../context/AppContext';
-import { QuestType } from '../../types';
+import { QuestType } from '../../frontendTypes';
 import ToggleSwitch from '../ui/ToggleSwitch';
 
 interface QuestIdea {

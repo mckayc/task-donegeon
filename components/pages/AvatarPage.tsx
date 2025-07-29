@@ -4,7 +4,7 @@ import React, { useMemo, useState } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import Avatar from '../ui/Avatar';
 import Card from '../ui/Card';
-import { GameAsset } from '../../types';
+import { GameAsset } from '../../frontendTypes';
 import Button from '../ui/Button';
 import ImageSelectionDialog from '../ui/ImageSelectionDialog';
 

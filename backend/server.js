@@ -1,4 +1,5 @@
 
+
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
@@ -21,7 +22,7 @@ const {
     createSampleMarkets,
     createSampleGameAssets,
     createSampleQuests,
-} = require('../data/initialData.js');
+} = require('./initialData.js');
 
 const getGuidedSetupData = () => {
   // We pass an empty user array because the actual admin user will be added by the first-run handler.
@@ -318,39 +319,59 @@ app.post('/api/quests/:id/complete', apiHandler((data, req) => {
     }
 }));
 
-app.post('/api/approvals/quest/:id/:action', apiHandler((data, req) => {
-    const { id, action } = req.params; // action is 'approve' or 'reject'
+app.post('/api/approvals/quest/:id/approve', apiHandler((data, req) => {
+    const { id } = req.params;
+    const { note } = req.body;
     const completion = data.questCompletions.find(c => c.id === id);
     if (!completion) return { status: 404, body: { error: 'Completion record not found' } };
 
-    if (action === 'approve') {
-        completion.status = 'Approved';
-        const quest = data.quests.find(q => q.id === completion.questId);
-        const user = data.users.find(u => u.id === completion.userId);
-        if (quest && user) {
-            // Apply rewards logic (same as in quest completion)
-            let targetPurse, targetExperience;
-            if (quest.guildId) {
-                if (!user.guildBalances[quest.guildId]) user.guildBalances[quest.guildId] = { purse: {}, experience: {} };
-                targetPurse = user.guildBalances[quest.guildId].purse;
-                targetExperience = user.guildBalances[quest.guildId].experience;
-            } else {
-                targetPurse = user.personalPurse;
-                targetExperience = user.personalExperience;
-            }
-             quest.rewards.forEach(reward => {
-                const type = data.rewardTypes.find(rt => rt.id === reward.rewardTypeId)?.category;
-                if (type === 'Currency') {
-                    targetPurse[reward.rewardTypeId] = (targetPurse[reward.rewardTypeId] || 0) + reward.amount;
-                } else if (type === 'XP') {
-                    targetExperience[reward.rewardTypeId] = (targetExperience[reward.rewardTypeId] || 0) + reward.amount;
-                }
-            });
+    if (completion.status !== 'Pending') return { status: 400, body: { error: 'Quest is not pending approval.' } };
+
+    completion.status = 'Approved';
+    if (note) {
+        completion.note = completion.note ? `${completion.note}\nApprover: ${note}` : `Approver: ${note}`;
+    }
+
+    const quest = data.quests.find(q => q.id === completion.questId);
+    const user = data.users.find(u => u.id === completion.userId);
+    if (quest && user) {
+        // Apply rewards logic
+        let targetPurse, targetExperience;
+        if (quest.guildId) {
+            if (!user.guildBalances[quest.guildId]) user.guildBalances[quest.guildId] = { purse: {}, experience: {} };
+            targetPurse = user.guildBalances[quest.guildId].purse;
+            targetExperience = user.guildBalances[quest.guildId].experience;
+        } else {
+            targetPurse = user.personalPurse;
+            targetExperience = user.personalExperience;
         }
-    } else if (action === 'reject') {
-        completion.status = 'Rejected';
+         quest.rewards.forEach(reward => {
+            const typeDef = data.rewardTypes.find(rt => rt.id === reward.rewardTypeId);
+            if (typeDef) {
+              if (typeDef.category === 'Currency') {
+                  targetPurse[reward.rewardTypeId] = (targetPurse[reward.rewardTypeId] || 0) + reward.amount;
+              } else if (typeDef.category === 'XP') {
+                  targetExperience[reward.rewardTypeId] = (targetExperience[reward.rewardTypeId] || 0) + reward.amount;
+              }
+            }
+        });
     }
 }));
+
+app.post('/api/approvals/quest/:id/reject', apiHandler((data, req) => {
+    const { id } = req.params;
+    const { note } = req.body;
+    const completion = data.questCompletions.find(c => c.id === id);
+    if (!completion) return { status: 404, body: { error: 'Completion record not found' } };
+
+    if (completion.status !== 'Pending') return { status: 400, body: { error: 'Quest is not pending approval.' } };
+
+    completion.status = 'Rejected';
+    if (note) {
+        completion.note = completion.note ? `${completion.note}\nRejecter: ${note}` : `Rejecter: ${note}`;
+    }
+}));
+
 
 app.post('/api/quests/:id/actions', apiHandler((data, req) => {
     const { id } = req.params;

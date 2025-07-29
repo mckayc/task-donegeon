@@ -115,6 +115,8 @@ Once unlocked, you and other users can log in using the "Switch Profile" button.
 
 ## ⚙️ Installation and Running
 
+**Important Note on Deployment:** This application uses a file-based SQLite database for data persistence. As a result, it requires a persistent filesystem and is **not compatible with serverless deployment platforms like Vercel**. The recommended methods for running the application are via local development or Docker.
+
 ### Option 1: Local Development (Recommended)
 1.  **Clone & Install:**
     ```bash
@@ -157,7 +159,7 @@ Once unlocked, you and other users can log in using the "Switch Profile" button.
 2.  Give the stack a **Name** (e.g., `task-donegeon`).
 3.  **Paste** the contents of `docker-compose.yml` into the Web editor.
 4.  Scroll down to the **Environment variables** section (if you want AI features). Click **Add environment variable**:
-    -   **Name:** `API_KEY`, **Value:** `your_gemini_api_key_here`
+    -   **Name:** `API_KEY`, **Value:** `your_api_key_here`
 5.  **Important:** To make your data persistent, go to the **Volumes** tab in Portainer and map the container paths to a host path.
     -   `./uploads:/app/uploads`
     -   `./backups:/app/backend/backups`

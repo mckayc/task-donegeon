@@ -1,2 +1,1 @@
-// This deployment method is no longer supported with the SQLite database.
-// Please use Docker or run locally.
+{}

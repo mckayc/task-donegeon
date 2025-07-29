@@ -674,6 +674,24 @@ app.post('/api/first-run', async (req, res) => {
     res.status(201).json({ message: 'First run completed successfully.', adminUser: newAdmin });
 });
 
+app.post('/api/reinitialize', async (req, res) => {
+    try {
+        const emptyData = {
+            users: [], quests: [], questGroups: [], markets: [], rewardTypes: [], questCompletions: [],
+            purchaseRequests: [], guilds: [], ranks: [], trophies: [], userTrophies: [],
+            adminAdjustments: [], gameAssets: [], systemLogs: [], settings: INITIAL_SETTINGS,
+            themes: [], loginHistory: [], chatMessages: [], systemNotifications: [], scheduledEvents: [],
+        };
+        // Reset content version to trigger first run logic.
+        emptyData.settings.contentVersion = 1; 
+        await saveData(emptyData); // saveData already updates cache and broadcasts
+        res.status(200).json({ message: 'Application data has been reset.' });
+    } catch (error) {
+        console.error('Failed to reinitialize data:', error);
+        res.status(500).json({ error: 'Failed to reset application data.' });
+    }
+});
+
 app.get('/api/pre-run-check', async (req, res) => {
     const data = await db.getData();
     if (data && data.users && data.users.length > 0) {

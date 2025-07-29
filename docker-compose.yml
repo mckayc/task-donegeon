@@ -1,1 +1,15 @@
-½κμ‰
+version: '3.8'
+
+services:
+  app:
+    container_name: task-donegeon-app
+    build: .
+    ports:
+      - "3002:3001"
+    volumes:
+      - ./backend/data.db:/app/backend/data.db
+      - ./uploads:/app/uploads
+      - ./backups:/app/backend/backups
+    env_file:
+      - .env
+    restart: unless-stopped

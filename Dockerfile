@@ -54,14 +54,18 @@ WORKDIR /app
 # Running as a non-root user is a critical security best practice.
 RUN addgroup -S appgroup && adduser -S appuser -G appgroup
 
+# Create directories for file uploads and backups.
+RUN mkdir -p /app/uploads /app/backend/backups
+
 # Copy the built frontend assets from the 'build' stage into the final image.
 COPY --from=build /usr/src/app/dist ./dist
 
 # Copy the production-only backend node_modules from the 'dependencies' stage.
 COPY --from=dependencies /usr/src/app/backend/node_modules ./backend/node_modules
 
-# Copy the backend's server code and the initial default uploads.
+# Copy the backend's server code and its package.json for metadata.
 COPY backend/server.js ./backend/
+COPY backend/package.json ./backend/
 
 # Change ownership of all application files to our new non-root user.
 # This is important for security.

@@ -115,7 +115,7 @@ interface AppDispatch {
   deleteAllCustomContent: () => Promise<void>;
   
   // First Run
-  completeFirstRun: (adminUserData: Omit<User, 'id' | 'personalPurse' | 'personalExperience' | 'guildBalances' | 'avatar' | 'ownedAssetIds' | 'ownedThemes' | 'hasBeenOnboarded'>, setupChoice: 'guided' | 'scratch' | 'import', blueprint: Blueprint | null) => Promise<void>;
+  completeFirstRun: (adminUserData: Omit<User, 'id' | 'personalPurse' | 'personalExperience' | 'guildBalances' | 'avatar' | 'ownedAssetIds' | 'ownedThemes' | 'hasBeenOnboarded'>, setupChoice: 'guided' | 'scratch' | 'import', blueprint: Blueprint | null) => Promise<{ message: string; adminUser: User; } | undefined>;
   
   // Ranks
   setRanks: (ranks: Rank[]) => void;
@@ -271,6 +271,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
                 ? (newData.users || prev.users).find(u => u.id === currentUserId) || null
                 : null;
             
+            const isFirstRunNow = newData.users.length === 0 && newData.settings.contentVersion < 2;
+
             // Create a new object containing only the data properties from the server payload
             const dataState: IAppData = {
                 users: newData.users,
@@ -300,6 +302,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
                 ...dataState, // Overwrite only the data part with fresh data
                 currentUser: updatedCurrentUser, // Use the fresh user
                 isDataLoaded: true,
+                isFirstRun: isFirstRunNow,
                 syncStatus: 'success',
                 syncError: null,
             };

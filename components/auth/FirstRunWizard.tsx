@@ -11,13 +11,14 @@ type WizardStep = 'checking' | 'warning' | 'setup';
 type AdminDataPayload = Omit<User, 'id' | 'personalPurse' | 'personalExperience' | 'guildBalances' | 'avatar' | 'ownedAssetIds' | 'ownedThemes' | 'hasBeenOnboarded'>;
 
 const FirstRunWizard: React.FC = () => {
-  const { completeFirstRun, bypassFirstRunCheck } = useAppDispatch();
+  const { completeFirstRun, bypassFirstRunCheck, setCurrentUser, setAppUnlocked } = useAppDispatch();
   const { settings } = useAppState();
 
   const [step, setStep] = useState<WizardStep>('checking');
   const [existingDataInfo, setExistingDataInfo] = useState<{version: number, appName: string} | null>(null);
   const [appVersion, setAppVersion] = useState('');
   const [pendingAdminData, setPendingAdminData] = useState<AdminDataPayload | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [formData, setFormData] = useState({
     firstName: '',
@@ -85,34 +86,53 @@ const FirstRunWizard: React.FC = () => {
     };
   }
 
-  const handleSetupChoice = (choice: 'guided' | 'scratch' | 'import') => {
+  const handleSetupChoice = async (choice: 'guided' | 'scratch' | 'import') => {
       const adminData = validateAdminForm();
       if (!adminData) return;
+      setIsSubmitting(true);
 
       if (choice === 'import') {
           setPendingAdminData(adminData);
           fileInputRef.current?.click();
       } else {
-          completeFirstRun(adminData, choice, null);
+          try {
+              const result = await completeFirstRun(adminData, choice, null);
+              if (result && result.adminUser) {
+                  setCurrentUser(result.adminUser);
+                  setAppUnlocked(true);
+              }
+          } catch (e) {
+              console.error("First run setup failed", e);
+              setIsSubmitting(false);
+          }
       }
   };
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (!file || !pendingAdminData) return;
+    if (!file || !pendingAdminData) {
+        setIsSubmitting(false);
+        return;
+    }
 
     const reader = new FileReader();
-    reader.onload = (e) => {
+    reader.onload = async (e) => {
         try {
             const content = e.target?.result as string;
             const blueprint = JSON.parse(content) as Blueprint;
             if (blueprint.name && blueprint.assets) {
-                 completeFirstRun(pendingAdminData, 'import', blueprint);
+                 const result = await completeFirstRun(pendingAdminData, 'import', blueprint);
+                 if (result && result.adminUser) {
+                     setCurrentUser(result.adminUser);
+                     setAppUnlocked(true);
+                 }
             } else {
                 setError("Invalid blueprint file format.");
+                setIsSubmitting(false);
             }
         } catch (err) {
             setError("Failed to read or parse the blueprint file.");
+            setIsSubmitting(false);
         }
     };
     reader.readAsText(file);
@@ -193,18 +213,18 @@ const FirstRunWizard: React.FC = () => {
                 <p className="text-stone-300 mb-6">Choose how to set up your new world. This will create your account and initialize the database.</p>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                     {/* Guided Setup Card */}
-                    <button onClick={() => handleSetupChoice('guided')} className="p-8 border-2 border-emerald-500 bg-emerald-900/40 rounded-xl text-left hover:bg-emerald-800/50 transition-colors transform hover:scale-105">
-                        <h3 className="text-2xl font-bold text-emerald-300">Guided Setup (Recommended)</h3>
+                    <button onClick={() => handleSetupChoice('guided')} disabled={isSubmitting} className="p-8 border-2 border-emerald-500 bg-emerald-900/40 rounded-xl text-left hover:bg-emerald-800/50 transition-colors transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed">
+                        <h3 className="text-2xl font-bold text-emerald-300">{isSubmitting ? 'Initializing...' : 'Guided Setup (Recommended)'}</h3>
                         <p className="text-stone-300 mt-2">Start with a set of sample quests, items, and markets. This includes a full tutorial to help everyone learn how to use the app.</p>
                     </button>
                     {/* Start from Scratch Card */}
-                    <button onClick={() => handleSetupChoice('scratch')} className="p-8 border border-stone-700 bg-stone-800/50 rounded-xl text-left hover:bg-stone-700/60 transition-colors transform hover:scale-105">
-                        <h3 className="text-2xl font-bold text-stone-200">Start from Scratch</h3>
+                    <button onClick={() => handleSetupChoice('scratch')} disabled={isSubmitting} className="p-8 border border-stone-700 bg-stone-800/50 rounded-xl text-left hover:bg-stone-700/60 transition-colors transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed">
+                        <h3 className="text-2xl font-bold text-stone-200">{isSubmitting ? 'Initializing...' : 'Start from Scratch'}</h3>
                         <p className="text-stone-300 mt-2">Begin with a completely blank slate. You will create all quests, items, and markets yourself. Best for experienced administrators.</p>
                     </button>
                     {/* Import from Blueprint Card */}
-                    <button onClick={() => handleSetupChoice('import')} className="p-8 border border-stone-700 bg-stone-800/50 rounded-xl text-left hover:bg-stone-700/60 transition-colors transform hover:scale-105">
-                        <h3 className="text-2xl font-bold text-stone-200">Import from Blueprint</h3>
+                    <button onClick={() => handleSetupChoice('import')} disabled={isSubmitting} className="p-8 border border-stone-700 bg-stone-800/50 rounded-xl text-left hover:bg-stone-700/60 transition-colors transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed">
+                        <h3 className="text-2xl font-bold text-stone-200">{isSubmitting ? 'Initializing...' : 'Import from Blueprint'}</h3>
                         <p className="text-stone-300 mt-2">Set up your world by importing a pre-made <code>Blueprint.json</code> file. Perfect for migrating or sharing a setup.</p>
                         <input type="file" ref={fileInputRef} onChange={handleFileSelect} accept=".json,application/json" className="hidden" />
                     </button>

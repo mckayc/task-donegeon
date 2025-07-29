@@ -159,11 +159,12 @@ function createInitialData(setupChoice = 'guided', adminUserData, blueprint) {
     if (setupChoice === 'scratch') {
         const users = [adminUserData];
         const guilds = createInitialGuilds(users);
+        const bankMarket = createSampleMarkets().find(m => m.id === 'market-bank');
         return {
             users: users,
             quests: [],
             questGroups: [],
-            markets: [],
+            markets: bankMarket ? [bankMarket] : [],
             rewardTypes: INITIAL_REWARD_TYPES,
             questCompletions: [],
             purchaseRequests: [],
@@ -186,16 +187,25 @@ function createInitialData(setupChoice = 'guided', adminUserData, blueprint) {
     if (setupChoice === 'import' && blueprint) {
         const users = [adminUserData];
         const guilds = createInitialGuilds(users);
+        const finalRewardTypes = [
+            ...INITIAL_REWARD_TYPES,
+            ...(blueprint.assets.rewardTypes || []).filter(rt => !INITIAL_REWARD_TYPES.some(coreRt => coreRt.id === rt.id))
+        ];
+        let finalMarkets = blueprint.assets.markets || [];
+        if (!finalMarkets.some(m => m.id === 'market-bank')) {
+            const bankMarket = createSampleMarkets().find(m => m.id === 'market-bank');
+            if (bankMarket) finalMarkets.push(bankMarket);
+        }
         return {
             users: users,
             quests: blueprint.assets.quests || [],
             questGroups: blueprint.assets.questGroups || [],
-            markets: blueprint.assets.markets || [],
-            rewardTypes: [...INITIAL_REWARD_TYPES, ...(blueprint.assets.rewardTypes || [])],
+            markets: finalMarkets,
+            rewardTypes: finalRewardTypes,
             questCompletions: [],
             purchaseRequests: [],
             guilds: guilds,
-            ranks: blueprint.assets.ranks || [],
+            ranks: blueprint.assets.ranks || INITIAL_RANKS,
             trophies: blueprint.assets.trophies || [],
             userTrophies: [],
             adminAdjustments: [],
@@ -454,12 +464,15 @@ app.post('/api/first-run', async (req, res) => {
         personalExperience: {},
         guildBalances: {},
         ownedThemes: ['emerald', 'rose', 'sky'],
-        hasBeenOnboarded: false,
+        hasBeenOnboarded: true,
     };
 
     const initialData = createInitialData(setupChoice, adminWithDefaults, blueprint);
     await saveData(initialData);
-    res.status(201).json({ message: 'First run completed successfully.' });
+
+    const newAdmin = initialData.users.find(u => u.id === adminWithDefaults.id);
+    
+    res.status(201).json({ message: 'First run completed successfully.', adminUser: newAdmin });
 });
 
 app.get('/api/pre-run-check', async (req, res) => {

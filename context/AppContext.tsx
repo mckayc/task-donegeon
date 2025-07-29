@@ -39,6 +39,7 @@ interface AppDispatch {
   exitToSharedView: () => void;
   setIsSharedViewActive: (isActive: boolean) => void;
   bypassFirstRunCheck: () => void;
+  reinitialize: () => void;
 
   // Game Data
   addQuest: (quest: Omit<Quest, 'id' | 'claimedByUserIds' | 'dismissals'>) => Promise<Quest | undefined>;
@@ -419,6 +420,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         },
         setIsSharedViewActive: (isActive: boolean) => setState(s => ({ ...s, isSharedViewActive: isActive })),
         bypassFirstRunCheck: () => setState(s => ({...s, isFirstRun: false})),
+        reinitialize: () => setState(s => ({ ...s, isFirstRun: true, isAppUnlocked: false, currentUser: null })),
 
         // Game Data
         addQuest: (quest: Omit<Quest, 'id' | 'claimedByUserIds' | 'dismissals'>) => apiRequest('/api/quests', { method: 'POST', body: JSON.stringify(quest) }),

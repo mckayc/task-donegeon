@@ -275,18 +275,18 @@ export const INITIAL_SETTINGS: AppSettings = {
     enableAiFeatures: false,
     rewardValuation: {
       enabled: true,
-      anchorRewardId: 'core-gold',
+      anchorRewardId: 'core-gems',
       exchangeRates: {
-        'core-gems': 0.1,
-        'core-crystal': 20,
-        'core-strength': 10,
-        'core-diligence': 10,
-        'core-wisdom': 5,
-        'core-skill': 5,
-        'core-creative': 5,
+        'core-gold': 5,
+        'core-crystal': 10,
+        'core-strength': 20,
+        'core-diligence': 20,
+        'core-wisdom': 20,
+        'core-skill': 20,
+        'core-creative': 20,
       },
-      currencyExchangeFeePercent: 5,
-      xpExchangeFeePercent: 10,
+      currencyExchangeFeePercent: 10,
+      xpExchangeFeePercent: 20,
     },
     chat: {
         enabled: true,
@@ -546,8 +546,119 @@ export const createSampleQuests = (users: User[]): Quest[] => {
   return quests;
 };
 
+export function createInitialData(setupChoice = 'guided', adminUserData?: any, blueprint?: any) {
+    if (setupChoice === 'scratch') {
+        const users = [adminUserData];
+        const guilds = createInitialGuilds(users);
+        const bankMarket = createSampleMarkets().find(m => m.id === 'market-bank');
+        return {
+            users: users,
+            quests: [],
+            questGroups: [],
+            markets: bankMarket ? [bankMarket] : [],
+            rewardTypes: INITIAL_REWARD_TYPES,
+            questCompletions: [],
+            purchaseRequests: [],
+            guilds: guilds,
+            ranks: INITIAL_RANKS,
+            trophies: [],
+            userTrophies: [],
+            adminAdjustments: [],
+            gameAssets: [],
+            systemLogs: [],
+            settings: INITIAL_SETTINGS,
+            themes: INITIAL_THEMES,
+            loginHistory: [],
+            chatMessages: [],
+            systemNotifications: [],
+            scheduledEvents: [],
+        };
+    }
 
-export const createInitialQuestCompletions = (users: User[], quests: Quest[]): QuestCompletion[] => {
-    // This function can be used to populate some initial "completed" quests for demonstration
-    return [];
-};
+    if (setupChoice === 'import' && blueprint) {
+        const users = [adminUserData];
+        const guilds = createInitialGuilds(users);
+        const finalRewardTypes = [
+            ...INITIAL_REWARD_TYPES,
+            ...(blueprint.assets.rewardTypes || []).filter(rt => !INITIAL_REWARD_TYPES.some(coreRt => coreRt.id === rt.id))
+        ];
+        let finalMarkets = blueprint.assets.markets || [];
+        if (!finalMarkets.some(m => m.id === 'market-bank')) {
+            const bankMarket = createSampleMarkets().find(m => m.id === 'market-bank');
+            if (bankMarket) finalMarkets.push(bankMarket);
+        }
+        return {
+            users: users,
+            quests: blueprint.assets.quests || [],
+            questGroups: blueprint.assets.questGroups || [],
+            markets: finalMarkets,
+            rewardTypes: finalRewardTypes,
+            questCompletions: [],
+            purchaseRequests: [],
+            guilds: guilds,
+            ranks: blueprint.assets.ranks || INITIAL_RANKS,
+            trophies: blueprint.assets.trophies || [],
+            userTrophies: [],
+            adminAdjustments: [],
+            gameAssets: blueprint.assets.gameAssets || [],
+            systemLogs: [],
+            settings: INITIAL_SETTINGS,
+            themes: INITIAL_THEMES,
+            loginHistory: [],
+            chatMessages: [],
+            systemNotifications: [],
+            scheduledEvents: [],
+        };
+    }
+    
+    // Default to 'guided' setup
+    const users = createMockUsers();
+    if (adminUserData) {
+        users[0] = { ...users[0], ...adminUserData };
+    }
+    const quests = createSampleQuests(users);
+    const guilds = createInitialGuilds(users);
+    const markets = createSampleMarkets();
+    const gameAssets = createSampleGameAssets();
+
+    return {
+        users: users,
+        quests: quests,
+        questGroups: INITIAL_QUEST_GROUPS,
+        markets: markets,
+        rewardTypes: INITIAL_REWARD_TYPES,
+        questCompletions: [],
+        purchaseRequests: [],
+        guilds: guilds,
+        ranks: INITIAL_RANKS,
+        trophies: INITIAL_TROPHIES,
+        userTrophies: [],
+        adminAdjustments: [],
+        gameAssets: gameAssets,
+        systemLogs: [],
+        settings: INITIAL_SETTINGS,
+        themes: INITIAL_THEMES,
+        loginHistory: [],
+        chatMessages: [],
+        systemNotifications: [],
+        scheduledEvents: [],
+    };
+}
+
+export function createInitialQuestCompletions(quests: Quest[], users: User[]): QuestCompletion[] {
+  const explorer = users.find(u => u.username === 'explorer');
+  const gatekeeper = users.find(u => u.username === 'gatekeeper');
+  
+  if (!explorer || !gatekeeper) return [];
+
+  const completion: QuestCompletion = {
+    id: `qc-initial-${Date.now()}`,
+    questId: 'quest-gatekeeper-approval-setup',
+    userId: explorer.id,
+    completedAt: new Date().toISOString(),
+    status: QuestCompletionStatus.Pending,
+    note: 'This is my first note for approval!'
+  };
+
+  return [completion];
+}

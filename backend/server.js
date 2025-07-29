@@ -99,7 +99,21 @@ const INITIAL_SETTINGS = {
     loginNotifications: { enabled: true }, theme: 'emerald',
     terminology: { appName: 'Task Donegeon', task: 'Quest', tasks: 'Quests', recurringTask: 'Duty', recurringTasks: 'Duties', singleTask: 'Venture', singleTasks: 'Ventures', shoppingCenter: 'Marketplace', store: 'Market', stores: 'Markets', history: 'Chronicles', group: 'Guild', groups: 'Guilds', level: 'Rank', levels: 'Ranks', award: 'Trophy', awards: 'Trophies', point: 'Reward', points: 'Rewards', xp: 'XP', currency: 'Currency', negativePoint: 'Setback', negativePoints: 'Setbacks', admin: 'Donegeon Master', moderator: 'Gatekeeper', user: 'Explorer', link_dashboard: 'Dashboard', link_quests: 'Quests', link_marketplace: 'Marketplace', link_calendar: 'Calendar', link_avatar: 'Avatar', link_collection: 'Collection', link_themes: 'Themes', link_guild: 'Guild', link_progress: 'Progress', link_trophies: 'Trophies', link_ranks: 'Ranks', link_chronicles: 'Chronicles', link_manage_quests: 'Manage Quests', link_manage_quest_groups: 'Manage Quest Groups', link_manage_items: 'Manage Goods', link_manage_markets: 'Manage Markets', link_manage_rewards: 'Manage Rewards', link_manage_ranks: 'Manage Ranks', link_manage_trophies: 'Manage Trophies', link_manage_events: 'Manage Events', link_theme_editor: 'Theme Editor', link_approvals: 'Approvals', link_manage_users: 'Manage Users', link_manage_guilds: 'Manage Guilds', link_ai_studio: 'AI Studio', link_appearance: 'Appearance', link_object_exporter: 'Object Exporter', link_asset_manager: 'Asset Manager', link_backup_import: 'Backup & Import', link_asset_library: 'Asset Library', link_settings: 'Settings', link_about: 'About', link_help_guide: 'Help Guide', link_chat: 'Chat' },
     enableAiFeatures: false,
-    rewardValuation: { enabled: true, anchorRewardId: 'core-gold', exchangeRates: { 'core-gems': 0.1, 'core-crystal': 20, 'core-strength': 10, 'core-diligence': 10, 'core-wisdom': 5, 'core-skill': 5, 'core-creative': 5 }, currencyExchangeFeePercent: 5, xpExchangeFeePercent: 10 },
+    rewardValuation: {
+      enabled: true,
+      anchorRewardId: 'core-gems',
+      exchangeRates: {
+        'core-gold': 5,
+        'core-crystal': 10,
+        'core-strength': 20,
+        'core-diligence': 20,
+        'core-wisdom': 20,
+        'core-skill': 20,
+        'core-creative': 20,
+      },
+      currencyExchangeFeePercent: 10,
+      xpExchangeFeePercent: 20,
+    },
     chat: { enabled: true, chatEmoji: '💬' },
     sidebars: { main: INITIAL_MAIN_SIDEBAR_CONFIG, dataManagement: [ { type: 'link', id: 'Object Exporter', emoji: '🗂️', isVisible: true, level: 0, role: Role.DonegeonMaster, termKey: 'link_object_exporter' }, { type: 'link', id: 'Asset Manager', emoji: '🖼️', isVisible: true, level: 0, role: Role.DonegeonMaster, termKey: 'link_asset_manager' }, { type: 'link', id: 'Asset Library', emoji: '📚', isVisible: true, level: 0, role: Role.DonegeonMaster, termKey: 'link_asset_library' }, { type: 'link', id: 'Backup & Import', emoji: '💾', isVisible: true, level: 0, role: Role.DonegeonMaster, termKey: 'link_backup_import' } ] }
 };
@@ -554,6 +568,87 @@ app.post('/api/completions/:id/reject', async (req, res) => {
 
     await saveData(newData);
     res.status(200).json(updatedCompletion);
+});
+
+app.post('/api/economy/exchange', async (req, res) => {
+    try {
+        const { userId, payItem, receiveItem, guildId } = req.body;
+        const data = appDataCache;
+
+        const user = data.users.find(u => u.id === userId);
+        if (!user) {
+            return res.status(404).json({ error: 'User not found.' });
+        }
+
+        const { rewardValuation } = data.settings;
+        const { rewardTypes } = data;
+        if (!rewardValuation.enabled) {
+            return res.status(400).json({ error: 'Economy features are disabled.' });
+        }
+        
+        const payRewardType = rewardTypes.find(rt => rt.id === payItem.rewardTypeId);
+        const receiveRewardType = rewardTypes.find(rt => rt.id === receiveItem.rewardTypeId);
+
+        if (!payRewardType || !receiveRewardType) {
+            return res.status(400).json({ error: 'Invalid reward types provided for exchange.' });
+        }
+
+        const { anchorRewardId, exchangeRates, currencyExchangeFeePercent, xpExchangeFeePercent } = rewardValuation;
+        
+        const getRate = (id) => id === anchorRewardId ? 1 : (exchangeRates[id] || 0);
+
+        const receiveRate = getRate(receiveItem.rewardTypeId);
+        if (receiveRate === 0) {
+            return res.status(400).json({ error: `No exchange rate set for ${receiveRewardType.name}.` });
+        }
+        
+        const receiveValueInAnchor = receiveItem.amount / receiveRate;
+        
+        const payRate = getRate(payItem.rewardTypeId);
+        if (payRate === 0) {
+            return res.status(400).json({ error: `No exchange rate set for ${payRewardType.name}.` });
+        }
+
+        const fromAmountBase = receiveValueInAnchor * payRate;
+        const feePercent = payRewardType.category === RewardCategory.Currency ? currencyExchangeFeePercent : xpExchangeFeePercent;
+        const fee = fromAmountBase * (feePercent / 100);
+        const totalCost = Math.ceil(fromAmountBase + fee);
+
+        let balanceSource;
+        if (guildId) {
+            if (!user.guildBalances[guildId]) user.guildBalances[guildId] = { purse: {}, experience: {} };
+            balanceSource = payRewardType.category === RewardCategory.Currency ? user.guildBalances[guildId].purse : user.guildBalances[guildId].experience;
+        } else {
+            balanceSource = payRewardType.category === RewardCategory.Currency ? user.personalPurse : user.personalExperience;
+        }
+
+        const userBalance = balanceSource[payItem.rewardTypeId] || 0;
+
+        if (userBalance < totalCost) {
+            return res.status(400).json({ error: `Insufficient funds. You need ${totalCost} ${payRewardType.name}, but you only have ${Math.floor(userBalance)}.` });
+        }
+        
+        balanceSource[payItem.rewardTypeId] -= totalCost;
+        
+        let balanceDestination;
+         if (guildId) {
+            if (!user.guildBalances[guildId]) user.guildBalances[guildId] = { purse: {}, experience: {} };
+            balanceDestination = receiveRewardType.category === RewardCategory.Currency ? user.guildBalances[guildId].purse : user.guildBalances[guildId].experience;
+        } else {
+            balanceDestination = receiveRewardType.category === RewardCategory.Currency ? user.personalPurse : user.personalExperience;
+        }
+        
+        balanceDestination[receiveItem.rewardTypeId] = (balanceDestination[receiveItem.rewardTypeId] || 0) + receiveItem.amount;
+        
+        const updatedUsers = data.users.map(u => u.id === userId ? user : u);
+        await saveData({ ...data, users: updatedUsers });
+        
+        res.status(200).json({ success: true, user: user });
+
+    } catch (error) {
+        console.error('Error during exchange:', error);
+        res.status(500).json({ error: 'An internal server error occurred during the exchange.' });
+    }
 });
 
 

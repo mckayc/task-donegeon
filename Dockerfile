@@ -57,8 +57,8 @@ RUN addgroup -S appgroup && adduser -S appuser -G appgroup
 # Install 'su-exec' for securely dropping privileges in our entrypoint script.
 RUN apk add --no-cache su-exec
 
-# Create directories for file uploads and backups.
-RUN mkdir -p /app/uploads /app/backend/backups
+# Create the directory for file uploads. The entrypoint will handle the /app/backend/db directory.
+RUN mkdir -p /app/uploads
 
 # Copy the built frontend assets from the 'build' stage into the final image.
 COPY --from=build /usr/src/app/dist ./dist

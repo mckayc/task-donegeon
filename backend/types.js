@@ -22,6 +22,12 @@ const QuestAvailability = {
     Unlimited: 'Unlimited',
 };
 
+const QuestCompletionStatus = {
+  Pending: 'Pending',
+  Approved: 'Approved',
+  Rejected: 'Rejected',
+}
+
 const TrophyRequirementType = {
     CompleteQuestType: 'COMPLETE_QUEST_TYPE',
     EarnTotalReward: 'EARN_TOTAL_REWARD',
@@ -34,5 +40,6 @@ module.exports = {
     QuestType,
     RewardCategory,
     QuestAvailability,
+    QuestCompletionStatus,
     TrophyRequirementType,
 };

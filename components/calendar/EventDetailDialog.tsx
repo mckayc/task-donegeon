@@ -1,5 +1,5 @@
 import React from 'react';
-import { ScheduledEvent } from '../../frontendTypes';
+import { ScheduledEvent } from '../../types';
 import Button from '../ui/Button';
 import { useAppState } from '../../context/AppContext';
 

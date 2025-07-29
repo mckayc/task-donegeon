@@ -2,7 +2,7 @@
 
 import React, { useState, useMemo } from 'react';
 import { useAppState } from '../../context/AppContext';
-import { RewardCategory, QuestCompletionStatus, RewardItem } from '../../frontendTypes';
+import { RewardCategory, QuestCompletionStatus, RewardItem } from '../../types';
 import Card from '../ui/Card';
 import LineChart from '../ui/LineChart';
 

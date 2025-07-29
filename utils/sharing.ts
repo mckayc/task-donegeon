@@ -1,6 +1,6 @@
 
 
-import { Blueprint, BlueprintAssets, Quest, RewardItem, RewardTypeDefinition, ShareableAssetType, Trophy, Rank, Market, IAppData, ImportResolution, GameAsset } from '../frontendTypes';
+import { Blueprint, BlueprintAssets, Quest, RewardItem, RewardTypeDefinition, ShareableAssetType, Trophy, Rank, Market, IAppData, ImportResolution, GameAsset } from '../types';
 
 /**
  * Finds all unique dependency IDs (e.g., rewardType IDs) from a collection of assets.

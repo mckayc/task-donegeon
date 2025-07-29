@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
-import { ThemeDefinition, ThemeStyle } from '../../frontendTypes';
+import { ThemeDefinition, ThemeStyle } from '../../types';
 import Button from '../ui/Button';
 import Card from '../ui/Card';
 import Input from '../ui/Input';

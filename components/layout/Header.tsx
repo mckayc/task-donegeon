@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { Page, Role, AppMode, User } from '../../frontendTypes';
+import { Page, Role, AppMode, User } from '../../types';
 import Avatar from '../ui/Avatar';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import FullscreenToggle from '../ui/FullscreenToggle';
@@ -45,13 +45,6 @@ const Header: React.FC = () => {
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
   const [guildDropdownOpen, setGuildDropdownOpen] = useState(false);
 
-  const isSharedModeEnabledForDevice = useMemo(() => {
-    const deviceMode = localStorage.getItem('deviceMode');
-    if (deviceMode === 'shared') return true;
-    if (deviceMode === 'personal') return false;
-    return settings.sharedMode.enabled;
-  }, [settings.sharedMode.enabled]);
-
   const handleLogout = () => {
     localStorage.removeItem('lastUserId');
     localStorage.removeItem('isAppUnlocked');
@@ -91,9 +84,9 @@ const Header: React.FC = () => {
   if (!currentUser) return null;
 
   return (
-    <header className="h-20 bg-stone-900/30 flex items-center justify-between px-4 md:px-8 border-b border-stone-700/50 flex-shrink-0">
+    <header className="h-20 bg-stone-900/30 flex items-center justify-between px-4 md:px-8 border-b border-stone-700/50">
       {/* Left Group */}
-      <div className="flex items-center gap-2 md:gap-4 flex-shrink-0">
+      <div className="flex items-center gap-2 md:gap-4">
         <div className="flex bg-stone-800/50 p-1 rounded-full border border-stone-700/60">
             <button onClick={() => handleModeChange({ mode: 'personal' })} className={`px-4 py-1.5 text-sm font-semibold rounded-full transition-colors ${appMode.mode === 'personal' ? 'bg-emerald-600 text-white' : 'text-stone-300 hover:bg-stone-700'}`}>
                 Personal
@@ -125,17 +118,16 @@ const Header: React.FC = () => {
         </div>
       </div>
 
-      {/* Center Group - Scrollable Rewards */}
-      <div className="flex-1 flex justify-center items-center overflow-hidden mx-2 md:mx-4">
-          <div className="flex items-center gap-3 border-l border-r border-stone-700/60 px-4 overflow-x-auto scrollbar-hide py-2">
-              <RewardDisplay />
-          </div>
+      {/* Center Group */}
+      <div className="hidden lg:flex items-center justify-center flex-grow mx-4">
+        <RewardDisplay />
       </div>
       
       {/* Right Group */}
-      <div className="flex items-center gap-2 md:gap-4 flex-shrink-0">
+      <div className="flex items-center gap-4">
+        <FullscreenToggle />
         <Clock />
-        {isSharedModeEnabledForDevice && (
+        {settings.sharedMode.enabled && (
             <button
                 onClick={exitToSharedView}
                 className="bg-amber-600 text-white px-4 py-1.5 rounded-full font-bold text-lg hover:bg-amber-500 transition-colors"
@@ -143,10 +135,9 @@ const Header: React.FC = () => {
                 Exit User
             </button>
         )}
-        <FullscreenToggle />
         <div className="relative">
           <button onClick={() => setProfileDropdownOpen(!profileDropdownOpen)} className="flex items-center space-x-3">
-            <span className="hidden md:inline text-stone-200 font-medium">{currentUser.gameName}</span>
+            <span className="hidden sm:inline text-stone-200 font-medium">{currentUser.gameName}</span>
             <Avatar user={currentUser} className="w-12 h-12 bg-emerald-800 rounded-full border-2 border-accent overflow-hidden" />
           </button>
           {profileDropdownOpen && (

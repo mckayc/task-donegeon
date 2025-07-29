@@ -1,5 +1,5 @@
 import React from 'react';
-import { AppSettings, Page, AppMode } from '../frontendTypes';
+import { AppSettings, Page, AppMode } from '../types';
 import { useAppState, useAppDispatch } from './AppContext';
 
 // The state slice provided by this context

@@ -1,12 +1,14 @@
+
+
 import React, { useState, ChangeEvent, ReactNode, useEffect } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
-import { Role, AppSettings, Terminology, RewardCategory, RewardTypeDefinition, AutomatedBackupProfile } from '../../frontendTypes';
+import { Role, AppSettings, Terminology, RewardCategory, RewardTypeDefinition, AutomatedBackupProfile } from '../../types';
 import Button from '../ui/Button';
 import { ChevronDownIcon } from '../ui/Icons';
 import Input from '../ui/Input';
 import ToggleSwitch from '../ui/ToggleSwitch';
 import ConfirmDialog from '../ui/ConfirmDialog';
-import { INITIAL_SETTINGS } from '../../data/frontend/initialData';
+import { INITIAL_SETTINGS } from '../../data/initialData';
 import EmojiPicker from '../ui/EmojiPicker';
 
 
@@ -97,7 +99,7 @@ const terminologyLabels: { [key in keyof Terminology]: string } = {
   link_asset_library: 'Sidebar: Asset Library',
   link_settings: 'Sidebar: Settings',
   link_about: 'About',
-  link_help_guide: 'Help Guide',
+  link_help_guide: 'Sidebar: Help Guide',
   link_chat: 'Sidebar: Chat',
 };
 
@@ -113,24 +115,6 @@ const SettingsPage: React.FC = () => {
     
     const [apiKeyStatus, setApiKeyStatus] = useState<'unknown' | 'testing' | 'valid' | 'invalid'>(isAiConfigured ? 'valid' : 'unknown');
     const [apiKeyError, setApiKeyError] = useState<string | null>(null);
-
-    const [deviceMode, setDeviceMode] = useState<'default' | 'personal' | 'shared'>(() => {
-        const savedMode = localStorage.getItem('deviceMode');
-        if (savedMode === 'personal' || savedMode === 'shared') {
-            return savedMode;
-        }
-        return 'default';
-    });
-
-    const handleDeviceModeChange = (mode: 'default' | 'personal' | 'shared') => {
-        setDeviceMode(mode);
-        if (mode === 'default') {
-            localStorage.removeItem('deviceMode');
-        } else {
-            localStorage.setItem('deviceMode', mode);
-        }
-        addNotification({ type: 'success', message: `This device's mode has been set.` });
-    };
 
     useEffect(() => {
         // Self-correct if AI is enabled in settings but the server key is bad/missing
@@ -364,26 +348,11 @@ const SettingsPage: React.FC = () => {
             <CollapsibleSection title="Shared Mode" onSave={() => handleManualSave('Shared Mode')} showSavedIndicator={showSaved === 'Shared Mode'}>
                 <div className="space-y-6">
                     <div className="flex items-start">
-                        <ToggleSwitch enabled={formState.sharedMode.enabled} setEnabled={(val) => handleToggleChange('sharedMode.enabled', val, 'Shared Mode')} label="Enable Shared Mode (Global Default)" />
-                        <p className="text-sm ml-6" style={{ color: 'hsl(var(--color-text-secondary))' }}>This mode is for a device in a shared location (like a family tablet). This is the default for all devices unless overridden below.</p>
+                        <ToggleSwitch enabled={formState.sharedMode.enabled} setEnabled={(val) => handleToggleChange('sharedMode.enabled', val, 'Shared Mode')} label="Enable Shared Mode" />
+                        <p className="text-sm ml-6" style={{ color: 'hsl(var(--color-text-secondary))' }}>This mode is for a device in a shared location (like a family tablet) where multiple people can view and use the app like a kiosk.</p>
                     </div>
 
-                    <div className="pt-6 mt-6 border-t border-stone-700/60">
-                        <h4 className="font-bold text-stone-200">This Device's Mode</h4>
-                        <p className="text-sm text-stone-400 mb-3">Override the global setting for this device only. This is stored in your browser.</p>
-                        <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2 p-1 bg-stone-900/50 rounded-lg max-w-lg">
-                            <button onClick={() => handleDeviceModeChange('default')} className={`flex-1 px-3 py-1.5 rounded-md font-semibold text-sm transition-colors ${deviceMode === 'default' ? 'btn-primary' : 'text-stone-300 hover:bg-stone-700'}`}>Default (Use Global)</button>
-                            <button onClick={() => handleDeviceModeChange('personal')} className={`flex-1 px-3 py-1.5 rounded-md font-semibold text-sm transition-colors ${deviceMode === 'personal' ? 'btn-primary' : 'text-stone-300 hover:bg-stone-700'}`}>Personal Mode</button>
-                            <button onClick={() => handleDeviceModeChange('shared')} className={`flex-1 px-3 py-1.5 rounded-md font-semibold text-sm transition-colors ${deviceMode === 'shared' ? 'btn-primary' : 'text-stone-300 hover:bg-stone-700'}`}>Shared Mode</button>
-                        </div>
-                        <p className="text-xs text-stone-500 mt-2">
-                            {deviceMode === 'default' && `Currently using the global setting. Shared mode is globally ${formState.sharedMode.enabled ? 'ON' : 'OFF'}.`}
-                            {deviceMode === 'personal' && `This device is forced into Personal Mode, regardless of the global setting.`}
-                            {deviceMode === 'shared' && `This device is forced into Shared Mode, regardless of the global setting.`}
-                        </p>
-                    </div>
-
-                    <div className={`space-y-6 pl-8 mt-4 border-l-2 border-stone-700 ${!formState.sharedMode.enabled && deviceMode !== 'shared' ? 'opacity-50 pointer-events-none' : ''}`}>
+                    <div className={`space-y-6 pl-8 mt-4 border-l-2 border-stone-700 ${!formState.sharedMode.enabled ? 'opacity-50 pointer-events-none' : ''}`}>
                          <div className="flex items-start">
                             <ToggleSwitch enabled={formState.sharedMode.quickUserSwitchingEnabled} setEnabled={(val) => handleToggleChange('sharedMode.quickUserSwitchingEnabled', val, 'Shared Mode')} label="Quick User Switching Bar" />
                             <p className="text-sm ml-6" style={{ color: 'hsl(var(--color-text-secondary))' }}>If enabled, a bar with user avatars will appear at the top for one-click switching.</p>
@@ -515,12 +484,12 @@ const SettingsPage: React.FC = () => {
 
              <CollapsibleSection title="Terminology" onSave={() => handleManualSave('Terminology')} showSavedIndicator={showSaved === 'Terminology'}>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-4">
-                    {(Object.keys(formState.terminology) as Array<keyof Terminology>).map(key => (
+                    {Object.keys(formState.terminology).map(key => (
                          <Input 
                             key={key}
-                            label={terminologyLabels[key]}
+                            label={terminologyLabels[key as keyof Terminology]}
                             name={`terminology.${key}`}
-                            value={formState.terminology[key]}
+                            value={formState.terminology[key as keyof Terminology]}
                             onChange={handleFormChange}
                          />
                     ))}

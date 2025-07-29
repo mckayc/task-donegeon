@@ -1,10 +1,10 @@
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { useAppState, useAppDispatch } from '../../../context/AppContext';
-import { GameAsset } from '../../../frontendTypes';
+import { GameAsset } from '../../../types';
 import Button from '../../ui/Button';
 import Card from '../../ui/Card';
 import ConfirmDialog from '../../ui/ConfirmDialog';
-import { EditGameAssetDialog } from '../../admin/EditGameAssetDialog';
+import EditGameAssetDialog from '../../admin/EditGameAssetDialog';
 import AiImagePromptHelper from '../../sharing/AiImagePromptHelper';
 import UploadWithCategoryDialog from '../../admin/UploadWithCategoryDialog';
 import ImagePackImporterDialog from '../../admin/ImagePackImporterDialog';

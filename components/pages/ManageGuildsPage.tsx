@@ -1,5 +1,7 @@
+
+
 import React, { useState } from 'react';
-import { Guild } from '../../frontendTypes';
+import { Guild } from '../../types';
 import Button from '../ui/Button';
 import Card from '../ui/Card';
 import EditGuildDialog from '../guilds/EditGuildDialog';

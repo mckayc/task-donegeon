@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Notification as NotificationType } from '../../frontendTypes';
+import { Notification as NotificationType } from '../../types';
 
 interface NotificationProps {
   notification: NotificationType;

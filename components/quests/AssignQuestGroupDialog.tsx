@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { QuestGroup } from '../../frontendTypes';
+import { QuestGroup } from '../../types';
 import Button from '../ui/Button';
 import { useAppDispatch, useAppState } from '../../context/AppContext';
 

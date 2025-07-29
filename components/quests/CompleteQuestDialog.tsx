@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Quest, User } from '../../frontendTypes';
+import { Quest, User } from '../../types';
 import { useAppDispatch, useAppState } from '../../context/AppContext';
 import Button from '../ui/Button';
 

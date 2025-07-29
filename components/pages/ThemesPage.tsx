@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
-import { ThemeDefinition, AppMode } from '../../frontendTypes';
+import { ThemeDefinition, AppMode } from '../../types';
 import Button from '../ui/Button';
 import Card from '../ui/Card';
 

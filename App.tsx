@@ -1,10 +1,7 @@
 
 
-
-
-
-import React, { useEffect, useMemo } from 'react';
-import { useAppState, useAppDispatch } from './context/AppContext';
+import React, { useEffect } from 'react';
+import { useAppState } from './context/AppContext';
 import FirstRunWizard from './components/auth/FirstRunWizard';
 import MainLayout from './components/layout/MainLayout';
 import SwitchUser from './components/auth/SwitchUser';
@@ -13,18 +10,9 @@ import NotificationContainer from './components/ui/NotificationContainer';
 import AppLockScreen from './components/auth/AppLockScreen';
 import OnboardingWizard from './components/auth/OnboardingWizard';
 import SharedLayout from './components/layout/SharedLayout';
-import ConnectionError from './components/ui/ConnectionError';
 
 const App: React.FC = () => {
-  const { isAppUnlocked, isFirstRun, currentUser, isSwitchingUser, isDataLoaded, settings, isSharedViewActive, appMode, guilds, themes, syncStatus, syncError } = useAppState();
-  const { retryDataLoad } = useAppDispatch();
-
-  const isSharedModeEnabledForDevice = useMemo(() => {
-    const deviceMode = localStorage.getItem('deviceMode');
-    if (deviceMode === 'shared') return true;
-    if (deviceMode === 'personal') return false;
-    return settings.sharedMode.enabled;
-  }, [settings.sharedMode.enabled]);
+  const { isAppUnlocked, isFirstRun, currentUser, isSwitchingUser, isDataLoaded, settings, isSharedViewActive, appMode, guilds, themes } = useAppState();
 
   useEffect(() => {
     let activeThemeId: string | undefined = settings.theme; // Default to system theme
@@ -69,10 +57,6 @@ const App: React.FC = () => {
   }, [settings.favicon]);
 
 
-  if (syncStatus === 'error') {
-    return <ConnectionError error={syncError || 'An unknown error occurred.'} onRetry={retryDataLoad} />;
-  }
-
   if (!isDataLoaded) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-stone-900">
@@ -96,7 +80,7 @@ const App: React.FC = () => {
         if (isSwitchingUser) { return <SwitchUser />; }
         
         // If not switching, and shared mode is active, show the shared layout.
-        if (isSharedModeEnabledForDevice && isSharedViewActive) {
+        if (settings.sharedMode.enabled && isSharedViewActive) {
           return <SharedLayout />;
         }
 

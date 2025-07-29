@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
-import { Market, MarketStatus, MarketCondition, MarketConditionType } from '../../frontendTypes';
+import { Market, MarketStatus, MarketCondition, MarketConditionType } from '../../types';
 import Button from '../ui/Button';
 import Input from '../ui/Input';
 import EmojiPicker from '../ui/EmojiPicker';

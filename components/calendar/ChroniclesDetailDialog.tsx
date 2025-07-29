@@ -1,5 +1,5 @@
 import React from 'react';
-import { ChronicleEvent } from '../../frontendTypes';
+import { ChronicleEvent } from '../../types';
 import Button from '../ui/Button';
 
 interface ChroniclesDetailDialogProps {

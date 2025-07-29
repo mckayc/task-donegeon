@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import Button from '../ui/Button';
 import AddUserDialog from '../users/AddUserDialog';
-import { Role, User } from '../../frontendTypes';
+import { Role, User } from '../../types';
 import EditUserDialog from '../users/EditUserDialog';
 import ManualAdjustmentDialog from '../admin/ManualAdjustmentDialog';
 import Card from '../ui/Card';

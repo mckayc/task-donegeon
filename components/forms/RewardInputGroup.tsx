@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { RewardCategory, RewardItem } from '../../frontendTypes';
+import { RewardCategory, RewardItem } from '../../types';
 import Input from '../ui/Input';
 import Button from '../ui/Button';
 import { useAppState } from '../../context/AppContext';

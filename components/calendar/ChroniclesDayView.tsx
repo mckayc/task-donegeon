@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { useAppState } from '../../context/AppContext';
-import { QuestCompletionStatus, QuestType, ChronicleEvent } from '../../frontendTypes';
+import { QuestCompletionStatus, QuestType, ChronicleEvent } from '../../types';
 import { toYMD } from '../../utils/quests';
 import Card from '../ui/Card';
 
@@ -46,7 +46,7 @@ const ChroniclesDayView: React.FC<ChroniclesDayViewProps> = ({ currentDate }) =>
                 note: c.note,
                 status: c.status,
                 icon: quest?.icon || '📜',
-                color: c.status === QuestCompletionStatus.Approved ? '#22c55e' : c.status === QuestCompletionStatus.Pending ? '#eab308' : '#ef4444',
+                color: quest?.type === QuestType.Duty ? '#38bdf8' : '#f59e0b',
                 userId: c.userId,
                 questType: quest?.type,
             };

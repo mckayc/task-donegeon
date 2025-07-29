@@ -1,5 +1,5 @@
 import React from 'react';
-import { User, Quest, RewardTypeDefinition, QuestCompletion, RewardItem, Market, PurchaseRequest, Guild, Rank, Trophy, UserTrophy, Notification, AdminAdjustment, SystemLog, Blueprint, ImportResolution, GameAsset } from '../frontendTypes';
+import { User, Quest, RewardTypeDefinition, QuestCompletion, RewardItem, Market, PurchaseRequest, Guild, Rank, Trophy, UserTrophy, Notification, AdminAdjustment, SystemLog, Blueprint, ImportResolution, GameAsset } from '../types';
 import { useAppState, useAppDispatch } from './AppContext';
 
 // The state slice provided by this context

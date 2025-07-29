@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { Quest, QuestCompletion, QuestType, ScheduledEvent } from '../../frontendTypes';
+import { Quest, QuestCompletion, QuestType, ScheduledEvent } from '../../types';
 import QuestList from './QuestList';
 import { useCalendarVentures } from '../../hooks/useCalendarVentures';
 import { useAppDispatch, useAppState } from '../../context/AppContext';

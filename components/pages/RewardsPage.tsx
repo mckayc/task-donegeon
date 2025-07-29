@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
-import { RewardCategory, RewardTypeDefinition } from '../../frontendTypes';
+import { RewardCategory, RewardTypeDefinition } from '../../types';
 import Button from '../ui/Button';
 import Card from '../ui/Card';
 import EditRewardTypeDialog from '../rewards/EditRewardTypeDialog';

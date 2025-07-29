@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
-import { RewardTypeDefinition, RewardCategory, Market, RewardItem } from '../../frontendTypes';
+import { RewardTypeDefinition, RewardCategory, Market, RewardItem } from '../../types';
 import Button from '../ui/Button';
 import Card from '../ui/Card';
 import Input from '../ui/Input';

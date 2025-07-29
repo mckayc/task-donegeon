@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
-import { Rank } from '../../frontendTypes';
+import { Rank } from '../../types';
 import Button from '../ui/Button';
 import Card from '../ui/Card';
 import EditRankDialog from '../settings/EditRankDialog';

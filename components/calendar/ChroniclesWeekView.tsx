@@ -1,7 +1,7 @@
 import React from 'react';
 import { toYMD } from '../../utils/quests';
 import { useChronicles } from '../../hooks/useChronicles';
-import { ChronicleEvent } from '../../frontendTypes';
+import { ChronicleEvent } from '../../types';
 
 const ChronicleItem: React.FC<{ event: ChronicleEvent }> = ({ event }) => (
     <div className={`p-2 rounded-md border-l-4`} style={{borderColor: event.color}}>

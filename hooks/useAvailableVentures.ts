@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { useAppState } from '../context/AppContext';
-import { QuestType } from '../frontendTypes';
+import { QuestType } from '../types';
 import { isQuestAvailableForUser } from '../utils/quests';
 
 export const useAvailableVentures = () => {

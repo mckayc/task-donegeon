@@ -1,6 +1,6 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
-import { User } from '../../frontendTypes';
+import { User } from '../../types';
 import Avatar from '../ui/Avatar';
 import FullscreenToggle from '../ui/FullscreenToggle';
 

@@ -5,7 +5,7 @@ import BackupAndImportPage from './BackupAndImportPage';
 import AssetLibraryPage from './AssetLibraryPage';
 import AssetManagerPage from './MediaManagerPage';
 import { useAppState } from '../../../context/AppContext';
-import { Page, SidebarConfigItem, SidebarLink } from '../../../frontendTypes';
+import { Page, SidebarConfigItem, SidebarLink } from '../../../types';
 
 type ManagementPage = 'Object Exporter' | 'Asset Manager' | 'Backup & Import' | 'Asset Library';
 

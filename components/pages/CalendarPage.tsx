@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
-import { Quest, Role, ScheduledEvent } from '../../frontendTypes';
+import { Quest, Role, ScheduledEvent } from '../../types';
 import Card from '../ui/Card';
 import { toYMD } from '../../utils/quests';
 import MonthView from '../calendar/MonthView';

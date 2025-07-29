@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { useAppState, useAppDispatch } from '../../../context/AppContext';
-import { IAppData, Blueprint, ImportResolution, AutomatedBackupProfile, AutomatedBackups } from '../../../frontendTypes';
+import { IAppData, Blueprint, ImportResolution, AutomatedBackupProfile, AutomatedBackups } from '../../../types';
 import { analyzeBlueprintForConflicts } from '../../../utils/sharing';
 import Button from '../../ui/Button';
 import Card from '../../ui/Card';

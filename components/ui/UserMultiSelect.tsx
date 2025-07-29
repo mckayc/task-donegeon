@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { User } from '../../frontendTypes';
+import { User } from '../../types';
 import Input from './Input';
 import Avatar from './Avatar';
 

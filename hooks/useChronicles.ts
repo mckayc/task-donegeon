@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { useAppState } from '../context/AppContext';
-import { ChronicleEvent, AdminAdjustmentType, QuestCompletionStatus, PurchaseRequestStatus, QuestType, Role } from '../frontendTypes';
+import { ChronicleEvent, AdminAdjustmentType, QuestCompletionStatus, PurchaseRequestStatus, QuestType, Role } from '../types';
 import { toYMD } from '../utils/quests';
 
 export const useChronicles = ({ startDate, endDate }: { startDate: Date; endDate: Date; }) => {
@@ -27,16 +27,12 @@ export const useChronicles = ({ startDate, endDate }: { startDate: Date; endDate
             if (dateKey >= startYMD && dateKey <= endYMD && c.userId === currentUser.id && c.guildId === currentGuildId) {
                 const quest = quests.find(q => q.id === c.questId);
                 const event: ChronicleEvent = {
-                    id: c.id,
-                    date: c.completedAt,
-                    type: 'Quest',
+                    id: c.id, date: c.completedAt, type: 'Quest',
                     title: quest?.title || 'Unknown Quest',
-                    note: c.note,
-                    status: c.status,
+                    note: c.note, status: c.status,
                     icon: quest?.icon || '📜',
                     color: c.status === QuestCompletionStatus.Approved ? '#22c55e' : c.status === QuestCompletionStatus.Pending ? '#eab308' : '#ef4444',
-                    userId: c.userId,
-                    questType: quest?.type,
+                    userId: c.userId, questType: quest?.type
                 };
                 if (!eventsByDate.has(dateKey)) eventsByDate.set(dateKey, []);
                 eventsByDate.get(dateKey)!.push(event);

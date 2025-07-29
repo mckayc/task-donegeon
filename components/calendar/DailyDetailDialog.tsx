@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
-import { Quest, QuestCompletion, QuestType } from '../../frontendTypes';
+import { Quest, QuestCompletion, QuestType } from '../../types';
 import Button from '../ui/Button';
 import { toYMD, questSorter } from '../../utils/quests';
 import QuestDetailDialog from '../quests/QuestDetailDialog';
@@ -62,112 +62,191 @@ const QuestListItem: React.FC<{
     }, [quest]);
 
 
-    const backgroundClass = quest.type === QuestType.Duty ? 'bg-sky-900/40 hover:bg-sky-900/60' : 'bg-amber-900/30 hover:bg-amber-900/60';
-    const borderClass = isTodoVenture ? 'border-2 border-purple-500' : 'border-2 border-transparent';
-    
+    const backgroundClass = quest.type === QuestType.Duty ? 'bg-sky-900/40 hover:bg-sky-900/60' : 'bg-amber-900/30 hover:bg-amber-900/50';
+    const todoBorderClass = isTodoVenture ? 'border-2 border-purple-500' : 'border-2 border-transparent';
+    const optionalClass = quest.isOptional ? "border-dashed" : "";
+    const isDisabled = status === 'completed' || (status === 'todo' && isFuture);
+
+    const containerClasses = [
+        `${backgroundClass} p-3 rounded-lg flex items-center justify-between gap-3 transition-colors w-full`,
+        isTodoVenture ? todoBorderClass : (quest.isOptional ? optionalClass : todoBorderClass),
+        currentConfig.containerOpacity,
+        isDisabled ? 'cursor-not-allowed' : 'cursor-pointer',
+    ].join(" ");
+
     return (
         <button
+            className={containerClasses}
             onClick={() => onSelect(quest)}
-            disabled={isFuture || status === 'completed' || status === 'pending'}
-            className={`w-full text-left p-3 rounded-lg flex items-center justify-between gap-4 transition-colors ${currentConfig.containerOpacity} ${backgroundClass} ${borderClass}`}
+            disabled={isDisabled}
         >
-            <div className="flex items-center gap-3 overflow-hidden">
-                 <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${currentConfig.iconContainerClass}`}>
+            <div className="flex items-center gap-3 overflow-hidden text-left flex-grow" >
+                <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${currentConfig.iconContainerClass}`}>
                     {currentConfig.iconJsx}
                 </div>
-                <div className="overflow-hidden">
-                    <p className={`truncate ${currentConfig.textClass} ${currentConfig.isStrikethrough ? 'line-through text-stone-400' : ''}`} title={quest.title}>{quest.title}</p>
-                    {dueTime && <p className="text-xs text-stone-400">{dueTime}</p>}
+                <div className="flex-grow overflow-hidden">
+                    <p className={`${currentConfig.textClass} truncate ${currentConfig.isStrikethrough ? 'line-through' : ''}`} title={quest.title}>{quest.title}</p>
+                    {(dueTime || quest.isOptional) && (
+                        <p className="text-xs text-stone-400 mt-1">
+                            {quest.isOptional && 'Optional'}
+                            {quest.isOptional && dueTime && ' · '}
+                            {dueTime && `Due at ${dueTime}`}
+                        </p>
+                    )}
                 </div>
             </div>
         </button>
-    )
+    );
 };
 
+
 const DailyDetailDialog: React.FC<DailyDetailDialogProps> = ({ date, onClose, scheduledQuests, completedForDay, pendingForDay, questCompletions }) => {
-    const { currentUser, settings, scheduledEvents, appMode } = useAppState();
-    const [selectedQuest, setSelectedQuest] = useState<Quest | null>(null);
-    const [completingQuest, setCompletingQuest] = useState<Quest | null>(null);
-    const { markQuestAsTodo, unmarkQuestAsTodo } = useAppDispatch();
-    const isFuture = toYMD(date) > toYMD(new Date());
+  const { quests, currentUser, scheduledEvents } = useAppState();
+  const { markQuestAsTodo, unmarkQuestAsTodo } = useAppDispatch();
+  const [selectedQuestForDetail, setSelectedQuestForDetail] = useState<Quest | null>(null);
+  const [completingQuest, setCompletingQuest] = useState<Quest | null>(null);
+  const availableVentures = useCalendarVentures(date);
+  
+  const isFutureDate = toYMD(date) > toYMD(new Date());
 
-    if (!currentUser) return null;
+  const dueQuests = useMemo(() => {
+    if(!currentUser) return [];
+    const scheduledIds = new Set(scheduledQuests.map(q => q.id));
+    const additionalVentures = availableVentures.filter(v => !scheduledIds.has(v.id));
+    const combined = [...scheduledQuests, ...additionalVentures];
+    const uniqueQuests = Array.from(new Set(combined.map(q => q.id))).map(id => combined.find(q => q.id === id)!);
+    return uniqueQuests.sort(questSorter(currentUser, questCompletions, scheduledEvents, date));
+  }, [scheduledQuests, availableVentures, currentUser, date, questCompletions, scheduledEvents]);
 
-    const questsWithStatus = useMemo(() => {
-        const completedIds = new Set(completedForDay.map(c => c.questId));
-        const pendingIds = new Set(pendingForDay.map(c => c.questId));
-        
-        const completed = completedForDay.map(c => ({ quest: scheduledQuests.find(q => q.id === c.questId)!, status: 'completed' as const }));
-        const pending = pendingForDay.map(c => ({ quest: scheduledQuests.find(q => q.id === c.questId)!, status: 'pending' as const }));
-        const todo = scheduledQuests.filter(q => !completedIds.has(q.id) && !pendingIds.has(q.id)).map(q => ({ quest: q, status: 'todo' as const }));
-        
-        return [...todo, ...pending, ...completed].filter(item => item.quest); // Filter out any undefined quests
-    }, [scheduledQuests, completedForDay, pendingForDay]);
+  const handleStartCompletion = (quest: Quest) => {
+      if(isFutureDate) return;
+      setCompletingQuest(quest);
+      setSelectedQuestForDetail(null);
+  };
+  
+  const handleToggleTodo = () => {
+    if (!selectedQuestForDetail || !currentUser) return;
+    const quest = selectedQuestForDetail;
+    const isCurrentlyTodo = quest.todoUserIds?.includes(currentUser.id);
 
-    const handleStartCompletion = (quest: Quest) => {
-        setCompletingQuest(quest);
-        setSelectedQuest(null);
-    };
+    if (isCurrentlyTodo) {
+        unmarkQuestAsTodo(quest.id, currentUser.id);
+    } else {
+        markQuestAsTodo(quest.id, currentUser.id);
+    }
+    
+    // Update the dialog's state immediately for better UX
+    setSelectedQuestForDetail(prev => {
+        if (!prev) return null;
+        const newTodoUserIds = isCurrentlyTodo
+            ? (prev.todoUserIds || []).filter(id => id !== currentUser.id)
+            : [...(prev.todoUserIds || []), currentUser.id];
+        return { ...prev, todoUserIds: newTodoUserIds };
+    });
+  };
 
-    const handleToggleTodo = () => {
-        if (!selectedQuest) return;
-        const quest = selectedQuest;
-        const isCurrentlyTodo = quest.todoUserIds?.includes(currentUser.id);
-        
-        if (isCurrentlyTodo) {
-            unmarkQuestAsTodo(selectedQuest.id, currentUser.id);
-        } else {
-            markQuestAsTodo(selectedQuest.id, currentUser.id);
-        }
+  const completedQuestDetails = useMemo(() => {
+    return completedForDay.map(comp => quests.find(q => q.id === comp.questId)).filter((q): q is Quest => !!q);
+  }, [completedForDay, quests]);
 
-        // Update the dialog's state immediately for better UX
-        setSelectedQuest(prev => {
-            if (!prev) return null;
-            const newTodoUserIds = isCurrentlyTodo
-                ? (prev.todoUserIds || []).filter(id => id !== currentUser.id)
-                : [...(prev.todoUserIds || []), currentUser.id];
-            return { ...prev, todoUserIds: newTodoUserIds };
-        });
-    };
+  const pendingQuestDetails = useMemo(() => {
+    return pendingForDay.map(comp => quests.find(q => q.id === comp.questId)).filter((q): q is Quest => !!q);
+  }, [pendingForDay, quests]);
 
-    return (
-        <>
-        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4" onClick={onClose}>
-            <div className="bg-stone-800 border border-stone-700 rounded-xl shadow-2xl max-w-md w-full max-h-[80vh] flex flex-col" onClick={e => e.stopPropagation()}>
-                <div className="p-6 border-b border-stone-700/60">
-                    <h2 className="text-2xl font-medieval text-emerald-400">{date.toLocaleDateString('default', { weekday: 'long', month: 'long', day: 'numeric' })}</h2>
-                </div>
-                <div className="p-6 space-y-3 overflow-y-auto scrollbar-hide">
-                    {questsWithStatus.length > 0 ? questsWithStatus.map(({ quest, status }) => {
-                         const isTodo = quest.type === QuestType.Venture && !!quest.todoUserIds?.includes(currentUser.id);
-                         return <QuestListItem key={quest.id} quest={quest} status={status} onSelect={setSelectedQuest} isFuture={isFuture} isTodoVenture={isTodo} />;
-                    }) : (
-                        <p className="text-stone-400 text-center py-8">No quests scheduled for this day.</p>
-                    )}
-                </div>
-                <div className="p-4 border-t border-stone-700/60 text-right">
-                    <Button variant="secondary" onClick={onClose}>Close</Button>
-                </div>
-            </div>
+  const completedIds = new Set([...completedForDay, ...pendingForDay].map(c => c.questId));
+  const todoQuests = dueQuests.filter(q => !completedIds.has(q.id));
+
+  return (
+    <>
+      <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4" onClick={onClose}>
+        <div className="bg-stone-800 border border-stone-700 rounded-xl shadow-2xl max-w-lg w-full max-h-[80vh] flex flex-col" onClick={e => e.stopPropagation()}>
+          <div className="p-6 border-b border-stone-700/60">
+              <h2 className="text-2xl font-medieval text-emerald-400">{date.toLocaleDateString('default', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</h2>
+          </div>
+          <div className="p-6 space-y-6 overflow-y-auto scrollbar-hide">
+              {isFutureDate && <p className="text-center text-yellow-400 bg-yellow-900/50 p-2 rounded-md">You cannot complete quests for a future date.</p>}
+              
+              {todoQuests.length > 0 && (
+                  <div>
+                      <h3 className="text-lg font-semibold text-stone-200 mb-3">To-Do</h3>
+                      <div className="space-y-3">
+                          {todoQuests.map(quest => (
+                              <QuestListItem 
+                                  key={quest.id} 
+                                  quest={quest} 
+                                  status="todo" 
+                                  onSelect={setSelectedQuestForDetail} 
+                                  isFuture={isFutureDate}
+                                  isTodoVenture={quest.type === QuestType.Venture && !!currentUser && !!quest.todoUserIds?.includes(currentUser.id)}
+                              />
+                          ))}
+                      </div>
+                  </div>
+              )}
+
+              {pendingQuestDetails.length > 0 && (
+                   <div>
+                      <h3 className="text-lg font-semibold text-stone-200 mb-3">Pending Approval</h3>
+                      <div className="space-y-3">
+                          {pendingQuestDetails.map(quest => (
+                            <QuestListItem 
+                                key={quest.id} 
+                                quest={quest} 
+                                status="pending" 
+                                onSelect={setSelectedQuestForDetail} 
+                                isFuture={isFutureDate} 
+                                isTodoVenture={false}
+                            />
+                          ))}
+                      </div>
+                  </div>
+              )}
+              
+              {completedQuestDetails.length > 0 && (
+                   <div>
+                      <h3 className="text-lg font-semibold text-stone-200 mb-3">Completed</h3>
+                      <div className="space-y-3">
+                          {completedQuestDetails.map(quest => (
+                            <QuestListItem 
+                                key={quest.id} 
+                                quest={quest} 
+                                status="completed" 
+                                onSelect={setSelectedQuestForDetail} 
+                                isFuture={isFutureDate} 
+                                isTodoVenture={false}
+                            />
+                          ))}
+                      </div>
+                  </div>
+              )}
+              
+              {todoQuests.length === 0 && completedQuestDetails.length === 0 && pendingQuestDetails.length === 0 && (
+                  <p className="text-stone-400 text-center py-8">No quests scheduled for this day.</p>
+              )}
+          </div>
+          <div className="p-4 border-t border-stone-700/60 text-right">
+              <Button variant="secondary" onClick={onClose}>Close</Button>
+          </div>
         </div>
-        {selectedQuest && (
-            <QuestDetailDialog
-                quest={selectedQuest}
-                onClose={() => setSelectedQuest(null)}
-                onComplete={() => handleStartCompletion(selectedQuest)}
-                onToggleTodo={handleToggleTodo}
-                isTodo={!!(currentUser && selectedQuest.type === QuestType.Venture && selectedQuest.todoUserIds?.includes(currentUser.id))}
-            />
-        )}
-        {completingQuest && (
-            <CompleteQuestDialog
-                quest={completingQuest}
-                onClose={() => setCompletingQuest(null)}
-                completionDate={date}
-            />
-        )}
-        </>
-    );
+      </div>
+      {selectedQuestForDetail && currentUser && (
+          <QuestDetailDialog 
+            quest={selectedQuestForDetail} 
+            onClose={() => setSelectedQuestForDetail(null)}
+            onComplete={() => handleStartCompletion(selectedQuestForDetail)}
+            onToggleTodo={handleToggleTodo}
+            isTodo={!!selectedQuestForDetail.todoUserIds?.includes(currentUser.id)}
+          />
+      )}
+      {completingQuest && (
+          <CompleteQuestDialog 
+            quest={completingQuest} 
+            onClose={() => setCompletingQuest(null)} 
+            completionDate={date}
+          />
+      )}
+    </>
+  );
 };
 
 export default DailyDetailDialog;

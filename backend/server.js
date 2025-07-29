@@ -20,7 +20,7 @@ async function fetchGitHub(apiPath) {
     });
     if (!response.ok) {
         const errorBody = await response.text();
-        console.error(`GitHub API request failed for ${url}: ${response.statusText}`, errorBody);
+        console.error(`[GITHUB] GitHub API request failed for ${url}: ${response.statusText}`, errorBody);
         throw new Error(`GitHub API request failed: ${response.statusText}`);
     }
     return response.json();
@@ -272,11 +272,12 @@ function createInitialData(setupChoice = 'guided', adminUserData, blueprint) {
 // === DATABASE CLASS (SQLite) ===
 class SqliteDB {
     constructor(dbPath) {
+        console.log(`[DB] Initializing database at path: ${dbPath}`);
         this.db = new sqlite3.Database(dbPath, (err) => {
             if (err) {
-                console.error('Error opening database', err.message);
+                console.error('[DB] CRITICAL: Could not open or create database file.', err);
             } else {
-                console.log('Connected to the SQLite database.');
+                console.log('[DB] Database file opened successfully.');
                 this.init();
             }
         });
@@ -286,21 +287,21 @@ class SqliteDB {
         this.db.run(`CREATE TABLE IF NOT EXISTS app_data (
             key TEXT PRIMARY KEY,
             value TEXT NOT NULL
-        )`, async (err) => {
+        )`, (err) => {
             if (err) {
-                console.error('Error creating table', err.message);
+                console.error('[DB] Error creating app_data table.', err);
                 return;
             }
+            console.log('[DB] Table "app_data" is ready.');
             this.db.get("SELECT value FROM app_data WHERE key = ?", ['main'], async (err, row) => {
                 if (err) {
-                    console.error('Error checking for initial data', err.message);
+                    console.error('[DB] Error checking for initial data.', err);
                     return;
                 }
                 if (!row) {
-                    console.log('No initial data found. Seeding database with default guided setup...');
+                    console.log('[DB] No data found. Seeding database with default guided setup...');
                     const initialData = createInitialData('guided'); // Seed with default guided setup
                     await this.saveData(initialData);
-                    console.log('Database seeded successfully.');
                 }
             });
         });
@@ -310,6 +311,7 @@ class SqliteDB {
         return new Promise((resolve, reject) => {
             this.db.get("SELECT value FROM app_data WHERE key = ?", ['main'], (err, row) => {
                 if (err) {
+                    console.error('[DB] Failed to get data from database.', err);
                     reject(new Error(`Failed to get data from database: ${err.message}`));
                 } else {
                     resolve(row ? JSON.parse(row.value) : null);
@@ -323,8 +325,10 @@ class SqliteDB {
             const jsonData = JSON.stringify(data);
             this.db.run(`INSERT OR REPLACE INTO app_data (key, value) VALUES (?, ?)`, ['main', jsonData], function(err) {
                 if (err) {
+                    console.error('[DB] Failed to save data to database.', err);
                     reject(new Error(`Failed to save data to database: ${err.message}`));
                 } else {
+                    console.log(`[DB] Data saved successfully. Rows changed: ${this.changes}`);
                     resolve({ changes: this.changes });
                 }
             });
@@ -341,15 +345,31 @@ const UPLOADS_DIR = path.join(__dirname, '../uploads');
 
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
+
+// Request Logger Middleware
+app.use((req, res, next) => {
+    const start = Date.now();
+    res.on('finish', () => {
+        const duration = Date.now() - start;
+        console.log(`[API] ${req.method} ${req.originalUrl} - ${res.statusCode} [${duration}ms]`);
+    });
+    next();
+});
+
+console.log(`[FS] Serving static files from: ${path.join(__dirname, '../dist')}`);
 app.use(express.static(path.join(__dirname, '../dist')));
+console.log(`[FS] Serving uploads from: ${UPLOADS_DIR}`);
 app.use('/uploads', express.static(UPLOADS_DIR));
+
 
 // === WebSocket Setup ===
 const wss = new WebSocket.Server({ server });
 let clients = new Set();
 wss.on('connection', (ws) => {
+    console.log('[WS] Client connected.');
     clients.add(ws);
     ws.on('close', () => {
+        console.log('[WS] Client disconnected.');
         clients.delete(ws);
     });
 });
@@ -367,11 +387,20 @@ const storage = multer.diskStorage({
     destination: async (req, file, cb) => {
         const category = req.body.category || 'Miscellaneous';
         const dir = path.join(UPLOADS_DIR, category);
-        await fs.mkdir(dir, { recursive: true });
-        cb(null, dir);
+        console.log(`[FS] Attempting to save upload to: ${dir}`);
+        try {
+            await fs.mkdir(dir, { recursive: true });
+            console.log(`[FS] Ensured directory exists: ${dir}`);
+            cb(null, dir);
+        } catch (error) {
+            console.error(`[FS] Error creating upload directory: ${dir}`, error);
+            cb(error);
+        }
     },
     filename: (req, file, cb) => {
-        cb(null, `${Date.now()}-${file.originalname}`);
+        const filename = `${Date.now()}-${file.originalname}`;
+        console.log(`[FS] Generating filename: ${filename}`);
+        cb(null, filename);
     }
 });
 const upload = multer({ storage: storage });
@@ -381,15 +410,18 @@ let appDataCache = null;
 const loadData = async () => {
     try {
         appDataCache = await db.getData();
+        console.log('[DB] Initial data loaded into cache.');
     } catch (error) {
-        console.error("FATAL: Could not load data from database.", error);
+        console.error("[DB] FATAL: Could not load initial data from database.", error);
         process.exit(1);
     }
 };
 const saveData = async (newData) => {
+    console.log('[DB] Saving updated data to database and broadcasting to clients...');
     appDataCache = newData;
     await db.saveData(newData);
     broadcast({ type: 'FULL_STATE_UPDATE', payload: appDataCache });
+    console.log('[WS] Broadcast complete.');
 };
 
 // === API Routes ===
@@ -401,8 +433,13 @@ app.get('/api/data', async (req, res) => {
 });
 
 app.post('/api/data', async (req, res) => {
-    await saveData(req.body);
-    res.status(204).send();
+    try {
+        await saveData(req.body);
+        res.status(204).send();
+    } catch (error) {
+        console.error('[API] Error in POST /api/data:', error);
+        res.status(500).json({ error: 'Failed to save data.' });
+    }
 });
 
 // Other specific routes will now update the cache and then save
@@ -646,36 +683,43 @@ app.post('/api/economy/exchange', async (req, res) => {
         res.status(200).json({ success: true, user: user });
 
     } catch (error) {
-        console.error('Error during exchange:', error);
+        console.error('[API] Error during exchange:', error);
         res.status(500).json({ error: 'An internal server error occurred during the exchange.' });
     }
 });
 
 
 app.post('/api/first-run', async (req, res) => {
-    const { adminUserData, setupChoice, blueprint } = req.body;
-    const adminWithDefaults = {
-        ...adminUserData,
-        id: `user-${Date.now()}`,
-        avatar: {},
-        ownedAssetIds: [],
-        personalPurse: {},
-        personalExperience: {},
-        guildBalances: {},
-        ownedThemes: ['emerald', 'rose', 'sky'],
-        hasBeenOnboarded: true,
-    };
+    try {
+        const { adminUserData, setupChoice, blueprint } = req.body;
+        console.log(`[API] Initiating first run with setup choice: ${setupChoice}`);
+        const adminWithDefaults = {
+            ...adminUserData,
+            id: `user-${Date.now()}`,
+            avatar: {},
+            ownedAssetIds: [],
+            personalPurse: {},
+            personalExperience: {},
+            guildBalances: {},
+            ownedThemes: ['emerald', 'rose', 'sky'],
+            hasBeenOnboarded: true,
+        };
 
-    const initialData = createInitialData(setupChoice, adminWithDefaults, blueprint);
-    await saveData(initialData);
+        const initialData = createInitialData(setupChoice, adminWithDefaults, blueprint);
+        await saveData(initialData);
 
-    const newAdmin = initialData.users.find(u => u.id === adminWithDefaults.id);
-    
-    res.status(201).json({ message: 'First run completed successfully.', adminUser: newAdmin });
+        const newAdmin = initialData.users.find(u => u.id === adminWithDefaults.id);
+        console.log('[API] First run completed successfully.');
+        res.status(201).json({ message: 'First run completed successfully.', adminUser: newAdmin });
+    } catch(error) {
+        console.error('[API] CRITICAL: First run setup failed!', error);
+        res.status(500).json({ error: 'An error occurred during the first run setup.' });
+    }
 });
 
 app.post('/api/reinitialize', async (req, res) => {
     try {
+        console.log('[API] Received request to re-initialize application data.');
         const emptyData = {
             users: [], quests: [], questGroups: [], markets: [], rewardTypes: [], questCompletions: [],
             purchaseRequests: [], guilds: [], ranks: [], trophies: [], userTrophies: [],
@@ -684,10 +728,11 @@ app.post('/api/reinitialize', async (req, res) => {
         };
         // Reset content version to trigger first run logic.
         emptyData.settings.contentVersion = 1; 
-        await saveData(emptyData); // saveData already updates cache and broadcasts
+        await saveData(emptyData);
+        console.log('[API] Application data has been successfully reset.');
         res.status(200).json({ message: 'Application data has been reset.' });
     } catch (error) {
-        console.error('Failed to reinitialize data:', error);
+        console.error('[API] Failed to reinitialize data:', error);
         res.status(500).json({ error: 'Failed to reset application data.' });
     }
 });
@@ -695,12 +740,14 @@ app.post('/api/reinitialize', async (req, res) => {
 app.get('/api/pre-run-check', async (req, res) => {
     const data = await db.getData();
     if (data && data.users && data.users.length > 0) {
+        console.log('[API] Pre-run check: Existing data found.');
         res.json({
             dataExists: true,
             version: data.settings?.contentVersion || 1,
             appName: data.settings?.terminology?.appName || 'Task Donegeon'
         });
     } else {
+        console.log('[API] Pre-run check: No existing data found. Ready for first run.');
         res.json({ dataExists: false });
     }
 });
@@ -708,21 +755,29 @@ app.get('/api/pre-run-check', async (req, res) => {
 // Media Routes
 app.post('/api/media/upload', upload.single('file'), (req, res) => {
     if (!req.file) {
+        console.error('[API] Upload failed: No file provided.');
         return res.status(400).send('No file uploaded.');
     }
     const relativePath = path.relative(path.join(__dirname, '..'), req.file.path);
-    res.json({ url: `/${relativePath.replace(/\\/g, '/')}` });
+    const url = `/${relativePath.replace(/\\/g, '/')}`;
+    console.log(`[API] File uploaded successfully: ${url}`);
+    res.json({ url });
 });
 
 // Gemini AI Routes
 let geminiAI;
 if (process.env.API_KEY) {
+    console.log('[AI] Gemini API Key found. Initializing client...');
     try {
         geminiAI = new GoogleGenAI({ apiKey: process.env.API_KEY });
+        console.log('[AI] Gemini client initialized successfully.');
     } catch (e) {
-        console.error("Failed to initialize GoogleGenAI. AI features will be disabled.", e.message);
+        console.error("[AI] CRITICAL: Failed to initialize GoogleGenAI. AI features will be disabled.", e.message);
     }
+} else {
+    console.log('[AI] Gemini API Key not found. AI features will be disabled.');
 }
+
 
 app.get('/api/ai/status', (req, res) => {
     res.json({ isConfigured: !!geminiAI });
@@ -746,10 +801,11 @@ app.post('/api/ai/generate', async (req, res) => {
     }
     try {
         const { model, prompt, generationConfig } = req.body;
+        console.log(`[AI] Generating content with model: ${model}`);
         const response = await geminiAI.models.generateContent({ model, contents: prompt, config: generationConfig });
         res.json(response);
     } catch (e) {
-        console.error("AI Generation Error:", e);
+        console.error("[AI] Generation Error:", e);
         res.status(500).json({ error: e.message });
     }
 });
@@ -762,5 +818,5 @@ app.get('*', (req, res) => {
 // Start server
 server.listen(PORT, async () => {
     await loadData();
-    console.log(`Server listening on port ${PORT}`);
+    console.log(`[SERVER] Server listening on http://localhost:${PORT}`);
 });

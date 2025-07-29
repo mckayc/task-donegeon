@@ -1,1 +1,2 @@
-// This file is obsolete and can be deleted. The backend now uses backend/types.js.
+// This file is obsolete. Its contents have been moved to backend/backendTypes.js.
+// It can be safely deleted.

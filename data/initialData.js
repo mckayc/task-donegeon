@@ -1,1 +1,2 @@
-// This file is obsolete and can be deleted. The backend now uses backend/initialData.js.
+// This file is obsolete. Its contents have been moved to backend/initialData.js.
+// It can be safely deleted.

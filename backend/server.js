@@ -11,7 +11,7 @@ const multer = require('multer');
 const { GoogleGenAI } = require('@google/genai');
 
 // --- INITIAL DATA HELPERS (used for first run) ---
-const { Role, QuestType, RewardCategory, QuestAvailability, TrophyRequirementType } = require('./types.js');
+const { Role, QuestType, RewardCategory, QuestAvailability, TrophyRequirementType } = require('./backendTypes.js');
 const {
     INITIAL_QUEST_GROUPS,
     INITIAL_REWARD_TYPES,

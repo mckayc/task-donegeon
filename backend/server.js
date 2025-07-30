@@ -272,70 +272,106 @@ function createInitialData(setupChoice = 'guided', adminUserData, blueprint) {
 // === DATABASE CLASS (SQLite) ===
 class SqliteDB {
     constructor(dbPath) {
-        console.log(`[DB] Initializing database at path: ${dbPath}`);
-        this.db = new sqlite3.Database(dbPath, (err) => {
-            if (err) {
-                console.error('[DB] CRITICAL: Could not open or create database file.', err);
-            } else {
-                console.log('[DB] Database file opened successfully.');
-                this.init();
-            }
-        });
+        this.dbPath = dbPath;
+        this.db = null;
     }
 
-    init() {
-        this.db.run(`CREATE TABLE IF NOT EXISTS app_data (
-            key TEXT PRIMARY KEY,
-            value TEXT NOT NULL
-        )`, (err) => {
-            if (err) {
-                console.error('[DB] Error creating app_data table.', err);
-                return;
-            }
-            console.log('[DB] Table "app_data" is ready.');
-            this.db.get("SELECT value FROM app_data WHERE key = ?", ['main'], async (err, row) => {
-                if (err) {
-                    console.error('[DB] Error checking for initial data.', err);
-                    return;
-                }
-                if (!row) {
-                    console.log('[DB] No data found. Seeding database with default guided setup...');
-                    const initialData = createInitialData('guided'); // Seed with default guided setup
-                    await this.saveData(initialData);
-                }
-            });
-        });
-    }
-
-    getData() {
+    // Promisified helper for running SQL commands that don't return rows (CREATE, INSERT, UPDATE, DELETE)
+    run(sql, params = []) {
         return new Promise((resolve, reject) => {
-            this.db.get("SELECT value FROM app_data WHERE key = ?", ['main'], (err, row) => {
+            this.db.run(sql, params, function (err) {
                 if (err) {
-                    console.error('[DB] Failed to get data from database.', err);
-                    reject(new Error(`Failed to get data from database: ${err.message}`));
+                    console.error('[DB] DB Run Error:', err.message);
+                    reject(err);
                 } else {
-                    resolve(row ? JSON.parse(row.value) : null);
-                }
-            });
-        });
-    }
-
-    saveData(data) {
-        return new Promise((resolve, reject) => {
-            const jsonData = JSON.stringify(data);
-            this.db.run(`INSERT OR REPLACE INTO app_data (key, value) VALUES (?, ?)`, ['main', jsonData], function(err) {
-                if (err) {
-                    console.error('[DB] Failed to save data to database.', err);
-                    reject(new Error(`Failed to save data to database: ${err.message}`));
-                } else {
-                    console.log(`[DB] Data saved successfully. Rows changed: ${this.changes}`);
                     resolve({ changes: this.changes });
                 }
             });
         });
     }
+
+    // Promisified helper for running a SELECT query that returns a single row
+    get(sql, params = []) {
+        return new Promise((resolve, reject) => {
+            this.db.get(sql, params, (err, row) => {
+                if (err) {
+                    console.error('[DB] DB Get Error:', err.message);
+                    reject(err);
+                } else {
+                    resolve(row);
+                }
+            });
+        });
+    }
+
+    // Initializes the database connection and schema
+    async init() {
+        console.log('[DB] --- Database Initialization Start ---');
+        console.log(`[DB] Full database file path configured: ${this.dbPath}`);
+        const dbDir = path.dirname(this.dbPath);
+        console.log(`[DB] Database directory path derived: ${dbDir}`);
+
+        // 1. Ensure directory exists
+        console.log(`[DB] STEP 1: Ensuring directory exists at ${dbDir}...`);
+        try {
+            await fs.mkdir(dbDir, { recursive: true });
+            console.log(`[DB] SUCCESS: Directory check/creation complete for ${dbDir}.`);
+        } catch (error) {
+            console.error(`[DB] CRITICAL: Failed to create database directory at ${dbDir}`, error);
+            throw new Error(`Failed to create database directory: ${error.message}`);
+        }
+
+        // 2. Open DB connection (promisified)
+        console.log(`[DB] STEP 2: Attempting to open/create SQLite database file at ${this.dbPath}...`);
+        await new Promise((resolve, reject) => {
+            this.db = new sqlite3.Database(this.dbPath, (err) => {
+                if (err) {
+                    console.error(`[DB] CRITICAL: Could not open or create database file. Path: ${this.dbPath}`, err);
+                    reject(err);
+                } else {
+                    console.log(`[DB] SUCCESS: Database file opened successfully. Path: ${this.dbPath}`);
+                    resolve();
+                }
+            });
+        });
+        
+        console.log('[DB] STEP 3: Ensuring "app_data" table exists...');
+        await this.run(`CREATE TABLE IF NOT EXISTS app_data (
+            key TEXT PRIMARY KEY,
+            value TEXT NOT NULL
+        )`);
+        console.log('[DB] SUCCESS: Table "app_data" is ready.');
+
+        // 4. Check for and seed data if necessary
+        console.log('[DB] STEP 4: Checking for existing data in "app_data" table...');
+        const row = await this.get("SELECT value FROM app_data WHERE key = ?", ['main']).catch(e => null);
+        if (!row) {
+            console.log('[DB] No data found. Seeding database with default guided setup...');
+            const initialData = createInitialData('guided');
+            await this.saveData(initialData);
+            console.log('[DB] SUCCESS: Database seeded successfully.');
+        } else {
+            console.log('[DB] Existing data found. Skipping database seed.');
+        }
+        console.log('[DB] --- Database Initialization Complete ---');
+    }
+
+    async getData() {
+        const row = await this.get("SELECT value FROM app_data WHERE key = ?", ['main']);
+        return row ? JSON.parse(row.value) : null;
+    }
+
+    async saveData(data) {
+        const jsonData = JSON.stringify(data);
+        const result = await this.run(`INSERT OR REPLACE INTO app_data (key, value) VALUES (?, ?)`, ['main', jsonData]);
+        console.log(`[DB] Data saved successfully. Rows changed: ${result.changes}`);
+        return result;
+    }
 }
-const db = new SqliteDB(path.join(__dirname, 'data.db'));
+
+
+const dbPath = path.join(__dirname, 'db', 'data.db');
+const db = new SqliteDB(dbPath);
 
 // === Express App Setup ===
 const app = express();
@@ -815,8 +851,24 @@ app.get('*', (req, res) => {
     res.sendFile(path.join(__dirname, '../dist/index.html'));
 });
 
-// Start server
-server.listen(PORT, async () => {
-    await loadData();
-    console.log(`[SERVER] Server listening on http://localhost:${PORT}`);
-});
+// === Server Startup ===
+const startServer = async () => {
+    try {
+        // 1. Initialize DB fully (creates dir, file, table, and seeds if needed)
+        await db.init();
+        
+        // 2. Load initial data from the now-guaranteed-to-exist DB into memory cache
+        await loadData();
+
+        // 3. Start listening for requests
+        server.listen(PORT, () => {
+            console.log(`[SERVER] Server listening on http://localhost:${PORT}`);
+        });
+
+    } catch (error) {
+        console.error('[SERVER] FAILED TO START:', error);
+        process.exit(1); // Exit if DB initialization fails
+    }
+};
+
+startServer();

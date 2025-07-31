@@ -91,7 +91,9 @@ const rawThemes = {
 };
 const INITIAL_THEMES = Object.entries(rawThemes).map(([id, styles]) => ({ id, name: id.charAt(0).toUpperCase() + id.slice(1), isCustom: false, styles }));
 const INITIAL_SETTINGS = {
-    contentVersion: 2, favicon: '🏰', forgivingSetbacks: true,
+    contentVersion: 2,
+    isFirstRunComplete: false,
+    favicon: '🏰', forgivingSetbacks: true,
     questDefaults: { requiresApproval: false, isOptional: false, isActive: true },
     security: { requirePinForUsers: true, requirePasswordForAdmin: true, allowProfileEditing: true },
     sharedMode: { enabled: false, quickUserSwitchingEnabled: true, allowCompletion: true, autoExit: false, autoExitMinutes: 2, userIds: [] },
@@ -117,18 +119,39 @@ const INITIAL_SETTINGS = {
     chat: { enabled: true, chatEmoji: '💬' },
     sidebars: { main: INITIAL_MAIN_SIDEBAR_CONFIG, dataManagement: [ { type: 'link', id: 'Object Exporter', emoji: '🗂️', isVisible: true, level: 0, role: Role.DonegeonMaster, termKey: 'link_object_exporter' }, { type: 'link', id: 'Asset Manager', emoji: '🖼️', isVisible: true, level: 0, role: Role.DonegeonMaster, termKey: 'link_asset_manager' }, { type: 'link', id: 'Asset Library', emoji: '📚', isVisible: true, level: 0, role: Role.DonegeonMaster, termKey: 'link_asset_library' }, { type: 'link', id: 'Backup & Import', emoji: '💾', isVisible: true, level: 0, role: Role.DonegeonMaster, termKey: 'link_backup_import' } ] }
 };
-const INITIAL_TROPHIES = [ { id: 'trophy-1', name: 'First Quest', description: 'Complete your first quest.', iconType: 'emoji', icon: '🎉', isManual: false, requirements: [{type: TrophyRequirementType.CompleteQuestType, value: QuestType.Duty, count: 1}] }, { id: 'trophy-2', name: 'First Customization', description: 'Change your theme for the first time.', iconType: 'emoji', icon: '🎨', isManual: true, requirements: [] }, { id: 'trophy-3', name: 'The Adjudicator', description: 'Approve or reject a pending quest.', iconType: 'emoji', icon: '⚖️', isManual: true, requirements: [] }, { id: 'trophy-4', name: 'World Builder', description: 'Create a new quest.', iconType: 'emoji', icon: '🛠️', isManual: true, requirements: [] }, { id: 'trophy-5', name: 'The Name Changer', description: 'Rename a user in the Manage Users panel.', iconType: 'emoji', icon: '✍️', isManual: true, requirements: [] }, { id: 'trophy-6', name: 'Initiate Rank', description: 'Achieve the rank of Initiate', iconType: 'emoji', icon: '🌱', isManual: false, requirements: [{type: TrophyRequirementType.AchieveRank, value: 'rank-2', count: 1}]}, { id: 'trophy-7', name: 'The Philanthropist', description: 'Donate an item to a guildmate.', iconType: 'emoji', icon: '🎁', isManual: true, requirements: [] }, { id: 'trophy-8', name: 'Master of Coin', description: 'Amass 1,000 gold.', iconType: 'emoji', icon: '💰', isManual: true, requirements: [] }, { id: 'trophy-9', name: 'Dungeon Crawler', description: 'Complete 10 Ventures.', iconType: 'emoji', icon: '🗺️', isManual: true, requirements: [] }, { id: 'trophy-10', name: 'Daily Grind', description: 'Complete 25 Duties.', iconType: 'emoji', icon: '⚙️', isManual: true, requirements: [] }, { id: 'trophy-11', name: 'The Collector', description: 'Own 10 unique items.', iconType: 'emoji', icon: '📦', isManual: true, requirements: [] }, { id: 'trophy-12', name: 'Fashionista', description: 'Own 5 pieces of avatar equipment.', iconType: 'emoji', icon: '🧑‍🎤', isManual: true, requirements: [] }, { id: 'trophy-13', name: 'The Completionist', description: 'Complete all available quests for a day.', iconType: 'emoji', icon: '💯', isManual: true, requirements: [] }, { id: 'trophy-14', name: 'The Achiever', description: 'Earn 5 other trophies.', iconType: 'emoji', icon: '🏆', isManual: true, requirements: [] }, { id: 'trophy-15', name: 'The Socialite', description: 'Join a guild.', iconType: 'emoji', icon: '🤝', isManual: true, requirements: [] }, { id: 'trophy-16', name: 'The Founder', description: 'Create a guild.', iconType: 'emoji', icon: '🏰', isManual: true, requirements: [] }, { id: 'trophy-17', name: 'The Merchant', description: 'Sell an item in the marketplace.', iconType: 'emoji', icon: '📈', isManual: true, requirements: [] }, { id: 'trophy-18', name: 'The Artisan', description: 'Craft an item.', iconType: 'emoji', icon: '🔨', isManual: true, requirements: [] }, { id: 'trophy-19', name: 'The Explorer', description: 'Discover a hidden area or secret.', iconType: 'emoji', icon: '🧭', isManual: true, requirements: [] }, { id: 'trophy-20', name: 'The Loremaster', description: 'Read 10 in-game books or lore entries.', iconType: 'emoji', icon: '📚', isManual: true, requirements: [] }, { id: 'trophy-21', name: 'The Beastmaster', description: 'Tame a pet.', iconType: 'emoji', icon: '🐾', isManual: true, requirements: [] }, { id: 'trophy-22', name: 'The Angler', description: 'Catch 50 fish.', iconType: 'emoji', icon: '🎣', isManual: true, requirements: [] }, { id: 'trophy-23', name: 'The Gardener', description: 'Harvest 100 plants.', iconType: 'emoji', icon: '🌱', isManual: true, requirements: [] }, { id: 'trophy-24', name: 'The Chef', description: 'Cook 20 different recipes.', iconType: 'emoji', icon: '🍳', isManual: true, requirements: [] }, { id: 'trophy-25', name: 'The Alchemist', description: 'Brew 15 different potions.', iconType: 'emoji', icon: '⚗️', isManual: true, requirements: [] }, { id: 'trophy-26', name: 'The Enchanter', description: 'Enchant an item.', iconType: 'emoji', icon: '✨', isManual: true, requirements: [] }, { id: 'trophy-27', name: 'The Blacksmith', description: 'Forge an item.', iconType: 'emoji', icon: '🔥', isManual: true, requirements: [] }, { id: 'trophy-28', name: 'The Jeweler', description: 'Cut a gemstone.', iconType: 'emoji', icon: '💎', isManual: true, requirements: [] }, { id: 'trophy-29', name: 'The Scribe', description: 'Write a scroll.', iconType: 'emoji', icon: '📜', isManual: true, requirements: [] }, { id: 'trophy-30', name: 'The Cartographer', description: 'Map out a new zone.', iconType: 'emoji', icon: '🗺️', isManual: true, requirements: [] }, { id: 'trophy-31', name: 'The Archaeologist', description: 'Uncover a lost artifact.', iconType: 'emoji', icon: '🏺', isManual: true, requirements: [] }, { id: 'trophy-32', name: 'The Linguist', description: 'Learn a new language.', iconType: 'emoji', icon: '🗣️', isManual: true, requirements: [] }, { id: 'trophy-33', name: 'The Musician', description: 'Master a musical instrument.', iconType: 'emoji', icon: '🎶', isManual: true, requirements: [] }, { id: 'trophy-34', name: 'The Dancer', description: 'Learn a new dance.', iconType: 'emoji', icon: '💃', isManual: true, requirements: [] }, { id: 'trophy-35', name: 'The Painter', description: 'Paint a masterpiece.', iconType: 'emoji', icon: '🎨', isManual: true, requirements: [] }, { id: 'trophy-36', name: 'The Sculptor', description: 'Carve a statue.', iconType: 'emoji', icon: '🗿', isManual: true, requirements: [] }, { id: 'trophy-37', name: 'The Artist', description: 'For creating a masterpiece of art.', iconType: 'emoji', icon: '🎨', isManual: true, requirements: [] }, { id: 'trophy-38', name: 'The Bard', description: 'For a wonderful musical performance.', iconType: 'emoji', icon: '🎵', isManual: true, requirements: [] }, { id: 'trophy-39', name: 'The Architect', description: 'For building an impressive creation (LEGOs, Minecraft, etc).', iconType: 'emoji', icon: '🏰', isManual: true, requirements: [] }, { id: 'trophy-40', name: 'The Director', description: 'For creating and editing a video.', iconType: 'emoji', icon: '🎬', isManual: true, requirements: [] }, { id: 'trophy-41', name: 'The Photographer', description: 'For taking a beautiful photograph.', iconType: 'emoji', icon: '📷', isManual: true, requirements: [] }, { id: 'trophy-42', name: 'Team Player', description: 'For excellent teamwork in a game.', iconType: 'emoji', icon: '🏅', isManual: true, requirements: [] }, { id: 'trophy-43', name: 'Personal Best', description: 'For beating your own record.', iconType: 'emoji', icon: '📈', isManual: true, requirements: [] }, { id: 'trophy-44', name: 'Tournament Victor', description: 'For winning a tournament.', iconType: 'emoji', icon: '🥇', isManual: true, requirements: [] }, { id: 'trophy-45', name: 'Good Sport', description: 'For showing great sportsmanship, win or lose.', iconType: 'emoji', icon: '🤝', isManual: true, requirements: [] }, { id: 'trophy-46', name: 'Practice Pays Off', description: 'For mastering a new skill through practice.', iconType: 'emoji', icon: '🎯', isManual: true, requirements: [] }, { id: 'trophy-47', name: 'Master of the Mop', description: 'For mopping the floors to a sparkling shine.', iconType: 'emoji', icon: '✨', isManual: true, requirements: [] }, { id: 'trophy-48', name: 'Laundry Lord', description: 'For washing, drying, and folding 5 loads of laundry.', iconType: 'emoji', icon: '🧺', isManual: true, requirements: [] }, { id: 'trophy-49', name: 'The Green Thumb', description: 'For keeping a plant alive for a month.', iconType: 'emoji', icon: '🪴', isManual: true, requirements: [] }, { id: 'trophy-50', name: 'The Organizer', description: 'For decluttering a messy drawer or closet.', iconType: 'emoji', icon: '🗂️', isManual: true, requirements: [] }, { id: 'trophy-51', name: 'The Recycler', description: 'For consistently sorting the recycling correctly.', iconType: 'emoji', icon: '♻️', isManual: true, requirements: [] }, { id: 'trophy-52', name: 'The Repairman', description: 'For fixing something that was broken.', iconType: 'emoji', icon: '🛠️', isManual: true, requirements: [] }, { id: 'trophy-53', name: 'The Pet Pal', description: 'For taking excellent care of a pet.', iconType: 'emoji', icon: '🐾', isManual: true, requirements: [] }, { id: 'trophy-54', name: 'The Dust Slayer', description: 'For dusting the entire house.', iconType: 'emoji', icon: '🌬️', isManual: true, requirements: [] }, { id: 'trophy-55', name: 'Honor Roll', description: 'For getting straight A\'s on a report card.', iconType: 'emoji', icon: '🅰️', isManual: true, requirements: [] }, { id: 'trophy-56', name: 'Perfect Attendance', description: 'For not missing a single day of school.', iconType: 'emoji', icon: '🗓️', isManual: true, requirements: [] }, { id: 'trophy-57', name: 'Science Fair Winner', description: 'For winning a prize at the science fair.', iconType: 'emoji', icon: '🥇', isManual: true, requirements: [] }, { id: 'trophy-58', name: 'Spelling Bee Champ', description: 'For winning the spelling bee.', iconType: 'emoji', icon: '🐝', isManual: true, requirements: [] }, { id: 'trophy-59', name: 'Book Worm', description: 'For reading 25 books in a school year.', iconType: 'emoji', icon: '🐛', isManual: true, requirements: [] }, { id: 'trophy-60', name: 'The Punisher', description: 'For telling an exceptionally great (or terrible) pun.', iconType: 'emoji', icon: '😂', isManual: true, requirements: [] }, { id: 'trophy-61', name: 'Klutz of the Week', description: 'For a spectacular, harmless trip or fall.', iconType: 'emoji', icon: '🤕', isManual: true, requirements: [] }, { id: 'trophy-62', name: 'Bed Head', description: 'For having the most epic bed head one morning.', iconType: 'emoji', icon: '🛌', isManual: true, requirements: [] }, { id: 'trophy-63', name: 'The Snorter', description: 'For laughing so hard you snorted.', iconType: 'emoji', icon: '🐽', isManual: true, requirements: [] }, { id: 'trophy-64', name: 'Brain Fart', description: 'For a truly memorable moment of forgetfulness.', iconType: 'emoji', icon: '💨', isManual: true, requirements: [] }, { id: 'trophy-65', name: 'The Snackinator', description: 'For impressively finishing a bag of snacks.', iconType: 'emoji', icon: '🍿', isManual: true, requirements: [] }, { id: 'trophy-66', name: 'The Drama Llama', description: 'For an award-worthy dramatic performance over something small.', iconType: 'emoji', icon: '🎭', isManual: true, requirements: [] }, { id: 'trophy-67', name: 'Early Bird', description: 'For waking up on time without being told for a whole week.', iconType: 'emoji', icon: '🌅', isManual: true, requirements: [] }, { id: 'trophy-68', name: 'Night Owl', description: 'For staying up late to finish a project.', iconType: 'emoji', icon: '🦉', isManual: true, requirements: [] }, { id: 'trophy-69', name: 'Hydration Hero', description: 'For drinking 8 glasses of water in a day.', iconType: 'emoji', icon: '💧', isManual: true, requirements: [] }, { id: 'trophy-70', name: 'The Diplomat', description: 'For resolving an argument peacefully.', iconType: 'emoji', icon: '🕊️', isManual: true, requirements: [] }, { id: 'trophy-71', name: 'The Comedian', description: 'For making the entire family laugh out loud.', iconType: 'emoji', icon: '🤣', isManual: true, requirements: [] }, { id: 'trophy-72', name: 'The Encourager', description: 'For cheering up a family member who was feeling down.', iconType: 'emoji', icon: '🤗', isManual: true, requirements: [] }, { id: 'trophy-73', name: 'The Listener', description: 'For being a great listener when someone needed to talk.', iconType: 'emoji', icon: '👂', isManual: true, requirements: [] }, { id: 'trophy-74', name: 'The Giver', description: 'For giving a thoughtful, handmade gift.', iconType: 'emoji', icon: '🎁', isManual: true, requirements: [] }, { id: 'trophy-75', name: 'The Helper', description: 'For helping a sibling with their homework.', iconType: 'emoji', icon: '🧑‍🏫', isManual: true, requirements: [] }, { id: 'trophy-76', name: 'The Collaborator', description: 'For working well on a family project.', iconType: 'emoji', icon: '🧑‍🤝‍🧑', isManual: true, requirements: [] }, { id: 'trophy-77', name: 'The Welcomer', description: 'For making a guest feel welcome and included.', iconType: 'emoji', icon: '👋', isManual: true, requirements: [] }, { id: 'trophy-78', name: 'Speed Runner', description: 'For getting ready for school in record time.', iconType: 'emoji', icon: '⏱️', isManual: true, requirements: [] }, { id: 'trophy-79', name: 'Completionist', description: 'For finishing all your homework before dinner.', iconType: 'emoji', icon: '💯', isManual: true, requirements: [] }, { id: 'trophy-80', name: 'The Strategist', description: 'For winning a board game with a clever strategy.', iconType: 'emoji', icon: '♟️', isManual: true, requirements: [] }, { id: 'trophy-81', 'name': 'The Farmer', 'description': 'For helping with gardening or yard work.', iconType: 'emoji', 'icon': '🧑‍🌾', 'isManual': true, 'requirements': [] }, { id: 'trophy-82', name: 'The Co-op King', description: 'For successfully completing a two-person chore with a sibling.', iconType: 'emoji', icon: '🤝', isManual: true, requirements: [] }, { id: 'trophy-83', name: 'The Patient One', description: 'For waiting patiently without complaining.', iconType: 'emoji', icon: '⏳', isManual: true, requirements: [] }, { id: 'trophy-84', name: 'The Brave', description: 'For going to the doctor or dentist without any fuss.', iconType: 'emoji', icon: '씩', isManual: true, requirements: [] }, { id: 'trophy-85', name: 'The Problem Solver', description: 'For figuring out a tricky problem on your own.', iconType: 'emoji', icon: '💡', isManual: true, requirements: [] }, { id: 'trophy-86', name: 'The Tidy Titan', description: 'For keeping your room clean for a whole week.', iconType: 'emoji', icon: '✨', isManual: true, requirements: [] }, { id: 'trophy-87', name: 'The Gracious', description: 'For remembering to say "please" and "thank you" all day.', iconType: 'emoji', icon: '🙏', isManual: true, requirements: [] }, { id: 'trophy-88', name: 'The Independent', description: 'For completing your morning routine all by yourself.', iconType: 'emoji', icon: '🧍', isManual: true, requirements: [] }, { id: 'trophy-89', name: 'The Tech Support', description: 'For helping a family member with a tech problem.', iconType: 'emoji', icon: '💻', isManual: true, requirements: [] }, { id: 'trophy-90', name: 'The Foodie', description: 'For trying a new food without complaining.', iconType: 'emoji', icon: '😋', isManual: true, requirements: [] }, { id: 'trophy-91', name: 'The On-Time Arrival', description: 'For being ready to leave on time.', iconType: 'emoji', icon: '⏰', isManual: true, requirements: [] }, { id: 'trophy-92', name: 'The Car Cleaner', description: 'For helping to clean out the inside of the car.', iconType: 'emoji', icon: '🚗', isManual: true, requirements: [] }, { id: 'trophy-93', name: 'The Toy Tamer', description: 'For putting away all the toys after playing.', iconType: 'emoji', icon: '🧸', isManual: true, requirements: [] }, { id: 'trophy-94', name: 'The Leftover Legend', description: 'For eating leftovers without a fuss.', iconType: 'emoji', icon: '🍲', isManual: true, requirements: [] }, { id: 'trophy-95', name: 'The Chore Champion', description: 'For doing an extra chore without being asked.', iconType: 'emoji', icon: '🌟', isManual: true, requirements: [] }, { id: 'trophy-96', name: 'The Lost and Found', description: 'For finding something important that was lost.', iconType: 'emoji', icon: '🔍', isManual: true, requirements: [] }, { id: 'trophy-97', name: 'The Penny Pincher', description: 'For saving up your allowance for a goal.', iconType: 'emoji', icon: '🐷', isManual: true, requirements: [] },
+const INITIAL_TROPHIES = [ { id: 'trophy-1', name: 'First Quest', description: 'Complete your first quest.', iconType: 'emoji', icon: '🎉', isManual: false, requirements: [{type: TrophyRequirementType.CompleteQuestType, value: QuestType.Duty, count: 1}] }, { id: 'trophy-2', name: 'First Customization', description: 'Change your theme for the first time.', iconType: 'emoji', icon: '🎨', isManual: true, requirements: [] }, { id: 'trophy-3', name: 'The Adjudicator', description: 'Approve or reject a pending quest.', iconType: 'emoji', icon: '⚖️', isManual: true, requirements: [] }, { id: 'trophy-4', name: 'World Builder', description: 'Create a new quest.', iconType: 'emoji', icon: '🛠️', isManual: true, requirements: [] }, { id: 'trophy-5', name: 'The Name Changer', description: 'Rename a user in the Manage Users panel.', iconType: 'emoji', icon: '✍️', isManual: true, requirements: [] }, { id: 'trophy-6', name: 'Initiate Rank', description: 'Achieve the rank of Initiate', iconType: 'emoji', icon: '🌱', isManual: false, requirements: [{type: TrophyRequirementType.AchieveRank, value: 'rank-2', count: 1}]}, { id: 'trophy-7', name: 'The Philanthropist', description: 'Donate an item to a guildmate.', iconType: 'emoji', icon: '🎁', isManual: true, requirements: [] }, { id: 'trophy-8', name: 'Master of Coin', description: 'Amass 1,000 gold.', iconType: 'emoji', icon: '💰', isManual: true, requirements: [] }, { id: 'trophy-9', name: 'Dungeon Crawler', description: 'Complete 10 Ventures.', iconType: 'emoji', icon: '🗺️', isManual: true, requirements: [] }, { id: 'trophy-10', name: 'Daily Grind', description: 'Complete 25 Duties.', iconType: 'emoji', icon: '⚙️', isManual: true, requirements: [] }, { id: 'trophy-11', name: 'The Collector', description: 'Own 10 unique items.', iconType: 'emoji', icon: '📦', isManual: true, requirements: [] }, { id: 'trophy-12', name: 'Fashionista', description: 'Own 5 pieces of avatar equipment.', iconType: 'emoji', icon: '🧑‍🎤', isManual: true, requirements: [] }, { id: 'trophy-13', name: 'The Completionist', description: 'Complete all available quests for a day.', iconType: 'emoji', icon: '💯', isManual: true, requirements: [] }, { id: 'trophy-14', name: 'The Achiever', description: 'Earn 5 other trophies.', iconType: 'emoji', icon: '🏆', isManual: true, requirements: [] }, { id: 'trophy-15', name: 'The Socialite', description: 'Join a guild.', iconType: 'emoji', icon: '🤝', isManual: true, requirements: [] }, { id: 'trophy-16', name: 'The Founder', description: 'Create a guild.', iconType: 'emoji', icon: '🏰', isManual: true, requirements: [] }, { id: 'trophy-17', name: 'The Merchant', description: 'Sell an item in the marketplace.', iconType: 'emoji', icon: '📈', isManual: true, requirements: [] }, { id: 'trophy-18', name: 'The Artisan', description: 'Craft an item.', iconType: 'emoji', icon: '🔨', isManual: true, requirements: [] }, { id: 'trophy-19', name: 'The Explorer', description: 'Discover a hidden area or secret.', iconType: 'emoji', icon: '🧭', isManual: true, requirements: [] }, { id: 'trophy-20', name: 'The Loremaster', description: 'Read 10 in-game books or lore entries.', iconType: 'emoji', icon: '📚', isManual: true, requirements: [] }, { id: 'trophy-21', name: 'The Beastmaster', description: 'Tame a pet.', iconType: 'emoji', icon: '🐾', isManual: true, requirements: [] }, { id: 'trophy-22', name: 'The Angler', description: 'Catch 50 fish.', iconType: 'emoji', icon: '🎣', isManual: true, requirements: [] }, { id: 'trophy-23', name: 'The Gardener', description: 'Harvest 100 plants.', iconType: 'emoji', icon: '🌱', isManual: true, requirements: [] }, { id: 'trophy-24', name: 'The Chef', description: 'Cook 20 different recipes.', iconType: 'emoji', icon: '🍳', isManual: true, requirements: [] }, { id: 'trophy-25', name: 'The Alchemist', description: 'Brew 15 different potions.', iconType: 'emoji', icon: '⚗️', isManual: true, requirements: [] }, { id: 'trophy-26', name: 'The Enchanter', description: 'Enchant an item.', iconType: 'emoji', icon: '✨', isManual: true, requirements: [] }, { id: 'trophy-27', name: 'The Blacksmith', description: 'Forge an item.', iconType: 'emoji', icon: '🔥', isManual: true, requirements: [] }, { id: 'trophy-28', name: 'The Jeweler', description: 'Cut a gemstone.', iconType: 'emoji', icon: '💎', isManual: true, requirements: [] }, { id: 'trophy-29', name: 'The Scribe', description: 'Write a scroll.', iconType: 'emoji', icon: '📜', isManual: true, requirements: [] }, { id: 'trophy-30', name: 'The Cartographer', description: 'Map out a new zone.', iconType: 'emoji', icon: '🗺️', isManual: true, requirements: [] }, { id: 'trophy-31', name: 'The Archaeologist', description: 'Uncover a lost artifact.', iconType: 'emoji', icon: '🏺', isManual: true, requirements: [] }, { id: 'trophy-32', name: 'The Linguist', description: 'Learn a new language.', iconType: 'emoji', icon: '🗣️', isManual: true, requirements: [] }, { id: 'trophy-33', name: 'The Musician', description: 'Master a musical instrument.', iconType: 'emoji', icon: '🎶', isManual: true, requirements: [] }, { id: 'trophy-34', name: 'The Dancer', description: 'Learn a new dance.', iconType: 'emoji', icon: '💃', isManual: true, requirements: [] }, { id: 'trophy-35', name: 'The Painter', description: 'Paint a masterpiece.', iconType: 'emoji', icon: '🎨', isManual: true, requirements: [] }, { id: 'trophy-36', name: 'The Sculptor', description: 'Carve a statue.', iconType: 'emoji', icon: '🗿', isManual: true, requirements: [] }, { id: 'trophy-37', name: 'The Artist', description: 'For creating a masterpiece of art.', iconType: 'emoji', icon: '🎨', isManual: true, requirements: [] }, { id: 'trophy-38', name: 'The Bard', description: 'For a wonderful musical performance.', iconType: 'emoji', icon: '🎵', isManual: true, requirements: [] }, { id: 'trophy-39', name: 'The Architect', description: 'For building an impressive creation (LEGOs, Minecraft, etc).', iconType: 'emoji', icon: '🏰', isManual: true, requirements: [] }, { id: 'trophy-40', name: 'The Director', description: 'For creating and editing a video.', iconType: 'emoji', icon: '🎬', isManual: true, requirements: [] }, { id: 'trophy-41', name: 'The Photographer', description: 'For taking a beautiful photograph.', iconType: 'emoji', icon: '📷', isManual: true, requirements: [] }, { id: 'trophy-42', name: 'Team Player', description: 'For excellent teamwork in a game.', iconType: 'emoji', icon: '🏅', isManual: true, requirements: [] }, { id: 'trophy-43', name: 'Personal Best', description: 'For beating your own record.', iconType: 'emoji', icon: '📈', isManual: true, requirements: [] }, { id: 'trophy-44', name: 'Tournament Victor', description: 'For winning a tournament.', iconType: 'emoji', icon: '🥇', isManual: true, requirements: [] }, { id: 'trophy-45', name: 'Good Sport', description: 'For showing great sportsmanship, win or lose.', iconType: 'emoji', icon: '🤝', isManual: true, requirements: [] }, { id: 'trophy-46', name: 'Practice Pays Off', description: 'For mastering a new skill through practice.', iconType: 'emoji', icon: '🎯', isManual: true, requirements: [] }, { id: 'trophy-47', name: 'Master of the Mop', description: 'For mopping the floors to a sparkling shine.', iconType: 'emoji', icon: '✨', isManual: true, requirements: [] }, { id: 'trophy-48', name: 'Laundry Lord', description: 'For washing, drying, and folding 5 loads of laundry.', iconType: 'emoji', icon: '🧺', isManual: true, requirements: [] }, { id: 'trophy-49', name: 'The Green Thumb', description: 'For keeping a plant alive for a month.', iconType: 'emoji', icon: '🪴', isManual: true, requirements: [] }, { id: 'trophy-50', name: 'The Organizer', description: 'For decluttering a messy drawer or closet.', iconType: 'emoji', icon: '🗂️', isManual: true, requirements: [] }, { id: 'trophy-51', name: 'The Recycler', description: 'For consistently sorting the recycling correctly.', iconType: 'emoji', icon: '♻️', isManual: true, requirements: [] }, { id: 'trophy-52', name: 'The Repairman', description: 'For fixing something that was broken.', iconType: 'emoji', icon: '🛠️', isManual: true, requirements: [] }, { id: 'trophy-53', name: 'The Pet Pal', description: 'For taking excellent care of a pet.', iconType: 'emoji', icon: '🐾', isManual: true, requirements: [] }, { id: 'trophy-54', name: 'The Dust Slayer', description: 'For dusting the entire house.', iconType: 'emoji', icon: '🌬️', isManual: true, requirements: [] }, { id: 'trophy-55', name: 'Honor Roll', description: 'For getting straight A\'s on a report card.', iconType: 'emoji', icon: '🅰️', isManual: true, requirements: [] }, { id: 'trophy-56', name: 'Perfect Attendance', description: 'For not missing a single day of school.', iconType: 'emoji', icon: '🗓️', isManual: true, requirements: [] }, { id: 'trophy-57', name: 'Science Fair Winner', description: 'For winning a prize at the science fair.', iconType: 'emoji', icon: '🥇', isManual: true, requirements: [] }, { id: 'trophy-58', name: 'Spelling Bee Champ', description: 'For winning the spelling bee.', iconType: 'emoji', icon: '🐝', isManual: true, requirements: [] }, { id: 'trophy-59', name: 'Book Worm', description: 'For reading 25 books in a school year.', iconType: 'emoji', icon: '🐛', isManual: true, requirements: [] }, { id: 'trophy-60', name: 'The Punisher', description: 'For telling an exceptionally great (or terrible) pun.', iconType: 'emoji', icon: '😂', isManual: true, requirements: [] }, { id: 'trophy-61', name: 'Klutz of the Week', description: 'For a spectacular, harmless trip or fall.', iconType: 'emoji', icon: '🤕', isManual: true, requirements: [] }, { id: 'trophy-62', name: 'Bed Head', description: 'For having the most epic bed head one morning.', iconType: 'emoji', icon: '🛌', isManual: true, requirements: [] }, { id: 'trophy-63', name: 'The Snorter', description: 'For laughing so hard you snorted.', iconType: 'emoji', icon: '🐽', isManual: true, requirements: [] }, { id: 'trophy-64', name: 'Brain Fart', description: 'For a truly memorable moment of forgetfulness.', iconType: 'emoji', icon: '💨', isManual: true, requirements: [] }, { id: 'trophy-65', name: 'The Snackinator', description: 'For impressively finishing a bag of snacks.', iconType: 'emoji', icon: '🍿', isManual: true, requirements: [] }, { id: 'trophy-66', name: 'The Drama Llama', description: 'For an award-worthy dramatic performance over something small.', iconType: 'emoji', icon: '🎭', isManual: true, requirements: [] }, { id: 'trophy-67', name: 'Early Bird', description: 'For waking up on time without being told for a whole week.', iconType: 'emoji', icon: '🌅', isManual: true, requirements: [] }, { id: 'trophy-68', name: 'Night Owl', description: 'For staying up late to finish a project.', iconType: 'emoji', icon: '🦉', isManual: true, requirements: [] }, { id: 'trophy-69', name: 'Hydration Hero', description: 'For drinking 8 glasses of water in a day.', iconType: 'emoji', icon: '💧', isManual: true, requirements: [] }, { id: 'trophy-70', name: 'The Diplomat', description: 'For resolving an argument peacefully.', iconType: 'emoji', icon: '🕊️', isManual: true, requirements: [] }, { id: 'trophy-71', name: 'The Comedian', description: 'For making the entire family laugh out loud.', iconType: 'emoji', icon: '🤣', isManual: true, requirements: [] }, { id: 'trophy-72', name: 'The Encourager', description: 'For cheering up a family member who was feeling down.', iconType: 'emoji', icon: '🤗', isManual: true, requirements: [] }, { id: 'trophy-73', name: 'The Listener', description: 'For being a great listener when someone needed to talk.', iconType: 'emoji', icon: '👂', isManual: true, requirements: [] }, { id: 'trophy-74', name: 'The Giver', description: 'For giving a thoughtful, handmade gift.', iconType: 'emoji', icon: '🎁', isManual: true, requirements: [] }, { id: 'trophy-75', name: 'The Helper', description: 'For helping a sibling with their homework.', iconType: 'emoji', icon: '🧑‍🏫', isManual: true, requirements: [] }, { id: 'trophy-76', name: 'The Collaborator', description: 'For working well on a family project.', iconType: 'emoji', icon: '🧑‍🤝‍🧑', isManual: true, requirements: [] }, { id: 'trophy-77', name: 'The Welcomer', description: 'For making a guest feel welcome and included.', iconType: 'emoji', icon: '👋', isManual: true, requirements: [] }, { id: 'trophy-78', name: 'Speed Runner', description: 'For getting ready for school in record time.', iconType: 'emoji', icon: '⏱️', isManual: true, requirements: [] }, { id: 'trophy-79', name: 'Completionist', description: 'For finishing all your homework before dinner.', iconType: 'emoji', icon: '💯', isManual: true, requirements: [] }, { id: 'trophy-80', name: 'The Strategist', description: 'For winning a board game with a clever strategy.', iconType: 'emoji', icon: '♟️', isManual: true, requirements: [] }, { id: 'trophy-81', 'name': 'The Farmer', 'description': 'For helping with gardening or yard work.', iconType: 'emoji', 'icon': '🧑‍🌾', 'isManual': true, 'requirements': [] }, { id: 'trophy-82', name: 'The Co-op King', description: 'For successfully completing a two-person chore with a sibling.', iconType: 'emoji', icon: '🤝', isManual: true, requirements: [] }, { id: 'trophy-83', name: 'The Patient One', description: 'For waiting patiently without complaining.', iconType: 'emoji', icon: '⏳', isManual: true, requirements: [] }, { id: 'trophy-84', name: 'The Brave', description: 'For going to the doctor or dentist without any fuss.', iconType: 'emoji', icon: '씩', isManual: true, requirements: [] }, { id: 'trophy-85', name: 'The Problem Solver', description: 'For figuring out a tricky problem on your own.', iconType: 'emoji', icon: '💡', isManual: true, requirements: [] }, { id: 'trophy-86', name: 'The Tidy Titan', description: 'For keeping your room clean for a whole week.', iconType: 'emoji', icon: '✨', isManual: true, requirements: [] }, { id: 'trophy-87', name: 'The Gracious', description: 'For remembering to say "please" and "thank you" all day.', iconType: 'emoji', icon: '🙏', isManual: true, requirements: [] }, { id: 'trophy-88', name: 'The Independent', description: 'For completing your morning routine all by yourself.', iconType: 'emoji', icon: '🧍', isManual: true, requirements: [] }, { id: 'trophy-89', name: 'The Tech Support', description: 'For helping a family member with a tech problem.', iconType: 'emoji', icon: '💻', isManual: true, requirements: [] }, { id: 'trophy-90', name: 'The Foodie', description: 'For trying a new food without complaining.', iconType: 'emoji', icon: '😋', isManual: true, requirements: [] }, { id: 'trophy-91', name: 'The On-Time Arrival', description: 'For being ready to leave on time.', iconType: 'emoji', icon: '⏰', isManual: true, requirements: [] }, { id: 'trophy-92', name: 'The Car Cleaner', description: 'For helping to clean out the inside of the car.', iconType: 'emoji', icon: '🚗', isManual: true, requirements: [] }, { id: 'trophy-93', name: 'The Toy Tamer', description: 'For putting away all the toys after playing.', iconType: 'emoji', icon: '🧸', isManual: true, requirements: [] }, { id: 'trophy-94', name: 'The Leftover Legend', description: 'For eating leftovers without a fuss.', iconType: 'emoji', icon: '🍲', isManual: true, requirements: [] }, { id: 'trophy-95', name: 'The Chore Champion', description: 'For doing an extra chore without being asked.', iconType: 'emoji', icon: '🌟', isManual: true, requirements: [] }, { id: 'trophy-96', name: 'The Lost and Found', description: 'For finding something important that was lost.', iconType: 'emoji', icon: '🔍', isManual: true, requirements: [] },
+    { id: 'trophy-97', name: 'The Penny Pincher', description: 'For saving up your allowance for a goal.', iconType: 'emoji', icon: '🐷', isManual: true, requirements: [] },
 ];
-const createSampleMarkets = () => ([
+
+export const createSampleMarkets = (): Market[] => ([
   { id: 'market-tutorial', title: 'Tutorial Market', description: 'A place to complete your first quests.', iconType: 'emoji', icon: '🎓', status: { type: 'open' } },
   { id: 'market-themes', title: 'The Gilded Brush (Themes)', description: 'Purchase new visual themes to customize your entire application.', iconType: 'emoji', icon: '🎨', status: { type: 'open' } },
   { id: 'market-bank', title: 'The Exchange Post', description: 'Exchange your various currencies and experience points.', iconType: 'emoji', icon: '⚖️', status: { type: 'open' } },
   { id: 'market-experiences', title: 'The Guild of Adventurers', description: 'Spend your hard-earned gems on real-world experiences and privileges.', iconType: 'emoji', icon: '🎟️', status: { type: 'open' } },
   { id: 'market-candy', title: 'The Sugar Cube', description: 'A delightful shop for purchasing sweet treats with your crystals.', iconType: 'emoji', icon: '🍬', status: { type: 'open' } },
 ]);
-const createSampleGameAssets = () => {
-    const allAssets = [
-    { id: 'ga-theme-sapphire', name: 'Sapphire Theme Unlock', description: 'Unlocks the cool blue Sapphire theme for your account.', url: 'https://placehold.co/150/3b82f6/FFFFFF?text=Sapphire', icon: '🎨', category: 'Theme', avatarSlot: undefined, isForSale: true, costGroups: [[{rewardTypeId: 'core-gold', amount: 50}]], marketIds: ['market-tutorial'], creatorId: 'user-1', createdAt: new Date().toISOString(), purchaseLimit: 1, purchaseLimitType: 'PerUser', purchaseCount: 0, requiresApproval: false, linkedThemeId: 'sapphire', },
+
+export const createSampleGameAssets = (): GameAsset[] => {
+    const allAssets: GameAsset[] = [
+    { 
+        id: 'ga-theme-sapphire', 
+        name: 'Sapphire Theme Unlock', 
+        description: 'Unlocks the cool blue Sapphire theme for your account.', 
+        url: 'https://placehold.co/150/3b82f6/FFFFFF?text=Sapphire', 
+        icon: '🎨', 
+        category: 'Theme', 
+        avatarSlot: undefined, 
+        isForSale: true, 
+        costGroups: [[{rewardTypeId: 'core-gold', amount: 50}]], 
+        marketIds: ['market-tutorial'], 
+        creatorId: 'user-1', 
+        createdAt: new Date().toISOString(), 
+        purchaseLimit: 1,
+        purchaseLimitType: 'PerUser',
+        purchaseCount: 0,
+        requiresApproval: false,
+        linkedThemeId: 'sapphire',
+    },
     { id: 'ga-theme-arcane', name: 'Theme: Arcane', description: 'Unlocks a magical, purple-hued theme.', url: 'https://placehold.co/150/8b5cf6/FFFFFF?text=Arcane', icon: '🎨', category: 'Theme', isForSale: true, costGroups: [[{ rewardTypeId: 'core-gold', amount: 100 }]], marketIds: ['market-themes'], creatorId: 'system', createdAt: new Date().toISOString(), purchaseLimit: 1, purchaseLimitType: 'PerUser', purchaseCount: 0, requiresApproval: false, linkedThemeId: 'arcane' },
     { id: 'ga-theme-cartoon', name: 'Theme: Cartoon', description: 'A bright, fun, and cartoony theme.', url: 'https://placehold.co/150/3b82f6/FFFFFF?text=Cartoon', icon: '🎨', category: 'Theme', isForSale: true, costGroups: [[{ rewardTypeId: 'core-gold', amount: 100 }]], marketIds: ['market-themes'], creatorId: 'system', createdAt: new Date().toISOString(), purchaseLimit: 1, purchaseLimitType: 'PerUser', purchaseCount: 0, requiresApproval: false, linkedThemeId: 'cartoon' },
     { id: 'ga-theme-forest', name: 'Theme: Forest', description: 'A calming theme of greens and browns.', url: 'https://placehold.co/150/166534/FFFFFF?text=Forest', icon: '🎨', category: 'Theme', isForSale: true, costGroups: [[{ rewardTypeId: 'core-gold', amount: 100 }]], marketIds: ['market-themes'], creatorId: 'system', createdAt: new Date().toISOString(), purchaseLimit: 1, purchaseLimitType: 'PerUser', purchaseCount: 0, requiresApproval: false, linkedThemeId: 'forest' },
@@ -145,44 +168,128 @@ const createSampleGameAssets = () => {
     { id: 'ga-exp-game-hour', name: 'One Hour of Gaming', description: 'A voucher for one hour of video games.', url: 'https://placehold.co/150/3b82f6/FFFFFF?text=1+Hour', icon: '🎮', category: 'Real-World Reward', isForSale: true, costGroups: [[{rewardTypeId: 'core-gems', amount: 5}]], marketIds: ['market-experiences'], creatorId: 'system', createdAt: new Date().toISOString(), purchaseLimit: null, purchaseLimitType: 'Total', purchaseCount: 0, requiresApproval: false },
     { id: 'ga-candy-chocolate', name: 'Chocolate Bar', description: 'A delicious bar of chocolate.', url: 'https://placehold.co/150/78350f/FFFFFF?text=Chocolate', icon: '🍫', category: 'Treat', isForSale: true, costGroups: [[{rewardTypeId: 'core-crystal', amount: 20}]], marketIds: ['market-candy'], creatorId: 'system', createdAt: new Date().toISOString(), purchaseLimit: 10, purchaseLimitType: 'Total', purchaseCount: 0, requiresApproval: false },
     { id: 'ga-candy-lollipop', name: 'Lollipop', description: 'A sweet, colorful lollipop.', url: 'https://placehold.co/150/ec4899/FFFFFF?text=Lollipop', icon: '🍭', category: 'Treat', isForSale: true, costGroups: [[{rewardTypeId: 'core-crystal', amount: 10}]], marketIds: ['market-candy'], creatorId: 'system', createdAt: new Date().toISOString(), purchaseLimit: null, purchaseLimitType: 'Total', purchaseCount: 0, requiresApproval: false },
-    { id: 'ga-special-item', name: 'Mysterious Amulet', description: 'An amulet that can be bought with different resources.', url: 'https://placehold.co/150/8b5cf6/FFFFFF?text=Amulet', icon: '🧿', category: 'Trinket', isForSale: true, costGroups: [ [{rewardTypeId: 'core-wisdom', amount: 5}, {rewardTypeId: 'core-skill', amount: 3}], [{rewardTypeId: 'core-crystal', amount: 1}, {rewardTypeId: 'core-gold', amount: 1}] ], marketIds: ['market-experiences'], creatorId: 'system', createdAt: new Date().toISOString(), purchaseLimit: 1, purchaseLimitType: 'PerUser', purchaseCount: 0, requiresApproval: false, }
+    {
+        id: 'ga-special-item',
+        name: 'Mysterious Amulet',
+        description: 'An amulet that can be bought with different resources.',
+        url: 'https://placehold.co/150/8b5cf6/FFFFFF?text=Amulet',
+        icon: '🧿',
+        category: 'Trinket',
+        isForSale: true,
+        costGroups: [
+            [{rewardTypeId: 'core-wisdom', amount: 5}, {rewardTypeId: 'core-skill', amount: 3}],
+            [{rewardTypeId: 'core-crystal', amount: 1}, {rewardTypeId: 'core-gold', amount: 1}]
+        ],
+        marketIds: ['market-experiences'],
+        creatorId: 'system',
+        createdAt: new Date().toISOString(),
+        purchaseLimit: 1,
+        purchaseLimitType: 'PerUser',
+        purchaseCount: 0,
+        requiresApproval: false,
+    }
   ];
+  
   const exchangeAssetIds = new Set(['ga-bank-gold-to-gems', 'ga-bank-gems-to-gold', 'ga-bank-gold-to-strength', 'ga-bank-strength-to-gold', 'ga-bank-gems-to-wisdom', 'ga-bank-wisdom-to-gems']);
+
   return allAssets.filter(asset => !exchangeAssetIds.has(asset.id));
 };
-const createInitialGuilds = (users) => ([ { id: 'guild-1', name: 'The First Guild', purpose: 'The default guild for all new adventurers.', memberIds: users.map(u => u.id), isDefault: true } ]);
-const createSampleQuests = (users) => {
-  const explorer = users.find(u => u.role === Role.Explorer);
-  const gatekeeper = users.find(u => u.role === Role.Gatekeeper);
-  const donegeonMaster = users.find(u => u.role === Role.DonegeonMaster);
+
+export const createInitialGuilds = (users) => ([
+  { id: 'guild-1', name: 'The First Guild', purpose: 'The default guild for all new adventurers.', memberIds: users.map((u) => u.id), isDefault: true },
+]);
+
+export const createSampleQuests = (users) => {
+  const explorer = users.find((u) => u.role === Role.Explorer);
+  const gatekeeper = users.find((u) => u.role === Role.Gatekeeper);
+  const donegeonMaster = users.find((u) => u.role === Role.DonegeonMaster);
+
   const quests = [
-    { id: 'quest-explorer-1', title: 'Change Your Theme', description: "First, visit the Marketplace and buy the 'Sapphire Theme Unlock' from the Tutorial Market. Then, go to the 'Themes' page from the sidebar to activate it!", type: QuestType.Venture, iconType: 'emoji', icon: '🎨', tags: ['tutorial', 'tutorial-explorer'], rewards: [{ rewardTypeId: 'core-wisdom', amount: 50 }], lateSetbacks: [], incompleteSetbacks: [], isActive: true, isOptional: false, availabilityType: QuestAvailability.Unlimited, availabilityCount: 1, weeklyRecurrenceDays: [], monthlyRecurrenceDays: [], assignedUserIds: explorer ? [explorer.id] : [], requiresApproval: false, claimedByUserIds: [], dismissals: [], groupId: 'qg-personal' },
-    { id: 'quest-explorer-2', title: 'Consult the Sages', description: "Knowledge is power! Visit the 'Help Guide' from the sidebar to learn the secrets of the Donegeon, then complete this quest.", type: QuestType.Venture, iconType: 'emoji', icon: '📖', tags: ['tutorial', 'tutorial-explorer', 'learning'], rewards: [{ rewardTypeId: 'core-wisdom', amount: 20 }], lateSetbacks: [], incompleteSetbacks: [], isActive: true, isOptional: false, availabilityType: QuestAvailability.Unlimited, availabilityCount: 1, weeklyRecurrenceDays: [], monthlyRecurrenceDays: [], assignedUserIds: explorer ? [explorer.id] : [], requiresApproval: false, claimedByUserIds: [], dismissals: [], groupId: 'qg-school' },
-    { id: 'quest-gatekeeper-approval-setup', title: 'Submit A Note', description: "Complete this quest to test the approval system.", type: QuestType.Venture, iconType: 'emoji', icon: '📝', tags: ['tutorial', 'tutorial-explorer'], rewards: [{ rewardTypeId: 'core-wisdom', amount: 10 }], lateSetbacks: [], incompleteSetbacks: [], isActive: true, isOptional: false, availabilityType: QuestAvailability.Unlimited, availabilityCount: 1, weeklyRecurrenceDays: [], monthlyRecurrenceDays: [], assignedUserIds: explorer ? [explorer.id] : [], requiresApproval: true, claimedByUserIds: [], dismissals: [], groupId: 'qg-personal' },
-    { id: 'quest-explorer-3', title: 'Plan Your Week', description: "The wise adventurer is always prepared. Visit the 'Calendar' page from the sidebar to see your upcoming schedule.", type: QuestType.Venture, iconType: 'emoji', icon: '🗓️', tags: ['tutorial', 'tutorial-explorer'], rewards: [{ rewardTypeId: 'core-wisdom', amount: 15 }], lateSetbacks: [], incompleteSetbacks: [], isActive: true, isOptional: false, availabilityType: QuestAvailability.Unlimited, availabilityCount: 1, weeklyRecurrenceDays: [], monthlyRecurrenceDays: [], assignedUserIds: explorer ? [explorer.id] : [], requiresApproval: false, claimedByUserIds: [], dismissals: [], groupId: 'qg-personal' },
-    { id: 'quest-gatekeeper-1', title: 'The First Approval', description: "An Explorer has submitted a quest for approval. Go to the 'Approvals' page and either approve or reject it.", type: QuestType.Venture, iconType: 'emoji', icon: '✅', tags: ['tutorial', 'tutorial-gatekeeper'], rewards: [{ rewardTypeId: 'core-wisdom', amount: 25 }], lateSetbacks: [], incompleteSetbacks: [], isActive: true, isOptional: false, availabilityType: QuestAvailability.Unlimited, availabilityCount: 1, weeklyRecurrenceDays: [], monthlyRecurrenceDays: [], assignedUserIds: gatekeeper ? [gatekeeper.id] : [], requiresApproval: false, claimedByUserIds: [], dismissals: [], groupId: 'qg-personal' },
-    { id: 'quest-gatekeeper-2', title: 'Review the Troops', description: "Visit the 'Guild' page to review all members of your guild.", type: QuestType.Venture, iconType: 'emoji', icon: '🏰', tags: ['tutorial', 'tutorial-gatekeeper'], rewards: [{ rewardTypeId: 'core-wisdom', amount: 10 }], lateSetbacks: [], incompleteSetbacks: [], isActive: true, isOptional: false, availabilityType: QuestAvailability.Unlimited, availabilityCount: 1, weeklyRecurrenceDays: [], monthlyRecurrenceDays: [], assignedUserIds: gatekeeper ? [gatekeeper.id] : [], requiresApproval: false, claimedByUserIds: [], dismissals: [], groupId: 'qg-family' },
-    { id: 'quest-dm-1', title: 'Create a Quest', description: "Go to 'Manage Quests' and create a new quest of any type. Assign it to the Explorer.", type: QuestType.Venture, iconType: 'emoji', icon: '🛠️', tags: ['tutorial', 'tutorial-donegeon-master'], rewards: [{ rewardTypeId: 'core-wisdom', amount: 50 }], lateSetbacks: [], incompleteSetbacks: [], isActive: true, isOptional: false, availabilityType: QuestAvailability.Unlimited, availabilityCount: 1, weeklyRecurrenceDays: [], monthlyRecurrenceDays: [], assignedUserIds: donegeonMaster ? [donegeonMaster.id] : [], requiresApproval: false, claimedByUserIds: [], dismissals: [], groupId: 'qg-personal' },
-    { id: 'quest-dm-2', title: 'Customize the Donegeon', description: "Visit the 'Settings' page and change the app's name in the 'Terminology' section.", type: QuestType.Venture, iconType: 'emoji', icon: '⚙️', tags: ['tutorial', 'tutorial-donegeon-master'], rewards: [{ rewardTypeId: 'core-wisdom', amount: 25 }], lateSetbacks: [], incompleteSetbacks: [], isActive: true, isOptional: false, availabilityType: QuestAvailability.Unlimited, availabilityCount: 1, weeklyRecurrenceDays: [], monthlyRecurrenceDays: [], assignedUserIds: donegeonMaster ? [donegeonMaster.id] : [], requiresApproval: false, claimedByUserIds: [], dismissals: [], groupId: 'qg-personal' },
-    { id: 'quest-dm-3', title: 'Manual Adjustment', description: "An adventurer did something great outside the app! Go to 'Manage Users' and use the 'Adjust' button on the Explorer to grant them a bonus reward.", type: QuestType.Venture, iconType: 'emoji', icon: '✨', tags: ['tutorial', 'tutorial-donegeon-master'], rewards: [{ rewardTypeId: 'core-wisdom', amount: 25 }], lateSetbacks: [], incompleteSetbacks: [], isActive: true, isOptional: false, availabilityType: QuestAvailability.Unlimited, availabilityCount: 1, weeklyRecurrenceDays: [], monthlyRecurrenceDays: [], assignedUserIds: donegeonMaster ? [donegeonMaster.id] : [], requiresApproval: false, claimedByUserIds: [], dismissals: [], groupId: 'qg-personal' },
+    // For Explorer
+    {
+      id: 'quest-explorer-1', title: 'Change Your Theme', description: "First, visit the Marketplace and buy the 'Sapphire Theme Unlock' from the Tutorial Market. Then, go to the 'Themes' page from the sidebar to activate it!", type: QuestType.Venture, iconType: 'emoji', icon: '🎨', tags: ['tutorial', 'tutorial-explorer'],
+      rewards: [{ rewardTypeId: 'core-wisdom', amount: 50 }], lateSetbacks: [], incompleteSetbacks: [],
+      isActive: true, isOptional: false, availabilityType: QuestAvailability.Unlimited, availabilityCount: 1, weeklyRecurrenceDays: [], monthlyRecurrenceDays: [],
+      assignedUserIds: explorer ? [explorer.id] : [], requiresApproval: false, claimedByUserIds: [], dismissals: [], groupId: 'qg-personal'
+    },
+    {
+      id: 'quest-explorer-2', title: 'Consult the Sages', description: "Knowledge is power! Visit the 'Help Guide' from the sidebar to learn the secrets of the Donegeon, then complete this quest.", type: QuestType.Venture, iconType: 'emoji', icon: '📖', tags: ['tutorial', 'tutorial-explorer', 'learning'],
+      rewards: [{ rewardTypeId: 'core-wisdom', amount: 20 }], lateSetbacks: [], incompleteSetbacks: [],
+      isActive: true, isOptional: false, availabilityType: QuestAvailability.Unlimited, availabilityCount: 1, weeklyRecurrenceDays: [], monthlyRecurrenceDays: [],
+      assignedUserIds: explorer ? [explorer.id] : [], requiresApproval: false, claimedByUserIds: [], dismissals: [], groupId: 'qg-school'
+    },
+    {
+      id: 'quest-gatekeeper-approval-setup', title: 'Submit A Note', description: "Complete this quest to test the approval system.", type: QuestType.Venture, iconType: 'emoji', icon: '📝', tags: ['tutorial', 'tutorial-explorer'],
+      rewards: [{ rewardTypeId: 'core-wisdom', amount: 10 }], lateSetbacks: [], incompleteSetbacks: [],
+      isActive: true, isOptional: false, availabilityType: QuestAvailability.Unlimited, availabilityCount: 1, weeklyRecurrenceDays: [], monthlyRecurrenceDays: [],
+      assignedUserIds: explorer ? [explorer.id] : [], requiresApproval: true, claimedByUserIds: [], dismissals: [], groupId: 'qg-personal'
+    },
+    {
+      id: 'quest-explorer-3', title: 'Plan Your Week', description: "The wise adventurer is always prepared. Visit the 'Calendar' page from the sidebar to see your upcoming schedule.", type: QuestType.Venture, iconType: 'emoji', icon: '🗓️', tags: ['tutorial', 'tutorial-explorer'],
+      rewards: [{ rewardTypeId: 'core-wisdom', amount: 15 }], lateSetbacks: [], incompleteSetbacks: [],
+      isActive: true, isOptional: false, availabilityType: QuestAvailability.Unlimited, availabilityCount: 1, weeklyRecurrenceDays: [], monthlyRecurrenceDays: [],
+      assignedUserIds: explorer ? [explorer.id] : [], requiresApproval: false, claimedByUserIds: [], dismissals: [], groupId: 'qg-personal'
+    },
+    // For Gatekeeper
+    {
+      id: 'quest-gatekeeper-1', title: 'The First Approval', description: "An Explorer has submitted a quest for approval. Go to the 'Approvals' page and either approve or reject it.", type: QuestType.Venture, iconType: 'emoji', icon: '✅', tags: ['tutorial', 'tutorial-gatekeeper'],
+      rewards: [{ rewardTypeId: 'core-wisdom', amount: 25 }], lateSetbacks: [], incompleteSetbacks: [],
+      isActive: true, isOptional: false, availabilityType: QuestAvailability.Unlimited, availabilityCount: 1, weeklyRecurrenceDays: [], monthlyRecurrenceDays: [],
+      assignedUserIds: gatekeeper ? [gatekeeper.id] : [], requiresApproval: false, claimedByUserIds: [], dismissals: [], groupId: 'qg-personal'
+    },
+    {
+      id: 'quest-gatekeeper-2', title: 'Review the Troops', description: "Visit the 'Guild' page to review all members of your guild.", type: QuestType.Venture, iconType: 'emoji', icon: '🏰', tags: ['tutorial', 'tutorial-gatekeeper'],
+      rewards: [{ rewardTypeId: 'core-wisdom', amount: 10 }], lateSetbacks: [], incompleteSetbacks: [],
+      isActive: true, isOptional: false, availabilityType: QuestAvailability.Unlimited, availabilityCount: 1, weeklyRecurrenceDays: [], monthlyRecurrenceDays: [],
+      assignedUserIds: gatekeeper ? [gatekeeper.id] : [], requiresApproval: false, claimedByUserIds: [], dismissals: [], groupId: 'qg-family'
+    },
+    // For Donegeon Master
+    {
+      id: 'quest-dm-1', title: 'Create a Quest', description: "Go to 'Manage Quests' and create a new quest of any type. Assign it to the Explorer.", type: QuestType.Venture, iconType: 'emoji', icon: '🛠️', tags: ['tutorial', 'tutorial-donegeon-master'],
+      rewards: [{ rewardTypeId: 'core-wisdom', amount: 50 }], lateSetbacks: [], incompleteSetbacks: [],
+      isActive: true, isOptional: false, availabilityType: QuestAvailability.Unlimited, availabilityCount: 1, weeklyRecurrenceDays: [], monthlyRecurrenceDays: [],
+      assignedUserIds: donegeonMaster ? [donegeonMaster.id] : [], requiresApproval: false, claimedByUserIds: [], dismissals: [], groupId: 'qg-personal'
+    },
+    {
+      id: 'quest-dm-2', title: 'Customize the Donegeon', description: "Visit the 'Settings' page and change the app's name in the 'Terminology' section.", type: QuestType.Venture, iconType: 'emoji', icon: '⚙️', tags: ['tutorial', 'tutorial-donegeon-master'],
+      rewards: [{ rewardTypeId: 'core-wisdom', amount: 25 }], lateSetbacks: [], incompleteSetbacks: [],
+      isActive: true, isOptional: false, availabilityType: QuestAvailability.Unlimited, availabilityCount: 1, weeklyRecurrenceDays: [], monthlyRecurrenceDays: [],
+      assignedUserIds: donegeonMaster ? [donegeonMaster.id] : [], requiresApproval: false, claimedByUserIds: [], dismissals: [], groupId: 'qg-personal'
+    },
+    {
+      id: 'quest-dm-3', title: 'Manual Adjustment', description: "An adventurer did something great outside the app! Go to 'Manage Users' and use the 'Adjust' button on the Explorer to grant them a bonus reward.", type: QuestType.Venture, iconType: 'emoji', icon: '✨', tags: ['tutorial', 'tutorial-donegeon-master'],
+      rewards: [{ rewardTypeId: 'core-wisdom', amount: 25 }], lateSetbacks: [], incompleteSetbacks: [],
+      isActive: true, isOptional: false, availabilityType: QuestAvailability.Unlimited, availabilityCount: 1, weeklyRecurrenceDays: [], monthlyRecurrenceDays: [],
+      assignedUserIds: donegeonMaster ? [donegeonMaster.id] : [], requiresApproval: false, claimedByUserIds: [], dismissals: [], groupId: 'qg-personal'
+    },
   ];
   return quests;
 };
 
-function createInitialData(setupChoice = 'guided', adminUserData, blueprint) {
+export function createInitialData(setupChoice = 'guided', adminUserData, blueprint = null) {
     if (setupChoice === 'scratch') {
-        const users = [adminUserData];
+        const users = [{
+            ...adminUserData,
+            id: `user-${Date.now()}`,
+            avatar: {},
+            ownedAssetIds: [],
+            personalPurse: {},
+            personalExperience: {},
+            guildBalances: {},
+            ownedThemes: ['emerald', 'rose', 'sky'],
+            hasBeenOnboarded: false,
+        }];
         const guilds = createInitialGuilds(users);
         const bankMarket = createSampleMarkets().find(m => m.id === 'market-bank');
         return {
-            users: users,
+            users,
             quests: [],
             questGroups: [],
             markets: bankMarket ? [bankMarket] : [],
             rewardTypes: INITIAL_REWARD_TYPES,
             questCompletions: [],
             purchaseRequests: [],
-            guilds: guilds,
+            guilds,
             ranks: INITIAL_RANKS,
             trophies: [],
             userTrophies: [],
@@ -199,19 +306,29 @@ function createInitialData(setupChoice = 'guided', adminUserData, blueprint) {
     }
 
     if (setupChoice === 'import' && blueprint) {
-        const users = [adminUserData];
+         const users = [{
+            ...adminUserData,
+            id: `user-${Date.now()}`,
+            avatar: {},
+            ownedAssetIds: [],
+            personalPurse: {},
+            personalExperience: {},
+            guildBalances: {},
+            ownedThemes: ['emerald', 'rose', 'sky'],
+            hasBeenOnboarded: false,
+        }];
         const guilds = createInitialGuilds(users);
         const finalRewardTypes = [
             ...INITIAL_REWARD_TYPES,
-            ...(blueprint.assets.rewardTypes || []).filter(rt => !INITIAL_REWARD_TYPES.some(coreRt => coreRt.id === rt.id))
+            ...(blueprint.assets.rewardTypes || []).filter((rt) => !INITIAL_REWARD_TYPES.some(coreRt => coreRt.id === rt.id))
         ];
         let finalMarkets = blueprint.assets.markets || [];
-        if (!finalMarkets.some(m => m.id === 'market-bank')) {
-            const bankMarket = createSampleMarkets().find(m => m.id === 'market-bank');
+        if (!finalMarkets.some((m) => m.id === 'market-bank')) {
+            const bankMarket = createSampleMarkets().find((m) => m.id === 'market-bank');
             if (bankMarket) finalMarkets.push(bankMarket);
         }
         return {
-            users: users,
+            users,
             quests: blueprint.assets.quests || [],
             questGroups: blueprint.assets.questGroups || [],
             markets: finalMarkets,
@@ -236,13 +353,23 @@ function createInitialData(setupChoice = 'guided', adminUserData, blueprint) {
     
     // Default to 'guided' setup
     const users = createMockUsers();
-    if (adminUserData) {
-        users[0] = { ...users[0], ...adminUserData };
-    }
+    users[0] = {
+        ...users[0],
+        ...adminUserData,
+        id: `user-${Date.now()}`,
+        avatar: {},
+        ownedAssetIds: [],
+        personalPurse: {},
+        personalExperience: {},
+        guildBalances: {},
+        ownedThemes: ['emerald', 'rose', 'sky'],
+        hasBeenOnboarded: false,
+    };
     const quests = createSampleQuests(users);
     const guilds = createInitialGuilds(users);
     const markets = createSampleMarkets();
     const gameAssets = createSampleGameAssets();
+    const initialCompletions = createInitialQuestCompletions(quests, users);
 
     return {
         users: users,
@@ -250,7 +377,7 @@ function createInitialData(setupChoice = 'guided', adminUserData, blueprint) {
         questGroups: INITIAL_QUEST_GROUPS,
         markets: markets,
         rewardTypes: INITIAL_REWARD_TYPES,
-        questCompletions: [],
+        questCompletions: initialCompletions,
         purchaseRequests: [],
         guilds: guilds,
         ranks: INITIAL_RANKS,
@@ -267,769 +394,399 @@ function createInitialData(setupChoice = 'guided', adminUserData, blueprint) {
         scheduledEvents: [],
     };
 }
-// === END INLINED DATA ===
 
-// === DATABASE CLASS (SQLite) ===
-class SqliteDB {
-    constructor(dbPath) {
-        this.dbPath = dbPath;
-        this.db = null;
-    }
+export function createInitialQuestCompletions(quests, users) {
+  const explorer = users.find((u) => u.username === 'explorer');
+  const gatekeeper = users.find((u) => u.username === 'gatekeeper');
+  
+  if (!explorer || !gatekeeper) return [];
 
-    // Promisified helper for running SQL commands that don't return rows (CREATE, INSERT, UPDATE, DELETE)
-    run(sql, params = []) {
-        return new Promise((resolve, reject) => {
-            this.db.run(sql, params, function (err) {
-                if (err) {
-                    console.error('[DB] DB Run Error:', err.message);
-                    reject(err);
-                } else {
-                    resolve({ changes: this.changes });
-                }
-            });
-        });
-    }
+  const completion = {
+    id: `qc-initial-${Date.now()}`,
+    questId: 'quest-gatekeeper-approval-setup',
+    userId: explorer.id,
+    completedAt: new Date().toISOString(),
+    status: 'Pending',
+    note: 'This is my first note for approval!'
+  };
 
-    // Promisified helper for running a SELECT query that returns a single row
-    get(sql, params = []) {
-        return new Promise((resolve, reject) => {
-            this.db.get(sql, params, (err, row) => {
-                if (err) {
-                    console.error('[DB] DB Get Error:', err.message);
-                    reject(err);
-                } else {
-                    resolve(row);
-                }
-            });
-        });
-    }
-
-    // Initializes the database connection and schema
-    async init() {
-        console.log('[DB] --- Database Initialization Start ---');
-        console.log(`[DB] Full database file path configured: ${this.dbPath}`);
-        const dbDir = path.dirname(this.dbPath);
-        console.log(`[DB] Database directory path derived: ${dbDir}`);
-
-        // 1. Ensure directory exists
-        console.log(`[DB] STEP 1: Ensuring directory exists at ${dbDir}...`);
-        try {
-            await fs.mkdir(dbDir, { recursive: true });
-            console.log(`[DB] SUCCESS: Directory check/creation complete for ${dbDir}.`);
-        } catch (error) {
-            console.error(`[DB] CRITICAL: Failed to create database directory at ${dbDir}`, error);
-            throw new Error(`Failed to create database directory: ${error.message}`);
-        }
-
-        // 2. Open DB connection (promisified)
-        console.log(`[DB] STEP 2: Attempting to open/create SQLite database file at ${this.dbPath}...`);
-        await new Promise((resolve, reject) => {
-            this.db = new sqlite3.Database(this.dbPath, (err) => {
-                if (err) {
-                    console.error(`[DB] CRITICAL: Could not open or create database file. Path: ${this.dbPath}`, err);
-                    reject(err);
-                } else {
-                    console.log(`[DB] SUCCESS: Database file opened successfully. Path: ${this.dbPath}`);
-                    resolve();
-                }
-            });
-        });
-        
-        console.log('[DB] STEP 3: Ensuring "app_data" table exists...');
-        await this.run(`CREATE TABLE IF NOT EXISTS app_data (
-            key TEXT PRIMARY KEY,
-            value TEXT NOT NULL
-        )`);
-        console.log('[DB] SUCCESS: Table "app_data" is ready.');
-
-        // 4. Check for and seed data if necessary
-        console.log('[DB] STEP 4: Checking for existing data in "app_data" table...');
-        const row = await this.get("SELECT value FROM app_data WHERE key = ?", ['main']).catch(e => null);
-        if (!row) {
-            console.log('[DB] No data found. Seeding database with empty state for first run wizard...');
-            const emptyInitialState = {
-                users: [], quests: [], questGroups: [], markets: [], rewardTypes: [], questCompletions: [],
-                purchaseRequests: [], guilds: [], ranks: [], trophies: [], userTrophies: [],
-                adminAdjustments: [], gameAssets: [], systemLogs: [],
-                settings: INITIAL_SETTINGS, themes: INITIAL_THEMES,
-                loginHistory: [], chatMessages: [], systemNotifications: [], scheduledEvents: [],
-            };
-            await this.saveData(emptyInitialState);
-            console.log('[DB] SUCCESS: Database seeded successfully.');
-        } else {
-            console.log('[DB] Existing data found. Skipping database seed.');
-        }
-        console.log('[DB] --- Database Initialization Complete ---');
-    }
-
-    getData() {
-        return this.get("SELECT value FROM app_data WHERE key = ?", ['main'])
-            .then(row => row ? JSON.parse(row.value) : null);
-    }
-
-    async saveData(data) {
-        const jsonData = JSON.stringify(data);
-        const result = await this.run(`INSERT OR REPLACE INTO app_data (key, value) VALUES (?, ?)`, ['main', jsonData]);
-        console.log(`[DB] Data saved successfully. Rows changed: ${result.changes}`);
-        return result;
-    }
-
-    close() {
-        return new Promise((resolve, reject) => {
-            this.db.close(err => {
-                if (err) {
-                    console.error('[DB] Error closing the database connection.', err);
-                    reject(err);
-                } else {
-                    console.log('[DB] Database connection closed.');
-                    resolve();
-                }
-            });
-        });
-    }
+  return [completion];
 }
 
 
-const dbPath = path.join(__dirname, 'db', 'data.db');
-const db = new SqliteDB(dbPath);
+// === END INLINED DATA ===
 
-// === Express App Setup ===
 const app = express();
 const server = http.createServer(app);
-const PORT = process.env.PORT || 3001;
-const UPLOADS_DIR = path.join(__dirname, '../uploads');
-const BACKUPS_DIR = path.join(__dirname, '../backups');
+const wss = new WebSocket.Server({ server });
 
+const PORT = process.env.PORT || 3001;
+const DB_PATH = path.join(__dirname, 'db', 'data.db');
+const UPLOAD_PATH = path.join(__dirname, '..', 'uploads');
+
+fs.mkdir(path.dirname(DB_PATH), { recursive: true }).catch(console.error);
+fs.mkdir(UPLOAD_PATH, { recursive: true }).catch(console.error);
 
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
+app.use('/uploads', express.static(UPLOAD_PATH));
 
-// Enhanced Request Logger Middleware
-app.use((req, res, next) => {
-    const start = Date.now();
-    res.on('finish', () => {
-        const duration = Date.now() - start;
-        console.log(`[API] ${req.method} ${req.originalUrl} - ${res.statusCode} [${duration}ms]`);
+let db;
 
-        // Log request body on error or for mutations, avoiding huge payloads
-        if ((res.statusCode >= 400 || req.method === 'POST' || req.method === 'PUT') && req.body) {
-            try {
-                const bodyString = JSON.stringify(req.body);
-                if (bodyString.length > 2000) {
-                    console.log(`  [REQ_BODY] (Payload too large to log)`);
-                } else if (Object.keys(req.body).length > 0) {
-                    console.log(`  [REQ_BODY] ${bodyString}`);
-                }
-            } catch (e) {
-                // Ignore stringify errors on weird bodies
-            }
+// === Database Utilities ===
+const dbRun = (query, params = []) => new Promise((resolve, reject) => {
+    db.run(query, params, function(err) {
+        if (err) reject(err);
+        else resolve(this);
+    });
+});
+
+const dbGet = (query, params = []) => new Promise((resolve, reject) => {
+    db.get(query, params, (err, row) => {
+        if (err) reject(err);
+        else resolve(row);
+    });
+});
+
+const closeDb = () => new Promise((resolve, reject) => {
+    db.close(err => {
+        if (err) reject(err);
+        else {
+            console.log('Database connection closed.');
+            resolve();
         }
     });
-    next();
 });
 
-console.log(`[FS] Serving static files from: ${path.join(__dirname, '../dist')}`);
-app.use(express.static(path.join(__dirname, '../dist')));
-console.log(`[FS] Serving uploads from: ${UPLOADS_DIR}`);
-app.use('/uploads', express.static(UPLOADS_DIR));
-console.log(`[FS] Serving backups from: ${BACKUPS_DIR}`);
-app.use('/api/backups', express.static(BACKUPS_DIR));
+const readData = async () => {
+    const row = await dbGet('SELECT value FROM data WHERE key = ?', ['appData']);
+    return row ? JSON.parse(row.value) : null;
+};
 
+const writeData = async (data) => {
+    await dbRun('REPLACE INTO data (key, value) VALUES (?, ?)', ['appData', JSON.stringify(data)]);
+};
 
-// Enhanced WebSocket Setup
-const wss = new WebSocket.Server({ server });
-let clients = new Set();
-wss.on('connection', (ws, req) => {
-    const ip = req.socket.remoteAddress;
-    console.log(`[WS] Client connected from ${ip}. Total clients: ${clients.size + 1}`);
-    clients.add(ws);
-
-    ws.on('message', (message) => {
-        console.log(`[WS] Received message from ${ip}: ${message.toString().substring(0, 200)}...`);
-    });
-
-    ws.on('close', () => {
-        console.log(`[WS] Client disconnected from ${ip}. Total clients: ${clients.size - 1}`);
-        clients.delete(ws);
-    });
-
-    ws.on('error', (error) => {
-        console.error(`[WS] WebSocket error from client ${ip}:`, error);
-    });
-});
-
-const broadcast = (message) => {
-    if (!message || !message.type) {
-        console.warn('[WS] Broadcast called with invalid message format.');
-        return;
-    }
-    console.log(`[WS] Broadcasting message of type: ${message.type}`);
-    const data = JSON.stringify(message);
-    clients.forEach(client => {
+const broadcastState = async () => {
+    const data = await readData();
+    if (!data) return;
+    const message = JSON.stringify({ type: 'FULL_STATE_UPDATE', payload: data });
+    wss.clients.forEach(client => {
         if (client.readyState === WebSocket.OPEN) {
-            client.send(data, (err) => {
-                if (err) {
-                    console.error('[WS] Error sending message to a client:', err);
-                }
-            });
+            client.send(message);
         }
     });
 };
 
-// === Multer Setup for Local File Storage ===
+// This function is called on server startup if the database is empty.
+// It creates a minimal, user-less state to force the first-run wizard.
+const seedDatabase = async () => {
+    console.log("Creating empty database structure for first run...");
+    const initialData = {
+        users: [],
+        quests: [],
+        questGroups: [],
+        markets: [],
+        rewardTypes: INITIAL_REWARD_TYPES,
+        questCompletions: [],
+        purchaseRequests: [],
+        guilds: [],
+        ranks: INITIAL_RANKS,
+        trophies: [],
+        userTrophies: [],
+        adminAdjustments: [],
+        gameAssets: [],
+        systemLogs: [],
+        settings: INITIAL_SETTINGS, // Contains isFirstRunComplete: false
+        themes: INITIAL_THEMES,
+        loginHistory: [],
+        chatMessages: [],
+        systemNotifications: [],
+        scheduledEvents: [],
+    };
+    await writeData(initialData);
+    console.log("Empty database seeded.");
+};
+
+
+const connectToDb = () => {
+    db = new sqlite3.Database(DB_PATH, async (err) => {
+        if (err) {
+            console.error(err.message);
+            return;
+        }
+        console.log('Connected to the SQLite database.');
+        try {
+            await dbRun('CREATE TABLE IF NOT EXISTS data (key TEXT PRIMARY KEY, value TEXT)');
+            const row = await dbGet('SELECT value FROM data WHERE key = ?', ['appData']);
+            if (!row) {
+                console.log("No data found, seeding database...");
+                await seedDatabase();
+            }
+        } catch (e) {
+            console.error("Error initializing database", e);
+        }
+    });
+}
+
+connectToDb();
+
+
+// === WebSocket Handling ===
+wss.on('connection', ws => {
+    console.log('Client connected');
+    ws.on('close', () => console.log('Client disconnected'));
+});
+
+// === File Uploads ===
 const storage = multer.diskStorage({
     destination: async (req, file, cb) => {
         const category = req.body.category || 'Miscellaneous';
-        const dir = path.join(UPLOADS_DIR, category);
-        console.log(`[FS] Attempting to save upload to: ${dir}`);
-        try {
-            await fs.mkdir(dir, { recursive: true });
-            console.log(`[FS] Ensured directory exists: ${dir}`);
-            cb(null, dir);
-        } catch (error) {
-            console.error(`[FS] Error creating upload directory: ${dir}`, error);
-            cb(error);
-        }
+        const dir = path.join(UPLOAD_PATH, category);
+        await fs.mkdir(dir, { recursive: true });
+        cb(null, dir);
     },
     filename: (req, file, cb) => {
-        const filename = `${Date.now()}-${file.originalname}`;
-        console.log(`[FS] Generating filename: ${filename}`);
-        cb(null, filename);
-    }
+        cb(null, `${Date.now()}-${file.originalname}`);
+    },
 });
-const upload = multer({ storage: storage });
+const upload = multer({ storage });
 
-// === App State Management ===
-const saveData = async (newData) => {
-    console.log('[DB] Saving updated data to database and broadcasting to clients...');
-    await db.saveData(newData);
-    broadcast({ type: 'FULL_STATE_UPDATE', payload: newData });
-    console.log('[WS] Broadcast complete.');
-    return newData;
-};
 
-// === API Routes ===
+// === API Endpoints ===
+
+// Serve Frontend
+const clientBuildPath = path.join(__dirname, '..');
+app.use(express.static(clientBuildPath));
+
+// Data API
 app.get('/api/data', async (req, res) => {
     try {
-        const data = await db.getData();
+        const data = await readData();
         res.json(data);
-    } catch (error) {
-        console.error('[API] Error in GET /api/data:', error);
-        res.status(500).json({ error: 'Failed to retrieve data.' });
+    } catch (e) {
+        res.status(500).json({ error: 'Failed to read data.' });
     }
 });
 
 app.post('/api/data', async (req, res) => {
     try {
-        await saveData(req.body);
-        res.status(204).send();
-    } catch (error) {
-        console.error('[API] Error in POST /api/data:', error);
-        res.status(500).json({ error: 'Failed to save data.' });
+        await writeData(req.body);
+        await broadcastState();
+        res.status(200).json({ message: 'Data saved.' });
+    } catch (e) {
+        res.status(500).json({ error: 'Failed to write data.' });
+    }
+});
+
+app.post('/api/first-run', async (req, res) => {
+    try {
+        const { adminUserData, setupChoice, blueprint } = req.body;
+        
+        // This is now the ONLY place that populates the database with content.
+        const initialData = createInitialData(setupChoice, adminUserData, blueprint);
+        
+        // Mark the first run as complete IN THE NEW DATA OBJECT before writing
+        initialData.settings.isFirstRunComplete = true;
+
+        await writeData(initialData);
+        
+        const adminUser = initialData.users.find(u => u.role === Role.DonegeonMaster);
+        
+        await broadcastState();
+        res.status(201).json({ message: "Setup complete!", adminUser });
+    } catch (e) {
+        console.error("First run setup failed:", e);
+        res.status(500).json({ error: 'Failed to initialize application.' });
     }
 });
 
 // Generic CRUD handlers
-const createCrudHandlers = (router, dataType, idPrefix) => {
-    // POST (Create)
-    router.post('/', async (req, res) => {
-        const appData = await db.getData();
-        const newItemPayload = req.body;
-        const newItem = { ...newItemPayload, id: `${idPrefix}-${Date.now()}` };
-        
-        if (dataType === 'gameAssets') {
-            newItem.creatorId = 'admin';
+const createCrudHandlers = (entityName, pluralEntityName) => {
+    // GET all
+    app.get(`/api/${pluralEntityName}`, async (req, res) => {
+        const data = await readData();
+        res.json(data[pluralEntityName]);
+    });
+
+    // POST new
+    app.post(`/api/${pluralEntityName}`, async (req, res) => {
+        const data = await readData();
+        const newItem = { ...req.body, id: `${entityName}-${Date.now()}` };
+        // Add specific defaults for certain types
+        if (entityName === 'gameAsset') {
             newItem.createdAt = new Date().toISOString();
             newItem.purchaseCount = 0;
-        } else if (dataType === 'users') {
-            newItem.avatar = {}; newItem.ownedAssetIds = []; newItem.personalPurse = {}; newItem.personalExperience = {}; newItem.guildBalances = {}; newItem.ownedThemes = ['emerald', 'rose', 'sky']; newItem.hasBeenOnboarded = false;
+            // Assuming creatorId is passed in body or handled differently
         }
-        
-        const newData = { ...appData, [dataType]: [...appData[dataType], newItem] };
-        await saveData(newData);
+        data[pluralEntityName].push(newItem);
+        await writeData(data);
+        await broadcastState();
         res.status(201).json(newItem);
     });
 
-    // PUT (Update)
-    router.put('/:id', async (req, res) => {
-        const appData = await db.getData();
+    // PUT update
+    app.put(`/api/${pluralEntityName}/:id`, async (req, res) => {
         const { id } = req.params;
-        const updatedFields = req.body;
-
-        let itemFound = false;
-        const newItems = appData[dataType].map(item => {
-            if (item.id === id) {
-                itemFound = true;
-                return { ...item, ...updatedFields };
-            }
-            return item;
-        });
-
-        if (!itemFound) {
-            return res.status(404).json({ error: `${dataType} item with id ${id} not found.` });
+        const data = await readData();
+        const index = data[pluralEntityName].findIndex(item => item.id === id);
+        if (index === -1) {
+            return res.status(404).json({ error: `${entityName} not found` });
         }
-
-        const newData = { ...appData, [dataType]: newItems };
-        await saveData(newData);
-        const updatedItem = newItems.find(item => item.id === id);
-        res.json(updatedItem);
+        // Merge existing data with new data to prevent accidental deletion of fields
+        data[pluralEntityName][index] = { ...data[pluralEntityName][index], ...req.body };
+        await writeData(data);
+        await broadcastState();
+        res.json(data[pluralEntityName][index]);
     });
 
-    // DELETE (Single)
-    router.delete('/:id', async (req, res) => {
-        const appData = await db.getData();
+    // DELETE
+    app.delete(`/api/${pluralEntityName}/:id`, async (req, res) => {
         const { id } = req.params;
-        const newData = { ...appData, [dataType]: appData[dataType].filter(item => item.id !== id) };
-        await saveData(newData);
+        const data = await readData();
+        data[pluralEntityName] = data[pluralEntityName].filter(item => item.id !== id);
+        await writeData(data);
+        await broadcastState();
         res.status(204).send();
     });
 };
 
-// Apply CRUD handlers
-['quests', 'markets', 'guilds', 'trophies', 'gameAssets', 'themes', 'rewardTypes', 'questGroups', 'scheduledEvents'].forEach(type => {
-    const router = express.Router();
-    const prefix = type.slice(0, -1);
-    createCrudHandlers(router, type, prefix);
-    app.use(`/api/${type}`, router);
+['user', 'quest', 'questGroup', 'market', 'rewardType', 'guild', 'trophy', 'gameAsset', 'theme', 'systemNotification', 'scheduledEvent'].forEach(entity => {
+    const plural = entity.endsWith('y') ? entity.slice(0, -1) + 'ies' : entity + 's';
+    createCrudHandlers(entity, plural === 'rewardTypes' ? 'rewardTypes' : plural);
 });
 
-// Custom User routes due to complexity
-const userRouter = express.Router();
-createCrudHandlers(userRouter, 'users', 'user'); 
-
-userRouter.delete('/:id', async (req, res) => {
-    const { id: userIdToDelete } = req.params;
-    let data = await db.getData();
-
-    data.users = data.users.filter(u => u.id !== userIdToDelete);
-    data.guilds = data.guilds.map(g => ({ ...g, memberIds: g.memberIds.filter(id => id !== userIdToDelete) }));
-    data.quests = data.quests.map(q => ({
-        ...q,
-        assignedUserIds: q.assignedUserIds.filter(id => id !== userIdToDelete),
-        claimedByUserIds: q.claimedByUserIds.filter(id => id !== userIdToDelete),
-        dismissals: q.dismissals.filter(d => d.userId !== userIdToDelete),
-        todoUserIds: (q.todoUserIds || []).filter(id => id !== userIdToDelete)
-    }));
-    data.questCompletions = data.questCompletions.filter(c => c.userId !== userIdToDelete);
-    data.purchaseRequests = data.purchaseRequests.filter(p => p.userId !== userIdToDelete);
-    data.userTrophies = data.userTrophies.filter(ut => ut.userId !== userIdToDelete);
-    data.adminAdjustments = data.adminAdjustments.filter(a => a.userId !== userIdToDelete);
-    data.chatMessages = data.chatMessages.map(msg => ({ ...msg, readBy: msg.readBy.filter(id => id !== userIdToDelete) }));
-
-    await saveData(data);
-    res.status(204).send();
-});
-app.use('/api/users', userRouter);
-
-// CHAT API Endpoints
-app.post('/api/chat/messages', async (req, res) => {
+// Specific Action Endpoints
+app.post('/api/quests/:id/complete', async (req, res) => {
     try {
-        const appData = await db.getData();
-        const { senderId, recipientId, guildId, message, isAnnouncement } = req.body;
+        const { id } = req.params;
+        const { userId, note, completionDate } = req.body;
+        const appData = await readData();
+        const quest = appData.quests.find(q => q.id === id);
+        if (!quest) return res.status(404).json({ error: 'Quest not found.' });
 
-        if (!senderId || !message || (!recipientId && !guildId)) {
-            return res.status(400).json({ error: 'Missing required chat message fields.' });
-        }
-
-        const newChatMessage = {
-            id: `chat-${Date.now()}`,
-            senderId,
-            recipientId,
-            guildId,
-            message,
-            isAnnouncement: !!isAnnouncement,
-            timestamp: new Date().toISOString(),
-            readBy: [senderId],
+        const newCompletion = {
+            id: `qc-${Date.now()}`,
+            questId: id,
+            userId,
+            completedAt: completionDate ? new Date(completionDate).toISOString() : new Date().toISOString(),
+            status: quest.requiresApproval ? 'Pending' : 'Approved',
+            note: note || '',
+            guildId: quest.guildId,
         };
 
-        appData.chatMessages.push(newChatMessage);
-        await saveData(appData);
+        appData.questCompletions.push(newCompletion);
 
-        res.status(201).json(newChatMessage);
+        // If not pending, apply rewards immediately
+        if (newCompletion.status === 'Approved') {
+            const user = appData.users.find(u => u.id === userId);
+            if(user) {
+                const targetBalances = quest.guildId
+                    ? (user.guildBalances[quest.guildId] = user.guildBalances[quest.guildId] || { purse: {}, experience: {} })
+                    : { purse: user.personalPurse, experience: user.personalExperience };
+
+                quest.rewards.forEach(reward => {
+                    const rewardDef = appData.rewardTypes.find(rt => rt.id === reward.rewardTypeId);
+                    if (rewardDef) {
+                        const balanceType = rewardDef.category === 'Currency' ? 'purse' : 'experience';
+                        targetBalances[balanceType][reward.rewardTypeId] = (targetBalances[balanceType][reward.rewardTypeId] || 0) + reward.amount;
+                    }
+                });
+            }
+        }
+
+        await writeData(appData);
+        await broadcastState();
+        res.status(201).json(newCompletion);
+    } catch (e) {
+        res.status(500).json({ error: 'Failed to complete quest.' });
+    }
+});
+
+// Add other specific endpoints here...
+app.post('/api/actions/reinitialize', async (req, res) => {
+    console.log("Received request to re-initialize application.");
+    try {
+        await closeDb();
+        await fs.unlink(DB_PATH);
+        console.log("Database file deleted.");
+        res.status(200).json({ message: "Application is re-initializing." });
+        process.exit(0);
     } catch (error) {
-        console.error('[API] Error in POST /api/chat/messages:', error);
+        console.error("Failed to re-initialize:", error);
+        if (error.code === 'ENOENT') { // File didn't exist, which is fine
+            res.status(200).json({ message: "Application is re-initializing (no DB file found)." });
+            process.exit(0);
+        } else {
+            res.status(500).json({ error: "Failed to delete database file." });
+        }
+    }
+});
+
+// Chat Endpoints
+app.post('/api/chat/messages', async (req, res) => {
+    try {
+        const appData = await readData();
+        const senderId = req.body.senderId;
+        if (!senderId) {
+            return res.status(400).json({ error: 'Sender ID is required.' });
+        }
+        const newMessage = { ...req.body, id: `msg-${Date.now()}`, timestamp: new Date().toISOString(), readBy: [senderId] };
+        appData.chatMessages.push(newMessage);
+        await writeData(appData);
+        
+        // Broadcast only the new message for efficiency
+        wss.clients.forEach(client => {
+            if (client.readyState === WebSocket.OPEN) {
+                client.send(JSON.stringify({ type: 'NEW_CHAT_MESSAGE', payload: newMessage }));
+            }
+        });
+        
+        res.status(201).json(newMessage);
+    } catch (e) {
+        console.error("Error sending message:", e);
         res.status(500).json({ error: 'Failed to send message.' });
     }
 });
 
 app.post('/api/chat/read', async (req, res) => {
     try {
-        const appData = await db.getData();
         const { userId, partnerId, guildId } = req.body;
-
-        if (!userId || (!partnerId && !guildId)) {
-            return res.status(400).json({ error: 'User and target (partner/guild) are required.' });
+        if (!userId) {
+             return res.status(400).json({ error: 'User ID is required.' });
         }
+        const appData = await readData();
+        
+        appData.chatMessages = appData.chatMessages.map(msg => {
+            const alreadyRead = msg.readBy.includes(userId);
+            if (alreadyRead) return msg;
 
-        let messagesUpdated = false;
-        appData.chatMessages.forEach(msg => {
-            const isRelevantDM = partnerId &&
-                ((msg.senderId === userId && msg.recipientId === partnerId) ||
-                 (msg.senderId === partnerId && msg.recipientId === userId));
-            const isRelevantGuildMsg = guildId && msg.guildId === guildId && msg.senderId !== userId;
+            // Mark DMs as read
+            const isDmToMe = msg.recipientId === userId && msg.senderId === partnerId;
+            // Mark Guild messages as read
+            const isMyGuild = msg.guildId === guildId && msg.senderId !== userId;
 
-            if ((isRelevantDM || isRelevantGuildMsg) && !msg.readBy.includes(userId)) {
-                msg.readBy.push(userId);
-                messagesUpdated = true;
+            if (isDmToMe || isMyGuild) {
+                return { ...msg, readBy: [...msg.readBy, userId] };
             }
+            return msg;
         });
 
-        if (messagesUpdated) {
-            await saveData(appData);
-        }
-
+        await writeData(appData);
+        await broadcastState();
         res.status(204).send();
-    } catch (error) {
-        console.error('[API] Error in POST /api/chat/read:', error);
+    } catch (e) {
+        console.error("Error marking messages as read:", e);
         res.status(500).json({ error: 'Failed to mark messages as read.' });
     }
 });
 
 
-// More complex endpoints
-app.post('/api/actions/factory-reset', async (req, res) => {
-    try {
-        let data = await db.getData();
-        data.quests = [];
-        data.gameAssets = [];
-        data.questGroups = [];
-        data.markets = data.markets.filter(m => m.id === 'market-bank');
-        const initialTrophyIds = new Set(INITIAL_TROPHIES.map(it => it.id));
-        data.trophies = data.trophies.filter(t => initialTrophyIds.has(t.id));
-        data.questCompletions = [];
-        data.purchaseRequests = [];
-        data.userTrophies = [];
-        data.adminAdjustments = [];
-        data.systemLogs = [];
-        data.chatMessages = [];
-        data.systemNotifications = [];
-        data.scheduledEvents = [];
-        data.users = data.users.map(user => ({ ...user, ownedAssetIds: [], avatar: {} }));
-        await saveData(data);
-        res.status(200).json({ message: 'Custom content and all related history has been reset.' });
-    } catch (error) {
-        console.error('[API] Error during factory reset:', error);
-        res.status(500).json({ error: 'Failed to reset custom content.' });
-    }
-});
-
-app.post('/api/actions/reinitialize', async (req, res) => {
-    console.log('[API] DANGER: Received request to re-initialize application data.');
-    res.status(200).json({ message: 'Application is re-initializing...' });
-    
-    setTimeout(async () => {
-        try {
-            console.log('[SERVER] Closing database connection...');
-            await db.close();
-            console.log('[SERVER] Database connection closed.');
-            console.log(`[SERVER] Deleting database file at ${dbPath}...`);
-            await fs.unlink(dbPath);
-            console.log('[SERVER] Database file deleted.');
-            console.log('[SERVER] Exiting process to trigger restart.');
-            process.exit(1);
-        } catch (error) {
-            console.error('[SERVER] CRITICAL: Failed during re-initialization process:', error);
-            process.exit(1);
-        }
-    }, 500);
-});
-
-
-app.post('/api/quests/:id/actions', async (req, res) => {
-    const { id: questId } = req.params;
-    const { action, userId } = req.body;
-    const appData = await db.getData();
-    
-    let quest = appData.quests.find(q => q.id === questId);
-    if (!quest) return res.status(404).json({ error: 'Quest not found' });
-
-    quest.todoUserIds = quest.todoUserIds || [];
-    const isTodo = quest.todoUserIds.includes(userId);
-
-    if (action === 'mark_todo' && !isTodo) {
-        quest.todoUserIds.push(userId);
-    } else if (action === 'unmark_todo' && isTodo) {
-        quest.todoUserIds = quest.todoUserIds.filter(id => id !== userId);
-    }
-
-    const newData = { ...appData, quests: appData.quests.map(q => q.id === questId ? quest : q) };
-    await saveData(newData);
-    res.status(200).json(quest);
-});
-
-const applyRewards = (user, quest, rewardTypes) => {
-    const updatedUser = JSON.parse(JSON.stringify(user));
-    quest.rewards.forEach(reward => {
-        const rewardType = rewardTypes.find(rt => rt.id === reward.rewardTypeId);
-        if (!rewardType) return;
-        
-        let balanceTarget;
-        if (quest.guildId) {
-            if (!updatedUser.guildBalances[quest.guildId]) {
-                updatedUser.guildBalances[quest.guildId] = { purse: {}, experience: {} };
-            }
-            balanceTarget = rewardType.category === RewardCategory.Currency ? updatedUser.guildBalances[quest.guildId].purse : updatedUser.guildBalances[quest.guildId].experience;
-        } else {
-            balanceTarget = rewardType.category === RewardCategory.Currency ? updatedUser.personalPurse : updatedUser.personalExperience;
-        }
-        
-        balanceTarget[reward.rewardTypeId] = (balanceTarget[reward.rewardTypeId] || 0) + reward.amount;
-    });
-    return updatedUser;
-};
-
-app.post('/api/quests/:id/complete', async (req, res) => {
-    const { id } = req.params;
-    const { userId, note, completionDate } = req.body;
-    let appData = await db.getData();
-    const quest = appData.quests.find(q => q.id === id);
-    if (!quest) return res.status(404).json({ error: 'Quest not found' });
-
-    const newCompletion = {
-        id: `qc-${Date.now()}`, questId: id, userId,
-        completedAt: completionDate || new Date().toISOString(),
-        status: quest.requiresApproval ? 'Pending' : 'Approved',
-        note, guildId: quest.guildId,
-    };
-
-    appData.questCompletions.push(newCompletion);
-
-    if (newCompletion.status === 'Approved') {
-        const user = appData.users.find(u => u.id === userId);
-        if (user) {
-            const updatedUser = applyRewards(user, quest, appData.rewardTypes);
-            appData.users = appData.users.map(u => u.id === userId ? updatedUser : u);
-        }
-    }
-    
-    await saveData(appData);
-    res.status(201).json(newCompletion);
-});
-
-app.post('/api/completions/:id/approve', async (req, res) => {
-    const { id } = req.params;
-    const { note } = req.body;
-    let appData = await db.getData();
-    
-    const completion = appData.questCompletions.find(c => c.id === id);
-    if (!completion || completion.status !== 'Pending') return res.status(404).json({ error: 'Pending completion not found.' });
-
-    const quest = appData.quests.find(q => q.id === completion.questId);
-    const user = appData.users.find(u => u.id === completion.userId);
-    if (!quest || !user) return res.status(404).json({ error: 'Associated quest or user not found.' });
-
-    const updatedUser = applyRewards(user, quest, appData.rewardTypes);
-    const updatedCompletion = { ...completion, status: 'Approved', note: note || completion.note };
-    
-    const newData = {
-        ...appData,
-        users: appData.users.map(u => u.id === user.id ? updatedUser : u),
-        questCompletions: appData.questCompletions.map(c => c.id === id ? updatedCompletion : c),
-    };
-    
-    await saveData(newData);
-    res.status(200).json(updatedCompletion);
-});
-
-app.post('/api/completions/:id/reject', async (req, res) => {
-    const { id } = req.params;
-    const { note } = req.body;
-    let appData = await db.getData();
-    
-    const completion = appData.questCompletions.find(c => c.id === id);
-    if (!completion || completion.status !== 'Pending') return res.status(404).json({ error: 'Pending completion not found.' });
-    
-    const updatedCompletion = { ...completion, status: 'Rejected', note: note || completion.note };
-
-    const newData = { ...appData, questCompletions: appData.questCompletions.map(c => c.id === id ? updatedCompletion : c) };
-
-    await saveData(newData);
-    res.status(200).json(updatedCompletion);
-});
-
-app.post('/api/economy/exchange', async (req, res) => {
-    try {
-        const { userId, payItem, receiveItem, guildId } = req.body;
-        const data = await db.getData();
-        const user = data.users.find(u => u.id === userId);
-        if (!user) return res.status(404).json({ error: 'User not found.' });
-        if (!data.settings.rewardValuation.enabled) return res.status(400).json({ error: 'Economy features are disabled.' });
-        
-        const payRewardType = data.rewardTypes.find(rt => rt.id === payItem.rewardTypeId);
-        const receiveRewardType = data.rewardTypes.find(rt => rt.id === receiveItem.rewardTypeId);
-        if (!payRewardType || !receiveRewardType) return res.status(400).json({ error: 'Invalid reward types provided.' });
-
-        const { anchorRewardId, exchangeRates, currencyExchangeFeePercent, xpExchangeFeePercent } = data.settings.rewardValuation;
-        const getRate = (id) => id === anchorRewardId ? 1 : (exchangeRates[id] || 0);
-        const receiveRate = getRate(receiveItem.rewardTypeId);
-        if (receiveRate === 0) return res.status(400).json({ error: `No exchange rate for ${receiveRewardType.name}.` });
-        
-        const receiveValueInAnchor = receiveItem.amount / receiveRate;
-        const payRate = getRate(payItem.rewardTypeId);
-        if (payRate === 0) return res.status(400).json({ error: `No exchange rate for ${payRewardType.name}.` });
-
-        const fromAmountBase = receiveValueInAnchor * payRate;
-        const feePercent = payRewardType.category === RewardCategory.Currency ? currencyExchangeFeePercent : xpExchangeFeePercent;
-        const fee = fromAmountBase * (feePercent / 100);
-        const totalCost = Math.ceil(fromAmountBase + fee);
-
-        let balanceSource = guildId ? (user.guildBalances[guildId]?.[payRewardType.category === 'Currency' ? 'purse' : 'experience']) : (payRewardType.category === 'Currency' ? user.personalPurse : user.personalExperience);
-        if (!balanceSource) balanceSource = {};
-        
-        const userBalance = balanceSource[payItem.rewardTypeId] || 0;
-        if (userBalance < totalCost) return res.status(400).json({ error: `Insufficient funds.` });
-        
-        balanceSource[payItem.rewardTypeId] -= totalCost;
-        
-        let balanceDestination = guildId ? (user.guildBalances[guildId]?.[receiveRewardType.category === 'Currency' ? 'purse' : 'experience']) : (receiveRewardType.category === 'Currency' ? user.personalPurse : user.personalExperience);
-        if (!balanceDestination) {
-            if (guildId) {
-                if (!user.guildBalances[guildId]) user.guildBalances[guildId] = { purse: {}, experience: {} };
-                balanceDestination = user.guildBalances[guildId][receiveRewardType.category === 'Currency' ? 'purse' : 'experience'];
-            } else {
-                balanceDestination = receiveRewardType.category === 'Currency' ? user.personalPurse : user.personalExperience;
-            }
-        }
-        
-        balanceDestination[receiveItem.rewardTypeId] = (balanceDestination[receiveItem.rewardTypeId] || 0) + receiveItem.amount;
-        
-        const updatedUsers = data.users.map(u => u.id === userId ? user : u);
-        await saveData({ ...data, users: updatedUsers });
-        
-        res.status(200).json({ success: true, user: user });
-    } catch (error) {
-        console.error('[API] Error during exchange:', error);
-        res.status(500).json({ error: 'An internal server error occurred.' });
-    }
-});
-
-
-app.post('/api/first-run', async (req, res) => {
-    try {
-        const { adminUserData, setupChoice, blueprint } = req.body;
-        console.log(`[API] Initiating first run with setup choice: ${setupChoice}`);
-        const adminWithDefaults = {
-            ...adminUserData, id: `user-${Date.now()}`, avatar: {}, ownedAssetIds: [], personalPurse: {}, personalExperience: {}, guildBalances: {}, ownedThemes: ['emerald', 'rose', 'sky'], hasBeenOnboarded: true,
-        };
-        const initialData = createInitialData(setupChoice, adminWithDefaults, blueprint);
-        await saveData(initialData);
-        const newAdmin = initialData.users.find(u => u.id === adminWithDefaults.id);
-        console.log('[API] First run completed successfully.');
-        res.status(201).json({ message: 'First run completed successfully.', adminUser: newAdmin });
-    } catch(error) {
-        console.error('[API] CRITICAL: First run setup failed!', error);
-        res.status(500).json({ error: 'An error occurred during the first run setup.' });
-    }
-});
-
-app.get('/api/pre-run-check', async (req, res) => {
-    const data = await db.getData();
-    if (data && data.users && data.users.length > 0) {
-        console.log('[API] Pre-run check: Existing data found.');
-        res.json({
-            dataExists: true,
-            version: data.settings?.contentVersion || 1,
-            appName: data.settings?.terminology?.appName || 'Task Donegeon'
-        });
-    } else {
-        console.log('[API] Pre-run check: No existing data found. Ready for first run.');
-        res.json({ dataExists: false });
-    }
-});
-
-// Media Routes
-app.post('/api/media/upload', upload.single('file'), (req, res) => {
-    if (!req.file) {
-        console.error('[API] Upload failed: No file provided.');
-        return res.status(400).send('No file uploaded.');
-    }
-    const relativePath = path.relative(path.join(__dirname, '..'), req.file.path);
-    const url = `/${relativePath.replace(/\\/g, '/')}`;
-    console.log(`[API] File uploaded successfully: ${url}`);
-    res.json({ url });
-});
-
-// Gemini AI Routes
-let geminiAI;
-if (process.env.API_KEY) {
-    console.log('[AI] Gemini API Key found. Initializing client...');
-    try {
-        geminiAI = new GoogleGenAI({ apiKey: process.env.API_KEY });
-        console.log('[AI] Gemini client initialized successfully.');
-    } catch (e) {
-        console.error("[AI] CRITICAL: Failed to initialize GoogleGenAI. AI features will be disabled.", e.message);
-    }
-} else {
-    console.log('[AI] Gemini API Key not found. AI features will be disabled.');
-}
-
-
-app.get('/api/ai/status', (req, res) => {
-    res.json({ isConfigured: !!geminiAI });
-});
-
-app.post('/api/ai/test', async (req, res) => {
-    if (!geminiAI) {
-        return res.status(400).json({ success: false, error: 'API_KEY is not configured on the server.' });
-    }
-    try {
-        await geminiAI.models.generateContent({ model: 'gemini-2.5-flash', contents: 'test' });
-        res.json({ success: true });
-    } catch (e) {
-        res.status(500).json({ success: false, error: 'API key is invalid or Gemini API is unreachable.' });
-    }
-});
-
-app.post('/api/ai/generate', async (req, res) => {
-    if (!geminiAI) {
-        return res.status(503).json({ error: 'AI features are not configured on the server.' });
-    }
-    try {
-        const { model, prompt, generationConfig } = req.body;
-        console.log(`[AI] Generating content with model: ${model}`);
-        const response = await geminiAI.models.generateContent({ model, contents: prompt, config: generationConfig });
-        res.json(response);
-    } catch (e) {
-        console.error("[AI] Generation Error:", e);
-        res.status(500).json({ error: e.message });
-    }
-});
-
-// Backup route
-app.post('/api/backups/create', async (req, res) => {
-    try {
-        await fs.mkdir(BACKUPS_DIR, { recursive: true });
-        const timestamp = new Date().toISOString().replace(/:/g, '-').slice(0, 19);
-        const filename = `manual_backup_${timestamp}.json`;
-        const filePath = path.join(BACKUPS_DIR, filename);
-        const dataToBackup = await db.getData();
-        await fs.writeFile(filePath, JSON.stringify(dataToBackup, null, 2));
-        res.status(201).json({ message: `Backup created: ${filename}` });
-    } catch (error) {
-        console.error('[API] Failed to create backup:', error);
-        res.status(500).json({ error: 'Failed to create backup.' });
-    }
-});
-
-
-// Catch-all to serve index.html
+// Serve index.html for all other routes to enable client-side routing
 app.get('*', (req, res) => {
-    res.sendFile(path.join(__dirname, '../dist/index.html'));
+    res.sendFile(path.join(clientBuildPath, 'index.html'));
 });
 
-// === Server Startup ===
-const startServer = async () => {
-    try {
-        await db.init();
-        await fs.mkdir(UPLOADS_DIR, { recursive: true });
-        await fs.mkdir(BACKUPS_DIR, { recursive: true });
-        server.listen(PORT, () => {
-            console.log(`[SERVER] Server listening on http://localhost:${PORT}`);
-        });
-    } catch (error) {
-        console.error('[SERVER] FAILED TO START:', error);
-        process.exit(1);
-    }
-};
-
-startServer();
+server.listen(PORT, () => {
+    console.log(`Server listening on port ${PORT}`);
+});

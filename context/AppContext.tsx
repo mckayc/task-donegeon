@@ -1,11 +1,3 @@
-
-
-
-
-
-
-
-
 import React, { createContext, useState, useContext, ReactNode, useEffect, useCallback, useMemo, useRef } from 'react';
 import { AppSettings, User, Quest, RewardTypeDefinition, QuestCompletion, RewardItem, Market, PurchaseRequest, Guild, Rank, Trophy, UserTrophy, Notification, AppMode, Page, IAppData, ShareableAssetType, GameAsset, Role, QuestCompletionStatus, RewardCategory, PurchaseRequestStatus, AdminAdjustment, AdminAdjustmentType, SystemLog, QuestType, QuestAvailability, Blueprint, ImportResolution, TrophyRequirementType, ThemeDefinition, ChatMessage, SystemNotification, SystemNotificationType, MarketStatus, QuestGroup, BulkQuestUpdates, ScheduledEvent } from '../types';
 import { INITIAL_SETTINGS, createMockUsers, INITIAL_REWARD_TYPES, INITIAL_RANKS, INITIAL_TROPHIES, createSampleMarkets, createSampleQuests, createInitialGuilds, createSampleGameAssets, INITIAL_THEMES, createInitialQuestCompletions, INITIAL_TAGS, INITIAL_QUEST_GROUPS } from '../data/initialData';
@@ -284,7 +276,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
                 ? (newData.users || prev.users).find(u => u.id === currentUserId) || null
                 : null;
             
-            const isFirstRunNow = newData.users.length === 0 && newData.settings.contentVersion < 2;
+            const isFirstRunNow = !newData.settings.isFirstRunComplete;
 
             // Create a new object containing only the data properties from the server payload
             const dataState: IAppData = {
@@ -381,7 +373,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
                     throw new Error("Received malformed data from server. The database might be corrupted.");
                 }
 
-                const isFirstRun = data.users.length === 0 && data.settings.contentVersion < 2;
+                const isFirstRun = !data.settings.isFirstRunComplete;
 
                 const lastUserId = localStorage.getItem('lastUserId');
                 const lastUser = isFirstRun ? null : data.users.find((u: User) => u.id === lastUserId);
@@ -584,33 +576,52 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         // Bulk Actions
         deleteQuests: (questIds: string[]) => updateAndSave(s => ({ quests: s.quests.filter(q => !questIds.includes(q.id)) })),
         updateQuestsStatus: (questIds: string[], isActive: boolean) => updateAndSave(s => ({ quests: s.quests.map(q => questIds.includes(q.id) ? { ...q, isActive } : q) })),
-        bulkUpdateQuests: (questIds: string[], updates: BulkQuestUpdates) => updateAndSave(s => {
-            return {
-                quests: s.quests.map(q => {
-                    if (!questIds.includes(q.id)) return q;
-                    const newQuest = { ...q };
-                    if (updates.isActive !== undefined) newQuest.isActive = updates.isActive;
-                    if (updates.isOptional !== undefined) newQuest.isOptional = updates.isOptional;
-                    if (updates.requiresApproval !== undefined) newQuest.requiresApproval = updates.requiresApproval;
-                    if (updates.groupId !== undefined) newQuest.groupId = updates.groupId === null ? undefined : updates.groupId;
-                    if (updates.addTags) newQuest.tags = [...new Set([...newQuest.tags, ...updates.addTags])];
-                    if (updates.removeTags) newQuest.tags = newQuest.tags.filter(t => !updates.removeTags?.includes(t));
-                    if (updates.assignUsers) newQuest.assignedUserIds = [...new Set([...newQuest.assignedUserIds, ...updates.assignUsers])];
-                    if (updates.unassignUsers) newQuest.assignedUserIds = newQuest.assignedUserIds.filter(id => !updates.unassignUsers?.includes(id));
-                    return newQuest;
-                })
-            }
-        }),
+        bulkUpdateQuests: (questIds: string[], updates: BulkQuestUpdates) => updateAndSave(s => ({
+            quests: s.quests.map(q => {
+                if (!questIds.includes(q.id)) return q;
+
+                let updatedQuest = { ...q };
+                if (updates.isActive !== undefined) updatedQuest.isActive = updates.isActive;
+                if (updates.isOptional !== undefined) updatedQuest.isOptional = updates.isOptional;
+                if (updates.requiresApproval !== undefined) updatedQuest.requiresApproval = updates.requiresApproval;
+                if (updates.groupId !== undefined) updatedQuest.groupId = updates.groupId === null ? undefined : updates.groupId;
+                if (updates.addTags) updatedQuest.tags = [...new Set([...updatedQuest.tags, ...updates.addTags])];
+                if (updates.removeTags) updatedQuest.tags = updatedQuest.tags.filter(t => !updates.removeTags!.includes(t));
+                if (updates.assignUsers) updatedQuest.assignedUserIds = [...new Set([...updatedQuest.assignedUserIds, ...updates.assignUsers])];
+                if (updates.unassignUsers) updatedQuest.assignedUserIds = updatedQuest.assignedUserIds.filter(id => !updates.unassignUsers!.includes(id));
+                
+                return updatedQuest;
+            })
+        })),
 
         // Assets
         uploadFile: async (file: File, category?: string) => {
             const formData = new FormData();
             formData.append('file', file);
-            if(category) formData.append('category', category);
-            return apiRequest('/api/media/upload', { method: 'POST', body: formData, headers: {} }); // Let browser set Content-Type for FormData
+            if (category) {
+                formData.append('category', category);
+            }
+            try {
+                const response = await fetch('/api/media/upload', {
+                    method: 'POST',
+                    body: formData,
+                });
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || 'File upload failed');
+                }
+                if (response.status === 204) return null;
+                return response.json();
+            } catch (error) {
+                console.error('File Upload Error:', error);
+                if (error instanceof Error) {
+                    addNotification({ type: 'error', message: error.message });
+                }
+                return null;
+            }
         },
-        executeExchange: (userId: string, payItem: RewardItem, receiveItem: RewardItem, guildId?: string) => apiRequest('/api/economy/exchange', { method: 'POST', body: JSON.stringify({ userId, payItem, receiveItem, guildId }) }),
-    } as unknown as AppDispatch), [state, updateAndSave, addNotification, removeNotification, apiRequest]);
+        executeExchange: (userId: string, payItem: RewardItem, receiveItem: RewardItem, guildId?: string) => apiRequest('/api/actions/exchange', { method: 'POST', body: JSON.stringify({ userId, payItem, receiveItem, guildId }) }),
+    }), [state.currentUser, state.appMode, apiRequest, addNotification, removeNotification, updateAndSave]);
 
     return (
         <AppStateContext.Provider value={state}>

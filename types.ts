@@ -478,6 +478,7 @@ export interface AutomatedBackups {
 
 export interface AppSettings {
   contentVersion: number;
+  isFirstRunComplete: boolean;
   favicon: string;
   forgivingSetbacks: boolean;
   questDefaults: {

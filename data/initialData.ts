@@ -179,6 +179,7 @@ export const INITIAL_THEMES: ThemeDefinition[] = Object.entries(rawThemes).map((
 
 export const INITIAL_SETTINGS: AppSettings = {
     contentVersion: 2,
+    isFirstRunComplete: false,
     favicon: '🏰',
     forgivingSetbacks: true,
     questDefaults: {

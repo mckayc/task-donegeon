@@ -276,13 +276,15 @@ function createInitialQuestCompletions(quests, users) {
 }
 
 function createInitialData(setupChoice = 'guided', adminUserData, blueprint = null) {
+    // --- Start from Scratch Path ---
     if (setupChoice === 'scratch') {
-        const users = [{
+        const adminUser = {
             ...adminUserData,
             id: `user-${Date.now()}`,
             avatar: {}, ownedAssetIds: [], personalPurse: {}, personalExperience: {}, guildBalances: {},
             ownedThemes: ['emerald', 'rose', 'sky'], hasBeenOnboarded: false,
-        }];
+        };
+        const users = [adminUser];
         const guilds = createInitialGuilds(users);
         const bankMarket = createSampleMarkets().find(m => m.id === 'market-bank');
         return {
@@ -296,18 +298,23 @@ function createInitialData(setupChoice = 'guided', adminUserData, blueprint = nu
             loginHistory: [], chatMessages: [], systemNotifications: [], scheduledEvents: [],
         };
     }
+
+    // --- Import from Blueprint Path ---
     if (setupChoice === 'import' && blueprint) {
-         const users = [{
+        const adminUser = {
             ...adminUserData,
             id: `user-${Date.now()}`,
             avatar: {}, ownedAssetIds: [], personalPurse: {}, personalExperience: {}, guildBalances: {},
             ownedThemes: ['emerald', 'rose', 'sky'], hasBeenOnboarded: false,
-        }];
+        };
+        const users = [adminUser];
         const guilds = createInitialGuilds(users);
+        // Merge reward types, ensuring core types are not duplicated
         const finalRewardTypes = [
             ...INITIAL_REWARD_TYPES,
             ...(blueprint.assets.rewardTypes || []).filter((rt) => !INITIAL_REWARD_TYPES.some(coreRt => coreRt.id === rt.id))
         ];
+        // Ensure bank market exists
         let finalMarkets = blueprint.assets.markets || [];
         if (!finalMarkets.some((m) => m.id === 'market-bank')) {
             const bankMarket = createSampleMarkets().find((m) => m.id === 'market-bank');
@@ -319,32 +326,27 @@ function createInitialData(setupChoice = 'guided', adminUserData, blueprint = nu
             questGroups: blueprint.assets.questGroups || [],
             markets: finalMarkets,
             rewardTypes: finalRewardTypes,
-            questCompletions: [],
-            purchaseRequests: [],
-            guilds,
+            questCompletions: [], purchaseRequests: [], guilds,
             ranks: blueprint.assets.ranks || INITIAL_RANKS,
             trophies: blueprint.assets.trophies || [],
-            userTrophies: [],
-            adminAdjustments: [],
+            userTrophies: [], adminAdjustments: [],
             gameAssets: blueprint.assets.gameAssets || [],
-            systemLogs: [],
-            settings: INITIAL_SETTINGS,
-            themes: INITIAL_THEMES,
-            loginHistory: [],
-            chatMessages: [],
-            systemNotifications: [],
-            scheduledEvents: [],
+            systemLogs: [], settings: INITIAL_SETTINGS, themes: INITIAL_THEMES,
+            loginHistory: [], chatMessages: [], systemNotifications: [], scheduledEvents: [],
         };
     }
-    // Default to 'guided' setup
+
+    // --- Guided Setup Path (Default) ---
     const users = createMockUsers();
-    users[0] = {
-        ...users[0],
-        ...adminUserData,
-        id: `user-${Date.now()}`,
-        avatar: {}, ownedAssetIds: [], personalPurse: {}, personalExperience: {}, guildBalances: {},
-        ownedThemes: ['emerald', 'rose', 'sky'], hasBeenOnboarded: false,
-    };
+    // Find the default admin and overwrite its credentials with what the user provided
+    const adminIndex = users.findIndex(u => u.username === 'admin');
+    if (adminIndex !== -1) {
+        users[adminIndex] = {
+            ...users[adminIndex], // Keep defaults like ID
+            ...adminUserData,     // Overwrite with user input
+            hasBeenOnboarded: false,
+        };
+    }
     const quests = createSampleQuests(users);
     const guilds = createInitialGuilds(users);
     const markets = createSampleMarkets();
@@ -352,26 +354,19 @@ function createInitialData(setupChoice = 'guided', adminUserData, blueprint = nu
     const initialCompletions = createInitialQuestCompletions(quests, users);
 
     return {
-        users,
-        quests,
+        users, quests,
         questGroups: INITIAL_QUEST_GROUPS,
         markets,
         rewardTypes: INITIAL_REWARD_TYPES,
         questCompletions: initialCompletions,
-        purchaseRequests: [],
-        guilds,
+        purchaseRequests: [], guilds,
         ranks: INITIAL_RANKS,
         trophies: INITIAL_TROPHIES,
-        userTrophies: [],
-        adminAdjustments: [],
-        gameAssets,
-        systemLogs: [],
+        userTrophies: [], adminAdjustments: [],
+        gameAssets, systemLogs: [],
         settings: INITIAL_SETTINGS,
         themes: INITIAL_THEMES,
-        loginHistory: [],
-        chatMessages: [],
-        systemNotifications: [],
-        scheduledEvents: [],
+        loginHistory: [], chatMessages: [], systemNotifications: [], scheduledEvents: [],
     };
 }
 // === END INLINED DATA ===
@@ -543,10 +538,11 @@ app.post('/api/first-run', async (req, res) => {
     try {
         const { adminUserData, setupChoice, blueprint } = req.body;
         
-        // This is now the ONLY place that populates the database with content.
+        // This is the ONLY place that populates the database with content.
+        // It completely overwrites any existing data.
         const initialData = createInitialData(setupChoice, adminUserData, blueprint);
         
-        // Mark the first run as complete IN THE NEW DATA OBJECT before writing
+        // Mark the first run as complete IN THE NEW DATA OBJECT before writing.
         initialData.settings.isFirstRunComplete = true;
 
         await writeData(initialData);
@@ -744,18 +740,20 @@ app.post('/api/chat/read', async (req, res) => {
 app.get('/api/pre-run-check', async (req, res) => {
     try {
         const data = await readData();
-        // A more robust check for existing data is to see if any users have been created.
-        if (data && data.users && data.users.length > 0) {
+        // The definitive check: has the first run process been explicitly marked as complete?
+        if (data && data.settings && data.settings.isFirstRunComplete) {
             res.json({
                 dataExists: true,
                 version: data.settings.contentVersion || 1,
                 appName: data.settings.terminology ? data.settings.terminology.appName : 'Task Donegeon'
             });
         } else {
+            // If the flag is false, not present, or the whole data object is missing,
+            // we treat it as a first run and force setup.
             res.json({ dataExists: false });
         }
     } catch (e) {
-        // If there's an error reading (e.g., file doesn't exist), it means no data exists.
+        // If there's an error reading (e.g., file doesn't exist), it also means no data exists.
         console.error("Pre-run check failed (this is expected on a very first run):", e.message);
         res.json({ dataExists: false });
     }

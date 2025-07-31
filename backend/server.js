@@ -382,12 +382,26 @@ const UPLOADS_DIR = path.join(__dirname, '../uploads');
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 
-// Request Logger Middleware
+// Enhanced Request Logger Middleware
 app.use((req, res, next) => {
     const start = Date.now();
     res.on('finish', () => {
         const duration = Date.now() - start;
         console.log(`[API] ${req.method} ${req.originalUrl} - ${res.statusCode} [${duration}ms]`);
+
+        // Log request body on error or for mutations, avoiding huge payloads
+        if ((res.statusCode >= 400 || req.method === 'POST' || req.method === 'PUT') && req.body) {
+            try {
+                const bodyString = JSON.stringify(req.body);
+                if (bodyString.length > 2000) {
+                    console.log(`  [REQ_BODY] (Payload too large to log)`);
+                } else if (Object.keys(req.body).length > 0) {
+                    console.log(`  [REQ_BODY] ${bodyString}`);
+                }
+            } catch (e) {
+                // Ignore stringify errors on weird bodies
+            }
+        }
     });
     next();
 });
@@ -398,22 +412,42 @@ console.log(`[FS] Serving uploads from: ${UPLOADS_DIR}`);
 app.use('/uploads', express.static(UPLOADS_DIR));
 
 
-// === WebSocket Setup ===
+// Enhanced WebSocket Setup
 const wss = new WebSocket.Server({ server });
 let clients = new Set();
-wss.on('connection', (ws) => {
-    console.log('[WS] Client connected.');
+wss.on('connection', (ws, req) => {
+    const ip = req.socket.remoteAddress;
+    console.log(`[WS] Client connected from ${ip}. Total clients: ${clients.size + 1}`);
     clients.add(ws);
+
+    ws.on('message', (message) => {
+        console.log(`[WS] Received message from ${ip}: ${message.toString().substring(0, 200)}...`);
+    });
+
     ws.on('close', () => {
-        console.log('[WS] Client disconnected.');
+        console.log(`[WS] Client disconnected from ${ip}. Total clients: ${clients.size - 1}`);
         clients.delete(ws);
     });
+
+    ws.on('error', (error) => {
+        console.error(`[WS] WebSocket error from client ${ip}:`, error);
+    });
 });
+
 const broadcast = (message) => {
+    if (!message || !message.type) {
+        console.warn('[WS] Broadcast called with invalid message format.');
+        return;
+    }
+    console.log(`[WS] Broadcasting message of type: ${message.type}`);
     const data = JSON.stringify(message);
     clients.forEach(client => {
         if (client.readyState === WebSocket.OPEN) {
-            client.send(data);
+            client.send(data, (err) => {
+                if (err) {
+                    console.error('[WS] Error sending message to a client:', err);
+                }
+            });
         }
     });
 };

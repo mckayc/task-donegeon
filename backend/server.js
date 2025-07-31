@@ -494,30 +494,23 @@ const storage = multer.diskStorage({
 const upload = multer({ storage: storage });
 
 // === App State Management ===
-let appDataCache = null;
-const loadData = async () => {
-    try {
-        appDataCache = await db.getData();
-        console.log('[DB] Initial data loaded into cache.');
-    } catch (error) {
-        console.error("[DB] FATAL: Could not load initial data from database.", error);
-        process.exit(1);
-    }
-};
 const saveData = async (newData) => {
     console.log('[DB] Saving updated data to database and broadcasting to clients...');
-    appDataCache = newData;
     await db.saveData(newData);
-    broadcast({ type: 'FULL_STATE_UPDATE', payload: appDataCache });
+    broadcast({ type: 'FULL_STATE_UPDATE', payload: newData });
     console.log('[WS] Broadcast complete.');
+    return newData;
 };
 
 // === API Routes ===
 app.get('/api/data', async (req, res) => {
-    if (!appDataCache) {
-        await loadData();
+    try {
+        const data = await db.getData();
+        res.json(data);
+    } catch (error) {
+        console.error('[API] Error in GET /api/data:', error);
+        res.status(500).json({ error: 'Failed to retrieve data.' });
     }
-    res.json(appDataCache);
 });
 
 app.post('/api/data', async (req, res) => {
@@ -534,42 +527,38 @@ app.post('/api/data', async (req, res) => {
 const createCrudHandlers = (router, dataType, idPrefix) => {
     // POST (Create)
     router.post('/', async (req, res) => {
+        const appData = await db.getData();
         const newItemPayload = req.body;
         const newItem = { ...newItemPayload, id: `${idPrefix}-${Date.now()}` };
         
-        // Add creation-specific fields
         if (dataType === 'gameAssets') {
-            newItem.creatorId = 'admin'; // Placeholder
+            newItem.creatorId = 'admin';
             newItem.createdAt = new Date().toISOString();
             newItem.purchaseCount = 0;
         } else if (dataType === 'users') {
-            newItem.avatar = {};
-            newItem.ownedAssetIds = [];
-            newItem.personalPurse = {};
-            newItem.personalExperience = {};
-            newItem.guildBalances = {};
-            newItem.ownedThemes = ['emerald', 'rose', 'sky'];
-            newItem.hasBeenOnboarded = false;
+            newItem.avatar = {}; newItem.ownedAssetIds = []; newItem.personalPurse = {}; newItem.personalExperience = {}; newItem.guildBalances = {}; newItem.ownedThemes = ['emerald', 'rose', 'sky']; newItem.hasBeenOnboarded = false;
         }
         
-        const newData = { ...appDataCache, [dataType]: [...appDataCache[dataType], newItem] };
+        const newData = { ...appData, [dataType]: [...appData[dataType], newItem] };
         await saveData(newData);
         res.status(201).json(newItem);
     });
 
     // PUT (Update)
     router.put('/:id', async (req, res) => {
+        const appData = await db.getData();
         const { id } = req.params;
-        const updatedItem = { ...req.body, id }; // Ensure ID is not changed
-        const newData = { ...appDataCache, [dataType]: appDataCache[dataType].map(item => item.id === id ? updatedItem : item) };
+        const updatedItem = { ...req.body, id };
+        const newData = { ...appData, [dataType]: appData[dataType].map(item => item.id === id ? updatedItem : item) };
         await saveData(newData);
         res.json(updatedItem);
     });
 
     // DELETE (Single)
     router.delete('/:id', async (req, res) => {
+        const appData = await db.getData();
         const { id } = req.params;
-        const newData = { ...appDataCache, [dataType]: appDataCache[dataType].filter(item => item.id !== id) };
+        const newData = { ...appData, [dataType]: appData[dataType].filter(item => item.id !== id) };
         await saveData(newData);
         res.status(204).send();
     });
@@ -578,29 +567,21 @@ const createCrudHandlers = (router, dataType, idPrefix) => {
 // Apply CRUD handlers
 ['quests', 'markets', 'guilds', 'trophies', 'gameAssets', 'themes', 'rewardTypes', 'questGroups', 'scheduledEvents'].forEach(type => {
     const router = express.Router();
-    const prefix = type.slice(0, -1); // e.g., 'quest'
+    const prefix = type.slice(0, -1);
     createCrudHandlers(router, type, prefix);
     app.use(`/api/${type}`, router);
 });
 
 // Custom User routes due to complexity
 const userRouter = express.Router();
-createCrudHandlers(userRouter, 'users', 'user'); // Handles POST and PUT
+createCrudHandlers(userRouter, 'users', 'user'); 
 
 userRouter.delete('/:id', async (req, res) => {
     const { id: userIdToDelete } = req.params;
-    let data = { ...appDataCache };
+    let data = await db.getData();
 
-    // 1. Filter out the user
     data.users = data.users.filter(u => u.id !== userIdToDelete);
-
-    // 2. Clean up dependencies
-    // Guilds
-    data.guilds = data.guilds.map(g => ({
-        ...g,
-        memberIds: g.memberIds.filter(id => id !== userIdToDelete)
-    }));
-    // Quest Assignments
+    data.guilds = data.guilds.map(g => ({ ...g, memberIds: g.memberIds.filter(id => id !== userIdToDelete) }));
     data.quests = data.quests.map(q => ({
         ...q,
         assignedUserIds: q.assignedUserIds.filter(id => id !== userIdToDelete),
@@ -608,16 +589,11 @@ userRouter.delete('/:id', async (req, res) => {
         dismissals: q.dismissals.filter(d => d.userId !== userIdToDelete),
         todoUserIds: (q.todoUserIds || []).filter(id => id !== userIdToDelete)
     }));
-    // History records
     data.questCompletions = data.questCompletions.filter(c => c.userId !== userIdToDelete);
     data.purchaseRequests = data.purchaseRequests.filter(p => p.userId !== userIdToDelete);
     data.userTrophies = data.userTrophies.filter(ut => ut.userId !== userIdToDelete);
     data.adminAdjustments = data.adminAdjustments.filter(a => a.userId !== userIdToDelete);
-    // Chat messages (keep messages, but sender will be "Unknown")
-    data.chatMessages = data.chatMessages.map(msg => ({
-        ...msg,
-        readBy: msg.readBy.filter(id => id !== userIdToDelete)
-    }));
+    data.chatMessages = data.chatMessages.map(msg => ({ ...msg, readBy: msg.readBy.filter(id => id !== userIdToDelete) }));
 
     await saveData(data);
     res.status(204).send();
@@ -628,19 +604,13 @@ app.use('/api/users', userRouter);
 // More complex endpoints
 app.post('/api/actions/factory-reset', async (req, res) => {
     try {
-        let data = { ...appDataCache };
-
-        // 1. Clear all user-creatable content arrays
+        let data = await db.getData();
         data.quests = [];
         data.gameAssets = [];
         data.questGroups = [];
-        // Keep the bank market, but remove others
         data.markets = data.markets.filter(m => m.id === 'market-bank');
-        // Filter trophies to keep only the initial default ones
         const initialTrophyIds = new Set(INITIAL_TROPHIES.map(it => it.id));
         data.trophies = data.trophies.filter(t => initialTrophyIds.has(t.id));
-
-        // 2. Clear all history and transactional data that references the above content
         data.questCompletions = [];
         data.purchaseRequests = [];
         data.userTrophies = [];
@@ -649,14 +619,7 @@ app.post('/api/actions/factory-reset', async (req, res) => {
         data.chatMessages = [];
         data.systemNotifications = [];
         data.scheduledEvents = [];
-
-        // 3. Clean up user-specific references to deleted content
-        data.users = data.users.map(user => ({
-            ...user,
-            ownedAssetIds: [], // Clear inventory
-            avatar: {},        // Clear equipped items
-        }));
-
+        data.users = data.users.map(user => ({ ...user, ownedAssetIds: [], avatar: {} }));
         await saveData(data);
         res.status(200).json({ message: 'Custom content and all related history has been reset.' });
     } catch (error) {
@@ -669,23 +632,18 @@ app.post('/api/actions/reinitialize', async (req, res) => {
     console.log('[API] DANGER: Received request to re-initialize application data.');
     res.status(200).json({ message: 'Application is re-initializing...' });
     
-    // Give the response time to send before shutting down.
     setTimeout(async () => {
         try {
             console.log('[SERVER] Closing database connection...');
             await db.close();
             console.log('[SERVER] Database connection closed.');
-
             console.log(`[SERVER] Deleting database file at ${dbPath}...`);
             await fs.unlink(dbPath);
             console.log('[SERVER] Database file deleted.');
-
             console.log('[SERVER] Exiting process to trigger restart.');
             process.exit(1);
-
         } catch (error) {
             console.error('[SERVER] CRITICAL: Failed during re-initialization process:', error);
-            // If deletion fails, we should still try to restart to avoid a broken state.
             process.exit(1);
         }
     }, 500);
@@ -695,8 +653,9 @@ app.post('/api/actions/reinitialize', async (req, res) => {
 app.post('/api/quests/:id/actions', async (req, res) => {
     const { id: questId } = req.params;
     const { action, userId } = req.body;
+    const appData = await db.getData();
     
-    let quest = appDataCache.quests.find(q => q.id === questId);
+    let quest = appData.quests.find(q => q.id === questId);
     if (!quest) return res.status(404).json({ error: 'Quest not found' });
 
     quest.todoUserIds = quest.todoUserIds || [];
@@ -708,14 +667,13 @@ app.post('/api/quests/:id/actions', async (req, res) => {
         quest.todoUserIds = quest.todoUserIds.filter(id => id !== userId);
     }
 
-    const newData = { ...appDataCache, quests: appDataCache.quests.map(q => q.id === questId ? quest : q) };
+    const newData = { ...appData, quests: appData.quests.map(q => q.id === questId ? quest : q) };
     await saveData(newData);
     res.status(200).json(quest);
 });
 
 const applyRewards = (user, quest, rewardTypes) => {
     const updatedUser = JSON.parse(JSON.stringify(user));
-
     quest.rewards.forEach(reward => {
         const rewardType = rewardTypes.find(rt => rt.id === reward.rewardTypeId);
         if (!rewardType) return;
@@ -732,64 +690,56 @@ const applyRewards = (user, quest, rewardTypes) => {
         
         balanceTarget[reward.rewardTypeId] = (balanceTarget[reward.rewardTypeId] || 0) + reward.amount;
     });
-
     return updatedUser;
 };
 
 app.post('/api/quests/:id/complete', async (req, res) => {
     const { id } = req.params;
     const { userId, note, completionDate } = req.body;
-    const quest = appDataCache.quests.find(q => q.id === id);
+    let appData = await db.getData();
+    const quest = appData.quests.find(q => q.id === id);
     if (!quest) return res.status(404).json({ error: 'Quest not found' });
 
     const newCompletion = {
-        id: `qc-${Date.now()}`,
-        questId: id,
-        userId,
+        id: `qc-${Date.now()}`, questId: id, userId,
         completedAt: completionDate || new Date().toISOString(),
         status: quest.requiresApproval ? 'Pending' : 'Approved',
-        note,
-        guildId: quest.guildId,
+        note, guildId: quest.guildId,
     };
 
-    let newData = { ...appDataCache, questCompletions: [...appDataCache.questCompletions, newCompletion] };
+    appData.questCompletions.push(newCompletion);
 
-    // If no approval is needed, apply rewards immediately
     if (newCompletion.status === 'Approved') {
-        const user = newData.users.find(u => u.id === userId);
+        const user = appData.users.find(u => u.id === userId);
         if (user) {
-            const updatedUser = applyRewards(user, quest, newData.rewardTypes);
-            newData.users = newData.users.map(u => u.id === userId ? updatedUser : u);
+            const updatedUser = applyRewards(user, quest, appData.rewardTypes);
+            appData.users = appData.users.map(u => u.id === userId ? updatedUser : u);
         }
     }
     
-    await saveData(newData);
+    await saveData(appData);
     res.status(201).json(newCompletion);
 });
 
 app.post('/api/completions/:id/approve', async (req, res) => {
     const { id } = req.params;
     const { note } = req.body;
+    let appData = await db.getData();
     
-    const completion = appDataCache.questCompletions.find(c => c.id === id);
-    if (!completion || completion.status !== 'Pending') {
-        return res.status(404).json({ error: 'Pending completion not found.' });
-    }
+    const completion = appData.questCompletions.find(c => c.id === id);
+    if (!completion || completion.status !== 'Pending') return res.status(404).json({ error: 'Pending completion not found.' });
 
-    const quest = appDataCache.quests.find(q => q.id === completion.questId);
-    const user = appDataCache.users.find(u => u.id === completion.userId);
+    const quest = appData.quests.find(q => q.id === completion.questId);
+    const user = appData.users.find(u => u.id === completion.userId);
+    if (!quest || !user) return res.status(404).json({ error: 'Associated quest or user not found.' });
 
-    if (!quest || !user) {
-        return res.status(404).json({ error: 'Associated quest or user not found.' });
-    }
-
-    const updatedUser = applyRewards(user, quest, appDataCache.rewardTypes);
+    const updatedUser = applyRewards(user, quest, appData.rewardTypes);
     const updatedCompletion = { ...completion, status: 'Approved', note: note || completion.note };
     
     const newData = {
-        ...appDataCache,
-        users: appDataCache.users.map(u => u.id === user.id ? updatedUser : u),
-        questCompletions: appDataCache.questCompletions.map(c => c.id === id ? updatedCompletion : c),
+        ...appData,
+        users: appData.users.map(u => u.id === user.id ? updatedUser : u),
+        questCompletions: appData.questCompletions.map(c => c.id === id ? updatedCompletion : c),
     };
     
     await saveData(newData);
@@ -799,18 +749,14 @@ app.post('/api/completions/:id/approve', async (req, res) => {
 app.post('/api/completions/:id/reject', async (req, res) => {
     const { id } = req.params;
     const { note } = req.body;
+    let appData = await db.getData();
     
-    const completion = appDataCache.questCompletions.find(c => c.id === id);
-    if (!completion || completion.status !== 'Pending') {
-        return res.status(404).json({ error: 'Pending completion not found.' });
-    }
+    const completion = appData.questCompletions.find(c => c.id === id);
+    if (!completion || completion.status !== 'Pending') return res.status(404).json({ error: 'Pending completion not found.' });
     
     const updatedCompletion = { ...completion, status: 'Rejected', note: note || completion.note };
 
-    const newData = {
-        ...appDataCache,
-        questCompletions: appDataCache.questCompletions.map(c => c.id === id ? updatedCompletion : c),
-    };
+    const newData = { ...appData, questCompletions: appData.questCompletions.map(c => c.id === id ? updatedCompletion : c) };
 
     await saveData(newData);
     res.status(200).json(updatedCompletion);
@@ -819,69 +765,45 @@ app.post('/api/completions/:id/reject', async (req, res) => {
 app.post('/api/economy/exchange', async (req, res) => {
     try {
         const { userId, payItem, receiveItem, guildId } = req.body;
-        const data = appDataCache;
-
+        const data = await db.getData();
         const user = data.users.find(u => u.id === userId);
-        if (!user) {
-            return res.status(404).json({ error: 'User not found.' });
-        }
-
-        const { rewardValuation } = data.settings;
-        const { rewardTypes } = data;
-        if (!rewardValuation.enabled) {
-            return res.status(400).json({ error: 'Economy features are disabled.' });
-        }
+        if (!user) return res.status(404).json({ error: 'User not found.' });
+        if (!data.settings.rewardValuation.enabled) return res.status(400).json({ error: 'Economy features are disabled.' });
         
-        const payRewardType = rewardTypes.find(rt => rt.id === payItem.rewardTypeId);
-        const receiveRewardType = rewardTypes.find(rt => rt.id === receiveItem.rewardTypeId);
+        const payRewardType = data.rewardTypes.find(rt => rt.id === payItem.rewardTypeId);
+        const receiveRewardType = data.rewardTypes.find(rt => rt.id === receiveItem.rewardTypeId);
+        if (!payRewardType || !receiveRewardType) return res.status(400).json({ error: 'Invalid reward types provided.' });
 
-        if (!payRewardType || !receiveRewardType) {
-            return res.status(400).json({ error: 'Invalid reward types provided for exchange.' });
-        }
-
-        const { anchorRewardId, exchangeRates, currencyExchangeFeePercent, xpExchangeFeePercent } = rewardValuation;
-        
+        const { anchorRewardId, exchangeRates, currencyExchangeFeePercent, xpExchangeFeePercent } = data.settings.rewardValuation;
         const getRate = (id) => id === anchorRewardId ? 1 : (exchangeRates[id] || 0);
-
         const receiveRate = getRate(receiveItem.rewardTypeId);
-        if (receiveRate === 0) {
-            return res.status(400).json({ error: `No exchange rate set for ${receiveRewardType.name}.` });
-        }
+        if (receiveRate === 0) return res.status(400).json({ error: `No exchange rate for ${receiveRewardType.name}.` });
         
         const receiveValueInAnchor = receiveItem.amount / receiveRate;
-        
         const payRate = getRate(payItem.rewardTypeId);
-        if (payRate === 0) {
-            return res.status(400).json({ error: `No exchange rate set for ${payRewardType.name}.` });
-        }
+        if (payRate === 0) return res.status(400).json({ error: `No exchange rate for ${payRewardType.name}.` });
 
         const fromAmountBase = receiveValueInAnchor * payRate;
         const feePercent = payRewardType.category === RewardCategory.Currency ? currencyExchangeFeePercent : xpExchangeFeePercent;
         const fee = fromAmountBase * (feePercent / 100);
         const totalCost = Math.ceil(fromAmountBase + fee);
 
-        let balanceSource;
-        if (guildId) {
-            if (!user.guildBalances[guildId]) user.guildBalances[guildId] = { purse: {}, experience: {} };
-            balanceSource = payRewardType.category === RewardCategory.Currency ? user.guildBalances[guildId].purse : user.guildBalances[guildId].experience;
-        } else {
-            balanceSource = payRewardType.category === RewardCategory.Currency ? user.personalPurse : user.personalExperience;
-        }
-
+        let balanceSource = guildId ? (user.guildBalances[guildId]?.[payRewardType.category === 'Currency' ? 'purse' : 'experience']) : (payRewardType.category === 'Currency' ? user.personalPurse : user.personalExperience);
+        if (!balanceSource) balanceSource = {};
+        
         const userBalance = balanceSource[payItem.rewardTypeId] || 0;
-
-        if (userBalance < totalCost) {
-            return res.status(400).json({ error: `Insufficient funds. You need ${totalCost} ${payRewardType.name}, but you only have ${Math.floor(userBalance)}.` });
-        }
+        if (userBalance < totalCost) return res.status(400).json({ error: `Insufficient funds.` });
         
         balanceSource[payItem.rewardTypeId] -= totalCost;
         
-        let balanceDestination;
-         if (guildId) {
-            if (!user.guildBalances[guildId]) user.guildBalances[guildId] = { purse: {}, experience: {} };
-            balanceDestination = receiveRewardType.category === RewardCategory.Currency ? user.guildBalances[guildId].purse : user.guildBalances[guildId].experience;
-        } else {
-            balanceDestination = receiveRewardType.category === RewardCategory.Currency ? user.personalPurse : user.personalExperience;
+        let balanceDestination = guildId ? (user.guildBalances[guildId]?.[receiveRewardType.category === 'Currency' ? 'purse' : 'experience']) : (receiveRewardType.category === 'Currency' ? user.personalPurse : user.personalExperience);
+        if (!balanceDestination) {
+            if (guildId) {
+                if (!user.guildBalances[guildId]) user.guildBalances[guildId] = { purse: {}, experience: {} };
+                balanceDestination = user.guildBalances[guildId][receiveRewardType.category === 'Currency' ? 'purse' : 'experience'];
+            } else {
+                balanceDestination = receiveRewardType.category === 'Currency' ? user.personalPurse : user.personalExperience;
+            }
         }
         
         balanceDestination[receiveItem.rewardTypeId] = (balanceDestination[receiveItem.rewardTypeId] || 0) + receiveItem.amount;
@@ -890,10 +812,9 @@ app.post('/api/economy/exchange', async (req, res) => {
         await saveData({ ...data, users: updatedUsers });
         
         res.status(200).json({ success: true, user: user });
-
     } catch (error) {
         console.error('[API] Error during exchange:', error);
-        res.status(500).json({ error: 'An internal server error occurred during the exchange.' });
+        res.status(500).json({ error: 'An internal server error occurred.' });
     }
 });
 
@@ -903,20 +824,10 @@ app.post('/api/first-run', async (req, res) => {
         const { adminUserData, setupChoice, blueprint } = req.body;
         console.log(`[API] Initiating first run with setup choice: ${setupChoice}`);
         const adminWithDefaults = {
-            ...adminUserData,
-            id: `user-${Date.now()}`,
-            avatar: {},
-            ownedAssetIds: [],
-            personalPurse: {},
-            personalExperience: {},
-            guildBalances: {},
-            ownedThemes: ['emerald', 'rose', 'sky'],
-            hasBeenOnboarded: true,
+            ...adminUserData, id: `user-${Date.now()}`, avatar: {}, ownedAssetIds: [], personalPurse: {}, personalExperience: {}, guildBalances: {}, ownedThemes: ['emerald', 'rose', 'sky'], hasBeenOnboarded: true,
         };
-
         const initialData = createInitialData(setupChoice, adminWithDefaults, blueprint);
         await saveData(initialData);
-
         const newAdmin = initialData.users.find(u => u.id === adminWithDefaults.id);
         console.log('[API] First run completed successfully.');
         res.status(201).json({ message: 'First run completed successfully.', adminUser: newAdmin });
@@ -1006,9 +917,7 @@ app.post('/api/backups/create', async (req, res) => {
         const timestamp = new Date().toISOString().replace(/:/g, '-').slice(0, 19);
         const filename = `manual_backup_${timestamp}.json`;
         const filePath = path.join(BACKUPS_DIR, filename);
-        const dataToBackup = { ...appDataCache };
-        // Optionally remove transient state if it exists
-        delete dataToBackup.notifications;
+        const dataToBackup = await db.getData();
         await fs.writeFile(filePath, JSON.stringify(dataToBackup, null, 2));
         res.status(201).json({ message: `Backup created: ${filename}` });
     } catch (error) {
@@ -1026,25 +935,15 @@ app.get('*', (req, res) => {
 // === Server Startup ===
 const startServer = async () => {
     try {
-        // 1. Initialize DB fully (creates dir, file, table, and seeds if needed)
         await db.init();
-        
-        // 2. Load initial data from the now-guaranteed-to-exist DB into memory cache
-        await loadData();
-        
-        // 3. Ensure essential directories exist
         await fs.mkdir(UPLOADS_DIR, { recursive: true });
         await fs.mkdir(BACKUPS_DIR, { recursive: true });
-
-
-        // 4. Start listening for requests
         server.listen(PORT, () => {
             console.log(`[SERVER] Server listening on http://localhost:${PORT}`);
         });
-
     } catch (error) {
         console.error('[SERVER] FAILED TO START:', error);
-        process.exit(1); // Exit if DB initialization fails
+        process.exit(1);
     }
 };
 

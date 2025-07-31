@@ -741,6 +741,25 @@ app.post('/api/chat/read', async (req, res) => {
     }
 });
 
+app.get('/api/pre-run-check', async (req, res) => {
+    try {
+        const data = await readData();
+        // Check if settings exist and if the first run has been marked as complete.
+        if (data && data.settings && data.settings.isFirstRunComplete) {
+            res.json({
+                dataExists: true,
+                version: data.settings.contentVersion || 1,
+                appName: data.settings.terminology ? data.settings.terminology.appName : 'Task Donegeon'
+            });
+        } else {
+            res.json({ dataExists: false });
+        }
+    } catch (e) {
+        // If there's an error reading (e.g., file doesn't exist), it means no data exists.
+        console.error("Pre-run check failed (this is expected on a very first run):", e.message);
+        res.json({ dataExists: false });
+    }
+});
 
 // Serve index.html for all other routes to enable client-side routing
 app.get('*', (req, res) => {

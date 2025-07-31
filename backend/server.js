@@ -612,6 +612,26 @@ app.use('/api/users', userRouter);
 
 
 // More complex endpoints
+app.post('/api/actions/factory-reset', async (req, res) => {
+    try {
+        let data = { ...appDataCache };
+
+        data.quests = [];
+        data.gameAssets = [];
+        data.questGroups = [];
+        // Keep the bank market, but remove others
+        data.markets = data.markets.filter(m => m.id === 'market-bank');
+        // Filter trophies to keep only the initial default ones
+        data.trophies = data.trophies.filter(t => INITIAL_TROPHIES.some(it => it.id === t.id));
+
+        await saveData(data);
+        res.status(200).json({ message: 'Custom content has been reset.' });
+    } catch (error) {
+        console.error('[API] Error during factory reset:', error);
+        res.status(500).json({ error: 'Failed to reset custom content.' });
+    }
+});
+
 app.post('/api/quests/:id/actions', async (req, res) => {
     const { id: questId } = req.params;
     const { action, userId } = req.body;

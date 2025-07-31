@@ -26,7 +26,7 @@ async function fetchGitHub(apiPath) {
     return response.json();
 }
 
-// === START INLINED DATA from data.js ===
+// === START INLINED DATA ===
 const Role = { DonegeonMaster: 'Donegeon Master', Gatekeeper: 'Gatekeeper', Explorer: 'Explorer' };
 const QuestType = { Duty: 'Duty', Venture: 'Venture' };
 const RewardCategory = { Currency: 'Currency', XP: 'XP' };
@@ -123,7 +123,7 @@ const INITIAL_TROPHIES = [ { id: 'trophy-1', name: 'First Quest', description: '
     { id: 'trophy-97', name: 'The Penny Pincher', description: 'For saving up your allowance for a goal.', iconType: 'emoji', icon: '🐷', isManual: true, requirements: [] },
 ];
 
-export const createSampleMarkets = (): Market[] => ([
+const createSampleMarkets = () => ([
   { id: 'market-tutorial', title: 'Tutorial Market', description: 'A place to complete your first quests.', iconType: 'emoji', icon: '🎓', status: { type: 'open' } },
   { id: 'market-themes', title: 'The Gilded Brush (Themes)', description: 'Purchase new visual themes to customize your entire application.', iconType: 'emoji', icon: '🎨', status: { type: 'open' } },
   { id: 'market-bank', title: 'The Exchange Post', description: 'Exchange your various currencies and experience points.', iconType: 'emoji', icon: '⚖️', status: { type: 'open' } },
@@ -131,8 +131,8 @@ export const createSampleMarkets = (): Market[] => ([
   { id: 'market-candy', title: 'The Sugar Cube', description: 'A delightful shop for purchasing sweet treats with your crystals.', iconType: 'emoji', icon: '🍬', status: { type: 'open' } },
 ]);
 
-export const createSampleGameAssets = (): GameAsset[] => {
-    const allAssets: GameAsset[] = [
+const createSampleGameAssets = () => {
+    const allAssets = [
     { 
         id: 'ga-theme-sapphire', 
         name: 'Sapphire Theme Unlock', 
@@ -189,23 +189,19 @@ export const createSampleGameAssets = (): GameAsset[] => {
         requiresApproval: false,
     }
   ];
-  
   const exchangeAssetIds = new Set(['ga-bank-gold-to-gems', 'ga-bank-gems-to-gold', 'ga-bank-gold-to-strength', 'ga-bank-strength-to-gold', 'ga-bank-gems-to-wisdom', 'ga-bank-wisdom-to-gems']);
-
   return allAssets.filter(asset => !exchangeAssetIds.has(asset.id));
 };
 
-export const createInitialGuilds = (users) => ([
+const createInitialGuilds = (users) => ([
   { id: 'guild-1', name: 'The First Guild', purpose: 'The default guild for all new adventurers.', memberIds: users.map((u) => u.id), isDefault: true },
 ]);
 
-export const createSampleQuests = (users) => {
+const createSampleQuests = (users) => {
   const explorer = users.find((u) => u.role === Role.Explorer);
   const gatekeeper = users.find((u) => u.role === Role.Gatekeeper);
   const donegeonMaster = users.find((u) => u.role === Role.DonegeonMaster);
-
   const quests = [
-    // For Explorer
     {
       id: 'quest-explorer-1', title: 'Change Your Theme', description: "First, visit the Marketplace and buy the 'Sapphire Theme Unlock' from the Tutorial Market. Then, go to the 'Themes' page from the sidebar to activate it!", type: QuestType.Venture, iconType: 'emoji', icon: '🎨', tags: ['tutorial', 'tutorial-explorer'],
       rewards: [{ rewardTypeId: 'core-wisdom', amount: 50 }], lateSetbacks: [], incompleteSetbacks: [],
@@ -230,7 +226,6 @@ export const createSampleQuests = (users) => {
       isActive: true, isOptional: false, availabilityType: QuestAvailability.Unlimited, availabilityCount: 1, weeklyRecurrenceDays: [], monthlyRecurrenceDays: [],
       assignedUserIds: explorer ? [explorer.id] : [], requiresApproval: false, claimedByUserIds: [], dismissals: [], groupId: 'qg-personal'
     },
-    // For Gatekeeper
     {
       id: 'quest-gatekeeper-1', title: 'The First Approval', description: "An Explorer has submitted a quest for approval. Go to the 'Approvals' page and either approve or reject it.", type: QuestType.Venture, iconType: 'emoji', icon: '✅', tags: ['tutorial', 'tutorial-gatekeeper'],
       rewards: [{ rewardTypeId: 'core-wisdom', amount: 25 }], lateSetbacks: [], incompleteSetbacks: [],
@@ -243,7 +238,6 @@ export const createSampleQuests = (users) => {
       isActive: true, isOptional: false, availabilityType: QuestAvailability.Unlimited, availabilityCount: 1, weeklyRecurrenceDays: [], monthlyRecurrenceDays: [],
       assignedUserIds: gatekeeper ? [gatekeeper.id] : [], requiresApproval: false, claimedByUserIds: [], dismissals: [], groupId: 'qg-family'
     },
-    // For Donegeon Master
     {
       id: 'quest-dm-1', title: 'Create a Quest', description: "Go to 'Manage Quests' and create a new quest of any type. Assign it to the Explorer.", type: QuestType.Venture, iconType: 'emoji', icon: '🛠️', tags: ['tutorial', 'tutorial-donegeon-master'],
       rewards: [{ rewardTypeId: 'core-wisdom', amount: 50 }], lateSetbacks: [], incompleteSetbacks: [],
@@ -266,56 +260,48 @@ export const createSampleQuests = (users) => {
   return quests;
 };
 
-export function createInitialData(setupChoice = 'guided', adminUserData, blueprint = null) {
+function createInitialQuestCompletions(quests, users) {
+  const explorer = users.find((u) => u.username === 'explorer');
+  const gatekeeper = users.find((u) => u.username === 'gatekeeper');
+  if (!explorer || !gatekeeper) return [];
+  const completion = {
+    id: `qc-initial-${Date.now()}`,
+    questId: 'quest-gatekeeper-approval-setup',
+    userId: explorer.id,
+    completedAt: new Date().toISOString(),
+    status: 'Pending',
+    note: 'This is my first note for approval!'
+  };
+  return [completion];
+}
+
+function createInitialData(setupChoice = 'guided', adminUserData, blueprint = null) {
     if (setupChoice === 'scratch') {
         const users = [{
             ...adminUserData,
             id: `user-${Date.now()}`,
-            avatar: {},
-            ownedAssetIds: [],
-            personalPurse: {},
-            personalExperience: {},
-            guildBalances: {},
-            ownedThemes: ['emerald', 'rose', 'sky'],
-            hasBeenOnboarded: false,
+            avatar: {}, ownedAssetIds: [], personalPurse: {}, personalExperience: {}, guildBalances: {},
+            ownedThemes: ['emerald', 'rose', 'sky'], hasBeenOnboarded: false,
         }];
         const guilds = createInitialGuilds(users);
         const bankMarket = createSampleMarkets().find(m => m.id === 'market-bank');
         return {
-            users,
-            quests: [],
-            questGroups: [],
+            users, quests: [], questGroups: [],
             markets: bankMarket ? [bankMarket] : [],
             rewardTypes: INITIAL_REWARD_TYPES,
-            questCompletions: [],
-            purchaseRequests: [],
-            guilds,
-            ranks: INITIAL_RANKS,
-            trophies: [],
-            userTrophies: [],
-            adminAdjustments: [],
-            gameAssets: [],
-            systemLogs: [],
-            settings: INITIAL_SETTINGS,
-            themes: INITIAL_THEMES,
-            loginHistory: [],
-            chatMessages: [],
-            systemNotifications: [],
-            scheduledEvents: [],
+            questCompletions: [], purchaseRequests: [], guilds,
+            ranks: INITIAL_RANKS, trophies: [], userTrophies: [],
+            adminAdjustments: [], gameAssets: [], systemLogs: [],
+            settings: INITIAL_SETTINGS, themes: INITIAL_THEMES,
+            loginHistory: [], chatMessages: [], systemNotifications: [], scheduledEvents: [],
         };
     }
-
     if (setupChoice === 'import' && blueprint) {
          const users = [{
             ...adminUserData,
             id: `user-${Date.now()}`,
-            avatar: {},
-            ownedAssetIds: [],
-            personalPurse: {},
-            personalExperience: {},
-            guildBalances: {},
-            ownedThemes: ['emerald', 'rose', 'sky'],
-            hasBeenOnboarded: false,
+            avatar: {}, ownedAssetIds: [], personalPurse: {}, personalExperience: {}, guildBalances: {},
+            ownedThemes: ['emerald', 'rose', 'sky'], hasBeenOnboarded: false,
         }];
         const guilds = createInitialGuilds(users);
         const finalRewardTypes = [
@@ -335,7 +321,7 @@ export function createInitialData(setupChoice = 'guided', adminUserData, bluepri
             rewardTypes: finalRewardTypes,
             questCompletions: [],
             purchaseRequests: [],
-            guilds: guilds,
+            guilds,
             ranks: blueprint.assets.ranks || INITIAL_RANKS,
             trophies: blueprint.assets.trophies || [],
             userTrophies: [],
@@ -350,20 +336,14 @@ export function createInitialData(setupChoice = 'guided', adminUserData, bluepri
             scheduledEvents: [],
         };
     }
-    
     // Default to 'guided' setup
     const users = createMockUsers();
     users[0] = {
         ...users[0],
         ...adminUserData,
         id: `user-${Date.now()}`,
-        avatar: {},
-        ownedAssetIds: [],
-        personalPurse: {},
-        personalExperience: {},
-        guildBalances: {},
-        ownedThemes: ['emerald', 'rose', 'sky'],
-        hasBeenOnboarded: false,
+        avatar: {}, ownedAssetIds: [], personalPurse: {}, personalExperience: {}, guildBalances: {},
+        ownedThemes: ['emerald', 'rose', 'sky'], hasBeenOnboarded: false,
     };
     const quests = createSampleQuests(users);
     const guilds = createInitialGuilds(users);
@@ -372,19 +352,19 @@ export function createInitialData(setupChoice = 'guided', adminUserData, bluepri
     const initialCompletions = createInitialQuestCompletions(quests, users);
 
     return {
-        users: users,
-        quests: quests,
+        users,
+        quests,
         questGroups: INITIAL_QUEST_GROUPS,
-        markets: markets,
+        markets,
         rewardTypes: INITIAL_REWARD_TYPES,
         questCompletions: initialCompletions,
         purchaseRequests: [],
-        guilds: guilds,
+        guilds,
         ranks: INITIAL_RANKS,
         trophies: INITIAL_TROPHIES,
         userTrophies: [],
         adminAdjustments: [],
-        gameAssets: gameAssets,
+        gameAssets,
         systemLogs: [],
         settings: INITIAL_SETTINGS,
         themes: INITIAL_THEMES,
@@ -394,26 +374,6 @@ export function createInitialData(setupChoice = 'guided', adminUserData, bluepri
         scheduledEvents: [],
     };
 }
-
-export function createInitialQuestCompletions(quests, users) {
-  const explorer = users.find((u) => u.username === 'explorer');
-  const gatekeeper = users.find((u) => u.username === 'gatekeeper');
-  
-  if (!explorer || !gatekeeper) return [];
-
-  const completion = {
-    id: `qc-initial-${Date.now()}`,
-    questId: 'quest-gatekeeper-approval-setup',
-    userId: explorer.id,
-    completedAt: new Date().toISOString(),
-    status: 'Pending',
-    note: 'This is my first note for approval!'
-  };
-
-  return [completion];
-}
-
-
 // === END INLINED DATA ===
 
 const app = express();

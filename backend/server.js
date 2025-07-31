@@ -356,9 +356,9 @@ class SqliteDB {
         console.log('[DB] --- Database Initialization Complete ---');
     }
 
-    async getData() {
-        const row = await this.get("SELECT value FROM app_data WHERE key = ?", ['main']);
-        return row ? JSON.parse(row.value) : null;
+    getData() {
+        return this.get("SELECT value FROM app_data WHERE key = ?", ['main'])
+            .then(row => row ? JSON.parse(row.value) : null);
     }
 
     async saveData(data) {
@@ -366,6 +366,20 @@ class SqliteDB {
         const result = await this.run(`INSERT OR REPLACE INTO app_data (key, value) VALUES (?, ?)`, ['main', jsonData]);
         console.log(`[DB] Data saved successfully. Rows changed: ${result.changes}`);
         return result;
+    }
+
+    close() {
+        return new Promise((resolve, reject) => {
+            this.db.close(err => {
+                if (err) {
+                    console.error('[DB] Error closing the database connection.', err);
+                    reject(err);
+                } else {
+                    console.log('[DB] Database connection closed.');
+                    resolve();
+                }
+            });
+        });
     }
 }
 
@@ -632,6 +646,33 @@ app.post('/api/actions/factory-reset', async (req, res) => {
     }
 });
 
+app.post('/api/actions/reinitialize', async (req, res) => {
+    console.log('[API] DANGER: Received request to re-initialize application data.');
+    res.status(200).json({ message: 'Application is re-initializing...' });
+    
+    // Give the response time to send before shutting down.
+    setTimeout(async () => {
+        try {
+            console.log('[SERVER] Closing database connection...');
+            await db.close();
+            console.log('[SERVER] Database connection closed.');
+
+            console.log(`[SERVER] Deleting database file at ${dbPath}...`);
+            await fs.unlink(dbPath);
+            console.log('[SERVER] Database file deleted.');
+
+            console.log('[SERVER] Exiting process to trigger restart.');
+            process.exit(1);
+
+        } catch (error) {
+            console.error('[SERVER] CRITICAL: Failed during re-initialization process:', error);
+            // If deletion fails, we should still try to restart to avoid a broken state.
+            process.exit(1);
+        }
+    }, 500);
+});
+
+
 app.post('/api/quests/:id/actions', async (req, res) => {
     const { id: questId } = req.params;
     const { action, userId } = req.body;
@@ -863,26 +904,6 @@ app.post('/api/first-run', async (req, res) => {
     } catch(error) {
         console.error('[API] CRITICAL: First run setup failed!', error);
         res.status(500).json({ error: 'An error occurred during the first run setup.' });
-    }
-});
-
-app.post('/api/reinitialize', async (req, res) => {
-    try {
-        console.log('[API] Received request to re-initialize application data.');
-        const emptyData = {
-            users: [], quests: [], questGroups: [], markets: [], rewardTypes: [], questCompletions: [],
-            purchaseRequests: [], guilds: [], ranks: [], trophies: [], userTrophies: [],
-            adminAdjustments: [], gameAssets: [], systemLogs: [], settings: INITIAL_SETTINGS,
-            themes: [], loginHistory: [], chatMessages: [], systemNotifications: [], scheduledEvents: [],
-        };
-        // Reset content version to trigger first run logic.
-        emptyData.settings.contentVersion = 1; 
-        await saveData(emptyData);
-        console.log('[API] Application data has been successfully reset.');
-        res.status(200).json({ message: 'Application data has been reset.' });
-    } catch (error) {
-        console.error('[API] Failed to reinitialize data:', error);
-        res.status(500).json({ error: 'Failed to reset application data.' });
     }
 });
 

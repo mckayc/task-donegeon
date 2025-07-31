@@ -17,7 +17,7 @@ interface ServerBackup {
 }
 
 const BackupAndImportPage: React.FC = () => {
-    const { restoreFromBackup, importBlueprint, restoreDefaultObjects, clearAllHistory, resetAllPlayerData, deleteAllCustomContent, updateSettings, addNotification } = useAppDispatch();
+    const { restoreFromBackup, importBlueprint, restoreDefaultObjects, clearAllHistory, resetAllPlayerData, deleteAllCustomContent, updateSettings, addNotification, reinitializeApp } = useAppDispatch();
     const appState = useAppState();
     const { settings } = appState;
     
@@ -150,6 +150,7 @@ const BackupAndImportPage: React.FC = () => {
             case 'clear-history': clearAllHistory(); break;
             case 'reset-players': resetAllPlayerData(); break;
             case 'factory-reset': deleteAllCustomContent(); break;
+            case 'reinitialize': reinitializeApp(); break;
         }
         setConfirmation(null);
     };
@@ -282,6 +283,12 @@ const BackupAndImportPage: React.FC = () => {
                             <Button className="!bg-red-700 hover:!bg-red-600 w-full" onClick={() => setConfirmation({ action: 'factory-reset', title: 'Factory Reset', message: 'Are you sure? This deletes ALL user-created content (quests, items, etc.). It cannot be undone.'})}>Factory Reset Content</Button>
                             <p className="text-xs text-red-200/70 mt-2">Deletes ALL user-created content (quests, items, markets, trophies, rewards, etc.) but keeps user accounts. This is irreversible.</p>
                         </div>
+                    </div>
+                    <div className="pt-6 border-t border-red-700/60">
+                        <Button className="!bg-red-800 hover:!bg-red-700 w-full" onClick={() => setConfirmation({ action: 'reinitialize', title: 'Re-initialize Application', message: 'This will PERMANENTLY DELETE ALL DATA, including users, quests, and settings. The application will restart to the first-run setup wizard. This action cannot be undone.'})}>
+                            Re-initialize Application (Full Reset)
+                        </Button>
+                        <p className="text-xs text-red-200/70 mt-2">This is a full factory reset that deletes the entire database and restarts the application. Use this if your application is in a broken state and you want to start completely fresh.</p>
                     </div>
                 </div>
              </Card>

@@ -1,6 +1,7 @@
 
 
 
+
 import React, { useEffect } from 'react';
 import { useAppState } from './context/AppContext';
 import FirstRunWizard from './components/auth/FirstRunWizard';
@@ -12,7 +13,7 @@ import OnboardingWizard from './components/auth/OnboardingWizard';
 import SharedLayout from './components/layout/SharedLayout';
 
 const App: React.FC = () => {
-  const { isAppUnlocked, isFirstRun, currentUser, isSwitchingUser, isDataLoaded, settings, isSharedViewActive, appMode, guilds, themes } = useAppState();
+  const { isAppUnlocked, isFirstRun, currentUser, isSwitchingUser, isDataLoaded, settings, isSharedViewActive, appMode, guilds, themes, isRestarting } = useAppState();
 
   useEffect(() => {
     let activeThemeId: string | undefined = settings.theme; // Default to system theme
@@ -56,6 +57,16 @@ const App: React.FC = () => {
     }
   }, [settings.favicon]);
 
+
+  if (isRestarting) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-stone-900 text-center p-4">
+        <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-emerald-400 mb-6"></div>
+        <h1 className="text-3xl font-medieval text-accent">Application Restarting</h1>
+        <p className="text-stone-300 mt-2">Please wait a few moments. The page will reload automatically.</p>
+      </div>
+    );
+  }
 
   if (!isDataLoaded) {
     return (

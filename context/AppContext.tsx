@@ -4,6 +4,8 @@
 
 
 
+
+
 import React, { createContext, useState, useContext, ReactNode, useEffect, useCallback, useMemo, useRef } from 'react';
 import { AppSettings, User, Quest, RewardTypeDefinition, QuestCompletion, RewardItem, Market, PurchaseRequest, Guild, Rank, Trophy, UserTrophy, Notification, AppMode, Page, IAppData, ShareableAssetType, GameAsset, Role, QuestCompletionStatus, RewardCategory, PurchaseRequestStatus, AdminAdjustment, AdminAdjustmentType, SystemLog, QuestType, QuestAvailability, Blueprint, ImportResolution, TrophyRequirementType, ThemeDefinition, ChatMessage, SystemNotification, SystemNotificationType, MarketStatus, QuestGroup, BulkQuestUpdates, ScheduledEvent } from '../types';
 import { INITIAL_SETTINGS, createMockUsers, INITIAL_REWARD_TYPES, INITIAL_RANKS, INITIAL_TROPHIES, createSampleMarkets, createSampleQuests, createInitialGuilds, createSampleGameAssets, INITIAL_THEMES, createInitialQuestCompletions, INITIAL_TAGS, INITIAL_QUEST_GROUPS } from '../data/initialData';
@@ -27,6 +29,7 @@ interface AppState extends IAppData {
   syncStatus: 'idle' | 'syncing' | 'success' | 'error';
   syncError: string | null;
   isChatOpen: boolean;
+  isRestarting: boolean;
 }
 
 // The single, unified dispatch for the entire application
@@ -43,7 +46,7 @@ interface AppDispatch {
   exitToSharedView: () => void;
   setIsSharedViewActive: (isActive: boolean) => void;
   bypassFirstRunCheck: () => void;
-  reinitialize: () => Promise<void>;
+  reinitializeApp: () => Promise<void>;
 
   // Game Data
   addQuest: (quest: Omit<Quest, 'id' | 'claimedByUserIds' | 'dismissals'>) => Promise<Quest | undefined>;
@@ -180,7 +183,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         activePage: 'Dashboard', appMode: { mode: 'personal' }, notifications: [],
         isDataLoaded: false, activeMarketId: null, allTags: [],
         isSwitchingUser: false, isSharedViewActive: false, targetedUserForLogin: null,
-        isAiConfigured: false, isSidebarCollapsed: false, syncStatus: 'idle', syncError: null, isChatOpen: false
+        isAiConfigured: false, isSidebarCollapsed: false, syncStatus: 'idle', syncError: null, isChatOpen: false,
+        isRestarting: false,
     });
 
     const isMounted = useRef(true);
@@ -235,7 +239,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             const {
                 isAppUnlocked, isFirstRun, currentUser, activePage, appMode, notifications, isDataLoaded,
                 activeMarketId, allTags, isSwitchingUser, isSharedViewActive, targetedUserForLogin,
-                isAiConfigured, isSidebarCollapsed, syncStatus, syncError, isChatOpen,
+                isAiConfigured, isSidebarCollapsed, syncStatus, syncError, isChatOpen, isRestarting,
                 ...dataToSave
             } = optimisticState;
 
@@ -434,20 +438,18 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         },
         setIsSharedViewActive: (isActive: boolean) => setState(s => ({ ...s, isSharedViewActive: isActive })),
         bypassFirstRunCheck: () => setState(s => ({...s, isFirstRun: false})),
-        reinitialize: async () => {
+        reinitializeApp: async () => {
             try {
-                await apiRequest('/api/reinitialize', { method: 'POST' });
-                // The websocket should handle the full state update, but we can force the UI to change immediately.
-                setState(s => ({
-                    ...s,
-                    isFirstRun: true,
-                    isAppUnlocked: false,
-                    currentUser: null,
-                    users: [] // Make sure the app lock screen doesn't flash the error again
-                }));
+                await apiRequest('/api/actions/reinitialize', { method: 'POST' });
+                setState(s => ({ ...s, isRestarting: true }));
+                // The page will automatically try to reconnect via websockets.
+                // A full reload after a delay is a good fallback.
+                setTimeout(() => {
+                    window.location.reload();
+                }, 7000); // Give it some time for the server to come back up
             } catch (error) {
                 if (error instanceof Error) {
-                    addNotification({ type: 'error', message: `Failed to reset: ${error.message}` });
+                    addNotification({ type: 'error', message: `Failed to send re-initialize command: ${error.message}` });
                 }
             }
         },

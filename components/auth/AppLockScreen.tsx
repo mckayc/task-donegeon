@@ -7,7 +7,7 @@ import Card from '../ui/Card';
 
 const AppLockScreen: React.FC = () => {
   const { users, settings } = useAppState();
-  const { setAppUnlocked, setCurrentUser, reinitialize } = useAppDispatch();
+  const { setAppUnlocked, setCurrentUser, reinitializeApp } = useAppDispatch();
   
   const adminUsers = useMemo(() => users.filter(u => u.role === Role.DonegeonMaster), [users]);
 
@@ -28,7 +28,7 @@ const AppLockScreen: React.FC = () => {
                   <p className="text-stone-300 mb-8">
                       To resolve this, you must re-initialize the application. This will erase the current (corrupted) data and guide you through the first-run setup again.
                   </p>
-                  <Button onClick={reinitialize} className="!bg-red-600 hover:!bg-red-500">
+                  <Button onClick={reinitializeApp} className="!bg-red-600 hover:!bg-red-500">
                       Reset & Re-initialize Application
                   </Button>
               </Card>

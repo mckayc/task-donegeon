@@ -744,8 +744,8 @@ app.post('/api/chat/read', async (req, res) => {
 app.get('/api/pre-run-check', async (req, res) => {
     try {
         const data = await readData();
-        // Check if settings exist and if the first run has been marked as complete.
-        if (data && data.settings && data.settings.isFirstRunComplete) {
+        // A more robust check for existing data is to see if any users have been created.
+        if (data && data.users && data.users.length > 0) {
             res.json({
                 dataExists: true,
                 version: data.settings.contentVersion || 1,
@@ -760,6 +760,7 @@ app.get('/api/pre-run-check', async (req, res) => {
         res.json({ dataExists: false });
     }
 });
+
 
 // Serve index.html for all other routes to enable client-side routing
 app.get('*', (req, res) => {

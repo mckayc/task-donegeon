@@ -1,6 +1,7 @@
 
 
 
+
 import React, { createContext, useState, useContext, ReactNode, useEffect, useCallback, useMemo, useRef } from 'react';
 import { AppSettings, User, Quest, RewardTypeDefinition, QuestCompletion, RewardItem, Market, PurchaseRequest, Guild, Rank, Trophy, UserTrophy, Notification, AppMode, Page, IAppData, ShareableAssetType, GameAsset, Role, QuestCompletionStatus, RewardCategory, PurchaseRequestStatus, AdminAdjustment, AdminAdjustmentType, SystemLog, QuestType, QuestAvailability, Blueprint, ImportResolution, TrophyRequirementType, ThemeDefinition, ChatMessage, SystemNotification, SystemNotificationType, MarketStatus, QuestGroup, BulkQuestUpdates, ScheduledEvent } from '../types';
 import { INITIAL_SETTINGS, createMockUsers, INITIAL_REWARD_TYPES, INITIAL_RANKS, INITIAL_TROPHIES, createSampleMarkets, createSampleQuests, createInitialGuilds, createSampleGameAssets, INITIAL_THEMES, createInitialQuestCompletions, INITIAL_TAGS, INITIAL_QUEST_GROUPS } from '../data/initialData';
@@ -267,6 +268,11 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     const fullUpdate = useCallback((newData: IAppData) => {
         if (!isMounted.current) return;
         setState(prev => {
+            if (!newData || !newData.users || !newData.settings) {
+                console.error("Received incomplete or malformed data from WebSocket. Update skipped.", newData);
+                return prev;
+            }
+            
             const currentUserId = prev.currentUser?.id;
             const updatedCurrentUser = currentUserId
                 ? (newData.users || prev.users).find(u => u.id === currentUserId) || null
@@ -312,9 +318,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
     const connectWebSocket = useCallback(() => {
         if (typeof window === 'undefined' || !window.location.host) {
-            console.warn('WebSocket connection skipped: Not a browser environment or host is missing.');
-            if (reconnectTimeoutId.current) clearTimeout(reconnectTimeoutId.current);
-            reconnectTimeoutId.current = window.setTimeout(connectWebSocket, 1000);
+            console.warn('WebSocket connection skipped: Not in a browser environment or host is missing.');
             return;
         }
 
@@ -367,6 +371,10 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         const loadData = async () => {
             try {
                 const data = await apiRequest('/api/data');
+                if (!data || !data.users || !data.settings) {
+                    throw new Error("Received malformed data from server. The database might be corrupted.");
+                }
+
                 const isFirstRun = data.users.length === 0 && data.settings.contentVersion < 2;
 
                 const lastUserId = localStorage.getItem('lastUserId');
@@ -384,7 +392,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             } catch (error) {
                 console.error("Failed to load initial data:", error);
                  if (isMounted.current) {
-                  setState(prev => ({ ...prev, isDataLoaded: true, syncStatus: 'error', syncError: 'Failed to connect to server.' }));
+                  setState(prev => ({ ...prev, isDataLoaded: true, syncStatus: 'error', syncError: error instanceof Error ? error.message : 'Failed to connect to server.' }));
                  }
             }
         };

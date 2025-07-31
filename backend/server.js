@@ -516,7 +516,7 @@ const upload = multer({ storage });
 // === API Endpoints ===
 
 // Serve Frontend
-const clientBuildPath = path.join(__dirname, '..');
+const clientBuildPath = path.join(__dirname, '..', 'dist');
 app.use(express.static(clientBuildPath));
 
 // Data API

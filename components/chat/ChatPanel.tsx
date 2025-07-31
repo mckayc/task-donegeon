@@ -104,7 +104,7 @@ const ChatPanel: React.FC = () => {
 
     const unreadInfo = useMemo(() => {
         if (!currentUser) return { dms: new Set(), guilds: new Set() };
-        const dms = new Set(chatMessages.filter(msg => msg.recipientId === currentUser.id && !msg.readBy.includes(currentUser.id)).map(msg => msg.senderId));
+        const dms = new Set(chatMessages.filter(msg => msg.recipientId === currentUser.id && !msg.readBy.includes(currentUser.id) && users.find(u => u.id === msg.senderId)).map(msg => msg.senderId));
         const guildsWithUnread = new Set(chatMessages.filter(msg => msg.guildId && !msg.readBy.includes(currentUser.id) && users.find(u => u.id === msg.senderId)).map(msg => msg.guildId));
         return { dms, guilds: guildsWithUnread };
     }, [chatMessages, currentUser, users]);
@@ -250,6 +250,8 @@ const ChatPanel: React.FC = () => {
                                     const isOwnMessage = msg.senderId === currentUser.id;
                                     const sender = users.find(u => u.id === msg.senderId);
                                     const isMsgAnnouncement = msg.isAnnouncement && 'isGuild' in activeChatTarget && activeChatTarget.isGuild;
+
+                                    if (!sender) return null; // FIX: Don't render messages from deleted users
 
                                     return (
                                         <React.Fragment key={msg.id}>

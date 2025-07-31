@@ -288,7 +288,7 @@ const PackDetailView: React.FC<{ pack: LibraryPack; onBack: () => void; }> = ({ 
                 </div>
 
                 <div className="space-y-6 max-h-[60vh] overflow-y-auto pr-4 scrollbar-hide">
-                    {pack.assets.quests && pack.assets.quests.length > 0 && (
+                    {(livePackAssets.quests || []).length > 0 && (
                         <div className="p-4 bg-stone-900/40 rounded-lg border border-stone-700/60">
                             <UserMultiSelect
                                 allUsers={users}
@@ -379,7 +379,7 @@ const AssetLibraryPage: React.FC = () => {
             );
             if (questTagMatch) return true;
 
-            const groupNameMatch = pack.assets.questGroups?.some(g => 
+            const groupNameMatch = (pack.assets.questGroups || []).some(g => 
                 g.name.toLowerCase().includes(lowerSearch)
             );
             if (groupNameMatch) return true;

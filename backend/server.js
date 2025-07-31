@@ -378,6 +378,8 @@ const app = express();
 const server = http.createServer(app);
 const PORT = process.env.PORT || 3001;
 const UPLOADS_DIR = path.join(__dirname, '../uploads');
+const BACKUPS_DIR = path.join(__dirname, '../backups');
+
 
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
@@ -410,6 +412,8 @@ console.log(`[FS] Serving static files from: ${path.join(__dirname, '../dist')}`
 app.use(express.static(path.join(__dirname, '../dist')));
 console.log(`[FS] Serving uploads from: ${UPLOADS_DIR}`);
 app.use('/uploads', express.static(UPLOADS_DIR));
+console.log(`[FS] Serving backups from: ${BACKUPS_DIR}`);
+app.use('/api/backups', express.static(BACKUPS_DIR));
 
 
 // Enhanced WebSocket Setup
@@ -516,13 +520,6 @@ app.post('/api/data', async (req, res) => {
 const createCrudHandler = (dataType, idField = 'id') => {
     const router = express.Router();
     
-    router.post('/', async (req, res) => {
-        const newItem = { ...req.body, [idField]: `${dataType.slice(0, -1)}-${Date.now()}` };
-        const newData = { ...appDataCache, [dataType]: [...appDataCache[dataType], newItem] };
-        await saveData(newData);
-        res.status(201).json(newItem);
-    });
-
     router.put(`/:id`, async (req, res) => {
         const { id } = req.params;
         const updatedItem = req.body;
@@ -530,18 +527,13 @@ const createCrudHandler = (dataType, idField = 'id') => {
         await saveData(newData);
         res.json(updatedItem);
     });
-
-    router.delete(`/:id`, async (req, res) => {
-        const { id } = req.params;
-        const newData = { ...appDataCache, [dataType]: appDataCache[dataType].filter(item => item[idField] !== id) };
-        await saveData(newData);
-        res.status(204).send();
-    });
+    
+    // Most POST and DELETE are handled by specific routes now for better logic
 
     return router;
 };
 
-app.use('/api/users', createCrudHandler('users'));
+// Generic handlers for simple types
 app.use('/api/quests', createCrudHandler('quests'));
 app.use('/api/markets', createCrudHandler('markets'));
 app.use('/api/guilds', createCrudHandler('guilds'));
@@ -880,6 +872,25 @@ app.post('/api/ai/generate', async (req, res) => {
     }
 });
 
+// Backup route
+app.post('/api/backups/create', async (req, res) => {
+    try {
+        await fs.mkdir(BACKUPS_DIR, { recursive: true });
+        const timestamp = new Date().toISOString().replace(/:/g, '-').slice(0, 19);
+        const filename = `manual_backup_${timestamp}.json`;
+        const filePath = path.join(BACKUPS_DIR, filename);
+        const dataToBackup = { ...appDataCache };
+        // Optionally remove transient state if it exists
+        delete dataToBackup.notifications;
+        await fs.writeFile(filePath, JSON.stringify(dataToBackup, null, 2));
+        res.status(201).json({ message: `Backup created: ${filename}` });
+    } catch (error) {
+        console.error('[API] Failed to create backup:', error);
+        res.status(500).json({ error: 'Failed to create backup.' });
+    }
+});
+
+
 // Catch-all to serve index.html
 app.get('*', (req, res) => {
     res.sendFile(path.join(__dirname, '../dist/index.html'));
@@ -893,8 +904,13 @@ const startServer = async () => {
         
         // 2. Load initial data from the now-guaranteed-to-exist DB into memory cache
         await loadData();
+        
+        // 3. Ensure essential directories exist
+        await fs.mkdir(UPLOADS_DIR, { recursive: true });
+        await fs.mkdir(BACKUPS_DIR, { recursive: true });
 
-        // 3. Start listening for requests
+
+        // 4. Start listening for requests
         server.listen(PORT, () => {
             console.log(`[SERVER] Server listening on http://localhost:${PORT}`);
         });

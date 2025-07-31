@@ -346,9 +346,15 @@ class SqliteDB {
         console.log('[DB] STEP 4: Checking for existing data in "app_data" table...');
         const row = await this.get("SELECT value FROM app_data WHERE key = ?", ['main']).catch(e => null);
         if (!row) {
-            console.log('[DB] No data found. Seeding database with default guided setup...');
-            const initialData = createInitialData('guided');
-            await this.saveData(initialData);
+            console.log('[DB] No data found. Seeding database with empty state for first run wizard...');
+            const emptyInitialState = {
+                users: [], quests: [], questGroups: [], markets: [], rewardTypes: [], questCompletions: [],
+                purchaseRequests: [], guilds: [], ranks: [], trophies: [], userTrophies: [],
+                adminAdjustments: [], gameAssets: [], systemLogs: [],
+                settings: INITIAL_SETTINGS, themes: INITIAL_THEMES,
+                loginHistory: [], chatMessages: [], systemNotifications: [], scheduledEvents: [],
+            };
+            await this.saveData(emptyInitialState);
             console.log('[DB] SUCCESS: Database seeded successfully.');
         } else {
             console.log('[DB] Existing data found. Skipping database seed.');
@@ -614,6 +620,70 @@ userRouter.delete('/:id', async (req, res) => {
     res.status(204).send();
 });
 app.use('/api/users', userRouter);
+
+// CHAT API Endpoints
+app.post('/api/chat/messages', async (req, res) => {
+    try {
+        const appData = await db.getData();
+        const { senderId, recipientId, guildId, message, isAnnouncement } = req.body;
+
+        if (!senderId || !message || (!recipientId && !guildId)) {
+            return res.status(400).json({ error: 'Missing required chat message fields.' });
+        }
+
+        const newChatMessage = {
+            id: `chat-${Date.now()}`,
+            senderId,
+            recipientId,
+            guildId,
+            message,
+            isAnnouncement: !!isAnnouncement,
+            timestamp: new Date().toISOString(),
+            readBy: [senderId],
+        };
+
+        appData.chatMessages.push(newChatMessage);
+        await saveData(appData);
+
+        res.status(201).json(newChatMessage);
+    } catch (error) {
+        console.error('[API] Error in POST /api/chat/messages:', error);
+        res.status(500).json({ error: 'Failed to send message.' });
+    }
+});
+
+app.post('/api/chat/read', async (req, res) => {
+    try {
+        const appData = await db.getData();
+        const { userId, partnerId, guildId } = req.body;
+
+        if (!userId || (!partnerId && !guildId)) {
+            return res.status(400).json({ error: 'User and target (partner/guild) are required.' });
+        }
+
+        let messagesUpdated = false;
+        appData.chatMessages.forEach(msg => {
+            const isRelevantDM = partnerId &&
+                ((msg.senderId === userId && msg.recipientId === partnerId) ||
+                 (msg.senderId === partnerId && msg.recipientId === userId));
+            const isRelevantGuildMsg = guildId && msg.guildId === guildId && msg.senderId !== userId;
+
+            if ((isRelevantDM || isRelevantGuildMsg) && !msg.readBy.includes(userId)) {
+                msg.readBy.push(userId);
+                messagesUpdated = true;
+            }
+        });
+
+        if (messagesUpdated) {
+            await saveData(appData);
+        }
+
+        res.status(204).send();
+    } catch (error) {
+        console.error('[API] Error in POST /api/chat/read:', error);
+        res.status(500).json({ error: 'Failed to mark messages as read.' });
+    }
+});
 
 
 // More complex endpoints

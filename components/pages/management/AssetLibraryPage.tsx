@@ -2,7 +2,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import Button from '../../ui/Button';
 import Card from '../../ui/Card';
 import { libraryPacks } from '../../../data/assetLibrary';
-import { LibraryPack, BlueprintAssets, TrophyRequirementType, QuestGroup, Quest, GameAsset, Market, Trophy, RewardTypeDefinition, QuestType, User } from '../../../types';
+import { LibraryPack, BlueprintAssets, TrophyRequirementType, QuestGroup, Quest, GameAsset, Market, Trophy, RewardTypeDefinition, QuestType, User, ShareableAssetType } from '../../../types';
 import { useAppState, useAppDispatch } from '../../../context/AppContext';
 import Input from '../../ui/Input';
 import CreateQuestDialog from '../../quests/CreateQuestDialog';
@@ -11,13 +11,14 @@ import EditTrophyDialog from '../../settings/EditTrophyDialog';
 import EditMarketDialog from '../../markets/EditMarketDialog';
 import UserMultiSelect from '../../ui/UserMultiSelect';
 
-const packTypes = ['All', 'Quests', 'Markets', 'Items', 'Trophies', 'Rewards'];
+const packTypes = ['All', 'Quests', 'Markets', 'Items', 'Trophies', 'Rewards', 'Quest Groups'];
 
 type SelectableAsset = { id: string; name: string; description: string; icon: string; type: keyof BlueprintAssets; questType?: QuestType };
 
 const AssetPreview: React.FC<{ assets: Partial<BlueprintAssets> }> = ({ assets }) => {
     const assetList = [
         ...(assets.quests || []),
+        ...(assets.questGroups || []),
         ...(assets.gameAssets || []),
         ...(assets.trophies || []),
         ...(assets.markets || []),
@@ -68,6 +69,7 @@ const PackDetailView: React.FC<{ pack: LibraryPack; onBack: () => void; }> = ({ 
     const allAssets = useMemo((): SelectableAsset[] => {
         const assets: SelectableAsset[] = [];
         livePackAssets.quests?.forEach(q => assets.push({ id: q.id, name: q.title, description: q.description, icon: q.icon || '📝', type: 'quests', questType: q.type }));
+        livePackAssets.questGroups?.forEach(qg => assets.push({ id: qg.id, name: qg.name, description: qg.description, icon: qg.icon || '📂', type: 'questGroups' }));
         livePackAssets.gameAssets?.forEach(ga => assets.push({ id: ga.id, name: ga.name, description: ga.description, icon: ga.icon || '📦', type: 'gameAssets' }));
         livePackAssets.trophies?.forEach(t => assets.push({ id: t.id, name: t.name, description: t.description, icon: t.icon, type: 'trophies' }));
         livePackAssets.markets?.forEach(m => assets.push({ id: m.id, name: m.title, description: m.description, icon: m.icon || '🛒', type: 'markets' }));

@@ -516,33 +516,100 @@ app.post('/api/data', async (req, res) => {
     }
 });
 
-// Other specific routes will now update the cache and then save
-const createCrudHandler = (dataType, idField = 'id') => {
-    const router = express.Router();
-    
-    router.put(`/:id`, async (req, res) => {
+// Generic CRUD handlers
+const createCrudHandlers = (router, dataType, idPrefix) => {
+    // POST (Create)
+    router.post('/', async (req, res) => {
+        const newItemPayload = req.body;
+        const newItem = { ...newItemPayload, id: `${idPrefix}-${Date.now()}` };
+        
+        // Add creation-specific fields
+        if (dataType === 'gameAssets') {
+            newItem.creatorId = 'admin'; // Placeholder
+            newItem.createdAt = new Date().toISOString();
+            newItem.purchaseCount = 0;
+        } else if (dataType === 'users') {
+            newItem.avatar = {};
+            newItem.ownedAssetIds = [];
+            newItem.personalPurse = {};
+            newItem.personalExperience = {};
+            newItem.guildBalances = {};
+            newItem.ownedThemes = ['emerald', 'rose', 'sky'];
+            newItem.hasBeenOnboarded = false;
+        }
+        
+        const newData = { ...appDataCache, [dataType]: [...appDataCache[dataType], newItem] };
+        await saveData(newData);
+        res.status(201).json(newItem);
+    });
+
+    // PUT (Update)
+    router.put('/:id', async (req, res) => {
         const { id } = req.params;
-        const updatedItem = req.body;
-        const newData = { ...appDataCache, [dataType]: appDataCache[dataType].map(item => item[idField] === id ? updatedItem : item) };
+        const updatedItem = { ...req.body, id }; // Ensure ID is not changed
+        const newData = { ...appDataCache, [dataType]: appDataCache[dataType].map(item => item.id === id ? updatedItem : item) };
         await saveData(newData);
         res.json(updatedItem);
     });
-    
-    // Most POST and DELETE are handled by specific routes now for better logic
 
-    return router;
+    // DELETE (Single)
+    router.delete('/:id', async (req, res) => {
+        const { id } = req.params;
+        const newData = { ...appDataCache, [dataType]: appDataCache[dataType].filter(item => item.id !== id) };
+        await saveData(newData);
+        res.status(204).send();
+    });
 };
 
-// Generic handlers for simple types
-app.use('/api/quests', createCrudHandler('quests'));
-app.use('/api/markets', createCrudHandler('markets'));
-app.use('/api/guilds', createCrudHandler('guilds'));
-app.use('/api/trophies', createCrudHandler('trophies'));
-app.use('/api/gameAssets', createCrudHandler('gameAssets'));
-app.use('/api/themes', createCrudHandler('themes'));
-app.use('/api/rewardTypes', createCrudHandler('rewardTypes'));
-app.use('/api/questGroups', createCrudHandler('questGroups'));
-app.use('/api/scheduledEvents', createCrudHandler('scheduledEvents'));
+// Apply CRUD handlers
+['quests', 'markets', 'guilds', 'trophies', 'gameAssets', 'themes', 'rewardTypes', 'questGroups', 'scheduledEvents'].forEach(type => {
+    const router = express.Router();
+    const prefix = type.slice(0, -1); // e.g., 'quest'
+    createCrudHandlers(router, type, prefix);
+    app.use(`/api/${type}`, router);
+});
+
+// Custom User routes due to complexity
+const userRouter = express.Router();
+createCrudHandlers(userRouter, 'users', 'user'); // Handles POST and PUT
+
+userRouter.delete('/:id', async (req, res) => {
+    const { id: userIdToDelete } = req.params;
+    let data = { ...appDataCache };
+
+    // 1. Filter out the user
+    data.users = data.users.filter(u => u.id !== userIdToDelete);
+
+    // 2. Clean up dependencies
+    // Guilds
+    data.guilds = data.guilds.map(g => ({
+        ...g,
+        memberIds: g.memberIds.filter(id => id !== userIdToDelete)
+    }));
+    // Quest Assignments
+    data.quests = data.quests.map(q => ({
+        ...q,
+        assignedUserIds: q.assignedUserIds.filter(id => id !== userIdToDelete),
+        claimedByUserIds: q.claimedByUserIds.filter(id => id !== userIdToDelete),
+        dismissals: q.dismissals.filter(d => d.userId !== userIdToDelete),
+        todoUserIds: (q.todoUserIds || []).filter(id => id !== userIdToDelete)
+    }));
+    // History records
+    data.questCompletions = data.questCompletions.filter(c => c.userId !== userIdToDelete);
+    data.purchaseRequests = data.purchaseRequests.filter(p => p.userId !== userIdToDelete);
+    data.userTrophies = data.userTrophies.filter(ut => ut.userId !== userIdToDelete);
+    data.adminAdjustments = data.adminAdjustments.filter(a => a.userId !== userIdToDelete);
+    // Chat messages (keep messages, but sender will be "Unknown")
+    data.chatMessages = data.chatMessages.map(msg => ({
+        ...msg,
+        readBy: msg.readBy.filter(id => id !== userIdToDelete)
+    }));
+
+    await saveData(data);
+    res.status(204).send();
+});
+app.use('/api/users', userRouter);
+
 
 // More complex endpoints
 app.post('/api/quests/:id/actions', async (req, res) => {

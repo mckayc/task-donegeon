@@ -630,16 +630,35 @@ app.post('/api/actions/factory-reset', async (req, res) => {
     try {
         let data = { ...appDataCache };
 
+        // 1. Clear all user-creatable content arrays
         data.quests = [];
         data.gameAssets = [];
         data.questGroups = [];
         // Keep the bank market, but remove others
         data.markets = data.markets.filter(m => m.id === 'market-bank');
         // Filter trophies to keep only the initial default ones
-        data.trophies = data.trophies.filter(t => INITIAL_TROPHIES.some(it => it.id === t.id));
+        const initialTrophyIds = new Set(INITIAL_TROPHIES.map(it => it.id));
+        data.trophies = data.trophies.filter(t => initialTrophyIds.has(t.id));
+
+        // 2. Clear all history and transactional data that references the above content
+        data.questCompletions = [];
+        data.purchaseRequests = [];
+        data.userTrophies = [];
+        data.adminAdjustments = [];
+        data.systemLogs = [];
+        data.chatMessages = [];
+        data.systemNotifications = [];
+        data.scheduledEvents = [];
+
+        // 3. Clean up user-specific references to deleted content
+        data.users = data.users.map(user => ({
+            ...user,
+            ownedAssetIds: [], // Clear inventory
+            avatar: {},        // Clear equipped items
+        }));
 
         await saveData(data);
-        res.status(200).json({ message: 'Custom content has been reset.' });
+        res.status(200).json({ message: 'Custom content and all related history has been reset.' });
     } catch (error) {
         console.error('[API] Error during factory reset:', error);
         res.status(500).json({ error: 'Failed to reset custom content.' });

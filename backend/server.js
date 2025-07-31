@@ -548,9 +548,24 @@ const createCrudHandlers = (router, dataType, idPrefix) => {
     router.put('/:id', async (req, res) => {
         const appData = await db.getData();
         const { id } = req.params;
-        const updatedItem = { ...req.body, id };
-        const newData = { ...appData, [dataType]: appData[dataType].map(item => item.id === id ? updatedItem : item) };
+        const updatedFields = req.body;
+
+        let itemFound = false;
+        const newItems = appData[dataType].map(item => {
+            if (item.id === id) {
+                itemFound = true;
+                return { ...item, ...updatedFields };
+            }
+            return item;
+        });
+
+        if (!itemFound) {
+            return res.status(404).json({ error: `${dataType} item with id ${id} not found.` });
+        }
+
+        const newData = { ...appData, [dataType]: newItems };
         await saveData(newData);
+        const updatedItem = newItems.find(item => item.id === id);
         res.json(updatedItem);
     });
 

@@ -1,4 +1,5 @@
 
+
 import React, { useMemo, useState } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { Quest, QuestAvailability, QuestCompletionStatus, RewardCategory, Role, User, QuestType, PurchaseRequest, UserTrophy, Rank } from '../../types';
@@ -43,9 +44,9 @@ const Dashboard: React.FC = () => {
 
     const currentBalances = useMemo(() => {
         if (appMode.mode === 'personal') {
-            return { purse: currentUser.personalPurse, experience: currentUser.personalExperience };
+            return { purse: currentUser.personalPurse || {}, experience: currentUser.personalExperience || {} };
         }
-        return currentUser.guildBalances[appMode.guildId] || { purse: {}, experience: {} };
+        return currentUser.guildBalances?.[appMode.guildId] || { purse: {}, experience: {} };
     }, [currentUser, appMode]);
 
     const rankData = useMemo(() => {
@@ -155,9 +156,9 @@ const Dashboard: React.FC = () => {
             .map(user => {
                 let userTotalXp = 0;
                 if (currentGuildId) {
-                    userTotalXp = (Object.values(user.guildBalances[currentGuildId]?.experience || {}) as number[]).reduce((sum, amount) => sum + amount, 0);
+                    userTotalXp = (Object.values(user.guildBalances?.[currentGuildId]?.experience || {}) as number[]).reduce((sum, amount) => sum + amount, 0);
                 } else {
-                    userTotalXp = (Object.values(user.personalExperience) as number[]).reduce((sum, amount) => sum + amount, 0);
+                    userTotalXp = (Object.values(user.personalExperience || {}) as number[]).reduce((sum, amount) => sum + amount, 0);
                 }
                 return { name: user.gameName, xp: userTotalXp };
             })

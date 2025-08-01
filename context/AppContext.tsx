@@ -276,7 +276,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
                 ? (newData.users || prev.users).find(u => u.id === currentUserId) || null
                 : null;
             
-            const isFirstRunNow = !newData.settings.isFirstRunComplete;
+            // A more robust check: if there are no users, it must be the first run.
+            const isFirstRunNow = !newData.users || newData.users.length === 0;
 
             // Create a new object containing only the data properties from the server payload
             const dataState: IAppData = {
@@ -369,15 +370,14 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         const loadData = async () => {
             try {
                 const data = await apiRequest('/api/data');
-                if (!data || !data.users || !data.settings) {
+                if (!data || !data.settings) { // Check for settings, as users can be empty on first run
                     throw new Error("Received malformed data from server. The database might be corrupted.");
                 }
 
-                console.log(`[FRONTEND LOG] AppContext.loadData: Received data from server. settings.isFirstRunComplete is: ${data.settings.isFirstRunComplete}`);
-
-                const isFirstRun = !data.settings.isFirstRunComplete;
-
-                console.log(`[FRONTEND LOG] AppContext.loadData: Setting isFirstRun state to: ${isFirstRun}`);
+                // A more robust check: if there are no users, it MUST be the first run.
+                // This avoids issues with the isFirstRunComplete flag not persisting correctly.
+                const isFirstRun = !data.users || data.users.length === 0;
+                console.log(`[FRONTEND LOG] AppContext.loadData: Found ${data.users?.length} users. Setting isFirstRun to: ${isFirstRun}`);
                 
                 const lastUserId = localStorage.getItem('lastUserId');
                 const lastUser = isFirstRun ? null : data.users.find((u: User) => u.id === lastUserId);

@@ -1,8 +1,9 @@
 import React, { useState, useRef } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { Role, User, Blueprint } from '../../types';
-import Button from '../ui/Button';
-import Input from '../ui/Input';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import UserFormFields from '../users/UserFormFields';
 
 type AdminDataPayload = Omit<User, 'id' | 'personalPurse' | 'personalExperience' | 'guildBalances' | 'avatar' | 'ownedAssetIds' | 'ownedThemes' | 'hasBeenOnboarded'>;
@@ -122,12 +123,24 @@ const FirstRunWizard: React.FC = () => {
                   <div className="space-y-4">
                       <UserFormFields formData={formData} handleChange={handleChange} />
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <Input label="Password" id="password" name="password" type="password" value={formData.password} onChange={handleChange} required />
-                      <Input label="Confirm Password" id="confirmPassword" name="confirmPassword" type="password" value={formData.confirmPassword} onChange={handleChange} required />
+                        <div className="grid w-full items-center gap-1.5">
+                          <Label htmlFor="password">Password</Label>
+                          <Input id="password" name="password" type="password" value={formData.password} onChange={handleChange} required />
+                        </div>
+                        <div className="grid w-full items-center gap-1.5">
+                          <Label htmlFor="confirmPassword">Confirm Password</Label>
+                          <Input id="confirmPassword" name="confirmPassword" type="password" value={formData.confirmPassword} onChange={handleChange} required />
+                        </div>
                       </div>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <Input label="PIN (4-10 digits)" id="pin" name="pin" type="password" value={formData.pin} onChange={handleChange} required />
-                      <Input label="Confirm PIN" id="confirmPin" name="confirmPin" type="password" value={formData.confirmPin} onChange={handleChange} required />
+                        <div className="grid w-full items-center gap-1.5">
+                          <Label htmlFor="pin">PIN (4-10 digits)</Label>
+                          <Input id="pin" name="pin" type="password" value={formData.pin} onChange={handleChange} required />
+                        </div>
+                        <div className="grid w-full items-center gap-1.5">
+                          <Label htmlFor="confirmPin">Confirm PIN</Label>
+                          <Input id="confirmPin" name="confirmPin" type="password" value={formData.confirmPin} onChange={handleChange} required />
+                        </div>
                       </div>
                   </div>
               </div>

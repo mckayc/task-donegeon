@@ -1,5 +1,3 @@
-
-
 import React, { useMemo, useEffect, useState, useRef } from 'react';
 import Sidebar from './Sidebar';
 import Header from './Header';
@@ -62,8 +60,6 @@ const MainLayout: React.FC = () => {
   }, [systemNotifications, currentUser]);
 
   useEffect(() => {
-    // This effect resets the "shown" flag whenever the user ID changes,
-    // effectively starting a new "notification session" for the new user.
     if (currentUser?.id !== prevUserIdRef.current) {
         setNotificationsShownForSession(false);
         prevUserIdRef.current = currentUser?.id;
@@ -71,12 +67,10 @@ const MainLayout: React.FC = () => {
   }, [currentUser]);
 
   useEffect(() => {
-    // This effect handles the logic for showing the popup.
     if (currentUser && !notificationsShownForSession && settings.loginNotifications.enabled && unreadNotifications.length > 0) {
         setShowLoginNotifications(true);
-        setNotificationsShownForSession(true); // Mark as shown for this session.
+        setNotificationsShownForSession(true);
     } else if (!currentUser) {
-        // Explicitly hide popup on logout, just in case.
         setShowLoginNotifications(false);
     }
   }, [currentUser, notificationsShownForSession, settings.loginNotifications.enabled, unreadNotifications]);
@@ -84,7 +78,6 @@ const MainLayout: React.FC = () => {
   useEffect(() => {
     if (!currentUser || !settings.sidebars.main) return;
 
-    // Find the configuration for the active page from the settings, which is the single source of truth.
     const pageConfig = settings.sidebars.main.find(item => item.type === 'link' && item.id === activePage);
 
     if (!pageConfig) {
@@ -160,7 +153,7 @@ const MainLayout: React.FC = () => {
             onClose={() => setShowLoginNotifications(false)} 
         />
       )}
-      <div className="flex h-screen" style={{ backgroundColor: 'hsl(var(--color-bg-secondary))', color: 'hsl(var(--color-text-primary))' }}>
+      <div className="flex h-screen bg-background text-foreground">
         <Sidebar />
         <div className="flex-1 flex flex-col overflow-hidden transition-all duration-300">
           <Header />

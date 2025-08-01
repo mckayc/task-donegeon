@@ -655,10 +655,14 @@ app.post('/api/first-run', async (req, res) => {
 
         const initialData = createInitialData(setupChoice, adminUserData, blueprint);
         
+        // Find the admin user and mark them as onboarded
+        const adminUser = initialData.users.find(u => u.role === Role.DonegeonMaster);
+        if (adminUser) {
+            adminUser.hasBeenOnboarded = true;
+        }
+
         await writeData(initialData);
         broadcastStateUpdate();
-        
-        const adminUser = initialData.users.find(u => u.role === Role.DonegeonMaster);
         
         res.status(201).json({ message: 'First run completed successfully', adminUser });
     } catch (error) {

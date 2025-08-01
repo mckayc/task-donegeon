@@ -1,6 +1,7 @@
 import React, { createContext, useState, useContext, ReactNode, useEffect, useCallback, useMemo, useRef } from 'react';
 import { AppSettings, User, Quest, RewardTypeDefinition, QuestCompletion, RewardItem, Market, PurchaseRequest, Guild, Rank, Trophy, UserTrophy, Notification, AppMode, Page, IAppData, ShareableAssetType, GameAsset, Role, QuestCompletionStatus, RewardCategory, PurchaseRequestStatus, AdminAdjustment, AdminAdjustmentType, SystemLog, QuestType, QuestAvailability, Blueprint, ImportResolution, TrophyRequirementType, ThemeDefinition, ChatMessage, SystemNotification, SystemNotificationType, MarketStatus, QuestGroup, BulkQuestUpdates, ScheduledEvent } from '../types';
 import { INITIAL_SETTINGS, createMockUsers, INITIAL_REWARD_TYPES, INITIAL_RANKS, INITIAL_TROPHIES, createSampleMarkets, createSampleQuests, createInitialGuilds, createSampleGameAssets, INITIAL_THEMES, createInitialQuestCompletions, INITIAL_TAGS, INITIAL_QUEST_GROUPS } from '../data/initialData';
+import { useDebounce } from '../hooks/useDebounce';
 
 declare var Primus: any;
 
@@ -183,6 +184,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
     const isMounted = useRef(true);
     const primusRef = useRef<any | null>(null);
+    const isInitialLoad = useRef(true);
 
     useEffect(() => {
       isMounted.current = true;
@@ -220,53 +222,63 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             throw error;
         }
     }, [addNotification]);
-    
-    // A function to optimistically update state, then persist the entire state to the backend.
+
+    // This function only performs the optimistic local state update.
+    // The actual saving is handled by a debounced useEffect below.
     const updateAndSave = useCallback((updater: (prevState: AppState) => Partial<IAppData>) => {
         setState(prev => {
             const changes = updater(prev);
-            const optimisticState = { ...prev, ...changes };
-    
-            // Guard against saving during initial load or first run to prevent race conditions.
-            if (!prev.isDataLoaded || prev.isFirstRun) {
-                console.warn("Update and save to server blocked during initial load or first run setup. Applying optimistically.");
-                return optimisticState;
-            }
-
-            // Separate the data part to be saved
-            const {
-                isAppUnlocked, isFirstRun, currentUser, activePage, appMode, notifications, isDataLoaded,
-                activeMarketId, allTags, isSwitchingUser, isSharedViewActive, targetedUserForLogin,
-                isAiConfigured, isSidebarCollapsed, syncStatus, syncError, isChatOpen, isRestarting,
-                ...dataToSave
-            } = optimisticState;
-
-            // Fire-and-forget the async save operation
-            (async () => {
-                if (!isMounted.current) return;
-                try {
-                    setState(s => ({...s, syncStatus: 'syncing'}));
-                    await apiRequest('/api/data', {
-                        method: 'POST',
-                        body: JSON.stringify(dataToSave),
-                    });
-                    if (isMounted.current) {
-                        setState(s => ({ ...s, syncStatus: 'success' }));
-                    }
-                } catch (error) {
-                    if (isMounted.current) {
-                        if (error instanceof Error) {
-                            setState(s => ({...s, syncStatus: 'error', syncError: error.message }));
-                        }
-                    }
-                    console.error("Failed to save state, optimistic update may be out of sync.", error);
-                    // TODO: Implement state rollback on failure. Could restore `prev`.
-                }
-            })();
-    
-            return optimisticState;
+            return { ...prev, ...changes };
         });
-    }, [apiRequest]);
+    }, []);
+
+    // Extract the data portion of the state that needs to be persisted.
+    const {
+        isAppUnlocked, isFirstRun, currentUser, activePage, appMode, notifications, isDataLoaded,
+        activeMarketId, allTags, isSwitchingUser, isSharedViewActive, targetedUserForLogin,
+        isAiConfigured, isSidebarCollapsed, syncStatus, syncError, isChatOpen, isRestarting,
+        ...dataToSave
+    } = state;
+
+    // Debounce the data that will be saved to the server.
+    const debouncedDataToSave = useDebounce(dataToSave, 500);
+
+    // This effect runs automatically when the debounced data changes, saving it to the backend.
+    useEffect(() => {
+        // Don't save if data isn't loaded yet or we are in the first run wizard.
+        if (!state.isDataLoaded || state.isFirstRun) {
+            return;
+        }
+
+        // Prevent saving on the very first effect run after data is loaded from the server.
+        if (isInitialLoad.current) {
+            isInitialLoad.current = false;
+            return;
+        }
+
+        const saveState = async () => {
+            if (!isMounted.current) return;
+            try {
+                setState(s => ({ ...s, syncStatus: 'syncing' }));
+                await apiRequest('/api/data', {
+                    method: 'POST',
+                    body: JSON.stringify(debouncedDataToSave),
+                });
+                if (isMounted.current) {
+                    setState(s => ({ ...s, syncStatus: 'success', syncError: null }));
+                }
+            } catch (error) {
+                if (isMounted.current) {
+                    if (error instanceof Error) {
+                        setState(s => ({ ...s, syncStatus: 'error', syncError: error.message }));
+                    }
+                }
+                console.error("Failed to save state, optimistic update may be out of sync.", error);
+            }
+        };
+
+        saveState();
+    }, [debouncedDataToSave, state.isDataLoaded, state.isFirstRun]);
 
 
     const fullUpdate = useCallback((newData: IAppData) => {

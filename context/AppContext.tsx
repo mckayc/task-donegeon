@@ -222,12 +222,17 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     }, [addNotification]);
     
     // A function to optimistically update state, then persist the entire state to the backend.
-    // Use this for operations that don't have a dedicated backend endpoint.
     const updateAndSave = useCallback((updater: (prevState: AppState) => Partial<IAppData>) => {
         setState(prev => {
             const changes = updater(prev);
             const optimisticState = { ...prev, ...changes };
     
+            // Guard against saving during initial load or first run to prevent race conditions.
+            if (!prev.isDataLoaded || prev.isFirstRun) {
+                console.warn("Update and save to server blocked during initial load or first run setup. Applying optimistically.");
+                return optimisticState;
+            }
+
             // Separate the data part to be saved
             const {
                 isAppUnlocked, isFirstRun, currentUser, activePage, appMode, notifications, isDataLoaded,

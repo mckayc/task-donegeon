@@ -796,22 +796,41 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             ws.current.send(JSON.stringify({ type: 'SEND_CHAT_MESSAGE', payload: newMessage }));
             return newMessage;
         },
-        markMessagesAsRead: async (options) => updateAndSave(s => {
+        markMessagesAsRead: async (options) => {
             const currentUserId = state.currentUser?.id;
-            if (!currentUserId) return {};
-            return {
-                chatMessages: s.chatMessages.map(msg => {
-                    const isUnread = !msg.readBy.includes(currentUserId);
-                    const isGuildMatch = options.guildId && msg.guildId === options.guildId;
-                    const isDMMatch = options.partnerId && ((msg.recipientId === currentUserId && msg.senderId === options.partnerId) || (msg.recipientId === options.partnerId && msg.senderId === currentUserId));
-                    
-                    if (isUnread && (isGuildMatch || isDMMatch)) {
-                        return { ...msg, readBy: [...msg.readBy, currentUserId] };
-                    }
-                    return msg;
-                })
+            if (!currentUserId) return;
+        
+            // Optimistic UI update
+            setState(s => {
+                return {
+                    ...s,
+                    chatMessages: s.chatMessages.map(msg => {
+                        const isUnread = !msg.readBy.includes(currentUserId);
+                        const isGuildMatch = options.guildId && msg.guildId === options.guildId;
+                        const isDMMatch = options.partnerId && 
+                            ((msg.recipientId === currentUserId && msg.senderId === options.partnerId) || 
+                             (msg.recipientId === options.partnerId && msg.senderId === currentUserId));
+                        
+                        if (isUnread && (isGuildMatch || isDMMatch)) {
+                            return { ...msg, readBy: [...msg.readBy, currentUserId] };
+                        }
+                        return msg;
+                    })
+                };
+            });
+        
+            // Fire-and-forget API call to persist the change
+            try {
+                await apiRequest('/api/chat/read', {
+                    method: 'POST',
+                    body: JSON.stringify({ userId: currentUserId, ...options }),
+                });
+            } catch (error) {
+                console.error("Failed to mark messages as read on server:", error);
+                // Note: No state rollback is implemented here for simplicity,
+                // but in a production app, you might want to handle this.
             }
-        }),
+        },
 
         // System Notifications
         addSystemNotification: async (notification) => {

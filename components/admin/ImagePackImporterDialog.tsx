@@ -32,47 +32,22 @@ const ImagePackImporterDialog: React.FC<ImagePackImporterDialogProps> = ({ onClo
         setIsLoadingDetails(true);
         setError('');
         try {
-            // This now becomes a local processing step instead of a network request
             const localGalleryRes = await fetch('/api/media/local-gallery');
             if (!localGalleryRes.ok) throw new Error('Could not fetch local gallery to check for duplicates.');
             const localGallery: {url: string}[] = await localGalleryRes.json();
             const localUrls = new Set(localGallery.map(img => img.url));
 
-            const packImageFiles: PackFile[] = [];
-            
-            // This logic would need to be adapted based on how image URLs are stored in the assetLibrary
-            // For now, assuming they are placeholders or need construction
-            // This part is complex without knowing the real image source
-            // Let's assume for now that asset URLs are absolute and correct
-            
-            const assetPromises = (pack.assets.gameAssets || []).map(asset => {
-                const category = asset.avatarSlot ? `Avatar-${asset.avatarSlot}` : asset.category;
-                const url = asset.url; // Assuming this is a full URL now
-                const name = url.substring(url.lastIndexOf('/') + 1);
-
-                return {
-                    name,
-                    category,
-                    url,
-                    exists: localUrls.has(`/uploads/${category}/${name}`) // A guess at the local path structure
-                }
-            });
-            
-            // This example won't work perfectly without a way to map asset definitions to downloadable image URLs.
-            // For now, we'll simulate the check based on dummy URLs. The real implementation would need a source.
-            // A more realistic approach would be to have the full download URL in the asset library data.
-            // For now, let's just show the logic.
-            // TODO: Ensure assetLibrary.ts contains full, valid URLs for images.
-
-            // Let's simplify and just mark them all as new for this fix.
             const details = (pack.assets.gameAssets || []).map(asset => {
                  const url = asset.url;
                  const name = url.substring(url.lastIndexOf('/') + 1);
+                 const category = asset.avatarSlot ? `Avatar/${asset.avatarSlot}` : asset.category || 'Miscellaneous';
+                 const localPath = `/uploads/${category}/${name}`;
+                 
                  return {
                     name: name,
-                    category: asset.category || 'Miscellaneous',
+                    category: category,
                     url: url,
-                    exists: false, // Placeholder logic
+                    exists: localUrls.has(localPath),
                  }
             });
             setPackDetails(details);
@@ -109,9 +84,7 @@ const ImagePackImporterDialog: React.FC<ImagePackImporterDialogProps> = ({ onClo
         setIsImporting(true);
         setError('');
         try {
-            // This endpoint needs to exist on the backend to receive the files and save them.
-            // It seems it does from the server.js file.
-            const response = await fetch('/api/image-packs/import', {
+            const response = await fetch('/api/media/import-pack', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ files: selectedFiles })

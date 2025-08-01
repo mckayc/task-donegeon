@@ -1,4 +1,5 @@
 
+
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
@@ -183,8 +184,9 @@ wss.on('connection', ws => {
                 ));
                 stmt.finalize();
 
-                // Broadcast a full state update to ensure all clients are in sync
-                broadcastStateUpdate();
+                // Broadcast ONLY the new message, not the full state
+                const broadcastMessage = JSON.stringify({ type: 'NEW_CHAT_MESSAGE', payload: newChatMessage });
+                wss.clients.forEach(client => { if (client.readyState === WebSocket.OPEN) client.send(broadcastMessage); });
             }
         } catch (e) { console.error("Error processing WebSocket message:", e); }
     });
@@ -253,6 +255,7 @@ app.get('/api/data', async (req, res) => {
     } catch (error) { res.status(500).json({ error: 'Failed to read data' }); }
 });
 
+// This route is now DEPRECATED in favor of granular endpoints, but kept for backup/restore.
 app.post('/api/data', async (req, res) => {
     try {
         await writeCoreData(req.body);

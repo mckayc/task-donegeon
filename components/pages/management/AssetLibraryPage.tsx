@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { useAppDispatch } from '../../../context/AppContext';
+import { useAppDispatch } from '../../context/AppContext';
 import Button from '../../ui/Button';
 import Card from '../../ui/Card';
-import ImagePackImporterDialog from '../admin/ImagePackImporterDialog';
+import ImagePackImporterDialog from '../../admin/ImagePackImporterDialog';
 
 const AssetLibraryPage: React.FC = () => {
     const [isImporterOpen, setIsImporterOpen] = useState(false);

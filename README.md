@@ -135,7 +135,7 @@ Once unlocked, you and other users can log in using the "Switch Profile" button.
     -   In one terminal, from the `backend` directory: `npm start`
     -   In another terminal, from the root directory: `npm run dev`
     
-    The application will be running at `http://localhost:5173`. A `data.db` file will be created automatically in the `backend` directory to store all application data.
+    The application will be running at `http://localhost:5173`. A `db` folder containing a `data.db` file will be created automatically in the `backend` directory to store all application data.
 
 ### Option 2: Docker Deployment
 1.  **Clone the Repository**.
@@ -144,15 +144,15 @@ Once unlocked, you and other users can log in using the "Switch Profile" button.
 3.  **Create local directories for persistent storage:**
     ```bash
     mkdir uploads
-    mkdir backups
+    mkdir db
     # Ensure folders have correct permissions for the container user (UID 1000)
-    sudo chown -R 1000:1000 ./uploads ./backups
+    sudo chown -R 1000:1000 ./uploads ./db
     ```
 4.  **Build and Run:**
     ```bash
     docker-compose up --build -d
     ```
-    The app will be at `http://localhost:3002`. Your database, uploaded files, and server-side backups will be persistent in the `./backend/data.db`, `./uploads`, and `./backups` folders on your host machine.
+    The app will be at `http://localhost:3002`. Your database, uploaded files, and server-side backups will be persistent in the `./db`, and `./uploads` folders on your host machine.
 
 ### Option 3: Portainer Deployment
 1.  In Portainer, go to **Stacks** > **+ Add stack**.
@@ -162,6 +162,5 @@ Once unlocked, you and other users can log in using the "Switch Profile" button.
     -   **Name:** `API_KEY`, **Value:** `your_api_key_here`
 5.  **Important:** To make your data persistent, go to the **Volumes** tab in Portainer and map the container paths to a host path.
     -   `./uploads:/app/uploads`
-    -   `./backups:/app/backend/backups`
-    -   `./backend/data.db:/app/backend/data.db`
+    -   `./db:/app/backend/db`
 6.  Click **Deploy the stack**. The app will be available at `http://<your-server-ip>:3002`.

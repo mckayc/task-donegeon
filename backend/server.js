@@ -1,5 +1,4 @@
 
-
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
@@ -275,6 +274,139 @@ app.post('/api/first-run', async (req, res) => {
     } catch (error) { res.status(500).json({ error: 'Failed to initialize data' }); }
 });
 
+// === DYNAMIC DATA ROUTES ===
+
+// --- USERS ---
+app.post('/api/users', async (req, res) => {
+    try {
+        const newUserPayload = req.body;
+        const data = await readCoreData();
+        const newUser = {
+            ...newUserPayload,
+            id: `user-${Date.now()}`,
+            avatar: {}, ownedAssetIds: [], personalPurse: {}, personalExperience: {},
+            guildBalances: {}, ownedThemes: ['emerald', 'rose', 'sky'], hasBeenOnboarded: false,
+        };
+        data.users = [...(data.users || []), newUser];
+        await writeCoreData(data);
+        broadcastStateUpdate();
+        res.status(201).json(newUser);
+    } catch (error) { res.status(500).json({ error: 'Failed to add user' }); }
+});
+
+app.put('/api/users/:userId', async (req, res) => {
+    try {
+        const { userId } = req.params;
+        const updatedData = req.body;
+        const data = await readCoreData();
+        const userIndex = data.users.findIndex(u => u.id === userId);
+        if (userIndex === -1) return res.status(404).json({ error: 'User not found' });
+        data.users[userIndex] = { ...data.users[userIndex], ...updatedData };
+        await writeCoreData(data);
+        broadcastStateUpdate();
+        res.status(200).json(data.users[userIndex]);
+    } catch (error) { res.status(500).json({ error: `Failed to update user: ${error.message}` }); }
+});
+
+app.delete('/api/users/:userId', async (req, res) => {
+    try {
+        const { userId } = req.params;
+        const data = await readCoreData();
+        data.users = data.users.filter(u => u.id !== userId);
+        await writeCoreData(data);
+        broadcastStateUpdate();
+        res.status(204).send();
+    } catch (error) { res.status(500).json({ error: 'Failed to delete user' }); }
+});
+
+
+// --- GENERIC CRUD ---
+const genericCrud = (resource, idPrefix) => {
+    const router = express.Router();
+    
+    // GET ALL
+    router.get('/', async (req, res) => {
+        try {
+            const data = await readCoreData();
+            res.json(data[resource] || []);
+        } catch (e) { res.status(500).json({ error: `Failed to get ${resource}` }); }
+    });
+
+    // CREATE
+    router.post('/', async (req, res) => {
+        try {
+            const data = await readCoreData();
+            const newItem = { ...req.body, id: `${idPrefix}-${Date.now()}` };
+            data[resource] = [...(data[resource] || []), newItem];
+            await writeCoreData(data);
+            broadcastStateUpdate();
+            res.status(201).json(newItem);
+        } catch (e) { res.status(500).json({ error: `Failed to create ${resource}` }); }
+    });
+
+    // UPDATE
+    router.put('/:id', async (req, res) => {
+        try {
+            const { id } = req.params;
+            const data = await readCoreData();
+            const index = data[resource].findIndex(item => item.id === id);
+            if (index === -1) return res.status(404).json({ error: `${resource} not found` });
+            data[resource][index] = { ...data[resource][index], ...req.body };
+            await writeCoreData(data);
+            broadcastStateUpdate();
+            res.json(data[resource][index]);
+        } catch (e) { res.status(500).json({ error: `Failed to update ${resource}` }); }
+    });
+    
+    // DELETE (Singular)
+    router.delete('/:id', async (req, res) => {
+        try {
+            const { id } = req.params;
+            const data = await readCoreData();
+            data[resource] = data[resource].filter(item => item.id !== id);
+            await writeCoreData(data);
+            broadcastStateUpdate();
+            res.status(204).send();
+        } catch (e) { res.status(500).json({ error: `Failed to delete ${resource}` }); }
+    });
+
+    return router;
+};
+
+app.use('/api/quests', genericCrud('quests', 'quest'));
+app.use('/api/quest-groups', genericCrud('questGroups', 'qg'));
+app.use('/api/reward-types', genericCrud('rewardTypes', 'rt'));
+app.use('/api/markets', genericCrud('markets', 'market'));
+app.use('/api/guilds', genericCrud('guilds', 'guild'));
+app.use('/api/trophies', genericCrud('trophies', 'trophy'));
+app.use('/api/game-assets', genericCrud('gameAssets', 'ga'));
+app.use('/api/themes', genericCrud('themes', 'theme'));
+app.use('/api/system-notifications', genericCrud('systemNotifications', 'sn'));
+app.use('/api/scheduled-events', genericCrud('scheduledEvents', 'se'));
+
+
+// --- BULK/COMPLEX ROUTES ---
+app.put('/api/settings', async (req, res) => {
+    try {
+        const data = await readCoreData();
+        data.settings = { ...data.settings, ...req.body };
+        await writeCoreData(data);
+        broadcastStateUpdate();
+        res.json(data.settings);
+    } catch(e) { res.status(500).json({ error: 'Failed to update settings.'}) }
+});
+
+app.put('/api/ranks', async (req, res) => {
+    try {
+        const data = await readCoreData();
+        data.ranks = req.body.ranks;
+        await writeCoreData(data);
+        broadcastStateUpdate();
+        res.json(data.ranks);
+    } catch(e) { res.status(500).json({ error: 'Failed to update ranks.'}) }
+});
+
+
 app.post('/api/completions/:completionId/approve', async (req, res) => {
     try {
         const { completionId } = req.params;
@@ -295,14 +427,15 @@ app.post('/api/completions/:completionId/approve', async (req, res) => {
             const rewardDef = data.rewardTypes.find(rt => rt.id === reward.rewardTypeId);
             if (!rewardDef) return;
             let targetBalance;
+            let purseKey = rewardDef.category === 'Currency' ? 'purse' : 'experience';
+
             if (completion.guildId) {
                 if (!user.guildBalances[completion.guildId]) user.guildBalances[completion.guildId] = { purse: {}, experience: {} };
-                targetBalance = user.guildBalances[completion.guildId];
+                targetBalance = user.guildBalances[completion.guildId][purseKey];
             } else {
-                targetBalance = { purse: user.personalPurse, experience: user.personalExperience };
+                targetBalance = rewardDef.category === 'Currency' ? user.personalPurse : user.personalExperience;
             }
-            const key = rewardDef.category === 'Currency' ? 'purse' : 'experience';
-            targetBalance[key][rewardDef.id] = (targetBalance[key][rewardDef.id] || 0) + reward.amount;
+            targetBalance[rewardDef.id] = (targetBalance[rewardDef.id] || 0) + reward.amount;
         });
 
         completion.status = 'Approved';

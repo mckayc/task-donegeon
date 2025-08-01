@@ -1,4 +1,5 @@
 
+
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
@@ -572,25 +573,47 @@ const readData = () => {
                 console.error("readData SQL error:", err.message);
                 return reject(err);
             }
+
+            // Create a default structure to ensure all top-level keys exist.
+            const defaultData = {
+                users: [], quests: [], questGroups: [], markets: [], rewardTypes: [], questCompletions: [],
+                purchaseRequests: [], guilds: [], ranks: [], trophies: [], userTrophies: [],
+                adminAdjustments: [], gameAssets: [], systemLogs: [], settings: INITIAL_SETTINGS,
+                themes: INITIAL_THEMES, loginHistory: [], chatMessages: [], systemNotifications: [], scheduledEvents: [],
+            };
+
             if (row && row.json) {
-                const data = JSON.parse(row.json);
-                console.log(`[SERVER LOG] /api/data (GET): Reading from DB. isFirstRunComplete is: ${data.settings.isFirstRunComplete}, Users: ${data.users.length}`);
-                resolve(data);
+                try {
+                    const dbData = JSON.parse(row.json);
+                    
+                    // Merge DB data over defaults. This handles cases where the DB has partial data or is just '{}'.
+                    const data = { ...defaultData, ...dbData };
+
+                    // Also deep-merge settings to ensure nested properties aren't lost
+                    if (dbData.settings) {
+                        data.settings = { ...defaultData.settings, ...dbData.settings };
+                    }
+
+                    // Now data.settings is guaranteed to exist.
+                    console.log(`[SERVER LOG] /api/data (GET): Reading from DB. isFirstRunComplete is: ${data.settings.isFirstRunComplete}, Users: ${data.users.length}`);
+                    resolve(data);
+                } catch (e) {
+                    console.error("Failed to parse JSON from DB, returning default structure.", e);
+                    resolve(defaultData);
+                }
             } else {
-                console.log("[SERVER LOG] No data found in DB, returning initial structure for first run.");
-                resolve({
-                    users: [], quests: [], questGroups: [], markets: [], rewardTypes: [], questCompletions: [],
-                    purchaseRequests: [], guilds: [], ranks: [], trophies: [], userTrophies: [],
-                    adminAdjustments: [], gameAssets: [], systemLogs: [], settings: INITIAL_SETTINGS,
-                    themes: INITIAL_THEMES, loginHistory: [], chatMessages: [], systemNotifications: [], scheduledEvents: [],
-                });
+                console.log("[SERVER LOG] No data row found in DB, returning initial structure for first run.");
+                resolve(defaultData);
             }
         });
     });
 };
 
 const writeData = (data) => {
-    console.log(`[SERVER LOG] writeData: Writing to DB. isFirstRunComplete is: ${data.settings.isFirstRunComplete}, Users: ${data.users.length}`);
+    const isFirstRunComplete = data && data.settings ? data.settings.isFirstRunComplete : 'unknown';
+    const userCount = data && data.users ? data.users.length : 'unknown';
+    console.log(`[SERVER LOG] writeData: Writing to DB. isFirstRunComplete is: ${isFirstRunComplete}, Users: ${userCount}`);
+    
     return new Promise((resolve, reject) => {
         const jsonData = JSON.stringify(data);
         db.run('REPLACE INTO data (id, json) VALUES (1, ?)', [jsonData], function(err) {

@@ -32,8 +32,10 @@ USER appuser
 WORKDIR /home/appuser/app
 
 # Copy only the necessary built files from the 'build' stage and the 'backend' folder.
-COPY --from=build /usr/src/app/dist ./dist
-COPY --from=build /usr/src/app/backend ./backend
+# The --chown flag is CRITICAL: it changes the owner of the copied files from 'root'
+# to our new 'appuser', preventing the permission errors you were seeing.
+COPY --from=build --chown=appuser:appgroup /usr/src/app/dist ./dist
+COPY --from=build --chown=appuser:appgroup /usr/src/app/backend ./backend
 
 # The backend's package.json is inside the `backend` folder, so we need to
 # navigate into it to install its specific dependencies (like express, cors, etc.).

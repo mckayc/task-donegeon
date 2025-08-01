@@ -573,6 +573,7 @@ export interface ThemeDefinition {
   id: string;
   name: string;
   isCustom: boolean;
+  isGuildOnly?: boolean;
   styles: ThemeStyle;
 }
 

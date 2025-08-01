@@ -441,7 +441,16 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             return Promise.resolve(newUser);
         },
         updateUser: async (userId, updatedData) => updateAndSave(s => ({ users: s.users.map(u => u.id === userId ? { ...u, ...updatedData } : u) })),
-        deleteUser: async (userId) => updateAndSave(s => ({ users: s.users.filter(u => u.id !== userId) })),
+        deleteUser: async (userId) => {
+            updateAndSave(s => {
+                const newUsers = s.users.filter(u => u.id !== userId);
+                const newGuilds = s.guilds.map(g => ({
+                    ...g,
+                    memberIds: g.memberIds.filter(id => id !== userId),
+                }));
+                return { users: newUsers, guilds: newGuilds };
+            });
+        },
         setCurrentUser: (user: User | null) => { 
             setState(s => ({...s, currentUser: user, isSharedViewActive: false}));
             if (user) {
@@ -773,6 +782,10 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
         // Chat
         sendMessage: async (message) => {
+            if (!ws.current || ws.current.readyState !== WebSocket.OPEN) {
+                addNotification({ type: 'error', message: 'Chat is not connected.' });
+                return undefined;
+            }
             const newMessage: ChatMessage = {
                 id: `msg-${Date.now()}`,
                 senderId: state.currentUser!.id,
@@ -780,7 +793,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
                 readBy: [state.currentUser!.id],
                 ...message,
             };
-            updateAndSave(s => ({ chatMessages: [...s.chatMessages, newMessage] }));
+            ws.current.send(JSON.stringify({ type: 'SEND_CHAT_MESSAGE', payload: newMessage }));
             return newMessage;
         },
         markMessagesAsRead: async (options) => updateAndSave(s => {

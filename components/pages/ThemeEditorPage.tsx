@@ -9,6 +9,7 @@ import { TrophyIcon, RankIcon } from '../ui/Icons';
 import ThemeIdeaGenerator from '../quests/ThemeIdeaGenerator';
 import ConfirmDialog from '../ui/ConfirmDialog';
 import SimpleColorPicker from '../ui/SimpleColorPicker';
+import ToggleSwitch from '../ui/ToggleSwitch';
 
 const FONT_OPTIONS = [
     "'MedievalSharp', cursive", "'Uncial Antiqua', cursive", "'Press Start 2P', cursive", "'IM Fell English SC', serif", 
@@ -101,6 +102,7 @@ const ThemeEditorPage: React.FC = () => {
                 id: 'new',
                 name: 'New Custom Theme',
                 isCustom: true,
+                isGuildOnly: false,
                 styles: defaultStyles || {} as ThemeStyle
             });
         }
@@ -138,6 +140,7 @@ const ThemeEditorPage: React.FC = () => {
             const newThemeData = {
                 name: newName.trim(),
                 isCustom: true,
+                isGuildOnly: false,
                 styles: defaultStyles || {} as ThemeStyle
             };
             addTheme(newThemeData);
@@ -149,7 +152,7 @@ const ThemeEditorPage: React.FC = () => {
             ...themes.find(t => t.id === 'emerald')!.styles, // ensure all keys exist
             ...idea.styles,
         }
-        setFormData({ name: idea.name, styles: fullStyles, isCustom: true, id: 'new' });
+        setFormData({ name: idea.name, styles: fullStyles, isCustom: true, id: 'new', isGuildOnly: false });
         setSelectedThemeId('new');
         setIsGeneratorOpen(false);
     };
@@ -225,6 +228,16 @@ const ThemeEditorPage: React.FC = () => {
                             {activeTab === 'general' && (
                                 <div className="space-y-4">
                                     <Input label="Theme Name" value={formData.name} onChange={e => setFormData(p => p ? ({...p, name: e.target.value}) : null)} required disabled={!formData.isCustom} />
+                                    {formData.isCustom && (
+                                        <div className="pt-4 border-t border-stone-700/60">
+                                            <ToggleSwitch
+                                                enabled={!!formData.isGuildOnly}
+                                                setEnabled={val => setFormData(p => p ? ({ ...p, isGuildOnly: val }) : null)}
+                                                label="Guild Only Theme"
+                                            />
+                                            <p className="text-xs text-stone-400 mt-1">If enabled, this theme can only be selected by Guilds.</p>
+                                        </div>
+                                    )}
                                     {isAiAvailable && (
                                         <Button onClick={() => setIsGeneratorOpen(true)} variant="secondary">
                                             Generate Theme with AI

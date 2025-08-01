@@ -554,9 +554,20 @@ wss.on('connection', ws => {
             const parsedMessage = JSON.parse(message);
             if (parsedMessage.type === 'SEND_CHAT_MESSAGE') {
                 const data = await readData();
-                data.chatMessages.push(parsedMessage.payload);
+                const newChatMessage = parsedMessage.payload;
+                data.chatMessages = [...(data.chatMessages || []), newChatMessage];
                 await writeData(data);
-                await broadcastStateUpdate();
+                
+                // Broadcast only the new message to all clients
+                const broadcastPayload = JSON.stringify({
+                    type: 'NEW_CHAT_MESSAGE',
+                    payload: newChatMessage
+                });
+                wss.clients.forEach(client => {
+                    if (client.readyState === WebSocket.OPEN) {
+                        client.send(broadcastPayload);
+                    }
+                });
             }
         } catch (e) {
             console.error("Error processing WebSocket message:", e);
@@ -923,31 +934,6 @@ app.get('/api/media/local-gallery', async (req, res) => {
     } catch (error) {
         console.error("Error fetching local gallery:", error);
         res.status(500).json({ error: "Could not read image gallery." });
-    }
-});
-
-// === REMOVED Image Pack Routes ===
-// These now rely on a local data file on the frontend, removing the GitHub dependency.
-
-app.post('/api/image-packs/import', async (req, res) => {
-    const { files } = req.body;
-    if (!files || !Array.isArray(files)) {
-        return res.status(400).json({ error: 'Invalid file list.' });
-    }
-    try {
-        for (const file of files) {
-            const categoryDir = path.join(UPLOADS_PATH, file.category);
-            await fs.mkdir(categoryDir, { recursive: true });
-            const filePath = path.join(categoryDir, file.name);
-
-            const response = await fetch(file.url);
-            if (!response.ok) throw new Error(`Failed to download ${file.name}`);
-            const buffer = await response.arrayBuffer();
-            await fs.writeFile(filePath, Buffer.from(buffer));
-        }
-        res.json({ message: 'Import successful.' });
-    } catch (error) {
-        res.status(500).json({ error: error.message });
     }
 });
 

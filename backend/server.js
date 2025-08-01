@@ -413,6 +413,9 @@ app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 const DB_PATH = path.join(__dirname, 'db');
 const DB_FILE = path.join(DB_PATH, 'data.db');
+const UPLOADS_PATH = path.join(__dirname, '../uploads');
+const BACKUPS_PATH = path.join(DB_PATH, 'backups');
+
 
 let db;
 
@@ -516,9 +519,12 @@ const executeMigrations = (db) => {
     });
 };
 
-// Ensure db directory exists and initialize DB
-fs.mkdir(DB_PATH, { recursive: true })
-  .then(() => {
+// Ensure all required directories exist
+Promise.all([
+    fs.mkdir(DB_PATH, { recursive: true }),
+    fs.mkdir(UPLOADS_PATH, { recursive: true }),
+    fs.mkdir(BACKUPS_PATH, { recursive: true })
+]).then(() => {
     db = new sqlite3.Database(DB_FILE, (err) => {
       if (err) {
         console.error('Failed to connect to SQLite:', err.message);
@@ -533,10 +539,10 @@ fs.mkdir(DB_PATH, { recursive: true })
             process.exit(1);
         });
     });
-  })
-  .catch(err => {
-    console.error('Failed to create database directory:', err);
-  });
+}).catch(err => {
+    console.error('Failed to create required directories:', err);
+    process.exit(1);
+});
 
 
 // WebSocket connection handling
@@ -574,9 +580,14 @@ const readData = () => {
                 return reject(err);
             }
             if (row && row.json) {
-                const data = JSON.parse(row.json);
-                console.log(`[SERVER LOG] /api/data (GET): Reading from DB. isFirstRunComplete is: ${data.settings.isFirstRunComplete}, Users: ${data.users.length}`);
-                resolve(data);
+                try {
+                    const data = JSON.parse(row.json);
+                    console.log(`[SERVER LOG] /api/data (GET): Reading from DB. isFirstRunComplete is: ${data.settings.isFirstRunComplete}, Users: ${data.users.length}`);
+                    resolve(data);
+                } catch(e) {
+                     console.error("JSON parsing error in readData:", e.message);
+                     reject(new Error("Failed to parse database content."));
+                }
             } else {
                 console.log("[SERVER LOG] No data found in DB, returning initial structure for first run.");
                 resolve({
@@ -602,6 +613,21 @@ const writeData = (data) => {
         });
     });
 };
+
+// === Multer Setup for File Uploads ===
+const storage = multer.diskStorage({
+  destination: async (req, file, cb) => {
+    const category = req.body.category || 'Miscellaneous';
+    const sanitizedCategory = category.replace(/[^a-zA-Z0-9\s_-]/g, '').trim();
+    const dir = path.join(UPLOADS_PATH, sanitizedCategory);
+    await fs.mkdir(dir, { recursive: true });
+    cb(null, dir);
+  },
+  filename: (req, file, cb) => {
+    cb(null, `${Date.now()}-${file.originalname}`);
+  }
+});
+const upload = multer({ storage: storage });
 
 // API routes
 app.get('/api/data', async (req, res) => {
@@ -852,7 +878,169 @@ app.post('/api/ai/generate', async (req, res) => {
     }
 });
 
-// Serve the main app
+// === NEW Media Routes ===
+app.post('/api/media/upload', upload.single('file'), (req, res) => {
+    if (!req.file) {
+        return res.status(400).json({ error: 'No file uploaded.' });
+    }
+    const relativePath = path.relative(path.join(__dirname, '..'), req.file.path);
+    res.json({ url: `/${relativePath.replace(/\\/g, '/')}` });
+});
+
+app.get('/api/media/local-gallery', async (req, res) => {
+    try {
+        const getFiles = async (dir, category = '') => {
+            const dirents = await fs.readdir(dir, { withFileTypes: true });
+            const files = await Promise.all(dirents.map(async (dirent) => {
+                const resPath = path.resolve(dir, dirent.name);
+                if (dirent.isDirectory()) {
+                    return getFiles(resPath, dirent.name);
+                } else {
+                    const url = `/uploads/${category ? `${category}/` : ''}${dirent.name}`;
+                    return { url, category: category || 'Miscellaneous', name: dirent.name };
+                }
+            }));
+            return Array.prototype.concat(...files);
+        };
+        const gallery = await getFiles(UPLOADS_PATH);
+        res.json(gallery);
+    } catch (error) {
+        console.error("Error fetching local gallery:", error);
+        res.status(500).json({ error: "Could not read image gallery." });
+    }
+});
+
+// === NEW Image Pack Routes ===
+app.get('/api/image-packs', async (req, res) => {
+    try {
+        const packs = await fetchGitHub(GITHUB_PACKS_PATH);
+        const packData = await Promise.all(packs.filter(p => p.type === 'dir').map(async pack => {
+            const files = await fetchGitHub(pack.path);
+            const sampleImage = files.find(f => f.type === 'file');
+            return { name: pack.name, sampleImageUrl: sampleImage ? sampleImage.download_url : '' };
+        }));
+        res.json(packData);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+app.get('/api/image-packs/:packName', async (req, res) => {
+    try {
+        const packName = req.params.packName;
+        const packContents = await fetchGitHub(`${GITHUB_PACKS_PATH}/${packName}`);
+        
+        const localFiles = new Set();
+        const walk = async (dir) => {
+            const files = await fs.readdir(dir);
+            for (const file of files) {
+                const filePath = path.join(dir, file);
+                const stat = await fs.stat(filePath);
+                if (stat.isDirectory()) {
+                    await walk(filePath);
+                } else {
+                    localFiles.add(path.basename(filePath));
+                }
+            }
+        };
+        await walk(UPLOADS_PATH);
+
+        const fileDetails = packContents.filter(f => f.type === 'file').map(file => ({
+            name: file.name,
+            category: packName,
+            url: file.download_url,
+            exists: localFiles.has(file.name)
+        }));
+
+        res.json(fileDetails);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+app.post('/api/image-packs/import', async (req, res) => {
+    const { files } = req.body;
+    if (!files || !Array.isArray(files)) {
+        return res.status(400).json({ error: 'Invalid file list.' });
+    }
+    try {
+        for (const file of files) {
+            const categoryDir = path.join(UPLOADS_PATH, file.category);
+            await fs.mkdir(categoryDir, { recursive: true });
+            const filePath = path.join(categoryDir, file.name);
+
+            const response = await fetch(file.url);
+            if (!response.ok) throw new Error(`Failed to download ${file.name}`);
+            const buffer = await response.arrayBuffer();
+            await fs.writeFile(filePath, Buffer.from(buffer));
+        }
+        res.json({ message: 'Import successful.' });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// === NEW Backup Routes ===
+app.post('/api/backups/create', async (req, res) => {
+    try {
+        const data = await readData();
+        const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+        const filename = `backup-${timestamp}.json`;
+        const filepath = path.join(BACKUPS_PATH, filename);
+        await fs.writeFile(filepath, JSON.stringify(data, null, 2));
+        res.json({ message: `Backup created: ${filename}` });
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to create backup.' });
+    }
+});
+
+app.get('/api/backups', async (req, res) => {
+    try {
+        const files = await fs.readdir(BACKUPS_PATH);
+        const backups = await Promise.all(
+            files.filter(f => f.endsWith('.json')).map(async f => {
+                const stats = await fs.stat(path.join(BACKUPS_PATH, f));
+                return { filename: f, createdAt: stats.mtime, size: stats.size, isAuto: f.startsWith('auto-') };
+            })
+        );
+        res.json(backups.sort((a,b) => b.createdAt - a.createdAt));
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to list backups.' });
+    }
+});
+
+app.get('/api/backups/:filename', (req, res) => {
+    const { filename } = req.params;
+    const filepath = path.join(BACKUPS_PATH, filename);
+    res.download(filepath);
+});
+
+app.post('/api/backups/restore/:filename', async (req, res) => {
+    try {
+        const { filename } = req.params;
+        const filepath = path.join(BACKUPS_PATH, filename);
+        const backupData = await fs.readFile(filepath, 'utf-8');
+        await writeData(JSON.parse(backupData));
+        broadcastStateUpdate();
+        res.json({ message: 'Restore successful. The application will now reload.' });
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to restore backup.' });
+    }
+});
+
+app.delete('/api/backups/:filename', async (req, res) => {
+    try {
+        const { filename } = req.params;
+        const filepath = path.join(BACKUPS_PATH, filename);
+        await fs.unlink(filepath);
+        res.json({ message: 'Backup deleted.' });
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to delete backup.' });
+    }
+});
+
+
+// Serve the main app for any other request
 app.get('*', (req, res) => {
     res.sendFile(path.join(__dirname, '../dist/index.html'));
 });

@@ -1,0 +1,297 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./data.db"
+}
+
+model AppState {
+  id           Int      @id @default(1)
+  settings     Json
+  loginHistory Json
+}
+
+model User {
+  id                 String  @id @default(uuid())
+  firstName          String
+  lastName           String
+  username           String  @unique
+  email              String  @unique
+  gameName           String
+  birthday           String
+  role               Role
+  avatar             Json
+  profilePictureUrl  String?
+  ownedAssetIds      Json
+  pin                String
+  password           String?
+  personalPurse      Json
+  personalExperience Json
+  guildBalances      Json
+  theme              String?
+  ownedThemes        Json
+  hasBeenOnboarded   Boolean?
+}
+
+model Quest {
+  id                   String   @id @default(uuid())
+  title                String
+  description          String
+  type                 QuestType
+  iconType             String
+  icon                 String
+  imageUrl             String?
+  tags                 Json
+  lateDateTime         String?
+  incompleteDateTime   String?
+  lateTime             String?
+  incompleteTime       String?
+  rewards              Json
+  lateSetbacks         Json
+  incompleteSetbacks   Json
+  isActive             Boolean
+  isOptional           Boolean
+  availabilityType     QuestAvailability
+  availabilityCount    Int?
+  weeklyRecurrenceDays Json
+  monthlyRecurrenceDays Json
+  assignedUserIds      Json
+  guildId              String?
+  groupId              String?
+  requiresApproval     Boolean
+  claimedByUserIds     Json
+  dismissals           Json
+  todoUserIds          Json?
+}
+
+model QuestGroup {
+  id          String @id @default(uuid())
+  name        String
+  description String
+  icon        String
+}
+
+model RewardTypeDefinition {
+  id          String         @id @default(uuid())
+  name        String
+  category    RewardCategory
+  description String
+  isCore      Boolean
+  iconType    String
+  icon        String
+  imageUrl    String?
+}
+
+model QuestCompletion {
+  id          String                @id @default(uuid())
+  questId     String
+  userId      String
+  completedAt String
+  status      QuestCompletionStatus
+  note        String?
+  guildId     String?
+}
+
+model GameAsset {
+  id                 String  @id @default(uuid())
+  name               String
+  description        String
+  url                String
+  icon               String?
+  category           String
+  avatarSlot         String?
+  isForSale          Boolean
+  costGroups         Json
+  payouts            Json?
+  marketIds          Json
+  creatorId          String
+  createdAt          String
+  purchaseLimit      Int?
+  purchaseLimitType  String
+  purchaseCount      Int
+  requiresApproval   Boolean
+  linkedThemeId      String?
+}
+
+model Market {
+  id          String  @id @default(uuid())
+  title       String
+  description String
+  iconType    String
+  icon        String
+  imageUrl    String?
+  guildId     String?
+  status      Json
+}
+
+model PurchaseRequest {
+  id            String                @id @default(uuid())
+  userId        String
+  assetId       String
+  requestedAt   String
+  actedAt       String?
+  status        PurchaseRequestStatus
+  assetDetails  Json
+  guildId       String?
+}
+
+model Guild {
+  id        String  @id @default(uuid())
+  name      String
+  purpose   String
+  memberIds Json
+  isDefault Boolean?
+  themeId   String?
+}
+
+model Rank {
+  id          String  @id @default(uuid())
+  name        String
+  xpThreshold Int
+  iconType    String
+  icon        String
+  imageUrl    String?
+}
+
+model Trophy {
+  id           String @id @default(uuid())
+  name         String
+  description  String
+  iconType     String
+  icon         String
+  imageUrl     String?
+  isManual     Boolean
+  requirements Json
+}
+
+model UserTrophy {
+  id        String  @id @default(uuid())
+  userId    String
+  trophyId  String
+  awardedAt String
+  guildId   String?
+}
+
+model AdminAdjustment {
+  id          String              @id @default(uuid())
+  userId      String
+  adjusterId  String
+  type        AdminAdjustmentType
+  rewards     Json
+  setbacks    Json
+  trophyId    String?
+  reason      String
+  adjustedAt  String
+  guildId     String?
+}
+
+model SystemLog {
+  id              String @id @default(uuid())
+  timestamp       String
+  type            String // e.g., 'QUEST_LATE'
+  questId         String
+  userIds         Json
+  setbacksApplied Json
+}
+
+model ThemeDefinition {
+  id       String  @id @default(uuid())
+  name     String
+  isCustom Boolean
+  styles   Json
+}
+
+model ChatMessage {
+  id             String   @id @default(uuid())
+  senderId       String
+  recipientId    String?
+  guildId        String?
+  message        String
+  timestamp      DateTime @default(now())
+  readBy         Json
+  isAnnouncement Boolean?
+}
+
+model SystemNotification {
+  id                String   @id @default(uuid())
+  senderId          String?
+  message           String
+  type              SystemNotificationType
+  timestamp         DateTime @default(now())
+  recipientUserIds  Json
+  readByUserIds     Json
+  link              Json? // Represents 'Page' enum, stored as JSON
+  guildId           String?
+  iconType          String?
+  icon              String?
+  imageUrl          String?
+}
+
+model ScheduledEvent {
+  id         String @id @default(uuid())
+  title      String
+  description String
+  startDate  String
+  endDate    String
+  isAllDay   Boolean
+  eventType  String
+  guildId    String?
+  icon       String?
+  color      String?
+  modifiers  Json
+}
+
+enum Role {
+  DonegeonMaster
+  Gatekeeper
+  Explorer
+}
+
+enum QuestType {
+  Duty
+  Venture
+}
+
+enum RewardCategory {
+  Currency
+  XP
+}
+
+enum QuestAvailability {
+  Daily
+  Weekly
+  Monthly
+  Frequency
+  Unlimited
+}
+
+enum QuestCompletionStatus {
+  Pending
+  Approved
+  Rejected
+}
+
+enum PurchaseRequestStatus {
+  Pending
+  Completed
+  Rejected
+  Cancelled
+}
+
+enum AdminAdjustmentType {
+  Reward
+  Setback
+  Trophy
+}
+
+enum SystemNotificationType {
+  Announcement
+  QuestAssigned
+  TrophyAwarded
+  ApprovalRequired
+}

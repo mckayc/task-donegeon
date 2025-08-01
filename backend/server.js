@@ -393,44 +393,54 @@ fs.mkdir(DB_PATH, { recursive: true })
       }
       console.log('Connected to the SQLite database.');
       
-      // Initialize and migrate schema
       db.serialize(() => {
-        // Step 1: Ensure the table exists with at least an ID column. This is safe for new and old DBs.
-        db.run(`CREATE TABLE IF NOT EXISTS data (id INTEGER PRIMARY KEY)`, (err) => {
+        // Create table with the correct schema if it doesn't exist at all.
+        db.run(`CREATE TABLE IF NOT EXISTS data (id INTEGER PRIMARY KEY, json TEXT)`, (err) => {
           if (err) {
-            console.error('Error creating base data table:', err.message);
+            console.error('Initial table creation failed:', err.message);
             return;
           }
-        });
-
-        // Step 2: Check if 'json' column exists.
-        db.all("PRAGMA table_info(data)", (err, columns) => {
-          if (err) {
-            console.error("Error checking table schema:", err.message);
-            return;
-          }
-
-          if (!columns.some(col => col.name === 'json')) {
-            console.log("Old database schema detected. Upgrading...");
-            // Step 3: Add 'json' column if it's missing.
-            db.run("ALTER TABLE data ADD COLUMN json TEXT", (alterErr) => {
-              if (alterErr) {
-                console.error("Error upgrading database schema:", alterErr.message);
-              } else {
-                console.log("Database schema upgraded successfully.");
-              }
-            });
-          } else {
-              // Schema is fine, check if data exists just for logging purposes.
+      
+          // Now, verify the schema of the existing (or newly created) table.
+          db.all("PRAGMA table_info(data)", (err, columns) => {
+            if (err) {
+              console.error("Error checking table schema:", err.message);
+              return;
+            }
+      
+            const hasIdColumn = columns.some(col => col.name === 'id');
+            const hasJsonColumn = columns.some(col => col.name === 'json');
+      
+            // If the schema is incorrect (missing id or json column), drop and recreate.
+            if (!hasIdColumn || !hasJsonColumn) {
+              console.log("Incorrect database schema detected. Recreating table...");
+              db.serialize(() => {
+                db.run("DROP TABLE data", (dropErr) => {
+                  if (dropErr) {
+                    console.error("Error dropping old data table:", dropErr.message);
+                    return;
+                  }
+                  db.run(`CREATE TABLE data (id INTEGER PRIMARY KEY, json TEXT)`, (createErr) => {
+                    if (createErr) {
+                      console.error("Error recreating data table:", createErr.message);
+                    } else {
+                      console.log("Database table recreated successfully.");
+                    }
+                  });
+                });
+              });
+            } else {
+              // Schema is correct. Log status.
               db.get('SELECT json FROM data WHERE id = 1', [], (err, row) => {
-                if (err) { /* The readData function will handle this error during requests */ return; }
+                if (err) { /* readData will handle this */ return; }
                 if (!row || !row.json) {
-                   console.log("Database is ready. No initial data found. Waiting for first-run setup.");
+                  console.log("Database is ready. No initial data found. Waiting for first-run setup.");
                 } else {
-                   console.log("Database is ready. Existing data found.");
+                  console.log("Database is ready. Existing data found.");
                 }
               });
-          }
+            }
+          });
         });
       });
     });

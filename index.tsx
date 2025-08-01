@@ -5,7 +5,11 @@ import { AppProvider } from './context/AppContext';
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js').then(registration => {
+    // Construct an absolute URL to the service worker using the document's origin.
+    // This is a robust way to prevent cross-origin errors when the app is run
+    // in specific sandboxed or proxied environments.
+    const swUrl = `${window.location.origin}/sw.js`;
+    navigator.serviceWorker.register(swUrl).then(registration => {
       console.log('SW registered: ', registration);
     }).catch(registrationError => {
       console.log('SW registration failed: ', registrationError);

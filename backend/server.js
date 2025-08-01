@@ -17,16 +17,16 @@ const app = express();
 const server = http.createServer(app);
 
 // --- CORS Configuration ---
-// This is the critical fix for the "xhr poll error".
-// It allows the frontend (on a different origin) to connect to the Socket.IO server.
+// Allow all origins for simplicity in this development setup.
+// This is a robust way to solve the "xhr poll error".
 const io = new Server(server, {
   cors: {
-    origin: "*", // Allow all origins for development simplicity
+    origin: "*",
     methods: ["GET", "POST"]
   }
 });
 
-app.use(cors()); // Use cors for all Express routes
+app.use(cors()); // Use cors for all Express routes, allowing all origins.
 app.use(express.json({ limit: '50mb' }));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
@@ -207,7 +207,7 @@ app.put('/api/settings', async (req, res) => {
 
 
 app.post('/api/quests/:id/complete', async (req, res) => {
-    const { questId } = req.params;
+    const { id: questId } = req.params;
     const { userId, guildId, options } = req.body;
     try {
         const quest = await prisma.quest.findUnique({ where: { id: questId } });

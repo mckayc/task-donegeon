@@ -261,6 +261,9 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     const connectSocketIO = useCallback(() => {
         if (socketRef.current) return;
         
+        // Connect to the server, letting the Vite proxy handle the routing.
+        // A simple connection without credentials is more robust for dev
+        // environments that don't yet require them.
         const socket = io();
         socketRef.current = socket;
 
@@ -283,7 +286,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         });
 
         socket.on('connect_error', (err) => {
-            console.error('Socket.IO connection error:', err);
+            console.error('Socket.IO connection error:', err.message);
              if (isMounted.current) setState(prev => ({ ...prev, syncStatus: 'error', syncError: 'Socket connection failed.' }));
         });
 

@@ -383,35 +383,56 @@ const DB_FILE = path.join(DB_PATH, 'data.db');
 
 let db;
 
-// Ensure db directory exists
+// Ensure db directory exists and initialize DB
 fs.mkdir(DB_PATH, { recursive: true })
   .then(() => {
     db = new sqlite3.Database(DB_FILE, (err) => {
       if (err) {
-        console.error(err.message);
-      } else {
-        console.log('Connected to the SQLite database.');
-        db.run(`CREATE TABLE IF NOT EXISTS data (
-          id INTEGER PRIMARY KEY,
-          json TEXT
-        )`, (err) => {
+        console.error('Failed to connect to SQLite:', err.message);
+        return;
+      }
+      console.log('Connected to the SQLite database.');
+      
+      // Initialize and migrate schema
+      db.serialize(() => {
+        // Step 1: Ensure the table exists with at least an ID column. This is safe for new and old DBs.
+        db.run(`CREATE TABLE IF NOT EXISTS data (id INTEGER PRIMARY KEY)`, (err) => {
           if (err) {
-            console.error(err.message);
-          } else {
-            // Check if there's any data
-            db.get('SELECT json FROM data WHERE id = 1', [], (err, row) => {
-              if (err) {
-                return console.error(err.message);
-              }
-              if (!row) {
-                 // No data, so we don't initialize anything here.
-                 // The app is in "first run" state.
-                 console.log("No initial data found. Waiting for first-run setup from client.");
-              }
-            });
+            console.error('Error creating base data table:', err.message);
+            return;
           }
         });
-      }
+
+        // Step 2: Check if 'json' column exists.
+        db.all("PRAGMA table_info(data)", (err, columns) => {
+          if (err) {
+            console.error("Error checking table schema:", err.message);
+            return;
+          }
+
+          if (!columns.some(col => col.name === 'json')) {
+            console.log("Old database schema detected. Upgrading...");
+            // Step 3: Add 'json' column if it's missing.
+            db.run("ALTER TABLE data ADD COLUMN json TEXT", (alterErr) => {
+              if (alterErr) {
+                console.error("Error upgrading database schema:", alterErr.message);
+              } else {
+                console.log("Database schema upgraded successfully.");
+              }
+            });
+          } else {
+              // Schema is fine, check if data exists just for logging purposes.
+              db.get('SELECT json FROM data WHERE id = 1', [], (err, row) => {
+                if (err) { /* The readData function will handle this error during requests */ return; }
+                if (!row || !row.json) {
+                   console.log("Database is ready. No initial data found. Waiting for first-run setup.");
+                } else {
+                   console.log("Database is ready. Existing data found.");
+                }
+              });
+          }
+        });
+      });
     });
   })
   .catch(err => {
@@ -450,9 +471,10 @@ const readData = () => {
     return new Promise((resolve, reject) => {
         db.get('SELECT json FROM data WHERE id = 1', [], (err, row) => {
             if (err) {
+                console.error("readData SQL error:", err.message);
                 return reject(err);
             }
-            if (row) {
+            if (row && row.json) {
                 const data = JSON.parse(row.json);
                 console.log(`[SERVER LOG] /api/data (GET): Reading from DB. isFirstRunComplete is: ${data.settings.isFirstRunComplete}, Users: ${data.users.length}`);
                 resolve(data);

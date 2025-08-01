@@ -51,7 +51,7 @@ const RewardDisplay: React.FC = () => {
   };
 
   return (
-    <div className="flex items-center gap-3">
+    <div className="flex items-center gap-3 border-l-2 border-r-2 border-stone-700/60 px-4">
         {balances.map(balance => (
           <BalanceItem key={balance.id} balance={balance} />
         ))}

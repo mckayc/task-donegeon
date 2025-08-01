@@ -377,20 +377,20 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
                 }
 
                 const isFirstRun = !data.users || data.users.length === 0;
-                console.log(`[FRONTEND LOG] AppContext.loadData: Found ${data.users?.length} users. Setting isFirstRun to: ${isFirstRun}`);
+                const sharedViewActive = localStorage.getItem('sharedViewActive') === 'true' && data.settings.sharedMode.enabled;
                 
                 const lastUserId = localStorage.getItem('lastUserId');
                 const lastUser = isFirstRun ? null : data.users.find((u: User) => u.id === lastUserId);
                 
                 if (isMounted.current) {
-                  // Set main data first. This is crucial.
                   setState(prev => ({
                       ...prev, ...data, isFirstRun, isDataLoaded: true,
-                      currentUser: lastUser || null, isAppUnlocked: !!lastUser,
+                      currentUser: lastUser || null, 
+                      isAppUnlocked: !!lastUser || sharedViewActive,
+                      isSharedViewActive: sharedViewActive,
                   }));
                 }
 
-                // Now, fetch AI status in a non-blocking way.
                 try {
                     const aiStatus = await apiRequest('/api/ai/status');
                     if (isMounted.current) {
@@ -431,9 +431,13 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         updateUser: (userId: string, updatedData: Partial<User>) => apiRequest(`/api/users/${userId}`, { method: 'PUT', body: JSON.stringify(updatedData) }),
         deleteUser: (userId: string) => apiRequest(`/api/users/${userId}`, { method: 'DELETE' }),
         setCurrentUser: (user: User | null) => { 
-            setState(s => ({...s, currentUser: user}));
-            if (user) localStorage.setItem('lastUserId', user.id);
-            else localStorage.removeItem('lastUserId');
+            setState(s => ({...s, currentUser: user, isSharedViewActive: false}));
+            if (user) {
+                localStorage.setItem('lastUserId', user.id);
+                localStorage.removeItem('sharedViewActive');
+            } else {
+                localStorage.removeItem('lastUserId');
+            }
         },
         markUserAsOnboarded: (userId: string) => dispatch.updateUser(userId, { hasBeenOnboarded: true }),
         setAppUnlocked: (isUnlocked: boolean) => setState(s => ({ ...s, isAppUnlocked: isUnlocked })),
@@ -442,6 +446,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         exitToSharedView: () => {
              setState(s => ({...s, currentUser: null, isAppUnlocked: true, isSharedViewActive: true }));
              localStorage.removeItem('lastUserId');
+             localStorage.setItem('sharedViewActive', 'true');
         },
         setIsSharedViewActive: (isActive: boolean) => setState(s => ({ ...s, isSharedViewActive: isActive })),
         bypassFirstRunCheck: () => setState(s => ({...s, isFirstRun: false})),

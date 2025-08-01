@@ -124,8 +124,7 @@ const Header: React.FC = () => {
       </div>
       
       {/* Right Group */}
-      <div className="flex items-center gap-4">
-        <FullscreenToggle />
+      <div className="flex items-center gap-4 flex-shrink-0">
         <Clock />
         {settings.sharedMode.enabled && (
             <button
@@ -136,10 +135,13 @@ const Header: React.FC = () => {
             </button>
         )}
         <div className="relative">
-          <button onClick={() => setProfileDropdownOpen(!profileDropdownOpen)} className="flex items-center space-x-3">
-            <span className="hidden sm:inline text-stone-200 font-medium">{currentUser.gameName}</span>
-            <Avatar user={currentUser} className="w-12 h-12 bg-emerald-800 rounded-full border-2 border-accent overflow-hidden" />
-          </button>
+          <div className="flex items-center gap-2">
+            <FullscreenToggle />
+            <button onClick={() => setProfileDropdownOpen(!profileDropdownOpen)} className="flex items-center space-x-3">
+              <span className="hidden sm:inline text-stone-200 font-medium">{currentUser.gameName}</span>
+              <Avatar user={currentUser} className="w-12 h-12 bg-emerald-800 rounded-full border-2 border-accent overflow-hidden" />
+            </button>
+          </div>
           {profileDropdownOpen && (
             <div className="absolute right-0 mt-2 w-48 bg-stone-800 border border-stone-700 rounded-lg shadow-xl z-20">
               <a href="#" onClick={handleSwitchUser} className="block px-4 py-2 text-stone-300 hover:bg-stone-700">Switch User</a>

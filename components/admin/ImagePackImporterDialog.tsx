@@ -1,7 +1,11 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import Button from '../ui/Button';
 import { useAppDispatch } from '../../context/AppContext';
-import { LibraryPack } from '../../types';
+
+interface AvailablePack {
+    name: string;
+    sampleImageUrl: string;
+}
 
 interface PackFile {
     name: string;
@@ -16,13 +20,11 @@ interface ImagePackImporterDialogProps {
 }
 
 const ImagePackImporterDialog: React.FC<ImagePackImporterDialogProps> = ({ onClose, onImportSuccess }) => {
-    const [remotePacks, setRemotePacks] = useState<LibraryPack[]>([]);
-    const [isLoadingPacks, setIsLoadingPacks] = useState(true);
-    const [packError, setPackError] = useState('');
-
+    const [availablePacks, setAvailablePacks] = useState<AvailablePack[]>([]);
     const [packDetails, setPackDetails] = useState<PackFile[]>([]);
-    const [selectedPack, setSelectedPack] = useState<LibraryPack | null>(null);
+    const [selectedPackName, setSelectedPackName] = useState<string | null>(null);
     
+    const [isLoadingPacks, setIsLoadingPacks] = useState(true);
     const [isLoadingDetails, setIsLoadingDetails] = useState(false);
     const [isImporting, setIsImporting] = useState(false);
     const [error, setError] = useState('');
@@ -33,29 +35,15 @@ const ImagePackImporterDialog: React.FC<ImagePackImporterDialogProps> = ({ onClo
     useEffect(() => {
         const fetchPacks = async () => {
             setIsLoadingPacks(true);
-            setPackError('');
+            setError('');
             try {
-                const repoUrl = 'https://api.github.com/repos/mckayc/task-donegeon/contents/image-packs';
-                const response = await fetch(repoUrl);
-                if (!response.ok) throw new Error(`GitHub API error: ${response.statusText}`);
-                
-                const files = await response.json();
-                if (!Array.isArray(files)) throw new Error('Unexpected response from GitHub API.');
-
-                const packPromises = files
-                    .filter((file: any) => file.name.endsWith('.json'))
-                    .map(async (file: any) => {
-                        const packRes = await fetch(file.download_url);
-                        if (!packRes.ok) throw new Error(`Failed to download ${file.name}`);
-                        return packRes.json();
-                    });
-                
-                const packs = await Promise.all(packPromises);
-                setRemotePacks(packs);
-
+                const response = await fetch('/api/image-packs');
+                if (!response.ok) throw new Error('Failed to fetch image packs from the server.');
+                const data = await response.json();
+                setAvailablePacks(data);
             } catch (err) {
                 const message = err instanceof Error ? err.message : 'An unknown error occurred.';
-                setPackError(`Could not load asset packs: ${message}`);
+                setError(message);
             } finally {
                 setIsLoadingPacks(false);
             }
@@ -63,39 +51,27 @@ const ImagePackImporterDialog: React.FC<ImagePackImporterDialogProps> = ({ onClo
         fetchPacks();
     }, []);
 
-    const handleSelectPack = useCallback(async (pack: LibraryPack) => {
-        setSelectedPack(pack);
-        setIsLoadingDetails(true);
-        setError('');
-        try {
-            const localGalleryRes = await fetch('/api/media/local-gallery');
-            if (!localGalleryRes.ok) throw new Error('Could not fetch local gallery to check for duplicates.');
-            const localGallery: {url: string}[] = await localGalleryRes.json();
-            const localUrls = new Set(localGallery.map(img => img.url));
+    useEffect(() => {
+        if (!selectedPackName) return;
 
-            const details = (pack.assets.gameAssets || []).map(asset => {
-                 const url = asset.url;
-                 const name = url.substring(url.lastIndexOf('/') + 1);
-                 const category = asset.avatarSlot ? `Avatar-${asset.avatarSlot}` : asset.category || 'Miscellaneous';
-                 const localPath = `/uploads/${category}/${name}`;
-                 
-                 return {
-                    name: name,
-                    category: category,
-                    url: url,
-                    exists: localUrls.has(localPath),
-                 }
-            });
-            setPackDetails(details);
-            setSelectedFiles(details.filter(file => !file.exists));
-
-        } catch (err) {
-            const message = err instanceof Error ? err.message : 'An unknown error occurred.';
-            setError(message);
-        } finally {
-            setIsLoadingDetails(false);
-        }
-    }, []);
+        const fetchPackDetails = async () => {
+            setIsLoadingDetails(true);
+            setError('');
+            try {
+                const response = await fetch(`/api/image-packs/${encodeURIComponent(selectedPackName)}`);
+                if (!response.ok) throw new Error(`Failed to fetch details for pack: ${selectedPackName}`);
+                const data: PackFile[] = await response.json();
+                setPackDetails(data);
+                setSelectedFiles(data.filter(file => !file.exists));
+            } catch (err) {
+                const message = err instanceof Error ? err.message : 'An unknown error occurred.';
+                setError(message);
+            } finally {
+                setIsLoadingDetails(false);
+            }
+        };
+        fetchPackDetails();
+    }, [selectedPackName]);
     
     const handleToggleFile = (file: PackFile) => {
         if (file.exists) return;
@@ -120,7 +96,7 @@ const ImagePackImporterDialog: React.FC<ImagePackImporterDialogProps> = ({ onClo
         setIsImporting(true);
         setError('');
         try {
-            const response = await fetch('/api/media/import-pack', {
+            const response = await fetch('/api/image-packs/import', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ files: selectedFiles })
@@ -157,22 +133,22 @@ const ImagePackImporterDialog: React.FC<ImagePackImporterDialogProps> = ({ onClo
             </div>
             <div className="flex-grow p-6 overflow-y-auto scrollbar-hide">
                 {isLoadingPacks ? (
-                     <div className="flex items-center justify-center h-full"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-400"></div></div>
+                    <div className="flex items-center justify-center h-full"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-400"></div></div>
                 ) : error ? (
                     <div className="text-red-400 text-center">{error}</div>
-                ) : remotePacks.filter(p => p.type === 'Items').length > 0 ? (
+                ) : availablePacks.length > 0 ? (
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-                        {remotePacks.filter(p => p.type === 'Items').map(pack => (
-                            <button key={pack.id} onClick={() => handleSelectPack(pack)} className="p-2 rounded-lg text-left space-y-2 bg-stone-900/50 hover:bg-stone-700/50 border-2 border-transparent hover:border-emerald-500 transition-all">
+                        {availablePacks.map(pack => (
+                            <button key={pack.name} onClick={() => setSelectedPackName(pack.name)} className="p-2 rounded-lg text-left space-y-2 bg-stone-900/50 hover:bg-stone-700/50 border-2 border-transparent hover:border-emerald-500 transition-all">
                                 <div className="aspect-square w-full bg-stone-700/50 rounded-md flex items-center justify-center overflow-hidden">
-                                    <span className="text-5xl">{pack.emoji}</span>
+                                    <img src={pack.sampleImageUrl} alt={`Sample for ${pack.name}`} className="w-full h-full object-cover" />
                                 </div>
-                                <p className="text-sm text-stone-300 font-semibold truncate">{pack.title}</p>
+                                <p className="text-sm text-stone-300 font-semibold truncate">{pack.name}</p>
                             </button>
                         ))}
                     </div>
                 ) : (
-                    <div className="text-center text-stone-400">No image packs found in the remote library.</div>
+                    <div className="text-center text-stone-400">No image packs found in the repository.</div>
                 )}
             </div>
              <div className="p-4 border-t border-stone-700/60 text-right flex-shrink-0">
@@ -184,8 +160,8 @@ const ImagePackImporterDialog: React.FC<ImagePackImporterDialogProps> = ({ onClo
     const renderFileSelection = () => (
         <>
             <div className="p-6 border-b border-stone-700/60 flex-shrink-0">
-                <Button variant="secondary" size="sm" onClick={() => setSelectedPack(null)} className="mb-4">&larr; Back to Packs</Button>
-                <h2 className="text-2xl font-medieval text-accent">Import from "{selectedPack?.title}"</h2>
+                <Button variant="secondary" size="sm" onClick={() => setSelectedPackName(null)} className="mb-4">&larr; Back to Packs</Button>
+                <h2 className="text-2xl font-medieval text-accent">Import from "{selectedPackName}"</h2>
                 <p className="text-sm text-stone-400">Select the files you want to import. Duplicates are disabled.</p>
             </div>
             <div className="flex-grow p-6 overflow-y-auto scrollbar-hide">
@@ -236,7 +212,7 @@ const ImagePackImporterDialog: React.FC<ImagePackImporterDialogProps> = ({ onClo
     return (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4" onClick={onClose}>
             <div className="bg-stone-800 border border-stone-700 rounded-xl shadow-2xl max-w-4xl w-full h-[80vh] flex flex-col" onClick={e => e.stopPropagation()}>
-                {selectedPack ? renderFileSelection() : renderPackSelection()}
+                {selectedPackName ? renderFileSelection() : renderPackSelection()}
             </div>
         </div>
     );

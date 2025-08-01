@@ -39,21 +39,11 @@ const EditGuildDialog: React.FC<EditGuildDialogProps> = ({ guild, onClose }) => 
   }, [guild, users]);
 
   const availableThemes = useMemo(() => {
-    const themesUsedByOtherGuilds = new Set(
-      guilds.filter(g => g.id !== guild?.id && g.themeId).map(g => g.themeId)
-    );
-    return themes.filter(theme => {
-        // Always include the currently assigned theme
-        if (theme.id === guild?.themeId) return true;
-        // Include if it's a designated guild-only theme
-        if (theme.isGuildOnly) return true;
-        // Include if it's a regular theme and not used by another guild
-        if (!theme.isGuildOnly && !themesUsedByOtherGuilds.has(theme.id)) return true;
-        
-        return false;
-    });
+      const lockedThemeIds = new Set(
+          guilds.filter(g => g.id !== guild?.id).map(g => g.themeId)
+      );
+      return themes.filter(t => !lockedThemeIds.has(t.id));
   }, [themes, guilds, guild]);
-
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -129,7 +119,7 @@ const EditGuildDialog: React.FC<EditGuildDialogProps> = ({ guild, onClose }) => 
               <Input as="select" label="Guild Theme (Optional)" name="themeId" value={formData.themeId} onChange={handleChange}>
                   <option value="">-- Default User Theme --</option>
                   {availableThemes.map(theme => (
-                      <option key={theme.id} value={theme.id}>{theme.name}{theme.isGuildOnly ? ' (Guild)' : ''}</option>
+                      <option key={theme.id} value={theme.id}>{theme.name}</option>
                   ))}
               </Input>
               <p className="text-xs text-stone-400 mt-1">Assigning a theme here will lock it for this guild's use only.</p>

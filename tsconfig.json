@@ -1,4 +1,3 @@
-
 {
   "compilerOptions": {
     "target": "ESNext",
@@ -15,11 +14,7 @@
     "resolveJsonModule": true,
     "isolatedModules": true,
     "noEmit": true,
-    "jsx": "react-jsx",
-    "baseUrl": ".",
-    "paths": {
-      "@/*": ["./*"]
-    }
+    "jsx": "react-jsx"
   },
   "include": ["components", "context", "data", "hooks", "utils", "index.tsx", "App.tsx", "types.ts", "metadata.json"],
   "references": [{ "path": "./tsconfig.node.json" }]

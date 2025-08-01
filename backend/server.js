@@ -404,7 +404,7 @@ function createInitialQuestCompletions(quests, users) {
 
 const app = express();
 const server = http.createServer(app);
-const primus = new Primus(server, { transformer: 'ws' });
+const primus = new Primus(server, { transformer: 'websockets' });
 
 // Save the client library to the dist folder
 primus.save(__dirname + '/../dist/primus.js');

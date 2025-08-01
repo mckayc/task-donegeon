@@ -317,7 +317,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         });
     }, []);
 
-    const connectWebSocket = useCallback(() => {
+    const connectPrimus = useCallback(() => {
         if (typeof window === 'undefined' || primusRef.current || typeof Primus === 'undefined') {
             return;
         }
@@ -404,14 +404,14 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         };
 
         loadData();
-        connectWebSocket();
+        connectPrimus();
 
         return () => {
             if (primusRef.current) {
                 primusRef.current.end();
             }
         };
-    }, [connectWebSocket, apiRequest]);
+    }, [connectPrimus, apiRequest]);
 
 
     const dispatch: AppDispatch = useMemo(() => ({

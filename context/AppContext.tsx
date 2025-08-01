@@ -376,22 +376,31 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
                     throw new Error("Received malformed data from server. The database might be corrupted.");
                 }
 
-                // A more robust check: if there are no users, it MUST be the first run.
-                // This avoids issues with the isFirstRunComplete flag not persisting correctly.
                 const isFirstRun = !data.users || data.users.length === 0;
                 console.log(`[FRONTEND LOG] AppContext.loadData: Found ${data.users?.length} users. Setting isFirstRun to: ${isFirstRun}`);
                 
                 const lastUserId = localStorage.getItem('lastUserId');
                 const lastUser = isFirstRun ? null : data.users.find((u: User) => u.id === lastUserId);
                 
-                const aiStatus = await apiRequest('/api/ai/status');
-
                 if (isMounted.current) {
+                  // Set main data first. This is crucial.
                   setState(prev => ({
                       ...prev, ...data, isFirstRun, isDataLoaded: true,
                       currentUser: lastUser || null, isAppUnlocked: !!lastUser,
-                      isAiConfigured: aiStatus.isConfigured,
                   }));
+                }
+
+                // Now, fetch AI status in a non-blocking way.
+                try {
+                    const aiStatus = await apiRequest('/api/ai/status');
+                    if (isMounted.current) {
+                        setState(prev => ({ ...prev, isAiConfigured: aiStatus.isConfigured }));
+                    }
+                } catch (aiError) {
+                    console.error("Failed to fetch AI status, continuing without it.", aiError);
+                    if (isMounted.current) {
+                        setState(prev => ({ ...prev, isAiConfigured: false }));
+                    }
                 }
             } catch (error) {
                 console.error("Failed to load initial data:", error);

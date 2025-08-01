@@ -84,7 +84,13 @@ const Header: React.FC = () => {
   if (!currentUser) return null;
 
   return (
-    <header className="h-20 bg-stone-900/30 flex items-center justify-between px-4 md:px-8 border-b border-stone-700/50">
+    <header className="relative h-20 bg-stone-900/30 flex items-center justify-between px-4 md:px-8 border-b border-stone-700/50">
+      {appMode.mode === 'guild' && (
+        <div
+          className="absolute top-0 left-0 right-0 h-1 btn-primary"
+          title={`You are in ${currentGuildName} mode`}
+        ></div>
+      )}
       {/* Left Group */}
       <div className="flex items-center gap-2 md:gap-4">
         <div className="flex bg-stone-800/50 p-1 rounded-full border border-stone-700/60">

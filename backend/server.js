@@ -548,10 +548,26 @@ Promise.all([
 // WebSocket connection handling
 wss.on('connection', ws => {
     console.log('Client connected');
+
+    ws.on('message', async (message) => {
+        try {
+            const parsedMessage = JSON.parse(message);
+            if (parsedMessage.type === 'SEND_CHAT_MESSAGE') {
+                const data = await readData();
+                data.chatMessages.push(parsedMessage.payload);
+                await writeData(data);
+                await broadcastStateUpdate();
+            }
+        } catch (e) {
+            console.error("Error processing WebSocket message:", e);
+        }
+    });
+
     ws.on('close', () => {
         console.log('Client disconnected');
     });
 });
+
 
 const broadcastStateUpdate = async () => {
     try {
@@ -910,53 +926,8 @@ app.get('/api/media/local-gallery', async (req, res) => {
     }
 });
 
-// === NEW Image Pack Routes ===
-app.get('/api/image-packs', async (req, res) => {
-    try {
-        const packs = await fetchGitHub(GITHUB_PACKS_PATH);
-        const packData = await Promise.all(packs.filter(p => p.type === 'dir').map(async pack => {
-            const files = await fetchGitHub(pack.path);
-            const sampleImage = files.find(f => f.type === 'file');
-            return { name: pack.name, sampleImageUrl: sampleImage ? sampleImage.download_url : '' };
-        }));
-        res.json(packData);
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
-});
-
-app.get('/api/image-packs/:packName', async (req, res) => {
-    try {
-        const packName = req.params.packName;
-        const packContents = await fetchGitHub(`${GITHUB_PACKS_PATH}/${packName}`);
-        
-        const localFiles = new Set();
-        const walk = async (dir) => {
-            const files = await fs.readdir(dir);
-            for (const file of files) {
-                const filePath = path.join(dir, file);
-                const stat = await fs.stat(filePath);
-                if (stat.isDirectory()) {
-                    await walk(filePath);
-                } else {
-                    localFiles.add(path.basename(filePath));
-                }
-            }
-        };
-        await walk(UPLOADS_PATH);
-
-        const fileDetails = packContents.filter(f => f.type === 'file').map(file => ({
-            name: file.name,
-            category: packName,
-            url: file.download_url,
-            exists: localFiles.has(file.name)
-        }));
-
-        res.json(fileDetails);
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
-});
+// === REMOVED Image Pack Routes ===
+// These now rely on a local data file on the frontend, removing the GitHub dependency.
 
 app.post('/api/image-packs/import', async (req, res) => {
     const { files } = req.body;

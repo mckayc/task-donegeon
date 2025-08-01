@@ -418,11 +418,13 @@ const closeDb = () => new Promise((resolve, reject) => {
 
 const readData = async () => {
     const row = await dbGet('SELECT value FROM data WHERE key = ?', ['appData']);
-    return row ? JSON.parse(row.value) : null;
+    const data = row ? JSON.parse(row.value) : null;
+    console.log(`[SERVER LOG] readData: Read from DB. isFirstRunComplete: ${data?.settings?.isFirstRunComplete}, User count: ${data?.users?.length || 0}`);
+    return data;
 };
 
 const writeData = async (data) => {
-    console.log(`[SERVER LOG] writeData: Writing to DB. isFirstRunComplete is: ${data?.settings?.isFirstRunComplete}`);
+    console.log(`[SERVER LOG] writeData: Writing to DB. isFirstRunComplete: ${data?.settings?.isFirstRunComplete}, User count: ${data?.users?.length || 0}`);
     await dbRun('REPLACE INTO data (key, value) VALUES (?, ?)', ['appData', JSON.stringify(data)]);
 };
 
@@ -522,7 +524,6 @@ app.use(express.static(clientBuildPath));
 app.get('/api/data', async (req, res) => {
     try {
         const data = await readData();
-        console.log(`[SERVER LOG] /api/data (GET): Reading from DB. isFirstRunComplete is: ${data?.settings?.isFirstRunComplete}`);
         res.json(data);
     } catch (e) {
         res.status(500).json({ error: 'Failed to read data.' });
@@ -546,8 +547,7 @@ app.post('/api/first-run', async (req, res) => {
         // createInitialData now returns the complete, correct data object
         // with isFirstRunComplete set to true.
         const initialData = createInitialData(setupChoice, adminUserData, blueprint);
-        console.log(`[SERVER LOG] /api/first-run (POST): Preparing to write initial data. isFirstRunComplete is: ${initialData?.settings?.isFirstRunComplete}`);
-
+        
         await writeData(initialData);
         
         const adminUser = initialData.users.find(u => u.role === Role.DonegeonMaster);

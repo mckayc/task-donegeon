@@ -264,6 +264,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
 
     const fullUpdate = useCallback((newData: IAppData) => {
+        console.log('[FRONTEND LOG] Raw data object from WebSocket fullUpdate:', JSON.parse(JSON.stringify(newData)));
         if (!isMounted.current) return;
         setState(prev => {
             if (!newData || !newData.users || !newData.settings) {
@@ -370,6 +371,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         const loadData = async () => {
             try {
                 const data = await apiRequest('/api/data');
+                console.log('[FRONTEND LOG] Raw data object from /api/data:', JSON.parse(JSON.stringify(data)));
                 if (!data || !data.settings) { // Check for settings, as users can be empty on first run
                     throw new Error("Received malformed data from server. The database might be corrupted.");
                 }

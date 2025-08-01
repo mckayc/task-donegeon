@@ -235,7 +235,7 @@ const ThemeEditorPage: React.FC = () => {
                                                 setEnabled={val => setFormData(p => p ? ({ ...p, isGuildOnly: val }) : null)}
                                                 label="Guild Only Theme"
                                             />
-                                            <p className="text-xs text-stone-400 mt-1">If enabled, this theme can only be selected by Guilds.</p>
+                                            <p className="text-xs text-stone-400 mt-1">If enabled, this theme can only be selected by Guilds and will not appear in a user's personal theme list.</p>
                                         </div>
                                     )}
                                     {isAiAvailable && (

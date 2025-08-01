@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import Button from '../ui/Button';
 import { useAppDispatch } from '../../context/AppContext';
-import { libraryPacks } from '../../data/assetLibrary'; // Import local data
 import { LibraryPack } from '../../types';
 
 interface PackFile {
@@ -17,6 +16,10 @@ interface ImagePackImporterDialogProps {
 }
 
 const ImagePackImporterDialog: React.FC<ImagePackImporterDialogProps> = ({ onClose, onImportSuccess }) => {
+    const [remotePacks, setRemotePacks] = useState<LibraryPack[]>([]);
+    const [isLoadingPacks, setIsLoadingPacks] = useState(true);
+    const [packError, setPackError] = useState('');
+
     const [packDetails, setPackDetails] = useState<PackFile[]>([]);
     const [selectedPack, setSelectedPack] = useState<LibraryPack | null>(null);
     
@@ -26,6 +29,39 @@ const ImagePackImporterDialog: React.FC<ImagePackImporterDialogProps> = ({ onClo
     const [selectedFiles, setSelectedFiles] = useState<PackFile[]>([]);
     
     const { addNotification } = useAppDispatch();
+
+    useEffect(() => {
+        const fetchPacks = async () => {
+            setIsLoadingPacks(true);
+            setPackError('');
+            try {
+                const repoUrl = 'https://api.github.com/repos/mckayc/task-donegeon/contents/image-packs';
+                const response = await fetch(repoUrl);
+                if (!response.ok) throw new Error(`GitHub API error: ${response.statusText}`);
+                
+                const files = await response.json();
+                if (!Array.isArray(files)) throw new Error('Unexpected response from GitHub API.');
+
+                const packPromises = files
+                    .filter((file: any) => file.name.endsWith('.json'))
+                    .map(async (file: any) => {
+                        const packRes = await fetch(file.download_url);
+                        if (!packRes.ok) throw new Error(`Failed to download ${file.name}`);
+                        return packRes.json();
+                    });
+                
+                const packs = await Promise.all(packPromises);
+                setRemotePacks(packs);
+
+            } catch (err) {
+                const message = err instanceof Error ? err.message : 'An unknown error occurred.';
+                setPackError(`Could not load asset packs: ${message}`);
+            } finally {
+                setIsLoadingPacks(false);
+            }
+        };
+        fetchPacks();
+    }, []);
 
     const handleSelectPack = useCallback(async (pack: LibraryPack) => {
         setSelectedPack(pack);
@@ -40,7 +76,7 @@ const ImagePackImporterDialog: React.FC<ImagePackImporterDialogProps> = ({ onClo
             const details = (pack.assets.gameAssets || []).map(asset => {
                  const url = asset.url;
                  const name = url.substring(url.lastIndexOf('/') + 1);
-                 const category = asset.avatarSlot ? `Avatar/${asset.avatarSlot}` : asset.category || 'Miscellaneous';
+                 const category = asset.avatarSlot ? `Avatar-${asset.avatarSlot}` : asset.category || 'Miscellaneous';
                  const localPath = `/uploads/${category}/${name}`;
                  
                  return {
@@ -120,11 +156,13 @@ const ImagePackImporterDialog: React.FC<ImagePackImporterDialogProps> = ({ onClo
                 <p className="text-sm text-stone-400">Select an image pack to view its contents and import new files.</p>
             </div>
             <div className="flex-grow p-6 overflow-y-auto scrollbar-hide">
-                {error ? (
+                {isLoadingPacks ? (
+                     <div className="flex items-center justify-center h-full"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-400"></div></div>
+                ) : error ? (
                     <div className="text-red-400 text-center">{error}</div>
-                ) : libraryPacks.filter(p => p.type === 'Items').length > 0 ? (
+                ) : remotePacks.filter(p => p.type === 'Items').length > 0 ? (
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-                        {libraryPacks.filter(p => p.type === 'Items').map(pack => (
+                        {remotePacks.filter(p => p.type === 'Items').map(pack => (
                             <button key={pack.id} onClick={() => handleSelectPack(pack)} className="p-2 rounded-lg text-left space-y-2 bg-stone-900/50 hover:bg-stone-700/50 border-2 border-transparent hover:border-emerald-500 transition-all">
                                 <div className="aspect-square w-full bg-stone-700/50 rounded-md flex items-center justify-center overflow-hidden">
                                     <span className="text-5xl">{pack.emoji}</span>
@@ -134,7 +172,7 @@ const ImagePackImporterDialog: React.FC<ImagePackImporterDialogProps> = ({ onClo
                         ))}
                     </div>
                 ) : (
-                    <div className="text-center text-stone-400">No image packs found in the local library.</div>
+                    <div className="text-center text-stone-400">No image packs found in the remote library.</div>
                 )}
             </div>
              <div className="p-4 border-t border-stone-700/60 text-right flex-shrink-0">

@@ -1,9 +1,8 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import Button from '../../ui/Button';
 import Card from '../../ui/Card';
-import { libraryPacks } from '../../../data/assetLibrary';
-import { LibraryPack, BlueprintAssets, TrophyRequirementType, QuestGroup, Quest, GameAsset, Market, Trophy, RewardTypeDefinition, QuestType, User, ShareableAssetType } from '../../../types';
-import { useAppState, useAppDispatch } from '../../../context/AppContext';
+import { LibraryPack, BlueprintAssets, TrophyRequirementType, QuestGroup, Quest, GameAsset, Market, Trophy, RewardTypeDefinition, QuestType, User, ShareableAssetType } from '../../types';
+import { useAppState, useAppDispatch } from '../../context/AppContext';
 import Input from '../../ui/Input';
 import CreateQuestDialog from '../../quests/CreateQuestDialog';
 import EditGameAssetDialog from '../../admin/EditGameAssetDialog';
@@ -351,81 +350,26 @@ const PackDetailView: React.FC<{ pack: LibraryPack; onBack: () => void; }> = ({ 
 };
 
 const AssetLibraryPage: React.FC = () => {
-    const [selectedPack, setSelectedPack] = useState<LibraryPack | null>(null);
-    const [activeFilter, setActiveFilter] = useState('All');
-    const [searchTerm, setSearchTerm] = useState('');
-
-    const filteredPacks = useMemo(() => {
-        return libraryPacks.filter(pack => {
-            const filterMatch = activeFilter === 'All' || pack.type === activeFilter;
-            if (!filterMatch) return false;
-
-            if (!searchTerm.trim()) return true;
-            const lowerSearch = searchTerm.toLowerCase();
-
-            const textMatch = pack.title.toLowerCase().includes(lowerSearch) || pack.description.toLowerCase().includes(lowerSearch);
-            if (textMatch) return true;
-
-            const assetContentMatch = Object.values(pack.assets).some(assetArray => {
-                if (!Array.isArray(assetArray)) return false;
-                return assetArray.some(asset => {
-                    const name = (asset as any).title || (asset as any).name || '';
-                    const desc = (asset as any).description || '';
-                    return name.toLowerCase().includes(lowerSearch) || desc.toLowerCase().includes(lowerSearch);
-                });
-            });
-            if (assetContentMatch) return true;
-
-            const questTagMatch = pack.assets.quests?.some(q => 
-                q.tags.some(t => t.toLowerCase().includes(lowerSearch))
-            );
-            if (questTagMatch) return true;
-
-            const groupNameMatch = (pack.assets.questGroups || []).some(g => 
-                g.name.toLowerCase().includes(lowerSearch)
-            );
-            if (groupNameMatch) return true;
-            
-            return false;
-        });
-    }, [activeFilter, searchTerm]);
-    
-    if (selectedPack) {
-        return (
-            <PackDetailView
-                pack={selectedPack}
-                onBack={() => setSelectedPack(null)}
-            />
-        );
-    }
+    // This component is now just a placeholder that opens the importer dialog.
+    // The pack selection logic is inside the dialog itself.
+    const [isImporterOpen, setIsImporterOpen] = useState(false);
     
     return (
         <div className="space-y-6">
             <Card>
-                <div className="flex justify-between items-center mb-6 flex-wrap gap-4">
-                     <div className="flex-grow max-w-sm">
-                        <Input placeholder="Search packs..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
-                     </div>
-                    <div className="flex space-x-2 p-1 bg-stone-900/50 rounded-lg overflow-x-auto">
-                        {packTypes.map(type => (
-                             <button
-                                key={type}
-                                onClick={() => setActiveFilter(type)}
-                                className={`px-3 py-1 rounded-md font-semibold text-sm transition-colors whitespace-nowrap ${
-                                    activeFilter === type ? 'btn-primary' : 'text-stone-300 hover:bg-stone-700'
-                                }`}
-                            >
-                                {type}
-                            </button>
-                        ))}
+                <div className="text-center p-8">
+                    <h2 className="text-2xl font-bold text-stone-100">Content Library</h2>
+                    <p className="text-stone-400 mt-2 max-w-xl mx-auto">
+                        Jumpstart your game by installing pre-made content packs. You can import quests, items, trophies, and more, created by the community and the developers.
+                    </p>
+                    <div className="mt-6">
+                        <Button onClick={() => setIsImporterOpen(true)}>
+                            Open Content Library
+                        </Button>
                     </div>
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {filteredPacks.map(pack => (
-                        <PackCard key={pack.id} pack={pack} onSelect={() => setSelectedPack(pack)} />
-                    ))}
-                </div>
             </Card>
+            {isImporterOpen && <p className="text-center text-stone-400">This feature is currently under construction. Please check back later!</p>}
         </div>
     );
 };

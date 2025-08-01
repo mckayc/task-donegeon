@@ -183,12 +183,8 @@ wss.on('connection', ws => {
                 ));
                 stmt.finalize();
 
-                const broadcastPayload = JSON.stringify({ type: 'NEW_CHAT_MESSAGE', payload: newChatMessage });
-                wss.clients.forEach(client => {
-                    if (client.readyState === WebSocket.OPEN) {
-                        client.send(broadcastPayload);
-                    }
-                });
+                // Broadcast a full state update to ensure all clients are in sync
+                broadcastStateUpdate();
             }
         } catch (e) { console.error("Error processing WebSocket message:", e); }
     });

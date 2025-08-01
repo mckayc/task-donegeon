@@ -13,6 +13,38 @@ const sqlite3 = require('sqlite3').verbose();
 const GITHUB_REPO = 'mckayc/task-donegeon';
 const GITHUB_PACKS_PATH = 'image_packs';
 
+// === IN-MEMORY MIGRATIONS ===
+// By embedding the SQL, we remove the dependency on the file system,
+// which resolves potential Docker build issues where the migrations
+// folder might not be copied correctly.
+const MIGRATION_SCRIPTS = {
+    '001_initial_schema.sql': `
+-- Version 1: Initial Schema
+-- Establishes the core tables for the application.
+
+-- Main data table to store the entire application state as a single JSON object.
+-- This follows the original design and ensures backward compatibility with existing data.
+CREATE TABLE IF NOT EXISTS data (
+    id INTEGER PRIMARY KEY,
+    json TEXT NOT NULL
+);
+
+-- Ensures only one row can exist in the data table.
+-- All application data is managed within the JSON of this single row.
+INSERT OR IGNORE INTO data (id, json) VALUES (1, '{}');
+
+-- Table to track the current version of the database schema.
+-- This is essential for the migration system to work correctly.
+CREATE TABLE IF NOT EXISTS schema_version (
+    version INTEGER NOT NULL
+);
+
+-- Sets the initial version of the schema to 1.
+INSERT OR IGNORE INTO schema_version (version) VALUES (1);
+`
+};
+
+
 // Helper to fetch from GitHub API
 async function fetchGitHub(apiPath) {
     const url = `https://api.github.com/repos/${GITHUB_REPO}/contents/${apiPath}`;
@@ -381,7 +413,6 @@ app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 const DB_PATH = path.join(__dirname, 'db');
 const DB_FILE = path.join(DB_PATH, 'data.db');
-const MIGRATIONS_PATH = path.join(__dirname, 'migrations');
 
 let db;
 
@@ -428,12 +459,15 @@ const bootstrapDatabase = (db) => {
             }
 
             console.log("Applying initial schema migration (001)...");
-            const migrationScript = await fs.readFile(path.join(MIGRATIONS_PATH, '001_initial_schema.sql'), 'utf8');
+            const migrationScript = MIGRATION_SCRIPTS['001_initial_schema.sql'];
+            if (!migrationScript) {
+                return reject(new Error("Initial migration script is missing from MIGRATION_SCRIPTS map."));
+            }
             await new Promise((res, rej) => db.exec(migrationScript, err => err ? rej(err) : res()));
             
             if (oldDataJson) {
                 console.log("Restoring salvaged data...");
-                await new Promise((res, rej) => db.run("INSERT INTO data (id, json) VALUES (1, ?)", [oldDataJson], err => err ? rej(err) : res()));
+                await new Promise((res, rej) => db.run("INSERT OR IGNORE INTO data (id, json) VALUES (1, ?)", [oldDataJson], err => err ? rej(err) : res()));
             }
 
             console.log("Database successfully bootstrapped to version 1.");
@@ -451,10 +485,8 @@ const executeMigrations = (db) => {
             let currentVersion = versionRow ? versionRow.version : 0;
             console.log(`Current DB version: ${currentVersion}`);
 
-            const allFiles = await fs.readdir(MIGRATIONS_PATH);
-            const migrationFiles = allFiles
-                .filter(file => file.endsWith('.sql'))
-                .map(file => ({ version: parseInt(file.split('_')[0]), filename: file }))
+            const migrationFiles = Object.keys(MIGRATION_SCRIPTS)
+                .map(filename => ({ version: parseInt(filename.split('_')[0]), filename }))
                 .filter(mf => !isNaN(mf.version) && mf.version > currentVersion)
                 .sort((a, b) => a.version - b.version);
 
@@ -467,7 +499,10 @@ const executeMigrations = (db) => {
 
             for (const mf of migrationFiles) {
                 console.log(`Applying migration: ${mf.filename}...`);
-                const script = await fs.readFile(path.join(MIGRATIONS_PATH, mf.filename), 'utf8');
+                const script = MIGRATION_SCRIPTS[mf.filename];
+                if (!script) {
+                    return reject(new Error(`Migration script for ${mf.filename} is missing from MIGRATION_SCRIPTS map.`));
+                }
                 await new Promise((res, rej) => db.exec(script, err => err ? rej(new Error(`Failed on ${mf.filename}: ${err.message}`)) : res()));
                 await new Promise((res, rej) => db.run("UPDATE schema_version SET version = ?", [mf.version], err => err ? rej(new Error(`Failed to update version after ${mf.filename}: ${err.message}`)) : res()));
                 console.log(`Successfully migrated to version ${mf.version}.`);
@@ -659,7 +694,7 @@ app.post('/api/completions/:completionId/approve', async (req, res) => {
 
         completion.status = 'Approved';
         if (note) {
-            completion.note = completion.note ? `${completion.note}\nApprover: ${note}` : `Approver: ${note}`;
+            completion.note = completion.note ? `${completion.note}\\nApprover: ${note}` : `Approver: ${note}`;
         }
         
         await writeData(data);

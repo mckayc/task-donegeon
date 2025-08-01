@@ -20,7 +20,7 @@ const CompleteQuestDialog: React.FC<CompleteQuestDialogProps> = ({ quest, onClos
     const userToComplete = user || currentUser;
     if (!userToComplete) return;
 
-    completeQuest(quest.id, userToComplete.id, quest.rewards, quest.requiresApproval, quest.guildId, { note: note || undefined, completionDate });
+    completeQuest(quest.id, userToComplete.id, quest.requiresApproval, quest.guildId, { note: note || undefined, completionDate });
     onClose();
   };
 

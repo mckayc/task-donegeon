@@ -706,6 +706,36 @@ app.post('/api/completions/:completionId/approve', async (req, res) => {
     }
 });
 
+app.post('/api/completions/:completionId/reject', async (req, res) => {
+    try {
+        const { completionId } = req.params;
+        const { note } = req.body;
+        const data = await readData();
+
+        const completionIndex = data.questCompletions.findIndex(c => c.id === completionId);
+        if (completionIndex === -1) {
+             return res.status(404).json({ error: 'Completion not found.' });
+        }
+        const completion = data.questCompletions[completionIndex];
+        if (completion.status !== 'Pending') {
+            return res.status(400).json({ error: 'Completion is not pending.' });
+        }
+        
+        completion.status = 'Rejected';
+         if (note) {
+            completion.note = completion.note ? `${completion.note}\\nRejecter: ${note}` : `Rejecter: ${note}`;
+        }
+
+        await writeData(data);
+        broadcastStateUpdate();
+        res.status(200).json({ message: 'Quest completion rejected.' });
+    } catch (error) {
+        console.error('Error rejecting quest:', error);
+        res.status(500).json({ error: 'Failed to reject quest.' });
+    }
+});
+
+
 // Exchange currencies
 app.post('/api/actions/exchange', async (req, res) => {
     try {
@@ -746,6 +776,41 @@ app.post('/api/actions/exchange', async (req, res) => {
         res.status(500).json({ error: 'Failed to process exchange.' });
     }
 });
+
+app.post('/api/actions/factory-reset', async (req, res) => {
+    try {
+        const data = await readData();
+        const users = data.users; // Keep users
+        const freshData = createInitialData('scratch', users[0]);
+        freshData.users = users; // Put all original users back
+        await writeData(freshData);
+        broadcastStateUpdate();
+        res.status(200).json({ message: 'Factory reset successful. Users have been kept.' });
+    } catch (error) {
+        console.error('Factory reset error:', error);
+        res.status(500).json({ error: 'Failed to perform factory reset.' });
+    }
+});
+
+app.post('/api/actions/reinitialize', async (req, res) => {
+    try {
+        await new Promise((resolve, reject) => {
+            db.run('DELETE FROM data', (err) => {
+                if (err) return reject(err);
+                db.run("INSERT INTO data (id, json) VALUES (1, '{}')", (err) => {
+                    if (err) return reject(err);
+                    resolve();
+                });
+            });
+        });
+        broadcastStateUpdate();
+        res.status(200).json({ message: 'Application reinitialized. Please reload.' });
+    } catch (error) {
+        console.error('Reinitialization error:', error);
+        res.status(500).json({ error: 'Failed to reinitialize application.' });
+    }
+});
+
 
 app.get('/api/ai/status', (req, res) => {
     res.json({ isConfigured: !!process.env.API_KEY });

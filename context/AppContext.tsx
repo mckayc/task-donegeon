@@ -50,7 +50,7 @@ interface AppDispatch {
   releaseQuest: (questId: string, userId: string) => Promise<void>;
   markQuestAsTodo: (questId: string, userId: string) => Promise<void>;
   unmarkQuestAsTodo: (questId: string, userId: string) => Promise<void>;
-  completeQuest: (questId: string, userId: string, rewards: RewardItem[], requiresApproval: boolean, guildId?: string, options?: { note?: string; completionDate?: Date }) => Promise<void>;
+  completeQuest: (questId: string, userId: string, requiresApproval: boolean, guildId?: string, options?: { note?: string; completionDate?: Date }) => Promise<void>;
   approveQuestCompletion: (completionId: string, note?: string) => Promise<void>;
   rejectQuestCompletion: (completionId: string, note?: string) => Promise<void>;
   addQuestGroup: (group: Omit<QuestGroup, 'id'>) => Promise<QuestGroup | undefined>;
@@ -67,7 +67,7 @@ interface AppDispatch {
   cloneMarket: (marketId: string) => Promise<void>;
   deleteMarkets: (marketIds: string[]) => Promise<void>;
   updateMarketsStatus: (marketIds: string[], status: 'open' | 'closed') => Promise<void>;
-  purchaseMarketItem: (assetId: string, marketId: string, user: User, costGroupIndex: number) => Promise<void>;
+  purchaseMarketItem: (assetId: string, marketId: string, userId: string, costGroupIndex: number, guildId?: string) => Promise<void>;
   approvePurchaseRequest: (purchaseId: string) => Promise<void>;
   rejectPurchaseRequest: (purchaseId: string) => Promise<void>;
   cancelPurchaseRequest: (purchaseId: string) => Promise<void>;
@@ -120,7 +120,7 @@ interface AppDispatch {
   setRanks: (ranks: Rank[]) => void;
 
   // Chat
-  sendMessage: (message: Partial<ChatMessage>) => Promise<ChatMessage | undefined>;
+  sendMessage: (message: Pick<ChatMessage, "message"> & Partial<Omit<ChatMessage, "message">>) => Promise<ChatMessage | undefined>;
   markMessagesAsRead: (options: { partnerId?: string; guildId?: string }) => Promise<void>;
 
   // System Notifications
@@ -427,9 +427,21 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
     const dispatch: AppDispatch = useMemo(() => ({
         // Auth
-        addUser: (userData: Omit<User, 'id' | 'personalPurse' | 'personalExperience' | 'guildBalances' | 'avatar' | 'ownedAssetIds' | 'ownedThemes' | 'hasBeenOnboarded'>) => apiRequest('/api/users', { method: 'POST', body: JSON.stringify(userData) }),
-        updateUser: (userId: string, updatedData: Partial<User>) => apiRequest(`/api/users/${userId}`, { method: 'PUT', body: JSON.stringify(updatedData) }),
-        deleteUser: (userId: string) => apiRequest(`/api/users/${userId}`, { method: 'DELETE' }),
+        addUser: async (userData) => {
+            const newId = `user-${Date.now()}`;
+            const newUser: User = {
+                ...userData,
+                id: newId,
+                personalPurse: {}, personalExperience: {}, guildBalances: {},
+                avatar: {}, ownedAssetIds: [],
+                ownedThemes: ['emerald', 'rose', 'sky'],
+                hasBeenOnboarded: false,
+            };
+            updateAndSave(s => ({ users: [...s.users, newUser] }));
+            return Promise.resolve(newUser);
+        },
+        updateUser: async (userId, updatedData) => updateAndSave(s => ({ users: s.users.map(u => u.id === userId ? { ...u, ...updatedData } : u) })),
+        deleteUser: async (userId) => updateAndSave(s => ({ users: s.users.filter(u => u.id !== userId) })),
         setCurrentUser: (user: User | null) => { 
             setState(s => ({...s, currentUser: user, isSharedViewActive: false}));
             if (user) {
@@ -439,7 +451,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
                 localStorage.removeItem('lastUserId');
             }
         },
-        markUserAsOnboarded: (userId: string) => dispatch.updateUser(userId, { hasBeenOnboarded: true }),
+        markUserAsOnboarded: async (userId: string) => dispatch.updateUser(userId, { hasBeenOnboarded: true }),
         setAppUnlocked: (isUnlocked: boolean) => setState(s => ({ ...s, isAppUnlocked: isUnlocked })),
         setIsSwitchingUser: (isSwitching: boolean) => setState(s => ({ ...s, isSwitchingUser: isSwitching })),
         setTargetedUserForLogin: (user: User | null) => setState(s => ({ ...s, targetedUserForLogin: user })),
@@ -454,22 +466,20 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             try {
                 await apiRequest('/api/actions/reinitialize', { method: 'POST' });
                 setState(s => ({ ...s, isRestarting: true }));
-                // The page will automatically try to reconnect via websockets.
-                // A full reload after a delay is a good fallback.
-                setTimeout(() => {
-                    window.location.reload();
-                }, 7000); // Give it some time for the server to come back up
+                setTimeout(() => window.location.reload(), 7000);
             } catch (error) {
-                if (error instanceof Error) {
-                    addNotification({ type: 'error', message: `Failed to send re-initialize command: ${error.message}` });
-                }
+                if (error instanceof Error) addNotification({ type: 'error', message: `Failed to re-initialize: ${error.message}` });
             }
         },
 
         // Game Data
-        addQuest: (quest: Omit<Quest, 'id' | 'claimedByUserIds' | 'dismissals'>) => apiRequest('/api/quests', { method: 'POST', body: JSON.stringify(quest) }),
-        updateQuest: (updatedQuest: Quest) => apiRequest(`/api/quests/${updatedQuest.id}`, { method: 'PUT', body: JSON.stringify(updatedQuest) }),
-        deleteQuest: (questId: string) => apiRequest(`/api/quests/${questId}`, { method: 'DELETE' }),
+        addQuest: async (quest) => {
+            const newQuest: Quest = { ...quest, id: `quest-${Date.now()}`, claimedByUserIds: [], dismissals: [] };
+            updateAndSave(s => ({ quests: [...s.quests, newQuest] }));
+            return newQuest;
+        },
+        updateQuest: async (updatedQuest) => updateAndSave(s => ({ quests: s.quests.map(q => q.id === updatedQuest.id ? updatedQuest : q) })),
+        deleteQuest: async (questId) => updateAndSave(s => ({ quests: s.quests.filter(q => q.id !== questId) })),
         cloneQuest: async (questId: string) => updateAndSave(s => {
             const questToClone = s.quests.find(q => q.id === questId);
             if (!questToClone) return {};
@@ -479,27 +489,76 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         dismissQuest: async (questId: string, userId: string) => updateAndSave(s => ({ quests: s.quests.map(q => q.id === questId ? {...q, dismissals: [...q.dismissals, {userId, dismissedAt: new Date().toISOString()}]} : q) })),
         claimQuest: async (questId: string, userId: string) => updateAndSave(s => ({ quests: s.quests.map(q => q.id === questId ? {...q, claimedByUserIds: [...q.claimedByUserIds, userId]} : q) })),
         releaseQuest: async (questId: string, userId: string) => updateAndSave(s => ({ quests: s.quests.map(q => q.id === questId ? {...q, claimedByUserIds: q.claimedByUserIds.filter(id => id !== userId)} : q) })),
-        markQuestAsTodo: (questId: string, userId: string) => apiRequest(`/api/quests/${questId}/actions`, { method: 'POST', body: JSON.stringify({ action: 'mark_todo', userId }) }),
-        unmarkQuestAsTodo: (questId: string, userId: string) => apiRequest(`/api/quests/${questId}/actions`, { method: 'POST', body: JSON.stringify({ action: 'unmark_todo', userId }) }),
-        completeQuest: (questId: string, userId: string, rewards: RewardItem[], requiresApproval: boolean, guildId?: string, options?: { note?: string; completionDate?: Date }) => apiRequest(`/api/quests/${questId}/complete`, { method: 'POST', body: JSON.stringify({ userId, note: options?.note, completionDate: options?.completionDate }) }),
-        approveQuestCompletion: (completionId: string, note?: string) => apiRequest(`/api/completions/${completionId}/approve`, { method: 'POST', body: JSON.stringify({ note }) }),
-        rejectQuestCompletion: (completionId: string, note?: string) => apiRequest(`/api/completions/${completionId}/reject`, { method: 'POST', body: JSON.stringify({ note }) }),
-        addQuestGroup: (group: Omit<QuestGroup, 'id'>) => apiRequest('/api/questGroups', { method: 'POST', body: JSON.stringify(group) }),
-        updateQuestGroup: (group: QuestGroup) => apiRequest(`/api/questGroups/${group.id}`, { method: 'PUT', body: JSON.stringify(group) }),
-        deleteQuestGroup: (groupId: string) => apiRequest(`/api/questGroups/${groupId}`, { method: 'DELETE' }),
-        assignQuestGroupToUsers: async (groupId: string, userIds: string[]) => updateAndSave(s => ({ quests: s.quests.map(q => q.groupId === groupId ? { ...q, assignedUserIds: [...new Set([...q.assignedUserIds, ...userIds])] } : q) })),
-        addRewardType: (rewardType: Omit<RewardTypeDefinition, 'id' | 'isCore'>) => apiRequest('/api/rewardTypes', { method: 'POST', body: JSON.stringify(rewardType) }),
-        updateRewardType: (rewardType: RewardTypeDefinition) => apiRequest(`/api/rewardTypes/${rewardType.id}`, { method: 'PUT', body: JSON.stringify(rewardType) }),
-        deleteRewardType: (rewardTypeId: string) => apiRequest(`/api/rewardTypes/${rewardTypeId}`, { method: 'DELETE' }),
+        markQuestAsTodo: async (questId, userId) => updateAndSave(s => ({ quests: s.quests.map(q => q.id === questId ? { ...q, todoUserIds: [...(q.todoUserIds || []), userId] } : q) })),
+        unmarkQuestAsTodo: async (questId, userId) => updateAndSave(s => ({ quests: s.quests.map(q => q.id === questId ? { ...q, todoUserIds: (q.todoUserIds || []).filter(id => id !== userId) } : q) })),
+        completeQuest: async (questId, userId, requiresApproval, guildId, options) => {
+            updateAndSave(s => {
+                const quest = s.quests.find(q => q.id === questId);
+                if (!quest) return {};
+                
+                const newCompletion: QuestCompletion = {
+                    id: `qc-${Date.now()}`,
+                    questId, userId,
+                    completedAt: options?.completionDate?.toISOString() || new Date().toISOString(),
+                    status: requiresApproval ? QuestCompletionStatus.Pending : QuestCompletionStatus.Approved,
+                    note: options?.note,
+                    guildId,
+                };
+
+                if (requiresApproval) {
+                    return { questCompletions: [...s.questCompletions, newCompletion] };
+                }
+
+                // If no approval needed, grant rewards immediately
+                const userIndex = s.users.findIndex(u => u.id === userId);
+                if (userIndex === -1) return {};
+                
+                const updatedUsers = [...s.users];
+                const userToUpdate = { ...updatedUsers[userIndex] };
+
+                const balanceTarget = guildId ? (userToUpdate.guildBalances[guildId] = userToUpdate.guildBalances[guildId] || { purse: {}, experience: {} }) : { purse: userToUpdate.personalPurse, experience: userToUpdate.personalExperience };
+
+                quest.rewards.forEach(reward => {
+                    const rewardDef = s.rewardTypes.find(rt => rt.id === reward.rewardTypeId);
+                    if (rewardDef) {
+                        const balanceKey = rewardDef.category === RewardCategory.Currency ? 'purse' : 'experience';
+                        balanceTarget[balanceKey][reward.rewardTypeId] = (balanceTarget[balanceKey][reward.rewardTypeId] || 0) + reward.amount;
+                    }
+                });
+                updatedUsers[userIndex] = userToUpdate;
+                return { questCompletions: [...s.questCompletions, newCompletion], users: updatedUsers };
+            });
+        },
+        approveQuestCompletion: (completionId, note) => apiRequest(`/api/completions/${completionId}/approve`, { method: 'POST', body: JSON.stringify({ note }) }),
+        rejectQuestCompletion: (completionId, note) => apiRequest(`/api/completions/${completionId}/reject`, { method: 'POST', body: JSON.stringify({ note }) }),
+        addQuestGroup: async (group) => {
+            const newGroup: QuestGroup = { ...group, id: `qg-${Date.now()}` };
+            updateAndSave(s => ({ questGroups: [...s.questGroups, newGroup] }));
+            return newGroup;
+        },
+        updateQuestGroup: async (group) => updateAndSave(s => ({ questGroups: s.questGroups.map(g => g.id === group.id ? group : g) })),
+        deleteQuestGroup: async (groupId) => updateAndSave(s => ({ questGroups: s.questGroups.filter(g => g.id !== groupId) })),
+        assignQuestGroupToUsers: async (groupId, userIds) => updateAndSave(s => ({ quests: s.quests.map(q => q.groupId === groupId ? { ...q, assignedUserIds: [...new Set([...q.assignedUserIds, ...userIds])] } : q) })),
+        addRewardType: async (rewardType) => {
+            const newRewardType: RewardTypeDefinition = { ...rewardType, id: `rt-${Date.now()}`, isCore: false };
+            updateAndSave(s => ({ rewardTypes: [...s.rewardTypes, newRewardType] }));
+            return newRewardType;
+        },
+        updateRewardType: async (rewardType) => updateAndSave(s => ({ rewardTypes: s.rewardTypes.map(rt => rt.id === rewardType.id ? rewardType : rt) })),
+        deleteRewardType: async (rewardTypeId) => updateAndSave(s => ({ rewardTypes: s.rewardTypes.filter(rt => rt.id !== rewardTypeId) })),
         cloneRewardType: async (rewardTypeId: string) => updateAndSave(s => {
             const typeToClone = s.rewardTypes.find(rt => rt.id === rewardTypeId);
             if (!typeToClone) return {};
             const newType = { ...typeToClone, isCore: false, id: `rt-${Date.now()}`, name: `${typeToClone.name} (Copy)` };
             return { rewardTypes: [...s.rewardTypes, newType] };
         }),
-        addMarket: (market: Omit<Market, 'id'>) => apiRequest('/api/markets', { method: 'POST', body: JSON.stringify(market) }),
-        updateMarket: (market: Market) => apiRequest(`/api/markets/${market.id}`, { method: 'PUT', body: JSON.stringify(market) }),
-        deleteMarket: (marketId: string) => apiRequest(`/api/markets/${marketId}`, { method: 'DELETE' }),
+        addMarket: async (market) => {
+            const newMarket: Market = { ...market, id: `mkt-${Date.now()}` };
+            updateAndSave(s => ({ markets: [...s.markets, newMarket] }));
+            return newMarket;
+        },
+        updateMarket: async (market) => updateAndSave(s => ({ markets: s.markets.map(m => m.id === market.id ? market : m) })),
+        deleteMarket: async (marketId) => updateAndSave(s => ({ markets: s.markets.filter(m => m.id !== marketId) })),
         cloneMarket: async (marketId: string) => updateAndSave(s => {
             const marketToClone = s.markets.find(m => m.id === marketId);
             if (!marketToClone) return {};
@@ -508,16 +567,147 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         }),
         deleteMarkets: async (marketIds: string[]) => updateAndSave(s => ({ markets: s.markets.filter(m => !marketIds.includes(m.id)) })),
         updateMarketsStatus: async (marketIds: string[], status: 'open' | 'closed') => updateAndSave(s => ({ markets: s.markets.map(m => marketIds.includes(m.id) ? { ...m, status: { type: status } as MarketStatus } : m) })),
-        purchaseMarketItem: (assetId: string, marketId: string, user: User, costGroupIndex: number) => apiRequest('/api/actions/purchase', { method: 'POST', body: JSON.stringify({ assetId, marketId, userId: user.id, costGroupIndex, guildId: state.appMode.mode === 'guild' ? state.appMode.guildId : undefined }) }),
-        approvePurchaseRequest: (purchaseId: string) => apiRequest(`/api/purchase-requests/${purchaseId}/approve`, { method: 'POST' }),
-        rejectPurchaseRequest: (purchaseId: string) => apiRequest(`/api/purchase-requests/${purchaseId}/reject`, { method: 'POST' }),
-        cancelPurchaseRequest: (purchaseId: string) => apiRequest(`/api/purchase-requests/${purchaseId}/cancel`, { method: 'POST' }),
-        addGuild: (guild: Omit<Guild, 'id'>) => apiRequest('/api/guilds', { method: 'POST', body: JSON.stringify(guild) }),
-        updateGuild: (guild: Guild) => apiRequest(`/api/guilds/${guild.id}`, { method: 'PUT', body: JSON.stringify(guild) }),
-        deleteGuild: (guildId: string) => apiRequest(`/api/guilds/${guildId}`, { method: 'DELETE' }),
-        addTrophy: (trophy: Omit<Trophy, 'id'>) => apiRequest('/api/trophies', { method: 'POST', body: JSON.stringify(trophy) }),
-        updateTrophy: (trophy: Trophy) => apiRequest(`/api/trophies/${trophy.id}`, { method: 'PUT', body: JSON.stringify(trophy) }),
-        deleteTrophy: (trophyId: string) => apiRequest(`/api/trophies/${trophyId}`, { method: 'DELETE' }),
+        purchaseMarketItem: async (assetId, marketId, userId, costGroupIndex, guildId) => {
+            updateAndSave(s => {
+                const user = s.users.find(u => u.id === userId);
+                const asset = s.gameAssets.find(a => a.id === assetId);
+                if (!user || !asset) return {};
+                
+                const cost = asset.costGroups[costGroupIndex];
+                if (!cost) return {};
+
+                const updatedUsers = [...s.users];
+                const userIndex = updatedUsers.findIndex(u => u.id === userId);
+                const userToUpdate = JSON.parse(JSON.stringify(updatedUsers[userIndex]));
+
+                const balanceTarget = guildId ? (userToUpdate.guildBalances[guildId] = userToUpdate.guildBalances[guildId] || { purse: {}, experience: {} }) : { purse: userToUpdate.personalPurse, experience: userToUpdate.personalExperience };
+
+                // Check affordability
+                for (const item of cost) {
+                    const rewardDef = s.rewardTypes.find(rt => rt.id === item.rewardTypeId);
+                    if (!rewardDef) return {};
+                    const balanceKey = rewardDef.category === RewardCategory.Currency ? 'purse' : 'experience';
+                    if ((balanceTarget[balanceKey][item.rewardTypeId] || 0) < item.amount) {
+                        addNotification({ type: 'error', message: "You can't afford this item." });
+                        return {};
+                    }
+                }
+                
+                const newPurchaseRequest: PurchaseRequest = {
+                    id: `pr-${Date.now()}`, userId, assetId, requestedAt: new Date().toISOString(),
+                    status: asset.requiresApproval ? PurchaseRequestStatus.Pending : PurchaseRequestStatus.Completed,
+                    assetDetails: { name: asset.name, description: asset.description, cost },
+                    guildId,
+                };
+                
+                // Deduct cost (escrow for pending, spend for completed)
+                cost.forEach(item => {
+                    const rewardDef = s.rewardTypes.find(rt => rt.id === item.rewardTypeId);
+                    if (rewardDef) {
+                        const balanceKey = rewardDef.category === RewardCategory.Currency ? 'purse' : 'experience';
+                        balanceTarget[balanceKey][item.rewardTypeId] -= item.amount;
+                    }
+                });
+
+                if (asset.requiresApproval) {
+                    updatedUsers[userIndex] = userToUpdate;
+                    return { users: updatedUsers, purchaseRequests: [...s.purchaseRequests, newPurchaseRequest] };
+                }
+
+                // If not approval, complete transaction
+                newPurchaseRequest.actedAt = new Date().toISOString();
+                userToUpdate.ownedAssetIds.push(assetId);
+                if(asset.linkedThemeId && !userToUpdate.ownedThemes.includes(asset.linkedThemeId)) {
+                    userToUpdate.ownedThemes.push(asset.linkedThemeId);
+                }
+                // Handle payouts (exchanges)
+                (asset.payouts || []).forEach(payout => {
+                    const rewardDef = s.rewardTypes.find(rt => rt.id === payout.rewardTypeId);
+                     if (rewardDef) {
+                        const balanceKey = rewardDef.category === RewardCategory.Currency ? 'purse' : 'experience';
+                        balanceTarget[balanceKey][payout.rewardTypeId] = (balanceTarget[balanceKey][payout.rewardTypeId] || 0) + payout.amount;
+                    }
+                });
+                
+                updatedUsers[userIndex] = userToUpdate;
+                const updatedAssets = s.gameAssets.map(a => a.id === assetId ? {...a, purchaseCount: a.purchaseCount + 1} : a);
+
+                return { users: updatedUsers, gameAssets: updatedAssets, purchaseRequests: [...s.purchaseRequests, newPurchaseRequest] };
+            });
+        },
+        approvePurchaseRequest: async (purchaseId) => updateAndSave(s => {
+            const reqIndex = s.purchaseRequests.findIndex(pr => pr.id === purchaseId);
+            if (reqIndex === -1) return {};
+            const updatedRequests = [...s.purchaseRequests];
+            const request = { ...updatedRequests[reqIndex], status: PurchaseRequestStatus.Completed, actedAt: new Date().toISOString() };
+            updatedRequests[reqIndex] = request;
+
+            const userIndex = s.users.findIndex(u => u.id === request.userId);
+            const asset = s.gameAssets.find(a => a.id === request.assetId);
+            if(userIndex === -1 || !asset) return { purchaseRequests: updatedRequests }; // Escrow lost but state is consistent
+            
+            const updatedUsers = [...s.users];
+            const userToUpdate = JSON.parse(JSON.stringify(updatedUsers[userIndex]));
+            userToUpdate.ownedAssetIds = [...userToUpdate.ownedAssetIds, request.assetId];
+            if(asset.linkedThemeId && !userToUpdate.ownedThemes.includes(asset.linkedThemeId)) {
+                 userToUpdate.ownedThemes = [...userToUpdate.ownedThemes, asset.linkedThemeId];
+            }
+            // Handle payouts
+            const balanceTarget = request.guildId ? (userToUpdate.guildBalances[request.guildId] = userToUpdate.guildBalances[request.guildId] || { purse: {}, experience: {} }) : { purse: userToUpdate.personalPurse, experience: userToUpdate.personalExperience };
+            (asset.payouts || []).forEach(payout => {
+                const rewardDef = s.rewardTypes.find(rt => rt.id === payout.rewardTypeId);
+                 if (rewardDef) {
+                    const balanceKey = rewardDef.category === RewardCategory.Currency ? 'purse' : 'experience';
+                    balanceTarget[balanceKey][payout.rewardTypeId] = (balanceTarget[balanceKey][payout.rewardTypeId] || 0) + payout.amount;
+                }
+            });
+            updatedUsers[userIndex] = userToUpdate;
+            
+            const updatedAssets = s.gameAssets.map(a => a.id === asset.id ? {...a, purchaseCount: a.purchaseCount + 1} : a);
+
+            return { purchaseRequests: updatedRequests, users: updatedUsers, gameAssets: updatedAssets };
+        }),
+        rejectPurchaseRequest: async (purchaseId) => updateAndSave(s => {
+            const reqIndex = s.purchaseRequests.findIndex(pr => pr.id === purchaseId);
+            if (reqIndex === -1) return {};
+            const updatedRequests = [...s.purchaseRequests];
+            const request = { ...updatedRequests[reqIndex], status: PurchaseRequestStatus.Rejected, actedAt: new Date().toISOString() };
+            updatedRequests[reqIndex] = request;
+
+            const userIndex = s.users.findIndex(u => u.id === request.userId);
+            if(userIndex === -1) return { purchaseRequests: updatedRequests };
+            
+            const updatedUsers = [...s.users];
+            const userToUpdate = JSON.parse(JSON.stringify(updatedUsers[userIndex]));
+
+            // Refund cost
+            const balanceTarget = request.guildId ? (userToUpdate.guildBalances[request.guildId] = userToUpdate.guildBalances[request.guildId] || { purse: {}, experience: {} }) : { purse: userToUpdate.personalPurse, experience: userToUpdate.personalExperience };
+            request.assetDetails.cost.forEach(item => {
+                const rewardDef = s.rewardTypes.find(rt => rt.id === item.rewardTypeId);
+                if (rewardDef) {
+                    const balanceKey = rewardDef.category === RewardCategory.Currency ? 'purse' : 'experience';
+                    balanceTarget[balanceKey][item.rewardTypeId] = (balanceTarget[balanceKey][item.rewardTypeId] || 0) + item.amount;
+                }
+            });
+            updatedUsers[userIndex] = userToUpdate;
+
+            return { purchaseRequests: updatedRequests, users: updatedUsers };
+        }),
+        cancelPurchaseRequest: async (purchaseId) => dispatch.rejectPurchaseRequest(purchaseId), // Same logic as reject
+        addGuild: async (guild) => {
+            const newGuild: Guild = { ...guild, id: `g-${Date.now()}` };
+            updateAndSave(s => ({ guilds: [...s.guilds, newGuild] }));
+            return newGuild;
+        },
+        updateGuild: async (guild) => updateAndSave(s => ({ guilds: s.guilds.map(g => g.id === guild.id ? guild : g) })),
+        deleteGuild: async (guildId) => updateAndSave(s => ({ guilds: s.guilds.filter(g => g.id !== guildId) })),
+        addTrophy: async (trophy) => {
+            const newTrophy: Trophy = { ...trophy, id: `t-${Date.now()}` };
+            updateAndSave(s => ({ trophies: [...s.trophies, newTrophy] }));
+            return newTrophy;
+        },
+        updateTrophy: async (trophy) => updateAndSave(s => ({ trophies: s.trophies.map(t => t.id === trophy.id ? trophy : t) })),
+        deleteTrophy: async (trophyId) => updateAndSave(s => ({ trophies: s.trophies.filter(t => t.id !== trophyId) })),
         cloneTrophy: async (trophyId: string) => updateAndSave(s => {
             const trophyToClone = s.trophies.find(t => t.id === trophyId);
             if (!trophyToClone) return {};
@@ -525,14 +715,18 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             return { trophies: [...s.trophies, newTrophy] };
         }),
         deleteTrophies: async (trophyIds: string[]) => updateAndSave(s => ({ trophies: s.trophies.filter(t => !trophyIds.includes(t.id)) })),
-        awardTrophy: async (userId: string, trophyId: string, guildId?: string) => updateAndSave(s => ({ userTrophies: [...s.userTrophies, { id: `ut-${Date.now()}`, userId, trophyId, awardedAt: new Date().toISOString(), guildId }] })),
-        applyManualAdjustment: async (adjustment: Omit<AdminAdjustment, 'id' | 'adjustedAt'>) => {
+        awardTrophy: async (userId, trophyId, guildId) => updateAndSave(s => ({ userTrophies: [...s.userTrophies, { id: `ut-${Date.now()}`, userId, trophyId, awardedAt: new Date().toISOString(), guildId }] })),
+        applyManualAdjustment: async (adjustment) => {
             updateAndSave(s => ({ adminAdjustments: [...s.adminAdjustments, { ...adjustment, id: `adj-${Date.now()}`, adjustedAt: new Date().toISOString() }] }));
             return true;
         },
-        addGameAsset: (asset: Omit<GameAsset, 'id' | 'creatorId' | 'createdAt' | 'purchaseCount'>) => apiRequest('/api/gameAssets', { method: 'POST', body: JSON.stringify(asset) }),
-        updateGameAsset: (asset: GameAsset) => apiRequest(`/api/gameAssets/${asset.id}`, { method: 'PUT', body: JSON.stringify(asset) }),
-        deleteGameAsset: (assetId: string) => apiRequest(`/api/gameAssets/${assetId}`, { method: 'DELETE' }),
+        addGameAsset: async (asset) => {
+            const newAsset: GameAsset = { ...asset, id: `ga-${Date.now()}`, creatorId: state.currentUser?.id || 'system', createdAt: new Date().toISOString(), purchaseCount: 0 };
+            updateAndSave(s => ({ gameAssets: [...s.gameAssets, newAsset] }));
+            return newAsset;
+        },
+        updateGameAsset: async (asset) => updateAndSave(s => ({ gameAssets: s.gameAssets.map(a => a.id === asset.id ? asset : a) })),
+        deleteGameAsset: async (assetId) => updateAndSave(s => ({ gameAssets: s.gameAssets.filter(a => a.id !== assetId) })),
         deleteGameAssets: async (assetIds: string[]) => updateAndSave(s => ({ gameAssets: s.gameAssets.filter(a => !assetIds.includes(a.id)) })),
         cloneGameAsset: async (assetId: string) => updateAndSave(s => {
             const assetToClone = s.gameAssets.find(a => a.id === assetId);
@@ -542,9 +736,13 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         }),
         
         // Themes
-        addTheme: (theme: Omit<ThemeDefinition, 'id'>) => apiRequest('/api/themes', { method: 'POST', body: JSON.stringify(theme) }),
-        updateTheme: (theme: ThemeDefinition) => apiRequest(`/api/themes/${theme.id}`, { method: 'PUT', body: JSON.stringify(theme) }),
-        deleteTheme: (themeId: string) => apiRequest(`/api/themes/${themeId}`, { method: 'DELETE' }),
+        addTheme: async (theme) => {
+            const newTheme: ThemeDefinition = { ...theme, id: `theme-${Date.now()}` };
+            updateAndSave(s => ({ themes: [...s.themes, newTheme] }));
+            return newTheme;
+        },
+        updateTheme: async (theme) => updateAndSave(s => ({ themes: s.themes.map(t => t.id === theme.id ? theme : t) })),
+        deleteTheme: async (themeId) => updateAndSave(s => ({ themes: s.themes.filter(t => t.id !== themeId) })),
 
         // Settings
         updateSettings: (newSettings: Partial<AppSettings>) => updateAndSave(s => ({ settings: { ...s.settings, ...newSettings } })),
@@ -565,33 +763,59 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         restoreDefaultObjects: async (objectType: 'trophies') => updateAndSave(s => ({ trophies: [...s.trophies, ...INITIAL_TROPHIES.filter(it => !s.trophies.some(t => t.id === it.id))] })),
         clearAllHistory: async () => updateAndSave(() => ({ questCompletions: [], purchaseRequests: [], systemLogs: [], adminAdjustments: [] })),
         resetAllPlayerData: async () => updateAndSave(s => ({ users: s.users.map(u => ({...u, personalPurse: {}, personalExperience: {}, guildBalances: {}, ownedAssetIds: [], userTrophies: []})) })),
-        deleteAllCustomContent: async () => {
-            try {
-                await apiRequest('/api/actions/factory-reset', { method: 'POST' });
-                addNotification({ type: 'success', message: 'Custom content has been reset successfully.' });
-            } catch (error) {
-                // apiRequest will show the error notification
-            }
-        },
+        deleteAllCustomContent: async () => apiRequest('/api/actions/factory-reset', { method: 'POST' }),
         
         // First Run
-        completeFirstRun: (adminUserData: Omit<User, 'id' | 'personalPurse' | 'personalExperience' | 'guildBalances' | 'avatar' | 'ownedAssetIds' | 'ownedThemes' | 'hasBeenOnboarded'>, setupChoice: 'guided' | 'scratch' | 'import', blueprint: Blueprint | null) => apiRequest('/api/first-run', { method: 'POST', body: JSON.stringify({ adminUserData, setupChoice, blueprint }) }),
+        completeFirstRun: (adminUserData, setupChoice, blueprint) => apiRequest('/api/first-run', { method: 'POST', body: JSON.stringify({ adminUserData, setupChoice, blueprint }) }),
         
         // Ranks
         setRanks: (ranks: Rank[]) => updateAndSave(() => ({ ranks })),
 
         // Chat
-        sendMessage: (message: Partial<ChatMessage>) => apiRequest('/api/chat/messages', { method: 'POST', body: JSON.stringify({ ...message, senderId: state.currentUser?.id }) }),
-        markMessagesAsRead: (options: { partnerId?: string; guildId?: string }) => apiRequest('/api/chat/read', { method: 'POST', body: JSON.stringify({ ...options, userId: state.currentUser?.id }) }),
+        sendMessage: async (message) => {
+            const newMessage: ChatMessage = {
+                id: `msg-${Date.now()}`,
+                senderId: state.currentUser!.id,
+                timestamp: new Date().toISOString(),
+                readBy: [state.currentUser!.id],
+                ...message,
+            };
+            updateAndSave(s => ({ chatMessages: [...s.chatMessages, newMessage] }));
+            return newMessage;
+        },
+        markMessagesAsRead: async (options) => updateAndSave(s => {
+            const currentUserId = state.currentUser?.id;
+            if (!currentUserId) return {};
+            return {
+                chatMessages: s.chatMessages.map(msg => {
+                    const isUnread = !msg.readBy.includes(currentUserId);
+                    const isGuildMatch = options.guildId && msg.guildId === options.guildId;
+                    const isDMMatch = options.partnerId && ((msg.recipientId === currentUserId && msg.senderId === options.partnerId) || (msg.recipientId === options.partnerId && msg.senderId === currentUserId));
+                    
+                    if (isUnread && (isGuildMatch || isDMMatch)) {
+                        return { ...msg, readBy: [...msg.readBy, currentUserId] };
+                    }
+                    return msg;
+                })
+            }
+        }),
 
         // System Notifications
-        addSystemNotification: (notification: Omit<SystemNotification, 'id' | 'timestamp' | 'readByUserIds'>) => apiRequest('/api/systemNotifications', { method: 'POST', body: JSON.stringify(notification) }),
-        markSystemNotificationsAsRead: (notificationIds: string[]) => apiRequest('/api/systemNotifications/read', { method: 'POST', body: JSON.stringify({ notificationIds, userId: state.currentUser?.id }) }),
+        addSystemNotification: async (notification) => {
+            const newNotification: SystemNotification = { ...notification, id: `sys-notif-${Date.now()}`, timestamp: new Date().toISOString(), readByUserIds: [] };
+            updateAndSave(s => ({ systemNotifications: [...s.systemNotifications, newNotification] }));
+            return newNotification;
+        },
+        markSystemNotificationsAsRead: async (notificationIds) => updateAndSave(s => ({ systemNotifications: s.systemNotifications.map(n => notificationIds.includes(n.id) ? { ...n, readByUserIds: [...new Set([...n.readByUserIds, state.currentUser!.id])] } : n) })),
 
         // Scheduled Events
-        addScheduledEvent: (event: Omit<ScheduledEvent, 'id'>) => apiRequest('/api/scheduledEvents', { method: 'POST', body: JSON.stringify(event) }),
-        updateScheduledEvent: (event: ScheduledEvent) => apiRequest(`/api/scheduledEvents/${event.id}`, { method: 'PUT', body: JSON.stringify(event) }),
-        deleteScheduledEvent: (eventId: string) => apiRequest(`/api/scheduledEvents/${eventId}`, { method: 'DELETE' }),
+        addScheduledEvent: async (event) => {
+            const newEvent: ScheduledEvent = { ...event, id: `event-${Date.now()}` };
+            updateAndSave(s => ({ scheduledEvents: [...s.scheduledEvents, newEvent] }));
+            return newEvent;
+        },
+        updateScheduledEvent: async (event) => updateAndSave(s => ({ scheduledEvents: s.scheduledEvents.map(e => e.id === event.id ? event : e) })),
+        deleteScheduledEvent: async (eventId) => updateAndSave(s => ({ scheduledEvents: s.scheduledEvents.filter(e => e.id !== eventId) })),
         
         // Bulk Actions
         deleteQuests: async (questIds: string[]) => updateAndSave(s => ({ quests: s.quests.filter(q => !questIds.includes(q.id)) })),
@@ -599,7 +823,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         bulkUpdateQuests: async (questIds: string[], updates: BulkQuestUpdates) => updateAndSave(s => ({
             quests: s.quests.map(q => {
                 if (!questIds.includes(q.id)) return q;
-
                 let updatedQuest = { ...q };
                 if (updates.isActive !== undefined) updatedQuest.isActive = updates.isActive;
                 if (updates.isOptional !== undefined) updatedQuest.isOptional = updates.isOptional;
@@ -609,7 +832,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
                 if (updates.removeTags) updatedQuest.tags = updatedQuest.tags.filter(t => !updates.removeTags!.includes(t));
                 if (updates.assignUsers) updatedQuest.assignedUserIds = [...new Set([...updatedQuest.assignedUserIds, ...updates.assignUsers])];
                 if (updates.unassignUsers) updatedQuest.assignedUserIds = updatedQuest.assignedUserIds.filter(id => !updates.unassignUsers!.includes(id));
-                
                 return updatedQuest;
             })
         })),
@@ -640,7 +862,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
                 return null;
             }
         },
-        executeExchange: (userId: string, payItem: RewardItem, receiveItem: RewardItem, guildId?: string) => apiRequest('/api/actions/exchange', { method: 'POST', body: JSON.stringify({ userId, payItem, receiveItem, guildId }) }),
+        executeExchange: (userId, payItem, receiveItem, guildId) => apiRequest('/api/actions/exchange', { method: 'POST', body: JSON.stringify({ userId, payItem, receiveItem, guildId }) }),
     }), [state.currentUser, state.appMode, apiRequest, addNotification, removeNotification, updateAndSave]);
 
     return (

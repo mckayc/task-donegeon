@@ -276,6 +276,12 @@ function createInitialQuestCompletions(quests, users) {
 }
 
 function createInitialData(setupChoice = 'guided', adminUserData, blueprint = null) {
+    // Create a settings object for this specific run with the completion flag set to true.
+    const settingsForRun = {
+        ...INITIAL_SETTINGS,
+        isFirstRunComplete: true,
+    };
+
     // --- Start from Scratch Path ---
     if (setupChoice === 'scratch') {
         const adminUser = {
@@ -294,7 +300,7 @@ function createInitialData(setupChoice = 'guided', adminUserData, blueprint = nu
             questCompletions: [], purchaseRequests: [], guilds,
             ranks: INITIAL_RANKS, trophies: [], userTrophies: [],
             adminAdjustments: [], gameAssets: [], systemLogs: [],
-            settings: INITIAL_SETTINGS, themes: INITIAL_THEMES,
+            settings: settingsForRun, themes: INITIAL_THEMES,
             loginHistory: [], chatMessages: [], systemNotifications: [], scheduledEvents: [],
         };
     }
@@ -309,12 +315,10 @@ function createInitialData(setupChoice = 'guided', adminUserData, blueprint = nu
         };
         const users = [adminUser];
         const guilds = createInitialGuilds(users);
-        // Merge reward types, ensuring core types are not duplicated
         const finalRewardTypes = [
             ...INITIAL_REWARD_TYPES,
             ...(blueprint.assets.rewardTypes || []).filter((rt) => !INITIAL_REWARD_TYPES.some(coreRt => coreRt.id === rt.id))
         ];
-        // Ensure bank market exists
         let finalMarkets = blueprint.assets.markets || [];
         if (!finalMarkets.some((m) => m.id === 'market-bank')) {
             const bankMarket = createSampleMarkets().find((m) => m.id === 'market-bank');
@@ -331,19 +335,18 @@ function createInitialData(setupChoice = 'guided', adminUserData, blueprint = nu
             trophies: blueprint.assets.trophies || [],
             userTrophies: [], adminAdjustments: [],
             gameAssets: blueprint.assets.gameAssets || [],
-            systemLogs: [], settings: INITIAL_SETTINGS, themes: INITIAL_THEMES,
+            systemLogs: [], settings: settingsForRun, themes: INITIAL_THEMES,
             loginHistory: [], chatMessages: [], systemNotifications: [], scheduledEvents: [],
         };
     }
 
     // --- Guided Setup Path (Default) ---
     const users = createMockUsers();
-    // Find the default admin and overwrite its credentials with what the user provided
     const adminIndex = users.findIndex(u => u.username === 'admin');
     if (adminIndex !== -1) {
         users[adminIndex] = {
-            ...users[adminIndex], // Keep defaults like ID
-            ...adminUserData,     // Overwrite with user input
+            ...users[adminIndex],
+            ...adminUserData,
             hasBeenOnboarded: false,
         };
     }
@@ -364,7 +367,7 @@ function createInitialData(setupChoice = 'guided', adminUserData, blueprint = nu
         trophies: INITIAL_TROPHIES,
         userTrophies: [], adminAdjustments: [],
         gameAssets, systemLogs: [],
-        settings: INITIAL_SETTINGS,
+        settings: settingsForRun,
         themes: INITIAL_THEMES,
         loginHistory: [], chatMessages: [], systemNotifications: [], scheduledEvents: [],
     };
@@ -538,12 +541,9 @@ app.post('/api/first-run', async (req, res) => {
     try {
         const { adminUserData, setupChoice, blueprint } = req.body;
         
-        // This is the ONLY place that populates the database with content.
-        // It completely overwrites any existing data.
+        // createInitialData now returns the complete, correct data object
+        // with isFirstRunComplete set to true.
         const initialData = createInitialData(setupChoice, adminUserData, blueprint);
-        
-        // Mark the first run as complete IN THE NEW DATA OBJECT before writing.
-        initialData.settings.isFirstRunComplete = true;
 
         await writeData(initialData);
         

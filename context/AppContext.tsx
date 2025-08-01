@@ -373,8 +373,12 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
                     throw new Error("Received malformed data from server. The database might be corrupted.");
                 }
 
+                console.log(`[FRONTEND LOG] AppContext.loadData: Received data from server. settings.isFirstRunComplete is: ${data.settings.isFirstRunComplete}`);
+
                 const isFirstRun = !data.settings.isFirstRunComplete;
 
+                console.log(`[FRONTEND LOG] AppContext.loadData: Setting isFirstRun state to: ${isFirstRun}`);
+                
                 const lastUserId = localStorage.getItem('lastUserId');
                 const lastUser = isFirstRun ? null : data.users.find((u: User) => u.id === lastUserId);
                 

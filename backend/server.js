@@ -1,3 +1,4 @@
+
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
@@ -380,8 +381,105 @@ app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 const DB_PATH = path.join(__dirname, 'db');
 const DB_FILE = path.join(DB_PATH, 'data.db');
+const MIGRATIONS_PATH = path.join(__dirname, 'migrations');
 
 let db;
+
+// == MIGRATION LOGIC ==
+const runMigrations = (db) => {
+    return new Promise((resolve, reject) => {
+        db.serialize(() => {
+            db.get("SELECT name FROM sqlite_master WHERE type='table' AND name='schema_version'", (err, row) => {
+                if (err) return reject(new Error(`Failed to check for schema_version table: ${err.message}`));
+
+                if (!row) {
+                    console.log("Schema versioning not found. Bootstrapping database...");
+                    bootstrapDatabase(db).then(resolve).catch(reject);
+                } else {
+                    executeMigrations(db).then(resolve).catch(reject);
+                }
+            });
+        });
+    });
+};
+
+const bootstrapDatabase = (db) => {
+    return new Promise(async (resolve, reject) => {
+        try {
+            let oldDataJson = null;
+            const oldTableExists = await new Promise((res, rej) => {
+                db.get("SELECT name FROM sqlite_master WHERE type='table' AND name='data'", (err, row) => err ? rej(err) : res(!!row));
+            });
+
+            if (oldTableExists) {
+                console.log("Found existing 'data' table. Attempting to salvage data...");
+                try {
+                    const oldRow = await new Promise((res) => {
+                        db.get("SELECT json FROM data LIMIT 1", (err, row) => res(row || null));
+                    });
+                    if (oldRow && oldRow.json) {
+                        oldDataJson = oldRow.json;
+                        console.log("Successfully salvaged old data.");
+                    }
+                } catch (salvageError) {
+                    console.warn(`Could not salvage data: ${salvageError.message}`);
+                }
+                await new Promise((res, rej) => db.run("DROP TABLE data", err => err ? rej(err) : res()));
+            }
+
+            console.log("Applying initial schema migration (001)...");
+            const migrationScript = await fs.readFile(path.join(MIGRATIONS_PATH, '001_initial_schema.sql'), 'utf8');
+            await new Promise((res, rej) => db.exec(migrationScript, err => err ? rej(err) : res()));
+            
+            if (oldDataJson) {
+                console.log("Restoring salvaged data...");
+                await new Promise((res, rej) => db.run("INSERT INTO data (id, json) VALUES (1, ?)", [oldDataJson], err => err ? rej(err) : res()));
+            }
+
+            console.log("Database successfully bootstrapped to version 1.");
+            resolve();
+        } catch (bootstrapError) {
+            reject(new Error(`Database bootstrapping failed: ${bootstrapError.message}`));
+        }
+    });
+};
+
+const executeMigrations = (db) => {
+    return new Promise(async (resolve, reject) => {
+        try {
+            const versionRow = await new Promise((res, rej) => db.get("SELECT version FROM schema_version", (err, row) => err ? rej(err) : res(row)));
+            let currentVersion = versionRow ? versionRow.version : 0;
+            console.log(`Current DB version: ${currentVersion}`);
+
+            const allFiles = await fs.readdir(MIGRATIONS_PATH);
+            const migrationFiles = allFiles
+                .filter(file => file.endsWith('.sql'))
+                .map(file => ({ version: parseInt(file.split('_')[0]), filename: file }))
+                .filter(mf => !isNaN(mf.version) && mf.version > currentVersion)
+                .sort((a, b) => a.version - b.version);
+
+            if (migrationFiles.length === 0) {
+                console.log("Database is up to date.");
+                return resolve();
+            }
+
+            console.log(`Found ${migrationFiles.length} new migration(s) to apply.`);
+
+            for (const mf of migrationFiles) {
+                console.log(`Applying migration: ${mf.filename}...`);
+                const script = await fs.readFile(path.join(MIGRATIONS_PATH, mf.filename), 'utf8');
+                await new Promise((res, rej) => db.exec(script, err => err ? rej(new Error(`Failed on ${mf.filename}: ${err.message}`)) : res()));
+                await new Promise((res, rej) => db.run("UPDATE schema_version SET version = ?", [mf.version], err => err ? rej(new Error(`Failed to update version after ${mf.filename}: ${err.message}`)) : res()));
+                console.log(`Successfully migrated to version ${mf.version}.`);
+            }
+            
+            console.log("All migrations applied successfully.");
+            resolve();
+        } catch (migrationError) {
+            reject(new Error(`Migration process failed: ${migrationError.message}`));
+        }
+    });
+};
 
 // Ensure db directory exists and initialize DB
 fs.mkdir(DB_PATH, { recursive: true })
@@ -393,56 +491,12 @@ fs.mkdir(DB_PATH, { recursive: true })
       }
       console.log('Connected to the SQLite database.');
       
-      db.serialize(() => {
-        // Create table with the correct schema if it doesn't exist at all.
-        db.run(`CREATE TABLE IF NOT EXISTS data (id INTEGER PRIMARY KEY, json TEXT)`, (err) => {
-          if (err) {
-            console.error('Initial table creation failed:', err.message);
-            return;
-          }
-      
-          // Now, verify the schema of the existing (or newly created) table.
-          db.all("PRAGMA table_info(data)", (err, columns) => {
-            if (err) {
-              console.error("Error checking table schema:", err.message);
-              return;
-            }
-      
-            const hasIdColumn = columns.some(col => col.name === 'id');
-            const hasJsonColumn = columns.some(col => col.name === 'json');
-      
-            // If the schema is incorrect (missing id or json column), drop and recreate.
-            if (!hasIdColumn || !hasJsonColumn) {
-              console.log("Incorrect database schema detected. Recreating table...");
-              db.serialize(() => {
-                db.run("DROP TABLE data", (dropErr) => {
-                  if (dropErr) {
-                    console.error("Error dropping old data table:", dropErr.message);
-                    return;
-                  }
-                  db.run(`CREATE TABLE data (id INTEGER PRIMARY KEY, json TEXT)`, (createErr) => {
-                    if (createErr) {
-                      console.error("Error recreating data table:", createErr.message);
-                    } else {
-                      console.log("Database table recreated successfully.");
-                    }
-                  });
-                });
-              });
-            } else {
-              // Schema is correct. Log status.
-              db.get('SELECT json FROM data WHERE id = 1', [], (err, row) => {
-                if (err) { /* readData will handle this */ return; }
-                if (!row || !row.json) {
-                  console.log("Database is ready. No initial data found. Waiting for first-run setup.");
-                } else {
-                  console.log("Database is ready. Existing data found.");
-                }
-              });
-            }
-          });
+      runMigrations(db)
+        .then(() => console.log("Database is ready."))
+        .catch(err => {
+            console.error("CRITICAL: DATABASE MIGRATION FAILED. The application cannot start.", err);
+            process.exit(1);
         });
-      });
     });
   })
   .catch(err => {
@@ -489,8 +543,13 @@ const readData = () => {
                 console.log(`[SERVER LOG] /api/data (GET): Reading from DB. isFirstRunComplete is: ${data.settings.isFirstRunComplete}, Users: ${data.users.length}`);
                 resolve(data);
             } else {
-                // Return an empty shell that implies first run
-                resolve({ settings: { isFirstRunComplete: false }, users: [] });
+                console.log("[SERVER LOG] No data found in DB, returning initial structure for first run.");
+                resolve({
+                    users: [], quests: [], questGroups: [], markets: [], rewardTypes: [], questCompletions: [],
+                    purchaseRequests: [], guilds: [], ranks: [], trophies: [], userTrophies: [],
+                    adminAdjustments: [], gameAssets: [], systemLogs: [], settings: INITIAL_SETTINGS,
+                    themes: INITIAL_THEMES, loginHistory: [], chatMessages: [], systemNotifications: [], scheduledEvents: [],
+                });
             }
         });
     });
@@ -533,12 +592,8 @@ app.post('/api/first-run', async (req, res) => {
     try {
         const { adminUserData, setupChoice, blueprint } = req.body;
         
-        // This is the point of creation, so wipe anything that might exist.
         await new Promise((resolve, reject) => {
-            db.run('DELETE FROM data WHERE id = 1', (err) => {
-                if(err) reject(err);
-                else resolve();
-            });
+            db.run('DELETE FROM data WHERE id = 1', (err) => err ? reject(err) : resolve());
         });
 
         const initialData = createInitialData(setupChoice, adminUserData, blueprint);
@@ -546,7 +601,6 @@ app.post('/api/first-run', async (req, res) => {
         await writeData(initialData);
         broadcastStateUpdate();
         
-        // Find the newly created admin user to return to the client
         const adminUser = initialData.users.find(u => u.role === Role.DonegeonMaster);
         
         res.status(201).json({ message: 'First run completed successfully', adminUser });

@@ -554,7 +554,7 @@ server.listen(PORT, () => console.log(`Server listening on port ${PORT}`));
 
 // Inlined Data for initial setup
 const createInitialData = (setupChoice = 'guided', adminUserData, blueprint) => {
-    const { createMockUsers, INITIAL_REWARD_TYPES, INITIAL_RANKS, INITIAL_THEMES, INITIAL_MAIN_SIDEBAR_CONFIG, INITIAL_SETTINGS, INITIAL_TROPHIES, createSampleQuests, INITIAL_QUEST_GROUPS, createSampleMarkets, createSampleGameAssets, createInitialGuilds } = require('../dist/server-data.js');
+    const { createMockUsers, INITIAL_REWARD_TYPES, INITIAL_RANKS, INITIAL_THEMES, INITIAL_MAIN_SIDEBAR_CONFIG, INITIAL_SETTINGS, INITIAL_TROPHIES, createSampleQuests, INITIAL_QUEST_GROUPS, createSampleMarkets, createSampleGameAssets, createInitialGuilds } = require('./data.js');
     let baseData;
     let users = [];
     if (setupChoice === 'scratch') {

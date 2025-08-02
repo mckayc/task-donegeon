@@ -1,12 +1,12 @@
 import React, { useEffect } from 'react';
-import { useAppState } from './context/AppContext';
-import FirstRunWizard from './components/auth/FirstRunWizard';
-import MainLayout from './components/layout/MainLayout';
-import SwitchUser from './components/auth/SwitchUser';
-import NotificationContainer from './components/ui/notification-container';
-import AppLockScreen from './components/auth/AppLockScreen';
-import OnboardingWizard from './components/auth/OnboardingWizard';
-import SharedLayout from './components/layout/SharedLayout';
+import { useAppState } from '@/context/AppContext';
+import FirstRunWizard from '@/components/auth/FirstRunWizard';
+import MainLayout from '@/components/layout/MainLayout';
+import SwitchUser from '@/components/auth/SwitchUser';
+import NotificationContainer from '@/components/ui/notification-container';
+import AppLockScreen from '@/components/auth/AppLockScreen';
+import OnboardingWizard from '@/components/auth/OnboardingWizard';
+import SharedLayout from '@/components/layout/SharedLayout';
 import { TooltipProvider } from "@/components/ui/tooltip";
 
 const App: React.FC = () => {

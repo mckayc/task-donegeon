@@ -35,7 +35,7 @@ const GuildMemberProfilePage: React.FC<GuildMemberProfilePageProps> = ({ user, g
     const personalCurrencies = useMemo(() => {
         return rewardTypes
             .filter(rt => rt.category === 'Currency' && (personalBalances.purse[rt.id] || 0) > 0)
-            .map(c => ({ ...c, amount: personalBalances.purse[c.id] || 0 }));
+            .map(c => ({ ...c, amount: personalBalances.purse[rt.id] || 0 }));
     }, [personalBalances.purse, rewardTypes]);
 
     const personalExperienceItems = useMemo(() => {

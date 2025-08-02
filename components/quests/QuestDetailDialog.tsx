@@ -2,7 +2,7 @@ import React from 'react';
 import { Quest, RewardCategory, RewardItem, QuestType } from '../../types';
 import { useAppState } from '../../context/AppContext';
 import { Button } from '@/components/ui/button';
-import ToggleSwitch from '../ui/ToggleSwitch';
+import ToggleSwitch from '../ui/toggle-switch';
 import { isQuestAvailableForUser } from '../../utils/quests';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 

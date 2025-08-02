@@ -55,7 +55,7 @@ const UploadWithCategoryDialog: React.FC<UploadWithCategoryDialogProps> = ({ fil
                                         id="new-category-name"
                                         placeholder="e.g., Pets, Weapons"
                                         value={customCategory}
-                                        onChange={e => setCustomCategory(e.target.value)}
+                                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setCustomCategory(e.target.value)}
                                         disabled={isUploading}
                                         required
                                     />

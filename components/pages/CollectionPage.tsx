@@ -2,7 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { useAppState } from '../../context/AppContext';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { CollectionIcon } from '../ui/icons';
-import ImagePreviewDialog from '../ui/ImagePreviewDialog';
+import ImagePreviewDialog from '../ui/image-preview-dialog';
 
 const CollectionPage: React.FC = () => {
     const { currentUser, gameAssets } = useAppState();

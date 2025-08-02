@@ -9,7 +9,7 @@ import CreateQuestDialog from '../../quests/CreateQuestDialog';
 import EditGameAssetDialog from '../../admin/EditGameAssetDialog';
 import EditTrophyDialog from '../../settings/EditTrophyDialog';
 import EditMarketDialog from '../../markets/EditMarketDialog';
-import UserMultiSelect from '../../ui/UserMultiSelect';
+import UserMultiSelect from '../../ui/user-multi-select';
 
 const packTypes = ['All', 'Quests', 'Markets', 'Items', 'Trophies', 'Rewards', 'Quest Groups'];
 

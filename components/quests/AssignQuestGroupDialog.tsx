@@ -5,7 +5,7 @@ import { useAppDispatch, useAppState } from '../../context/AppContext';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
-import UserMultiSelect from '../ui/UserMultiSelect';
+import UserMultiSelect from '../ui/user-multi-select';
 
 
 interface AssignQuestGroupDialogProps {

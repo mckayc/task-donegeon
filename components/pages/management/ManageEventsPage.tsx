@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { toYMD } from '../../../utils/quests';
 import ScheduleEventDialog from '../../admin/ScheduleEventDialog';
-import ConfirmDialog from '../../ui/ConfirmDialog';
+import ConfirmDialog from '../../ui/confirm-dialog';
 
 const ManageEventsPage: React.FC = () => {
     const { scheduledEvents, settings } = useAppState();

@@ -99,7 +99,7 @@ const SwitchUser: React.FC = () => {
                             <CardDescription>Enter your Password to continue</CardDescription>
                         </CardHeader>
                         <CardContent>
-                            <form onSubmit={(e) => { e.preventDefault(); handlePasswordSubmit(); }} className="w-full space-y-4">
+                            <form onSubmit={(e: React.FormEvent) => { e.preventDefault(); handlePasswordSubmit(); }} className="w-full space-y-4">
                                 <div className="space-y-2">
                                     <Label htmlFor="password-input">Password</Label>
                                     <Input
@@ -107,7 +107,7 @@ const SwitchUser: React.FC = () => {
                                         name="password"
                                         type="password"
                                         value={password}
-                                        onChange={(e) => setPassword(e.target.value)}
+                                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPassword(e.target.value)}
                                         required
                                         autoFocus
                                     />
@@ -142,13 +142,13 @@ const SwitchUser: React.FC = () => {
                                     type="password"
                                     aria-label="PIN Input"
                                     value={pin}
-                                    onChange={(e) => {
+                                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                                         const val = e.target.value;
                                         if (/^\d*$/.test(val) && val.length <= 10) {
                                             setPin(val);
                                         }
                                     }}
-                                    onKeyDown={e => {
+                                    onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => {
                                         if (e.key === 'Enter') {
                                             e.preventDefault();
                                             handlePinSubmit();
@@ -164,7 +164,7 @@ const SwitchUser: React.FC = () => {
                             {error && <p className="text-red-500 text-sm text-center mb-4">{error}</p>}
                             
                             <Keypad
-                                onKeyPress={(key) => {
+                                onKeyPress={(key: string) => {
                                     if (pin.length < 10) setPin(p => p + key)
                                 }}
                                 onBackspace={() => setPin(p => p.slice(0, -1))}

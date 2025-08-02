@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { useAppDispatch } from '../../context/AppContext';
-import EmojiPicker from '../ui/EmojiPicker';
+import EmojiPicker from '../ui/emoji-picker';
 
 interface EditQuestGroupDialogProps {
     groupToEdit: QuestGroup | null;
@@ -56,7 +56,7 @@ const EditQuestGroupDialog: React.FC<EditQuestGroupDialogProps> = ({ groupToEdit
                         <Input
                             id="group-name"
                             value={formData.name}
-                            onChange={(e) => setFormData(p => ({ ...p, name: e.target.value }))}
+                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData(p => ({ ...p, name: e.target.value }))}
                             required
                         />
                     </div>
@@ -66,7 +66,7 @@ const EditQuestGroupDialog: React.FC<EditQuestGroupDialogProps> = ({ groupToEdit
                             id="group-description"
                             rows={3}
                             value={formData.description}
-                            onChange={(e) => setFormData(p => ({ ...p, description: e.target.value }))}
+                            onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setFormData(p => ({ ...p, description: e.target.value }))}
                         />
                     </div>
                     <div className="space-y-2">
@@ -82,7 +82,7 @@ const EditQuestGroupDialog: React.FC<EditQuestGroupDialogProps> = ({ groupToEdit
                             </button>
                             {isEmojiPickerOpen && (
                                 <EmojiPicker
-                                    onSelect={(emoji) => {
+                                    onSelect={(emoji: string) => {
                                         setFormData(p => ({ ...p, icon: emoji }));
                                         setIsEmojiPickerOpen(false);
                                     }}

@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import EmojiPicker from '../ui/EmojiPicker';
+import EmojiPicker from '../ui/emoji-picker';
 
 interface ScheduleEventDialogProps {
   event: ScheduledEvent | null;
@@ -100,7 +100,7 @@ const ScheduleEventDialog: React.FC<ScheduleEventDialogProps> = ({ event, onClos
                             <button type="button" onClick={() => setIsEmojiPickerOpen(p => !p)} className="w-16 h-10 mt-1.5 text-2xl p-1 rounded-md bg-background border border-input flex items-center justify-center">
                                 {formData.icon || '🎉'}
                             </button>
-                            {isEmojiPickerOpen && <EmojiPicker onSelect={(emoji) => { setFormData(p => ({...p, icon: emoji})); setIsEmojiPickerOpen(false); }} onClose={() => setIsEmojiPickerOpen(false)} />}
+                            {isEmojiPickerOpen && <EmojiPicker onSelect={(emoji: string) => { setFormData(p => ({...p, icon: emoji})); setIsEmojiPickerOpen(false); }} onClose={() => setIsEmojiPickerOpen(false)} />}
                         </div>
                         <div className="flex-grow space-y-2">
                           <Label htmlFor="scope">Scope</Label>
@@ -159,7 +159,7 @@ const ScheduleEventDialog: React.FC<ScheduleEventDialogProps> = ({ event, onClos
                                     <h4 className="font-semibold text-foreground">Bonus XP Modifiers</h4>
                                     <div className="space-y-2">
                                       <Label htmlFor="xpMultiplier">XP Multiplier</Label>
-                                      <Input id="xpMultiplier" type="number" step="0.1" value={formData.modifiers.xpMultiplier || 1.5} onChange={e => handleModifierChange('xpMultiplier', parseFloat(e.target.value))} />
+                                      <Input id="xpMultiplier" type="number" step="0.1" value={formData.modifiers.xpMultiplier || 1.5} onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleModifierChange('xpMultiplier', parseFloat(e.target.value))} />
                                     </div>
                                 </>
                             )}
@@ -177,7 +177,7 @@ const ScheduleEventDialog: React.FC<ScheduleEventDialogProps> = ({ event, onClos
                                      </div>
                                      <div className="space-y-2">
                                       <Label htmlFor="discountPercent">Discount Percentage</Label>
-                                      <Input id="discountPercent" type="number" min="1" max="100" value={formData.modifiers.discountPercent || 10} onChange={e => handleModifierChange('discountPercent', parseInt(e.target.value))} />
+                                      <Input id="discountPercent" type="number" min="1" max="100" value={formData.modifiers.discountPercent || 10} onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleModifierChange('discountPercent', parseInt(e.target.value))} />
                                     </div>
                                 </>
                             )}

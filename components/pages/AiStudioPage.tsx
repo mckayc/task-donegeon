@@ -160,7 +160,7 @@ const AiStudioPage: React.FC = () => {
                             ))}
                         </div>
                         <div className="flex gap-4">
-                            <Input placeholder={`Generate ${settings.terminology[assetTypeConfig[assetType].termKey].toLowerCase()} about...`} value={prompt} onChange={e => setPrompt(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleGenerate()} />
+                            <Input placeholder={`Generate ${settings.terminology[assetTypeConfig[assetType].termKey].toLowerCase()} about...`} value={prompt} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPrompt(e.target.value)} onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => e.key === 'Enter' && handleGenerate()} />
                             <Button onClick={handleGenerate} disabled={isLoading || !prompt.trim()}>
                                 {isLoading ? 'Generating...' : 'Generate'}
                             </Button>

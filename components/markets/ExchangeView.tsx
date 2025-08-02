@@ -255,7 +255,7 @@ const ExchangeView: React.FC<ExchangeViewProps> = ({ market }) => {
                                             <Label htmlFor="exchange-amount" className="block text-sm font-semibold text-muted-foreground mb-1">Amount</Label>
                                             <div className="flex items-center">
                                                 <Button onClick={() => handleAmountStep(-1)} size="sm" variant="secondary" className="!px-3 !py-2 rounded-r-none">-</Button>
-                                                <Input id="exchange-amount" value={toAmountString} onChange={e => handleAmountChange(e.target.value)} type="text" className="text-center text-lg h-11 rounded-none" />
+                                                <Input id="exchange-amount" value={toAmountString} onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleAmountChange(e.target.value)} type="text" className="text-center text-lg h-11 rounded-none" />
                                                 <Button onClick={() => handleAmountStep(1)} size="sm" variant="secondary" className="!px-3 !py-2 rounded-l-none">+</Button>
                                             </div>
                                             <Button onClick={handleMax} variant="secondary" className="text-xs !py-1 mt-2">Max: {Math.floor(calculation.maxToAmount)}</Button>

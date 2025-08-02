@@ -4,7 +4,7 @@ import Avatar from '../ui/avatar';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { GameAsset } from '../../types';
 import { Button } from '@/components/ui/button';
-import ImageSelectionDialog from '../ui/ImageSelectionDialog';
+import ImageSelectionDialog from '../ui/image-selection-dialog';
 
 const AvatarPage: React.FC = () => {
     const { currentUser, gameAssets } = useAppState();

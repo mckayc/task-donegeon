@@ -6,8 +6,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
-import TagInput from '../ui/TagInput';
-import UserMultiSelect from '../ui/UserMultiSelect';
+import TagInput from '../ui/tag-input';
+import UserMultiSelect from '../ui/user-multi-select';
 
 interface BulkEditQuestsDialogProps {
     questIds: string[];

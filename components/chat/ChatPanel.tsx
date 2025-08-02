@@ -307,7 +307,7 @@ const ChatPanel: React.FC = () => {
                             <form onSubmit={handleSend} className="p-3 border-t flex-shrink-0 flex items-center gap-2">
                                 <Input
                                     value={message}
-                                    onChange={(e) => setMessage(e.target.value)}
+                                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setMessage(e.target.value)}
                                     placeholder="Type a message..."
                                     autoComplete="off"
                                     className="flex-grow"

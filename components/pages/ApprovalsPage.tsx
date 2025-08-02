@@ -77,7 +77,7 @@ const ApprovalsPage: React.FC = () => {
                                           id={`note-${completion.id}`}
                                           placeholder="Add an optional note..."
                                           value={notes[completion.id] || ''}
-                                          onChange={(e) => handleNoteChange(completion.id, e.target.value)}
+                                          onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleNoteChange(completion.id, e.target.value)}
                                           className="flex-grow"
                                       />
                                     </div>

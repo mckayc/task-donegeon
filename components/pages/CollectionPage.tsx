@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { useAppState } from '../../context/AppContext';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
-import { CollectionIcon } from '../ui/Icons';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { CollectionIcon } from '../ui/icons';
 import ImagePreviewDialog from '../ui/ImagePreviewDialog';
 
 const CollectionPage: React.FC = () => {

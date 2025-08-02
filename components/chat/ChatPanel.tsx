@@ -1,11 +1,11 @@
 import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { Role, User } from '../../types';
-import Avatar from '../ui/Avatar';
-import { Input } from '@/components/ui/Input';
-import { XCircleIcon, ArrowLeftIcon } from '@/components/ui/Icons';
-import { Button } from '@/components/ui/Button';
-import ToggleSwitch from '../ui/ToggleSwitch';
+import Avatar from '../ui/avatar';
+import { Input } from '@/components/ui/input';
+import { XCircleIcon, ArrowLeftIcon } from '@/components/ui/icons';
+import { Button } from '@/components/ui/button';
+import ToggleSwitch from '../ui/toggle-switch';
 import { useLocalStorage } from '../../hooks/useLocalStorage';
 
 type ChatTarget = User | {

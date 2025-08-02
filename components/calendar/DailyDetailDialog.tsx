@@ -1,12 +1,12 @@
 import React, { useMemo, useState } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { Quest, QuestCompletion, QuestType } from '../../types';
-import { Button } from '@/components/ui/Button';
+import { Button } from '@/components/ui/button';
 import { toYMD, questSorter } from '../../utils/quests';
 import QuestDetailDialog from '@/components/quests/QuestDetailDialog';
 import CompleteQuestDialog from '@/components/quests/CompleteQuestDialog';
 import { useCalendarVentures } from '../../hooks/useCalendarVentures';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/Dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 
 interface DailyDetailDialogProps {
   date: Date;

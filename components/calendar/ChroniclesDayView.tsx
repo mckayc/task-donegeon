@@ -2,7 +2,7 @@ import React, { useMemo } from 'react';
 import { useAppState } from '../../context/AppContext';
 import { QuestCompletionStatus, QuestType, ChronicleEvent } from '../../types';
 import { toYMD } from '../../utils/quests';
-import { Card } from '@/components/ui/Card';
+import { Card } from '@/components/ui/card';
 
 interface ChroniclesDayViewProps {
     currentDate: Date;

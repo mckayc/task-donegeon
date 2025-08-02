@@ -1,16 +1,16 @@
 import React, { useState, useEffect, useRef, ChangeEvent } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { ThemeDefinition, ThemeStyle } from '../../types';
-import { Button } from '../ui/Button';
-import { Card, CardContent } from '../ui/Card';
-import { Input } from '../ui/Input';
+import { Button } from '../ui/button';
+import { Card, CardContent } from '../ui/card';
+import { Input } from '../ui/input';
 import { getContrast, getWcagRating, hslValuesToCss, parseHslString, hexToHsl, rgbToHex, hslToRgb } from '../../utils/colors';
-import { TrophyIcon, RankIcon } from '../ui/Icons';
+import { TrophyIcon, RankIcon } from '../ui/icons';
 import ThemeIdeaGenerator from '../quests/ThemeIdeaGenerator';
-import ConfirmDialog from '../ui/ConfirmDialog';
-import SimpleColorPicker from '../ui/SimpleColorPicker';
-import { Label } from '@/components/ui/Label';
-import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/Select';
+import ConfirmDialog from '../ui/confirm-dialog';
+import SimpleColorPicker from '../ui/simple-color-picker';
+import { Label } from '@/components/ui/label';
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
 
 const FONT_OPTIONS = [
     "'MedievalSharp', cursive", "'Uncial Antiqua', cursive", "'Press Start 2P', cursive", "'IM Fell English SC', serif", 

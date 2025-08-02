@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { ScheduledEvent, RewardCategory } from '../../types';
-import { Button } from '@/components/ui/Button';
-import { Input } from '@/components/ui/Input';
-import { Label } from '@/components/ui/Label';
-import { Textarea } from '@/components/ui/Textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/Select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/Dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import EmojiPicker from '../ui/EmojiPicker';
 
 interface ScheduleEventDialogProps {
@@ -104,7 +104,7 @@ const ScheduleEventDialog: React.FC<ScheduleEventDialogProps> = ({ event, onClos
                         </div>
                         <div className="flex-grow space-y-2">
                           <Label htmlFor="scope">Scope</Label>
-                          <Select name="guildId" value={formData.guildId} onValueChange={(value) => handleSelectChange('guildId', value)}>
+                          <Select name="guildId" value={formData.guildId} onValueChange={(value: string) => handleSelectChange('guildId', value)}>
                               <SelectTrigger id="scope"><SelectValue placeholder="Personal" /></SelectTrigger>
                               <SelectContent>
                                   <SelectItem value="">Personal</SelectItem>
@@ -141,7 +141,7 @@ const ScheduleEventDialog: React.FC<ScheduleEventDialogProps> = ({ event, onClos
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="eventType">Event Type</Label>
-                      <Select name="eventType" value={formData.eventType} onValueChange={(value) => handleSelectChange('eventType', value)}>
+                      <Select name="eventType" value={formData.eventType} onValueChange={(value: string) => handleSelectChange('eventType', value)}>
                         <SelectTrigger id="eventType"><SelectValue /></SelectTrigger>
                         <SelectContent>
                           <SelectItem value="Announcement">Announcement</SelectItem>
@@ -168,7 +168,7 @@ const ScheduleEventDialog: React.FC<ScheduleEventDialogProps> = ({ event, onClos
                                     <h4 className="font-semibold text-foreground">Market Sale Modifiers</h4>
                                      <div className="space-y-2">
                                       <Label htmlFor="marketId">Market</Label>
-                                      <Select value={formData.modifiers.marketId || ''} onValueChange={value => handleModifierChange('marketId', value)}>
+                                      <Select value={formData.modifiers.marketId || ''} onValueChange={(value: string) => handleModifierChange('marketId', value)}>
                                         <SelectTrigger id="marketId"><SelectValue placeholder="Select a market..."/></SelectTrigger>
                                         <SelectContent>
                                           {markets.filter(m => m.guildId === (formData.guildId || undefined)).map(m => <SelectItem key={m.id} value={m.id}>{m.title}</SelectItem>)}

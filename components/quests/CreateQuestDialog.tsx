@@ -1,6 +1,3 @@
-
-
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { Quest, QuestType, RewardItem, RewardCategory, QuestAvailability } from '../../types';
@@ -10,12 +7,12 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
-import ToggleSwitch from '../ui/ToggleSwitch';
+import ToggleSwitch from '../ui/toggle-switch';
 import RewardInputGroup from '../forms/RewardInputGroup';
-import EmojiPicker from '../ui/EmojiPicker';
-import TagInput from '../ui/TagInput';
-import ImageSelectionDialog from '../ui/ImageSelectionDialog';
-import DynamicIcon from '../ui/DynamicIcon';
+import EmojiPicker from '../ui/emoji-picker';
+import TagInput from '../ui/tag-input';
+import ImageSelectionDialog from '../ui/image-selection-dialog';
+import DynamicIcon from '../ui/dynamic-icon';
 
 interface QuestDialogProps {
   questToEdit?: Quest;

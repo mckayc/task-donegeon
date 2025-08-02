@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { Quest, Role, ScheduledEvent } from '../../types';
-import { Card, CardHeader, CardContent } from '@/components/ui/Card';
+import { Card, CardHeader, CardContent } from '@/components/ui/card';
 import { toYMD } from '../../utils/quests';
 import MonthView from '../calendar/MonthView';
 import WeekView from '../calendar/WeekView';
@@ -9,7 +9,7 @@ import DayView from '../calendar/DayView';
 import ChroniclesDayView from '../calendar/ChroniclesDayView';
 import ChroniclesMonthView from '../calendar/ChroniclesMonthView';
 import ChroniclesWeekView from '../calendar/ChroniclesWeekView';
-import { Button } from '@/components/ui/Button';
+import { Button } from '@/components/ui/button';
 import ScheduleEventDialog from '@/components/admin/ScheduleEventDialog';
 import EventDetailDialog from '@/components/calendar/EventDetailDialog';
 

@@ -1,10 +1,10 @@
 import React, { useMemo, useEffect, useState } from 'react';
 import { Page, Role, AppMode, User } from '../../types';
-import Avatar from '../ui/Avatar';
+import Avatar from '../ui/avatar';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
-import FullscreenToggle from '../ui/FullscreenToggle';
+import FullscreenToggle from '../ui/fullscreen-toggle';
 import { ChevronDownIcon } from '@/components/ui/icons';
-import RewardDisplay from '../ui/RewardDisplay';
+import RewardDisplay from '../ui/reward-display';
 import {
   DropdownMenu,
   DropdownMenuContent,

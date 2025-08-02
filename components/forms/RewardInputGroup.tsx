@@ -1,12 +1,12 @@
 import React from 'react';
 import { RewardCategory, RewardItem } from '../../types';
-import { Input } from '@/components/ui/Input';
-import { Button } from '@/components/ui/Button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/Select";
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useAppState } from '../../context/AppContext';
 import { useAnchorEquivalent } from '../../hooks/useRewardValue';
 import { X } from 'lucide-react';
-import { Label } from '@/components/ui/Label';
+import { Label } from '@/components/ui/label';
 
 interface RewardInputGroupProps {
   category: 'rewards' | 'setbacks' | 'cost' | 'payout' | 'lateSetbacks' | 'incompleteSetbacks';
@@ -28,7 +28,7 @@ const RewardItemRow: React.FC<{
 
     return (
         <div className="flex items-center gap-2">
-            <Select onValueChange={(value) => onChange(originalIndex, 'rewardTypeId', value)} defaultValue={item.rewardTypeId}>
+            <Select onValueChange={(value: string) => onChange(originalIndex, 'rewardTypeId', value)} defaultValue={item.rewardTypeId}>
                 <SelectTrigger className="flex-grow"><SelectValue placeholder="Select..."/></SelectTrigger>
                 <SelectContent>
                     {filteredRewardTypes.map(rt => <SelectItem key={rt.id} value={rt.id}>{rt.name}</SelectItem>)}

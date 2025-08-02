@@ -27,7 +27,7 @@ import ManageTrophiesPage from '../pages/ManageTrophiesPage';
 import ThemesPage from '../pages/ThemesPage';
 import AboutPage from '../pages/AboutPage';
 import CollectionPage from '../pages/CollectionPage';
-import ManageItemsPage from '../pages/ManageItemsPage';
+import ManageItemsPage from '../pages/management/ManageItemsPage';
 import AiStudioPage from '../pages/AiStudioPage';
 import AppearancePage from '../pages/AppearancePage';
 import ObjectExporterPage from '../pages/management/ObjectExporterPage';
@@ -38,9 +38,10 @@ import ThemeEditorPage from '../pages/ThemeEditorPage';
 import ManageQuestGroupsPage from '../pages/ManageQuestGroupsPage';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import ChatPanel from '../chat/ChatPanel';
-import LoginNotificationPopup from '../ui/LoginNotificationPopup';
+import LoginNotificationPopup from '../ui/login-notification-popup';
 import ManageEventsPage from '../pages/management/ManageEventsPage';
 import BackupAndImportPage from '../pages/management/BackupAndImportPage';
+import ChatController from '../chat/ChatController';
 
 const MainLayout: React.FC = () => {
   const { activePage, currentUser, settings, systemNotifications } = useAppState();
@@ -165,6 +166,7 @@ const MainLayout: React.FC = () => {
         </div>
         <ChatPanel />
       </div>
+      <ChatController />
     </>
   );
 };

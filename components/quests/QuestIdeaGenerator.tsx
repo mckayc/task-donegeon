@@ -1,12 +1,12 @@
 import React, { useState, ChangeEvent } from 'react';
 import { GenerateContentResponse, Type } from "@google/genai";
-import { Button } from '@/components/ui/Button';
-import { Input } from '@/components/ui/Input';
-import { SparklesIcon } from '@/components/ui/Icons';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { SparklesIcon } from '@/components/ui/icons';
 import { useAppState } from '../../context/AppContext';
 import { QuestType } from '../../types';
 import ToggleSwitch from '../ui/ToggleSwitch';
-import { Label } from '@/components/ui/Label';
+import { Label } from '@/components/ui/label';
 
 interface QuestIdea {
   title: string;

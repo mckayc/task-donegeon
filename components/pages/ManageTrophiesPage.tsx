@@ -1,15 +1,15 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Trophy } from '../../types';
-import { Button } from '@/components/ui/Button';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
-import { Checkbox } from '@/components/ui/Checkbox';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/Dropdown-Menu";
+import { Button } from '@/components/ui/button';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import EditTrophyDialog from '../settings/EditTrophyDialog';
-import ConfirmDialog from '../ui/ConfirmDialog';
+import ConfirmDialog from '../ui/confirm-dialog';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
-import EmptyState from '../ui/EmptyState';
+import EmptyState from '../ui/empty-state';
 import TrophyIdeaGenerator from '../quests/TrophyIdeaGenerator';
-import { TrophyIcon } from '@/components/ui/Icons';
+import { TrophyIcon } from '@/components/ui/icons';
 import { EllipsisVertical } from 'lucide-react';
 
 
@@ -57,7 +57,7 @@ const ManageTrophiesPage: React.FC = () => {
     };
     
     const handleSelectAll = (checked: boolean | "indeterminate") => {
-        if (checked) {
+        if (checked === true) {
             setSelectedTrophies(trophies.map(t => t.id));
         } else {
             setSelectedTrophies([]);
@@ -109,7 +109,7 @@ const ManageTrophiesPage: React.FC = () => {
                                 <tbody>
                                     {trophies.map(trophy => (
                                         <tr key={trophy.id} className="border-b last:border-b-0">
-                                            <td className="p-4"><Checkbox checked={selectedTrophies.includes(trophy.id)} onCheckedChange={checked => handleSelectOne(trophy.id, checked === true)} /></td>
+                                            <td className="p-4"><Checkbox checked={selectedTrophies.includes(trophy.id)} onCheckedChange={(checked) => handleSelectOne(trophy.id, checked === true)} /></td>
                                             <td className="p-4 text-2xl">{trophy.icon}</td>
                                             <td className="p-4 font-bold">{trophy.name}</td>
                                             <td className="p-4 text-muted-foreground max-w-sm truncate">{trophy.description}</td>

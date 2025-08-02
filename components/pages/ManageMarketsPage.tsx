@@ -1,15 +1,15 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Market } from '../../types';
-import { Button } from '@/components/ui/Button';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
+import { Button } from '@/components/ui/button';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import EditMarketDialog from '../markets/EditMarketDialog';
-import ConfirmDialog from '../ui/ConfirmDialog';
+import ConfirmDialog from '../ui/confirm-dialog';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
-import EmptyState from '../ui/EmptyState';
-import { MarketplaceIcon, EllipsisVerticalIcon } from '@/components/ui/Icons';
+import EmptyState from '../ui/empty-state';
+import { MarketplaceIcon, EllipsisVerticalIcon } from '@/components/ui/icons';
 import MarketIdeaGenerator from '../quests/MarketIdeaGenerator';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/Dropdown-Menu";
-import { Checkbox } from '@/components/ui/Checkbox';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Checkbox } from '@/components/ui/checkbox';
 
 const ManageMarketsPage: React.FC = () => {
     const { markets, settings, isAiConfigured } = useAppState();
@@ -140,7 +140,7 @@ const ManageMarketsPage: React.FC = () => {
 
                                     return (
                                         <tr key={market.id} className="border-b last:border-b-0">
-                                            <td className="p-4"><Checkbox checked={selectedMarkets.includes(market.id)} onCheckedChange={(checked: boolean | "indeterminate") => handleSelectOne(market.id, checked === true)} /></td>
+                                            <td className="p-4"><Checkbox checked={selectedMarkets.includes(market.id)} onCheckedChange={(checked) => handleSelectOne(market.id, checked === true)} /></td>
                                             <td className="p-4 font-bold">{market.icon} {market.title}</td>
                                             <td className="p-4 text-muted-foreground hidden md:table-cell">{market.description}</td>
                                             <td className="p-4">

@@ -1,8 +1,8 @@
 import React, { useState, useMemo } from 'react';
 import { useAppState, useAppDispatch } from '../../../context/AppContext';
 import { ScheduledEvent } from '../../../types';
-import { Button } from '@/components/ui/Button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { toYMD } from '../../../utils/quests';
 import ScheduleEventDialog from '../../admin/ScheduleEventDialog';
 import ConfirmDialog from '../../ui/ConfirmDialog';

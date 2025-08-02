@@ -1,10 +1,10 @@
 import React, { useState, ChangeEvent } from 'react';
 import { useAppState } from '../../../context/AppContext';
 import { ShareableAssetType, Terminology } from '../../../types';
-import { Button } from '@/components/ui/Button';
-import { Input } from '@/components/ui/Input';
-import { Label } from '@/components/ui/Label';
-import { Checkbox } from '@/components/ui/Checkbox';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
 import { generateBlueprint } from '../../../utils/sharing';
 
 const ObjectExporterPage: React.FC = () => {
@@ -66,7 +66,7 @@ const ObjectExporterPage: React.FC = () => {
 
     return (
         <div className="space-y-6">
-            <div>
+             <div>
                 <h4 className="font-bold text-lg text-foreground">Export Blueprint</h4>
                 <p className="text-muted-foreground text-sm mb-3">Create a shareable file containing your custom game assets. Dependencies like custom {settings.terminology.points.toLowerCase()} will be included automatically.</p>
             </div>

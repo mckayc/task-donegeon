@@ -1,12 +1,12 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { RewardCategory, RewardTypeDefinition } from '../../types';
-import { Button } from '@/components/ui/Button';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
+import { Button } from '@/components/ui/button';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import EditRewardTypeDialog from '../rewards/EditRewardTypeDialog';
-import ConfirmDialog from '../ui/ConfirmDialog';
+import ConfirmDialog from '../ui/confirm-dialog';
 import { useRewardValuePerUnit } from '../../hooks/useRewardValue';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/Dropdown-Menu";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { EllipsisVertical } from 'lucide-react';
 
 const RewardItem: React.FC<{

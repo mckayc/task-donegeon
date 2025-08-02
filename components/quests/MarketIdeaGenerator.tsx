@@ -1,9 +1,9 @@
 import React, { useState, ChangeEvent } from 'react';
 import { GenerateContentResponse, Type } from "@google/genai";
-import { Button } from '@/components/ui/Button';
-import { Input } from '@/components/ui/Input';
-import { Label } from '@/components/ui/Label';
-import { SparklesIcon } from '../ui/Icons';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { SparklesIcon } from '../ui/icons';
 import { useAppState } from '../../context/AppContext';
 
 interface MarketIdea {

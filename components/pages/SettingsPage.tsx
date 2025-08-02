@@ -1,15 +1,16 @@
+
 import React, { useState, ChangeEvent, ReactNode, useEffect } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { Role, AppSettings, Terminology, RewardCategory, RewardTypeDefinition, AutomatedBackupProfile } from '../../types';
-import { Button } from '@/components/ui/Button';
+import { Button } from '@/components/ui/button';
 import { ChevronDown } from 'lucide-react';
-import { Input } from '@/components/ui/Input';
-import { Label } from '@/components/ui/Label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/Select";
-import ToggleSwitch from '../ui/ToggleSwitch';
-import ConfirmDialog from '../ui/ConfirmDialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import ToggleSwitch from '../ui/toggle-switch';
+import ConfirmDialog from '../ui/confirm-dialog';
 import { INITIAL_SETTINGS } from '../../data/initialData';
-import EmojiPicker from '../ui/EmojiPicker';
+import EmojiPicker from '../ui/emoji-picker';
 
 
 const CollapsibleSection: React.FC<{ title: string; children: React.ReactNode; defaultOpen?: boolean; onSave?: () => void; showSavedIndicator?: boolean; className?: string; }> = ({ title, children, defaultOpen = false, onSave, showSavedIndicator, className }) => {
@@ -339,7 +340,7 @@ const SettingsPage: React.FC = () => {
                             <div className={`grid grid-cols-2 gap-4 mt-4 ${!profile.enabled ? 'opacity-50 pointer-events-none' : ''}`}>
                                 <div className="space-y-2">
                                   <Label htmlFor={`backup-freq-${index}`}>Frequency</Label>
-                                  <Select onValueChange={(value: string) => handleFormChange({ target: { name: `automatedBackups.profiles.${index}.frequency`, value } } as any)} defaultValue={profile.frequency}>
+                                  <Select onValueChange={(value) => handleFormChange({ target: { name: `automatedBackups.profiles.${index}.frequency`, value } } as any)} defaultValue={profile.frequency}>
                                     <SelectTrigger id={`backup-freq-${index}`}><SelectValue /></SelectTrigger>
                                     <SelectContent>
                                       <SelectItem value="hourly">Hourly</SelectItem>
@@ -449,4 +450,94 @@ const SettingsPage: React.FC = () => {
                                         {apiKeyError}
                                     </p>
                                     <p className="text-xs text-muted-foreground">
-                                        The server administrator must set the
+                                        The server administrator must set the API_KEY environment variable and restart the server.
+                                    </p>
+                                </div>
+                             )}
+                        </div>
+                    </div>
+                </div>
+            </CollapsibleSection>
+            
+            <CollapsibleSection title="Economy & Valuation" onSave={() => handleManualSave('Economy & Valuation')} showSavedIndicator={showSaved === 'Economy & Valuation'}>
+                <div className="space-y-6">
+                    <div className="flex items-start">
+                        <ToggleSwitch enabled={formState.rewardValuation.enabled} setEnabled={(val) => handleToggleChange('rewardValuation.enabled', val, 'Economy & Valuation')} label="Enable Reward Valuation" />
+                        <p className="text-sm ml-6 text-muted-foreground">Enable an economic system where different currencies and XP can be valued against a single anchor currency. This provides helpful tooltips for balancing rewards.</p>
+                    </div>
+
+                    <div className={`space-y-6 pt-4 border-t border-border ${!formState.rewardValuation.enabled ? 'opacity-50 pointer-events-none' : ''}`}>
+                        <div className="space-y-2">
+                            <Label htmlFor="anchor-reward">Anchor Currency</Label>
+                            <Select value={formState.rewardValuation.anchorRewardId} onValueChange={(value) => handleFormChange({ target: { name: 'rewardValuation.anchorRewardId', value } } as any)}>
+                                <SelectTrigger id="anchor-reward"><SelectValue /></SelectTrigger>
+                                <SelectContent>
+                                    {currencyRewards.map(c => <SelectItem key={c.id} value={c.id}>{c.icon} {c.name}</SelectItem>)}
+                                </SelectContent>
+                            </Select>
+                            <p className="text-xs text-muted-foreground">All other rewards will be valued based on their exchange rate to this currency.</p>
+                        </div>
+                        
+                        <div className="space-y-2">
+                            <Label>Exchange Rates</Label>
+                            <p className="text-xs text-muted-foreground">How many of each reward equals <strong>1 {anchorReward?.name} {anchorReward?.icon}</strong>?</p>
+                            <div className="grid grid-cols-2 gap-4">
+                                {otherRewards.map(reward => (
+                                    <div key={reward.id} className="space-y-1">
+                                        <Label htmlFor={`rate-${reward.id}`} className="text-sm font-normal">{reward.icon} {reward.name}</Label>
+                                        <Input id={`rate-${reward.id}`} type="number" step="0.1" value={formState.rewardValuation.exchangeRates[reward.id] || ''} onChange={(e: ChangeEvent<HTMLInputElement>) => handleExchangeRateChange(reward.id, e.target.value)} />
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="currency-fee">Currency Exchange Fee (%)</Label>
+                                <Input id="currency-fee" type="number" name="rewardValuation.currencyExchangeFeePercent" value={formState.rewardValuation.currencyExchangeFeePercent} onChange={handleFormChange} />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="xp-fee">XP Exchange Fee (%)</Label>
+                                <Input id="xp-fee" type="number" name="rewardValuation.xpExchangeFeePercent" value={formState.rewardValuation.xpExchangeFeePercent} onChange={handleFormChange} />
+                            </div>
+                        </div>
+                        <Button variant="outline" size="sm" onClick={handleResetEconomy}>Reset to Defaults</Button>
+                    </div>
+                </div>
+            </CollapsibleSection>
+            
+            <CollapsibleSection title="Terminology" onSave={() => handleManualSave('Terminology')} showSavedIndicator={showSaved === 'Terminology'}>
+                 <p className="text-sm text-muted-foreground mb-4">Customize the names used throughout the app to match your theme.</p>
+                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {Object.entries(terminologyLabels).map(([key, label]) => (
+                        <div key={key} className="space-y-1">
+                            <Label htmlFor={`term-${key}`} className="text-xs font-medium text-muted-foreground">{label}</Label>
+                            <Input id={`term-${key}`} name={`terminology.${key}`} value={(formState.terminology as any)[key]} onChange={handleFormChange} />
+                        </div>
+                    ))}
+                </div>
+            </CollapsibleSection>
+            
+            <CollapsibleSection title="Danger Zone">
+                <div className="p-4 bg-destructive/10 border border-destructive/20 rounded-lg space-y-4">
+                    <p className="text-sm text-destructive-foreground">These actions are irreversible. Be certain before you proceed.</p>
+                    <div className="flex justify-end">
+                         <Button variant="destructive" onClick={() => setIsResetConfirmOpen(true)}>Reset All Settings</Button>
+                    </div>
+                </div>
+            </CollapsibleSection>
+
+            {isResetConfirmOpen && (
+                <ConfirmDialog
+                    isOpen={isResetConfirmOpen}
+                    onClose={() => setIsResetConfirmOpen(false)}
+                    onConfirm={handleResetConfirm}
+                    title="Reset All Settings?"
+                    message="Are you sure you want to reset all settings to their default values? This cannot be undone."
+                />
+            )}
+        </div>
+    );
+};
+
+export default SettingsPage;

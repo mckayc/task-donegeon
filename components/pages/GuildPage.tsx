@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/Card';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
-import { Button } from '@/components/ui/Button';
+import { Button } from '@/components/ui/button';
 import { Guild, User } from '../../types';
 import GuildMemberProfilePage from '../guilds/GuildMemberProfilePage';
-import Avatar from '../ui/Avatar';
+import Avatar from '../ui/avatar';
 
 const GuildPage: React.FC = () => {
     const { currentUser, users, guilds, settings } = useAppState();

@@ -1,10 +1,10 @@
 import React, { useMemo, useState } from 'react';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { useAppState } from '../../context/AppContext';
 import { QuestCompletionStatus, Role, PurchaseRequestStatus, AdminAdjustmentType, SystemNotificationType, ChronicleEvent, SystemLog } from '../../types';
-import { Button } from '@/components/ui/Button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/Select"
-import { Label } from '@/components/ui/Label';
+import { Button } from '@/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Label } from '@/components/ui/label';
 
 const ChroniclesPage: React.FC = () => {
   const { questCompletions, purchaseRequests, users, quests, gameAssets, currentUser, userTrophies, trophies, appMode, adminAdjustments, rewardTypes, systemLogs, settings, systemNotifications, guilds } = useAppState();

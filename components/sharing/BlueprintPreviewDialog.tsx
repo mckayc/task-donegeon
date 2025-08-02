@@ -1,10 +1,10 @@
 import React, { useState, ChangeEvent } from 'react';
 import { useAppState } from '../../context/AppContext';
 import { Blueprint, ImportResolution, ShareableAssetType, Terminology } from '../../types';
-import { Button } from '@/components/ui/Button';
-import { Input } from '@/components/ui/Input';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/Dialog';
-import { Label } from '@/components/ui/Label';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
 
 interface BlueprintPreviewDialogProps {
   blueprint: Blueprint;

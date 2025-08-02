@@ -1,16 +1,16 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { Trophy, TrophyRequirement, TrophyRequirementType, QuestType } from '../../types';
-import { Button } from '@/components/ui/Button';
-import { Input } from '@/components/ui/Input';
-import { Label } from '@/components/ui/Label';
-import { Textarea } from '@/components/ui/Textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/Select';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/Dialog';
-import ToggleSwitch from '@/components/ui/ToggleSwitch';
-import EmojiPicker from '@/components/ui/EmojiPicker';
-import ImageSelectionDialog from '@/components/ui/ImageSelectionDialog';
-import DynamicIcon from '@/components/ui/DynamicIcon';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
+import ToggleSwitch from '@/components/ui/toggle-switch';
+import EmojiPicker from '@/components/ui/emoji-picker';
+import ImageSelectionDialog from '@/components/ui/image-selection-dialog';
+import DynamicIcon from '@/components/ui/dynamic-icon';
 
 interface EditTrophyDialogProps {
   trophy: Trophy | null;
@@ -121,7 +121,7 @@ const EditTrophyDialog: React.FC<EditTrophyDialogProps> = ({ trophy, initialData
     switch (req.type) {
         case TrophyRequirementType.CompleteQuestType:
             return (
-                <Select onValueChange={value => handleRequirementChange(index, 'value', value)} defaultValue={req.value}>
+                <Select onValueChange={(value: string) => handleRequirementChange(index, 'value', value)} defaultValue={req.value}>
                     <SelectTrigger><SelectValue placeholder="Select type..." /></SelectTrigger>
                     <SelectContent>
                         <SelectItem value={QuestType.Duty}>Duty</SelectItem>
@@ -131,7 +131,7 @@ const EditTrophyDialog: React.FC<EditTrophyDialogProps> = ({ trophy, initialData
             );
         case TrophyRequirementType.AchieveRank:
              return (
-                <Select onValueChange={value => handleRequirementChange(index, 'value', value)} defaultValue={req.value}>
+                <Select onValueChange={(value: string) => handleRequirementChange(index, 'value', value)} defaultValue={req.value}>
                     <SelectTrigger><SelectValue placeholder="Select rank..." /></SelectTrigger>
                     <SelectContent>
                         {[...ranks].sort((a,b) => a.xpThreshold - b.xpThreshold).map(r => <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>)}

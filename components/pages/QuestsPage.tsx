@@ -1,14 +1,14 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { Card, CardContent } from '@/components/ui/Card';
-import { Button } from '@/components/ui/Button';
+import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import CreateQuestDialog from '../quests/CreateQuestDialog';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { Role, QuestType, Quest, QuestAvailability } from '../../types';
 import { isQuestAvailableForUser, questSorter, isQuestVisibleToUserInMode } from '../../utils/quests';
 import CompleteQuestDialog from '../quests/CompleteQuestDialog';
 import QuestDetailDialog from '../quests/QuestDetailDialog';
-import DynamicIcon from '../ui/DynamicIcon';
-import ImagePreviewDialog from '../ui/ImagePreviewDialog';
+import DynamicIcon from '../ui/dynamic-icon';
+import ImagePreviewDialog from '../ui/image-preview-dialog';
 
 const getAvailabilityText = (quest: Quest, completionsCount: number): string => {
     switch (quest.availabilityType) {
@@ -232,34 +232,39 @@ const QuestsPage: React.FC = () => {
         const today = now;
         const visibleQuests = quests.filter(quest => isQuestVisibleToUserInMode(quest, currentUser.id, appMode));
         return visibleQuests.sort(questSorter(currentUser, questCompletions, scheduledEvents, today));
-    }, [quests, currentUser, appMode, questCompletions, now, scheduledEvents]);
+    }, [quests, currentUser, appMode, questCompletions, scheduledEvents, now]);
     
-    const filteredSortedQuests = useMemo(() => {
-        if (filter === 'all') return sortedQuests;
-        return sortedQuests.filter(q => q.type === filter);
+    const filteredQuests = useMemo(() => {
+        if (filter === 'all') {
+            return sortedQuests;
+        }
+        return sortedQuests.filter(quest => quest.type === filter);
     }, [sortedQuests, filter]);
+    
 
     return (
-        <div className="space-y-6">
-            <Card>
-                <CardContent className="p-2">
-                    <div className="grid grid-cols-3 gap-2 max-w-sm mx-auto p-1 bg-background rounded-lg">
-                        <FilterButton type="all" activeFilter={filter} setFilter={setFilter}>All Quests</FilterButton>
-                        <FilterButton type={QuestType.Duty} activeFilter={filter} setFilter={setFilter}>{settings.terminology.recurringTasks}</FilterButton>
-                        <FilterButton type={QuestType.Venture} activeFilter={filter} setFilter={setFilter}>{settings.terminology.singleTasks}</FilterButton>
-                    </div>
-                </CardContent>
-            </Card>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {filteredSortedQuests.map(quest => (
-                    <QuestItem 
-                        key={quest.id} 
-                        quest={quest} 
-                        now={now} 
-                        onSelect={setSelectedQuest} 
-                        onImagePreview={setPreviewImageUrl}
-                    />
+        <div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                 <Card>
+                    <CardContent className="p-2">
+                         <FilterButton type="all" activeFilter={filter} setFilter={setFilter}>All {settings.terminology.tasks}</FilterButton>
+                    </CardContent>
+                </Card>
+                 <Card>
+                    <CardContent className="p-2">
+                         <FilterButton type={QuestType.Duty} activeFilter={filter} setFilter={setFilter}>{settings.terminology.recurringTasks}</FilterButton>
+                    </CardContent>
+                </Card>
+                 <Card>
+                    <CardContent className="p-2">
+                         <FilterButton type={QuestType.Venture} activeFilter={filter} setFilter={setFilter}>{settings.terminology.singleTasks}</FilterButton>
+                    </CardContent>
+                </Card>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                {filteredQuests.map(quest => (
+                    <QuestItem key={quest.id} quest={quest} now={now} onSelect={setSelectedQuest} onImagePreview={setPreviewImageUrl} />
                 ))}
             </div>
 
@@ -272,6 +277,7 @@ const QuestsPage: React.FC = () => {
                     isTodo={!!(currentUser && selectedQuest.type === QuestType.Venture && selectedQuest.todoUserIds?.includes(currentUser.id))}
                 />
             )}
+
             {completingQuest && (
                 <CompleteQuestDialog
                     quest={completingQuest}
@@ -281,7 +287,7 @@ const QuestsPage: React.FC = () => {
             {previewImageUrl && (
                 <ImagePreviewDialog
                     imageUrl={previewImageUrl}
-                    altText="Quest icon preview"
+                    altText="Quest image preview"
                     onClose={() => setPreviewImageUrl(null)}
                 />
             )}

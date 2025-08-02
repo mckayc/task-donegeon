@@ -1,6 +1,6 @@
 import React from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
-import { Button } from '@/components/ui/Button';
+import { Button } from '@/components/ui/button';
 
 const OnboardingWizard: React.FC = () => {
     const { currentUser, settings } = useAppState();

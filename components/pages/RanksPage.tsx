@@ -1,10 +1,10 @@
 import React, { useMemo, useState } from 'react';
 import { useAppState } from '../../context/AppContext';
 import { Rank } from '../../types';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
-import { RankIcon } from '@/components/ui/Icons';
-import DynamicIcon from '../ui/DynamicIcon';
-import ImagePreviewDialog from '../ui/ImagePreviewDialog';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { RankIcon } from '@/components/ui/icons';
+import DynamicIcon from '../ui/dynamic-icon';
+import ImagePreviewDialog from '../ui/image-preview-dialog';
 
 const RanksPage: React.FC = () => {
     const { currentUser, ranks, appMode } = useAppState();

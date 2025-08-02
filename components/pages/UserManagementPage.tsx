@@ -1,14 +1,14 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
-import { Button } from '@/components/ui/Button';
+import { Button } from '@/components/ui/button';
 import AddUserDialog from '../users/AddUserDialog';
 import { Role, User } from '../../types';
 import EditUserDialog from '../users/EditUserDialog';
 import ManualAdjustmentDialog from '../admin/ManualAdjustmentDialog';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { EllipsisVertical } from 'lucide-react';
-import ConfirmDialog from '../ui/ConfirmDialog';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/Dropdown-Menu";
+import ConfirmDialog from '../ui/confirm-dialog';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
 const UserManagementPage: React.FC = () => {
     const { users, settings, currentUser } = useAppState();

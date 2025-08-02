@@ -1,11 +1,11 @@
 import React, { useMemo, useState } from 'react';
 import { useAppState } from '../../context/AppContext';
 import { Role, Trophy, UserTrophy, TrophyRequirementType, QuestType, QuestCompletionStatus, Quest, AppMode, User } from '../../types';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { fromYMD } from '../../utils/quests';
-import EmptyState from '@/components/ui/EmptyState';
-import DynamicIcon from '@/components/ui/DynamicIcon';
-import ImagePreviewDialog from '@/components/ui/ImagePreviewDialog';
+import EmptyState from '@/components/ui/empty-state';
+import DynamicIcon from '@/components/ui/dynamic-icon';
+import ImagePreviewDialog from '@/components/ui/image-preview-dialog';
 
 const TrophiesPage: React.FC = () => {
     const { currentUser, trophies, userTrophies, appMode, settings, questCompletions, quests, ranks } = useAppState();

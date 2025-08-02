@@ -1,9 +1,9 @@
 import React, { useMemo, useState } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
-import Avatar from '../ui/Avatar';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
+import Avatar from '../ui/avatar';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { GameAsset } from '../../types';
-import { Button } from '@/components/ui/Button';
+import { Button } from '@/components/ui/button';
 import ImageSelectionDialog from '../ui/ImageSelectionDialog';
 
 const AvatarPage: React.FC = () => {

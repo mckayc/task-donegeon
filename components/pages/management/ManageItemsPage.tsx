@@ -1,18 +1,18 @@
 import React, { useState, useRef, useEffect, useMemo, ChangeEvent } from 'react';
 import { useAppState, useAppDispatch } from '../../../context/AppContext';
 import { GameAsset } from '../../../types';
-import { Button } from '@/components/ui/Button';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
-import { Checkbox } from "@/components/ui/Checkbox";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/Dropdown-Menu";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/Select";
-import ConfirmDialog from '../../ui/ConfirmDialog';
+import { Button } from '@/components/ui/button';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Checkbox } from "@/components/ui/checkbox";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import ConfirmDialog from '../../ui/confirm-dialog';
 import EditGameAssetDialog from '../../admin/EditGameAssetDialog';
-import EmptyState from '../../ui/EmptyState';
-import { ItemManagerIcon, EllipsisVerticalIcon } from '@/components/ui/Icons';
+import EmptyState from '../../ui/empty-state';
+import { ItemManagerIcon, EllipsisVerticalIcon } from '@/components/ui/icons';
 import ItemIdeaGenerator from '../../quests/ItemIdeaGenerator';
-import { Input } from '@/components/ui/Input';
-import ImagePreviewDialog from '../../ui/ImagePreviewDialog';
+import { Input } from '@/components/ui/input';
+import ImagePreviewDialog from '../../ui/image-preview-dialog';
 
 const ManageItemsPage: React.FC = () => {
     const { gameAssets, settings, isAiConfigured } = useAppState();

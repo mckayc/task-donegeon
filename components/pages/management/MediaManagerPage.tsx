@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import ConfirmDialog from '../../ui/confirm-dialog';
 import EditGameAssetDialog from '../../admin/EditGameAssetDialog';
-import AiImagePromptHelper from '@/components/sharing/ai-image-prompt-helper';
+import AiImagePromptHelper from '@/components/sharing/AiImagePromptHelper';
 import UploadWithCategoryDialog from '../../admin/UploadWithCategoryDialog';
 import ImagePackImporterDialog from '../../admin/ImagePackImporterDialog';
 

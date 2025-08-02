@@ -2,12 +2,14 @@ import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { useAppState, useAppDispatch } from '../../../context/AppContext';
 import { IAppData, Blueprint, ImportResolution, AutomatedBackupProfile, AutomatedBackups } from '../../../types';
 import { analyzeBlueprintForConflicts } from '../../../utils/sharing';
-import Button from '../../ui/Button';
-import Card from '../../ui/Card';
+import { Button } from '@/components/ui/button';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import ConfirmDialog from '../../ui/ConfirmDialog';
 import BlueprintPreviewDialog from '../../sharing/BlueprintPreviewDialog';
-import Input from '../../ui/Input';
-import ToggleSwitch from '../../ui/ToggleSwitch';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
 
 interface ServerBackup {
     filename: string;
@@ -173,124 +175,147 @@ const BackupAndImportPage: React.FC = () => {
     
     return (
         <div className="space-y-6">
-            <Card title="Backup & Restore">
-                 <div className="space-y-4 grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                        <h4 className="font-semibold text-stone-200">Manual Server Backup</h4>
-                        <p className="text-sm text-stone-400 mb-3">Create a secure backup of your entire game state directly on the server. This is the recommended method for reliability.</p>
-                        <Button onClick={handleCreateServerBackup}>Create Manual Backup</Button>
+            <Card>
+                <CardHeader><CardTitle>Backup & Restore</CardTitle></CardHeader>
+                <CardContent>
+                    <div className="space-y-4 grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <h4 className="font-semibold text-foreground">Manual Server Backup</h4>
+                            <p className="text-sm text-muted-foreground mb-3">Create a secure backup of your entire game state directly on the server. This is the recommended method for reliability.</p>
+                            <Button onClick={handleCreateServerBackup}>Create Manual Backup</Button>
+                        </div>
+                        <div>
+                            <h4 className="font-semibold text-foreground">Restore from Local File</h4>
+                            <p className="text-sm text-muted-foreground mb-3">Restore your game from a `.json` backup file on your computer. <strong className="text-amber-400">This will overwrite all current data.</strong></p>
+                            <input type="file" id="restore-file-input" className="hidden" accept=".json" onChange={e => e.target.files && handleRestoreFileSelect(e.target.files[0])} />
+                            <Button onClick={() => document.getElementById('restore-file-input')?.click()} variant="destructive">Select Local Backup</Button>
+                        </div>
                     </div>
-                    <div>
-                        <h4 className="font-semibold text-stone-200">Restore from Local File</h4>
-                        <p className="text-sm text-stone-400 mb-3">Restore your game from a `.json` backup file on your computer. <strong className="text-amber-400">This will overwrite all current data.</strong></p>
-                        <input type="file" id="restore-file-input" className="hidden" accept=".json" onChange={e => e.target.files && handleRestoreFileSelect(e.target.files[0])} />
-                        <Button onClick={() => document.getElementById('restore-file-input')?.click()} className="!bg-amber-600 hover:!bg-amber-500">Select Local Backup</Button>
-                    </div>
-                </div>
+                </CardContent>
             </Card>
 
-            <Card title="Manage Server Backups">
-                {isLoading ? (
-                    <p className="text-stone-400">Loading backups...</p>
-                ) : serverBackups.length > 0 ? (
-                    <div className="space-y-2 max-h-60 overflow-y-auto pr-2">
-                        {serverBackups.map(backup => (
-                            <div key={backup.filename} className="bg-stone-900/40 p-3 rounded-md flex justify-between items-center">
-                                <div>
-                                    <p className="font-semibold text-stone-200">{backup.filename}</p>
-                                    <p className="text-xs text-stone-400">
-                                        {new Date(backup.createdAt).toLocaleString()} - {(backup.size / 1024).toFixed(2)} KB
-                                    </p>
+            <Card>
+                 <CardHeader><CardTitle>Manage Server Backups</CardTitle></CardHeader>
+                 <CardContent>
+                    {isLoading ? (
+                        <p className="text-muted-foreground">Loading backups...</p>
+                    ) : serverBackups.length > 0 ? (
+                        <div className="space-y-2 max-h-60 overflow-y-auto pr-2">
+                            {serverBackups.map(backup => (
+                                <div key={backup.filename} className="bg-background p-3 rounded-md flex justify-between items-center">
+                                    <div>
+                                        <p className="font-semibold text-foreground">{backup.filename}</p>
+                                        <p className="text-xs text-muted-foreground">
+                                            {new Date(backup.createdAt).toLocaleString()} - {(backup.size / 1024).toFixed(2)} KB
+                                        </p>
+                                    </div>
+                                    <div className="flex gap-2">
+                                        <a href={`/api/backups/${backup.filename}`} download><Button variant="secondary" size="sm">Download</Button></a>
+                                        <Button variant="secondary" size="sm" onClick={() => setConfirmation({action: 'restore-server', title: 'Confirm Restore', message: `This will overwrite all current data with the contents of ${backup.filename}.`, data: backup })}>Restore</Button>
+                                        <Button variant="destructive" size="sm" onClick={() => setConfirmation({action: 'delete-server-backup', title: 'Confirm Delete', message: `Are you sure you want to permanently delete ${backup.filename}?`, data: backup })}>Delete</Button>
+                                    </div>
                                 </div>
-                                <div className="flex gap-2">
-                                    <a href={`/api/backups/${backup.filename}`} download><Button variant="secondary" size="sm">Download</Button></a>
-                                    <Button variant="secondary" size="sm" onClick={() => setConfirmation({action: 'restore-server', title: 'Confirm Restore', message: `This will overwrite all current data with the contents of ${backup.filename}.`, data: backup })}>Restore</Button>
-                                    <Button variant="secondary" size="sm" className="!bg-red-900/50 hover:!bg-red-800/60" onClick={() => setConfirmation({action: 'delete-server-backup', title: 'Confirm Delete', message: `Are you sure you want to permanently delete ${backup.filename}?`, data: backup })}>Delete</Button>
+                            ))}
+                        </div>
+                    ) : (
+                        <p className="text-muted-foreground text-center py-4">No server-side backups found. Click "Create Manual Backup" to make one.</p>
+                    )}
+                 </CardContent>
+            </Card>
+            
+            <Card>
+                <CardHeader><CardTitle>Automated Server Backups</CardTitle></CardHeader>
+                <CardContent>
+                    <p className="text-sm text-muted-foreground mb-4">Configure automatic backups to the server's file system. This is highly recommended for Docker/self-hosted instances.</p>
+                    <div className="space-y-4">
+                        {automatedBackupsForm.profiles.map((profile, index) => (
+                            <div key={index} className="p-4 bg-background rounded-lg border">
+                                <div className="flex items-center space-x-2">
+                                    <Switch
+                                        id={`backup-enabled-${index}`}
+                                        checked={profile.enabled}
+                                        onCheckedChange={(val) => handleBackupProfileChange(index, 'enabled', val)}
+                                    />
+                                    <Label htmlFor={`backup-enabled-${index}`}>Profile {index + 1}: Enabled</Label>
+                                </div>
+                                <div className={`grid grid-cols-2 gap-4 mt-4 ${!profile.enabled ? 'opacity-50 pointer-events-none' : ''}`}>
+                                    <div className="space-y-2">
+                                        <Label htmlFor={`backup-freq-${index}`}>Frequency</Label>
+                                        <Select value={profile.frequency} onValueChange={value => handleBackupProfileChange(index, 'frequency', value)}>
+                                            <SelectTrigger id={`backup-freq-${index}`}><SelectValue /></SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="hourly">Hourly</SelectItem>
+                                                <SelectItem value="daily">Daily</SelectItem>
+                                                <SelectItem value="weekly">Weekly</SelectItem>
+                                                <SelectItem value="monthly">Monthly</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor={`backup-keep-${index}`}>Keep (number of backups)</Label>
+                                        <Input
+                                            id={`backup-keep-${index}`}
+                                            type="number"
+                                            min="1"
+                                            value={profile.keep}
+                                            onChange={e => handleBackupProfileChange(index, 'keep', parseInt(e.target.value) || 1)}
+                                        />
+                                    </div>
                                 </div>
                             </div>
                         ))}
                     </div>
-                ) : (
-                    <p className="text-stone-400 text-center py-4">No server-side backups found. Click "Create Manual Backup" to make one.</p>
-                )}
+                    <div className="text-right mt-6">
+                        <Button onClick={handleSaveAutomatedBackups}>Save Automated Backup Settings</Button>
+                    </div>
+                </CardContent>
             </Card>
 
-            <Card title="Automated Server Backups">
-                <p className="text-sm text-stone-400 mb-4">Configure automatic backups to the server's file system. This is highly recommended for Docker/self-hosted instances.</p>
-                <div className="space-y-4">
-                    {automatedBackupsForm.profiles.map((profile, index) => (
-                        <div key={index} className="p-4 bg-stone-900/40 rounded-lg border border-stone-700/60">
-                             <ToggleSwitch
-                                enabled={profile.enabled}
-                                setEnabled={(val) => handleBackupProfileChange(index, 'enabled', val)}
-                                label={`Profile ${index + 1}: Enabled`}
-                            />
-                            <div className={`grid grid-cols-2 gap-4 mt-4 ${!profile.enabled ? 'opacity-50 pointer-events-none' : ''}`}>
-                                <Input
-                                    as="select"
-                                    label="Frequency"
-                                    value={profile.frequency}
-                                    onChange={e => handleBackupProfileChange(index, 'frequency', e.target.value)}
-                                >
-                                    <option value="hourly">Hourly</option>
-                                    <option value="daily">Daily</option>
-                                    <option value="weekly">Weekly</option>
-                                    <option value="monthly">Monthly</option>
-                                </Input>
-                                <Input
-                                    label="Keep (number of backups)"
-                                    type="number"
-                                    min="1"
-                                    value={profile.keep}
-                                    onChange={e => handleBackupProfileChange(index, 'keep', parseInt(e.target.value) || 1)}
-                                />
+
+            <Card>
+                <CardHeader><CardTitle>Import Content</CardTitle></CardHeader>
+                <CardContent>
+                    <div>
+                        <h4 className="font-semibold text-foreground">Import Blueprint</h4>
+                        <p className="text-sm text-muted-foreground mb-3">Load a Blueprint `.json` file to add new content (quests, items, etc.) to your game. This will not overwrite existing data.</p>
+                        <input type="file" id="import-file-input" className="hidden" accept=".json" onChange={e => e.target.files && handleBlueprintFileSelect(e.target.files[0])} />
+                        <Button onClick={() => document.getElementById('import-file-input')?.click()}>Select Blueprint File</Button>
+                    </div>
+                </CardContent>
+            </Card>
+
+             <Card>
+                 <CardHeader><CardTitle>Data Resets</CardTitle></CardHeader>
+                 <CardContent>
+                    <div className="p-4 bg-destructive/10 border border-destructive/20 rounded-lg space-y-6">
+                        <h4 className="font-bold text-destructive">Danger Zone</h4>
+                        <p className="text-sm text-destructive/80">These actions are permanent and can result in data loss. Use with extreme caution.</p>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-x-6 gap-y-8">
+                            <div>
+                                <Button variant="destructive" className="w-full" onClick={() => setConfirmation({ action: 'restore-defaults', title: 'Restore Defaults', message: 'Are you sure? This will add any missing default items like trophies back into the game.'})}>Restore Default Objects</Button>
+                                <p className="text-xs text-muted-foreground mt-2">Adds any missing default items (like the initial set of Trophies) back into the game without affecting your existing custom content. Useful after an update.</p>
+                            </div>
+                            <div>
+                                <Button variant="destructive" className="w-full" onClick={() => setConfirmation({ action: 'clear-history', title: 'Clear History', message: 'Are you sure? This deletes all completions, purchases, and logs, but keeps users and content.'})}>Clear All History</Button>
+                                <p className="text-xs text-muted-foreground mt-2">Deletes all quest completions, purchase requests, and system logs. This does NOT delete users, quests, items, or other created content.</p>
+                            </div>
+                            <div>
+                                <Button variant="destructive" className="w-full" onClick={() => setConfirmation({ action: 'reset-players', title: 'Reset Player Data', message: 'Are you sure? This wipes all player progress (currency, XP, items) but keeps user accounts.'})}>Reset All Player Data</Button>
+                                <p className="text-xs text-muted-foreground mt-2">Wipes all player progress, including currency, XP, owned items, and trophies. User accounts themselves are NOT deleted.</p>
+                            </div>
+                            <div>
+                                <Button variant="destructive" className="w-full" onClick={() => setConfirmation({ action: 'factory-reset', title: 'Factory Reset', message: 'Are you sure? This deletes ALL user-created content (quests, items, etc.). It cannot be undone.'})}>Factory Reset Content</Button>
+                                <p className="text-xs text-muted-foreground mt-2">Deletes ALL user-created content (quests, items, markets, trophies, rewards, etc.) but keeps user accounts. This is irreversible.</p>
                             </div>
                         </div>
-                    ))}
-                </div>
-                <div className="text-right mt-6">
-                    <Button onClick={handleSaveAutomatedBackups}>Save Automated Backup Settings</Button>
-                </div>
-            </Card>
-
-            <Card title="Import Content">
-                 <div>
-                    <h4 className="font-semibold text-stone-200">Import Blueprint</h4>
-                    <p className="text-sm text-stone-400 mb-3">Load a Blueprint `.json` file to add new content (quests, items, etc.) to your game. This will not overwrite existing data.</p>
-                    <input type="file" id="import-file-input" className="hidden" accept=".json" onChange={e => e.target.files && handleBlueprintFileSelect(e.target.files[0])} />
-                    <Button onClick={() => document.getElementById('import-file-input')?.click()}>Select Blueprint File</Button>
-                </div>
-            </Card>
-
-             <Card title="Data Resets">
-                 <div className="p-4 bg-red-900/30 border border-red-700/60 rounded-lg space-y-6">
-                    <h4 className="font-bold text-red-300">Danger Zone</h4>
-                     <p className="text-sm text-red-200/80">These actions are permanent and can result in data loss. Use with extreme caution.</p>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-x-6 gap-y-8">
-                        <div>
-                            <Button className="!bg-red-700 hover:!bg-red-600 w-full" onClick={() => setConfirmation({ action: 'restore-defaults', title: 'Restore Defaults', message: 'Are you sure? This will add any missing default items like trophies back into the game.'})}>Restore Default Objects</Button>
-                            <p className="text-xs text-red-200/70 mt-2">Adds any missing default items (like the initial set of Trophies) back into the game without affecting your existing custom content. Useful after an update.</p>
-                        </div>
-                        <div>
-                            <Button className="!bg-red-700 hover:!bg-red-600 w-full" onClick={() => setConfirmation({ action: 'clear-history', title: 'Clear History', message: 'Are you sure? This deletes all completions, purchases, and logs, but keeps users and content.'})}>Clear All History</Button>
-                            <p className="text-xs text-red-200/70 mt-2">Deletes all quest completions, purchase requests, and system logs. This does NOT delete users, quests, items, or other created content.</p>
-                        </div>
-                        <div>
-                            <Button className="!bg-red-700 hover:!bg-red-600 w-full" onClick={() => setConfirmation({ action: 'reset-players', title: 'Reset Player Data', message: 'Are you sure? This wipes all player progress (currency, XP, items) but keeps user accounts.'})}>Reset All Player Data</Button>
-                            <p className="text-xs text-red-200/70 mt-2">Wipes all player progress, including currency, XP, owned items, and trophies. User accounts themselves are NOT deleted.</p>
-                        </div>
-                        <div>
-                            <Button className="!bg-red-700 hover:!bg-red-600 w-full" onClick={() => setConfirmation({ action: 'factory-reset', title: 'Factory Reset', message: 'Are you sure? This deletes ALL user-created content (quests, items, etc.). It cannot be undone.'})}>Factory Reset Content</Button>
-                            <p className="text-xs text-red-200/70 mt-2">Deletes ALL user-created content (quests, items, markets, trophies, rewards, etc.) but keeps user accounts. This is irreversible.</p>
+                        <div className="pt-6 border-t border-destructive/20">
+                            <Button variant="destructive" className="w-full" onClick={() => setConfirmation({ action: 'reinitialize', title: 'Re-initialize Application', message: 'This will PERMANENTLY DELETE ALL DATA, including users, quests, and settings. The application will restart to the first-run setup wizard. This action cannot be undone.'})}>
+                                Re-initialize Application (Full Reset)
+                            </Button>
+                            <p className="text-xs text-muted-foreground mt-2">This is a full factory reset that deletes the entire database and restarts the application. Use this if your application is in a broken state and you want to start completely fresh.</p>
                         </div>
                     </div>
-                    <div className="pt-6 border-t border-red-700/60">
-                        <Button className="!bg-red-800 hover:!bg-red-700 w-full" onClick={() => setConfirmation({ action: 'reinitialize', title: 'Re-initialize Application', message: 'This will PERMANENTLY DELETE ALL DATA, including users, quests, and settings. The application will restart to the first-run setup wizard. This action cannot be undone.'})}>
-                            Re-initialize Application (Full Reset)
-                        </Button>
-                        <p className="text-xs text-red-200/70 mt-2">This is a full factory reset that deletes the entire database and restarts the application. Use this if your application is in a broken state and you want to start completely fresh.</p>
-                    </div>
-                </div>
+                 </CardContent>
              </Card>
 
             {confirmation && (

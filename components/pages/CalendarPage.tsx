@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { Quest, Role, ScheduledEvent } from '../../types';
-import Card from '../ui/Card';
+import { Card, CardHeader, CardContent } from '@/components/ui/card';
 import { toYMD } from '../../utils/quests';
 import MonthView from '../calendar/MonthView';
 import WeekView from '../calendar/WeekView';
@@ -9,7 +9,7 @@ import DayView from '../calendar/DayView';
 import ChroniclesDayView from '../calendar/ChroniclesDayView';
 import ChroniclesMonthView from '../calendar/ChroniclesMonthView';
 import ChroniclesWeekView from '../calendar/ChroniclesWeekView';
-import Button from '../ui/Button';
+import { Button } from '@/components/ui/button';
 import ScheduleEventDialog from '../admin/ScheduleEventDialog';
 import EventDetailDialog from '../calendar/EventDetailDialog';
 
@@ -17,12 +17,13 @@ type CalendarView = 'month' | 'week' | 'day';
 type CalendarMode = 'quests' | 'chronicles';
 
 const ViewButton: React.FC<{ type: CalendarView, currentView: CalendarView, setView: (view: CalendarView) => void, children: React.ReactNode }> = ({ type, currentView, setView, children }) => (
-    <button
+    <Button
         onClick={() => setView(type)}
-        className={`px-3 py-1 rounded-md font-semibold text-sm transition-colors ${currentView === type ? 'btn-primary' : 'text-stone-300 hover:bg-stone-700'}`}
+        variant={currentView === type ? 'default' : 'ghost'}
+        size="sm"
     >
         {children}
-    </button>
+    </Button>
 );
 
 const CalendarPage: React.FC = () => {
@@ -52,81 +53,60 @@ const CalendarPage: React.FC = () => {
         else newDate.setDate(currentDate.getDate() + offset);
         setCurrentDate(newDate);
     };
-    
-    const getHeaderTitle = () => {
-        switch (view) {
-            case 'month':
-                return currentDate.toLocaleString('default', { month: 'long', year: 'numeric' });
-            case 'week':
-                const startOfWeek = new Date(currentDate);
-                startOfWeek.setDate(currentDate.getDate() - currentDate.getDay());
-                const endOfWeek = new Date(startOfWeek);
-                endOfWeek.setDate(startOfWeek.getDate() + 6);
-                return `${startOfWeek.toLocaleDateString()} - ${endOfWeek.toLocaleDateString()}`;
-            case 'day':
-                return currentDate.toLocaleDateString('default', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-        }
-    };
 
-    const handleEventSelect = (event: ScheduledEvent) => {
-        if (currentUser.role === Role.DonegeonMaster) {
-            setEditingEvent(event);
-        } else {
-            setViewingEvent(event);
+    const dateDisplay = useMemo(() => {
+        if (view === 'month') return currentDate.toLocaleDateString('default', { month: 'long', year: 'numeric' });
+        if (view === 'week') {
+            const start = new Date(currentDate);
+            start.setDate(currentDate.getDate() - currentDate.getDay());
+            const end = new Date(start);
+            end.setDate(start.getDate() + 6);
+            return `${start.toLocaleDateString('default', { month: 'short', day: 'numeric' })} - ${end.toLocaleDateString('default', { month: 'short', day: 'numeric', year: 'numeric' })}`;
         }
-    };
-
-    const renderContent = () => {
-        if (mode === 'chronicles') {
-            switch (view) {
-                case 'day': return <ChroniclesDayView currentDate={currentDate} />;
-                case 'week': return <div className="overflow-x-auto scrollbar-hide"><ChroniclesWeekView currentDate={currentDate} /></div>;
-                case 'month': return <ChroniclesMonthView currentDate={currentDate} />;
-                default: return null;
-            }
-        }
-
-        switch (view) {
-            case 'month': return <MonthView currentDate={currentDate} quests={filteredQuests} questCompletions={questCompletions} scheduledEvents={scheduledEvents} onEventSelect={handleEventSelect} />;
-            case 'week': return <div className="overflow-x-auto scrollbar-hide"><WeekView currentDate={currentDate} quests={filteredQuests} questCompletions={questCompletions} scheduledEvents={scheduledEvents} onEventSelect={handleEventSelect} /></div>;
-            case 'day': return <DayView currentDate={currentDate} quests={filteredQuests} questCompletions={questCompletions} scheduledEvents={scheduledEvents} onEventSelect={handleEventSelect} />;
-            default: return null;
-        }
-    };
+        return currentDate.toLocaleDateString('default', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+    }, [currentDate, view]);
 
     return (
-        <div>
-            <Card>
-                <div className="flex items-center justify-between p-4 border-b border-stone-700/60 flex-wrap gap-4">
-                    <div className="flex items-center">
-                        <button onClick={() => changeDate(-1)} className="p-2 rounded-full hover:bg-stone-700 transition">&lt;</button>
-                        <h2 className="text-2xl font-semibold text-emerald-300 mx-4 text-center w-auto min-w-[16rem] md:min-w-[24rem]">{getHeaderTitle()}</h2>
-                        <button onClick={() => changeDate(1)} className="p-2 rounded-full hover:bg-stone-700 transition">&gt;</button>
+        <div className="flex flex-col h-full">
+            <header className="flex-shrink-0 flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
+                <div className="flex items-center gap-2">
+                    <Button onClick={() => changeDate(-1)} variant="outline">&larr;</Button>
+                    <Button onClick={() => setCurrentDate(new Date())} variant="outline">Today</Button>
+                    <Button onClick={() => changeDate(1)} variant="outline">&rarr;</Button>
+                    <h2 className="text-2xl font-bold text-foreground ml-4">{dateDisplay}</h2>
+                </div>
+                <div className="flex items-center gap-4">
+                    {currentUser.role !== Role.Explorer && (
+                        <Button onClick={() => setEditingEvent({} as ScheduledEvent)}>Schedule Event</Button>
+                    )}
+                    <div className="p-1 bg-background rounded-lg flex gap-1">
+                         <Button onClick={() => setMode('quests')} variant={mode === 'quests' ? 'default' : 'ghost'} size="sm">Quests</Button>
+                         <Button onClick={() => setMode('chronicles')} variant={mode === 'chronicles' ? 'default' : 'ghost'} size="sm">History</Button>
                     </div>
-                    <div className="flex items-center gap-4">
-                        {currentUser.role === Role.DonegeonMaster && (
-                            <Button size="sm" onClick={() => setActivePage('Manage Events')}>Events</Button>
-                        )}
-                        <div className="flex space-x-2 p-1 bg-stone-900/50 rounded-lg">
-                            <button onClick={() => setMode('quests')} className={`px-3 py-1 rounded-md font-semibold text-sm transition-colors ${mode === 'quests' ? 'btn-primary' : 'text-stone-300 hover:bg-stone-700'}`}>Quests</button>
-                            <button onClick={() => setMode('chronicles')} className={`px-3 py-1 rounded-md font-semibold text-sm transition-colors ${mode === 'chronicles' ? 'btn-primary' : 'text-stone-300 hover:bg-stone-700'}`}>Chronicles</button>
-                        </div>
-                        <div className="flex space-x-2 p-1 bg-stone-900/50 rounded-lg">
-                            <ViewButton type="day" currentView={view} setView={setView}>Day</ViewButton>
-                            <ViewButton type="week" currentView={view} setView={setView}>Week</ViewButton>
-                            <ViewButton type="month" currentView={view} setView={setView}>Month</ViewButton>
-                        </div>
+                    <div className="p-1 bg-background rounded-lg flex gap-1">
+                        <ViewButton type="month" currentView={view} setView={setView}>Month</ViewButton>
+                        <ViewButton type="week" currentView={view} setView={setView}>Week</ViewButton>
+                        <ViewButton type="day" currentView={view} setView={setView}>Day</ViewButton>
                     </div>
                 </div>
-                {renderContent()}
-            </Card>
-
-            {editingEvent && (
-                <ScheduleEventDialog event={editingEvent} onClose={() => setEditingEvent(null)} />
-            )}
-            {viewingEvent && (
-                <EventDetailDialog event={viewingEvent} onClose={() => setViewingEvent(null)} />
-            )}
+            </header>
+            <div className="flex-grow bg-card rounded-lg overflow-hidden">
+                {mode === 'quests' ? (
+                    <>
+                        {view === 'month' && <MonthView currentDate={currentDate} quests={filteredQuests} questCompletions={questCompletions} scheduledEvents={scheduledEvents} onEventSelect={setViewingEvent} />}
+                        {view === 'week' && <WeekView currentDate={currentDate} quests={filteredQuests} questCompletions={questCompletions} scheduledEvents={scheduledEvents} onEventSelect={setViewingEvent} />}
+                        {view === 'day' && <DayView currentDate={currentDate} quests={filteredQuests} questCompletions={questCompletions} scheduledEvents={scheduledEvents} onEventSelect={setViewingEvent} />}
+                    </>
+                ) : (
+                     <>
+                        {view === 'month' && <ChroniclesMonthView currentDate={currentDate} />}
+                        {view === 'week' && <ChroniclesWeekView currentDate={currentDate} />}
+                        {view === 'day' && <ChroniclesDayView currentDate={currentDate} />}
+                    </>
+                )}
+            </div>
+            {editingEvent && <ScheduleEventDialog event={editingEvent === {} as ScheduledEvent ? null : editingEvent} onClose={() => setEditingEvent(null)} />}
+            {viewingEvent && <EventDetailDialog event={viewingEvent} onClose={() => setViewingEvent(null)} />}
         </div>
     );
 };

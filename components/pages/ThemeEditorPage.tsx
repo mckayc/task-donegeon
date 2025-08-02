@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { ThemeDefinition, ThemeStyle } from '../../types';
-import Button from '../ui/Button';
-import Card from '../ui/Card';
-import Input from '../ui/Input';
+import { Button } from '../ui/Button';
+import { Card } from '../ui/Card';
+import { Input } from '../ui/Input';
 import { getContrast, getWcagRating, hslValuesToCss, parseHslString, hexToHsl, rgbToHex, hslToRgb } from '../../utils/colors';
 import { TrophyIcon, RankIcon } from '../ui/Icons';
 import ThemeIdeaGenerator from '../quests/ThemeIdeaGenerator';
@@ -66,7 +66,7 @@ const ThemePreview: React.FC<{ themeData: ThemeStyle }> = ({ themeData }) => {
                     This is a preview of your theme. The quick brown fox jumps over the lazy dog.
                 </p>
                 <div className="flex gap-4">
-                    <Button variant="primary">Primary Button</Button>
+                    <Button variant="default">Primary Button</Button>
                     <Button variant="secondary">Secondary</Button>
                 </div>
                 <Card title="Sample Card" className="mt-4">

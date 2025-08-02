@@ -1,7 +1,6 @@
-
 import React from 'react';
 import { useAppState } from '../../context/AppContext';
-import Button from '../ui/Button';
+import { Button } from '@/components/ui/button';
 
 const BackupPanel: React.FC = () => {
     const appState = useAppState();

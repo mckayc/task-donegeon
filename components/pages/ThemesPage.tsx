@@ -1,10 +1,8 @@
-
-
 import React, { useState, useEffect, useMemo } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { ThemeDefinition, AppMode } from '../../types';
-import Button from '../ui/Button';
-import Card from '../ui/Card';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
 
 const ThemesPage: React.FC = () => {
     const { currentUser, settings, themes, markets, guilds, appMode } = useAppState();
@@ -92,6 +90,7 @@ const ThemesPage: React.FC = () => {
             </div>
             
             <Card>
+              <CardContent className="p-6">
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
                     {themes.map(theme => {
                         const isOwned = currentUser.ownedThemes.includes(theme.id);
@@ -122,15 +121,16 @@ const ThemesPage: React.FC = () => {
                                     ) : isOwned ? (
                                         <span className="text-xs font-bold text-green-400 bg-green-900/50 px-3 py-1 rounded-full">OWNED</span>
                                     ) : (
-                                        <button onClick={goToThemeMarket} className="text-xs font-bold text-stone-400 bg-stone-700/50 px-3 py-1 rounded-full hover:bg-stone-700 hover:text-white transition-colors">
+                                        <Button onClick={goToThemeMarket} variant="link" className="text-xs font-bold">
                                             Unlock ➔
-                                        </button>
+                                        </Button>
                                     )}
                                 </div>
                             </div>
                         );
                     })}
                 </div>
+              </CardContent>
             </Card>
         </div>
     );

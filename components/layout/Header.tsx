@@ -3,7 +3,7 @@ import { Page, Role, AppMode, User } from '../../types';
 import Avatar from '../ui/Avatar';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import FullscreenToggle from '../ui/FullscreenToggle';
-import { ChevronDownIcon } from '../ui/Icons';
+import { ChevronDownIcon } from '@/components/ui/icons';
 import RewardDisplay from '../ui/RewardDisplay';
 import {
   DropdownMenu,

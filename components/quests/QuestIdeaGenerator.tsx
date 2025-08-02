@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
 import { GenerateContentResponse, Type } from "@google/genai";
-import Button from '../ui/Button';
-import Input from '../ui/Input';
-import { SparklesIcon } from '../ui/Icons';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { SparklesIcon } from '@/components/ui/Icons';
 import { useAppState } from '../../context/AppContext';
 import { QuestType } from '../../types';
 import ToggleSwitch from '../ui/ToggleSwitch';
+import { Label } from '@/components/ui/label';
 
 interface QuestIdea {
   title: string;
@@ -132,15 +133,18 @@ const QuestIdeaGenerator: React.FC<QuestIdeaGeneratorProps> = ({ onUseIdea, onCl
 
                 <div className="flex-1 space-y-4 p-8 overflow-y-auto scrollbar-hide">
                     <div className="flex flex-col gap-4">
-                        <Input
-                            label="Quest Theme"
-                            placeholder="e.g., 'Weekly kitchen chores for kids'"
-                            value={prompt}
-                            onChange={e => setPrompt(e.target.value)}
-                            onKeyDown={e => e.key === 'Enter' && handleGenerate()}
-                            className="flex-grow"
-                            disabled={isLoading}
-                        />
+                        <div className="flex-grow space-y-2">
+                          <Label htmlFor="quest-theme">Quest Theme</Label>
+                          <Input
+                              id="quest-theme"
+                              placeholder="e.g., 'Weekly kitchen chores for kids'"
+                              value={prompt}
+                              onChange={e => setPrompt(e.target.value)}
+                              onKeyDown={e => e.key === 'Enter' && handleGenerate()}
+                              className="flex-grow"
+                              disabled={isLoading}
+                          />
+                        </div>
                          <div className="flex items-center justify-between p-3 bg-stone-900/40 rounded-lg">
                             <span className="font-semibold text-stone-300">Quest Type:</span>
                              <div className="flex items-center gap-4">

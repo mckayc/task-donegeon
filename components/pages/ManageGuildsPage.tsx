@@ -1,14 +1,12 @@
-
-
 import React, { useState } from 'react';
 import { Guild } from '../../types';
-import Button from '../ui/Button';
-import Card from '../ui/Card';
+import { Button } from '@/components/ui/button';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import EditGuildDialog from '../guilds/EditGuildDialog';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import ConfirmDialog from '../ui/ConfirmDialog';
 import EmptyState from '../ui/EmptyState';
-import { GuildIcon } from '../ui/Icons';
+import { GuildIcon } from '@/components/ui/icons';
 
 const ManageGuildsPage: React.FC = () => {
     const { guilds, settings } = useAppState();
@@ -40,24 +38,24 @@ const ManageGuildsPage: React.FC = () => {
 
     return (
         <div className="space-y-6">
-            <Card
-                title={`All Created ${settings.terminology.groups}`}
-                headerAction={
+            <Card>
+                <CardHeader className="flex flex-row items-center justify-between">
+                    <CardTitle>{`All Created ${settings.terminology.groups}`}</CardTitle>
                     <Button onClick={handleCreateGuild} size="sm">
                         Create New {settings.terminology.group}
                     </Button>
-                }
-            >
+                </CardHeader>
+                <CardContent>
                 {guilds.length > 0 ? (
                      <div className="space-y-4">
                         {guilds.map(guild => (
-                            <div key={guild.id} className="bg-stone-900/40 rounded-lg overflow-hidden">
-                                <div className="px-6 py-4 border-b border-stone-700/60 flex justify-between items-start flex-wrap gap-4">
+                            <div key={guild.id} className="bg-background/50 rounded-lg overflow-hidden border">
+                                <div className="px-6 py-4 border-b flex justify-between items-start flex-wrap gap-4">
                                     <div>
-                                        <h3 className="text-xl font-bold text-stone-100">{guild.name}</h3>
-                                        <p className="text-stone-400 text-sm">{guild.purpose}</p>
+                                        <h3 className="text-xl font-bold text-foreground">{guild.name}</h3>
+                                        <p className="text-muted-foreground text-sm">{guild.purpose}</p>
                                         {guild.isDefault && (
-                                            <span className="mt-2 inline-block px-2 py-0.5 text-xs font-semibold rounded-full bg-blue-500/20 text-blue-300">
+                                            <span className="mt-2 inline-block px-2 py-0.5 text-xs font-semibold rounded-full bg-primary/20 text-primary">
                                                 Default {settings.terminology.group}
                                             </span>
                                         )}
@@ -65,12 +63,12 @@ const ManageGuildsPage: React.FC = () => {
                                     <div className="flex space-x-2 flex-shrink-0">
                                         <Button size="sm" variant="secondary" onClick={() => handleEditGuild(guild)}>Edit</Button>
                                         {!guild.isDefault && (
-                                            <Button size="sm" variant="secondary" className="!bg-red-900/50 hover:!bg-red-800/60 text-red-300" onClick={() => handleDeleteRequest(guild)}>Delete</Button>
+                                            <Button size="sm" variant="destructive" onClick={() => handleDeleteRequest(guild)}>Delete</Button>
                                         )}
                                     </div>
                                 </div>
                                 <div className="p-6">
-                                    <h4 className="font-semibold text-sm mb-2 text-stone-300">{guild.memberIds.length} Members</h4>
+                                    <h4 className="font-semibold text-sm mb-2 text-foreground">{guild.memberIds.length} Members</h4>
                                 </div>
                             </div>
                         ))}
@@ -83,6 +81,7 @@ const ManageGuildsPage: React.FC = () => {
                         actionButton={<Button onClick={handleCreateGuild}>Create {settings.terminology.group}</Button>}
                     />
                 )}
+                </CardContent>
             </Card>
 
             {isGuildDialogOpen && (

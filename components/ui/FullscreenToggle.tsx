@@ -1,6 +1,5 @@
-
 import React, { useState, useEffect } from 'react';
-import { EnterFullscreenIcon, ExitFullscreenIcon } from './Icons';
+import { EnterFullscreenIcon, ExitFullscreenIcon } from './icons';
 
 const FullscreenToggle: React.FC = () => {
     const [isFullscreen, setIsFullscreen] = useState(false);
@@ -40,7 +39,7 @@ const FullscreenToggle: React.FC = () => {
         <button
             onClick={handleToggleFullscreen}
             title={isFullscreen ? 'Exit Fullscreen' : 'Enter Fullscreen'}
-            className="p-2 rounded-full text-stone-300 hover:bg-stone-700/50 hover:text-white transition-colors"
+            className="p-2 rounded-full text-foreground/80 hover:bg-accent/50 hover:text-foreground transition-colors"
             aria-label="Toggle Fullscreen"
         >
             {isFullscreen

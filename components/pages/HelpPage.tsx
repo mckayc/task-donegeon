@@ -1,23 +1,22 @@
-
 import React, { useState } from 'react';
-import Card from '../ui/Card';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { useAppState } from '../../context/AppContext';
-import { ChevronDownIcon } from '../ui/Icons';
+import { ChevronDown } from 'lucide-react';
 
 const CollapsibleSection: React.FC<{ title: string; children: React.ReactNode; defaultOpen?: boolean; }> = ({ title, children, defaultOpen = false }) => {
     const [isOpen, setIsOpen] = useState(defaultOpen);
     return (
-        <div className="border-b border-stone-700/60 last:border-b-0">
+        <div className="border-b last:border-b-0">
             <button
-                className="w-full flex justify-between items-center text-left py-4 px-6 hover:bg-stone-700/30 transition-colors"
+                className="w-full flex justify-between items-center text-left py-4 px-6 hover:bg-accent/10 transition-colors"
                 onClick={() => setIsOpen(!isOpen)}
                 aria-expanded={isOpen}
             >
-                <h3 className="text-xl font-semibold text-stone-200">{title}</h3>
-                <ChevronDownIcon className={`w-6 h-6 text-stone-400 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+                <h3 className="text-xl font-semibold text-foreground">{title}</h3>
+                <ChevronDown className={`w-6 h-6 text-muted-foreground transition-transform ${isOpen ? 'rotate-180' : ''}`} />
             </button>
             {isOpen && (
-                <div className="px-6 pb-6 text-stone-300 space-y-4 prose prose-invert max-w-none">
+                <div className="px-6 pb-6 text-foreground/80 space-y-4 prose prose-invert max-w-none">
                     {children}
                 </div>
             )}
@@ -38,7 +37,7 @@ const HelpPage: React.FC = () => {
                 </CollapsibleSection>
 
                  <CollapsibleSection title="Core Concepts: How It All Works">
-                    <h4 className="text-lg font-bold text-stone-100">Roles: Who's Who?</h4>
+                    <h4 className="text-lg font-bold text-foreground">Roles: Who's Who?</h4>
                     <p>Every member of your {terminology.group} has a role that defines what they can do:</p>
                     <ul className="list-disc list-inside space-y-2 pl-4">
                         <li><strong>{terminology.admin}:</strong> The game administrator. They can create and manage all users, {terminology.tasks}, {terminology.stores}, {terminology.groups}, and settings. They have the ultimate authority.</li>
@@ -46,7 +45,7 @@ const HelpPage: React.FC = () => {
                         <li><strong>{terminology.user}:</strong> The standard player role. They complete {terminology.tasks}, earn {terminology.points}, and customize their character.</li>
                     </ul>
 
-                    <h4 className="text-lg font-bold text-stone-100 mt-4">Personal vs. {terminology.group} Mode</h4>
+                    <h4 className="text-lg font-bold text-foreground mt-4">Personal vs. {terminology.group} Mode</h4>
                     <p>The app has two primary contexts, which you can switch between using the dropdown in the header:</p>
                     <ul className="list-disc list-inside space-y-2 pl-4">
                         <li><strong>Personal Mode:</strong> This is your individual space. {terminology.tasks} you complete here add to your personal balances of currency and XP. You can spend this personal currency in personal {terminology.stores}.
@@ -55,7 +54,7 @@ const HelpPage: React.FC = () => {
                             <br/><em>Example: A {terminology.group.toLowerCase()} {terminology.task.toLowerCase()} might be "Help clean the kitchen after dinner" or "Rake the leaves in the yard".</em></li>
                     </ul>
 
-                    <h4 className="text-lg font-bold text-stone-100 mt-4">{terminology.tasks}: {terminology.recurringTasks} vs. {terminology.singleTasks}</h4>
+                    <h4 className="text-lg font-bold text-foreground mt-4">{terminology.tasks}: {terminology.recurringTasks} vs. {terminology.singleTasks}</h4>
                      <p>All tasks fall into one of two categories:</p>
                     <ul className="list-disc list-inside space-y-2 pl-4">
                         <li><strong>{terminology.recurringTasks}:</strong> These are repeating tasks that happen on a schedule, like daily, weekly, or on specific dates of the month. They are great for building habits.
@@ -64,7 +63,7 @@ const HelpPage: React.FC = () => {
                             <br/><em>Example: "Organize the garage" (completable once) or "Help wash the car" (could have 2 slots).</em></li>
                     </ul>
 
-                    <h4 className="text-lg font-bold text-stone-100 mt-4">Deadlines &amp; {terminology.negativePoints}</h4>
+                    <h4 className="text-lg font-bold text-foreground mt-4">Deadlines &amp; {terminology.negativePoints}</h4>
                     <p>The {terminology.admin} can set deadlines for any {terminology.task}. There are two types:</p>
                      <ul className="list-disc list-inside space-y-2 pl-4">
                         <li><strong>Late:</strong> The point at which a {terminology.task} is considered late. A {terminology.negativePoint} may be applied, but the {terminology.task} can still be completed for its original {terminology.points}.</li>
@@ -91,25 +90,25 @@ const HelpPage: React.FC = () => {
 
                 <CollapsibleSection title={`The Admin's Toolkit`}>
                     <p>If you are a <strong>{terminology.admin}</strong> or <strong>{terminology.moderator}</strong>, you have special administrative powers.</p>
-                    <h4 className="text-lg font-bold text-stone-100 mt-4">User Management</h4>
+                    <h4 className="text-lg font-bold text-foreground mt-4">User Management</h4>
                     <p>Go to `Manage Users` to add new adventurers, edit their details, or delete them. The "Adjust" button is a powerful tool to manually grant {terminology.points} or {terminology.awards} for actions that happen outside the app.</p>
                     <p><em>Example Use Case: A user gets a great report card. You can use the "Adjust" button to grant them 100 bonus XP and a special "Good Grades" trophy you created.</em></p>
 
-                    <h4 className="text-lg font-bold text-stone-100 mt-4">Content Creation &amp; Management</h4>
+                    <h4 className="text-lg font-bold text-foreground mt-4">Content Creation &amp; Management</h4>
                     <p>The "Manage" pages in the sidebar are your world-building tools. You can define new {terminology.tasks}, set up {terminology.stores} with custom items, create {terminology.groups}, define custom {terminology.points}, design {terminology.levels}, and invent unique {terminology.awards}. To help you get started, the app comes with a set of default categories (tags) for quests, such as 'Cleaning' and 'Yardwork'.</p>
                     <p>When setting rewards for {terminology.tasks.toLowerCase()}, you'll see a helpful indicator (e.g., `(equals 5 💎 or $5.00)`) showing its equivalent "real-world" value based on your settings, making it easier to balance your game's economy.</p>
                     
-                    <h4 className="text-lg font-bold text-stone-100 mt-4">Theme Editor</h4>
+                    <h4 className="text-lg font-bold text-foreground mt-4">Theme Editor</h4>
                     <p>The Theme Editor (found under `Content Management` in the sidebar) is a powerful tool for customizing the entire look and feel of the application. It features a two-panel layout:</p>
                     <ul className="list-disc list-inside space-y-2 pl-4">
                         <li><strong>Live Preview (Left):</strong> The left side of the screen shows a live preview that looks just like your main dashboard. Any change you make in the controls is reflected here instantly.</li>
                         <li><strong>Controls (Right):</strong> The right side contains all your editing tools. You can select a theme to edit, rename it, and adjust its properties. This includes choosing from over 30 display and body fonts, using sliders to set precise font sizes, and picking exact colors for every part of the UI. Changes are not saved until you hit the "Save" or "Create" button, so you can experiment freely.</li>
                     </ul>
 
-                    <h4 className="text-lg font-bold text-stone-100 mt-4">Managing Images &amp; Assets</h4>
+                    <h4 className="text-lg font-bold text-foreground mt-4">Managing Images &amp; Assets</h4>
                     <p>You can add images for your Game Assets in two primary ways from the `Asset Manager` page. This is the central hub for all your visual content.</p>
                     
-                    <h5 className="text-md font-bold text-stone-100 mt-4">Method 1: Frontend Upload (Recommended)</h5>
+                    <h5 className="text-md font-bold text-foreground mt-4">Method 1: Frontend Upload (Recommended)</h5>
                     <p>This is the easiest way to add images one by one.</p>
                      <ol className="list-decimal list-inside space-y-2 pl-4">
                         <li>Navigate to `System Tools -&gt; Asset Manager`.</li>
@@ -120,7 +119,7 @@ const HelpPage: React.FC = () => {
                         <li>Now, you can click on your new image in the gallery to open the "Create New Asset" dialog and fill in the rest of its details (name, cost, etc.).</li>
                     </ol>
 
-                    <h5 className="text-md font-bold text-stone-100 mt-4">Method 2: Manual Folder Upload (For Docker/Local Installs)</h5>
+                    <h5 className="text-md font-bold text-foreground mt-4">Method 2: Manual Folder Upload (For Docker/Local Installs)</h5>
                     <p>If you are running the application locally using Docker and need to add many images at once, this is the most efficient method:</p>
                     <ul className="list-disc list-inside space-y-2 pl-4">
                         <li>
@@ -138,7 +137,7 @@ const HelpPage: React.FC = () => {
                         </li>
                     </ul>
 
-                    <h5 className="text-md font-bold text-stone-100 mt-4">Method 3: Importing from the Library (For Docker/Local Installs)</h5>
+                    <h5 className="text-md font-bold text-foreground mt-4">Method 3: Importing from the Library (For Docker/Local Installs)</h5>
                     <p>The "Import from Library" button on the `Asset Manager` page opens a powerful tool for adding curated content packs directly from the project's central repository.</p>
                     <ol className="list-decimal list-inside space-y-2 pl-4">
                         <li><strong>Select a Pack:</strong> You'll first see a list of available image packs. Click one to view its contents.</li>
@@ -160,7 +159,7 @@ const HelpPage: React.FC = () => {
                         <li><strong>Keep it Square:</strong> Square images (e.g., 500x500 pixels) display most consistently in the UI.</li>
                     </ul>
 
-                    <h4 className="text-lg font-bold text-stone-100 mt-4">Data Management</h4>
+                    <h4 className="text-lg font-bold text-foreground mt-4">Data Management</h4>
                     <p>This powerful page gives you full control over the game's data. It is separated into several areas:</p>
                     <ul className="list-disc list-inside space-y-2 pl-4">
                         <li><strong>Backup & Import:</strong> Create a full backup of all game data for safekeeping. You can also import these backups or smaller "Blueprint" files.</li>
@@ -171,18 +170,18 @@ const HelpPage: React.FC = () => {
 
                 <CollapsibleSection title="Settings Deep Dive">
                     <p>The `Settings` page allows the {terminology.admin} to fine-tune the game experience.</p>
-                     <h4 className="text-lg font-bold text-stone-100 mt-4">Security Settings</h4>
+                     <h4 className="text-lg font-bold text-foreground mt-4">Security Settings</h4>
                     <ul className="list-disc list-inside space-y-2 pl-4">
                         <li><strong>Quick User Switching:</strong> Shows avatars in the header for fast switching. Turn this off for a cleaner interface or if you have many users.</li>
                         <li><strong>Require PIN for Users:</strong> When ON, standard users must enter their PIN to log in. Turn this OFF for young children or on a trusted family device for easier access.</li>
                         <li><strong>Require Password for Admins:</strong> When ON, {terminology.admin} and {terminology.moderator} roles must use their full password. Turn this OFF to allow them to use their PIN, which is faster but less secure.</li>
                     </ul>
-                     <h4 className="text-lg font-bold text-stone-100 mt-4">Game Rules</h4>
+                     <h4 className="text-lg font-bold text-foreground mt-4">Game Rules</h4>
                     <ul className="list-disc list-inside space-y-2 pl-4">
                         <li><strong>Forgiving Setbacks:</strong> When ON, {terminology.negativePoints} are only applied if a {terminology.task} is incomplete at the end of the day. When OFF, {terminology.negativePoints} are applied the moment a {terminology.task} becomes late.</li>
                         <li><strong>Vacation Mode:</strong> Pause all deadlines and {terminology.negativePoints} between two dates. Perfect for holidays!</li>
                     </ul>
-                    <h4 className="text-lg font-bold text-stone-100 mt-4">Terminology</h4>
+                    <h4 className="text-lg font-bold text-foreground mt-4">Terminology</h4>
                     <p>This is one of the most powerful features for personalization. You can change almost any key term in the app.
                     <br/><em>Example: You could change `{terminology.appName}` to "The Family Crew," `{terminology.task}` to "Chore," and `{terminology.group}` to "Team" to create a less fantasy-themed experience.</em></p>
                 </CollapsibleSection>

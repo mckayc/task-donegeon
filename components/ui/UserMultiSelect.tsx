@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { User } from '../../types';
-import Input from './Input';
+import { Input } from './input';
 import Avatar from './Avatar';
 
 interface UserMultiSelectProps {

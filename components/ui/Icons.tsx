@@ -57,14 +57,14 @@ export const AvatarIcon: React.FC = () => (
     </svg>
 );
 
-export const QuestsIcon: React.FC = () => (
-  <svg {...iconProps}>
+export const QuestsIcon: React.FC<{className?: string}> = ({ className }) => (
+  <svg {...iconProps} className={className || iconProps.className}>
     <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h.01M15 12h.01M10.5 16.5h3m-6.38-3.38l-1.5-1.5m1.5 1.5l1.5-1.5m3.88-3.38l1.5-1.5m-1.5 1.5l-1.5-1.5M12 21a9 9 0 100-18 9 9 0 000 18z" />
   </svg>
 );
 
-export const MarketplaceIcon: React.FC = () => (
-    <svg {...iconProps}>
+export const MarketplaceIcon: React.FC<{className?: string}> = ({ className }) => (
+    <svg {...iconProps} className={className || iconProps.className}>
         <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 21v-7.5a.75.75 0 01.75-.75h3a.75.75 0 01.75.75V21m-4.5 0H2.25a.75.75 0 01-.75-.75v-7.5a.75.75 0 01.75-.75h7.5a.75.75 0 01.75.75v7.5a.75.75 0 01-.75.75zM13.5 8.25h3.75m-3.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h.008v.008h-.008v-.008zm0 0H9.75m-1.5-1.5H1.5a.75.75 0 00-.75.75V21a.75.75 0 00.75.75h16.5a.75.75 0 00.75-.75V3.75a.75.75 0 00-.75-.75H3.75a.75.75 0 00-.75.75v4.5z" />
     </svg>
 );
@@ -87,8 +87,8 @@ export const ChroniclesIcon: React.FC = () => (
     </svg>
 );
 
-export const GuildIcon: React.FC = () => (
-    <svg {...iconProps}>
+export const GuildIcon: React.FC<{className?: string}> = ({ className }) => (
+    <svg {...iconProps} className={className || iconProps.className}>
         <path d="M12.75 3.375a9.75 9.75 0 00-9.25 7.156a9.75 9.75 0 0018.5 0A9.75 9.75 0 0012.75 3.375z" />
         <path strokeLinecap="round" strokeLinejoin="round" d="M12.75 3.375v2.25m0-2.25L13.5 6m-1.5-2.625L11.25 6m0-2.625L10.5 6m2.25-2.625L13.5 6M15 11.25a.75.75 0 11-1.5 0 .75.75 0 011.5 0z" />
         <path strokeLinecap="round" strokeLinejoin="round" d="M3 13.5a9.75 9.75 0 1119.5 0 9.75 9.75 0 01-19.5 0z" />
@@ -96,14 +96,14 @@ export const GuildIcon: React.FC = () => (
     </svg>
 );
 
-export const TrophyIcon: React.FC = () => (
-    <svg {...iconProps}>
+export const TrophyIcon: React.FC<{className?: string}> = ({ className }) => (
+    <svg {...iconProps} className={className || iconProps.className}>
         <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 18.75h-9a7.5 7.5 0 100-15h9a7.5 7.5 0 100 15zM3 18.75V9.75" />
     </svg>
 );
 
-export const RankIcon: React.FC = () => (
-  <svg {...iconProps}>
+export const RankIcon: React.FC<{className?: string}> = ({ className }) => (
+  <svg {...iconProps} className={className || iconProps.className}>
     <path strokeLinecap="round" strokeLinejoin="round" d="M11.48 3.499a.562.562 0 011.04 0l2.125 5.111a.563.563 0 00.475.345h5.584a.563.563 0 01.321.988l-4.204 3.602a.563.563 0 00-.182.557l1.285 5.385a.562.562 0 01-.84.61l-4.725-2.885a.563.563 0 00-.586 0L6.982 21.54a.562.562 0 01-.84-.61l1.285-5.386a.562.562 0 00-.182-.557l-4.204-3.602a.563.563 0 01.321-.988h5.584a.563.563 0 00.475-.345L11.48 3.5z" />
   </svg>
 );

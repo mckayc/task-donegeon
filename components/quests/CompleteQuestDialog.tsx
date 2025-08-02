@@ -1,7 +1,10 @@
 import React, { useState } from 'react';
 import { Quest, User } from '../../types';
 import { useAppDispatch, useAppState } from '../../context/AppContext';
-import Button from '../ui/Button';
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
 
 interface CompleteQuestDialogProps {
   quest: Quest;
@@ -25,32 +28,31 @@ const CompleteQuestDialog: React.FC<CompleteQuestDialogProps> = ({ quest, onClos
   };
 
   return (
-    <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
-      <div className="bg-stone-800 border border-stone-700 rounded-xl shadow-2xl p-8 max-w-lg w-full">
-        <h2 className="text-3xl font-medieval text-emerald-400 mb-2">Complete Quest</h2>
-        <p className="text-lg text-stone-200 mb-6">"{quest.title}"</p>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label htmlFor="quest-note" className="block text-sm font-medium text-stone-300 mb-1">
-              Add a comment (optional)
-            </label>
-            <textarea
+    <Dialog open={true} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-lg">
+        <DialogHeader>
+          <DialogTitle>Complete Quest</DialogTitle>
+          <DialogDescription>"{quest.title}"</DialogDescription>
+        </DialogHeader>
+        <form onSubmit={handleSubmit} id="complete-quest-form" className="space-y-4 py-4">
+          <div className="space-y-2">
+            <Label htmlFor="quest-note">Add a comment (optional)</Label>
+            <Textarea
               id="quest-note"
               name="note"
               rows={4}
               value={note}
               onChange={(e) => setNote(e.target.value)}
-              className="w-full px-4 py-2 bg-stone-700 border border-stone-600 rounded-md focus:ring-emerald-500 focus:border-emerald-500 transition"
               placeholder="Enter a note for yourself or for the approver."
             />
           </div>
-          <div className="flex justify-end space-x-4 pt-4">
-            <Button type="button" variant="secondary" onClick={onClose}>Cancel</Button>
-            <Button type="submit">Confirm Completion</Button>
-          </div>
         </form>
-      </div>
-    </div>
+        <DialogFooter>
+          <Button type="button" variant="secondary" onClick={onClose}>Cancel</Button>
+          <Button type="submit" form="complete-quest-form">Confirm Completion</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 };
 

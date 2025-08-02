@@ -1,9 +1,10 @@
 import React from 'react';
 import { Quest, RewardCategory, RewardItem, QuestType } from '../../types';
 import { useAppState } from '../../context/AppContext';
-import Button from '../ui/Button';
+import { Button } from '@/components/ui/button';
 import ToggleSwitch from '../ui/ToggleSwitch';
 import { isQuestAvailableForUser } from '../../utils/quests';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 
 interface QuestDetailDialogProps {
   quest: Quest;
@@ -34,7 +35,7 @@ const QuestDetailDialog: React.FC<QuestDetailDialogProps> = ({ quest, onClose, o
                 <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm font-semibold mt-1">
                     {rewards.map(r => {
                         const { name, icon } = getRewardInfo(r.rewardTypeId);
-                        return <span key={`${r.rewardTypeId}-${r.amount}`} className="text-stone-300 flex items-center gap-1" title={name}>
+                        return <span key={`${r.rewardTypeId}-${r.amount}`} className="text-foreground flex items-center gap-1" title={name}>
                             {title.toLowerCase().includes(settings.terminology.negativePoint.toLowerCase()) ? '- ' : '+ '}{r.amount} <span className="text-base">{icon}</span>
                         </span>
                     })}
@@ -42,42 +43,38 @@ const QuestDetailDialog: React.FC<QuestDetailDialogProps> = ({ quest, onClose, o
             </div>
         );
     }
-
-    const themeClasses = quest.type === QuestType.Duty
-      ? 'bg-sky-950 border-sky-800'
-      : 'bg-amber-950 border-amber-800';
     
     const todoClass = isTodo ? '!border-purple-500 ring-2 ring-purple-500/50' : '';
     
     return (
-        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-[60]" onClick={onClose}>
-            <div className={`backdrop-blur-sm border rounded-xl shadow-2xl max-w-lg w-full ${themeClasses} ${todoClass}`} onClick={e => e.stopPropagation()}>
-                <div className="p-6 border-b border-white/10">
+        <Dialog open={true} onOpenChange={onClose}>
+            <DialogContent className={`sm:max-w-lg ${todoClass}`}>
+                <DialogHeader>
                      {dialogTitle && (
-                        <p className="text-sm font-bold uppercase tracking-wider text-stone-400 mb-2">{dialogTitle}</p>
+                        <DialogDescription className="text-sm font-bold uppercase tracking-wider !mb-2">{dialogTitle}</DialogDescription>
                     )}
                     <div className="flex items-start gap-4">
                         <div className="text-4xl mt-1">{quest.icon || '📝'}</div>
                         <div>
-                            <h2 className="text-2xl font-medieval text-accent">{quest.title}</h2>
+                            <DialogTitle className="text-2xl text-accent">{quest.title}</DialogTitle>
                             {quest.tags.length > 0 && (
                                 <div className="flex flex-wrap gap-1 mt-2">
                                     {quest.tags.map(tag => (
-                                        <span key={tag} className="text-xs bg-black/20 text-stone-300 px-2 py-0.5 rounded-full">{tag}</span>
+                                        <span key={tag} className="text-xs bg-background/50 text-muted-foreground px-2 py-0.5 rounded-full">{tag}</span>
                                     ))}
                                 </div>
                             )}
                         </div>
                     </div>
-                </div>
+                </DialogHeader>
 
-                <div className="p-6 space-y-4 max-h-[50vh] overflow-y-auto scrollbar-hide">
-                    <p className="text-stone-300 whitespace-pre-wrap">{quest.description || 'No description provided.'}</p>
+                <div className="space-y-4 max-h-[50vh] overflow-y-auto scrollbar-hide pr-2">
+                    <p className="text-foreground whitespace-pre-wrap">{quest.description || 'No description provided.'}</p>
                     
                      { (quest.lateDateTime || quest.lateTime || quest.incompleteDateTime || quest.incompleteTime) && (
-                        <div className="space-y-2 pt-4 border-t border-white/10">
-                            <p className="text-xs font-semibold text-stone-400 uppercase tracking-wider">Deadlines</p>
-                            <div className="text-sm space-y-1 text-stone-200">
+                        <div className="space-y-2 pt-4 border-t border-border">
+                            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Deadlines</p>
+                            <div className="text-sm space-y-1 text-foreground">
                                 {quest.lateDateTime && (
                                     <p><span className="font-semibold text-yellow-400">Becomes Late:</span> {new Date(quest.lateDateTime).toLocaleString()}</p>
                                 )}
@@ -94,15 +91,14 @@ const QuestDetailDialog: React.FC<QuestDetailDialogProps> = ({ quest, onClose, o
                         </div>
                     )}
 
-                    <div className="space-y-3 pt-4 border-t border-white/10">
+                    <div className="space-y-3 pt-4 border-t border-border">
                         {renderRewardList(quest.rewards, settings.terminology.points, 'text-green-400')}
                         {renderRewardList(quest.lateSetbacks, `Late ${settings.terminology.negativePoints}`, 'text-yellow-400')}
                         {renderRewardList(quest.incompleteSetbacks, `Incomplete ${settings.terminology.negativePoints}`, 'text-red-400')}
                     </div>
                 </div>
 
-                <div className="p-4 bg-black/20 rounded-b-xl flex justify-between items-center gap-2 flex-wrap">
-                    <Button variant="secondary" onClick={onClose}>Close</Button>
+                <DialogFooter className="!justify-between items-center gap-2 flex-wrap">
                     <div className="flex items-center gap-4">
                         {onToggleTodo && quest.type === QuestType.Venture && (
                             <ToggleSwitch
@@ -111,15 +107,15 @@ const QuestDetailDialog: React.FC<QuestDetailDialogProps> = ({ quest, onClose, o
                                 label="To-Do"
                             />
                         )}
-                        {onComplete && (
-                            <Button onClick={onComplete} disabled={!isAvailable}>
-                                {isAvailable ? 'Complete' : 'Unavailable'}
-                            </Button>
-                        )}
                     </div>
-                </div>
-            </div>
-        </div>
+                    {onComplete && (
+                        <Button onClick={onComplete} disabled={!isAvailable}>
+                            {isAvailable ? 'Complete' : 'Unavailable'}
+                        </Button>
+                    )}
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
     );
 };
 

@@ -1,11 +1,11 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import Button from '../ui/Button';
-import Input from '../ui/Input';
-import { SparklesIcon, CheckCircleIcon, XCircleIcon } from '../ui/Icons';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { SparklesIcon, CheckCircleIcon, XCircleIcon } from '@/components/ui/icons';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { GenerateContentResponse, Type } from '@google/genai';
 import { QuestType, Terminology } from '../../types';
-import Card from '../ui/Card';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import CreateQuestDialog from '../quests/CreateQuestDialog';
 import EditGameAssetDialog from '../admin/EditGameAssetDialog';
 import EditTrophyDialog from '../settings/EditTrophyDialog';
@@ -185,86 +185,95 @@ const AiStudioPage: React.FC = () => {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
                 {/* Left Column */}
                 <div className="space-y-6">
-                    <Card title="Asset Generator">
-                        <div className="space-y-4">
-                            <div>
-                                <label className="block text-sm font-medium text-stone-300 mb-2">1. Select Asset Type</label>
-                                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                                    {Object.entries(assetTypeConfig).map(([key, config]) => (
-                                        <button
-                                            key={key}
-                                            onClick={() => setAssetType(key as AssetType)}
-                                            className={`p-4 rounded-lg text-center transition-all duration-200 border-2 ${
-                                                assetType === key
-                                                    ? 'bg-emerald-800/60 border-emerald-500 ring-2 ring-emerald-500/50 scale-105'
-                                                    : 'bg-stone-900/50 border-transparent hover:border-emerald-600'
-                                            }`}
-                                        >
-                                            <div className="text-4xl">{config.icon}</div>
-                                            <p className="font-semibold text-sm text-stone-200 mt-2 capitalize">{settings.terminology[config.termKey]}</p>
-                                        </button>
-                                    ))}
+                    <Card>
+                        <CardHeader><CardTitle>Asset Generator</CardTitle></CardHeader>
+                        <CardContent>
+                            <div className="space-y-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-foreground mb-2">1. Select Asset Type</label>
+                                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                                        {Object.entries(assetTypeConfig).map(([key, config]) => (
+                                            <button
+                                                key={key}
+                                                onClick={() => setAssetType(key as AssetType)}
+                                                className={`p-4 rounded-lg text-center transition-all duration-200 border-2 ${
+                                                    assetType === key
+                                                        ? 'bg-primary/20 border-primary ring-2 ring-primary/50 scale-105'
+                                                        : 'bg-background/50 border-transparent hover:border-primary/50'
+                                                }`}
+                                            >
+                                                <div className="text-4xl">{config.icon}</div>
+                                                <p className="font-semibold text-sm text-foreground mt-2 capitalize">{settings.terminology[config.termKey]}</p>
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label htmlFor="ai-prompt" className="block text-sm font-medium text-foreground mb-2">2. Enter Prompt / Theme</label>
+                                    <textarea
+                                        id="ai-prompt"
+                                        rows={4}
+                                        placeholder={`e.g., 'Weekly kitchen chores for kids', 'Magical forest artifacts', 'Sports achievements'`}
+                                        value={prompt}
+                                        onChange={e => setPrompt(e.target.value)}
+                                        className="w-full px-4 py-2 bg-background border border-input rounded-md"
+                                    />
                                 </div>
                             </div>
-
-                            <div>
-                                <label htmlFor="ai-prompt" className="block text-sm font-medium text-stone-300 mb-2">2. Enter Prompt / Theme</label>
-                                <textarea
-                                    id="ai-prompt"
-                                    rows={4}
-                                    placeholder={`e.g., 'Weekly kitchen chores for kids', 'Magical forest artifacts', 'Sports achievements'`}
-                                    value={prompt}
-                                    onChange={e => setPrompt(e.target.value)}
-                                    className="w-full px-4 py-2 bg-stone-700 border border-stone-600 rounded-md"
-                                />
+                            {error && <p className="text-red-400 text-center mt-4">{error}</p>}
+                            <div className="text-right mt-4">
+                                <Button onClick={handleGenerate} disabled={isLoading || !isAiAvailable || !prompt.trim()}>
+                                    {isLoading ? 'Generating...' : 'Generate'}
+                                </Button>
                             </div>
-                        </div>
-                        {error && <p className="text-red-400 text-center mt-4">{error}</p>}
-                        <div className="text-right mt-4">
-                            <Button onClick={handleGenerate} disabled={isLoading || !isAiAvailable || !prompt.trim()}>
-                                {isLoading ? 'Generating...' : 'Generate'}
-                            </Button>
-                        </div>
+                        </CardContent>
                     </Card>
                 </div>
 
                 {/* Right Column */}
                 <div className="space-y-6">
-                    <Card title="Generation Context">
-                        <p className="text-sm text-stone-400 mb-2">Provide some general context about your group or goals. This will be included with every prompt to help the AI generate more relevant content.</p>
-                        <textarea
-                            value={context}
-                            onChange={e => setContext(e.target.value)}
-                            placeholder="e.g., A family with two kids, ages 8 and 12, focusing on household chores and homework."
-                            rows={4}
-                            className="w-full px-4 py-2 bg-stone-700 border border-stone-600 rounded-md"
-                        />
-                        <div className="text-right mt-2">
-                            <Button variant="secondary" onClick={handleSaveContext} className="text-xs py-1 px-3">Save Context</Button>
-                        </div>
-                    </Card>
-                    <Card title="AI Studio Setup">
-                        {!isAiAvailable ? (
-                            <div className="text-amber-300 bg-amber-900/40 p-4 rounded-md border border-amber-700/60">
-                                <p className="font-bold mb-2">AI Features Disabled</p>
-                                <p className="text-sm">The AI Studio is currently disabled in the main application settings. An administrator can enable it from the Settings page.</p>
+                    <Card>
+                        <CardHeader><CardTitle>Generation Context</CardTitle></CardHeader>
+                        <CardContent>
+                            <p className="text-sm text-muted-foreground mb-2">Provide some general context about your group or goals. This will be included with every prompt to help the AI generate more relevant content.</p>
+                            <textarea
+                                value={context}
+                                onChange={e => setContext(e.target.value)}
+                                placeholder="e.g., A family with two kids, ages 8 and 12, focusing on household chores and homework."
+                                rows={4}
+                                className="w-full px-4 py-2 bg-background border border-input rounded-md"
+                            />
+                            <div className="text-right mt-2">
+                                <Button variant="secondary" onClick={handleSaveContext} size="sm">Save Context</Button>
                             </div>
-                        ) : (
-                            <>
-                                <div className="flex items-center gap-4 mb-4">
-                                    <span className="font-semibold text-stone-200">API Key Status:</span>
-                                    {apiStatus === 'testing' && <span className="text-yellow-400">Testing...</span>}
-                                    {apiStatus === 'valid' && <span className="flex items-center gap-2 text-green-400 font-bold"><CheckCircleIcon className="w-5 h-5" /> Connected</span>}
-                                    {apiStatus === 'invalid' && <span className="flex items-center gap-2 text-red-400 font-bold"><XCircleIcon className="w-5 h-5" /> Invalid / Not Found</span>}
-                                    {apiStatus === 'unknown' && <span className="text-stone-400">Unknown</span>}
-                                    <Button variant="secondary" onClick={testApiKey} disabled={apiStatus === 'testing'} className="text-xs py-1 px-3">
-                                        Test API Key
-                                    </Button>
+                        </CardContent>
+                    </Card>
+                    <Card>
+                        <CardHeader><CardTitle>AI Studio Setup</CardTitle></CardHeader>
+                        <CardContent>
+                            {!isAiAvailable ? (
+                                <div className="text-amber-300 bg-amber-900/40 p-4 rounded-md border border-amber-700/60">
+                                    <p className="font-bold mb-2">AI Features Disabled</p>
+                                    <p className="text-sm">The AI Studio is currently disabled in the main application settings. An administrator can enable it from the Settings page.</p>
                                 </div>
-                                {apiStatus === 'invalid' && apiError && <p className="text-red-400 text-sm bg-red-900/30 p-3 rounded-md">{apiError}</p>}
-                                {(apiStatus === 'unknown' || apiStatus === 'invalid') && <ApiInstructions />}
-                            </>
-                        )}
+                            ) : (
+                                <>
+                                    <div className="flex items-center gap-4 mb-4">
+                                        <span className="font-semibold text-foreground">API Key Status:</span>
+                                        {apiStatus === 'testing' && <span className="text-yellow-400">Testing...</span>}
+                                        {apiStatus === 'valid' && <span className="flex items-center gap-2 text-green-400 font-bold"><CheckCircleIcon className="w-5 h-5" /> Connected</span>}
+                                        {apiStatus === 'invalid' && <span className="flex items-center gap-2 text-red-400 font-bold"><XCircleIcon className="w-5 h-5" /> Invalid / Not Found</span>}
+                                        {apiStatus === 'unknown' && <span className="text-muted-foreground">Unknown</span>}
+                                        <Button variant="secondary" onClick={testApiKey} disabled={apiStatus === 'testing'} size="sm">
+                                            Test API Key
+                                        </Button>
+                                    </div>
+                                    {apiStatus === 'invalid' && apiError && <p className="text-red-400 text-sm bg-red-900/30 p-3 rounded-md">{apiError}</p>}
+                                    {(apiStatus === 'unknown' || apiStatus === 'invalid') && <ApiInstructions />}
+                                </>
+                            )}
+                        </CardContent>
                     </Card>
                 </div>
             </div>

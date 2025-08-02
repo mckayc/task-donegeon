@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import Card from '../ui/Card';
-import Button from '../ui/Button';
+import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import CreateQuestDialog from '../quests/CreateQuestDialog';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { Role, QuestType, Quest, QuestAvailability } from '../../types';
@@ -187,12 +187,13 @@ const QuestItem: React.FC<{ quest: Quest; now: Date; onSelect: (quest: Quest) =>
 };
 
 const FilterButton: React.FC<{ type: 'all' | QuestType, children: React.ReactNode, activeFilter: 'all' | QuestType, setFilter: (filter: 'all' | QuestType) => void }> = ({ type, children, activeFilter, setFilter }) => (
-    <button
+    <Button
         onClick={() => setFilter(type)}
-        className={`w-full p-2 rounded-md font-semibold text-sm transition-colors ${activeFilter === type ? 'btn-primary' : 'text-stone-300 hover:bg-stone-700'}`}
+        variant={activeFilter === type ? 'default' : 'ghost'}
+        className="w-full text-sm font-semibold"
     >
         {children}
-    </button>
+    </Button>
 );
 
 const QuestsPage: React.FC = () => {
@@ -241,11 +242,13 @@ const QuestsPage: React.FC = () => {
     return (
         <div className="space-y-6">
             <Card>
-                <div className="grid grid-cols-3 gap-2 max-w-sm mx-auto p-1 bg-stone-900/50 rounded-lg">
-                    <FilterButton type="all" activeFilter={filter} setFilter={setFilter}>All Quests</FilterButton>
-                    <FilterButton type={QuestType.Duty} activeFilter={filter} setFilter={setFilter}>{settings.terminology.recurringTasks}</FilterButton>
-                    <FilterButton type={QuestType.Venture} activeFilter={filter} setFilter={setFilter}>{settings.terminology.singleTasks}</FilterButton>
-                </div>
+                <CardContent className="p-2">
+                    <div className="grid grid-cols-3 gap-2 max-w-sm mx-auto p-1 bg-background rounded-lg">
+                        <FilterButton type="all" activeFilter={filter} setFilter={setFilter}>All Quests</FilterButton>
+                        <FilterButton type={QuestType.Duty} activeFilter={filter} setFilter={setFilter}>{settings.terminology.recurringTasks}</FilterButton>
+                        <FilterButton type={QuestType.Venture} activeFilter={filter} setFilter={setFilter}>{settings.terminology.singleTasks}</FilterButton>
+                    </div>
+                </CardContent>
             </Card>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

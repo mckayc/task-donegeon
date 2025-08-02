@@ -1,13 +1,14 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { AppSettings, ThemeDefinition, SidebarConfigItem, Page, SidebarLink } from '../../types';
-import Button from '../ui/Button';
-import Input from '../ui/Input';
-import Card from '../ui/Card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import ToggleSwitch from '../ui/ToggleSwitch';
 import EmojiPicker from '../ui/EmojiPicker';
-import { GrabHandleIcon, ArrowLeftIcon, ArrowRightIcon } from '../ui/Icons';
+import { GrabHandleIcon, ArrowLeftIcon, ArrowRightIcon } from '@/components/ui/icons';
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
 
 type SidebarKey = keyof AppSettings['sidebars'];
 
@@ -116,7 +117,7 @@ const AppearancePage: React.FC = () => {
                 {items.map((item, index) => (
                      <div
                         key={item.id}
-                        className="flex items-center gap-2 p-2 rounded-md border border-stone-700 bg-stone-800/50"
+                        className="flex items-center gap-2 p-2 rounded-md border bg-background"
                         draggable={item.type === 'link'}
                         onDragStart={item.type === 'link' ? (e) => handleDragStart(e, index) : undefined}
                         onDragEnter={item.type === 'link' ? (e) => handleDragEnter(e, index) : undefined}
@@ -125,18 +126,18 @@ const AppearancePage: React.FC = () => {
                         onDrop={item.type === 'link' ? handleDrop : undefined}
                         style={{ marginLeft: `${item.level * 2}rem`}}
                      >
-                        {item.type === 'link' && <GrabHandleIcon className="w-5 h-5 text-stone-500 cursor-grab" />}
+                        {item.type === 'link' && <GrabHandleIcon className="w-5 h-5 text-muted-foreground cursor-grab" />}
                         {item.type === 'link' ? (
                             <>
                                 <div className="relative">
-                                    <button type="button" onClick={() => setPickerOpenFor(pickerOpenFor === index ? null : index)} className="w-12 h-10 text-xl p-1 rounded-md bg-stone-700 hover:bg-stone-600 flex items-center justify-center">
+                                    <button type="button" onClick={() => setPickerOpenFor(pickerOpenFor === index ? null : index)} className="w-12 h-10 text-xl p-1 rounded-md bg-background border flex items-center justify-center">
                                         {item.emoji}
                                     </button>
                                     {pickerOpenFor === index && <EmojiPicker onSelect={(emoji) => handleSidebarItemChange(index, 'emoji', emoji)} onClose={() => setPickerOpenFor(null)} />}
                                 </div>
-                                <span className="font-semibold text-stone-200 flex-grow">{item.termKey ? formState.terminology[item.termKey] : item.id}</span>
-                                <button type="button" onClick={() => handleOutdent(index)} disabled={item.level === 0} className="p-1 rounded-md hover:bg-stone-700 disabled:opacity-30 disabled:cursor-not-allowed"><ArrowLeftIcon className="w-5 h-5" /></button>
-                                <button type="button" onClick={() => handleIndent(index)} disabled={index === 0} className="p-1 rounded-md hover:bg-stone-700 disabled:opacity-30 disabled:cursor-not-allowed"><ArrowRightIcon className="w-5 h-5" /></button>
+                                <span className="font-semibold text-foreground flex-grow">{item.termKey ? formState.terminology[item.termKey] : item.id}</span>
+                                <Button type="button" variant="ghost" size="icon" onClick={() => handleOutdent(index)} disabled={item.level === 0} className="disabled:opacity-30 disabled:cursor-not-allowed"><ArrowLeftIcon className="w-5 h-5" /></Button>
+                                <Button type="button" variant="ghost" size="icon" onClick={() => handleIndent(index)} disabled={index === 0} className="disabled:opacity-30 disabled:cursor-not-allowed"><ArrowRightIcon className="w-5 h-5" /></Button>
                                 <ToggleSwitch enabled={item.isVisible} setEnabled={(val) => handleSidebarItemChange(index, 'isVisible', val)} label="" />
                             </>
                         ) : (
@@ -156,42 +157,43 @@ const AppearancePage: React.FC = () => {
                 </div>
             </div>
 
-            <Card title="General Appearance">
-                <div className="space-y-6">
-                    <Input label="App Name" value={formState.terminology.appName} onChange={e => setFormState(p => ({...p, terminology: { ...p.terminology, appName: e.target.value}}))} />
+            <Card>
+                <CardHeader><CardTitle>General Appearance</CardTitle></CardHeader>
+                <CardContent className="space-y-6">
+                    <div className="space-y-2">
+                        <Label htmlFor="app-name">App Name</Label>
+                        <Input id="app-name" value={formState.terminology.appName} onChange={e => setFormState(p => ({...p, terminology: { ...p.terminology, appName: e.target.value}}))} />
+                    </div>
                     <div>
-                        <label className="block text-sm font-medium mb-2" style={{ color: 'hsl(var(--color-text-secondary))' }}>Default Theme</label>
+                        <Label className="block text-sm font-medium mb-2">Default Theme</Label>
                         <div className="flex flex-wrap gap-4">
                             {themes.map(theme => {
                                 const themeStyle = {
                                     fontFamily: theme.styles['--font-display'],
-                                    backgroundColor: `hsl(${theme.styles['--color-primary-hue']} ${theme.styles['--color-primary-saturation']} ${theme.styles['--color-primary-lightness']})`
+                                    backgroundColor: `hsl(${theme.styles['--color-bg-primary']})`,
+                                    color: `hsl(${theme.styles['--color-text-primary']})`,
                                 };
                                 return (
-                                <button
-                                    key={theme.id}
-                                    type="button"
-                                    onClick={() => setFormState(p => ({...p, theme: theme.id}))}
-                                    className={`capitalize w-24 h-16 rounded-lg font-bold text-white flex items-center justify-center transition-all ${formState.theme === theme.id ? 'ring-2 ring-offset-2 ring-offset-stone-800 ring-white' : ''}`}
-                                    style={themeStyle}
-                                >
-                                    {theme.name}
-                                </button>
-                                )
+                                    <button
+                                        key={theme.id}
+                                        onClick={() => setFormState(p => ({...p, theme: theme.id}))}
+                                        className={`w-24 h-24 rounded-lg flex flex-col justify-between p-2 text-left transition-all duration-200 border-4 ${formState.theme === theme.id ? 'border-white shadow-lg' : 'border-transparent opacity-70 hover:opacity-100'}`}
+                                        style={themeStyle}
+                                    >
+                                        <h4 className="font-bold text-sm capitalize truncate">{theme.name}</h4>
+                                    </button>
+                                );
                             })}
                         </div>
                     </div>
-                </div>
+                </CardContent>
             </Card>
 
             <Card>
-                 <div className="border-b border-stone-700 mb-6">
-                    <nav className="-mb-px flex space-x-6">
-                        <button onClick={() => setActiveTab('main')} className={`whitespace-nowrap pb-4 px-1 border-b-2 font-medium text-sm transition-colors ${activeTab === 'main' ? 'border-emerald-500 text-emerald-400' : 'border-transparent text-stone-400 hover:text-stone-200'}`}>Main Sidebar</button>
-                    </nav>
-                </div>
-                <p className="text-stone-400 text-sm mb-4">Drag and drop to reorder links. Use arrows to create nested groups.</p>
-                {renderSidebarEditor()}
+                <CardHeader><CardTitle>Sidebar Layout</CardTitle></CardHeader>
+                <CardContent>
+                    {renderSidebarEditor()}
+                </CardContent>
             </Card>
         </div>
     );

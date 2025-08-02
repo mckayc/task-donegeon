@@ -1,7 +1,11 @@
 import React, { useState } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { User, RewardItem, RewardCategory, AdminAdjustmentType, Trophy } from '../../types';
-import Button from '../ui/Button';
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
 import RewardInputGroup from '../forms/RewardInputGroup';
 
 interface ManualAdjustmentDialogProps {
@@ -78,33 +82,36 @@ const ManualAdjustmentDialog: React.FC<ManualAdjustmentDialogProps> = ({ user, o
   const userGuilds = guilds.filter(g => g.memberIds.includes(user.id));
 
   return (
-    <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
-      <div className="bg-stone-800 border border-stone-700 rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] flex flex-col">
-        <div className="p-8 border-b border-stone-700/60">
-            <h2 className="text-3xl font-medieval text-emerald-400">Manual Adjustment for {user.gameName}</h2>
-        </div>
+    <Dialog open={true} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-2xl max-h-[90vh] flex flex-col">
+        <DialogHeader>
+            <DialogTitle>Manual Adjustment for {user.gameName}</DialogTitle>
+        </DialogHeader>
         
-        <form id="adjustment-form" onSubmit={handleSubmit} className="flex-1 space-y-4 p-8 overflow-y-auto scrollbar-hide">
-            <div>
-              <label htmlFor="reason" className="block text-sm font-medium text-stone-300 mb-1">Reason / Note for User</label>
-              <textarea id="reason" name="reason" rows={3} value={reason} onChange={(e) => setReason(e.target.value)} className="w-full px-4 py-2 bg-stone-700 border border-stone-600 rounded-md" required />
+        <form id="adjustment-form" onSubmit={handleSubmit} className="flex-1 space-y-4 py-4 overflow-y-auto pr-6">
+            <div className="space-y-2">
+              <Label htmlFor="reason">Reason / Note for User</Label>
+              <Textarea id="reason" name="reason" rows={3} value={reason} onChange={(e) => setReason(e.target.value)} required />
             </div>
 
-            <div>
-                <label htmlFor="guildId" className="block text-sm font-medium text-stone-300 mb-1">Scope</label>
-                <select id="guildId" name="guildId" value={guildId} onChange={(e) => setGuildId(e.target.value)} className="w-full px-4 py-2 bg-stone-700 border border-stone-600 rounded-md">
-                    <option value="">Personal</option>
-                    {userGuilds.map(g => <option key={g.id} value={g.id}>{g.name}</option>)}
-                </select>
+            <div className="space-y-2">
+                <Label htmlFor="guildId">Scope</Label>
+                 <Select onValueChange={setGuildId} defaultValue={guildId}>
+                    <SelectTrigger id="guildId"><SelectValue placeholder="Personal" /></SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="">Personal</SelectItem>
+                        {userGuilds.map(g => <SelectItem key={g.id} value={g.id}>{g.name}</SelectItem>)}
+                    </SelectContent>
+                </Select>
             </div>
 
-            <div>
-                <label className="block text-sm font-medium text-stone-300 mb-1">Action Type</label>
-                <div className="flex space-x-4">
+            <div className="space-y-2">
+                <Label>Action Type</Label>
+                <div className="flex space-x-2">
                     {Object.values(AdminAdjustmentType).map(type => (
-                        <button type="button" key={type} onClick={() => setActionType(type)} className={`px-4 py-2 rounded-md font-semibold text-sm transition-colors ${actionType === type ? 'bg-emerald-600 text-white' : 'bg-stone-700 hover:bg-stone-600'}`}>
+                        <Button type="button" key={type} onClick={() => setActionType(type)} variant={actionType === type ? 'default' : 'secondary'}>
                             {type}
-                        </button>
+                        </Button>
                     ))}
                 </div>
             </div>
@@ -116,26 +123,26 @@ const ManualAdjustmentDialog: React.FC<ManualAdjustmentDialogProps> = ({ user, o
                 <RewardInputGroup category='setbacks' items={setbacks} onChange={handleRewardChange(setbacks, setSetbacks)} onAdd={handleAddRewardForCategory(setSetbacks)} onRemove={handleRemoveReward(setbacks, setSetbacks)} />
             )}
             {actionType === AdminAdjustmentType.Trophy && (
-                <div>
-                     <label htmlFor="trophy" className="block text-sm font-medium text-stone-300 mb-1">Trophy to Award</label>
-                    <select id="trophy" value={trophyId} onChange={(e) => setTrophyId(e.target.value)} className="w-full px-4 py-2 bg-stone-700 border border-stone-600 rounded-md" required>
-                        <option value="" disabled>Select a trophy...</option>
-                        {availableTrophies.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
-                    </select>
-                    {availableTrophies.length === 0 && <p className="text-xs text-stone-400 mt-1">No more manual trophies available for this user in this scope.</p>}
+                <div className="space-y-2">
+                     <Label htmlFor="trophy">Trophy to Award</Label>
+                     <Select onValueChange={setTrophyId} defaultValue={trophyId}>
+                        <SelectTrigger id="trophy"><SelectValue placeholder="Select a trophy..." /></SelectTrigger>
+                        <SelectContent>
+                           {availableTrophies.map(t => <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>)}
+                        </SelectContent>
+                    </Select>
+                    {availableTrophies.length === 0 && <p className="text-xs text-muted-foreground mt-1">No more manual trophies available for this user in this scope.</p>}
                 </div>
             )}
+             {error && <p className="text-red-500 text-center text-sm">{error}</p>}
         </form>
         
-        <div className="p-6 border-t border-stone-700/60">
-            {error && <p className="text-red-400 text-center mb-4">{error}</p>}
-            <div className="flex justify-end space-x-4">
-                <Button type="button" variant="secondary" onClick={onClose}>Cancel</Button>
-                <Button type="submit" form="adjustment-form">Apply Adjustment</Button>
-            </div>
-        </div>
-      </div>
-    </div>
+        <DialogFooter>
+            <Button type="button" variant="secondary" onClick={onClose}>Cancel</Button>
+            <Button type="submit" form="adjustment-form">Apply Adjustment</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 };
 

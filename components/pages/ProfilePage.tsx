@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
-import Button from '../ui/Button';
-import Card from '../ui/Card';
-import Input from '../ui/Input';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Role, User } from '../../types';
 import UserFormFields from '../users/UserFormFields';
 
@@ -11,7 +12,7 @@ const ProfilePage: React.FC = () => {
     const { updateUser, addNotification } = useAppDispatch();
     
     if (!currentUser) {
-        return <Card><p>User not found. Please log in again.</p></Card>;
+        return <Card><CardContent><p>User not found. Please log in again.</p></CardContent></Card>;
     }
 
     const [formData, setFormData] = useState({
@@ -103,65 +104,78 @@ const ProfilePage: React.FC = () => {
 
     return (
         <div>
-            <Card>
-                <form onSubmit={handleSave} className="space-y-8 max-w-lg mx-auto">
+            <Card className="max-w-lg mx-auto">
+              <CardHeader>
+                <CardTitle>Edit Your Profile</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <form onSubmit={handleSave} className="space-y-8">
                     <div>
-                        <h3 className="text-xl font-bold text-stone-200 mb-4">Account Details</h3>
+                        <h3 className="text-xl font-bold text-foreground mb-4">Account Details</h3>
                         <div className="space-y-4">
                             <UserFormFields formData={formData} handleChange={handleChange} isEditMode={true} />
                         </div>
                     </div>
                     
-                    <div className="pt-4 border-t border-stone-700/60">
-                        <h3 className="text-xl font-bold text-stone-200 mb-4">Security</h3>
+                    <div className="pt-4 border-t border-border">
+                        <h3 className="text-xl font-bold text-foreground mb-4">Security</h3>
                          <div className="space-y-4">
-                             <Input 
-                                label="New PIN (4-10 digits, optional)"
-                                id="pin"
-                                name="pin"
-                                type="password"
-                                value={formData.pin}
-                                onChange={handleChange}
-                            />
-                            <Input 
-                                label="Confirm New PIN"
-                                id="confirmPin"
-                                name="confirmPin"
-                                type="password"
-                                value={formData.confirmPin}
-                                onChange={handleChange}
-                                disabled={!formData.pin || formData.pin === currentUser.pin}
-                            />
+                             <div className="space-y-2">
+                                <Label htmlFor="pin">New PIN (4-10 digits, optional)</Label>
+                                <Input 
+                                    id="pin"
+                                    name="pin"
+                                    type="password"
+                                    value={formData.pin}
+                                    onChange={handleChange}
+                                />
+                             </div>
+                             <div className="space-y-2">
+                                <Label htmlFor="confirmPin">Confirm New PIN</Label>
+                                <Input 
+                                    id="confirmPin"
+                                    name="confirmPin"
+                                    type="password"
+                                    value={formData.confirmPin}
+                                    onChange={handleChange}
+                                    disabled={!formData.pin || formData.pin === currentUser.pin}
+                                />
+                            </div>
                             {canEditPassword && (
                                 <>
-                                    <div className="pt-4 border-t border-stone-700/60"></div>
-                                    <Input 
-                                        label="New Password (optional, min 6 char)"
-                                        id="password"
-                                        name="password"
-                                        type="password"
-                                        value={formData.password}
-                                        onChange={handleChange}
-                                    />
-                                    <Input 
-                                        label="Confirm New Password"
-                                        id="confirmPassword"
-                                        name="confirmPassword"
-                                        type="password"
-                                        value={formData.confirmPassword}
-                                        onChange={handleChange}
-                                        disabled={!formData.password}
-                                    />
+                                    <div className="pt-4 border-t border-border"></div>
+                                    <div className="space-y-2">
+                                      <Label htmlFor="password">New Password (optional, min 6 char)</Label>
+                                      <Input 
+                                          id="password"
+                                          name="password"
+                                          type="password"
+                                          value={formData.password}
+                                          onChange={handleChange}
+                                      />
+                                    </div>
+                                    <div className="space-y-2">
+                                      <Label htmlFor="confirmPassword">Confirm New Password</Label>
+                                      <Input 
+                                          id="confirmPassword"
+                                          name="confirmPassword"
+                                          type="password"
+                                          value={formData.confirmPassword}
+                                          onChange={handleChange}
+                                          disabled={!formData.password}
+                                      />
+                                    </div>
                                 </>
                             )}
                         </div>
                     </div>
 
-                    {error && <p className="text-red-400 text-center">{error}</p>}
+                    {error && <p className="text-red-500 text-center">{error}</p>}
                     <div className="pt-4 text-right">
                         <Button type="submit">Save Changes</Button>
                     </div>
                 </form>
+              </CardContent>
             </Card>
         </div>
     );

@@ -1,10 +1,10 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import Button from '../../ui/Button';
-import Card from '../../ui/Card';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
 import { libraryPacks } from '../../../data/assetLibrary';
 import { LibraryPack, BlueprintAssets, TrophyRequirementType, QuestGroup, Quest, GameAsset, Market, Trophy, RewardTypeDefinition, QuestType, User, ShareableAssetType } from '../../../types';
 import { useAppState, useAppDispatch } from '../../../context/AppContext';
-import Input from '../../ui/Input';
+import { Input } from '@/components/ui/input';
 import CreateQuestDialog from '../../quests/CreateQuestDialog';
 import EditGameAssetDialog from '../../admin/EditGameAssetDialog';
 import EditTrophyDialog from '../../settings/EditTrophyDialog';
@@ -26,14 +26,14 @@ const AssetPreview: React.FC<{ assets: Partial<BlueprintAssets> }> = ({ assets }
     ].slice(0, 3);
 
     if (assetList.length === 0) {
-        return <div className="text-xs text-stone-500 italic">No preview available.</div>;
+        return <div className="text-xs text-muted-foreground italic">No preview available.</div>;
     }
 
     return (
-        <div className="space-y-1 mt-3 pt-3 border-t border-stone-700/60">
-            <p className="text-xs font-semibold text-stone-400">Contains:</p>
+        <div className="space-y-1 mt-3 pt-3 border-t border-border">
+            <p className="text-xs font-semibold text-muted-foreground">Contains:</p>
             {assetList.map((asset, index) => (
-                <div key={index} className="flex items-center gap-2 text-sm text-stone-300">
+                <div key={index} className="flex items-center gap-2 text-sm text-foreground">
                     <span className="text-lg">{'icon' in asset ? asset.icon : '❔'}</span>
                     <span className="truncate">{'title' in asset ? asset.title : asset.name}</span>
                 </div>
@@ -45,13 +45,13 @@ const AssetPreview: React.FC<{ assets: Partial<BlueprintAssets> }> = ({ assets }
 const PackCard: React.FC<{ pack: LibraryPack; onSelect: () => void; }> = ({ pack, onSelect }) => {
     return (
         <button onClick={onSelect} className="text-left h-full">
-            <Card className={`h-full hover:bg-stone-700/50 hover:border-accent transition-colors duration-200 border-2 ${pack.color || 'border-stone-700/60'}`}>
+            <Card className={`h-full p-4 hover:bg-accent/10 hover:border-accent transition-colors duration-200 border-2 ${pack.color || 'border-border'}`}>
                 <div className="flex items-center gap-2">
                     <span className="text-2xl">{pack.emoji}</span>
-                    <span className={`text-sm font-bold uppercase ${pack.color ? '' : 'text-emerald-400'}`}>{pack.type}</span>
+                    <span className={`text-sm font-bold uppercase ${pack.color ? '' : 'text-primary'}`}>{pack.type}</span>
                 </div>
-                <h4 className="text-lg font-bold text-stone-100 mt-2">{pack.title}</h4>
-                <p className="text-sm text-stone-400 mt-2">{pack.description}</p>
+                <h4 className="text-lg font-bold text-foreground mt-2">{pack.title}</h4>
+                <p className="text-sm text-muted-foreground mt-2">{pack.description}</p>
                 <AssetPreview assets={pack.assets} />
             </Card>
         </button>
@@ -275,67 +275,69 @@ const PackDetailView: React.FC<{ pack: LibraryPack; onBack: () => void; }> = ({ 
     return (
         <>
             <Card>
-                <div className="flex justify-between items-start mb-6">
-                    <div>
-                        <Button variant="secondary" size="sm" onClick={onBack}>&larr; Back to Library</Button>
-                        <div className="flex items-center gap-4 mt-4">
-                            <span className="text-5xl">{pack.emoji}</span>
-                            <div>
-                                <h2 className="text-3xl font-medieval text-accent">{pack.title}</h2>
-                                <p className="text-stone-400">{pack.description}</p>
+                <CardContent className="p-6">
+                    <div className="flex justify-between items-start mb-6">
+                        <div>
+                            <Button variant="secondary" size="sm" onClick={onBack}>&larr; Back to Library</Button>
+                            <div className="flex items-center gap-4 mt-4">
+                                <span className="text-5xl">{pack.emoji}</span>
+                                <div>
+                                    <h2 className="text-3xl font-display text-accent">{pack.title}</h2>
+                                    <p className="text-muted-foreground">{pack.description}</p>
+                                </div>
                             </div>
                         </div>
+                        <Button onClick={handleInstall} disabled={selectedIds.length === 0}>Install {selectedIds.length} Selected</Button>
                     </div>
-                    <Button onClick={handleInstall} disabled={selectedIds.length === 0}>Install {selectedIds.length} Selected</Button>
-                </div>
 
-                <div className="space-y-6 max-h-[60vh] overflow-y-auto pr-4 scrollbar-hide">
-                    {(livePackAssets.quests || []).length > 0 && (
-                        <div className="p-4 bg-stone-900/40 rounded-lg border border-stone-700/60">
-                            <UserMultiSelect
-                                allUsers={users}
-                                selectedUserIds={userIdsForImport}
-                                onSelectionChange={setUserIdsForImport}
-                                label="Assign Imported Quests to Users"
-                            />
-                             <p className="text-xs text-stone-400 mt-2">By default, all quests from this pack will be assigned to the selected users.</p>
-                        </div>
-                    )}
-
-                    <div className="flex justify-between items-center mb-2 sticky top-0 bg-stone-800 py-2">
-                        <h4 className="font-bold text-stone-200">Pack Contents</h4>
-                        <Button variant="secondary" onClick={handleSelectAll} className="text-xs py-1 px-2">
-                            {selectedIds.length === allAssets.length ? 'Deselect All' : 'Select All'}
-                        </Button>
-                    </div>
-                    {Object.entries(groupedAssets).map(([type, assets]) => (
-                        <div key={type}>
-                            <h5 className="font-bold text-lg text-stone-300 capitalize mb-2">{typeTitles[type] || type}</h5>
-                            <div className="space-y-2">
-                                {assets.map(asset => (
-                                    <div key={asset.id} className="flex items-start p-3 rounded-md has-[:checked]:bg-stone-700/60 has-[:checked]:border-stone-600/80 border border-transparent transition-colors">
-                                        <input
-                                            type="checkbox"
-                                            id={`asset-${asset.id}`}
-                                            checked={selectedIds.includes(asset.id)}
-                                            onChange={() => handleToggle(asset.id)}
-                                            className="h-5 w-5 rounded text-emerald-600 bg-stone-700 border-stone-500 focus:ring-emerald-500 mt-1 flex-shrink-0"
-                                        />
-                                        <label htmlFor={`asset-${asset.id}`} className="ml-3 flex-grow">
-                                            <div className="font-semibold text-stone-200 flex items-center gap-2">
-                                                <span className="text-xl">{asset.icon}</span>
-                                                <button onClick={() => handleEditAsset(asset)} className="hover:underline hover:text-accent transition-colors text-left">
-                                                    {asset.name}
-                                                </button>
-                                            </div>
-                                            <p className="text-sm text-stone-400 mt-1">{asset.description}</p>
-                                        </label>
-                                    </div>
-                                ))}
+                    <div className="space-y-6 max-h-[60vh] overflow-y-auto pr-4 scrollbar-hide">
+                        {(livePackAssets.quests || []).length > 0 && (
+                            <div className="p-4 bg-background rounded-lg border">
+                                <UserMultiSelect
+                                    allUsers={users}
+                                    selectedUserIds={userIdsForImport}
+                                    onSelectionChange={setUserIdsForImport}
+                                    label="Assign Imported Quests to Users"
+                                />
+                                <p className="text-xs text-muted-foreground mt-2">By default, all quests from this pack will be assigned to the selected users.</p>
                             </div>
+                        )}
+
+                        <div className="flex justify-between items-center mb-2 sticky top-0 bg-card py-2">
+                            <h4 className="font-bold text-foreground">Pack Contents</h4>
+                            <Button variant="outline" size="sm" onClick={handleSelectAll}>
+                                {selectedIds.length === allAssets.length ? 'Deselect All' : 'Select All'}
+                            </Button>
                         </div>
-                    ))}
-                </div>
+                        {Object.entries(groupedAssets).map(([type, assets]) => (
+                            <div key={type}>
+                                <h5 className="font-bold text-lg text-foreground capitalize mb-2">{typeTitles[type] || type}</h5>
+                                <div className="space-y-2">
+                                    {assets.map(asset => (
+                                        <div key={asset.id} className="flex items-start p-3 rounded-md has-[:checked]:bg-accent/10 has-[:checked]:border-accent/20 border border-transparent transition-colors">
+                                            <input
+                                                type="checkbox"
+                                                id={`asset-${asset.id}`}
+                                                checked={selectedIds.includes(asset.id)}
+                                                onChange={() => handleToggle(asset.id)}
+                                                className="h-5 w-5 rounded text-primary bg-background border-input focus:ring-ring mt-1 flex-shrink-0"
+                                            />
+                                            <label htmlFor={`asset-${asset.id}`} className="ml-3 flex-grow">
+                                                <div className="font-semibold text-foreground flex items-center gap-2">
+                                                    <span className="text-xl">{asset.icon}</span>
+                                                    <button onClick={() => handleEditAsset(asset)} className="hover:underline hover:text-accent transition-colors text-left">
+                                                        {asset.name}
+                                                    </button>
+                                                </div>
+                                                <p className="text-sm text-muted-foreground mt-1">{asset.description}</p>
+                                            </label>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </CardContent>
             </Card>
 
             {assetToEdit && (
@@ -402,29 +404,31 @@ const AssetLibraryPage: React.FC = () => {
     return (
         <div className="space-y-6">
             <Card>
-                <div className="flex justify-between items-center mb-6 flex-wrap gap-4">
-                     <div className="flex-grow max-w-sm">
-                        <Input placeholder="Search packs..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
-                     </div>
-                    <div className="flex space-x-2 p-1 bg-stone-900/50 rounded-lg overflow-x-auto">
-                        {packTypes.map(type => (
-                             <button
-                                key={type}
-                                onClick={() => setActiveFilter(type)}
-                                className={`px-3 py-1 rounded-md font-semibold text-sm transition-colors whitespace-nowrap ${
-                                    activeFilter === type ? 'btn-primary' : 'text-stone-300 hover:bg-stone-700'
-                                }`}
-                            >
-                                {type}
-                            </button>
+                <CardContent className="p-6">
+                    <div className="flex justify-between items-center mb-6 flex-wrap gap-4">
+                        <div className="flex-grow max-w-sm">
+                            <Input placeholder="Search packs..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
+                        </div>
+                        <div className="flex space-x-2 p-1 bg-background rounded-lg overflow-x-auto">
+                            {packTypes.map(type => (
+                                <button
+                                    key={type}
+                                    onClick={() => setActiveFilter(type)}
+                                    className={`px-3 py-1 rounded-md font-semibold text-sm transition-colors whitespace-nowrap ${
+                                        activeFilter === type ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-accent'
+                                    }`}
+                                >
+                                    {type}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {filteredPacks.map(pack => (
+                            <PackCard key={pack.id} pack={pack} onSelect={() => setSelectedPack(pack)} />
                         ))}
                     </div>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {filteredPacks.map(pack => (
-                        <PackCard key={pack.id} pack={pack} onSelect={() => setSelectedPack(pack)} />
-                    ))}
-                </div>
+                </CardContent>
             </Card>
         </div>
     );

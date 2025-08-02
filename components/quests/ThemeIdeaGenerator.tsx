@@ -1,8 +1,8 @@
-
 import React, { useState } from 'react';
 import { GenerateContentResponse, Type } from "@google/genai";
-import Button from '../ui/Button';
-import Input from '../ui/Input';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { SparklesIcon } from '../ui/Icons';
 import { useAppState } from '../../context/AppContext';
 
@@ -113,15 +113,17 @@ const ThemeIdeaGenerator: React.FC<ThemeIdeaGeneratorProps> = ({ onUseIdea, onCl
                 </div>
                 <div className="flex-1 space-y-4 p-8 overflow-y-auto scrollbar-hide">
                     <div className="flex gap-4">
-                        <Input
-                            label="Theme Concept"
-                            placeholder="e.g., 'Cyberpunk', 'Fairy Forest', 'Steampunk'"
-                            value={prompt}
-                            onChange={e => setPrompt(e.target.value)}
-                            onKeyDown={e => e.key === 'Enter' && handleGenerate()}
-                            className="flex-grow"
-                            disabled={isLoading}
-                        />
+                        <div className="flex-grow space-y-2">
+                            <Label htmlFor="theme-concept">Theme Concept</Label>
+                            <Input
+                                id="theme-concept"
+                                placeholder="e.g., 'Cyberpunk', 'Fairy Forest', 'Steampunk'"
+                                value={prompt}
+                                onChange={e => setPrompt(e.target.value)}
+                                onKeyDown={e => e.key === 'Enter' && handleGenerate()}
+                                disabled={isLoading}
+                            />
+                        </div>
                         <Button onClick={handleGenerate} disabled={isLoading || !prompt.trim()} className="self-end">
                             {isLoading ? 'Generating...' : 'Generate'}
                         </Button>

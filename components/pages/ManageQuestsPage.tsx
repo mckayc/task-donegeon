@@ -1,18 +1,18 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { Quest, QuestType, QuestGroup } from '../../types';
-import { Button } from '@/components/ui/button';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/Button';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Checkbox } from "@/components/ui/checkbox"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/Select"
+import { Checkbox } from "@/components/ui/Checkbox"
 import CreateQuestDialog from '../quests/CreateQuestDialog';
 import ConfirmDialog from '../ui/ConfirmDialog';
 import QuestIdeaGenerator from '../quests/QuestIdeaGenerator';
 import { QuestsIcon } from '@/components/ui/icons';
 import { EllipsisVertical } from 'lucide-react';
 import EmptyState from '../ui/EmptyState';
-import { Input } from '@/components/ui/input';
+import { Input } from '@/components/ui/Input';
 import BulkEditQuestsDialog from '../quests/BulkEditQuestsDialog';
 
 const ManageQuestsPage: React.FC = () => {

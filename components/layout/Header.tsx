@@ -13,7 +13,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/ui/Button';
 
 const Clock: React.FC = () => {
     const [time, setTime] = useState(new Date());

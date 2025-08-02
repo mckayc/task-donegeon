@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import ConfirmDialog from '../../ui/confirm-dialog';
 import EditGameAssetDialog from '../../admin/EditGameAssetDialog';
-import AiImagePromptHelper from '../../sharing/ai-image-prompt-helper';
+import AiImagePromptHelper from '@/components/sharing/ai-image-prompt-helper';
 import UploadWithCategoryDialog from '../../admin/UploadWithCategoryDialog';
 import ImagePackImporterDialog from '../../admin/ImagePackImporterDialog';
 
@@ -145,7 +145,7 @@ const AssetManagerPage: React.FC = () => {
                 <CardHeader><CardTitle>Import Image Packs from Library</CardTitle></CardHeader>
                 <CardContent>
                     <p className="text-sm text-muted-foreground mb-4">
-                        Quickly add curated sets of images to your library from the project's GitHub repository. This is great for getting started or adding new themes.
+                        Quickly add curated sets of images to your library from the project's central repository. This is great for getting started or adding new themes.
                     </p>
                     <Button onClick={() => setIsImporterOpen(true)}>
                         Import from Library

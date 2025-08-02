@@ -4,9 +4,9 @@ import { QuestGroup } from '../../types';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { EllipsisVerticalIcon, QuestsIcon } from '@/components/ui/icons';
-import EmptyState from '../ui/EmptyState';
+import EmptyState from '@/components/ui/empty-state';
 import EditQuestGroupDialog from '../quests/EditQuestGroupDialog';
-import ConfirmDialog from '../ui/ConfirmDialog';
+import ConfirmDialog from '@/components/ui/confirm-dialog';
 import AssignQuestGroupDialog from '../quests/AssignQuestGroupDialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 

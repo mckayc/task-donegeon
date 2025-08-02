@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { User } from '../../types';
 import { Button } from '@/components/ui/button';
-import Keypad from '../ui/Keypad';
+import Keypad from '@/components/ui/keypad';
 import Avatar from '../ui/avatar';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';

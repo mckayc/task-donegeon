@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { GenerateContentResponse, Type } from "@google/genai";
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { SparklesIcon } from '@/components/ui/Icons';
+import { SparklesIcon } from '@/components/ui/icons';
 import { useAppState } from '../../context/AppContext';
 import { QuestType } from '../../types';
 import ToggleSwitch from '../ui/ToggleSwitch';

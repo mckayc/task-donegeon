@@ -16,7 +16,7 @@ type ChatTarget = User | {
 };
 
 const ChatPanel: React.FC = () => {
-    const { currentUser, users, guilds, chatMessages, isChatOpen, settings } = useAppState();
+    const { currentUser, users, guilds, chatMessages, isChatOpen, settings, isAiReplying } = useAppState();
     const { toggleChat, sendMessage, markMessagesAsRead } = useAppDispatch();
     const [activeChatTarget, setActiveChatTarget] = useState<ChatTarget | null>(null);
     const [message, setMessage] = useState('');
@@ -151,7 +151,7 @@ const ChatPanel: React.FC = () => {
         if (!userScrolledUp) {
             scrollToBottom();
         }
-    }, [activeConversation, userScrolledUp, scrollToBottom]);
+    }, [activeConversation, userScrolledUp, scrollToBottom, isAiReplying]);
     
     const handleSend = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -282,6 +282,16 @@ const ChatPanel: React.FC = () => {
                                         </React.Fragment>
                                     );
                                 })}
+                                 {isAiReplying && activeChatTarget?.id === 'user-ai-assistant' && (
+                                    <div className="flex items-end gap-2 justify-start">
+                                        <Avatar user={users.find(u => u.id === 'user-ai-assistant')!} className="w-8 h-8 flex-shrink-0 rounded-full overflow-hidden self-start" />
+                                        <div className="max-w-xs px-4 py-3 rounded-lg flex items-center gap-1.5 bg-background text-foreground">
+                                            <span className="w-2.5 h-2.5 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: '0s' }}></span>
+                                            <span className="w-2.5 h-2.5 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></span>
+                                            <span className="w-2.5 h-2.5 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: '0.4s' }}></span>
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                             
                             {activeChatTarget && 'isGuild' in activeChatTarget && activeChatTarget.isGuild && currentUser.role === Role.DonegeonMaster && (

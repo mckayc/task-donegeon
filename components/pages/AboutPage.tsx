@@ -1,3 +1,5 @@
+
+
 import React, { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { useAppState } from '../../context/AppContext';
@@ -149,7 +151,7 @@ const AboutPage: React.FC = () => {
                             </ul>
                         </li>
                         <li><strong>Granular Import:</strong> You can uncheck any new files you don't want. When you click "Import," only the selected new files are downloaded and added to your gallery. This gives you precise control over your asset library.</li>
-                    </ul>
+                    </ol>
 
                     <p className="font-bold mt-4">Best Practices for Images:</p>
                     <ul className="list-disc list-inside space-y-2 pl-4">
@@ -157,14 +159,6 @@ const AboutPage: React.FC = () => {
                         <li><strong>Use Transparency Wisely:</strong> For avatar items, use formats that support transparency like <code>PNG</code> or <code>WebP</code>. This ensures they layer correctly without a white box around them.</li>
                         <li><strong>Optimize File Size:</strong> <code>WebP</code> is highly recommended as it offers excellent quality with smaller file sizes. Aim to keep files under 200kb to ensure the app loads quickly.</li>
                         <li><strong>Keep it Square:</strong> Square images (e.g., 500x500 pixels) display most consistently in the UI.</li>
-                    </ul>
-
-                    <h4 className="text-lg font-bold text-foreground mt-4">Data Management</h4>
-                    <p>This powerful page gives you full control over the game's data. It is separated into several areas:</p>
-                    <ul className="list-disc list-inside space-y-2 pl-4">
-                        <li><strong>Backup & Import:</strong> Create a full backup of all game data for safekeeping. You can also import these backups or smaller "Blueprint" files.</li>
-                        <li><strong>Object Manager:</strong> A powerful table view of all your created content. You can bulk-select items to delete them or export them as a Blueprint.</li>
-                        <li><strong>Asset Library:</strong> Jumpstart your game with pre-made content packs! Install packs of quests, items, and more with just a few clicks.</li>
                     </ul>
                 </CollapsibleSection>
 

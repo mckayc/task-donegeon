@@ -39,6 +39,7 @@ export interface User {
   theme?: string; // Theme ID
   ownedThemes: string[]; // Array of Theme IDs
   hasBeenOnboarded?: boolean;
+  isAi?: boolean;
 }
 
 export enum QuestType {

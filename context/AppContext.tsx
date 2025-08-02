@@ -25,6 +25,7 @@ interface AppState extends IAppData {
   syncError: string | null;
   isChatOpen: boolean;
   isRestarting: boolean;
+  isAiReplying: boolean;
 }
 
 // The single, unified dispatch for the entire application
@@ -179,7 +180,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         isDataLoaded: false, activeMarketId: null, allTags: [],
         isSwitchingUser: false, isSharedViewActive: false, targetedUserForLogin: null,
         isAiConfigured: false, isSidebarCollapsed: false, syncStatus: 'idle', syncError: null, isChatOpen: false,
-        isRestarting: false,
+        isRestarting: false, isAiReplying: false,
     });
 
     const isMounted = useRef(true);
@@ -237,6 +238,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         isAppUnlocked, isFirstRun, currentUser, activePage, appMode, notifications, isDataLoaded,
         activeMarketId, allTags, isSwitchingUser, isSharedViewActive, targetedUserForLogin,
         isAiConfigured, isSidebarCollapsed, syncStatus, syncError, isChatOpen, isRestarting,
+        isAiReplying,
         ...dataToSave
     } = state;
 
@@ -786,7 +788,30 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
                 readBy: [state.currentUser!.id],
                 ...message,
             };
-            updateAndSave(s => ({ chatMessages: [...s.chatMessages, newMessage] }));
+
+            if (message.recipientId !== 'user-ai-assistant') {
+                updateAndSave(s => ({ chatMessages: [...s.chatMessages, newMessage] }));
+            }
+            
+            if (message.recipientId === 'user-ai-assistant') {
+                setState(s => ({ ...s, isAiReplying: true }));
+                try {
+                    await apiRequest('/api/ai/chat', { 
+                        method: 'POST', 
+                        body: JSON.stringify({
+                            newMessage: { ...newMessage, senderName: state.currentUser?.gameName },
+                            history: state.chatMessages,
+                        }) 
+                    });
+                } catch (error) {
+                    console.error("AI chat request failed", error);
+                } finally {
+                    if (isMounted.current) {
+                        setState(s => ({ ...s, isAiReplying: false }));
+                    }
+                }
+            }
+
             return newMessage;
         },
         markMessagesAsRead: async (options) => updateAndSave(s => {
@@ -869,7 +894,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             }
         },
         executeExchange: (userId, payItem, receiveItem, guildId) => apiRequest('/api/actions/exchange', { method: 'POST', body: JSON.stringify({ userId, payItem, receiveItem, guildId }) }),
-    }), [state.currentUser, state.appMode, apiRequest, addNotification, removeNotification, updateAndSave]);
+    }), [state.currentUser, state.appMode, apiRequest, addNotification, removeNotification, updateAndSave, state.chatMessages]);
 
     return (
         <AppStateContext.Provider value={state}>

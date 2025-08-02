@@ -1,5 +1,26 @@
 import { User, Role, RewardTypeDefinition, RewardCategory, Rank, Trophy, TrophyRequirementType, QuestType, Market, Quest, QuestAvailability, Guild, AppSettings, SidebarConfigItem, GameAsset, ThemeDefinition, ThemeStyle, QuestCompletion, QuestCompletionStatus, MarketStatus, QuestGroup } from '../types';
 
+export const AI_ASSISTANT: User = {
+    id: 'user-ai-assistant',
+    firstName: 'Donegeon',
+    lastName: 'Sage',
+    username: 'ai_sage',
+    email: 'sage@donegeon.com',
+    gameName: 'Donegeon Sage',
+    birthday: '2024-01-01',
+    role: Role.DonegeonMaster,
+    avatar: {},
+    profilePictureUrl: 'https://placehold.co/150/8b5cf6/FFFFFF?text=✨',
+    ownedAssetIds: [],
+    pin: '',
+    personalPurse: {},
+    personalExperience: {},
+    guildBalances: {},
+    ownedThemes: [],
+    hasBeenOnboarded: true,
+    isAi: true,
+};
+
 export const INITIAL_QUEST_GROUPS: QuestGroup[] = [
     { id: 'qg-household', name: 'Household Chores', description: 'General tasks related to keeping the house clean and tidy.', icon: '🏡' },
     { id: 'qg-school', name: 'School & Learning', description: 'Quests related to homework, studying, and educational activities.', icon: '📚' },
@@ -41,6 +62,7 @@ export const createMockUsers = (): User[] => {
         explorer.personalPurse = { 'core-gold': 100 };
     }
     
+    initialUsers.push(AI_ASSISTANT);
     return initialUsers;
 };
 
@@ -548,19 +570,20 @@ export const createSampleQuests = (users: User[]): Quest[] => {
 };
 
 export function createInitialData(setupChoice = 'guided', adminUserData?: any, blueprint?: any) {
+    let users: User[] = [];
+    let baseData;
+
     if (setupChoice === 'scratch') {
-        const users = [adminUserData];
-        const guilds = createInitialGuilds(users);
-        const bankMarket = createSampleMarkets().find(m => m.id === 'market-bank');
-        return {
-            users: users,
+        const adminUser = { ...adminUserData, id: `user-admin-${Date.now()}`, avatar: {}, ownedAssetIds: [], personalPurse: {}, personalExperience: {}, guildBalances: {}, ownedThemes: ['emerald', 'rose', 'sky'], hasBeenOnboarded: false };
+        users.push(adminUser);
+        baseData = {
             quests: [],
             questGroups: [],
-            markets: bankMarket ? [bankMarket] : [],
+            markets: createSampleMarkets().filter(m => m.id === 'market-bank'), // Only include bank
             rewardTypes: INITIAL_REWARD_TYPES,
             questCompletions: [],
             purchaseRequests: [],
-            guilds: guilds,
+            guilds: createInitialGuilds(users),
             ranks: INITIAL_RANKS,
             trophies: [],
             userTrophies: [],
@@ -574,34 +597,44 @@ export function createInitialData(setupChoice = 'guided', adminUserData?: any, b
             systemNotifications: [],
             scheduledEvents: [],
         };
-    }
-
-    if (setupChoice === 'import' && blueprint) {
-        const users = [adminUserData];
-        const guilds = createInitialGuilds(users);
-        const finalRewardTypes = [
-            ...INITIAL_REWARD_TYPES,
-            ...(blueprint.assets.rewardTypes || []).filter((rt: RewardTypeDefinition) => !INITIAL_REWARD_TYPES.some(coreRt => coreRt.id === rt.id))
-        ];
+    } else if (setupChoice === 'import' && blueprint) {
+        const adminUser = { ...adminUserData, id: `user-admin-${Date.now()}`, avatar: {}, ownedAssetIds: [], personalPurse: {}, personalExperience: {}, guildBalances: {}, ownedThemes: ['emerald', 'rose', 'sky'], hasBeenOnboarded: false };
+        users.push(adminUser);
+        const finalRewardTypes = [ ...INITIAL_REWARD_TYPES, ...(blueprint.assets.rewardTypes || []).filter((rt: RewardTypeDefinition) => !INITIAL_REWARD_TYPES.some(coreRt => coreRt.id === rt.id)) ];
         let finalMarkets = blueprint.assets.markets || [];
         if (!finalMarkets.some((m: Market) => m.id === 'market-bank')) {
             const bankMarket = createSampleMarkets().find((m: Market) => m.id === 'market-bank');
             if (bankMarket) finalMarkets.push(bankMarket);
         }
-        return {
-            users: users,
-            quests: blueprint.assets.quests || [],
-            questGroups: blueprint.assets.questGroups || [],
-            markets: finalMarkets,
+        baseData = {
+            ...blueprint.assets,
             rewardTypes: finalRewardTypes,
+            markets: finalMarkets,
+            guilds: createInitialGuilds(users),
+            // Fill in missing empty arrays from blueprint
+            questCompletions: [], purchaseRequests: [], userTrophies: [], adminAdjustments: [], systemLogs: [], loginHistory: [], chatMessages: [], systemNotifications: [], scheduledEvents: [],
+            settings: INITIAL_SETTINGS,
+            themes: INITIAL_THEMES,
+        };
+    } else { // 'guided'
+        users = createMockUsers();
+        // Overwrite first mock user with actual admin data
+        if (adminUserData) {
+            users[0] = { ...users[0], ...adminUserData };
+        }
+        baseData = {
+            quests: createSampleQuests(users),
+            questGroups: INITIAL_QUEST_GROUPS,
+            markets: createSampleMarkets(),
+            rewardTypes: INITIAL_REWARD_TYPES,
             questCompletions: [],
             purchaseRequests: [],
-            guilds: guilds,
-            ranks: blueprint.assets.ranks || INITIAL_RANKS,
-            trophies: blueprint.assets.trophies || [],
+            guilds: createInitialGuilds(users),
+            ranks: INITIAL_RANKS,
+            trophies: INITIAL_TROPHIES,
             userTrophies: [],
             adminAdjustments: [],
-            gameAssets: blueprint.assets.gameAssets || [],
+            gameAssets: createSampleGameAssets(),
             systemLogs: [],
             settings: INITIAL_SETTINGS,
             themes: INITIAL_THEMES,
@@ -611,38 +644,26 @@ export function createInitialData(setupChoice = 'guided', adminUserData?: any, b
             scheduledEvents: [],
         };
     }
-    
-    // Default to 'guided' setup
-    const users = createMockUsers();
-    if (adminUserData) {
-        users[0] = { ...users[0], ...adminUserData };
+
+    // This is the single source of truth for creating the admin user
+    const finalAdminUser = users.find(u => u.role === Role.DonegeonMaster);
+    if (finalAdminUser && adminUserData) {
+        Object.assign(finalAdminUser, adminUserData);
+        finalAdminUser.id = `user-admin-${Date.now()}`;
     }
-    const quests = createSampleQuests(users);
-    const guilds = createInitialGuilds(users);
-    const markets = createSampleMarkets();
-    const gameAssets = createSampleGameAssets();
+
+    // Always add the AI assistant
+    if (!users.some(u => u.isAi)) {
+        users.push(AI_ASSISTANT);
+    }
 
     return {
-        users: users,
-        quests: quests,
-        questGroups: INITIAL_QUEST_GROUPS,
-        markets: markets,
-        rewardTypes: INITIAL_REWARD_TYPES,
-        questCompletions: [],
-        purchaseRequests: [],
-        guilds: guilds,
-        ranks: INITIAL_RANKS,
-        trophies: INITIAL_TROPHIES,
-        userTrophies: [],
-        adminAdjustments: [],
-        gameAssets: gameAssets,
-        systemLogs: [],
-        settings: INITIAL_SETTINGS,
-        themes: INITIAL_THEMES,
-        loginHistory: [],
-        chatMessages: [],
-        systemNotifications: [],
-        scheduledEvents: [],
+        ...baseData,
+        users, // Use the user array which contains the final admin user and AI
+        settings: {
+            ...baseData.settings,
+            isFirstRunComplete: true, // Always set to true on creation
+        }
     };
 }
 

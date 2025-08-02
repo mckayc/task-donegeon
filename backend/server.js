@@ -676,6 +676,59 @@ const modifyBalance = (balance, rewardDef, amount) => {
     balance[key][rewardDef.id] = (balance[key][rewardDef.id] || 0) + amount;
 };
 
+app.post('/api/quests/:questId/complete', async (req, res) => {
+    try {
+        const { questId } = req.params;
+        const { userId, guildId, options } = req.body;
+        const data = await readData();
+
+        const quest = data.quests.find(q => q.id === questId);
+        if (!quest) return res.status(404).json({ error: 'Quest not found.' });
+        
+        const userIndex = data.users.findIndex(u => u.id === userId);
+        if (userIndex === -1) return res.status(404).json({ error: 'User not found.' });
+
+        // Create the completion record
+        const newCompletion = {
+            id: `qc-${Date.now()}`,
+            questId,
+            userId,
+            completedAt: options?.completionDate || new Date().toISOString(),
+            status: quest.requiresApproval ? 'Pending' : 'Approved',
+            note: options?.note,
+            guildId,
+        };
+        data.questCompletions.push(newCompletion);
+
+        // If no approval is needed, grant rewards immediately
+        if (!quest.requiresApproval) {
+            const userToUpdate = JSON.parse(JSON.stringify(data.users[userIndex]));
+
+            const balanceTarget = guildId 
+                ? (userToUpdate.guildBalances[guildId] = userToUpdate.guildBalances[guildId] || { purse: {}, experience: {} }) 
+                : { purse: userToUpdate.personalPurse, experience: userToUpdate.personalExperience };
+
+            quest.rewards.forEach(reward => {
+                const rewardDef = data.rewardTypes.find(rt => rt.id === reward.rewardTypeId);
+                if (rewardDef) {
+                    const balanceKey = rewardDef.category === RewardCategory.Currency ? 'purse' : 'experience';
+                    balanceTarget[balanceKey][reward.rewardTypeId] = (balanceTarget[balanceKey][reward.rewardTypeId] || 0) + reward.amount;
+                }
+            });
+            data.users[userIndex] = userToUpdate;
+        }
+
+        await writeData(data);
+        broadcastStateUpdate();
+        res.status(200).json({ message: 'Quest completion recorded.' });
+
+    } catch (error) {
+        console.error('Error completing quest:', error);
+        res.status(500).json({ error: 'Failed to complete quest.' });
+    }
+});
+
+
 // Approve a quest completion
 app.post('/api/completions/:completionId/approve', async (req, res) => {
     try {

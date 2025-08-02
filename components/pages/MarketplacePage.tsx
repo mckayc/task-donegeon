@@ -175,7 +175,7 @@ const MarketItemView: React.FC<{ market: Market }> = ({ market }) => {
                         <Label htmlFor="sort-market-items" className="text-sm font-medium">Sort by:</Label>
                         <Select
                             value={sortBy}
-                            onValueChange={e => setSortBy(e as any)}
+                            onValueChange={(value: string) => setSortBy(value as any)}
                         >
                             <SelectTrigger id="sort-market-items" className="w-[180px]">
                                 <SelectValue placeholder="Sort by..." />

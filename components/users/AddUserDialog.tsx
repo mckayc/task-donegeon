@@ -121,7 +121,7 @@ const AddUserDialog: React.FC<AddUserDialogProps> = ({ onClose }) => {
 
           <div className="space-y-2">
             <Label htmlFor="role">Role</Label>
-            <Select onValueChange={(value) => handleSelectChange('role', value)} defaultValue={formData.role}>
+            <Select onValueChange={(value: string) => handleSelectChange('role', value)} defaultValue={formData.role}>
               <SelectTrigger id="role">
                 <SelectValue placeholder="Select a role" />
               </SelectTrigger>

@@ -265,7 +265,7 @@ const ChroniclesPage: React.FC = () => {
               )}
               <div className="flex items-center gap-2">
                   <Label htmlFor="items-per-page" className="text-sm font-medium">Show:</Label>
-                   <Select onValueChange={(value) => { setItemsPerPage(Number(value)); setCurrentPage(1); }} defaultValue={String(itemsPerPage)}>
+                   <Select onValueChange={(value: string) => { setItemsPerPage(Number(value)); setCurrentPage(1); }} defaultValue={String(itemsPerPage)}>
                       <SelectTrigger id="items-per-page" className="w-[80px]">
                         <SelectValue placeholder="Show..." />
                       </SelectTrigger>

@@ -3,7 +3,7 @@ import { Page, Role, AppMode, User } from '../../types';
 import Avatar from '../ui/Avatar';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import FullscreenToggle from '../ui/FullscreenToggle';
-import { ChevronDownIcon } from '@/components/ui/Icons';
+import { ChevronDownIcon } from '@/components/ui/icons';
 import RewardDisplay from '../ui/RewardDisplay';
 import {
   DropdownMenu,
@@ -12,8 +12,8 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/Dropdown-Menu";
-import { Button } from '@/components/ui/Button';
+} from "@/components/ui/dropdown-menu";
+import { Button } from '@/components/ui/button';
 
 const Clock: React.FC = () => {
     const [time, setTime] = useState(new Date());

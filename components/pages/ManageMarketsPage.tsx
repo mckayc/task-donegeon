@@ -121,7 +121,7 @@ const ManageMarketsPage: React.FC = () => {
                         <table className="w-full text-left">
                             <thead className="border-b">
                                 <tr>
-                                    <th className="p-4 w-12"><Checkbox onCheckedChange={handleSelectAll} checked={selectedMarkets.length === markets.length && markets.length > 0} /></th>
+                                    <th className="p-4 w-12"><Checkbox onCheckedChange={(checked) => handleSelectAll(checked)} checked={selectedMarkets.length === markets.length && markets.length > 0} /></th>
                                     <th className="p-4 font-semibold">Title</th>
                                     <th className="p-4 font-semibold hidden md:table-cell">Description</th>
                                     <th className="p-4 font-semibold">Status</th>
@@ -140,7 +140,7 @@ const ManageMarketsPage: React.FC = () => {
 
                                     return (
                                         <tr key={market.id} className="border-b last:border-b-0">
-                                            <td className="p-4"><Checkbox checked={selectedMarkets.includes(market.id)} onCheckedChange={checked => handleSelectOne(market.id, checked === true)} /></td>
+                                            <td className="p-4"><Checkbox checked={selectedMarkets.includes(market.id)} onCheckedChange={(checked: boolean | "indeterminate") => handleSelectOne(market.id, checked === true)} /></td>
                                             <td className="p-4 font-bold">{market.icon} {market.title}</td>
                                             <td className="p-4 text-muted-foreground hidden md:table-cell">{market.description}</td>
                                             <td className="p-4">

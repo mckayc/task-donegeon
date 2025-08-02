@@ -140,6 +140,7 @@ const MainLayout: React.FC = () => {
       case 'Profile': return <ProfilePage />;
       case 'About': return <AboutPage />;
       case 'Help Guide': return <Dashboard />; // return <HelpPage />;
+      case 'Chat': return <ChatPanel />;
       default: return <Dashboard />;
     }
   };

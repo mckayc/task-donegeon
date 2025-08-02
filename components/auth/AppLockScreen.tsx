@@ -91,7 +91,7 @@ const AppLockScreen: React.FC = () => {
                 <Label htmlFor="admin-select">Select {settings.terminology.admin}</Label>
                 <Select
                   value={selectedAdminId}
-                  onValueChange={(value) => {
+                  onValueChange={(value: string) => {
                     setSelectedAdminId(value);
                     setError('');
                     setPassword('');

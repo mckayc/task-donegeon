@@ -79,7 +79,7 @@ const EditUserDialog: React.FC<EditUserDialogProps> = ({ user, onClose }) => {
           <UserFormFields formData={formData} handleChange={handleChange} isEditMode={true} />
           <div className="space-y-2">
             <Label htmlFor="role">Role</Label>
-            <Select onValueChange={(value) => handleSelectChange('role', value)} defaultValue={formData.role} disabled={!canChangeRole}>
+            <Select onValueChange={(value: string) => handleSelectChange('role', value)} defaultValue={formData.role} disabled={!canChangeRole}>
               <SelectTrigger id="role">
                 <SelectValue placeholder="Select a role" />
               </SelectTrigger>

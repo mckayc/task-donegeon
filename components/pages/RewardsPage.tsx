@@ -6,7 +6,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import EditRewardTypeDialog from '../rewards/EditRewardTypeDialog';
 import ConfirmDialog from '../ui/ConfirmDialog';
 import { useRewardValuePerUnit } from '../../hooks/useRewardValue';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/Dropdown-Menu";
 import { EllipsisVertical } from 'lucide-react';
 
 const RewardItem: React.FC<{

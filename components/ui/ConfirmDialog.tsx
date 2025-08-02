@@ -1,5 +1,5 @@
 import React from 'react';
-import { Button } from "@/components/ui/button"
+import { Button } from "@/components/ui/Button"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -9,7 +9,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
+} from "@/components/ui/Alert-Dialog"
 
 
 interface ConfirmDialogProps {

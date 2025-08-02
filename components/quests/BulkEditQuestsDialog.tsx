@@ -3,9 +3,9 @@ import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { BulkQuestUpdates } from '../../types';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/Label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/Select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/Dialog';
 import TagInput from '../ui/TagInput';
 import UserMultiSelect from '../ui/UserMultiSelect';
 
@@ -59,7 +59,7 @@ const BulkEditQuestsDialog: React.FC<BulkEditQuestsDialogProps> = ({ questIds, o
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="space-y-2">
                             <Label>Status</Label>
-                            <Select value={status} onValueChange={v => setStatus(v as TriState)}>
+                            <Select value={status} onValueChange={(v) => setStatus(v as TriState)}>
                                 <SelectTrigger><SelectValue/></SelectTrigger>
                                 <SelectContent>
                                     <SelectItem value="no-change">No Change</SelectItem>
@@ -70,7 +70,7 @@ const BulkEditQuestsDialog: React.FC<BulkEditQuestsDialogProps> = ({ questIds, o
                         </div>
                         <div className="space-y-2">
                              <Label>Optional</Label>
-                            <Select value={isOptional} onValueChange={v => setIsOptional(v as TriState)}>
+                            <Select value={isOptional} onValueChange={(v) => setIsOptional(v as TriState)}>
                                 <SelectTrigger><SelectValue/></SelectTrigger>
                                 <SelectContent>
                                     <SelectItem value="no-change">No Change</SelectItem>
@@ -81,7 +81,7 @@ const BulkEditQuestsDialog: React.FC<BulkEditQuestsDialogProps> = ({ questIds, o
                         </div>
                        <div className="space-y-2">
                              <Label>Requires Approval</Label>
-                            <Select value={requiresApproval} onValueChange={v => setRequiresApproval(v as TriState)}>
+                            <Select value={requiresApproval} onValueChange={(v) => setRequiresApproval(v as TriState)}>
                                 <SelectTrigger><SelectValue/></SelectTrigger>
                                 <SelectContent>
                                     <SelectItem value="no-change">No Change</SelectItem>

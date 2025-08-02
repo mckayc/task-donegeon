@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import * as Icons from '@/components/ui/icons';
+import * as Icons from '@/components/ui/Icons';
 import ObjectExporterPage from './ObjectExporterPage';
 import BackupAndImportPage from './BackupAndImportPage';
 import AssetLibraryPage from './AssetLibraryPage';

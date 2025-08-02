@@ -1,7 +1,7 @@
-import React, { useMemo, useState, useEffect, useCallback } from 'react';
+import React, { useMemo, useState, useEffect, useCallback, ChangeEvent } from 'react';
 import { useAppState } from '../../context/AppContext';
-import { Input } from './input';
-import { Button } from './button';
+import { Input } from './Input';
+import { Button } from './Button';
 
 interface ImageSelectionDialogProps {
   onSelect: (url: string) => void;
@@ -60,13 +60,13 @@ const ImageSelectionDialog: React.FC<ImageSelectionDialogProps> = ({ onSelect, o
 
   return (
     <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-[60] p-4" onClick={onClose}>
-      <div className="bg-card border rounded-xl shadow-2xl max-w-4xl w-full h-[80vh] flex flex-col" onClick={e => e.stopPropagation()}>
+      <div className="bg-card border rounded-xl shadow-2xl max-w-4xl w-full h-[80vh] flex flex-col" onClick={(e: React.MouseEvent) => e.stopPropagation()}>
         <div className="p-6 border-b flex-shrink-0">
           <h2 className="text-2xl font-display text-accent">Select Existing Image</h2>
           <Input
             placeholder="Search by name or category..."
             value={searchTerm}
-            onChange={e => setSearchTerm(e.target.value)}
+            onChange={(e: ChangeEvent<HTMLInputElement>) => setSearchTerm(e.target.value)}
             className="mt-4"
           />
         </div>

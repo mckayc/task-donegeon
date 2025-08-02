@@ -1,6 +1,6 @@
 # Task Donegeon
 
-**Version:** 0.1.0
+**Version:** 0.1.01
 
 ---
 
@@ -15,10 +15,11 @@ Task Donegeon is a gamified task and chore management application designed for f
 
 ## ✨ Features
 
-### What's New in Version 0.1.0 (July 27, 2025)
--   **Critical Bug Fix: Quest Approval Rewards:** Fixed a critical bug where approving a pending quest completion did not grant the associated rewards to the user. Approvals now correctly process all currency and XP rewards.
+### What's New in Version 0.1.01 (July 28, 2025)
+-   **Critical Build Fix:** Fixed a critical build failure caused by incorrect import casing on case-sensitive filesystems (e.g., Docker/Linux) and various TypeScript type errors. This resolves numerous `TS2307` (Cannot find module) and `TS7006` (implicitly has an 'any' type) errors that prevented the application from compiling.
 
 ### Version History
+- **v0.1.0 (July 27, 2025):** Critical Bug Fix: Quest Approval Rewards.
 - **v0.0.99 (July 27, 2025):** New Feature: Theme Variety & Marketplace, New Store: "The Gilded Brush (Themes)".
 - **v0.0.98 (July 23, 2025):** Bug fixes for chat indicator and quest completion server error, plus backend stability improvements.
 - **v0.0.97 (July 23, 2025):** New "Vacation" Event Type, Calendar-Driven Vacations, Automatic Penalty Pausing, Streamlined Settings.

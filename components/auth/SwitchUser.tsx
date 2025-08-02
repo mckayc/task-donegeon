@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/Button';
 import Keypad from '../ui/Keypad';
 import Avatar from '../ui/Avatar';
 import { Input } from '@/components/ui/Input';
-import { Label } from '@/components/ui/label';
+import { Label } from '@/components/ui/Label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card';
 
 const SwitchUser: React.FC = () => {

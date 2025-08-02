@@ -1,12 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, ChangeEvent } from 'react';
 import { GenerateContentResponse, Type } from "@google/genai";
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { SparklesIcon } from '@/components/ui/icons';
+import { Button } from '@/components/ui/Button';
+import { Input } from '@/components/ui/Input';
+import { SparklesIcon } from '@/components/ui/Icons';
 import { useAppState } from '../../context/AppContext';
 import { QuestType } from '../../types';
 import ToggleSwitch from '../ui/ToggleSwitch';
-import { Label } from '@/components/ui/label';
+import { Label } from '@/components/ui/Label';
 
 interface QuestIdea {
   title: string;
@@ -139,8 +139,8 @@ const QuestIdeaGenerator: React.FC<QuestIdeaGeneratorProps> = ({ onUseIdea, onCl
                               id="quest-theme"
                               placeholder="e.g., 'Weekly kitchen chores for kids'"
                               value={prompt}
-                              onChange={e => setPrompt(e.target.value)}
-                              onKeyDown={e => e.key === 'Enter' && handleGenerate()}
+                              onChange={(e: ChangeEvent<HTMLInputElement>) => setPrompt(e.target.value)}
+                              onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => e.key === 'Enter' && handleGenerate()}
                               className="flex-grow"
                               disabled={isLoading}
                           />

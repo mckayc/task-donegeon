@@ -1,8 +1,8 @@
 import React from 'react';
 import { ScheduledEvent } from '../../types';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/ui/Button';
 import { useAppState } from '../../context/AppContext';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/Dialog';
 
 interface EventDetailDialogProps {
   event: ScheduledEvent;

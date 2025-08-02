@@ -2,14 +2,14 @@ import React, { useState, useMemo, useEffect, useCallback, ChangeEvent } from 'r
 import { useAppState, useAppDispatch } from '../../../context/AppContext';
 import { IAppData, Blueprint, ImportResolution, AutomatedBackupProfile, AutomatedBackups } from '../../../types';
 import { analyzeBlueprintForConflicts } from '../../../utils/sharing';
-import { Button } from '@/components/ui/button';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/Button';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import ConfirmDialog from '../../ui/ConfirmDialog';
 import BlueprintPreviewDialog from '../../sharing/BlueprintPreviewDialog';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
-import { Switch } from '@/components/ui/switch';
+import { Input } from '@/components/ui/Input';
+import { Label } from '@/components/ui/Label';
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/Select';
+import { Switch } from '@/components/ui/Switch';
 
 interface ServerBackup {
     filename: string;

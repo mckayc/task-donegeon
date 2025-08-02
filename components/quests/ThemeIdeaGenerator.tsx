@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, ChangeEvent } from 'react';
 import { GenerateContentResponse, Type } from "@google/genai";
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { SparklesIcon } from '../ui/icons';
+import { Button } from '@/components/ui/Button';
+import { Input } from '@/components/ui/Input';
+import { Label } from '@/components/ui/Label';
+import { SparklesIcon } from '../ui/Icons';
 import { useAppState } from '../../context/AppContext';
 
 interface ThemeIdea {
@@ -119,8 +119,8 @@ const ThemeIdeaGenerator: React.FC<ThemeIdeaGeneratorProps> = ({ onUseIdea, onCl
                                 id="theme-concept"
                                 placeholder="e.g., 'Cyberpunk', 'Fairy Forest', 'Steampunk'"
                                 value={prompt}
-                                onChange={e => setPrompt(e.target.value)}
-                                onKeyDown={e => e.key === 'Enter' && handleGenerate()}
+                                onChange={(e: ChangeEvent<HTMLInputElement>) => setPrompt(e.target.value)}
+                                onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => e.key === 'Enter' && handleGenerate()}
                                 disabled={isLoading}
                             />
                         </div>

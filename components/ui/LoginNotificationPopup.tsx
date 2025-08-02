@@ -1,9 +1,9 @@
 import React from 'react';
 import { SystemNotification, SystemNotificationType, User } from '../../types';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/ui/Button';
 import { useAppDispatch } from '../../context/AppContext';
-import { XCircleIcon } from '@/components/ui/icons';
-import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card';
+import { XCircleIcon } from '@/components/ui/Icons';
+import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/Card';
 
 // Icons for different notification types
 const getIconForType = (type: SystemNotificationType) => {

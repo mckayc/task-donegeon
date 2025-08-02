@@ -6,7 +6,7 @@ import { useAppDispatch, useAppState } from '../../context/AppContext';
 import QuestDetailDialog from '../quests/QuestDetailDialog';
 import CompleteQuestDialog from '../quests/CompleteQuestDialog';
 import { questSorter, isQuestScheduledForDay, toYMD } from '../../utils/quests';
-import { Card } from '@/components/ui/card';
+import { Card } from '@/components/ui/Card';
 
 interface DayViewProps {
     currentDate: Date;

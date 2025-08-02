@@ -9,8 +9,8 @@ import { isMarketOpenForUser } from '../../utils/markets';
 import ImagePreviewDialog from '../ui/ImagePreviewDialog';
 import DynamicIcon from '../ui/DynamicIcon';
 import { toYMD } from '../../utils/quests';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/Select";
+import { Label } from '@/components/ui/Label';
 
 const MarketItemView: React.FC<{ market: Market }> = ({ market }) => {
     const { rewardTypes, currentUser, purchaseRequests, appMode, settings, gameAssets, scheduledEvents } = useAppState();

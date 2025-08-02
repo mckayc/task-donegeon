@@ -1,10 +1,10 @@
 import React, { useState, useMemo, ChangeEvent } from 'react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/Button';
+import { Card, CardContent } from '@/components/ui/Card';
 import { libraryPacks } from '../../../data/assetLibrary';
 import { LibraryPack, BlueprintAssets, TrophyRequirementType, QuestGroup, Quest, GameAsset, Market, Trophy, RewardTypeDefinition, QuestType, User, ShareableAssetType } from '../../../types';
 import { useAppState, useAppDispatch } from '../../../context/AppContext';
-import { Input } from '@/components/ui/input';
+import { Input } from '@/components/ui/Input';
 import CreateQuestDialog from '../../quests/CreateQuestDialog';
 import EditGameAssetDialog from '../../admin/EditGameAssetDialog';
 import EditTrophyDialog from '../../settings/EditTrophyDialog';

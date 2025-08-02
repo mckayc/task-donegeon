@@ -1,10 +1,10 @@
 import React from 'react';
 import { Quest, RewardCategory, RewardItem, QuestType } from '../../types';
 import { useAppState } from '../../context/AppContext';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/ui/Button';
 import ToggleSwitch from '../ui/ToggleSwitch';
 import { isQuestAvailableForUser } from '../../utils/quests';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/Dialog';
 
 interface QuestDetailDialogProps {
   quest: Quest;

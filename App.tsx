@@ -7,7 +7,7 @@ import NotificationContainer from './components/ui/NotificationContainer';
 import AppLockScreen from './components/auth/AppLockScreen';
 import OnboardingWizard from './components/auth/OnboardingWizard';
 import SharedLayout from './components/layout/SharedLayout';
-import { TooltipProvider } from "@/components/ui/tooltip"
+import { TooltipProvider } from "@/components/ui/Tooltip";
 
 const App: React.FC = () => {
   const { isAppUnlocked, isFirstRun, currentUser, isSwitchingUser, isDataLoaded, settings, isSharedViewActive, appMode, guilds, themes, isRestarting } = useAppState();

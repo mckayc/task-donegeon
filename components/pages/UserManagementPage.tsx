@@ -8,7 +8,7 @@ import ManualAdjustmentDialog from '../admin/ManualAdjustmentDialog';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { EllipsisVertical } from 'lucide-react';
 import ConfirmDialog from '../ui/ConfirmDialog';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/Dropdown-Menu";
 
 const UserManagementPage: React.FC = () => {
     const { users, settings, currentUser } = useAppState();

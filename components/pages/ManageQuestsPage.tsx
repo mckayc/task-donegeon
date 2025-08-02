@@ -3,13 +3,13 @@ import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { Quest, QuestType, QuestGroup } from '../../types';
 import { Button } from '@/components/ui/Button';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/Dropdown-Menu";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/Select"
 import { Checkbox } from "@/components/ui/Checkbox"
 import CreateQuestDialog from '../quests/CreateQuestDialog';
 import ConfirmDialog from '../ui/ConfirmDialog';
 import QuestIdeaGenerator from '../quests/QuestIdeaGenerator';
-import { QuestsIcon } from '@/components/ui/icons';
+import { QuestsIcon } from '@/components/ui/Icons';
 import { EllipsisVertical } from 'lucide-react';
 import EmptyState from '../ui/EmptyState';
 import { Input } from '@/components/ui/Input';

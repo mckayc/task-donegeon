@@ -1,17 +1,17 @@
 import React, { useState, useRef, useEffect, useMemo, ChangeEvent } from 'react';
 import { useAppState, useAppDispatch } from '../../../context/AppContext';
 import { GameAsset } from '../../../types';
-import { Button } from '@/components/ui/button';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { Checkbox } from "@/components/ui/checkbox";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Button } from '@/components/ui/Button';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
+import { Checkbox } from "@/components/ui/Checkbox";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/Dropdown-Menu";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/Select";
 import ConfirmDialog from '../../ui/ConfirmDialog';
 import EditGameAssetDialog from '../../admin/EditGameAssetDialog';
 import EmptyState from '../../ui/EmptyState';
-import { ItemManagerIcon, EllipsisVerticalIcon } from '@/components/ui/icons';
+import { ItemManagerIcon, EllipsisVerticalIcon } from '@/components/ui/Icons';
 import ItemIdeaGenerator from '../../quests/ItemIdeaGenerator';
-import { Input } from '@/components/ui/input';
+import { Input } from '@/components/ui/Input';
 import ImagePreviewDialog from '../../ui/ImagePreviewDialog';
 
 const ManageItemsPage: React.FC = () => {
@@ -151,8 +151,8 @@ const ManageItemsPage: React.FC = () => {
                     </div>
 
                     <div className="flex flex-wrap gap-4 mb-4">
-                        <Input placeholder="Search assets..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="max-w-xs" />
-                        <Select onValueChange={e => setSortBy(e as any)} defaultValue={sortBy}>
+                        <Input placeholder="Search assets..." value={searchTerm} onChange={(e: ChangeEvent<HTMLInputElement>) => setSearchTerm(e.target.value)} className="max-w-xs" />
+                        <Select onValueChange={(e: any) => setSortBy(e)} defaultValue={sortBy}>
                             <SelectTrigger className="w-[180px]">
                                 <SelectValue placeholder="Sort by..." />
                             </SelectTrigger>
@@ -179,7 +179,7 @@ const ManageItemsPage: React.FC = () => {
                                          <Checkbox
                                             id={`select-asset-${asset.id}`}
                                             checked={selectedAssets.includes(asset.id)}
-                                            onCheckedChange={checked => handleSelectOne(asset.id, checked === true)}
+                                            onCheckedChange={(checked: boolean | "indeterminate") => handleSelectOne(asset.id, checked === true)}
                                         />
                                     </div>
                                     <Card className="h-full flex flex-col hover:border-accent transition-colors duration-200">

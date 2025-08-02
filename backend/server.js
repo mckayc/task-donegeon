@@ -1,5 +1,6 @@
 
 
+
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
@@ -706,16 +707,21 @@ app.post('/api/completions/:completionId/approve', async (req, res) => {
             const rewardDef = data.rewardTypes.find(rt => rt.id === reward.rewardTypeId);
             if (!rewardDef) return;
 
-            let targetBalance;
             if (completion.guildId) {
+                // Guild-specific balance
                 if (!user.guildBalances[completion.guildId]) {
                     user.guildBalances[completion.guildId] = { purse: {}, experience: {} };
                 }
-                targetBalance = user.guildBalances[completion.guildId];
+                const targetBalance = user.guildBalances[completion.guildId];
+                modifyBalance(targetBalance, rewardDef, reward.amount);
             } else {
-                targetBalance = { purse: user.personalPurse, experience: user.personalExperience };
+                // Personal balance
+                const key = rewardDef.category === RewardCategory.Currency ? 'personalPurse' : 'personalExperience';
+                if (typeof user[key] !== 'object' || user[key] === null) {
+                    user[key] = {};
+                }
+                user[key][reward.rewardTypeId] = (user[key][reward.rewardTypeId] || 0) + reward.amount;
             }
-             modifyBalance(targetBalance, rewardDef, reward.amount);
         });
 
         completion.status = 'Approved';

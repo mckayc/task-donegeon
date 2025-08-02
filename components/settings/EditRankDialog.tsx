@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, ChangeEvent } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { Rank } from '../../types';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/Button';
+import { Input } from '@/components/ui/Input';
+import { Label } from '@/components/ui/Label';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/Dialog';
 import EmojiPicker from '../ui/EmojiPicker';
 import ImageSelectionDialog from '../ui/ImageSelectionDialog';
 import DynamicIcon from '../ui/DynamicIcon';
@@ -68,11 +68,11 @@ const EditRankDialog: React.FC<EditRankDialogProps> = ({ rank, onClose }) => {
           <form id="rank-form" onSubmit={handleSubmit} className="space-y-4 py-4">
             <div className="space-y-2">
               <Label htmlFor="name">Rank Name</Label>
-              <Input id="name" name="name" value={formData.name} onChange={(e) => setFormData(p => ({ ...p, name: e.target.value }))} required />
+              <Input id="name" name="name" value={formData.name} onChange={(e: ChangeEvent<HTMLInputElement>) => setFormData(p => ({ ...p, name: e.target.value }))} required />
             </div>
             <div className="space-y-2">
               <Label htmlFor="xpThreshold">XP Threshold</Label>
-              <Input id="xpThreshold" name="xpThreshold" type="number" value={formData.xpThreshold} onChange={(e) => setFormData(p => ({...p, xpThreshold: parseInt(e.target.value) || 0 }))} required />
+              <Input id="xpThreshold" name="xpThreshold" type="number" value={formData.xpThreshold} onChange={(e: ChangeEvent<HTMLInputElement>) => setFormData(p => ({...p, xpThreshold: parseInt(e.target.value) || 0 }))} required />
             </div>
             
             <div className="space-y-2">

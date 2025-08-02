@@ -156,7 +156,7 @@ const EditRewardTypeDialog: React.FC<EditRewardTypeDialogProps> = ({ rewardType,
             </div>
             <div className="space-y-2">
               <Label htmlFor="category">Category</Label>
-              <Select onValueChange={(value) => handleSelectChange('category', value)} defaultValue={formData.category} disabled={isCore}>
+              <Select onValueChange={(value: string) => handleSelectChange('category', value)} defaultValue={formData.category} disabled={isCore}>
                 <SelectTrigger id="category">
                     <SelectValue placeholder="Select a category" />
                 </SelectTrigger>

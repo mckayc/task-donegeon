@@ -1,18 +1,18 @@
 import React, { useMemo, useState } from 'react';
 import { useAppState } from '../../context/AppContext';
 import { Rank } from '../../types';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { RankIcon } from '@/components/ui/icons';
-import DynamicIcon from '@/components/ui/DynamicIcon';
-import ImagePreviewDialog from '@/components/ui/ImagePreviewDialog';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
+import { RankIcon } from '@/components/ui/Icons';
+import DynamicIcon from '../ui/DynamicIcon';
+import ImagePreviewDialog from '../ui/ImagePreviewDialog';
 
 const RanksPage: React.FC = () => {
     const { currentUser, ranks, appMode } = useAppState();
     const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null);
 
-    const { currentRank, nextRank, totalXp, progressPercentage, sortedRanks } = useMemo(() => {
-        if (!currentUser || !ranks || ranks.length === 0) {
-            return { currentRank: null, nextRank: null, totalXp: 0, progressPercentage: 0, sortedRanks: [] };
+    const { totalXp, sortedRanks } = useMemo(() => {
+        if (!currentUser || !ranks) {
+            return { totalXp: 0, sortedRanks: [] };
         }
 
         const currentBalances = appMode.mode === 'personal'
@@ -23,28 +23,42 @@ const RanksPage: React.FC = () => {
         
         const allRanks = [...ranks].sort((a, b) => a.xpThreshold - b.xpThreshold);
         
+        return { totalXp: currentTotalXp, sortedRanks: allRanks };
+
+    }, [currentUser, ranks, appMode]);
+
+    const { currentRank, nextRank } = useMemo(() => {
+        if (sortedRanks.length === 0) {
+            return { currentRank: null, nextRank: null };
+        }
+
         let foundRank: Rank | null = null;
         let foundNextRank: Rank | null = null;
 
-        for (let i = allRanks.length - 1; i >= 0; i--) {
-            if (currentTotalXp >= allRanks[i].xpThreshold) {
-                foundRank = allRanks[i];
-                foundNextRank = allRanks[i + 1] || null;
+        for (let i = sortedRanks.length - 1; i >= 0; i--) {
+            if (totalXp >= sortedRanks[i].xpThreshold) {
+                foundRank = sortedRanks[i];
+                foundNextRank = sortedRanks[i + 1] || null;
                 break;
             }
         }
-
-        if (!foundRank && allRanks.length > 0) {
-          foundRank = allRanks[0];
-          foundNextRank = allRanks[1] || null;
+        
+        if (!foundRank && sortedRanks.length > 0) {
+          foundRank = sortedRanks[0];
+          foundNextRank = sortedRanks[1] || null;
         }
+        
+        return { currentRank: foundRank, nextRank: foundNextRank };
+    }, [totalXp, sortedRanks]);
 
-        const xpForNextRank = foundNextRank ? foundNextRank.xpThreshold - (foundRank?.xpThreshold || 0) : 0;
-        const xpIntoCurrentRank = currentTotalXp - (foundRank?.xpThreshold || 0);
-        const progress = nextRank && xpForNextRank > 0 ? Math.min(100, (xpIntoCurrentRank / xpForNextRank) * 100) : 100;
+    const progressPercentage = useMemo(() => {
+        if (!nextRank || !currentRank) return 100;
+        const xpForNextRank = nextRank.xpThreshold - currentRank.xpThreshold;
+        const xpIntoCurrentRank = totalXp - currentRank.xpThreshold;
+        const progress = xpForNextRank > 0 ? Math.min(100, (xpIntoCurrentRank / xpForNextRank) * 100) : 100;
+        return progress;
+    }, [totalXp, currentRank, nextRank]);
 
-        return { currentRank: foundRank, nextRank: foundNextRank, totalXp: currentTotalXp, progressPercentage: progress, sortedRanks: allRanks };
-    }, [currentUser, ranks, appMode]);
 
     if (!currentUser) return null;
 
@@ -79,7 +93,7 @@ const RanksPage: React.FC = () => {
                 </CardHeader>
                 <CardContent>
                     <ul className="space-y-3">
-                        {sortedRanks.map((rank, index) => {
+                        {sortedRanks.map((rank: Rank) => {
                             const isCurrent = rank.id === currentRank?.id;
                             const isNext = rank.id === nextRank?.id;
                             const isAchieved = totalXp >= rank.xpThreshold;

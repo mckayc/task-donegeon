@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { EnterFullscreenIcon, ExitFullscreenIcon } from './icons';
+import { EnterFullscreenIcon, ExitFullscreenIcon } from './Icons';
 
 const FullscreenToggle: React.FC = () => {
     const [isFullscreen, setIsFullscreen] = useState(false);

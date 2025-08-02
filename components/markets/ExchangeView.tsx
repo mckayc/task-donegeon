@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/Button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { Label } from '@/components/ui/label';
-import { ArrowRightIcon } from '@/components/ui/icons';
+import { ArrowRightIcon } from '@/components/ui/Icons';
 
 interface ExchangeViewProps {
     market: Market;
@@ -25,7 +25,7 @@ const RewardButton: React.FC<{
             isSelected 
                 ? 'bg-emerald-800/60 border-2 border-emerald-500 ring-2 ring-emerald-500/50 scale-105' 
                 : isDisabled 
-                ? 'bg-stone-800 opacity-40 cursor-not-allowed'
+                ? 'bg-stone-800 opacity-40 cursor-not-allowed' 
                 : 'bg-stone-900/50 border-2 border-transparent hover:border-emerald-600'
         }`}
         title={balance !== undefined ? `${reward.name}: ${Math.floor(balance)}` : reward.name}

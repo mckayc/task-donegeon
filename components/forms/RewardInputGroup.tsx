@@ -1,12 +1,12 @@
 import React from 'react';
 import { RewardCategory, RewardItem } from '../../types';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Input } from '@/components/ui/Input';
+import { Button } from '@/components/ui/Button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/Select";
 import { useAppState } from '../../context/AppContext';
 import { useAnchorEquivalent } from '../../hooks/useRewardValue';
 import { X } from 'lucide-react';
-import { Label } from '@/components/ui/label';
+import { Label } from '@/components/ui/Label';
 
 interface RewardInputGroupProps {
   category: 'rewards' | 'setbacks' | 'cost' | 'payout' | 'lateSetbacks' | 'incompleteSetbacks';

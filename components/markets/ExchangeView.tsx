@@ -4,7 +4,7 @@ import { RewardTypeDefinition, RewardCategory, Market, RewardItem } from '../../
 import { Button } from '@/components/ui/Button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
-import { Label } from '@/components/ui/label';
+import { Label } from '@/components/ui/Label';
 import { ArrowRightIcon } from '@/components/ui/Icons';
 
 interface ExchangeViewProps {

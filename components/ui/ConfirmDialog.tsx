@@ -9,7 +9,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "@/components/ui/Alert-Dialog"
+} from "@/components/ui/alert-dialog"
 
 
 interface ConfirmDialogProps {

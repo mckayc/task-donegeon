@@ -34,7 +34,7 @@ const RewardItemRow: React.FC<{
                     {filteredRewardTypes.map(rt => <SelectItem key={rt.id} value={rt.id}>{rt.name}</SelectItem>)}
                 </SelectContent>
             </Select>
-            <Input type="number" min="1" value={item.amount} onChange={(e) => onChange(originalIndex, 'amount', e.target.value)} className="w-24 flex-shrink-0" aria-label="Amount" />
+            <Input type="number" min="1" value={item.amount} onChange={(e: React.ChangeEvent<HTMLInputElement>) => onChange(originalIndex, 'amount', e.target.value)} className="w-24 flex-shrink-0" aria-label="Amount" />
             <div className="flex-1 text-left min-w-[150px]">
                 {anchorEquivalent && <span className="text-xs text-amber-300">{anchorEquivalent}</span>}
             </div>

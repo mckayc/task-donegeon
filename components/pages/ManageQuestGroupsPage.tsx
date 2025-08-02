@@ -1,14 +1,14 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { QuestGroup } from '../../types';
-import { Button } from '@/components/ui/button';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { EllipsisVerticalIcon, QuestsIcon } from '@/components/ui/icons';
+import { Button } from '@/components/ui/Button';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
+import { EllipsisVerticalIcon, QuestsIcon } from '@/components/ui/Icons';
 import EmptyState from '../ui/EmptyState';
 import EditQuestGroupDialog from '../quests/EditQuestGroupDialog';
 import ConfirmDialog from '../ui/ConfirmDialog';
 import AssignQuestGroupDialog from '../quests/AssignQuestGroupDialog';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/Dropdown-Menu";
 
 const ManageQuestGroupsPage: React.FC = () => {
     const { questGroups, settings } = useAppState();

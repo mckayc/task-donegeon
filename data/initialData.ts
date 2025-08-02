@@ -44,7 +44,7 @@ export const createMockUsers = (): User[] => {
         { firstName: 'New', lastName: 'Explorer', username: 'explorer', email: 'explorer@donegeon.com', gameName: 'Explorer', birthday: '2010-04-15', role: Role.Explorer, pin: '1234' },
     ];
 
-    const initialUsers = usersData.map((u, i) => ({
+    const initialUsers: User[] = usersData.map((u, i) => ({
         ...u,
         id: `user-${i + 1}`,
         avatar: {},

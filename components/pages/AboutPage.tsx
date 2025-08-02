@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { Card } from '@/components/ui/card';
+import { Card } from '@/components/ui/Card';
 import { useAppState } from '../../context/AppContext';
-import { ChevronDownIcon } from '@/components/ui/icons';
+import { ChevronDownIcon } from '@/components/ui/Icons';
 
 const CollapsibleSection: React.FC<{ title: string; children: React.ReactNode; defaultOpen?: boolean; }> = ({ title, children, defaultOpen = false }) => {
     const [isOpen, setIsOpen] = useState(defaultOpen);
@@ -149,7 +149,7 @@ const HelpPage: React.FC = () => {
                             </ul>
                         </li>
                         <li><strong>Granular Import:</strong> You can uncheck any new files you don't want. When you click "Import," only the selected new files are downloaded and added to your gallery. This gives you precise control over your asset library.</li>
-                    </ol>
+                    </ul>
 
                     <p className="font-bold mt-4">Best Practices for Images:</p>
                     <ul className="list-disc list-inside space-y-2 pl-4">

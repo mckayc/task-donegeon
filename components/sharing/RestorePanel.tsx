@@ -1,5 +1,5 @@
 import React, { useRef } from 'react';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/ui/Button';
 
 interface RestorePanelProps {
   onFileSelect: (file: File) => void;

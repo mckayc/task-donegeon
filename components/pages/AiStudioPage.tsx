@@ -1,11 +1,11 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { SparklesIcon, CheckCircleIcon, XCircleIcon } from '@/components/ui/icons';
+import { Button } from '@/components/ui/Button';
+import { Input } from '@/components/ui/Input';
+import { SparklesIcon, CheckCircleIcon, XCircleIcon } from '@/components/ui/Icons';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { GenerateContentResponse, Type } from '@google/genai';
 import { QuestType, Terminology } from '../../types';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import CreateQuestDialog from '../quests/CreateQuestDialog';
 import EditGameAssetDialog from '../admin/EditGameAssetDialog';
 import EditTrophyDialog from '../settings/EditTrophyDialog';

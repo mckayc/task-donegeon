@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { useAppState } from '../../context/AppContext';
 import { Role, Trophy, UserTrophy, TrophyRequirementType, QuestType, QuestCompletionStatus, Quest, AppMode, User } from '../../types';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { fromYMD } from '../../utils/quests';
 import EmptyState from '../ui/EmptyState';
 import DynamicIcon from '../ui/DynamicIcon';

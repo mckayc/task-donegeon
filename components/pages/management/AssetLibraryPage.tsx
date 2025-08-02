@@ -407,23 +407,27 @@ const AssetLibraryPage: React.FC = () => {
                 <CardContent className="p-6">
                     <div className="flex justify-between items-center mb-6 flex-wrap gap-4">
                         <div className="flex-grow max-w-sm">
-                            <Input placeholder="Search packs..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
+                          <Input 
+                              placeholder="Search library packs..."
+                              value={searchTerm}
+                              onChange={e => setSearchTerm(e.target.value)}
+                          />
                         </div>
-                        <div className="flex space-x-2 p-1 bg-background rounded-lg overflow-x-auto">
+                        <div className="flex items-center gap-2 p-1 bg-background rounded-lg flex-wrap">
                             {packTypes.map(type => (
-                                <button
+                                <Button
                                     key={type}
                                     onClick={() => setActiveFilter(type)}
-                                    className={`px-3 py-1 rounded-md font-semibold text-sm transition-colors whitespace-nowrap ${
-                                        activeFilter === type ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-accent'
-                                    }`}
+                                    variant={activeFilter === type ? 'default' : 'ghost'}
+                                    size="sm"
                                 >
                                     {type}
-                                </button>
+                                </Button>
                             ))}
                         </div>
                     </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         {filteredPacks.map(pack => (
                             <PackCard key={pack.id} pack={pack} onSelect={() => setSelectedPack(pack)} />
                         ))}

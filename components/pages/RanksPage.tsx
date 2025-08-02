@@ -1,8 +1,8 @@
 import React, { useMemo, useState } from 'react';
 import { useAppState } from '../../context/AppContext';
 import { Rank } from '../../types';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { RankIcon } from '@/components/ui/icons';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
+import { RankIcon } from '@/components/ui/Icons';
 import DynamicIcon from '../ui/DynamicIcon';
 import ImagePreviewDialog from '../ui/ImagePreviewDialog';
 
@@ -102,16 +102,19 @@ const RanksPage: React.FC = () => {
                                         </div>
                                         <div>
                                             <h4 className="font-bold text-lg text-foreground">{rank.name}</h4>
-                                            <p className="text-muted-foreground text-sm">Level {index + 1}</p>
+                                            <p className="text-muted-foreground text-sm">Requires {rank.xpThreshold} total XP</p>
                                         </div>
                                     </div>
-                                    <div className="font-semibold text-lg text-primary">{rank.xpThreshold} XP</div>
+                                    {isAchieved && !isCurrent && (
+                                        <div className="text-green-400 font-bold text-sm">ACHIEVED</div>
+                                    )}
                                 </li>
                             );
                         })}
                     </ul>
                 </CardContent>
             </Card>
+
             {previewImageUrl && (
                 <ImagePreviewDialog
                     imageUrl={previewImageUrl}

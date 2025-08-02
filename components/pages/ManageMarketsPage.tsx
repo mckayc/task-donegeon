@@ -1,12 +1,12 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Market } from '../../types';
-import { Button } from '@/components/ui/button';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/Button';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import EditMarketDialog from '../markets/EditMarketDialog';
 import ConfirmDialog from '../ui/ConfirmDialog';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import EmptyState from '../ui/EmptyState';
-import { MarketplaceIcon, EllipsisVerticalIcon } from '@/components/ui/icons';
+import { MarketplaceIcon, EllipsisVerticalIcon } from '@/components/ui/Icons';
 import MarketIdeaGenerator from '../quests/MarketIdeaGenerator';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Checkbox } from '@/components/ui/checkbox';

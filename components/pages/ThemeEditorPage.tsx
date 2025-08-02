@@ -2,13 +2,15 @@ import React, { useState, useEffect } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { ThemeDefinition, ThemeStyle } from '../../types';
 import { Button } from '../ui/button';
-import { Card } from '../ui/card';
+import { Card, CardContent } from '../ui/card';
 import { Input } from '../ui/input';
 import { getContrast, getWcagRating, hslValuesToCss, parseHslString, hexToHsl, rgbToHex, hslToRgb } from '../../utils/colors';
 import { TrophyIcon, RankIcon } from '../ui/icons';
 import ThemeIdeaGenerator from '../quests/ThemeIdeaGenerator';
 import ConfirmDialog from '../ui/ConfirmDialog';
 import SimpleColorPicker from '../ui/SimpleColorPicker';
+import { Label } from '@/components/ui/label';
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
 
 const FONT_OPTIONS = [
     "'MedievalSharp', cursive", "'Uncial Antiqua', cursive", "'Press Start 2P', cursive", "'IM Fell English SC', serif", 
@@ -69,9 +71,11 @@ const ThemePreview: React.FC<{ themeData: ThemeStyle }> = ({ themeData }) => {
                     <Button variant="default">Primary Button</Button>
                     <Button variant="secondary">Secondary</Button>
                 </div>
-                <Card title="Sample Card" className="mt-4">
-                    <p>This card uses the secondary background color. The text inside is the primary text color.</p>
-                    <p className="text-accent mt-2">This text has the accent color.</p>
+                <Card className="mt-4">
+                    <CardContent className="p-4">
+                      <p>This card uses the secondary background color. The text inside is the primary text color.</p>
+                      <p className="text-accent mt-2">This text has the accent color.</p>
+                    </CardContent>
                 </Card>
              </div>
         </div>
@@ -184,7 +188,8 @@ const ThemeEditorPage: React.FC = () => {
                 </div>
                 
                 <div className="space-y-6">
-                    <Card title="Select Theme">
+                    <Card>
+                      <CardContent className="p-4">
                         <div className="grid grid-cols-3 md:grid-cols-4 gap-2 max-h-48 overflow-y-auto pr-2">
                              <button onClick={handleCreateNew} className="w-full aspect-square rounded-lg transition-all duration-200 border-2 border-dashed border-stone-600 hover:border-emerald-500 hover:text-emerald-400 flex flex-col items-center justify-center">
                                 <span className="text-3xl">+</span>
@@ -209,9 +214,11 @@ const ThemeEditorPage: React.FC = () => {
                                 </div>
                             ))}
                         </div>
+                      </CardContent>
                     </Card>
 
                     <Card>
+                      <CardContent className="p-6">
                         <div className="border-b border-stone-700 mb-6">
                             <nav className="-mb-px flex space-x-6">
                                 <TabButton tabName="general">General</TabButton>
@@ -224,7 +231,10 @@ const ThemeEditorPage: React.FC = () => {
                         <div>
                             {activeTab === 'general' && (
                                 <div className="space-y-4">
-                                    <Input label="Theme Name" value={formData.name} onChange={e => setFormData(p => p ? ({...p, name: e.target.value}) : null)} required disabled={!formData.isCustom} />
+                                  <div className="space-y-2">
+                                      <Label htmlFor="theme-name">Theme Name</Label>
+                                      <Input id="theme-name" value={formData.name} onChange={e => setFormData(p => p ? ({...p, name: e.target.value}) : null)} required disabled={!formData.isCustom} />
+                                  </div>
                                     {isAiAvailable && (
                                         <Button onClick={() => setIsGeneratorOpen(true)} variant="secondary">
                                             Generate Theme with AI
@@ -234,18 +244,30 @@ const ThemeEditorPage: React.FC = () => {
                             )}
                             {activeTab === 'fonts' && (
                                 <div className="space-y-4">
-                                    <Input as="select" label="Display Font" value={formData.styles['--font-display']} onChange={e => handleStyleChange('--font-display', e.target.value)}>
-                                        {FONT_OPTIONS.map(f => <option key={f} value={f}>{f.split(',')[0].replace(/'/g, '')}</option>)}
-                                    </Input>
-                                    <Input as="select" label="Body Font" value={formData.styles['--font-body']} onChange={e => handleStyleChange('--font-body', e.target.value)}>
-                                        {FONT_OPTIONS.map(f => <option key={f} value={f}>{f.split(',')[0].replace(/'/g, '')}</option>)}
-                                    </Input>
+                                    <div className="space-y-2">
+                                      <Label>Display Font</Label>
+                                      <Select value={formData.styles['--font-display']} onValueChange={value => handleStyleChange('--font-display', value)}>
+                                          <SelectTrigger><SelectValue /></SelectTrigger>
+                                          <SelectContent>
+                                              {FONT_OPTIONS.map(f => <SelectItem key={f} value={f} style={{fontFamily: f}}>{f.split(',')[0].replace(/'/g, '')}</SelectItem>)}
+                                          </SelectContent>
+                                      </Select>
+                                    </div>
+                                     <div className="space-y-2">
+                                      <Label>Body Font</Label>
+                                      <Select value={formData.styles['--font-body']} onValueChange={value => handleStyleChange('--font-body', value)}>
+                                          <SelectTrigger><SelectValue /></SelectTrigger>
+                                          <SelectContent>
+                                              {FONT_OPTIONS.map(f => <SelectItem key={f} value={f} style={{fontFamily: f}}>{f.split(',')[0].replace(/'/g, '')}</SelectItem>)}
+                                          </SelectContent>
+                                      </Select>
+                                    </div>
                                     <div>
-                                        <label className="flex justify-between text-sm font-medium mb-1">Display Font Size <span>({formData.styles['--font-size-display']})</span></label>
+                                        <Label className="flex justify-between text-sm font-medium mb-1">Display Font Size <span>({formData.styles['--font-size-display']})</span></Label>
                                         <input type="range" min="1.5" max="4" step="0.1" value={parseFloat(formData.styles['--font-size-display'])} onChange={e => handleStyleChange('--font-size-display', `${e.target.value}rem`)} className="w-full h-2 bg-stone-700 rounded-lg appearance-none cursor-pointer" />
                                     </div>
                                     <div>
-                                        <label className="flex justify-between text-sm font-medium mb-1">Body Font Size <span>({formData.styles['--font-size-body']})</span></label>
+                                        <Label className="flex justify-between text-sm font-medium mb-1">Body Font Size <span>({formData.styles['--font-size-body']})</span></Label>
                                         <input type="range" min="0.8" max="1.2" step="0.05" value={parseFloat(formData.styles['--font-size-body'])} onChange={e => handleStyleChange('--font-size-body', `${e.target.value}rem`)} className="w-full h-2 bg-stone-700 rounded-lg appearance-none cursor-pointer" />
                                     </div>
                                 </div>
@@ -287,6 +309,7 @@ const ThemeEditorPage: React.FC = () => {
                             )}
                             {activeTab === 'accessibility' && <ContrastChecker styles={formData.styles} />}
                         </div>
+                      </CardContent>
                     </Card>
                 </div>
             </div>

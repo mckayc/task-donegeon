@@ -1,9 +1,9 @@
 import React, { useState, ChangeEvent, ReactNode, useEffect } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { Role, AppSettings, Terminology, RewardCategory, RewardTypeDefinition, AutomatedBackupProfile } from '../../types';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/ui/Button';
 import { ChevronDown } from 'lucide-react';
-import { Input } from '@/components/ui/input';
+import { Input } from '@/components/ui/Input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import ToggleSwitch from '../ui/ToggleSwitch';

@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { useAppState } from '../../context/AppContext';
 import { Blueprint, ImportResolution, ShareableAssetType, Terminology } from '../../types';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/Button';
+import { Input } from '@/components/ui/Input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 

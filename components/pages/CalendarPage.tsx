@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { Quest, Role, ScheduledEvent } from '../../types';
-import { Card, CardHeader, CardContent } from '@/components/ui/Card';
+import { Card, CardHeader, CardContent } from '@/components/ui/card';
 import { toYMD } from '../../utils/quests';
 import MonthView from '../calendar/MonthView';
 import WeekView from '../calendar/WeekView';
@@ -9,9 +9,9 @@ import DayView from '../calendar/DayView';
 import ChroniclesDayView from '../calendar/ChroniclesDayView';
 import ChroniclesMonthView from '../calendar/ChroniclesMonthView';
 import ChroniclesWeekView from '../calendar/ChroniclesWeekView';
-import { Button } from '@/components/ui/Button';
-import ScheduleEventDialog from '../admin/ScheduleEventDialog';
-import EventDetailDialog from '../calendar/EventDetailDialog';
+import { Button } from '@/components/ui/button';
+import ScheduleEventDialog from '@/components/admin/ScheduleEventDialog';
+import EventDetailDialog from '@/components/calendar/EventDetailDialog';
 
 type CalendarView = 'month' | 'week' | 'day';
 type CalendarMode = 'quests' | 'chronicles';
@@ -32,81 +32,105 @@ const CalendarPage: React.FC = () => {
     const [view, setView] = useState<CalendarView>('month');
     const [mode, setMode] = useState<CalendarMode>('quests');
     const [currentDate, setCurrentDate] = useState(new Date());
-    const [editingEvent, setEditingEvent] = useState<ScheduledEvent | null>(null);
-    const [viewingEvent, setViewingEvent] = useState<ScheduledEvent | null>(null);
-    
-    if (!currentUser) return null;
+    const [isEventDialogOpen, setIsEventDialogOpen] = useState(false);
+    const [selectedEvent, setSelectedEvent] = useState<ScheduledEvent | null>(null);
 
-    const filteredQuests = useMemo(() => {
+    const handleDateChange = (offset: number) => {
+        setCurrentDate(prevDate => {
+            const newDate = new Date(prevDate);
+            if (view === 'month') newDate.setMonth(prevDate.getMonth() + offset);
+            else if (view === 'week') newDate.setDate(prevDate.getDate() + (offset * 7));
+            else newDate.setDate(prevDate.getDate() + offset);
+            return newDate;
+        });
+    };
+    
+    const handleEventSelect = (event: ScheduledEvent) => {
+        setSelectedEvent(event);
+    };
+
+    const questsForView = useMemo(() => {
+        if (!currentUser) return [];
         const currentGuildId = appMode.mode === 'guild' ? appMode.guildId : undefined;
         return quests.filter(q => {
-            if (!q.isActive || q.guildId !== currentGuildId) return false;
+            if (!q.isActive) return false;
+            if (q.guildId !== currentGuildId) return false;
             if (q.assignedUserIds.length > 0 && !q.assignedUserIds.includes(currentUser.id)) return false;
             return true;
         });
     }, [quests, currentUser, appMode]);
 
-    const changeDate = (offset: number) => {
-        const newDate = new Date(currentDate);
-        if (view === 'month') newDate.setMonth(currentDate.getMonth() + offset);
-        else if (view === 'week') newDate.setDate(currentDate.getDate() + (offset * 7));
-        else newDate.setDate(currentDate.getDate() + offset);
-        setCurrentDate(newDate);
-    };
-
-    const dateDisplay = useMemo(() => {
-        if (view === 'month') return currentDate.toLocaleDateString('default', { month: 'long', year: 'numeric' });
-        if (view === 'week') {
-            const start = new Date(currentDate);
-            start.setDate(currentDate.getDate() - currentDate.getDay());
-            const end = new Date(start);
-            end.setDate(start.getDate() + 6);
-            return `${start.toLocaleDateString('default', { month: 'short', day: 'numeric' })} - ${end.toLocaleDateString('default', { month: 'short', day: 'numeric', year: 'numeric' })}`;
+    const title = useMemo(() => {
+        const options: Intl.DateTimeFormatOptions = { year: 'numeric' };
+        if (view === 'month') options.month = 'long';
+        else if (view === 'week') {
+            const startOfWeek = new Date(currentDate);
+            startOfWeek.setDate(currentDate.getDate() - currentDate.getDay());
+            const endOfWeek = new Date(startOfWeek);
+            endOfWeek.setDate(startOfWeek.getDate() + 6);
+            if (startOfWeek.getMonth() === endOfWeek.getMonth()) {
+                return `${startOfWeek.toLocaleDateString('default', { month: 'long' })} ${startOfWeek.getFullYear()}`;
+            } else {
+                 return `${startOfWeek.toLocaleDateString('default', { month: 'short' })} - ${endOfWeek.toLocaleDateString('default', { month: 'short' })} ${endOfWeek.getFullYear()}`;
+            }
+        } else {
+             options.month = 'long';
+             options.day = 'numeric';
         }
-        return currentDate.toLocaleDateString('default', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+        return currentDate.toLocaleDateString('default', options);
     }, [currentDate, view]);
 
     return (
-        <div className="flex flex-col h-full">
-            <header className="flex-shrink-0 flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
-                <div className="flex items-center gap-2">
-                    <Button onClick={() => changeDate(-1)} variant="outline">&larr;</Button>
-                    <Button onClick={() => setCurrentDate(new Date())} variant="outline">Today</Button>
-                    <Button onClick={() => changeDate(1)} variant="outline">&rarr;</Button>
-                    <h2 className="text-2xl font-bold text-foreground ml-4">{dateDisplay}</h2>
-                </div>
-                <div className="flex items-center gap-4">
-                    {currentUser.role !== Role.Explorer && (
-                        <Button onClick={() => setEditingEvent({} as ScheduledEvent)}>Schedule Event</Button>
-                    )}
-                    <div className="p-1 bg-background rounded-lg flex gap-1">
-                         <Button onClick={() => setMode('quests')} variant={mode === 'quests' ? 'default' : 'ghost'} size="sm">Quests</Button>
-                         <Button onClick={() => setMode('chronicles')} variant={mode === 'chronicles' ? 'default' : 'ghost'} size="sm">History</Button>
+        <div>
+            <Card>
+                <CardHeader className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div className="flex items-center gap-4">
+                        <Button variant="outline" size="sm" onClick={() => handleDateChange(-1)}>&larr;</Button>
+                        <h2 className="text-2xl font-bold text-center w-64">{title}</h2>
+                        <Button variant="outline" size="sm" onClick={() => handleDateChange(1)}>&rarr;</Button>
+                        <Button variant="secondary" size="sm" onClick={() => setCurrentDate(new Date())}>Today</Button>
                     </div>
-                    <div className="p-1 bg-background rounded-lg flex gap-1">
-                        <ViewButton type="month" currentView={view} setView={setView}>Month</ViewButton>
-                        <ViewButton type="week" currentView={view} setView={setView}>Week</ViewButton>
-                        <ViewButton type="day" currentView={view} setView={setView}>Day</ViewButton>
+                    <div className="flex items-center gap-4">
+                        <div className="flex space-x-1 p-1 bg-background rounded-lg">
+                            <Button onClick={() => setMode('quests')} variant={mode === 'quests' ? 'default' : 'ghost'} size="sm">Quests</Button>
+                            <Button onClick={() => setMode('chronicles')} variant={mode === 'chronicles' ? 'default' : 'ghost'} size="sm">Chronicles</Button>
+                        </div>
+                        <div className="flex space-x-1 p-1 bg-background rounded-lg">
+                            <ViewButton type="month" currentView={view} setView={setView}>Month</ViewButton>
+                            <ViewButton type="week" currentView={view} setView={setView}>Week</ViewButton>
+                            <ViewButton type="day" currentView={view} setView={setView}>Day</ViewButton>
+                        </div>
+                         {currentUser?.role === Role.DonegeonMaster && (
+                            <Button onClick={() => setIsEventDialogOpen(true)}>Schedule Event</Button>
+                        )}
                     </div>
-                </div>
-            </header>
-            <div className="flex-grow bg-card rounded-lg overflow-hidden">
-                {mode === 'quests' ? (
-                    <>
-                        {view === 'month' && <MonthView currentDate={currentDate} quests={filteredQuests} questCompletions={questCompletions} scheduledEvents={scheduledEvents} onEventSelect={setViewingEvent} />}
-                        {view === 'week' && <WeekView currentDate={currentDate} quests={filteredQuests} questCompletions={questCompletions} scheduledEvents={scheduledEvents} onEventSelect={setViewingEvent} />}
-                        {view === 'day' && <DayView currentDate={currentDate} quests={filteredQuests} questCompletions={questCompletions} scheduledEvents={scheduledEvents} onEventSelect={setViewingEvent} />}
-                    </>
-                ) : (
-                     <>
-                        {view === 'month' && <ChroniclesMonthView currentDate={currentDate} />}
-                        {view === 'week' && <ChroniclesWeekView currentDate={currentDate} />}
-                        {view === 'day' && <ChroniclesDayView currentDate={currentDate} />}
-                    </>
-                )}
-            </div>
-            {editingEvent && <ScheduleEventDialog event={editingEvent === {} as ScheduledEvent ? null : editingEvent} onClose={() => setEditingEvent(null)} />}
-            {viewingEvent && <EventDetailDialog event={viewingEvent} onClose={() => setViewingEvent(null)} />}
+                </CardHeader>
+                <CardContent>
+                    {(() => {
+                        if (mode === 'quests') {
+                            switch (view) {
+                                case 'month': return <MonthView currentDate={currentDate} quests={questsForView} questCompletions={questCompletions} scheduledEvents={scheduledEvents} onEventSelect={handleEventSelect} />;
+                                case 'week': return <WeekView currentDate={currentDate} quests={questsForView} questCompletions={questCompletions} scheduledEvents={scheduledEvents} onEventSelect={handleEventSelect} />;
+                                case 'day': return <DayView currentDate={currentDate} quests={questsForView} questCompletions={questCompletions} scheduledEvents={scheduledEvents} onEventSelect={handleEventSelect} />;
+                            }
+                        } else { // Chronicles mode
+                             switch (view) {
+                                case 'month': return <ChroniclesMonthView currentDate={currentDate} />;
+                                case 'week': return <ChroniclesWeekView currentDate={currentDate} />;
+                                case 'day': return <ChroniclesDayView currentDate={currentDate} />;
+                            }
+                        }
+                    })()}
+                </CardContent>
+            </Card>
+
+            {isEventDialogOpen && (
+                <ScheduleEventDialog event={null} onClose={() => setIsEventDialogOpen(false)} />
+            )}
+
+            {selectedEvent && (
+                <EventDetailDialog event={selectedEvent} onClose={() => setSelectedEvent(null)} />
+            )}
         </div>
     );
 };

@@ -1,8 +1,8 @@
 import React, { useMemo, useState } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { Quest, QuestAvailability, QuestCompletionStatus, RewardCategory, Role, User, QuestType, PurchaseRequest, UserTrophy, Rank } from '../../types';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
+import { Button } from '@/components/ui/Button';
 import { isQuestAvailableForUser, isQuestVisibleToUserInMode, fromYMD, getQuestUserStatus, questSorter } from '../../utils/quests';
 import QuestDetailDialog from '../quests/QuestDetailDialog';
 import CompleteQuestDialog from '../quests/CompleteQuestDialog';

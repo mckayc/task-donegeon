@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { ThemeDefinition, ThemeStyle } from '../../types';
 import { Button } from '../ui/button';
@@ -54,12 +54,19 @@ const ContrastChecker: React.FC<{ styles: ThemeStyle }> = ({ styles }) => {
 
 const ThemePreview: React.FC<{ themeData: ThemeStyle }> = ({ themeData }) => {
     const { settings } = useAppState();
-    
-    // This creates a style object that sets the CSS variables for this component's scope.
-    const livePreviewStyles: React.CSSProperties = { ...themeData } as any;
+    const previewRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        const element = previewRef.current;
+        if (element) {
+            Object.entries(themeData).forEach(([key, value]) => {
+                element.style.setProperty(key, value);
+            });
+        }
+    }, [themeData]);
 
     return (
-        <div style={livePreviewStyles} className="p-4 rounded-lg transition-all duration-300 flex flex-col border-2 border-stone-700" data-theme>
+        <div ref={previewRef} className="p-4 rounded-lg transition-all duration-300 flex flex-col border-2 border-stone-700" data-theme>
              <div className="flex-grow p-4 rounded-lg space-y-4" style={{ backgroundColor: 'hsl(var(--color-bg-tertiary))' }}>
                 <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--font-size-display)', color: 'hsl(var(--color-text-primary))' }}>
                     {settings.terminology.appName}

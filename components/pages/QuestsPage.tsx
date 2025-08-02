@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/Card';
+import { Button } from '@/components/ui/Button';
 import CreateQuestDialog from '../quests/CreateQuestDialog';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { Role, QuestType, Quest, QuestAvailability } from '../../types';

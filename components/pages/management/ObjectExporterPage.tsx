@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, ChangeEvent } from 'react';
 import { useAppState } from '../../../context/AppContext';
 import { ShareableAssetType, Terminology } from '../../../types';
-import { Button } from '@/components/ui/Button';
-import { Input } from '@/components/ui/Input';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { generateBlueprint } from '../../../utils/sharing';
@@ -73,11 +73,11 @@ const ObjectExporterPage: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="bp-name">Blueprint Name</Label>
-                  <Input id="bp-name" placeholder="e.g., 'My Awesome Chore Pack'" value={blueprintName} onChange={e => setBlueprintName(e.target.value)} required />
+                  <Input id="bp-name" placeholder="e.g., 'My Awesome Chore Pack'" value={blueprintName} onChange={(e: ChangeEvent<HTMLInputElement>) => setBlueprintName(e.target.value)} required />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="bp-desc">Description (Optional)</Label>
-                  <Input id="bp-desc" placeholder="A brief summary of what's inside" value={blueprintDesc} onChange={e => setBlueprintDesc(e.target.value)} />
+                  <Input id="bp-desc" placeholder="A brief summary of what's inside" value={blueprintDesc} onChange={(e: ChangeEvent<HTMLInputElement>) => setBlueprintDesc(e.target.value)} />
                 </div>
             </div>
 

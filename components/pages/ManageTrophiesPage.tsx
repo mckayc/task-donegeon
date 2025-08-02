@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Trophy } from '../../types';
-import { Button } from '@/components/ui/Button';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
+import { Button } from '@/components/ui/button';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import EditTrophyDialog from '../settings/EditTrophyDialog';
@@ -9,7 +9,7 @@ import ConfirmDialog from '../ui/ConfirmDialog';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import EmptyState from '../ui/EmptyState';
 import TrophyIdeaGenerator from '../quests/TrophyIdeaGenerator';
-import { TrophyIcon } from '@/components/ui/Icons';
+import { TrophyIcon } from '@/components/ui/icons';
 import { EllipsisVertical } from 'lucide-react';
 
 

@@ -1,17 +1,16 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { Trophy, TrophyRequirement, TrophyRequirementType, QuestType } from '../../types';
-import { Button } from '@/components/ui/Button';
-import { Input } from '@/components/ui/Input';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
-import ToggleSwitch from '../ui/ToggleSwitch';
-import EmojiPicker from '../ui/EmojiPicker';
-import ImageSelectionDialog from '../ui/ImageSelectionDialog';
-import DynamicIcon from '../ui/DynamicIcon';
+import ToggleSwitch from '@/components/ui/ToggleSwitch';
+import EmojiPicker from '@/components/ui/EmojiPicker';
+import ImageSelectionDialog from '@/components/ui/ImageSelectionDialog';
+import DynamicIcon from '@/components/ui/DynamicIcon';
 
 interface EditTrophyDialogProps {
   trophy: Trophy | null;

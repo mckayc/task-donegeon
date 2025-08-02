@@ -1,9 +1,9 @@
 import React, { useState, useMemo } from 'react';
 import { useAppState } from '../../context/AppContext';
 import { RewardCategory, QuestCompletionStatus, RewardItem } from '../../types';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
-import LineChart from '../ui/LineChart';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import LineChart from '@/components/ui/LineChart';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const ProgressPage: React.FC = () => {
     const { currentUser, questCompletions, quests, rewardTypes, appMode } = useAppState();

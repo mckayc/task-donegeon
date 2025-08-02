@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { User, Role } from '../../types';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/ui/Button';
 import Keypad from '../ui/Keypad';
 import Avatar from '../ui/Avatar';
-import { Input } from '@/components/ui/input';
+import { Input } from '@/components/ui/Input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card';
 
 const SwitchUser: React.FC = () => {
     const { users, currentUser: anyCurrentUser, targetedUserForLogin, settings } = useAppState();

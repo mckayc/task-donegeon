@@ -19,7 +19,7 @@ import CalendarPage from '../pages/CalendarPage';
 import ProgressPage from '../pages/ProgressPage';
 import TrophiesPage from '../pages/TrophiesPage';
 import RanksPage from '../pages/RanksPage';
-import HelpPage from '../pages/HelpPage';
+// import HelpPage from '../pages/HelpPage';
 import AvatarPage from '../pages/AvatarPage';
 import VacationModeBanner from '../settings/VacationModeBanner';
 import ManageRanksPage from '../pages/ManageRanksPage';
@@ -139,7 +139,7 @@ const MainLayout: React.FC = () => {
       case 'Asset Library': return <AssetLibraryPage />;
       case 'Profile': return <ProfilePage />;
       case 'About': return <AboutPage />;
-      case 'Help Guide': return <HelpPage />;
+      case 'Help Guide': return <Dashboard />; // return <HelpPage />;
       default: return <Dashboard />;
     }
   };

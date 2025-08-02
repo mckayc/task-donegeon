@@ -1,13 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { AppSettings, ThemeDefinition, SidebarConfigItem, Page, SidebarLink } from '../../types';
-import { Button } from '@/components/ui/Button';
-import { Input } from '@/components/ui/Input';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import ToggleSwitch from '../ui/ToggleSwitch';
 import EmojiPicker from '../ui/EmojiPicker';
-import { GrabHandleIcon, ArrowLeftIcon, ArrowRightIcon } from '@/components/ui/Icons';
+import { GrabHandleIcon, ArrowLeftIcon, ArrowRightIcon } from '@/components/ui/icons';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
 
 type SidebarKey = keyof AppSettings['sidebars'];
@@ -162,7 +162,7 @@ const AppearancePage: React.FC = () => {
                 <CardContent className="space-y-6">
                     <div className="space-y-2">
                         <Label htmlFor="app-name">App Name</Label>
-                        <Input id="app-name" value={formState.terminology.appName} onChange={e => setFormState(p => ({...p, terminology: { ...p.terminology, appName: e.target.value}}))} />
+                        <Input id="app-name" value={formState.terminology.appName} onChange={(e: ChangeEvent<HTMLInputElement>) => setFormState(p => ({...p, terminology: { ...p.terminology, appName: e.target.value}}))} />
                     </div>
                     <div>
                         <Label className="block text-sm font-medium mb-2">Default Theme</Label>

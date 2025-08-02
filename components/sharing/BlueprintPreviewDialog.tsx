@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, ChangeEvent } from 'react';
 import { useAppState } from '../../context/AppContext';
 import { Blueprint, ImportResolution, ShareableAssetType, Terminology } from '../../types';
-import { Button } from '@/components/ui/Button';
-import { Input } from '@/components/ui/Input';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 
@@ -83,7 +83,7 @@ const BlueprintPreviewDialog: React.FC<BlueprintPreviewDialogProps> = ({ bluepri
                                         {res.resolution === 'rename' && (
                                             <Input
                                                 value={res.newName || `${res.name} (Imported)`}
-                                                onChange={e => handleRenameChange(res.id, res.type, e.target.value)}
+                                                onChange={(e: ChangeEvent<HTMLInputElement>) => handleRenameChange(res.id, res.type, e.target.value)}
                                                 className="mt-2 text-sm"
                                             />
                                         )}

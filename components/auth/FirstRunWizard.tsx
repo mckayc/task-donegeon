@@ -1,8 +1,8 @@
 import React, { useState, useRef } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { Role, User, Blueprint } from '../../types';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/Button';
+import { Input } from '@/components/ui/Input';
 import { Label } from '@/components/ui/label';
 import UserFormFields from '../users/UserFormFields';
 

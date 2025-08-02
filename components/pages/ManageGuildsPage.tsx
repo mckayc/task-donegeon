@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
 import { Guild } from '../../types';
-import { Button } from '@/components/ui/Button';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
+import { Button } from '@/components/ui/button';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import EditGuildDialog from '../guilds/EditGuildDialog';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import ConfirmDialog from '../ui/ConfirmDialog';
 import EmptyState from '../ui/EmptyState';
-import { GuildIcon } from '@/components/ui/Icons';
+import { GuildIcon } from '@/components/ui/icons';
 
 const ManageGuildsPage: React.FC = () => {
     const { guilds, settings } = useAppState();

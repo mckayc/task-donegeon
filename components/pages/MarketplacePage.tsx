@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/ui/Button';
 import { PurchaseRequestStatus, RewardCategory, Market, GameAsset, RewardItem, ScheduledEvent } from '../../types';
 import PurchaseDialog from '../markets/PurchaseDialog';
 import ExchangeView from '../markets/ExchangeView';
@@ -9,7 +9,7 @@ import { isMarketOpenForUser } from '../../utils/markets';
 import ImagePreviewDialog from '../ui/ImagePreviewDialog';
 import DynamicIcon from '../ui/DynamicIcon';
 import { toYMD } from '../../utils/quests';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from '@/components/ui/label';
 
 const MarketItemView: React.FC<{ market: Market }> = ({ market }) => {

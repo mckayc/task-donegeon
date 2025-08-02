@@ -1,9 +1,9 @@
 import React, { useState, ChangeEvent, ReactNode, useEffect } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { Role, AppSettings, Terminology, RewardCategory, RewardTypeDefinition, AutomatedBackupProfile } from '../../types';
-import { Button } from '@/components/ui/Button';
+import { Button } from '@/components/ui/button';
 import { ChevronDown } from 'lucide-react';
-import { Input } from '@/components/ui/Input';
+import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import ToggleSwitch from '../ui/ToggleSwitch';
@@ -99,7 +99,7 @@ const terminologyLabels: { [key in keyof Terminology]: string } = {
   link_asset_library: 'Sidebar: Asset Library',
   link_settings: 'Sidebar: Settings',
   link_about: 'About',
-  link_help_guide: 'Sidebar: Help Guide',
+  link_help_guide: 'Help Guide',
   link_chat: 'Sidebar: Chat',
 };
 

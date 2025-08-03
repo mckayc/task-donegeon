@@ -198,69 +198,32 @@ async function main() {
         let result = { success: true };
         try {
             console.log('[ACTION] Reading current state from DB...');
-            const data = await readData();
+            const originalData = await readData();
+            // CRITICAL FIX: Work on a deep copy to prevent any reference issues.
+            let data = JSON.parse(JSON.stringify(originalData));
             
-            // Helper function to apply rewards
-            const applyRewards = (user, rewards, guildId) => {
-                if (!user || !rewards || rewards.length === 0) return;
-
-                // Ensure base objects exist
-                if (!user.personalPurse) user.personalPurse = {};
-                if (!user.personalExperience) user.personalExperience = {};
-                if (guildId && !user.guildBalances[guildId]) {
-                    user.guildBalances[guildId] = { purse: {}, experience: {} };
-                }
-
-                rewards.forEach(rewardItem => {
-                    const rewardDef = data.rewardTypes.find(rt => rt.id === rewardItem.rewardTypeId);
+            // Helper function to apply rewards/setbacks
+            const applyBalanceChange = (user, items, guildId, isSetback = false) => {
+                if (!user || !items || items.length === 0) return;
+                items.forEach(item => {
+                    const rewardDef = data.rewardTypes.find(rt => rt.id === item.rewardTypeId);
                     if (!rewardDef) return;
-
+                    const amount = isSetback ? -item.amount : item.amount;
                     if (guildId) {
-                        const guildBalance = user.guildBalances[guildId];
-                        if (rewardDef.category === RewardCategory.Currency) {
-                            guildBalance.purse[rewardItem.rewardTypeId] = (guildBalance.purse[rewardItem.rewardTypeId] || 0) + rewardItem.amount;
-                        } else {
-                            guildBalance.experience[rewardItem.rewardTypeId] = (guildBalance.experience[rewardItem.rewardTypeId] || 0) + rewardItem.amount;
-                        }
+                        if (!user.guildBalances[guildId]) user.guildBalances[guildId] = { purse: {}, experience: {} };
+                        const balance = user.guildBalances[guildId];
+                        if (rewardDef.category === RewardCategory.Currency) balance.purse[item.rewardTypeId] = (balance.purse[item.rewardTypeId] || 0) + amount;
+                        else balance.experience[item.rewardTypeId] = (balance.experience[item.rewardTypeId] || 0) + amount;
                     } else {
-                        if (rewardDef.category === RewardCategory.Currency) {
-                            user.personalPurse[rewardItem.rewardTypeId] = (user.personalPurse[rewardItem.rewardTypeId] || 0) + rewardItem.amount;
-                        } else {
-                            user.personalExperience[rewardItem.rewardTypeId] = (user.personalExperience[rewardItem.rewardTypeId] || 0) + rewardItem.amount;
-                        }
+                        if (!user.personalPurse) user.personalPurse = {};
+                        if (!user.personalExperience) user.personalExperience = {};
+                        if (rewardDef.category === RewardCategory.Currency) user.personalPurse[item.rewardTypeId] = (user.personalPurse[item.rewardTypeId] || 0) + amount;
+                        else user.personalExperience[item.rewardTypeId] = (user.personalExperience[item.rewardTypeId] || 0) + amount;
                     }
                 });
             };
-
-            const applySetbacks = (user, setbacks, guildId) => {
-                if (!user || !setbacks || setbacks.length === 0) return;
-
-                if (!user.personalPurse) user.personalPurse = {};
-                if (!user.personalExperience) user.personalExperience = {};
-                if (guildId && !user.guildBalances[guildId]) {
-                    user.guildBalances[guildId] = { purse: {}, experience: {} };
-                }
-
-                setbacks.forEach(setbackItem => {
-                    const rewardDef = data.rewardTypes.find(rt => rt.id === setbackItem.rewardTypeId);
-                    if (!rewardDef) return;
-
-                    if (guildId) {
-                        const guildBalance = user.guildBalances[guildId];
-                        if (rewardDef.category === RewardCategory.Currency) {
-                            guildBalance.purse[setbackItem.rewardTypeId] = (guildBalance.purse[setbackItem.rewardTypeId] || 0) - setbackItem.amount;
-                        } else {
-                            guildBalance.experience[setbackItem.rewardTypeId] = (guildBalance.experience[setbackItem.rewardTypeId] || 0) - setbackItem.amount;
-                        }
-                    } else {
-                        if (rewardDef.category === RewardCategory.Currency) {
-                            user.personalPurse[setbackItem.rewardTypeId] = (user.personalPurse[setbackItem.rewardTypeId] || 0) - setbackItem.amount;
-                        } else {
-                            user.personalExperience[setbackItem.rewardTypeId] = (user.personalExperience[setbackItem.rewardTypeId] || 0) - setbackItem.amount;
-                        }
-                    }
-                });
-            };
+            const applyRewards = (user, rewards, guildId) => applyBalanceChange(user, rewards, guildId, false);
+            const applySetbacks = (user, setbacks, guildId) => applyBalanceChange(user, setbacks, guildId, true);
 
             switch(type) {
                 // === USER ACTIONS ===
@@ -372,23 +335,48 @@ async function main() {
                     data.questCompletions.push(newCompletion);
                     
                     if (!quest.requiresApproval) {
-                        applyRewards(user, quest.rewards, guildId, data);
+                        applyRewards(user, quest.rewards, guildId);
                     }
                     break;
                 }
                 case 'APPROVE_QUEST_COMPLETION': {
                     const completion = data.questCompletions.find(c => c.id === payload.completionId);
-                    if(completion) {
+                    const user = data.users.find(u => u.id === completion?.userId);
+                    if(completion && user) {
                         completion.status = QuestCompletionStatus.Approved;
                         const quest = data.quests.find(q => q.id === completion.questId);
-                        const user = data.users.find(u => u.id === completion.userId);
-                        if(quest && user) applyRewards(user, quest.rewards, completion.guildId, data);
+                        if(quest) applyRewards(user, quest.rewards, completion.guildId);
                     }
                     break;
                 }
                 case 'REJECT_QUEST_COMPLETION': {
                     const completion = data.questCompletions.find(c => c.id === payload.completionId);
                     if(completion) completion.status = QuestCompletionStatus.Rejected;
+                    break;
+                }
+                case 'UPDATE_QUESTS_STATUS': {
+                    const { questIds, isActive } = payload;
+                    data.quests.forEach(q => {
+                        if (questIds.includes(q.id)) {
+                            q.isActive = isActive;
+                        }
+                    });
+                    break;
+                }
+                case 'BULK_UPDATE_QUESTS': {
+                    const { questIds, updates } = payload;
+                    data.quests.forEach(q => {
+                        if (questIds.includes(q.id)) {
+                            if (updates.isActive !== undefined) q.isActive = updates.isActive;
+                            if (updates.isOptional !== undefined) q.isOptional = updates.isOptional;
+                            if (updates.requiresApproval !== undefined) q.requiresApproval = updates.requiresApproval;
+                            if (updates.groupId !== undefined) q.groupId = updates.groupId === null ? undefined : updates.groupId;
+                            if (updates.addTags) q.tags = [...new Set([...q.tags, ...updates.addTags])];
+                            if (updates.removeTags) q.tags = q.tags.filter(t => !updates.removeTags.includes(t));
+                            if (updates.assignUsers) q.assignedUserIds = [...new Set([...q.assignedUserIds, ...updates.assignUsers])];
+                            if (updates.unassignUsers) q.assignedUserIds = q.assignedUserIds.filter(id => !updates.unassignUsers.includes(id));
+                        }
+                    });
                     break;
                 }
 
@@ -406,7 +394,6 @@ async function main() {
                 }
                 case 'DELETE_QUEST_GROUP': {
                     data.questGroups = data.questGroups.filter(g => g.id !== payload.groupId);
-                    // Uncategorize quests that were in this group
                     data.quests.forEach(q => {
                         if (q.groupId === payload.groupId) q.groupId = undefined;
                     });
@@ -526,15 +513,13 @@ async function main() {
                     const { senderId, recipientId, guildId, message, isAnnouncement } = payload;
                     const newMessage = {
                         id: `msg-${Date.now()}-${Math.random()}`,
-                        senderId,
-                        message,
+                        senderId, message,
                         timestamp: new Date().toISOString(),
                         readBy: [senderId],
                     };
                     if (recipientId) newMessage.recipientId = recipientId;
                     if (guildId) newMessage.guildId = guildId;
                     if (isAnnouncement) newMessage.isAnnouncement = isAnnouncement;
-
                     data.chatMessages.push(newMessage);
                     break;
                 }
@@ -543,17 +528,18 @@ async function main() {
                     data.chatMessages.forEach(msg => {
                         const isUnread = !msg.readBy.includes(currentUserId);
                         if (isUnread) {
-                            if (guildId && msg.guildId === guildId) {
-                                msg.readBy.push(currentUserId);
-                            } else if (partnerId && ((msg.recipientId === currentUserId && msg.senderId === partnerId))) {
-                                msg.readBy.push(currentUserId);
-                            }
+                            if (guildId && msg.guildId === guildId) msg.readBy.push(currentUserId);
+                            else if (partnerId && msg.recipientId === currentUserId && msg.senderId === partnerId) msg.readBy.push(currentUserId);
                         }
                     });
                     break;
                 }
                 case 'UPDATE_SETTINGS': {
                     data.settings = { ...data.settings, ...payload };
+                    break;
+                }
+                case 'RESET_SETTINGS': {
+                    data.settings = INITIAL_SETTINGS;
                     break;
                 }
                 case 'PURCHASE_MARKET_ITEM': {
@@ -570,12 +556,13 @@ async function main() {
                         const balanceKey = rewardDef.category === RewardCategory.Currency ? 'purse' : 'experience';
                         if ((balanceTarget[balanceKey][item.rewardTypeId] || 0) < item.amount) throw new Error("You can't afford this item.");
                     }
+                    
+                    applySetbacks(user, cost, guildId);
+                    
                     const newPurchaseRequest = {
                         id: `pr-${Date.now()}`, userId, assetId, requestedAt: new Date().toISOString(),
                         status: asset.requiresApproval ? 'Pending' : 'Completed', assetDetails: { name: asset.name, description: asset.description, cost }, guildId,
                     };
-                    
-                    applySetbacks(user, cost, guildId, data);
                     
                     if (asset.requiresApproval) {
                         data.purchaseRequests.push(newPurchaseRequest);
@@ -583,7 +570,7 @@ async function main() {
                         newPurchaseRequest.actedAt = new Date().toISOString();
                         user.ownedAssetIds.push(assetId);
                         if (asset.linkedThemeId && !user.ownedThemes.includes(asset.linkedThemeId)) user.ownedThemes.push(asset.linkedThemeId);
-                        applyRewards(user, asset.payouts || [], guildId, data);
+                        applyRewards(user, asset.payouts || [], guildId);
                         asset.purchaseCount = (asset.purchaseCount || 0) + 1;
                         data.purchaseRequests.push(newPurchaseRequest);
                     }
@@ -598,7 +585,7 @@ async function main() {
                         purchase.actedAt = new Date().toISOString();
                         user.ownedAssetIds.push(asset.id);
                         if (asset.linkedThemeId && !user.ownedThemes.includes(asset.linkedThemeId)) user.ownedThemes.push(asset.linkedThemeId);
-                        applyRewards(user, asset.payouts || [], purchase.guildId, data);
+                        applyRewards(user, asset.payouts || [], purchase.guildId);
                         asset.purchaseCount = (asset.purchaseCount || 0) + 1;
                     }
                     break;
@@ -609,15 +596,24 @@ async function main() {
                      if(purchase && user) {
                          purchase.status = 'Rejected';
                          purchase.actedAt = new Date().toISOString();
-                         // Refund
-                         applyRewards(user, purchase.assetDetails.cost, purchase.guildId, data);
+                         applyRewards(user, purchase.assetDetails.cost, purchase.guildId);
+                     }
+                    break;
+                }
+                 case 'CANCEL_PURCHASE_REQUEST': {
+                     const purchase = data.purchaseRequests.find(pr => pr.id === payload.purchaseId);
+                     const user = data.users.find(u => u.id === purchase.userId);
+                     if(purchase && user) {
+                         purchase.status = 'Cancelled';
+                         purchase.actedAt = new Date().toISOString();
+                         applyRewards(user, purchase.assetDetails.cost, purchase.guildId);
                      }
                     break;
                 }
                 case 'ADD_THEME': {
                     const newTheme = { ...payload, id: `theme-custom-${Date.now()}` };
                     data.themes.push(newTheme);
-                    result = newTheme; // Return the new theme with its ID
+                    result = newTheme;
                     break;
                 }
                 case 'UPDATE_THEME': {
@@ -627,6 +623,65 @@ async function main() {
                 }
                 case 'DELETE_THEME': {
                     data.themes = data.themes.filter(t => t.id !== payload.themeId);
+                    break;
+                }
+                 case 'ADD_GUILD': {
+                    const newGuild = { ...payload, id: `guild-${Date.now()}` };
+                    data.guilds.push(newGuild);
+                    break;
+                }
+                case 'UPDATE_GUILD': {
+                    const index = data.guilds.findIndex(g => g.id === payload.id);
+                    if (index > -1) data.guilds[index] = payload;
+                    break;
+                }
+                case 'DELETE_GUILD': {
+                    data.guilds = data.guilds.filter(g => g.id !== payload.guildId);
+                    break;
+                }
+                case 'APPLY_MANUAL_ADJUSTMENT': {
+                    const newAdjustment = { ...payload, id: `adj-${Date.now()}`, adjustedAt: new Date().toISOString() };
+                    data.adminAdjustments.push(newAdjustment);
+                    const user = data.users.find(u => u.id === payload.userId);
+                    if (user) {
+                        applyRewards(user, payload.rewards, payload.guildId);
+                        applySetbacks(user, payload.setbacks, payload.guildId);
+                    }
+                    break;
+                }
+                case 'ADD_GAME_ASSET': {
+                    const newAsset = { ...payload, id: `ga-${Date.now()}`, creatorId: 'admin', createdAt: new Date().toISOString(), purchaseCount: 0 };
+                    data.gameAssets.push(newAsset);
+                    break;
+                }
+                case 'UPDATE_GAME_ASSET': {
+                    const index = data.gameAssets.findIndex(ga => ga.id === payload.id);
+                    if (index > -1) data.gameAssets[index] = payload;
+                    break;
+                }
+                case 'DELETE_GAME_ASSET': {
+                    data.gameAssets = data.gameAssets.filter(ga => ga.id !== payload.assetId);
+                    break;
+                }
+                case 'DELETE_GAME_ASSETS': {
+                    const idsToDelete = new Set(payload.assetIds);
+                    data.gameAssets = data.gameAssets.filter(ga => !idsToDelete.has(ga.id));
+                    break;
+                }
+                case 'CLONE_GAME_ASSET': {
+                    const toClone = data.gameAssets.find(ga => ga.id === payload.assetId);
+                    if (toClone) {
+                        const newAsset = { ...toClone, id: `ga-${Date.now()}`, name: `${toClone.name} (Copy)` };
+                        data.gameAssets.push(newAsset);
+                    }
+                    break;
+                }
+                 case 'EXECUTE_EXCHANGE': {
+                    const { userId, payItem, receiveItem, guildId } = payload;
+                    const user = data.users.find(u => u.id === userId);
+                    if (!user) throw new Error("User not found for exchange");
+                    applySetbacks(user, [payItem], guildId);
+                    applyRewards(user, [receiveItem], guildId);
                     break;
                 }
                 default:

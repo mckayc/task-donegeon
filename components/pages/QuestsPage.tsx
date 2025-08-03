@@ -118,14 +118,23 @@ const QuestItem: React.FC<{ quest: Quest; now: Date; onSelect: (quest: Quest) =>
     }, [quest]);
 
     const isDuty = quest.type === QuestType.Duty;
-    let baseCardClass = isDuty ? 'bg-sky-900/30' : 'bg-amber-900/30';
     const optionalClass = quest.isOptional ? 'border-dashed' : '';
 
+    const cardStyle = {
+      backgroundColor: `hsl(${isDuty ? 'var(--color-duty-bg)' : 'var(--color-venture-bg)'})`,
+      color: `hsl(${isDuty ? 'var(--color-duty-text)' : 'var(--color-venture-text)'})`,
+    };
+
+    const iconBgStyle = {
+        backgroundColor: `hsla(${isDuty ? 'var(--color-duty-bg)' : 'var(--color-venture-bg)'}, 0.5)`
+    };
+
+
     return (
-        <div onClick={() => onSelect(quest)} className={`border-2 rounded-xl shadow-lg flex flex-col h-full transition-all duration-500 cursor-pointer ${baseCardClass} ${borderClass} ${optionalClass} ${!isAvailable ? 'opacity-50' : ''}`}>
+        <div onClick={() => onSelect(quest)} className={`border-2 rounded-xl shadow-lg flex flex-col h-full transition-all duration-500 cursor-pointer ${borderClass} ${optionalClass} ${!isAvailable ? 'opacity-50' : ''}`} style={cardStyle}>
             {/* Header */}
             <div className="p-4 border-b border-white/10 flex items-start gap-4">
-                <div className={`w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 text-3xl overflow-hidden ${isDuty ? 'bg-sky-900/70' : 'bg-amber-900/70'}`}>
+                <div className={`w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 text-3xl overflow-hidden`} style={iconBgStyle}>
                     <button
                         onClick={(e) => {
                             e.stopPropagation();
@@ -198,9 +207,9 @@ const FilterButton: React.FC<{
 
   if (isActive) {
       if (type === QuestType.Duty) {
-          className += "bg-sky-500/80 hover:bg-sky-500/90 text-white";
+          className += "bg-duty-card-accent text-duty-card-text hover:opacity-90";
       } else if (type === QuestType.Venture) {
-          className += "bg-amber-500/80 hover:bg-amber-500/90 text-white";
+          className += "bg-venture-card-accent text-venture-card-text hover:opacity-90";
       } else {
           variant = 'default';
       }

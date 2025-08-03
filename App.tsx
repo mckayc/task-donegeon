@@ -10,9 +10,14 @@ import SharedLayout from '@/components/layout/SharedLayout';
 import { TooltipProvider } from "@/components/ui/tooltip";
 
 const App: React.FC = () => {
-  const { isAppUnlocked, isFirstRun, currentUser, isSwitchingUser, isDataLoaded, settings, isSharedViewActive, appMode, guilds, themes, isRestarting } = useAppState();
+  const { isAppUnlocked, isFirstRun, currentUser, isSwitchingUser, isDataLoaded, settings, isSharedViewActive, appMode, guilds, themes, isRestarting, activePage } = useAppState();
 
   useEffect(() => {
+    // If we are on a page that handles its own theme preview, don't let the global effect override it.
+    if (activePage === 'Appearance' || activePage === 'Theme Editor') {
+        return;
+    }
+
     let activeThemeId: string | undefined = settings.theme; // Default to system theme
 
     if (appMode.mode === 'guild') {
@@ -37,7 +42,7 @@ const App: React.FC = () => {
         });
     }
 
-  }, [settings.theme, currentUser?.id, currentUser?.theme, appMode, guilds, themes]);
+  }, [settings.theme, currentUser?.id, currentUser?.theme, appMode, guilds, themes, activePage]);
 
   useEffect(() => {
     if (settings.favicon) {

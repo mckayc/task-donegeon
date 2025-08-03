@@ -53,6 +53,28 @@ export default {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
+        "duty-card": {
+            DEFAULT: "hsl(var(--color-duty-bg))",
+            border: "hsl(var(--color-duty-border))",
+            text: "hsl(var(--color-duty-text))",
+            accent: "hsla(var(--color-duty-bg), 0.5)",
+        },
+        "venture-card": {
+            DEFAULT: "hsl(var(--color-venture-bg))",
+            border: "hsl(var(--color-venture-border))",
+            text: "hsl(var(--color-venture-text))",
+            accent: "hsla(var(--color-venture-bg), 0.5)",
+        },
+        "item-card": {
+            DEFAULT: "hsl(var(--color-item-bg))",
+            border: "hsl(var(--color-item-border))",
+            text: "hsl(var(--color-item-text))",
+        },
+        "trophy-card": {
+            DEFAULT: "hsl(var(--color-trophy-bg))",
+            border: "hsl(var(--color-trophy-border))",
+            text: "hsl(var(--color-trophy-text))",
+        }
       },
       borderRadius: {
         lg: "var(--radius)",

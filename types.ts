@@ -568,6 +568,19 @@ export interface ThemeStyle {
   '--color-accent-light-hue': string;
   '--color-accent-light-saturation': string;
   '--color-accent-light-lightness': string;
+  // Asset Colors
+  '--color-duty-bg': string;
+  '--color-duty-border': string;
+  '--color-duty-text': string;
+  '--color-venture-bg': string;
+  '--color-venture-border': string;
+  '--color-venture-text': string;
+  '--color-item-bg': string;
+  '--color-item-border': string;
+  '--color-item-text': string;
+  '--color-trophy-bg': string;
+  '--color-trophy-border': string;
+  '--color-trophy-text': string;
 }
 
 export interface ThemeDefinition {

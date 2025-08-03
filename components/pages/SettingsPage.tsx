@@ -29,10 +29,6 @@ const SettingsPage: React.FC = () => {
     const [formState, setFormState] = useState<AppSettings>(() => JSON.parse(JSON.stringify(settings)));
     const [isFaviconPickerOpen, setIsFaviconPickerOpen] = useState(false);
     const [isChatEmojiPickerOpen, setIsChatEmojiPickerOpen] = useState(false);
-
-    useEffect(() => {
-        setFormState(JSON.parse(JSON.stringify(settings)));
-    }, [settings]);
     
     const handleNestedChange = <T extends keyof AppSettings>(section: T) => (field: keyof AppSettings[T], value: any) => {
         setFormState(prev => ({

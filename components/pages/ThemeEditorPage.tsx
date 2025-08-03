@@ -109,13 +109,14 @@ const ThemeEditorPage: React.FC = () => {
         setFormData(prev => prev ? ({ ...prev, styles: { ...prev.styles, [key]: value } }) : null);
     };
 
-    const handleSave = () => {
+    const handleSave = async () => {
         if (!formData) return;
         if (formData.id.startsWith('new-')) { // It's a new theme
             const { id, ...newThemeData } = formData;
-            addTheme({ ...newThemeData, isCustom: true }).then(newTheme => {
-                if (newTheme) setSelectedThemeId(newTheme.id);
-            });
+            const newTheme = await addTheme({ ...newThemeData, isCustom: true });
+            if (newTheme) {
+                setSelectedThemeId(newTheme.id);
+            }
         } else { // It's an existing theme
             updateTheme({ ...formData, isCustom: true });
         }

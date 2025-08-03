@@ -656,7 +656,7 @@ export interface BulkQuestUpdates {
 // The single, unified dispatch for the entire application
 export interface AppDispatch {
   // Auth
-  addUser: (user: Omit<User, 'id' | 'personalPurse' | 'personalExperience' | 'guildBalances' | 'avatar' | 'ownedAssetIds' | 'ownedThemes' | 'hasBeenOnboarded'>) => Promise<User | undefined>;
+  addUser: (user: Omit<User, 'id' | 'personalPurse' | 'personalExperience' | 'guildBalances' | 'avatar' | 'ownedAssetIds' | 'ownedThemes' | 'hasBeenOnboarded'>) => Promise<void>;
   updateUser: (userId: string, updatedData: Partial<User>) => Promise<void>;
   deleteUser: (userId: string) => Promise<void>;
   setCurrentUser: (user: User | null) => void;
@@ -670,7 +670,7 @@ export interface AppDispatch {
   reinitializeApp: () => Promise<void>;
 
   // Game Data
-  addQuest: (quest: Omit<Quest, 'id' | 'claimedByUserIds' | 'dismissals'>) => Promise<Quest | undefined>;
+  addQuest: (quest: Omit<Quest, 'id' | 'claimedByUserIds' | 'dismissals'>) => Promise<void>;
   updateQuest: (updatedQuest: Quest) => Promise<void>;
   deleteQuest: (questId: string) => Promise<void>;
   cloneQuest: (questId: string) => Promise<void>;
@@ -700,7 +700,7 @@ export interface AppDispatch {
   approvePurchaseRequest: (purchaseId: string) => Promise<void>;
   rejectPurchaseRequest: (purchaseId: string) => Promise<void>;
   cancelPurchaseRequest: (purchaseId: string) => Promise<void>;
-  addGuild: (guild: Omit<Guild, 'id'>) => Promise<Guild | undefined>;
+  addGuild: (guild: Omit<Guild, 'id'>) => Promise<void>;
   updateGuild: (guild: Guild) => Promise<void>;
   deleteGuild: (guildId: string) => Promise<void>;
   addTrophy: (trophy: Omit<Trophy, 'id'>) => Promise<Trophy | undefined>;
@@ -709,8 +709,8 @@ export interface AppDispatch {
   cloneTrophy: (trophyId: string) => Promise<void>;
   deleteTrophies: (trophyIds: string[]) => Promise<void>;
   awardTrophy: (userId: string, trophyId: string, guildId?: string) => Promise<void>;
-  applyManualAdjustment: (adjustment: Omit<AdminAdjustment, 'id' | 'adjustedAt'>) => Promise<boolean>;
-  addGameAsset: (asset: Omit<GameAsset, 'id' | 'creatorId' | 'createdAt' | 'purchaseCount'>) => Promise<GameAsset | undefined>;
+  applyManualAdjustment: (adjustment: Omit<AdminAdjustment, 'id' | 'adjustedAt'>) => Promise<void>;
+  addGameAsset: (asset: Omit<GameAsset, 'id' | 'creatorId' | 'createdAt' | 'purchaseCount'>) => Promise<void>;
   updateGameAsset: (asset: GameAsset) => Promise<void>;
   deleteGameAsset: (assetId: string) => Promise<void>;
   deleteGameAssets: (assetIds: string[]) => Promise<void>;
@@ -749,15 +749,15 @@ export interface AppDispatch {
   setRanks: (ranks: Rank[]) => void;
 
   // Chat
-  sendMessage: (message: Pick<ChatMessage, "message"> & Partial<Omit<ChatMessage, "message">>) => Promise<ChatMessage | undefined>;
+  sendMessage: (message: Pick<ChatMessage, "message"> & Partial<Omit<ChatMessage, "message">>) => Promise<void>;
   markMessagesAsRead: (options: { partnerId?: string; guildId?: string }) => Promise<void>;
 
   // System Notifications
-  addSystemNotification: (notification: Omit<SystemNotification, 'id' | 'timestamp' | 'readByUserIds'>) => Promise<SystemNotification | undefined>;
+  addSystemNotification: (notification: Omit<SystemNotification, 'id' | 'timestamp' | 'readByUserIds'>) => Promise<void>;
   markSystemNotificationsAsRead: (notificationIds: string[]) => Promise<void>;
 
   // Scheduled Events
-  addScheduledEvent: (event: Omit<ScheduledEvent, 'id'>) => Promise<ScheduledEvent | undefined>;
+  addScheduledEvent: (event: Omit<ScheduledEvent, 'id'>) => Promise<void>;
   updateScheduledEvent: (event: ScheduledEvent) => Promise<void>;
   deleteScheduledEvent: (eventId: string) => Promise<void>;
   

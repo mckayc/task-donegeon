@@ -72,10 +72,12 @@ const ManualAdjustmentDialog: React.FC<ManualAdjustmentDialogProps> = ({ user, o
         return;
     }
     
-    const success = await applyManualAdjustment(adjustmentPayload);
-
-    if (success) {
+    try {
+        await applyManualAdjustment(adjustmentPayload);
         onClose();
+    } catch(err) {
+        console.error('Failed to apply manual adjustment', err);
+        // Notification is handled by AppContext
     }
   };
   

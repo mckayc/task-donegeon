@@ -357,6 +357,16 @@ async function main() {
                     if(completion) completion.status = QuestCompletionStatus.Rejected;
                     break;
                 }
+                 case 'SEND_MESSAGE': {
+                    const newMessage = {
+                        id: `msg-${Date.now()}`,
+                        ...payload,
+                        timestamp: new Date().toISOString(),
+                        readBy: [payload.senderId], // Sender has read it by default
+                    };
+                    data.chatMessages.push(newMessage);
+                    break;
+                }
                 
                 // === SCHEDULED EVENT ACTIONS ===
                 case 'ADD_SCHEDULED_EVENT': {

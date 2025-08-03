@@ -129,8 +129,10 @@ const Header: React.FC = () => {
         </div>
       </div>
 
-      <div className="hidden lg:flex items-center justify-center flex-grow mx-4">
-        <RewardDisplay />
+      <div className="flex items-center justify-center flex-grow mx-4 min-w-0">
+        <div className="overflow-x-auto scrollbar-hide">
+            <RewardDisplay />
+        </div>
       </div>
       
       <div className="flex items-center gap-4 flex-shrink-0">
@@ -145,6 +147,8 @@ const Header: React.FC = () => {
             </Button>
         )}
         
+        <FullscreenToggle />
+
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button className="flex items-center space-x-3 rounded-full focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:ring-offset-background">
@@ -163,7 +167,6 @@ const Header: React.FC = () => {
             </DropdownMenuContent>
         </DropdownMenu>
 
-        <FullscreenToggle />
       </div>
     </header>
   );

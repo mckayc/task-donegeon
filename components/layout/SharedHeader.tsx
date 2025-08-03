@@ -3,6 +3,7 @@ import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { User } from '../../types';
 import Avatar from '../ui/avatar';
 import FullscreenToggle from '../ui/fullscreen-toggle';
+import { Button } from '../ui/button';
 
 const Clock: React.FC = () => {
     const [time, setTime] = useState(new Date());
@@ -19,7 +20,7 @@ const Clock: React.FC = () => {
 
 const SharedHeader: React.FC = () => {
   const { users, settings } = useAppState();
-  const { setTargetedUserForLogin, setIsSwitchingUser } = useAppDispatch();
+  const { setTargetedUserForLogin, setIsSwitchingUser, exitSharedMode } = useAppDispatch();
   const [currentDate, setCurrentDate] = useState(new Date());
 
    useEffect(() => {
@@ -37,6 +38,21 @@ const SharedHeader: React.FC = () => {
     setTargetedUserForLogin(user);
     setIsSwitchingUser(true);
   };
+
+  if (sharedUsers.length === 0) {
+    return (
+      <header className="h-20 bg-stone-900/30 flex items-center justify-between px-4 md:px-8 border-b border-stone-700/50 flex-shrink-0">
+        <h1 className="font-medieval text-accent">{settings.terminology.appName}</h1>
+        <div className="text-center">
+            <p className="text-red-400 font-semibold">No users are configured for Shared Mode.</p>
+            <Button variant="link" onClick={exitSharedMode} className="text-accent-light">
+                Return to User Selection
+            </Button>
+        </div>
+        <div />
+      </header>
+    );
+  }
 
   return (
     <header className="h-20 bg-stone-900/30 flex items-center justify-between px-4 md:px-8 border-b border-stone-700/50 flex-shrink-0">

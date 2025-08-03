@@ -299,6 +299,10 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
              localStorage.removeItem('lastUserId');
              localStorage.setItem('sharedViewActive', 'true');
         },
+        exitSharedMode: () => {
+            setState(s => ({...s, isSharedViewActive: false }));
+            localStorage.removeItem('sharedViewActive');
+        },
         setIsSharedViewActive: (isActive: boolean) => setState(s => ({ ...s, isSharedViewActive: isActive })),
         bypassFirstRunCheck: () => setState(s => ({...s, isFirstRun: false})),
         reinitializeApp: async () => {

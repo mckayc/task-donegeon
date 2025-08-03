@@ -41,6 +41,20 @@ const SettingsPage: React.FC = () => {
         updateSettings(formState);
         addNotification({ type: 'success', message: 'Settings saved successfully!' });
     };
+
+    const handleSharedUsersChange = (ids: string[]) => {
+        const newSharedModeState = {
+            ...formState.sharedMode,
+            userIds: ids,
+            // Auto-disable if no users are selected, preserving the enabled state otherwise
+            enabled: ids.length > 0 ? formState.sharedMode.enabled : false,
+        };
+        setFormState(prev => ({
+            ...prev,
+            sharedMode: newSharedModeState,
+        }));
+    };
+
     
     if (!currentUser || currentUser.role !== Role.DonegeonMaster) {
         return (
@@ -101,8 +115,18 @@ const SettingsPage: React.FC = () => {
                     </SettingSection>
 
                      <SettingSection title="Shared / Kiosk Mode">
-                        <ToggleSwitch enabled={formState.sharedMode.enabled} setEnabled={(val) => handleNestedChange('sharedMode')('enabled' as any, val)} label="Enable Shared Mode" />
-                        <UserMultiSelect allUsers={users} selectedUserIds={formState.sharedMode.userIds} onSelectionChange={(ids) => handleNestedChange('sharedMode')('userIds' as any, ids)} label="Users in Shared Mode" />
+                        <ToggleSwitch
+                            enabled={formState.sharedMode.enabled}
+                            setEnabled={(val) => {
+                                if (val && formState.sharedMode.userIds.length === 0) {
+                                    addNotification({ type: 'error', message: 'Please select at least one user for Shared Mode first.' });
+                                    return;
+                                }
+                                handleNestedChange('sharedMode')('enabled' as any, val);
+                            }}
+                            label="Enable Shared Mode"
+                        />
+                        <UserMultiSelect allUsers={users} selectedUserIds={formState.sharedMode.userIds} onSelectionChange={handleSharedUsersChange} label="Users in Shared Mode" />
                         <ToggleSwitch enabled={formState.sharedMode.allowCompletion} setEnabled={(val) => handleNestedChange('sharedMode')('allowCompletion' as any, val)} label="Allow quest completion from shared view" />
                         <ToggleSwitch enabled={formState.sharedMode.autoExit} setEnabled={(val) => handleNestedChange('sharedMode')('autoExit' as any, val)} label="Auto-exit user session after inactivity" />
                         {formState.sharedMode.autoExit && (

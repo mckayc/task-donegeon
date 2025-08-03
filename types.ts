@@ -678,6 +678,7 @@ export interface AppDispatch {
   setIsSwitchingUser: (isSwitching: boolean) => void;
   setTargetedUserForLogin: (user: User | null) => void;
   exitToSharedView: () => void;
+  exitSharedMode: () => void;
   setIsSharedViewActive: (isActive: boolean) => void;
   bypassFirstRunCheck: () => void;
   reinitializeApp: () => Promise<void>;

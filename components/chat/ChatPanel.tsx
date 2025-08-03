@@ -32,27 +32,56 @@ const ChatPanel: React.FC = () => {
     const dragRef = useRef({ isDragging: false, isResizing: false, initialX: 0, initialY: 0, initialWidth: 0, initialHeight: 0 });
 
     useEffect(() => {
-        const handleResize = () => setIsMobile(window.innerWidth < 1024);
+        const clamp = (value: number, min: number, max: number) => Math.max(min, Math.min(value, max));
+
+        const handleResize = () => {
+            const mobile = window.innerWidth < 1024;
+            setIsMobile(mobile);
+
+            if (!mobile) {
+                // This logic is complex because the useLocalStorage hook is simple and doesn't
+                // support functional updates. We read the stateful values and then set them.
+                const currentSize = JSON.parse(localStorage.getItem('chat-panel-size') || JSON.stringify({ width: 600, height: 700 }));
+                const currentPos = JSON.parse(localStorage.getItem('chat-panel-position') || JSON.stringify({ x: 20, y: 20 }));
+
+                const clampedWidth = clamp(currentSize.width, 400, window.innerWidth - 40);
+                const clampedHeight = clamp(currentSize.height, 500, window.innerHeight - 40);
+                setSize({ width: clampedWidth, height: clampedHeight });
+
+                const clampedX = clamp(currentPos.x, 20, window.innerWidth - clampedWidth - 20);
+                const clampedY = clamp(currentPos.y, 20, window.innerHeight - clampedHeight - 20);
+                setPosition({ x: clampedX, y: clampedY });
+            }
+        };
+
+        handleResize(); // Run once on mount to clamp initial state
         window.addEventListener('resize', handleResize);
         return () => window.removeEventListener('resize', handleResize);
-    }, []);
+    }, [setSize, setPosition]);
+
 
     const handleMouseMove = useCallback((e: MouseEvent) => {
+        const clamp = (value: number, min: number, max: number) => Math.max(min, Math.min(value, max));
+
         if (dragRef.current.isDragging) {
+            const newX = e.clientX - dragRef.current.initialX;
+            const newY = e.clientY - dragRef.current.initialY;
+            
             setPosition({
-                x: e.clientX - dragRef.current.initialX,
-                y: e.clientY - dragRef.current.initialY
+                x: clamp(newX, 0, window.innerWidth - size.width),
+                y: clamp(newY, 0, window.innerHeight - size.height)
             });
         }
         if (dragRef.current.isResizing) {
             const newWidth = dragRef.current.initialWidth + (e.clientX - dragRef.current.initialX);
             const newHeight = dragRef.current.initialHeight + (e.clientY - dragRef.current.initialY);
+            
             setSize({
-                width: Math.max(400, newWidth),
-                height: Math.max(500, newHeight)
+                width: clamp(newWidth, 400, window.innerWidth - position.x),
+                height: clamp(newHeight, 500, window.innerHeight - position.y)
             });
         }
-    }, [setPosition, setSize]);
+    }, [position.x, position.y, setPosition, setSize, size.width, size.height]);
 
     const handleMouseUp = useCallback(() => {
         dragRef.current.isDragging = false;

@@ -472,4 +472,7 @@ module.exports = {
     INITIAL_THEMES,
     Role,
     RewardCategory,
+    QuestCompletionStatus,
+    QuestType,
+    QuestAvailability,
 };

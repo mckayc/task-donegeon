@@ -58,7 +58,7 @@ const ScheduleEventDialog: React.FC<ScheduleEventDialogProps> = ({ event, onClos
 
     useEffect(() => {
         if (event) {
-            // Merge event data with a complete initial structure to prevent missing keys
+            // Deep merge event data with a complete initial structure to prevent missing keys
             const fullEventData = {
                 ...getInitialFormData(),
                 ...event,

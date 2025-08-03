@@ -1,6 +1,6 @@
-import React, { useState, useMemo, useEffect, useCallback, ChangeEvent } from 'react';
+import React, { useState } from 'react';
 import { useAppState, useAppDispatch } from '../../../context/AppContext';
-import { IAppData, Blueprint, ImportResolution, AutomatedBackupProfile, AutomatedBackups } from '../../../types';
+import { Blueprint, ImportResolution } from '../../../types';
 import { analyzeBlueprintForConflicts } from '../../../utils/sharing';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
@@ -75,7 +75,7 @@ const BackupAndImportPage: React.FC = () => {
     return (
         <div className="space-y-6">
             <Card>
-                <CardHeader><CardTitle>Backup & Restore</CardTitle></CardHeader>
+                <CardHeader><CardTitle>Manual Backup & Restore</CardTitle></CardHeader>
                 <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-8">
                     <BackupPanel />
                     <RestorePanel onFileSelect={(file) => handleFileSelect(file, 'restore')} />

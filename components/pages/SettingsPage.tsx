@@ -22,70 +22,6 @@ const SettingSection: React.FC<{ title: string, description?: string, children: 
     </div>
 );
 
-const terminologyLabels: { [key in keyof Terminology]: string } = {
-  appName: 'App Name',
-  task: 'Task (Singular)',
-  tasks: 'Tasks (Plural)',
-  recurringTask: 'Recurring Task (e.g., Duty)',
-  recurringTasks: 'Recurring Tasks (Plural)',
-  singleTask: 'Single Task (e.g., Venture)',
-  singleTasks: 'Single Tasks (Plural)',
-  shoppingCenter: 'Shopping Center (e.g., Marketplace)',
-  store: 'Store (e.g., Market)',
-  stores: 'Stores (Plural)',
-  history: 'History (e.g., Chronicles)',
-  group: 'Group (e.g., Guild)',
-  groups: 'Groups (Plural)',
-  level: 'Level (e.g., Rank)',
-  levels: 'Levels (Plural)',
-  award: 'Award (e.g., Trophy)',
-  awards: 'Awards (Plural)',
-  point: 'Point (e.g., Reward)',
-  points: 'Points (Plural)',
-  xp: 'Experience Points',
-  currency: 'Currency',
-  negativePoint: 'Negative Point (e.g., Setback)',
-  negativePoints: 'Negative Points (Plural)',
-  admin: 'Admin (e.g., Donegeon Master)',
-  moderator: 'Moderator (e.g., Gatekeeper)',
-  user: 'User (e.g., Explorer)',
-  link_dashboard: 'Sidebar: Dashboard',
-  link_quests: 'Sidebar: Quests',
-  link_marketplace: 'Sidebar: Marketplace',
-  link_calendar: 'Sidebar: Calendar',
-  link_avatar: 'Sidebar: Avatar',
-  link_collection: 'Sidebar: Collection',
-  link_themes: 'Sidebar: Themes',
-  link_guild: 'Sidebar: Guild',
-  link_progress: 'Sidebar: Progress',
-  link_trophies: 'Sidebar: Trophies',
-  link_ranks: 'Sidebar: Ranks',
-  link_chronicles: 'Sidebar: Chronicles',
-  link_manage_quests: 'Sidebar: Manage Quests',
-  link_manage_quest_groups: 'Sidebar: Manage Quest Groups',
-  link_manage_items: 'Sidebar: Manage Goods',
-  link_manage_markets: 'Sidebar: Manage Markets',
-  link_manage_rewards: 'Sidebar: Manage Rewards',
-  link_manage_ranks: 'Sidebar: Manage Ranks',
-  link_manage_trophies: 'Sidebar: Manage Trophies',
-  link_manage_events: 'Sidebar: Manage Events',
-  link_theme_editor: 'Sidebar: Theme Editor',
-  link_approvals: 'Sidebar: Approvals',
-  link_manage_users: 'Sidebar: Manage Users',
-  link_manage_guilds: 'Sidebar: Manage Guilds',
-  link_ai_studio: 'Sidebar: AI Studio',
-  link_appearance: 'Sidebar: Appearance',
-  link_object_exporter: 'Sidebar: Object Exporter',
-  link_asset_manager: 'Sidebar: Asset Manager',
-  link_backup_import: 'Sidebar: Backup & Import',
-  link_asset_library: 'Sidebar: Asset Library',
-  link_settings: 'Sidebar: Settings',
-  link_about: 'About',
-  link_help_guide: 'Help Guide',
-  link_chat: 'Sidebar: Chat',
-};
-
-
 const SettingsPage: React.FC = () => {
     const { currentUser, users, settings, rewardTypes, isAiConfigured, themes } = useAppState();
     const { updateSettings, addNotification, reinitializeApp, clearAllHistory, resetAllPlayerData, deleteAllCustomContent } = useAppDispatch();
@@ -98,10 +34,6 @@ const SettingsPage: React.FC = () => {
     useEffect(() => {
         setFormState(JSON.parse(JSON.stringify(settings)));
     }, [settings]);
-    
-    const handleTerminologyChange = (field: keyof Terminology, value: string) => {
-        setFormState(prev => ({ ...prev, terminology: { ...prev.terminology, [field]: value } }));
-    };
     
     const handleNestedChange = <T extends keyof AppSettings>(section: T) => (field: keyof AppSettings[T], value: any) => {
         setFormState(prev => ({
@@ -160,7 +92,7 @@ const SettingsPage: React.FC = () => {
                     <SettingSection title="General">
                          <div className="space-y-2 max-w-sm">
                             <Label htmlFor="app-name">App Name</Label>
-                            <Input id="app-name" value={formState.terminology.appName} onChange={(e: ChangeEvent<HTMLInputElement>) => handleTerminologyChange('appName', e.target.value)} />
+                            <Input id="app-name" value={formState.terminology.appName} onChange={(e: ChangeEvent<HTMLInputElement>) => setFormState(p => ({...p, terminology: { ...p.terminology, appName: e.target.value}}))} />
                          </div>
                          <div className="flex items-end gap-4">
                              <div className="relative">
@@ -183,6 +115,12 @@ const SettingsPage: React.FC = () => {
                         <ToggleSwitch enabled={formState.forgivingSetbacks} setEnabled={(val) => setFormState(p => ({...p, forgivingSetbacks: val}))} label="Forgiving Setbacks (only apply penalties at the end of the day)" />
                     </SettingSection>
 
+                    <SettingSection title="Quest Defaults">
+                        <ToggleSwitch enabled={formState.questDefaults.isActive} setEnabled={(val) => handleNestedChange('questDefaults')('isActive' as any, val)} label="New Quests are Active by default" />
+                        <ToggleSwitch enabled={formState.questDefaults.isOptional} setEnabled={(val) => handleNestedChange('questDefaults')('isOptional' as any, val)} label="New Quests are Optional by default" />
+                        <ToggleSwitch enabled={formState.questDefaults.requiresApproval} setEnabled={(val) => handleNestedChange('questDefaults')('requiresApproval' as any, val)} label="New Quests Require Approval by default" />
+                    </SettingSection>
+
                     <SettingSection title="Security & Access">
                         <ToggleSwitch enabled={formState.security.requirePinForUsers} setEnabled={(val) => handleNestedChange('security')('requirePinForUsers' as any, val)} label="Require PIN for user login" />
                         <ToggleSwitch enabled={formState.security.requirePasswordForAdmin} setEnabled={(val) => handleNestedChange('security')('requirePasswordForAdmin' as any, val)} label="Require Password for Admin/Moderator login" />
@@ -193,6 +131,13 @@ const SettingsPage: React.FC = () => {
                         <ToggleSwitch enabled={formState.sharedMode.enabled} setEnabled={(val) => handleNestedChange('sharedMode')('enabled' as any, val)} label="Enable Shared Mode" />
                         <UserMultiSelect allUsers={users} selectedUserIds={formState.sharedMode.userIds} onSelectionChange={(ids) => handleNestedChange('sharedMode')('userIds' as any, ids)} label="Users in Shared Mode" />
                         <ToggleSwitch enabled={formState.sharedMode.allowCompletion} setEnabled={(val) => handleNestedChange('sharedMode')('allowCompletion' as any, val)} label="Allow quest completion from shared view" />
+                        <ToggleSwitch enabled={formState.sharedMode.autoExit} setEnabled={(val) => handleNestedChange('sharedMode')('autoExit' as any, val)} label="Auto-exit user session after inactivity" />
+                        {formState.sharedMode.autoExit && (
+                             <div className="space-y-2 max-w-xs">
+                                <Label htmlFor="auto-exit-minutes">Auto-exit after (minutes)</Label>
+                                <Input id="auto-exit-minutes" type="number" value={formState.sharedMode.autoExitMinutes} onChange={(e) => handleNestedChange('sharedMode')('autoExitMinutes' as any, parseInt(e.target.value) || 2)} />
+                             </div>
+                        )}
                     </SettingSection>
 
                      <SettingSection title="Notifications & Chat">
@@ -205,6 +150,55 @@ const SettingsPage: React.FC = () => {
                             </button>
                             {isChatEmojiPickerOpen && <EmojiPicker onSelect={(emoji: string) => { setFormState(p => ({...p, chat: {...p.chat, chatEmoji: emoji}})); setIsChatEmojiPickerOpen(false); }} onClose={() => setIsChatEmojiPickerOpen(false)} />}
                         </div>
+                    </SettingSection>
+
+                     <SettingSection title="Reward Valuation & Exchange">
+                        <ToggleSwitch enabled={formState.rewardValuation.enabled} setEnabled={(val) => handleNestedChange('rewardValuation')('enabled' as any, val)} label="Enable reward valuation system" />
+                        {formState.rewardValuation.enabled && (
+                            <div className="p-4 bg-background/50 rounded-lg border space-y-4">
+                                <div className="space-y-2 max-w-sm">
+                                    <Label>Anchor Currency</Label>
+                                    <Select value={formState.rewardValuation.anchorRewardId} onValueChange={(val) => handleNestedChange('rewardValuation')('anchorRewardId' as any, val)}>
+                                        <SelectTrigger><SelectValue /></SelectTrigger>
+                                        <SelectContent>{currencyRewards.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent>
+                                    </Select>
+                                </div>
+                                <div className="space-y-2 max-w-sm">
+                                    <Label>Currency Exchange Fee (%)</Label>
+                                    <Input type="number" value={formState.rewardValuation.currencyExchangeFeePercent} onChange={(e) => handleNestedChange('rewardValuation')('currencyExchangeFeePercent' as any, parseInt(e.target.value))} />
+                                </div>
+                                <div className="space-y-2 max-w-sm">
+                                    <Label>XP Exchange Fee (%)</Label>
+                                    <Input type="number" value={formState.rewardValuation.xpExchangeFeePercent} onChange={(e) => handleNestedChange('rewardValuation')('xpExchangeFeePercent' as any, parseInt(e.target.value))} />
+                                </div>
+                            </div>
+                        )}
+                    </SettingSection>
+
+                    <SettingSection title="Automated Backups">
+                        {formState.automatedBackups.profiles.map((profile, index) => (
+                            <div key={index} className="p-4 border rounded-lg bg-background/50 flex flex-wrap gap-4 items-center">
+                                <ToggleSwitch enabled={profile.enabled} setEnabled={(val) => handleBackupProfileChange(index, 'enabled', val)} label={`Profile ${index+1}`} />
+                                <div className="flex-grow grid grid-cols-2 gap-4">
+                                    <div className="space-y-1">
+                                        <Label>Frequency</Label>
+                                        <Select value={profile.frequency} onValueChange={(val) => handleBackupProfileChange(index, 'frequency', val)} disabled={!profile.enabled}>
+                                            <SelectTrigger><SelectValue /></SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="hourly">Hourly</SelectItem>
+                                                <SelectItem value="daily">Daily</SelectItem>
+                                                <SelectItem value="weekly">Weekly</SelectItem>
+                                                <SelectItem value="monthly">Monthly</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                    <div className="space-y-1">
+                                        <Label>Keep how many?</Label>
+                                        <Input type="number" value={profile.keep} onChange={(e) => handleBackupProfileChange(index, 'keep', parseInt(e.target.value))} disabled={!profile.enabled}/>
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
                     </SettingSection>
 
                     <SettingSection title="AI Features">

@@ -4,6 +4,8 @@
 
 
 
+
+
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
@@ -402,6 +404,13 @@ async function main() {
         }
     });
     
+    app.get('/api/ai/status', (req, res) => {
+        console.log('[API] Checking AI configuration status...');
+        const isConfigured = !!process.env.API_KEY;
+        console.log(`[API] AI isConfigured: ${isConfigured}`);
+        res.json({ isConfigured });
+    });
+
     // ... rest of the server file (first run, AI routes, etc.) ...
 
     app.get('*', (req, res) => {

@@ -135,7 +135,7 @@ const Header: React.FC = () => {
         </div>
       </div>
       
-      <div className="flex items-center gap-4 flex-shrink-0">
+      <div className="flex items-center gap-2 md:gap-4 flex-shrink-0">
         <Clock />
         {settings.sharedMode.enabled && (
             <Button

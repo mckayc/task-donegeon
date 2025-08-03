@@ -48,32 +48,17 @@ const ContrastChecker: React.FC<{ styles: ThemeStyle }> = ({ styles }) => {
     );
 };
 
-const LivePreview: React.FC<{ styles: ThemeStyle }> = ({ styles }) => {
-     const previewStyle = {
-        '--font-display': styles['--font-display'],
-        '--font-body': styles['--font-body'],
-        '--font-size-display': styles['--font-size-display'],
-        '--font-size-body': styles['--font-size-body'],
-        '--color-bg-primary': `hsl(${styles['--color-bg-primary']})`,
-        '--color-bg-secondary': `hsl(${styles['--color-bg-secondary']})`,
-        '--color-bg-tertiary': `hsl(${styles['--color-bg-tertiary']})`,
-        '--color-text-primary': `hsl(${styles['--color-text-primary']})`,
-        '--color-text-secondary': `hsl(${styles['--color-text-secondary']})`,
-        '--color-border': `hsl(${styles['--color-border']})`,
-        '--color-primary': `hsl(${styles['--color-primary-hue']} ${styles['--color-primary-saturation']} ${styles['--color-primary-lightness']})`,
-        '--color-accent': `hsl(${styles['--color-accent-hue']} ${styles['--color-accent-saturation']} ${styles['--color-accent-lightness']})`,
-        '--color-accent-light': `hsl(${styles['--color-accent-light-hue']} ${styles['--color-accent-light-saturation']} ${styles['--color-accent-light-lightness']})`,
-    };
-
+const LivePreview: React.FC = () => {
+    // This component now relies on the global styles applied by the editor
     return (
-        <div style={previewStyle as React.CSSProperties} className="p-4 rounded-lg flex-1 flex flex-col gap-4 overflow-hidden" >
+        <div className="p-4 rounded-lg flex-1 flex flex-col gap-4 overflow-hidden bg-background">
             <h1 className="text-3xl font-display text-accent">Dashboard</h1>
             <div className="flex-1 grid grid-cols-2 gap-4 overflow-y-auto scrollbar-hide">
                 <Card className="bg-card text-card-foreground">
                     <CardContent className="p-4">
                         <h4 className="font-bold text-lg flex items-center gap-2"><TrophyIcon className="w-5 h-5"/> Example Card</h4>
                         <p className="text-sm mt-2">This is a sample card with body text. It uses the secondary background color.</p>
-                        <Button className="mt-4 bg-primary text-primary-foreground">Primary Button</Button>
+                        <Button className="mt-4">Primary Button</Button>
                     </CardContent>
                 </Card>
                  <Card className="bg-card text-card-foreground">
@@ -89,7 +74,7 @@ const LivePreview: React.FC<{ styles: ThemeStyle }> = ({ styles }) => {
 };
 
 const ThemeEditorPage: React.FC = () => {
-    const { themes, isAiConfigured } = useAppState();
+    const { themes, isAiConfigured, settings, currentUser, guilds, appMode } = useAppState();
     const { addTheme, updateTheme, deleteTheme } = useAppDispatch();
     
     const [selectedThemeId, setSelectedThemeId] = useState(themes[0]?.id || '');
@@ -103,6 +88,34 @@ const ThemeEditorPage: React.FC = () => {
             setFormData(JSON.parse(JSON.stringify(theme)));
         }
     }, [selectedThemeId, themes]);
+    
+    // Effect to apply the live preview styles globally
+    useEffect(() => {
+        const root = document.documentElement;
+        if (formData) {
+            Object.entries(formData.styles).forEach(([key, value]) => {
+                root.style.setProperty(key, value);
+            });
+        }
+        // Cleanup: Revert to the actual saved theme when component unmounts
+        return () => {
+            let activeThemeId: string | undefined = settings.theme; // Default to system theme
+            if (appMode.mode === 'guild') {
+                const currentGuild = guilds.find(g => g.id === appMode.guildId);
+                if (currentGuild?.themeId) activeThemeId = currentGuild.themeId;
+                else if (currentUser?.theme) activeThemeId = currentUser.theme;
+            } else {
+                if (currentUser?.theme) activeThemeId = currentUser.theme;
+            }
+            const savedTheme = themes.find(t => t.id === activeThemeId);
+            if(savedTheme) {
+                Object.entries(savedTheme.styles).forEach(([key, value]) => {
+                    root.style.setProperty(key, value);
+                });
+            }
+        }
+    }, [formData, settings.theme, currentUser?.theme, appMode, guilds, themes]);
+
 
     const handleStyleChange = (key: keyof ThemeStyle, value: string) => {
         if (!formData) return;
@@ -165,7 +178,7 @@ const ThemeEditorPage: React.FC = () => {
     return (
         <div className="h-full flex flex-col lg:flex-row gap-6">
             <div className="flex-1 flex flex-col bg-tertiary p-4 rounded-lg">
-                <LivePreview styles={formData.styles} />
+                <LivePreview />
             </div>
 
             <div className="w-full lg:w-[450px] flex-shrink-0 flex flex-col gap-4">

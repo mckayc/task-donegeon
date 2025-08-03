@@ -110,29 +110,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         }
     }, [addNotification]);
     
-    // Generic action dispatcher
-    const dispatchAction = useCallback(async (type: string, payload: any) => {
-        console.log(`[FRONTEND LOG] dispatchAction called for type: ${type}`);
-        try {
-            setState(s => ({ ...s, syncStatus: 'syncing' }));
-            const result = await apiRequest('/api/action', {
-                method: 'POST',
-                body: JSON.stringify({ type, payload })
-            });
-            // The websocket will handle the state update, including setting syncStatus back to 'success'.
-            // No local state update needed here anymore, this prevents race conditions.
-            console.log(`[FRONTEND LOG] dispatchAction for ${type} API call successful, waiting for WebSocket update.`);
-            return result;
-        } catch (error) {
-            // Error notification is handled by apiRequest
-             if (isMounted.current) {
-                const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred.';
-                setState(s => ({ ...s, syncStatus: 'error', syncError: errorMessage }));
-             }
-             throw error;
-        }
-    }, [apiRequest]);
-
     const fullUpdate = useCallback((newData: IAppData) => {
         console.log('[FRONTEND LOG] fullUpdate function called.');
         if (!isMounted.current) {
@@ -143,7 +120,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         setState(prev => {
             console.log('[FRONTEND LOG] setState inside fullUpdate is running.');
             if (!newData || !newData.users || !newData.settings) {
-                console.error("[FRONTEND LOG] Received incomplete or malformed data from WebSocket. Update skipped.", newData);
+                console.error("[FRONTEND LOG] Received incomplete or malformed data. Update skipped.", newData);
                 return prev;
             }
             
@@ -154,9 +131,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             
             const isFirstRunNow = !newData.users || newData.users.length === 0;
 
-            // CRITICAL FIX: Ensure a completely new state object is created to guarantee a re-render.
-            // Spreading `prev` first, then `newData`, ensures all top-level keys from the new data
-            // replace the old ones, and any other UI state in `prev` is preserved.
             return {
                 ...prev,
                 ...newData,
@@ -168,6 +142,38 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             };
         });
     }, []);
+
+    // Generic action dispatcher
+    const dispatchAction = useCallback(async (type: string, payload: any) => {
+        console.log(`[FRONTEND LOG] dispatchAction called for type: ${type}`);
+        try {
+            setState(s => ({ ...s, syncStatus: 'syncing' }));
+            const response = await apiRequest('/api/action', {
+                method: 'POST',
+                body: JSON.stringify({ type, payload })
+            });
+
+            // The API response now contains a `result` and the `fullState`.
+            if (response && response.fullState && response.fullState.users && response.fullState.settings) {
+                console.log(`[FRONTEND LOG] API response for ${type} received. Applying full state update directly.`);
+                fullUpdate(response.fullState);
+                return response.result; // Return the specific result for components that need it.
+            } else {
+                 console.warn(`[FRONTEND LOG] Received an invalid response object from API for action ${type}.`, response);
+                 if (isMounted.current) {
+                    setState(s => ({ ...s, syncStatus: 'error', syncError: 'Received invalid data from server.' }));
+                 }
+                 return { success: false, error: 'Invalid server response' };
+            }
+        } catch (error) {
+             if (isMounted.current) {
+                const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred.';
+                setState(s => ({ ...s, syncStatus: 'error', syncError: errorMessage }));
+             }
+             throw error;
+        }
+    }, [apiRequest, fullUpdate]);
+
 
     const connectPrimus = useCallback(() => {
         console.log('[FRONTEND LOG] Attempting to connect Primus...');
@@ -189,7 +195,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         primus.on('data', (message: any) => {
             console.log('[FRONTEND LOG] Primus "data" event received:', message.type);
             if (message.type === 'FULL_STATE_UPDATE') {
-                console.log('[FRONTEND LOG] Received FULL_STATE_UPDATE. Payload keys:', Object.keys(message.payload));
+                console.log('[FRONTEND LOG] Received FULL_STATE_UPDATE via WebSocket. Payload keys:', Object.keys(message.payload));
                 fullUpdate(message.payload);
             }
         });
@@ -470,7 +476,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             }
         },
         executeExchange: (userId, payItem, receiveItem, guildId) => dispatchAction('EXECUTE_EXCHANGE', { userId, payItem, receiveItem, guildId }),
-    }), [state.currentUser, apiRequest, addNotification, dispatchAction, state.chatMessages]);
+    }), [state.currentUser, apiRequest, addNotification, dispatchAction, state.chatMessages, fullUpdate]);
 
     return (
         <AppStateContext.Provider value={state}>

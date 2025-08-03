@@ -195,12 +195,11 @@ async function main() {
     app.post('/api/action', async (req, res) => {
         const { type, payload } = req.body;
         console.log(`[ACTION] Received action: ${type}`, payload ? JSON.stringify(payload).substring(0, 200) + '...' : '');
-        let result = { success: true };
         try {
             console.log('[ACTION] Reading current state from DB...');
             const originalData = await readData();
-            // CRITICAL FIX: Work on a deep copy to prevent any reference issues.
             let data = JSON.parse(JSON.stringify(originalData));
+            let result = { success: true };
             
             // Helper function to apply rewards/setbacks
             const applyBalanceChange = (user, items, guildId, isSetback = false) => {
@@ -690,10 +689,11 @@ async function main() {
             }
             console.log('[ACTION] Data modified in memory. Preparing to write to DB.');
             await writeData(data);
-            console.log('[ACTION] DB write complete. Broadcasting state update.');
-            broadcastStateUpdate(data);
-            console.log('[ACTION] Broadcast complete. Sending success response.');
-            res.status(200).json(result);
+            console.log('[ACTION] DB write complete. Reading fresh state for response and broadcast.');
+            const updatedData = await readData();
+            broadcastStateUpdate(updatedData);
+            console.log('[ACTION] Broadcast complete. Sending full updated state in API response.');
+            res.status(200).json({ result, fullState: updatedData });
         } catch (error) {
             console.error(`[ACTION] FAILED to process action ${type}:`, error);
             res.status(500).json({ error: error.message });

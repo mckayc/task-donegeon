@@ -29,7 +29,7 @@ INSERT OR IGNORE INTO schema_version (version) VALUES (1);
 };
 
 // === INLINED DATA HELPERS ===
-const { createInitialData, INITIAL_SETTINGS, INITIAL_THEMES, Role, RewardCategory } = require('./data.js');
+const { createInitialData, INITIAL_SETTINGS, INITIAL_THEMES, Role, RewardCategory, QuestCompletionStatus, QuestType, QuestAvailability } = require('./data.js');
 
 // Helper to fetch from GitHub API
 async function fetchGitHub(apiPath) {
@@ -176,24 +176,116 @@ async function main() {
 
     app.post('/api/action', async (req, res) => {
         const { type, payload } = req.body;
+        let result = { success: true };
         try {
             const data = await readData();
+            
+            // Helper function to apply rewards
+            const applyRewards = (user, rewards, guildId) => {
+                if (!user) return;
+                const balanceTarget = guildId 
+                    ? (user.guildBalances[guildId] = user.guildBalances[guildId] || { purse: {}, experience: {} }) 
+                    : { purse: user.personalPurse, experience: user.personalExperience };
+
+                rewards.forEach(rewardItem => {
+                    const rewardDef = data.rewardTypes.find(rt => rt.id === rewardItem.rewardTypeId);
+                    if (rewardDef) {
+                        const balanceKey = rewardDef.category === RewardCategory.Currency ? 'purse' : 'experience';
+                        balanceTarget[balanceKey][rewardItem.rewardTypeId] = (balanceTarget[balanceKey][rewardItem.rewardTypeId] || 0) + rewardItem.amount;
+                    }
+                });
+            };
+
             switch(type) {
+                // USER
                 case 'ADD_USER': {
                     const newId = `user-${Date.now()}`;
-                    const newUser = {
-                        ...payload, id: newId, personalPurse: {}, personalExperience: {}, guildBalances: {},
-                        avatar: {}, ownedAssetIds: [], ownedThemes: ['emerald', 'rose', 'sky'], hasBeenOnboarded: false,
-                    };
+                    const newUser = { ...payload, id: newId, personalPurse: {}, personalExperience: {}, guildBalances: {}, avatar: {}, ownedAssetIds: [], ownedThemes: ['emerald', 'rose', 'sky'], hasBeenOnboarded: false };
                     data.users.push(newUser);
                     break;
                 }
                 case 'UPDATE_USER': {
                     const { userId, updatedData } = payload;
                     const userIndex = data.users.findIndex(u => u.id === userId);
-                    if (userIndex > -1) {
-                        data.users[userIndex] = { ...data.users[userIndex], ...updatedData };
+                    if (userIndex > -1) data.users[userIndex] = { ...data.users[userIndex], ...updatedData };
+                    break;
+                }
+                case 'DELETE_USER': {
+                    data.users = data.users.filter(u => u.id !== payload.userId);
+                    break;
+                }
+
+                // QUESTS
+                case 'ADD_QUEST': {
+                    const newId = `quest-${Date.now()}`;
+                    data.quests.push({ ...payload, id: newId, claimedByUserIds: [], dismissals: [] });
+                    break;
+                }
+                case 'UPDATE_QUEST': {
+                    const questIndex = data.quests.findIndex(q => q.id === payload.id);
+                    if (questIndex > -1) data.quests[questIndex] = payload;
+                    break;
+                }
+                case 'DELETE_QUEST': {
+                    data.quests = data.quests.filter(q => q.id !== payload.questId);
+                    break;
+                }
+                case 'DELETE_QUESTS': {
+                    const idsToDelete = new Set(payload.questIds);
+                    data.quests = data.quests.filter(q => !idsToDelete.has(q.id));
+                    break;
+                }
+                case 'CLONE_QUEST': {
+                    const questToClone = data.quests.find(q => q.id === payload.questId);
+                    if(questToClone) {
+                        const newQuest = {...questToClone, id: `quest-${Date.now()}`, title: `${questToClone.title} (Copy)`};
+                        data.quests.push(newQuest);
                     }
+                    break;
+                }
+                case 'COMPLETE_QUEST': {
+                    const { questId, userId, guildId, options } = payload;
+                    const quest = data.quests.find(q => q.id === questId);
+                    const user = data.users.find(u => u.id === userId);
+                    if (!quest || !user) throw new Error("Quest or User not found");
+
+                    const newCompletion = {
+                        id: `qc-${Date.now()}`,
+                        questId, userId, guildId,
+                        completedAt: options?.completionDate || new Date().toISOString(),
+                        status: quest.requiresApproval ? QuestCompletionStatus.Pending : QuestCompletionStatus.Approved,
+                        note: options?.note || '',
+                    };
+                    data.questCompletions.push(newCompletion);
+                    
+                    if (!quest.requiresApproval) {
+                        applyRewards(user, quest.rewards, guildId);
+                    }
+                    break;
+                }
+                case 'APPROVE_QUEST_COMPLETION': {
+                    const completion = data.questCompletions.find(c => c.id === payload.completionId);
+                    if(completion) {
+                        completion.status = QuestCompletionStatus.Approved;
+                        const quest = data.quests.find(q => q.id === completion.questId);
+                        const user = data.users.find(u => u.id === completion.userId);
+                        if(quest && user) applyRewards(user, quest.rewards, completion.guildId);
+                    }
+                    break;
+                }
+                case 'REJECT_QUEST_COMPLETION': {
+                    const completion = data.questCompletions.find(c => c.id === payload.completionId);
+                    if(completion) completion.status = QuestCompletionStatus.Rejected;
+                    break;
+                }
+                case 'ADD_QUEST_GROUP': {
+                    const newGroup = { ...payload, id: `qg-${Date.now()}` };
+                    data.questGroups.push(newGroup);
+                    result = newGroup;
+                    break;
+                }
+                case 'UPDATE_SETTINGS': {
+                    data.settings = { ...data.settings, ...payload };
                     break;
                 }
                 case 'PURCHASE_MARKET_ITEM': {
@@ -239,13 +331,64 @@ async function main() {
                     }
                     break;
                 }
+                 case 'APPROVE_PURCHASE_REQUEST': {
+                    const purchase = data.purchaseRequests.find(pr => pr.id === payload.purchaseId);
+                    const user = data.users.find(u => u.id === purchase.userId);
+                    const asset = data.gameAssets.find(a => a.id === purchase.assetId);
+                    if (purchase && user && asset) {
+                        purchase.status = 'Completed';
+                        purchase.actedAt = new Date().toISOString();
+                        user.ownedAssetIds.push(asset.id);
+                        if (asset.linkedThemeId && !user.ownedThemes.includes(asset.linkedThemeId)) user.ownedThemes.push(asset.linkedThemeId);
+                         (asset.payouts || []).forEach(payout => {
+                            const balanceTarget = purchase.guildId ? (user.guildBalances[purchase.guildId] = user.guildBalances[purchase.guildId] || { purse: {}, experience: {} }) : { purse: user.personalPurse, experience: user.personalExperience };
+                            const rewardDef = data.rewardTypes.find(rt => rt.id === payout.rewardTypeId);
+                            if (rewardDef) {
+                                const balanceKey = rewardDef.category === RewardCategory.Currency ? 'purse' : 'experience';
+                                balanceTarget[balanceKey][payout.rewardTypeId] = (balanceTarget[balanceKey][payout.rewardTypeId] || 0) + payout.amount;
+                            }
+                        });
+                        asset.purchaseCount = (asset.purchaseCount || 0) + 1;
+                    }
+                    break;
+                }
+                case 'REJECT_PURCHASE_REQUEST': {
+                     const purchase = data.purchaseRequests.find(pr => pr.id === payload.purchaseId);
+                     const user = data.users.find(u => u.id === purchase.userId);
+                     if(purchase && user) {
+                         purchase.status = 'Rejected';
+                         purchase.actedAt = new Date().toISOString();
+                         // Refund
+                         applyRewards(user, purchase.assetDetails.cost, purchase.guildId);
+                     }
+                    break;
+                }
+                case 'ADD_THEME': {
+                    const newTheme = { ...payload, id: `theme-custom-${Date.now()}` };
+                    data.themes.push(newTheme);
+                    result = newTheme; // Return the new theme with its ID
+                    break;
+                }
+                case 'UPDATE_THEME': {
+                    const index = data.themes.findIndex(t => t.id === payload.id);
+                    if (index > -1) data.themes[index] = payload;
+                    break;
+                }
+                case 'DELETE_THEME': {
+                    data.themes = data.themes.filter(t => t.id !== payload.themeId);
+                    break;
+                }
+                case 'SET_RANKS': {
+                    data.ranks = payload.ranks;
+                    break;
+                }
                 default:
                     console.warn(`[SERVER ACTION] Unhandled action type: ${type}`);
                     break;
             }
             await writeData(data);
             broadcastStateUpdate();
-            res.status(200).json({ success: true, message: `Action ${type} processed.` });
+            res.status(200).json(result);
         } catch (error) {
             console.error(`Error processing action ${type}:`, error);
             res.status(500).json({ error: error.message });

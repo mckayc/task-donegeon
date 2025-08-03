@@ -111,11 +111,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
                 method: 'POST',
                 body: JSON.stringify({ type, payload })
             });
-            // The websocket will handle the state update, so we don't do it here.
-            // We just set sync status back to success locally after the request is acknowledged.
-            if (isMounted.current) {
-                setState(s => ({ ...s, syncStatus: 'success' }));
-            }
+            // The websocket will handle the state update, including setting syncStatus back to 'success'.
+            // No local state update needed here anymore, this prevents race conditions.
             return result;
         } catch (error) {
             // Error notification is handled by apiRequest

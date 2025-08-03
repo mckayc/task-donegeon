@@ -1,3 +1,4 @@
+
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
@@ -94,15 +95,12 @@ const executeMigrations = (db) => {
 
 async function main() {
     const app = express();
-    // Create an HTTP server but don't attach Express yet.
-    const server = http.createServer();
+    // Correctly create the HTTP server with the Express app.
+    const server = http.createServer(app);
     // Attach Primus to the server. It will now handle WebSocket connections
     // and dynamically serve its client library at /primus.js.
     const primus = new Primus(server, { transformer: 'websockets' });
     
-    // Now, let Express handle all other requests.
-    server.on('request', app);
-
     app.use(cors());
     app.use(express.json({ limit: '50mb' }));
     app.use(express.static(path.join(__dirname, '../dist')));
@@ -750,6 +748,7 @@ async function main() {
         }
     });
     
+    // This MUST be the last route.
     app.get('*', (req, res) => res.sendFile(path.join(__dirname, '../dist/index.html')));
 
     const PORT = process.env.PORT || 3001;

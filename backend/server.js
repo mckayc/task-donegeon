@@ -29,7 +29,7 @@ INSERT OR IGNORE INTO schema_version (version) VALUES (1);
 };
 
 // === INLINED DATA HELPERS ===
-const { createInitialData, createInitialQuestCompletions, INITIAL_SETTINGS, INITIAL_THEMES, Role, RewardCategory } = require('../dist/data/initialData');
+const { createInitialData, INITIAL_SETTINGS, INITIAL_THEMES, Role, RewardCategory } = require('./data.js');
 
 // Helper to fetch from GitHub API
 async function fetchGitHub(apiPath) {

@@ -13,6 +13,7 @@ import EmojiPicker from '../ui/emoji-picker';
 import TagInput from '../ui/tag-input';
 import ImageSelectionDialog from '../ui/image-selection-dialog';
 import DynamicIcon from '../ui/dynamic-icon';
+import UserMultiSelect from '../ui/user-multi-select';
 
 interface QuestDialogProps {
   questToEdit?: Quest;
@@ -154,10 +155,6 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
 
   }, [formData.type, questToEdit]);
   
-  const handleUserAssignmentChange = (userId: string) => {
-    setFormData(prev => ({...prev, assignedUserIds: prev.assignedUserIds.includes(userId) ? prev.assignedUserIds.filter(id => id !== userId) : [...prev.assignedUserIds, userId]}));
-  };
-
   const handleRewardChange = (category: 'rewards' | 'lateSetbacks' | 'incompleteSetbacks') => (index: number, field: keyof RewardItem, value: string | number) => {
     const newItems = [...formData[category]];
     newItems[index] = { ...newItems[index], [field]: field === 'amount' ? Math.max(1, Number(value)) : value };
@@ -264,7 +261,90 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
               <Input id="title" name="title" value={formData.title} onChange={(e) => setFormData(p => ({...p, title: e.target.value}))} required />
             </div>
             
-            {/* Omitted the rest of the form for brevity, assuming conversion to shadcn components */}
+            <div className="space-y-2">
+                <Label htmlFor="description">Description</Label>
+                <Textarea id="description" name="description" value={formData.description} onChange={(e) => setFormData(p => ({...p, description: e.target.value}))} />
+            </div>
+            
+             <RewardInputGroup category='rewards' items={formData.rewards} onChange={handleRewardChange('rewards')} onAdd={handleAddRewardForCategory('rewards')} onRemove={handleRemoveReward('rewards')} />
+
+            <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                    <Label>Quest Type</Label>
+                    <Select value={formData.type} onValueChange={(v: string) => setFormData(p => ({...p, type: v as QuestType}))}>
+                        <SelectTrigger><SelectValue/></SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value={QuestType.Duty}>{settings.terminology.recurringTask}</SelectItem>
+                            <SelectItem value={QuestType.Venture}>{settings.terminology.singleTask}</SelectItem>
+                        </SelectContent>
+                    </Select>
+                </div>
+                 <div className="space-y-2">
+                    <Label>Availability</Label>
+                    <Select value={formData.availabilityType} onValueChange={(v: string) => setFormData(p => ({...p, availabilityType: v as QuestAvailability}))}>
+                        <SelectTrigger><SelectValue/></SelectTrigger>
+                        <SelectContent>
+                            {currentAvailabilityOptions.map(opt => <SelectItem key={opt} value={opt}>{opt}</SelectItem>)}
+                        </SelectContent>
+                    </Select>
+                </div>
+            </div>
+            
+            {/* Conditional Availability Inputs */}
+            {formData.availabilityType === QuestAvailability.Frequency && (
+                 <div className="space-y-2">
+                    <Label>Completion Count</Label>
+                    <Input type="number" value={formData.availabilityCount} onChange={(e) => setFormData(p => ({...p, availabilityCount: Math.max(1, parseInt(e.target.value))}))} />
+                </div>
+            )}
+            {formData.availabilityType === QuestAvailability.Weekly && (
+                 <div className="space-y-2">
+                    <Label>Recurrence Days</Label>
+                    <div className="flex gap-1 flex-wrap">{WEEKDAYS.map((day, i) => <Button key={i} type="button" variant={formData.weeklyRecurrenceDays.includes(i) ? 'default' : 'secondary'} onClick={() => handleWeeklyDayToggle(i)}>{day}</Button>)}</div>
+                </div>
+            )}
+            {formData.availabilityType === QuestAvailability.Monthly && (
+                 <div className="space-y-2">
+                    <Label>Recurrence Dates</Label>
+                    <div className="flex gap-1 flex-wrap">{Array.from({length: 31}, (_, i) => i+1).map(day => <Button key={day} type="button" variant={formData.monthlyRecurrenceDays.includes(day) ? 'default' : 'secondary'} size="sm" onClick={() => handleMonthlyDayToggle(day)}>{day}</Button>)}</div>
+                </div>
+            )}
+
+            <div className="space-y-2 pt-4 border-t">
+                <ToggleSwitch enabled={formData.hasDeadlines} setEnabled={(val) => setFormData(p => ({...p, hasDeadlines: val}))} label="Has Deadlines / Setbacks"/>
+            </div>
+            
+            {formData.hasDeadlines && (
+                 <div className="p-4 bg-background rounded-lg space-y-4 border">
+                    {formData.type === QuestType.Venture ? (
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label>Late After</Label>
+                                <Input type="datetime-local" value={formData.lateDateTime} onChange={(e) => setFormData(p=>({...p, lateDateTime: e.target.value}))} />
+                            </div>
+                             <div className="space-y-2">
+                                <Label>Incomplete After</Label>
+                                <Input type="datetime-local" value={formData.incompleteDateTime} onChange={(e) => setFormData(p=>({...p, incompleteDateTime: e.target.value}))} />
+                            </div>
+                        </div>
+                    ) : (
+                         <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label>Late After (Daily Time)</Label>
+                                <Input type="time" value={formData.lateTime} onChange={(e) => setFormData(p=>({...p, lateTime: e.target.value}))} />
+                            </div>
+                             <div className="space-y-2">
+                                <Label>Incomplete After (Daily Time)</Label>
+                                <Input type="time" value={formData.incompleteTime} onChange={(e) => setFormData(p=>({...p, incompleteTime: e.target.value}))} />
+                            </div>
+                        </div>
+                    )}
+                    <RewardInputGroup category="lateSetbacks" items={formData.lateSetbacks} onChange={handleRewardChange('lateSetbacks')} onAdd={handleAddRewardForCategory('lateSetbacks')} onRemove={handleRemoveReward('lateSetbacks')} />
+                    <RewardInputGroup category="incompleteSetbacks" items={formData.incompleteSetbacks} onChange={handleRewardChange('incompleteSetbacks')} onAdd={handleAddRewardForCategory('incompleteSetbacks')} onRemove={handleRemoveReward('incompleteSetbacks')} />
+                </div>
+            )}
+            
+            <UserMultiSelect allUsers={users} selectedUserIds={formData.assignedUserIds} onSelectionChange={(ids) => setFormData(p => ({...p, assignedUserIds: ids}))} label="Assigned Users (leave empty for all)" />
 
           </form>
           <DialogFooter>

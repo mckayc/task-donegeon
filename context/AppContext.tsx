@@ -129,19 +129,14 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
     // This effect runs automatically when the debounced data changes, saving it to the backend.
     useEffect(() => {
-        // Don't save if data isn't loaded yet or we are in the first run wizard.
         if (!state.isDataLoaded || state.isFirstRun) {
             return;
         }
 
-        // If the state was just updated by the server, don't save it back.
-        // This breaks the infinite save/broadcast loop.
         if (isServerUpdate.current) {
-            isServerUpdate.current = false; // Reset the flag
             return;
         }
 
-        // Prevent saving on the very first effect run after data is loaded from the server.
         if (isInitialLoad.current) {
             isInitialLoad.current = false;
             return;
@@ -175,7 +170,9 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     const fullUpdate = useCallback((newData: IAppData) => {
         if (!isMounted.current) return;
         
-        isServerUpdate.current = true; // Set flag to prevent immediate save-back
+        isServerUpdate.current = true;
+        setTimeout(() => { if(isMounted.current) { isServerUpdate.current = false; }}, 1000);
+
 
         setState(prev => {
             if (!newData || !newData.users || !newData.settings) {
@@ -189,10 +186,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
                 ? (newData.users || prev.users).find(u => u.id === currentUserId) || null
                 : null;
             
-            // A more robust check: if there are no users, it must be the first run.
             const isFirstRunNow = !newData.users || newData.users.length === 0;
 
-            // Create a new object containing only the data properties from the server payload
             const dataState: IAppData = {
                 users: newData.users,
                 quests: newData.quests,
@@ -217,9 +212,9 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             };
 
             return {
-                ...prev, // Keep all old state (UI and data)
-                ...dataState, // Overwrite only the data part with fresh data
-                currentUser: updatedCurrentUser, // Use the fresh user
+                ...prev,
+                ...dataState,
+                currentUser: updatedCurrentUser,
                 isDataLoaded: true,
                 isFirstRun: isFirstRunNow,
                 syncStatus: 'success',
@@ -641,9 +636,9 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             });
 
             if (result && result.adminUser && result.fullData) {
-                // The server now returns the complete new state. We apply it here atomically.
-                // This prevents the race condition between the HTTP response and the WebSocket broadcast.
-                isServerUpdate.current = true; // Prevent this major state change from being saved back immediately.
+                isServerUpdate.current = true;
+                setTimeout(() => { if(isMounted.current) { isServerUpdate.current = false; }}, 1000);
+                
                 setState(prev => ({
                     ...prev,
                     ...result.fullData,

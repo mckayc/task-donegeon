@@ -11,6 +11,7 @@ import ToggleSwitch from '@/components/ui/toggle-switch';
 import EmojiPicker from '@/components/ui/emoji-picker';
 import ImageSelectionDialog from '@/components/ui/image-selection-dialog';
 import DynamicIcon from '@/components/ui/dynamic-icon';
+import { X } from 'lucide-react';
 
 interface EditTrophyDialogProps {
   trophy: Trophy | null;
@@ -65,10 +66,6 @@ const EditTrophyDialog: React.FC<EditTrophyDialogProps> = ({ trophy, initialData
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
   
-  const handleSelectChange = (name: string, value: string) => {
-    setFormData({ ...formData, [name]: value });
-  };
-
   const handleRequirementChange = (index: number, field: keyof TrophyRequirement, value: any) => {
     const newRequirements = [...formData.requirements];
     if (field === 'count') {
@@ -163,7 +160,36 @@ const EditTrophyDialog: React.FC<EditTrophyDialogProps> = ({ trophy, initialData
              {mode === 'ai-creation' && <DialogDescription>Review and adjust the AI-generated details below.</DialogDescription>}
           </DialogHeader>
           <form id="trophy-form" onSubmit={handleSubmit} className="space-y-4 py-4 overflow-y-auto pr-6">
-            {/* Omitted for brevity, assuming conversion to shadcn */}
+            <div className="space-y-2">
+                <Label htmlFor="trophy-name">Name</Label>
+                <Input id="trophy-name" name="name" value={formData.name} onChange={handleChange} required />
+            </div>
+            <div className="space-y-2">
+                <Label htmlFor="trophy-desc">Description</Label>
+                <Textarea id="trophy-desc" name="description" value={formData.description} onChange={handleChange} />
+            </div>
+            {/* ... Icon selection logic ... */}
+            <ToggleSwitch enabled={!formData.isManual} setEnabled={(val) => setFormData(p => ({...p, isManual: !val}))} label="Automatic Awarding" />
+            
+            {!formData.isManual && (
+                <div className="p-4 bg-background rounded-lg border space-y-3">
+                    <h4 className="font-semibold text-foreground">Requirements</h4>
+                    {formData.requirements.map((req, i) => (
+                        <div key={i} className="p-2 border rounded-md space-y-2">
+                           <div className="flex justify-end"><Button type="button" variant="ghost" size="icon" onClick={() => handleRemoveRequirement(i)}><X className="w-4 h-4 text-red-400"/></Button></div>
+                           <div className="grid grid-cols-2 gap-4">
+                                <Select value={req.type} onValueChange={(v: string) => handleRequirementChange(i, 'type', v)}>
+                                    <SelectTrigger><SelectValue/></SelectTrigger>
+                                    <SelectContent>{Object.values(TrophyRequirementType).map(t => <SelectItem key={t} value={t}>{t.replace(/_/g, ' ')}</SelectItem>)}</SelectContent>
+                                </Select>
+                                {renderRequirementValueInput(req, i)}
+                           </div>
+                           <Input type="number" min="1" value={req.count} onChange={(e) => handleRequirementChange(i, 'count', e.target.value)} placeholder="Count" />
+                        </div>
+                    ))}
+                    <Button type="button" variant="outline" size="sm" onClick={handleAddRequirement}>Add Requirement</Button>
+                </div>
+            )}
           </form>
           <DialogFooter>
              {mode === 'ai-creation' ? (
@@ -194,6 +220,9 @@ const EditTrophyDialog: React.FC<EditTrophyDialogProps> = ({ trophy, initialData
           onClose={() => setIsGalleryOpen(false)}
         />
       )}
+      <datalist id="tags-datalist">
+        {allTags.map(tag => <option key={tag} value={tag} />)}
+      </datalist>
     </>
   );
 };

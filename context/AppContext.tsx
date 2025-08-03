@@ -147,44 +147,19 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
                 return prev;
             }
             
-            // Deep clone for logging to avoid console reference issues
-            const prevForLog = JSON.parse(JSON.stringify(prev));
-            const newForLog = JSON.parse(JSON.stringify(newData));
-            console.log('[FRONTEND LOG] Comparing states. Prev completions:', prevForLog.questCompletions.length, 'New completions:', newForLog.questCompletions.length);
-            
             const currentUserId = prev.currentUser?.id;
             const updatedCurrentUser = currentUserId
-                ? (newData.users || prev.users).find(u => u.id === currentUserId) || null
+                ? (newData.users || []).find(u => u.id === currentUserId) || null
                 : null;
             
             const isFirstRunNow = !newData.users || newData.users.length === 0;
 
-            const dataState: IAppData = {
-                users: newData.users,
-                quests: newData.quests,
-                questGroups: newData.questGroups,
-                markets: newData.markets,
-                rewardTypes: newData.rewardTypes,
-                questCompletions: newData.questCompletions,
-                purchaseRequests: newData.purchaseRequests,
-                guilds: newData.guilds,
-                ranks: newData.ranks,
-                trophies: newData.trophies,
-                userTrophies: newData.userTrophies,
-                adminAdjustments: newData.adminAdjustments,
-                gameAssets: newData.gameAssets,
-                systemLogs: newData.systemLogs,
-                settings: newData.settings,
-                themes: newData.themes,
-                loginHistory: newData.loginHistory,
-                chatMessages: newData.chatMessages,
-                systemNotifications: newData.systemNotifications,
-                scheduledEvents: newData.scheduledEvents,
-            };
-
+            // CRITICAL FIX: Ensure a completely new state object is created to guarantee a re-render.
+            // Spreading `prev` first, then `newData`, ensures all top-level keys from the new data
+            // replace the old ones, and any other UI state in `prev` is preserved.
             return {
                 ...prev,
-                ...dataState,
+                ...newData,
                 currentUser: updatedCurrentUser,
                 isDataLoaded: true,
                 isFirstRun: isFirstRunNow,

@@ -202,22 +202,68 @@ async function main() {
             
             // Helper function to apply rewards
             const applyRewards = (user, rewards, guildId) => {
-                if (!user) return;
-                const balanceTarget = guildId 
-                    ? (user.guildBalances[guildId] = user.guildBalances[guildId] || { purse: {}, experience: {} }) 
-                    : { purse: user.personalPurse, experience: user.personalExperience };
+                if (!user || !rewards || rewards.length === 0) return;
+
+                // Ensure base objects exist
+                if (!user.personalPurse) user.personalPurse = {};
+                if (!user.personalExperience) user.personalExperience = {};
+                if (guildId && !user.guildBalances[guildId]) {
+                    user.guildBalances[guildId] = { purse: {}, experience: {} };
+                }
 
                 rewards.forEach(rewardItem => {
                     const rewardDef = data.rewardTypes.find(rt => rt.id === rewardItem.rewardTypeId);
-                    if (rewardDef) {
-                        const balanceKey = rewardDef.category === RewardCategory.Currency ? 'purse' : 'experience';
-                        balanceTarget[balanceKey][rewardItem.rewardTypeId] = (balanceTarget[balanceKey][rewardItem.rewardTypeId] || 0) + rewardItem.amount;
+                    if (!rewardDef) return;
+
+                    if (guildId) {
+                        const guildBalance = user.guildBalances[guildId];
+                        if (rewardDef.category === RewardCategory.Currency) {
+                            guildBalance.purse[rewardItem.rewardTypeId] = (guildBalance.purse[rewardItem.rewardTypeId] || 0) + rewardItem.amount;
+                        } else {
+                            guildBalance.experience[rewardItem.rewardTypeId] = (guildBalance.experience[rewardItem.rewardTypeId] || 0) + rewardItem.amount;
+                        }
+                    } else {
+                        if (rewardDef.category === RewardCategory.Currency) {
+                            user.personalPurse[rewardItem.rewardTypeId] = (user.personalPurse[rewardItem.rewardTypeId] || 0) + rewardItem.amount;
+                        } else {
+                            user.personalExperience[rewardItem.rewardTypeId] = (user.personalExperience[rewardItem.rewardTypeId] || 0) + rewardItem.amount;
+                        }
+                    }
+                });
+            };
+
+            const applySetbacks = (user, setbacks, guildId) => {
+                if (!user || !setbacks || setbacks.length === 0) return;
+
+                if (!user.personalPurse) user.personalPurse = {};
+                if (!user.personalExperience) user.personalExperience = {};
+                if (guildId && !user.guildBalances[guildId]) {
+                    user.guildBalances[guildId] = { purse: {}, experience: {} };
+                }
+
+                setbacks.forEach(setbackItem => {
+                    const rewardDef = data.rewardTypes.find(rt => rt.id === setbackItem.rewardTypeId);
+                    if (!rewardDef) return;
+
+                    if (guildId) {
+                        const guildBalance = user.guildBalances[guildId];
+                        if (rewardDef.category === RewardCategory.Currency) {
+                            guildBalance.purse[setbackItem.rewardTypeId] = (guildBalance.purse[setbackItem.rewardTypeId] || 0) - setbackItem.amount;
+                        } else {
+                            guildBalance.experience[setbackItem.rewardTypeId] = (guildBalance.experience[setbackItem.rewardTypeId] || 0) - setbackItem.amount;
+                        }
+                    } else {
+                        if (rewardDef.category === RewardCategory.Currency) {
+                            user.personalPurse[setbackItem.rewardTypeId] = (user.personalPurse[setbackItem.rewardTypeId] || 0) - setbackItem.amount;
+                        } else {
+                            user.personalExperience[setbackItem.rewardTypeId] = (user.personalExperience[setbackItem.rewardTypeId] || 0) - setbackItem.amount;
+                        }
                     }
                 });
             };
 
             switch(type) {
-                // USER
+                // === USER ACTIONS ===
                 case 'ADD_USER': {
                     const newId = `user-${Date.now()}`;
                     const newUser = { ...payload, id: newId, personalPurse: {}, personalExperience: {}, guildBalances: {}, avatar: {}, ownedAssetIds: [], ownedThemes: ['emerald', 'rose', 'sky'], hasBeenOnboarded: false };
@@ -235,7 +281,7 @@ async function main() {
                     break;
                 }
 
-                // QUESTS
+                // === QUEST ACTIONS ===
                 case 'ADD_QUEST': {
                     const newId = `quest-${Date.now()}`;
                     data.quests.push({ ...payload, id: newId, claimedByUserIds: [], dismissals: [] });
@@ -263,6 +309,53 @@ async function main() {
                     }
                     break;
                 }
+                 case 'DISMISS_QUEST': {
+                    const { questId, userId } = payload;
+                    const quest = data.quests.find(q => q.id === questId);
+                    if (quest) {
+                        if (!quest.dismissals) quest.dismissals = [];
+                        quest.dismissals.push({ userId, dismissedAt: new Date().toISOString() });
+                    }
+                    break;
+                }
+                case 'CLAIM_QUEST': {
+                    const { questId, userId } = payload;
+                    const quest = data.quests.find(q => q.id === questId);
+                    if (quest) {
+                        if (!quest.claimedByUserIds) quest.claimedByUserIds = [];
+                        if (!quest.claimedByUserIds.includes(userId)) {
+                            quest.claimedByUserIds.push(userId);
+                        }
+                    }
+                    break;
+                }
+                case 'RELEASE_QUEST': {
+                    const { questId, userId } = payload;
+                    const quest = data.quests.find(q => q.id === questId);
+                    if (quest && quest.claimedByUserIds) {
+                        quest.claimedByUserIds = quest.claimedByUserIds.filter(id => id !== userId);
+                    }
+                    break;
+                }
+                case 'MARK_QUEST_TODO': {
+                    const { questId, userId } = payload;
+                    const quest = data.quests.find(q => q.id === questId);
+                    if (quest) {
+                        if (!quest.todoUserIds) quest.todoUserIds = [];
+                        if (!quest.todoUserIds.includes(userId)) {
+                            quest.todoUserIds.push(userId);
+                        }
+                    }
+                    break;
+                }
+                case 'UNMARK_QUEST_TODO': {
+                    const { questId, userId } = payload;
+                    const quest = data.quests.find(q => q.id === questId);
+                    if (quest && quest.todoUserIds) {
+                        quest.todoUserIds = quest.todoUserIds.filter(id => id !== userId);
+                    }
+                    break;
+                }
                 case 'COMPLETE_QUEST': {
                     const { questId, userId, guildId, options } = payload;
                     const quest = data.quests.find(q => q.id === questId);
@@ -279,7 +372,7 @@ async function main() {
                     data.questCompletions.push(newCompletion);
                     
                     if (!quest.requiresApproval) {
-                        applyRewards(user, quest.rewards, guildId);
+                        applyRewards(user, quest.rewards, guildId, data);
                     }
                     break;
                 }
@@ -289,7 +382,7 @@ async function main() {
                         completion.status = QuestCompletionStatus.Approved;
                         const quest = data.quests.find(q => q.id === completion.questId);
                         const user = data.users.find(u => u.id === completion.userId);
-                        if(quest && user) applyRewards(user, quest.rewards, completion.guildId);
+                        if(quest && user) applyRewards(user, quest.rewards, completion.guildId, data);
                     }
                     break;
                 }
@@ -298,10 +391,165 @@ async function main() {
                     if(completion) completion.status = QuestCompletionStatus.Rejected;
                     break;
                 }
+
+                // === QUEST GROUP ACTIONS ===
                 case 'ADD_QUEST_GROUP': {
                     const newGroup = { ...payload, id: `qg-${Date.now()}` };
                     data.questGroups.push(newGroup);
                     result = newGroup;
+                    break;
+                }
+                case 'UPDATE_QUEST_GROUP': {
+                    const groupIndex = data.questGroups.findIndex(g => g.id === payload.id);
+                    if (groupIndex > -1) data.questGroups[groupIndex] = payload;
+                    break;
+                }
+                case 'DELETE_QUEST_GROUP': {
+                    data.questGroups = data.questGroups.filter(g => g.id !== payload.groupId);
+                    // Uncategorize quests that were in this group
+                    data.quests.forEach(q => {
+                        if (q.groupId === payload.groupId) q.groupId = undefined;
+                    });
+                    break;
+                }
+                case 'ASSIGN_QUEST_GROUP_TO_USERS': {
+                    const { groupId, userIds } = payload;
+                    data.quests.forEach(q => {
+                        if (q.groupId === groupId) {
+                            q.assignedUserIds = [...new Set([...q.assignedUserIds, ...userIds])];
+                        }
+                    });
+                    break;
+                }
+                 // === REWARD ACTIONS ===
+                case 'ADD_REWARD_TYPE': {
+                    const newReward = { ...payload, id: `reward-${Date.now()}`, isCore: false };
+                    data.rewardTypes.push(newReward);
+                    result = newReward;
+                    break;
+                }
+                case 'UPDATE_REWARD_TYPE': {
+                    const index = data.rewardTypes.findIndex(rt => rt.id === payload.id);
+                    if (index > -1) data.rewardTypes[index] = payload;
+                    break;
+                }
+                case 'DELETE_REWARD_TYPE': {
+                    data.rewardTypes = data.rewardTypes.filter(rt => rt.id !== payload.rewardTypeId);
+                    break;
+                }
+                case 'CLONE_REWARD_TYPE': {
+                    const toClone = data.rewardTypes.find(rt => rt.id === payload.rewardTypeId);
+                    if (toClone) {
+                        const newReward = { ...toClone, id: `reward-${Date.now()}`, name: `${toClone.name} (Copy)`, isCore: false };
+                        data.rewardTypes.push(newReward);
+                    }
+                    break;
+                }
+                 // === MARKET ACTIONS ===
+                case 'ADD_MARKET': {
+                    const newMarket = { ...payload, id: `market-${Date.now()}` };
+                    data.markets.push(newMarket);
+                    result = newMarket;
+                    break;
+                }
+                case 'UPDATE_MARKET': {
+                    const index = data.markets.findIndex(m => m.id === payload.id);
+                    if (index > -1) data.markets[index] = payload;
+                    break;
+                }
+                case 'DELETE_MARKET': {
+                    data.markets = data.markets.filter(m => m.id !== payload.marketId);
+                    break;
+                }
+                case 'CLONE_MARKET': {
+                    const toClone = data.markets.find(m => m.id === payload.marketId);
+                    if (toClone) {
+                        const newMarket = { ...toClone, id: `market-${Date.now()}`, title: `${toClone.title} (Copy)` };
+                        data.markets.push(newMarket);
+                    }
+                    break;
+                }
+                case 'DELETE_MARKETS': {
+                    const idsToDelete = new Set(payload.marketIds);
+                    data.markets = data.markets.filter(m => !idsToDelete.has(m.id));
+                    break;
+                }
+                case 'UPDATE_MARKETS_STATUS': {
+                    const { marketIds, status } = payload;
+                    data.markets.forEach(m => {
+                        if (marketIds.includes(m.id)) {
+                            m.status = { type: status };
+                        }
+                    });
+                    break;
+                }
+                // === TROPHY & RANK ACTIONS ===
+                case 'ADD_TROPHY': {
+                    const newTrophy = { ...payload, id: `trophy-${Date.now()}` };
+                    data.trophies.push(newTrophy);
+                    result = newTrophy;
+                    break;
+                }
+                case 'UPDATE_TROPHY': {
+                    const index = data.trophies.findIndex(t => t.id === payload.id);
+                    if (index > -1) data.trophies[index] = payload;
+                    break;
+                }
+                case 'DELETE_TROPHY': {
+                    data.trophies = data.trophies.filter(t => t.id !== payload.trophyId);
+                    break;
+                }
+                case 'CLONE_TROPHY': {
+                    const toClone = data.trophies.find(t => t.id === payload.trophyId);
+                    if (toClone) {
+                        const newTrophy = { ...toClone, id: `trophy-${Date.now()}`, name: `${toClone.name} (Copy)` };
+                        data.trophies.push(newTrophy);
+                    }
+                    break;
+                }
+                case 'DELETE_TROPHIES': {
+                    const idsToDelete = new Set(payload.trophyIds);
+                    data.trophies = data.trophies.filter(t => !idsToDelete.has(t.id));
+                    break;
+                }
+                case 'AWARD_TROPHY': {
+                    const { userId, trophyId, guildId } = payload;
+                    data.userTrophies.push({ id: `ut-${Date.now()}`, userId, trophyId, awardedAt: new Date().toISOString(), guildId });
+                    break;
+                }
+                 case 'SET_RANKS': {
+                    data.ranks = payload.ranks;
+                    break;
+                }
+                // === CHAT ACTIONS ===
+                case 'SEND_MESSAGE': {
+                    const { senderId, recipientId, guildId, message, isAnnouncement } = payload;
+                    const newMessage = {
+                        id: `msg-${Date.now()}-${Math.random()}`,
+                        senderId,
+                        message,
+                        timestamp: new Date().toISOString(),
+                        readBy: [senderId],
+                    };
+                    if (recipientId) newMessage.recipientId = recipientId;
+                    if (guildId) newMessage.guildId = guildId;
+                    if (isAnnouncement) newMessage.isAnnouncement = isAnnouncement;
+
+                    data.chatMessages.push(newMessage);
+                    break;
+                }
+                case 'MARK_MESSAGES_AS_READ': {
+                    const { partnerId, guildId, currentUserId } = payload;
+                    data.chatMessages.forEach(msg => {
+                        const isUnread = !msg.readBy.includes(currentUserId);
+                        if (isUnread) {
+                            if (guildId && msg.guildId === guildId) {
+                                msg.readBy.push(currentUserId);
+                            } else if (partnerId && ((msg.recipientId === currentUserId && msg.senderId === partnerId))) {
+                                msg.readBy.push(currentUserId);
+                            }
+                        }
+                    });
                     break;
                 }
                 case 'UPDATE_SETTINGS': {
@@ -315,7 +563,7 @@ async function main() {
                     if (!user || !asset) throw new Error("User or Asset not found");
                     const cost = asset.costGroups[costGroupIndex];
                     if (!cost) throw new Error("Invalid cost group");
-                    const balanceTarget = guildId ? (user.guildBalances[guildId] = user.guildBalances[guildId] || { purse: {}, experience: {} }) : { purse: user.personalPurse, experience: user.personalExperience };
+                    const balanceTarget = guildId ? (user.guildBalances[guildId] || { purse: {}, experience: {} }) : { purse: user.personalPurse, experience: user.personalExperience };
                     for (const item of cost) {
                         const rewardDef = data.rewardTypes.find(rt => rt.id === item.rewardTypeId);
                         if (!rewardDef) throw new Error("Invalid reward type in cost");
@@ -326,26 +574,16 @@ async function main() {
                         id: `pr-${Date.now()}`, userId, assetId, requestedAt: new Date().toISOString(),
                         status: asset.requiresApproval ? 'Pending' : 'Completed', assetDetails: { name: asset.name, description: asset.description, cost }, guildId,
                     };
-                    cost.forEach(item => {
-                        const rewardDef = data.rewardTypes.find(rt => rt.id === item.rewardTypeId);
-                        if (rewardDef) {
-                            const balanceKey = rewardDef.category === RewardCategory.Currency ? 'purse' : 'experience';
-                            balanceTarget[balanceKey][item.rewardTypeId] -= item.amount;
-                        }
-                    });
+                    
+                    applySetbacks(user, cost, guildId, data);
+                    
                     if (asset.requiresApproval) {
                         data.purchaseRequests.push(newPurchaseRequest);
                     } else {
                         newPurchaseRequest.actedAt = new Date().toISOString();
                         user.ownedAssetIds.push(assetId);
                         if (asset.linkedThemeId && !user.ownedThemes.includes(asset.linkedThemeId)) user.ownedThemes.push(asset.linkedThemeId);
-                        (asset.payouts || []).forEach(payout => {
-                            const rewardDef = data.rewardTypes.find(rt => rt.id === payout.rewardTypeId);
-                            if (rewardDef) {
-                                const balanceKey = rewardDef.category === RewardCategory.Currency ? 'purse' : 'experience';
-                                balanceTarget[balanceKey][payout.rewardTypeId] = (balanceTarget[balanceKey][payout.rewardTypeId] || 0) + payout.amount;
-                            }
-                        });
+                        applyRewards(user, asset.payouts || [], guildId, data);
                         asset.purchaseCount = (asset.purchaseCount || 0) + 1;
                         data.purchaseRequests.push(newPurchaseRequest);
                     }
@@ -360,14 +598,7 @@ async function main() {
                         purchase.actedAt = new Date().toISOString();
                         user.ownedAssetIds.push(asset.id);
                         if (asset.linkedThemeId && !user.ownedThemes.includes(asset.linkedThemeId)) user.ownedThemes.push(asset.linkedThemeId);
-                         (asset.payouts || []).forEach(payout => {
-                            const balanceTarget = purchase.guildId ? (user.guildBalances[purchase.guildId] = user.guildBalances[purchase.guildId] || { purse: {}, experience: {} }) : { purse: user.personalPurse, experience: user.personalExperience };
-                            const rewardDef = data.rewardTypes.find(rt => rt.id === payout.rewardTypeId);
-                            if (rewardDef) {
-                                const balanceKey = rewardDef.category === RewardCategory.Currency ? 'purse' : 'experience';
-                                balanceTarget[balanceKey][payout.rewardTypeId] = (balanceTarget[balanceKey][payout.rewardTypeId] || 0) + payout.amount;
-                            }
-                        });
+                        applyRewards(user, asset.payouts || [], purchase.guildId, data);
                         asset.purchaseCount = (asset.purchaseCount || 0) + 1;
                     }
                     break;
@@ -379,7 +610,7 @@ async function main() {
                          purchase.status = 'Rejected';
                          purchase.actedAt = new Date().toISOString();
                          // Refund
-                         applyRewards(user, purchase.assetDetails.cost, purchase.guildId);
+                         applyRewards(user, purchase.assetDetails.cost, purchase.guildId, data);
                      }
                     break;
                 }
@@ -396,10 +627,6 @@ async function main() {
                 }
                 case 'DELETE_THEME': {
                     data.themes = data.themes.filter(t => t.id !== payload.themeId);
-                    break;
-                }
-                case 'SET_RANKS': {
-                    data.ranks = payload.ranks;
                     break;
                 }
                 default:

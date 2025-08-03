@@ -1,4 +1,4 @@
-import React, { useState, ChangeEvent, ReactNode, useEffect } from 'react';
+import React, { useState, ChangeEvent, ReactNode, useEffect, useRef } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { Role, AppSettings, Terminology, RewardCategory, RewardTypeDefinition, AutomatedBackupProfile } from '../../types';
 import { Button } from '@/components/ui/button';
@@ -11,6 +11,7 @@ import EmojiPicker from '../ui/emoji-picker';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Separator } from '../ui/separator';
 import UserMultiSelect from '../ui/user-multi-select';
+import { CheckCircle, Edit3, Loader2 } from 'lucide-react';
 
 const SettingSection: React.FC<{ title: string, description?: string, children: React.ReactNode }> = ({ title, description, children }) => (
     <div className="py-6">
@@ -22,24 +23,68 @@ const SettingSection: React.FC<{ title: string, description?: string, children: 
     </div>
 );
 
+const SaveStatusIndicator: React.FC<{ status: 'saved' | 'unsaved' | 'saving' }> = ({ status }) => {
+    switch (status) {
+        case 'saved':
+            return <div className="flex items-center gap-2 text-sm text-green-400"><CheckCircle className="w-4 h-4" /> All changes saved</div>;
+        case 'unsaved':
+            return <div className="flex items-center gap-2 text-sm text-yellow-400"><Edit3 className="w-4 h-4" /> Unsaved changes...</div>;
+        case 'saving':
+            return <div className="flex items-center gap-2 text-sm text-sky-400"><Loader2 className="w-4 h-4 animate-spin" /> Saving...</div>;
+        default:
+            return null;
+    }
+};
+
 const SettingsPage: React.FC = () => {
     const { currentUser, users, settings, rewardTypes, isAiConfigured, themes } = useAppState();
     const { updateSettings, addNotification } = useAppDispatch();
     
     const [formState, setFormState] = useState<AppSettings>(() => JSON.parse(JSON.stringify(settings)));
+    const [saveStatus, setSaveStatus] = useState<'saved' | 'unsaved' | 'saving'>('saved');
     const [isFaviconPickerOpen, setIsFaviconPickerOpen] = useState(false);
     const [isChatEmojiPickerOpen, setIsChatEmojiPickerOpen] = useState(false);
+    const isInitialMount = useRef(true);
     
+    // Debounced auto-save effect
+    useEffect(() => {
+        // Skip the effect on the initial render to prevent an unnecessary save.
+        if (isInitialMount.current) {
+            isInitialMount.current = false;
+            return;
+        }
+    
+        // Mark as unsaved immediately on change
+        setSaveStatus('unsaved');
+    
+        // Set up a timer to save after a delay
+        const handler = setTimeout(async () => {
+            setSaveStatus('saving');
+            try {
+                await updateSettings(formState);
+                setSaveStatus('saved');
+                // We don't show a notification on auto-save to avoid being noisy.
+                // The status indicator is sufficient feedback.
+            } catch (error) {
+                console.error("Failed to auto-save settings", error);
+                addNotification({ type: 'error', message: 'Failed to save settings.' });
+                setSaveStatus('unsaved'); // Revert to unsaved so user knows it failed
+            }
+        }, 1500); // 1.5-second delay
+    
+        // Cleanup function: if the component unmounts or formState changes again,
+        // clear the previous timer to prevent the old save from running.
+        return () => {
+            clearTimeout(handler);
+        };
+    }, [formState, updateSettings, addNotification]);
+
+
     const handleNestedChange = <T extends keyof AppSettings>(section: T) => (field: keyof AppSettings[T], value: any) => {
         setFormState(prev => ({
             ...prev,
             [section]: { ...(prev[section] as object), [field as string]: value },
         }));
-    };
-
-    const handleSave = () => {
-        updateSettings(formState);
-        addNotification({ type: 'success', message: 'Settings saved successfully!' });
     };
 
     const handleSharedUsersChange = (ids: string[]) => {
@@ -71,7 +116,7 @@ const SettingsPage: React.FC = () => {
         <div className="space-y-6">
             <div className="flex justify-between items-center">
                 <h1 className="text-4xl font-display text-foreground">Settings</h1>
-                <Button onClick={handleSave}>Save All Settings</Button>
+                <SaveStatusIndicator status={saveStatus} />
             </div>
             
             <Card>

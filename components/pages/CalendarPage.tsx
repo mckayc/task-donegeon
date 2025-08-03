@@ -10,7 +10,6 @@ import ChroniclesDayView from '../calendar/ChroniclesDayView';
 import ChroniclesMonthView from '../calendar/ChroniclesMonthView';
 import ChroniclesWeekView from '../calendar/ChroniclesWeekView';
 import { Button } from '@/components/ui/button';
-import ScheduleEventDialog from '@/components/admin/ScheduleEventDialog';
 import EventDetailDialog from '@/components/calendar/EventDetailDialog';
 
 type CalendarView = 'month' | 'week' | 'day';
@@ -32,7 +31,6 @@ const CalendarPage: React.FC = () => {
     const [view, setView] = useState<CalendarView>('month');
     const [mode, setMode] = useState<CalendarMode>('quests');
     const [currentDate, setCurrentDate] = useState(new Date());
-    const [isEventDialogOpen, setIsEventDialogOpen] = useState(false);
     const [selectedEvent, setSelectedEvent] = useState<ScheduledEvent | null>(null);
 
     const handleDateChange = (offset: number) => {
@@ -101,7 +99,7 @@ const CalendarPage: React.FC = () => {
                             <ViewButton type="day" currentView={view} setView={setView}>Day</ViewButton>
                         </div>
                          {currentUser?.role === Role.DonegeonMaster && (
-                            <Button onClick={() => setIsEventDialogOpen(true)}>Schedule Event</Button>
+                            <Button onClick={() => setActivePage('Manage Events')}>Event Scheduler</Button>
                         )}
                     </div>
                 </CardHeader>
@@ -123,10 +121,6 @@ const CalendarPage: React.FC = () => {
                     })()}
                 </CardContent>
             </Card>
-
-            {isEventDialogOpen && (
-                <ScheduleEventDialog event={null} onClose={() => setIsEventDialogOpen(false)} />
-            )}
 
             {selectedEvent && (
                 <EventDetailDialog event={selectedEvent} onClose={() => setSelectedEvent(null)} />

@@ -16,7 +16,7 @@ const CollapsibleSection: React.FC<{ title: string; children: React.ReactNode; d
                 <ChevronDownIcon className={`w-6 h-6 text-muted-foreground transition-transform ${isOpen ? 'rotate-180' : ''}`} />
             </button>
             {isOpen && (
-                <div className="px-6 pb-6 text-foreground/80 space-y-4 prose prose-invert max-w-none">
+                <div className="px-6 pb-6 text-foreground/80 space-y-4">
                     {children}
                 </div>
             )}

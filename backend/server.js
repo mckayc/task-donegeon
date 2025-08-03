@@ -1,4 +1,5 @@
 
+
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
@@ -748,6 +749,87 @@ async function main() {
         }
     });
     
+    // === IMAGE PACKS ===
+    const UPLOADS_PATH = path.join(__dirname, '..', 'uploads');
+
+    app.get('/api/image-packs', async (req, res) => {
+        try {
+            const contents = await fetchGitHub(GITHUB_PACKS_PATH);
+            const packs = contents.filter(item => item.type === 'dir');
+            
+            const packData = await Promise.all(packs.map(async (pack) => {
+                const packContents = await fetchGitHub(pack.path);
+                const firstImage = packContents.find(item => item.type === 'file' && /\.(png|jpg|jpeg|gif|webp)$/i.test(item.name));
+                return {
+                    name: pack.name,
+                    sampleImageUrl: firstImage ? firstImage.download_url : 'https://placehold.co/150/1c1917/FFFFFF?text=No+Preview'
+                };
+            }));
+            
+            res.json(packData);
+        } catch (error) {
+            console.error('Error fetching image packs:', error);
+            res.status(500).json({ error: 'Could not retrieve image packs from GitHub.' });
+        }
+    });
+
+    app.get('/api/image-packs/:packName', async (req, res) => {
+        const { packName } = req.params;
+        try {
+            const contents = await fetchGitHub(`${GITHUB_PACKS_PATH}/${packName}`);
+            
+            const fileDetails = await Promise.all(contents
+                .filter(item => item.type === 'file' && /\.(png|jpg|jpeg|gif|webp)$/i.test(item.name))
+                .map(async (file) => {
+                    const localPath = path.join(UPLOADS_PATH, packName, file.name);
+                    let exists = false;
+                    try {
+                        await fs.access(localPath);
+                        exists = true;
+                    } catch {
+                        exists = false;
+                    }
+                    return {
+                        name: file.name,
+                        category: packName,
+                        url: file.download_url,
+                        exists,
+                    };
+                })
+            );
+            res.json(fileDetails);
+        } catch (error) {
+            console.error(`Error fetching details for pack ${packName}:`, error);
+            res.status(500).json({ error: `Could not retrieve details for pack ${packName}.` });
+        }
+    });
+
+    app.post('/api/image-packs/import', async (req, res) => {
+        const { files } = req.body;
+        if (!files || !Array.isArray(files)) {
+            return res.status(400).json({ error: 'Invalid file list provided.' });
+        }
+    
+        try {
+            for (const file of files) {
+                const categoryPath = path.join(UPLOADS_PATH, file.category);
+                await fs.mkdir(categoryPath, { recursive: true });
+                
+                const filePath = path.join(categoryPath, file.name);
+                const response = await fetch(file.url);
+                if (!response.ok) throw new Error(`Failed to download ${file.name}`);
+                
+                const arrayBuffer = await response.arrayBuffer();
+                const buffer = Buffer.from(arrayBuffer);
+                await fs.writeFile(filePath, buffer);
+            }
+            res.status(200).json({ success: true, message: `${files.length} files imported successfully.` });
+        } catch (error) {
+            console.error('Error importing image pack files:', error);
+            res.status(500).json({ error: 'Failed to import one or more files.' });
+        }
+    });
+
     // This MUST be the last route.
     app.get('*', (req, res) => res.sendFile(path.join(__dirname, '../dist/index.html')));
 

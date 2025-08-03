@@ -24,10 +24,9 @@ const SettingSection: React.FC<{ title: string, description?: string, children: 
 
 const SettingsPage: React.FC = () => {
     const { currentUser, users, settings, rewardTypes, isAiConfigured, themes } = useAppState();
-    const { updateSettings, addNotification, reinitializeApp, clearAllHistory, resetAllPlayerData, deleteAllCustomContent } = useAppDispatch();
+    const { updateSettings, addNotification } = useAppDispatch();
     
     const [formState, setFormState] = useState<AppSettings>(() => JSON.parse(JSON.stringify(settings)));
-    const [confirmation, setConfirmation] = useState<{ action: string, title: string, message: string } | null>(null);
     const [isFaviconPickerOpen, setIsFaviconPickerOpen] = useState(false);
     const [isChatEmojiPickerOpen, setIsChatEmojiPickerOpen] = useState(false);
 
@@ -41,32 +40,10 @@ const SettingsPage: React.FC = () => {
             [section]: { ...(prev[section] as object), [field as string]: value },
         }));
     };
-    
-     const handleBackupProfileChange = (index: number, field: keyof AutomatedBackupProfile, value: string | boolean | number) => {
-        setFormState(prev => {
-            const newProfiles = [...prev.automatedBackups.profiles] as [AutomatedBackupProfile, AutomatedBackupProfile, AutomatedBackupProfile];
-            (newProfiles[index] as any)[field] = value;
-            return { ...prev, automatedBackups: { ...prev.automatedBackups, profiles: newProfiles } };
-        });
-    };
 
     const handleSave = () => {
         updateSettings(formState);
         addNotification({ type: 'success', message: 'Settings saved successfully!' });
-    };
-    
-    const handleConfirm = async () => {
-        if (!confirmation) return;
-        try {
-            switch (confirmation.action) {
-                case 'reinitialize': await reinitializeApp(); break;
-                case 'clear_history': await clearAllHistory(); addNotification({ type: 'success', message: 'All history has been cleared.' }); break;
-                case 'reset_player_data': await resetAllPlayerData(); addNotification({ type: 'success', message: 'Player data has been reset.' }); break;
-                case 'factory_reset': await deleteAllCustomContent(); addNotification({ type: 'success', message: 'All custom content deleted. App will reload.' }); setTimeout(() => window.location.reload(), 3000); break;
-            }
-        } finally {
-            setConfirmation(null);
-        }
     };
     
     if (!currentUser || currentUser.role !== Role.DonegeonMaster) {
@@ -174,58 +151,13 @@ const SettingsPage: React.FC = () => {
                             </div>
                         )}
                     </SettingSection>
-
-                    <SettingSection title="Automated Backups">
-                        {formState.automatedBackups.profiles.map((profile, index) => (
-                            <div key={index} className="p-4 border rounded-lg bg-background/50 flex flex-wrap gap-4 items-center">
-                                <ToggleSwitch enabled={profile.enabled} setEnabled={(val) => handleBackupProfileChange(index, 'enabled', val)} label={`Profile ${index+1}`} />
-                                <div className="flex-grow grid grid-cols-2 gap-4">
-                                    <div className="space-y-1">
-                                        <Label>Frequency</Label>
-                                        <Select value={profile.frequency} onValueChange={(val) => handleBackupProfileChange(index, 'frequency', val)} disabled={!profile.enabled}>
-                                            <SelectTrigger><SelectValue /></SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem value="hourly">Hourly</SelectItem>
-                                                <SelectItem value="daily">Daily</SelectItem>
-                                                <SelectItem value="weekly">Weekly</SelectItem>
-                                                <SelectItem value="monthly">Monthly</SelectItem>
-                                            </SelectContent>
-                                        </Select>
-                                    </div>
-                                    <div className="space-y-1">
-                                        <Label>Keep how many?</Label>
-                                        <Input type="number" value={profile.keep} onChange={(e) => handleBackupProfileChange(index, 'keep', parseInt(e.target.value))} disabled={!profile.enabled}/>
-                                    </div>
-                                </div>
-                            </div>
-                        ))}
-                    </SettingSection>
-
+                    
                     <SettingSection title="AI Features">
                         <ToggleSwitch enabled={formState.enableAiFeatures} setEnabled={(val) => setFormState(p => ({...p, enableAiFeatures: val}))} label="Enable AI-powered features" />
                         <p className="text-sm text-muted-foreground">When enabled, AI features like idea generators will appear. This requires a valid Google Gemini API key to be set on the server.</p>
                     </SettingSection>
-
-                    <SettingSection title="Danger Zone" description="These are destructive actions that cannot be undone. Please be certain before proceeding.">
-                        <div className="p-4 border border-destructive rounded-lg flex flex-wrap gap-4 items-center justify-center">
-                            <Button variant="destructive" onClick={() => setConfirmation({ action: 'clear_history', title: 'Clear All History', message: 'This will delete all quest completions, purchases, adjustments, and logs. User and quest definitions will remain. Are you sure?' })}>Clear All History</Button>
-                            <Button variant="destructive" onClick={() => setConfirmation({ action: 'reset_player_data', title: 'Reset All Player Data', message: 'This will reset all user balances, owned items, and trophies to zero, but will not delete history. Are you sure?' })}>Reset Player Data</Button>
-                            <Button variant="destructive" onClick={() => setConfirmation({ action: 'factory_reset', title: 'Factory Reset', message: 'This will delete all custom content (quests, items, etc.), reset all players, and clear all history, keeping only user accounts. Are you sure?' })}>Factory Reset</Button>
-                            <Button variant="destructive" onClick={() => setConfirmation({ action: 'reinitialize', title: 'Re-initialize Application', message: 'This will delete EVERYTHING, including all user accounts, and restart the first-run wizard. THIS IS A COMPLETE WIPE. Are you sure?' })}>Re-initialize App</Button>
-                        </div>
-                    </SettingSection>
                 </CardContent>
             </Card>
-
-            {confirmation && (
-                <ConfirmDialog
-                    isOpen={!!confirmation}
-                    onClose={() => setConfirmation(null)}
-                    onConfirm={handleConfirm}
-                    title={confirmation.title}
-                    message={confirmation.message}
-                />
-            )}
         </div>
     );
 };

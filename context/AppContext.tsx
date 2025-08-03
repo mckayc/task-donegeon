@@ -83,6 +83,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
     // Generic API handler
     const apiRequest = useCallback(async (endpoint: string, options: RequestInit = {}) => {
+        console.log(`[FRONTEND LOG] Starting apiRequest for ${endpoint}`, options.method || 'GET');
         try {
             const response = await fetch(endpoint, {
                 headers: { 'Content-Type': 'application/json' },
@@ -90,12 +91,18 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             });
             if (!response.ok) {
                 const errorData = await response.json();
+                console.error(`[FRONTEND LOG] API Error on ${endpoint}:`, errorData);
                 throw new Error(errorData.error || 'API request failed');
             }
-             if (response.status === 204) return null; // Handle No Content response
-            return response.json();
+             if (response.status === 204) {
+                console.log(`[FRONTEND LOG] apiRequest for ${endpoint} successful (204 No Content).`);
+                return null;
+             }
+            const data = await response.json();
+            console.log(`[FRONTEND LOG] apiRequest for ${endpoint} successful.`);
+            return data;
         } catch (error) {
-            console.error(`API Error on ${endpoint}:`, error);
+            console.error(`[FRONTEND LOG] FATAL API Error on ${endpoint}:`, error);
             if (error instanceof Error) {
                 addNotification({ type: 'error', message: error.message });
             }
@@ -105,6 +112,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     
     // Generic action dispatcher
     const dispatchAction = useCallback(async (type: string, payload: any) => {
+        console.log(`[FRONTEND LOG] dispatchAction called for type: ${type}`);
         try {
             setState(s => ({ ...s, syncStatus: 'syncing' }));
             const result = await apiRequest('/api/action', {
@@ -113,6 +121,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             });
             // The websocket will handle the state update, including setting syncStatus back to 'success'.
             // No local state update needed here anymore, this prevents race conditions.
+            console.log(`[FRONTEND LOG] dispatchAction for ${type} API call successful, waiting for WebSocket update.`);
             return result;
         } catch (error) {
             // Error notification is handled by apiRequest
@@ -125,13 +134,23 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     }, [apiRequest]);
 
     const fullUpdate = useCallback((newData: IAppData) => {
-        if (!isMounted.current) return;
+        console.log('[FRONTEND LOG] fullUpdate function called.');
+        if (!isMounted.current) {
+            console.warn('[FRONTEND LOG] fullUpdate skipped: component is not mounted.');
+            return;
+        }
         
         setState(prev => {
+            console.log('[FRONTEND LOG] setState inside fullUpdate is running.');
             if (!newData || !newData.users || !newData.settings) {
-                console.error("Received incomplete or malformed data from WebSocket. Update skipped.", newData);
+                console.error("[FRONTEND LOG] Received incomplete or malformed data from WebSocket. Update skipped.", newData);
                 return prev;
             }
+            
+            // Deep clone for logging to avoid console reference issues
+            const prevForLog = JSON.parse(JSON.stringify(prev));
+            const newForLog = JSON.parse(JSON.stringify(newData));
+            console.log('[FRONTEND LOG] Comparing states. Prev completions:', prevForLog.questCompletions.length, 'New completions:', newForLog.questCompletions.length);
             
             const currentUserId = prev.currentUser?.id;
             const updatedCurrentUser = currentUserId
@@ -176,7 +195,9 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     }, []);
 
     const connectPrimus = useCallback(() => {
+        console.log('[FRONTEND LOG] Attempting to connect Primus...');
         if (typeof window === 'undefined' || primusRef.current || typeof Primus === 'undefined') {
+            console.log('[FRONTEND LOG] Primus connection skipped (already connected, SSR, or Primus not loaded).');
             return;
         }
 
@@ -184,27 +205,29 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         primusRef.current = primus;
 
         primus.on('open', () => {
-            console.log('Primus connection established.');
+            console.log('[FRONTEND LOG] Primus connection established.');
             if (isMounted.current) {
                 setState(prev => ({ ...prev, syncStatus: 'success', syncError: null }));
             }
         });
 
         primus.on('data', (message: any) => {
+            console.log('[FRONTEND LOG] Primus "data" event received:', message.type);
             if (message.type === 'FULL_STATE_UPDATE') {
+                console.log('[FRONTEND LOG] Received FULL_STATE_UPDATE. Payload keys:', Object.keys(message.payload));
                 fullUpdate(message.payload);
             }
         });
 
         primus.on('error', (error: any) => {
-            console.error('Primus error:', error);
+            console.error('[FRONTEND LOG] Primus error:', error);
             if (isMounted.current) {
                 setState(prev => ({ ...prev, syncStatus: 'error', syncError: 'Real-time connection failed.' }));
             }
         });
         
         primus.on('reconnect', () => {
-            console.log('Primus attempting to reconnect...');
+            console.log('[FRONTEND LOG] Primus attempting to reconnect...');
             if (isMounted.current) {
                 setState(prev => ({ ...prev, syncStatus: 'syncing' }));
             }
@@ -212,7 +235,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
         primus.on('end', () => {
             if (!isMounted.current) return;
-            console.log('Primus connection ended.');
+            console.log('[FRONTEND LOG] Primus connection ended.');
             setState(prev => ({ ...prev, syncStatus: 'error', syncError: 'Real-time connection lost.' }));
         });
 

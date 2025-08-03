@@ -36,13 +36,15 @@ const Clock: React.FC = () => {
     return (
         <div
             title={currentStatus.title}
-            className={`hidden lg:flex items-center gap-3 bg-card px-4 py-2 rounded-full border-2 transition-colors duration-500 border-transparent`}
+            className="hidden lg:flex flex-col items-center bg-card px-4 py-1.5 rounded-lg border"
         >
+            <span className="font-mono text-lg font-semibold text-foreground/80 tracking-wider">
+                {time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+            </span>
             <span className={`text-xs font-semibold uppercase flex items-center gap-1.5 ${currentStatus.color}`}>
-                <span className={`w-2 h-2 rounded-full ${currentStatus.pulse ? 'animate-pulse' : ''}`} style={{ backgroundColor: 'currentColor' }}></span>
+                <span className={`w-1.5 h-1.5 rounded-full ${currentStatus.pulse ? 'animate-pulse' : ''}`} style={{ backgroundColor: 'currentColor' }}></span>
                 {currentStatus.text}
             </span>
-            <span className="font-mono text-lg font-semibold text-foreground/80">{time.toLocaleTimeString()}</span>
         </div>
     );
 };
@@ -84,6 +86,13 @@ const Header: React.FC = () => {
   }, [appMode, guilds]);
 
   if (!currentUser) return null;
+  
+  const handleGuildButtonClick = () => {
+      if (userGuilds.length === 1) {
+          handleModeChange({ mode: 'guild', guildId: userGuilds[0].id });
+      }
+      // If length > 1, the DropdownMenuTrigger will handle opening the menu
+  };
 
   return (
     <header className="h-20 bg-background/80 flex items-center justify-between px-4 md:px-8 border-b backdrop-blur-sm">
@@ -94,7 +103,13 @@ const Header: React.FC = () => {
             </Button>
             <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                    <Button variant={appMode.mode === 'guild' ? 'default' : 'ghost'} size="sm" className="rounded-full" disabled={userGuilds.length === 0}>
+                    <Button 
+                        variant={appMode.mode === 'guild' ? 'default' : 'ghost'} 
+                        size="sm" 
+                        className="rounded-full" 
+                        disabled={userGuilds.length === 0}
+                        onClick={handleGuildButtonClick}
+                    >
                         <span>{currentGuildName}</span>
                         {userGuilds.length > 1 && <ChevronDownIcon className="w-4 h-4 ml-1" />}
                     </Button>

@@ -186,15 +186,36 @@ const QuestItem: React.FC<{ quest: Quest; now: Date; onSelect: (quest: Quest) =>
     );
 };
 
-const FilterButton: React.FC<{ type: 'all' | QuestType, children: React.ReactNode, activeFilter: 'all' | QuestType, setFilter: (filter: 'all' | QuestType) => void }> = ({ type, children, activeFilter, setFilter }) => (
+const FilterButton: React.FC<{
+  type: 'all' | QuestType;
+  children: React.ReactNode;
+  activeFilter: 'all' | QuestType;
+  setFilter: (filter: 'all' | QuestType) => void;
+}> = ({ type, children, activeFilter, setFilter }) => {
+  const isActive = activeFilter === type;
+  let variant: "default" | "secondary" | "ghost" | "link" | "outline" | "destructive" | null | undefined = 'ghost';
+  let className = "w-full text-sm font-semibold ";
+
+  if (isActive) {
+      if (type === QuestType.Duty) {
+          className += "bg-sky-500/80 hover:bg-sky-500/90 text-white";
+      } else if (type === QuestType.Venture) {
+          className += "bg-amber-500/80 hover:bg-amber-500/90 text-white";
+      } else {
+          variant = 'default';
+      }
+  }
+
+  return (
     <Button
-        onClick={() => setFilter(type)}
-        variant={activeFilter === type ? 'default' : 'ghost'}
-        className="w-full text-sm font-semibold"
+      onClick={() => setFilter(type)}
+      variant={variant}
+      className={className}
     >
-        {children}
+      {children}
     </Button>
-);
+  );
+};
 
 const QuestsPage: React.FC = () => {
     const { currentUser, quests, questCompletions, appMode, settings, scheduledEvents } = useAppState();

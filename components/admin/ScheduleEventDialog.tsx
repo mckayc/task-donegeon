@@ -15,16 +15,16 @@ interface ScheduleEventDialogProps {
 }
 
 const colorPalette = [
-    '4 89% 51%',   // Red
-    '25 95% 53%',  // Orange
-    '43 84% 47%',  // Amber
-    '84 70% 53%',  // Lime
-    '142 71% 45%', // Green
-    '172 84% 39%', // Teal
-    '190 91% 54%', // Cyan
-    '217 91% 60%', // Blue
-    '262 83% 67%', // Violet
-    '286 85% 61%', // Fuchsia
+    'hsl(4 89% 51%)',   // Red
+    'hsl(25 95% 53%)',  // Orange
+    'hsl(43 84% 47%)',  // Amber
+    'hsl(84 70% 53%)',  // Lime
+    'hsl(142 71% 45%)', // Green
+    'hsl(172 84% 39%)', // Teal
+    'hsl(190 91% 54%)', // Cyan
+    'hsl(217 91% 60%)', // Blue
+    'hsl(262 83% 67%)', // Violet
+    'hsl(286 85% 61%)', // Fuchsia
 ];
 
 const getInitialFormData = (): Omit<ScheduledEvent, 'id'> => {
@@ -36,9 +36,9 @@ const getInitialFormData = (): Omit<ScheduledEvent, 'id'> => {
         endDate: today,
         isAllDay: true,
         eventType: 'Announcement',
-        guildId: '',
+        guildId: undefined,
         icon: '🎉',
-        color: colorPalette[7], // Default to blue
+        color: colorPalette[7],
         modifiers: {
             xpMultiplier: 1.5,
             affectedRewardIds: [],
@@ -58,7 +58,6 @@ const ScheduleEventDialog: React.FC<ScheduleEventDialogProps> = ({ event, onClos
 
     useEffect(() => {
         if (event) {
-            // Deep merge event data with a complete initial structure to prevent missing keys
             const fullEventData = {
                 ...getInitialFormData(),
                 ...event,
@@ -91,16 +90,16 @@ const ScheduleEventDialog: React.FC<ScheduleEventDialogProps> = ({ event, onClos
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
+        const finalPayload = { ...formData, guildId: formData.guildId || undefined };
         if (event) {
-            updateScheduledEvent({ ...formData, id: event.id });
+            updateScheduledEvent({ ...finalPayload, id: event.id });
         } else {
-            addScheduledEvent(formData);
+            addScheduledEvent(finalPayload);
         }
         onClose();
     };
 
     const xpRewardTypes = rewardTypes.filter(rt => rt.category === RewardCategory.XP);
-
     const showModifiers = formData.eventType !== 'Announcement' && formData.eventType !== 'Vacation';
 
     return (
@@ -132,7 +131,7 @@ const ScheduleEventDialog: React.FC<ScheduleEventDialogProps> = ({ event, onClos
                           <Select name="guildId" value={formData.guildId} onValueChange={(value: string) => handleSelectChange('guildId', value)}>
                               <SelectTrigger id="scope"><SelectValue placeholder="Personal" /></SelectTrigger>
                               <SelectContent>
-                                  <SelectItem value="">Personal</SelectItem>
+                                  <SelectItem value="">Personal (All Users)</SelectItem>
                                   {guilds.map(g => <SelectItem key={g.id} value={g.id}>{g.name}</SelectItem>)}
                               </SelectContent>
                           </Select>
@@ -148,7 +147,7 @@ const ScheduleEventDialog: React.FC<ScheduleEventDialogProps> = ({ event, onClos
                                     type="button"
                                     onClick={() => setFormData(p => ({...p, color: colorHsl}))}
                                     className={`w-10 h-10 rounded-full transition-all ${formData.color === colorHsl ? 'ring-2 ring-offset-2 ring-offset-background ring-foreground' : ''}`}
-                                    style={{ backgroundColor: `hsl(${colorHsl})` }}
+                                    style={{ backgroundColor: colorHsl }}
                                 />
                             ))}
                         </div>

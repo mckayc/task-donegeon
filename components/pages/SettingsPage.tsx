@@ -1,47 +1,26 @@
-
-
 import React, { useState, ChangeEvent, ReactNode, useEffect } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { Role, AppSettings, Terminology, RewardCategory, RewardTypeDefinition, AutomatedBackupProfile } from '../../types';
 import { Button } from '@/components/ui/button';
-import { ChevronDown } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import ToggleSwitch from '../ui/toggle-switch';
 import ConfirmDialog from '../ui/confirm-dialog';
-import { INITIAL_SETTINGS } from '../../data/initialData';
 import EmojiPicker from '../ui/emoji-picker';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Separator } from '../ui/separator';
+import UserMultiSelect from '../ui/user-multi-select';
 
-
-const CollapsibleSection: React.FC<{ title: string; children: React.ReactNode; defaultOpen?: boolean; onSave?: () => void; showSavedIndicator?: boolean; className?: string; }> = ({ title, children, defaultOpen = false, onSave, showSavedIndicator, className }) => {
-    const [isOpen, setIsOpen] = useState(defaultOpen);
-    return (
-         <div className={`relative bg-card border rounded-xl shadow-lg backdrop-blur-sm ${className || ''}`}>
-            <button
-                className="w-full flex justify-between items-center text-left px-6 py-4 hover:bg-accent/10 transition-colors"
-                onClick={() => setIsOpen(!isOpen)}
-            >
-                <h3 className="text-2xl font-display text-accent">{title}</h3>
-                <div className="flex items-center gap-4">
-                    {onSave && (
-                        <Button onClick={(e) => { e.stopPropagation(); onSave(); }} size="sm" variant="secondary">
-                            Save
-                        </Button>
-                    )}
-                    {showSavedIndicator && (
-                        <span className="text-sm font-semibold text-green-400 saved-animation flex items-center gap-1">
-                            ✓ Saved!
-                        </span>
-                    )}
-                    <ChevronDown className={`w-6 h-6 text-muted-foreground transition-transform ${isOpen ? 'rotate-180' : ''}`} />
-                </div>
-            </button>
-            {isOpen && <div className="p-6 border-t">{children}</div>}
+const SettingSection: React.FC<{ title: string, description?: string, children: React.ReactNode }> = ({ title, description, children }) => (
+    <div className="py-6">
+        <h3 className="text-xl font-bold text-foreground">{title}</h3>
+        {description && <p className="text-sm text-muted-foreground mt-1 mb-4">{description}</p>}
+        <div className="mt-4 space-y-4">
+            {children}
         </div>
-    );
-}
+    </div>
+);
 
 const terminologyLabels: { [key in keyof Terminology]: string } = {
   appName: 'App Name',
@@ -108,84 +87,54 @@ const terminologyLabels: { [key in keyof Terminology]: string } = {
 
 
 const SettingsPage: React.FC = () => {
-    const { currentUser, users, settings, rewardTypes, isAiConfigured } = useAppState();
-    const { updateSettings, resetSettings, addNotification } = useAppDispatch();
+    const { currentUser, users, settings, rewardTypes, isAiConfigured, themes } = useAppState();
+    const { updateSettings, addNotification, reinitializeApp, clearAllHistory, resetAllPlayerData, deleteAllCustomContent } = useAppDispatch();
     
     const [formState, setFormState] = useState<AppSettings>(() => JSON.parse(JSON.stringify(settings)));
-    const [showSaved, setShowSaved] = useState<string | null>(null);
-    const [isResetConfirmOpen, setIsResetConfirmOpen] = useState(false);
+    const [confirmation, setConfirmation] = useState<{ action: string, title: string, message: string } | null>(null);
     const [isFaviconPickerOpen, setIsFaviconPickerOpen] = useState(false);
-    
-    const [apiKeyStatus, setApiKeyStatus] = useState<'unknown' | 'testing' | 'valid' | 'invalid'>(isAiConfigured ? 'valid' : 'unknown');
-    const [apiKeyError, setApiKeyError] = useState<string | null>(null);
+    const [isChatEmojiPickerOpen, setIsChatEmojiPickerOpen] = useState(false);
 
     useEffect(() => {
         setFormState(JSON.parse(JSON.stringify(settings)));
     }, [settings]);
-
-
-    useEffect(() => {
-        if (formState.enableAiFeatures) {
-            const verifyKeyOnLoad = async () => {
-                try {
-                    const response = await fetch('/api/ai/test', { method: 'POST' });
-                    if (!response.ok) {
-                        const data = await response.json();
-                        throw new Error(data.error || 'Test failed');
-                    }
-                } catch (err) {
-                    if (err instanceof Error) {
-                        addNotification({ type: 'error', message: `AI key is invalid, disabling AI features: ${err.message}` });
-                    }
-                    setFormState(p => ({ ...p, enableAiFeatures: false }));
-                    setApiKeyStatus('invalid');
-                }
-            };
-            verifyKeyOnLoad();
-        }
-    }, [formState.enableAiFeatures, addNotification]);
     
     const handleTerminologyChange = (field: keyof Terminology, value: string) => {
-        setFormState(prev => ({
-            ...prev,
-            terminology: {
-                ...prev.terminology,
-                [field]: value
-            }
-        }));
-    };
-    
-    const handleSimpleChange = (field: keyof AppSettings, value: any) => {
-        setFormState(prev => ({ ...prev, [field]: value }));
+        setFormState(prev => ({ ...prev, terminology: { ...prev.terminology, [field]: value } }));
     };
     
     const handleNestedChange = <T extends keyof AppSettings>(section: T) => (field: keyof AppSettings[T], value: any) => {
+        setFormState(prev => ({
+            ...prev,
+            [section]: { ...(prev[section] as object), [field as string]: value },
+        }));
+    };
+    
+     const handleBackupProfileChange = (index: number, field: keyof AutomatedBackupProfile, value: string | boolean | number) => {
         setFormState(prev => {
-            const sectionValue = prev[section];
-            if (typeof sectionValue === 'object' && sectionValue !== null) {
-                return {
-                    ...prev,
-                    [section]: {
-                        ...(sectionValue as object),
-                        [field as string]: value,
-                    },
-                };
-            }
-            return prev;
+            const newProfiles = [...prev.automatedBackups.profiles] as [AutomatedBackupProfile, AutomatedBackupProfile, AutomatedBackupProfile];
+            (newProfiles[index] as any)[field] = value;
+            return { ...prev, automatedBackups: { ...prev.automatedBackups, profiles: newProfiles } };
         });
     };
 
-    const handleSave = (section: string) => {
+    const handleSave = () => {
         updateSettings(formState);
-        setShowSaved(section);
-        setTimeout(() => setShowSaved(null), 2000);
+        addNotification({ type: 'success', message: 'Settings saved successfully!' });
     };
-
-    const handleReset = () => {
-        updateSettings(INITIAL_SETTINGS);
-        setFormState(INITIAL_SETTINGS);
-        setIsResetConfirmOpen(false);
-        addNotification({type: 'success', message: 'All settings have been reset to default.'})
+    
+    const handleConfirm = async () => {
+        if (!confirmation) return;
+        try {
+            switch (confirmation.action) {
+                case 'reinitialize': await reinitializeApp(); break;
+                case 'clear_history': await clearAllHistory(); addNotification({ type: 'success', message: 'All history has been cleared.' }); break;
+                case 'reset_player_data': await resetAllPlayerData(); addNotification({ type: 'success', message: 'Player data has been reset.' }); break;
+                case 'factory_reset': await deleteAllCustomContent(); addNotification({ type: 'success', message: 'All custom content deleted. App will reload.' }); setTimeout(() => window.location.reload(), 3000); break;
+            }
+        } finally {
+            setConfirmation(null);
+        }
     };
     
     if (!currentUser || currentUser.role !== Role.DonegeonMaster) {
@@ -196,53 +145,91 @@ const SettingsPage: React.FC = () => {
             </Card>
         );
     }
+    
+    const currencyRewards = rewardTypes.filter(rt => rt.category === RewardCategory.Currency);
 
     return (
         <div className="space-y-6">
-            <h1 className="text-4xl font-display text-foreground">Settings</h1>
-            <p className="text-muted-foreground">Manage the core settings of your application.</p>
-
-            <CollapsibleSection title="Terminology" onSave={() => handleSave('terminology')} showSavedIndicator={showSaved === 'terminology'}>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {Object.entries(terminologyLabels).map(([key, label]) => (
-                        <div key={key} className="space-y-2">
-                            <Label htmlFor={`term-${key}`}>{label}</Label>
-                            <Input
-                                id={`term-${key}`}
-                                value={formState.terminology[key as keyof Terminology]}
-                                onChange={(e: ChangeEvent<HTMLInputElement>) => handleTerminologyChange(key as keyof Terminology, e.target.value)}
-                            />
-                        </div>
-                    ))}
-                </div>
-            </CollapsibleSection>
-            
-            <CollapsibleSection title="Security & Access" onSave={() => handleSave('security')} showSavedIndicator={showSaved === 'security'}>
-                <div className="space-y-4">
-                    <ToggleSwitch enabled={formState.security.requirePinForUsers} setEnabled={(val) => handleNestedChange('security')('requirePinForUsers' as any, val)} label="Require PIN for user login" />
-                    <ToggleSwitch enabled={formState.security.requirePasswordForAdmin} setEnabled={(val) => handleNestedChange('security')('requirePasswordForAdmin' as any, val)} label="Require Password for Admin/Moderator login" />
-                    <ToggleSwitch enabled={formState.security.allowProfileEditing} setEnabled={(val) => handleNestedChange('security')('allowProfileEditing' as any, val)} label="Allow users to edit their own profiles" />
-                </div>
-            </CollapsibleSection>
-
-            <CollapsibleSection title="AI Features" onSave={() => handleSave('ai')} showSavedIndicator={showSaved === 'ai'}>
-                <div className="space-y-4">
-                    <ToggleSwitch enabled={formState.enableAiFeatures} setEnabled={(val) => handleSimpleChange('enableAiFeatures', val)} label="Enable AI-powered features" />
-                    <p className="text-sm text-muted-foreground">When enabled, AI features like idea generators will appear. This requires a valid Google Gemini API key to be set on the server.</p>
-                </div>
-            </CollapsibleSection>
-
-            <div className="flex justify-end gap-4 pt-4">
-                <Button variant="destructive" onClick={() => setIsResetConfirmOpen(true)}>Reset All Settings</Button>
+            <div className="flex justify-between items-center">
+                <h1 className="text-4xl font-display text-foreground">Settings</h1>
+                <Button onClick={handleSave}>Save All Settings</Button>
             </div>
+            
+            <Card>
+                <CardContent className="divide-y divide-border">
+                    <SettingSection title="General">
+                         <div className="space-y-2 max-w-sm">
+                            <Label htmlFor="app-name">App Name</Label>
+                            <Input id="app-name" value={formState.terminology.appName} onChange={(e: ChangeEvent<HTMLInputElement>) => handleTerminologyChange('appName', e.target.value)} />
+                         </div>
+                         <div className="flex items-end gap-4">
+                             <div className="relative">
+                                <Label>Favicon</Label>
+                                <button type="button" onClick={() => setIsFaviconPickerOpen(p => !p)} className="w-16 h-10 mt-1.5 text-2xl p-1 rounded-md bg-background border border-input flex items-center justify-center">
+                                    {formState.favicon}
+                                </button>
+                                {isFaviconPickerOpen && <EmojiPicker onSelect={(emoji: string) => { setFormState(p => ({...p, favicon: emoji})); setIsFaviconPickerOpen(false); }} onClose={() => setIsFaviconPickerOpen(false)} />}
+                            </div>
+                            <div className="flex-grow space-y-2">
+                                <Label htmlFor="default-theme">Default Theme</Label>
+                                <Select value={formState.theme} onValueChange={(value: string) => setFormState(p => ({...p, theme: value}))}>
+                                    <SelectTrigger id="default-theme"><SelectValue/></SelectTrigger>
+                                    <SelectContent>
+                                        {themes.map(t => <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>)}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        </div>
+                        <ToggleSwitch enabled={formState.forgivingSetbacks} setEnabled={(val) => setFormState(p => ({...p, forgivingSetbacks: val}))} label="Forgiving Setbacks (only apply penalties at the end of the day)" />
+                    </SettingSection>
 
-            {isResetConfirmOpen && (
+                    <SettingSection title="Security & Access">
+                        <ToggleSwitch enabled={formState.security.requirePinForUsers} setEnabled={(val) => handleNestedChange('security')('requirePinForUsers' as any, val)} label="Require PIN for user login" />
+                        <ToggleSwitch enabled={formState.security.requirePasswordForAdmin} setEnabled={(val) => handleNestedChange('security')('requirePasswordForAdmin' as any, val)} label="Require Password for Admin/Moderator login" />
+                        <ToggleSwitch enabled={formState.security.allowProfileEditing} setEnabled={(val) => handleNestedChange('security')('allowProfileEditing' as any, val)} label="Allow users to edit their own profiles" />
+                    </SettingSection>
+
+                     <SettingSection title="Shared / Kiosk Mode">
+                        <ToggleSwitch enabled={formState.sharedMode.enabled} setEnabled={(val) => handleNestedChange('sharedMode')('enabled' as any, val)} label="Enable Shared Mode" />
+                        <UserMultiSelect allUsers={users} selectedUserIds={formState.sharedMode.userIds} onSelectionChange={(ids) => handleNestedChange('sharedMode')('userIds' as any, ids)} label="Users in Shared Mode" />
+                        <ToggleSwitch enabled={formState.sharedMode.allowCompletion} setEnabled={(val) => handleNestedChange('sharedMode')('allowCompletion' as any, val)} label="Allow quest completion from shared view" />
+                    </SettingSection>
+
+                     <SettingSection title="Notifications & Chat">
+                        <ToggleSwitch enabled={formState.loginNotifications.enabled} setEnabled={(val) => handleNestedChange('loginNotifications')('enabled' as any, val)} label="Enable login notifications popup" />
+                        <ToggleSwitch enabled={formState.chat.enabled} setEnabled={(val) => handleNestedChange('chat')('enabled' as any, val)} label="Enable in-app chat" />
+                         <div className="relative w-fit">
+                            <Label>Chat Icon</Label>
+                            <button type="button" onClick={() => setIsChatEmojiPickerOpen(p => !p)} className="w-16 h-10 mt-1.5 text-2xl p-1 rounded-md bg-background border border-input flex items-center justify-center">
+                                {formState.chat.chatEmoji}
+                            </button>
+                            {isChatEmojiPickerOpen && <EmojiPicker onSelect={(emoji: string) => { setFormState(p => ({...p, chat: {...p.chat, chatEmoji: emoji}})); setIsChatEmojiPickerOpen(false); }} onClose={() => setIsChatEmojiPickerOpen(false)} />}
+                        </div>
+                    </SettingSection>
+
+                    <SettingSection title="AI Features">
+                        <ToggleSwitch enabled={formState.enableAiFeatures} setEnabled={(val) => setFormState(p => ({...p, enableAiFeatures: val}))} label="Enable AI-powered features" />
+                        <p className="text-sm text-muted-foreground">When enabled, AI features like idea generators will appear. This requires a valid Google Gemini API key to be set on the server.</p>
+                    </SettingSection>
+
+                    <SettingSection title="Danger Zone" description="These are destructive actions that cannot be undone. Please be certain before proceeding.">
+                        <div className="p-4 border border-destructive rounded-lg flex flex-wrap gap-4 items-center justify-center">
+                            <Button variant="destructive" onClick={() => setConfirmation({ action: 'clear_history', title: 'Clear All History', message: 'This will delete all quest completions, purchases, adjustments, and logs. User and quest definitions will remain. Are you sure?' })}>Clear All History</Button>
+                            <Button variant="destructive" onClick={() => setConfirmation({ action: 'reset_player_data', title: 'Reset All Player Data', message: 'This will reset all user balances, owned items, and trophies to zero, but will not delete history. Are you sure?' })}>Reset Player Data</Button>
+                            <Button variant="destructive" onClick={() => setConfirmation({ action: 'factory_reset', title: 'Factory Reset', message: 'This will delete all custom content (quests, items, etc.), reset all players, and clear all history, keeping only user accounts. Are you sure?' })}>Factory Reset</Button>
+                            <Button variant="destructive" onClick={() => setConfirmation({ action: 'reinitialize', title: 'Re-initialize Application', message: 'This will delete EVERYTHING, including all user accounts, and restart the first-run wizard. THIS IS A COMPLETE WIPE. Are you sure?' })}>Re-initialize App</Button>
+                        </div>
+                    </SettingSection>
+                </CardContent>
+            </Card>
+
+            {confirmation && (
                 <ConfirmDialog
-                    isOpen={isResetConfirmOpen}
-                    onClose={() => setIsResetConfirmOpen(false)}
-                    onConfirm={handleReset}
-                    title="Reset All Settings"
-                    message="Are you sure you want to reset all settings to their default values? This action cannot be undone."
+                    isOpen={!!confirmation}
+                    onClose={() => setConfirmation(null)}
+                    onConfirm={handleConfirm}
+                    title={confirmation.title}
+                    message={confirmation.message}
                 />
             )}
         </div>

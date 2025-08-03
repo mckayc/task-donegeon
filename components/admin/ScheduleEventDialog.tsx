@@ -27,24 +27,49 @@ const colorPalette = [
     '286 85% 61%', // Fuchsia
 ];
 
+const getInitialFormData = (): Omit<ScheduledEvent, 'id'> => {
+    const today = new Date().toISOString().split('T')[0];
+    return {
+        title: '',
+        description: '',
+        startDate: today,
+        endDate: today,
+        isAllDay: true,
+        eventType: 'Announcement',
+        guildId: '',
+        icon: '🎉',
+        color: colorPalette[7], // Default to blue
+        modifiers: {
+            xpMultiplier: 1.5,
+            affectedRewardIds: [],
+            marketId: '',
+            assetIds: [],
+            discountPercent: 10,
+        }
+    };
+};
+
 const ScheduleEventDialog: React.FC<ScheduleEventDialogProps> = ({ event, onClose }) => {
     const { addScheduledEvent, updateScheduledEvent, deleteScheduledEvent } = useAppDispatch();
     const { guilds, markets, rewardTypes } = useAppState();
     
-    const [formData, setFormData] = useState<Omit<ScheduledEvent, 'id'>>({
-        title: '', description: '', startDate: '', endDate: '', isAllDay: true, eventType: 'Announcement', guildId: '',
-        icon: '🎉', color: colorPalette[7], // Default to blue
-        modifiers: {}
-    });
+    const [formData, setFormData] = useState<Omit<ScheduledEvent, 'id'>>(getInitialFormData());
     const [isEmojiPickerOpen, setIsEmojiPickerOpen] = useState(false);
 
     useEffect(() => {
         if (event) {
-            setFormData({ ...event });
+            // Merge event data with a complete initial structure to prevent missing keys
+            const fullEventData = {
+                ...getInitialFormData(),
+                ...event,
+                modifiers: {
+                    ...getInitialFormData().modifiers,
+                    ...(event.modifiers || {}),
+                },
+            };
+            setFormData(fullEventData);
         } else {
-            // Default new event to today
-            const today = new Date().toISOString().split('T')[0];
-            setFormData(prev => ({ ...prev, startDate: today, endDate: today }));
+            setFormData(getInitialFormData());
         }
     }, [event]);
 

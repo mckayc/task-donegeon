@@ -6,66 +6,18 @@ import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import ConfirmDialog from '../../ui/confirm-dialog';
 import BlueprintPreviewDialog from '../../sharing/BlueprintPreviewDialog';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
-import { Switch } from '@/components/ui/switch';
-
-interface ServerBackup {
-    filename: string;
-    createdAt: string;
-    size: number;
-    isAuto: boolean;
-}
+import ImportPanel from '../../sharing/ImportPanel';
+import RestorePanel from '../../sharing/RestorePanel';
+import BackupPanel from '../../sharing/BackupPanel';
 
 const BackupAndImportPage: React.FC = () => {
-    const { restoreFromBackup, importBlueprint, restoreDefaultObjects, clearAllHistory, resetAllPlayerData, deleteAllCustomContent, updateSettings, addNotification, reinitializeApp } = useAppDispatch();
+    const { restoreFromBackup, importBlueprint, addNotification } = useAppDispatch();
     const appState = useAppState();
-    const { settings } = appState;
     
-    const [fileToRestore, setFileToRestore] = useState<File | null>(null);
     const [blueprintToImport, setBlueprintToImport] = useState<Blueprint | null>(null);
     const [importResolutions, setImportResolutions] = useState<ImportResolution[]>([]);
     const [confirmation, setConfirmation] = useState<{ action: string, title: string, message: string, data?: any } | null>(null);
-    
-    const [serverBackups, setServerBackups] = useState<ServerBackup[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
-    const [automatedBackupsForm, setAutomatedBackupsForm] = useState<AutomatedBackups>(() => JSON.parse(JSON.stringify(settings.automatedBackups)));
 
-    const fetchServerBackups = useCallback(async () => {
-        setIsLoading(true);
-        try {
-            const response = await fetch('/api/backups');
-            if (response.ok) {
-                const data = await response.json();
-                setServerBackups(data);
-            } else {
-                addNotification({ type: 'error', message: 'Failed to fetch server backups.' });
-            }
-        } catch (e) {
-            addNotification({ type: 'error', message: 'Error connecting to server for backups.' });
-        } finally {
-            setIsLoading(false);
-        }
-    }, [addNotification]);
-    
-    useEffect(() => {
-        fetchServerBackups();
-    }, [fetchServerBackups]);
-
-    const handleBackupProfileChange = (index: number, field: keyof AutomatedBackupProfile, value: string | boolean | number) => {
-        setAutomatedBackupsForm(prev => {
-            const newProfiles = [...prev.profiles] as [AutomatedBackupProfile, AutomatedBackupProfile, AutomatedBackupProfile];
-            (newProfiles[index] as any)[field] = value;
-            return { ...prev, profiles: newProfiles };
-        });
-    };
-
-    const handleSaveAutoBackups = () => {
-        updateSettings({ automatedBackups: automatedBackupsForm });
-        addNotification({type: 'success', message: 'Automated backup settings saved!'});
-    };
-    
     const handleFileSelect = (file: File, type: 'restore' | 'import') => {
         const reader = new FileReader();
         reader.onload = (e) => {
@@ -74,7 +26,6 @@ const BackupAndImportPage: React.FC = () => {
                 const data = JSON.parse(content);
                 if (type === 'restore') {
                     if (data.users && data.settings) {
-                        setFileToRestore(file);
                         setConfirmation({
                             action: 'restore_local',
                             title: 'Confirm Restore',
@@ -99,54 +50,18 @@ const BackupAndImportPage: React.FC = () => {
         };
         reader.readAsText(file);
     };
-    
-    const handleServerRestore = async (filename: string) => {
-        setConfirmation({
-            action: 'restore_server',
-            title: 'Confirm Server Restore',
-            message: `Are you sure you want to restore from backup "${filename}"? This will overwrite ALL current data.`,
-            data: filename
-        });
-    };
 
     const handleConfirm = async () => {
         if (!confirmation) return;
-
         try {
             switch (confirmation.action) {
                 case 'restore_local':
                     await restoreFromBackup(confirmation.data);
                     addNotification({ type: 'success', message: 'Data restored successfully!' });
                     break;
-                case 'restore_server':
-                     const response = await fetch('/api/backups/restore', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ filename: confirmation.data })
-                     });
-                     if (!response.ok) throw new Error('Server failed to restore backup.');
-                     addNotification({ type: 'success', message: 'Server is restoring backup. App will reload.' });
-                     setTimeout(() => window.location.reload(), 3000);
-                    break;
                 case 'import':
                     await importBlueprint(confirmation.data.blueprint, confirmation.data.resolutions);
                     addNotification({ type: 'success', message: 'Blueprint imported successfully!' });
-                    break;
-                 case 'clear_history':
-                    await clearAllHistory();
-                    addNotification({ type: 'success', message: 'All history has been cleared.' });
-                    break;
-                 case 'reset_player_data':
-                    await resetAllPlayerData();
-                    addNotification({ type: 'success', message: 'Player data has been reset.' });
-                    break;
-                 case 'factory_reset':
-                    await deleteAllCustomContent();
-                    addNotification({ type: 'success', message: 'All custom content has been deleted. Starting over...' });
-                    setTimeout(() => window.location.reload(), 3000);
-                    break;
-                 case 'reinitialize':
-                    await reinitializeApp();
                     break;
             }
         } catch (err) {
@@ -161,15 +76,16 @@ const BackupAndImportPage: React.FC = () => {
         <div className="space-y-6">
             <Card>
                 <CardHeader><CardTitle>Backup & Restore</CardTitle></CardHeader>
-                <CardContent>
-                    {/* Panel content will go here */}
+                <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <BackupPanel />
+                    <RestorePanel onFileSelect={(file) => handleFileSelect(file, 'restore')} />
                 </CardContent>
             </Card>
 
             <Card>
-                <CardHeader><CardTitle>Dangerous Actions</CardTitle></CardHeader>
-                <CardContent className="space-y-4">
-                    {/* Panel content will go here */}
+                <CardHeader><CardTitle>Import Blueprint</CardTitle></CardHeader>
+                <CardContent>
+                    <ImportPanel onFileSelect={(file) => handleFileSelect(file, 'import')} />
                 </CardContent>
             </Card>
 

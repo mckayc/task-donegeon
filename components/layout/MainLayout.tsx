@@ -140,7 +140,7 @@ const MainLayout: React.FC = () => {
       case 'Asset Library': return <AssetLibraryPage />;
       case 'Profile': return <ProfilePage />;
       case 'About': return <AboutPage />;
-      case 'Help Guide': return <Dashboard />; // return <HelpPage />;
+      case 'Help Guide': return <AboutPage />;
       case 'Chat': return <ChatPanel />;
       default: return <Dashboard />;
     }

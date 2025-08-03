@@ -67,6 +67,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     const isMounted = useRef(true);
     const primusRef = useRef<any | null>(null);
     const isInitialLoad = useRef(true);
+    const isServerUpdate = useRef(false);
 
     useEffect(() => {
       isMounted.current = true;
@@ -133,6 +134,13 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             return;
         }
 
+        // If the state was just updated by the server, don't save it back.
+        // This breaks the infinite save/broadcast loop.
+        if (isServerUpdate.current) {
+            isServerUpdate.current = false; // Reset the flag
+            return;
+        }
+
         // Prevent saving on the very first effect run after data is loaded from the server.
         if (isInitialLoad.current) {
             isInitialLoad.current = false;
@@ -161,15 +169,18 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         };
 
         saveState();
-    }, [debouncedDataToSave, state.isDataLoaded, state.isFirstRun]);
+    }, [debouncedDataToSave, state.isDataLoaded, state.isFirstRun, apiRequest]);
 
 
     const fullUpdate = useCallback((newData: IAppData) => {
-        console.log('[FRONTEND LOG] Raw data object from WebSocket fullUpdate:', JSON.parse(JSON.stringify(newData)));
         if (!isMounted.current) return;
+        
+        isServerUpdate.current = true; // Set flag to prevent immediate save-back
+
         setState(prev => {
             if (!newData || !newData.users || !newData.settings) {
                 console.error("Received incomplete or malformed data from WebSocket. Update skipped.", newData);
+                isServerUpdate.current = false; // Reset flag if we abort
                 return prev;
             }
             

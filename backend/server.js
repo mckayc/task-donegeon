@@ -147,18 +147,36 @@ async function main() {
     });
 
     const writeData = (data) => new Promise((resolve, reject) => {
-        db.run('REPLACE INTO data (id, json) VALUES (1, ?)', [JSON.stringify(data)], (err) => {
-            if (err) return reject(err);
+        console.log('[DB] Attempting to write data to database...');
+        let jsonData;
+        try {
+            jsonData = JSON.stringify(data);
+        } catch (stringifyError) {
+            console.error('[DB] FATAL: Failed to stringify data. This may be due to a circular reference.', stringifyError);
+            return reject(stringifyError);
+        }
+
+        db.run('REPLACE INTO data (id, json) VALUES (1, ?)', [jsonData], function(err) {
+            if (err) {
+                console.error('[DB] Write FAILED:', err.message);
+                return reject(err);
+            }
+            console.log(`[DB] Write SUCCEEDED. Rows affected: ${this.changes}`);
+            if (this.changes === 0) {
+                 console.warn('[DB] WARNING: A write operation resulted in 0 rows changed. The data might not have been modified before saving.');
+            }
             resolve();
         });
     });
 
     const broadcastStateUpdate = async () => {
         try {
+            console.log('[BROADCAST] Reading latest data to broadcast...');
             const data = await readData();
             primus.write({ type: 'FULL_STATE_UPDATE', payload: data });
+            console.log('[BROADCAST] Full state update sent to all clients.');
         } catch (error) {
-            console.error("Failed to broadcast state update:", error);
+            console.error("[BROADCAST] Failed to broadcast state update:", error);
         }
     };
 
@@ -176,8 +194,10 @@ async function main() {
 
     app.post('/api/action', async (req, res) => {
         const { type, payload } = req.body;
+        console.log(`[ACTION] Received action: ${type}`, payload ? JSON.stringify(payload).substring(0, 200) + '...' : '');
         let result = { success: true };
         try {
+            console.log('[ACTION] Reading current state from DB...');
             const data = await readData();
             
             // Helper function to apply rewards
@@ -386,11 +406,14 @@ async function main() {
                     console.warn(`[SERVER ACTION] Unhandled action type: ${type}`);
                     break;
             }
+            console.log('[ACTION] Data modified in memory. Preparing to write to DB.');
             await writeData(data);
-            broadcastStateUpdate();
+            console.log('[ACTION] DB write complete. Broadcasting state update.');
+            await broadcastStateUpdate();
+            console.log('[ACTION] Broadcast complete. Sending success response.');
             res.status(200).json(result);
         } catch (error) {
-            console.error(`Error processing action ${type}:`, error);
+            console.error(`[ACTION] FAILED to process action ${type}:`, error);
             res.status(500).json({ error: error.message });
         }
     });

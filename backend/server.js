@@ -94,12 +94,14 @@ const executeMigrations = (db) => {
 
 async function main() {
     const app = express();
-    const server = http.createServer(app);
+    // Create an HTTP server but don't attach Express yet.
+    const server = http.createServer();
+    // Attach Primus to the server. It will now handle WebSocket connections
+    // and dynamically serve its client library at /primus.js.
     const primus = new Primus(server, { transformer: 'websockets' });
     
-    // Ensure dist directory exists for primus.save in local dev
-    await fs.mkdir(path.join(__dirname, '../dist'), { recursive: true }).catch(() => {});
-    primus.save(__dirname + '/../dist/primus.js');
+    // Now, let Express handle all other requests.
+    server.on('request', app);
 
     app.use(cors());
     app.use(express.json({ limit: '50mb' }));

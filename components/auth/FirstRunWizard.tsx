@@ -9,7 +9,7 @@ import UserFormFields from '../users/UserFormFields';
 type AdminDataPayload = Omit<User, 'id' | 'personalPurse' | 'personalExperience' | 'guildBalances' | 'avatar' | 'ownedAssetIds' | 'ownedThemes' | 'hasBeenOnboarded'>;
 
 const FirstRunWizard: React.FC = () => {
-  const { completeFirstRun, setCurrentUser, setAppUnlocked } = useAppDispatch();
+  const { completeFirstRun } = useAppDispatch();
   const { settings } = useAppState();
 
   const [pendingAdminData, setPendingAdminData] = useState<AdminDataPayload | null>(null);
@@ -70,11 +70,9 @@ const FirstRunWizard: React.FC = () => {
           fileInputRef.current?.click();
       } else {
           try {
-              const result = await completeFirstRun(adminData, choice, null);
-              if (result && result.adminUser) {
-                  setCurrentUser(result.adminUser);
-                  setAppUnlocked(true);
-              }
+              await completeFirstRun(adminData, choice, null);
+              // The AppContext now handles setting the user and unlocking the app.
+              // The wizard will automatically unmount.
           } catch (e) {
               console.error("First run setup failed", e);
               setIsSubmitting(false);
@@ -95,11 +93,8 @@ const FirstRunWizard: React.FC = () => {
             const content = e.target?.result as string;
             const blueprint = JSON.parse(content) as Blueprint;
             if (blueprint.name && blueprint.assets) {
-                 const result = await completeFirstRun(pendingAdminData, 'import', blueprint);
-                 if (result && result.adminUser) {
-                     setCurrentUser(result.adminUser);
-                     setAppUnlocked(true);
-                 }
+                 await completeFirstRun(pendingAdminData, 'import', blueprint);
+                 // The AppContext now handles setting the user and unlocking the app.
             } else {
                 setError("Invalid blueprint file format.");
                 setIsSubmitting(false);

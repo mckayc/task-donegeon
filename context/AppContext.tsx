@@ -634,7 +634,26 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         deleteAllCustomContent: async () => apiRequest('/api/actions/factory-reset', { method: 'POST' }),
         
         // First Run
-        completeFirstRun: (adminUserData, setupChoice, blueprint) => apiRequest('/api/first-run', { method: 'POST', body: JSON.stringify({ adminUserData, setupChoice, blueprint }) }),
+        completeFirstRun: async (adminUserData, setupChoice, blueprint) => {
+            const result = await apiRequest('/api/first-run', { 
+                method: 'POST', 
+                body: JSON.stringify({ adminUserData, setupChoice, blueprint }) 
+            });
+
+            if (result && result.adminUser && result.fullData) {
+                // The server now returns the complete new state. We apply it here atomically.
+                // This prevents the race condition between the HTTP response and the WebSocket broadcast.
+                isServerUpdate.current = true; // Prevent this major state change from being saved back immediately.
+                setState(prev => ({
+                    ...prev,
+                    ...result.fullData,
+                    isFirstRun: false,
+                    isAppUnlocked: true,
+                    currentUser: result.adminUser,
+                }));
+                return { message: result.message, adminUser: result.adminUser };
+            }
+        },
         
         // Ranks
         setRanks: (ranks: Rank[]) => updateAndSave(() => ({ ranks })),

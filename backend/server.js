@@ -64,6 +64,9 @@ const QuestType = { Duty: 'Duty', Venture: 'Venture' };
 const RewardCategory = { Currency: 'Currency', XP: 'XP' };
 const QuestAvailability = { Daily: 'Daily', Weekly: 'Weekly', Monthly: 'Monthly', Frequency: 'Frequency', Unlimited: 'Unlimited' };
 const TrophyRequirementType = { CompleteQuestType: 'COMPLETE_QUEST_TYPE', EarnTotalReward: 'EARN_TOTAL_REWARD', AchieveRank: 'ACHIEVE_RANK', CompleteQuestTag: 'COMPLETE_QUEST_TAG' };
+const AI_ASSISTANT = {
+    id: 'user-ai-assistant', firstName: 'Donegeon', lastName: 'Sage', username: 'ai_sage', email: 'sage@donegeon.com', gameName: 'Donegeon Sage', birthday: '2024-01-01', role: Role.DonegeonMaster, avatar: {}, profilePictureUrl: 'https://placehold.co/150/8b5cf6/FFFFFF?text=✨', ownedAssetIds: [], pin: '', personalPurse: {}, personalExperience: {}, guildBalances: {}, ownedThemes: [], hasBeenOnboarded: true, isAi: true,
+};
 const INITIAL_QUEST_GROUPS = [
     { id: 'qg-household', name: 'Household Chores', description: 'General tasks related to keeping the house clean and tidy.', icon: '🏡' },
     { id: 'qg-school', name: 'School & Learning', description: 'Quests related to homework, studying, and educational activities.', icon: '📚' },
@@ -85,6 +88,7 @@ const createMockUsers = () => {
     }));
     const explorer = initialUsers.find(u => u.username === 'explorer');
     if (explorer) { explorer.personalPurse = { 'core-gold': 100 }; }
+    initialUsers.push(AI_ASSISTANT);
     return initialUsers;
 };
 const INITIAL_REWARD_TYPES = [
@@ -293,36 +297,27 @@ const createSampleQuests = (users) => {
   return quests;
 };
 function createInitialData(setupChoice = 'guided', adminUserData, blueprint) {
+    const adminUser = {
+        ...adminUserData,
+        id: `user-admin-${Date.now()}`,
+        avatar: {}, ownedAssetIds: [], personalPurse: {}, personalExperience: {}, guildBalances: {},
+        ownedThemes: ['emerald', 'rose', 'sky'], hasBeenOnboarded: true,
+    };
+
     let baseData;
-    let users = [];
+    let users = [adminUser];
 
     if (setupChoice === 'scratch') {
-        const adminUser = { ...adminUserData, id: `user-admin-${Date.now()}`, avatar: {}, ownedAssetIds: [], personalPurse: {}, personalExperience: {}, guildBalances: {}, ownedThemes: ['emerald', 'rose', 'sky'], hasBeenOnboarded: false };
-        users.push(adminUser);
+        users.push(AI_ASSISTANT);
         baseData = {
-            quests: [],
-            questGroups: [],
-            markets: createSampleMarkets().filter(m => m.id === 'market-bank'), // Only include bank
-            rewardTypes: INITIAL_REWARD_TYPES,
-            questCompletions: [],
-            purchaseRequests: [],
-            guilds: createInitialGuilds(users),
-            ranks: INITIAL_RANKS,
-            trophies: [],
-            userTrophies: [],
-            adminAdjustments: [],
-            gameAssets: [],
-            systemLogs: [],
-            settings: INITIAL_SETTINGS,
-            themes: INITIAL_THEMES,
-            loginHistory: [],
-            chatMessages: [],
-            systemNotifications: [],
-            scheduledEvents: [],
+            quests: [], questGroups: [], markets: createSampleMarkets().filter(m => m.id === 'market-bank'),
+            rewardTypes: INITIAL_REWARD_TYPES, questCompletions: [], purchaseRequests: [],
+            guilds: createInitialGuilds(users), ranks: INITIAL_RANKS, trophies: [], userTrophies: [],
+            adminAdjustments: [], gameAssets: [], systemLogs: [], settings: INITIAL_SETTINGS,
+            themes: INITIAL_THEMES, loginHistory: [], chatMessages: [], systemNotifications: [], scheduledEvents: [],
         };
     } else if (setupChoice === 'import' && blueprint) {
-        const adminUser = { ...adminUserData, id: `user-admin-${Date.now()}`, avatar: {}, ownedAssetIds: [], personalPurse: {}, personalExperience: {}, guildBalances: {}, ownedThemes: ['emerald', 'rose', 'sky'], hasBeenOnboarded: false };
-        users.push(adminUser);
+        users.push(AI_ASSISTANT);
         const finalRewardTypes = [ ...INITIAL_REWARD_TYPES, ...(blueprint.assets.rewardTypes || []).filter(rt => !INITIAL_REWARD_TYPES.some(coreRt => coreRt.id === rt.id)) ];
         let finalMarkets = blueprint.assets.markets || [];
         if (!finalMarkets.some(m => m.id === 'market-bank')) {
@@ -331,56 +326,24 @@ function createInitialData(setupChoice = 'guided', adminUserData, blueprint) {
         }
         baseData = {
             ...blueprint.assets,
-            rewardTypes: finalRewardTypes,
-            markets: finalMarkets,
-            guilds: createInitialGuilds(users),
-            // Fill in missing empty arrays from blueprint
+            rewardTypes: finalRewardTypes, markets: finalMarkets, guilds: createInitialGuilds(users),
             questCompletions: [], purchaseRequests: [], userTrophies: [], adminAdjustments: [], systemLogs: [], loginHistory: [], chatMessages: [], systemNotifications: [], scheduledEvents: [],
-            settings: INITIAL_SETTINGS,
-            themes: INITIAL_THEMES,
+            settings: INITIAL_SETTINGS, themes: INITIAL_THEMES,
         };
     } else { // 'guided'
-        users = createMockUsers();
-        // Overwrite first mock user with actual admin data
-        users[0] = { ...users[0], ...adminUserData };
+        const mockUsers = createMockUsers().filter(u => u.role !== Role.DonegeonMaster);
+        users.push(...mockUsers);
         baseData = {
-            quests: createSampleQuests(users),
-            questGroups: INITIAL_QUEST_GROUPS,
-            markets: createSampleMarkets(),
-            rewardTypes: INITIAL_REWARD_TYPES,
-            questCompletions: [],
-            purchaseRequests: [],
-            guilds: createInitialGuilds(users),
-            ranks: INITIAL_RANKS,
-            trophies: INITIAL_TROPHIES,
-            userTrophies: [],
-            adminAdjustments: [],
-            gameAssets: createSampleGameAssets(),
-            systemLogs: [],
-            settings: INITIAL_SETTINGS,
-            themes: INITIAL_THEMES,
-            loginHistory: [],
-            chatMessages: [],
-            systemNotifications: [],
-            scheduledEvents: [],
+            quests: createSampleQuests(users), questGroups: INITIAL_QUEST_GROUPS, markets: createSampleMarkets(),
+            rewardTypes: INITIAL_REWARD_TYPES, questCompletions: [], purchaseRequests: [],
+            guilds: createInitialGuilds(users), ranks: INITIAL_RANKS, trophies: INITIAL_TROPHIES,
+            userTrophies: [], adminAdjustments: [], gameAssets: createSampleGameAssets(),
+            systemLogs: [], settings: INITIAL_SETTINGS, themes: INITIAL_THEMES, loginHistory: [],
+            chatMessages: [], systemNotifications: [], scheduledEvents: [],
         };
     }
 
-    // This is the single source of truth for creating the admin user
-    const finalAdminUser = users[0];
-    if (adminUserData) {
-        Object.assign(finalAdminUser, adminUserData);
-        finalAdminUser.id = `user-admin-${Date.now()}`;
-    }
-
-    return {
-        ...baseData,
-        users, // Use the user array which contains the final admin user
-        settings: {
-            ...baseData.settings,
-            isFirstRunComplete: true, // Always set to true on creation
-        }
-    };
+    return { ...baseData, users, settings: { ...baseData.settings, isFirstRunComplete: true } };
 }
 function createInitialQuestCompletions(quests, users) {
   const explorer = users.find((u) => u.username === 'explorer');
@@ -580,19 +543,18 @@ const readData = () => {
                 themes: INITIAL_THEMES, loginHistory: [], chatMessages: [], systemNotifications: [], scheduledEvents: [],
             };
 
-            if (row && row.json) {
+            if (row && row.json && row.json !== '{}') {
                 try {
                     const dbData = JSON.parse(row.json);
                     
-                    // Merge DB data over defaults. This handles cases where the DB has partial data or is just '{}'.
+                    // Merge DB data over defaults. This handles cases where the DB has partial data.
                     const data = { ...defaultData, ...dbData };
 
                     // Also deep-merge settings to ensure nested properties aren't lost
                     if (dbData.settings) {
                         data.settings = { ...defaultData.settings, ...dbData.settings };
                     }
-
-                    // Now data.settings is guaranteed to exist.
+                    
                     console.log(`[SERVER LOG] /api/data (GET): Reading from DB. isFirstRunComplete is: ${data.settings.isFirstRunComplete}, Users: ${data.users.length}`);
                     resolve(data);
                 } catch (e) {
@@ -647,22 +609,22 @@ app.post('/api/first-run', async (req, res) => {
     try {
         const { adminUserData, setupChoice, blueprint } = req.body;
         
-        await new Promise((resolve, reject) => {
-            db.run('DELETE FROM data WHERE id = 1', (err) => err ? reject(err) : resolve());
-        });
-
+        // This logic is now self-contained to prevent race conditions
         const initialData = createInitialData(setupChoice, adminUserData, blueprint);
         
-        // Find the admin user and mark them as onboarded
-        const adminUser = initialData.users.find(u => u.role === Role.DonegeonMaster);
-        if (adminUser) {
-            adminUser.hasBeenOnboarded = true;
-        }
-
         await writeData(initialData);
-        broadcastStateUpdate();
         
-        res.status(201).json({ message: 'First run completed successfully', adminUser });
+        // The single source of truth for the new admin user object is from the generated data
+        const adminUser = initialData.users.find(u => u.role === Role.DonegeonMaster);
+
+        // Instead of broadcasting, we return the full new state directly.
+        // This makes the client-side update atomic and prevents sync loops.
+        res.status(201).json({ 
+            message: 'First run completed successfully', 
+            adminUser, 
+            fullData: initialData 
+        });
+
     } catch (error) {
         console.error("First run setup failed:", error);
         res.status(500).json({ error: 'Failed to initialize data' });

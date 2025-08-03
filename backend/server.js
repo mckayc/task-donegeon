@@ -169,10 +169,9 @@ async function main() {
         });
     });
 
-    const broadcastStateUpdate = async () => {
+    const broadcastStateUpdate = (data) => {
         try {
-            console.log('[BROADCAST] Reading latest data to broadcast...');
-            const data = await readData();
+            console.log('[BROADCAST] Sending in-memory state to all clients...');
             primus.write({ type: 'FULL_STATE_UPDATE', payload: data });
             console.log('[BROADCAST] Full state update sent to all clients.');
         } catch (error) {
@@ -691,7 +690,7 @@ async function main() {
             console.log('[ACTION] Data modified in memory. Preparing to write to DB.');
             await writeData(data);
             console.log('[ACTION] DB write complete. Broadcasting state update.');
-            await broadcastStateUpdate();
+            broadcastStateUpdate(data);
             console.log('[ACTION] Broadcast complete. Sending success response.');
             res.status(200).json(result);
         } catch (error) {
@@ -715,8 +714,9 @@ async function main() {
 
     app.post('/api/actions/reinitialize', async (req, res) => {
         try {
-            await writeData({});
-            broadcastStateUpdate();
+            const emptyData = {};
+            await writeData(emptyData);
+            broadcastStateUpdate(emptyData);
             res.status(200).json({ message: 'Application reinitialized.' });
         } catch (error) {
             res.status(500).json({ error: 'Failed to reinitialize.' });

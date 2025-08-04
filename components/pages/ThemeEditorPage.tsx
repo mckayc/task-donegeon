@@ -4,7 +4,7 @@ import { ThemeDefinition, ThemeStyle } from '../../types';
 import { Button } from '../ui/button';
 import { Card, CardContent } from '../ui/card';
 import { Input } from '../ui/input';
-import { getContrast, getWcagRating, hslValuesToCss, parseHslString, hexToHsl, rgbToHex, hslToRgb } from '../../utils/colors';
+import { getContrast, getWcagRating, hslValuesToCss, parseHslString } from '../../utils/colors';
 import { TrophyIcon, RankIcon } from '../ui/icons';
 import ThemeIdeaGenerator from '../quests/ThemeIdeaGenerator';
 import ConfirmDialog from '../ui/confirm-dialog';
@@ -329,11 +329,11 @@ const ThemeEditorPage: React.FC = () => {
                         </div>
                          <div className="space-y-2">
                              <Label>Display Font Size</Label>
-                             <Slider defaultValue={[parseInt(formData.styles['--font-size-display'])]} max={6} min={1.5} step={0.1} onValueChange={(v) => handleStyleChange('--font-size-display', `${v[0]}rem`)} />
+                             <Slider defaultValue={[parseInt(formData.styles['--font-size-display'])]} max={6} min={1.5} step={0.1} onValueChange={(v: number[]) => handleStyleChange('--font-size-display', `${v[0]}rem`)} />
                          </div>
                          <div className="space-y-2">
                              <Label>Body Font Size</Label>
-                             <Slider defaultValue={[parseInt(formData.styles['--font-size-body'])]} max={1.5} min={0.8} step={0.05} onValueChange={(v) => handleStyleChange('--font-size-body', `${v[0]}rem`)} />
+                             <Slider defaultValue={[parseInt(formData.styles['--font-size-body'])]} max={1.5} min={0.8} step={0.05} onValueChange={(v: number[]) => handleStyleChange('--font-size-body', `${v[0]}rem`)} />
                          </div>
                     </div>
                  </div>

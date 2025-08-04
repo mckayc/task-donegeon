@@ -5,7 +5,10 @@ name: Build and Push Docker Images
 # This workflow runs on every push to the 'main' branch.
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "master", "dev" ]  # Trigger on both master and dev branches
+
+env:
+  IMAGE_NAME: mckayc/task-donegeon    
 
 jobs:
   build-frontend:

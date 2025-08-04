@@ -54,6 +54,10 @@ const ScheduleEventDialog: React.FC<ScheduleEventDialogProps> = ({ event, onClos
     const { addScheduledEvent, updateScheduledEvent, deleteScheduledEvent } = useAppDispatch();
     const { guilds, markets, rewardTypes } = useAppState();
     
+    useEffect(() => {
+        console.log('ScheduleEventDialog has mounted.');
+    }, []);
+
     const [formData, setFormData] = useState<Omit<ScheduledEvent, 'id'>>(() => {
         if (event) {
             return {

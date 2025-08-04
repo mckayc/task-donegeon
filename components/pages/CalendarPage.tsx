@@ -63,7 +63,7 @@ const CalendarPage: React.FC = () => {
     };
 
     const handleCreateEvent = () => {
-        console.log('Opening schedule dialog...');
+        console.log('Opening schedule dialog from inside handleCreateEvent...');
         setEditingEvent(null);
         setIsScheduleDialogOpen(true);
     };
@@ -128,7 +128,10 @@ const CalendarPage: React.FC = () => {
                             <ViewButton type="day" currentView={view} setView={setView}>Day</ViewButton>
                         </div>
                         {currentUser?.role === Role.DonegeonMaster && (
-                            <Button onClick={handleCreateEvent}>Schedule New Event</Button>
+                            <Button onClick={() => {
+                                console.log('Schedule New Event button clicked!');
+                                handleCreateEvent();
+                            }}>Schedule New Event</Button>
                         )}
                     </div>
                 </CardHeader>

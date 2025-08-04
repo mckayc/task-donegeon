@@ -94,14 +94,20 @@ const ThemeEditorPage: React.FC = () => {
 
     useEffect(() => {
         const theme = themes.find(t => t.id === selectedThemeId);
-        if (theme) {
+        const defaultTheme = themes.find(t => t.id === 'emerald') || themes[0]; // Get a complete default theme
+
+        if (theme && defaultTheme) {
             console.log(`[ThemeEditor] Loading theme data for: ${theme.name} (${theme.id})`);
-            setFormData(JSON.parse(JSON.stringify(theme)));
-        } else {
+            // Merge the loaded theme styles over the default styles to fill in any missing properties
+            const completeStyles = { ...defaultTheme.styles, ...theme.styles };
+            const completeTheme = { ...theme, styles: completeStyles };
+            setFormData(JSON.parse(JSON.stringify(completeTheme)));
+        } else if (themes.length > 0) {
             console.warn(`[ThemeEditor] Could not find theme with ID: ${selectedThemeId}. Resetting to first available theme.`);
-            if (themes.length > 0) {
-              setSelectedThemeId(themes[0].id);
-            }
+            setSelectedThemeId(themes[0].id);
+        } else {
+            // Handle case where there are no themes at all
+            setFormData(null);
         }
     }, [selectedThemeId, themes]);
     
@@ -167,11 +173,14 @@ const ThemeEditorPage: React.FC = () => {
     };
     const handleUseIdea = (idea: {name: string, styles: any}) => {
         const newId = `new-${Date.now()}`;
+        const defaultTheme = themes.find(t => t.id === 'emerald') || themes[0];
+        const completeStyles = { ...defaultTheme.styles, ...idea.styles };
+
         setFormData({
             id: newId,
             name: idea.name,
             isCustom: true,
-            styles: idea.styles,
+            styles: completeStyles,
         });
         setSelectedThemeId(newId);
         setIsGeneratorOpen(false);

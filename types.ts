@@ -581,6 +581,12 @@ export interface ThemeStyle {
   '--color-trophy-bg': string;
   '--color-trophy-border': string;
   '--color-trophy-text': string;
+  '--color-reward-bg': string;
+  '--color-reward-border': string;
+  '--color-reward-text': string;
+  '--color-quest-group-bg': string;
+  '--color-quest-group-border': string;
+  '--color-quest-group-text': string;
 }
 
 export interface ThemeDefinition {

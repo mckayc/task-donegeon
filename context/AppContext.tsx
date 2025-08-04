@@ -71,15 +71,15 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       return () => { isMounted.current = false; }
     }, []);
 
-    const addNotification = useCallback((notification: Omit<Notification, 'id'>) => {
-        const id = `notif-${Date.now()}`;
-        setState(s => ({ ...s, notifications: [...s.notifications, { ...notification, id }] }));
-        setTimeout(() => removeNotification(id), 5000);
-    }, []);
-
     const removeNotification = useCallback((notificationId: string) => {
         setState(s => ({ ...s, notifications: s.notifications.filter(n => n.id !== notificationId) }));
     }, []);
+
+    const addNotification = useCallback((notification: Omit<Notification, 'id'>) => {
+        const id = `notif-${Date.now()}`;
+        setState(s => ({ ...s, notifications: [...s.notifications, { ...notification, id }] }));
+    }, []);
+
 
     // Generic API handler
     const apiRequest = useCallback(async (endpoint: string, options: RequestInit = {}) => {
@@ -176,9 +176,13 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
 
     const connectPrimus = useCallback(() => {
+        if (primusRef.current && primusRef.current.readyState < 2) { // 0=CONNECTING, 1=OPEN
+            console.log('[FRONTEND LOG] Primus connection attempt skipped (already connecting or open).');
+            return;
+        }
         console.log('[FRONTEND LOG] Attempting to connect Primus...');
-        if (typeof window === 'undefined' || primusRef.current || typeof Primus === 'undefined') {
-            console.log('[FRONTEND LOG] Primus connection skipped (already connected, SSR, or Primus not loaded).');
+        if (typeof window === 'undefined' || typeof Primus === 'undefined') {
+            console.log('[FRONTEND LOG] Primus connection skipped (SSR or Primus not loaded).');
             return;
         }
 
@@ -217,6 +221,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         primus.on('end', () => {
             if (!isMounted.current) return;
             console.log('[FRONTEND LOG] Primus connection ended.');
+            primusRef.current = null; // Nullify the ref to allow the reconnect interval to create a new instance
             setState(prev => ({ ...prev, syncStatus: 'error', syncError: 'Real-time connection lost.' }));
         });
 
@@ -266,11 +271,22 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         };
 
         loadData();
-        connectPrimus();
+        connectPrimus(); // Initial connection attempt
+
+        // Set up an interval to ensure we stay connected if the connection drops completely.
+        const reconnectInterval = setInterval(() => {
+            if (!primusRef.current) {
+                console.log('[FRONTEND LOG] Reconnect interval: No active Primus instance. Attempting to connect.');
+                connectPrimus();
+            }
+        }, 5000); // Check every 5 seconds.
+
 
         return () => {
+            clearInterval(reconnectInterval);
             if (primusRef.current) {
                 primusRef.current.end();
+                primusRef.current = null;
             }
         };
     }, [connectPrimus, apiRequest]);
@@ -480,7 +496,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             }
         },
         executeExchange: (userId, payItem, receiveItem, guildId) => dispatchAction('EXECUTE_EXCHANGE', { userId, payItem, receiveItem, guildId }),
-    }), [state.currentUser, apiRequest, addNotification, dispatchAction, state.chatMessages, fullUpdate]);
+    }), [state.currentUser, apiRequest, addNotification, removeNotification, dispatchAction, state.chatMessages, fullUpdate]);
 
     return (
         <AppStateContext.Provider value={state}>

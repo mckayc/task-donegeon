@@ -1,5 +1,5 @@
 import React from 'react';
-import { ScheduledEvent } from '../../types';
+import { ScheduledEvent, Role } from '../../types';
 import { Button } from '@/components/ui/button';
 import { useAppState } from '../../context/AppContext';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
@@ -7,10 +7,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 interface EventDetailDialogProps {
   event: ScheduledEvent;
   onClose: () => void;
+  onEdit?: (event: ScheduledEvent) => void;
+  onDelete?: (event: ScheduledEvent) => void;
 }
 
-const EventDetailDialog: React.FC<EventDetailDialogProps> = ({ event, onClose }) => {
-    const { markets } = useAppState();
+const EventDetailDialog: React.FC<EventDetailDialogProps> = ({ event, onClose, onEdit, onDelete }) => {
+    const { markets, currentUser } = useAppState();
 
     const getModifierDetails = () => {
         const { modifiers } = event;
@@ -56,7 +58,15 @@ const EventDetailDialog: React.FC<EventDetailDialogProps> = ({ event, onClose })
                     <p className="text-foreground whitespace-pre-wrap">{event.description || 'No description provided.'}</p>
                     {getModifierDetails()}
                 </div>
-                 <DialogFooter className="p-4 bg-card rounded-b-lg">
+                 <DialogFooter className="p-4 bg-card rounded-b-lg justify-between w-full">
+                    <div>
+                        {currentUser?.role === Role.DonegeonMaster && onDelete && onEdit && (
+                            <div className="flex gap-2">
+                                <Button variant="outline" onClick={() => onEdit(event)}>Edit</Button>
+                                <Button variant="destructive" onClick={() => onDelete(event)}>Delete</Button>
+                            </div>
+                        )}
+                    </div>
                     <Button variant="secondary" onClick={onClose}>Close</Button>
                 </DialogFooter>
             </DialogContent>

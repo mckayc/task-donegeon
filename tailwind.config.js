@@ -74,6 +74,16 @@ export default {
             DEFAULT: "hsl(var(--color-trophy-bg))",
             border: "hsl(var(--color-trophy-border))",
             text: "hsl(var(--color-trophy-text))",
+        },
+        "reward-card": {
+            DEFAULT: "hsl(var(--color-reward-bg))",
+            border: "hsl(var(--color-reward-border))",
+            text: "hsl(var(--color-reward-text))",
+        },
+        "quest-group-card": {
+            DEFAULT: "hsl(var(--color-quest-group-bg))",
+            border: "hsl(var(--color-quest-group-border))",
+            text: "hsl(var(--color-quest-group-text))",
         }
       },
       borderRadius: {

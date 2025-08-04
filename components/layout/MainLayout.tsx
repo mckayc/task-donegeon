@@ -39,7 +39,6 @@ import ManageQuestGroupsPage from '../pages/ManageQuestGroupsPage';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import ChatPanel from '../chat/ChatPanel';
 import LoginNotificationPopup from '../ui/login-notification-popup';
-import ManageEventsPage from '../pages/management/ManageEventsPage';
 import BackupAndImportPage from '../pages/management/BackupAndImportPage';
 import ChatController from '../chat/ChatController';
 
@@ -127,7 +126,6 @@ const MainLayout: React.FC = () => {
       case 'Manage Guilds': return <ManageGuildsPage />;
       case 'Manage Ranks': return <ManageRanksPage />;
       case 'Manage Trophies': return <ManageTrophiesPage />;
-      case 'Manage Events': return <ManageEventsPage />;
       case 'AI Studio': return <AiStudioPage />;
       case 'Approvals': return <ApprovalsPage />;
       case 'Settings': return <SettingsPage />;

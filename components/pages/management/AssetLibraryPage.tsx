@@ -2,7 +2,7 @@ import React, { useState, useMemo, ChangeEvent } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { libraryPacks } from '../../../data/assetLibrary';
-import { LibraryPack, BlueprintAssets, TrophyRequirementType, QuestGroup, Quest, GameAsset, Market, Trophy, RewardTypeDefinition, QuestType, User, ShareableAssetType } from '../../../types';
+import { LibraryPack, BlueprintAssets, TrophyRequirementType, QuestGroup, Quest, GameAsset, Market, Trophy, RewardTypeDefinition, QuestType, User, ShareableAssetType, LibraryPackType } from '../../../types';
 import { useAppState, useAppDispatch } from '../../../context/AppContext';
 import { Input } from '@/components/ui/input';
 import CreateQuestDialog from '../../quests/CreateQuestDialog';
@@ -10,6 +10,7 @@ import EditGameAssetDialog from '../../admin/EditGameAssetDialog';
 import EditTrophyDialog from '../../settings/EditTrophyDialog';
 import EditMarketDialog from '../../markets/EditMarketDialog';
 import UserMultiSelect from '../../ui/user-multi-select';
+import { cn } from '@/lib/utils';
 
 const packTypes = ['All', 'Quests', 'Markets', 'Items', 'Trophies', 'Rewards', 'Quest Groups'];
 
@@ -30,10 +31,10 @@ const AssetPreview: React.FC<{ assets: Partial<BlueprintAssets> }> = ({ assets }
     }
 
     return (
-        <div className="space-y-1 mt-3 pt-3 border-t border-border">
+        <div className="space-y-1 mt-3 pt-3 border-t border-border/50">
             <p className="text-xs font-semibold text-muted-foreground">Contains:</p>
             {assetList.map((asset, index) => (
-                <div key={index} className="flex items-center gap-2 text-sm text-foreground">
+                <div key={index} className="flex items-center gap-2 text-sm">
                     <span className="text-lg">{'icon' in asset ? asset.icon : '❔'}</span>
                     <span className="truncate">{'title' in asset ? asset.title : asset.name}</span>
                 </div>
@@ -43,15 +44,31 @@ const AssetPreview: React.FC<{ assets: Partial<BlueprintAssets> }> = ({ assets }
 };
 
 const PackCard: React.FC<{ pack: LibraryPack; onSelect: () => void; }> = ({ pack, onSelect }) => {
+    const typeToClassMap: { [key in LibraryPackType]?: { bg: string, border: string, text: string } } = {
+        'Quests': { bg: 'bg-duty-card', border: 'border-duty-card', text: 'text-duty-card-text' },
+        'Items': { bg: 'bg-item-card', border: 'border-item-card', text: 'text-item-card-text' },
+        'Markets': { bg: 'bg-item-card', border: 'border-item-card', text: 'text-item-card-text' },
+        'Trophies': { bg: 'bg-trophy-card', border: 'border-trophy-card', text: 'text-trophy-card-text' },
+        'Rewards': { bg: 'bg-reward-card', border: 'border-reward-card', text: 'text-reward-card-text' },
+        'Quest Groups': { bg: 'bg-quest-group-card', border: 'border-quest-group-card', text: 'text-quest-group-card-text' },
+    };
+    
+    const packStyle = typeToClassMap[pack.type] || typeToClassMap['Quests']!;
+
     return (
-        <button onClick={onSelect} className="text-left h-full">
-            <Card className={`h-full p-4 hover:bg-accent/10 hover:border-accent transition-colors duration-200 border-2 ${pack.color || 'border-border'}`}>
+        <button onClick={onSelect} className="text-left h-full group">
+            <Card className={cn(
+                "h-full p-4 border transition-all duration-200 group-hover:scale-105 group-hover:shadow-lg",
+                packStyle.bg,
+                packStyle.border,
+                packStyle.text
+            )}>
                 <div className="flex items-center gap-2">
                     <span className="text-2xl">{pack.emoji}</span>
-                    <span className={`text-sm font-bold uppercase ${pack.color ? '' : 'text-primary'}`}>{pack.type}</span>
+                    <span className="text-sm font-bold uppercase">{pack.type}</span>
                 </div>
-                <h4 className="text-lg font-bold text-foreground mt-2">{pack.title}</h4>
-                <p className="text-sm text-muted-foreground mt-2">{pack.description}</p>
+                <h4 className="text-lg font-bold mt-2">{pack.title}</h4>
+                <p className="text-sm opacity-80 mt-2">{pack.description}</p>
                 <AssetPreview assets={pack.assets} />
             </Card>
         </button>

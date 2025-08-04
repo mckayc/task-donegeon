@@ -11,6 +11,8 @@ import ChroniclesMonthView from '../calendar/ChroniclesMonthView';
 import ChroniclesWeekView from '../calendar/ChroniclesWeekView';
 import { Button } from '@/components/ui/button';
 import EventDetailDialog from '@/components/calendar/EventDetailDialog';
+import ScheduleEventDialog from '@/components/admin/ScheduleEventDialog';
+import ConfirmDialog from '@/components/ui/confirm-dialog';
 
 type CalendarView = 'month' | 'week' | 'day';
 type CalendarMode = 'quests' | 'chronicles';
@@ -27,11 +29,16 @@ const ViewButton: React.FC<{ type: CalendarView, currentView: CalendarView, setV
 
 const CalendarPage: React.FC = () => {
     const { quests, currentUser, questCompletions, appMode, scheduledEvents } = useAppState();
-    const { setActivePage } = useAppDispatch();
+    const { deleteScheduledEvent } = useAppDispatch();
     const [view, setView] = useState<CalendarView>('month');
     const [mode, setMode] = useState<CalendarMode>('quests');
     const [currentDate, setCurrentDate] = useState(new Date());
     const [selectedEvent, setSelectedEvent] = useState<ScheduledEvent | null>(null);
+
+    const [isScheduleDialogOpen, setIsScheduleDialogOpen] = useState(false);
+    const [editingEvent, setEditingEvent] = useState<ScheduledEvent | null>(null);
+    const [deletingEvent, setDeletingEvent] = useState<ScheduledEvent | null>(null);
+
 
     const handleDateChange = (offset: number) => {
         setCurrentDate(prevDate => {
@@ -46,6 +53,25 @@ const CalendarPage: React.FC = () => {
     const handleEventSelect = (event: ScheduledEvent) => {
         setSelectedEvent(event);
     };
+
+    const handleEditEvent = (event: ScheduledEvent) => {
+        setSelectedEvent(null); // Close the detail dialog
+        setEditingEvent(event);
+        setIsScheduleDialogOpen(true);
+    };
+
+    const handleCreateEvent = () => {
+        setEditingEvent(null);
+        setIsScheduleDialogOpen(true);
+    };
+
+    const handleConfirmDelete = () => {
+        if (deletingEvent) {
+            deleteScheduledEvent(deletingEvent.id);
+        }
+        setDeletingEvent(null);
+    };
+
 
     const questsForView = useMemo(() => {
         if (!currentUser) return [];
@@ -99,7 +125,7 @@ const CalendarPage: React.FC = () => {
                             <ViewButton type="day" currentView={view} setView={setView}>Day</ViewButton>
                         </div>
                          {currentUser?.role === Role.DonegeonMaster && (
-                            <Button onClick={() => setActivePage('Manage Events')}>Event Scheduler</Button>
+                            <Button onClick={handleCreateEvent}>Schedule New Event</Button>
                         )}
                     </div>
                 </CardHeader>
@@ -123,7 +149,29 @@ const CalendarPage: React.FC = () => {
             </Card>
 
             {selectedEvent && (
-                <EventDetailDialog event={selectedEvent} onClose={() => setSelectedEvent(null)} />
+                <EventDetailDialog
+                    event={selectedEvent}
+                    onClose={() => setSelectedEvent(null)}
+                    onEdit={handleEditEvent}
+                    onDelete={(event) => { setSelectedEvent(null); setDeletingEvent(event); }}
+                />
+            )}
+
+            {isScheduleDialogOpen && (
+                <ScheduleEventDialog
+                    event={editingEvent}
+                    onClose={() => setIsScheduleDialogOpen(false)}
+                />
+            )}
+
+            {deletingEvent && (
+                 <ConfirmDialog
+                    isOpen={!!deletingEvent}
+                    onClose={() => setDeletingEvent(null)}
+                    onConfirm={handleConfirmDelete}
+                    title="Delete Event"
+                    message={`Are you sure you want to delete the event "${deletingEvent.title}"?`}
+                />
             )}
         </div>
     );

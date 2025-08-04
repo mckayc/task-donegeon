@@ -92,12 +92,10 @@
     .bg-duty-card { background-color: hsl(var(--color-duty-bg)); }
     .border-duty-card { border-color: hsl(var(--color-duty-border)); }
     .text-duty-card-text { color: hsl(var(--color-duty-text)); }
-    .bg-duty-card-accent { background-color: hsl(var(--color-duty-accent)); }
 
     .bg-venture-card { background-color: hsl(var(--color-venture-bg)); }
     .border-venture-card { border-color: hsl(var(--color-venture-border)); }
     .text-venture-card-text { color: hsl(var(--color-venture-text)); }
-    .bg-venture-card-accent { background-color: hsl(var(--color-venture-accent)); }
 
     .bg-item-card { background-color: hsl(var(--color-item-bg)); }
     .border-item-card { border-color: hsl(var(--color-item-border)); }
@@ -106,6 +104,14 @@
     .bg-trophy-card { background-color: hsl(var(--color-trophy-bg)); }
     .border-trophy-card { border-color: hsl(var(--color-trophy-border)); }
     .text-trophy-card-text { color: hsl(var(--color-trophy-text)); }
+
+    .bg-reward-card { background-color: hsl(var(--color-reward-bg)); }
+    .border-reward-card { border-color: hsl(var(--color-reward-border)); }
+    .text-reward-card-text { color: hsl(var(--color-reward-text)); }
+
+    .bg-quest-group-card { background-color: hsl(var(--color-quest-group-bg)); }
+    .border-quest-group-card { border-color: hsl(var(--color-quest-group-border)); }
+    .text-quest-group-card-text { color: hsl(var(--color-quest-group-text)); }
 }
 
 /* For hiding scrollbars */

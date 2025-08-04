@@ -142,7 +142,7 @@ const PackDetailView: React.FC<{ pack: LibraryPack; onBack: () => void; }> = ({ 
             livePackAssets[type]?.forEach(asset => {
                 if (selectedIds.includes(asset.id)) {
                     const { id, ...rest } = asset;
-                    addFunc(rest as Omit<T, 'id'>);
+                    addFunc(rest as unknown as Omit<T, 'id'>);
                     importedCount++;
                 }
             });

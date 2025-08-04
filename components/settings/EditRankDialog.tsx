@@ -61,7 +61,7 @@ const EditRankDialog: React.FC<EditRankDialogProps> = ({ rank, onClose }) => {
           <Input 
             label="Rank Name" 
             value={formData.name} 
-            onChange={(e) => setFormData(p => ({ ...p, name: e.target.value }))} 
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData(p => ({ ...p, name: e.target.value }))} 
             required 
           />
            <Input 
@@ -69,7 +69,7 @@ const EditRankDialog: React.FC<EditRankDialogProps> = ({ rank, onClose }) => {
             type="number"
             min="0"
             value={formData.xpThreshold} 
-            onChange={(e) => setFormData(p => ({ ...p, xpThreshold: parseInt(e.target.value) || 0 }))} 
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData(p => ({ ...p, xpThreshold: parseInt(e.target.value) || 0 }))} 
             required 
           />
           <div>

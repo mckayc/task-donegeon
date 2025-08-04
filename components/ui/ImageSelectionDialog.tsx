@@ -60,7 +60,7 @@ const ImageSelectionDialog: React.FC<ImageSelectionDialogProps> = ({ onSelect, o
 
   return (
     <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-[60] p-4" onClick={onClose}>
-      <div className="bg-stone-800 border border-stone-700 rounded-xl shadow-2xl max-w-4xl w-full h-[80vh] flex flex-col" onClick={e => e.stopPropagation()}>
+      <div className="bg-stone-800 border border-stone-700 rounded-xl shadow-2xl max-w-4xl w-full h-[80vh] flex flex-col" onClick={(e: React.MouseEvent<HTMLDivElement>) => e.stopPropagation()}>
         <div className="p-6 border-b border-stone-700/60 flex-shrink-0">
           <h2 className="text-2xl font-medieval text-accent">Select Existing Image</h2>
           <Input

@@ -182,7 +182,7 @@ const ManageItemsPage: React.FC = () => {
                                             id={`select-asset-${asset.id}`}
                                             type="checkbox"
                                             checked={selectedAssets.includes(asset.id)}
-                                            onChange={e => handleSelectOne(asset.id, e.target.checked)}
+                                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleSelectOne(asset.id, e.target.checked)}
                                             className="h-5 w-5 rounded text-emerald-600 bg-stone-800 border-stone-600 focus:ring-emerald-500"
                                         />
                                     </div>

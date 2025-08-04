@@ -1,10 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { RewardTypeDefinition, RewardCategory, Market, RewardItem } from '../../types';
-import Button from '../ui/Button';
-import Card from '../ui/Card';
-import Input from '../ui/Input';
-import { ArrowRightIcon } from '../ui/Icons';
+import { Button, Card, Input, Icons } from '../ui';
 
 interface ExchangeViewProps {
     market: Market;
@@ -238,7 +235,7 @@ const ExchangeView: React.FC<ExchangeViewProps> = ({ market }) => {
                              <div className="space-y-6 text-center">
                                 <div className="flex justify-around items-center">
                                     <div className="text-6xl">{fromReward.icon}</div>
-                                    <ArrowRightIcon className="w-10 h-10 text-stone-500"/>
+                                    <Icons.ArrowRightIcon className="w-10 h-10 text-stone-500"/>
                                     <div className="text-6xl">{toReward.icon}</div>
                                 </div>
                                 <div className="grid grid-cols-2 gap-4 items-end">
@@ -250,7 +247,7 @@ const ExchangeView: React.FC<ExchangeViewProps> = ({ market }) => {
                                         <label className="block text-sm font-semibold text-stone-400 mb-1">Amount</label>
                                         <div className="flex items-center">
                                             <Button onClick={() => handleAmountStep(-1)} size="sm" variant="secondary" className="!px-3 !py-2 rounded-r-none">-</Button>
-                                            <Input value={toAmountString} onChange={e => handleAmountChange(e.target.value)} type="text" className="text-center text-lg h-11 rounded-none" />
+                                            <Input value={toAmountString} onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleAmountChange(e.target.value)} type="text" className="text-center text-lg h-11 rounded-none" />
                                             <Button onClick={() => handleAmountStep(1)} size="sm" variant="secondary" className="!px-3 !py-2 rounded-l-none">+</Button>
                                         </div>
                                         <Button onClick={handleMax} variant="secondary" className="text-xs !py-1 mt-2">Max: {Math.floor(calculation.maxToAmount)}</Button>

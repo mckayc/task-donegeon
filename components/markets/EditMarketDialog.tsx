@@ -1,11 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { Market, MarketStatus, MarketCondition, MarketConditionType } from '../../types';
-import Button from '../ui/Button';
-import Input from '../ui/Input';
-import EmojiPicker from '../ui/EmojiPicker';
-import ImageSelectionDialog from '../ui/ImageSelectionDialog';
-import DynamicIcon from '../ui/DynamicIcon';
+import { Button, Input, EmojiPicker, ImageSelectionDialog, DynamicIcon } from '../ui';
 
 interface EditMarketDialogProps {
   market: Market | null;
@@ -119,7 +115,7 @@ const EditMarketDialog: React.FC<EditMarketDialogProps> = ({ market, initialData
                 <button type="button" onClick={() => removeCondition(index)} className="text-red-400 hover:text-red-300">&times;</button>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <Input as="select" label="Condition Type" value={condition.type} onChange={e => {
+                <Input as="select" label="Condition Type" value={condition.type} onChange={(e: React.ChangeEvent<HTMLSelectElement>) => {
                     const newType = e.target.value as MarketConditionType;
                     let newCondition: MarketCondition;
                     switch (newType) {
@@ -138,20 +134,20 @@ const EditMarketDialog: React.FC<EditMarketDialogProps> = ({ market, initialData
                 </Input>
                 
                 {condition.type === MarketConditionType.MinRank && (
-                    <Input as="select" label="Rank" value={condition.rankId} onChange={e => updateCondition(index, { ...condition, rankId: e.target.value })}>
+                    <Input as="select" label="Rank" value={condition.rankId} onChange={(e: React.ChangeEvent<HTMLSelectElement>) => updateCondition(index, { ...condition, rankId: e.target.value })}>
                         {ranks.sort((a,b) => a.xpThreshold - b.xpThreshold).map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
                     </Input>
                 )}
                  {condition.type === MarketConditionType.QuestCompleted && (
-                    <Input as="select" label="Quest" value={condition.questId} onChange={e => updateCondition(index, { ...condition, questId: e.target.value })}>
+                    <Input as="select" label="Quest" value={condition.questId} onChange={(e: React.ChangeEvent<HTMLSelectElement>) => updateCondition(index, { ...condition, questId: e.target.value })}>
                         {quests.map(q => <option key={q.id} value={q.id}>{q.title}</option>)}
                     </Input>
                 )}
             </div>
             {condition.type === MarketConditionType.DateRange && (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <Input type="date" label="Start Date" value={condition.start} onChange={e => updateCondition(index, { ...condition, start: e.target.value })} />
-                    <Input type="date" label="End Date" value={condition.end} onChange={e => updateCondition(index, { ...condition, end: e.target.value })} />
+                    <Input type="date" label="Start Date" value={condition.start} onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateCondition(index, { ...condition, start: e.target.value })} />
+                    <Input type="date" label="End Date" value={condition.end} onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateCondition(index, { ...condition, end: e.target.value })} />
                 </div>
             )}
              {condition.type === MarketConditionType.DayOfWeek && (

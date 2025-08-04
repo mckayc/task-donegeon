@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import Button from '../ui/Button';
+import { Button } from '../ui';
 import { useAppDispatch } from '../../context/AppContext';
 
 interface AvailablePack {
@@ -211,7 +211,7 @@ const ImagePackImporterDialog: React.FC<ImagePackImporterDialogProps> = ({ onClo
 
     return (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4" onClick={onClose}>
-            <div className="bg-stone-800 border border-stone-700 rounded-xl shadow-2xl max-w-4xl w-full h-[80vh] flex flex-col" onClick={e => e.stopPropagation()}>
+            <div className="bg-stone-800 border border-stone-700 rounded-xl shadow-2xl max-w-4xl w-full h-[80vh] flex flex-col" onClick={(e: React.MouseEvent<HTMLDivElement>) => e.stopPropagation()}>
                 {selectedPackName ? renderFileSelection() : renderPackSelection()}
             </div>
         </div>

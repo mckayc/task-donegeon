@@ -1,6 +1,6 @@
 import React from 'react';
 import { ScheduledEvent } from '../../types';
-import Button from '../ui/Button';
+import { Button } from '../ui';
 import { useAppState } from '../../context/AppContext';
 
 interface EventDetailDialogProps {

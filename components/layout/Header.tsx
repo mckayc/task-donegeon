@@ -1,9 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { Page, Role, AppMode, User } from '../../types';
-import Avatar from '../ui/Avatar';
+import { Avatar, FullscreenToggle, Icons } from '../ui';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
-import FullscreenToggle from '../ui/FullscreenToggle';
-import { ChevronDownIcon } from '../ui/Icons';
 import RewardDisplay from '../ui/RewardDisplay';
 
 const Clock: React.FC = () => {
@@ -100,7 +98,7 @@ const Header: React.FC = () => {
                     className={`px-4 py-1.5 text-sm font-semibold rounded-full transition-colors flex items-center gap-1 ${appMode.mode === 'guild' ? 'bg-emerald-600 text-white' : 'text-stone-300 hover:bg-stone-700 disabled:opacity-50'}`}
                 >
                     <span>{currentGuildName}</span>
-                    {userGuilds.length > 1 && <ChevronDownIcon className="w-4 h-4" />}
+                    {userGuilds.length > 1 && <Icons.ChevronDownIcon className="w-4 h-4" />}
                 </button>
                  {guildDropdownOpen && userGuilds.length > 1 && (
                     <div className="absolute left-0 mt-2 w-56 bg-stone-800 border border-stone-700 rounded-lg shadow-xl z-20">

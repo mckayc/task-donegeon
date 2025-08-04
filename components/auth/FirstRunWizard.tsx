@@ -1,8 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { Role, User, Blueprint } from '../../types';
-import Button from '../ui/Button';
-import Input from '../ui/Input';
+import { Button, Input } from '../ui';
 import UserFormFields from '../users/UserFormFields';
 
 const FirstRunWizard: React.FC = () => {

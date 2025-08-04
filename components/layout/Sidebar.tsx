@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { Role, Page, QuestCompletionStatus, PurchaseRequestStatus, Terminology, SidebarConfigItem, SidebarLink, SidebarHeader } from '../../types';
-import { ChevronDownIcon, ArrowLeftIcon, ArrowRightIcon } from '../ui/Icons';
+import { Icons } from '../ui';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 
 const FlyoutPanel: React.FC<{ title: string; items?: SidebarLink[]; isVisible: boolean }> = ({ title, items, isVisible }) => {
@@ -92,7 +92,7 @@ const CollapsibleNavGroup: React.FC<CollapsibleNavGroupProps> = ({ header, child
                     title={header.title}
                 >
                     {header.emoji && <span className="text-2xl">{header.emoji}</span>}
-                    <ChevronDownIcon className={`w-4 h-4 mt-1 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+                    <Icons.ChevronDownIcon className={`w-4 h-4 mt-1 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
                     {(badgeCount ?? 0) > 0 && !isOpen && (
                          <span className="absolute flex items-center justify-center w-5 h-5 text-xs font-bold text-white bg-red-600 rounded-full top-1 right-1">
                             {badgeCount > 9 ? '9+' : badgeCount}
@@ -127,7 +127,7 @@ const CollapsibleNavGroup: React.FC<CollapsibleNavGroupProps> = ({ header, child
                             {badgeCount > 9 ? '9+' : badgeCount}
                         </span>
                     ) : null}
-                    <ChevronDownIcon className={`w-5 h-5 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+                    <Icons.ChevronDownIcon className={`w-5 h-5 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
                 </div>
             </button>
             {isOpen && (
@@ -278,7 +278,7 @@ const Sidebar: React.FC = () => {
             title={isSidebarCollapsed ? 'Expand Sidebar' : 'Collapse Sidebar'}
             className="w-full flex items-center justify-center py-2 text-stone-400 hover:bg-stone-700/50 hover:text-white rounded-lg transition-colors"
          >
-            {isSidebarCollapsed ? <ArrowRightIcon className="w-6 h-6" /> : <ArrowLeftIcon className="w-6 h-6" />}
+            {isSidebarCollapsed ? <Icons.ArrowRightIcon className="w-6 h-6" /> : <Icons.ArrowLeftIcon className="w-6 h-6" />}
          </button>
       </div>
     </div>

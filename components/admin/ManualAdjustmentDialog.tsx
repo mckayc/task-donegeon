@@ -1,10 +1,7 @@
-
-
-
 import React, { useState } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { User, RewardItem, RewardCategory, AdminAdjustmentType, Trophy } from '../../types';
-import Button from '../ui/Button';
+import { Button } from '../ui';
 import RewardInputGroup from '../forms/RewardInputGroup';
 
 interface ManualAdjustmentDialogProps {

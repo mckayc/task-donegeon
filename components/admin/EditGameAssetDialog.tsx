@@ -1,11 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { GameAsset, RewardItem, RewardCategory } from '../../types';
-import Button from '../ui/Button';
-import Input from '../ui/Input';
+import { Button, Input, ToggleSwitch, ImageSelectionDialog } from '../ui';
 import RewardInputGroup from '../forms/RewardInputGroup';
-import ToggleSwitch from '../ui/ToggleSwitch';
-import ImageSelectionDialog from '../ui/ImageSelectionDialog';
 
 interface EditGameAssetDialogProps {
   assetToEdit: GameAsset | null;
@@ -45,7 +42,7 @@ const EditGameAssetDialog: React.FC<EditGameAssetDialogProps> = ({ assetToEdit, 
         avatarSlot: d.avatarSlot || '',
         isForSale: typeof d.isForSale === 'boolean' ? d.isForSale : false,
         requiresApproval: typeof d.requiresApproval === 'boolean' ? d.requiresApproval : false,
-        costGroups: d.costGroups?.length > 0 ? [...d.costGroups.map(group => [...group])] : [[]],
+        costGroups: d.costGroups && d.costGroups.length > 0 ? [...d.costGroups.map(group => [...group])] : [[]],
         payouts: d.payouts ? [...d.payouts] : [],
         marketIds: [...(d.marketIds || [])],
         purchaseLimit: typeof d.purchaseLimit === 'number' ? d.purchaseLimit : null,
@@ -247,8 +244,8 @@ const EditGameAssetDialog: React.FC<EditGameAssetDialogProps> = ({ assetToEdit, 
                     )}
                 </div>
                 <div className="flex-grow space-y-4">
-                  <Input label="Asset Name" value={formData.name} onChange={(e) => setFormData(p => ({...p, name: e.target.value}))} required />
-                  <Input label="Description" value={formData.description} onChange={(e) => setFormData(p => ({...p, description: e.target.value}))} />
+                  <Input label="Asset Name" value={formData.name} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData(p => ({...p, name: e.target.value}))} required />
+                  <Input label="Description" value={formData.description} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData(p => ({...p, description: e.target.value}))} />
                   <input id="image-upload-input" type="file" accept="image/*" onChange={handleManualUpload} className="hidden" />
                   <div className="flex gap-2">
                       <Button type="button" variant="secondary" onClick={() => document.getElementById('image-upload-input')?.click()} disabled={isUploading} className="flex-grow">
@@ -263,7 +260,7 @@ const EditGameAssetDialog: React.FC<EditGameAssetDialogProps> = ({ assetToEdit, 
 
             <div className="grid grid-cols-2 gap-4">
                 <div>
-                    <Input as="select" label="Category" value={formData.category} onChange={e => setFormData(p => ({...p, category: e.target.value}))}>
+                    <Input as="select" label="Category" value={formData.category} onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setFormData(p => ({...p, category: e.target.value}))}>
                         {PREDEFINED_CATEGORIES.map(cat => <option key={cat} value={cat}>{cat}</option>)}
                         <option value="Other">Other...</option>
                     </Input>
@@ -272,12 +269,12 @@ const EditGameAssetDialog: React.FC<EditGameAssetDialogProps> = ({ assetToEdit, 
                             className="mt-2"
                             placeholder="Enter custom category name"
                             value={customCategory}
-                            onChange={e => setCustomCategory(e.target.value)}
+                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setCustomCategory(e.target.value)}
                         />
                     )}
                 </div>
                 {formData.category.toLowerCase() === 'avatar' && (
-                  <Input label="Avatar Slot" placeholder="e.g., hat, shirt, hand-right" value={formData.avatarSlot} onChange={(e) => setFormData(p => ({...p, avatarSlot: e.target.value}))} required />
+                  <Input label="Avatar Slot" placeholder="e.g., hat, shirt, hand-right" value={formData.avatarSlot} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData(p => ({...p, avatarSlot: e.target.value}))} required />
                 )}
             </div>
             
@@ -294,12 +291,12 @@ const EditGameAssetDialog: React.FC<EditGameAssetDialogProps> = ({ assetToEdit, 
                       <div>
                           <h4 className="font-semibold text-stone-300 mb-2">Purchase Limit</h4>
                           <div className="flex items-center gap-4">
-                              <label><input type="radio" name="limit" checked={limitTypeOption === 'unlimited'} onChange={() => setLimitTypeOption('unlimited')} /> Unlimited</label>
-                              <label><input type="radio" name="limit" checked={limitTypeOption === 'total'} onChange={() => setLimitTypeOption('total')} /> Total</label>
-                              <label><input type="radio" name="limit" checked={limitTypeOption === 'perUser'} onChange={() => setLimitTypeOption('perUser')} /> Per User</label>
+                              <label><input type="radio" name="limit" checked={limitTypeOption === 'unlimited'} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setLimitTypeOption('unlimited')} /> Unlimited</label>
+                              <label><input type="radio" name="limit" checked={limitTypeOption === 'total'} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setLimitTypeOption('total')} /> Total</label>
+                              <label><input type="radio" name="limit" checked={limitTypeOption === 'perUser'} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setLimitTypeOption('perUser')} /> Per User</label>
                           </div>
                           {limitTypeOption !== 'unlimited' && (
-                              <div className="mt-2"><Input label="Limit Amount" type="number" min="1" value={formData.purchaseLimit || 1} onChange={(e) => setFormData(p => ({...p, purchaseLimit: parseInt(e.target.value) || 1}))} /></div>
+                              <div className="mt-2"><Input label="Limit Amount" type="number" min="1" value={formData.purchaseLimit || 1} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData(p => ({...p, purchaseLimit: parseInt(e.target.value) || 1}))} /></div>
                           )}
                       </div>
                       
@@ -375,9 +372,9 @@ const EditGameAssetDialog: React.FC<EditGameAssetDialogProps> = ({ assetToEdit, 
       
       {isInfoVisible && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-[60]" onClick={() => setIsInfoVisible(false)}>
-            <div className="bg-stone-900 border border-stone-700 rounded-lg p-6 max-w-lg w-full" onClick={e => e.stopPropagation()}>
+            <div className="bg-stone-900 border border-stone-700 rounded-lg p-6 max-w-lg w-full" onClick={(e: React.MouseEvent<HTMLDivElement>) => e.stopPropagation()}>
                 <h3 className="font-bold text-lg text-stone-200 mb-4">Asset Information</h3>
-                <Input label="Image URL" readOnly value={formData.url} onFocus={e => (e.target as HTMLInputElement).select()} />
+                <Input label="Image URL" readOnly value={formData.url} onFocus={(e: React.FocusEvent<HTMLInputElement>) => e.target.select()} />
                 <div className="text-right mt-4">
                     <Button variant="secondary" onClick={() => setIsInfoVisible(false)}>Close</Button>
                 </div>

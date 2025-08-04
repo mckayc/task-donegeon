@@ -1,8 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { Guild } from '../../types';
-import Button from '../ui/Button';
-import Input from '../ui/Input';
+import { Button, Input } from '../ui';
 
 interface EditGuildDialogProps {
   guild: Guild | null;

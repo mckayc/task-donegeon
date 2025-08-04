@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
-import Button from '../ui/Button';
-import Input from '../ui/Input';
+import { Button, Input } from '../ui';
 
 interface UploadWithCategoryDialogProps {
     file: File;
@@ -35,7 +34,7 @@ const UploadWithCategoryDialog: React.FC<UploadWithCategoryDialogProps> = ({ fil
                                 as="select"
                                 label="Category"
                                 value={selectedCategory}
-                                onChange={e => setSelectedCategory(e.target.value)}
+                                onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setSelectedCategory(e.target.value)}
                                 disabled={isUploading}
                                 autoFocus
                             >
@@ -48,7 +47,7 @@ const UploadWithCategoryDialog: React.FC<UploadWithCategoryDialogProps> = ({ fil
                                     label="New Category Name"
                                     placeholder="e.g., Pets, Weapons"
                                     value={customCategory}
-                                    onChange={e => setCustomCategory(e.target.value)}
+                                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setCustomCategory(e.target.value)}
                                     disabled={isUploading}
                                     required
                                     className="mt-2"

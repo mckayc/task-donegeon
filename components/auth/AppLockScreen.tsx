@@ -1,8 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { Role, User } from '../../types';
-import Button from '../ui/Button';
-import Input from '../ui/Input';
+import { Button, Input } from '../ui';
 
 const AppLockScreen: React.FC = () => {
   const { users, settings } = useAppState();
@@ -62,7 +61,7 @@ const AppLockScreen: React.FC = () => {
               label={`Select ${settings.terminology.admin}`}
               id="admin-select"
               value={selectedAdminId}
-              onChange={(e) => {
+              onChange={(e: React.ChangeEvent<HTMLSelectElement>) => {
                 setSelectedAdminId(e.target.value);
                 setError('');
                 setPassword('');
@@ -79,7 +78,7 @@ const AppLockScreen: React.FC = () => {
             name="password"
             type="password"
             value={password}
-            onChange={(e) => setPassword(e.target.value)}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPassword(e.target.value)}
             required
             autoFocus
           />

@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { Quest, QuestCompletion, QuestType, QuestAvailability } from '../../types';
 import { isQuestAvailableForUser, toYMD } from '../../utils/quests';
-import Button from '../ui/Button';
+import { Button } from '../ui';
 import { useAppDispatch, useAppState } from '../../context/AppContext';
 import QuestDetailDialog from '../quests/QuestDetailDialog';
 

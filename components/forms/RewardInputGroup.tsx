@@ -1,8 +1,6 @@
-
 import React from 'react';
 import { RewardCategory, RewardItem } from '../../types';
-import Input from '../ui/Input';
-import Button from '../ui/Button';
+import { Input, Button } from '../ui';
 import { useAppState } from '../../context/AppContext';
 import { useAnchorEquivalent } from '../../hooks/useRewardValue';
 
@@ -28,13 +26,13 @@ const RewardItemRow: React.FC<{
         <div className="flex items-center gap-2">
             <select
                 value={item.rewardTypeId}
-                onChange={(e) => onChange(originalIndex, 'rewardTypeId', e.target.value)}
+                onChange={(e: React.ChangeEvent<HTMLSelectElement>) => onChange(originalIndex, 'rewardTypeId', e.target.value)}
                 className="flex-grow px-4 py-2 bg-stone-700 border border-stone-600 rounded-md"
             >
                 <option value="" disabled>Select...</option>
                 {filteredRewardTypes.map(rt => <option key={rt.id} value={rt.id}>{rt.name}</option>)}
             </select>
-            <Input type="number" min="1" value={item.amount} onChange={(e) => onChange(originalIndex, 'amount', e.target.value)} className="w-24 flex-shrink-0" aria-label="Amount" />
+            <Input type="number" min="1" value={item.amount} onChange={(e: React.ChangeEvent<HTMLInputElement>) => onChange(originalIndex, 'amount', e.target.value)} className="w-24 flex-shrink-0" aria-label="Amount" />
             <div className="flex-1 text-left min-w-[150px]">
                 {anchorEquivalent && <span className="text-xs text-amber-300">{anchorEquivalent}</span>}
             </div>

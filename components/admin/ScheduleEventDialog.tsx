@@ -1,9 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { ScheduledEvent, RewardCategory } from '../../types';
-import Button from '../ui/Button';
-import Input from '../ui/Input';
-import EmojiPicker from '../ui/EmojiPicker';
+import { Button, Input, EmojiPicker } from '../ui';
 
 interface ScheduleEventDialogProps {
   event: ScheduledEvent | null;
@@ -123,17 +121,17 @@ const ScheduleEventDialog: React.FC<ScheduleEventDialogProps> = ({ event, onClos
                             {formData.eventType === 'BonusXP' && (
                                 <div className="p-4 bg-stone-900/50 rounded-lg space-y-4">
                                     <h4 className="font-semibold text-stone-200">Bonus XP Modifiers</h4>
-                                    <Input label="XP Multiplier" type="number" step="0.1" value={formData.modifiers.xpMultiplier || 1.5} onChange={e => handleModifierChange('xpMultiplier', parseFloat(e.target.value))} />
+                                    <Input label="XP Multiplier" type="number" step="0.1" value={formData.modifiers.xpMultiplier || 1.5} onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleModifierChange('xpMultiplier', parseFloat(e.target.value))} />
                                 </div>
                             )}
                             {formData.eventType === 'MarketSale' && (
                                 <div className="p-4 bg-stone-900/50 rounded-lg space-y-4">
                                     <h4 className="font-semibold text-stone-200">Market Sale Modifiers</h4>
-                                    <Input as="select" label="Market" value={formData.modifiers.marketId || ''} onChange={e => handleModifierChange('marketId', e.target.value)}>
+                                    <Input as="select" label="Market" value={formData.modifiers.marketId || ''} onChange={(e: React.ChangeEvent<HTMLSelectElement>) => handleModifierChange('marketId', e.target.value)}>
                                         <option value="">Select a market...</option>
                                         {markets.filter(m => m.guildId === (formData.guildId || undefined)).map(m => <option key={m.id} value={m.id}>{m.title}</option>)}
                                     </Input>
-                                    <Input label="Discount Percentage" type="number" min="1" max="100" value={formData.modifiers.discountPercent || 10} onChange={e => handleModifierChange('discountPercent', parseInt(e.target.value))} />
+                                    <Input label="Discount Percentage" type="number" min="1" max="100" value={formData.modifiers.discountPercent || 10} onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleModifierChange('discountPercent', parseInt(e.target.value))} />
                                 </div>
                             )}
                         </>

@@ -1,13 +1,7 @@
-
-
 import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { Role, User } from '../../types';
-import Avatar from '../ui/Avatar';
-import Input from '../ui/Input';
-import { XCircleIcon } from '../ui/Icons';
-import Button from '../ui/Button';
-import ToggleSwitch from '../ui/ToggleSwitch';
+import { Avatar, Input, Button, ToggleSwitch, Icons } from '../ui';
 
 type ChatTarget = User | {
     id: string;
@@ -123,7 +117,7 @@ const ChatPanel: React.FC = () => {
         <div className="fixed bottom-6 right-6 z-50 w-[600px] h-[700px] bg-stone-800 border border-stone-700 rounded-xl shadow-2xl flex flex-col">
             <header className="p-4 border-b border-stone-700 flex justify-between items-center flex-shrink-0">
                 <h3 className="font-bold text-lg text-stone-100">Chat</h3>
-                <button onClick={toggleChat} className="text-stone-400 hover:text-white"><XCircleIcon className="w-6 h-6"/></button>
+                <button onClick={toggleChat} className="text-stone-400 hover:text-white"><Icons.XCircleIcon className="w-6 h-6"/></button>
             </header>
             
             <div className="flex-grow flex overflow-hidden">
@@ -200,7 +194,7 @@ const ChatPanel: React.FC = () => {
                             <form onSubmit={handleSend} className="p-3 border-t border-stone-700 flex-shrink-0 flex items-center gap-2">
                                 <Input
                                     value={message}
-                                    onChange={(e) => setMessage(e.target.value)}
+                                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setMessage(e.target.value)}
                                     placeholder="Type a message..."
                                     autoComplete="off"
                                     className="flex-grow"

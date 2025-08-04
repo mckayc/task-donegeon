@@ -27,7 +27,7 @@ import VacationModeBanner from '../settings/VacationModeBanner';
 import ManageRanksPage from '../pages/ManageRanksPage';
 import ManageTrophiesPage from '../pages/ManageTrophiesPage';
 import ThemesPage from '../pages/ThemesPage';
-import AboutPage from '../pages/AboutPage';
+import { AboutPage } from '../pages/AboutPage';
 import CollectionPage from '../pages/CollectionPage';
 import ManageItemsPage from '../pages/ManageItemsPage';
 import AiStudioPage from '../pages/AiStudioPage';

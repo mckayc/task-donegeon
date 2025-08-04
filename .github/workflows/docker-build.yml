@@ -8,8 +8,6 @@ on:
   push:
     branches: [ "master", "dev"  ]
 
-
-
 # Defines the jobs that will run as part of the workflow.
 jobs:
   # This workflow contains a single job called "build-and-push".

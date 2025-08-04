@@ -1,45 +1,61 @@
-# frontend/Dockerfile
-
-# --- Stage 1: The Build Environment ---
-# Use an official Node.js image. The 'alpine' version is a lightweight Linux distribution.
-# We name this stage 'builder' so we can refer to it later.
+# ----- Stage 1: The "Builder" Stage -----
+# Start with an official Node.js Alpine image. This provides the TypeScript compiler (tsc)
+# and npm to install dependencies. We name this stage "builder".
 FROM node:18-alpine AS builder
 
 # Set the working directory inside the container.
 WORKDIR /app
 
-# Copy the package.json and package-lock.json files first.
-# This leverages Docker's layer caching. If these files haven't changed, Docker
-# won't re-run the `npm install` step, making future builds much faster.
-COPY package.json ./
-COPY package-lock.json ./
+# Copy package manifests first to leverage Docker's layer caching.
+# `npm install` will only re-run if these files change.
+COPY package.json package-lock.json ./
 
-# Install all the project dependencies.
+# Install ALL dependencies, including the devDependencies like `typescript`,
+# `ts-node-dev`, and `prisma`, which are required for the build process.
 RUN npm install
 
-# Copy the rest of the application's source code into the container.
+# Copy the rest of the backend source code into the container.
+# This includes your `src` folder, `prisma` schema, and `assets`.
 COPY . .
 
-# Run the build script defined in package.json to compile the React app
-# into static HTML, CSS, and JS files. This output goes into the /app/dist directory.
+# Run the build script defined in `package.json`. This command executes `tsc`,
+# which compiles your TypeScript files from `src/` into JavaScript in the `dist/` directory.
 RUN npm run build
 
-# --- Stage 2: The Production Environment ---
-# Start from a clean, lightweight Nginx image. Nginx is a high-performance web server.
-FROM nginx:1.25-alpine
 
-# Copy ONLY the built application files from the 'builder' stage.
-# We copy the contents of /app/dist from the 'builder' into the default
-# Nginx web root directory.
-COPY --from=builder /app/dist /usr/share/nginx/html
+# ----- Stage 2: The Final "Production" Image -----
+# Start a new, clean stage from the same lightweight Node.js image.
+# This ensures no build tools or source code from the previous stage are included.
+FROM node:18-alpine
 
-# Copy our custom Nginx configuration file into the Nginx configuration directory.
-# This file tells Nginx how to serve our app and proxy API requests.
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+# Set the working directory for the production environment.
+WORKDIR /app
 
-# Tell Docker that the container will listen on port 80 at runtime.
-EXPOSE 80
+# Copy the package manifests again.
+COPY package.json package-lock.json ./
 
-# This is the command that runs when the container starts. It starts the Nginx
-# server in the foreground, which is standard practice for Docker containers.
-CMD ["nginx", "-g", "daemon off;"]
+# CRITICAL STEP: Install ONLY production dependencies.
+# The `--omit=dev` flag tells npm to skip installing anything in `devDependencies`.
+# This results in a much smaller and more secure final image.
+RUN npm install --omit=dev
+
+# Copy the compiled JavaScript code from the 'builder' stage.
+COPY --from=builder /app/dist ./dist
+
+# Copy the Prisma schema. This is required by the Prisma Client at runtime.
+COPY --from=builder /app/prisma ./prisma
+
+# Copy the game assets. The server needs to read these files to serve quest data.
+COPY --from=builder /app/assets ./assets
+
+# Generate the Prisma Client. This command reads the schema and creates the
+# tailored database client code inside `node_modules/@prisma/client`.
+# This MUST be run after installing dependencies and copying the schema.
+RUN npx prisma generate
+
+# Expose the port the Fastify server will listen on.
+EXPOSE 3000
+
+# The command to start the server when the container launches.
+# This executes the "start" script in `package.json` (`node dist/server.js`).
+CMD ["npm", "start"]

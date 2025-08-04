@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
-import { Quest, QuestType, QuestAvailability, User, AppMode } from '../../types';
+import { Quest, QuestType, QuestAvailability, User, AppMode, ScheduledEvent } from '../../types';
 import { isQuestAvailableForUser, toYMD, isQuestScheduledForDay, questSorter } from '../../utils/quests';
 import { Card } from '@/components/ui/card';
 import Avatar from '../ui/avatar';
@@ -8,6 +8,15 @@ import { Button } from '@/components/ui/button';
 import PinEntryDialog from '../auth/PinEntryDialog';
 import QuestDetailDialog from '../quests/QuestDetailDialog';
 import CompleteQuestDialog from '../quests/CompleteQuestDialog';
+import EventDetailDialog from '../calendar/EventDetailDialog';
+
+const getTextColorForBg = (bgColorHsl?: string) => {
+    const hslString = (bgColorHsl || 'hsl(0 0% 100%)');
+    const parts = hslString.replace('hsl(', '').replace(')', '').trim().replace(/%/g, '').split(/[ ,]+/).map(Number);
+    if (parts.length < 3) return 'text-stone-100';
+    const l = parts[2];
+    return l > 50 ? 'text-stone-900' : 'text-stone-100';
+};
 
 const getDueDateString = (quest: Quest): string | null => {
     if (quest.type === QuestType.Venture && quest.lateDateTime) {
@@ -29,12 +38,28 @@ const SharedCalendarPage: React.FC = () => {
     const [verifyingQuest, setVerifyingQuest] = useState<{ quest: Quest; user: User } | null>(null);
     const [questForNoteCompletion, setQuestForNoteCompletion] = useState<{ quest: Quest; user: User } | null>(null);
     const [selectedQuestDetails, setSelectedQuestDetails] = useState<{ quest: Quest; user: User } | null>(null);
+    const [selectedEvent, setSelectedEvent] = useState<ScheduledEvent | null>(null);
 
     const sharedUsers = useMemo(() => {
         const userMap = new Map(users.map(u => [u.id, u]));
         const userIdsToShow = settings.sharedMode.userIds;
         return userIdsToShow.map(id => userMap.get(id)).filter((u): u is User => !!u);
     }, [users, settings.sharedMode.userIds]);
+
+    const dailyEvents = useMemo(() => {
+        const todayYMD = toYMD(currentDate);
+        const sharedUserGuildIds = new Set(
+            guilds.filter(g => sharedUsers.some(u => g.memberIds.includes(u.id))).map(g => g.id)
+        );
+
+        return scheduledEvents.filter(event => {
+            const scopeMatch = !event.guildId || sharedUserGuildIds.has(event.guildId);
+            if (!scopeMatch) return false;
+
+            const dateMatch = todayYMD >= event.startDate && todayYMD <= event.endDate;
+            return dateMatch;
+        });
+    }, [currentDate, scheduledEvents, sharedUsers, guilds]);
 
     const questsByUser = useMemo(() => {
         const dateKey = toYMD(currentDate);
@@ -115,6 +140,29 @@ const SharedCalendarPage: React.FC = () => {
 
     return (
         <div className="p-4 md:p-8 flex flex-col h-full">
+            {dailyEvents.length > 0 && (
+                <div className="flex-shrink-0 mb-6">
+                    <h2 className="text-xl font-bold text-foreground mb-2">Today's Events</h2>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+                        {dailyEvents.map(event => {
+                             const textColor = getTextColorForBg(event.color);
+                            return (
+                                <button
+                                    key={event.id}
+                                    onClick={() => setSelectedEvent(event)}
+                                    className={`w-full text-left p-3 rounded font-bold flex items-center gap-2 ${textColor}`}
+                                    style={{ 
+                                        backgroundColor: event.color,
+                                    }}
+                                >
+                                    <span>{event.icon || '🎉'}</span>
+                                    <span className="truncate">{event.title}</span>
+                                </button>
+                            );
+                        })}
+                    </div>
+                </div>
+            )}
             <div className="flex-grow flex gap-4 overflow-x-auto pt-6 pb-4 scrollbar-hide">
                 {sharedUsers.map(user => {
                     if (!user) return null;
@@ -180,6 +228,9 @@ const SharedCalendarPage: React.FC = () => {
                     onToggleTodo={handleToggleTodo}
                     isTodo={!!selectedQuestDetails.quest.todoUserIds?.includes(selectedQuestDetails.user.id)}
                 />
+            )}
+            {selectedEvent && (
+                <EventDetailDialog event={selectedEvent} onClose={() => setSelectedEvent(null)} />
             )}
         </div>
     );

@@ -36,7 +36,7 @@ const getInitialFormData = (): Omit<ScheduledEvent, 'id'> => {
         endDate: today,
         isAllDay: true,
         eventType: 'Announcement',
-        guildId: undefined,
+        guildId: '',
         icon: '🎉',
         color: colorPalette[7],
         modifiers: {
@@ -58,6 +58,7 @@ const ScheduleEventDialog: React.FC<ScheduleEventDialogProps> = ({ event, onClos
             return {
                 ...getInitialFormData(),
                 ...event,
+                guildId: event.guildId || '',
                 modifiers: {
                     ...getInitialFormData().modifiers,
                     ...(event.modifiers || {}),
@@ -125,9 +126,9 @@ const ScheduleEventDialog: React.FC<ScheduleEventDialogProps> = ({ event, onClos
                         <div className="flex-grow space-y-2">
                           <Label htmlFor="scope">Scope</Label>
                           <Select name="guildId" value={formData.guildId} onValueChange={(value: string) => handleSelectChange('guildId', value)}>
-                              <SelectTrigger id="scope"><SelectValue placeholder="Personal" /></SelectTrigger>
+                              <SelectTrigger id="scope"><SelectValue placeholder="Global" /></SelectTrigger>
                               <SelectContent>
-                                  <SelectItem value="">Personal (All Users)</SelectItem>
+                                  <SelectItem value="">Global (All Users)</SelectItem>
                                   {guilds.map(g => <SelectItem key={g.id} value={g.id}>{g.name}</SelectItem>)}
                               </SelectContent>
                           </Select>

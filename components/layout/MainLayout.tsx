@@ -40,7 +40,7 @@ import ThemeEditorPage from '../pages/ThemeEditorPage';
 import ManageQuestGroupsPage from '../pages/ManageQuestGroupsPage';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import ChatPanel from '../chat/ChatPanel';
-import LoginNotificationPopup from '../ui/LoginNotificationPopup';
+import { LoginNotificationPopup } from '../ui';
 import ManageEventsPage from '../pages/management/ManageEventsPage';
 
 const MainLayout: React.FC = () => {

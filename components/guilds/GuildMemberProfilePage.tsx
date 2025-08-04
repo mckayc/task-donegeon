@@ -1,5 +1,4 @@
 
-
 import React, { useMemo } from 'react';
 import { Guild, Rank, User, Trophy } from '../../types';
 import { useAppState } from '../../context/AppContext';
@@ -11,7 +10,7 @@ interface GuildMemberProfilePageProps {
   onBack: () => void;
 }
 
-const GuildMemberProfilePage: React.FC<GuildMemberProfilePageProps> = ({ user, guild, onBack }) => {
+export const GuildMemberProfilePage: React.FC<GuildMemberProfilePageProps> = ({ user, guild, onBack }) => {
     const { ranks, rewardTypes, trophies, userTrophies, gameAssets } = useAppState();
 
     const personalBalances = useMemo(() => {

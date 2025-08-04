@@ -1,12 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { AppSettings, ThemeDefinition, SidebarConfigItem, Page, SidebarLink } from '../../types';
-import Button from '../ui/Button';
-import Input from '../ui/Input';
-import Card from '../ui/Card';
-import ToggleSwitch from '../ui/ToggleSwitch';
-import EmojiPicker from '../ui/EmojiPicker';
-import { GrabHandleIcon, ArrowLeftIcon, ArrowRightIcon } from '../ui/Icons';
+import { Button, Input, Card, ToggleSwitch, EmojiPicker, Icons } from '../ui';
 
 type SidebarKey = keyof AppSettings['sidebars'];
 
@@ -122,7 +117,7 @@ const AppearancePage: React.FC = () => {
                         onDrop={item.type === 'link' ? handleDrop : undefined}
                         style={{ marginLeft: `${item.level * 2}rem`}}
                      >
-                        {item.type === 'link' && <GrabHandleIcon className="w-5 h-5 text-stone-500 cursor-grab" />}
+                        {item.type === 'link' && <Icons.GrabHandleIcon className="w-5 h-5 text-stone-500 cursor-grab" />}
                         {item.type === 'link' ? (
                             <>
                                 <div className="relative">
@@ -132,8 +127,8 @@ const AppearancePage: React.FC = () => {
                                     {pickerOpenFor === index && <EmojiPicker onSelect={(emoji) => handleSidebarItemChange(index, 'emoji', emoji)} onClose={() => setPickerOpenFor(null)} />}
                                 </div>
                                 <span className="font-semibold text-stone-200 flex-grow">{item.termKey ? formState.terminology[item.termKey] : item.id}</span>
-                                <button type="button" onClick={() => handleOutdent(index)} disabled={item.level === 0} className="p-1 rounded-md hover:bg-stone-700 disabled:opacity-30 disabled:cursor-not-allowed"><ArrowLeftIcon className="w-5 h-5" /></button>
-                                <button type="button" onClick={() => handleIndent(index)} disabled={index === 0} className="p-1 rounded-md hover:bg-stone-700 disabled:opacity-30 disabled:cursor-not-allowed"><ArrowRightIcon className="w-5 h-5" /></button>
+                                <button type="button" onClick={() => handleOutdent(index)} disabled={item.level === 0} className="p-1 rounded-md hover:bg-stone-700 disabled:opacity-30 disabled:cursor-not-allowed"><Icons.ArrowLeftIcon className="w-5 h-5" /></button>
+                                <button type="button" onClick={() => handleIndent(index)} disabled={index === 0} className="p-1 rounded-md hover:bg-stone-700 disabled:opacity-30 disabled:cursor-not-allowed"><Icons.ArrowRightIcon className="w-5 h-5" /></button>
                                 <ToggleSwitch enabled={item.isVisible} setEnabled={(val) => handleSidebarItemChange(index, 'isVisible', val)} label="" />
                             </>
                         ) : (

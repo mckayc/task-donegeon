@@ -56,6 +56,8 @@ const ThemeIdeaGenerator: React.FC<ThemeIdeaGeneratorProps> = ({ onUseIdea, onCl
                                             styles: { type: Type.OBJECT, properties: {
                                                 '--font-display': { type: Type.STRING, description: "Display font, e.g., 'MedievalSharp', cursive" },
                                                 '--font-body': { type: Type.STRING, description: "Body font, e.g., 'Roboto', sans-serif" },
+                                                '--font-size-display': { type: Type.STRING, description: "Display font size in rem, e.g., '2.75rem'" },
+                                                '--font-size-body': { type: Type.STRING, description: "Body font size in rem, e.g., '1rem'" },
                                                 '--color-bg-primary': { type: Type.STRING, description: 'Primary background HSL, e.g., 224 71% 4%' },
                                                 '--color-bg-secondary': { type: Type.STRING, description: 'Secondary background HSL' },
                                                 '--color-bg-tertiary': { type: Type.STRING, description: 'Tertiary background HSL' },

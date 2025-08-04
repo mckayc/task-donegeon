@@ -50,6 +50,7 @@ const getInitialFormData = (): Omit<ScheduledEvent, 'id'> => {
 };
 
 const ScheduleEventDialog: React.FC<ScheduleEventDialogProps> = ({ event, onClose }) => {
+    console.log('--- ScheduleEventDialog Rendering ---', { event });
     const { addScheduledEvent, updateScheduledEvent, deleteScheduledEvent } = useAppDispatch();
     const { guilds, markets, rewardTypes } = useAppState();
     

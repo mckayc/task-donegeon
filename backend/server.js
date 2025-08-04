@@ -1,452 +1,417 @@
+
 const express = require('express');
 const cors = require('cors');
+const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
 const multer = require('multer');
 const fs = require('fs').promises;
-const http = require('http');
-const Primus = require('primus');
 const { GoogleGenAI } = require('@google/genai');
-const sqlite3 = require('sqlite3').verbose();
+const http = require('http');
+const WebSocket = require('ws');
 
-// === GITHUB IMAGE PACK CONFIG ===
-const GITHUB_REPO = 'mckayc/task-donegeon';
-const GITHUB_PACKS_PATH = 'image_packs';
-
-// === IN-MEMORY MIGRATIONS ===
-const MIGRATION_SCRIPTS = {
-    '001_initial_schema.sql': `
--- Version 1: Initial Schema
-CREATE TABLE IF NOT EXISTS data (
-    id INTEGER PRIMARY KEY,
-    json TEXT NOT NULL
-);
-INSERT OR IGNORE INTO data (id, json) VALUES (1, '{}');
-CREATE TABLE IF NOT EXISTS schema_version (
-    version INTEGER NOT NULL
-);
-INSERT OR IGNORE INTO schema_version (version) VALUES (1);
-`
-};
-
-// === INLINED DATA HELPERS ===
-const { createInitialData, INITIAL_SETTINGS, INITIAL_THEMES, Role, RewardCategory, QuestCompletionStatus, QuestType, QuestAvailability } = require('./data.js');
-
-// Helper to fetch from GitHub API
-async function fetchGitHub(apiPath) {
-    const url = `https://api.github.com/repos/${GITHUB_REPO}/contents/${apiPath}`;
-    const response = await fetch(url, { headers: { 'Accept': 'application/vnd.github.v3+json' } });
-    if (!response.ok) {
-        const errorBody = await response.text();
-        console.error(`[GITHUB] GitHub API request failed for ${url}: ${response.statusText}`, errorBody);
-        throw new Error(`GitHub API request failed: ${response.statusText}`);
+// --- Environment Variable Checks ---
+const requiredEnv = ['STORAGE_PROVIDER'];
+for (const envVar of requiredEnv) {
+    if (!process.env[envVar]) {
+        console.error(`FATAL ERROR: ${envVar} environment variable is not set.`);
+        process.exit(1);
     }
-    return response.json();
 }
 
-// === MIGRATION LOGIC ===
-const runMigrations = (db) => {
-    return new Promise((resolve, reject) => {
-        db.get("SELECT name FROM sqlite_master WHERE type='table' AND name='schema_version'", (err, row) => {
-            if (err) return reject(new Error(`Failed to check for schema_version table: ${err.message}`));
-            if (!row) {
-                console.log("Schema versioning not found. Bootstrapping database...");
-                bootstrapDatabase(db).then(resolve).catch(reject);
-            } else {
-                executeMigrations(db).then(resolve).catch(reject);
-            }
-        });
-    });
+const app = express();
+const port = process.env.PORT || 3001;
+const server = http.createServer(app);
+const wss = new WebSocket.Server({ server });
+
+// === WebSocket Logic ===
+wss.on('connection', ws => {
+  console.log('Client connected to WebSocket');
+  ws.on('close', () => {
+    console.log('Client disconnected from WebSocket');
+  });
+});
+
+const broadcast = (data) => {
+  wss.clients.forEach(client => {
+    if (client.readyState === WebSocket.OPEN) {
+      client.send(JSON.stringify(data));
+    }
+  });
 };
 
-const bootstrapDatabase = (db) => {
-    return new Promise(async (resolve, reject) => {
-        try {
-            const migrationScript = MIGRATION_SCRIPTS['001_initial_schema.sql'];
-            if (!migrationScript) return reject(new Error("Initial migration script is missing."));
-            await new Promise((res, rej) => db.exec(migrationScript, err => err ? rej(err) : res()));
-            console.log("Database successfully bootstrapped to version 1.");
-            resolve();
-        } catch (bootstrapError) {
-            reject(new Error(`Database bootstrapping failed: ${bootstrapError.message}`));
-        }
-    });
+// === Middleware ===
+const allowedOrigins = ['https://taskdonegeon.mckayc.com', 'http://localhost:3000', 'http://localhost:3002'];
+const corsOptions = {
+  origin: function (origin, callback) {
+    if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  optionsSuccessStatus: 200
 };
+app.use(cors(corsOptions));
+app.use(express.json({ limit: '10mb' }));
 
-const executeMigrations = (db) => {
-    return new Promise(async (resolve, reject) => {
+
+// === Gemini AI Client ===
+let ai;
+if (process.env.API_KEY) {
+    ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+} else {
+    console.warn("WARNING: API_KEY environment variable not set. AI features will be disabled.");
+}
+
+// === Multer Configuration for File Uploads ===
+const UPLOADS_DIR = path.resolve('/app', 'uploads');
+const storage = multer.diskStorage({
+      destination: async (req, file, cb) => {
+        const category = req.body.category || 'Miscellaneous';
+        const sanitizedCategory = category.replace(/[^a-zA-Z0-9-_ ]/g, '').trim();
+        const finalDir = path.join(UPLOADS_DIR, sanitizedCategory);
         try {
-            const versionRow = await new Promise((res, rej) => db.get("SELECT version FROM schema_version", (err, row) => err ? rej(err) : res(row)));
-            let currentVersion = versionRow ? versionRow.version : 0;
-            const migrationFiles = Object.keys(MIGRATION_SCRIPTS).map(f => ({ version: parseInt(f), filename: f })).filter(mf => mf.version > currentVersion).sort((a, b) => a.version - b.version);
-            if (migrationFiles.length === 0) return resolve();
-            for (const mf of migrationFiles) {
-                const script = MIGRATION_SCRIPTS[mf.filename];
-                await new Promise((res, rej) => db.exec(script, err => err ? rej(new Error(`Failed on ${mf.filename}: ${err.message}`)) : res()));
-                await new Promise((res, rej) => db.run("UPDATE schema_version SET version = ?", [mf.version], err => err ? rej(err) : res()));
-            }
-            resolve();
-        } catch (migrationError) {
-            reject(new Error(`Migration process failed: ${migrationError.message}`));
+            await fs.mkdir(finalDir, { recursive: true });
+            cb(null, finalDir);
+        } catch (err) {
+            cb(err);
         }
-    });
-};
-
-
-async function main() {
-    const app = express();
-    // Correctly create the HTTP server with the Express app.
-    const server = http.createServer(app);
-    // Attach Primus to the server. It will now handle WebSocket connections
-    // and dynamically serve its client library at /primus.js.
-    const primus = new Primus(server, { transformer: 'websockets' });
-    
-    app.use(cors());
-    app.use(express.json({ limit: '50mb' }));
-    app.use(express.static(path.join(__dirname, '../dist')));
-    app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
-
-    const DB_PATH = path.join(__dirname, 'db');
-    const DB_FILE = path.join(DB_PATH, 'data.db');
-
-    await fs.mkdir(DB_PATH, { recursive: true });
-
-    const db = await new Promise((resolve, reject) => {
-        const database = new sqlite3.Database(DB_FILE, (err) => {
-            if (err) return reject(err);
-            console.log('Connected to the SQLite database.');
-            resolve(database);
-        });
+      },
+      filename: (req, file, cb) => {
+        const sanitizedFilename = file.originalname.replace(/[^a-zA-Z0-9-._]/g, '_');
+        cb(null, `${Date.now()}-${sanitizedFilename}`);
+      }
     });
 
-    await runMigrations(db);
-    console.log("Database is ready.");
+const upload = multer({
+    storage,
+    limits: { fileSize: 10 * 1024 * 1024 } // 10MB file size limit
+});
 
-    const readData = () => new Promise((resolve, reject) => {
-        db.get('SELECT json FROM data WHERE id = 1', [], (err, row) => {
-            if (err) return reject(err);
-            const defaultData = {
-                users: [], quests: [], questGroups: [], markets: [], rewardTypes: [], questCompletions: [],
-                purchaseRequests: [], guilds: [], ranks: [], trophies: [], userTrophies: [],
-                adminAdjustments: [], gameAssets: [], systemLogs: [], settings: INITIAL_SETTINGS,
-                themes: INITIAL_THEMES, loginHistory: [], chatMessages: [], systemNotifications: [], scheduledEvents: [],
-            };
-            if (row && row.json && row.json !== '{}') {
-                try {
-                    const dbData = JSON.parse(row.json);
-                    const data = { ...defaultData, ...dbData };
-                    if (dbData.settings) data.settings = { ...defaultData.settings, ...dbData.settings };
-                    resolve(data);
-                } catch (e) {
-                    resolve(defaultData);
-                }
-            } else {
-                resolve(defaultData);
-            }
-        });
+// === Backup Configuration ===
+const BACKUP_DIR = process.env.BACKUP_PATH || path.join(__dirname, 'backups');
+
+// === Database Connection and Initialization ===
+const DB_DIR = path.join(__dirname, 'data');
+const DB_PATH = path.join(DB_DIR, 'taskdonegeon.db');
+let db;
+
+// Promisify sqlite3 functions to use async/await
+const dbRun = (sql, params = []) => new Promise((resolve, reject) => {
+    db.run(sql, params, function (err) {
+        if (err) reject(err);
+        else resolve(this);
     });
+});
 
-    const writeData = (data) => new Promise((resolve, reject) => {
-        console.log('[DB] Attempting to write data to database...');
-        let jsonData;
-        try {
-            jsonData = JSON.stringify(data);
-        } catch (stringifyError) {
-            console.error('[DB] FATAL: Failed to stringify data. This may be due to a circular reference.', stringifyError);
-            return reject(stringifyError);
-        }
+const dbGet = (sql, params = []) => new Promise((resolve, reject) => {
+    db.get(sql, params, (err, row) => {
+        if (err) reject(err);
+        else resolve(row);
+    });
+});
 
-        db.run('REPLACE INTO data (id, json) VALUES (1, ?)', [jsonData], function(err) {
+const initializeDatabase = async () => {
+    try {
+        await fs.mkdir(DB_DIR, { recursive: true });
+        console.log(`Data directory is ready at: ${DB_DIR}`);
+
+        db = new sqlite3.Database(DB_PATH, async (err) => {
             if (err) {
-                console.error('[DB] Write FAILED:', err.message);
-                return reject(err);
+                console.error("Fatal error connecting to SQLite database:", err.message);
+                process.exit(1);
             }
-            console.log(`[DB] Write SUCCEEDED. Rows affected: ${this.changes}`);
-            if (this.changes === 0) {
-                 console.warn('[DB] WARNING: A write operation resulted in 0 rows changed. The data might not have been modified before saving.');
+            console.log('Connected to the SQLite database.');
+
+            try {
+                await dbRun(`
+                    CREATE TABLE IF NOT EXISTS app_data (
+                        key TEXT PRIMARY KEY,
+                        value TEXT NOT NULL
+                    );
+                `);
+                console.log("Table 'app_data' is ready.");
+                await fs.mkdir(BACKUP_DIR, { recursive: true });
+                console.log(`Backup directory is ready at: ${BACKUP_DIR}`);
+            } catch (initErr) {
+                console.error("Fatal error initializing database table:", initErr.message);
+                process.exit(1);
             }
-            resolve();
         });
-    });
+    } catch (dirErr) {
+        console.error("Fatal error creating data directory:", dirErr.message);
+        process.exit(1);
+    }
+};
 
-    const broadcastStateUpdate = (data) => {
-        try {
-            console.log('[BROADCAST] Sending in-memory state to all clients...');
-            primus.write({ type: 'FULL_STATE_UPDATE', payload: data });
-            console.log('[BROADCAST] Full state update sent to all clients.');
-        } catch (error) {
-            console.error("[BROADCAST] Failed to broadcast state update:", error);
-        }
-    };
-
-    primus.on('connection', spark => console.log('Client connected via Primus'));
-    primus.on('disconnection', spark => console.log('Client disconnected via Primus'));
-
-    app.get('/api/data', async (req, res) => {
-        try {
-            const data = await readData();
-            res.json(data);
-        } catch (error) {
-            res.status(500).json({ error: 'Failed to read data' });
-        }
-    });
-
-    app.post('/api/action', async (req, res) => {
-        const { type, payload } = req.body;
-        console.log(`[ACTION] Received action: ${type}`, payload ? JSON.stringify(payload).substring(0, 200) + '...' : '');
-        try {
-            console.log('[ACTION] Reading current state from DB...');
-            const originalData = await readData();
-            let data = JSON.parse(JSON.stringify(originalData));
-            let result = { success: true };
-            
-            // Helper function to apply rewards/setbacks
-            const applyBalanceChange = (user, items, guildId, isSetback = false) => {
-                if (!user || !items || items.length === 0) return;
-                items.forEach(item => {
-                    const rewardDef = data.rewardTypes.find(rt => rt.id === item.rewardTypeId);
-                    if (!rewardDef) return;
-                    const amount = isSetback ? -item.amount : item.amount;
-                    if (guildId) {
-                        if (!user.guildBalances[guildId]) user.guildBalances[guildId] = { purse: {}, experience: {} };
-                        const balance = user.guildBalances[guildId];
-                        if (rewardDef.category === RewardCategory.Currency) balance.purse[item.rewardTypeId] = (balance.purse[item.rewardTypeId] || 0) + amount;
-                        else balance.experience[item.rewardTypeId] = (balance.experience[item.rewardTypeId] || 0) + amount;
-                    } else {
-                        if (!user.personalPurse) user.personalPurse = {};
-                        if (!user.personalExperience) user.personalExperience = {};
-                        if (rewardDef.category === RewardCategory.Currency) user.personalPurse[item.rewardTypeId] = (user.personalPurse[item.rewardTypeId] || 0) + amount;
-                        else user.personalExperience[item.rewardTypeId] = (user.personalExperience[item.rewardTypeId] || 0) + amount;
-                    }
-                });
-            };
-            const applyRewards = (user, rewards, guildId) => applyBalanceChange(user, rewards, guildId, false);
-            const applySetbacks = (user, setbacks, guildId) => applyBalanceChange(user, setbacks, guildId, true);
-
-            switch(type) {
-                // === USER ACTIONS ===
-                case 'ADD_USER': {
-                    const newId = `user-${Date.now()}`;
-                    const newUser = { ...payload, id: newId, personalPurse: {}, personalExperience: {}, guildBalances: {}, avatar: {}, ownedAssetIds: [], ownedThemes: ['emerald', 'rose', 'sky'], hasBeenOnboarded: false };
-                    data.users.push(newUser);
-                    // Add new user to the default guild
-                    const defaultGuild = data.guilds.find(g => g.isDefault);
-                    if (defaultGuild && !defaultGuild.memberIds.includes(newId)) {
-                        defaultGuild.memberIds.push(newId);
-                    }
-                    break;
-                }
-                case 'UPDATE_USER': {
-                    const { userId, updatedData } = payload;
-                    const userIndex = data.users.findIndex(u => u.id === userId);
-                    if (userIndex > -1) data.users[userIndex] = { ...data.users[userIndex], ...updatedData };
-                    break;
-                }
-                case 'DELETE_USER': {
-                    data.users = data.users.filter(u => u.id !== payload.userId);
-                    break;
-                }
-                // === GUILD ACTIONS ===
-                case 'ADD_GUILD': {
-                    const newId = `guild-${Date.now()}`;
-                    const newGuild = { ...payload, id: newId };
-                    data.guilds.push(newGuild);
-                    break;
-                }
-                case 'UPDATE_GUILD': {
-                    const guildIndex = data.guilds.findIndex(g => g.id === payload.id);
-                    if (guildIndex > -1) {
-                        data.guilds[guildIndex] = payload;
-                    }
-                    break;
-                }
-                case 'DELETE_GUILD': {
-                    // Prevent deleting the default guild
-                    const guildToDelete = data.guilds.find(g => g.id === payload.guildId);
-                    if (guildToDelete && !guildToDelete.isDefault) {
-                        data.guilds = data.guilds.filter(g => g.id !== payload.guildId);
-                    } else if (guildToDelete && guildToDelete.isDefault) {
-                        console.warn(`[ACTION] Attempted to delete default guild with id: ${payload.guildId}. Action denied.`);
-                    }
-                    break;
-                }
-
-                // === QUEST ACTIONS ===
-                case 'ADD_QUEST': {
-                    const newId = `quest-${Date.now()}`;
-                    data.quests.push({ ...payload, id: newId, claimedByUserIds: [], dismissals: [] });
-                    break;
-                }
-                case 'UPDATE_QUEST': {
-                    const questIndex = data.quests.findIndex(q => q.id === payload.id);
-                    if (questIndex > -1) data.quests[questIndex] = payload;
-                    break;
-                }
-                case 'DELETE_QUEST': {
-                    data.quests = data.quests.filter(q => q.id !== payload.questId);
-                    break;
-                }
-                case 'DELETE_QUESTS': {
-                    const idsToDelete = new Set(payload.questIds);
-                    data.quests = data.quests.filter(q => !idsToDelete.has(q.id));
-                    break;
-                }
-                case 'CLONE_QUEST': {
-                    const questToClone = data.quests.find(q => q.id === payload.questId);
-                    if(questToClone) {
-                        const newQuest = {...questToClone, id: `quest-${Date.now()}`, title: `${questToClone.title} (Copy)`};
-                        data.quests.push(newQuest);
-                    }
-                    break;
-                }
-                 case 'DISMISS_QUEST': {
-                    const { questId, userId } = payload;
-                    const quest = data.quests.find(q => q.id === questId);
-                    if (quest) {
-                        if (!quest.dismissals) quest.dismissals = [];
-                        quest.dismissals.push({ userId, dismissedAt: new Date().toISOString() });
-                    }
-                    break;
-                }
-                case 'CLAIM_QUEST': {
-                    const { questId, userId } = payload;
-                    const quest = data.quests.find(q => q.id === questId);
-                    if (quest) {
-                        if (!quest.claimedByUserIds) quest.claimedByUserIds = [];
-                        if (!quest.claimedByUserIds.includes(userId)) {
-                            quest.claimedByUserIds.push(userId);
-                        }
-                    }
-                    break;
-                }
-                case 'RELEASE_QUEST': {
-                    const { questId, userId } = payload;
-                    const quest = data.quests.find(q => q.id === questId);
-                    if (quest && quest.claimedByUserIds) {
-                        quest.claimedByUserIds = quest.claimedByUserIds.filter(id => id !== userId);
-                    }
-                    break;
-                }
-                case 'MARK_QUEST_TODO': {
-                    const { questId, userId } = payload;
-                    const quest = data.quests.find(q => q.id === questId);
-                    if (quest) {
-                        if (!quest.todoUserIds) quest.todoUserIds = [];
-                        if (!quest.todoUserIds.includes(userId)) {
-                            quest.todoUserIds.push(userId);
-                        }
-                    }
-                    break;
-                }
-                case 'UNMARK_QUEST_TODO': {
-                    const { questId, userId } = payload;
-                    const quest = data.quests.find(q => q.id === questId);
-                    if (quest && quest.todoUserIds) {
-                        quest.todoUserIds = quest.todoUserIds.filter(id => id !== userId);
-                    }
-                    break;
-                }
-                case 'COMPLETE_QUEST': {
-                    const { questId, userId, guildId, options } = payload;
-                    const quest = data.quests.find(q => q.id === questId);
-                    const user = data.users.find(u => u.id === userId);
-                    if (!quest || !user) throw new Error("Quest or User not found");
-
-                    const newCompletion = {
-                        id: `qc-${Date.now()}`,
-                        questId, userId, guildId,
-                        completedAt: options?.completionDate || new Date().toISOString(),
-                        status: quest.requiresApproval ? QuestCompletionStatus.Pending : QuestCompletionStatus.Approved,
-                        note: options?.note || '',
-                    };
-                    data.questCompletions.push(newCompletion);
-                    
-                    if (!quest.requiresApproval) {
-                        applyRewards(user, quest.rewards, guildId);
-                    }
-                    break;
-                }
-                case 'APPROVE_QUEST_COMPLETION': {
-                    const completion = data.questCompletions.find(c => c.id === payload.completionId);
-                    const user = data.users.find(u => u.id === completion?.userId);
-                    if(completion && user) {
-                        completion.status = QuestCompletionStatus.Approved;
-                        const quest = data.quests.find(q => q.id === completion.questId);
-                        if (quest) {
-                            applyRewards(user, quest.rewards, completion.guildId);
-                        }
-                    }
-                    break;
-                }
-                 case 'REJECT_QUEST_COMPLETION': {
-                    const completion = data.questCompletions.find(c => c.id === payload.completionId);
-                    if(completion) completion.status = QuestCompletionStatus.Rejected;
-                    break;
-                }
-                 case 'SEND_MESSAGE': {
-                    const newMessage = {
-                        id: `msg-${Date.now()}`,
-                        ...payload,
-                        timestamp: new Date().toISOString(),
-                        readBy: [payload.senderId], // Sender has read it by default
-                    };
-                    data.chatMessages.push(newMessage);
-                    break;
-                }
-                
-                // === SCHEDULED EVENT ACTIONS ===
-                case 'ADD_SCHEDULED_EVENT': {
-                    const newId = `event-${Date.now()}`;
-                    data.scheduledEvents.push({ ...payload, id: newId });
-                    break;
-                }
-                case 'UPDATE_SCHEDULED_EVENT': {
-                    const eventIndex = data.scheduledEvents.findIndex(e => e.id === payload.id);
-                    if (eventIndex > -1) {
-                        data.scheduledEvents[eventIndex] = payload;
-                    }
-                    break;
-                }
-                case 'DELETE_SCHEDULED_EVENT': {
-                    data.scheduledEvents = data.scheduledEvents.filter(e => e.id !== payload.eventId);
-                    break;
-                }
-
-                // ... other cases ...
-            }
-            
-            console.log('[ACTION] Writing updated state back to DB...');
-            await writeData(data);
-            console.log('[ACTION] DB write complete. Broadcasting state update...');
-            broadcastStateUpdate(data);
-            res.status(200).json({ success: true, message: 'Action processed', result, fullState: data });
-        } catch (error) {
-            console.error(`[ACTION] Error processing action ${type}:`, error);
-            res.status(500).json({ success: false, error: error.message || 'An unknown server error occurred.' });
-        }
-    });
-    
-    app.get('/api/ai/status', (req, res) => {
-        console.log('[API] Checking AI configuration status...');
-        const isConfigured = !!process.env.API_KEY;
-        console.log(`[API] AI isConfigured: ${isConfigured}`);
-        res.json({ isConfigured });
-    });
-
-    // ... rest of the server file (first run, AI routes, etc.) ...
-
-    app.get('*', (req, res) => {
-        res.sendFile(path.join(__dirname, '../dist/index.html'));
-    });
-
-    const PORT = process.env.PORT || 3001;
-    // VERY IMPORTANT: Use the `server` object to listen, not the `app` object.
-    // This allows both Express and Primus (WebSockets) to handle incoming connections.
-    server.listen(PORT, () => {
-        console.log(`Server is running on port ${PORT}`);
-    });
-}
-
-main().catch(err => {
-    console.error('Failed to start server:', err);
+initializeDatabase().catch(err => {
+    console.error("Critical error during database initialization:", err);
     process.exit(1);
 });
+
+// === API ROUTES ===
+
+app.get('/api/health', (req, res) => res.status(200).json({ status: 'ok' }));
+
+app.get('/api/metadata', async (req, res, next) => {
+    try {
+        const metadataPath = path.join(__dirname, '..', 'metadata.json');
+        const data = await fs.readFile(metadataPath, 'utf8');
+        res.status(200).json(JSON.parse(data));
+    } catch (err) {
+        console.error('Error reading metadata.json:', err);
+        next(err);
+    }
+});
+
+app.get('/api/data/load', async (req, res, next) => {
+    console.log(`[${new Date().toISOString()}] Received GET /api/data/load`);
+    try {
+        const row = await dbGet('SELECT value FROM app_data WHERE key = ?', ['app_state']);
+        const data = row ? JSON.parse(row.value) : {};
+        console.log(`[${new Date().toISOString()}] Loading data success.`);
+        res.status(200).json(data);
+    } catch (err) {
+        console.error(`[${new Date().toISOString()}] ERROR in GET /api/data/load:`, err);
+        next(err);
+    }
+});
+
+app.post('/api/data/save', async (req, res, next) => {
+    console.log(`[${new Date().toISOString()}] Received POST /api/data/save`);
+    try {
+        const dataToSave = req.body;
+        if (!dataToSave || typeof dataToSave !== 'object') {
+            return res.status(400).json({ error: 'Invalid data format. Expected a JSON object.' });
+        }
+        const dataString = JSON.stringify(dataToSave);
+        await dbRun(`INSERT OR REPLACE INTO app_data (key, value) VALUES (?, ?);`, ['app_state', dataString]);
+        console.log(`[${new Date().toISOString()}] Save data success.`);
+        broadcast({ type: 'DATA_UPDATED' });
+        res.status(200).json({ message: 'Data saved successfully.' });
+    } catch (err) {
+        console.error(`[${new Date().toISOString()}] ERROR in POST /api/data/save:`, err);
+        next(err);
+    }
+});
+
+app.get('/api/backups', async (req, res, next) => {
+    try {
+        const files = await fs.readdir(BACKUP_DIR);
+        const backupDetails = await Promise.all(
+            files.filter(file => file.endsWith('.json')).map(async file => {
+                const stats = await fs.stat(path.join(BACKUP_DIR, file));
+                return { filename: file, createdAt: stats.birthtime, size: stats.size, isAuto: file.startsWith('auto_backup_') };
+            })
+        );
+        res.json(backupDetails.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)));
+    } catch (err) {
+        if (err.code === 'ENOENT') return res.json([]);
+        next(err);
+    }
+});
+
+app.post('/api/backups', async (req, res, next) => {
+    try {
+        const dataToBackup = JSON.stringify(req.body, null, 2);
+        const timestamp = new Date().toISOString().replace(/:/g, '-').slice(0, 19);
+        const filename = `manual_backup_${timestamp}.json`;
+        await fs.writeFile(path.join(BACKUP_DIR, filename), dataToBackup);
+        res.status(201).json({ message: 'Manual backup created successfully.' });
+    } catch (err) {
+        next(err);
+    }
+});
+
+app.get('/api/backups/:filename', (req, res, next) => {
+    const filename = path.basename(req.params.filename);
+    const filePath = path.join(BACKUP_DIR, filename);
+    res.download(filePath, (err) => {
+        if (err) {
+            if (err.code === "ENOENT") return res.status(404).json({ error: "File not found." });
+            next(err);
+        }
+    });
+});
+
+app.delete('/api/backups/:filename', async (req, res, next) => {
+    try {
+        const filename = path.basename(req.params.filename);
+        await fs.unlink(path.join(BACKUP_DIR, filename));
+        res.status(200).json({ message: 'Backup deleted successfully.' });
+    } catch (err) {
+        if (err.code === "ENOENT") return res.status(404).json({ error: "File not found." });
+        next(err);
+    }
+});
+
+app.post('/api/media/upload', upload.single('file'), async (req, res, next) => {
+    if (!req.file) return res.status(400).json({ error: 'No file uploaded.' });
+    try {
+        const relativePath = path.relative(UPLOADS_DIR, req.file.path).replace(/\\/g, '/');
+        const fileUrl = `/uploads/${relativePath}`;
+        res.status(201).json({ url: fileUrl, name: req.file.originalname, type: req.file.mimetype, size: req.file.size });
+    } catch (err) {
+        next(err);
+    }
+});
+
+app.get('/api/media/local-gallery', async (req, res, next) => {
+    const walk = async (dir, parentCategory = null) => {
+        let dirents;
+        try {
+            dirents = await fs.readdir(dir, { withFileTypes: true });
+        } catch (e) {
+            if (e.code === 'ENOENT') {
+                await fs.mkdir(dir, { recursive: true });
+                return [];
+            }
+            throw e;
+        }
+        let imageFiles = [];
+        for (const dirent of dirents) {
+            const fullPath = path.join(dir, dirent.name);
+            if (dirent.isDirectory()) {
+                imageFiles.push(...await walk(fullPath, dirent.name));
+            } else if (/\.(png|jpg|jpeg|gif|webp|svg)$/i.test(dirent.name)) {
+                const relativePath = path.relative(UPLOADS_DIR, fullPath).replace(/\\/g, '/');
+                imageFiles.push({
+                    url: `/uploads/${relativePath}`,
+                    category: parentCategory ? (parentCategory.charAt(0).toUpperCase() + parentCategory.slice(1)) : 'Miscellaneous',
+                    name: dirent.name.replace(/\.[^/.]+$/, ""),
+                });
+            }
+        }
+        return imageFiles;
+    };
+    try {
+        res.status(200).json(await walk(UPLOADS_DIR));
+    } catch (err) {
+        next(err);
+    }
+});
+
+app.get('/api/ai/status', (req, res) => res.json({ isConfigured: !!ai }));
+
+app.post('/api/ai/test', async (req, res) => {
+    if (!ai) return res.status(400).json({ success: false, error: "AI features are not configured on the server." });
+    try {
+        const response = await ai.models.generateContent({ model: 'gemini-2.5-flash', contents: 'test' });
+        if (response && response.text) res.json({ success: true });
+        else throw new Error("Invalid response from API.");
+    } catch (error) {
+        res.status(400).json({ success: false, error: 'API key is invalid or permissions are insufficient.' });
+    }
+});
+
+app.post('/api/ai/generate', async (req, res, next) => {
+    if (!ai) return res.status(503).json({ error: "AI features are not configured on the server." });
+    const { model, prompt, generationConfig } = req.body;
+    try {
+        const response = await ai.models.generateContent({ model, contents: prompt, config: generationConfig });
+        res.json({ text: response.text });
+    } catch (err) {
+        next(err);
+    }
+});
+
+const GITHUB_REPO = 'mckayc/task-donegeon';
+const GITHUB_BRANCH = 'master';
+const IMAGE_PACK_ROOT = 'image-packs';
+
+const getLocalFileBasenames = async (dir) => {
+    let basenames = new Set();
+    try {
+        const dirents = await fs.readdir(dir, { withFileTypes: true });
+        for (const dirent of dirents) {
+            if (dirent.isDirectory()) {
+                (await getLocalFileBasenames(path.resolve(dir, dirent.name))).forEach(b => basenames.add(b));
+            } else {
+                basenames.add(dirent.name);
+            }
+        }
+    } catch (err) {
+        if (err.code !== 'ENOENT') console.error("Error reading local gallery:", err);
+    }
+    return basenames;
+};
+
+app.get('/api/image-packs', async (req, res, next) => {
+    try {
+        const response = await fetch(`https://api.github.com/repos/${GITHUB_REPO}/contents/${IMAGE_PACK_ROOT}?ref=${GITHUB_BRANCH}`);
+        if (!response.ok) throw new Error(`GitHub API error: ${response.statusText}`);
+        const packsData = await response.json();
+        if (!Array.isArray(packsData)) return res.json([]);
+        const packPromises = packsData.filter(item => item.type === 'dir').map(async (packDir) => {
+            const contentsResponse = await fetch(packDir.url);
+            const contentsData = await contentsResponse.json();
+            if (!Array.isArray(contentsData)) return null;
+            const sampleImage = contentsData.find(item => item.type === 'file' && item.name.toLowerCase().startsWith('sample.'));
+            return sampleImage ? { name: packDir.name, sampleImageUrl: sampleImage.download_url } : null;
+        });
+        res.status(200).json((await Promise.all(packPromises)).filter(Boolean));
+    } catch (err) {
+        next(err);
+    }
+});
+
+app.get('/api/image-packs/:packName', async (req, res, next) => {
+    try {
+        const localBasenames = await getLocalFileBasenames(UPLOADS_DIR);
+        const packUrl = `https://api.github.com/repos/${GITHUB_REPO}/contents/${IMAGE_PACK_ROOT}/${path.basename(req.params.packName)}?ref=${GITHUB_BRANCH}`;
+        const packResponse = await fetch(packUrl);
+        if (!packResponse.ok) throw new Error(`Could not find pack.`);
+        const packContents = await packResponse.json();
+        let filesToCompare = [];
+        for (const item of packContents) {
+            if (item.type === 'dir') {
+                const categoryContents = await (await fetch(item.url)).json();
+                for (const file of categoryContents) {
+                    if (file.type === 'file') filesToCompare.push({ category: item.name, name: file.name, url: file.download_url, exists: localBasenames.has(file.name) });
+                }
+            } else if (item.type === 'file') {
+                filesToCompare.push({ category: 'Miscellaneous', name: item.name, url: item.download_url, exists: localBasenames.has(item.name) });
+            }
+        }
+        res.json(filesToCompare);
+    } catch (err) {
+        next(err);
+    }
+});
+
+app.post('/api/image-packs/import', async (req, res, next) => {
+    const { files } = req.body;
+    if (!Array.isArray(files) || files.length === 0) return res.status(400).json({ error: 'No files specified.' });
+    try {
+        let importedCount = 0;
+        for (const file of files) {
+            const { category, name, url } = file;
+            if (!category || !name || !url) continue;
+            const categoryDir = path.join(UPLOADS_DIR, category.replace(/[^a-zA-Z0-9-_ ]/g, '').trim());
+            await fs.mkdir(categoryDir, { recursive: true });
+            const imageResponse = await fetch(url);
+            if (!imageResponse.ok) continue;
+            const imageBuffer = Buffer.from(await imageResponse.arrayBuffer());
+            await fs.writeFile(path.join(categoryDir, name.replace(/[^a-zA-Z0-9-._]/g, '_')), imageBuffer);
+            importedCount++;
+        }
+        res.status(200).json({ message: `${importedCount} images imported.` });
+    } catch (err) {
+        next(err);
+    }
+});
+
+app.use(express.static(path.join(__dirname, '../dist')));
+app.use('/uploads', express.static(UPLOADS_DIR));
+app.get('*', (req, res) => res.sendFile(path.join(__dirname, '../dist/index.html')));
+
+app.use((err, req, res, next) => {
+    console.error('An error occurred:', err.stack);
+    res.status(500).json({ error: 'Internal Server Error', message: err.message });
+});
+
+server.listen(port, () => {
+    console.log(`Task Donegeon backend listening at http://localhost:${port}`);
+});
+
+module.exports = app;

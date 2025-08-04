@@ -1,9 +1,9 @@
-import React, { useState, ChangeEvent } from 'react';
+
+import React, { useState } from 'react';
 import { GenerateContentResponse, Type } from "@google/genai";
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { SparklesIcon } from '../ui/icons';
+import Button from '../ui/Button';
+import Input from '../ui/Input';
+import { SparklesIcon } from '../ui/Icons';
 import { useAppState } from '../../context/AppContext';
 
 interface ThemeIdea {
@@ -32,7 +32,7 @@ const ThemeIdeaGenerator: React.FC<ThemeIdeaGeneratorProps> = ({ onUseIdea, onCl
         setError('');
         setGeneratedThemes([]);
 
-        const fullPrompt = `Generate 3 UI theme ideas for a gamified task app called ${settings.terminology.appName}. The themes should be based on the theme: "${prompt}". Each theme should have a name and a set of HSL color values and font families for all required CSS properties.`;
+        const fullPrompt = `Generate 3 UI theme ideas for a gamified task app called ${settings.terminology.appName}. The themes should be based on the theme: "${prompt}". Each theme should have a name and a set of HSL color values and font families.`;
 
         try {
             const response = await fetch('/api/ai/generate', {
@@ -56,8 +56,6 @@ const ThemeIdeaGenerator: React.FC<ThemeIdeaGeneratorProps> = ({ onUseIdea, onCl
                                             styles: { type: Type.OBJECT, properties: {
                                                 '--font-display': { type: Type.STRING, description: "Display font, e.g., 'MedievalSharp', cursive" },
                                                 '--font-body': { type: Type.STRING, description: "Body font, e.g., 'Roboto', sans-serif" },
-                                                '--font-size-display': { type: Type.STRING, description: "Display font size in rem, e.g., '2.75rem'" },
-                                                '--font-size-body': { type: Type.STRING, description: "Body font size in rem, e.g., '1rem'" },
                                                 '--color-bg-primary': { type: Type.STRING, description: 'Primary background HSL, e.g., 224 71% 4%' },
                                                 '--color-bg-secondary': { type: Type.STRING, description: 'Secondary background HSL' },
                                                 '--color-bg-tertiary': { type: Type.STRING, description: 'Tertiary background HSL' },
@@ -73,24 +71,6 @@ const ThemeIdeaGenerator: React.FC<ThemeIdeaGeneratorProps> = ({ onUseIdea, onCl
                                                 '--color-accent-light-hue': { type: Type.STRING },
                                                 '--color-accent-light-saturation': { type: Type.STRING },
                                                 '--color-accent-light-lightness': { type: Type.STRING },
-                                                '--color-duty-bg': { type: Type.STRING, description: 'Duty card background HSL' },
-                                                '--color-duty-border': { type: Type.STRING, description: 'Duty card border HSL' },
-                                                '--color-duty-text': { type: Type.STRING, description: 'Duty card text HSL' },
-                                                '--color-venture-bg': { type: Type.STRING, description: 'Venture card background HSL' },
-                                                '--color-venture-border': { type: Type.STRING, description: 'Venture card border HSL' },
-                                                '--color-venture-text': { type: Type.STRING, description: 'Venture card text HSL' },
-                                                '--color-item-bg': { type: Type.STRING, description: 'Item card background HSL' },
-                                                '--color-item-border': { type: Type.STRING, description: 'Item card border HSL' },
-                                                '--color-item-text': { type: Type.STRING, description: 'Item card text HSL' },
-                                                '--color-trophy-bg': { type: Type.STRING, description: 'Trophy card background HSL' },
-                                                '--color-trophy-border': { type: Type.STRING, description: 'Trophy card border HSL' },
-                                                '--color-trophy-text': { type: Type.STRING, description: 'Trophy card text HSL' },
-                                                '--color-reward-bg': { type: Type.STRING, description: 'Reward card background HSL' },
-                                                '--color-reward-border': { type: Type.STRING, description: 'Reward card border HSL' },
-                                                '--color-reward-text': { type: Type.STRING, description: 'Reward card text HSL' },
-                                                '--color-quest-group-bg': { type: Type.STRING, description: 'Quest Group card background HSL' },
-                                                '--color-quest-group-border': { type: Type.STRING, description: 'Quest Group card border HSL' },
-                                                '--color-quest-group-text': { type: Type.STRING, description: 'Quest Group card text HSL' },
                                             }}
                                         },
                                         required: ['name', 'styles']
@@ -133,17 +113,15 @@ const ThemeIdeaGenerator: React.FC<ThemeIdeaGeneratorProps> = ({ onUseIdea, onCl
                 </div>
                 <div className="flex-1 space-y-4 p-8 overflow-y-auto scrollbar-hide">
                     <div className="flex gap-4">
-                        <div className="flex-grow space-y-2">
-                            <Label htmlFor="theme-concept">Theme Concept</Label>
-                            <Input
-                                id="theme-concept"
-                                placeholder="e.g., 'Cyberpunk', 'Fairy Forest', 'Steampunk'"
-                                value={prompt}
-                                onChange={(e: ChangeEvent<HTMLInputElement>) => setPrompt(e.target.value)}
-                                onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => e.key === 'Enter' && handleGenerate()}
-                                disabled={isLoading}
-                            />
-                        </div>
+                        <Input
+                            label="Theme Concept"
+                            placeholder="e.g., 'Cyberpunk', 'Fairy Forest', 'Steampunk'"
+                            value={prompt}
+                            onChange={e => setPrompt(e.target.value)}
+                            onKeyDown={e => e.key === 'Enter' && handleGenerate()}
+                            className="flex-grow"
+                            disabled={isLoading}
+                        />
                         <Button onClick={handleGenerate} disabled={isLoading || !prompt.trim()} className="self-end">
                             {isLoading ? 'Generating...' : 'Generate'}
                         </Button>

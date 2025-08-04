@@ -1,11 +1,11 @@
 import React, { useMemo, useState } from 'react';
 import { useAppState } from '../../context/AppContext';
 import { Role, Trophy, UserTrophy, TrophyRequirementType, QuestType, QuestCompletionStatus, Quest, AppMode, User } from '../../types';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import Card from '../ui/Card';
 import { fromYMD } from '../../utils/quests';
-import EmptyState from '@/components/ui/empty-state';
-import DynamicIcon from '@/components/ui/dynamic-icon';
-import ImagePreviewDialog from '@/components/ui/image-preview-dialog';
+import EmptyState from '../ui/EmptyState';
+import DynamicIcon from '../ui/DynamicIcon';
+import ImagePreviewDialog from '../ui/ImagePreviewDialog';
 
 const TrophiesPage: React.FC = () => {
     const { currentUser, trophies, userTrophies, appMode, settings, questCompletions, quests, ranks } = useAppState();
@@ -15,7 +15,7 @@ const TrophiesPage: React.FC = () => {
         if (!currentUser || trophy.isManual) return null;
 
         if (appMode.mode === 'guild') {
-            return <p className="mt-2 text-xs italic text-muted-foreground">Progress for automatic trophies is tracked in your Personal scope.</p>;
+            return <p className="mt-2 text-xs italic text-stone-500">Progress for automatic trophies is tracked in your Personal scope.</p>;
         }
 
         const userCompletedQuests = questCompletions.filter(c => c.userId === currentUser.id && !c.guildId && c.status === QuestCompletionStatus.Approved);
@@ -23,8 +23,8 @@ const TrophiesPage: React.FC = () => {
         const userRank = ranks.slice().sort((a, b) => b.xpThreshold - a.xpThreshold).find(r => totalXp >= r.xpThreshold);
 
         return (
-            <div className="mt-2 text-xs space-y-1 text-muted-foreground">
-                <p className="font-bold text-foreground">Requirements:</p>
+            <div className="mt-2 text-xs space-y-1 text-stone-400">
+                <p className="font-bold text-stone-300">Requirements:</p>
                 {trophy.requirements.map((req, index) => {
                     let progressText = '';
                     let requirementText = '';
@@ -52,7 +52,7 @@ const TrophiesPage: React.FC = () => {
                     return (
                         <div key={index}>
                            <span>{requirementText}</span>
-                           <span className={`font-semibold ml-1 ${progressText.includes('Achieved') ? 'text-green-400' : 'text-primary'}`}>{progressText}</span>
+                           <span className={`font-semibold ml-1 ${progressText.includes('Achieved') ? 'text-green-400' : 'text-emerald-400'}`}>{progressText}</span>
                         </div>
                     );
                 })}
@@ -61,8 +61,8 @@ const TrophiesPage: React.FC = () => {
     };
 
     const TrophyCard: React.FC<{ trophy: Trophy & { awardedAt?: string }, isEarned: boolean }> = ({ trophy, isEarned }) => (
-        <div className={`bg-card p-4 rounded-lg flex flex-col items-center text-center transition-all duration-200 ${!isEarned ? 'opacity-60' : ''}`}>
-            <div className={`w-20 h-20 mb-4 rounded-full flex items-center justify-center overflow-hidden ${isEarned ? 'bg-amber-900/50' : 'bg-background'}`}>
+        <div className={`bg-stone-800/70 p-4 rounded-lg flex flex-col items-center text-center transition-all duration-200 ${!isEarned ? 'opacity-60' : ''}`}>
+            <div className={`w-20 h-20 mb-4 rounded-full flex items-center justify-center overflow-hidden ${isEarned ? 'bg-amber-900/50' : 'bg-stone-700'}`}>
                 <button
                     onClick={() => trophy.iconType === 'image' && trophy.imageUrl && setPreviewImageUrl(trophy.imageUrl)}
                     disabled={trophy.iconType !== 'image' || !trophy.imageUrl}
@@ -71,10 +71,10 @@ const TrophiesPage: React.FC = () => {
                     <DynamicIcon iconType={trophy.iconType} icon={trophy.icon} imageUrl={trophy.imageUrl} className="w-full h-full text-4xl" altText={`${trophy.name} trophy icon`} />
                 </button>
             </div>
-            <h4 className={`font-bold text-lg ${isEarned ? 'text-amber-300' : 'text-foreground'}`}>{trophy.name}</h4>
-            <p className="text-muted-foreground text-sm mt-1 flex-grow">{trophy.description}</p>
+            <h4 className={`font-bold text-lg ${isEarned ? 'text-amber-300' : 'text-stone-300'}`}>{trophy.name}</h4>
+            <p className="text-stone-400 text-sm mt-1 flex-grow">{trophy.description}</p>
             {isEarned && trophy.awardedAt && (
-                 <p className="text-xs text-muted-foreground/70 mt-2">Awarded: {fromYMD(trophy.awardedAt).toLocaleDateString()}</p>
+                 <p className="text-xs text-stone-500 mt-2">Awarded: {fromYMD(trophy.awardedAt).toLocaleDateString()}</p>
             )}
             {!isEarned && <RequirementStatus trophy={trophy} />}
         </div>
@@ -104,9 +104,7 @@ const TrophiesPage: React.FC = () => {
 
     return (
         <div>
-            <Card className="mb-8">
-              <CardHeader><CardTitle>My {settings.terminology.award} Case</CardTitle></CardHeader>
-              <CardContent>
+            <Card title={`My ${settings.terminology.award} Case`} className="mb-8">
                 {earnedTrophiesWithDate.length > 0 ? (
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                         {earnedTrophiesWithDate.map(trophy => <TrophyCard key={trophy.id} trophy={trophy} isEarned={true} />)}
@@ -117,20 +115,16 @@ const TrophiesPage: React.FC = () => {
                         message={`You haven't earned any ${settings.terminology.awards.toLowerCase()} in this mode yet. Keep questing!`}
                     />
                 )}
-              </CardContent>
             </Card>
 
-             <Card>
-                <CardHeader><CardTitle>Available {settings.terminology.awards}</CardTitle></CardHeader>
-                <CardContent>
-                    {availableTrophies.length > 0 ? (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                            {availableTrophies.map(trophy => <TrophyCard key={trophy.id} trophy={trophy} isEarned={false} />)}
-                        </div>
-                    ) : (
-                        <p className="text-muted-foreground text-center py-4">Congratulations! You have earned all available {settings.terminology.awards.toLowerCase()}!</p>
-                    )}
-                </CardContent>
+             <Card title={`Available ${settings.terminology.awards}`}>
+                {availableTrophies.length > 0 ? (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                        {availableTrophies.map(trophy => <TrophyCard key={trophy.id} trophy={trophy} isEarned={false} />)}
+                    </div>
+                ) : (
+                    <p className="text-stone-400 text-center py-4">Congratulations! You have earned all available {settings.terminology.awards.toLowerCase()}!</p>
+                )}
             </Card>
 
             {previewImageUrl && (

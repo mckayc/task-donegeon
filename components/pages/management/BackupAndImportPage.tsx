@@ -1,181 +1,269 @@
-import React, { useState, ChangeEvent } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { useAppState, useAppDispatch } from '../../../context/AppContext';
-import { Blueprint, ImportResolution, AutomatedBackupProfile } from '../../../types';
+import { Blueprint, IAppData, ImportResolution } from '../../../types';
+import Button from '../../ui/Button';
+import Card from '../../ui/Card';
 import { analyzeBlueprintForConflicts } from '../../../utils/sharing';
-import { Button } from '@/components/ui/button';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import ConfirmDialog from '../../ui/confirm-dialog';
 import BlueprintPreviewDialog from '../../sharing/BlueprintPreviewDialog';
-import ImportPanel from '../../sharing/ImportPanel';
-import RestorePanel from '../../sharing/RestorePanel';
-import BackupPanel from '../../sharing/BackupPanel';
-import ToggleSwitch from '@/components/ui/toggle-switch';
-import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import ConfirmDialog from '../../ui/ConfirmDialog';
+import ToggleSwitch from '../../ui/ToggleSwitch';
+import Input from '../../ui/Input';
+
+const formatBytes = (bytes: number, decimals = 2) => {
+    if (!bytes || bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const dm = decimals < 0 ? 0 : decimals;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+};
+
+interface ServerBackup {
+    filename: string;
+    createdAt: string;
+    size: number;
+    isAuto: boolean;
+}
 
 const BackupAndImportPage: React.FC = () => {
-    const { restoreFromBackup, importBlueprint, addNotification, reinitializeApp, clearAllHistory, resetAllPlayerData, deleteAllCustomContent, updateSettings } = useAppDispatch();
     const appState = useAppState();
-    
-    const [blueprintToImport, setBlueprintToImport] = useState<Blueprint | null>(null);
-    const [importResolutions, setImportResolutions] = useState<ImportResolution[]>([]);
-    const [confirmation, setConfirmation] = useState<{ action: string, title: string, message: string, data?: any } | null>(null);
-    const [backupProfiles, setBackupProfiles] = useState<[AutomatedBackupProfile, AutomatedBackupProfile, AutomatedBackupProfile]>(() => JSON.parse(JSON.stringify(appState.settings.automatedBackups.profiles)));
+    const { restoreFromBackup, importBlueprint, addNotification, updateSettings } = useAppDispatch();
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
-     const handleBackupProfileChange = (index: number, field: keyof AutomatedBackupProfile, value: string | boolean | number) => {
-        const newProfiles = [...backupProfiles] as [AutomatedBackupProfile, AutomatedBackupProfile, AutomatedBackupProfile];
-        (newProfiles[index] as any)[field] = value;
-        setBackupProfiles(newProfiles);
-        // Also update the main settings state immediately
-        updateSettings({ automatedBackups: { profiles: newProfiles }});
+    const [serverBackups, setServerBackups] = useState<ServerBackup[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [blueprintToPreview, setBlueprintToPreview] = useState<Blueprint | null>(null);
+    const [initialResolutions, setInitialResolutions] = useState<ImportResolution[]>([]);
+    const [fileToRestore, setFileToRestore] = useState<IAppData | null>(null);
+    const [backupToDelete, setBackupToDelete] = useState<ServerBackup | null>(null);
+    
+    const [autoBackupSettings, setAutoBackupSettings] = useState(appState.settings.automatedBackups);
+
+    const fetchBackups = useCallback(async () => {
+        setIsLoading(true);
+        try {
+            const response = await fetch('/api/backups');
+            if (response.ok) {
+                const data = await response.json();
+                setServerBackups(data);
+            } else {
+                throw new Error('Failed to fetch backup list.');
+            }
+        } catch (e) {
+            const message = e instanceof Error ? e.message : 'Unknown error';
+            addNotification({ type: 'error', message });
+        } finally {
+            setIsLoading(false);
+        }
+    }, [addNotification]);
+
+    useEffect(() => {
+        fetchBackups();
+    }, [fetchBackups]);
+    
+    const handleSaveAutoBackupSettings = () => {
+        updateSettings({ automatedBackups: autoBackupSettings });
+        addNotification({ type: 'success', message: 'Automated backup settings saved.' });
     };
 
-    const handleFileSelect = (file: File, type: 'restore' | 'import') => {
+    const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (!file) return;
+
         const reader = new FileReader();
         reader.onload = (e) => {
             try {
                 const content = e.target?.result as string;
-                const data = JSON.parse(content);
-                if (type === 'restore') {
-                    if (data.users && data.settings) {
-                        setConfirmation({
-                            action: 'restore_local',
-                            title: 'Confirm Restore',
-                            message: 'Are you sure you want to restore from this file? This will overwrite ALL current data.',
-                            data: data
-                        });
-                    } else {
-                        addNotification({ type: 'error', message: 'This does not appear to be a valid backup file.' });
-                    }
-                } else { // import
-                    if (data.name && data.assets) {
-                         const resolutions = analyzeBlueprintForConflicts(data, appState);
-                         setBlueprintToImport(data);
-                         setImportResolutions(resolutions);
-                    } else {
-                         addNotification({ type: 'error', message: 'This does not appear to be a valid Blueprint file.' });
-                    }
+                const parsed = JSON.parse(content);
+
+                if (parsed.users && parsed.settings) {
+                    setFileToRestore(parsed);
+                } else if (parsed.name && parsed.assets) {
+                    const conflicts = analyzeBlueprintForConflicts(parsed, appState);
+                    setInitialResolutions(conflicts);
+                    setBlueprintToPreview(parsed);
+                } else {
+                    throw new Error("File does not appear to be a valid backup or blueprint.");
                 }
-            } catch (err) {
-                addNotification({ type: 'error', message: 'Failed to read or parse the selected file.' });
+            } catch (error) {
+                console.error("Error parsing file:", error);
+                const message = error instanceof Error ? error.message : 'Unknown error';
+                addNotification({ type: 'error', message: `Failed to read file: ${message}` });
             }
         };
         reader.readAsText(file);
+        event.target.value = '';
+    };
+    
+    const handleGenerateBackup = async () => {
+        addNotification({ type: 'info', message: 'Generating manual backup...' });
+        const { isAppUnlocked, isFirstRun, notifications, isSwitchingUser, targetedUserForLogin, activePage, activeMarketId, allTags, isDataLoaded, isSidebarCollapsed, syncStatus, syncError, isChatOpen, currentUser } = appState;
+        const dataToBackup = { users: appState.users, quests: appState.quests, markets: appState.markets, rewardTypes: appState.rewardTypes, questCompletions: appState.questCompletions, purchaseRequests: appState.purchaseRequests, guilds: appState.guilds, ranks: appState.ranks, trophies: appState.trophies, userTrophies: appState.userTrophies, adminAdjustments: appState.adminAdjustments, gameAssets: appState.gameAssets, systemLogs: appState.systemLogs, settings: appState.settings, themes: appState.themes, loginHistory: appState.loginHistory, chatMessages: appState.chatMessages, systemNotifications: appState.systemNotifications };
+
+        try {
+            const response = await fetch('/api/backups', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(dataToBackup),
+            });
+            if (response.ok) {
+                addNotification({type: 'success', message: 'Manual backup generated successfully!'});
+                fetchBackups();
+            } else {
+                throw new Error('Server failed to create backup.');
+            }
+        } catch(e) {
+            const message = e instanceof Error ? e.message : 'Unknown error';
+            addNotification({type: 'error', message: `Backup failed: ${message}`});
+        }
     };
 
-    const handleConfirm = async () => {
-        if (!confirmation) return;
-        try {
-            switch (confirmation.action) {
-                case 'restore_local':
-                    await restoreFromBackup(confirmation.data);
-                    addNotification({ type: 'success', message: 'Data restored successfully!' });
-                    break;
-                case 'import':
-                    await importBlueprint(confirmation.data.blueprint, confirmation.data.resolutions);
-                    addNotification({ type: 'success', message: 'Blueprint imported successfully!' });
-                    break;
-                case 'reinitialize': await reinitializeApp(); break;
-                case 'clear_history': await clearAllHistory(); addNotification({ type: 'success', message: 'All history has been cleared.' }); break;
-                case 'reset_player_data': await resetAllPlayerData(); addNotification({ type: 'success', message: 'Player data has been reset.' }); break;
-                case 'factory_reset': await deleteAllCustomContent(); addNotification({ type: 'success', message: 'All custom content deleted. App will reload.' }); setTimeout(() => window.location.reload(), 3000); break;
+    const handleDeleteBackup = async () => {
+        if (backupToDelete) {
+            try {
+                const response = await fetch(`/api/backups/${encodeURIComponent(backupToDelete.filename)}`, {
+                    method: 'DELETE'
+                });
+                if (response.ok) {
+                    addNotification({type: 'success', message: `Deleted backup: ${backupToDelete.filename}`});
+                    fetchBackups();
+                } else {
+                    throw new Error('Server failed to delete backup.');
+                }
+            } catch(e) {
+                 const message = e instanceof Error ? e.message : 'Unknown error';
+                 addNotification({type: 'error', message: `Delete failed: ${message}`});
+            } finally {
+                setBackupToDelete(null);
             }
-        } catch (err) {
-             const message = err instanceof Error ? err.message : 'An unknown error occurred.';
-             addNotification({ type: 'error', message: `Operation failed: ${message}` });
-        } finally {
-            setConfirmation(null);
         }
     };
     
+    const manualBackups = serverBackups.filter(b => !b.isAuto);
+    const autoBackups = serverBackups.filter(b => b.isAuto);
+
     return (
         <div className="space-y-6">
-            <Card>
-                <CardHeader><CardTitle>Manual Backup & Restore</CardTitle></CardHeader>
-                <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    <BackupPanel />
-                    <RestorePanel onFileSelect={(file) => handleFileSelect(file, 'restore')} />
-                </CardContent>
+            <Card title="How Backups Work & Best Practices">
+                 <div className="prose prose-invert max-w-none text-stone-300 text-sm space-y-3">
+                    <p><strong>Important:</strong> Backups are now stored on the server in the directory specified in your Docker configuration. This provides a durable and persistent way to manage your data.</p>
+                    <ul className="list-disc list-inside">
+                        <li>This system is designed for self-hosted Docker environments where you can map a volume to the backup directory.</li>
+                        <li>Automated backups provide a convenient safety net for recent changes.</li>
+                        <li>For true safekeeping, it's still recommended to regularly download important manual backups to your local computer.</li>
+                        <li>Before any major data change, like restoring a backup or importing a large blueprint, always create and download a fresh manual backup.</li>
+                    </ul>
+                </div>
             </Card>
 
-            <Card>
-                <CardHeader><CardTitle>Import Blueprint</CardTitle></CardHeader>
-                <CardContent>
-                    <ImportPanel onFileSelect={(file) => handleFileSelect(file, 'import')} />
-                </CardContent>
-            </Card>
-
-             <Card>
-                <CardHeader><CardTitle>Automated Backups</CardTitle></CardHeader>
-                <CardContent className="space-y-4">
-                    {backupProfiles.map((profile, index) => (
-                        <div key={index} className="p-4 border rounded-lg bg-background/50 flex flex-wrap gap-4 items-center">
-                            <ToggleSwitch enabled={profile.enabled} setEnabled={(val) => handleBackupProfileChange(index, 'enabled', val)} label={`Profile ${index+1}`} />
-                            <div className="flex-grow grid grid-cols-2 gap-4">
-                                <div className="space-y-1">
-                                    <Label>Frequency</Label>
-                                    <Select value={profile.frequency} onValueChange={(val) => handleBackupProfileChange(index, 'frequency', val)} disabled={!profile.enabled}>
-                                        <SelectTrigger><SelectValue /></SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="hourly">Hourly</SelectItem>
-                                            <SelectItem value="daily">Daily</SelectItem>
-                                            <SelectItem value="weekly">Weekly</SelectItem>
-                                            <SelectItem value="monthly">Monthly</SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-                                <div className="space-y-1">
-                                    <Label>Keep how many?</Label>
-                                    <Input type="number" value={profile.keep} onChange={(e) => handleBackupProfileChange(index, 'keep', parseInt(e.target.value))} disabled={!profile.enabled}/>
-                                </div>
-                            </div>
+            <Card title="Automated Backup Settings">
+                <p className="text-sm text-stone-400 mb-4">These settings control the automated backup process running on the server.</p>
+                <div className="space-y-4">
+                    <ToggleSwitch 
+                        enabled={autoBackupSettings.enabled}
+                        setEnabled={(val) => setAutoBackupSettings(p => ({...p, enabled: val}))}
+                        label="Enable Automated Backups"
+                    />
+                    {autoBackupSettings.enabled && (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t border-stone-700/60">
+                             <Input 
+                                label="Backup Frequency (in hours)"
+                                type="number"
+                                min="1"
+                                value={autoBackupSettings.frequencyHours}
+                                onChange={(e) => setAutoBackupSettings(p => ({...p, frequencyHours: parseInt(e.target.value) || 24}))}
+                             />
+                             <Input 
+                                label="Max Backups to Keep"
+                                type="number"
+                                min="1"
+                                value={autoBackupSettings.maxBackups}
+                                onChange={(e) => setAutoBackupSettings(p => ({...p, maxBackups: parseInt(e.target.value) || 7}))}
+                             />
                         </div>
-                    ))}
-                </CardContent>
+                    )}
+                </div>
+                 <div className="text-right mt-4">
+                    <Button onClick={handleSaveAutoBackupSettings}>Save Settings</Button>
+                </div>
             </Card>
-            
-            <Card>
-                <CardHeader>
-                    <CardTitle>Danger Zone</CardTitle>
-                    <p className="text-sm text-muted-foreground">These are destructive actions that cannot be undone. Please be certain before proceeding.</p>
-                </CardHeader>
-                <CardContent>
-                    <div className="p-4 border border-destructive rounded-lg flex flex-wrap gap-4 items-center justify-center">
-                        <Button variant="destructive" onClick={() => setConfirmation({ action: 'clear_history', title: 'Clear All History', message: 'This will delete all quest completions, purchases, adjustments, and logs. User and quest definitions will remain. Are you sure?' })}>Clear All History</Button>
-                        <Button variant="destructive" onClick={() => setConfirmation({ action: 'reset_player_data', title: 'Reset All Player Data', message: 'This will reset all user balances, owned items, and trophies to zero, but will not delete history. Are you sure?' })}>Reset Player Data</Button>
-                        <Button variant="destructive" onClick={() => setConfirmation({ action: 'factory_reset', title: 'Factory Reset', message: 'This will delete all custom content (quests, items, etc.), reset all players, and clear all history, keeping only user accounts. Are you sure?' })}>Factory Reset</Button>
-                        <Button variant="destructive" onClick={() => setConfirmation({ action: 'reinitialize', title: 'Re-initialize Application', message: 'This will delete EVERYTHING, including all user accounts, and restart the first-run wizard. THIS IS A COMPLETE WIPE. Are you sure?' })}>Re-initialize App</Button>
+
+            <Card title="Server Backups">
+                <div className="text-right mb-4">
+                    <Button onClick={handleGenerateBackup}>Generate New Manual Backup</Button>
+                </div>
+                <div className="space-y-6">
+                    <div>
+                        <h4 className="font-bold text-lg text-stone-200 mb-2">Manual Backups</h4>
+                        {isLoading ? <p>Loading...</p> : manualBackups.length > 0 ? (
+                            <div className="space-y-2">
+                                {manualBackups.map(backup => (
+                                    <div key={backup.filename} className="flex justify-between items-center p-3 bg-stone-900/50 rounded-md">
+                                        <div>
+                                            <p className="font-semibold text-stone-200">{backup.filename}</p>
+                                            <p className="text-xs text-stone-400">{new Date(backup.createdAt).toLocaleString()} ({formatBytes(backup.size)})</p>
+                                        </div>
+                                        <div className="flex gap-2">
+                                            <a href={`/api/backups/${encodeURIComponent(backup.filename)}`} download>
+                                                <Button variant="secondary" className="text-sm py-1 px-3">Download</Button>
+                                            </a>
+                                            <Button className="!bg-red-600 hover:!bg-red-500 text-sm py-1 px-3" onClick={() => setBackupToDelete(backup)}>Delete</Button>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        ) : <p className="text-center text-stone-400 py-4 text-sm">No manual backups found on the server.</p>}
                     </div>
-                </CardContent>
+                     <div>
+                        <h4 className="font-bold text-lg text-stone-200 mb-2">Automated Backups</h4>
+                        {isLoading ? <p>Loading...</p> : autoBackups.length > 0 ? (
+                            <div className="space-y-2">
+                                {autoBackups.map(backup => (
+                                    <div key={backup.filename} className="flex justify-between items-center p-3 bg-stone-900/50 rounded-md">
+                                        <div>
+                                            <p className="font-semibold text-stone-200">{backup.filename}</p>
+                                            <p className="text-xs text-stone-400">{new Date(backup.createdAt).toLocaleString()} ({formatBytes(backup.size)})</p>
+                                        </div>
+                                        <div className="flex gap-2">
+                                            <a href={`/api/backups/${encodeURIComponent(backup.filename)}`} download>
+                                                <Button variant="secondary" className="text-sm py-1 px-3">Download</Button>
+                                            </a>
+                                            <Button className="!bg-red-600 hover:!bg-red-500 text-sm py-1 px-3" onClick={() => setBackupToDelete(backup)}>Delete</Button>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        ) : <p className="text-center text-stone-400 py-4 text-sm">No automated backups found on the server.</p>}
+                    </div>
+                </div>
             </Card>
 
-            {confirmation && (
-                <ConfirmDialog
-                    isOpen={!!confirmation}
-                    onClose={() => setConfirmation(null)}
-                    onConfirm={handleConfirm}
-                    title={confirmation.title}
-                    message={confirmation.message}
-                />
-            )}
+            <Card title="Import / Restore from File">
+                <p className="text-stone-400 text-sm mb-4">Select a Blueprint or full backup `.json` file. The app will automatically detect which it is and guide you through the next steps.</p>
+                <div className="p-8 border-2 border-dashed border-stone-600 rounded-lg text-center">
+                    <input type="file" ref={fileInputRef} onChange={handleFileSelect} accept=".json,application/json" className="hidden" />
+                    <Button variant="secondary" onClick={() => fileInputRef.current?.click()}>Select File</Button>
+                    <p className="text-xs text-amber-400 font-semibold mt-4">Restoring from a full backup will overwrite all current data.</p>
+                </div>
+            </Card>
 
-            {blueprintToImport && (
-                <BlueprintPreviewDialog
-                    blueprint={blueprintToImport}
-                    initialResolutions={importResolutions}
-                    onClose={() => setBlueprintToImport(null)}
-                    onConfirm={(bp, res) => {
-                        setConfirmation({
-                            action: 'import',
-                            title: 'Confirm Import',
-                            message: 'Are you sure you want to add the selected items to your game?',
-                            data: { blueprint: bp, resolutions: res }
-                        });
-                        setBlueprintToImport(null);
-                    }}
-                />
+            {blueprintToPreview && (
+                <BlueprintPreviewDialog blueprint={blueprintToPreview} initialResolutions={initialResolutions} onClose={() => setBlueprintToPreview(null)} onConfirm={importBlueprint} />
             )}
+            <ConfirmDialog
+                isOpen={!!fileToRestore}
+                onClose={() => setFileToRestore(null)}
+                onConfirm={() => { if (fileToRestore) restoreFromBackup(fileToRestore); setFileToRestore(null); }}
+                title="Confirm Full Restore"
+                message="Are you sure you want to restore from this backup file? All current game data will be permanently overwritten. This action cannot be undone."
+            />
+            <ConfirmDialog
+                isOpen={!!backupToDelete}
+                onClose={() => setBackupToDelete(null)}
+                onConfirm={handleDeleteBackup}
+                title="Delete Server Backup"
+                message={`Are you sure you want to delete the backup file "${backupToDelete?.filename}" from the server? This action is permanent.`}
+            />
         </div>
     );
 };

@@ -2,7 +2,7 @@ import React, { useMemo } from 'react';
 import { useAppState } from '../../context/AppContext';
 import { QuestCompletionStatus, QuestType, ChronicleEvent } from '../../types';
 import { toYMD } from '../../utils/quests';
-import { Card } from '@/components/ui/card';
+import Card from '../ui/Card';
 
 interface ChroniclesDayViewProps {
     currentDate: Date;
@@ -46,7 +46,7 @@ const ChroniclesDayView: React.FC<ChroniclesDayViewProps> = ({ currentDate }) =>
                 note: c.note,
                 status: c.status,
                 icon: quest?.icon || '📜',
-                color: c.status === QuestCompletionStatus.Approved ? '#22c55e' : c.status === QuestCompletionStatus.Pending ? '#eab308' : '#ef4444',
+                color: quest?.type === QuestType.Duty ? '#38bdf8' : '#f59e0b',
                 userId: c.userId,
                 questType: quest?.type,
             };
@@ -65,23 +65,23 @@ const ChroniclesDayView: React.FC<ChroniclesDayViewProps> = ({ currentDate }) =>
     return (
         <div className="p-4 h-[70vh] grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="flex flex-col gap-4 overflow-y-auto scrollbar-hide pr-2">
-                <h3 className="text-xl font-bold text-foreground mb-2">Completed {settings.terminology.recurringTasks}</h3>
+                <h3 className="text-xl font-bold text-stone-300 mb-2">Completed {settings.terminology.recurringTasks}</h3>
                 {dutyChronicles.length > 0 ? (
                     <div className="space-y-3">
                         {dutyChronicles.map(event => <ChronicleItem key={event.id} event={event} />)}
                     </div>
                 ) : (
-                    <p className="text-sm text-muted-foreground">No {settings.terminology.recurringTasks.toLowerCase()} completed on this day.</p>
+                    <p className="text-sm text-stone-500">No {settings.terminology.recurringTasks.toLowerCase()} completed on this day.</p>
                 )}
             </div>
              <div className="flex flex-col gap-4 overflow-y-auto scrollbar-hide pr-2">
-                <h3 className="text-xl font-bold text-foreground mb-2">Completed {settings.terminology.singleTasks}</h3>
+                <h3 className="text-xl font-bold text-stone-300 mb-2">Completed {settings.terminology.singleTasks}</h3>
                 {ventureChronicles.length > 0 ? (
                     <div className="space-y-3">
                         {ventureChronicles.map(event => <ChronicleItem key={event.id} event={event} />)}
                     </div>
                 ) : (
-                    <p className="text-sm text-muted-foreground">No {settings.terminology.singleTasks.toLowerCase()} completed on this day.</p>
+                    <p className="text-sm text-stone-500">No {settings.terminology.singleTasks.toLowerCase()} completed on this day.</p>
                 )}
             </div>
         </div>

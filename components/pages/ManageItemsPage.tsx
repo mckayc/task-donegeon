@@ -1,18 +1,15 @@
-import React, { useState, useRef, useEffect, useMemo, ChangeEvent } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { GameAsset } from '../../types';
-import { Button } from '@/components/ui/button';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { Checkbox } from "@/components/ui/checkbox";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import ConfirmDialog from '@/components/ui/confirm-dialog';
+import Button from '../ui/Button';
+import Card from '../ui/Card';
+import ConfirmDialog from '../ui/ConfirmDialog';
 import EditGameAssetDialog from '../admin/EditGameAssetDialog';
-import EmptyState from '@/components/ui/empty-state';
-import { ItemManagerIcon, EllipsisVerticalIcon } from '@/components/ui/icons';
+import EmptyState from '../ui/EmptyState';
+import { ItemManagerIcon, EllipsisVerticalIcon } from '../ui/Icons';
 import ItemIdeaGenerator from '../quests/ItemIdeaGenerator';
-import { Input } from '@/components/ui/input';
-import ImagePreviewDialog from '@/components/ui/image-preview-dialog';
+import Input from '../ui/Input';
+import ImagePreviewDialog from '../ui/ImagePreviewDialog';
 
 const ManageItemsPage: React.FC = () => {
     const { gameAssets, settings, isAiConfigured } = useAppState();
@@ -24,6 +21,8 @@ const ManageItemsPage: React.FC = () => {
     const [isGeneratorOpen, setIsGeneratorOpen] = useState(false);
     const [initialCreateData, setInitialCreateData] = useState<{ name: string; description: string; category: string; icon: string; } | null>(null);
     const [selectedAssets, setSelectedAssets] = useState<string[]>([]);
+    const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
+    const dropdownRef = useRef<HTMLDivElement | null>(null);
     const [activeTab, setActiveTab] = useState('All');
     const [searchTerm, setSearchTerm] = useState('');
     const [sortBy, setSortBy] = useState<'createdAt-desc' | 'createdAt-asc' | 'name-asc' | 'name-desc'>('createdAt-desc');
@@ -32,11 +31,17 @@ const ManageItemsPage: React.FC = () => {
 
     const isAiAvailable = settings.enableAiFeatures && isAiConfigured;
 
-    const categories = useMemo(() => ['All', ...Array.from(new Set(gameAssets.map(a => a.category)))], [gameAssets]);
-
     useEffect(() => {
-        setSelectedAssets([]);
-    }, [activeTab, searchTerm, sortBy]);
+        const handleClickOutside = (event: MouseEvent) => {
+            if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+                setOpenDropdownId(null);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
+    const categories = useMemo(() => ['All', ...Array.from(new Set(gameAssets.map(a => a.category)))], [gameAssets]);
 
     const filteredAndSortedAssets = useMemo(() => {
         let assets = [...gameAssets];
@@ -96,8 +101,8 @@ const ManageItemsPage: React.FC = () => {
         setIsCreateDialogOpen(true);
     };
     
-    const handleSelectAll = (checked: boolean | "indeterminate") => {
-        if (checked === true) {
+    const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.checked) {
             setSelectedAssets(filteredAndSortedAssets.map(a => a.id));
         } else {
             setSelectedAssets([]);
@@ -116,7 +121,7 @@ const ManageItemsPage: React.FC = () => {
     const headerActions = (
         <div className="flex items-center gap-2 flex-wrap">
             {isAiAvailable && (
-                <Button size="sm" onClick={() => setIsGeneratorOpen(true)} variant="outline">
+                <Button size="sm" onClick={() => setIsGeneratorOpen(true)} variant="secondary">
                     Create with AI
                 </Button>
             )}
@@ -126,108 +131,113 @@ const ManageItemsPage: React.FC = () => {
 
     return (
         <div className="space-y-6">
-            <Card>
-                <CardHeader className="flex flex-row items-center justify-between">
-                    <CardTitle>All Created Items & Assets</CardTitle>
-                    {headerActions}
-                </CardHeader>
-                <CardContent>
-                    <div className="border-b mb-4">
-                        <nav className="-mb-px flex space-x-4 overflow-x-auto">
-                            {categories.map(category => (
-                                <button
-                                    key={category}
-                                    onClick={() => setActiveTab(category)}
-                                    className={`capitalize whitespace-nowrap pb-4 px-1 border-b-2 font-medium text-sm transition-colors ${
-                                        activeTab === category
-                                        ? 'border-primary text-primary'
-                                        : 'border-transparent text-muted-foreground hover:text-foreground'
-                                    }`}
+            <Card
+                title="All Created Items & Assets"
+                headerAction={headerActions}
+            >
+                <div className="border-b border-stone-700 mb-4">
+                    <nav className="-mb-px flex space-x-4 overflow-x-auto">
+                        {categories.map(category => (
+                            <button
+                                key={category}
+                                onClick={() => setActiveTab(category)}
+                                className={`capitalize whitespace-nowrap pb-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+                                    activeTab === category
+                                    ? 'border-emerald-500 text-emerald-400'
+                                    : 'border-transparent text-stone-400 hover:text-stone-200 hover:border-stone-500'
+                                }`}
+                            >
+                                {category}
+                            </button>
+                        ))}
+                    </nav>
+                </div>
+
+                <div className="flex flex-wrap gap-4 mb-4">
+                    <Input placeholder="Search assets..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="max-w-xs" />
+                    <Input as="select" value={sortBy} onChange={e => setSortBy(e.target.value as any)}>
+                        <option value="createdAt-desc">Date (Newest)</option>
+                        <option value="createdAt-asc">Date (Oldest)</option>
+                        <option value="name-asc">Name (A-Z)</option>
+                        <option value="name-desc">Name (Z-A)</option>
+                    </Input>
+                    {selectedAssets.length > 0 && (
+                        <div className="flex items-center gap-2 p-2 bg-stone-900/50 rounded-lg">
+                            <span className="text-sm font-semibold text-stone-300 px-2">{selectedAssets.length} selected</span>
+                            <Button size="sm" variant="secondary" className="!bg-red-900/50 hover:!bg-red-800/60 text-red-300" onClick={() => handleDeleteRequest(selectedAssets)}>Delete</Button>
+                        </div>
+                    )}
+                </div>
+
+                {filteredAndSortedAssets.length > 0 ? (
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                        {filteredAndSortedAssets.map(asset => (
+                             <div key={asset.id} className="relative group">
+                                <label
+                                    htmlFor={`select-asset-${asset.id}`}
+                                    className="w-full text-left bg-stone-900/40 rounded-lg border-2 flex flex-col hover:border-accent transition-all duration-200 cursor-pointer has-[:checked]:border-accent has-[:checked]:ring-2 has-[:checked]:ring-accent/50"
                                 >
-                                    {category}
-                                </button>
-                            ))}
-                        </nav>
-                    </div>
-
-                    <div className="flex flex-wrap gap-4 mb-4">
-                        <Input placeholder="Search assets..." value={searchTerm} onChange={(e: ChangeEvent<HTMLInputElement>) => setSearchTerm(e.target.value)} className="max-w-xs" />
-                        <Select onValueChange={(e: any) => setSortBy(e)} defaultValue={sortBy}>
-                            <SelectTrigger className="w-[180px]">
-                                <SelectValue placeholder="Sort by..." />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="createdAt-desc">Date (Newest)</SelectItem>
-                                <SelectItem value="createdAt-asc">Date (Oldest)</SelectItem>
-                                <SelectItem value="name-asc">Name (A-Z)</SelectItem>
-                                <SelectItem value="name-desc">Name (Z-A)</SelectItem>
-                            </SelectContent>
-                        </Select>
-                        {selectedAssets.length > 0 && (
-                            <div className="flex items-center gap-2 p-2 bg-background rounded-lg border">
-                                <span className="text-sm font-semibold px-2">{selectedAssets.length} selected</span>
-                                <Button size="sm" variant="destructive" onClick={() => handleDeleteRequest(selectedAssets)}>Delete</Button>
-                            </div>
-                        )}
-                    </div>
-
-                    {filteredAndSortedAssets.length > 0 ? (
-                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-                            {filteredAndSortedAssets.map(asset => (
-                                 <div key={asset.id} className="relative group">
-                                     <div className="absolute top-2 left-2 z-10">
-                                         <Checkbox
+                                    <div className="absolute top-2 left-2 z-10">
+                                        <input
                                             id={`select-asset-${asset.id}`}
+                                            type="checkbox"
                                             checked={selectedAssets.includes(asset.id)}
-                                            onCheckedChange={(checked: boolean | "indeterminate") => handleSelectOne(asset.id, checked === true)}
+                                            onChange={e => handleSelectOne(asset.id, e.target.checked)}
+                                            className="h-5 w-5 rounded text-emerald-600 bg-stone-800 border-stone-600 focus:ring-emerald-500"
                                         />
                                     </div>
-                                    <Card className="h-full flex flex-col hover:border-accent transition-colors duration-200">
-                                        <CardContent className="p-0">
-                                            <button
-                                                onClick={() => setPreviewImageUrl(asset.url)}
-                                                className="w-full aspect-square bg-background/20 rounded-t-lg flex items-center justify-center overflow-hidden group focus:outline-none focus:ring-2 focus:ring-primary ring-offset-2 ring-offset-card"
-                                                aria-label={`View larger image of ${asset.name}`}
-                                            >
-                                                <img src={asset.url} alt={asset.name} className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-200" />
-                                            </button>
-                                        </CardContent>
-                                        <div className="p-3">
-                                            <button 
-                                                onClick={() => handleEdit(asset)} 
-                                                className="w-full text-left"
-                                            >
-                                                <p className="font-bold text-foreground truncate hover:underline hover:text-accent transition-colors" title={asset.name}>{asset.name}</p>
-                                            </button>
-                                            <p className="text-xs text-muted-foreground">{asset.category}</p>
-                                        </div>
-                                    </Card>
-                                    <div className="absolute top-2 right-2">
-                                        <DropdownMenu>
-                                            <DropdownMenuTrigger asChild>
-                                                <Button variant="ghost" size="icon" className="w-8 h-8 rounded-full bg-black/40 hover:bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                    <EllipsisVerticalIcon className="w-4 h-4 text-white" />
-                                                </Button>
-                                            </DropdownMenuTrigger>
-                                            <DropdownMenuContent align="end">
-                                                <DropdownMenuItem onSelect={() => handleEdit(asset)}>Edit</DropdownMenuItem>
-                                                <DropdownMenuItem onSelect={() => cloneGameAsset(asset.id)}>Clone</DropdownMenuItem>
-                                                <DropdownMenuItem onSelect={() => handleDeleteRequest([asset.id])} className="text-red-400 focus:text-red-400">Delete</DropdownMenuItem>
-                                            </DropdownMenuContent>
-                                        </DropdownMenu>
+                                    <div className="aspect-square w-full bg-stone-700/50 rounded-t-md flex items-center justify-center overflow-hidden">
+                                        <button
+                                            onClick={() => setPreviewImageUrl(asset.url)}
+                                            className="w-full h-full group focus:outline-none focus:ring-2 focus:ring-emerald-500 ring-offset-2 ring-offset-stone-900/40"
+                                            aria-label={`View larger image of ${asset.name}`}
+                                        >
+                                            <img src={asset.url} alt={asset.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200" />
+                                        </button>
                                     </div>
+                                    <div className="p-3">
+                                        <button 
+                                            onClick={(e) => {
+                                                e.preventDefault(); 
+                                                e.stopPropagation(); 
+                                                handleEdit(asset);
+                                            }} 
+                                            className="w-full text-left"
+                                        >
+                                            <p className="font-bold text-stone-200 truncate hover:underline hover:text-accent transition-colors" title={asset.name}>{asset.name}</p>
+                                        </button>
+                                        <p className="text-xs text-stone-400">{asset.category}</p>
+                                    </div>
+                                </label>
+                                <div className="absolute top-2 right-2">
+                                    <button
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            setOpenDropdownId(openDropdownId === asset.id ? null : asset.id);
+                                        }}
+                                        className="p-1.5 rounded-full bg-black/40 hover:bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity"
+                                    >
+                                        <EllipsisVerticalIcon className="w-5 h-5 text-white" />
+                                    </button>
+                                    {openDropdownId === asset.id && (
+                                        <div ref={dropdownRef} className="absolute right-0 mt-2 w-36 bg-stone-900 border border-stone-700 rounded-lg shadow-xl z-20">
+                                            <a href="#" onClick={(e) => { e.preventDefault(); handleEdit(asset); setOpenDropdownId(null); }} className="block px-4 py-2 text-sm text-stone-300 hover:bg-stone-700/50">Edit</a>
+                                            <button onClick={() => { cloneGameAsset(asset.id); setOpenDropdownId(null); }} className="w-full text-left block px-4 py-2 text-sm text-stone-300 hover:bg-stone-700/50">Clone</button>
+                                            <button onClick={() => { handleDeleteRequest([asset.id]); setOpenDropdownId(null); }} className="w-full text-left block px-4 py-2 text-sm text-red-400 hover:bg-stone-700/50">Delete</button>
+                                        </div>
+                                    )}
                                 </div>
-                            ))}
-                        </div>
-                    ) : (
-                        <EmptyState
-                            Icon={ItemManagerIcon}
-                            title="No Assets Found"
-                            message={searchTerm ? "No assets match your search." : "Create your first asset to be used as a reward or marketplace item."}
-                            actionButton={<Button onClick={handleCreate}>Create Asset</Button>}
-                        />
-                    )}
-                </CardContent>
+                            </div>
+                        ))}
+                    </div>
+                ) : (
+                    <EmptyState
+                        Icon={ItemManagerIcon}
+                        title="No Assets Found"
+                        message={searchTerm ? "No assets match your search." : "Create your first asset to be used as a reward or marketplace item."}
+                        actionButton={<Button onClick={handleCreate}>Create Asset</Button>}
+                    />
+                )}
             </Card>
             
             {isCreateDialogOpen && <EditGameAssetDialog 

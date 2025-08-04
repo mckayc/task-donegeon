@@ -1,25 +1,21 @@
+
+
 import React, { useEffect } from 'react';
-import { useAppState } from '@/context/AppContext';
-import FirstRunWizard from '@/components/auth/FirstRunWizard';
-import MainLayout from '@/components/layout/MainLayout';
-import SwitchUser from '@/components/auth/SwitchUser';
-import NotificationContainer from '@/components/ui/notification-container';
-import AppLockScreen from '@/components/auth/AppLockScreen';
-import OnboardingWizard from '@/components/auth/OnboardingWizard';
-import SharedLayout from '@/components/layout/SharedLayout';
-import { TooltipProvider } from "@/components/ui/tooltip";
-import ErrorBoundary from '@/components/ui/ErrorBoundary';
+import { useAppState } from './context/AppContext';
+import FirstRunWizard from './components/auth/FirstRunWizard';
+import MainLayout from './components/layout/MainLayout';
+import SwitchUser from './components/auth/SwitchUser';
+import AuthPage from './components/auth/AuthPage';
+import NotificationContainer from './components/ui/NotificationContainer';
+import AppLockScreen from './components/auth/AppLockScreen';
+import OnboardingWizard from './components/auth/OnboardingWizard';
+import SharedLayout from './components/layout/SharedLayout';
 
 const App: React.FC = () => {
-  const { isAppUnlocked, isFirstRun, currentUser, isSwitchingUser, isDataLoaded, settings, isSharedViewActive, appMode, guilds, themes, isRestarting, activePage } = useAppState();
+  const { isAppUnlocked, isFirstRun, currentUser, isSwitchingUser, isDataLoaded, settings, isSharedViewActive, appMode, guilds, themes } = useAppState();
 
   useEffect(() => {
-    // If we are on a page that handles its own theme preview, don't let the global effect override it.
-    if (activePage === 'Appearance' || activePage === 'Theme Editor') {
-        return;
-    }
-
-    let activeThemeId: string | undefined = settings.theme; // Default to system theme
+    let activeThemeId = settings.theme; // Default to system theme
 
     if (appMode.mode === 'guild') {
         const currentGuild = guilds.find(g => g.id === appMode.guildId);
@@ -34,16 +30,16 @@ const App: React.FC = () => {
         }
     }
     
+    // Find the theme definition and apply its styles
     const theme = themes.find(t => t.id === activeThemeId);
-    const root = document.documentElement;
-
     if (theme) {
         Object.entries(theme.styles).forEach(([key, value]) => {
-            root.style.setProperty(key, value);
+            document.documentElement.style.setProperty(key, value);
         });
     }
 
-  }, [settings.theme, currentUser?.id, currentUser?.theme, appMode, guilds, themes, activePage]);
+    document.body.dataset.theme = activeThemeId;
+  }, [settings.theme, currentUser, appMode, guilds, themes]);
 
   useEffect(() => {
     if (settings.favicon) {
@@ -59,20 +55,10 @@ const App: React.FC = () => {
   }, [settings.favicon]);
 
 
-  if (isRestarting) {
-    return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-background text-center p-4">
-        <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-primary mb-6"></div>
-        <h1 className="text-3xl font-display text-accent">Application Restarting</h1>
-        <p className="text-foreground mt-2">Please wait a few moments. The page will reload automatically.</p>
-      </div>
-    );
-  }
-
   if (!isDataLoaded) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-primary"></div>
+      <div className="min-h-screen flex items-center justify-center bg-stone-900">
+        <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-emerald-400"></div>
       </div>
     );
   }
@@ -80,7 +66,7 @@ const App: React.FC = () => {
   const showOnboarding = currentUser && !currentUser.hasBeenOnboarded;
 
   return (
-    <TooltipProvider>
+    <>
       <NotificationContainer />
       {showOnboarding && <OnboardingWizard />}
 
@@ -88,21 +74,19 @@ const App: React.FC = () => {
         if (isFirstRun) { return <FirstRunWizard />; }
         if (!isAppUnlocked && !isFirstRun) { return <AppLockScreen />; }
         
+        // The user switching flow must take precedence over the shared view.
         if (isSwitchingUser) { return <SwitchUser />; }
         
+        // If not switching, and shared mode is active, show the shared layout.
         if (settings.sharedMode.enabled && isSharedViewActive) {
           return <SharedLayout />;
         }
 
-        if (!currentUser) { return <SwitchUser />; }
+        if (!currentUser) { return <AuthPage />; }
       
-        return (
-          <ErrorBoundary>
-            <MainLayout />
-          </ErrorBoundary>
-        );
+        return <MainLayout />;
       })()}
-    </TooltipProvider>
+    </>
   );
 };
 

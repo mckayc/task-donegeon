@@ -1,5 +1,4 @@
 
-
 export function parseHslString(hsl: string): { h: number, s: number, l: number } {
     const parts = hsl.trim().replace(/%/g, '').split(' ').map(Number);
     if (parts.length === 3) {

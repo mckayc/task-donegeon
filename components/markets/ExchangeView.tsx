@@ -1,11 +1,10 @@
 import React, { useState, useMemo } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { RewardTypeDefinition, RewardCategory, Market, RewardItem } from '../../types';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { ArrowRightIcon } from '@/components/ui/icons';
+import Button from '../ui/Button';
+import Card from '../ui/Card';
+import Input from '../ui/Input';
+import { ArrowRightIcon } from '../ui/Icons';
 
 interface ExchangeViewProps {
     market: Market;
@@ -25,7 +24,7 @@ const RewardButton: React.FC<{
             isSelected 
                 ? 'bg-emerald-800/60 border-2 border-emerald-500 ring-2 ring-emerald-500/50 scale-105' 
                 : isDisabled 
-                ? 'bg-stone-800 opacity-40 cursor-not-allowed' 
+                ? 'bg-stone-800 opacity-40 cursor-not-allowed'
                 : 'bg-stone-900/50 border-2 border-transparent hover:border-emerald-600'
         }`}
         title={balance !== undefined ? `${reward.name}: ${Math.floor(balance)}` : reward.name}
@@ -187,21 +186,21 @@ const ExchangeView: React.FC<ExchangeViewProps> = ({ market }) => {
             .filter((item): item is { reward: RewardTypeDefinition, amountForOneAnchor: number, costForOneAnchor: number } => !!item);
 
         return (
-            <div className="mt-8 pt-6 border-t border-border">
-                <h3 className="font-bold text-lg text-foreground mb-3 text-center">Exchange Rates</h3>
-                <p className="text-sm text-muted-foreground text-center mb-4">Rates include transaction fees and are rounded.</p>
+            <div className="mt-8 pt-6 border-t border-stone-700/60">
+                <h3 className="font-bold text-lg text-stone-200 mb-3 text-center">Exchange Rates</h3>
+                <p className="text-sm text-stone-400 text-center mb-4">Rates include transaction fees and are rounded.</p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2 max-w-lg mx-auto">
                     {rates.map(({ reward, amountForOneAnchor, costForOneAnchor }) => (
                         <React.Fragment key={reward.id}>
                              <div className="flex items-center justify-center text-lg">
-                                <span className="font-semibold text-foreground">1 {anchorReward.icon}</span>
-                                <span className="mx-2 text-muted-foreground">=</span>
+                                <span className="font-semibold text-stone-200">1 {anchorReward.icon}</span>
+                                <span className="mx-2 text-stone-400">=</span>
                                 <span className="font-bold text-accent-light">{amountForOneAnchor} {reward.icon}</span>
                             </div>
                              <div className="flex items-center justify-center text-lg">
                                 <span className="font-bold text-accent-light">{costForOneAnchor} {reward.icon}</span>
-                                <span className="mx-2 text-muted-foreground">=</span>
-                                <span className="font-semibold text-foreground">1 {anchorReward.icon}</span>
+                                <span className="mx-2 text-stone-400">=</span>
+                                <span className="font-semibold text-stone-200">1 {anchorReward.icon}</span>
                             </div>
                         </React.Fragment>
                     ))}
@@ -215,79 +214,74 @@ const ExchangeView: React.FC<ExchangeViewProps> = ({ market }) => {
             <Button variant="secondary" onClick={() => setActiveMarketId(null)} className="mb-6">
                 &larr; Back to the {settings.terminology.shoppingCenter}
             </Button>
-            <Card>
-                <CardHeader>
-                    <CardTitle>Currency & XP Exchange</CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                        {/* Left Column: Selection */}
-                        <div className="space-y-6">
-                            <div>
-                                <h3 className="font-bold text-lg text-foreground mb-3">You Pay</h3>
-                                <div className="grid grid-cols-4 gap-2">
-                                    {currencies.map(c => <RewardButton key={c.id} reward={c} balance={balances.get(c.id) || 0} isSelected={fromRewardId === c.id} isDisabled={toRewardId === c.id} onClick={() => handleFromSelect(c.id)} />)}
-                                    {experience.map(xp => <RewardButton key={xp.id} reward={xp} balance={balances.get(xp.id) || 0} isSelected={fromRewardId === xp.id} isDisabled={toRewardId === xp.id} onClick={() => handleFromSelect(xp.id)} />)}
-                                </div>
-                            </div>
-                            <div>
-                                <h3 className="font-bold text-lg text-foreground mb-3">You Receive</h3>
-                                <div className="grid grid-cols-4 gap-2">
-                                    {receiveCurrencies.map(c => <RewardButton key={c.id} reward={c} isSelected={toRewardId === c.id} isDisabled={fromRewardId === c.id} onClick={() => handleToSelect(c.id)} />)}
-                                </div>
+            <Card title="Currency & XP Exchange">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    {/* Left Column: Selection */}
+                    <div className="space-y-6">
+                         <div>
+                            <h3 className="font-bold text-lg text-stone-200 mb-3">You Pay</h3>
+                             <div className="grid grid-cols-4 gap-2">
+                                {currencies.map(c => <RewardButton key={c.id} reward={c} balance={balances.get(c.id) || 0} isSelected={fromRewardId === c.id} isDisabled={toRewardId === c.id} onClick={() => handleFromSelect(c.id)} />)}
+                                {experience.map(xp => <RewardButton key={xp.id} reward={xp} balance={balances.get(xp.id) || 0} isSelected={fromRewardId === xp.id} isDisabled={toRewardId === xp.id} onClick={() => handleFromSelect(xp.id)} />)}
                             </div>
                         </div>
-                        {/* Right Column: Calculator */}
-                        <div className="bg-background/40 p-6 rounded-lg flex flex-col justify-center">
-                            {fromReward && toReward ? (
-                                <div className="space-y-6 text-center">
-                                    <div className="flex justify-around items-center">
-                                        <div className="text-6xl">{fromReward.icon}</div>
-                                        <ArrowRightIcon className="w-10 h-10 text-muted-foreground"/>
-                                        <div className="text-6xl">{toReward.icon}</div>
-                                    </div>
-                                    <div className="grid grid-cols-2 gap-4 items-end">
-                                        <div>
-                                            <p className="text-sm font-semibold text-muted-foreground">Cost</p>
-                                            <p className="font-bold text-2xl text-amber-400">{Math.ceil(calculation.totalCost)}</p>
-                                        </div>
-                                        <div>
-                                            <Label htmlFor="exchange-amount" className="block text-sm font-semibold text-muted-foreground mb-1">Amount</Label>
-                                            <div className="flex items-center">
-                                                <Button onClick={() => handleAmountStep(-1)} size="sm" variant="secondary" className="!px-3 !py-2 rounded-r-none">-</Button>
-                                                <Input id="exchange-amount" value={toAmountString} onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleAmountChange(e.target.value)} type="text" className="text-center text-lg h-11 rounded-none" />
-                                                <Button onClick={() => handleAmountStep(1)} size="sm" variant="secondary" className="!px-3 !py-2 rounded-l-none">+</Button>
-                                            </div>
-                                            <Button onClick={handleMax} variant="secondary" className="text-xs !py-1 mt-2">Max: {Math.floor(calculation.maxToAmount)}</Button>
-                                        </div>
-                                    </div>
-                                    <div className="pt-6 border-t border-border space-y-3">
-                                        <h4 className="font-bold text-foreground">Summary</h4>
-                                        <div className="grid grid-cols-2 gap-4 text-sm">
-                                            <div className="text-right">
-                                                <p className="text-muted-foreground">Your {fromReward.name}:</p>
-                                                <p className="text-muted-foreground">Your {toReward.name}:</p>
-                                            </div>
-                                            <div className="text-left font-semibold">
-                                                <p className="text-foreground">{Math.floor(balances.get(fromRewardId) || 0)} &rarr; <span className="text-red-400">{Math.floor((balances.get(fromRewardId) || 0) - calculation.totalCost)}</span></p>
-                                                <p className="text-foreground">{Math.floor(balances.get(toRewardId) || 0)} &rarr; <span className="text-green-400">{Math.floor((balances.get(toRewardId) || 0) + (parseInt(toAmountString) || 0))}</span></p>
-                                            </div>
-                                        </div>
-                                        <Button onClick={handleExchange} disabled={calculation.totalCost <= 0 || calculation.totalCost > (balances.get(fromRewardId) || 0)}>
-                                            Confirm Exchange
-                                        </Button>
-                                    </div>
-                                </div>
-                            ) : (
-                                <div className="flex items-center justify-center h-full text-center text-muted-foreground">
-                                    <p>Select what to pay with and what to receive to begin.</p>
-                                </div>
-                            )}
+                         <div>
+                            <h3 className="font-bold text-lg text-stone-200 mb-3">You Receive</h3>
+                             <div className="grid grid-cols-4 gap-2">
+                                {receiveCurrencies.map(c => <RewardButton key={c.id} reward={c} isSelected={toRewardId === c.id} isDisabled={fromRewardId === c.id} onClick={() => handleToSelect(c.id)} />)}
+                            </div>
                         </div>
                     </div>
+                    {/* Right Column: Calculator */}
+                    <div className="bg-stone-900/40 p-6 rounded-lg flex flex-col justify-center">
+                        {fromReward && toReward ? (
+                             <div className="space-y-6 text-center">
+                                <div className="flex justify-around items-center">
+                                    <div className="text-6xl">{fromReward.icon}</div>
+                                    <ArrowRightIcon className="w-10 h-10 text-stone-500"/>
+                                    <div className="text-6xl">{toReward.icon}</div>
+                                </div>
+                                <div className="grid grid-cols-2 gap-4 items-end">
+                                    <div>
+                                        <p className="text-sm font-semibold text-stone-400">Cost</p>
+                                        <p className="font-bold text-2xl text-amber-400">{Math.ceil(calculation.totalCost)}</p>
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-semibold text-stone-400 mb-1">Amount</label>
+                                        <div className="flex items-center">
+                                            <Button onClick={() => handleAmountStep(-1)} size="sm" variant="secondary" className="!px-3 !py-2 rounded-r-none">-</Button>
+                                            <Input value={toAmountString} onChange={e => handleAmountChange(e.target.value)} type="text" className="text-center text-lg h-11 rounded-none" />
+                                            <Button onClick={() => handleAmountStep(1)} size="sm" variant="secondary" className="!px-3 !py-2 rounded-l-none">+</Button>
+                                        </div>
+                                        <Button onClick={handleMax} variant="secondary" className="text-xs !py-1 mt-2">Max: {Math.floor(calculation.maxToAmount)}</Button>
+                                    </div>
+                                </div>
+                                <div className="pt-6 border-t border-stone-700/60 space-y-3">
+                                    <h4 className="font-bold text-stone-200">Summary</h4>
+                                    <div className="grid grid-cols-2 gap-4 text-sm">
+                                        <div className="text-right">
+                                            <p className="text-stone-400">Your {fromReward.name}:</p>
+                                            <p className="text-stone-400">Your {toReward.name}:</p>
+                                        </div>
+                                        <div className="text-left font-semibold">
+                                            <p className="text-stone-200">{Math.floor(balances.get(fromRewardId) || 0)} &rarr; <span className="text-red-400">{Math.floor((balances.get(fromRewardId) || 0) - calculation.totalCost)}</span></p>
+                                            <p className="text-stone-200">{Math.floor(balances.get(toRewardId) || 0)} &rarr; <span className="text-green-400">{Math.floor((balances.get(toRewardId) || 0) + (parseInt(toAmountString) || 0))}</span></p>
+                                        </div>
+                                    </div>
+                                    <Button onClick={handleExchange} disabled={calculation.totalCost <= 0 || calculation.totalCost > (balances.get(fromRewardId) || 0)}>
+                                        Confirm Exchange
+                                    </Button>
+                                </div>
+                             </div>
+                        ) : (
+                            <div className="flex items-center justify-center h-full text-center text-stone-400">
+                                <p>Select what to pay with and what to receive to begin.</p>
+                            </div>
+                        )}
+                    </div>
+                </div>
 
-                    <ExchangeRateChart />
-                </CardContent>
+                <ExchangeRateChart />
             </Card>
         </div>
     );

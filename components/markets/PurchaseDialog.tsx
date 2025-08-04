@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { GameAsset, RewardItem } from '../../types';
-import { Button } from '@/components/ui/button';
+import Button from '../ui/Button';
 
 interface PurchaseDialogProps {
   asset: GameAsset;
@@ -40,8 +40,7 @@ const PurchaseDialog: React.FC<PurchaseDialogProps> = ({ asset, marketId, onClos
     };
 
     const handlePurchase = (costGroupIndex: number) => {
-        const guildId = appMode.mode === 'guild' ? appMode.guildId : undefined;
-        purchaseMarketItem(asset.id, marketId, currentUser.id, costGroupIndex, guildId);
+        purchaseMarketItem(asset.id, marketId, currentUser, costGroupIndex);
         onClose();
     };
 

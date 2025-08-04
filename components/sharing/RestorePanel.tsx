@@ -1,5 +1,6 @@
+
 import React, { useRef } from 'react';
-import { Button } from '@/components/ui/button';
+import Button from '../ui/Button';
 
 interface RestorePanelProps {
   onFileSelect: (file: File) => void;
@@ -36,7 +37,7 @@ const RestorePanel: React.FC<RestorePanelProps> = ({ onFileSelect }) => {
                     accept=".json,application/json"
                     className="hidden"
                 />
-                <Button onClick={handleButtonClick} variant="destructive">
+                <Button onClick={handleButtonClick} className="!bg-amber-600 hover:!bg-amber-500">
                     Select Backup File to Restore
                 </Button>
             </div>

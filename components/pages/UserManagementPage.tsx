@@ -1,14 +1,13 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
-import { Button } from '@/components/ui/button';
+import Button from '../ui/Button';
 import AddUserDialog from '../users/AddUserDialog';
 import { Role, User } from '../../types';
 import EditUserDialog from '../users/EditUserDialog';
 import ManualAdjustmentDialog from '../admin/ManualAdjustmentDialog';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { EllipsisVertical } from 'lucide-react';
-import ConfirmDialog from '../ui/confirm-dialog';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import Card from '../ui/Card';
+import { EllipsisVerticalIcon } from '../ui/Icons';
+import ConfirmDialog from '../ui/ConfirmDialog';
 
 const UserManagementPage: React.FC = () => {
     const { users, settings, currentUser } = useAppState();
@@ -18,6 +17,18 @@ const UserManagementPage: React.FC = () => {
     const [editingUser, setEditingUser] = useState<User | null>(null);
     const [adjustingUser, setAdjustingUser] = useState<User | null>(null);
     const [deletingUser, setDeletingUser] = useState<User | null>(null);
+    const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
+    const dropdownRef = useRef<HTMLDivElement | null>(null);
+
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+                setOpenDropdownId(null);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
 
     const handleEdit = (user: User) => {
         setEditingUser(user);
@@ -50,62 +61,59 @@ const UserManagementPage: React.FC = () => {
 
     return (
         <div className="space-y-6">
-            <Card>
-                <CardHeader className="flex flex-row items-center justify-between">
-                    <CardTitle>All {settings.terminology.group} Members</CardTitle>
+            <Card
+                title={`All ${settings.terminology.group} Members`}
+                headerAction={
                     <Button onClick={() => setIsAddUserDialogOpen(true)} size="sm">
                         Add New Member
                     </Button>
-                </CardHeader>
-                <CardContent>
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-left">
-                            <thead className="border-b">
-                                <tr>
-                                    <th className="p-4 font-semibold">Game Name</th>
-                                    <th className="p-4 font-semibold">Username</th>
-                                    <th className="p-4 font-semibold">Role</th>
-                                    <th className="p-4 font-semibold text-right">Actions</th>
+                }
+            >
+                <div className="overflow-x-auto">
+                    <table className="w-full text-left">
+                        <thead className="border-b border-stone-700/60">
+                            <tr>
+                                <th className="p-4 font-semibold">Game Name</th>
+                                <th className="p-4 font-semibold">Username</th>
+                                <th className="p-4 font-semibold">Role</th>
+                                <th className="p-4 font-semibold">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {users.map(user => (
+                                <tr key={user.id} className="border-b border-stone-700/40 last:border-b-0">
+                                    <td className="p-4">{user.gameName}</td>
+                                    <td className="p-4 text-stone-400">{user.username}</td>
+                                    <td className="p-4">
+                                        <span className={`px-2 py-1 text-xs font-semibold rounded-full ${
+                                            user.role === 'Donegeon Master' ? 'bg-yellow-500/20 text-yellow-300' : 
+                                            user.role === 'Gatekeeper' ? 'bg-sky-500/20 text-sky-300' : 
+                                            'bg-green-500/20 text-green-300'
+                                        }`}>
+                                            {roleName(user.role)}
+                                        </span>
+                                    </td>
+                                    <td className="p-4 relative">
+                                        <button onClick={() => setOpenDropdownId(openDropdownId === user.id ? null : user.id)} className="p-2 rounded-full hover:bg-stone-700/50">
+                                            <EllipsisVerticalIcon className="w-5 h-5 text-stone-300" />
+                                        </button>
+                                        {openDropdownId === user.id && (
+                                            <div ref={dropdownRef} className="absolute right-10 top-0 mt-2 w-36 bg-stone-900 border border-stone-700 rounded-lg shadow-xl z-20">
+                                                <a href="#" onClick={(e) => { e.preventDefault(); handleEdit(user); setOpenDropdownId(null); }} className="block px-4 py-2 text-sm text-stone-300 hover:bg-stone-700/50">Edit</a>
+                                                {user.id !== currentUser?.id && (
+                                                    <>
+                                                        <button onClick={() => { handleAdjust(user); setOpenDropdownId(null); }} className="w-full text-left block px-4 py-2 text-sm text-stone-300 hover:bg-stone-700/50">Adjust</button>
+                                                        <button onClick={() => { handleDeleteRequest(user); setOpenDropdownId(null); }} className="w-full text-left block px-4 py-2 text-sm text-red-400 hover:bg-stone-700/50">Delete</button>
+                                                    </>
+                                                )}
+                                            </div>
+                                        )}
+                                    </td>
                                 </tr>
-                            </thead>
-                            <tbody>
-                                {users.map(user => (
-                                    <tr key={user.id} className="border-b last:border-b-0">
-                                        <td className="p-4">{user.gameName}</td>
-                                        <td className="p-4 text-muted-foreground">{user.username}</td>
-                                        <td className="p-4">
-                                            <span className={`px-2 py-1 text-xs font-semibold rounded-full ${
-                                                user.role === 'Donegeon Master' ? 'bg-yellow-500/20 text-yellow-300' : 
-                                                user.role === 'Gatekeeper' ? 'bg-sky-500/20 text-sky-300' : 
-                                                'bg-green-500/20 text-green-300'
-                                            }`}>
-                                                {roleName(user.role)}
-                                            </span>
-                                        </td>
-                                        <td className="p-4 text-right">
-                                           <DropdownMenu>
-                                                <DropdownMenuTrigger asChild>
-                                                    <Button variant="ghost" size="icon">
-                                                        <EllipsisVertical className="w-4 h-4" />
-                                                    </Button>
-                                                </DropdownMenuTrigger>
-                                                <DropdownMenuContent align="end">
-                                                    <DropdownMenuItem onSelect={() => handleEdit(user)}>Edit</DropdownMenuItem>
-                                                    {user.id !== currentUser?.id && (
-                                                        <>
-                                                            <DropdownMenuItem onSelect={() => handleAdjust(user)}>Adjust</DropdownMenuItem>
-                                                            <DropdownMenuItem onSelect={() => handleDeleteRequest(user)} className="text-red-400 focus:text-red-400">Delete</DropdownMenuItem>
-                                                        </>
-                                                    )}
-                                                </DropdownMenuContent>
-                                            </DropdownMenu>
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
-                </CardContent>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
             </Card>
 
             {isAddUserDialogOpen && <AddUserDialog onClose={() => setIsAddUserDialogOpen(false)} />}

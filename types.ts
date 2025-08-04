@@ -39,7 +39,6 @@ export interface User {
   theme?: string; // Theme ID
   ownedThemes: string[]; // Array of Theme IDs
   hasBeenOnboarded?: boolean;
-  isAi?: boolean;
 }
 
 export enum QuestType {
@@ -466,20 +465,9 @@ export interface RewardValuationSettings {
   xpExchangeFeePercent: number;
 }
 
-export interface AutomatedBackupProfile {
-    enabled: boolean;
-    frequency: 'hourly' | 'daily' | 'weekly' | 'monthly';
-    keep: number;
-}
-
-export interface AutomatedBackups {
-    // A fixed array of 3 profiles for the UI
-    profiles: [AutomatedBackupProfile, AutomatedBackupProfile, AutomatedBackupProfile];
-}
 
 export interface AppSettings {
   contentVersion: number;
-  isFirstRunComplete: boolean;
   favicon: string;
   forgivingSetbacks: boolean;
   questDefaults: {
@@ -500,7 +488,11 @@ export interface AppSettings {
     autoExitMinutes: number;
     userIds: string[];
   };
-  automatedBackups: AutomatedBackups;
+  automatedBackups: {
+    enabled: boolean;
+    frequencyHours: number; // e.g., 24 for daily
+    maxBackups: number; // e.g., 7 for a week's worth
+  };
   loginNotifications: {
     enabled: boolean;
   };
@@ -568,25 +560,6 @@ export interface ThemeStyle {
   '--color-accent-light-hue': string;
   '--color-accent-light-saturation': string;
   '--color-accent-light-lightness': string;
-  // Asset Colors
-  '--color-duty-bg': string;
-  '--color-duty-border': string;
-  '--color-duty-text': string;
-  '--color-venture-bg': string;
-  '--color-venture-border': string;
-  '--color-venture-text': string;
-  '--color-item-bg': string;
-  '--color-item-border': string;
-  '--color-item-text': string;
-  '--color-trophy-bg': string;
-  '--color-trophy-border': string;
-  '--color-trophy-text': string;
-  '--color-reward-bg': string;
-  '--color-reward-border': string;
-  '--color-reward-text': string;
-  '--color-quest-group-bg': string;
-  '--color-quest-group-border': string;
-  '--color-quest-group-text': string;
 }
 
 export interface ThemeDefinition {
@@ -670,124 +643,4 @@ export interface BulkQuestUpdates {
     removeTags?: string[];
     assignUsers?: string[];
     unassignUsers?: string[];
-}
-
-// The single, unified dispatch for the entire application
-export interface AppDispatch {
-  // Auth
-  addUser: (user: Omit<User, 'id' | 'personalPurse' | 'personalExperience' | 'guildBalances' | 'avatar' | 'ownedAssetIds' | 'ownedThemes' | 'hasBeenOnboarded'>) => Promise<void>;
-  updateUser: (userId: string, updatedData: Partial<User>) => Promise<void>;
-  deleteUser: (userId: string) => Promise<void>;
-  setCurrentUser: (user: User | null) => void;
-  markUserAsOnboarded: (userId: string) => Promise<void>;
-  setAppUnlocked: (isUnlocked: boolean) => void;
-  setIsSwitchingUser: (isSwitching: boolean) => void;
-  setTargetedUserForLogin: (user: User | null) => void;
-  exitToSharedView: () => void;
-  exitSharedMode: () => void;
-  setIsSharedViewActive: (isActive: boolean) => void;
-  bypassFirstRunCheck: () => void;
-  reinitializeApp: () => Promise<void>;
-
-  // Game Data
-  addQuest: (quest: Omit<Quest, 'id' | 'claimedByUserIds' | 'dismissals'>) => Promise<void>;
-  updateQuest: (updatedQuest: Quest) => Promise<void>;
-  deleteQuest: (questId: string) => Promise<void>;
-  cloneQuest: (questId: string) => Promise<void>;
-  dismissQuest: (questId: string, userId: string) => Promise<void>;
-  claimQuest: (questId: string, userId: string) => Promise<void>;
-  releaseQuest: (questId: string, userId: string) => Promise<void>;
-  markQuestAsTodo: (questId: string, userId: string) => Promise<void>;
-  unmarkQuestAsTodo: (questId: string, userId: string) => Promise<void>;
-  completeQuest: (questId: string, userId: string, guildId?: string, options?: { note?: string; completionDate?: Date }) => Promise<void>;
-  approveQuestCompletion: (completionId: string, note?: string) => Promise<void>;
-  rejectQuestCompletion: (completionId: string, note?: string) => Promise<void>;
-  addQuestGroup: (group: Omit<QuestGroup, 'id'>) => Promise<QuestGroup | undefined>;
-  updateQuestGroup: (group: QuestGroup) => Promise<void>;
-  deleteQuestGroup: (groupId: string) => Promise<void>;
-  assignQuestGroupToUsers: (groupId: string, userIds: string[]) => Promise<void>;
-  addRewardType: (rewardType: Omit<RewardTypeDefinition, 'id' | 'isCore'>) => Promise<RewardTypeDefinition | undefined>;
-  updateRewardType: (rewardType: RewardTypeDefinition) => Promise<void>;
-  deleteRewardType: (rewardTypeId: string) => Promise<void>;
-  cloneRewardType: (rewardTypeId: string) => Promise<void>;
-  addMarket: (market: Omit<Market, 'id'>) => Promise<Market | undefined>;
-  updateMarket: (market: Market) => Promise<void>;
-  deleteMarket: (marketId: string) => Promise<void>;
-  cloneMarket: (marketId: string) => Promise<void>;
-  deleteMarkets: (marketIds: string[]) => Promise<void>;
-  updateMarketsStatus: (marketIds: string[], status: 'open' | 'closed') => Promise<void>;
-  purchaseMarketItem: (assetId: string, marketId: string, userId: string, costGroupIndex: number, guildId?: string) => Promise<void>;
-  approvePurchaseRequest: (purchaseId: string) => Promise<void>;
-  rejectPurchaseRequest: (purchaseId: string) => Promise<void>;
-  cancelPurchaseRequest: (purchaseId: string) => Promise<void>;
-  addGuild: (guild: Omit<Guild, 'id'>) => Promise<void>;
-  updateGuild: (guild: Guild) => Promise<void>;
-  deleteGuild: (guildId: string) => Promise<void>;
-  addTrophy: (trophy: Omit<Trophy, 'id'>) => Promise<Trophy | undefined>;
-  updateTrophy: (trophy: Trophy) => Promise<void>;
-  deleteTrophy: (trophyId: string) => Promise<void>;
-  cloneTrophy: (trophyId: string) => Promise<void>;
-  deleteTrophies: (trophyIds: string[]) => Promise<void>;
-  awardTrophy: (userId: string, trophyId: string, guildId?: string) => Promise<void>;
-  applyManualAdjustment: (adjustment: Omit<AdminAdjustment, 'id' | 'adjustedAt'>) => Promise<void>;
-  addGameAsset: (asset: Omit<GameAsset, 'id' | 'creatorId' | 'createdAt' | 'purchaseCount'>) => Promise<void>;
-  updateGameAsset: (asset: GameAsset) => Promise<void>;
-  deleteGameAsset: (assetId: string) => Promise<void>;
-  deleteGameAssets: (assetIds: string[]) => Promise<void>;
-  cloneGameAsset: (assetId: string) => Promise<void>;
-  
-  // Themes
-  addTheme: (theme: Omit<ThemeDefinition, 'id'>) => Promise<ThemeDefinition | undefined>;
-  updateTheme: (theme: ThemeDefinition) => Promise<void>;
-  deleteTheme: (themeId: string) => Promise<void>;
-
-  // Settings
-  updateSettings: (newSettings: Partial<AppSettings>) => void;
-  resetSettings: () => void;
-  
-  // UI
-  setActivePage: (page: Page) => void;
-  setAppMode: (mode: AppMode) => void;
-  addNotification: (notification: Omit<Notification, 'id'>) => void;
-  removeNotification: (notificationId: string) => void;
-  setActiveMarketId: (marketId: string | null) => void;
-  toggleSidebar: () => void;
-  toggleChat: () => void;
-
-  // Data Management
-  importBlueprint: (blueprint: Blueprint, resolutions: ImportResolution[]) => Promise<void>;
-  restoreFromBackup: (backupData: any) => Promise<void>;
-  restoreDefaultObjects: (objectType: 'trophies') => Promise<void>;
-  clearAllHistory: () => Promise<void>;
-  resetAllPlayerData: () => Promise<void>;
-  deleteAllCustomContent: () => Promise<void>;
-  
-  // First Run
-  completeFirstRun: (adminUserData: Omit<User, 'id' | 'personalPurse' | 'personalExperience' | 'guildBalances' | 'avatar' | 'ownedAssetIds' | 'ownedThemes' | 'hasBeenOnboarded'>, setupChoice: 'guided' | 'scratch' | 'import', blueprint: Blueprint | null) => Promise<{ message: string; adminUser: User; } | undefined>;
-  
-  // Ranks
-  setRanks: (ranks: Rank[]) => void;
-
-  // Chat
-  sendMessage: (message: Pick<ChatMessage, "message"> & Partial<Omit<ChatMessage, "message">>) => Promise<void>;
-  markMessagesAsRead: (options: { partnerId?: string; guildId?: string }) => Promise<void>;
-
-  // System Notifications
-  addSystemNotification: (notification: Omit<SystemNotification, 'id' | 'timestamp' | 'readByUserIds'>) => Promise<void>;
-  markSystemNotificationsAsRead: (notificationIds: string[]) => Promise<void>;
-
-  // Scheduled Events
-  addScheduledEvent: (event: Omit<ScheduledEvent, 'id'>) => Promise<void>;
-  updateScheduledEvent: (event: ScheduledEvent) => Promise<void>;
-  deleteScheduledEvent: (eventId: string) => Promise<void>;
-  
-  // Bulk Actions
-  deleteQuests: (questIds: string[]) => Promise<void>;
-  updateQuestsStatus: (questIds: string[], isActive: boolean) => Promise<void>;
-  bulkUpdateQuests: (questIds: string[], updates: BulkQuestUpdates) => Promise<void>;
-
-  // Assets
-  uploadFile: (file: File, category?: string) => Promise<{ url: string } | null>;
-  executeExchange: (userId: string, payItem: RewardItem, receiveItem: RewardItem, guildId?: string) => Promise<void>;
-
 }

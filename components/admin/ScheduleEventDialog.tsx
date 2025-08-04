@@ -53,12 +53,9 @@ const ScheduleEventDialog: React.FC<ScheduleEventDialogProps> = ({ event, onClos
     const { addScheduledEvent, updateScheduledEvent, deleteScheduledEvent } = useAppDispatch();
     const { guilds, markets, rewardTypes } = useAppState();
     
-    const [formData, setFormData] = useState<Omit<ScheduledEvent, 'id'>>(getInitialFormData());
-    const [isEmojiPickerOpen, setIsEmojiPickerOpen] = useState(false);
-
-    useEffect(() => {
+    const [formData, setFormData] = useState<Omit<ScheduledEvent, 'id'>>(() => {
         if (event) {
-            const fullEventData = {
+            return {
                 ...getInitialFormData(),
                 ...event,
                 modifiers: {
@@ -66,11 +63,10 @@ const ScheduleEventDialog: React.FC<ScheduleEventDialogProps> = ({ event, onClos
                     ...(event.modifiers || {}),
                 },
             };
-            setFormData(fullEventData);
-        } else {
-            setFormData(getInitialFormData());
         }
-    }, [event]);
+        return getInitialFormData();
+    });
+    const [isEmojiPickerOpen, setIsEmojiPickerOpen] = useState(false);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;

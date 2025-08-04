@@ -13,6 +13,7 @@ import { Button } from '@/components/ui/button';
 import EventDetailDialog from '@/components/calendar/EventDetailDialog';
 import ScheduleEventDialog from '@/components/admin/ScheduleEventDialog';
 import ConfirmDialog from '@/components/ui/confirm-dialog';
+import ErrorBoundary from '../ui/ErrorBoundary';
 
 type CalendarView = 'month' | 'week' | 'day';
 type CalendarMode = 'quests' | 'chronicles';
@@ -106,82 +107,79 @@ const CalendarPage: React.FC = () => {
         return currentDate.toLocaleDateString('default', options);
     }, [currentDate, view]);
 
-    try {
-        return (
-            <div>
-                <Card>
-                    <CardHeader className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                        <div className="flex items-center gap-4">
-                            <Button variant="outline" size="sm" onClick={() => handleDateChange(-1)}>&larr;</Button>
-                            <h2 className="text-2xl font-bold text-center w-64">{title}</h2>
-                            <Button variant="outline" size="sm" onClick={() => handleDateChange(1)}>&rarr;</Button>
-                            <Button variant="secondary" size="sm" onClick={() => setCurrentDate(new Date())}>Today</Button>
+    return (
+        <div>
+            <Card>
+                <CardHeader className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div className="flex items-center gap-4">
+                        <Button variant="outline" size="sm" onClick={() => handleDateChange(-1)}>&larr;</Button>
+                        <h2 className="text-2xl font-bold text-center w-64">{title}</h2>
+                        <Button variant="outline" size="sm" onClick={() => handleDateChange(1)}>&rarr;</Button>
+                        <Button variant="secondary" size="sm" onClick={() => setCurrentDate(new Date())}>Today</Button>
+                    </div>
+                    <div className="flex items-center gap-4">
+                        <div className="flex space-x-1 p-1 bg-background rounded-lg">
+                            <Button onClick={() => setMode('quests')} variant={mode === 'quests' ? 'default' : 'ghost'} size="sm">Quests</Button>
+                            <Button onClick={() => setMode('chronicles')} variant={mode === 'chronicles' ? 'default' : 'ghost'} size="sm">Chronicles</Button>
                         </div>
-                        <div className="flex items-center gap-4">
-                            <div className="flex space-x-1 p-1 bg-background rounded-lg">
-                                <Button onClick={() => setMode('quests')} variant={mode === 'quests' ? 'default' : 'ghost'} size="sm">Quests</Button>
-                                <Button onClick={() => setMode('chronicles')} variant={mode === 'chronicles' ? 'default' : 'ghost'} size="sm">Chronicles</Button>
-                            </div>
-                            <div className="flex space-x-1 p-1 bg-background rounded-lg">
-                                <ViewButton type="month" currentView={view} setView={setView}>Month</ViewButton>
-                                <ViewButton type="week" currentView={view} setView={setView}>Week</ViewButton>
-                                <ViewButton type="day" currentView={view} setView={setView}>Day</ViewButton>
-                            </div>
-                            {currentUser?.role === Role.DonegeonMaster && (
-                                <Button onClick={handleCreateEvent}>Schedule New Event</Button>
-                            )}
+                        <div className="flex space-x-1 p-1 bg-background rounded-lg">
+                            <ViewButton type="month" currentView={view} setView={setView}>Month</ViewButton>
+                            <ViewButton type="week" currentView={view} setView={setView}>Week</ViewButton>
+                            <ViewButton type="day" currentView={view} setView={setView}>Day</ViewButton>
                         </div>
-                    </CardHeader>
-                    <CardContent>
-                        {(() => {
-                            if (mode === 'quests') {
-                                switch (view) {
-                                    case 'month': return <MonthView currentDate={currentDate} quests={questsForView} questCompletions={questCompletions} scheduledEvents={scheduledEvents} onEventSelect={handleEventSelect} />;
-                                    case 'week': return <WeekView currentDate={currentDate} quests={questsForView} questCompletions={questCompletions} scheduledEvents={scheduledEvents} onEventSelect={handleEventSelect} />;
-                                    case 'day': return <DayView currentDate={currentDate} quests={questsForView} questCompletions={questCompletions} scheduledEvents={scheduledEvents} onEventSelect={handleEventSelect} />;
-                                }
-                            } else { // Chronicles mode
-                                switch (view) {
-                                    case 'month': return <ChroniclesMonthView currentDate={currentDate} />;
-                                    case 'week': return <ChroniclesWeekView currentDate={currentDate} />;
-                                    case 'day': return <ChroniclesDayView currentDate={currentDate} />;
-                                }
+                        {currentUser?.role === Role.DonegeonMaster && (
+                            <Button onClick={handleCreateEvent}>Schedule New Event</Button>
+                        )}
+                    </div>
+                </CardHeader>
+                <CardContent>
+                    {(() => {
+                        if (mode === 'quests') {
+                            switch (view) {
+                                case 'month': return <MonthView currentDate={currentDate} quests={questsForView} questCompletions={questCompletions} scheduledEvents={scheduledEvents} onEventSelect={handleEventSelect} />;
+                                case 'week': return <WeekView currentDate={currentDate} quests={questsForView} questCompletions={questCompletions} scheduledEvents={scheduledEvents} onEventSelect={handleEventSelect} />;
+                                case 'day': return <DayView currentDate={currentDate} quests={questsForView} questCompletions={questCompletions} scheduledEvents={scheduledEvents} onEventSelect={handleEventSelect} />;
                             }
-                        })()}
-                    </CardContent>
-                </Card>
+                        } else { // Chronicles mode
+                            switch (view) {
+                                case 'month': return <ChroniclesMonthView currentDate={currentDate} />;
+                                case 'week': return <ChroniclesWeekView currentDate={currentDate} />;
+                                case 'day': return <ChroniclesDayView currentDate={currentDate} />;
+                            }
+                        }
+                    })()}
+                </CardContent>
+            </Card>
 
-                {selectedEvent && (
-                    <EventDetailDialog
-                        event={selectedEvent}
-                        onClose={() => setSelectedEvent(null)}
-                        onEdit={handleEditEvent}
-                        onDelete={(event) => { setSelectedEvent(null); setDeletingEvent(event); }}
-                    />
-                )}
+            {selectedEvent && (
+                <EventDetailDialog
+                    event={selectedEvent}
+                    onClose={() => setSelectedEvent(null)}
+                    onEdit={handleEditEvent}
+                    onDelete={(event) => { setSelectedEvent(null); setDeletingEvent(event); }}
+                />
+            )}
 
-                {isScheduleDialogOpen && (
+            {isScheduleDialogOpen && (
+                <ErrorBoundary>
                     <ScheduleEventDialog
                         event={editingEvent}
                         onClose={() => setIsScheduleDialogOpen(false)}
                     />
-                )}
+                </ErrorBoundary>
+            )}
 
-                {deletingEvent && (
-                    <ConfirmDialog
-                        isOpen={!!deletingEvent}
-                        onClose={() => setDeletingEvent(null)}
-                        onConfirm={handleConfirmDelete}
-                        title="Delete Event"
-                        message={`Are you sure you want to delete the event "${deletingEvent.title}"?`}
-                    />
-                )}
-            </div>
-        );
-    } catch (error) {
-        console.error("--- CALENDAR PAGE CRASH ---", error);
-        return <div className="text-red-500 p-4 bg-red-900/20 border border-red-500/50 rounded-lg">A critical error occurred on the Calendar page. Please check the console for details.</div>;
-    }
+            {deletingEvent && (
+                <ConfirmDialog
+                    isOpen={!!deletingEvent}
+                    onClose={() => setDeletingEvent(null)}
+                    onConfirm={handleConfirmDelete}
+                    title="Delete Event"
+                    message={`Are you sure you want to delete the event "${deletingEvent.title}"?`}
+                />
+            )}
+        </div>
+    );
 };
 
 export default CalendarPage;

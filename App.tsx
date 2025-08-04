@@ -8,6 +8,7 @@ import AppLockScreen from '@/components/auth/AppLockScreen';
 import OnboardingWizard from '@/components/auth/OnboardingWizard';
 import SharedLayout from '@/components/layout/SharedLayout';
 import { TooltipProvider } from "@/components/ui/tooltip";
+import ErrorBoundary from '@/components/ui/ErrorBoundary';
 
 const App: React.FC = () => {
   const { isAppUnlocked, isFirstRun, currentUser, isSwitchingUser, isDataLoaded, settings, isSharedViewActive, appMode, guilds, themes, isRestarting, activePage } = useAppState();
@@ -95,7 +96,11 @@ const App: React.FC = () => {
 
         if (!currentUser) { return <SwitchUser />; }
       
-        return <MainLayout />;
+        return (
+          <ErrorBoundary>
+            <MainLayout />
+          </ErrorBoundary>
+        );
       })()}
     </TooltipProvider>
   );

@@ -178,126 +178,128 @@ const ThemeEditorPage: React.FC = () => {
     };
 
     if (!formData) {
-        console.log('[ThemeEditor] No formData, rendering loading state.');
-        return <div>Loading theme editor...</div>;
-    }
-
-    try {
-        const s = formData.styles;
-        const corePalette = {
-            bgPrimary: s['--color-bg-primary'], bgSecondary: s['--color-bg-secondary'],
-            textPrimary: s['--color-text-primary'], textSecondary: s['--color-text-secondary'],
-            primary: hslValuesToCss(parseInt(s['--color-primary-hue']), parseInt(s['--color-primary-saturation']), parseInt(s['--color-primary-lightness'])),
-            accent: hslValuesToCss(parseInt(s['--color-accent-hue']), parseInt(s['--color-accent-saturation']), parseInt(s['--color-accent-lightness'])),
-        };
-        
-        const assetColors = [
-            { type: 'Duty', prefix: '--color-duty' },
-            { type: 'Venture', prefix: '--color-venture' },
-            { type: 'Item', prefix: '--color-item' },
-            { type: 'Trophy', prefix: '--color-trophy' },
-            { type: 'Reward', prefix: '--color-reward' },
-            { type: 'Quest Group', prefix: '--color-quest-group' },
-        ];
-
+        console.log('[ThemeEditor] No formData, rendering loading state. This is normal during theme switches.');
         return (
-            <div className="h-full flex flex-col lg:flex-row gap-6">
-                <div className="flex-1 lg:w-[40%] flex flex-col bg-card border rounded-lg p-4 min-h-[500px] lg:max-h-full">
-                    <LivePreview />
-                </div>
-
-                <div className="flex-1 lg:w-[60%] flex flex-col gap-4">
-                    <div className="flex items-center gap-2 flex-wrap">
-                        <Select value={selectedThemeId} onValueChange={setSelectedThemeId}>
-                            <SelectTrigger><SelectValue/></SelectTrigger>
-                            <SelectContent>{themes.map(t => <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>)}</SelectContent>
-                        </Select>
-                        <Button onClick={handleCreateNew}>New</Button>
-                        {isAiConfigured && <Button onClick={() => setIsGeneratorOpen(true)} variant="outline">AI Ideas</Button>}
-                        <div className="flex-grow"></div>
-                        {formData.isCustom && <Button variant="destructive" size="sm" onClick={() => setDeletingTheme(formData)}>Delete</Button>}
-                        <Button onClick={handleSave}>{formData.id.startsWith('new-') ? 'Create Theme' : 'Save Changes'}</Button>
-                    </div>
-                    <Card className="flex-1 overflow-y-auto">
-                        <CardContent className="p-4 space-y-4">
-                            <Input value={formData.name} onChange={(e: ChangeEvent<HTMLInputElement>) => setFormData(p => p ? { ...p, name: e.target.value } : null)} />
-                            
-                            <div className="pt-4 border-t">
-                                <h3 className="font-semibold text-foreground mb-2">Core Palette</h3>
-                                <div className="grid grid-cols-2 gap-4">
-                                    <SimpleColorPicker label="Primary BG" hslValue={corePalette.bgPrimary} onChange={v => handleStyleChange('--color-bg-primary', v)} />
-                                    <SimpleColorPicker label="Secondary BG" hslValue={corePalette.bgSecondary} onChange={v => handleStyleChange('--color-bg-secondary', v)} />
-                                    <SimpleColorPicker label="Primary Text" hslValue={corePalette.textPrimary} onChange={v => handleStyleChange('--color-text-primary', v)} />
-                                    <SimpleColorPicker label="Secondary Text" hslValue={corePalette.textSecondary} onChange={v => handleStyleChange('--color-text-secondary', v)} />
-                                    <SimpleColorPicker label="Primary Accent" hslValue={corePalette.primary} onChange={v => handleStyleChange('--color-primary-hue', v)} />
-                                    <SimpleColorPicker label="Secondary Accent" hslValue={corePalette.accent} onChange={v => handleStyleChange('--color-accent-hue', v)} />
-                                </div>
-                            </div>
-
-                            <div className="pt-4 border-t">
-                                <h3 className="font-semibold text-foreground mb-2">Fonts</h3>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div className="space-y-2">
-                                        <Label>Display Font</Label>
-                                        <Select value={s['--font-display']} onValueChange={v => handleStyleChange('--font-display', v)}>
-                                            <SelectTrigger><SelectValue/></SelectTrigger>
-                                            <SelectContent>{FONT_GROUPS.map(g => <SelectGroup key={g.label}><SelectLabel>{g.label}</SelectLabel>{g.fonts.map(f => <SelectItem key={f} value={f} style={{fontFamily: f}}>{f.split(',')[0].replace(/'/g, '')}</SelectItem>)}</SelectGroup>)}</SelectContent>
-                                        </Select>
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Label>Body Font</Label>
-                                        <Select value={s['--font-body']} onValueChange={v => handleStyleChange('--font-body', v)}>
-                                            <SelectTrigger><SelectValue/></SelectTrigger>
-                                            <SelectContent>{FONT_GROUPS.map(g => <SelectGroup key={g.label}><SelectLabel>{g.label}</SelectLabel>{g.fonts.map(f => <SelectItem key={f} value={f} style={{fontFamily: f}}>{f.split(',')[0].replace(/'/g, '')}</SelectItem>)}</SelectGroup>)}</SelectContent>
-                                        </Select>
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Label>Display Size ({parseFloat(s['--font-size-display'] || '2.75').toFixed(1)}rem)</Label>
-                                        <Slider defaultValue={[parseFloat(s['--font-size-display'] || '2.75')]} max={6} min={1.5} step={0.1} onValueChange={(v) => handleStyleChange('--font-size-display', `${v[0]}rem`)} />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Label>Body Size ({parseFloat(s['--font-size-body'] || '1.0').toFixed(2)}rem)</Label>
-                                        <Slider defaultValue={[parseFloat(s['--font-size-body'] || '1.0')]} max={1.5} min={0.8} step={0.05} onValueChange={(v) => handleStyleChange('--font-size-body', `${v[0]}rem`)} />
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <div className="pt-4 border-t">
-                                <h3 className="font-semibold text-foreground mb-2">Asset Card Colors</h3>
-                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-2 gap-y-4">
-                                    {assetColors.map(({ type, prefix }) => (
-                                        <div key={type} className="p-2 bg-background/50 rounded-lg">
-                                            <h4 className="font-bold text-sm text-foreground mb-2">{type}</h4>
-                                            <div className="space-y-2">
-                                                <SimpleColorPicker label="BG" hslValue={s[`${prefix}-bg` as keyof ThemeStyle]} onChange={v => handleStyleChange(`${prefix}-bg` as keyof ThemeStyle, v)} />
-                                                <SimpleColorPicker label="Border" hslValue={s[`${prefix}-border` as keyof ThemeStyle]} onChange={v => handleStyleChange(`${prefix}-border` as keyof ThemeStyle, v)} />
-                                                <SimpleColorPicker label="Text" hslValue={s[`${prefix}-text` as keyof ThemeStyle]} onChange={v => handleStyleChange(`${prefix}-text` as keyof ThemeStyle, v)} />
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                        </CardContent>
-                    </Card>
-                </div>
-                
-                {isGeneratorOpen && <ThemeIdeaGenerator onUseIdea={handleUseIdea} onClose={() => setIsGeneratorOpen(false)} />}
-                
-                {deletingTheme && (
-                    <ConfirmDialog
-                        isOpen={!!deletingTheme}
-                        onClose={() => setDeletingTheme(null)}
-                        onConfirm={handleConfirmDelete}
-                        title="Delete Theme"
-                        message={`Are you sure you want to delete the theme "${deletingTheme.name}"? This is permanent.`}
-                    />
-                )}
+            <div className="flex items-center justify-center h-full">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
             </div>
         );
-    } catch (error) {
-        console.error("--- THEME EDITOR CRASH ---", error);
-        return <div className="text-red-500 p-4 bg-red-900/20 border border-red-500/50 rounded-lg">A critical error occurred in the Theme Editor. Check the console for details. This is often caused by incomplete theme data.</div>;
     }
+
+    const s = formData.styles;
+    const corePalette = {
+        bgPrimary: s['--color-bg-primary'], bgSecondary: s['--color-bg-secondary'],
+        textPrimary: s['--color-text-primary'], textSecondary: s['--color-text-secondary'],
+        primary: hslValuesToCss(parseInt(s['--color-primary-hue']), parseInt(s['--color-primary-saturation']), parseInt(s['--color-primary-lightness'])),
+        accent: hslValuesToCss(parseInt(s['--color-accent-hue']), parseInt(s['--color-accent-saturation']), parseInt(s['--color-accent-lightness'])),
+    };
+    
+    const assetColors = [
+        { type: 'Duty', prefix: '--color-duty' },
+        { type: 'Venture', prefix: '--color-venture' },
+        { type: 'Item', prefix: '--color-item' },
+        { type: 'Trophy', prefix: '--color-trophy' },
+        { type: 'Reward', prefix: '--color-reward' },
+        { type: 'Quest Group', prefix: '--color-quest-group' },
+    ];
+
+    const displaySize = parseFloat(s['--font-size-display'] || '2.75');
+    const bodySize = parseFloat(s['--font-size-body'] || '1.0');
+
+    return (
+        <div className="h-full flex flex-col lg:flex-row gap-6">
+            <div className="flex-1 lg:w-[40%] flex flex-col bg-card border rounded-lg p-4 min-h-[500px] lg:max-h-full">
+                <LivePreview />
+            </div>
+
+            <div className="flex-1 lg:w-[60%] flex flex-col gap-4">
+                <div className="flex items-center gap-2 flex-wrap">
+                    <Select value={selectedThemeId} onValueChange={setSelectedThemeId}>
+                        <SelectTrigger><SelectValue/></SelectTrigger>
+                        <SelectContent>{themes.map(t => <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>)}</SelectContent>
+                    </Select>
+                    <Button onClick={handleCreateNew}>New</Button>
+                    {isAiConfigured && <Button onClick={() => setIsGeneratorOpen(true)} variant="outline">AI Ideas</Button>}
+                    <div className="flex-grow"></div>
+                    {formData.isCustom && <Button variant="destructive" size="sm" onClick={() => setDeletingTheme(formData)}>Delete</Button>}
+                    <Button onClick={handleSave}>{formData.id.startsWith('new-') ? 'Create Theme' : 'Save Changes'}</Button>
+                </div>
+                <Card className="flex-1 overflow-y-auto">
+                    <CardContent className="p-4 space-y-4">
+                        <Input value={formData.name} onChange={(e: ChangeEvent<HTMLInputElement>) => setFormData(p => p ? { ...p, name: e.target.value } : null)} />
+                        
+                        <div className="pt-4 border-t">
+                            <h3 className="font-semibold text-foreground mb-2">Core Palette</h3>
+                            <div className="grid grid-cols-2 gap-4">
+                                <SimpleColorPicker label="Primary BG" hslValue={corePalette.bgPrimary} onChange={v => handleStyleChange('--color-bg-primary', v)} />
+                                <SimpleColorPicker label="Secondary BG" hslValue={corePalette.bgSecondary} onChange={v => handleStyleChange('--color-bg-secondary', v)} />
+                                <SimpleColorPicker label="Primary Text" hslValue={corePalette.textPrimary} onChange={v => handleStyleChange('--color-text-primary', v)} />
+                                <SimpleColorPicker label="Secondary Text" hslValue={corePalette.textSecondary} onChange={v => handleStyleChange('--color-text-secondary', v)} />
+                                <SimpleColorPicker label="Primary Accent" hslValue={corePalette.primary} onChange={v => handleStyleChange('--color-primary-hue', v)} />
+                                <SimpleColorPicker label="Secondary Accent" hslValue={corePalette.accent} onChange={v => handleStyleChange('--color-accent-hue', v)} />
+                            </div>
+                        </div>
+
+                        <div className="pt-4 border-t">
+                            <h3 className="font-semibold text-foreground mb-2">Fonts</h3>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <Label>Display Font</Label>
+                                    <Select value={s['--font-display']} onValueChange={v => handleStyleChange('--font-display', v)}>
+                                        <SelectTrigger><SelectValue/></SelectTrigger>
+                                        <SelectContent>{FONT_GROUPS.map(g => <SelectGroup key={g.label}><SelectLabel>{g.label}</SelectLabel>{g.fonts.map(f => <SelectItem key={f} value={f} style={{fontFamily: f}}>{f.split(',')[0].replace(/'/g, '')}</SelectItem>)}</SelectGroup>)}</SelectContent>
+                                    </Select>
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>Body Font</Label>
+                                    <Select value={s['--font-body']} onValueChange={v => handleStyleChange('--font-body', v)}>
+                                        <SelectTrigger><SelectValue/></SelectTrigger>
+                                        <SelectContent>{FONT_GROUPS.map(g => <SelectGroup key={g.label}><SelectLabel>{g.label}</SelectLabel>{g.fonts.map(f => <SelectItem key={f} value={f} style={{fontFamily: f}}>{f.split(',')[0].replace(/'/g, '')}</SelectItem>)}</SelectGroup>)}</SelectContent>
+                                    </Select>
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>Display Size ({displaySize.toFixed(1)}rem)</Label>
+                                    <Slider defaultValue={[displaySize]} max={6} min={1.5} step={0.1} onValueChange={(v: number[]) => handleStyleChange('--font-size-display', `${v[0]}rem`)} />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>Body Size ({bodySize.toFixed(2)}rem)</Label>
+                                    <Slider defaultValue={[bodySize]} max={1.5} min={0.8} step={0.05} onValueChange={(v: number[]) => handleStyleChange('--font-size-body', `${v[0]}rem`)} />
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div className="pt-4 border-t">
+                            <h3 className="font-semibold text-foreground mb-2">Asset Card Colors</h3>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-2 gap-y-4">
+                                {assetColors.map(({ type, prefix }) => (
+                                    <div key={type} className="p-2 bg-background/50 rounded-lg">
+                                        <h4 className="font-bold text-sm text-foreground mb-2">{type}</h4>
+                                        <div className="space-y-2">
+                                            <SimpleColorPicker label="BG" hslValue={s[`${prefix}-bg` as keyof ThemeStyle]} onChange={v => handleStyleChange(`${prefix}-bg` as keyof ThemeStyle, v)} />
+                                            <SimpleColorPicker label="Border" hslValue={s[`${prefix}-border` as keyof ThemeStyle]} onChange={v => handleStyleChange(`${prefix}-border` as keyof ThemeStyle, v)} />
+                                            <SimpleColorPicker label="Text" hslValue={s[`${prefix}-text` as keyof ThemeStyle]} onChange={v => handleStyleChange(`${prefix}-text` as keyof ThemeStyle, v)} />
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
+            </div>
+            
+            {isGeneratorOpen && <ThemeIdeaGenerator onUseIdea={handleUseIdea} onClose={() => setIsGeneratorOpen(false)} />}
+            
+            {deletingTheme && (
+                <ConfirmDialog
+                    isOpen={!!deletingTheme}
+                    onClose={() => setDeletingTheme(null)}
+                    onConfirm={handleConfirmDelete}
+                    title="Delete Theme"
+                    message={`Are you sure you want to delete the theme "${deletingTheme.name}"? This is permanent.`}
+                />
+            )}
+        </div>
+    );
 };
 
 export default ThemeEditorPage;

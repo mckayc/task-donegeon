@@ -41,6 +41,7 @@ import ChatPanel from '../chat/ChatPanel';
 import LoginNotificationPopup from '../ui/login-notification-popup';
 import BackupAndImportPage from '../pages/management/BackupAndImportPage';
 import ChatController from '../chat/ChatController';
+import ErrorBoundary from '../ui/ErrorBoundary';
 
 const MainLayout: React.FC = () => {
   const { activePage, currentUser, settings, systemNotifications } = useAppState();
@@ -159,7 +160,9 @@ const MainLayout: React.FC = () => {
           <Header />
           <main className="flex-1 overflow-x-hidden overflow-y-auto p-4 md:p-8" style={{ backgroundColor: 'hsl(var(--color-bg-tertiary))' }}>
             <VacationModeBanner />
-            {renderPage()}
+            <ErrorBoundary>
+              {renderPage()}
+            </ErrorBoundary>
           </main>
         </div>
         <ChatPanel />

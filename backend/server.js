@@ -1,11 +1,3 @@
-
-
-
-
-
-
-
-
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
@@ -236,6 +228,11 @@ async function main() {
                     const newId = `user-${Date.now()}`;
                     const newUser = { ...payload, id: newId, personalPurse: {}, personalExperience: {}, guildBalances: {}, avatar: {}, ownedAssetIds: [], ownedThemes: ['emerald', 'rose', 'sky'], hasBeenOnboarded: false };
                     data.users.push(newUser);
+                    // Add new user to the default guild
+                    const defaultGuild = data.guilds.find(g => g.isDefault);
+                    if (defaultGuild && !defaultGuild.memberIds.includes(newId)) {
+                        defaultGuild.memberIds.push(newId);
+                    }
                     break;
                 }
                 case 'UPDATE_USER': {
@@ -246,6 +243,30 @@ async function main() {
                 }
                 case 'DELETE_USER': {
                     data.users = data.users.filter(u => u.id !== payload.userId);
+                    break;
+                }
+                // === GUILD ACTIONS ===
+                case 'ADD_GUILD': {
+                    const newId = `guild-${Date.now()}`;
+                    const newGuild = { ...payload, id: newId };
+                    data.guilds.push(newGuild);
+                    break;
+                }
+                case 'UPDATE_GUILD': {
+                    const guildIndex = data.guilds.findIndex(g => g.id === payload.id);
+                    if (guildIndex > -1) {
+                        data.guilds[guildIndex] = payload;
+                    }
+                    break;
+                }
+                case 'DELETE_GUILD': {
+                    // Prevent deleting the default guild
+                    const guildToDelete = data.guilds.find(g => g.id === payload.guildId);
+                    if (guildToDelete && !guildToDelete.isDefault) {
+                        data.guilds = data.guilds.filter(g => g.id !== payload.guildId);
+                    } else if (guildToDelete && guildToDelete.isDefault) {
+                        console.warn(`[ACTION] Attempted to delete default guild with id: ${payload.guildId}. Action denied.`);
+                    }
                     break;
                 }
 

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { GameAsset, RewardItem, RewardCategory } from '../../types';
-import { Button, Input, ToggleSwitch, ImageSelectionDialog } from '../ui';
+import { Button, Input, ToggleSwitch, ImageSelectionDialog, Icons } from '../ui';
 import RewardInputGroup from '../forms/RewardInputGroup';
 
 interface EditGameAssetDialogProps {
@@ -14,19 +14,12 @@ interface EditGameAssetDialogProps {
   onSave?: (updatedData: any) => void;
 }
 
-const InfoIcon: React.FC<{className?: string}> = ({ className }) => (
-    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={className || "w-5 h-5"}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="m11.25 11.25.041-.02a.75.75 0 0 1 1.063.852l-.708 2.836a.75.75 0 0 0 1.063.853l.041-.021M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9-3.75h.008v.008H12V8.25Z" />
-    </svg>
-);
-
-
 const PREDEFINED_CATEGORIES = [
     'Avatar', 'Theme', 'Pet', 'Tool', 'Weapon (Cosmetic)', 
     'Armor (Cosmetic)', 'Consumable', 'Real-World Reward', 'Trophy Display', 'Miscellaneous'
 ];
 
-const EditGameAssetDialog: React.FC<EditGameAssetDialogProps> = ({ assetToEdit, initialData, onClose, mode = (assetToEdit ? 'edit' : 'create'), onTryAgain, isGenerating, onSave }) => {
+export const EditGameAssetDialog: React.FC<EditGameAssetDialogProps> = ({ assetToEdit, initialData, onClose, mode = (assetToEdit ? 'edit' : 'create'), onTryAgain, isGenerating, onSave }) => {
   const { addGameAsset, updateGameAsset, uploadFile, addNotification } = useAppDispatch();
   const { markets, rewardTypes } = useAppState();
 
@@ -239,7 +232,7 @@ const EditGameAssetDialog: React.FC<EditGameAssetDialogProps> = ({ assetToEdit, 
                     )}
                     {formData.url && (
                          <button type="button" onClick={() => setIsInfoVisible(true)} className="absolute top-1 right-1 p-1 bg-black/50 rounded-full text-white hover:bg-black/70 transition-colors" aria-label="Show image info">
-                            <InfoIcon />
+                            <Icons.InfoIcon className="w-5 h-5" />
                         </button>
                     )}
                 </div>
@@ -291,9 +284,9 @@ const EditGameAssetDialog: React.FC<EditGameAssetDialogProps> = ({ assetToEdit, 
                       <div>
                           <h4 className="font-semibold text-stone-300 mb-2">Purchase Limit</h4>
                           <div className="flex items-center gap-4">
-                              <label><input type="radio" name="limit" checked={limitTypeOption === 'unlimited'} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setLimitTypeOption('unlimited')} /> Unlimited</label>
-                              <label><input type="radio" name="limit" checked={limitTypeOption === 'total'} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setLimitTypeOption('total')} /> Total</label>
-                              <label><input type="radio" name="limit" checked={limitTypeOption === 'perUser'} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setLimitTypeOption('perUser')} /> Per User</label>
+                              <label><input type="radio" name="limit" checked={limitTypeOption === 'unlimited'} onChange={() => setLimitTypeOption('unlimited')} /> Unlimited</label>
+                              <label><input type="radio" name="limit" checked={limitTypeOption === 'total'} onChange={() => setLimitTypeOption('total')} /> Total</label>
+                              <label><input type="radio" name="limit" checked={limitTypeOption === 'perUser'} onChange={() => setLimitTypeOption('perUser')} /> Per User</label>
                           </div>
                           {limitTypeOption !== 'unlimited' && (
                               <div className="mt-2"><Input label="Limit Amount" type="number" min="1" value={formData.purchaseLimit || 1} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData(p => ({...p, purchaseLimit: parseInt(e.target.value) || 1}))} /></div>

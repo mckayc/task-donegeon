@@ -6,7 +6,7 @@ name: Docker Build and Push
 # Specifies the trigger for this workflow. In this case, it runs on every 'push' to the 'main' branch.
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "master", "dev"  ]
 
 env:
   IMAGE_NAME: mckayc/task-donegeon        

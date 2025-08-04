@@ -155,7 +155,7 @@ const AppearancePage: React.FC = () => {
 
             <Card title="General Appearance">
                 <div className="space-y-6">
-                    <Input label="App Name" value={formState.terminology.appName} onChange={e => setFormState(p => ({...p, terminology: { ...p.terminology, appName: e.target.value}}))} />
+                    <Input label="App Name" value={formState.terminology.appName} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormState(p => ({...p, terminology: { ...p.terminology, appName: e.target.value}}))} />
                     <div>
                         <label className="block text-sm font-medium mb-2" style={{ color: 'hsl(var(--color-text-secondary))' }}>Default Theme</label>
                         <div className="flex flex-wrap gap-4">

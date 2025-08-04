@@ -123,7 +123,7 @@ const VersionHistoryContent: React.FC = () => (
                 Version 0.0.90 ({V0_0_90_DATE.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })})
             </h4>
             <ul className="list-disc list-inside space-y-2 mt-2">
-                <li><strong>Smarter Asset Pack Importer:</strong> The "Import from Library" feature in the Asset Manager has been completely overhauled. It now performs a smart comparison between your local gallery and the server's image packs, highlighting new files (in green, pre-selected) versus duplicates (in red, disabled). This gives administrators granular control over which new assets to import, preventing accidental re-downloads and making library management much more efficient.</li>
+                <li><strong>Smarter Asset Pack Importer:</strong> The "Import from Library" feature in the Asset Manager has been completely overhauled. It now performs a smart comparison between your local gallery and the server's image packs, highlighting new files (in green, pre-selected) versus duplicates (in red, disabled). This gives you granular control over which new assets to import, preventing accidental re-downloads and making library management much more efficient.</li>
             </ul>
         </div>
         <div>
@@ -262,7 +262,7 @@ export const AboutPage: React.FC = () => {
                             </ul>
                         </li>
                         <li><strong>Granular Import:</strong> You can uncheck any new files you don't want. When you click "Import," only the selected new files are downloaded and added to your gallery. This gives you precise control over your asset library.</li>
-                    </ul>
+                    </ol>
 
                     <p className="font-bold mt-4">Best Practices for Images:</p>
                     <ul className="list-disc list-inside space-y-2 pl-4">
@@ -299,7 +299,7 @@ export const AboutPage: React.FC = () => {
                     <br/><em>Example: You could change `{terminology.appName}` to "The Family Crew," `{terminology.task}` to "Chore," and `{terminology.group}` to "Team" to create a less fantasy-themed experience.</em></p>
                 </CollapsibleSection>
 
-                 <CollapsibleSection title="Version History">
+                <CollapsibleSection title="Version History">
                     <VersionHistoryContent />
                 </CollapsibleSection>
             </Card>

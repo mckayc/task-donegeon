@@ -8,8 +8,7 @@ on:
   push:
     branches: [ "master", "dev"  ]
 
-env:
-  IMAGE_NAME: mckayc/task-donegeon        
+
 
 # Defines the jobs that will run as part of the workflow.
 jobs:

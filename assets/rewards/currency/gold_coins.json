@@ -1,0 +1,6 @@
+{
+  "id": "gold_coins",
+  "name": "Gold Coins",
+  "description": "Shiny currency for purchasing goods at the market.",
+  "icon": "assets/images/icons/gold_coin.png"
+}

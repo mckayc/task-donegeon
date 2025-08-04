@@ -1,0 +1,6 @@
+{
+  "id": "market_village",
+  "name": "Village Market",
+  "description": "A place to buy and sell common goods.",
+  "available_goods_ids": ["good_001", "good_002"]
+}

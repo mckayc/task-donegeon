@@ -1,48 +1,45 @@
-# --- Stage 1: Build the Frontend ---
-# This stage is temporary and only exists to build the static React files.
-FROM node:20 AS builder
+# frontend/Dockerfile
 
-# Set the working directory inside the container for the build process.
+# --- Stage 1: The Build Environment ---
+# Use an official Node.js image. The 'alpine' version is a lightweight Linux distribution.
+# We name this stage 'builder' so we can refer to it later.
+FROM node:18-alpine AS builder
+
+# Set the working directory inside the container.
 WORKDIR /app
 
-# Copy the package.json and other config files first.
-# This leverages Docker's caching. If these files don't change,
-# Docker won't re-run the `npm install` step, speeding up future builds.
-COPY package*.json tsconfig*.json vite.config.ts ./
+# Copy the package.json and package-lock.json files first.
+# This leverages Docker's layer caching. If these files haven't changed, Docker
+# won't re-run the `npm install` step, making future builds much faster.
+COPY package.json ./
+COPY package-lock.json ./
 
-# Install the frontend dependencies.
+# Install all the project dependencies.
 RUN npm install
 
-# Copy the rest of the frontend source code.
+# Copy the rest of the application's source code into the container.
 COPY . .
 
-# Build the frontend for production. This creates a `dist` folder
-# with optimized, static HTML, CSS, and JavaScript files.
+# Run the build script defined in package.json to compile the React app
+# into static HTML, CSS, and JS files. This output goes into the /app/dist directory.
 RUN npm run build
 
-# --- Stage 2: Create the Final Production Image ---
-# This is the stage that creates the final, lean image we will actually run.
-FROM node:20
+# --- Stage 2: The Production Environment ---
+# Start from a clean, lightweight Nginx image. Nginx is a high-performance web server.
+FROM nginx:1.25-alpine
 
-# Set the working directory for the backend server.
-WORKDIR /app
+# Copy ONLY the built application files from the 'builder' stage.
+# We copy the contents of /app/dist from the 'builder' into the default
+# Nginx web root directory.
+COPY --from=builder /app/dist /usr/share/nginx/html
 
-# Copy the backend's package files and install its dependencies.
-COPY backend/package*.json ./backend/
-RUN cd backend && npm install
+# Copy our custom Nginx configuration file into the Nginx configuration directory.
+# This file tells Nginx how to serve our app and proxy API requests.
+COPY nginx.conf /etc/nginx/conf.d/default.conf
 
-# Copy the entire backend source code.
-COPY backend/ ./backend/
+# Tell Docker that the container will listen on port 80 at runtime.
+EXPOSE 80
 
-# Crucially, copy ONLY the built frontend (`dist` folder) from the `builder` stage (stage 0).
-# We leave behind all the frontend source code and dev dependencies. This resolves
-# a build issue in some CI/CD environments like GitHub Actions.
-COPY --from=0 /app/dist ./dist
-
-# The backend server will run on port 3001 inside the container.
-# This line is for documentation; it doesn't actually open the port.
-EXPOSE 3001
-
-# The command that will be executed when the container starts.
-# It changes to the backend directory and starts the Node.js server.
-CMD ["sh", "-c", "cd backend && node server.js"]
+# This is the command that runs when the container starts. It starts the Nginx
+# server in the foreground, which is standard practice for Docker containers.
+CMD ["nginx", "-g", "daemon off;"]

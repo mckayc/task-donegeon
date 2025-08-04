@@ -1,0 +1,8 @@
+{
+  "id": "duty_001",
+  "name": "Bedroom Tidy-up",
+  "description": "Make your bed, put away all clothes, and organize your desk.",
+  "xp_reward": 15,
+  "currency_reward": 5,
+  "repeatable": "daily"
+}

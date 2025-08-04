@@ -1,15 +1,30 @@
+# docker-compose.yml
+
 version: '3.8'
 
 services:
-  app:
-    container_name: task-donegeon-app
-    build: .
-    ports:
-      - "3002:3001"
-    volumes:
-      - ./backend/data.db:/app/backend/data.db
-      - ./uploads:/app/uploads
-      - ./backups:/app/backend/backups
-    env_file:
-      - .env
+  frontend:
+    image: mckayc/task-donegeon-frontend:latest
+    container_name: task-donegeon-frontend
     restart: unless-stopped
+    ports:
+      - "${FRONTEND_PORT:-9373}:80"
+    depends_on:
+      - backend
+
+  backend:
+    image: mckayc/task-donegeon-backend:latest
+    container_name: task-donegeon-backend
+    restart: unless-stopped
+    ports:
+      - "${BACKEND_PORT:-9374}:3000"
+    volumes:
+      - ./assets:/usr/src/app/assets
+      - db-data:/usr/src/app/prisma
+      - backups:/usr/src/app/backups
+    env_file:
+      - ./backend/.env
+
+volumes:
+  db-data:
+  backups:

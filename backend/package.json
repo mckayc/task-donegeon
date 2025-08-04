@@ -1,18 +1,27 @@
 {
   "name": "task-donegeon-backend",
   "version": "1.0.0",
-  "type": "commonjs",
-  "description": "Backend API for Task Donegeon",
-  "main": "server.js",
+  "description": "Backend for Task Donegeon",
+  "main": "dist/server.js",
   "scripts": {
-    "start": "node server.js"
+    "build": "tsc",
+    "start": "node dist/server.js",
+    "dev": "ts-node-dev --respawn --transpile-only src/server.ts",
+    "postinstall": "npx prisma generate"
   },
   "dependencies": {
-    "@google/genai": "^1.9.0",
-    "cors": "^2.8.5",
-    "express": "^4.19.2",
-    "multer": "^1.4.5-lts.1",
-    "sqlite3": "^5.1.7",
-    "ws": "^8.17.0"
+    "@fastify/cors": "^8.2.1",
+    "@fastify/jwt": "^6.7.1",
+    "@prisma/client": "^4.12.0",
+    "bcryptjs": "^2.4.3",
+    "fastify": "^4.15.0",
+    "zod": "^3.21.4"
+  },
+  "devDependencies": {
+    "@types/bcryptjs": "^2.4.2",
+    "@types/node": "^18.15.11",
+    "prisma": "^4.12.0",
+    "ts-node-dev": "^2.0.0",
+    "typescript": "^5.0.4"
   }
 }

@@ -50,7 +50,7 @@ const UserMultiSelect: React.FC<UserMultiSelectProps> = ({ allUsers, selectedUse
                         <Input
                             placeholder="Search users..."
                             value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
+                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchTerm(e.target.value)}
                             autoFocus
                         />
                     </div>

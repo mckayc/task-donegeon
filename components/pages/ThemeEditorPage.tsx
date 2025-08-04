@@ -224,7 +224,7 @@ const ThemeEditorPage: React.FC = () => {
                         <div>
                             {activeTab === 'general' && (
                                 <div className="space-y-4">
-                                    <Input label="Theme Name" value={formData.name} onChange={e => setFormData(p => p ? ({...p, name: e.target.value}) : null)} required disabled={!formData.isCustom} />
+                                    <Input label="Theme Name" value={formData.name} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData(p => p ? ({...p, name: e.target.value}) : null)} required disabled={!formData.isCustom} />
                                     {isAiAvailable && (
                                         <Button onClick={() => setIsGeneratorOpen(true)} variant="secondary">
                                             Generate Theme with AI
@@ -234,19 +234,19 @@ const ThemeEditorPage: React.FC = () => {
                             )}
                             {activeTab === 'fonts' && (
                                 <div className="space-y-4">
-                                    <Input as="select" label="Display Font" value={formData.styles['--font-display']} onChange={e => handleStyleChange('--font-display', e.target.value)}>
+                                    <Input as="select" label="Display Font" value={formData.styles['--font-display']} onChange={(e: React.ChangeEvent<HTMLSelectElement>) => handleStyleChange('--font-display', e.target.value)}>
                                         {FONT_OPTIONS.map(f => <option key={f} value={f}>{f.split(',')[0].replace(/'/g, '')}</option>)}
                                     </Input>
-                                    <Input as="select" label="Body Font" value={formData.styles['--font-body']} onChange={e => handleStyleChange('--font-body', e.target.value)}>
+                                    <Input as="select" label="Body Font" value={formData.styles['--font-body']} onChange={(e: React.ChangeEvent<HTMLSelectElement>) => handleStyleChange('--font-body', e.target.value)}>
                                         {FONT_OPTIONS.map(f => <option key={f} value={f}>{f.split(',')[0].replace(/'/g, '')}</option>)}
                                     </Input>
                                     <div>
                                         <label className="flex justify-between text-sm font-medium mb-1">Display Font Size <span>({formData.styles['--font-size-display']})</span></label>
-                                        <input type="range" min="1.5" max="4" step="0.1" value={parseFloat(formData.styles['--font-size-display'])} onChange={e => handleStyleChange('--font-size-display', `${e.target.value}rem`)} className="w-full h-2 bg-stone-700 rounded-lg appearance-none cursor-pointer" />
+                                        <input type="range" min="1.5" max="4" step="0.1" value={parseFloat(formData.styles['--font-size-display'])} onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleStyleChange('--font-size-display', `${e.target.value}rem`)} className="w-full h-2 bg-stone-700 rounded-lg appearance-none cursor-pointer" />
                                     </div>
                                     <div>
                                         <label className="flex justify-between text-sm font-medium mb-1">Body Font Size <span>({formData.styles['--font-size-body']})</span></label>
-                                        <input type="range" min="0.8" max="1.2" step="0.05" value={parseFloat(formData.styles['--font-size-body'])} onChange={e => handleStyleChange('--font-size-body', `${e.target.value}rem`)} className="w-full h-2 bg-stone-700 rounded-lg appearance-none cursor-pointer" />
+                                        <input type="range" min="0.8" max="1.2" step="0.05" value={parseFloat(formData.styles['--font-size-body'])} onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleStyleChange('--font-size-body', `${e.target.value}rem`)} className="w-full h-2 bg-stone-700 rounded-lg appearance-none cursor-pointer" />
                                     </div>
                                 </div>
                             )}

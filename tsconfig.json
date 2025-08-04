@@ -14,7 +14,8 @@
     "resolveJsonModule": true,
     "isolatedModules": true,
     "noEmit": true,
-    "jsx": "react-jsx"
+    "jsx": "react-jsx",
+    "allowImportingTsExtensions": false
   },
   "include": ["components", "context", "data", "hooks", "utils", "index.tsx", "App.tsx", "types.ts", "metadata.json"],
   "references": [{ "path": "./tsconfig.node.json" }]

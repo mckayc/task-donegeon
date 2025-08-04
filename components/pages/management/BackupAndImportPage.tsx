@@ -171,14 +171,14 @@ const BackupAndImportPage: React.FC = () => {
                                 type="number"
                                 min="1"
                                 value={autoBackupSettings.frequencyHours}
-                                onChange={(e) => setAutoBackupSettings(p => ({...p, frequencyHours: parseInt(e.target.value) || 24}))}
+                                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setAutoBackupSettings(p => ({...p, frequencyHours: parseInt(e.target.value) || 24}))}
                              />
                              <Input 
                                 label="Max Backups to Keep"
                                 type="number"
                                 min="1"
                                 value={autoBackupSettings.maxBackups}
-                                onChange={(e) => setAutoBackupSettings(p => ({...p, maxBackups: parseInt(e.target.value) || 7}))}
+                                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setAutoBackupSettings(p => ({...p, maxBackups: parseInt(e.target.value) || 7}))}
                              />
                         </div>
                     )}

@@ -1,4 +1,5 @@
 
+
 import React, { useState } from 'react';
 import { GenerateContentResponse, Type } from "@google/genai";
 import Button from '../ui/Button';
@@ -117,8 +118,8 @@ const ThemeIdeaGenerator: React.FC<ThemeIdeaGeneratorProps> = ({ onUseIdea, onCl
                             label="Theme Concept"
                             placeholder="e.g., 'Cyberpunk', 'Fairy Forest', 'Steampunk'"
                             value={prompt}
-                            onChange={e => setPrompt(e.target.value)}
-                            onKeyDown={e => e.key === 'Enter' && handleGenerate()}
+                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPrompt(e.target.value)}
+                            onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => e.key === 'Enter' && handleGenerate()}
                             className="flex-grow"
                             disabled={isLoading}
                         />

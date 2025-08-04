@@ -95,6 +95,10 @@ const ManageQuestsPage: React.FC = () => {
         setIsCreateDialogOpen(true);
     };
 
+    const handleDeleteRequest = (questIds: string[]) => {
+        setConfirmation({ action: 'delete', ids: questIds });
+    };
+
     const handleConfirmAction = () => {
         if (!confirmation) return;
         
@@ -191,8 +195,8 @@ const ManageQuestsPage: React.FC = () => {
                 </div>
 
                  <div className="flex flex-wrap gap-4 mb-4">
-                    <Input placeholder="Search quests..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="max-w-xs" />
-                    <Input as="select" value={sortBy} onChange={e => setSortBy(e.target.value as any)}>
+                    <Input placeholder="Search quests..." value={searchTerm} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchTerm(e.target.value)} className="max-w-xs" />
+                    <Input as="select" value={sortBy} onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setSortBy(e.target.value as any)}>
                         <option value="title-asc">Title (A-Z)</option>
                         <option value="title-desc">Title (Z-A)</option>
                         <option value="status-asc">Status (Inactive first)</option>
@@ -254,7 +258,7 @@ const ManageQuestsPage: React.FC = () => {
                                                 <div ref={dropdownRef} className="absolute right-10 top-0 mt-2 w-36 bg-stone-900 border border-stone-700 rounded-lg shadow-xl z-20">
                                                     <a href="#" onClick={(e) => { e.preventDefault(); handleEdit(quest); setOpenDropdownId(null); }} className="block px-4 py-2 text-sm text-stone-300 hover:bg-stone-700/50">Edit</a>
                                                     <button onClick={() => { cloneQuest(quest.id); setOpenDropdownId(null); }} className="w-full text-left block px-4 py-2 text-sm text-stone-300 hover:bg-stone-700/50">Clone</button>
-                                                    <button onClick={() => { setConfirmation({ action: 'delete', ids: [quest.id] }); setOpenDropdownId(null); }} className="w-full text-left block px-4 py-2 text-sm text-red-400 hover:bg-stone-700/50">Delete</button>
+                                                    <button onClick={() => { handleDeleteRequest([quest.id]); setOpenDropdownId(null); }} className="w-full text-left block px-4 py-2 text-sm text-red-400 hover:bg-stone-700/50">Delete</button>
                                                 </div>
                                             )}
                                         </td>

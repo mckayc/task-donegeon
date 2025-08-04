@@ -3,7 +3,7 @@ import Button from '../../ui/Button';
 import Card from '../../ui/Card';
 import { libraryPacks } from '../../../data/assetLibrary';
 import { LibraryPack, BlueprintAssets, TrophyRequirementType, QuestGroup, Quest, GameAsset, Market, Trophy, RewardTypeDefinition, QuestType } from '../../../types';
-import { useAppState, useAppDispatch } from '../../../context/AppContext';
+import { useAppState, useAppDispatch } from '../../context/AppContext';
 import Input from '../../ui/Input';
 import CreateQuestDialog from '../../quests/CreateQuestDialog';
 import EditGameAssetDialog from '../../admin/EditGameAssetDialog';
@@ -101,7 +101,7 @@ const PackDetailView: React.FC<{ pack: LibraryPack; onBack: () => void; }> = ({ 
     const handleSaveEditedAsset = (updatedData: any) => {
         if (!assetToEdit) return;
         setLivePackAssets(prev => {
-            if (!prev) return null;
+            if (!prev) return prev;
             const newAssets = { ...prev };
             const assetList = (newAssets[assetToEdit.type] as any[]) || [];
             const assetIndex = assetList.findIndex(a => a.id === assetToEdit.data.id);
@@ -323,7 +323,7 @@ const AssetLibraryPage: React.FC = () => {
             <Card>
                 <div className="flex justify-between items-center mb-6 flex-wrap gap-4">
                      <div className="flex-grow max-w-sm">
-                        <Input placeholder="Search packs..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
+                        <Input placeholder="Search packs..." value={searchTerm} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchTerm(e.target.value)} />
                      </div>
                     <div className="flex space-x-2 p-1 bg-stone-900/50 rounded-lg overflow-x-auto">
                         {packTypes.map(type => (

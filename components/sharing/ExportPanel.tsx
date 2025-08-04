@@ -69,8 +69,8 @@ const ExportPanel: React.FC = () => {
                 <p className="text-stone-400 text-sm mb-3">Create a shareable file containing your custom game assets. Dependencies like custom {settings.terminology.points.toLowerCase()} will be included automatically.</p>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <Input label="Blueprint Name" placeholder="e.g., 'My Awesome Chore Pack'" value={blueprintName} onChange={e => setBlueprintName(e.target.value)} required />
-                <Input label="Description (Optional)" placeholder="A brief summary of what's inside" value={blueprintDesc} onChange={e => setBlueprintDesc(e.target.value)} />
+                <Input label="Blueprint Name" placeholder="e.g., 'My Awesome Chore Pack'" value={blueprintName} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setBlueprintName(e.target.value)} required />
+                <Input label="Description (Optional)" placeholder="A brief summary of what's inside" value={blueprintDesc} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setBlueprintDesc(e.target.value)} />
             </div>
 
             <div className="space-y-4">

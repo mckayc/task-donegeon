@@ -40,31 +40,35 @@ const CollapsibleSection: React.FC<{ title: string; children: React.ReactNode; d
 
 const terminologyLabels: { [key in keyof Terminology]: string } = {
   appName: 'App Name',
+  // Singular
   task: 'Task (Singular)',
-  tasks: 'Tasks (Plural)',
   recurringTask: 'Recurring Task (e.g., Duty)',
-  recurringTasks: 'Recurring Tasks (Plural)',
   singleTask: 'Single Task (e.g., Venture)',
-  singleTasks: 'Single Tasks (Plural)',
-  shoppingCenter: 'Shopping Center (e.g., Marketplace)',
   store: 'Store (e.g., Market)',
-  stores: 'Stores (Plural)',
   history: 'History (e.g., Chronicles)',
   group: 'Group (e.g., Guild)',
-  groups: 'Groups (Plural)',
   level: 'Level (e.g., Rank)',
-  levels: 'Levels (Plural)',
   award: 'Award (e.g., Trophy)',
-  awards: 'Awards (Plural)',
   point: 'Point (e.g., Reward)',
-  points: 'Points (Plural)',
   xp: 'Experience Points',
   currency: 'Currency',
   negativePoint: 'Negative Point (e.g., Setback)',
+  // Plural
+  tasks: 'Tasks (Plural)',
+  recurringTasks: 'Recurring Tasks (Plural)',
+  singleTasks: 'Single Tasks (Plural)',
+  shoppingCenter: 'Shopping Center (e.g., Marketplace)',
+  stores: 'Stores (Plural)',
+  groups: 'Groups (Plural)',
+  levels: 'Levels (Plural)',
+  awards: 'Awards (Plural)',
+  points: 'Points (Plural)',
   negativePoints: 'Negative Points (Plural)',
+  // Roles
   admin: 'Admin (e.g., Donegeon Master)',
   moderator: 'Moderator (e.g., Gatekeeper)',
   user: 'User (e.g., Explorer)',
+  // Sidebar Links
   link_dashboard: 'Sidebar: Dashboard',
   link_quests: 'Sidebar: Quests',
   link_marketplace: 'Sidebar: Marketplace',
@@ -430,7 +434,7 @@ const SettingsPage: React.FC = () => {
                                 {otherRewards.map(rt => (
                                     <div key={rt.id} className="flex items-center gap-2 p-2 bg-stone-900/60 rounded-md">
                                         <label htmlFor={`exchange-${rt.id}`} className="text-stone-300 flex-grow">{rt.name} ({rt.icon})</label>
-                                        <Input id={`exchange-${rt.id}`} type="number" step="any" value={formState.rewardValuation.exchangeRates[rt.id] || ''} onChange={(e) => handleExchangeRateChange(rt.id, e.target.value)} className="w-28" />
+                                        <Input id={`exchange-${rt.id}`} type="number" step="any" value={formState.rewardValuation.exchangeRates[rt.id] || ''} onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleExchangeRateChange(rt.id, e.target.value)} className="w-28" />
                                     </div>
                                 ))}
                             </div>

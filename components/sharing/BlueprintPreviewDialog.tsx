@@ -81,7 +81,7 @@ const BlueprintPreviewDialog: React.FC<BlueprintPreviewDialogProps> = ({ bluepri
                                         {res.resolution === 'rename' && (
                                             <Input
                                                 value={res.newName || `${res.name} (Imported)`}
-                                                onChange={e => handleRenameChange(res.id, res.type, e.target.value)}
+                                                onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleRenameChange(res.id, res.type, e.target.value)}
                                                 className="mt-2 text-sm"
                                             />
                                         )}

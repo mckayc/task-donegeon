@@ -136,8 +136,8 @@ const QuestIdeaGenerator: React.FC<QuestIdeaGeneratorProps> = ({ onUseIdea, onCl
                             label="Quest Theme"
                             placeholder="e.g., 'Weekly kitchen chores for kids'"
                             value={prompt}
-                            onChange={e => setPrompt(e.target.value)}
-                            onKeyDown={e => e.key === 'Enter' && handleGenerate()}
+                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPrompt(e.target.value)}
+                            onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => e.key === 'Enter' && handleGenerate()}
                             className="flex-grow"
                             disabled={isLoading}
                         />

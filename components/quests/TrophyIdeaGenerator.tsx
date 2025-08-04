@@ -100,8 +100,8 @@ const TrophyIdeaGenerator: React.FC<TrophyIdeaGeneratorProps> = ({ onUseIdea, on
                             label="Trophy Theme"
                             placeholder="e.g., 'household chores', 'sports achievements'"
                             value={prompt}
-                            onChange={e => setPrompt(e.target.value)}
-                            onKeyDown={e => e.key === 'Enter' && handleGenerate()}
+                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPrompt(e.target.value)}
+                            onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => e.key === 'Enter' && handleGenerate()}
                             className="flex-grow"
                             disabled={isLoading}
                         />

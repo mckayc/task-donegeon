@@ -102,8 +102,8 @@ const ItemIdeaGenerator: React.FC<ItemIdeaGeneratorProps> = ({ onUseIdea, onClos
                             label="Item Theme"
                             placeholder="e.g., 'Magical forest artifacts', 'Sci-fi gadgets'"
                             value={prompt}
-                            onChange={e => setPrompt(e.target.value)}
-                            onKeyDown={e => e.key === 'Enter' && handleGenerate()}
+                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPrompt(e.target.value)}
+                            onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => e.key === 'Enter' && handleGenerate()}
                             className="flex-grow"
                             disabled={isLoading}
                         />

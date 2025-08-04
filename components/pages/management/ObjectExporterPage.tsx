@@ -71,10 +71,10 @@ const ObjectExporterPage: React.FC = () => {
                  <div className="flex items-center gap-4 w-full">
                     <span className="font-bold text-lg text-stone-200 whitespace-nowrap">Export Options:</span>
                     <div className="flex-grow">
-                        <Input placeholder="Blueprint Name*" value={blueprintName} onChange={e => setBlueprintName(e.target.value)} required />
+                        <Input placeholder="Blueprint Name*" value={blueprintName} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setBlueprintName(e.target.value)} required />
                     </div>
                      <div className="flex-grow">
-                        <Input placeholder="Description (Optional)" value={blueprintDesc} onChange={e => setBlueprintDesc(e.target.value)} />
+                        <Input placeholder="Description (Optional)" value={blueprintDesc} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setBlueprintDesc(e.target.value)} />
                     </div>
                     <div>
                         <Button onClick={handleExport} disabled={!blueprintName.trim() || totalSelected === 0}>

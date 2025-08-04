@@ -66,7 +66,7 @@ const ImageSelectionDialog: React.FC<ImageSelectionDialogProps> = ({ onSelect, o
           <Input
             placeholder="Search by name or category..."
             value={searchTerm}
-            onChange={e => setSearchTerm(e.target.value)}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchTerm(e.target.value)}
             className="mt-4"
           />
         </div>

@@ -1,5 +1,3 @@
-
-
 import React, { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from './components/ui/Card';
 import { StatusIndicator } from './components/StatusIndicator';
@@ -9,6 +7,16 @@ import { Switch } from './components/ui/Switch';
 import { Label } from './components/ui/Label';
 import { Input } from './components/ui/Input';
 import { Button } from './components/ui/Button';
+
+interface WizardStatusItemProps {
+  statusKey: keyof ConnectionStatus;
+  title: string;
+  icon: React.ReactNode;
+  successMessage: string;
+  errorMessage: string;
+  warningMessage?: string;
+  instructions: React.ReactNode;
+}
 
 const App: React.FC = () => {
   const [isFirstRun, setIsFirstRun] = useState<boolean | null>(null);
@@ -98,7 +106,7 @@ const App: React.FC = () => {
     return dbOk && geminiOk && jwtOk;
   }, [statuses, skipped]);
 
-  const WizardStatusItem = ({ statusKey, title, icon, successMessage, errorMessage, warningMessage, instructions }) => (
+  const WizardStatusItem: React.FC<WizardStatusItemProps> = ({ statusKey, title, icon, successMessage, errorMessage, warningMessage, instructions }) => (
     <details className="group border-b border-donegeon-gray pb-4">
       <summary className="flex items-center justify-between cursor-pointer list-none">
         <StatusIndicator
@@ -114,7 +122,7 @@ const App: React.FC = () => {
       <div className="mt-4 pl-10 pr-4 text-sm text-gray-300 space-y-3">
         {instructions}
         <div className="flex items-center space-x-2 pt-2">
-          <Switch id={`skip-${statusKey}`} checked={skipped[statusKey]} onCheckedChange={(checked) => setSkipped(prev => ({ ...prev, [statusKey]: checked }))} />
+          <Switch id={`skip-${statusKey}`} checked={skipped[statusKey]} onCheckedChange={(checked: boolean) => setSkipped(prev => ({ ...prev, [statusKey]: checked }))} />
           <Label htmlFor={`skip-${statusKey}`}>Skip this check</Label>
         </div>
       </div>

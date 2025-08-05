@@ -5,9 +5,11 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build",
+    "build:server": "tsc -p tsconfig.server.json",
+    "build:client": "tsc && vite build",
+    "build": "npm run build:server && npm run build:client",
     "preview": "vite preview",
-    "start": "node server.js"
+    "start": "node dist/server.js"
   },
   "dependencies": {
     "@google/genai": "^0.14.0",

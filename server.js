@@ -6,9 +6,12 @@ import 'reflect-metadata';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import cookieParser from 'cookie-parser';
+import fs from 'fs/promises';
 import { AppDataSource, databaseDirectory } from './src/data/data-source.js';
 import { User } from './src/data/entities/User.js';
-import { Task } from './src/data/entities/Task.js';
+import { Quest } from './src/data/entities/Quest.js';
+import { QuestGroup } from './src/data/entities/QuestGroup.js';
+
 
 // Recreate __dirname for ES Modules
 const __filename = fileURLToPath(import.meta.url);
@@ -178,35 +181,61 @@ app.post('/api/auth/logout', (req, res) => {
 // --- SETUP ENDPOINTS ---
 app.post('/api/setup/seed-data', authMiddleware, async (req, res) => {
     const userRepository = AppDataSource.getRepository(User);
-    const taskRepository = AppDataSource.getRepository(Task);
+    const questGroupRepository = AppDataSource.getRepository(QuestGroup);
+    const questRepository = AppDataSource.getRepository(Quest);
     
     try {
         const playerCount = await userRepository.count({ where: { role: 'player' } });
         if (playerCount > 0) {
-            return res.status(409).json({ message: 'Sample data already exists.' });
+            return res.status(409).json({ message: 'Sample data already exists. Aborting seed.' });
         }
 
+        // 1. Create Sample Players
         const playersData = [
             { firstName: 'Leo', lastName: 'The Brave', gameName: 'LeoTheBrave', birthday: '2015-05-10', pin: '1234', role: 'player', password: 'password123' },
             { firstName: 'Mia', lastName: 'The Wise', gameName: 'MiaTheWise', birthday: '2014-09-22', pin: '5678', role: 'player', password: 'password123' },
         ];
-
+        const createdPlayers = [];
         for (const playerData of playersData) {
             const hashedPin = await bcrypt.hash(playerData.pin, 10);
             const hashedPassword = await bcrypt.hash(playerData.password, 10);
             const newPlayer = userRepository.create({ ...playerData, pin: hashedPin, password: hashedPassword });
-            await userRepository.save(newPlayer);
+            const savedPlayer = await userRepository.save(newPlayer);
+            createdPlayers.push(savedPlayer);
         }
 
-        const tasksData = [
-            { title: 'Tidy Up Your Chamber', description: 'Make your bed and put away all your toys.', experiencePoints: 10 },
-            { title: 'Feed the Mystical Beast', description: 'Remember to feed the cat/dog.', experiencePoints: 5 },
-            { title: 'Homework Quest', description: 'Complete all of today\'s homework.', experiencePoints: 20 },
-        ];
-        const newTasks = taskRepository.create(tasksData);
-        await taskRepository.save(newTasks);
+        // 2. Seed Quest Groups from JSON
+        const questGroupsPath = path.join(__dirname, 'src', 'assets', 'quest-groups', 'default.json');
+        const questGroupsData = JSON.parse(await fs.readFile(questGroupsPath, 'utf-8'));
 
-        res.status(201).json({ message: 'Sample data created successfully!' });
+        for (const groupData of questGroupsData) {
+            const existingGroup = await questGroupRepository.findOne({ where: { title: groupData.title } });
+            if (!existingGroup) {
+                const newGroup = questGroupRepository.create(groupData);
+                await questGroupRepository.save(newGroup);
+            }
+        }
+        
+        // 3. Seed Quests from JSON
+        const questsPath = path.join(__dirname, 'src', 'assets', 'quests', 'default.json');
+        const questsData = JSON.parse(await fs.readFile(questsPath, 'utf-8'));
+
+        for (const questData of questsData) {
+            const existingQuest = await questRepository.findOne({ where: { title: questData.title } });
+            if (!existingQuest) {
+                const questGroup = await questGroupRepository.findOne({ where: { title: questData.questGroup } });
+                
+                const newQuest = questRepository.create({
+                    ...questData,
+                    questGroup: questGroup || null,
+                    assignedUsers: createdPlayers // Assign to our new sample players
+                });
+                await questRepository.save(newQuest);
+            }
+        }
+        
+        res.status(201).json({ message: 'Sample players and assets created successfully!' });
+
     } catch (error) {
         console.error('Error seeding data:', error);
         res.status(500).json({ message: 'An error occurred while creating sample data.' });

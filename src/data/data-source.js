@@ -1,8 +1,10 @@
 
 
+
 import { DataSource } from 'typeorm';
-import { Task } from './entities/Task.js';
 import { User } from './entities/User.js';
+import { Quest } from './entities/Quest.js';
+import { QuestGroup } from './entities/QuestGroup.js';
 import path from 'path';
 import fs from 'fs';
 
@@ -29,7 +31,7 @@ export const AppDataSource = new DataSource({
    */
   synchronize: true, 
   logging: false,
-  entities: [Task, User],
+  entities: [User, Quest, QuestGroup],
   subscribers: [],
   migrations: [],
 });

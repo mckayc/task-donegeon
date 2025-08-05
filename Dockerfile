@@ -26,18 +26,16 @@ WORKDIR /app
 
 # Copy package files again
 COPY package*.json ./
-# Install ONLY production dependencies to keep the image small and secure
-RUN npm install --omit=dev
+# Install ONLY production dependencies and ignore postinstall scripts
+RUN npm install --omit=dev --ignore-scripts
 
 # === Copy Artifacts from Builder Stage ===
 # Copy the compiled backend code
 COPY --from=builder /app/dist-backend ./dist-backend
 # Copy the static frontend assets
 COPY --from=builder /app/dist ./dist
-# Copy the Prisma schema (needed at runtime for migrations)
-COPY backend/prisma/schema.prisma ./backend/prisma/
-# Copy the generated migration files
-COPY backend/prisma/migrations ./backend/prisma/migrations
+# Copy the Prisma schema and migrations (needed at runtime)
+COPY backend/prisma ./backend/prisma
 
 # Expose the port the application server will run on
 EXPOSE 3000

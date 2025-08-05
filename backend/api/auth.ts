@@ -1,3 +1,4 @@
+
 import express from 'express';
 import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
@@ -8,7 +9,7 @@ const prisma = new PrismaClient();
 
 // GET /api/auth/status
 // Checks if the application has been set up (i.e., if any user exists)
-router.get('/status', async (req, res) => {
+router.get('/status', async (req: express.Request, res: express.Response) => {
     try {
         const userCount = await prisma.user.count();
         res.json({ isSetupComplete: userCount > 0 });
@@ -20,7 +21,7 @@ router.get('/status', async (req, res) => {
 
 // POST /api/auth/setup
 // Creates the first administrative user. This can only be done once.
-router.post('/setup', async (req, res) => {
+router.post('/setup', async (req: express.Request, res: express.Response) => {
     const { username, password } = req.body;
 
     if (!username || !password) {
@@ -47,7 +48,7 @@ router.post('/setup', async (req, res) => {
 
 // POST /api/auth/login
 // Logs in a user and returns a JWT
-router.post('/login', async (req, res) => {
+router.post('/login', async (req: express.Request, res: express.Response) => {
     const { username, password } = req.body;
     const jwtSecret = process.env.JWT_SECRET;
 

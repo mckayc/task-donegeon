@@ -1,3 +1,4 @@
+
 import express from 'express';
 import cors from 'cors';
 import path from 'path';
@@ -23,7 +24,7 @@ app.use(express.static(frontendDistPath));
 
 // The "catchall" handler: for any request that doesn't match one above,
 // send back React's index.html file.
-app.get('*', (req, res) => {
+app.get('*', (req: express.Request, res: express.Response) => {
   res.sendFile(path.join(frontendDistPath, 'index.html'));
 });
 

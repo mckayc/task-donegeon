@@ -1,6 +1,7 @@
+
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { LogOut, ChevronLeft, LayoutDashboard, Swords, Store, ScrollText, Users, Settings } from 'lucide-react';
+import { LogOut, ChevronLeft, LayoutDashboard, Swords, Store, ScrollText, Users, Settings, FolderCog, Library } from 'lucide-react';
 import { Button } from '../ui/Button';
 
 interface SidebarProps {
@@ -13,16 +14,19 @@ interface SidebarProps {
 }
 
 const navLinks = [
-  { name: 'Dashboard', icon: LayoutDashboard, page: 'dashboard' },
-  { name: 'Quests', icon: Swords, page: 'quests' },
-  { name: 'Market', icon: Store, page: 'market' },
-  { name: 'Chronicles', icon: ScrollText, page: 'chronicles' },
-  { name: 'Guilds', icon: Users, page: 'guilds' },
-  { name: 'Settings', icon: Settings, page: 'settings' },
+  { name: 'Dashboard', icon: LayoutDashboard, page: 'dashboard', type: 'link' },
+  { name: 'Quests', icon: Swords, page: 'quests', type: 'link' },
+  { name: 'Market', icon: Store, page: 'market', type: 'link' },
+  { name: 'Chronicles', icon: ScrollText, page: 'chronicles', type: 'link' },
+  { name: 'Guilds', icon: Users, page: 'guilds', type: 'link' },
+  { type: 'heading', name: 'Admin Tools' },
+  { name: 'Manage Assets', icon: FolderCog, page: 'manage-assets', type: 'link' },
+  { name: 'Asset Library', icon: Library, page: 'asset-library', type: 'link' },
+  { name: 'Settings', icon: Settings, page: 'settings', type: 'link' },
 ];
 
-const NavItem = ({ link, isOpen, onNavigate }: { link: typeof navLinks[0]; isOpen: boolean; onNavigate: (page: string) => void; }) => {
-  const isClickable = link.page === 'dashboard' || link.page === 'quests';
+const NavItem = ({ link, isOpen, onNavigate }: { link: any; isOpen: boolean; onNavigate: (page: string) => void; }) => {
+  const isClickable = ['dashboard', 'quests', 'manage-assets', 'asset-library'].includes(link.page);
   return (
     <button
         onClick={() => isClickable && onNavigate(link.page)}
@@ -96,9 +100,15 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen, isMobileOpe
         </Button>
       </div>
 
-      <nav className="flex-1 px-3 py-4 space-y-2">
+      <nav className="flex-1 px-3 py-4 space-y-1">
         {navLinks.map((link) => (
-          <NavItem key={link.name} link={link} isOpen={isOpen} onNavigate={onNavigate} />
+            link.type === 'heading' ? (
+                <h3 key={link.name} className={`px-2 pt-4 pb-1 text-xs font-semibold text-donegeon-text/60 uppercase whitespace-nowrap ${isOpen ? '' : 'text-center'}`}>
+                    {isOpen ? link.name : '···'}
+                </h3>
+            ) : (
+                <NavItem key={link.name} link={link} isOpen={isOpen} onNavigate={onNavigate} />
+            )
         ))}
       </nav>
 

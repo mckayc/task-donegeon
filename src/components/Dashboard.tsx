@@ -1,7 +1,10 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/Card';
 import { Layout } from './layout/Layout';
 import QuestsPage from '../pages/QuestsPage';
+import ManageAssetsPage from '../pages/ManageAssetsPage';
+import AssetLibraryPage from '../pages/AssetLibraryPage';
 
 interface DashboardProps {
   onLogout: () => void;
@@ -36,6 +39,10 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
       switch(currentPage) {
           case 'quests':
               return <QuestsPage />;
+          case 'manage-assets':
+              return <ManageAssetsPage />;
+          case 'asset-library':
+              return <AssetLibraryPage />;
           case 'dashboard':
           default:
               return <DashboardContent />;

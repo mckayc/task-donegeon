@@ -1,3 +1,4 @@
+
 export enum Status {
   LOADING,
   SUCCESS,
@@ -5,7 +6,10 @@ export enum Status {
 }
 
 export interface ConnectionStatus {
-  db: Status;
+  db: {
+    status: Status;
+    customPath: boolean;
+  };
   gemini: Status;
   jwt: Status;
 }

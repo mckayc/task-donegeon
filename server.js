@@ -13,7 +13,10 @@ const PORT = process.env.PORT || 3000;
 // API endpoint to get connection statuses
 app.get('/api/status', (req, res) => {
     const statuses = {
-        db: 'CONNECTED', // Mocking DB connection status for now
+        db: {
+          status: 'CONNECTED', // Mocking DB connection status
+          customPath: !!process.env.APP_DATA_PATH && process.env.APP_DATA_PATH !== './data'
+        },
         gemini: process.env.API_KEY && process.env.API_KEY !== 'thiswontworkatall' ? 'CONNECTED' : 'NOT_CONFIGURED',
         jwt: process.env.JWT_SECRET && process.env.JWT_SECRET !== 'insecure_default_secret_for_testing_only' ? 'CONFIGURED' : 'NOT_CONFIGURED'
     };

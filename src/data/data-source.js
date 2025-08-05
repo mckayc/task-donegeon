@@ -43,7 +43,8 @@ try {
 try {
     const assetFiles = fs.readdirSync(assetsDirectory);
     if (assetFiles.length === 0) {
-        const sourceAssetsDir = path.join(__dirname, '..', 'assets');
+        // Corrected Path: Look in the project root `assets` dir, not the compiled-away `src/assets` dir.
+        const sourceAssetsDir = path.join(__dirname, '..', '..', 'assets');
         console.log(`Assets directory is empty. Copying default assets from ${sourceAssetsDir} to ${assetsDirectory}...`);
         cp(sourceAssetsDir, assetsDirectory, { recursive: true })
             .then(() => console.log('Default assets copied successfully.'))

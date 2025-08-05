@@ -1,9 +1,5 @@
 {
-  "name": "Copy of Task Donegeon - 0.0.84 - Categorized Image Uploads",
-  "version": "0.0.84",
-  "description": "A gamified task and chore tracker for families and groups. Complete quests, earn currency and experience, and level up your character in a fun, medieval-themed adventure.",
-  "requestFramePermissions": [
-    "camera"
-  ],
-  "prompt": ""
+  "name": "Task Donegeon",
+  "description": "A gamified chore and task tracker designed to motivate children. Users, or 'Explorers', complete tasks to earn experience points and currencies. These can be used to level up and make purchases in a virtual marketplace, turning everyday chores into an exciting adventure.",
+  "requestFramePermissions": []
 }

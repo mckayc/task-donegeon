@@ -14,9 +14,10 @@ services:
       # The JWT_SECRET is now used by the backend to sign security tokens.
       # It uses the .env variable, or falls back to the insecure default.
       - JWT_SECRET=${JWT_SECRET:-insecure_default_secret_for_testing_only}
+      - API_KEY=${API_KEY:-thiswontworkatall}
     volumes:
       # Persists application data to your host machine.
       # Defaults to a 'data' folder in the current directory.
-      - "${APP_DATA_PATH:-./data}/database:/app/backend/prisma"
+      - "${APP_DATA_PATH:-./data}/database:/app/data/database"
       - "${APP_DATA_PATH:-./data}/assets:/app/assets"
       - "${APP_DATA_PATH:-./data}/backups:/app/backups"     

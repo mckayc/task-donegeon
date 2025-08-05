@@ -1,42 +1,38 @@
-# === STAGE 1: Build Environment ===
-# Use an official Node.js runtime as a parent image.
-# The "-alpine" version is a lightweight Linux distribution.
-FROM node:20-alpine AS build
+# Stage 1: Build the React frontend
+FROM node:20-alpine AS builder
 
-# Set the working directory inside the container
+# Set the working directory
 WORKDIR /app
 
-# Copy backend package files and install backend dependencies
-COPY backend/package*.json ./backend/
-RUN npm install --prefix backend
-
-# Copy frontend package files and install frontend dependencies
+# Copy package.json and package-lock.json (if available)
 COPY package*.json ./
+
+# Install all dependencies, including development ones
 RUN npm install
+
 # Copy the rest of the application source code
 COPY . .
 
-# Build the frontend application for production
-# This creates a static 'dist' folder with optimized files.
+# Build the application. The output will be in the /app/dist directory
 RUN npm run build
-# === STAGE 2: Production Environment ===
-# Start from a fresh, clean Node.js image for the final container
+# Stage 2: Create the final production image
 FROM node:20-alpine
 
+# Set the working directory
 WORKDIR /app
 
-# Copy only the backend dependencies from the 'build' stage
-COPY --from=build /app/backend/node_modules ./backend/node_modules
-COPY backend/package*.json ./backend/
+# Copy package.json and install only production dependencies
+COPY package*.json ./
+RUN npm install --omit=dev
 
-# Copy the backend server code
-COPY backend/server.js ./backend/
-COPY backend/drizzle.config.js ./backend/
-COPY backend/db ./backend/db
+# Copy the server file
+COPY server.js .
 
-# Copy the built frontend assets from the 'build' stage
-COPY --from=build /app/dist ./dist
+# Copy the built frontend assets from the builder stage
+COPY --from=builder /app/dist ./dist
 
-# Copy other necessary root files
-COPY vercel.json .
-COPY metadata.json .
+# Expose the port the app runs on
+EXPOSE 3000
+
+# The command to run the application
+CMD ["node", "server.js"]

@@ -1,79 +1,88 @@
 
-
-import React, { useEffect } from 'react';
-import { useAppState } from './context/AppContext';
-import FirstRunWizard from './components/auth/FirstRunWizard';
-import MainLayout from './components/layout/MainLayout';
-import SwitchUser from './components/auth/SwitchUser';
-import AuthPage from './components/auth/AuthPage';
-import NotificationContainer from './components/ui/NotificationContainer';
-import AppLockScreen from './components/auth/AppLockScreen';
-import OnboardingWizard from './components/auth/OnboardingWizard';
-import SharedLayout from './components/layout/SharedLayout';
+import React, { useState, useEffect } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from './components/ui/Card';
+import { StatusIndicator } from './components/StatusIndicator';
+import { ConnectionStatus, Status } from './types';
+import { Database, BrainCircuit, KeyRound } from 'lucide-react';
 
 const App: React.FC = () => {
-  const { isAppUnlocked, isFirstRun, currentUser, isSwitchingUser, isDataLoaded, settings, isSharedViewActive, appMode, guilds, themes } = useAppState();
+  const [statuses, setStatuses] = useState<ConnectionStatus>({
+    db: Status.LOADING,
+    gemini: Status.LOADING,
+    jwt: Status.LOADING,
+  });
 
   useEffect(() => {
-    let activeThemeId = settings.theme; // Default to system theme
-
-    if (appMode.mode === 'guild') {
-        const currentGuild = guilds.find(g => g.id === appMode.guildId);
-        if (currentGuild?.themeId) {
-            activeThemeId = currentGuild.themeId; // Guild theme is priority in guild mode
-        } else if (currentUser?.theme) {
-            activeThemeId = currentUser.theme; // Fallback to user theme
+    const fetchStatuses = async () => {
+      try {
+        const response = await fetch('/api/status');
+        if (!response.ok) {
+          throw new Error('Network response was not ok');
         }
-    } else { // Personal mode
-        if (currentUser?.theme) {
-            activeThemeId = currentUser.theme; // Use personal theme
-        }
-    }
-    
-    // Find the theme definition and apply its styles
-    const theme = themes.find(t => t.id === activeThemeId);
-    if (theme) {
-        Object.entries(theme.styles).forEach(([key, value]) => {
-            document.documentElement.style.setProperty(key, value);
+        const data = await response.json();
+        setStatuses({
+          db: data.db === 'CONNECTED' ? Status.SUCCESS : Status.ERROR,
+          gemini: data.gemini === 'CONNECTED' ? Status.SUCCESS : Status.ERROR,
+          jwt: data.jwt === 'CONFIGURED' ? Status.SUCCESS : Status.ERROR,
         });
-    }
+      } catch (error) {
+        console.error("Failed to fetch statuses:", error);
+        setStatuses({
+          db: Status.ERROR,
+          gemini: Status.ERROR,
+          jwt: Status.ERROR,
+        });
+      }
+    };
 
-    document.body.dataset.theme = activeThemeId;
-  }, [settings.theme, currentUser, appMode, guilds, themes]);
-
-
-  if (!isDataLoaded) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-stone-900">
-        <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-emerald-400"></div>
-      </div>
-    );
-  }
-
-  const showOnboarding = currentUser && !currentUser.hasBeenOnboarded;
+    fetchStatuses();
+  }, []);
 
   return (
-    <>
-      <NotificationContainer />
-      {showOnboarding && <OnboardingWizard />}
-
-      {(() => {
-        if (isFirstRun) { return <FirstRunWizard />; }
-        if (!isAppUnlocked && !isFirstRun) { return <AppLockScreen />; }
-        
-        // The user switching flow must take precedence over the shared view.
-        if (isSwitchingUser) { return <SwitchUser />; }
-        
-        // If not switching, and shared mode is active, show the shared layout.
-        if (settings.sharedMode.enabled && isSharedViewActive) {
-          return <SharedLayout />;
-        }
-
-        if (!currentUser) { return <AuthPage />; }
+    <div className="min-h-screen bg-donegeon-gray-dark flex flex-col items-center justify-center p-4 sm:p-6 lg:p-8 font-medieval text-donegeon-text animate-fade-in">
+      <header className="text-center mb-8">
+        <h1 className="text-5xl md:text-7xl font-bold text-donegeon-gold" style={{ textShadow: '2px 2px 4px #000' }}>
+          Task Donegeon
+        </h1>
+        <p className="text-lg md:text-xl text-donegeon-text mt-2">The Gamified Chore Tracker</p>
+      </header>
       
-        return <MainLayout />;
-      })()}
-    </>
+      <main>
+        <Card className="w-full max-w-md">
+          <CardHeader>
+            <CardTitle>System Status</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-6">
+              <StatusIndicator
+                icon={<Database className="h-6 w-6 text-donegeon-gold" />}
+                title="Database Connection"
+                status={statuses.db}
+                successMessage="Connection established"
+                errorMessage="Connection failed"
+              />
+              <StatusIndicator
+                icon={<BrainCircuit className="h-6 w-6 text-donegeon-gold" />}
+                title="Gemini API"
+                status={statuses.gemini}
+                successMessage="API key configured"
+                errorMessage="API key not configured"
+              />
+              <StatusIndicator
+                icon={<KeyRound className="h-6 w-6 text-donegeon-gold" />}
+                title="JWT Authentication"
+                status={statuses.jwt}
+                successMessage="Secret key configured"
+                errorMessage="Secret key not configured"
+              />
+            </div>
+          </CardContent>
+        </Card>
+        <p className="text-center mt-6 text-sm text-gray-400">
+          Welcome, adventurer! The system is preparing for your quest.
+        </p>
+      </main>
+    </div>
   );
 };
 

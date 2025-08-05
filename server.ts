@@ -1,11 +1,11 @@
 
-import express, { Request as ExpressRequest, Response as ExpressResponse } from 'express';
+import express, { Request, Response } from 'express';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcrypt';
-import { db } from './src/db/index.ts';
-import { users } from './src/db/schema.ts';
+import { db } from './src/db/index.js';
+import { users } from './src/db/schema.js';
 import { eq, sql } from 'drizzle-orm';
 
 // Recreate __dirname for ES Modules
@@ -18,7 +18,7 @@ const PORT = process.env.PORT || 3000;
 const JWT_SECRET = process.env.JWT_SECRET || 'insecure_default_secret_for_testing_only';
 
 // API endpoint to get connection statuses
-app.get('/api/status', async (_req: ExpressRequest, res: ExpressResponse) => {
+app.get('/api/status', async (_req: Request, res: Response) => {
     const userCountResult = await db.select({ count: sql<number>`count(*)` }).from(users);
     const usersExist = userCountResult[0].count > 0;
 
@@ -35,7 +35,7 @@ app.get('/api/status', async (_req: ExpressRequest, res: ExpressResponse) => {
 });
 
 // API endpoint to get admin users for login screen
-app.get('/api/users/admins', async (_req: ExpressRequest, res: ExpressResponse) => {
+app.get('/api/users/admins', async (_req: Request, res: Response) => {
     try {
         const adminUsers = await db.select({ id: users.id, gameName: users.gameName }).from(users);
         res.json(adminUsers);
@@ -46,7 +46,7 @@ app.get('/api/users/admins', async (_req: ExpressRequest, res: ExpressResponse) 
 });
 
 // API endpoint to create the first user
-app.post('/api/users/create', async (req: ExpressRequest, res: ExpressResponse) => {
+app.post('/api/users/create', async (req: Request, res: Response) => {
     if (req.body.isInitialSetup) {
         const userCountResult = await db.select({ count: sql<number>`count(*)` }).from(users);
         if (userCountResult[0].count > 0) {
@@ -87,7 +87,7 @@ app.post('/api/users/create', async (req: ExpressRequest, res: ExpressResponse) 
 });
 
 // API endpoint for user login
-app.post('/api/auth/login', async (req: ExpressRequest, res: ExpressResponse) => {
+app.post('/api/auth/login', async (req: Request, res: Response) => {
     const { userId, password } = req.body;
     
     if (!userId || !password) {
@@ -122,7 +122,7 @@ app.use(express.static(path.join(__dirname, 'dist')));
 
 // The "catchall" handler: for any request that doesn't
 // match one above, send back React's index.html file.
-app.get('*', (_req: ExpressRequest, res: ExpressResponse) => {
+app.get('*', (_req: Request, res: Response) => {
     res.sendFile(path.join(__dirname, 'dist', 'index.html'));
 });
 

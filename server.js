@@ -179,7 +179,7 @@ app.post('/api/auth/logout', (req, res) => {
 });
 
 
-// --- QUESTS ENDPOINT ---
+// --- ASSET ENDPOINTS ---
 app.get('/api/quests', authMiddleware, async (req, res) => {
     try {
         const questRepository = AppDataSource.getRepository(Quest);
@@ -193,6 +193,17 @@ app.get('/api/quests', authMiddleware, async (req, res) => {
     } catch (error) {
         console.error('Error fetching quests:', error);
         res.status(500).json({ message: 'An error occurred while fetching quests.' });
+    }
+});
+
+app.get('/api/quest-groups', authMiddleware, async (req, res) => {
+    try {
+        const questGroupRepository = AppDataSource.getRepository(QuestGroup);
+        const groups = await questGroupRepository.find({ order: { title: "ASC" } });
+        res.json(groups);
+    } catch (error) {
+        console.error('Error fetching quest groups:', error);
+        res.status(500).json({ message: 'An error occurred while fetching quest groups.' });
     }
 });
 

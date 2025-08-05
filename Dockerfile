@@ -3,7 +3,7 @@ FROM node:18-alpine AS frontend-builder
 
 WORKDIR /app/frontend
 
-COPY frontend/package.json frontend/package-lock.json ./
+COPY frontend/package.json ./
 
 # Use npm ci for a clean, reproducible install from the lockfile
 RUN npm ci
@@ -17,7 +17,7 @@ FROM node:18-alpine AS backend-builder
 
 WORKDIR /app/backend
 
-COPY backend/package.json backend/package-lock.json ./
+COPY backend/package.json ./
 
 # Use npm ci for a clean, reproducible install
 RUN npm ci
@@ -34,7 +34,7 @@ WORKDIR /app
 ENV NODE_ENV=production
 
 # Copy only the necessary package files and prisma schema
-COPY backend/package.json backend/package-lock.json ./backend/
+COPY backend/package.json ./backend/
 COPY backend/prisma ./backend/prisma
 
 # Install ONLY production dependencies and generate Prisma Client

@@ -27,7 +27,7 @@ ENV NODE_ENV=production
 COPY backend/package.json backend/package-lock.json ./backend/
 COPY backend/prisma ./backend/prisma
 
-RUN cd backend && npm install --omit=dev
+RUN cd backend && npm cache clean --force && npm install --omit=dev
 
 COPY --from=backend-builder /app/backend/dist ./backend/dist
 

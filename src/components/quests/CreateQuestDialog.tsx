@@ -1,11 +1,11 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
 import { Label } from '../ui/Label';
 import { Switch } from '../ui/Switch';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/Card';
-import { Quest, QuestGroup, RewardItem } from '../../types';
+import { Quest, RewardItem } from '../../types';
 import { LoaderCircle } from 'lucide-react';
 
 interface CreateQuestDialogProps {
@@ -24,39 +24,35 @@ const CreateQuestDialog: React.FC<CreateQuestDialogProps> = ({ initialData, onCl
         approvalRequired: true,
         ...initialData,
     });
-    const [questGroups, setQuestGroups] = useState<QuestGroup[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
-
-    useEffect(() => {
-        fetch('/api/quest-groups')
-            .then(res => res.json())
-            .then(data => setQuestGroups(data))
-            .catch(err => console.error("Failed to fetch quest groups", err));
-    }, []);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
         setFormData(prev => ({...prev, [e.target.name]: e.target.value }));
     };
 
     const handleRewardChange = (index: number, field: keyof RewardItem, value: string | number) => {
-        const newRewards = [...(formData.rewards || [])];
-        const rewardToUpdate = { ...newRewards[index] };
+        setFormData(prev => {
+            if (!prev.rewards) return prev;
+            const newRewards = [...prev.rewards];
+            const rewardToUpdate: RewardItem = { ...newRewards[index] };
 
-        if (field === 'type') {
-            rewardToUpdate.type = value as 'currency' | 'xp';
-        } else if (field === 'name') {
-            rewardToUpdate.name = value as string;
-        } else if (field === 'amount') {
-            rewardToUpdate.amount = Number(value);
-        }
-        
-        newRewards[index] = rewardToUpdate;
-        setFormData(prev => ({...prev, rewards: newRewards}));
+            if (field === 'type') {
+                rewardToUpdate.type = value as 'currency' | 'xp';
+            } else if (field === 'name') {
+                rewardToUpdate.name = value as string;
+            } else if (field === 'amount') {
+                rewardToUpdate.amount = Number(value);
+            }
+            
+            newRewards[index] = rewardToUpdate;
+            return { ...prev, rewards: newRewards };
+        });
     };
     
     const addReward = () => {
-        const newRewards = [...(formData.rewards || []), {type: 'xp', name: 'XP', amount: 10}];
+        const newReward: RewardItem = { type: 'xp', name: 'XP', amount: 10 };
+        const newRewards = [...(formData.rewards || []), newReward];
         setFormData(prev => ({...prev, rewards: newRewards}));
     }
 

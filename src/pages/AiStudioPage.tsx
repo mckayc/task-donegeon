@@ -1,7 +1,6 @@
 
 import React, { useState, useCallback } from 'react';
 import { Button } from '../components/ui/Button';
-import { Input } from '../components/ui/Input';
 import { Sparkles, CheckCircle, XCircle, LoaderCircle } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
 import CreateQuestDialog from '../components/quests/CreateQuestDialog';

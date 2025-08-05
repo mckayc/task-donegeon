@@ -7,7 +7,7 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import cookieParser from 'cookie-parser';
 import fs from 'fs/promises';
-import { AppDataSource, databaseDirectory } from './src/data/data-source.js';
+import { AppDataSource, databaseDirectory, assetsDirectory } from './src/data/data-source.js';
 import { User } from './src/data/entities/User.js';
 import { Quest } from './src/data/entities/Quest.js';
 import { QuestGroup } from './src/data/entities/QuestGroup.js';
@@ -204,8 +204,8 @@ app.post('/api/setup/seed-data', authMiddleware, async (req, res) => {
             createdPlayers.push(savedPlayer);
         }
 
-        // 2. Seed Quest Groups from JSON
-        const questGroupsPath = path.join(__dirname, 'src', 'assets', 'quest-groups', 'default.json');
+        // 2. Seed Quest Groups from JSON file in the user-configurable assets directory
+        const questGroupsPath = path.join(assetsDirectory, 'quest-groups', 'default.json');
         const questGroupsData = JSON.parse(await fs.readFile(questGroupsPath, 'utf-8'));
 
         for (const groupData of questGroupsData) {
@@ -216,8 +216,8 @@ app.post('/api/setup/seed-data', authMiddleware, async (req, res) => {
             }
         }
         
-        // 3. Seed Quests from JSON
-        const questsPath = path.join(__dirname, 'src', 'assets', 'quests', 'default.json');
+        // 3. Seed Quests from JSON file in the user-configurable assets directory
+        const questsPath = path.join(assetsDirectory, 'quests', 'default.json');
         const questsData = JSON.parse(await fs.readFile(questsPath, 'utf-8'));
 
         for (const questData of questsData) {

@@ -1,4 +1,4 @@
-import { User, Role, RewardTypeDefinition, RewardCategory, Rank, Trophy, TrophyRequirementType, QuestType, Market, Quest, QuestAvailability, Guild, AppSettings, SidebarConfigItem, GameAsset, ThemeDefinition, ThemeStyle, QuestCompletion, QuestCompletionStatus, MarketStatus, QuestGroup } from '../types';
+import { User, Role, RewardTypeDefinition, RewardCategory, Rank, Trophy, TrophyRequirementType, QuestType, Market, Quest, QuestAvailability, Guild, AppSettings, SidebarConfigItem, GameAsset, ThemeDefinition, ThemeStyle, QuestCompletion, QuestCompletionStatus, MarketStatus, QuestGroup, IAppData } from '../types';
 
 export const INITIAL_QUEST_GROUPS: QuestGroup[] = [
     { id: 'qg-household', name: 'Household Chores', description: 'General tasks related to keeping the house clean and tidy.', icon: '🏡' },
@@ -550,4 +550,36 @@ export const createSampleQuests = (users: User[]): Quest[] => {
 export const createInitialQuestCompletions = (users: User[], quests: Quest[]): QuestCompletion[] => {
     // This function can be used to populate some initial "completed" quests for demonstration
     return [];
+};
+
+export const createInitialData = (): IAppData => {
+    const users = createMockUsers();
+    const guilds = createInitialGuilds(users);
+    const quests = createSampleQuests(users);
+    const markets = createSampleMarkets();
+    const gameAssets = createSampleGameAssets();
+    const questCompletions = createInitialQuestCompletions(users, quests);
+
+    return {
+        users,
+        quests,
+        questGroups: INITIAL_QUEST_GROUPS,
+        markets,
+        rewardTypes: INITIAL_REWARD_TYPES,
+        questCompletions,
+        purchaseRequests: [],
+        guilds,
+        ranks: INITIAL_RANKS,
+        trophies: INITIAL_TROPHIES,
+        userTrophies: [],
+        adminAdjustments: [],
+        gameAssets,
+        systemLogs: [],
+        settings: INITIAL_SETTINGS,
+        themes: INITIAL_THEMES,
+        loginHistory: [],
+        chatMessages: [],
+        systemNotifications: [],
+        scheduledEvents: [],
+    };
 };

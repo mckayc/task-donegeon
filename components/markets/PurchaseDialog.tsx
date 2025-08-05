@@ -40,7 +40,7 @@ const PurchaseDialog: React.FC<PurchaseDialogProps> = ({ asset, marketId, onClos
     };
 
     const handlePurchase = (costGroupIndex: number) => {
-        purchaseMarketItem(asset.id, marketId, currentUser, costGroupIndex);
+        purchaseMarketItem(asset.id, marketId, costGroupIndex);
         onClose();
     };
 

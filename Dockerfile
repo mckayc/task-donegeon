@@ -4,8 +4,7 @@ WORKDIR /app/frontend
 
 COPY frontend/package.json frontend/package-lock.json ./
 
-RUN npm install
-
+RUN npm cache clean --force && npm install
 
 COPY frontend/ ./
 
@@ -14,7 +13,7 @@ RUN npm run build
 FROM node:18-alpine AS backend-builder
 WORKDIR /app/backend
 COPY backend/package.json backend/package-lock.json ./
-RUN npm install
+RUN npm cache clean --force && npm install
 COPY backend/ ./
 
 RUN npm run build
@@ -39,5 +38,3 @@ COPY assets ./assets
 EXPOSE 3000
 
 CMD ["node", "backend/dist/server.js"]
-
-

@@ -9,15 +9,16 @@ services:
     ports:
       # Maps your host machine's port to the container's port 3000,
       # where the backend server is running.
-      - "${APP_PORT:-9373}:3000"
+      - "${APP_PORT:-3002}:3000"
     environment:
-      # The JWT_SECRET is now used by the backend to sign security tokens.
+      # The JWT_SECRET is used by the backend to sign security tokens type in random letters and numbers for this code. 
       # It uses the .env variable, or falls back to the insecure default.
       - JWT_SECRET=${JWT_SECRET:-insecure_default_secret_for_testing_only}
       - API_KEY=${API_KEY:-thiswontworkatall}
     volumes:
       # Persists application data to your host machine.
       # Defaults to a 'data' folder in the current directory.
+      # To specify the location (recommended) you should add the folder location. Example: /srv/dev-disk-by-uuid-2f5a0666-e1d5-4c25-82da-015a6d210094/Archive/Portainer/taskDonegeon/
       - "${APP_DATA_PATH:-./data}/database:/app/data/database"
       - "${APP_DATA_PATH:-./data}/assets:/app/assets"
       - "${APP_DATA_PATH:-./data}/backups:/app/backups"     

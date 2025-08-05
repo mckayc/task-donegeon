@@ -1,5 +1,4 @@
 
-
 import { DataSource } from 'typeorm';
 import { User } from './entities/User.js';
 import { Quest } from './entities/Quest.js';
@@ -10,31 +9,36 @@ import { fileURLToPath } from 'url';
 import { cp } from 'fs/promises';
 
 // --- Path Configuration ---
-// Recreate __dirname for ES Modules to locate source files
+// Recreate __dirname for ES Modules to locate the source asset files for copying.
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Define a single root for all user-managed data.
-// This can be mounted via a Docker volume to persist data.
-// Default is /app/data inside the container.
-const dataRoot = process.env.APP_DATA_PATH || '/app/data';
+// Inside the container, the data root is ALWAYS /app/data.
+// The user's Docker volume maps this path to a persistent location on the host.
+// The application code should not know or care about the host's file system structure.
+const dataRoot = '/app/data';
 
-// Define specific subdirectories for different data types
+// Define specific subdirectories for different data types within the container's data path.
 export const databaseDirectory = path.join(dataRoot, 'database');
 export const assetsDirectory = path.join(dataRoot, 'assets');
+export const backupsDirectory = path.join(dataRoot, 'backups');
 const dbPath = path.join(databaseDirectory, 'task-donegeon.sqlite');
 
 // --- Directory and Asset Initialization ---
 
-// Ensure the data directories exist.
-if (!fs.existsSync(databaseDirectory)) {
+// Ensure all necessary data directories exist within the data root.
+// fs.mkdirSync is safe to call even if the directory already exists.
+try {
     fs.mkdirSync(databaseDirectory, { recursive: true });
-}
-if (!fs.existsSync(assetsDirectory)) {
     fs.mkdirSync(assetsDirectory, { recursive: true });
+    fs.mkdirSync(backupsDirectory, { recursive: true });
+} catch (error) {
+    console.error(`Failed to create data directories in ${dataRoot}:`, error);
 }
 
-// On first run, copy the default assets from the source code to the user-managed assets directory.
+
+// On first run (or if the assets directory is empty), copy the default assets 
+// from the source code to the user-managed assets directory.
 // This makes the default packs visible and manageable through the user's Docker volume.
 try {
     const assetFiles = fs.readdirSync(assetsDirectory);

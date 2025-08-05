@@ -31,7 +31,7 @@ const initializeDatabase = () => {
         console.error("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
         console.error("An error occurred during database initialization:");
         console.error(error);
-        process.exit(1); // Exit the process with an error code to ensure the container stops
+        throw error; // Rethrowing will exit the process because this is called at the top level
     }
 };
 

@@ -1,24 +1,49 @@
 
-import React from 'react';
-import { cn } from '@/lib/utils';
+import React, { forwardRef } from 'react';
 
-export interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {}
+// Extends base props to allow for a 'select' type input
+interface InputProps extends React.InputHTMLAttributes<HTMLInputElement | HTMLSelectElement> {
+  label?: string;
+  as?: 'input' | 'select';
+  children?: React.ReactNode;
+}
 
-const Input = React.forwardRef<HTMLInputElement, InputProps>(
-  ({ className, type, ...props }, ref) => {
-    return (
-      <input
-        type={type}
-        className={cn(
-          'flex h-10 w-full rounded-md border border-brand-brown-700 bg-brand-gray-900/50 px-3 py-2 text-sm text-brand-brown-100 ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-brand-brown-300/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-green-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 font-quattrocento',
-          className
-        )}
-        ref={ref}
-        {...props}
-      />
-    );
+const Input = forwardRef<HTMLInputElement | HTMLSelectElement, InputProps>(({ label, id, className, as = 'input', children, ...props }, ref) => {
+  
+  const baseClasses = `w-full px-4 py-2 bg-stone-700 border border-stone-600 rounded-md focus:ring-emerald-500 focus:border-emerald-500 transition ${className || ''}`;
+
+  const inputElement = as === 'select' ? (
+    <select
+      id={id}
+      ref={ref as React.ForwardedRef<HTMLSelectElement>}
+      {...(props as React.SelectHTMLAttributes<HTMLSelectElement>)}
+      className={baseClasses}
+    >
+      {children}
+    </select>
+  ) : (
+    <input
+      id={id}
+      ref={ref as React.ForwardedRef<HTMLInputElement>}
+      {...(props as React.InputHTMLAttributes<HTMLInputElement>)}
+      className={baseClasses}
+    />
+  );
+  
+  if (!label) {
+    return inputElement;
   }
-);
+
+  return (
+    <div>
+      <label htmlFor={id} className="block text-sm font-medium text-stone-300 mb-1">
+        {label}
+      </label>
+      {inputElement}
+    </div>
+  );
+});
+
 Input.displayName = 'Input';
 
 export default Input;

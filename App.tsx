@@ -1,42 +1,80 @@
-import React from 'react';
-import { useAuth } from './hooks/useAuth';
-import SetupWizard from './pages/SetupWizard';
-import Login from './pages/Login';
-import Dashboard from './pages/Dashboard';
-import DungeonIcon from './components/icons/DungeonIcon';
-import FullScreenLoader from './components/ui/FullScreenLoader';
 
-function App() {
-  const { status, isAuthenticated } = useAuth();
 
-  const renderContent = () => {
-    if (status === 'loading') {
-      return <FullScreenLoader />;
+import React, { useEffect } from 'react';
+import { useAppState } from './context/AppContext';
+import FirstRunWizard from './components/auth/FirstRunWizard';
+import MainLayout from './components/layout/MainLayout';
+import SwitchUser from './components/auth/SwitchUser';
+import AuthPage from './components/auth/AuthPage';
+import NotificationContainer from './components/ui/NotificationContainer';
+import AppLockScreen from './components/auth/AppLockScreen';
+import OnboardingWizard from './components/auth/OnboardingWizard';
+import SharedLayout from './components/layout/SharedLayout';
+
+const App: React.FC = () => {
+  const { isAppUnlocked, isFirstRun, currentUser, isSwitchingUser, isDataLoaded, settings, isSharedViewActive, appMode, guilds, themes } = useAppState();
+
+  useEffect(() => {
+    let activeThemeId = settings.theme; // Default to system theme
+
+    if (appMode.mode === 'guild') {
+        const currentGuild = guilds.find(g => g.id === appMode.guildId);
+        if (currentGuild?.themeId) {
+            activeThemeId = currentGuild.themeId; // Guild theme is priority in guild mode
+        } else if (currentUser?.theme) {
+            activeThemeId = currentUser.theme; // Fallback to user theme
+        }
+    } else { // Personal mode
+        if (currentUser?.theme) {
+            activeThemeId = currentUser.theme; // Use personal theme
+        }
     }
-    if (status === 'needs-setup') {
-      return <SetupWizard />;
+    
+    // Find the theme definition and apply its styles
+    const theme = themes.find(t => t.id === activeThemeId);
+    if (theme) {
+        Object.entries(theme.styles).forEach(([key, value]) => {
+            document.documentElement.style.setProperty(key, value);
+        });
     }
-    if (status === 'ready' && !isAuthenticated) {
-      return <Login />;
-    }
-    if (status === 'authenticated') {
-      return <Dashboard />;
-    }
-    // Fallback case
-    return <Login />;
-  };
+
+    document.body.dataset.theme = activeThemeId;
+  }, [settings.theme, currentUser, appMode, guilds, themes]);
+
+
+  if (!isDataLoaded) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-stone-900">
+        <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-emerald-400"></div>
+      </div>
+    );
+  }
+
+  const showOnboarding = currentUser && !currentUser.hasBeenOnboarded;
 
   return (
-    <main className="bg-brand-gray-900 min-h-screen text-brand-brown-100 font-quattrocento flex flex-col items-center justify-center p-4 selection:bg-brand-green-500 selection:text-brand-gray-900">
-      <div className="absolute top-8 left-8 flex items-center gap-4 text-brand-gray-300">
-        <DungeonIcon className="h-10 w-10"/>
-        <h1 className="font-cinzel text-3xl font-bold tracking-wider">Task Donegeon</h1>
-      </div>
-      <div className="w-full max-w-md">
-        {renderContent()}
-      </div>
-    </main>
+    <>
+      <NotificationContainer />
+      {showOnboarding && <OnboardingWizard />}
+
+      {(() => {
+        if (isFirstRun) { return <FirstRunWizard />; }
+        if (!isAppUnlocked && !isFirstRun) { return <AppLockScreen />; }
+        
+        // The user switching flow must take precedence over the shared view.
+        if (isSwitchingUser) { return <SwitchUser />; }
+        
+        // If not switching, and shared mode is active, show the shared layout.
+        if (settings.sharedMode.enabled && isSharedViewActive) {
+          return <SharedLayout />;
+        }
+
+        if (!currentUser) { return <AuthPage />; }
+      
+        return <MainLayout />;
+      })()}
+    </>
   );
-}
+};
 
 export default App;

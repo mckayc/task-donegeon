@@ -1,6 +1,30 @@
+
 import type { NewAdminData, User } from '../types';
 
 const API_BASE_URL = '/api';
+
+/**
+ * Checks the server's status to see if initial setup (like setting a JWT secret) is needed.
+ * @returns A promise resolving to an object, e.g., { setupNeeded: boolean }.
+ */
+export const checkServerStatus = async (): Promise<{ setupNeeded: boolean }> => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/status`);
+    // If we get a 503, it means the API is in setup mode
+    if (response.status === 503) {
+      return { setupNeeded: true };
+    }
+    if (!response.ok) {
+        // For other errors, we can assume setup is needed to be safe
+        return { setupNeeded: true };
+    }
+    return response.json();
+  } catch (error) {
+    // Network errors, etc.
+    return { setupNeeded: true };
+  }
+};
+
 
 /**
  * Checks if a "Donegeon Master" (admin) account exists by querying the backend.

@@ -1,9 +1,16 @@
+
 import { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import '@fastify/jwt';
 import { prisma } from '../db';
 import { comparePassword, hashPassword } from '../lib/hash';
 
 export async function authRoutes(server: FastifyInstance) {
+
+  // A status check endpoint for the frontend
+  server.get('/status', async (request: FastifyRequest, reply: FastifyReply) => {
+    // If this route is reachable, it means the JWT secret is configured.
+    return { setupNeeded: false };
+  });
 
   // Check if an admin user already exists
   server.get('/admin-exists', async (request: FastifyRequest, reply: FastifyReply) => {

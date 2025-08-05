@@ -1,30 +1,27 @@
 # docker-compose.yml
-
 version: '3.8'
 
 services:
-  frontend:
+  app:
+    build: .
     image: mckayc/task-donegeon-frontend:latest
-    container_name: task-donegeon-frontend
+    container_name: task-donegeon
     restart: unless-stopped
+    # if you don't specify the port as an env variable it will default to 9373
     ports:
-      - "${FRONTEND_PORT:-9373}:80"
-    depends_on:
-      - backend
+      - "${FRONTEND_PORT:-9373}:3000"
 
-  backend:
-    image: mckayc/task-donegeon-backend:latest
-    container_name: task-donegeon-backend
-    restart: unless-stopped
-    ports:
-      - "${BACKEND_PORT:-9374}:3000"
     volumes:
-      - ./assets:/usr/src/app/assets
-      - db-data:/usr/src/app/prisma
-      - backups:/usr/src/app/backups
-    env_file:
-      - ./backend/.env
+      
+      # Example for .env variable: - /srv/dev-disk-by-uuid-2f5a0666-e1d5-4c25-82da-015a6d210094/Archive/Portainer/taskDonegeon
+      # If you don't enter a location it will go to the default such as ./data
+      - "${APP_DATA_PATH:-./data}/assets:/app/assets"
+      - "${APP_DATA_PATH:-./data}/database:/app/backend/prisma"
+      - "${APP_DATA_PATH:-./data}/backups:/app/backups"
+    # env_file:
+    #  - ./backend/.env
 
-volumes:
-  db-data:
-  backups:
+    # Note; if you would prefer to use an env file, uncomment the previous two lines
+    # Otherwise, if you install using Portainer, you can paste the docker compose file 
+    # for the stack then "Add an environment variable" below that
+    # EVN to fill out = JWT_SECRET, GEMINI_API_KEY, APP_DATA_PATH

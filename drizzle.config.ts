@@ -1,5 +1,3 @@
-
-import type { Config } from 'drizzle-kit';
 import path from 'path';
 
 // Read path from environment variable or use default

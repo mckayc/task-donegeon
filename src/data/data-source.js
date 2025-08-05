@@ -3,21 +3,20 @@ import { DataSource } from 'typeorm';
 import { Task } from './entities/Task.js';
 import { User } from './entities/User.js';
 import path from 'path';
-import { fileURLToPath } from 'url';
 import fs from 'fs';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-// Use APP_DATA_PATH from .env for the data directory, otherwise default to a 'data' folder in the project root.
-const dataDir = process.env.APP_DATA_PATH || path.join(__dirname, '..', '..', 'data');
+// The user's docker-compose snippet mounts a volume to `/app/data/database`.
+// To ensure data is persisted correctly on that volume, we will use this as the directory for the database file.
+// If the APP_DATA_PATH environment variable is set inside the container, it will be used instead,
+// allowing for a configuration override.
+const databaseDirectory = process.env.APP_DATA_PATH || '/app/data/database';
 
 // Ensure the data directory exists.
-if (!fs.existsSync(dataDir)) {
-    fs.mkdirSync(dataDir, { recursive: true });
+if (!fs.existsSync(databaseDirectory)) {
+    fs.mkdirSync(databaseDirectory, { recursive: true });
 }
 
-const dbPath = path.join(dataDir, 'task-donegeon.sqlite');
+const dbPath = path.join(databaseDirectory, 'task-donegeon.sqlite');
 
 export const AppDataSource = new DataSource({
   type: 'sqlite',

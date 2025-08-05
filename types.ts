@@ -1,12 +1,2 @@
-
-export enum Status {
-  LOADING,
-  SUCCESS,
-  ERROR,
-}
-
-export interface ConnectionStatus {
-  db: Status;
-  gemini: Status;
-  jwt: Status;
-}
+// This file is a shim to redirect imports to the correct location.
+export * from './src/types';

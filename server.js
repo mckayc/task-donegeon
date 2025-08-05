@@ -178,6 +178,24 @@ app.post('/api/auth/logout', (req, res) => {
     res.status(200).json({ message: 'Logged out successfully.' });
 });
 
+
+// --- QUESTS ENDPOINT ---
+app.get('/api/quests', authMiddleware, async (req, res) => {
+    try {
+        const questRepository = AppDataSource.getRepository(Quest);
+        const quests = await questRepository.find({
+            relations: ['questGroup'],
+            order: {
+                title: "ASC"
+            }
+        });
+        res.json(quests);
+    } catch (error) {
+        console.error('Error fetching quests:', error);
+        res.status(500).json({ message: 'An error occurred while fetching quests.' });
+    }
+});
+
 // --- SETUP ENDPOINTS ---
 app.post('/api/setup/seed-data', authMiddleware, async (req, res) => {
     const userRepository = AppDataSource.getRepository(User);

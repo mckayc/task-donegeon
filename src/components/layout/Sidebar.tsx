@@ -9,40 +9,50 @@ interface SidebarProps {
   isMobileOpen: boolean;
   setIsMobileOpen: (isOpen: boolean) => void;
   onLogout: () => void;
+  onNavigate: (page: string) => void;
 }
 
 const navLinks = [
-  { name: 'Dashboard', icon: LayoutDashboard, path: '#' },
-  { name: 'Quests', icon: Swords, path: '#' },
-  { name: 'Market', icon: Store, path: '#' },
-  { name: 'Chronicles', icon: ScrollText, path: '#' },
-  { name: 'Guilds', icon: Users, path: '#' },
-  { name: 'Settings', icon: Settings, path: '#' },
+  { name: 'Dashboard', icon: LayoutDashboard, page: 'dashboard' },
+  { name: 'Quests', icon: Swords, page: 'quests' },
+  { name: 'Market', icon: Store, page: 'market' },
+  { name: 'Chronicles', icon: ScrollText, page: 'chronicles' },
+  { name: 'Guilds', icon: Users, page: 'guilds' },
+  { name: 'Settings', icon: Settings, page: 'settings' },
 ];
 
-const NavItem = ({ link, isOpen }: { link: typeof navLinks[0]; isOpen: boolean }) => (
-  <a
-    href={link.path}
-    className="flex items-center p-2 text-base font-normal text-donegeon-text/80 rounded-lg hover:bg-donegeon-gray/50"
-  >
-    <link.icon className="w-6 h-6 text-donegeon-gold" />
-    <AnimatePresence>
-      {isOpen && (
-        <motion.span
-          initial={{ opacity: 0, width: 0 }}
-          animate={{ opacity: 1, width: 'auto' }}
-          exit={{ opacity: 0, width: 0 }}
-          transition={{ duration: 0.2, ease: 'easeInOut' }}
-          className="ml-3 whitespace-nowrap"
-        >
-          {link.name}
-        </motion.span>
-      )}
-    </AnimatePresence>
-  </a>
-);
+const NavItem = ({ link, isOpen, onNavigate }: { link: typeof navLinks[0]; isOpen: boolean; onNavigate: (page: string) => void; }) => {
+  const isClickable = link.page === 'dashboard' || link.page === 'quests';
+  return (
+    <button
+        onClick={() => isClickable && onNavigate(link.page)}
+        className={`flex items-center p-2 text-base font-normal text-donegeon-text/80 rounded-lg w-full text-left transition-colors ${
+        isClickable 
+            ? 'hover:bg-donegeon-gray/50 cursor-pointer' 
+            : 'opacity-50 cursor-not-allowed'
+        }`}
+        disabled={!isClickable}
+        aria-label={link.name}
+    >
+        <link.icon className="w-6 h-6 text-donegeon-gold" />
+        <AnimatePresence>
+        {isOpen && (
+            <motion.span
+            initial={{ opacity: 0, width: 0 }}
+            animate={{ opacity: 1, width: 'auto' }}
+            exit={{ opacity: 0, width: 0 }}
+            transition={{ duration: 0.2, ease: 'easeInOut' }}
+            className="ml-3 whitespace-nowrap"
+            >
+            {link.name}
+            </motion.span>
+        )}
+        </AnimatePresence>
+    </button>
+  );
+};
 
-export const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen, isMobileOpen, setIsMobileOpen, onLogout }) => {
+export const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen, isMobileOpen, setIsMobileOpen, onLogout, onNavigate }) => {
   const sidebarVariants = {
     open: { width: '16rem' }, // 256px
     closed: { width: '5rem' }, // 80px
@@ -88,7 +98,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen, isMobileOpe
 
       <nav className="flex-1 px-3 py-4 space-y-2">
         {navLinks.map((link) => (
-          <NavItem key={link.name} link={link} isOpen={isOpen} />
+          <NavItem key={link.name} link={link} isOpen={isOpen} onNavigate={onNavigate} />
         ))}
       </nav>
 

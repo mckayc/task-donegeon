@@ -5,9 +5,10 @@ import { Header } from './Header';
 interface LayoutProps {
   children: React.ReactNode;
   onLogout: () => void;
+  onNavigate: (page: string) => void;
 }
 
-export const Layout: React.FC<LayoutProps> = ({ children, onLogout }) => {
+export const Layout: React.FC<LayoutProps> = ({ children, onLogout, onNavigate }) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
@@ -19,6 +20,7 @@ export const Layout: React.FC<LayoutProps> = ({ children, onLogout }) => {
         isMobileOpen={isMobileMenuOpen}
         setIsMobileOpen={setIsMobileMenuOpen}
         onLogout={onLogout} 
+        onNavigate={onNavigate}
       />
       <div
         className={`transition-all duration-300 ease-in-out ${

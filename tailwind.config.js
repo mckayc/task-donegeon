@@ -23,6 +23,7 @@ export default {
         'donegeon-text': '#E2E8F0', // Light text color for dark backgrounds
         'donegeon-gold': '#FFD700', // For highlights and titles
         'donegeon-red': '#E53E3E', // For error states
+        'donegeon-orange': '#ED8936', // For warning states
       },
       fontFamily: {
         'medieval': ['MedievalSharp', 'cursive'],

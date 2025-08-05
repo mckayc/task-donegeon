@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Status } from '../types';
 import { LoaderCircle } from 'lucide-react';
@@ -8,15 +9,18 @@ interface StatusIndicatorProps {
   status: Status;
   successMessage: string;
   errorMessage: string;
+  warningMessage?: string;
 }
 
-export const StatusIndicator: React.FC<StatusIndicatorProps> = ({ icon, title, status, successMessage, errorMessage }) => {
+export const StatusIndicator: React.FC<StatusIndicatorProps> = ({ icon, title, status, successMessage, errorMessage, warningMessage }) => {
   const getStatusColor = () => {
     switch (status) {
       case Status.SUCCESS:
         return 'bg-donegeon-green';
       case Status.ERROR:
         return 'bg-donegeon-red';
+      case Status.WARNING:
+        return 'bg-donegeon-orange';
       case Status.LOADING:
       default:
         return 'bg-yellow-500';
@@ -29,9 +33,22 @@ export const StatusIndicator: React.FC<StatusIndicatorProps> = ({ icon, title, s
         return successMessage;
       case Status.ERROR:
         return errorMessage;
+      case Status.WARNING:
+        return warningMessage || 'Requires attention';
       case Status.LOADING:
       default:
         return 'Checking status...';
+    }
+  }
+
+  const getTextColor = () => {
+    switch (status) {
+        case Status.ERROR:
+            return 'text-donegeon-red';
+        case Status.WARNING:
+            return 'text-donegeon-orange';
+        default:
+            return 'text-gray-400';
     }
   }
 
@@ -47,7 +64,7 @@ export const StatusIndicator: React.FC<StatusIndicatorProps> = ({ icon, title, s
         ) : (
           <div className={`h-3 w-3 rounded-full ${getStatusColor()}`}></div>
         )}
-        <span className={`text-sm ${status === Status.ERROR ? 'text-donegeon-red' : 'text-gray-400'}`}>
+        <span className={`text-sm ${getTextColor()}`}>
           {getStatusText()}
         </span>
       </div>

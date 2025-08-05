@@ -33,7 +33,7 @@ const App: React.FC = () => {
     } catch (error) {
         console.error("Auth check failed:", error);
         setAuthStatus('unauthenticated');
-        setAppStatus(prev => prev || { firstRun: true, admins: [], db: 'ERROR', gemini: 'NOT_CONFIGURED', jwt: 'NOT_CONFIGURED' });
+        setAppStatus(prev => prev || { firstRun: true, admins: [], db: 'ERROR', dbPath: null, gemini: 'NOT_CONFIGURED', jwt: 'NOT_CONFIGURED' });
     }
   }, []);
 

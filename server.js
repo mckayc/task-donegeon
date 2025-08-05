@@ -6,8 +6,9 @@ import 'reflect-metadata';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import cookieParser from 'cookie-parser';
-import { AppDataSource } from './src/data/data-source.js';
+import { AppDataSource, databaseDirectory } from './src/data/data-source.js';
 import { User } from './src/data/entities/User.js';
+import { Task } from './src/data/entities/Task.js';
 
 // Recreate __dirname for ES Modules
 const __filename = fileURLToPath(import.meta.url);
@@ -36,14 +37,17 @@ app.get('/api/status', async (req, res) => {
         const firstRun = admins.length === 0;
 
         let dbStatus = 'ERROR';
+        let dbPathInfo = null;
         if (AppDataSource.isInitialized) {
             dbStatus = process.env.APP_DATA_PATH ? 'CONNECTED_CUSTOM' : 'CONNECTED_DEFAULT';
+            dbPathInfo = path.join(databaseDirectory, 'task-donegeon.sqlite');
         }
 
         const statuses = {
             firstRun,
             admins,
             db: dbStatus,
+            dbPath: dbPathInfo,
             gemini: process.env.API_KEY && process.env.API_KEY !== 'thiswontworkatall' ? 'CONNECTED' : 'NOT_CONFIGURED',
             jwt: process.env.JWT_SECRET && process.env.JWT_SECRET !== 'insecure_default_secret_for_testing_only' ? 'CONFIGURED' : 'NOT_CONFIGURED'
         };
@@ -54,6 +58,7 @@ app.get('/api/status', async (req, res) => {
             firstRun: true, // Assume first run on error
             admins: [],
             db: 'ERROR',
+            dbPath: null,
             gemini: 'NOT_CONFIGURED',
             jwt: 'NOT_CONFIGURED',
         });
@@ -168,6 +173,44 @@ app.get('/api/me', authMiddleware, (req, res) => {
 app.post('/api/auth/logout', (req, res) => {
     res.cookie('token', '', { expires: new Date(0), httpOnly: true, sameSite: 'strict' });
     res.status(200).json({ message: 'Logged out successfully.' });
+});
+
+// --- SETUP ENDPOINTS ---
+app.post('/api/setup/seed-data', authMiddleware, async (req, res) => {
+    const userRepository = AppDataSource.getRepository(User);
+    const taskRepository = AppDataSource.getRepository(Task);
+    
+    try {
+        const playerCount = await userRepository.count({ where: { role: 'player' } });
+        if (playerCount > 0) {
+            return res.status(409).json({ message: 'Sample data already exists.' });
+        }
+
+        const playersData = [
+            { firstName: 'Leo', lastName: 'The Brave', gameName: 'LeoTheBrave', birthday: '2015-05-10', pin: '1234', role: 'player', password: 'password123' },
+            { firstName: 'Mia', lastName: 'The Wise', gameName: 'MiaTheWise', birthday: '2014-09-22', pin: '5678', role: 'player', password: 'password123' },
+        ];
+
+        for (const playerData of playersData) {
+            const hashedPin = await bcrypt.hash(playerData.pin, 10);
+            const hashedPassword = await bcrypt.hash(playerData.password, 10);
+            const newPlayer = userRepository.create({ ...playerData, pin: hashedPin, password: hashedPassword });
+            await userRepository.save(newPlayer);
+        }
+
+        const tasksData = [
+            { title: 'Tidy Up Your Chamber', description: 'Make your bed and put away all your toys.', experiencePoints: 10 },
+            { title: 'Feed the Mystical Beast', description: 'Remember to feed the cat/dog.', experiencePoints: 5 },
+            { title: 'Homework Quest', description: 'Complete all of today\'s homework.', experiencePoints: 20 },
+        ];
+        const newTasks = taskRepository.create(tasksData);
+        await taskRepository.save(newTasks);
+
+        res.status(201).json({ message: 'Sample data created successfully!' });
+    } catch (error) {
+        console.error('Error seeding data:', error);
+        res.status(500).json({ message: 'An error occurred while creating sample data.' });
+    }
 });
 
 

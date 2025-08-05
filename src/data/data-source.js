@@ -1,4 +1,5 @@
 
+
 import { DataSource } from 'typeorm';
 import { Task } from './entities/Task.js';
 import { User } from './entities/User.js';
@@ -9,7 +10,7 @@ import fs from 'fs';
 // To ensure data is persisted correctly on that volume, we will use this as the directory for the database file.
 // If the APP_DATA_PATH environment variable is set inside the container, it will be used instead,
 // allowing for a configuration override.
-const databaseDirectory = process.env.APP_DATA_PATH || '/app/data/database';
+export const databaseDirectory = process.env.APP_DATA_PATH || '/app/data/database';
 
 // Ensure the data directory exists.
 if (!fs.existsSync(databaseDirectory)) {

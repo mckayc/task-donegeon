@@ -13,3 +13,17 @@ export interface ConnectionStatus {
   gemini: Status;
   jwt: Status;
 }
+
+export interface FullConnectionStatus extends ConnectionStatus {
+    usersExist: boolean;
+}
+
+export interface User {
+    id: number;
+    gameName: string;
+    firstName?: string;
+    lastName?: string;
+    birthday?: string;
+    pin?: string;
+    password?: string;
+}

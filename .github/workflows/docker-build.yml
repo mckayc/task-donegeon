@@ -50,5 +50,5 @@ jobs:
           # 'tags' defines the name and tag for the Docker image.
           # It uses your Docker Hub username from secrets to create a tag like 'your-username/task-donegeon-frontend:latest'.
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/task-donegeon:latest
-          cache-from: type=registry,ref={{ secrets.DOCKERHUB_USERNAME }}/task-donegeon:cache
-          cache-to: type=registry,ref={{ secrets.DOCKERHUB_USERNAME }}/task-donegeon:cache,mode=max
+          cache-from: type=registry,ref=${{ secrets.DOCKERHUB_USERNAME }}/task-donegeon:cache
+          cache-to: type=registry,ref=${{ secrets.DOCKERHUB_USERNAME }}/task-donegeon:cache,mode=max

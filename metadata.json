@@ -1,5 +1,6 @@
 {
   "name": "Task Donegeon 2.0 - v0.0.1 - env check working in Docker",
   "description": "A gamified chore and task tracker designed to motivate children. Users, or 'Explorers', complete tasks to earn experience points and currencies. These can be used to level up and make purchases in a virtual marketplace, turning everyday chores into an exciting adventure.",
-  "requestFramePermissions": []
+  "requestFramePermissions": [],
+  "prompt": ""
 }

@@ -1,4 +1,3 @@
-
 export enum Status {
   LOADING,
   SUCCESS,
@@ -6,24 +5,7 @@ export enum Status {
 }
 
 export interface ConnectionStatus {
-  db: {
-    status: Status;
-    customPath: boolean;
-  };
+  db: Status;
   gemini: Status;
   jwt: Status;
-}
-
-export interface FullConnectionStatus extends ConnectionStatus {
-    usersExist: boolean;
-}
-
-export interface User {
-    id: number;
-    gameName: string;
-    firstName?: string;
-    lastName?: string;
-    birthday?: string;
-    pin?: string;
-    password?: string;
 }

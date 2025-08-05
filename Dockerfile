@@ -29,14 +29,12 @@ COPY package*.json ./
 
 # Install only production dependencies
 RUN npm install --omit=dev
-
 # Copy the built frontend assets from the builder stage
 COPY --from=builder /app/dist ./dist
 
-# Copy the compiled server files from the builder stage
+# Copy the server files from the builder stage
 COPY --from=builder /app/server.js .
-COPY --from=builder /app/src/db/index.js ./src/db/
-COPY --from=builder /app/src/db/schema.js ./src/db/
+COPY --from=builder /app/src/data ./src/data
 
 # Expose the port the app runs on
 EXPOSE 3000

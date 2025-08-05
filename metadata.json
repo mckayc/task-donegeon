@@ -1,6 +1,9 @@
 {
-  "name": "Task Donegeon 2.0 - v0.0.4 - Better colors. Last before copying from older apps.",
-  "description": "A gamified chore and task tracker designed to motivate children. Users, or 'Explorers', complete tasks to earn experience points and currencies. These can be used to level up and make purchases in a virtual marketplace, turning everyday chores into an exciting adventure.",
-  "requestFramePermissions": [],
+  "name": "Task Donegeon - 0.1.0 - Version Update - Still has minor bugs",
+  "version": "0.1.0",
+  "description": "A gamified task and chore tracker for families and groups. Complete quests, earn currency and experience, and level up your character in a fun, medieval-themed adventure.",
+  "requestFramePermissions": [
+    "camera"
+  ],
   "prompt": ""
 }

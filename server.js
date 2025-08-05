@@ -37,7 +37,7 @@ app.get('/api/status', async (req, res) => {
 
         let dbStatus = 'ERROR';
         if (AppDataSource.isInitialized) {
-            dbStatus = process.env.DATABASE_PATH ? 'CONNECTED_CUSTOM' : 'CONNECTED_DEFAULT';
+            dbStatus = process.env.APP_DATA_PATH ? 'CONNECTED_CUSTOM' : 'CONNECTED_DEFAULT';
         }
 
         const statuses = {

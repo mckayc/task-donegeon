@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/Card';
 import { StatusIndicator } from './StatusIndicator';
@@ -120,8 +121,8 @@ const FirstRunWizard: React.FC<{ onSetupComplete: () => void }> = ({ onSetupComp
           <CardContent>
             <div className="space-y-4">
               <WizardStatusItem statusKey="db" title="Database Connection" icon={<Database className="h-6 w-6 text-donegeon-gold" />}
-                successMessage="Custom path connected" errorMessage="Connection failed" warningMessage="Using default database"
-                instructions={<p>For production, create a <code>.env</code> file and set <code>DATABASE_PATH=/path/to/your/db.sqlite</code>.</p>}
+                successMessage="Using custom data path" errorMessage="Connection failed" warningMessage="Using default data path"
+                instructions={<p>For production, create a <code>.env</code> file and set <code>APP_DATA_PATH=/path/to/your/data-directory</code> to control where the database and other assets are stored.</p>}
                 status={statuses.db} isSkipped={skipped.db} onSkipChange={(checked) => setSkipped(p => ({...p, db: checked}))} />
               <WizardStatusItem statusKey="gemini" title="Gemini API" icon={<BrainCircuit className="h-6 w-6 text-donegeon-gold" />}
                 successMessage="API key configured" errorMessage="API key not configured"

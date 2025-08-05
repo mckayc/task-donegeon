@@ -17,6 +17,6 @@
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true
   },
-  "include": ["src", "server.ts", "drizzle.config.ts", "src/db/migrate.ts"],
+  "include": ["src", "server.ts", "drizzle.config.ts"],
   "references": [{ "path": "./tsconfig.node.json" }]
 }

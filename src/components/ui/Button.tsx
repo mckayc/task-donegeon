@@ -10,7 +10,7 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     const baseClasses = 'inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50';
     
     const variantClassesMap = {
-      default: 'bg-donegeon-gold text-donegeon-brown-dark hover:bg-donegeon-gold/90',
+      default: 'bg-donegeon-green text-white hover:bg-donegeon-green/90',
       outline: 'border border-donegeon-gray bg-transparent hover:bg-donegeon-gray/80 hover:text-donegeon-text',
       ghost: 'hover:bg-donegeon-gray/80 hover:text-donegeon-text'
     };

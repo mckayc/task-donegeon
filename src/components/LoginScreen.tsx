@@ -50,7 +50,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ admins, onLoginSuccess }) => 
   return (
     <div className="min-h-screen bg-donegeon-gray-dark flex flex-col items-center justify-center p-4 font-medieval text-donegeon-text animate-fade-in">
       <header className="text-center mb-8">
-        <h1 className="text-5xl md:text-7xl font-bold text-donegeon-gold" style={{ textShadow: '2px 2px 4px #000' }}>
+        <h1 className="text-5xl md:text-7xl font-bold text-donegeon-accent" style={{ textShadow: '2px 2px 4px #000' }}>
           Task Donegeon
         </h1>
         <p className="text-lg md:text-xl text-donegeon-text mt-2">The Gamified Chore Tracker</p>
@@ -73,7 +73,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ admins, onLoginSuccess }) => 
                     name="gameName"
                     value={selectedAdmin}
                     onChange={(e) => setSelectedAdmin(e.target.value)}
-                    className="flex h-10 w-full rounded-md border border-donegeon-gray bg-donegeon-parchment/10 px-3 py-2 text-sm text-donegeon-text ring-offset-background focus:outline-none focus:ring-2 focus:ring-donegeon-gold"
+                    className="flex h-10 w-full rounded-md border border-donegeon-gray bg-donegeon-parchment/10 px-3 py-2 text-sm text-donegeon-text ring-offset-background focus:outline-none focus:ring-2 focus:ring-donegeon-accent"
                     required
                   >
                     {admins.map(admin => (

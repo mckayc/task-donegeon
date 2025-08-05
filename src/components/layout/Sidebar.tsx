@@ -1,4 +1,5 @@
 
+
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { LogOut, ChevronLeft, LayoutDashboard, Swords, Store, ScrollText, Users, Settings, FolderCog, Library } from 'lucide-react';
@@ -38,7 +39,7 @@ const NavItem = ({ link, isOpen, onNavigate }: { link: any; isOpen: boolean; onN
         disabled={!isClickable}
         aria-label={link.name}
     >
-        <link.icon className="w-6 h-6 text-donegeon-gold" />
+        <link.icon className="w-6 h-6 text-donegeon-accent" />
         <AnimatePresence>
         {isOpen && (
             <motion.span
@@ -76,7 +77,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen, isMobileOpe
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0}}
-                    className="text-xl font-bold text-donegeon-gold whitespace-nowrap"
+                    className="text-xl font-bold text-donegeon-accent whitespace-nowrap"
                 >
                     Task Donegeon
                 </motion.h1>

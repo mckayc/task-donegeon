@@ -54,7 +54,7 @@ const QuestsPage: React.FC = () => {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-96 p-8">
-        <LoaderCircle className="h-12 w-12 animate-spin text-donegeon-gold" />
+        <LoaderCircle className="h-12 w-12 animate-spin text-donegeon-accent" />
       </div>
     );
   }
@@ -71,7 +71,7 @@ const QuestsPage: React.FC = () => {
 
   return (
     <div className="p-4 sm:p-6 lg:p-8">
-      <h1 className="text-3xl font-bold text-donegeon-gold mb-6" style={{ textShadow: '1px 1px 2px #000' }}>
+      <h1 className="text-3xl font-bold text-donegeon-accent mb-6" style={{ textShadow: '1px 1px 2px #000' }}>
         Quest Board
       </h1>
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
@@ -86,7 +86,7 @@ const QuestsPage: React.FC = () => {
             <CardContent className="flex-grow">
               <ul className="space-y-3">
                 {group.quests.map((quest) => (
-                  <li key={quest.id} className="p-3 rounded-lg bg-donegeon-gray-dark/50 border border-donegeon-gray hover:border-donegeon-gold transition-colors">
+                  <li key={quest.id} className="p-3 rounded-lg bg-donegeon-gray-dark/50 border border-donegeon-gray hover:border-donegeon-accent transition-colors">
                     <p className="font-semibold text-donegeon-text flex items-center gap-2">
                         {quest.emoji} {quest.title}
                     </p>

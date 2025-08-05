@@ -16,12 +16,12 @@ export default {
           dark: '#2D3748', // Darker slate
         },
         'donegeon-green': {
-          DEFAULT: '#48BB78', // A slightly muted forest green for success states
-          dark: '#2F855A',
+          DEFAULT: '#38A169', // Forest green for success/primary actions
+          dark: '#2F855A', // Darker forest green
         },
-        'donegeon-parchment': '#F5F5DC', // Parchment for text backgrounds
+        'donegeon-parchment': '#CFBFAD', // Neutral parchment for text backgrounds
         'donegeon-text': '#E2E8F0', // Light text color for dark backgrounds
-        'donegeon-gold': '#FFD700', // For highlights and titles
+        'donegeon-accent': '#4FD1C5', // Muted teal/cyan for highlights and titles
         'donegeon-red': '#E53E3E', // For error states
         'donegeon-orange': '#ED8936', // For warning states
       },

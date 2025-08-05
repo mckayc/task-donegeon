@@ -140,7 +140,7 @@ const FirstRunWizard: React.FC<{ onSetupComplete: () => void }> = ({ onSetupComp
   
   const dbInstructions = (
     <>
-      {apiResponse?.dbPath && <p>Current Path: <code className="text-donegeon-gold bg-black/20 p-1 rounded">{apiResponse.dbPath}</code></p>}
+      {apiResponse?.dbPath && <p>Current Path: <code className="text-donegeon-accent bg-black/20 p-1 rounded">{apiResponse.dbPath}</code></p>}
       <p>For production, create a <code>.env</code> file and set <code>APP_DATA_PATH=/path/to/your/data-directory</code> to control where the database and other assets are stored.</p>
     </>
   );
@@ -148,7 +148,7 @@ const FirstRunWizard: React.FC<{ onSetupComplete: () => void }> = ({ onSetupComp
   return (
     <div className="min-h-screen bg-donegeon-gray-dark flex flex-col items-center justify-center p-4 sm:p-6 lg:p-8 font-medieval text-donegeon-text animate-fade-in">
       <header className="text-center mb-8">
-        <h1 className="text-5xl md:text-7xl font-bold text-donegeon-gold flex flex-col items-center" style={{ textShadow: '2px 2px 4px #000' }}>
+        <h1 className="text-5xl md:text-7xl font-bold text-donegeon-accent flex flex-col items-center" style={{ textShadow: '2px 2px 4px #000' }}>
             <span role="img" aria-label="wizard emoji" className="text-7xl md:text-8xl mb-4">🧙‍♂️</span>
             First Run Wizard
         </h1>
@@ -162,15 +162,15 @@ const FirstRunWizard: React.FC<{ onSetupComplete: () => void }> = ({ onSetupComp
           <CardHeader><CardTitle>Step 1: System Configuration</CardTitle></CardHeader>
           <CardContent>
             <div className="space-y-4">
-              <WizardStatusItem statusKey="db" title="Database Connection" icon={<Database className="h-6 w-6 text-donegeon-gold" />}
+              <WizardStatusItem statusKey="db" title="Database Connection" icon={<Database className="h-6 w-6 text-donegeon-accent" />}
                 successMessage="Using custom data path" errorMessage="Connection failed" warningMessage="Using default data path"
                 instructions={dbInstructions}
                 status={statuses.db} isSkipped={skipped.db} onSkipChange={(checked) => setSkipped(p => ({...p, db: checked}))} />
-              <WizardStatusItem statusKey="gemini" title="Gemini API" icon={<BrainCircuit className="h-6 w-6 text-donegeon-gold" />}
+              <WizardStatusItem statusKey="gemini" title="Gemini API" icon={<BrainCircuit className="h-6 w-6 text-donegeon-accent" />}
                 successMessage="API key configured" errorMessage="API key not configured"
                 instructions={<p>The Gemini API is required for AI features. In <code>.env</code> add: <code>API_KEY=your_key</code></p>}
                 status={statuses.gemini} isSkipped={skipped.gemini} onSkipChange={(checked) => setSkipped(p => ({...p, gemini: checked}))} />
-              <WizardStatusItem statusKey="jwt" title="JWT Authentication" icon={<KeyRound className="h-6 w-6 text-donegeon-gold" />}
+              <WizardStatusItem statusKey="jwt" title="JWT Authentication" icon={<KeyRound className="h-6 w-6 text-donegeon-accent" />}
                 successMessage="Secret key configured" errorMessage="Secret key not configured"
                 instructions={<p>A JWT secret is vital for security. In <code>.env</code> set a long, random string: <code>JWT_SECRET=your_secret</code></p>}
                 status={statuses.jwt} isSkipped={skipped.jwt} onSkipChange={(checked) => setSkipped(p => ({...p, jwt: checked}))} />

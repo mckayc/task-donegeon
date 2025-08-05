@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
@@ -33,7 +34,7 @@ const QuestList: React.FC = () => {
             .finally(() => setLoading(false));
     }, []);
 
-    if (loading) return <div className="flex justify-center items-center p-8"><LoaderCircle className="h-8 w-8 animate-spin text-donegeon-gold" /></div>;
+    if (loading) return <div className="flex justify-center items-center p-8"><LoaderCircle className="h-8 w-8 animate-spin text-donegeon-accent" /></div>;
     if (error) return (
         <div className="text-donegeon-red p-4 flex flex-col items-center text-center">
             <ShieldAlert className="h-8 w-8 mb-2" />
@@ -75,7 +76,7 @@ const QuestGroupList: React.FC = () => {
             .finally(() => setLoading(false));
     }, []);
 
-    if (loading) return <div className="flex justify-center items-center p-8"><LoaderCircle className="h-8 w-8 animate-spin text-donegeon-gold" /></div>;
+    if (loading) return <div className="flex justify-center items-center p-8"><LoaderCircle className="h-8 w-8 animate-spin text-donegeon-accent" /></div>;
     if (error) return (
         <div className="text-donegeon-red p-4 flex flex-col items-center text-center">
             <ShieldAlert className="h-8 w-8 mb-2" />
@@ -106,7 +107,7 @@ const ManageAssetsPage: React.FC = () => {
 
     return (
         <div className="p-4 sm:p-6 lg:p-8">
-            <h1 className="text-3xl font-bold text-donegeon-gold mb-6" style={{ textShadow: '1px 1px 2px #000' }}>
+            <h1 className="text-3xl font-bold text-donegeon-accent mb-6" style={{ textShadow: '1px 1px 2px #000' }}>
                 Manage Assets
             </h1>
 

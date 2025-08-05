@@ -12,7 +12,7 @@ interface DashboardProps {
 
 const DashboardContent: React.FC = () => (
     <div className="p-4 sm:p-6 lg:p-8">
-        <h1 className="text-3xl font-bold text-donegeon-gold mb-6" style={{ textShadow: '1px 1px 2px #000' }}>
+        <h1 className="text-3xl font-bold text-donegeon-accent mb-6" style={{ textShadow: '1px 1px 2px #000' }}>
             Dashboard
         </h1>
         <Card>

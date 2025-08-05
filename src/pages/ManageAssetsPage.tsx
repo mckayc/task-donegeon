@@ -34,7 +34,6 @@ const QuestList: React.FC = () => {
     }, []);
 
     if (loading) return <div className="flex justify-center items-center p-8"><LoaderCircle className="h-8 w-8 animate-spin text-donegeon-gold" /></div>;
-<<<<<<< HEAD
     if (error) return (
         <div className="text-donegeon-red p-4 flex flex-col items-center text-center">
             <ShieldAlert className="h-8 w-8 mb-2" />
@@ -42,9 +41,6 @@ const QuestList: React.FC = () => {
             <p className="text-sm">{error}</p>
         </div>
     );
-=======
-    if (error) return <div className="text-donegeon-red p-4">{error}</div>;
->>>>>>> 15d16e204d60b90ad01dc704578def1d649395f9
 
     return (
         <div className="space-y-3">
@@ -80,7 +76,6 @@ const QuestGroupList: React.FC = () => {
     }, []);
 
     if (loading) return <div className="flex justify-center items-center p-8"><LoaderCircle className="h-8 w-8 animate-spin text-donegeon-gold" /></div>;
-<<<<<<< HEAD
     if (error) return (
         <div className="text-donegeon-red p-4 flex flex-col items-center text-center">
             <ShieldAlert className="h-8 w-8 mb-2" />
@@ -88,9 +83,6 @@ const QuestGroupList: React.FC = () => {
             <p className="text-sm">{error}</p>
         </div>
     );
-=======
-    if (error) return <div className="text-donegeon-red p-4">{error}</div>;
->>>>>>> 15d16e204d60b90ad01dc704578def1d649395f9
 
     return (
         <div className="space-y-3">
@@ -138,8 +130,4 @@ const ManageAssetsPage: React.FC = () => {
     );
 };
 
-<<<<<<< HEAD
 export default ManageAssetsPage;
-=======
-export default ManageAssetsPage;
->>>>>>> 15d16e204d60b90ad01dc704578def1d649395f9

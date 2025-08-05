@@ -4,6 +4,8 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import 'reflect-metadata';
 import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
+import cookieParser from 'cookie-parser';
 import { AppDataSource } from './src/data/data-source.js';
 import { User } from './src/data/entities/User.js';
 
@@ -13,7 +15,9 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 app.use(express.json()); // Middleware to parse JSON bodies
+app.use(cookieParser());
 const PORT = process.env.PORT || 3000;
+const JWT_SECRET = process.env.JWT_SECRET || 'insecure_default_secret_for_testing_only';
 
 // Initialize database connection on server start
 AppDataSource.initialize()
@@ -28,8 +32,8 @@ AppDataSource.initialize()
 app.get('/api/status', async (req, res) => {
     try {
         const userRepository = AppDataSource.getRepository(User);
-        const admin = await userRepository.findOne({ where: { role: 'admin' } });
-        const firstRun = !admin;
+        const admins = await userRepository.find({ where: { role: 'admin' }, select: ['gameName', 'id'] });
+        const firstRun = admins.length === 0;
 
         let dbStatus = 'ERROR';
         if (AppDataSource.isInitialized) {
@@ -38,6 +42,7 @@ app.get('/api/status', async (req, res) => {
 
         const statuses = {
             firstRun,
+            admins,
             db: dbStatus,
             gemini: process.env.API_KEY && process.env.API_KEY !== 'thiswontworkatall' ? 'CONNECTED' : 'NOT_CONFIGURED',
             jwt: process.env.JWT_SECRET && process.env.JWT_SECRET !== 'insecure_default_secret_for_testing_only' ? 'CONFIGURED' : 'NOT_CONFIGURED'
@@ -47,6 +52,7 @@ app.get('/api/status', async (req, res) => {
         console.error("Error fetching status:", error);
         res.status(500).json({
             firstRun: true, // Assume first run on error
+            admins: [],
             db: 'ERROR',
             gemini: 'NOT_CONFIGURED',
             jwt: 'NOT_CONFIGURED',
@@ -93,6 +99,75 @@ app.post('/api/users/create-admin', async (req, res) => {
         }
         res.status(500).json({ message: 'An error occurred while creating the admin account.' });
     }
+});
+
+
+// --- AUTH ENDPOINTS ---
+
+// Auth endpoint for admin login
+app.post('/api/auth/login', async (req, res) => {
+    const { gameName, password } = req.body;
+    if (!gameName || !password) {
+        return res.status(400).json({ message: 'Game Name and password are required.' });
+    }
+
+    try {
+        const userRepository = AppDataSource.getRepository(User);
+        const admin = await userRepository.findOne({ where: { gameName, role: 'admin' } });
+
+        if (!admin) {
+            return res.status(401).json({ message: 'Invalid credentials or not an admin.' });
+        }
+
+        const isPasswordValid = await bcrypt.compare(password, admin.password);
+        if (!isPasswordValid) {
+            return res.status(401).json({ message: 'Invalid credentials.' });
+        }
+
+        const token = jwt.sign(
+            { id: admin.id, gameName: admin.gameName, role: admin.role },
+            JWT_SECRET,
+            { expiresIn: '1d' }
+        );
+
+        res.cookie('token', token, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'strict',
+            maxAge: 24 * 60 * 60 * 1000, // 1 day
+        });
+
+        res.json({ message: 'Login successful', user: { gameName: admin.gameName, role: admin.role } });
+
+    } catch (error) {
+        console.error('Login error:', error);
+        res.status(500).json({ message: 'An internal server error occurred.' });
+    }
+});
+
+// Middleware to verify JWT
+const authMiddleware = (req, res, next) => {
+    const token = req.cookies.token;
+    if (!token) {
+        return res.status(401).send();
+    }
+    try {
+        jwt.verify(token, JWT_SECRET);
+        next();
+    } catch (error) {
+        return res.status(401).send();
+    }
+};
+
+// Auth endpoint to check current user session
+app.get('/api/me', authMiddleware, (req, res) => {
+    res.status(200).send();
+});
+
+// Auth endpoint for logout
+app.post('/api/auth/logout', (req, res) => {
+    res.cookie('token', '', { expires: new Date(0), httpOnly: true, sameSite: 'strict' });
+    res.status(200).json({ message: 'Logged out successfully.' });
 });
 
 

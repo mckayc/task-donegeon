@@ -12,8 +12,14 @@ export interface ConnectionStatus {
   jwt: Status;
 }
 
+export interface AdminUser {
+    id: number;
+    gameName: string;
+}
+
 export interface StatusAPIResponse {
     firstRun: boolean;
+    admins: AdminUser[];
     db: 'CONNECTED_CUSTOM' | 'CONNECTED_DEFAULT' | 'ERROR';
     gemini: 'CONNECTED' | 'NOT_CONFIGURED';
     jwt: 'CONFIGURED' | 'NOT_CONFIGURED';

@@ -4,20 +4,36 @@ import Database from 'better-sqlite3';
 import * as schema from './schema.js';
 import path from 'path';
 import fs from 'fs';
+import process from 'process';
 
-// Use environment variable for data path, or default to ./data
-const dataPath = process.env.APP_DATA_PATH || './data';
+// Function to initialize the database
+const initializeDatabase = () => {
+    try {
+        // Use environment variable for data path, or default to ./data
+        const dataPath = process.env.APP_DATA_PATH || './data';
 
-// Ensure the data directory exists
-if (!fs.existsSync(dataPath)) {
-    console.log(`Data directory not found. Creating at: ${dataPath}`);
-    fs.mkdirSync(dataPath, { recursive: true });
-}
+        // Ensure the data directory exists
+        if (!fs.existsSync(dataPath)) {
+            console.log(`Data directory not found. Creating at: ${dataPath}`);
+            fs.mkdirSync(dataPath, { recursive: true });
+        }
 
-const dbPath = path.join(dataPath, 'app.db');
-console.log(`Connecting to database at: ${dbPath}`);
+        const dbPath = path.join(dataPath, 'app.db');
+        console.log(`Attempting to connect to database at: ${dbPath}`);
 
-const sqlite = new Database(dbPath);
-sqlite.pragma('journal_mode = WAL'); // Recommended for performance
+        // Add verbose logging to the connection itself for more detailed startup info
+        const sqlite = new Database(dbPath, { verbose: console.log });
+        sqlite.pragma('journal_mode = WAL'); // Recommended for performance
 
-export const db = drizzle(sqlite, { schema, logger: false }); // Set logger to true for debugging
+        return drizzle(sqlite, { schema, logger: false }); // Set Drizzle's logger to true for detailed query debugging if needed
+    } catch (error) {
+        console.error("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+        console.error("!!!   DATABASE CONNECTION FAILED     !!!");
+        console.error("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+        console.error("An error occurred during database initialization:");
+        console.error(error);
+        process.exit(1); // Exit the process with an error code to ensure the container stops
+    }
+};
+
+export const db = initializeDatabase();

@@ -5,6 +5,8 @@ import { Layout } from './layout/Layout';
 import QuestsPage from '../pages/QuestsPage';
 import ManageAssetsPage from '../pages/ManageAssetsPage';
 import AssetLibraryPage from '../pages/AssetLibraryPage';
+import AiStudioPage from '../pages/AiStudioPage';
+import DataManagementPage from '../pages/DataManagementPage';
 
 interface DashboardProps {
   onLogout: () => void;
@@ -43,6 +45,10 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
               return <ManageAssetsPage />;
           case 'asset-library':
               return <AssetLibraryPage />;
+          case 'ai-studio':
+              return <AiStudioPage />;
+          case 'data-management':
+                return <DataManagementPage />;
           case 'dashboard':
           default:
               return <DashboardContent />;

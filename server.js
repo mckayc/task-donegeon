@@ -7,10 +7,11 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import cookieParser from 'cookie-parser';
 import fs from 'fs/promises';
-import { AppDataSource, databaseDirectory, assetsDirectory } from './src/data/data-source.js';
+import { AppDataSource, databaseDirectory, assetsDirectory, backupsDirectory } from './src/data/data-source.js';
 import { User } from './src/data/entities/User.js';
 import { Quest } from './src/data/entities/Quest.js';
 import { QuestGroup } from './src/data/entities/QuestGroup.js';
+import { GoogleGenAI } from "@google/genai";
 
 
 // Recreate __dirname for ES Modules
@@ -142,7 +143,7 @@ app.post('/api/auth/login', async (req, res) => {
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production',
             sameSite: 'strict',
-            maxAge: 24 * 60 * 60 * 1000, // 1 day
+            maxAge: 24 * 60 * 60 * 1000, // 1 day,
         });
 
         res.json({ message: 'Login successful', user: { gameName: admin.gameName, role: admin.role } });
@@ -196,6 +197,19 @@ app.get('/api/quests', authMiddleware, async (req, res) => {
     }
 });
 
+app.post('/api/quests', authMiddleware, async (req, res) => {
+    const questRepository = AppDataSource.getRepository(Quest);
+    try {
+        const questData = req.body;
+        const newQuest = questRepository.create(questData);
+        await questRepository.save(newQuest);
+        res.status(201).json(newQuest);
+    } catch (error) {
+        console.error('Error creating quest:', error);
+        res.status(500).json({ message: 'An error occurred while creating the quest.' });
+    }
+});
+
 app.get('/api/quest-groups', authMiddleware, async (req, res) => {
     try {
         const questGroupRepository = AppDataSource.getRepository(QuestGroup);
@@ -204,6 +218,19 @@ app.get('/api/quest-groups', authMiddleware, async (req, res) => {
     } catch (error) {
         console.error('Error fetching quest groups:', error);
         res.status(500).json({ message: 'An error occurred while fetching quest groups.' });
+    }
+});
+
+app.post('/api/quest-groups', authMiddleware, async (req, res) => {
+    const questGroupRepository = AppDataSource.getRepository(QuestGroup);
+    try {
+        const groupData = req.body;
+        const newGroup = questGroupRepository.create(groupData);
+        await questGroupRepository.save(newGroup);
+        res.status(201).json(newGroup);
+    } catch (error) {
+        console.error('Error creating quest group:', error);
+        res.status(500).json({ message: 'An error occurred while creating the quest group.' });
     }
 });
 
@@ -271,9 +298,105 @@ app.post('/api/setup/seed-data', authMiddleware, async (req, res) => {
     }
 });
 
+// --- AI Endpoints ---
+const ai = process.env.API_KEY ? new GoogleGenAI({apiKey: process.env.API_KEY}) : null;
+
+app.post('/api/ai/test', async (req, res) => {
+    if (!ai) {
+        return res.status(400).json({ success: false, error: 'API key not configured on the server.' });
+    }
+    try {
+        // A very cheap request to validate the key
+        await ai.models.generateContent({ model: 'gemini-2.5-flash', contents: 'test' });
+        res.json({ success: true });
+    } catch (error) {
+        console.error('AI API key test failed:', error);
+        res.status(400).json({ success: false, error: 'The provided API key is invalid or has insufficient permissions.' });
+    }
+});
+
+app.post('/api/ai/generate', authMiddleware, async (req, res) => {
+    if (!ai) {
+        return res.status(503).json({ error: 'AI features are not configured on this server.' });
+    }
+    const { model, prompt, generationConfig } = req.body;
+    try {
+        const response = await ai.models.generateContent({
+            model: model || 'gemini-2.5-flash',
+            contents: prompt,
+            config: generationConfig,
+        });
+        res.json({ text: response.text });
+    } catch (error) {
+        console.error('Error generating content with AI:', error);
+        res.status(500).json({ error: 'Failed to generate content from the AI model.' });
+    }
+});
+
+// --- Backup Endpoints ---
+app.get('/api/backups', authMiddleware, async (req, res) => {
+    try {
+        const files = await fs.readdir(backupsDirectory);
+        const backupDetails = await Promise.all(
+            files
+                .filter(file => file.endsWith('.json'))
+                .map(async (file) => {
+                    const filePath = path.join(backupsDirectory, file);
+                    const stats = await fs.stat(filePath);
+                    return {
+                        filename: file,
+                        createdAt: stats.birthtime,
+                        size: stats.size,
+                        isAuto: file.startsWith('auto_'),
+                    };
+                })
+        );
+        res.json(backupDetails.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)));
+    } catch (error) {
+        console.error('Failed to list backups:', error);
+        res.status(500).json({ error: 'Could not list backups.' });
+    }
+});
+
+app.post('/api/backups', authMiddleware, async (req, res) => {
+    try {
+        const timestamp = new Date().toISOString().replace(/:/g, '-').slice(0, 19);
+        const filename = `manual_backup_${timestamp}.json`;
+        const filePath = path.join(backupsDirectory, filename);
+        await fs.writeFile(filePath, JSON.stringify(req.body, null, 2));
+        res.status(201).json({ message: 'Backup created successfully', filename });
+    } catch (error) {
+        console.error('Failed to create backup:', error);
+        res.status(500).json({ error: 'Could not create backup.' });
+    }
+});
+
+app.delete('/api/backups/:filename', authMiddleware, async (req, res) => {
+    try {
+        const filename = req.params.filename;
+        // Basic security check to prevent path traversal
+        if (filename.includes('..') || filename.includes('/')) {
+            return res.status(400).json({ error: 'Invalid filename.' });
+        }
+        const filePath = path.join(backupsDirectory, filename);
+        await fs.unlink(filePath);
+        res.status(200).json({ message: 'Backup deleted successfully' });
+    } catch (error) {
+        console.error('Failed to delete backup:', error);
+        res.status(500).json({ error: 'Could not delete backup.' });
+    }
+});
+
 
 // Serve static files from the React app build directory
 app.use(express.static(path.join(__dirname, 'dist')));
+
+// Serve backups for download
+app.use('/api/backups', authMiddleware, express.static(backupsDirectory, {
+    headers: (res, path) => {
+        res.setHeader('Content-Disposition', `attachment; filename=${path.split('/').pop()}`);
+    }
+}));
 
 // The "catchall" handler: for any request that doesn't
 // match one above, send back React's index.html file.

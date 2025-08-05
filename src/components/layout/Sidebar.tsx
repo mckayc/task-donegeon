@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { LogOut, ChevronLeft, LayoutDashboard, Swords, Store, ScrollText, Users, Settings, FolderCog, Library } from 'lucide-react';
+import { LogOut, ChevronLeft, LayoutDashboard, Swords, Store, ScrollText, Users, Settings, FolderCog, Library, Sparkles, DatabaseZap } from 'lucide-react';
 import { Button } from '../ui/Button';
 
 interface SidebarProps {
@@ -23,11 +23,14 @@ const navLinks = [
   { type: 'heading', name: 'Admin Tools' },
   { name: 'Manage Assets', icon: FolderCog, page: 'manage-assets', type: 'link' },
   { name: 'Asset Library', icon: Library, page: 'asset-library', type: 'link' },
+  { name: 'Data Management', icon: DatabaseZap, page: 'data-management', type: 'link' },
   { name: 'Settings', icon: Settings, page: 'settings', type: 'link' },
+  { type: 'heading', name: 'AI Tools' },
+  { name: 'AI Studio', icon: Sparkles, page: 'ai-studio', type: 'link' },
 ];
 
 const NavItem = ({ link, isOpen, onNavigate }: { link: any; isOpen: boolean; onNavigate: (page: string) => void; }) => {
-  const isClickable = ['dashboard', 'quests', 'manage-assets', 'asset-library'].includes(link.page);
+  const isClickable = ['dashboard', 'quests', 'manage-assets', 'asset-library', 'ai-studio', 'data-management'].includes(link.page);
   return (
     <button
         onClick={() => isClickable && onNavigate(link.page)}

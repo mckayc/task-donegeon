@@ -1,0 +1,14 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "outDir": "dist-backend",
+    "noEmit": false,
+    "isolatedModules": false,
+    "paths": {
+      "@/backend/*": ["./backend/*"]
+    }
+  },
+  "include": ["backend"]
+}

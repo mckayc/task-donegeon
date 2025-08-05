@@ -1,22 +1,74 @@
-<script type="importmap">
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Task Donegeon</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700&family=Quattrocento:wght@400;700&display=swap" rel="stylesheet">
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              'brand-brown': {
+                '100': '#EAE0D5',
+                '300': '#C6AC8F',
+                '500': '#8D6E63',
+                '700': '#5D4037',
+                '900': '#3E2723',
+              },
+              'brand-green': {
+                '100': '#E8F5E9',
+                '300': '#A5D6A7',
+                '500': '#4CAF50',
+                '700': '#2E7D32',
+                '900': '#1B5E20',
+              },
+              'brand-gray': {
+                '100': '#CFD8DC',
+                '300': '#90A4AE',
+                '500': '#607D8B',
+                '700': '#455A64',
+                '900': '#263238',
+              }
+            },
+            fontFamily: {
+              'cinzel': ['"Cinzel Decorative"', 'serif'],
+              'quattrocento': ['"Quattrocento"', 'sans-serif'],
+            }
+          }
+        }
+      }
+    </script>
+  <script type="importmap">
 {
   "imports": {
-    "vite": "https://esm.sh/vite@^7.0.6",
-    "@vitejs/plugin-react": "https://esm.sh/@vitejs/plugin-react@^4.7.0",
+    "react/": "https://esm.sh/react@^19.1.1/",
     "react": "https://esm.sh/react@^19.1.1",
     "react-dom/": "https://esm.sh/react-dom@^19.1.1/",
-    "react/": "https://esm.sh/react@^19.1.1/",
-    "@prisma/client": "https://esm.sh/@prisma/client@^6.13.0",
+    "@vitejs/plugin-react": "https://esm.sh/@vitejs/plugin-react@^4.7.0",
+    "tailwind-merge": "https://esm.sh/tailwind-merge@^3.3.1",
+    "vite": "https://esm.sh/vite@^7.0.6",
+    "clsx": "https://esm.sh/clsx@^2.1.1",
     "bcryptjs": "https://esm.sh/bcryptjs@^3.0.2",
-    "fastify": "https://esm.sh/fastify@^5.4.0",
-    "@fastify/jwt": "https://esm.sh/@fastify/jwt@^9.1.0",
-    "@fastify/cors": "https://esm.sh/@fastify/cors@^11.1.0",
-    "zod": "https://esm.sh/zod@^4.0.14",
-    "fs/": "https://esm.sh/fs@^0.0.1-security/",
+    "express": "https://esm.sh/express@^5.1.0",
+    "url": "https://esm.sh/url@^0.11.4",
     "path": "https://esm.sh/path@^0.12.7",
-    "@fastify/static": "https://esm.sh/@fastify/static@^8.2.0"
+    "cors": "https://esm.sh/cors@^2.8.5",
+    "jsonwebtoken": "https://esm.sh/jsonwebtoken@^9.0.2",
+    "@prisma/client": "https://esm.sh/@prisma/client@^6.13.0"
   }
 }
 </script>
 <link rel="stylesheet" href="/index.css">
-<script type="module" src="/index.tsx"></script>
+</head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/index.tsx"></script>
+  </body>
+</html>

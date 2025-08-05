@@ -1,7 +1,0 @@
-{
-  "id": "good_001",
-  "name": "Health Potion",
-  "description": "Restores 10 hit points.",
-  "cost": 50,
-  "currency_id": "gold_coins"
-}

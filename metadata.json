@@ -1,0 +1,5 @@
+{
+  "name": "Task Donegeon",
+  "description": "A gamified chore and task tracker for children. Complete tasks to earn experience and rewards, turning everyday chores into a fun adventure!",
+  "requestFramePermissions": []
+}

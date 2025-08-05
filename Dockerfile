@@ -1,52 +1,46 @@
-# Stage 1: Build the Frontend
-FROM node:18-alpine AS frontend-builder
+# Stage 1: The Build Stage
+# This stage builds the frontend and backend code from source.
+FROM node:20-alpine AS builder
 
-WORKDIR /app/frontend
+# Set the working directory inside the container
+WORKDIR /app
 
-COPY frontend/package.json frontend/package-lock.json ./
+# Copy package files and install all dependencies (including dev dependencies)
+# This is done first to leverage Docker's layer caching for faster builds.
+COPY package*.json ./
+RUN npm install
 
-# Use npm ci for a clean, reproducible install from the lockfile
-RUN npm ci
+# Copy the rest of the application source code
+COPY . .
 
-COPY frontend/ ./
+# Generate the Prisma client - this is required before building the backend
+RUN npx prisma generate
 
+# Run the build script from package.json to compile everything
 RUN npm run build
-
-# Stage 2: Build the Backend
-FROM node:18-alpine AS backend-builder
-
-WORKDIR /app/backend
-
-COPY backend/package.json backend/package-lock.json ./
-
-# Use npm ci for a clean, reproducible install
-RUN npm ci
-
-COPY backend/ ./
-
-RUN npm run build
-
-# Stage 3: The Final Production Image
-FROM node:18-alpine AS production
+# Stage 2: The Production Stage
+# This stage creates the final, lean image with only what's needed to run the app.
+FROM node:20-alpine
 
 WORKDIR /app
 
-ENV NODE_ENV=production
+# Copy package files again
+COPY package*.json ./
+# Install ONLY production dependencies to keep the image small and secure
+RUN npm install --omit=dev
 
-# Copy only the necessary package files and prisma schema
-COPY backend/package.json backend/package-lock.json ./backend/
-COPY backend/prisma ./backend/prisma
+# === Copy Artifacts from Builder Stage ===
+# Copy the compiled backend code
+COPY --from=builder /app/dist-backend ./dist-backend
+# Copy the static frontend assets
+COPY --from=builder /app/dist ./dist
+# Copy the Prisma schema (needed at runtime for migrations)
+COPY backend/prisma/schema.prisma ./backend/prisma/
+# Copy the generated migration files
+COPY backend/prisma/migrations ./backend/prisma/migrations
 
-# Install ONLY production dependencies and generate Prisma Client
-RUN cd backend && npm ci
-
-# Copy the compiled code from the builder stages
-COPY --from=backend-builder /app/backend/dist ./backend/dist
-COPY --from=frontend-builder /app/frontend/dist ./backend/public
-
-# Copy game assets
-COPY assets ./assets
-
+# Expose the port the application server will run on
 EXPOSE 3000
 
-CMD ["node", "backend/dist/server.js"]
+# The command to start the server. It first runs migrations, then starts the app.
+CMD ["npm", "start"]

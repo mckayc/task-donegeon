@@ -6,7 +6,9 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build",
+    "build:server": "tsc -p tsconfig.server.json",
+    "build:client": "tsc && vite build",
+    "build": "npm run build:server && npm run build:client",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview",
     "start": "npm run db:push && tsx server.ts",

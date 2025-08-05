@@ -4,7 +4,6 @@ import Database from 'better-sqlite3';
 import * as schema from './schema.js';
 import path from 'path';
 import fs from 'fs';
-import process from 'process';
 
 // Function to initialize the database
 const initializeDatabase = () => {

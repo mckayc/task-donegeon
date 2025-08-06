@@ -10,7 +10,12 @@ const http = require('http');
 const WebSocket = require('ws');
 const { dataSource, ensureDatabaseDirectoryExists } = require('./data-source');
 const { INITIAL_SETTINGS } = require('./initialData');
-const { allEntities } = require('./entities');
+const { 
+    UserEntity, QuestEntity, QuestGroupEntity, MarketEntity, RewardTypeDefinitionEntity,
+    QuestCompletionEntity, PurchaseRequestEntity, GuildEntity, RankEntity, TrophyEntity,
+    UserTrophyEntity, AdminAdjustmentEntity, GameAssetEntity, SystemLogEntity, ThemeDefinitionEntity,
+    ChatMessageEntity, SystemNotificationEntity, ScheduledEventEntity, SettingEntity, LoginHistoryEntity
+} = require('./entities');
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -98,32 +103,31 @@ initializeApp().catch(err => {
 // === Helper to construct the full app data state from DB ===
 const getFullAppData = async (manager) => {
     const data = {};
-    for (const entity of allEntities) {
-        const repo = manager.getRepository(entity.name);
-        // Special handling for singleton entities
-        if (entity.name === 'Setting') {
-            const settingRow = await repo.findOneBy({ id: 1 });
-            data.settings = settingRow ? settingRow.settings : INITIAL_SETTINGS;
-        } else if (entity.name === 'LoginHistory') {
-            const historyRow = await repo.findOneBy({ id: 1 });
-            data.loginHistory = historyRow ? historyRow.history : [];
-        } else {
-            // Simple mapping from snake_case table name to camelCase JSON key
-            const simpleKey = {
-                'users': 'users', 'quests': 'quests', 'quest_groups': 'questGroups', 'markets': 'markets',
-                'reward_types': 'rewardTypes', 'quest_completions': 'questCompletions',
-                'purchase_requests': 'purchaseRequests', 'guilds': 'guilds', 'ranks': 'ranks',
-                'trophies': 'trophies', 'user_trophies': 'userTrophies', 'admin_adjustments': 'adminAdjustments',
-                'game_assets': 'gameAssets', 'system_logs': 'systemLogs', 'themes': 'themes',
-                'chat_messages': 'chatMessages', 'system_notifications': 'systemNotifications',
-                'scheduled_events': 'scheduledEvents'
-            }[entity.tableName];
+    data.users = await manager.getRepository(UserEntity).find();
+    data.quests = await manager.getRepository(QuestEntity).find();
+    data.questGroups = await manager.getRepository(QuestGroupEntity).find();
+    data.markets = await manager.getRepository(MarketEntity).find();
+    data.rewardTypes = await manager.getRepository(RewardTypeDefinitionEntity).find();
+    data.questCompletions = await manager.getRepository(QuestCompletionEntity).find();
+    data.purchaseRequests = await manager.getRepository(PurchaseRequestEntity).find();
+    data.guilds = await manager.getRepository(GuildEntity).find();
+    data.ranks = await manager.getRepository(RankEntity).find();
+    data.trophies = await manager.getRepository(TrophyEntity).find();
+    data.userTrophies = await manager.getRepository(UserTrophyEntity).find();
+    data.adminAdjustments = await manager.getRepository(AdminAdjustmentEntity).find();
+    data.gameAssets = await manager.getRepository(GameAssetEntity).find();
+    data.systemLogs = await manager.getRepository(SystemLogEntity).find();
+    data.themes = await manager.getRepository(ThemeDefinitionEntity).find();
+    data.chatMessages = await manager.getRepository(ChatMessageEntity).find();
+    data.systemNotifications = await manager.getRepository(SystemNotificationEntity).find();
+    data.scheduledEvents = await manager.getRepository(ScheduledEventEntity).find();
+    
+    const settingRow = await manager.getRepository(SettingEntity).findOneBy({ id: 1 });
+    data.settings = settingRow ? settingRow.settings : INITIAL_SETTINGS;
 
-            if (simpleKey) {
-                data[simpleKey] = await repo.find();
-            }
-        }
-    }
+    const historyRow = await manager.getRepository(LoginHistoryEntity).findOneBy({ id: 1 });
+    data.loginHistory = historyRow ? historyRow.history : [];
+    
     return data;
 };
 
@@ -132,30 +136,19 @@ const getFullAppData = async (manager) => {
 // Load data
 app.get('/api/data/load', async (req, res, next) => {
     try {
-        const userRepo = dataSource.getRepository('User');
+        const userRepo = dataSource.getRepository(UserEntity);
         const userCount = await userRepo.count();
 
         if (userCount === 0) {
             console.log("No users found, triggering first run.");
-            const initialData = {};
-            for (const entity of allEntities) {
-                const simpleKey = {
-                    'users': 'users', 'quests': 'quests', 'quest_groups': 'questGroups', 'markets': 'markets',
-                    'reward_types': 'rewardTypes', 'quest_completions': 'questCompletions',
-                    'purchase_requests': 'purchaseRequests', 'guilds': 'guilds', 'ranks': 'ranks',
-                    'trophies': 'trophies', 'user_trophies': 'userTrophies', 'admin_adjustments': 'adminAdjustments',
-                    'game_assets': 'gameAssets', 'system_logs': 'systemLogs', 'themes': 'themes',
-                    'chat_messages': 'chatMessages', 'system_notifications': 'systemNotifications',
-                    'scheduled_events': 'scheduledEvents'
-                }[entity.tableName];
-                if (simpleKey) { // Avoid adding settings/loginHistory here
-                    initialData[simpleKey] = [];
-                }
-            }
-             initialData.settings = { ...INITIAL_SETTINGS, contentVersion: 0 };
-             initialData.loginHistory = [];
-
-            return res.status(200).json(initialData);
+            return res.status(200).json({
+                users: [], quests: [], questGroups: [], markets: [], rewardTypes: [], questCompletions: [],
+                purchaseRequests: [], guilds: [], ranks: [], trophies: [], userTrophies: [],
+                adminAdjustments: [], gameAssets: [], systemLogs: [], themes: [], chatMessages: [],
+                systemNotifications: [], scheduledEvents: [],
+                settings: { ...INITIAL_SETTINGS, contentVersion: 0 },
+                loginHistory: [],
+            });
         }
 
         const appData = await getFullAppData(dataSource.manager);
@@ -174,40 +167,51 @@ app.post('/api/data/save', async (req, res, next) => {
     await queryRunner.startTransaction();
 
     try {
-        // Clear all tables first (in reverse order to respect potential foreign keys)
-        for (const entity of allEntities.slice().reverse()) {
-            const repo = queryRunner.manager.getRepository(entity.name);
-            await repo.clear();
-        }
+        // Clear all tables explicitly in reverse dependency order to avoid constraint violations.
+        await queryRunner.manager.getRepository(QuestCompletionEntity).clear();
+        await queryRunner.manager.getRepository(PurchaseRequestEntity).clear();
+        await queryRunner.manager.getRepository(UserTrophyEntity).clear();
+        await queryRunner.manager.getRepository(AdminAdjustmentEntity).clear();
+        await queryRunner.manager.getRepository(SystemLogEntity).clear();
+        await queryRunner.manager.getRepository(ChatMessageEntity).clear();
+        await queryRunner.manager.getRepository(SystemNotificationEntity).clear();
+        await queryRunner.manager.getRepository(GameAssetEntity).clear();
+        await queryRunner.manager.getRepository(QuestEntity).clear();
+        await queryRunner.manager.getRepository(ScheduledEventEntity).clear();
+        await queryRunner.manager.getRepository(MarketEntity).clear();
+        await queryRunner.manager.getRepository(GuildEntity).clear();
+        await queryRunner.manager.getRepository(UserEntity).clear();
+        await queryRunner.manager.getRepository(QuestGroupEntity).clear();
+        await queryRunner.manager.getRepository(TrophyEntity).clear();
+        await queryRunner.manager.getRepository(RankEntity).clear();
+        await queryRunner.manager.getRepository(RewardTypeDefinitionEntity).clear();
+        await queryRunner.manager.getRepository(ThemeDefinitionEntity).clear();
+        await queryRunner.manager.getRepository(SettingEntity).clear();
+        await queryRunner.manager.getRepository(LoginHistoryEntity).clear();
 
-        // Now, insert all the new data
-        for (const entity of allEntities) {
-            const repo = queryRunner.manager.getRepository(entity.name);
-            const simpleKey = {
-                'users': 'users', 'quests': 'quests', 'quest_groups': 'questGroups', 'markets': 'markets',
-                'reward_types': 'rewardTypes', 'quest_completions': 'questCompletions',
-                'purchase_requests': 'purchaseRequests', 'guilds': 'guilds', 'ranks': 'ranks',
-                'trophies': 'trophies', 'user_trophies': 'userTrophies', 'admin_adjustments': 'adminAdjustments',
-                'game_assets': 'gameAssets', 'system_logs': 'systemLogs', 'themes': 'themes',
-                'chat_messages': 'chatMessages', 'system_notifications': 'systemNotifications',
-                'scheduled_events': 'scheduledEvents',
-                'settings': 'settings', 'login_history': 'loginHistory'
-            }[entity.tableName];
-
-            if (!simpleKey || !data.hasOwnProperty(simpleKey)) continue;
-
-            const itemsToSave = data[simpleKey];
-
-            if (entity.name === 'Setting') {
-                if (itemsToSave) await repo.save({ id: 1, settings: itemsToSave });
-            } else if (entity.name === 'LoginHistory') {
-                if (itemsToSave) await repo.save({ id: 1, history: itemsToSave });
-            } else {
-                if (itemsToSave && Array.isArray(itemsToSave) && itemsToSave.length > 0) {
-                    await repo.save(itemsToSave, { chunk: 100 }); // Chunking helps with large arrays
-                }
-            }
-        }
+        // Save new data explicitly, checking for existence and ensuring it's a non-empty array for list entities.
+        if (data.users && data.users.length) await queryRunner.manager.getRepository(UserEntity).save(data.users);
+        if (data.guilds && data.guilds.length) await queryRunner.manager.getRepository(GuildEntity).save(data.guilds);
+        if (data.questGroups && data.questGroups.length) await queryRunner.manager.getRepository(QuestGroupEntity).save(data.questGroups);
+        if (data.markets && data.markets.length) await queryRunner.manager.getRepository(MarketEntity).save(data.markets);
+        if (data.quests && data.quests.length) await queryRunner.manager.getRepository(QuestEntity).save(data.quests);
+        if (data.rewardTypes && data.rewardTypes.length) await queryRunner.manager.getRepository(RewardTypeDefinitionEntity).save(data.rewardTypes);
+        if (data.ranks && data.ranks.length) await queryRunner.manager.getRepository(RankEntity).save(data.ranks);
+        if (data.trophies && data.trophies.length) await queryRunner.manager.getRepository(TrophyEntity).save(data.trophies);
+        if (data.themes && data.themes.length) await queryRunner.manager.getRepository(ThemeDefinitionEntity).save(data.themes);
+        if (data.gameAssets && data.gameAssets.length) await queryRunner.manager.getRepository(GameAssetEntity).save(data.gameAssets);
+        if (data.questCompletions && data.questCompletions.length) await queryRunner.manager.getRepository(QuestCompletionEntity).save(data.questCompletions);
+        if (data.purchaseRequests && data.purchaseRequests.length) await queryRunner.manager.getRepository(PurchaseRequestEntity).save(data.purchaseRequests);
+        if (data.userTrophies && data.userTrophies.length) await queryRunner.manager.getRepository(UserTrophyEntity).save(data.userTrophies);
+        if (data.adminAdjustments && data.adminAdjustments.length) await queryRunner.manager.getRepository(AdminAdjustmentEntity).save(data.adminAdjustments);
+        if (data.systemLogs && data.systemLogs.length) await queryRunner.manager.getRepository(SystemLogEntity).save(data.systemLogs);
+        if (data.chatMessages && data.chatMessages.length) await queryRunner.manager.getRepository(ChatMessageEntity).save(data.chatMessages);
+        if (data.systemNotifications && data.systemNotifications.length) await queryRunner.manager.getRepository(SystemNotificationEntity).save(data.systemNotifications);
+        if (data.scheduledEvents && data.scheduledEvents.length) await queryRunner.manager.getRepository(ScheduledEventEntity).save(data.scheduledEvents);
+        
+        // Handle singleton entities
+        if (data.settings) await queryRunner.manager.getRepository(SettingEntity).save({ id: 1, settings: data.settings });
+        if (data.loginHistory) await queryRunner.manager.getRepository(LoginHistoryEntity).save({ id: 1, history: data.loginHistory });
 
         await queryRunner.commitTransaction();
         broadcast({ type: 'DATA_UPDATED' });
@@ -343,7 +347,7 @@ app.use((err, req, res, next) => {
 // Automated Backup Logic
 const runAutomatedBackup = async () => {
     try {
-        const settingsRepo = dataSource.getRepository('Setting');
+        const settingsRepo = dataSource.getRepository(SettingEntity);
         const settingRow = await settingsRepo.findOneBy({ id: 1 });
         const settings = settingRow?.settings;
 

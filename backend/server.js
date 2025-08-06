@@ -11,15 +11,6 @@ const { dataSource, ensureDatabaseDirectoryExists } = require('./data-source');
 const { INITIAL_SETTINGS } = require('./initialData');
 const { allEntities } = require('./entities');
 
-// --- Environment Variable Checks ---
-const requiredEnv = ['STORAGE_PROVIDER'];
-for (const envVar of requiredEnv) {
-    if (!process.env[envVar]) {
-        console.error(`FATAL ERROR: ${envVar} environment variable is not set.`);
-        process.exit(1);
-    }
-}
-
 const app = express();
 const port = process.env.PORT || 3001;
 const server = http.createServer(app);

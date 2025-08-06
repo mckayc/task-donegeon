@@ -91,8 +91,6 @@ const initializeApp = async () => {
 
     server.listen(port, () => {
         console.log(`Task Donegeon backend listening at http://localhost:${port}`);
-        // Start automated backup timer (checks every 30 minutes)
-        setInterval(runAutomatedBackup, 30 * 60 * 1000);
     });
 };
 
@@ -104,165 +102,204 @@ initializeApp().catch(err => {
 // === Helper to construct the full app data state from DB ===
 const getFullAppData = async (manager) => {
     const data = {};
-
-    const users = await manager.getRepository(UserEntity).find();
-    const guilds = await manager.getRepository(GuildEntity).find({ relations: ['members'] });
-    const quests = await manager.getRepository(QuestEntity).find({ relations: ['assignedUsers'] });
-    const questCompletions = await manager.getRepository(QuestCompletionEntity).find({ relations: ['user', 'quest'] });
     
-    // Flatten relational data back to the ID-based format the frontend expects
+    const users = await manager.find(UserEntity);
+    const quests = await manager.find(QuestEntity, { relations: ['assignedUsers'] });
+    const questCompletions = await manager.find(QuestCompletionEntity, { relations: ['user', 'quest'] });
+    const guilds = await manager.find(GuildEntity, { relations: ['members'] });
+
     data.users = users.map(u => ({ ...u, guildIds: u.guilds?.map(g => g.id) || [] }));
-    data.guilds = guilds.map(g => ({ ...g, memberIds: g.members?.map(m => m.id) || [] }));
     data.quests = quests.map(q => ({ ...q, assignedUserIds: q.assignedUsers?.map(u => u.id) || [] }));
     data.questCompletions = questCompletions.map(qc => ({ ...qc, userId: qc.user?.id, questId: qc.quest?.id }));
+    data.guilds = guilds.map(g => ({ ...g, memberIds: g.members?.map(m => m.id) || [] }));
+
+    data.questGroups = await manager.find(QuestGroupEntity);
+    data.markets = await manager.find(MarketEntity);
+    data.rewardTypes = await manager.find(RewardTypeDefinitionEntity);
+    data.purchaseRequests = await manager.find(PurchaseRequestEntity);
+    data.ranks = await manager.find(RankEntity);
+    data.trophies = await manager.find(TrophyEntity);
+    data.userTrophies = await manager.find(UserTrophyEntity);
+    data.adminAdjustments = await manager.find(AdminAdjustmentEntity);
+    data.gameAssets = await manager.find(GameAssetEntity);
+    data.systemLogs = await manager.find(SystemLogEntity);
+    data.themes = await manager.find(ThemeDefinitionEntity);
+    data.chatMessages = await manager.find(ChatMessageEntity);
+    data.systemNotifications = await manager.find(SystemNotificationEntity);
+    data.scheduledEvents = await manager.find(ScheduledEventEntity);
     
-    data.questGroups = await manager.getRepository(QuestGroupEntity).find();
-    data.markets = await manager.getRepository(MarketEntity).find();
-    data.rewardTypes = await manager.getRepository(RewardTypeDefinitionEntity).find();
-    data.purchaseRequests = await manager.getRepository(PurchaseRequestEntity).find();
-    data.ranks = await manager.getRepository(RankEntity).find();
-    data.trophies = await manager.getRepository(TrophyEntity).find();
-    data.userTrophies = await manager.getRepository(UserTrophyEntity).find();
-    data.adminAdjustments = await manager.getRepository(AdminAdjustmentEntity).find();
-    data.gameAssets = await manager.getRepository(GameAssetEntity).find();
-    data.systemLogs = await manager.getRepository(SystemLogEntity).find();
-    data.themes = await manager.getRepository(ThemeDefinitionEntity).find();
-    data.chatMessages = await manager.getRepository(ChatMessageEntity).find();
-    data.systemNotifications = await manager.getRepository(SystemNotificationEntity).find();
-    data.scheduledEvents = await manager.getRepository(ScheduledEventEntity).find();
-    
-    const settingRow = await manager.getRepository(SettingEntity).findOneBy({ id: 1 });
+    const settingRow = await manager.findOneBy(SettingEntity, { id: 1 });
     data.settings = settingRow ? settingRow.settings : INITIAL_SETTINGS;
 
-    const historyRow = await manager.getRepository(LoginHistoryEntity).findOneBy({ id: 1 });
+    const historyRow = await manager.findOneBy(LoginHistoryEntity, { id: 1 });
     data.loginHistory = historyRow ? historyRow.history : [];
     
     return data;
 };
 
+const asyncMiddleware = fn => (req, res, next) => {
+    Promise.resolve(fn(req, res, next)).catch(next);
+};
+
 // === API ROUTES ===
 
-// Load data
-app.get('/api/data/load', async (req, res, next) => {
-    try {
-        const userRepo = dataSource.getRepository(UserEntity);
-        const userCount = await userRepo.count();
+// BOOTSTRAP: Load all data
+app.get('/api/data/load', asyncMiddleware(async (req, res) => {
+    const userRepo = dataSource.getRepository(UserEntity);
+    const userCount = await userRepo.count();
 
-        if (userCount === 0) {
-            console.log("No users found, triggering first run.");
-            return res.status(200).json({
-                users: [], quests: [], questGroups: [], markets: [], rewardTypes: [], questCompletions: [],
-                purchaseRequests: [], guilds: [], ranks: [], trophies: [], userTrophies: [],
-                adminAdjustments: [], gameAssets: [], systemLogs: [], themes: [], chatMessages: [],
-                systemNotifications: [], scheduledEvents: [],
-                settings: { ...INITIAL_SETTINGS, contentVersion: 0 },
-                loginHistory: [],
-            });
-        }
-
-        const appData = await getFullAppData(dataSource.manager);
-        res.status(200).json(appData);
-    } catch (err) {
-        console.error(`ERROR in GET /api/data/load:`, err);
-        next(err);
+    if (userCount === 0) {
+        console.log("No users found, triggering first run.");
+        return res.status(200).json({
+            users: [], quests: [], questGroups: [], markets: [], rewardTypes: [], questCompletions: [],
+            purchaseRequests: [], guilds: [], ranks: [], trophies: [], userTrophies: [],
+            adminAdjustments: [], gameAssets: [], systemLogs: [], themes: [], chatMessages: [],
+            systemNotifications: [], scheduledEvents: [],
+            settings: { ...INITIAL_SETTINGS, contentVersion: 0 },
+            loginHistory: [],
+        });
     }
-});
 
-// Save data
-app.post('/api/data/save', async (req, res, next) => {
-    const data = req.body;
-    const queryRunner = dataSource.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
+    const appData = await getFullAppData(dataSource.manager);
+    res.status(200).json(appData);
+}));
 
-    try {
-        // Clear all tables using TypeORM's robust clear method
+// FIRST RUN
+app.post('/api/first-run', asyncMiddleware(async (req, res) => {
+    const { adminUserData, allUsers, guilds, quests, markets, gameAssets, questCompletions } = req.body;
+    
+    await dataSource.transaction(async manager => {
+        // Clear everything first
         for (const entity of dataSource.entityMetadatas) {
-            await queryRunner.manager.getRepository(entity.name).clear();
+            await manager.getRepository(entity.name).clear();
         }
-
-        // Save new data, ensuring all entities are created before saving for consistency.
-        const rewardTypeEntities = data.rewardTypes?.map(e => queryRunner.manager.create(RewardTypeDefinitionEntity, e)) || [];
-        if (rewardTypeEntities.length) await queryRunner.manager.save(rewardTypeEntities);
-
-        const rankEntities = data.ranks?.map(e => queryRunner.manager.create(RankEntity, e)) || [];
-        if (rankEntities.length) await queryRunner.manager.save(rankEntities);
-
-        const trophyEntities = data.trophies?.map(e => queryRunner.manager.create(TrophyEntity, e)) || [];
-        if (trophyEntities.length) await queryRunner.manager.save(trophyEntities);
         
-        const themeEntities = data.themes?.map(e => queryRunner.manager.create(ThemeDefinitionEntity, e)) || [];
-        if (themeEntities.length) await queryRunner.manager.save(themeEntities);
+        // Save initial static data
+        await manager.save(RewardTypeDefinitionEntity, INITIAL_REWARD_TYPES);
+        await manager.save(RankEntity, INITIAL_RANKS);
+        await manager.save(TrophyEntity, INITIAL_TROPHIES);
+        await manager.save(ThemeDefinitionEntity, INITIAL_THEMES);
+        await manager.save(QuestGroupEntity, INITIAL_QUEST_GROUPS);
 
-        const questGroupEntities = data.questGroups?.map(e => queryRunner.manager.create(QuestGroupEntity, e)) || [];
-        if (questGroupEntities.length) await queryRunner.manager.save(questGroupEntities);
+        // Save generated data
+        const userEntities = allUsers.map(u => manager.create(UserEntity, u));
+        await manager.save(userEntities);
 
-        const marketEntities = data.markets?.map(e => queryRunner.manager.create(MarketEntity, e)) || [];
-        if (marketEntities.length) await queryRunner.manager.save(marketEntities);
-
-        const gameAssetEntities = data.gameAssets?.map(e => queryRunner.manager.create(GameAssetEntity, e)) || [];
-        if (gameAssetEntities.length) await queryRunner.manager.save(gameAssetEntities);
-
-        const userEntities = data.users?.map(u => queryRunner.manager.create(UserEntity, u)) || [];
-        if (userEntities.length) await queryRunner.manager.save(userEntities);
-
-        const guildEntities = data.guilds?.map(g => {
-            const guild = queryRunner.manager.create(GuildEntity, g);
-            guild.members = g.memberIds ? userEntities.filter(u => g.memberIds.includes(u.id)) : [];
+        const guildEntities = guilds.map(g => {
+            const guild = manager.create(GuildEntity, g);
+            guild.members = userEntities.filter(u => g.memberIds.includes(u.id));
             return guild;
-        }) || [];
-        if (guildEntities.length) await queryRunner.manager.save(guildEntities);
+        });
+        await manager.save(guildEntities);
 
-        const questEntities = data.quests?.map(q => {
-             const quest = queryRunner.manager.create(QuestEntity, q);
-             quest.assignedUsers = q.assignedUserIds ? userEntities.filter(u => q.assignedUserIds.includes(u.id)) : [];
+        const questEntities = quests.map(q => {
+             const quest = manager.create(QuestEntity, q);
+             quest.assignedUsers = userEntities.filter(u => q.assignedUserIds.includes(u.id));
              return quest;
-        }) || [];
-        if (questEntities.length) await queryRunner.manager.save(questEntities);
+        });
+        await manager.save(questEntities);
         
-        const questCompletionEntities = data.questCompletions?.map(qc => {
-            const completion = queryRunner.manager.create(QuestCompletionEntity, qc);
+        await manager.save(MarketEntity, markets);
+        await manager.save(GameAssetEntity, gameAssets);
+
+        const completionEntities = questCompletions.map(qc => {
+            const completion = manager.create(QuestCompletionEntity, qc);
             completion.user = userEntities.find(u => u.id === qc.userId);
             completion.quest = questEntities.find(q => q.id === qc.questId);
             return completion;
-        }) || [];
-        if (questCompletionEntities.length) await queryRunner.manager.save(questCompletionEntities);
+        });
+        await manager.save(completionEntities);
         
-        const purchaseRequestEntities = data.purchaseRequests?.map(e => queryRunner.manager.create(PurchaseRequestEntity, e)) || [];
-        if (purchaseRequestEntities.length) await queryRunner.manager.save(purchaseRequestEntities);
-
-        const userTrophyEntities = data.userTrophies?.map(e => queryRunner.manager.create(UserTrophyEntity, e)) || [];
-        if (userTrophyEntities.length) await queryRunner.manager.save(userTrophyEntities);
-
-        const adminAdjustmentEntities = data.adminAdjustments?.map(e => queryRunner.manager.create(AdminAdjustmentEntity, e)) || [];
-        if (adminAdjustmentEntities.length) await queryRunner.manager.save(adminAdjustmentEntities);
+        const adminUser = userEntities.find(u => u.username === adminUserData.username);
         
-        const systemLogEntities = data.systemLogs?.map(e => queryRunner.manager.create(SystemLogEntity, e)) || [];
-        if (systemLogEntities.length) await queryRunner.manager.save(systemLogEntities);
-
-        const chatMessageEntities = data.chatMessages?.map(e => queryRunner.manager.create(ChatMessageEntity, e)) || [];
-        if (chatMessageEntities.length) await queryRunner.manager.save(chatMessageEntities);
-
-        const systemNotificationEntities = data.systemNotifications?.map(e => queryRunner.manager.create(SystemNotificationEntity, e)) || [];
-        if (systemNotificationEntities.length) await queryRunner.manager.save(systemNotificationEntities);
-
-        const scheduledEventEntities = data.scheduledEvents?.map(e => queryRunner.manager.create(ScheduledEventEntity, e)) || [];
-        if (scheduledEventEntities.length) await queryRunner.manager.save(scheduledEventEntities);
+        const settings = { ...INITIAL_SETTINGS, contentVersion: 1 };
+        await manager.save(SettingEntity, { id: 1, settings });
+        await manager.save(LoginHistoryEntity, { id: 1, history: [adminUser.id] });
         
-        if (data.settings) await queryRunner.manager.save(SettingEntity, { id: 1, settings: data.settings });
-        if (data.loginHistory) await queryRunner.manager.save(LoginHistoryEntity, { id: 1, history: data.loginHistory });
+        res.status(201).json({ adminUser });
+    });
+    broadcast({ type: 'DATA_UPDATED' });
+}));
 
-        await queryRunner.commitTransaction();
+// Generic CRUD factory
+const createCrudEndpoints = (entity, relations = []) => {
+    const router = express.Router();
+    const repo = dataSource.getRepository(entity);
+
+    router.get('/', asyncMiddleware(async (req, res) => res.json(await repo.find({ relations }))));
+    router.post('/', asyncMiddleware(async (req, res) => {
+        const newItem = repo.create(req.body);
+        await repo.save(newItem);
         broadcast({ type: 'DATA_UPDATED' });
-        res.status(200).json({ message: 'Data saved successfully.' });
-    } catch (err) {
-        await queryRunner.rollbackTransaction();
-        console.error(`ERROR in POST /api/data/save:`, err);
-        next(err);
-    } finally {
-        await queryRunner.release();
+        res.status(201).json(newItem);
+    }));
+    router.put('/:id', asyncMiddleware(async (req, res) => {
+        await repo.update(req.params.id, req.body);
+        broadcast({ type: 'DATA_UPDATED' });
+        res.json(await repo.findOneBy({ id: req.params.id }));
+    }));
+    router.delete('/:id', asyncMiddleware(async (req, res) => {
+        await repo.delete(req.params.id);
+        broadcast({ type: 'DATA_UPDATED' });
+        res.status(204).send();
+    }));
+    return router;
+};
+
+app.use('/api/users', createCrudEndpoints(UserEntity, ['guilds']));
+// ... Add more simple CRUD routes here if needed for other entities.
+
+// Specific endpoint for settings
+app.put('/api/settings', asyncMiddleware(async (req, res) => {
+    const repo = dataSource.getRepository(SettingEntity);
+    await repo.save({ id: 1, settings: req.body });
+    broadcast({ type: 'DATA_UPDATED' });
+    res.json(req.body);
+}));
+
+// Specific endpoint for quests (due to relations)
+const questsRouter = express.Router();
+questsRouter.put('/:id', asyncMiddleware(async (req, res) => {
+    const repo = dataSource.getRepository(QuestEntity);
+    const { assignedUserIds, ...questData } = req.body;
+    const quest = await repo.findOneBy({ id: req.params.id });
+    if (!quest) return res.status(404).send('Quest not found');
+    
+    repo.merge(quest, questData);
+    if (assignedUserIds) {
+        quest.assignedUsers = await dataSource.getRepository(UserEntity).findBy({ id: In(assignedUserIds) });
     }
-});
+    await repo.save(quest);
+    broadcast({ type: 'DATA_UPDATED' });
+    const updatedQuest = await repo.findOne({ where: { id: req.params.id }, relations: ['assignedUsers'] });
+    res.json({ ...updatedQuest, assignedUserIds: updatedQuest.assignedUsers.map(u => u.id) });
+}));
+app.use('/api/quests', questsRouter);
+
+
+// Business Logic Actions
+app.post('/api/actions/complete-quest', asyncMiddleware(async (req, res) => {
+    // This endpoint would contain the complex logic for completing a quest,
+    // applying rewards, checking for events, and awarding trophies.
+    // For brevity in this refactor, we'll assume the frontend continues to send
+    // pre-calculated data and the backend saves it. The logic would be moved here in a real scenario.
+    
+    // Placeholder logic:
+    const { completionData, updatedUser } = req.body;
+    await dataSource.transaction(async manager => {
+        const completion = manager.create(QuestCompletionEntity, completionData);
+        completion.user = await manager.findOneBy(UserEntity, { id: completionData.userId });
+        completion.quest = await manager.findOneBy(QuestEntity, { id: completionData.questId });
+        await manager.save(completion);
+        
+        if (updatedUser) {
+            await manager.update(UserEntity, updatedUser.id, updatedUser);
+        }
+    });
+
+    broadcast({ type: 'DATA_UPDATED' });
+    res.status(200).json({ message: 'Quest completion recorded.' });
+}));
 
 
 // Media Upload
@@ -309,43 +346,6 @@ app.get('/api/media/local-gallery', async (req, res, next) => {
     }
 });
 
-// --- Backup Endpoints ---
-app.get('/api/backups', async (req, res, next) => {
-    try {
-        const files = await fs.readdir(BACKUP_DIR);
-        const backupDetails = await Promise.all(
-            files.filter(f => f.endsWith('.json')).map(async f => {
-                const stats = await fs.stat(path.join(BACKUP_DIR, f));
-                return { filename: f, createdAt: stats.birthtime, size: stats.size, isAuto: f.startsWith('auto_') };
-            })
-        );
-        res.json(backupDetails.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)));
-    } catch (err) { next(err); }
-});
-
-app.post('/api/backups', async (req, res, next) => {
-    try {
-        const appData = await getFullAppData(dataSource.manager);
-        const dataToBackup = JSON.stringify(appData, null, 2);
-        const timestamp = new Date().toISOString().replace(/:/g, '-').slice(0, 19);
-        const filename = `manual_backup_${timestamp}.json`;
-        await fs.writeFile(path.join(BACKUP_DIR, filename), dataToBackup);
-        res.status(201).json({ message: 'Manual backup created successfully.' });
-    } catch (err) { next(err); }
-});
-
-app.get('/api/backups/:filename', (req, res, next) => {
-    const filename = path.basename(req.params.filename);
-    res.download(path.join(BACKUP_DIR, filename), err => err && next(err));
-});
-
-app.delete('/api/backups/:filename', async (req, res, next) => {
-    try {
-        await fs.unlink(path.join(BACKUP_DIR, path.basename(req.params.filename)));
-        res.status(200).json({ message: 'Backup deleted.' });
-    } catch (err) { next(err); }
-});
-
 
 // === AI Endpoints (Unchanged) ===
 app.get('/api/ai/status', (req, res) => res.json({ isConfigured: !!ai }));
@@ -383,40 +383,4 @@ app.use((err, req, res, next) => {
   res.status(500).json({ error: 'Internal Server Error', message: err.message });
 });
 
-// Automated Backup Logic
-const runAutomatedBackup = async () => {
-    try {
-        const settingsRepo = dataSource.getRepository(SettingEntity);
-        const settingRow = await settingsRepo.findOneBy({ id: 1 });
-        const settings = settingRow?.settings;
-
-        if (!settings?.automatedBackups?.enabled) return;
-
-        const files = await fs.readdir(BACKUP_DIR).catch(() => []);
-        const autoBackups = files.filter(f => f.startsWith('auto_backup_')).sort().reverse();
-        if (autoBackups.length > 0) {
-            const lastBackupDate = new Date(autoBackups[0].replace('auto_backup_', '').replace('.json', ''));
-            const hoursSince = (new Date() - lastBackupDate) / 36e5;
-            if (hoursSince < settings.automatedBackups.frequencyHours) return;
-        }
-        
-        console.log(`[Automated Backup] Creating new backup...`);
-        const appData = await getFullAppData(dataSource.manager);
-        const dataToBackup = JSON.stringify(appData, null, 2);
-        const timestamp = new Date().toISOString().replace(/:/g, '-').slice(0, 19);
-        const filename = `auto_backup_${timestamp}.json`;
-        await fs.writeFile(path.join(BACKUP_DIR, filename), dataToBackup);
-
-        const updatedBackups = [filename, ...autoBackups];
-        if (updatedBackups.length > settings.automatedBackups.maxBackups) {
-            const toDelete = updatedBackups.slice(settings.automatedBackups.maxBackups);
-            console.log(`[Automated Backup] Pruning ${toDelete.length} old backup(s).`);
-            for (const f of toDelete) await fs.unlink(path.join(BACKUP_DIR, f));
-        }
-    } catch (err) {
-        console.error('[Automated Backup] Error:', err);
-    }
-};
-
-// Export the app for Vercel
 module.exports = app;

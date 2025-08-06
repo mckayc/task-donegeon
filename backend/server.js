@@ -268,6 +268,13 @@ app.post('/api/first-run', asyncMiddleware(async (req, res) => {
         const adminUser = manager.create(UserEntity, {
             ...adminUserData,
             id: `user-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+            avatar: {},
+            ownedAssetIds: [],
+            personalPurse: {},
+            personalExperience: {},
+            guildBalances: {},
+            ownedThemes: ['emerald', 'rose', 'sky'],
+            hasBeenOnboarded: false,
         });
         await manager.save(adminUser);
 

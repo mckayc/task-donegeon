@@ -101,10 +101,10 @@ const FirstRunWizard: React.FC = () => {
     <div className="min-h-screen flex items-center justify-center bg-slate-900 p-4">
       <div className="max-w-3xl w-full bg-slate-800 border border-stone-700 rounded-2xl shadow-2xl p-8 md:p-12">
         <div className="text-center">
-          <div className="text-9xl transform scale-[2.5] inline-block my-4">
+          <div className="text-[10rem] leading-none -mb-4">
             <span>🧙‍♂️</span>
           </div>
-          <h1 className="font-medieval text-accent mt-4">First Run Wizard</h1>
+          <h1 className="font-medieval text-accent mt-8">First Run Wizard</h1>
           <p className="text-stone-300 mt-2 max-w-xl mx-auto">
             Welcome to Task Donegeon! This wizard will check your server setup and help you create the first administrator account.
           </p>
@@ -157,7 +157,7 @@ const FirstRunWizard: React.FC = () => {
 
         {allChecksPassed && (
           <div className="mt-8 pt-8 border-t border-stone-700">
-            <h2 className="text-2xl font-medieval text-center text-emerald-400 mb-6">Create Donegeon Master Account</h2>
+            <h2 className="text-3xl font-medieval text-center text-emerald-400 mb-6">Create Donegeon Master Account</h2>
             <form onSubmit={handleAdminSubmit} className="space-y-6">
               <div className="space-y-4">
                 <UserFormFields formData={formData} handleChange={handleChange} />

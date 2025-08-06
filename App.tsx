@@ -1,37 +1,48 @@
 
-import React, { useEffect, useCallback } from 'react';
-import { useAppState, useAppDispatch } from './context/AppContext';
+
+
+
+import React, { useEffect } from 'react';
+import { useAppState } from './context/AppContext';
 import FirstRunWizard from './components/auth/FirstRunWizard';
 import MainLayout from './components/layout/MainLayout';
-import AuthPage from './components/auth/AuthPage';
+import SwitchUser from './components/auth/SwitchUser';
 import NotificationContainer from './components/ui/NotificationContainer';
 import AppLockScreen from './components/auth/AppLockScreen';
 import OnboardingWizard from './components/auth/OnboardingWizard';
 import SharedLayout from './components/layout/SharedLayout';
 
-const LoadingScreen: React.FC = () => (
-    <div className="min-h-screen flex items-center justify-center bg-stone-900">
-        <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-emerald-400"></div>
-    </div>
-);
-
 const App: React.FC = () => {
-  const { isAppUnlocked, isFirstRun, currentUser, isDataLoaded, settings, themes } = useAppState();
-  const { setFirstRun, setAppUnlocked, setCurrentUser } = useAppDispatch();
+  const { isAppUnlocked, isFirstRun, currentUser, isSwitchingUser, isDataLoaded, settings, isSharedViewActive, appMode, guilds, themes, isRestarting } = useAppState();
 
   useEffect(() => {
-    // This effect handles applying the theme based on various contexts (guild, user, system).
-    // The core logic remains the same.
-    let activeThemeId: string | undefined = settings.theme;
-    // ... theme logic from original file
+    let activeThemeId: string | undefined = settings.theme; // Default to system theme
+
+    if (appMode.mode === 'guild') {
+        const currentGuild = guilds.find(g => g.id === appMode.guildId);
+        if (currentGuild?.themeId) {
+            activeThemeId = currentGuild.themeId; // Guild theme is priority in guild mode
+        } else if (currentUser?.theme) {
+            activeThemeId = currentUser.theme; // Fallback to user theme
+        }
+    } else { // Personal mode
+        if (currentUser?.theme) {
+            activeThemeId = currentUser.theme; // Use personal theme
+        }
+    }
+    
+    // Find the theme definition and apply its styles
     const theme = themes.find(t => t.id === activeThemeId);
     if (theme) {
         Object.entries(theme.styles).forEach(([key, value]) => {
-            document.documentElement.style.setProperty(key, value as string);
+            document.documentElement.style.setProperty(key, value);
         });
-        document.body.dataset.theme = activeThemeId || '';
     }
-  }, [settings.theme, currentUser, themes]);
+
+    if (activeThemeId) {
+      document.body.dataset.theme = activeThemeId;
+    }
+  }, [settings.theme, currentUser?.id, currentUser?.theme, appMode, guilds, themes]);
 
   useEffect(() => {
     if (settings.favicon) {
@@ -46,44 +57,48 @@ const App: React.FC = () => {
     }
   }, [settings.favicon]);
 
-  // New auth flow check
-  const checkAuthStatus = useCallback(async () => {
-    try {
-      // In a real app, we'd check a '/api/me' endpoint with a cookie.
-      // For this refactor, we simulate the check for first run.
-      const response = await fetch('/api/pre-run-check');
-      if (!response.ok) throw new Error('Server check failed');
-      const status = await response.json();
-      setFirstRun(!status.dataExists);
-    } catch (error) {
-      console.error("Failed to check server status:", error);
-      // Handle server offline case if necessary
-    }
-  }, [setFirstRun]);
 
-  useEffect(() => {
-    checkAuthStatus();
-  }, [checkAuthStatus]);
-
+  if (isRestarting) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-stone-900 text-center p-4">
+        <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-emerald-400 mb-6"></div>
+        <h1 className="text-3xl font-medieval text-accent">Application Restarting</h1>
+        <p className="text-stone-300 mt-2">Please wait a few moments. The page will reload automatically.</p>
+      </div>
+    );
+  }
 
   if (!isDataLoaded) {
-    return <LoadingScreen />;
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-stone-900">
+        <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-emerald-400"></div>
+      </div>
+    );
   }
 
   const showOnboarding = currentUser && !currentUser.hasBeenOnboarded;
 
-  const renderContent = () => {
-    if (isFirstRun) return <FirstRunWizard />;
-    // if (!isAppUnlocked) return <AppLockScreen />; // Re-enable once login flow is complete
-    if (!currentUser) return <AuthPage />; // Simplified login/switch flow
-    if (showOnboarding) return <OnboardingWizard />;
-    return <MainLayout />;
-  };
-
   return (
     <>
       <NotificationContainer />
-      {renderContent()}
+      {showOnboarding && <OnboardingWizard />}
+
+      {(() => {
+        if (isFirstRun) { return <FirstRunWizard />; }
+        if (!isAppUnlocked && !isFirstRun) { return <AppLockScreen />; }
+        
+        // The user switching flow must take precedence over the shared view.
+        if (isSwitchingUser) { return <SwitchUser />; }
+        
+        // If not switching, and shared mode is active, show the shared layout.
+        if (settings.sharedMode.enabled && isSharedViewActive) {
+          return <SharedLayout />;
+        }
+
+        if (!currentUser) { return <SwitchUser />; }
+      
+        return <MainLayout />;
+      })()}
     </>
   );
 };

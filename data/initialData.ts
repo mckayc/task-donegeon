@@ -1,4 +1,4 @@
-import { User, Role, RewardTypeDefinition, RewardCategory, Rank, Trophy, TrophyRequirementType, QuestType, Market, Quest, QuestAvailability, Guild, AppSettings, SidebarConfigItem, GameAsset, ThemeDefinition, ThemeStyle, QuestCompletion, QuestCompletionStatus, MarketStatus, QuestGroup, IAppData } from '../types';
+import { User, Role, RewardTypeDefinition, RewardCategory, Rank, Trophy, TrophyRequirementType, QuestType, Market, Quest, QuestAvailability, Guild, AppSettings, SidebarConfigItem, GameAsset, ThemeDefinition, ThemeStyle, QuestCompletion, QuestCompletionStatus, MarketStatus, QuestGroup } from '../types';
 
 export const INITIAL_QUEST_GROUPS: QuestGroup[] = [
     { id: 'qg-household', name: 'Household Chores', description: 'General tasks related to keeping the house clean and tidy.', icon: '🏡' },
@@ -36,7 +36,7 @@ export const createMockUsers = (): User[] => {
     }));
 
     // Give explorer starting gold for the tutorial quest
-    const explorer = initialUsers.find(u => u.username === 'explorer');
+    const explorer = initialUsers.find((u: User) => u.username === 'explorer');
     if (explorer) {
         explorer.personalPurse = { 'core-gold': 100 };
     }
@@ -179,6 +179,7 @@ export const INITIAL_THEMES: ThemeDefinition[] = Object.entries(rawThemes).map((
 
 export const INITIAL_SETTINGS: AppSettings = {
     contentVersion: 2,
+    isFirstRunComplete: false,
     favicon: '🏰',
     forgivingSetbacks: true,
     questDefaults: {
@@ -275,18 +276,18 @@ export const INITIAL_SETTINGS: AppSettings = {
     enableAiFeatures: false,
     rewardValuation: {
       enabled: true,
-      anchorRewardId: 'core-gold',
+      anchorRewardId: 'core-gems',
       exchangeRates: {
-        'core-gems': 0.1,
-        'core-crystal': 20,
-        'core-strength': 10,
-        'core-diligence': 10,
-        'core-wisdom': 5,
-        'core-skill': 5,
-        'core-creative': 5,
+        'core-gold': 5,
+        'core-crystal': 10,
+        'core-strength': 20,
+        'core-diligence': 20,
+        'core-wisdom': 20,
+        'core-skill': 20,
+        'core-creative': 20,
       },
-      currencyExchangeFeePercent: 5,
-      xpExchangeFeePercent: 10,
+      currencyExchangeFeePercent: 10,
+      xpExchangeFeePercent: 20,
     },
     chat: {
         enabled: true,
@@ -476,13 +477,13 @@ export const createSampleGameAssets = (): GameAsset[] => {
 };
 
 export const createInitialGuilds = (users: User[]): Guild[] => ([
-  { id: 'guild-1', name: 'The First Guild', purpose: 'The default guild for all new adventurers.', memberIds: users.map(u => u.id), isDefault: true },
+  { id: 'guild-1', name: 'The First Guild', purpose: 'The default guild for all new adventurers.', memberIds: users.map((u: User) => u.id), isDefault: true },
 ]);
 
 export const createSampleQuests = (users: User[]): Quest[] => {
-  const explorer = users.find(u => u.role === Role.Explorer);
-  const gatekeeper = users.find(u => u.role === Role.Gatekeeper);
-  const donegeonMaster = users.find(u => u.role === Role.DonegeonMaster);
+  const explorer = users.find((u: User) => u.role === Role.Explorer);
+  const gatekeeper = users.find((u: User) => u.role === Role.Gatekeeper);
+  const donegeonMaster = users.find((u: User) => u.role === Role.DonegeonMaster);
 
   const quests: Quest[] = [
     // For Explorer
@@ -546,34 +547,95 @@ export const createSampleQuests = (users: User[]): Quest[] => {
   return quests;
 };
 
+export function createInitialData(setupChoice = 'guided', adminUserData?: any, blueprint?: any) {
+    if (setupChoice === 'scratch') {
+        const users = [adminUserData];
+        const guilds = createInitialGuilds(users);
+        const bankMarket = createSampleMarkets().find(m => m.id === 'market-bank');
+        return {
+            users: users,
+            quests: [],
+            questGroups: [],
+            markets: bankMarket ? [bankMarket] : [],
+            rewardTypes: INITIAL_REWARD_TYPES,
+            questCompletions: [],
+            purchaseRequests: [],
+            guilds: guilds,
+            ranks: INITIAL_RANKS,
+            trophies: [],
+            userTrophies: [],
+            adminAdjustments: [],
+            gameAssets: [],
+            systemLogs: [],
+            settings: INITIAL_SETTINGS,
+            themes: INITIAL_THEMES,
+            loginHistory: [],
+            chatMessages: [],
+            systemNotifications: [],
+            scheduledEvents: [],
+        };
+    }
 
-export const createInitialQuestCompletions = (users: User[], quests: Quest[]): QuestCompletion[] => {
-    // This function can be used to populate some initial "completed" quests for demonstration
-    return [];
-};
-
-export const createInitialData = (): IAppData => {
+    if (setupChoice === 'import' && blueprint) {
+        const users = [adminUserData];
+        const guilds = createInitialGuilds(users);
+        const finalRewardTypes = [
+            ...INITIAL_REWARD_TYPES,
+            ...(blueprint.assets.rewardTypes || []).filter((rt: RewardTypeDefinition) => !INITIAL_REWARD_TYPES.some(coreRt => coreRt.id === rt.id))
+        ];
+        let finalMarkets = blueprint.assets.markets || [];
+        if (!finalMarkets.some((m: Market) => m.id === 'market-bank')) {
+            const bankMarket = createSampleMarkets().find((m: Market) => m.id === 'market-bank');
+            if (bankMarket) finalMarkets.push(bankMarket);
+        }
+        return {
+            users: users,
+            quests: blueprint.assets.quests || [],
+            questGroups: blueprint.assets.questGroups || [],
+            markets: finalMarkets,
+            rewardTypes: finalRewardTypes,
+            questCompletions: [],
+            purchaseRequests: [],
+            guilds: guilds,
+            ranks: blueprint.assets.ranks || INITIAL_RANKS,
+            trophies: blueprint.assets.trophies || [],
+            userTrophies: [],
+            adminAdjustments: [],
+            gameAssets: blueprint.assets.gameAssets || [],
+            systemLogs: [],
+            settings: INITIAL_SETTINGS,
+            themes: INITIAL_THEMES,
+            loginHistory: [],
+            chatMessages: [],
+            systemNotifications: [],
+            scheduledEvents: [],
+        };
+    }
+    
+    // Default to 'guided' setup
     const users = createMockUsers();
-    const guilds = createInitialGuilds(users);
+    if (adminUserData) {
+        users[0] = { ...users[0], ...adminUserData };
+    }
     const quests = createSampleQuests(users);
+    const guilds = createInitialGuilds(users);
     const markets = createSampleMarkets();
     const gameAssets = createSampleGameAssets();
-    const questCompletions = createInitialQuestCompletions(users, quests);
 
     return {
-        users,
-        quests,
+        users: users,
+        quests: quests,
         questGroups: INITIAL_QUEST_GROUPS,
-        markets,
+        markets: markets,
         rewardTypes: INITIAL_REWARD_TYPES,
-        questCompletions,
+        questCompletions: [],
         purchaseRequests: [],
-        guilds,
+        guilds: guilds,
         ranks: INITIAL_RANKS,
         trophies: INITIAL_TROPHIES,
         userTrophies: [],
         adminAdjustments: [],
-        gameAssets,
+        gameAssets: gameAssets,
         systemLogs: [],
         settings: INITIAL_SETTINGS,
         themes: INITIAL_THEMES,
@@ -582,4 +644,22 @@ export const createInitialData = (): IAppData => {
         systemNotifications: [],
         scheduledEvents: [],
     };
-};
+}
+
+export function createInitialQuestCompletions(quests: Quest[], users: User[]): QuestCompletion[] {
+  const explorer = users.find((u: User) => u.username === 'explorer');
+  const gatekeeper = users.find((u: User) => u.username === 'gatekeeper');
+  
+  if (!explorer || !gatekeeper) return [];
+
+  const completion: QuestCompletion = {
+    id: `qc-initial-${Date.now()}`,
+    questId: 'quest-gatekeeper-approval-setup',
+    userId: explorer.id,
+    completedAt: new Date().toISOString(),
+    status: QuestCompletionStatus.Pending,
+    note: 'This is my first note for approval!'
+  };
+
+  return [completion];
+}

@@ -1,12 +1,13 @@
 import React, { useState, useMemo } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
-import { Role, User } from '../../types';
+import { Role } from '../../types';
 import Button from '../ui/Button';
 import Input from '../ui/Input';
+import Card from '../ui/Card';
 
 const AppLockScreen: React.FC = () => {
   const { users, settings } = useAppState();
-  const { setAppUnlocked, setCurrentUser } = useAppDispatch();
+  const { setAppUnlocked, setCurrentUser, reinitializeApp } = useAppDispatch();
   
   const adminUsers = useMemo(() => users.filter(u => u.role === Role.DonegeonMaster), [users]);
 
@@ -14,6 +15,26 @@ const AppLockScreen: React.FC = () => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isChecking, setIsChecking] = useState(false);
+
+  // Fail-safe check: If data exists but no admin is found, the app is in a broken state.
+  if (users.length > 0 && adminUsers.length === 0) {
+      return (
+          <div className="min-h-screen flex items-center justify-center bg-stone-900 p-4">
+              <Card title="Critical Error: No Administrator Found" className="max-w-xl text-center">
+                  <p className="text-2xl text-red-400 font-semibold mb-4">Unrecoverable State!</p>
+                  <p className="text-stone-300 mb-6">
+                      The application has detected existing data but cannot find any administrator accounts to unlock it. This can happen if the last administrator account was deleted or if the initial setup was corrupted.
+                  </p>
+                  <p className="text-stone-300 mb-8">
+                      To resolve this, you must re-initialize the application. This will erase the current (corrupted) data and guide you through the first-run setup again.
+                  </p>
+                  <Button onClick={reinitializeApp} className="!bg-red-600 hover:!bg-red-500">
+                      Reset & Re-initialize Application
+                  </Button>
+              </Card>
+          </div>
+      );
+  }
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();

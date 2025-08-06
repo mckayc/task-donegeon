@@ -1,10 +1,8 @@
+import React, { createContext, useState, useContext, ReactNode, useEffect, useCallback, useMemo, useRef } from 'react';
+import { AppSettings, User, Quest, RewardTypeDefinition, QuestCompletion, RewardItem, Market, PurchaseRequest, Guild, Rank, Trophy, UserTrophy, Notification, AppMode, Page, IAppData, ShareableAssetType, GameAsset, Role, QuestCompletionStatus, RewardCategory, PurchaseRequestStatus, AdminAdjustment, AdminAdjustmentType, SystemLog, QuestType, QuestAvailability, Blueprint, ImportResolution, TrophyRequirementType, ThemeDefinition, ChatMessage, SystemNotification, SystemNotificationType, MarketStatus, QuestGroup, BulkQuestUpdates, ScheduledEvent } from '../types';
+import { INITIAL_SETTINGS, createMockUsers, INITIAL_REWARD_TYPES, INITIAL_RANKS, INITIAL_TROPHIES, createSampleMarkets, createSampleQuests, createInitialGuilds, createSampleGameAssets, INITIAL_THEMES, createInitialQuestCompletions, INITIAL_TAGS, INITIAL_QUEST_GROUPS } from '../data/initialData';
 
-import React, { createContext, useState, useContext, ReactNode, useEffect, useCallback } from 'react';
-import { AppSettings, User, Page, AppMode, Notification, IAppData, Quest, RewardTypeDefinition, QuestCompletion, RewardItem, Market, PurchaseRequest, Guild, Rank, Trophy, UserTrophy, AdminAdjustment, SystemLog, GameAsset, ThemeDefinition, Blueprint, ImportResolution, QuestGroup, SystemNotification, ScheduledEvent, ChatMessage, BulkQuestUpdates, QuestCompletionStatus, PurchaseRequestStatus } from '../types';
-import { INITIAL_SETTINGS, createInitialData } from '../data/initialData';
-import { produce } from 'immer';
-
-// The full application state, combining UI state and game data
+// The single, unified state for the entire application
 interface AppState extends IAppData {
   isAppUnlocked: boolean;
   isFirstRun: boolean;
@@ -13,459 +11,863 @@ interface AppState extends IAppData {
   appMode: AppMode;
   notifications: Notification[];
   isDataLoaded: boolean;
-  isSidebarCollapsed: boolean;
-  isSwitchingUser: boolean;
-  targetedUserForLogin: User | null;
   activeMarketId: string | null;
   allTags: string[];
+  isSwitchingUser: boolean;
+  isSharedViewActive: boolean;
+  targetedUserForLogin: User | null;
   isAiConfigured: boolean;
-  isChatOpen: boolean;
+  isSidebarCollapsed: boolean;
   syncStatus: 'idle' | 'syncing' | 'success' | 'error';
   syncError: string | null;
+  isChatOpen: boolean;
+  isRestarting: boolean;
 }
 
-// The complete set of dispatch functions
-export interface AppDispatch extends IAppDataDispatch, IAuthDispatch, ISettingsDispatch, INotificationsDispatch, IUiDispatch {}
-
-// --- Dispatch Interface Segments ---
-interface IUiDispatch {
-  toggleSidebar: () => void;
-  toggleChat: () => void;
-  setActiveMarketId: (marketId: string | null) => void;
+// The single, unified dispatch for the entire application
+interface AppDispatch {
+  // Auth
+  addUser: (user: Omit<User, 'id' | 'personalPurse' | 'personalExperience' | 'guildBalances' | 'avatar' | 'ownedAssetIds' | 'ownedThemes' | 'hasBeenOnboarded'>) => Promise<User | undefined>;
+  updateUser: (userId: string, updatedData: Partial<User>) => Promise<void>;
+  deleteUser: (userId: string) => Promise<void>;
+  setCurrentUser: (user: User | null) => void;
+  markUserAsOnboarded: (userId: string) => Promise<void>;
+  setAppUnlocked: (isUnlocked: boolean) => void;
+  setIsSwitchingUser: (isSwitching: boolean) => void;
+  setTargetedUserForLogin: (user: User | null) => void;
   exitToSharedView: () => void;
-}
+  setIsSharedViewActive: (isActive: boolean) => void;
+  bypassFirstRunCheck: () => void;
+  reinitializeApp: () => Promise<void>;
 
-interface INotificationsDispatch {
-  addNotification: (notification: Omit<Notification, 'id'>) => void;
-  removeNotification: (notificationId: string) => void;
-  markSystemNotificationsAsRead: (notificationIds: string[]) => void;
-}
+  // Game Data
+  addQuest: (quest: Omit<Quest, 'id' | 'claimedByUserIds' | 'dismissals'>) => Promise<Quest | undefined>;
+  updateQuest: (updatedQuest: Quest) => Promise<void>;
+  deleteQuest: (questId: string) => Promise<void>;
+  cloneQuest: (questId: string) => Promise<void>;
+  dismissQuest: (questId: string, userId: string) => Promise<void>;
+  claimQuest: (questId: string, userId: string) => Promise<void>;
+  releaseQuest: (questId: string, userId: string) => Promise<void>;
+  markQuestAsTodo: (questId: string, userId: string) => Promise<void>;
+  unmarkQuestAsTodo: (questId: string, userId: string) => Promise<void>;
+  completeQuest: (questId: string, userId: string, requiresApproval: boolean, guildId?: string, options?: { note?: string; completionDate?: Date }) => Promise<void>;
+  approveQuestCompletion: (completionId: string, note?: string) => Promise<void>;
+  rejectQuestCompletion: (completionId: string, note?: string) => Promise<void>;
+  addQuestGroup: (group: Omit<QuestGroup, 'id'>) => Promise<QuestGroup | undefined>;
+  updateQuestGroup: (group: QuestGroup) => Promise<void>;
+  deleteQuestGroup: (groupId: string) => Promise<void>;
+  assignQuestGroupToUsers: (groupId: string, userIds: string[]) => Promise<void>;
+  addRewardType: (rewardType: Omit<RewardTypeDefinition, 'id' | 'isCore'>) => Promise<RewardTypeDefinition | undefined>;
+  updateRewardType: (rewardType: RewardTypeDefinition) => Promise<void>;
+  deleteRewardType: (rewardTypeId: string) => Promise<void>;
+  cloneRewardType: (rewardTypeId: string) => Promise<void>;
+  addMarket: (market: Omit<Market, 'id'>) => Promise<Market | undefined>;
+  updateMarket: (market: Market) => Promise<void>;
+  deleteMarket: (marketId: string) => Promise<void>;
+  cloneMarket: (marketId: string) => Promise<void>;
+  deleteMarkets: (marketIds: string[]) => Promise<void>;
+  updateMarketsStatus: (marketIds: string[], status: 'open' | 'closed') => Promise<void>;
+  purchaseMarketItem: (assetId: string, marketId: string, userId: string, costGroupIndex: number, guildId?: string) => Promise<void>;
+  approvePurchaseRequest: (purchaseId: string) => Promise<void>;
+  rejectPurchaseRequest: (purchaseId: string) => Promise<void>;
+  cancelPurchaseRequest: (purchaseId: string) => Promise<void>;
+  addGuild: (guild: Omit<Guild, 'id'>) => Promise<Guild | undefined>;
+  updateGuild: (guild: Guild) => Promise<void>;
+  deleteGuild: (guildId: string) => Promise<void>;
+  addTrophy: (trophy: Omit<Trophy, 'id'>) => Promise<Trophy | undefined>;
+  updateTrophy: (trophy: Trophy) => Promise<void>;
+  deleteTrophy: (trophyId: string) => Promise<void>;
+  cloneTrophy: (trophyId: string) => Promise<void>;
+  deleteTrophies: (trophyIds: string[]) => Promise<void>;
+  awardTrophy: (userId: string, trophyId: string, guildId?: string) => Promise<void>;
+  applyManualAdjustment: (adjustment: Omit<AdminAdjustment, 'id' | 'adjustedAt'>) => Promise<boolean>;
+  addGameAsset: (asset: Omit<GameAsset, 'id' | 'creatorId' | 'createdAt' | 'purchaseCount'>) => Promise<GameAsset | undefined>;
+  updateGameAsset: (asset: GameAsset) => Promise<void>;
+  deleteGameAsset: (assetId: string) => Promise<void>;
+  deleteGameAssets: (assetIds: string[]) => Promise<void>;
+  cloneGameAsset: (assetId: string) => Promise<void>;
+  
+  // Themes
+  addTheme: (theme: Omit<ThemeDefinition, 'id'>) => Promise<ThemeDefinition | undefined>;
+  updateTheme: (theme: ThemeDefinition) => Promise<void>;
+  deleteTheme: (themeId: string) => Promise<void>;
 
-interface ISettingsDispatch {
+  // Settings
   updateSettings: (newSettings: Partial<AppSettings>) => void;
   resetSettings: () => void;
+  
+  // UI
   setActivePage: (page: Page) => void;
   setAppMode: (mode: AppMode) => void;
+  addNotification: (notification: Omit<Notification, 'id'>) => void;
+  removeNotification: (notificationId: string) => void;
+  setActiveMarketId: (marketId: string | null) => void;
+  toggleSidebar: () => void;
+  toggleChat: () => void;
+
+  // Data Management
+  importBlueprint: (blueprint: Blueprint, resolutions: ImportResolution[]) => Promise<void>;
+  restoreFromBackup: (backupData: any) => Promise<void>;
+  restoreDefaultObjects: (objectType: 'trophies') => Promise<void>;
+  clearAllHistory: () => Promise<void>;
+  resetAllPlayerData: () => Promise<void>;
+  deleteAllCustomContent: () => Promise<void>;
+  
+  // First Run
+  completeFirstRun: (adminUserData: Omit<User, 'id' | 'personalPurse' | 'personalExperience' | 'guildBalances' | 'avatar' | 'ownedAssetIds' | 'ownedThemes' | 'hasBeenOnboarded'>, setupChoice: 'guided' | 'scratch' | 'import', blueprint: Blueprint | null) => Promise<{ message: string; adminUser: User; } | undefined>;
+  
+  // Ranks
+  setRanks: (ranks: Rank[]) => void;
+
+  // Chat
+  sendMessage: (message: Pick<ChatMessage, "message"> & Partial<Omit<ChatMessage, "message">>) => Promise<ChatMessage | undefined>;
+  markMessagesAsRead: (options: { partnerId?: string; guildId?: string }) => Promise<void>;
+
+  // System Notifications
+  addSystemNotification: (notification: Omit<SystemNotification, 'id' | 'timestamp' | 'readByUserIds'>) => Promise<SystemNotification | undefined>;
+  markSystemNotificationsAsRead: (notificationIds: string[]) => Promise<void>;
+
+  // Scheduled Events
+  addScheduledEvent: (event: Omit<ScheduledEvent, 'id'>) => Promise<ScheduledEvent | undefined>;
+  updateScheduledEvent: (event: ScheduledEvent) => Promise<void>;
+  deleteScheduledEvent: (eventId: string) => Promise<void>;
+  
+  // Bulk Actions
+  deleteQuests: (questIds: string[]) => Promise<void>;
+  updateQuestsStatus: (questIds: string[], isActive: boolean) => Promise<void>;
+  bulkUpdateQuests: (questIds: string[], updates: BulkQuestUpdates) => Promise<void>;
+
+  // Assets
+  uploadFile: (file: File, category?: string) => Promise<{ url: string } | null>;
+  executeExchange: (userId: string, payItem: RewardItem, receiveItem: RewardItem, guildId?: string) => Promise<void>;
+
 }
 
-interface IAuthDispatch {
-  setCurrentUser: (user: User | null) => void;
-  setAppUnlocked: (isUnlocked: boolean) => void;
-  setFirstRun: (isFirstRun: boolean) => void;
-  addUser: (userPayload: Omit<User, 'id' | 'personalPurse' | 'personalExperience' | 'guildBalances' | 'avatar' | 'ownedAssetIds' | 'ownedThemes' | 'hasBeenOnboarded'>) => Promise<User | undefined>;
-  updateUser: (userId: string, updatedData: Partial<User>) => void;
-  deleteUser: (userId: string) => void;
-  setTargetedUserForLogin: (user: User | null) => void;
-  setIsSwitchingUser: (isSwitching: boolean) => void;
-  markUserAsOnboarded: (userId: string) => void;
-}
-
-interface IAppDataDispatch {
-    // This is a placeholder for actual server logic
-    uploadFile: (file: File, category?: string) => Promise<{ url: string } | null>;
-    
-    // Data manipulation
-    addQuest: (quest: Omit<Quest, 'id'|'claimedByUserIds'|'dismissals'>) => Promise<Quest | undefined>;
-    updateQuest: (updatedQuest: Quest) => void;
-    deleteQuests: (questIds: string[]) => void;
-    cloneQuest: (questId: string) => void;
-    completeQuest: (questId: string, userId: string, rewards: RewardItem[], requiresApproval: boolean, guildId?: string, options?: { note?: string; completionDate?: Date }) => void;
-    approveQuestCompletion: (completionId: string, note?: string) => void;
-    rejectQuestCompletion: (completionId: string, note?: string) => void;
-    markQuestAsTodo: (questId: string, userId: string) => void;
-    unmarkQuestAsTodo: (questId: string, userId: string) => void;
-    bulkUpdateQuests: (questIds: string[], updates: BulkQuestUpdates) => void;
-    updateQuestsStatus: (questIds: string[], isActive: boolean) => void;
-
-    addQuestGroup: (group: Omit<QuestGroup, 'id'>) => Promise<QuestGroup | undefined>;
-    updateQuestGroup: (group: QuestGroup) => void;
-    deleteQuestGroup: (groupId: string) => void;
-    assignQuestGroupToUsers: (groupId: string, userIds: string[]) => void;
-
-    addMarket: (market: Omit<Market, 'id'>) => Promise<Market | undefined>;
-    updateMarket: (market: Market) => void;
-    deleteMarkets: (marketIds: string[]) => void;
-    cloneMarket: (marketId: string) => void;
-    updateMarketsStatus: (marketIds: string[], status: 'open' | 'closed') => void;
-
-    addGameAsset: (asset: Omit<GameAsset, 'id'|'creatorId'|'createdAt'|'purchaseCount'>) => Promise<GameAsset | undefined>;
-    updateGameAsset: (asset: GameAsset) => void;
-    deleteGameAssets: (assetIds: string[]) => void;
-    cloneGameAsset: (assetId: string) => void;
-    
-    purchaseMarketItem: (assetId: string, marketId: string, costGroupIndex: number) => void;
-    approvePurchaseRequest: (purchaseId: string) => void;
-    rejectPurchaseRequest: (purchaseId: string) => void;
-
-    addRewardType: (rewardType: Omit<RewardTypeDefinition, 'id' | 'isCore'>) => Promise<RewardTypeDefinition | undefined>;
-    updateRewardType: (rewardType: RewardTypeDefinition) => void;
-    deleteRewardType: (rewardTypeId: string) => void;
-    cloneRewardType: (rewardTypeId: string) => void;
-
-    addGuild: (guild: Omit<Guild, 'id'>) => Promise<Guild | undefined>;
-    updateGuild: (guild: Guild) => void;
-    deleteGuild: (guildId: string) => void;
-
-    setRanks: (ranks: Rank[]) => void;
-    
-    addTrophy: (trophy: Omit<Trophy, 'id'>) => Promise<Trophy | undefined>;
-    updateTrophy: (trophy: Trophy) => void;
-    deleteTrophies: (trophyIds: string[]) => void;
-    cloneTrophy: (trophyId: string) => void;
-    awardTrophy: (userId: string, trophyId: string, guildId?: string) => void;
-
-    addTheme: (theme: Omit<ThemeDefinition, 'id'>) => void;
-    updateTheme: (theme: ThemeDefinition) => void;
-    deleteTheme: (themeId: string) => void;
-
-    addScheduledEvent: (event: Omit<ScheduledEvent, 'id'>) => void;
-    updateScheduledEvent: (event: ScheduledEvent) => void;
-    deleteScheduledEvent: (eventId: string) => void;
-
-    applyManualAdjustment: (adjustment: Omit<AdminAdjustment, 'id' | 'adjustedAt'>) => Promise<boolean>;
-    executeExchange: (userId: string, payItem: RewardItem, receiveItem: RewardItem, guildId?: string) => void;
-
-    sendMessage: (payload: { message: string, recipientId?: string, guildId?: string, isAnnouncement?: boolean }) => void;
-    markMessagesAsRead: (payload: { partnerId?: string, guildId?: string }) => void;
-
-    // Data Management
-    importBlueprint: (blueprint: Blueprint, resolutions: ImportResolution[]) => void;
-    restoreFromBackup: (backupData: IAppData) => void;
-    deleteAllCustomContent: () => void;
-    clearAllHistory: () => void;
-    resetAllPlayerData: () => void;
-    restoreDefaultObjects: (objectType: 'trophies') => void;
-}
-
-
+// This is where the magic happens. We'll implement the provider and hooks here.
 const AppStateContext = createContext<AppState | undefined>(undefined);
 const AppDispatchContext = createContext<AppDispatch | undefined>(undefined);
 
 export const useAppState = (): AppState => {
     const context = useContext(AppStateContext);
-    if (!context) throw new Error('useAppState must be used within an AppProvider');
+    if (context === undefined) {
+        throw new Error('useAppState must be used within an AppProvider');
+    }
     return context;
 };
 
 export const useAppDispatch = (): AppDispatch => {
     const context = useContext(AppDispatchContext);
-    if (!context) throw new Error('useAppDispatch must be used within an AppProvider');
+    if (context === undefined) {
+        throw new Error('useAppDispatch must be used within an AppProvider');
+    }
     return context;
 };
 
+// Placeholder for now. Actual implementation would involve API calls.
 export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     const [state, setState] = useState<AppState>({
-        ...createInitialData(),
-        isAppUnlocked: false,
-        isFirstRun: true,
-        currentUser: null,
-        activePage: 'Dashboard',
-        appMode: { mode: 'personal' },
-        notifications: [],
-        isDataLoaded: false,
-        isSidebarCollapsed: false,
-        isSwitchingUser: false,
-        targetedUserForLogin: null,
-        activeMarketId: null,
-        allTags: [],
-        isAiConfigured: false, // This will be checked on load
-        isChatOpen: false,
-        syncStatus: 'idle',
-        syncError: null,
+        // Default empty state
+        users: [], quests: [], questGroups: [], markets: [], rewardTypes: [], questCompletions: [],
+        purchaseRequests: [], guilds: [], ranks: [], trophies: [], userTrophies: [],
+        adminAdjustments: [], gameAssets: [], systemLogs: [], settings: INITIAL_SETTINGS,
+        themes: [], loginHistory: [], chatMessages: [], systemNotifications: [], scheduledEvents: [],
+        isAppUnlocked: false, isFirstRun: true, currentUser: null,
+        activePage: 'Dashboard', appMode: { mode: 'personal' }, notifications: [],
+        isDataLoaded: false, activeMarketId: null, allTags: [],
+        isSwitchingUser: false, isSharedViewActive: false, targetedUserForLogin: null,
+        isAiConfigured: false, isSidebarCollapsed: false, syncStatus: 'idle', syncError: null, isChatOpen: false,
+        isRestarting: false,
     });
+
+    const isMounted = useRef(true);
+    const ws = useRef<WebSocket | null>(null);
+    const reconnectTimeoutId = useRef<number | null>(null);
+
+    useEffect(() => {
+      isMounted.current = true;
+      return () => { isMounted.current = false; }
+    }, []);
 
     const addNotification = useCallback((notification: Omit<Notification, 'id'>) => {
         const id = `notif-${Date.now()}`;
         setState(s => ({ ...s, notifications: [...s.notifications, { ...notification, id }] }));
-        setTimeout(() => {
-            setState(s => ({ ...s, notifications: s.notifications.filter(n => n.id !== id) }));
-        }, 5000);
+        setTimeout(() => removeNotification(id), 5000);
     }, []);
 
     const removeNotification = useCallback((notificationId: string) => {
         setState(s => ({ ...s, notifications: s.notifications.filter(n => n.id !== notificationId) }));
     }, []);
-    
-    useEffect(() => {
+
+    // Generic API handler
+    const apiRequest = useCallback(async (endpoint: string, options: RequestInit = {}) => {
         try {
-            const savedState = localStorage.getItem('appData');
-            if (savedState) {
-                const parsedState: IAppData = JSON.parse(savedState);
-                setState(s => ({ ...s, ...parsedState, isDataLoaded: true }));
-            } else {
-                setState(s => ({...s, isDataLoaded: true}));
+            const response = await fetch(endpoint, {
+                headers: { 'Content-Type': 'application/json' },
+                ...options,
+            });
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'API request failed');
             }
-        } catch (e) {
-            console.error("Failed to load app data from localStorage", e);
-            setState(s => ({ ...s, isDataLoaded: true }));
+             if (response.status === 204) return null; // Handle No Content response
+            return response.json();
+        } catch (error) {
+            console.error(`API Error on ${endpoint}:`, error);
+            if (error instanceof Error) {
+                addNotification({ type: 'error', message: error.message });
+            }
+            throw error;
         }
+    }, [addNotification]);
+    
+    // A function to optimistically update state, then persist the entire state to the backend.
+    // Use this for operations that don't have a dedicated backend endpoint.
+    const updateAndSave = useCallback((updater: (prevState: AppState) => Partial<IAppData>) => {
+        setState(prev => {
+            const changes = updater(prev);
+            const optimisticState = { ...prev, ...changes };
+    
+            // Separate the data part to be saved
+            const {
+                isAppUnlocked, isFirstRun, currentUser, activePage, appMode, notifications, isDataLoaded,
+                activeMarketId, allTags, isSwitchingUser, isSharedViewActive, targetedUserForLogin,
+                isAiConfigured, isSidebarCollapsed, syncStatus, syncError, isChatOpen, isRestarting,
+                ...dataToSave
+            } = optimisticState;
+
+            // Fire-and-forget the async save operation
+            (async () => {
+                if (!isMounted.current) return;
+                try {
+                    setState(s => ({...s, syncStatus: 'syncing'}));
+                    await apiRequest('/api/data', {
+                        method: 'POST',
+                        body: JSON.stringify(dataToSave),
+                    });
+                    if (isMounted.current) {
+                        setState(s => ({ ...s, syncStatus: 'success' }));
+                    }
+                } catch (error) {
+                    if (isMounted.current) {
+                        if (error instanceof Error) {
+                            setState(s => ({...s, syncStatus: 'error', syncError: error.message }));
+                        }
+                    }
+                    console.error("Failed to save state, optimistic update may be out of sync.", error);
+                    // TODO: Implement state rollback on failure. Could restore `prev`.
+                }
+            })();
+    
+            return optimisticState;
+        });
+    }, [apiRequest]);
+
+
+    const fullUpdate = useCallback((newData: IAppData) => {
+        console.log('[FRONTEND LOG] Raw data object from WebSocket fullUpdate:', JSON.parse(JSON.stringify(newData)));
+        if (!isMounted.current) return;
+        setState(prev => {
+            if (!newData || !newData.users || !newData.settings) {
+                console.error("Received incomplete or malformed data from WebSocket. Update skipped.", newData);
+                return prev;
+            }
+            
+            const currentUserId = prev.currentUser?.id;
+            const updatedCurrentUser = currentUserId
+                ? (newData.users || prev.users).find(u => u.id === currentUserId) || null
+                : null;
+            
+            // A more robust check: if there are no users, it must be the first run.
+            const isFirstRunNow = !newData.users || newData.users.length === 0;
+
+            // Create a new object containing only the data properties from the server payload
+            const dataState: IAppData = {
+                users: newData.users,
+                quests: newData.quests,
+                questGroups: newData.questGroups,
+                markets: newData.markets,
+                rewardTypes: newData.rewardTypes,
+                questCompletions: newData.questCompletions,
+                purchaseRequests: newData.purchaseRequests,
+                guilds: newData.guilds,
+                ranks: newData.ranks,
+                trophies: newData.trophies,
+                userTrophies: newData.userTrophies,
+                adminAdjustments: newData.adminAdjustments,
+                gameAssets: newData.gameAssets,
+                systemLogs: newData.systemLogs,
+                settings: newData.settings,
+                themes: newData.themes,
+                loginHistory: newData.loginHistory,
+                chatMessages: newData.chatMessages,
+                systemNotifications: newData.systemNotifications,
+                scheduledEvents: newData.scheduledEvents,
+            };
+
+            return {
+                ...prev, // Keep all old state (UI and data)
+                ...dataState, // Overwrite only the data part with fresh data
+                currentUser: updatedCurrentUser, // Use the fresh user
+                isDataLoaded: true,
+                isFirstRun: isFirstRunNow,
+                syncStatus: 'success',
+                syncError: null,
+            };
+        });
     }, []);
 
-    useEffect(() => {
-        if (state.isDataLoaded) {
-            try {
-                const { notifications, activePage, ...dataToSave } = state;
-                localStorage.setItem('appData', JSON.stringify(dataToSave));
-            } catch (e) {
-                console.error("Failed to save app data to localStorage", e);
-            }
+    const connectWebSocket = useCallback(() => {
+        if (typeof window === 'undefined' || !window.location.host) {
+            console.warn('WebSocket connection skipped: Not in a browser environment or host is missing.');
+            return;
         }
-    }, [state]);
-    
 
-    const dispatch: AppDispatch = {
-        // --- UI DISPATCH ---
-        setCurrentUser: (user) => setState(s => ({ ...s, currentUser: user, isSwitchingUser: false })),
-        setAppUnlocked: (isUnlocked) => setState(s => ({ ...s, isAppUnlocked: isUnlocked })),
-        setFirstRun: (isFirstRun) => setState(s => ({ ...s, isFirstRun })),
-        setActivePage: (page) => setState(s => ({ ...s, activePage: page })),
-        setAppMode: (mode) => setState(s => ({ ...s, appMode: mode })),
-        toggleSidebar: () => setState(s => ({ ...s, isSidebarCollapsed: !s.isSidebarCollapsed })),
-        toggleChat: () => setState(s => ({ ...s, isChatOpen: !s.isChatOpen })),
-        setActiveMarketId: (marketId) => setState(s => ({...s, activeMarketId: marketId})),
-        setIsSwitchingUser: (isSwitching) => setState(s => ({...s, isSwitchingUser: isSwitching})),
-        setTargetedUserForLogin: (user) => setState(s => ({...s, targetedUserForLogin: user})),
-        exitToSharedView: () => {
-             setState(s => ({ ...s, currentUser: null, isAppUnlocked: false }));
-        },
-        addNotification,
-        removeNotification,
-        
-        // --- SETTINGS DISPATCH ---
-        updateSettings: (newSettings) => {
-            setState(produce((draft: AppState) => {
-                draft.settings = { ...draft.settings, ...newSettings };
-            }));
-        },
-        resetSettings: () => {
-            setState(s => ({...s, settings: INITIAL_SETTINGS}));
-            addNotification({ type: 'success', message: 'Settings have been reset to default.' });
-        },
+        const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const wsUrl = `${wsProtocol}//${window.location.host}`;
+        const socket = new WebSocket(wsUrl);
+        ws.current = socket;
 
-        // --- MOCK FILE UPLOAD ---
-        uploadFile: async (file: File, category?: string) => {
-            addNotification({type: 'info', message: 'File upload is a mock. No file was actually sent.'});
-            const mockUrl = `/uploads/${category ? `${category}/` : ''}${file.name}`;
-            return { url: mockUrl };
-        },
-        
-        // --- AUTH DISPATCH ---
-        addUser: async (userPayload) => {
+        let reconnectAttempts = 0;
+
+        const reconnect = () => {
+            if (socket.readyState === WebSocket.OPEN || socket.readyState === WebSocket.CONNECTING) return;
+            reconnectAttempts++;
+            const delay = Math.min(1000 * Math.pow(2, reconnectAttempts), 30000);
+            console.log(`WebSocket disconnected. Retrying in ${delay / 1000}s...`);
+            setState(prev => ({ ...prev, syncStatus: 'syncing' }));
+            if (reconnectTimeoutId.current) clearTimeout(reconnectTimeoutId.current);
+            reconnectTimeoutId.current = window.setTimeout(connectWebSocket, delay);
+        };
+
+        socket.onopen = () => {
+            console.log('WebSocket connected.');
+            reconnectAttempts = 0;
+            setState(prev => ({ ...prev, syncStatus: 'success', syncError: null }));
+        };
+
+        socket.onmessage = (event) => {
+            try {
+                const message = JSON.parse(event.data);
+                if (message.type === 'FULL_STATE_UPDATE') {
+                    fullUpdate(message.payload);
+                } else if (message.type === 'NEW_CHAT_MESSAGE') {
+                    setState(prev => ({ ...prev, chatMessages: [...prev.chatMessages, message.payload] }));
+                }
+            } catch (e) { console.error('Error parsing WebSocket message:', e); }
+        };
+
+        socket.onerror = (error) => {
+            console.error('WebSocket error:', error);
+            setState(prev => ({ ...prev, syncStatus: 'error', syncError: 'WebSocket connection failed.' }));
+            socket.close();
+        };
+
+        socket.onclose = () => {
+            if (isMounted.current) reconnect();
+        };
+    }, [fullUpdate]);
+
+    useEffect(() => {
+        const loadData = async () => {
+            try {
+                const data = await apiRequest('/api/data');
+                console.log('[FRONTEND LOG] Raw data object from /api/data:', JSON.parse(JSON.stringify(data)));
+                if (!data || !data.settings) { // Check for settings, as users can be empty on first run
+                    throw new Error("Received malformed data from server. The database might be corrupted.");
+                }
+
+                const isFirstRun = !data.users || data.users.length === 0;
+                const sharedViewActive = localStorage.getItem('sharedViewActive') === 'true' && data.settings.sharedMode.enabled;
+                
+                const lastUserId = localStorage.getItem('lastUserId');
+                const lastUser = isFirstRun ? null : data.users.find((u: User) => u.id === lastUserId);
+                
+                if (isMounted.current) {
+                  setState(prev => ({
+                      ...prev, ...data, isFirstRun, isDataLoaded: true,
+                      currentUser: lastUser || null, 
+                      isAppUnlocked: !!lastUser || sharedViewActive,
+                      isSharedViewActive: sharedViewActive,
+                  }));
+                }
+
+                try {
+                    const aiStatus = await apiRequest('/api/ai/status');
+                    if (isMounted.current) {
+                        setState(prev => ({ ...prev, isAiConfigured: aiStatus.isConfigured }));
+                    }
+                } catch (aiError) {
+                    console.error("Failed to fetch AI status, continuing without it.", aiError);
+                    if (isMounted.current) {
+                        setState(prev => ({ ...prev, isAiConfigured: false }));
+                    }
+                }
+            } catch (error) {
+                console.error("Failed to load initial data:", error);
+                 if (isMounted.current) {
+                  setState(prev => ({ ...prev, isDataLoaded: true, syncStatus: 'error', syncError: error instanceof Error ? error.message : 'Failed to connect to server.' }));
+                 }
+            }
+        };
+
+        loadData();
+        connectWebSocket();
+
+        return () => {
+            if (ws.current) {
+                ws.current.onclose = null; // Prevent reconnection on unmount
+                ws.current.close();
+            }
+            if (reconnectTimeoutId.current) {
+                clearTimeout(reconnectTimeoutId.current);
+            }
+        };
+    }, [connectWebSocket, apiRequest]);
+
+
+    const dispatch: AppDispatch = useMemo(() => ({
+        // Auth
+        addUser: async (userData) => {
+            const newId = `user-${Date.now()}`;
             const newUser: User = {
-                ...userPayload,
-                id: `user-${Date.now()}`,
-                avatar: {},
-                ownedAssetIds: [],
-                personalPurse: {},
-                personalExperience: {},
-                guildBalances: {},
+                ...userData,
+                id: newId,
+                personalPurse: {}, personalExperience: {}, guildBalances: {},
+                avatar: {}, ownedAssetIds: [],
                 ownedThemes: ['emerald', 'rose', 'sky'],
                 hasBeenOnboarded: false,
             };
-            setState(produce((draft: AppState) => {
-                draft.users.push(newUser);
-            }));
-            return newUser;
+            updateAndSave(s => ({ users: [...s.users, newUser] }));
+            return Promise.resolve(newUser);
         },
-        updateUser: (userId, updatedData) => {
-            setState(produce((draft: AppState) => {
-                const user = draft.users.find(u => u.id === userId);
-                if (user) Object.assign(user, updatedData);
-                if (draft.currentUser?.id === userId) {
-                    Object.assign(draft.currentUser, updatedData);
-                }
-            }));
+        updateUser: async (userId, updatedData) => updateAndSave(s => ({ users: s.users.map(u => u.id === userId ? { ...u, ...updatedData } : u) })),
+        deleteUser: async (userId) => updateAndSave(s => ({ users: s.users.filter(u => u.id !== userId) })),
+        setCurrentUser: (user: User | null) => { 
+            setState(s => ({...s, currentUser: user, isSharedViewActive: false}));
+            if (user) {
+                localStorage.setItem('lastUserId', user.id);
+                localStorage.removeItem('sharedViewActive');
+            } else {
+                localStorage.removeItem('lastUserId');
+            }
         },
-        markUserAsOnboarded: (userId) => {
-             setState(produce((draft: AppState) => {
-                const user = draft.users.find(u => u.id === userId);
-                if (user) user.hasBeenOnboarded = true;
-                if (draft.currentUser?.id === userId) draft.currentUser.hasBeenOnboarded = true;
-            }));
+        markUserAsOnboarded: async (userId: string) => dispatch.updateUser(userId, { hasBeenOnboarded: true }),
+        setAppUnlocked: (isUnlocked: boolean) => setState(s => ({ ...s, isAppUnlocked: isUnlocked })),
+        setIsSwitchingUser: (isSwitching: boolean) => setState(s => ({ ...s, isSwitchingUser: isSwitching })),
+        setTargetedUserForLogin: (user: User | null) => setState(s => ({ ...s, targetedUserForLogin: user })),
+        exitToSharedView: () => {
+             setState(s => ({...s, currentUser: null, isAppUnlocked: true, isSharedViewActive: true }));
+             localStorage.removeItem('lastUserId');
+             localStorage.setItem('sharedViewActive', 'true');
         },
-        deleteUser: (userId) => {
-             setState(produce((draft: AppState) => {
-                draft.users = draft.users.filter(u => u.id !== userId);
-             }));
+        setIsSharedViewActive: (isActive: boolean) => setState(s => ({ ...s, isSharedViewActive: isActive })),
+        bypassFirstRunCheck: () => setState(s => ({...s, isFirstRun: false})),
+        reinitializeApp: async () => {
+            try {
+                await apiRequest('/api/actions/reinitialize', { method: 'POST' });
+                setState(s => ({ ...s, isRestarting: true }));
+                setTimeout(() => window.location.reload(), 7000);
+            } catch (error) {
+                if (error instanceof Error) addNotification({ type: 'error', message: `Failed to re-initialize: ${error.message}` });
+            }
         },
-        
-        // --- APP DATA DISPATCH ---
+
+        // Game Data
         addQuest: async (quest) => {
-            const newQuest = { ...quest, id: `quest-${Date.now()}`, claimedByUserIds: [], dismissals: [] };
-            setState(produce((draft: AppState) => {
-                draft.quests.push(newQuest);
-            }));
+            const newQuest: Quest = { ...quest, id: `quest-${Date.now()}`, claimedByUserIds: [], dismissals: [] };
+            updateAndSave(s => ({ quests: [...s.quests, newQuest] }));
             return newQuest;
         },
-        updateQuest: (updatedQuest) => {
-            setState(produce((draft: AppState) => {
-                const index = draft.quests.findIndex(q => q.id === updatedQuest.id);
-                if (index !== -1) draft.quests[index] = updatedQuest;
-            }));
-        },
-        deleteQuests: (questIds) => {
-            setState(produce((draft: AppState) => {
-                draft.quests = draft.quests.filter(q => !questIds.includes(q.id));
-            }));
-        },
-        updateQuestsStatus: (questIds, isActive) => {
-            setState(produce((draft: AppState) => {
-                draft.quests.forEach(q => {
-                    if(questIds.includes(q.id)) {
-                        q.isActive = isActive;
-                    }
-                })
-            }));
-        },
-        completeQuest: (questId, userId, rewards, requiresApproval, guildId, options) => {
-            setState(produce((draft: AppState) => {
-                 const newCompletion: QuestCompletion = {
-                    id: `comp-${Date.now()}`,
-                    questId,
-                    userId,
+        updateQuest: async (updatedQuest) => updateAndSave(s => ({ quests: s.quests.map(q => q.id === updatedQuest.id ? updatedQuest : q) })),
+        deleteQuest: async (questId) => updateAndSave(s => ({ quests: s.quests.filter(q => q.id !== questId) })),
+        cloneQuest: async (questId: string) => updateAndSave(s => {
+            const questToClone = s.quests.find(q => q.id === questId);
+            if (!questToClone) return {};
+            const newQuest = { ...questToClone, id: `quest-${Date.now()}`, title: `${questToClone.title} (Copy)` };
+            return { quests: [...s.quests, newQuest] };
+        }),
+        dismissQuest: async (questId: string, userId: string) => updateAndSave(s => ({ quests: s.quests.map(q => q.id === questId ? {...q, dismissals: [...q.dismissals, {userId, dismissedAt: new Date().toISOString()}]} : q) })),
+        claimQuest: async (questId: string, userId: string) => updateAndSave(s => ({ quests: s.quests.map(q => q.id === questId ? {...q, claimedByUserIds: [...q.claimedByUserIds, userId]} : q) })),
+        releaseQuest: async (questId: string, userId: string) => updateAndSave(s => ({ quests: s.quests.map(q => q.id === questId ? {...q, claimedByUserIds: q.claimedByUserIds.filter(id => id !== userId)} : q) })),
+        markQuestAsTodo: async (questId, userId) => updateAndSave(s => ({ quests: s.quests.map(q => q.id === questId ? { ...q, todoUserIds: [...(q.todoUserIds || []), userId] } : q) })),
+        unmarkQuestAsTodo: async (questId, userId) => updateAndSave(s => ({ quests: s.quests.map(q => q.id === questId ? { ...q, todoUserIds: (q.todoUserIds || []).filter(id => id !== userId) } : q) })),
+        completeQuest: async (questId, userId, requiresApproval, guildId, options) => {
+            updateAndSave(s => {
+                const quest = s.quests.find(q => q.id === questId);
+                if (!quest) return {};
+                
+                const newCompletion: QuestCompletion = {
+                    id: `qc-${Date.now()}`,
+                    questId, userId,
                     completedAt: options?.completionDate?.toISOString() || new Date().toISOString(),
                     status: requiresApproval ? QuestCompletionStatus.Pending : QuestCompletionStatus.Approved,
                     note: options?.note,
                     guildId,
                 };
-                draft.questCompletions.push(newCompletion);
-                
-                if (!requiresApproval) {
-                    const user = draft.users.find(u => u.id === userId);
-                    if (user) {
-                        rewards.forEach(reward => {
-                            const rewardDef = draft.rewardTypes.find(rt => rt.id === reward.rewardTypeId);
-                            if (!rewardDef) return;
 
-                            let balanceTarget;
-                            if (guildId) {
-                                if (!user.guildBalances[guildId]) user.guildBalances[guildId] = { purse: {}, experience: {} };
-                                balanceTarget = rewardDef.category === 'Currency' ? user.guildBalances[guildId].purse : user.guildBalances[guildId].experience;
-                            } else {
-                                balanceTarget = rewardDef.category === 'Currency' ? user.personalPurse : user.personalExperience;
-                            }
-                            balanceTarget[reward.rewardTypeId] = (balanceTarget[reward.rewardTypeId] || 0) + reward.amount;
-                        });
-                    }
+                if (requiresApproval) {
+                    return { questCompletions: [...s.questCompletions, newCompletion] };
                 }
-            }));
-        },
-         approveQuestCompletion: (completionId, note) => {
-            setState(produce((draft: AppState) => {
-                const completion = draft.questCompletions.find(c => c.id === completionId);
-                if (!completion || completion.status !== QuestCompletionStatus.Pending) return;
 
-                completion.status = QuestCompletionStatus.Approved;
-                if (note) completion.note = note;
-
-                const quest = draft.quests.find(q => q.id === completion.questId);
-                const user = draft.users.find(u => u.id === completion.userId);
-                if (!quest || !user) return;
+                // If no approval needed, grant rewards immediately
+                const userIndex = s.users.findIndex(u => u.id === userId);
+                if (userIndex === -1) return {};
                 
+                const updatedUsers = [...s.users];
+                const userToUpdate = { ...updatedUsers[userIndex] };
+
+                const balanceTarget = guildId ? (userToUpdate.guildBalances[guildId] = userToUpdate.guildBalances[guildId] || { purse: {}, experience: {} }) : { purse: userToUpdate.personalPurse, experience: userToUpdate.personalExperience };
+
                 quest.rewards.forEach(reward => {
-                    const rewardDef = draft.rewardTypes.find(rt => rt.id === reward.rewardTypeId);
-                    if (!rewardDef) return;
-
-                    let balanceTarget;
-                    if (completion.guildId) {
-                        if (!user.guildBalances[completion.guildId]) user.guildBalances[completion.guildId] = { purse: {}, experience: {} };
-                        balanceTarget = rewardDef.category === 'Currency' ? user.guildBalances[completion.guildId].purse : user.guildBalances[completion.guildId].experience;
-                    } else {
-                        balanceTarget = rewardDef.category === 'Currency' ? user.personalPurse : user.personalExperience;
+                    const rewardDef = s.rewardTypes.find(rt => rt.id === reward.rewardTypeId);
+                    if (rewardDef) {
+                        const balanceKey = rewardDef.category === RewardCategory.Currency ? 'purse' : 'experience';
+                        balanceTarget[balanceKey][reward.rewardTypeId] = (balanceTarget[balanceKey][reward.rewardTypeId] || 0) + reward.amount;
                     }
-                    balanceTarget[reward.rewardTypeId] = (balanceTarget[reward.rewardTypeId] || 0) + reward.amount;
                 });
-            }));
+                updatedUsers[userIndex] = userToUpdate;
+                return { questCompletions: [...s.questCompletions, newCompletion], users: updatedUsers };
+            });
         },
-        rejectQuestCompletion: (completionId, note) => {
-             setState(produce((draft: AppState) => {
-                const completion = draft.questCompletions.find(c => c.id === completionId);
-                if (completion) {
-                    completion.status = QuestCompletionStatus.Rejected;
-                    if (note) completion.note = note;
-                }
-            }));
+        approveQuestCompletion: (completionId, note) => apiRequest(`/api/completions/${completionId}/approve`, { method: 'POST', body: JSON.stringify({ note }) }),
+        rejectQuestCompletion: (completionId, note) => apiRequest(`/api/completions/${completionId}/reject`, { method: 'POST', body: JSON.stringify({ note }) }),
+        addQuestGroup: async (group) => {
+            const newGroup: QuestGroup = { ...group, id: `qg-${Date.now()}` };
+            updateAndSave(s => ({ questGroups: [...s.questGroups, newGroup] }));
+            return newGroup;
         },
-        purchaseMarketItem: (assetId, marketId, costGroupIndex) => {
-             setState(produce((draft: AppState) => {
-                const user = draft.currentUser;
-                const asset = draft.gameAssets.find(a => a.id === assetId);
-                if (!user || !asset) return;
+        updateQuestGroup: async (group) => updateAndSave(s => ({ questGroups: s.questGroups.map(g => g.id === group.id ? group : g) })),
+        deleteQuestGroup: async (groupId) => updateAndSave(s => ({ questGroups: s.questGroups.filter(g => g.id !== groupId) })),
+        assignQuestGroupToUsers: async (groupId, userIds) => updateAndSave(s => ({ quests: s.quests.map(q => q.groupId === groupId ? { ...q, assignedUserIds: [...new Set([...q.assignedUserIds, ...userIds])] } : q) })),
+        addRewardType: async (rewardType) => {
+            const newRewardType: RewardTypeDefinition = { ...rewardType, id: `rt-${Date.now()}`, isCore: false };
+            updateAndSave(s => ({ rewardTypes: [...s.rewardTypes, newRewardType] }));
+            return newRewardType;
+        },
+        updateRewardType: async (rewardType) => updateAndSave(s => ({ rewardTypes: s.rewardTypes.map(rt => rt.id === rewardType.id ? rewardType : rt) })),
+        deleteRewardType: async (rewardTypeId) => updateAndSave(s => ({ rewardTypes: s.rewardTypes.filter(rt => rt.id !== rewardTypeId) })),
+        cloneRewardType: async (rewardTypeId: string) => updateAndSave(s => {
+            const typeToClone = s.rewardTypes.find(rt => rt.id === rewardTypeId);
+            if (!typeToClone) return {};
+            const newType = { ...typeToClone, isCore: false, id: `rt-${Date.now()}`, name: `${typeToClone.name} (Copy)` };
+            return { rewardTypes: [...s.rewardTypes, newType] };
+        }),
+        addMarket: async (market) => {
+            const newMarket: Market = { ...market, id: `mkt-${Date.now()}` };
+            updateAndSave(s => ({ markets: [...s.markets, newMarket] }));
+            return newMarket;
+        },
+        updateMarket: async (market) => updateAndSave(s => ({ markets: s.markets.map(m => m.id === market.id ? market : m) })),
+        deleteMarket: async (marketId) => updateAndSave(s => ({ markets: s.markets.filter(m => m.id !== marketId) })),
+        cloneMarket: async (marketId: string) => updateAndSave(s => {
+            const marketToClone = s.markets.find(m => m.id === marketId);
+            if (!marketToClone) return {};
+            const newMarket = { ...marketToClone, id: `mkt-${Date.now()}`, title: `${marketToClone.title} (Copy)` };
+            return { markets: [...s.markets, newMarket] };
+        }),
+        deleteMarkets: async (marketIds: string[]) => updateAndSave(s => ({ markets: s.markets.filter(m => !marketIds.includes(m.id)) })),
+        updateMarketsStatus: async (marketIds: string[], status: 'open' | 'closed') => updateAndSave(s => ({ markets: s.markets.map(m => marketIds.includes(m.id) ? { ...m, status: { type: status } as MarketStatus } : m) })),
+        purchaseMarketItem: async (assetId, marketId, userId, costGroupIndex, guildId) => {
+            updateAndSave(s => {
+                const user = s.users.find(u => u.id === userId);
+                const asset = s.gameAssets.find(a => a.id === assetId);
+                if (!user || !asset) return {};
                 
                 const cost = asset.costGroups[costGroupIndex];
-                
-                const newRequest: PurchaseRequest = {
-                    id: `pr-${Date.now()}`,
-                    userId: user.id,
-                    assetId: asset.id,
-                    requestedAt: new Date().toISOString(),
-                    status: asset.requiresApproval ? PurchaseRequestStatus.Pending : PurchaseRequestStatus.Completed,
-                    assetDetails: { name: asset.name, description: asset.description, cost: cost },
-                    guildId: draft.appMode.mode === 'guild' ? draft.appMode.guildId : undefined,
-                };
-                
-                draft.purchaseRequests.push(newRequest);
-                
-                if (!asset.requiresApproval) {
-                    let purseTarget = draft.appMode.mode === 'personal' ? user.personalPurse : user.guildBalances[draft.appMode.mode === 'guild' ? draft.appMode.guildId : '']?.purse || {};
-                    cost.forEach(c => {
-                        purseTarget[c.rewardTypeId] = (purseTarget[c.rewardTypeId] || 0) - c.amount;
-                    });
-                    user.ownedAssetIds.push(assetId);
-                    if(asset.linkedThemeId) user.ownedThemes.push(asset.linkedThemeId);
+                if (!cost) return {};
+
+                const updatedUsers = [...s.users];
+                const userIndex = updatedUsers.findIndex(u => u.id === userId);
+                const userToUpdate = JSON.parse(JSON.stringify(updatedUsers[userIndex]));
+
+                const balanceTarget = guildId ? (userToUpdate.guildBalances[guildId] = userToUpdate.guildBalances[guildId] || { purse: {}, experience: {} }) : { purse: userToUpdate.personalPurse, experience: userToUpdate.personalExperience };
+
+                // Check affordability
+                for (const item of cost) {
+                    const rewardDef = s.rewardTypes.find(rt => rt.id === item.rewardTypeId);
+                    if (!rewardDef) return {};
+                    const balanceKey = rewardDef.category === RewardCategory.Currency ? 'purse' : 'experience';
+                    if ((balanceTarget[balanceKey][item.rewardTypeId] || 0) < item.amount) {
+                        addNotification({ type: 'error', message: "You can't afford this item." });
+                        return {};
+                    }
                 }
-             }));
-        },
-        awardTrophy: (userId, trophyId, guildId) => {
-            setState(produce((draft: AppState) => {
-                const newTrophy: UserTrophy = {
-                    id: `ut-${Date.now()}`,
-                    userId,
-                    trophyId,
-                    awardedAt: new Date().toISOString(),
-                    guildId
+                
+                const newPurchaseRequest: PurchaseRequest = {
+                    id: `pr-${Date.now()}`, userId, assetId, requestedAt: new Date().toISOString(),
+                    status: asset.requiresApproval ? PurchaseRequestStatus.Pending : PurchaseRequestStatus.Completed,
+                    assetDetails: { name: asset.name, description: asset.description, cost },
+                    guildId,
                 };
-                draft.userTrophies.push(newTrophy);
-            }));
-        },
-        addTheme: (theme) => {
-            setState(produce((draft: AppState) => {
-                const newTheme: ThemeDefinition = {
-                    ...theme,
-                    id: `theme-${Date.now()}`,
-                };
-                draft.themes.push(newTheme);
-            }));
-        },
-        updateTheme: (theme) => {
-            setState(produce((draft: AppState) => {
-                const index = draft.themes.findIndex(t => t.id === theme.id);
-                if(index > -1) draft.themes[index] = theme;
-            }));
-        },
-        deleteTheme: (themeId) => {
-             setState(produce((draft: AppState) => {
-                draft.themes = draft.themes.filter(t => t.id !== themeId);
-             }));
-        },
-        markSystemNotificationsAsRead: (notificationIds) => {
-            setState(produce((draft: AppState) => {
-                if(!draft.currentUser) return;
-                const userId = draft.currentUser.id;
-                notificationIds.forEach(id => {
-                    const notif = draft.systemNotifications.find(n => n.id === id);
-                    if(notif && !notif.readByUserIds.includes(userId)) {
-                        notif.readByUserIds.push(userId);
+                
+                // Deduct cost (escrow for pending, spend for completed)
+                cost.forEach(item => {
+                    const rewardDef = s.rewardTypes.find(rt => rt.id === item.rewardTypeId);
+                    if (rewardDef) {
+                        const balanceKey = rewardDef.category === RewardCategory.Currency ? 'purse' : 'experience';
+                        balanceTarget[balanceKey][item.rewardTypeId] -= item.amount;
                     }
                 });
-            }));
+
+                if (asset.requiresApproval) {
+                    updatedUsers[userIndex] = userToUpdate;
+                    return { users: updatedUsers, purchaseRequests: [...s.purchaseRequests, newPurchaseRequest] };
+                }
+
+                // If not approval, complete transaction
+                newPurchaseRequest.actedAt = new Date().toISOString();
+                userToUpdate.ownedAssetIds.push(assetId);
+                if(asset.linkedThemeId && !userToUpdate.ownedThemes.includes(asset.linkedThemeId)) {
+                    userToUpdate.ownedThemes.push(asset.linkedThemeId);
+                }
+                // Handle payouts (exchanges)
+                (asset.payouts || []).forEach(payout => {
+                    const rewardDef = s.rewardTypes.find(rt => rt.id === payout.rewardTypeId);
+                     if (rewardDef) {
+                        const balanceKey = rewardDef.category === RewardCategory.Currency ? 'purse' : 'experience';
+                        balanceTarget[balanceKey][payout.rewardTypeId] = (balanceTarget[balanceKey][payout.rewardTypeId] || 0) + payout.amount;
+                    }
+                });
+                
+                updatedUsers[userIndex] = userToUpdate;
+                const updatedAssets = s.gameAssets.map(a => a.id === assetId ? {...a, purchaseCount: a.purchaseCount + 1} : a);
+
+                return { users: updatedUsers, gameAssets: updatedAssets, purchaseRequests: [...s.purchaseRequests, newPurchaseRequest] };
+            });
         },
-        ...{} as any, // This is to satisfy the type checker for other missing functions.
-    };
+        approvePurchaseRequest: async (purchaseId) => updateAndSave(s => {
+            const reqIndex = s.purchaseRequests.findIndex(pr => pr.id === purchaseId);
+            if (reqIndex === -1) return {};
+            const updatedRequests = [...s.purchaseRequests];
+            const request = { ...updatedRequests[reqIndex], status: PurchaseRequestStatus.Completed, actedAt: new Date().toISOString() };
+            updatedRequests[reqIndex] = request;
+
+            const userIndex = s.users.findIndex(u => u.id === request.userId);
+            const asset = s.gameAssets.find(a => a.id === request.assetId);
+            if(userIndex === -1 || !asset) return { purchaseRequests: updatedRequests }; // Escrow lost but state is consistent
+            
+            const updatedUsers = [...s.users];
+            const userToUpdate = JSON.parse(JSON.stringify(updatedUsers[userIndex]));
+            userToUpdate.ownedAssetIds = [...userToUpdate.ownedAssetIds, request.assetId];
+            if(asset.linkedThemeId && !userToUpdate.ownedThemes.includes(asset.linkedThemeId)) {
+                 userToUpdate.ownedThemes = [...userToUpdate.ownedThemes, asset.linkedThemeId];
+            }
+            // Handle payouts
+            const balanceTarget = request.guildId ? (userToUpdate.guildBalances[request.guildId] = userToUpdate.guildBalances[request.guildId] || { purse: {}, experience: {} }) : { purse: userToUpdate.personalPurse, experience: userToUpdate.personalExperience };
+            (asset.payouts || []).forEach(payout => {
+                const rewardDef = s.rewardTypes.find(rt => rt.id === payout.rewardTypeId);
+                 if (rewardDef) {
+                    const balanceKey = rewardDef.category === RewardCategory.Currency ? 'purse' : 'experience';
+                    balanceTarget[balanceKey][payout.rewardTypeId] = (balanceTarget[balanceKey][payout.rewardTypeId] || 0) + payout.amount;
+                }
+            });
+            updatedUsers[userIndex] = userToUpdate;
+            
+            const updatedAssets = s.gameAssets.map(a => a.id === asset.id ? {...a, purchaseCount: a.purchaseCount + 1} : a);
+
+            return { purchaseRequests: updatedRequests, users: updatedUsers, gameAssets: updatedAssets };
+        }),
+        rejectPurchaseRequest: async (purchaseId) => updateAndSave(s => {
+            const reqIndex = s.purchaseRequests.findIndex(pr => pr.id === purchaseId);
+            if (reqIndex === -1) return {};
+            const updatedRequests = [...s.purchaseRequests];
+            const request = { ...updatedRequests[reqIndex], status: PurchaseRequestStatus.Rejected, actedAt: new Date().toISOString() };
+            updatedRequests[reqIndex] = request;
+
+            const userIndex = s.users.findIndex(u => u.id === request.userId);
+            if(userIndex === -1) return { purchaseRequests: updatedRequests };
+            
+            const updatedUsers = [...s.users];
+            const userToUpdate = JSON.parse(JSON.stringify(updatedUsers[userIndex]));
+
+            // Refund cost
+            const balanceTarget = request.guildId ? (userToUpdate.guildBalances[request.guildId] = userToUpdate.guildBalances[request.guildId] || { purse: {}, experience: {} }) : { purse: userToUpdate.personalPurse, experience: userToUpdate.personalExperience };
+            request.assetDetails.cost.forEach(item => {
+                const rewardDef = s.rewardTypes.find(rt => rt.id === item.rewardTypeId);
+                if (rewardDef) {
+                    const balanceKey = rewardDef.category === RewardCategory.Currency ? 'purse' : 'experience';
+                    balanceTarget[balanceKey][item.rewardTypeId] = (balanceTarget[balanceKey][item.rewardTypeId] || 0) + item.amount;
+                }
+            });
+            updatedUsers[userIndex] = userToUpdate;
+
+            return { purchaseRequests: updatedRequests, users: updatedUsers };
+        }),
+        cancelPurchaseRequest: async (purchaseId) => dispatch.rejectPurchaseRequest(purchaseId), // Same logic as reject
+        addGuild: async (guild) => {
+            const newGuild: Guild = { ...guild, id: `g-${Date.now()}` };
+            updateAndSave(s => ({ guilds: [...s.guilds, newGuild] }));
+            return newGuild;
+        },
+        updateGuild: async (guild) => updateAndSave(s => ({ guilds: s.guilds.map(g => g.id === guild.id ? guild : g) })),
+        deleteGuild: async (guildId) => updateAndSave(s => ({ guilds: s.guilds.filter(g => g.id !== guildId) })),
+        addTrophy: async (trophy) => {
+            const newTrophy: Trophy = { ...trophy, id: `t-${Date.now()}` };
+            updateAndSave(s => ({ trophies: [...s.trophies, newTrophy] }));
+            return newTrophy;
+        },
+        updateTrophy: async (trophy) => updateAndSave(s => ({ trophies: s.trophies.map(t => t.id === trophy.id ? trophy : t) })),
+        deleteTrophy: async (trophyId) => updateAndSave(s => ({ trophies: s.trophies.filter(t => t.id !== trophyId) })),
+        cloneTrophy: async (trophyId: string) => updateAndSave(s => {
+            const trophyToClone = s.trophies.find(t => t.id === trophyId);
+            if (!trophyToClone) return {};
+            const newTrophy = { ...trophyToClone, id: `t-${Date.now()}`, name: `${trophyToClone.name} (Copy)` };
+            return { trophies: [...s.trophies, newTrophy] };
+        }),
+        deleteTrophies: async (trophyIds: string[]) => updateAndSave(s => ({ trophies: s.trophies.filter(t => !trophyIds.includes(t.id)) })),
+        awardTrophy: async (userId, trophyId, guildId) => updateAndSave(s => ({ userTrophies: [...s.userTrophies, { id: `ut-${Date.now()}`, userId, trophyId, awardedAt: new Date().toISOString(), guildId }] })),
+        applyManualAdjustment: async (adjustment) => {
+            updateAndSave(s => ({ adminAdjustments: [...s.adminAdjustments, { ...adjustment, id: `adj-${Date.now()}`, adjustedAt: new Date().toISOString() }] }));
+            return true;
+        },
+        addGameAsset: async (asset) => {
+            const newAsset: GameAsset = { ...asset, id: `ga-${Date.now()}`, creatorId: state.currentUser?.id || 'system', createdAt: new Date().toISOString(), purchaseCount: 0 };
+            updateAndSave(s => ({ gameAssets: [...s.gameAssets, newAsset] }));
+            return newAsset;
+        },
+        updateGameAsset: async (asset) => updateAndSave(s => ({ gameAssets: s.gameAssets.map(a => a.id === asset.id ? asset : a) })),
+        deleteGameAsset: async (assetId) => updateAndSave(s => ({ gameAssets: s.gameAssets.filter(a => a.id !== assetId) })),
+        deleteGameAssets: async (assetIds: string[]) => updateAndSave(s => ({ gameAssets: s.gameAssets.filter(a => !assetIds.includes(a.id)) })),
+        cloneGameAsset: async (assetId: string) => updateAndSave(s => {
+            const assetToClone = s.gameAssets.find(a => a.id === assetId);
+            if (!assetToClone) return {};
+            const newAsset = { ...assetToClone, id: `ga-${Date.now()}`, name: `${assetToClone.name} (Copy)` };
+            return { gameAssets: [...s.gameAssets, newAsset] };
+        }),
+        
+        // Themes
+        addTheme: async (theme) => {
+            const newTheme: ThemeDefinition = { ...theme, id: `theme-${Date.now()}` };
+            updateAndSave(s => ({ themes: [...s.themes, newTheme] }));
+            return newTheme;
+        },
+        updateTheme: async (theme) => updateAndSave(s => ({ themes: s.themes.map(t => t.id === theme.id ? theme : t) })),
+        deleteTheme: async (themeId) => updateAndSave(s => ({ themes: s.themes.filter(t => t.id !== themeId) })),
+
+        // Settings
+        updateSettings: (newSettings: Partial<AppSettings>) => updateAndSave(s => ({ settings: { ...s.settings, ...newSettings } })),
+        resetSettings: () => updateAndSave(() => ({ settings: INITIAL_SETTINGS })),
+        
+        // UI
+        setActivePage: (page: Page) => setState(s => ({ ...s, activePage: page })),
+        setAppMode: (mode: AppMode) => setState(s => ({ ...s, appMode: mode })),
+        addNotification,
+        removeNotification,
+        setActiveMarketId: (marketId: string | null) => setState(s => ({ ...s, activeMarketId: marketId })),
+        toggleSidebar: () => setState(s => ({...s, isSidebarCollapsed: !s.isSidebarCollapsed})),
+        toggleChat: () => setState(s => ({...s, isChatOpen: !s.isChatOpen})),
+
+        // Data Management
+        importBlueprint: async (blueprint: Blueprint, resolutions: ImportResolution[]) => updateAndSave(s => { /* complex logic */ return {}; }),
+        restoreFromBackup: async (backupData: IAppData) => updateAndSave(() => ({...backupData})),
+        restoreDefaultObjects: async (objectType: 'trophies') => updateAndSave(s => ({ trophies: [...s.trophies, ...INITIAL_TROPHIES.filter(it => !s.trophies.some(t => t.id === it.id))] })),
+        clearAllHistory: async () => updateAndSave(() => ({ questCompletions: [], purchaseRequests: [], systemLogs: [], adminAdjustments: [] })),
+        resetAllPlayerData: async () => updateAndSave(s => ({ users: s.users.map(u => ({...u, personalPurse: {}, personalExperience: {}, guildBalances: {}, ownedAssetIds: [], userTrophies: []})) })),
+        deleteAllCustomContent: async () => apiRequest('/api/actions/factory-reset', { method: 'POST' }),
+        
+        // First Run
+        completeFirstRun: (adminUserData, setupChoice, blueprint) => apiRequest('/api/first-run', { method: 'POST', body: JSON.stringify({ adminUserData, setupChoice, blueprint }) }),
+        
+        // Ranks
+        setRanks: (ranks: Rank[]) => updateAndSave(() => ({ ranks })),
+
+        // Chat
+        sendMessage: async (message) => {
+            const newMessage: ChatMessage = {
+                id: `msg-${Date.now()}`,
+                senderId: state.currentUser!.id,
+                timestamp: new Date().toISOString(),
+                readBy: [state.currentUser!.id],
+                ...message,
+            };
+            updateAndSave(s => ({ chatMessages: [...s.chatMessages, newMessage] }));
+            return newMessage;
+        },
+        markMessagesAsRead: async (options) => updateAndSave(s => {
+            const currentUserId = state.currentUser?.id;
+            if (!currentUserId) return {};
+            return {
+                chatMessages: s.chatMessages.map(msg => {
+                    const isUnread = !msg.readBy.includes(currentUserId);
+                    const isGuildMatch = options.guildId && msg.guildId === options.guildId;
+                    const isDMMatch = options.partnerId && ((msg.recipientId === currentUserId && msg.senderId === options.partnerId) || (msg.recipientId === options.partnerId && msg.senderId === currentUserId));
+                    
+                    if (isUnread && (isGuildMatch || isDMMatch)) {
+                        return { ...msg, readBy: [...msg.readBy, currentUserId] };
+                    }
+                    return msg;
+                })
+            }
+        }),
+
+        // System Notifications
+        addSystemNotification: async (notification) => {
+            const newNotification: SystemNotification = { ...notification, id: `sys-notif-${Date.now()}`, timestamp: new Date().toISOString(), readByUserIds: [] };
+            updateAndSave(s => ({ systemNotifications: [...s.systemNotifications, newNotification] }));
+            return newNotification;
+        },
+        markSystemNotificationsAsRead: async (notificationIds) => updateAndSave(s => ({ systemNotifications: s.systemNotifications.map(n => notificationIds.includes(n.id) ? { ...n, readByUserIds: [...new Set([...n.readByUserIds, state.currentUser!.id])] } : n) })),
+
+        // Scheduled Events
+        addScheduledEvent: async (event) => {
+            const newEvent: ScheduledEvent = { ...event, id: `event-${Date.now()}` };
+            updateAndSave(s => ({ scheduledEvents: [...s.scheduledEvents, newEvent] }));
+            return newEvent;
+        },
+        updateScheduledEvent: async (event) => updateAndSave(s => ({ scheduledEvents: s.scheduledEvents.map(e => e.id === event.id ? event : e) })),
+        deleteScheduledEvent: async (eventId) => updateAndSave(s => ({ scheduledEvents: s.scheduledEvents.filter(e => e.id !== eventId) })),
+        
+        // Bulk Actions
+        deleteQuests: async (questIds: string[]) => updateAndSave(s => ({ quests: s.quests.filter(q => !questIds.includes(q.id)) })),
+        updateQuestsStatus: async (questIds: string[], isActive: boolean) => updateAndSave(s => ({ quests: s.quests.map(q => questIds.includes(q.id) ? { ...q, isActive } : q) })),
+        bulkUpdateQuests: async (questIds: string[], updates: BulkQuestUpdates) => updateAndSave(s => ({
+            quests: s.quests.map(q => {
+                if (!questIds.includes(q.id)) return q;
+                let updatedQuest = { ...q };
+                if (updates.isActive !== undefined) updatedQuest.isActive = updates.isActive;
+                if (updates.isOptional !== undefined) updatedQuest.isOptional = updates.isOptional;
+                if (updates.requiresApproval !== undefined) updatedQuest.requiresApproval = updates.requiresApproval;
+                if (updates.groupId !== undefined) updatedQuest.groupId = updates.groupId === null ? undefined : updates.groupId;
+                if (updates.addTags) updatedQuest.tags = [...new Set([...updatedQuest.tags, ...updates.addTags])];
+                if (updates.removeTags) updatedQuest.tags = updatedQuest.tags.filter(t => !updates.removeTags!.includes(t));
+                if (updates.assignUsers) updatedQuest.assignedUserIds = [...new Set([...updatedQuest.assignedUserIds, ...updates.assignUsers])];
+                if (updates.unassignUsers) updatedQuest.assignedUserIds = updatedQuest.assignedUserIds.filter(id => !updates.unassignUsers!.includes(id));
+                return updatedQuest;
+            })
+        })),
+
+        // Assets
+        uploadFile: async (file: File, category?: string) => {
+            const formData = new FormData();
+            formData.append('file', file);
+            if (category) {
+                formData.append('category', category);
+            }
+            try {
+                const response = await fetch('/api/media/upload', {
+                    method: 'POST',
+                    body: formData,
+                });
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || 'File upload failed');
+                }
+                if (response.status === 204) return null;
+                return response.json();
+            } catch (error) {
+                console.error('File Upload Error:', error);
+                if (error instanceof Error) {
+                    addNotification({ type: 'error', message: error.message });
+                }
+                return null;
+            }
+        },
+        executeExchange: (userId, payItem, receiveItem, guildId) => apiRequest('/api/actions/exchange', { method: 'POST', body: JSON.stringify({ userId, payItem, receiveItem, guildId }) }),
+    }), [state.currentUser, state.appMode, apiRequest, addNotification, removeNotification, updateAndSave]);
 
     return (
         <AppStateContext.Provider value={state}>
-            <AppDispatchContext.Provider value={dispatch as any}>
+            <AppDispatchContext.Provider value={dispatch}>
                 {children}
             </AppDispatchContext.Provider>
         </AppStateContext.Provider>

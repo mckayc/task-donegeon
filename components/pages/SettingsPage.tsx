@@ -117,6 +117,12 @@ const SettingsPage: React.FC = () => {
     const [apiKeyError, setApiKeyError] = useState<string | null>(null);
 
     useEffect(() => {
+        // If global settings update (e.g. from a sync), refresh the form state
+        setFormState(JSON.parse(JSON.stringify(settings)));
+    }, [settings]);
+
+
+    useEffect(() => {
         // Self-correct if AI is enabled in settings but the server key is bad/missing
         if (formState.enableAiFeatures) {
             const verifyKeyOnLoad = async () => {
@@ -260,6 +266,16 @@ const SettingsPage: React.FC = () => {
         setIsResetConfirmOpen(false);
     };
     
+    const handleResetEconomy = () => {
+        const defaultEconomySettings = INITIAL_SETTINGS.rewardValuation;
+        setFormState(prev => ({
+            ...prev,
+            rewardValuation: JSON.parse(JSON.stringify(defaultEconomySettings))
+        }));
+        updateSettings({ rewardValuation: defaultEconomySettings });
+        triggerSavedAnimation('Economy & Valuation');
+    };
+
     const currencyRewards = rewardTypes.filter(rt => rt.category === RewardCategory.Currency);
     const otherRewards = rewardTypes.filter(rt => rt.id !== formState.rewardValuation.anchorRewardId);
     const anchorReward = rewardTypes.find(rt => rt.id === formState.rewardValuation.anchorRewardId);
@@ -461,6 +477,15 @@ const SettingsPage: React.FC = () => {
                                 ))}
                             </div>
                         </div>
+                    </div>
+                     <div className="mt-6 pt-4 border-t border-stone-700/60 flex justify-end">
+                        <Button
+                            type="button"
+                            variant="secondary"
+                            onClick={handleResetEconomy}
+                        >
+                            Reset to Defaults
+                        </Button>
                     </div>
                 </div>
             </CollapsibleSection>

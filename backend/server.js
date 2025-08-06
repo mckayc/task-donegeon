@@ -1,3 +1,4 @@
+
 require("reflect-metadata");
 const express = require('express');
 const cors = require('cors');
@@ -175,57 +176,78 @@ app.post('/api/data/save', async (req, res, next) => {
     await queryRunner.startTransaction();
 
     try {
-        // Clear all tables in an order that respects foreign key constraints
-        const entities = dataSource.entityMetadatas;
-        const sortedEntities = entities.sort((a, b) => (b.relations.length > 0 ? 1 : 0) - (a.relations.length > 0 ? 1 : 0));
-        for (const entity of sortedEntities) {
-            await queryRunner.manager.getRepository(entity.name).query(`DELETE FROM ${entity.tableName};`);
+        // Clear all tables using TypeORM's robust clear method
+        for (const entity of dataSource.entityMetadatas) {
+            await queryRunner.manager.getRepository(entity.name).clear();
         }
 
-        // The issue was trying to instantiate an EntitySchema.
-        // We should use the manager to create entity instances from plain objects.
+        // Save new data, ensuring all entities are created before saving for consistency.
+        const rewardTypeEntities = data.rewardTypes?.map(e => queryRunner.manager.create(RewardTypeDefinitionEntity, e)) || [];
+        if (rewardTypeEntities.length) await queryRunner.manager.save(rewardTypeEntities);
 
-        // Save new data, handling relations
-        const userEntities = data.users.map(u => queryRunner.manager.create(UserEntity, u));
-        await queryRunner.manager.save(userEntities);
+        const rankEntities = data.ranks?.map(e => queryRunner.manager.create(RankEntity, e)) || [];
+        if (rankEntities.length) await queryRunner.manager.save(rankEntities);
 
-        const guildEntities = data.guilds.map(g => {
+        const trophyEntities = data.trophies?.map(e => queryRunner.manager.create(TrophyEntity, e)) || [];
+        if (trophyEntities.length) await queryRunner.manager.save(trophyEntities);
+        
+        const themeEntities = data.themes?.map(e => queryRunner.manager.create(ThemeDefinitionEntity, e)) || [];
+        if (themeEntities.length) await queryRunner.manager.save(themeEntities);
+
+        const questGroupEntities = data.questGroups?.map(e => queryRunner.manager.create(QuestGroupEntity, e)) || [];
+        if (questGroupEntities.length) await queryRunner.manager.save(questGroupEntities);
+
+        const marketEntities = data.markets?.map(e => queryRunner.manager.create(MarketEntity, e)) || [];
+        if (marketEntities.length) await queryRunner.manager.save(marketEntities);
+
+        const gameAssetEntities = data.gameAssets?.map(e => queryRunner.manager.create(GameAssetEntity, e)) || [];
+        if (gameAssetEntities.length) await queryRunner.manager.save(gameAssetEntities);
+
+        const userEntities = data.users?.map(u => queryRunner.manager.create(UserEntity, u)) || [];
+        if (userEntities.length) await queryRunner.manager.save(userEntities);
+
+        const guildEntities = data.guilds?.map(g => {
             const guild = queryRunner.manager.create(GuildEntity, g);
             guild.members = g.memberIds ? userEntities.filter(u => g.memberIds.includes(u.id)) : [];
             return guild;
-        });
-        await queryRunner.manager.save(guildEntities);
+        }) || [];
+        if (guildEntities.length) await queryRunner.manager.save(guildEntities);
 
-        if (data.rewardTypes && data.rewardTypes.length) await queryRunner.manager.save(RewardTypeDefinitionEntity, data.rewardTypes);
-        if (data.ranks && data.ranks.length) await queryRunner.manager.save(RankEntity, data.ranks);
-        if (data.trophies && data.trophies.length) await queryRunner.manager.save(TrophyEntity, data.trophies);
-        if (data.themes && data.themes.length) await queryRunner.manager.save(ThemeDefinitionEntity, data.themes);
-        if (data.questGroups && data.questGroups.length) await queryRunner.manager.save(QuestGroupEntity, data.questGroups);
-        if (data.markets && data.markets.length) await queryRunner.manager.save(MarketEntity, data.markets);
-        if (data.gameAssets && data.gameAssets.length) await queryRunner.manager.save(GameAssetEntity, data.gameAssets);
-        
-        const questEntities = data.quests.map(q => {
+        const questEntities = data.quests?.map(q => {
              const quest = queryRunner.manager.create(QuestEntity, q);
              quest.assignedUsers = q.assignedUserIds ? userEntities.filter(u => q.assignedUserIds.includes(u.id)) : [];
              return quest;
-        });
-        await queryRunner.manager.save(questEntities);
+        }) || [];
+        if (questEntities.length) await queryRunner.manager.save(questEntities);
         
-        const questCompletionEntities = data.questCompletions.map(qc => {
+        const questCompletionEntities = data.questCompletions?.map(qc => {
             const completion = queryRunner.manager.create(QuestCompletionEntity, qc);
             completion.user = userEntities.find(u => u.id === qc.userId);
             completion.quest = questEntities.find(q => q.id === qc.questId);
             return completion;
-        });
-        await queryRunner.manager.save(questCompletionEntities);
+        }) || [];
+        if (questCompletionEntities.length) await queryRunner.manager.save(questCompletionEntities);
         
-        if (data.purchaseRequests && data.purchaseRequests.length) await queryRunner.manager.save(PurchaseRequestEntity, data.purchaseRequests);
-        if (data.userTrophies && data.userTrophies.length) await queryRunner.manager.save(UserTrophyEntity, data.userTrophies);
-        if (data.adminAdjustments && data.adminAdjustments.length) await queryRunner.manager.save(AdminAdjustmentEntity, data.adminAdjustments);
-        if (data.systemLogs && data.systemLogs.length) await queryRunner.manager.save(SystemLogEntity, data.systemLogs);
-        if (data.chatMessages && data.chatMessages.length) await queryRunner.manager.save(ChatMessageEntity, data.chatMessages);
-        if (data.systemNotifications && data.systemNotifications.length) await queryRunner.manager.save(SystemNotificationEntity, data.systemNotifications);
-        if (data.scheduledEvents && data.scheduledEvents.length) await queryRunner.manager.save(ScheduledEventEntity, data.scheduledEvents);
+        const purchaseRequestEntities = data.purchaseRequests?.map(e => queryRunner.manager.create(PurchaseRequestEntity, e)) || [];
+        if (purchaseRequestEntities.length) await queryRunner.manager.save(purchaseRequestEntities);
+
+        const userTrophyEntities = data.userTrophies?.map(e => queryRunner.manager.create(UserTrophyEntity, e)) || [];
+        if (userTrophyEntities.length) await queryRunner.manager.save(userTrophyEntities);
+
+        const adminAdjustmentEntities = data.adminAdjustments?.map(e => queryRunner.manager.create(AdminAdjustmentEntity, e)) || [];
+        if (adminAdjustmentEntities.length) await queryRunner.manager.save(adminAdjustmentEntities);
+        
+        const systemLogEntities = data.systemLogs?.map(e => queryRunner.manager.create(SystemLogEntity, e)) || [];
+        if (systemLogEntities.length) await queryRunner.manager.save(systemLogEntities);
+
+        const chatMessageEntities = data.chatMessages?.map(e => queryRunner.manager.create(ChatMessageEntity, e)) || [];
+        if (chatMessageEntities.length) await queryRunner.manager.save(chatMessageEntities);
+
+        const systemNotificationEntities = data.systemNotifications?.map(e => queryRunner.manager.create(SystemNotificationEntity, e)) || [];
+        if (systemNotificationEntities.length) await queryRunner.manager.save(systemNotificationEntities);
+
+        const scheduledEventEntities = data.scheduledEvents?.map(e => queryRunner.manager.create(ScheduledEventEntity, e)) || [];
+        if (scheduledEventEntities.length) await queryRunner.manager.save(scheduledEventEntities);
         
         if (data.settings) await queryRunner.manager.save(SettingEntity, { id: 1, settings: data.settings });
         if (data.loginHistory) await queryRunner.manager.save(LoginHistoryEntity, { id: 1, history: data.loginHistory });

@@ -1,13 +1,18 @@
 
-const express = require('express');
-const cors = require('cors');
-const path = require('path');
-const multer = require('multer');
-const fs = require('fs').promises;
-const http = require('http');
-const WebSocket = require('ws');
-const { GoogleGenAI } = require('@google/genai');
-const sqlite3 = require('sqlite3').verbose();
+import express from 'express';
+import cors from 'cors';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import multer from 'multer';
+import fs from 'fs/promises';
+import http from 'http';
+import { WebSocketServer } from 'ws';
+import { GoogleGenAI } from '@google/genai';
+import sqlite3 from 'sqlite3';
+
+// Replicate __dirname and __filename for ES Modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // === GITHUB IMAGE PACK CONFIG ===
 const GITHUB_REPO = 'mckayc/task-donegeon';
@@ -154,15 +159,16 @@ const INITIAL_SETTINGS = {
 };
 const INITIAL_TROPHIES = [ { id: 'trophy-1', name: 'First Quest', description: 'Complete your first quest.', iconType: 'emoji', icon: '🎉', isManual: false, requirements: [{type: TrophyRequirementType.CompleteQuestType, value: QuestType.Duty, count: 1}] }, { id: 'trophy-2', name: 'First Customization', description: 'Change your theme for the first time.', iconType: 'emoji', icon: '🎨', isManual: true, requirements: [] }, { id: 'trophy-3', name: 'The Adjudicator', description: 'Approve or reject a pending quest.', iconType: 'emoji', icon: '⚖️', isManual: true, requirements: [] }, { id: 'trophy-4', name: 'World Builder', description: 'Create a new quest.', iconType: 'emoji', icon: '🛠️', isManual: true, requirements: [] }, { id: 'trophy-5', name: 'The Name Changer', description: 'Rename a user in the Manage Users panel.', iconType: 'emoji', icon: '✍️', isManual: true, requirements: [] }, { id: 'trophy-6', name: 'Initiate Rank', description: 'Achieve the rank of Initiate', iconType: 'emoji', icon: '🌱', isManual: false, requirements: [{type: TrophyRequirementType.AchieveRank, value: 'rank-2', count: 1}]}, { id: 'trophy-7', name: 'The Philanthropist', description: 'Donate an item to a guildmate.', iconType: 'emoji', icon: '🎁', isManual: true, requirements: [] }, { id: 'trophy-8', name: 'Master of Coin', description: 'Amass 1,000 gold.', iconType: 'emoji', icon: '💰', isManual: true, requirements: [] }, { id: 'trophy-9', name: 'Dungeon Crawler', description: 'Complete 10 Ventures.', iconType: 'emoji', icon: '🗺️', isManual: true, requirements: [] }, { id: 'trophy-10', name: 'Daily Grind', description: 'Complete 25 Duties.', iconType: 'emoji', icon: '⚙️', isManual: true, requirements: [] }, { id: 'trophy-11', name: 'The Collector', description: 'Own 10 unique items.', iconType: 'emoji', icon: '📦', isManual: true, requirements: [] }, { id: 'trophy-12', name: 'Fashionista', description: 'Own 5 pieces of avatar equipment.', iconType: 'emoji', icon: '🧑‍🎤', isManual: true, requirements: [] }, { id: 'trophy-13', name: 'The Completionist', description: 'Complete all available quests for a day.', iconType: 'emoji', icon: '💯', isManual: true, requirements: [] }, { id: 'trophy-14', name: 'The Achiever', description: 'Earn 5 other trophies.', iconType: 'emoji', icon: '🏆', isManual: true, requirements: [] }, { id: 'trophy-15', name: 'The Socialite', description: 'Join a guild.', iconType: 'emoji', icon: '🤝', isManual: true, requirements: [] }, { id: 'trophy-16', name: 'The Founder', description: 'Create a guild.', iconType: 'emoji', icon: '🏰', isManual: true, requirements: [] }, { id: 'trophy-17', name: 'The Merchant', description: 'Sell an item in the marketplace.', iconType: 'emoji', icon: '📈', isManual: true, requirements: [] }, { id: 'trophy-18', name: 'The Artisan', description: 'Craft an item.', iconType: 'emoji', icon: '🔨', isManual: true, requirements: [] }, { id: 'trophy-19', name: 'The Explorer', description: 'Discover a hidden area or secret.', iconType: 'emoji', icon: '🧭', isManual: true, requirements: [] }, { id: 'trophy-20', name: 'The Loremaster', description: 'Read 10 in-game books or lore entries.', iconType: 'emoji', icon: '📚', isManual: true, requirements: [] }, { id: 'trophy-21', name: 'The Beastmaster', description: 'Tame a pet.', iconType: 'emoji', icon: '🐾', isManual: true, requirements: [] }, { id: 'trophy-22', name: 'The Angler', description: 'Catch 50 fish.', iconType: 'emoji', icon: '🎣', isManual: true, requirements: [] }, { id: 'trophy-23', name: 'The Gardener', description: 'Harvest 100 plants.', iconType: 'emoji', icon: '🌱', isManual: true, requirements: [] }, { id: 'trophy-24', name: 'The Chef', description: 'Cook 20 different recipes.', iconType: 'emoji', icon: '🍳', isManual: true, requirements: [] }, { id: 'trophy-25', name: 'The Alchemist', description: 'Brew 15 different potions.', iconType: 'emoji', icon: '⚗️', isManual: true, requirements: [] }, { id: 'trophy-26', name: 'The Enchanter', description: 'Enchant an item.', iconType: 'emoji', icon: '✨', isManual: true, requirements: [] }, { id: 'trophy-27', name: 'The Blacksmith', description: 'Forge an item.', iconType: 'emoji', icon: '🔥', isManual: true, requirements: [] }, { id: 'trophy-28', name: 'The Jeweler', description: 'Cut a gemstone.', iconType: 'emoji', icon: '💎', isManual: true, requirements: [] }, { id: 'trophy-29', name: 'The Scribe', description: 'Write a scroll.', iconType: 'emoji', icon: '📜', isManual: true, requirements: [] }, { id: 'trophy-30', name: 'The Cartographer', description: 'Map out a new zone.', iconType: 'emoji', icon: '🗺️', isManual: true, requirements: [] }, { id: 'trophy-31', name: 'The Archaeologist', description: 'Uncover a lost artifact.', iconType: 'emoji', icon: '🏺', isManual: true, requirements: [] }, { id: 'trophy-32', name: 'The Linguist', description: 'Learn a new language.', iconType: 'emoji', icon: '🗣️', isManual: true, requirements: [] }, { id: 'trophy-33', name: 'The Musician', description: 'Master a musical instrument.', iconType: 'emoji', icon: '🎶', isManual: true, requirements: [] }, { id: 'trophy-34', name: 'The Dancer', description: 'Learn a new dance.', iconType: 'emoji', icon: '💃', isManual: true, requirements: [] }, { id: 'trophy-35', name: 'The Painter', description: 'Paint a masterpiece.', iconType: 'emoji', icon: '🎨', isManual: true, requirements: [] }, { id: 'trophy-36', name: 'The Sculptor', description: 'Carve a statue.', iconType: 'emoji', icon: '🗿', isManual: true, requirements: [] }, { id: 'trophy-37', name: 'The Artist', description: 'For creating a masterpiece of art.', iconType: 'emoji', icon: '🎨', isManual: true, requirements: [] }, { id: 'trophy-38', name: 'The Bard', description: 'For a wonderful musical performance.', iconType: 'emoji', icon: '🎵', isManual: true, requirements: [] }, { id: 'trophy-39', name: 'The Architect', description: 'For building an impressive creation (LEGOs, Minecraft, etc).', iconType: 'emoji', icon: '🏰', isManual: true, requirements: [] }, { id: 'trophy-40', name: 'The Director', description: 'For creating and editing a video.', iconType: 'emoji', icon: '🎬', isManual: true, requirements: [] }, { id: 'trophy-41', name: 'The Photographer', description: 'For taking a beautiful photograph.', iconType: 'emoji', icon: '📷', isManual: true, requirements: [] }, { id: 'trophy-42', name: 'Team Player', description: 'For excellent teamwork in a game.', iconType: 'emoji', icon: '🏅', isManual: true, requirements: [] }, { id: 'trophy-43', name: 'Personal Best', description: 'For beating your own record.', iconType: 'emoji', icon: '📈', isManual: true, requirements: [] }, { id: 'trophy-44', name: 'Tournament Victor', description: 'For winning a tournament.', iconType: 'emoji', icon: '🥇', isManual: true, requirements: [] }, { id: 'trophy-45', name: 'Good Sport', description: 'For showing great sportsmanship, win or lose.', iconType: 'emoji', icon: '🤝', isManual: true, requirements: [] }, { id: 'trophy-46', name: 'Practice Pays Off', description: 'For mastering a new skill through practice.', iconType: 'emoji', icon: '🎯', isManual: true, requirements: [] }, { id: 'trophy-47', name: 'Master of the Mop', description: 'For mopping the floors to a sparkling shine.', iconType: 'emoji', icon: '✨', isManual: true, requirements: [] }, { id: 'trophy-48', name: 'Laundry Lord', description: 'For washing, drying, and folding 5 loads of laundry.', iconType: 'emoji', icon: '🧺', isManual: true, requirements: [] }, { id: 'trophy-49', name: 'The Green Thumb', description: 'For keeping a plant alive for a month.', iconType: 'emoji', icon: '🪴', isManual: true, requirements: [] }, { id: 'trophy-50', name: 'The Organizer', description: 'For decluttering a messy drawer or closet.', iconType: 'emoji', icon: '🗂️', isManual: true, requirements: [] }, { id: 'trophy-51', name: 'The Recycler', description: 'For consistently sorting the recycling correctly.', iconType: 'emoji', icon: '♻️', isManual: true, requirements: [] }, { id: 'trophy-52', name: 'The Repairman', description: 'For fixing something that was broken.', iconType: 'emoji', icon: '🛠️', isManual: true, requirements: [] }, { id: 'trophy-53', name: 'The Pet Pal', description: 'For taking excellent care of a pet.', iconType: 'emoji', icon: '🐾', isManual: true, requirements: [] }, { id: 'trophy-54', name: 'The Dust Slayer', description: 'For dusting the entire house.', iconType: 'emoji', icon: '🌬️', isManual: true, requirements: [] }, { id: 'trophy-55', name: 'Honor Roll', description: 'For getting straight A\'s on a report card.', iconType: 'emoji', icon: '🅰️', isManual: true, requirements: [] }, { id: 'trophy-56', name: 'Perfect Attendance', description: 'For not missing a single day of school.', iconType: 'emoji', icon: '🗓️', isManual: true, requirements: [] }, { id: 'trophy-57', name: 'Science Fair Winner', description: 'For winning a prize at the science fair.', iconType: 'emoji', icon: '🥇', isManual: true, requirements: [] }, { id: 'trophy-58', name: 'Spelling Bee Champ', description: 'For winning the spelling bee.', iconType: 'emoji', icon: '🐝', isManual: true, requirements: [] }, { id: 'trophy-59', name: 'Book Worm', description: 'For reading 25 books in a school year.', iconType: 'emoji', icon: '🐛', isManual: true, requirements: [] }, { id: 'trophy-60', name: 'The Punisher', description: 'For telling an exceptionally great (or terrible) pun.', iconType: 'emoji', icon: '😂', isManual: true, requirements: [] }, { id: 'trophy-61', name: 'Klutz of the Week', description: 'For a spectacular, harmless trip or fall.', iconType: 'emoji', icon: '🤕', isManual: true, requirements: [] }, { id: 'trophy-62', name: 'Bed Head', description: 'For having the most epic bed head one morning.', iconType: 'emoji', icon: '🛌', isManual: true, requirements: [] }, { id: 'trophy-63', name: 'The Snorter', description: 'For laughing so hard you snorted.', iconType: 'emoji', icon: '🐽', isManual: true, requirements: [] }, { id: 'trophy-64', name: 'Brain Fart', description: 'For a truly memorable moment of forgetfulness.', iconType: 'emoji', icon: '💨', isManual: true, requirements: [] }, { id: 'trophy-65', name: 'The Snackinator', description: 'For impressively finishing a bag of snacks.', iconType: 'emoji', icon: '🍿', isManual: true, requirements: [] }, { id: 'trophy-66', name: 'The Drama Llama', description: 'For an award-worthy dramatic performance over something small.', iconType: 'emoji', icon: '🎭', isManual: true, requirements: [] }, { id: 'trophy-67', name: 'Early Bird', description: 'For waking up on time without being told for a whole week.', iconType: 'emoji', icon: '🌅', isManual: true, requirements: [] }, { id: 'trophy-68', name: 'Night Owl', description: 'For staying up late to finish a project.', iconType: 'emoji', icon: '🦉', isManual: true, requirements: [] }, { id: 'trophy-69', name: 'Hydration Hero', description: 'For drinking 8 glasses of water in a day.', iconType: 'emoji', icon: '💧', isManual: true, requirements: [] }, { id: 'trophy-70', name: 'The Diplomat', description: 'For resolving an argument peacefully.', iconType: 'emoji', icon: '🕊️', isManual: true, requirements: [] }, { id: 'trophy-71', name: 'The Comedian', description: 'For making the entire family laugh out loud.', iconType: 'emoji', icon: '🤣', isManual: true, requirements: [] }, { id: 'trophy-72', name: 'The Encourager', description: 'For cheering up a family member who was feeling down.', iconType: 'emoji', icon: '🤗', isManual: true, requirements: [] }, { id: 'trophy-73', name: 'The Listener', description: 'For being a great listener when someone needed to talk.', iconType: 'emoji', icon: '👂', isManual: true, requirements: [] }, { id: 'trophy-74', name: 'The Giver', description: 'For giving a thoughtful, handmade gift.', iconType: 'emoji', icon: '🎁', isManual: true, requirements: [] }, { id: 'trophy-75', name: 'The Helper', description: 'For helping a sibling with their homework.', iconType: 'emoji', icon: '🧑‍🏫', isManual: true, requirements: [] }, { id: 'trophy-76', name: 'The Collaborator', description: 'For working well on a family project.', iconType: 'emoji', icon: '🧑‍🤝‍🧑', isManual: true, requirements: [] }, { id: 'trophy-77', name: 'The Welcomer', description: 'For making a guest feel welcome and included.', iconType: 'emoji', icon: '👋', isManual: true, requirements: [] }, { id: 'trophy-78', name: 'Speed Runner', description: 'For getting ready for school in record time.', iconType: 'emoji', icon: '⏱️', isManual: true, requirements: [] }, { id: 'trophy-79', name: 'Completionist', description: 'For finishing all your homework before dinner.', iconType: 'emoji', icon: '💯', isManual: true, requirements: [] }, { id: 'trophy-80', name: 'The Strategist', description: 'For winning a board game with a clever strategy.', iconType: 'emoji', icon: '♟️', isManual: true, requirements: [] }, { id: 'trophy-81', 'name': 'The Farmer', 'description': 'For helping with gardening or yard work.', iconType: 'emoji', 'icon': '🧑‍🌾', 'isManual': true, 'requirements': [] }, { id: 'trophy-82', name: 'The Co-op King', description: 'For successfully completing a two-person chore with a sibling.', iconType: 'emoji', icon: '🤝', isManual: true, requirements: [] }, { id: 'trophy-83', name: 'The Patient One', description: 'For waiting patiently without complaining.', iconType: 'emoji', icon: '⏳', isManual: true, requirements: [] }, { id: 'trophy-84', name: 'The Brave', description: 'For going to the doctor or dentist without any fuss.', iconType: 'emoji', icon: '씩', isManual: true, requirements: [] }, { id: 'trophy-85', name: 'The Problem Solver', description: 'For figuring out a tricky problem on your own.', iconType: 'emoji', icon: '💡', isManual: true, requirements: [] }, { id: 'trophy-86', name: 'The Tidy Titan', description: 'For keeping your room clean for a whole week.', iconType: 'emoji', icon: '✨', isManual: true, requirements: [] }, { id: 'trophy-87', name: 'The Gracious', description: 'For remembering to say "please" and "thank you" all day.', iconType: 'emoji', icon: '🙏', isManual: true, requirements: [] }, { id: 'trophy-88', name: 'The Independent', description: 'For completing your morning routine all by yourself.', iconType: 'emoji', icon: '🧍', isManual: true, requirements: [] }, { id: 'trophy-89', name: 'The Tech Support', description: 'For helping a family member with a tech problem.', iconType: 'emoji', icon: '💻', isManual: true, requirements: [] }, { id: 'trophy-90', name: 'The Foodie', description: 'For trying a new food without complaining.', iconType: 'emoji', icon: '😋', isManual: true, requirements: [] }, { id: 'trophy-91', name: 'The On-Time Arrival', description: 'For being ready to leave on time.', iconType: 'emoji', icon: '⏰', isManual: true, requirements: [] }, { id: 'trophy-92', name: 'The Car Cleaner', description: 'For helping to clean out the inside of the car.', iconType: 'emoji', icon: '🚗', isManual: true, requirements: [] }, { id: 'trophy-93', name: 'The Toy Tamer', description: 'For putting away all the toys after playing.', iconType: 'emoji', icon: '🧸', isManual: true, requirements: [] }, { id: 'trophy-94', name: 'The Leftover Legend', description: 'For eating leftovers without a fuss.', iconType: 'emoji', icon: '🍲', isManual: true, requirements: [] }, { id: 'trophy-95', name: 'The Chore Champion', description: 'For doing an extra chore without being asked.', iconType: 'emoji', icon: '🌟', isManual: true, requirements: [] }, { id: 'trophy-96', name: 'The Lost and Found', description: 'For finding something important that was lost.', iconType: 'emoji', icon: '🔍', isManual: true, requirements: [] }, { id: 'trophy-97', name: 'The Penny Pincher', description: 'For saving up your allowance for a goal.', iconType: 'emoji', icon: '🐷', isManual: true, requirements: [] },
 ];
-const createSampleMarkets = () => ([
+const createSampleMarkets = (): Market[] => ([
   { id: 'market-tutorial', title: 'Tutorial Market', description: 'A place to complete your first quests.', iconType: 'emoji', icon: '🎓', status: { type: 'open' } },
   { id: 'market-themes', title: 'The Gilded Brush (Themes)', description: 'Purchase new visual themes to customize your entire application.', iconType: 'emoji', icon: '🎨', status: { type: 'open' } },
   { id: 'market-bank', title: 'The Exchange Post', description: 'Exchange your various currencies and experience points.', iconType: 'emoji', icon: '⚖️', status: { type: 'open' } },
   { id: 'market-experiences', title: 'The Guild of Adventurers', description: 'Spend your hard-earned gems on real-world experiences and privileges.', iconType: 'emoji', icon: '🎟️', status: { type: 'open' } },
   { id: 'market-candy', title: 'The Sugar Cube', description: 'A delightful shop for purchasing sweet treats with your crystals.', iconType: 'emoji', icon: '🍬', status: { type: 'open' } },
 ]);
-const createSampleGameAssets = () => {
-    const allAssets = [
+
+const createSampleGameAssets = (): GameAsset[] => {
+    const allAssets: GameAsset[] = [
     { 
         id: 'ga-theme-sapphire', 
         name: 'Sapphire Theme Unlock', 
@@ -224,15 +230,17 @@ const createSampleGameAssets = () => {
 
   return allAssets.filter(asset => !exchangeAssetIds.has(asset.id));
 };
-const createInitialGuilds = (users) => ([
-  { id: 'guild-1', name: 'The First Guild', purpose: 'The default guild for all new adventurers.', memberIds: users.map((u) => u.id), isDefault: true },
-]);
-const createSampleQuests = (users) => {
-  const explorer = users.find((u) => u.role === Role.Explorer);
-  const gatekeeper = users.find((u) => u.role === Role.Gatekeeper);
-  const donegeonMaster = users.find((u) => u.role === Role.DonegeonMaster);
 
-  const quests = [
+export const createInitialGuilds = (users: User[]): Guild[] => ([
+  { id: 'guild-1', name: 'The First Guild', purpose: 'The default guild for all new adventurers.', memberIds: users.map((u: User) => u.id), isDefault: true },
+]);
+
+export const createSampleQuests = (users: User[]): Quest[] => {
+  const explorer = users.find((u: User) => u.role === Role.Explorer);
+  const gatekeeper = users.find((u: User) => u.role === Role.Gatekeeper);
+  const donegeonMaster = users.find((u: User) => u.role === Role.DonegeonMaster);
+
+  const quests: Quest[] = [
     // For Explorer
     {
       id: 'quest-explorer-1', title: 'Change Your Theme', description: "First, visit the Marketplace and buy the 'Sapphire Theme Unlock' from the Tutorial Market. Then, go to the 'Themes' page from the sidebar to activate it!", type: QuestType.Venture, iconType: 'emoji', icon: '🎨', tags: ['tutorial', 'tutorial-explorer'],
@@ -293,21 +301,21 @@ const createSampleQuests = (users) => {
   ];
   return quests;
 };
-function createInitialData(setupChoice = 'guided', adminUserData, blueprint) {
-    let baseData;
-    let users = [];
 
+export function createInitialData(setupChoice = 'guided', adminUserData?: any, blueprint?: any) {
     if (setupChoice === 'scratch') {
-        const adminUser = { ...adminUserData, id: `user-admin-${Date.now()}`, avatar: {}, ownedAssetIds: [], personalPurse: {}, personalExperience: {}, guildBalances: {}, ownedThemes: ['emerald', 'rose', 'sky'], hasBeenOnboarded: false };
-        users.push(adminUser);
-        baseData = {
+        const users = [adminUserData];
+        const guilds = createInitialGuilds(users);
+        const bankMarket = createSampleMarkets().find(m => m.id === 'market-bank');
+        return {
+            users: users,
             quests: [],
             questGroups: [],
-            markets: createSampleMarkets().filter(m => m.id === 'market-bank'), // Only include bank
+            markets: bankMarket ? [bankMarket] : [],
             rewardTypes: INITIAL_REWARD_TYPES,
             questCompletions: [],
             purchaseRequests: [],
-            guilds: createInitialGuilds(users),
+            guilds: guilds,
             ranks: INITIAL_RANKS,
             trophies: [],
             userTrophies: [],
@@ -321,42 +329,34 @@ function createInitialData(setupChoice = 'guided', adminUserData, blueprint) {
             systemNotifications: [],
             scheduledEvents: [],
         };
-    } else if (setupChoice === 'import' && blueprint) {
-        const adminUser = { ...adminUserData, id: `user-admin-${Date.now()}`, avatar: {}, ownedAssetIds: [], personalPurse: {}, personalExperience: {}, guildBalances: {}, ownedThemes: ['emerald', 'rose', 'sky'], hasBeenOnboarded: false };
-        users.push(adminUser);
-        const finalRewardTypes = [ ...INITIAL_REWARD_TYPES, ...(blueprint.assets.rewardTypes || []).filter(rt => !INITIAL_REWARD_TYPES.some(coreRt => coreRt.id === rt.id)) ];
+    }
+
+    if (setupChoice === 'import' && blueprint) {
+        const users = [adminUserData];
+        const guilds = createInitialGuilds(users);
+        const finalRewardTypes = [
+            ...INITIAL_REWARD_TYPES,
+            ...(blueprint.assets.rewardTypes || []).filter((rt: RewardTypeDefinition) => !INITIAL_REWARD_TYPES.some(coreRt => coreRt.id === rt.id))
+        ];
         let finalMarkets = blueprint.assets.markets || [];
-        if (!finalMarkets.some(m => m.id === 'market-bank')) {
-            const bankMarket = createSampleMarkets().find(m => m.id === 'market-bank');
+        if (!finalMarkets.some((m: Market) => m.id === 'market-bank')) {
+            const bankMarket = createSampleMarkets().find((m: Market) => m.id === 'market-bank');
             if (bankMarket) finalMarkets.push(bankMarket);
         }
-        baseData = {
-            ...blueprint.assets,
-            rewardTypes: finalRewardTypes,
+        return {
+            users: users,
+            quests: blueprint.assets.quests || [],
+            questGroups: blueprint.assets.questGroups || [],
             markets: finalMarkets,
-            guilds: createInitialGuilds(users),
-            // Fill in missing empty arrays from blueprint
-            questCompletions: [], purchaseRequests: [], userTrophies: [], adminAdjustments: [], systemLogs: [], loginHistory: [], chatMessages: [], systemNotifications: [], scheduledEvents: [],
-            settings: INITIAL_SETTINGS,
-            themes: INITIAL_THEMES,
-        };
-    } else { // 'guided'
-        users = createMockUsers();
-        // Overwrite first mock user with actual admin data
-        users[0] = { ...users[0], ...adminUserData };
-        baseData = {
-            quests: createSampleQuests(users),
-            questGroups: INITIAL_QUEST_GROUPS,
-            markets: createSampleMarkets(),
-            rewardTypes: INITIAL_REWARD_TYPES,
+            rewardTypes: finalRewardTypes,
             questCompletions: [],
             purchaseRequests: [],
-            guilds: createInitialGuilds(users),
-            ranks: INITIAL_RANKS,
-            trophies: INITIAL_TROPHIES,
+            guilds: guilds,
+            ranks: blueprint.assets.ranks || INITIAL_RANKS,
+            trophies: blueprint.assets.trophies || [],
             userTrophies: [],
             adminAdjustments: [],
-            gameAssets: createSampleGameAssets(),
+            gameAssets: blueprint.assets.gameAssets || [],
             systemLogs: [],
             settings: INITIAL_SETTINGS,
             themes: INITIAL_THEMES,
@@ -366,498 +366,99 @@ function createInitialData(setupChoice = 'guided', adminUserData, blueprint) {
             scheduledEvents: [],
         };
     }
-
-    // This is the single source of truth for creating the admin user
-    const finalAdminUser = users[0];
+    
+    // Default to 'guided' setup
+    const users = createMockUsers();
     if (adminUserData) {
-        Object.assign(finalAdminUser, adminUserData);
-        finalAdminUser.id = `user-admin-${Date.now()}`;
+        users[0] = { ...users[0], ...adminUserData };
     }
+    const quests = createSampleQuests(users);
+    const guilds = createInitialGuilds(users);
+    const markets = createSampleMarkets();
+    const gameAssets = createSampleGameAssets();
 
     return {
-        ...baseData,
-        users, // Use the user array which contains the final admin user
-        settings: {
-            ...baseData.settings,
-            isFirstRunComplete: true, // Always set to true on creation
-        }
+        users: users,
+        quests: quests,
+        questGroups: INITIAL_QUEST_GROUPS,
+        markets: markets,
+        rewardTypes: INITIAL_REWARD_TYPES,
+        questCompletions: [],
+        purchaseRequests: [],
+        guilds: guilds,
+        ranks: INITIAL_RANKS,
+        trophies: INITIAL_TROPHIES,
+        userTrophies: [],
+        adminAdjustments: [],
+        gameAssets: gameAssets,
+        systemLogs: [],
+        settings: INITIAL_SETTINGS,
+        themes: INITIAL_THEMES,
+        loginHistory: [],
+        chatMessages: [],
+        systemNotifications: [],
+        scheduledEvents: [],
     };
 }
-function createInitialQuestCompletions(quests, users) {
-  const explorer = users.find((u) => u.username === 'explorer');
-  const gatekeeper = users.find((u) => u.username === 'gatekeeper');
+
+export function createInitialQuestCompletions(quests: Quest[], users: User[]): QuestCompletion[] {
+  const explorer = users.find((u: User) => u.username === 'explorer');
+  const gatekeeper = users.find((u: User) => u.username === 'gatekeeper');
   
   if (!explorer || !gatekeeper) return [];
 
-  const completion = {
+  const completion: QuestCompletion = {
     id: `qc-initial-${Date.now()}`,
     questId: 'quest-gatekeeper-approval-setup',
     userId: explorer.id,
     completedAt: new Date().toISOString(),
-    status: 'Pending',
+    status: QuestCompletionStatus.Pending,
     note: 'This is my first note for approval!'
   };
 
   return [completion];
-}
-// === END INLINED DATA ===
+}--- START OF FILE Dockerfile ---
 
-const app = express();
-const server = http.createServer(app);
-const wss = new WebSocket.Server({ server });
+# Stage 1: Build the application
+FROM node:20-alpine AS builder
 
-app.use(cors());
-app.use(express.json({ limit: '50mb' }));
-app.use(express.static(path.join(__dirname, 'dist')));
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+# Set the working directory in the container
+WORKDIR /app
 
-const DB_PATH = path.join(__dirname, 'backend', 'db');
-const DB_FILE = path.join(DB_PATH, 'data.db');
+# Copy package.json and package-lock.json first to leverage Docker layer caching
+COPY package*.json ./
 
-let db;
+# Install all dependencies, including devDependencies needed for the build
+RUN npm install
 
-// == MIGRATION LOGIC ==
-const runMigrations = (db) => {
-    return new Promise((resolve, reject) => {
-        db.serialize(() => {
-            db.get("SELECT name FROM sqlite_master WHERE type='table' AND name='schema_version'", (err, row) => {
-                if (err) return reject(new Error(`Failed to check for schema_version table: ${err.message}`));
+# Copy the rest of the application source code
+COPY . .
 
-                if (!row) {
-                    console.log("Schema versioning not found. Bootstrapping database...");
-                    bootstrapDatabase(db).then(resolve).catch(reject);
-                } else {
-                    executeMigrations(db).then(resolve).catch(reject);
-                }
-            });
-        });
-    });
-};
+# Run the build script to compile the server and client
+RUN npm run build
+# Stage 2: Create the final production image
+FROM node:20-alpine
 
-const bootstrapDatabase = (db) => {
-    return new Promise(async (resolve, reject) => {
-        try {
-            let oldDataJson = null;
-            const oldTableExists = await new Promise((res, rej) => {
-                db.get("SELECT name FROM sqlite_master WHERE type='table' AND name='data'", (err, row) => err ? rej(err) : res(!!row));
-            });
+# Set the working directory
+WORKDIR /app
 
-            if (oldTableExists) {
-                console.log("Found existing 'data' table. Attempting to salvage data...");
-                try {
-                    const oldRow = await new Promise((res) => {
-                        db.get("SELECT json FROM data LIMIT 1", (err, row) => res(row || null));
-                    });
-                    if (oldRow && oldRow.json) {
-                        oldDataJson = oldRow.json;
-                        console.log("Successfully salvaged old data.");
-                    }
-                } catch (salvageError) {
-                    console.warn(`Could not salvage data: ${salvageError.message}`);
-                }
-                await new Promise((res, rej) => db.run("DROP TABLE data", err => err ? rej(err) : res()));
-            }
+# Set the environment to production
+ENV NODE_ENV=production
 
-            console.log("Applying initial schema migration (001)...");
-            const migrationScript = MIGRATION_SCRIPTS['001_initial_schema.sql'];
-            if (!migrationScript) {
-                return reject(new Error("Initial migration script is missing from MIGRATION_SCRIPTS map."));
-            }
-            await new Promise((res, rej) => db.exec(migrationScript, err => err ? rej(err) : res()));
-            
-            if (oldDataJson) {
-                console.log("Restoring salvaged data...");
-                await new Promise((res, rej) => db.run("INSERT OR IGNORE INTO data (id, json) VALUES (1, ?)", [oldDataJson], err => err ? rej(err) : res()));
-            }
+# Copy package files
+COPY package*.json ./
 
-            console.log("Database successfully bootstrapped to version 1.");
-            resolve();
-        } catch (bootstrapError) {
-            reject(new Error(`Database bootstrapping failed: ${bootstrapError.message}`));
-        }
-    });
-};
+# Install only production dependencies
+RUN npm install --omit=dev
 
-const executeMigrations = (db) => {
-    return new Promise(async (resolve, reject) => {
-        try {
-            const versionRow = await new Promise((res, rej) => db.get("SELECT version FROM schema_version", (err, row) => err ? rej(err) : res(row)));
-            let currentVersion = versionRow ? versionRow.version : 0;
-            console.log(`Current DB version: ${currentVersion}`);
+# Copy the built frontend assets from the builder stage
+COPY --from=builder /app/dist ./dist
 
-            const migrationFiles = Object.keys(MIGRATION_SCRIPTS)
-                .map(filename => ({ version: parseInt(filename.split('_')[0]), filename }))
-                .filter(mf => !isNaN(mf.version) && mf.version > currentVersion)
-                .sort((a, b) => a.version - b.version);
+# Copy the server files from the builder stage
+COPY --from=builder /app/server.js .
 
-            if (migrationFiles.length === 0) {
-                console.log("Database is up to date.");
-                return resolve();
-            }
+# Expose the port the app runs on
+EXPOSE 3001
 
-            console.log(`Found ${migrationFiles.length} new migration(s) to apply.`);
-
-            for (const mf of migrationFiles) {
-                console.log(`Applying migration: ${mf.filename}...`);
-                const script = MIGRATION_SCRIPTS[mf.filename];
-                if (!script) {
-                    return reject(new Error(`Migration script for ${mf.filename} is missing from MIGRATION_SCRIPTS map.`));
-                }
-                await new Promise((res, rej) => db.exec(script, err => err ? rej(new Error(`Failed on ${mf.filename}: ${err.message}`)) : res()));
-                await new Promise((res, rej) => db.run("UPDATE schema_version SET version = ?", [mf.version], err => err ? rej(new Error(`Failed to update version after ${mf.filename}: ${err.message}`)) : res()));
-                console.log(`Successfully migrated to version ${mf.version}.`);
-            }
-            
-            console.log("All migrations applied successfully.");
-            resolve();
-        } catch (migrationError) {
-            reject(new Error(`Migration process failed: ${migrationError.message}`));
-        }
-    });
-};
-
-// Ensure db directory exists and initialize DB
-fs.mkdir(DB_PATH, { recursive: true })
-  .then(() => {
-    db = new sqlite3.Database(DB_FILE, (err) => {
-      if (err) {
-        console.error('Failed to connect to SQLite:', err.message);
-        return;
-      }
-      console.log('Connected to the SQLite database.');
-      
-      runMigrations(db)
-        .then(() => console.log("Database is ready."))
-        .catch(err => {
-            console.error("CRITICAL: DATABASE MIGRATION FAILED. The application cannot start.", err);
-            process.exit(1);
-        });
-    });
-  })
-  .catch(err => {
-    console.error('Failed to create database directory:', err);
-  });
-
-
-// WebSocket connection handling
-wss.on('connection', ws => {
-    console.log('Client connected');
-    ws.on('close', () => {
-        console.log('Client disconnected');
-    });
-});
-
-const broadcastStateUpdate = async () => {
-    try {
-        const data = await readData();
-        const message = JSON.stringify({
-            type: 'FULL_STATE_UPDATE',
-            payload: data
-        });
-        wss.clients.forEach(client => {
-            if (client.readyState === WebSocket.OPEN) {
-                client.send(message);
-            }
-        });
-    } catch (error) {
-        console.error("Failed to broadcast state update:", error);
-    }
-};
-
-// Data persistence functions
-const readData = () => {
-    console.log(`[SERVER LOG] readData: Reading from DB.`);
-    return new Promise((resolve, reject) => {
-        db.get('SELECT json FROM data WHERE id = 1', [], (err, row) => {
-            if (err) {
-                console.error("readData SQL error:", err.message);
-                return reject(err);
-            }
-            if (row && row.json) {
-                const data = JSON.parse(row.json);
-                console.log(`[SERVER LOG] /api/data (GET): Reading from DB. isFirstRunComplete is: ${data.settings.isFirstRunComplete}, Users: ${data.users.length}`);
-                resolve(data);
-            } else {
-                console.log("[SERVER LOG] No data found in DB, returning initial structure for first run.");
-                resolve({
-                    users: [], quests: [], questGroups: [], markets: [], rewardTypes: [], questCompletions: [],
-                    purchaseRequests: [], guilds: [], ranks: [], trophies: [], userTrophies: [],
-                    adminAdjustments: [], gameAssets: [], systemLogs: [], settings: INITIAL_SETTINGS,
-                    themes: INITIAL_THEMES, loginHistory: [], chatMessages: [], systemNotifications: [], scheduledEvents: [],
-                });
-            }
-        });
-    });
-};
-
-const writeData = (data) => {
-    console.log(`[SERVER LOG] writeData: Writing to DB. isFirstRunComplete is: ${data.settings.isFirstRunComplete}, Users: ${data.users.length}`);
-    return new Promise((resolve, reject) => {
-        const jsonData = JSON.stringify(data);
-        db.run('REPLACE INTO data (id, json) VALUES (1, ?)', [jsonData], function(err) {
-            if (err) {
-                return reject(err);
-            }
-            resolve();
-        });
-    });
-};
-
-// API routes
-app.get('/api/data', async (req, res) => {
-    try {
-        const data = await readData();
-        res.json(data);
-    } catch (error) {
-        res.status(500).json({ error: 'Failed to read data' });
-    }
-});
-
-app.post('/api/data', async (req, res) => {
-    try {
-        await writeData(req.body);
-        broadcastStateUpdate();
-        res.status(200).send({ message: 'Data saved' });
-    } catch (error) {
-        res.status(500).json({ error: 'Failed to save data' });
-    }
-});
-
-app.post('/api/first-run', async (req, res) => {
-    try {
-        const { adminUserData, setupChoice, blueprint } = req.body;
-        
-        await new Promise((resolve, reject) => {
-            db.run('DELETE FROM data WHERE id = 1', (err) => err ? reject(err) : resolve());
-        });
-
-        const initialData = createInitialData(setupChoice, adminUserData, blueprint);
-        
-        await writeData(initialData);
-        broadcastStateUpdate();
-        
-        const adminUser = initialData.users.find(u => u.role === Role.DonegeonMaster);
-        
-        res.status(201).json({ message: 'First run completed successfully', adminUser });
-    } catch (error) {
-        console.error("First run setup failed:", error);
-        res.status(500).json({ error: 'Failed to initialize data' });
-    }
-});
-
-
-// Helper to manage balances
-const modifyBalance = (balance, rewardDef, amount) => {
-    const key = rewardDef.category === RewardCategory.Currency ? 'purse' : 'experience';
-    balance[key][rewardDef.id] = (balance[key][rewardDef.id] || 0) + amount;
-};
-
-// Approve a quest completion
-app.post('/api/completions/:completionId/approve', async (req, res) => {
-    try {
-        const { completionId } = req.params;
-        const { note } = req.body;
-        const data = await readData();
-
-        const completionIndex = data.questCompletions.findIndex(c => c.id === completionId);
-        if (completionIndex === -1) {
-             return res.status(404).json({ error: 'Completion not found.' });
-        }
-        
-        const completion = data.questCompletions[completionIndex];
-        if (completion.status !== 'Pending') {
-            return res.status(400).json({ error: 'Completion is not pending.' });
-        }
-
-        const user = data.users.find(u => u.id === completion.userId);
-        const quest = data.quests.find(q => q.id === completion.questId);
-        if (!user || !quest) {
-            return res.status(404).json({ error: 'Associated user or quest not found.' });
-        }
-
-        // Apply rewards
-        quest.rewards.forEach(reward => {
-            const rewardDef = data.rewardTypes.find(rt => rt.id === reward.rewardTypeId);
-            if (!rewardDef) return;
-
-            let targetBalance;
-            if (completion.guildId) {
-                if (!user.guildBalances[completion.guildId]) {
-                    user.guildBalances[completion.guildId] = { purse: {}, experience: {} };
-                }
-                targetBalance = user.guildBalances[completion.guildId];
-            } else {
-                targetBalance = { purse: user.personalPurse, experience: user.personalExperience };
-            }
-             modifyBalance(targetBalance, rewardDef, reward.amount);
-        });
-
-        completion.status = 'Approved';
-        if (note) {
-            completion.note = completion.note ? `${completion.note}\\nApprover: ${note}` : `Approver: ${note}`;
-        }
-        
-        await writeData(data);
-        broadcastStateUpdate();
-        res.status(200).json({ message: 'Quest approved and rewards granted.' });
-    } catch (error) {
-        console.error('Error approving quest:', error);
-        res.status(500).json({ error: 'Failed to approve quest.' });
-    }
-});
-
-app.post('/api/completions/:completionId/reject', async (req, res) => {
-    try {
-        const { completionId } = req.params;
-        const { note } = req.body;
-        const data = await readData();
-
-        const completionIndex = data.questCompletions.findIndex(c => c.id === completionId);
-        if (completionIndex === -1) {
-             return res.status(404).json({ error: 'Completion not found.' });
-        }
-        const completion = data.questCompletions[completionIndex];
-        if (completion.status !== 'Pending') {
-            return res.status(400).json({ error: 'Completion is not pending.' });
-        }
-        
-        completion.status = 'Rejected';
-         if (note) {
-            completion.note = completion.note ? `${completion.note}\\nRejecter: ${note}` : `Rejecter: ${note}`;
-        }
-
-        await writeData(data);
-        broadcastStateUpdate();
-        res.status(200).json({ message: 'Quest completion rejected.' });
-    } catch (error) {
-        console.error('Error rejecting quest:', error);
-        res.status(500).json({ error: 'Failed to reject quest.' });
-    }
-});
-
-
-// Exchange currencies
-app.post('/api/actions/exchange', async (req, res) => {
-    try {
-        const { userId, payItem, receiveItem, guildId } = req.body;
-        const data = await readData();
-
-        const user = data.users.find(u => u.id === userId);
-        if (!user) return res.status(404).json({ error: 'User not found.' });
-        
-        const payRewardDef = data.rewardTypes.find(rt => rt.id === payItem.rewardTypeId);
-        const receiveRewardDef = data.rewardTypes.find(rt => rt.id === receiveItem.rewardTypeId);
-        if (!payRewardDef || !receiveRewardDef) return res.status(400).json({ error: 'Invalid reward types provided.' });
-
-        let balance;
-        if (guildId) {
-            if (!user.guildBalances[guildId]) user.guildBalances[guildId] = { purse: {}, experience: {} };
-            balance = user.guildBalances[guildId];
-        } else {
-            balance = { purse: user.personalPurse, experience: user.personalExperience };
-        }
-
-        const balanceKey = payRewardDef.category === RewardCategory.Currency ? 'purse' : 'experience';
-        const currentAmount = (balance[balanceKey][payItem.rewardTypeId] || 0);
-
-        if (currentAmount < payItem.amount) {
-            return res.status(400).json({ error: 'Insufficient funds.' });
-        }
-
-        // Perform exchange
-        modifyBalance(balance, payRewardDef, -payItem.amount);
-        modifyBalance(balance, receiveRewardDef, receiveItem.amount);
-
-        await writeData(data);
-        broadcastStateUpdate();
-        res.status(200).json({ message: 'Exchange successful.' });
-    } catch (error) {
-        console.error('Error processing exchange:', error);
-        res.status(500).json({ error: 'Failed to process exchange.' });
-    }
-});
-
-app.post('/api/actions/factory-reset', async (req, res) => {
-    try {
-        const data = await readData();
-        const users = data.users; // Keep users
-        const freshData = createInitialData('scratch', users[0]);
-        freshData.users = users; // Put all original users back
-        await writeData(freshData);
-        broadcastStateUpdate();
-        res.status(200).json({ message: 'Factory reset successful. Users have been kept.' });
-    } catch (error) {
-        console.error('Factory reset error:', error);
-        res.status(500).json({ error: 'Failed to perform factory reset.' });
-    }
-});
-
-app.post('/api/actions/reinitialize', async (req, res) => {
-    try {
-        await new Promise((resolve, reject) => {
-            db.run('DELETE FROM data', (err) => {
-                if (err) return reject(err);
-                db.run("INSERT INTO data (id, json) VALUES (1, '{}')", (err) => {
-                    if (err) return reject(err);
-                    resolve();
-                });
-            });
-        });
-        broadcastStateUpdate();
-        res.status(200).json({ message: 'Application reinitialized. Please reload.' });
-    } catch (error) {
-        console.error('Reinitialization error:', error);
-        res.status(500).json({ error: 'Failed to reinitialize application.' });
-    }
-});
-
-
-app.get('/api/ai/status', (req, res) => {
-    res.json({ isConfigured: !!process.env.API_KEY });
-});
-
-app.post('/api/ai/test', async (req, res) => {
-    if (!process.env.API_KEY) {
-        return res.status(400).json({ success: false, error: 'API_KEY environment variable not set on the server.' });
-    }
-    try {
-        const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-        // A simple, harmless prompt to test connectivity and key validity.
-        await ai.models.generateContent({ model: "gemini-2.5-flash", contents: "test" });
-        res.json({ success: true, message: 'API key is valid.' });
-    } catch (error) {
-        console.error("AI API Key Test Error:", error.message);
-        res.status(400).json({ success: false, error: 'The provided API key is invalid or has insufficient permissions.' });
-    }
-});
-
-app.post('/api/ai/generate', async (req, res) => {
-    if (!process.env.API_KEY) {
-        return res.status(500).json({ error: "AI features are not configured on the server." });
-    }
-    const { prompt, model, generationConfig } = req.body;
-
-    try {
-        const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-        const response = await ai.models.generateContent({
-          model: model || 'gemini-2.5-flash',
-          contents: prompt,
-          config: generationConfig
-        });
-
-        res.json({ text: response.text });
-    } catch (error) {
-        console.error('AI generation error:', error);
-        res.status(500).json({ error: error.message || 'An unknown error occurred during AI generation.' });
-    }
-});
-
-// Serve the main app
-app.get('*', (req, res) => {
-    res.sendFile(path.join(__dirname, 'dist/index.html'));
-});
-
-const PORT = process.env.PORT || 3001;
-server.listen(PORT, () => {
-    console.log(`Server listening on port ${PORT}`);
-});
+# The command to run when the container starts
+CMD [ "node", "server.js" 

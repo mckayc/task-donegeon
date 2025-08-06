@@ -115,29 +115,41 @@ const FirstRunWizard: React.FC = () => {
           {status && (
             <>
               <StatusCheck title="Gemini API Key" isOk={status.geminiConnected} isSkipped={skip.gemini} onSkipToggle={() => handleSkipToggle('gemini')}>
-                <p>The Gemini API key is not configured correctly. AI features will be disabled.</p>
-                <p>To fix this, set the <code>API_KEY</code> environment variable in your <code>.env</code> file or hosting provider's settings.</p>
-                <pre><code>API_KEY="your-gemini-api-key-here"</code></pre>
+                {status.geminiConnected ? (
+                  <p>Your Gemini API key is connected successfully. AI features are available!</p>
+                ) : (
+                  <>
+                    <p>The Gemini API key is not configured correctly. AI features will be disabled.</p>
+                    <p>To fix this, get a key from the <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" className="text-accent hover:underline">Google AI Studio</a> and set the <code>API_KEY</code> environment variable in your <code>.env</code> file or hosting provider's settings.</p>
+                    <pre className="whitespace-pre-wrap break-all"><code>API_KEY="your-gemini-api-key-here"</code></pre>
+                  </>
+                )}
               </StatusCheck>
               <StatusCheck title="Persistent Data Storage" isOk={status.database.isCustomPath} isSkipped={skip.database} onSkipToggle={() => handleSkipToggle('database')} skipLabel="I've mapped a volume">
                 <p>Your application data is currently stored in the default internal location. For your data (users, quests, images) to be safe and persist if the container is recreated, you must map a persistent volume from your host machine.</p>
                 <p><strong>Recommended Setup (Docker):</strong></p>
                 <p>Set the <code>APP_DATA_PATH</code> environment variable in your <code>docker-compose.yml</code> or Docker run command to map a local folder to the container's <code>/app/data</code> directory.</p>
-                <pre><code>
-services:
+                <pre className="whitespace-pre-wrap break-all"><code>
+{`services:
   task-donegeon:
     # ...
     environment:
       - APP_DATA_PATH=./my-task-data
     volumes:
-      - "${"APP_DATA_PATH:-./data"}:/app/data"
+      - "\${APP_DATA_PATH:-./data}:/app/data"`}
                 </code></pre>
                 <p>If you've already done this, you can safely check the box above and continue.</p>
               </StatusCheck>
               <StatusCheck title="JWT Secret" isOk={status.jwtSecretSet} isSkipped={skip.jwt} onSkipToggle={() => handleSkipToggle('jwt')}>
-                <p>A secure secret for signing authentication tokens has not been set. Using the default is insecure.</p>
-                <p>To fix this, set the <code>JWT_SECRET</code> environment variable to a long, random, and secret string.</p>
-                <pre><code>JWT_SECRET="your-long-random-secret-string"</code></pre>
+                 {status.jwtSecretSet ? (
+                  <p>A secure JWT secret has been set. User sessions are properly secured.</p>
+                 ) : (
+                  <>
+                    <p>A secure secret for signing authentication tokens has not been set. Using the default is insecure.</p>
+                    <p>To fix this, set the <code>JWT_SECRET</code> environment variable to a long, random, and secret string.</p>
+                    <pre className="whitespace-pre-wrap break-all"><code>JWT_SECRET="your-long-random-secret-string"</code></pre>
+                  </>
+                 )}
               </StatusCheck>
             </>
           )}
@@ -150,12 +162,12 @@ services:
               <div className="space-y-4">
                 <UserFormFields formData={formData} handleChange={handleChange} />
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <Input label="Password" id="password" name="password" type="password" value={formData.password} onChange={handleChange} required className="bg-slate-700" />
-                  <Input label="Confirm Password" id="confirmPassword" name="confirmPassword" type="password" value={formData.confirmPassword} onChange={handleChange} required className="bg-slate-700" />
+                  <Input label="Password" id="password" name="password" type="password" value={formData.password} onChange={handleChange} required />
+                  <Input label="Confirm Password" id="confirmPassword" name="confirmPassword" type="password" value={formData.confirmPassword} onChange={handleChange} required />
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <Input label="PIN (4-10 digits)" id="pin" name="pin" type="password" value={formData.pin} onChange={handleChange} required className="bg-slate-700" />
-                  <Input label="Confirm PIN" id="confirmPin" name="confirmPin" type="password" value={formData.confirmPin} onChange={handleChange} required className="bg-slate-700" />
+                  <Input label="PIN (4-10 digits)" id="pin" name="pin" type="password" value={formData.pin} onChange={handleChange} required />
+                  <Input label="Confirm PIN" id="confirmPin" name="confirmPin" type="password" value={formData.confirmPin} onChange={handleChange} required />
                 </div>
               </div>
               {error && <p className="text-red-400 text-center">{error}</p>}

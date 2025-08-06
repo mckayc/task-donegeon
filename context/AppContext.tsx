@@ -1031,7 +1031,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const importBlueprint = useCallback((blueprint: Blueprint, resolutions: ImportResolution[]) => { const idMap = new Map<string, string>(); const genId = (p: string) => `${p}-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`; resolutions.forEach(res => { if (res.resolution !== 'skip') idMap.set(res.id, genId(res.type.slice(0, 2))); }); const newAssets: Partial<IAppData> = { quests: [], rewardTypes: [], ranks: [], trophies: [], markets: [] }; resolutions.forEach(res => { if (res.resolution === 'skip') return; const a = blueprint.assets[res.type]?.find(a => a.id === res.id); if (a) { const nA = { ...a, id: idMap.get(a.id)! }; if (res.resolution === 'rename' && res.newName) { if('title' in nA) nA.title = res.newName; else nA.name = res.newName; } newAssets[res.type]?.push(nA as any); } }); newAssets.quests?.forEach(q => { q.rewards = q.rewards.map(r => ({ ...r, rewardTypeId: idMap.get(r.rewardTypeId) || r.rewardTypeId })); q.lateSetbacks = q.lateSetbacks.map(r => ({ ...r, rewardTypeId: idMap.get(r.rewardTypeId) || r.rewardTypeId })); q.incompleteSetbacks = q.incompleteSetbacks.map(r => ({ ...r, rewardTypeId: idMap.get(r.rewardTypeId) || r.rewardTypeId })); }); newAssets.trophies?.forEach(t => t.requirements.forEach(r => { if(r.type === TrophyRequirementType.AchieveRank) r.value = idMap.get(r.value) || r.value; })); setQuests(p => [...p, ...(newAssets.quests || [])]); setRewardTypes(p => p.filter(rt => rt.isCore).concat(newAssets.rewardTypes || [])); setRanks(p => [...p, ...(newAssets.ranks || [])]); setTrophies(p => [...p, ...(newAssets.trophies || [])]); setMarkets(p => [...p, ...(newAssets.markets || [])]); addNotification({ type: 'success', message: `Imported from ${blueprint.name}!`}); }, [addNotification]);
   
   const completeFirstRun = useCallback((adminUserData: Omit<User, 'id' | 'personalPurse' | 'personalExperience' | 'guildBalances' | 'avatar' | 'ownedAssetIds' | 'ownedThemes' | 'hasBeenOnboarded'>, setupChoice: 'guided' | 'scratch' | 'import', blueprint?: Blueprint | null) => {
-    // 1. Create the admin user object
+    let allUsers: User[] = [];
     const adminUser: User = { 
         ...adminUserData, 
         id: `user-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`, 
@@ -1043,17 +1043,16 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         ownedThemes: ['emerald', 'rose', 'sky'], 
         hasBeenOnboarded: false 
     };
-
-    // 2. Set core data that's always present
-    setUsers([adminUser]);
-    setGuilds(createInitialGuilds([adminUser]));
+    allUsers.push(adminUser);
+    
+    // Create core data that's always present
     setRewardTypes(INITIAL_REWARD_TYPES);
     setRanks(INITIAL_RANKS);
     setTrophies(INITIAL_TROPHIES);
     setThemes(INITIAL_THEMES);
     setQuestGroups(INITIAL_QUEST_GROUPS);
     
-    // 3. Clear any potential old sample data from a failed previous run
+    // Clear any potential old sample data from a failed previous run
     setQuests([]);
     setMarkets([]);
     setGameAssets([]);
@@ -1063,13 +1062,15 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     setPurchaseRequests([]);
     setScheduledEvents([]);
     
-    // 4. Choice-specific setup
+    // Choice-specific setup
     if (setupChoice === 'guided') {
-        const sampleQuests = createSampleQuests([adminUser]);
+        const sampleUsers = createMockUsers().filter(u => u.username !== 'admin'); // Get other users
+        allUsers = [...allUsers, ...sampleUsers];
+        const sampleQuests = createSampleQuests(allUsers);
         setQuests(sampleQuests);
         setMarkets(createSampleMarkets());
         setGameAssets(createSampleGameAssets());
-        setQuestCompletions(createInitialQuestCompletions([adminUser], sampleQuests));
+        setQuestCompletions(createInitialQuestCompletions(allUsers, sampleQuests));
         addNotification({ type: 'info', message: 'Your Donegeon is being populated with sample data!' });
     } else if (setupChoice === 'scratch') {
         const exchangeMarket = createSampleMarkets().find(m => m.id === 'market-bank');
@@ -1092,7 +1093,11 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         });
     }
     
-    // 5. Finalize
+    // Set final user and guild states
+    setUsers(allUsers);
+    setGuilds(createInitialGuilds(allUsers));
+
+    // Finalize
     setSettings(prev => ({...prev, contentVersion: 1}));
     setCurrentUser(adminUser);
 

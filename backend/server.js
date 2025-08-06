@@ -1,4 +1,3 @@
-
 require("reflect-metadata");
 const express = require('express');
 const cors = require('cors');
@@ -8,6 +7,7 @@ const fs = require('fs').promises;
 const { GoogleGenAI } = require('@google/genai');
 const http = require('http');
 const WebSocket = require('ws');
+const { In } = require("typeorm");
 const { dataSource, ensureDatabaseDirectoryExists } = require('./data-source');
 const { INITIAL_SETTINGS } = require('./initialData');
 const { 
@@ -103,14 +103,22 @@ initializeApp().catch(err => {
 // === Helper to construct the full app data state from DB ===
 const getFullAppData = async (manager) => {
     const data = {};
-    data.users = await manager.getRepository(UserEntity).find();
-    data.quests = await manager.getRepository(QuestEntity).find();
+
+    const users = await manager.getRepository(UserEntity).find();
+    const guilds = await manager.getRepository(GuildEntity).find({ relations: ['members'] });
+    const quests = await manager.getRepository(QuestEntity).find({ relations: ['assignedUsers'] });
+    const questCompletions = await manager.getRepository(QuestCompletionEntity).find({ relations: ['user', 'quest'] });
+    
+    // Flatten relational data back to the ID-based format the frontend expects
+    data.users = users.map(u => ({ ...u, guildIds: u.guilds?.map(g => g.id) || [] }));
+    data.guilds = guilds.map(g => ({ ...g, memberIds: g.members?.map(m => m.id) || [] }));
+    data.quests = quests.map(q => ({ ...q, assignedUserIds: q.assignedUsers?.map(u => u.id) || [] }));
+    data.questCompletions = questCompletions.map(qc => ({ ...qc, userId: qc.user?.id, questId: qc.quest?.id }));
+    
     data.questGroups = await manager.getRepository(QuestGroupEntity).find();
     data.markets = await manager.getRepository(MarketEntity).find();
     data.rewardTypes = await manager.getRepository(RewardTypeDefinitionEntity).find();
-    data.questCompletions = await manager.getRepository(QuestCompletionEntity).find();
     data.purchaseRequests = await manager.getRepository(PurchaseRequestEntity).find();
-    data.guilds = await manager.getRepository(GuildEntity).find();
     data.ranks = await manager.getRepository(RankEntity).find();
     data.trophies = await manager.getRepository(TrophyEntity).find();
     data.userTrophies = await manager.getRepository(UserTrophyEntity).find();
@@ -167,51 +175,64 @@ app.post('/api/data/save', async (req, res, next) => {
     await queryRunner.startTransaction();
 
     try {
-        // Clear all tables explicitly in reverse dependency order to avoid constraint violations.
-        await queryRunner.manager.getRepository(QuestCompletionEntity).clear();
-        await queryRunner.manager.getRepository(PurchaseRequestEntity).clear();
-        await queryRunner.manager.getRepository(UserTrophyEntity).clear();
-        await queryRunner.manager.getRepository(AdminAdjustmentEntity).clear();
-        await queryRunner.manager.getRepository(SystemLogEntity).clear();
-        await queryRunner.manager.getRepository(ChatMessageEntity).clear();
-        await queryRunner.manager.getRepository(SystemNotificationEntity).clear();
-        await queryRunner.manager.getRepository(GameAssetEntity).clear();
-        await queryRunner.manager.getRepository(QuestEntity).clear();
-        await queryRunner.manager.getRepository(ScheduledEventEntity).clear();
-        await queryRunner.manager.getRepository(MarketEntity).clear();
-        await queryRunner.manager.getRepository(GuildEntity).clear();
-        await queryRunner.manager.getRepository(UserEntity).clear();
-        await queryRunner.manager.getRepository(QuestGroupEntity).clear();
-        await queryRunner.manager.getRepository(TrophyEntity).clear();
-        await queryRunner.manager.getRepository(RankEntity).clear();
-        await queryRunner.manager.getRepository(RewardTypeDefinitionEntity).clear();
-        await queryRunner.manager.getRepository(ThemeDefinitionEntity).clear();
-        await queryRunner.manager.getRepository(SettingEntity).clear();
-        await queryRunner.manager.getRepository(LoginHistoryEntity).clear();
+        // Clear all tables in an order that respects foreign key constraints
+        const entities = dataSource.entityMetadatas;
+        const sortedEntities = entities.sort((a, b) => (b.relations.length > 0 ? 1 : 0) - (a.relations.length > 0 ? 1 : 0));
+        for (const entity of sortedEntities) {
+            await queryRunner.manager.getRepository(entity.name).query(`DELETE FROM ${entity.tableName};`);
+        }
 
-        // Save new data explicitly, checking for existence and ensuring it's a non-empty array for list entities.
-        if (data.users && data.users.length) await queryRunner.manager.getRepository(UserEntity).save(data.users);
-        if (data.guilds && data.guilds.length) await queryRunner.manager.getRepository(GuildEntity).save(data.guilds);
-        if (data.questGroups && data.questGroups.length) await queryRunner.manager.getRepository(QuestGroupEntity).save(data.questGroups);
-        if (data.markets && data.markets.length) await queryRunner.manager.getRepository(MarketEntity).save(data.markets);
-        if (data.quests && data.quests.length) await queryRunner.manager.getRepository(QuestEntity).save(data.quests);
-        if (data.rewardTypes && data.rewardTypes.length) await queryRunner.manager.getRepository(RewardTypeDefinitionEntity).save(data.rewardTypes);
-        if (data.ranks && data.ranks.length) await queryRunner.manager.getRepository(RankEntity).save(data.ranks);
-        if (data.trophies && data.trophies.length) await queryRunner.manager.getRepository(TrophyEntity).save(data.trophies);
-        if (data.themes && data.themes.length) await queryRunner.manager.getRepository(ThemeDefinitionEntity).save(data.themes);
-        if (data.gameAssets && data.gameAssets.length) await queryRunner.manager.getRepository(GameAssetEntity).save(data.gameAssets);
-        if (data.questCompletions && data.questCompletions.length) await queryRunner.manager.getRepository(QuestCompletionEntity).save(data.questCompletions);
-        if (data.purchaseRequests && data.purchaseRequests.length) await queryRunner.manager.getRepository(PurchaseRequestEntity).save(data.purchaseRequests);
-        if (data.userTrophies && data.userTrophies.length) await queryRunner.manager.getRepository(UserTrophyEntity).save(data.userTrophies);
-        if (data.adminAdjustments && data.adminAdjustments.length) await queryRunner.manager.getRepository(AdminAdjustmentEntity).save(data.adminAdjustments);
-        if (data.systemLogs && data.systemLogs.length) await queryRunner.manager.getRepository(SystemLogEntity).save(data.systemLogs);
-        if (data.chatMessages && data.chatMessages.length) await queryRunner.manager.getRepository(ChatMessageEntity).save(data.chatMessages);
-        if (data.systemNotifications && data.systemNotifications.length) await queryRunner.manager.getRepository(SystemNotificationEntity).save(data.systemNotifications);
-        if (data.scheduledEvents && data.scheduledEvents.length) await queryRunner.manager.getRepository(ScheduledEventEntity).save(data.scheduledEvents);
+        // Save new data, handling relations
+        const userEntities = data.users.map(u => {
+            const user = new UserEntity();
+            Object.assign(user, u);
+            return user;
+        });
+        await queryRunner.manager.save(userEntities);
+
+        const guildEntities = data.guilds.map(g => {
+            const guild = new GuildEntity();
+            Object.assign(guild, g);
+            guild.members = g.memberIds ? userEntities.filter(u => g.memberIds.includes(u.id)) : [];
+            return guild;
+        });
+        await queryRunner.manager.save(guildEntities);
+
+        if (data.rewardTypes && data.rewardTypes.length) await queryRunner.manager.save(RewardTypeDefinitionEntity, data.rewardTypes);
+        if (data.ranks && data.ranks.length) await queryRunner.manager.save(RankEntity, data.ranks);
+        if (data.trophies && data.trophies.length) await queryRunner.manager.save(TrophyEntity, data.trophies);
+        if (data.themes && data.themes.length) await queryRunner.manager.save(ThemeDefinitionEntity, data.themes);
+        if (data.questGroups && data.questGroups.length) await queryRunner.manager.save(QuestGroupEntity, data.questGroups);
+        if (data.markets && data.markets.length) await queryRunner.manager.save(MarketEntity, data.markets);
+        if (data.gameAssets && data.gameAssets.length) await queryRunner.manager.save(GameAssetEntity, data.gameAssets);
         
-        // Handle singleton entities
-        if (data.settings) await queryRunner.manager.getRepository(SettingEntity).save({ id: 1, settings: data.settings });
-        if (data.loginHistory) await queryRunner.manager.getRepository(LoginHistoryEntity).save({ id: 1, history: data.loginHistory });
+        const questEntities = data.quests.map(q => {
+             const quest = new QuestEntity();
+             Object.assign(quest, q);
+             quest.assignedUsers = q.assignedUserIds ? userEntities.filter(u => q.assignedUserIds.includes(u.id)) : [];
+             return quest;
+        });
+        await queryRunner.manager.save(questEntities);
+        
+        const questCompletionEntities = data.questCompletions.map(qc => {
+            const completion = new QuestCompletionEntity();
+            Object.assign(completion, qc);
+            completion.user = userEntities.find(u => u.id === qc.userId);
+            completion.quest = questEntities.find(q => q.id === qc.questId);
+            return completion;
+        });
+        await queryRunner.manager.save(questCompletionEntities);
+        
+        if (data.purchaseRequests && data.purchaseRequests.length) await queryRunner.manager.save(PurchaseRequestEntity, data.purchaseRequests);
+        if (data.userTrophies && data.userTrophies.length) await queryRunner.manager.save(UserTrophyEntity, data.userTrophies);
+        if (data.adminAdjustments && data.adminAdjustments.length) await queryRunner.manager.save(AdminAdjustmentEntity, data.adminAdjustments);
+        if (data.systemLogs && data.systemLogs.length) await queryRunner.manager.save(SystemLogEntity, data.systemLogs);
+        if (data.chatMessages && data.chatMessages.length) await queryRunner.manager.save(ChatMessageEntity, data.chatMessages);
+        if (data.systemNotifications && data.systemNotifications.length) await queryRunner.manager.save(SystemNotificationEntity, data.systemNotifications);
+        if (data.scheduledEvents && data.scheduledEvents.length) await queryRunner.manager.save(ScheduledEventEntity, data.scheduledEvents);
+        
+        if (data.settings) await queryRunner.manager.save(SettingEntity, { id: 1, settings: data.settings });
+        if (data.loginHistory) await queryRunner.manager.save(LoginHistoryEntity, { id: 1, history: data.loginHistory });
 
         await queryRunner.commitTransaction();
         broadcast({ type: 'DATA_UPDATED' });

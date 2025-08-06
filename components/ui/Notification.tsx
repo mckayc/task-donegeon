@@ -1,6 +1,6 @@
-
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useEffect, useRef, useCallback } from 'react';
 import { Notification as NotificationType } from '../../types';
+import { motion } from 'framer-motion';
 
 interface NotificationProps {
   notification: NotificationType;
@@ -25,22 +25,16 @@ const getIcon = (type: NotificationType['type'], customIcon?: string) => {
 }
 
 const Notification: React.FC<NotificationProps> = ({ notification, onDismiss }) => {
-    const [show, setShow] = useState(false);
-  
     const onDismissRef = useRef(onDismiss);
     useEffect(() => {
         onDismissRef.current = onDismiss;
     });
 
     const handleDismiss = useCallback(() => {
-        setShow(false);
-        setTimeout(() => {
-            onDismissRef.current();
-        }, 300); // Wait for exit animation
+        onDismissRef.current();
     }, []);
   
     useEffect(() => {
-      setShow(true);
       const timerId = setTimeout(() => {
         handleDismiss();
       }, 5000);
@@ -48,15 +42,15 @@ const Notification: React.FC<NotificationProps> = ({ notification, onDismiss }) 
       return () => {
         clearTimeout(timerId);
       };
-    }, [notification.id, handleDismiss]); // Depend on ID to reset timer for new notifications
+    }, [notification.id, handleDismiss]);
   
     return (
-      <div
-        className={`
-          max-w-sm w-full bg-stone-800 shadow-2xl rounded-lg pointer-events-auto ring-1 ring-black ring-opacity-5 overflow-hidden
-          transition-all duration-300 ease-in-out
-          ${show ? 'transform-gpu opacity-100 translate-y-0 sm:translate-x-0' : 'transform-gpu opacity-0 translate-y-2 sm:translate-y-0 sm:translate-x-2'}
-        `}
+      <motion.div
+        layout
+        initial={{ opacity: 0, y: 50, scale: 0.3 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        exit={{ opacity: 0, scale: 0.5, transition: { duration: 0.2 } }}
+        className="max-w-sm w-full bg-stone-800 shadow-2xl rounded-lg pointer-events-auto ring-1 ring-black ring-opacity-5 overflow-hidden"
       >
         <div className="p-4 border border-stone-700/80 rounded-lg">
           <div className="flex items-start">
@@ -80,7 +74,7 @@ const Notification: React.FC<NotificationProps> = ({ notification, onDismiss }) 
             </div>
           </div>
         </div>
-      </div>
+      </motion.div>
     );
   };
   

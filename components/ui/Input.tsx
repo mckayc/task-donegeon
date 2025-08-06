@@ -1,5 +1,5 @@
-
 import React, { forwardRef } from 'react';
+import { cn } from '../../lib/utils';
 
 // Extends base props to allow for a 'select' or 'textarea' type input
 interface InputProps extends React.InputHTMLAttributes<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement> {
@@ -10,7 +10,8 @@ interface InputProps extends React.InputHTMLAttributes<HTMLInputElement | HTMLSe
 
 const Input = forwardRef<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement, InputProps>(({ label, id, className, as = 'input', children, ...props }, ref) => {
   
-  const baseClasses = `w-full px-4 py-2 bg-stone-700 border border-stone-600 rounded-md focus:ring-emerald-500 focus:border-emerald-500 transition ${className || ''}`;
+  const baseClasses = `w-full bg-stone-700 border border-stone-600 rounded-md focus:ring-emerald-500 focus:border-emerald-500 transition`;
+  const shadCnInputClasses = "flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50";
 
   const inputElement = (() => {
     switch(as) {
@@ -20,7 +21,7 @@ const Input = forwardRef<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElem
             id={id}
             ref={ref as React.ForwardedRef<HTMLSelectElement>}
             {...(props as React.SelectHTMLAttributes<HTMLSelectElement>)}
-            className={baseClasses}
+            className={cn(shadCnInputClasses, 'h-auto', className)}
           >
             {children}
           </select>
@@ -31,7 +32,7 @@ const Input = forwardRef<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElem
             id={id}
             ref={ref as React.ForwardedRef<HTMLTextAreaElement>}
             {...(props as React.TextareaHTMLAttributes<HTMLTextAreaElement>)}
-            className={baseClasses}
+            className={cn(shadCnInputClasses, 'h-auto', className)}
           />
         );
       case 'input':
@@ -41,7 +42,7 @@ const Input = forwardRef<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElem
             id={id}
             ref={ref as React.ForwardedRef<HTMLInputElement>}
             {...(props as React.InputHTMLAttributes<HTMLInputElement>)}
-            className={baseClasses}
+            className={cn(shadCnInputClasses, className)}
           />
         );
     }

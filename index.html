@@ -32,22 +32,43 @@
         --font-button: 'Roboto', sans-serif;
         --font-size-button: 1rem;
         
-        --color-bg-primary: 224 71% 4%;    /* stone-950 */
-        --color-bg-secondary: 224 39% 10%; /* stone-900 */
-        --color-bg-tertiary: 240 10% 19%;  /* stone-800 */
-        --color-text-primary: 240 8% 90%;   /* stone-200 */
-        --color-text-secondary: 240 6% 65%; /* stone-400 */
-        --color-border: 240 6% 30%; /* stone-700/60 */
+        /* Original Theme Colors */
+        --color-bg-primary-hsl: 224 71% 4%;    /* stone-950 */
+        --color-bg-secondary-hsl: 224 39% 10%; /* stone-900 */
+        --color-bg-tertiary-hsl: 240 10% 19%;  /* stone-800 */
+        --color-text-primary-hsl: 240 8% 90%;   /* stone-200 */
+        --color-text-secondary-hsl: 240 6% 65%; /* stone-400 */
+        --color-border-hsl: 240 6% 30%; /* stone-700/60 */
         --color-primary-hue: 158; --color-primary-saturation: 84%; --color-primary-lightness: 39%;
-        --color-accent-hue: 158; --color-accent-saturation: 75%; --color-accent-lightness: 58%;
-        --color-accent-light-hue: 158; --color-accent-light-saturation: 70%; --color-accent-light-lightness: 45%;
+        
+        /* ShadCN/UI Theme Variables */
+        --background: var(--color-bg-primary-hsl);
+        --foreground: var(--color-text-primary-hsl);
+        --card: var(--color-bg-secondary-hsl);
+        --card-foreground: var(--color-text-primary-hsl);
+        --popover: var(--color-bg-primary-hsl);
+        --popover-foreground: var(--color-text-primary-hsl);
+        --primary: var(--color-primary-hue) var(--color-primary-saturation) var(--color-primary-lightness);
+        --primary-foreground: 210 40% 98%;
+        --secondary: 240 10% 19%;
+        --secondary-foreground: var(--color-text-primary-hsl);
+        --muted: 240 6% 30%;
+        --muted-foreground: var(--color-text-secondary-hsl);
+        --accent: var(--color-primary-hue) var(--color-primary-saturation) 45%;
+        --accent-foreground: 210 40% 98%;
+        --destructive: 0 84.2% 60.2%;
+        --destructive-foreground: 210 40% 98%;
+        --border: var(--color-border-hsl);
+        --input: 240 6% 30%;
+        --ring: 158 84% 45%;
+        --radius: 0.5rem;
       }
 
       body {
         font-family: var(--font-p);
         font-size: var(--font-size-p);
-        background-color: hsl(var(--color-bg-primary));
-        color: hsl(var(--color-text-primary));
+        background-color: hsl(var(--background));
+        color: hsl(var(--foreground));
       }
       body[data-theme] h1 {
         font-family: var(--font-h1);
@@ -64,43 +85,9 @@
       body[data-theme] button {
          font-family: var(--font-button);
          font-size: var(--font-size-button);
-         font-weight: 700;
+         font-weight: 500;
       }
       
-      .btn-primary {
-        background-color: hsl(var(--color-primary-hue) var(--color-primary-saturation) var(--color-primary-lightness));
-        color: white;
-      }
-      .btn-primary:hover:not(:disabled) {
-        background-color: hsl(var(--color-primary-hue) var(--color-primary-saturation) calc(var(--color-primary-lightness) - 5%));
-      }
-      
-      .text-accent {
-        color: hsl(var(--color-accent-hue) var(--color-accent-saturation) var(--color-accent-lightness));
-      }
-      
-      .text-accent-light {
-        color: hsl(var(--color-accent-light-hue) var(--color-accent-light-saturation) var(--color-accent-light-lightness));
-      }
-
-      .border-accent {
-        border-color: hsl(var(--color-accent-hue) var(--color-accent-saturation) var(--color-accent-lightness));
-      }
-      
-      .toggle-on {
-        background-color: hsl(var(--color-primary-hue) var(--color-primary-saturation) var(--color-primary-lightness));
-      }
-
-      .fill-accent {
-        fill: hsl(var(--color-accent-hue) var(--color-accent-saturation) var(--color-accent-lightness));
-      }
-      .stroke-accent {
-        stroke: hsl(var(--color-accent-hue) var(--color-accent-saturation) var(--color-accent-lightness));
-      }
-      .line-chart-color {
-        color: hsl(var(--color-accent-hue) var(--color-accent-saturation) var(--color-accent-lightness));
-      }
-
       @keyframes fadeInOut {
         0% { opacity: 0; transform: translateY(5px); }
         10% { opacity: 1; transform: translateY(0); }
@@ -111,17 +98,42 @@
         animation: fadeInOut 2s ease-in-out forwards;
       }
 
+      @keyframes slide-in {
+        from { transform: translateX(100%); }
+        to { transform: translateX(0); }
+      }
+      @keyframes slide-out {
+        from { transform: translateX(0); }
+        to { transform: translateX(100%); }
+      }
+      .animate-in {
+        animation-name: slide-in;
+        animation-duration: 0.3s;
+        animation-timing-function: ease-out;
+      }
+      .animate-out {
+         animation-name: slide-out;
+         animation-duration: 0.2s;
+         animation-timing-function: ease-in;
+      }
+
     </style>
   <script type="importmap">
 {
   "imports": {
-    "react": "https://esm.sh/react@^19.1.0",
-    "react-dom/": "https://esm.sh/react-dom@^19.1.0/",
-    "react/": "https://esm.sh/react@^19.1.0/",
+    "react": "https://esm.sh/react@^18.2.0",
+    "react-dom/": "https://esm.sh/react-dom@^18.2.0/",
+    "react/": "https://esm.sh/react@^18.2.0/",
     "@google/genai": "https://esm.sh/@google/genai@^1.9.0",
     "emoji-picker-react": "https://esm.sh/emoji-picker-react@^4.13.1",
     "vite": "https://esm.sh/vite@^7.0.4",
-    "@vitejs/plugin-react": "https://esm.sh/@vitejs/plugin-react@^4.6.0"
+    "@vitejs/plugin-react": "https://esm.sh/@vitejs/plugin-react@^4.6.0",
+    "framer-motion": "https://esm.sh/framer-motion@^11.2.10",
+    "class-variance-authority": "https://esm.sh/class-variance-authority@^0.7.0",
+    "clsx": "https://esm.sh/clsx@^2.1.1",
+    "tailwind-merge": "https://esm.sh/tailwind-merge@^2.3.0",
+    "@radix-ui/react-slot": "https://esm.sh/@radix-ui/react-slot@^1.0.2",
+    "lucide-react": "https://esm.sh/lucide-react@^0.395.0"
   }
 }
 </script>

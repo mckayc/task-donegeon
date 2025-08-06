@@ -101,7 +101,9 @@ const FirstRunWizard: React.FC = () => {
     <div className="min-h-screen flex items-center justify-center bg-slate-900 p-4">
       <div className="max-w-3xl w-full bg-slate-800 border border-stone-700 rounded-2xl shadow-2xl p-8 md:p-12">
         <div className="text-center">
-          <span className="text-9xl">🧙‍♂️</span>
+          <div className="text-9xl transform scale-[2.5] inline-block my-4">
+            <span>🧙‍♂️</span>
+          </div>
           <h1 className="font-medieval text-accent mt-4">First Run Wizard</h1>
           <p className="text-stone-300 mt-2 max-w-xl mx-auto">
             Welcome to Task Donegeon! This wizard will check your server setup and help you create the first administrator account.
@@ -158,7 +160,7 @@ services:
               </div>
               {error && <p className="text-red-400 text-center">{error}</p>}
               <div className="pt-4 text-center">
-                <Button type="submit" className="w-full md:w-auto">Create My Account</Button>
+                <Button type="submit" className="w-full md:w-auto">Create Account & Begin</Button>
               </div>
             </form>
           </div>

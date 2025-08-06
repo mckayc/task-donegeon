@@ -1,0 +1,62 @@
+
+[
+  {
+    "title": "Make Bed",
+    "description": "Straighten your sheets and blankets every morning.",
+    "emoji": "🛏️",
+    "backgroundColor": "#F472B6",
+    "borderColor": "#EC4899",
+    "type": "Duty",
+    "questGroup": "Room Tidiness",
+    "optional": false,
+    "approvalRequired": true,
+    "tags": ["daily", "morning"],
+    "availability": { "perPerson": true, "frequency": 1 },
+    "rewards": [{ "type": "xp", "name": "Skill", "amount": 5 }]
+  },
+  {
+    "title": "Brush Teeth",
+    "description": "Brush your teeth for two minutes, morning and night.",
+    "emoji": "🦷",
+    "backgroundColor": "#60A5FA",
+    "borderColor": "#3B82F6",
+    "type": "Duty",
+    "questGroup": "Personal Care",
+    "optional": false,
+    "approvalRequired": false,
+    "tags": ["health", "daily"],
+    "availability": { "perPerson": true, "frequency": 2 },
+    "rewards": [{ "type": "xp", "name": "Skill", "amount": 5 }]
+  },
+  {
+    "title": "Read for 20 Minutes",
+    "description": "Read a book of your choice for at least 20 minutes.",
+    "emoji": "📚",
+    "backgroundColor": "#A78BFA",
+    "borderColor": "#8B5CF6",
+    "type": "Venture",
+    "questGroup": "Learning & Development",
+    "optional": true,
+    "approvalRequired": true,
+    "tags": ["reading", "education"],
+    "availability": { "perPerson": true, "frequency": 1 },
+    "rewards": [{ "type": "xp", "name": "Wisdom", "amount": 20 }]
+  },
+  {
+    "title": "Unload Dishwasher",
+    "description": "Empty the dishwasher and put all the clean dishes away.",
+    "emoji": "🍽️",
+    "backgroundColor": "#FBBF24",
+    "borderColor": "#F59E0B",
+    "type": "Venture",
+    "questGroup": "Kitchen Duties",
+    "optional": false,
+    "approvalRequired": true,
+    "tags": ["chores", "kitchen"],
+    "availability": { "perPerson": true, "frequency": 1 },
+    "rewards": [
+      { "type": "currency", "name": "Gold Coins", "amount": 1 },
+      { "type": "xp", "name": "Strength", "amount": 5 }
+    ]
+  }
+]

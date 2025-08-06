@@ -548,26 +548,36 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         note: options?.note
     };
 
-    let updatedUser: User | null = null;
-
-    if (!requiresApproval) {
-      // This logic will be moved to the backend. For now, we simulate the user update.
-      const userToUpdate = { ...users.find(u => u.id === userId)! };
-      // ... applyRewards logic simulation
-      updatedUser = userToUpdate;
-      // ... checkAndAwardTrophies simulation
-    }
-
     try {
-      await apiRequest('POST', '/api/actions/complete-quest', { completionData, updatedUser });
-      // In a real scenario, the backend would handle user updates. Here we rely on the websocket + sync.
+      // The backend now handles reward application for auto-approved quests.
+      // The `updatedUser` object is no longer needed from the client.
+      await apiRequest('POST', '/api/actions/complete-quest', { completionData });
+      // The backend will broadcast a data update, and the frontend will sync.
     } catch (error) {
-       // error handled by apiRequest
+       // error is handled by the apiRequest helper
     }
-  }, [apiRequest, users]);
+  }, [apiRequest]);
 
-  const approveQuestCompletion = useCallback((completionId: string, note?: string) => { const c = questCompletions.find(c => c.id === completionId); if (c) { const q = quests.find(q => q.id === c.questId); if (q) { setQuestCompletions(prev => prev.map(comp => comp.id === completionId ? { ...comp, status: QuestCompletionStatus.Approved, note: note || comp.note } : comp)); const completionDate = new Date(c.completedAt); const rewards = q.rewards; const guildId = q.guildId; completeQuest(q.id, c.userId, rewards, false, guildId, {completionDate}); } } }, [questCompletions, quests, completeQuest]);
-  const rejectQuestCompletion = useCallback((completionId: string, note?: string) => { setQuestCompletions(prev => prev.map(c => c.id === completionId ? { ...c, status: QuestCompletionStatus.Rejected, note: note || c.note } : c)); addNotification({ type: 'info', message: `Quest rejected.`}); }, [addNotification]);
+  const approveQuestCompletion = useCallback(async (completionId: string, note?: string) => {
+    try {
+        await apiRequest('POST', `/api/actions/approve-quest/${completionId}`, { note });
+        addNotification({ type: 'success', message: 'Quest approved!' });
+        // State updates are now handled via WebSocket broadcast from the server.
+    } catch (error) {
+        // Error notification is handled by apiRequest helper.
+    }
+  }, [apiRequest, addNotification]);
+
+  const rejectQuestCompletion = useCallback(async (completionId: string, note?: string) => {
+    try {
+        await apiRequest('POST', `/api/actions/reject-quest/${completionId}`, { note });
+        addNotification({ type: 'info', message: 'Quest rejected.' });
+        // State updates are now handled via WebSocket broadcast from the server.
+    } catch (error) {
+        // Error notification is handled by apiRequest helper.
+    }
+  }, [apiRequest, addNotification]);
+
   const addRewardType = useCallback((rewardType: Omit<RewardTypeDefinition, 'id' | 'isCore'>) => setRewardTypes(prev => [...prev, { ...rewardType, id: `custom-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`, isCore: false }]), []);
   const updateRewardType = useCallback((rewardType: RewardTypeDefinition) => setRewardTypes(prev => prev.map(rt => rt.id === rewardType.id ? rewardType : rt)), []);
   const deleteRewardType = useCallback((rewardTypeId: string) => setRewardTypes(prev => prev.filter(rt => rt.id !== rewardTypeId)), []);

@@ -5,6 +5,7 @@ services:
     build: .
     image: mckayc/task-donegeon:latest
     container_name: task-donegeon
+    # user: "${UID}:${GID}"
     restart: unless-stopped
     ports:
       # Maps your host machine's port to the container's port 3000,
@@ -19,6 +20,4 @@ services:
       # Persists application data to your host machine.
       # Defaults to a 'data' folder in the current directory.
       # To specify the location (recommended) you should add the folder location. Example: /srv/dev-disk-by-uuid-2f5a0666-e1d5-4c25-82da-015a6d210094/Archive/Portainer/taskDonegeon/
-      - "${APP_DATA_PATH:-./data}/database:/app/data/database"
-      - "${APP_DATA_PATH:-./data}/assets:/app/assets"
-      - "${APP_DATA_PATH:-./data}/backups:/app/backups"     
+      - "${APP_DATA_PATH:-./data}:/app/data"     

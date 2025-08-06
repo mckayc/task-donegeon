@@ -1,3 +1,4 @@
+
 require("reflect-metadata");
 const express = require('express');
 const cors = require('cors');
@@ -173,6 +174,13 @@ app.post('/api/data/save', async (req, res, next) => {
     await queryRunner.startTransaction();
 
     try {
+        // Clear all tables first (in reverse order to respect potential foreign keys)
+        for (const entity of allEntities.slice().reverse()) {
+            const repo = queryRunner.manager.getRepository(entity.target);
+            await repo.clear();
+        }
+
+        // Now, insert all the new data
         for (const entity of allEntities) {
             const repo = queryRunner.manager.getRepository(entity.target);
             const simpleKey = {
@@ -188,21 +196,15 @@ app.post('/api/data/save', async (req, res, next) => {
 
             if (!simpleKey || !data.hasOwnProperty(simpleKey)) continue;
 
+            const itemsToSave = data[simpleKey];
+
             if (entity.targetName === 'Setting') {
-                await repo.save({ id: 1, settings: data.settings });
+                if (itemsToSave) await repo.save({ id: 1, settings: itemsToSave });
             } else if (entity.targetName === 'LoginHistory') {
-                await repo.save({ id: 1, history: data.loginHistory });
+                if (itemsToSave) await repo.save({ id: 1, history: itemsToSave });
             } else {
-                const itemsFromFrontend = data[simpleKey];
-                const currentIds = (await repo.find({ select: { id: true } })).map(item => item.id);
-                const frontendIds = new Set(itemsFromFrontend.map(item => item.id));
-                const idsToDelete = currentIds.filter(id => !frontendIds.has(id));
-                
-                if (idsToDelete.length > 0) {
-                    await repo.delete(idsToDelete);
-                }
-                if (itemsFromFrontend.length > 0) {
-                    await repo.save(itemsFromFrontend);
+                if (itemsToSave && Array.isArray(itemsToSave) && itemsToSave.length > 0) {
+                    await repo.save(itemsToSave, { chunk: 100 }); // Chunking helps with large arrays
                 }
             }
         }

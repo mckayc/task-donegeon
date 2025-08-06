@@ -1,13 +1,14 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { QuestGroup } from '../../types';
-import Button from '../ui/Button';
-import Card from '../ui/Card';
-import { EllipsisVerticalIcon, QuestsIcon } from '../ui/Icons';
-import EmptyState from '../ui/EmptyState';
+import { Button } from '@/components/ui/button';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { EllipsisVerticalIcon, QuestsIcon } from '@/components/ui/icons';
+import EmptyState from '@/components/ui/empty-state';
 import EditQuestGroupDialog from '../quests/EditQuestGroupDialog';
-import ConfirmDialog from '../ui/ConfirmDialog';
+import ConfirmDialog from '@/components/ui/confirm-dialog';
 import AssignQuestGroupDialog from '../quests/AssignQuestGroupDialog';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
 const ManageQuestGroupsPage: React.FC = () => {
     const { questGroups, settings } = useAppState();
@@ -17,18 +18,6 @@ const ManageQuestGroupsPage: React.FC = () => {
     const [editingGroup, setEditingGroup] = useState<QuestGroup | null>(null);
     const [deletingGroup, setDeletingGroup] = useState<QuestGroup | null>(null);
     const [assigningGroup, setAssigningGroup] = useState<QuestGroup | null>(null);
-    const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
-    const dropdownRef = useRef<HTMLDivElement | null>(null);
-
-    useEffect(() => {
-        const handleClickOutside = (event: MouseEvent) => {
-            if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-                setOpenDropdownId(null);
-            }
-        };
-        document.addEventListener('mousedown', handleClickOutside);
-        return () => document.removeEventListener('mousedown', handleClickOutside);
-    }, []);
 
     const handleCreate = () => {
         setEditingGroup(null);
@@ -53,36 +42,40 @@ const ManageQuestGroupsPage: React.FC = () => {
 
     return (
         <div className="space-y-6">
-            <Card
-                title="All Quest Groups"
-                headerAction={<Button onClick={handleCreate} size="sm">Create New Group</Button>}
-            >
+            <Card>
+                <CardHeader className="flex flex-row items-center justify-between">
+                    <CardTitle>All Quest Groups</CardTitle>
+                    <Button onClick={handleCreate} size="sm">Create New Group</Button>
+                </CardHeader>
+                <CardContent>
                 {questGroups.length > 0 ? (
                     <div className="overflow-x-auto">
                         <table className="w-full text-left">
-                            <thead className="border-b border-stone-700/60">
+                            <thead className="border-b">
                                 <tr>
                                     <th className="p-4 font-semibold">Name</th>
                                     <th className="p-4 font-semibold">Description</th>
-                                    <th className="p-4 font-semibold">Actions</th>
+                                    <th className="p-4 font-semibold text-right">Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {questGroups.map(group => (
-                                    <tr key={group.id} className="border-b border-stone-700/40 last:border-b-0">
+                                    <tr key={group.id} className="border-b last:border-b-0">
                                         <td className="p-4 font-bold">{group.icon} {group.name}</td>
-                                        <td className="p-4 text-stone-400">{group.description}</td>
-                                        <td className="p-4 relative">
-                                            <button onClick={() => setOpenDropdownId(openDropdownId === group.id ? null : group.id)} className="p-2 rounded-full hover:bg-stone-700/50">
-                                                <EllipsisVerticalIcon className="w-5 h-5 text-stone-300" />
-                                            </button>
-                                            {openDropdownId === group.id && (
-                                                <div ref={dropdownRef} className="absolute right-10 top-0 mt-2 w-36 bg-stone-900 border border-stone-700 rounded-lg shadow-xl z-20">
-                                                    <a href="#" onClick={(e) => { e.preventDefault(); handleAssign(group); setOpenDropdownId(null); }} className="block px-4 py-2 text-sm text-stone-300 hover:bg-stone-700/50">Assign</a>
-                                                    <a href="#" onClick={(e) => { e.preventDefault(); handleEdit(group); setOpenDropdownId(null); }} className="block px-4 py-2 text-sm text-stone-300 hover:bg-stone-700/50">Edit</a>
-                                                    <button onClick={() => { setDeletingGroup(group); setOpenDropdownId(null); }} className="w-full text-left block px-4 py-2 text-sm text-red-400 hover:bg-stone-700/50">Delete</button>
-                                                </div>
-                                            )}
+                                        <td className="p-4 text-muted-foreground">{group.description}</td>
+                                        <td className="p-4 text-right">
+                                            <DropdownMenu>
+                                                <DropdownMenuTrigger asChild>
+                                                    <Button variant="ghost" size="icon">
+                                                        <EllipsisVerticalIcon className="w-5 h-5" />
+                                                    </Button>
+                                                </DropdownMenuTrigger>
+                                                <DropdownMenuContent align="end">
+                                                    <DropdownMenuItem onSelect={() => handleAssign(group)}>Assign to Users</DropdownMenuItem>
+                                                    <DropdownMenuItem onSelect={() => handleEdit(group)}>Edit</DropdownMenuItem>
+                                                    <DropdownMenuItem onSelect={() => setDeletingGroup(group)} className="text-red-400 focus:text-red-400">Delete</DropdownMenuItem>
+                                                </DropdownMenuContent>
+                                            </DropdownMenu>
                                         </td>
                                     </tr>
                                 ))}
@@ -97,6 +90,7 @@ const ManageQuestGroupsPage: React.FC = () => {
                         actionButton={<Button onClick={handleCreate}>Create Quest Group</Button>}
                     />
                 )}
+                </CardContent>
             </Card>
 
             {isDialogOpen && <EditQuestGroupDialog groupToEdit={editingGroup} onClose={() => setIsDialogOpen(false)} />}

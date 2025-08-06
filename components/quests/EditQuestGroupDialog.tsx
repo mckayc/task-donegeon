@@ -1,9 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { QuestGroup } from '../../types';
-import Button from '../ui/Button';
-import Input from '../ui/Input';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { useAppDispatch } from '../../context/AppContext';
-import EmojiPicker from '../ui/EmojiPicker';
+import EmojiPicker from '../ui/emoji-picker';
 
 interface EditQuestGroupDialogProps {
     groupToEdit: QuestGroup | null;
@@ -42,39 +45,44 @@ const EditQuestGroupDialog: React.FC<EditQuestGroupDialogProps> = ({ groupToEdit
     const dialogTitle = groupToEdit ? 'Edit Quest Group' : 'Create New Quest Group';
 
     return (
-        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
-            <div className="bg-stone-800 border border-stone-700 rounded-xl shadow-2xl p-8 max-w-lg w-full">
-                <h2 className="text-3xl font-medieval text-emerald-400 mb-6">{dialogTitle}</h2>
-                <form onSubmit={handleSubmit} className="space-y-4">
-                    <Input
-                        label="Group Name"
-                        value={formData.name}
-                        onChange={(e) => setFormData(p => ({ ...p, name: e.target.value }))}
-                        required
-                    />
-                    <div>
-                        <label className="block text-sm font-medium text-stone-300 mb-1">Description</label>
-                        <textarea
-                            rows={3}
-                            value={formData.description}
-                            onChange={(e) => setFormData(p => ({ ...p, description: e.target.value }))}
-                            className="w-full px-4 py-2 bg-stone-700 border border-stone-600 rounded-md"
+         <Dialog open={true} onOpenChange={onClose}>
+            <DialogContent className="sm:max-w-lg">
+                <DialogHeader>
+                    <DialogTitle>{dialogTitle}</DialogTitle>
+                </DialogHeader>
+                <form id="quest-group-form" onSubmit={handleSubmit} className="space-y-4 py-4">
+                    <div className="space-y-2">
+                        <Label htmlFor="group-name">Group Name</Label>
+                        <Input
+                            id="group-name"
+                            value={formData.name}
+                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData(p => ({ ...p, name: e.target.value }))}
+                            required
                         />
                     </div>
-                    <div>
-                        <label className="block text-sm font-medium text-stone-300 mb-1">Icon</label>
+                    <div className="space-y-2">
+                        <Label htmlFor="group-description">Description</Label>
+                        <Textarea
+                            id="group-description"
+                            rows={3}
+                            value={formData.description}
+                            onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setFormData(p => ({ ...p, description: e.target.value }))}
+                        />
+                    </div>
+                    <div className="space-y-2">
+                        <Label>Icon</Label>
                         <div className="relative">
                             <button
                                 type="button"
                                 onClick={() => setIsEmojiPickerOpen(prev => !prev)}
-                                className="w-full text-left px-4 py-2 bg-stone-700 border border-stone-600 rounded-md flex items-center gap-2"
+                                className="w-full text-left px-3 py-2 bg-background border border-input rounded-md flex items-center gap-2"
                             >
                                 <span className="text-2xl">{formData.icon}</span>
-                                <span className="text-stone-300">Click to change</span>
+                                <span className="text-muted-foreground">Click to change</span>
                             </button>
                             {isEmojiPickerOpen && (
                                 <EmojiPicker
-                                    onSelect={(emoji) => {
+                                    onSelect={(emoji: string) => {
                                         setFormData(p => ({ ...p, icon: emoji }));
                                         setIsEmojiPickerOpen(false);
                                     }}
@@ -83,13 +91,13 @@ const EditQuestGroupDialog: React.FC<EditQuestGroupDialogProps> = ({ groupToEdit
                             )}
                         </div>
                     </div>
-                    <div className="flex justify-end space-x-4 pt-4">
-                        <Button type="button" variant="secondary" onClick={onClose}>Cancel</Button>
-                        <Button type="submit">{groupToEdit ? 'Save Changes' : 'Create Group'}</Button>
-                    </div>
                 </form>
-            </div>
-        </div>
+                <DialogFooter>
+                    <Button type="button" variant="secondary" onClick={onClose}>Cancel</Button>
+                    <Button type="submit" form="quest-group-form">{groupToEdit ? 'Save Changes' : 'Create Group'}</Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
     );
 };
 

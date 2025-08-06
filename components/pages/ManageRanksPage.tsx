@@ -1,12 +1,14 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { Rank } from '../../types';
-import Button from '../ui/Button';
-import Card from '../ui/Card';
+import { Button } from '@/components/ui/button';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import EditRankDialog from '../settings/EditRankDialog';
-import ConfirmDialog from '../ui/ConfirmDialog';
+import ConfirmDialog from '../ui/confirm-dialog';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
-import EmptyState from '../ui/EmptyState';
-import { RankIcon, EllipsisVerticalIcon } from '../ui/Icons';
+import EmptyState from '../ui/empty-state';
+import { RankIcon } from '@/components/ui/icons';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { EllipsisVertical } from 'lucide-react';
 
 const ManageRanksPage: React.FC = () => {
     const { ranks, settings } = useAppState();
@@ -14,18 +16,6 @@ const ManageRanksPage: React.FC = () => {
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [editingRank, setEditingRank] = useState<Rank | null>(null);
     const [deletingRank, setDeletingRank] = useState<Rank | null>(null);
-    const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
-    const dropdownRef = useRef<HTMLDivElement | null>(null);
-
-    useEffect(() => {
-        const handleClickOutside = (event: MouseEvent) => {
-            if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-                setOpenDropdownId(null);
-            }
-        };
-        document.addEventListener('mousedown', handleClickOutside);
-        return () => document.removeEventListener('mousedown', handleClickOutside);
-    }, []);
 
     const sortedRanks = useMemo(() => {
         return [...ranks].sort((a, b) => a.xpThreshold - b.xpThreshold);
@@ -59,47 +49,49 @@ const ManageRanksPage: React.FC = () => {
 
     return (
         <div className="space-y-6">
-            <Card
-                title={`All Created ${settings.terminology.levels}`}
-                headerAction={
+            <Card>
+                <CardHeader className="flex flex-row items-center justify-between">
+                    <CardTitle>{`All Created ${settings.terminology.levels}`}</CardTitle>
                     <Button onClick={handleCreate} size="sm">
                         Create New {settings.terminology.level}
                     </Button>
-                }
-            >
+                </CardHeader>
+                <CardContent>
                 {sortedRanks.length > 0 ? (
                      <div className="overflow-x-auto">
                         <table className="w-full text-left">
-                            <thead className="border-b border-stone-700/60">
+                            <thead className="border-b">
                                 <tr>
                                     <th className="p-4 font-semibold">Icon</th>
                                     <th className="p-4 font-semibold">Name</th>
                                     <th className="p-4 font-semibold">XP Threshold</th>
-                                    <th className="p-4 font-semibold">Actions</th>
+                                    <th className="p-4 font-semibold text-right">Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {sortedRanks.map(rank => (
-                                    <tr key={rank.id} className="border-b border-stone-700/40 last:border-b-0">
+                                    <tr key={rank.id} className="border-b last:border-b-0">
                                         <td className="p-4 text-2xl">{rank.icon}</td>
                                         <td className="p-4 font-bold">{rank.name}</td>
-                                        <td className="p-4 text-stone-300">{rank.xpThreshold}</td>
-                                        <td className="p-4 relative">
-                                            <button onClick={() => setOpenDropdownId(openDropdownId === rank.id ? null : rank.id)} className="p-2 rounded-full hover:bg-stone-700/50">
-                                                <EllipsisVerticalIcon className="w-5 h-5 text-stone-300" />
-                                            </button>
-                                            {openDropdownId === rank.id && (
-                                                <div ref={dropdownRef} className="absolute right-10 top-0 mt-2 w-36 bg-stone-900 border border-stone-700 rounded-lg shadow-xl z-20">
-                                                    <a href="#" onClick={(e) => { e.preventDefault(); handleEdit(rank); setOpenDropdownId(null); }} className="block px-4 py-2 text-sm text-stone-300 hover:bg-stone-700/50">Edit</a>
-                                                    <button 
-                                                        onClick={() => { handleDeleteRequest(rank); setOpenDropdownId(null); }} 
-                                                        className="w-full text-left block px-4 py-2 text-sm text-red-400 hover:bg-stone-700/50 disabled:opacity-50 disabled:text-stone-500"
+                                        <td className="p-4 text-muted-foreground">{rank.xpThreshold}</td>
+                                        <td className="p-4 text-right">
+                                            <DropdownMenu>
+                                                <DropdownMenuTrigger asChild>
+                                                    <Button variant="ghost" size="icon">
+                                                        <EllipsisVertical className="w-4 h-4" />
+                                                    </Button>
+                                                </DropdownMenuTrigger>
+                                                <DropdownMenuContent align="end">
+                                                    <DropdownMenuItem onSelect={() => handleEdit(rank)}>Edit</DropdownMenuItem>
+                                                    <DropdownMenuItem 
+                                                        onSelect={() => handleDeleteRequest(rank)} 
                                                         disabled={rank.xpThreshold === 0}
+                                                        className="text-red-400 focus:text-red-400"
                                                     >
                                                         Delete
-                                                    </button>
-                                                </div>
-                                            )}
+                                                    </DropdownMenuItem>
+                                                </DropdownMenuContent>
+                                            </DropdownMenu>
                                         </td>
                                     </tr>
                                 ))}
@@ -114,6 +106,7 @@ const ManageRanksPage: React.FC = () => {
                         actionButton={<Button onClick={handleCreate}>Create {settings.terminology.level}</Button>}
                     />
                 )}
+                </CardContent>
             </Card>
 
             {isDialogOpen && <EditRankDialog rank={editingRank} onClose={() => setIsDialogOpen(false)} />}

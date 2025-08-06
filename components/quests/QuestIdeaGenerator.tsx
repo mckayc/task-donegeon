@@ -1,11 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, ChangeEvent } from 'react';
 import { GenerateContentResponse, Type } from "@google/genai";
-import Button from '../ui/Button';
-import Input from '../ui/Input';
-import { SparklesIcon } from '../ui/Icons';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { SparklesIcon } from '@/components/ui/icons';
 import { useAppState } from '../../context/AppContext';
-import { QuestType } from '../../types';
-import ToggleSwitch from '../ui/ToggleSwitch';
+import { QuestType, Terminology } from '../../types';
+import { Label } from '@/components/ui/label';
 
 interface QuestIdea {
   title: string;
@@ -132,15 +132,18 @@ const QuestIdeaGenerator: React.FC<QuestIdeaGeneratorProps> = ({ onUseIdea, onCl
 
                 <div className="flex-1 space-y-4 p-8 overflow-y-auto scrollbar-hide">
                     <div className="flex flex-col gap-4">
-                        <Input
-                            label="Quest Theme"
-                            placeholder="e.g., 'Weekly kitchen chores for kids'"
-                            value={prompt}
-                            onChange={e => setPrompt(e.target.value)}
-                            onKeyDown={e => e.key === 'Enter' && handleGenerate()}
-                            className="flex-grow"
-                            disabled={isLoading}
-                        />
+                        <div className="flex-grow space-y-2">
+                          <Label htmlFor="quest-theme">Quest Theme</Label>
+                          <Input
+                              id="quest-theme"
+                              placeholder="e.g., 'Weekly kitchen chores for kids'"
+                              value={prompt}
+                              onChange={(e: ChangeEvent<HTMLInputElement>) => setPrompt(e.target.value)}
+                              onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => e.key === 'Enter' && handleGenerate()}
+                              className="flex-grow"
+                              disabled={isLoading}
+                          />
+                        </div>
                          <div className="flex items-center justify-between p-3 bg-stone-900/40 rounded-lg">
                             <span className="font-semibold text-stone-300">Quest Type:</span>
                              <div className="flex items-center gap-4">
@@ -158,41 +161,24 @@ const QuestIdeaGenerator: React.FC<QuestIdeaGeneratorProps> = ({ onUseIdea, onCl
                             {isLoading ? 'Generating...' : 'Generate'}
                         </Button>
                     </div>
-
                     {error && <p className="text-red-400 text-center">{error}</p>}
-                    
-                    {isLoading && (
-                         <div className="text-center py-10">
-                            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-400 mx-auto"></div>
-                            <p className="mt-4 text-stone-300">The AI is thinking...</p>
-                        </div>
-                    )}
-                    
+                    {isLoading && <div className="text-center py-10"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div><p className="mt-4 text-muted-foreground">The AI is thinking...</p></div>}
                     {generatedQuests.length > 0 && (
                         <div className="space-y-3 pt-4">
                             {generatedQuests.map((quest, index) => (
-                                <div key={index} className="bg-stone-900/50 p-4 rounded-lg flex justify-between items-start gap-4">
-                                    <div className="flex-grow">
-                                        <h4 className="font-bold text-stone-100 flex items-center gap-2">{quest.icon} {quest.title}</h4>
-                                        <p className="text-sm text-stone-400 mt-1">{quest.description}</p>
-                                        <div className="flex flex-wrap gap-2 mt-2">
-                                            {quest.groupName && <span className={`text-xs px-2 py-0.5 rounded-full ${quest.isNewGroup ? 'bg-green-900/50 text-green-300' : 'bg-purple-900/50 text-purple-300'}`}>{quest.isNewGroup ? `New Group: ${quest.groupName}` : quest.groupName}</span>}
-                                            {quest.tags?.map(tag => <span key={tag} className="text-xs bg-blue-900/50 text-blue-300 px-2 py-0.5 rounded-full">{tag}</span>)}
-                                            {quest.suggestedRewards?.map(r => <span key={r.rewardTypeName} className="text-xs bg-yellow-900/50 text-yellow-300 px-2 py-0.5 rounded-full">+{r.amount} {r.rewardTypeName}</span>)}
-                                        </div>
+                                <div key={index} className="bg-background/50 p-4 rounded-lg flex justify-between items-center gap-4">
+                                    <div>
+                                        <p className="font-bold text-foreground">{quest.icon} {quest.title} <span className="text-xs font-normal text-muted-foreground">({quest.groupName})</span></p>
+                                        <p className="text-sm text-muted-foreground">{quest.description}</p>
                                     </div>
-                                    <Button variant="secondary" className="text-sm py-1 px-3 flex-shrink-0" onClick={() => onUseIdea({...quest, type: questType})}>
-                                        Use Idea
-                                    </Button>
+                                    <Button variant="secondary" size="sm" onClick={() => onUseIdea({ ...quest, type: questType })}>Use Idea</Button>
                                 </div>
                             ))}
                         </div>
                     )}
-
                 </div>
-
-                <div className="p-6 border-t border-stone-700/60 text-right">
-                    <Button type="button" variant="secondary" onClick={onClose}>Close</Button>
+                <div className="p-6 border-t text-right">
+                    <Button type="button" variant="ghost" onClick={onClose}>Close</Button>
                 </div>
             </div>
         </div>

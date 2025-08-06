@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { Quest, QuestCompletion, QuestType, QuestAvailability } from '../../types';
 import { isQuestAvailableForUser, toYMD } from '../../utils/quests';
-import Button from '../ui/Button';
+import { Button } from '@/components/ui/button';
 import { useAppDispatch, useAppState } from '../../context/AppContext';
 import QuestDetailDialog from '../quests/QuestDetailDialog';
 
@@ -34,8 +34,8 @@ const QuestList: React.FC<QuestListProps> = ({ title, date, quests, questComplet
         if (title) { // Only show message if a title was provided
              return (
                 <div>
-                    <h3 className="text-xl font-bold text-stone-300 mb-2">{title}</h3>
-                    <p className="text-sm text-stone-500">No {title?.toLowerCase()} for this day.</p>
+                    <h3 className="text-xl font-bold text-foreground mb-2">{title}</h3>
+                    <p className="text-sm text-muted-foreground">No {title?.toLowerCase()} for this day.</p>
                 </div>
             );
         }
@@ -44,7 +44,7 @@ const QuestList: React.FC<QuestListProps> = ({ title, date, quests, questComplet
     
     return (
         <>
-            {title && <h3 className="text-xl font-bold text-stone-300 mb-2">{title}</h3>}
+            {title && <h3 className="text-xl font-bold text-foreground mb-2">{title}</h3>}
             <div className="space-y-2">
                 {quests.map(quest => {
                     const isAvailable = isQuestAvailableForUser(quest, questCompletions, date, scheduledEvents, appMode);
@@ -59,14 +59,14 @@ const QuestList: React.FC<QuestListProps> = ({ title, date, quests, questComplet
                             onClick={() => onQuestSelect(quest)}
                             disabled={!isAvailable || isFuture}
                             className={`w-full text-left p-2 rounded-md flex items-center justify-between gap-2 transition-colors ${borderClass} ${
-                                isAvailable ? `${bgClass} hover:bg-white/10` : 'bg-stone-800/50 opacity-60 cursor-not-allowed'
+                                isAvailable ? `${bgClass} hover:bg-white/10` : 'bg-background/50 opacity-60 cursor-not-allowed'
                             }`}
                         >
                             <div className="flex items-center gap-2 overflow-hidden text-left flex-grow">
                                 <span className="text-lg">{quest.icon}</span>
                                 <div className="overflow-hidden">
-                                    <p className={`text-sm font-semibold text-stone-200 truncate ${!isAvailable ? 'line-through text-stone-400' : ''}`} title={quest.title}>{quest.title}</p>
-                                    {dueDateString && <p className="text-xs text-stone-400 mt-0.5 truncate">{dueDateString}</p>}
+                                    <p className={`text-sm font-semibold text-foreground truncate ${!isAvailable ? 'line-through text-muted-foreground' : ''}`} title={quest.title}>{quest.title}</p>
+                                    {dueDateString && <p className="text-xs text-muted-foreground mt-0.5 truncate">{dueDateString}</p>}
                                 </div>
                             </div>
                         </button>

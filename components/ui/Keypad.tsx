@@ -1,6 +1,5 @@
-
-
 import React from 'react';
+import { Button } from '@/components/ui/button';
 
 interface KeypadProps {
     onKeyPress: (key: string) => void;
@@ -10,17 +9,15 @@ interface KeypadProps {
 }
 
 const KeyButton: React.FC<{ children: React.ReactNode; onClick: () => void; primary?: boolean }> = ({ children, onClick, primary }) => {
-    const primaryClasses = 'bg-emerald-600 hover:bg-emerald-500 text-white';
-    const secondaryClasses = 'bg-stone-700 hover:bg-stone-600 text-stone-200';
-    
     return (
-        <button
+        <Button
             type="button"
+            variant={primary ? "default" : "secondary"}
             onClick={onClick}
-            className={`flex items-center justify-center h-12 rounded-lg text-xl font-bold transition-colors duration-150 focus:outline-none ${primary ? primaryClasses : secondaryClasses}`}
+            className="h-12 text-xl font-bold"
         >
             {children}
-        </button>
+        </Button>
     );
 };
 

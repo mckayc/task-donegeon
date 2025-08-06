@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { useAppState } from '../../context/AppContext';
 import { useRewardValue } from '../../hooks/useRewardValue';
-import DynamicIcon from './DynamicIcon';
+import DynamicIcon from './dynamic-icon';
 
 const RewardDisplay: React.FC = () => {
   const { currentUser, rewardTypes, appMode } = useAppState();

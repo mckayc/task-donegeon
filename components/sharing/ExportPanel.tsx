@@ -1,8 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, ChangeEvent } from 'react';
 import { useAppState } from '../../context/AppContext';
 import { ShareableAssetType, Terminology } from '../../types';
-import Button from '../ui/Button';
-import Input from '../ui/Input';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
 import { generateBlueprint } from '../../utils/sharing';
 
 const ExportPanel: React.FC = () => {
@@ -64,36 +66,40 @@ const ExportPanel: React.FC = () => {
 
     return (
         <div className="space-y-6">
-            <div>
-                <h4 className="font-bold text-lg text-stone-200">Export Blueprint</h4>
-                <p className="text-stone-400 text-sm mb-3">Create a shareable file containing your custom game assets. Dependencies like custom {settings.terminology.points.toLowerCase()} will be included automatically.</p>
+             <div>
+                <h4 className="font-bold text-lg text-foreground">Export Blueprint</h4>
+                <p className="text-muted-foreground text-sm mb-3">Create a shareable file containing your custom game assets. Dependencies like custom {settings.terminology.points.toLowerCase()} will be included automatically.</p>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <Input label="Blueprint Name" placeholder="e.g., 'My Awesome Chore Pack'" value={blueprintName} onChange={e => setBlueprintName(e.target.value)} required />
-                <Input label="Description (Optional)" placeholder="A brief summary of what's inside" value={blueprintDesc} onChange={e => setBlueprintDesc(e.target.value)} />
+                <div className="space-y-2">
+                  <Label htmlFor="bp-name">Blueprint Name</Label>
+                  <Input id="bp-name" placeholder="e.g., 'My Awesome Chore Pack'" value={blueprintName} onChange={(e: ChangeEvent<HTMLInputElement>) => setBlueprintName(e.target.value)} required />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="bp-desc">Description (Optional)</Label>
+                  <Input id="bp-desc" placeholder="A brief summary of what's inside" value={blueprintDesc} onChange={(e: ChangeEvent<HTMLInputElement>) => setBlueprintDesc(e.target.value)} />
+                </div>
             </div>
 
             <div className="space-y-4">
                 {assetTypes.map(({ key, label, data }) => (
-                     <div key={key} className="p-4 bg-stone-900/50 rounded-lg">
+                     <div key={key} className="p-4 bg-background rounded-lg border">
                         <div className="flex justify-between items-center mb-2">
-                             <h5 className="font-semibold capitalize text-stone-200">{settings.terminology[label]}</h5>
-                            <Button variant="secondary" className="text-xs py-1 px-2" onClick={() => handleToggleAll(key, data)}>Toggle All</Button>
+                             <h5 className="font-semibold capitalize text-foreground">{settings.terminology[label]}</h5>
+                            <Button variant="outline" size="sm" onClick={() => handleToggleAll(key, data)}>Toggle All</Button>
                         </div>
                         <div className="max-h-48 overflow-y-auto space-y-1 pr-2">
                             {data.map((item: any) => (
-                                <label key={item.id} className="flex items-center p-2 rounded-md hover:bg-stone-800/50 cursor-pointer">
-                                    <input
-                                        type="checkbox"
+                                <Label key={item.id} className="flex items-center p-2 rounded-md hover:bg-accent/10 cursor-pointer">
+                                    <Checkbox
                                         checked={selected[key].includes(item.id)}
-                                        onChange={() => handleToggle(key, item.id)}
-                                        className="h-4 w-4 rounded text-emerald-600 bg-stone-700 border-stone-500 focus:ring-emerald-500"
+                                        onCheckedChange={() => handleToggle(key, item.id)}
                                     />
-                                    <span className="ml-3 text-stone-300">{item.title || item.name}</span>
-                                </label>
+                                    <span className="ml-3 text-foreground">{item.title || item.name}</span>
+                                </Label>
                             ))}
                         </div>
-                        {data.length === 0 && <p className="text-xs text-stone-500 italic text-center py-2">No custom {settings.terminology[label].toLowerCase()} to export.</p>}
+                        {data.length === 0 && <p className="text-xs text-muted-foreground italic text-center py-2">No custom {settings.terminology[label].toLowerCase()} to export.</p>}
                     </div>
                 ))}
             </div>

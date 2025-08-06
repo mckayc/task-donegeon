@@ -1,10 +1,9 @@
-
-
 import React, { useState, useMemo } from 'react';
 import { useAppState } from '../../context/AppContext';
 import { RewardCategory, QuestCompletionStatus, RewardItem } from '../../types';
-import Card from '../ui/Card';
-import LineChart from '../ui/LineChart';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import LineChart from '@/components/ui/line-chart';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const ProgressPage: React.FC = () => {
     const { currentUser, questCompletions, quests, rewardTypes, appMode } = useAppState();
@@ -81,25 +80,26 @@ const ProgressPage: React.FC = () => {
     return (
         <div>
             <Card>
-                <div className="flex justify-between items-center px-6 py-4 border-b border-stone-700/60">
-                    <h3 className="text-xl font-medieval text-emerald-400">XP Gained (Last 30 Days)</h3>
+                <CardHeader className="flex flex-row items-center justify-between">
+                    <CardTitle>XP Gained (Last 30 Days)</CardTitle>
                     {xpTypes.length > 0 && (
-                        <select
-                            value={selectedXpType}
-                            onChange={(e) => setSelectedXpType(e.target.value)}
-                            className="px-4 py-2 bg-stone-700 border border-stone-600 rounded-md focus:ring-emerald-500 focus:border-emerald-500 transition"
-                        >
-                            {xpTypes.map(xp => <option key={xp.id} value={xp.id}>{xp.name}</option>)}
-                        </select>
+                        <Select value={selectedXpType} onValueChange={setSelectedXpType}>
+                            <SelectTrigger className="w-[180px]">
+                                <SelectValue placeholder="Select XP Type" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {xpTypes.map(xp => <SelectItem key={xp.id} value={xp.id}>{xp.icon} {xp.name}</SelectItem>)}
+                            </SelectContent>
+                        </Select>
                     )}
-                </div>
-                <div className="p-6">
+                </CardHeader>
+                <CardContent>
                     {chartData.length > 0 && chartData.some(d => d.value > 0) ? (
                         <LineChart data={chartData} color="#10b981" />
                     ) : (
-                        <p className="text-stone-400 text-center">No XP of this type has been earned recently in this mode. Go complete some quests!</p>
+                        <p className="text-muted-foreground text-center">No XP of this type has been earned recently in this mode. Go complete some quests!</p>
                     )}
-                </div>
+                </CardContent>
             </Card>
         </div>
     );

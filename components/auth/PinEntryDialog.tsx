@@ -1,9 +1,11 @@
+
 import React, { useState } from 'react';
 import { User } from '../../types';
-import Button from '../ui/Button';
-import Keypad from '../ui/Keypad';
-import Avatar from '../ui/Avatar';
-import Input from '../ui/Input';
+import { Button } from '@/components/ui/button';
+import Keypad from '@/components/ui/keypad';
+import Avatar from '../ui/avatar';
+import { Input } from '@/components/ui/input';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 
 interface PinEntryDialogProps {
     user: User;
@@ -25,13 +27,14 @@ const PinEntryDialog: React.FC<PinEntryDialogProps> = ({ user, onClose, onSucces
     };
     
     return (
-        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4" onClick={onClose}>
-            <div className="bg-stone-800 border border-stone-700 rounded-2xl shadow-2xl p-8 max-w-md w-full" onClick={e => e.stopPropagation()}>
+        <Dialog open={true} onOpenChange={onClose}>
+            <DialogContent>
+                <DialogHeader className="flex flex-col items-center text-center">
+                    <Avatar user={user} className="w-24 h-24 mb-4 bg-primary/20 rounded-full border-4 border-primary overflow-hidden" />
+                    <DialogTitle>{user.gameName}</DialogTitle>
+                    <DialogDescription>Enter PIN to complete quest</DialogDescription>
+                </DialogHeader>
                 <div className="flex flex-col items-center">
-                    <Avatar user={user} className="w-24 h-24 mb-4 bg-emerald-800 rounded-full border-4 border-emerald-600 overflow-hidden" />
-                    <h2 className="text-3xl font-bold text-stone-100 mb-2">{user.gameName}</h2>
-                    <p className="text-stone-400 mb-6">Enter PIN to complete quest</p>
-                    
                     <div className="w-full max-w-xs mb-4">
                         <Input
                             id="pin-input-dialog"
@@ -39,13 +42,13 @@ const PinEntryDialog: React.FC<PinEntryDialogProps> = ({ user, onClose, onSucces
                             type="password"
                             aria-label="PIN Input"
                             value={pin}
-                            onChange={(e) => {
+                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                                 const val = e.target.value;
                                 if (/^\d*$/.test(val) && val.length <= 10) {
                                     setPin(val);
                                 }
                             }}
-                            onKeyDown={e => {
+                            onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => {
                                 if (e.key === 'Enter') {
                                     e.preventDefault();
                                     handlePinSubmit();
@@ -61,19 +64,18 @@ const PinEntryDialog: React.FC<PinEntryDialogProps> = ({ user, onClose, onSucces
                     {error && <p className="text-red-400 text-center mb-4">{error}</p>}
                     
                     <Keypad
-                        onKeyPress={(key) => {
+                        onKeyPress={(key: string) => {
                             if (pin.length < 10) setPin(p => p + key)
                         }}
                         onBackspace={() => setPin(p => p.slice(0, -1))}
                         onEnter={handlePinSubmit}
                     />
-
-                    <div className="mt-6 w-full">
-                        <Button variant="secondary" onClick={onClose} className="w-full">Cancel</Button>
-                    </div>
                 </div>
-            </div>
-        </div>
+                <DialogFooter className="mt-6">
+                    <Button variant="secondary" onClick={onClose} className="w-full">Cancel</Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
     );
 };
 

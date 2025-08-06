@@ -1,10 +1,14 @@
+
+
 import React, { useState, useEffect } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { User, Role } from '../../types';
-import Button from '../ui/Button';
-import Keypad from '../ui/Keypad';
-import Avatar from '../ui/Avatar';
-import Input from '../ui/Input';
+import { Button } from '@/components/ui/button';
+import Keypad from '@/components/ui/keypad';
+import Avatar from '../ui/avatar';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
 const SwitchUser: React.FC = () => {
     const { users, currentUser: anyCurrentUser, targetedUserForLogin, settings } = useAppState();
@@ -89,24 +93,28 @@ const SwitchUser: React.FC = () => {
         if (needsPassword) {
             // Render Password Form
             return (
-                <div className="min-h-screen flex items-center justify-center bg-stone-900 p-4">
-                    <div className="max-w-md w-full bg-stone-800 border border-stone-700 rounded-2xl shadow-2xl p-8">
-                         <div className="flex flex-col items-center">
-                            <Avatar user={selectedUser} className="w-24 h-24 mb-4 bg-emerald-800 rounded-full border-4 border-emerald-600 overflow-hidden" />
-                            <h2 className="text-3xl font-bold text-stone-100 mb-2">{selectedUser.gameName}</h2>
-                            <p className="text-stone-400 mb-6">Enter your Password to continue</p>
-                            <form onSubmit={(e) => { e.preventDefault(); handlePasswordSubmit(); }} className="w-full space-y-4">
-                                <Input
-                                    label="Password"
-                                    id="password-input"
-                                    name="password"
-                                    type="password"
-                                    value={password}
-                                    onChange={(e) => setPassword(e.target.value)}
-                                    required
-                                    autoFocus
-                                />
-                                {error && <p className="text-red-400 text-center">{error}</p>}
+                <div className="min-h-screen flex items-center justify-center bg-background p-4">
+                    <Card className="max-w-md w-full">
+                        <CardHeader className="flex flex-col items-center">
+                            <Avatar user={selectedUser} className="w-24 h-24 mb-4 bg-primary/20 rounded-full border-4 border-primary overflow-hidden" />
+                            <CardTitle>{selectedUser.gameName}</CardTitle>
+                            <CardDescription>Enter your Password to continue</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <form onSubmit={(e: React.FormEvent) => { e.preventDefault(); handlePasswordSubmit(); }} className="w-full space-y-4">
+                                <div className="space-y-2">
+                                    <Label htmlFor="password-input">Password</Label>
+                                    <Input
+                                        id="password-input"
+                                        name="password"
+                                        type="password"
+                                        value={password}
+                                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPassword(e.target.value)}
+                                        required
+                                        autoFocus
+                                    />
+                                </div>
+                                {error && <p className="text-red-500 text-sm text-center">{error}</p>}
                                 <div className="pt-2">
                                   <Button type="submit" className="w-full">Login</Button>
                                 </div>
@@ -114,20 +122,21 @@ const SwitchUser: React.FC = () => {
                             <div className="mt-4 w-full">
                                 <Button variant="secondary" onClick={() => { setSelectedUser(null); setNeedsPassword(false); }} className="w-full">Back to user selection</Button>
                             </div>
-                        </div>
-                    </div>
+                        </CardContent>
+                    </Card>
                 </div>
             );
         } else {
             // Render PIN form
             return (
-                 <div className="min-h-screen flex items-center justify-center bg-stone-900 p-4">
-                    <div className="max-w-md w-full bg-stone-800 border border-stone-700 rounded-2xl shadow-2xl p-8">
-                         <div className="flex flex-col items-center">
-                            <Avatar user={selectedUser} className="w-24 h-24 mb-4 bg-emerald-800 rounded-full border-4 border-emerald-600 overflow-hidden" />
-                            <h2 className="text-3xl font-bold text-stone-100 mb-2">{selectedUser.gameName}</h2>
-                            <p className="text-stone-400 mb-6">Enter your PIN to continue</p>
-                            
+                 <div className="min-h-screen flex items-center justify-center bg-background p-4">
+                    <Card className="max-w-md w-full">
+                         <CardHeader className="flex flex-col items-center">
+                            <Avatar user={selectedUser} className="w-24 h-24 mb-4 bg-primary/20 rounded-full border-4 border-primary overflow-hidden" />
+                            <CardTitle>{selectedUser.gameName}</CardTitle>
+                            <CardDescription>Enter your PIN to continue</CardDescription>
+                         </CardHeader>
+                         <CardContent className="flex flex-col items-center">
                             <div className="w-full max-w-xs mb-4">
                                 <Input
                                     id="pin-input"
@@ -135,13 +144,13 @@ const SwitchUser: React.FC = () => {
                                     type="password"
                                     aria-label="PIN Input"
                                     value={pin}
-                                    onChange={(e) => {
+                                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                                         const val = e.target.value;
                                         if (/^\d*$/.test(val) && val.length <= 10) {
                                             setPin(val);
                                         }
                                     }}
-                                    onKeyDown={e => {
+                                    onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => {
                                         if (e.key === 'Enter') {
                                             e.preventDefault();
                                             handlePinSubmit();
@@ -154,10 +163,10 @@ const SwitchUser: React.FC = () => {
                                 />
                             </div>
                             
-                            {error && <p className="text-red-400 text-center mb-4">{error}</p>}
+                            {error && <p className="text-red-500 text-sm text-center mb-4">{error}</p>}
                             
                             <Keypad
-                                onKeyPress={(key) => {
+                                onKeyPress={(key: string) => {
                                     if (pin.length < 10) setPin(p => p + key)
                                 }}
                                 onBackspace={() => setPin(p => p.slice(0, -1))}
@@ -167,8 +176,8 @@ const SwitchUser: React.FC = () => {
                             <div className="mt-6 w-full">
                                 <Button variant="secondary" onClick={() => setSelectedUser(null)} className="w-full">Back to user selection</Button>
                             </div>
-                        </div>
-                    </div>
+                        </CardContent>
+                    </Card>
                 </div>
             );
         }
@@ -177,22 +186,22 @@ const SwitchUser: React.FC = () => {
     // While targetedUserForLogin is processing, show a loader to avoid flashing the user grid
     if (targetedUserForLogin) {
         return (
-            <div className="min-h-screen flex items-center justify-center bg-stone-900">
-                <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-emerald-400"></div>
+            <div className="min-h-screen flex items-center justify-center bg-background">
+                <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-primary"></div>
             </div>
         );
     }
 
     return (
-        <div className="min-h-screen flex flex-col items-center justify-center bg-stone-900 p-4">
-            <h1 className="font-medieval text-emerald-400 text-center mb-10">Choose Your Adventurer</h1>
-            {error && <p className="text-red-400 bg-red-900/30 p-3 rounded-md mb-8 max-w-lg text-center">{error}</p>}
+        <div className="min-h-screen flex flex-col items-center justify-center bg-background p-4">
+            <h1 className="font-display text-accent text-5xl text-center mb-10">Choose Your Adventurer</h1>
+            {error && <p className="text-red-500 bg-destructive/10 p-3 rounded-md mb-8 max-w-lg text-center">{error}</p>}
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
                 {users.map(user => (
                     <div key={user.id} onClick={() => handleUserSelect(user)} className="flex flex-col items-center text-center cursor-pointer group">
-                        <Avatar user={user} className="w-32 h-32 bg-stone-700 rounded-full border-4 border-stone-600 group-hover:border-emerald-500 group-hover:scale-105 transition-all duration-200 overflow-hidden" />
-                        <p className="mt-4 text-xl font-semibold text-stone-200 group-hover:text-emerald-400">{user.gameName}</p>
-                        <p className="text-sm text-stone-400">{user.role}</p>
+                        <Avatar user={user} className="w-32 h-32 bg-card rounded-full border-4 border-border group-hover:border-primary group-hover:scale-105 transition-all duration-200 overflow-hidden" />
+                        <p className="mt-4 text-xl font-semibold text-foreground group-hover:text-accent">{user.gameName}</p>
+                        <p className="text-sm text-muted-foreground">{user.role}</p>
                     </div>
                 ))}
             </div>

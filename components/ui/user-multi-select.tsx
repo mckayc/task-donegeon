@@ -1,7 +1,7 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, ChangeEvent } from 'react';
 import { User } from '../../types';
-import Input from './Input';
-import Avatar from './Avatar';
+import { Input } from '@/components/ui/input';
+import Avatar from '@/components/ui/avatar';
 
 interface UserMultiSelectProps {
     allUsers: User[];
@@ -50,7 +50,7 @@ const UserMultiSelect: React.FC<UserMultiSelectProps> = ({ allUsers, selectedUse
                         <Input
                             placeholder="Search users..."
                             value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
+                            onChange={(e: ChangeEvent<HTMLInputElement>) => setSearchTerm(e.target.value)}
                             autoFocus
                         />
                     </div>

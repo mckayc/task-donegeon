@@ -1,14 +1,16 @@
 import React, { useState, useMemo } from 'react';
-import Card from '../ui/Card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
-import Button from '../ui/Button';
+import { Button } from '@/components/ui/button';
 import { PurchaseRequestStatus, RewardCategory, Market, GameAsset, RewardItem, ScheduledEvent } from '../../types';
 import PurchaseDialog from '../markets/PurchaseDialog';
 import ExchangeView from '../markets/ExchangeView';
 import { isMarketOpenForUser } from '../../utils/markets';
-import ImagePreviewDialog from '../ui/ImagePreviewDialog';
-import DynamicIcon from '../ui/DynamicIcon';
+import ImagePreviewDialog from '../ui/image-preview-dialog';
+import DynamicIcon from '../ui/dynamic-icon';
 import { toYMD } from '../../utils/quests';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Label } from '@/components/ui/label';
 
 const MarketItemView: React.FC<{ market: Market }> = ({ market }) => {
     const { rewardTypes, currentUser, purchaseRequests, appMode, settings, gameAssets, scheduledEvents } = useAppState();
@@ -102,25 +104,25 @@ const MarketItemView: React.FC<{ market: Market }> = ({ market }) => {
         else if (!canAffordAny) buttonText = "Can't Afford";
 
         return (
-             <div className={`relative bg-violet-900/30 border-2 border-violet-700/60 rounded-xl shadow-lg flex flex-col h-full ${!canPurchase || !canAffordAny ? 'opacity-60' : ''}`}>
+             <Card className={`relative flex flex-col h-full ${!canPurchase || !canAffordAny ? 'opacity-60' : ''}`}>
                 {saleForThisItem && (
                     <div className="absolute top-2 right-2 bg-red-600 text-white text-xs font-bold px-2 py-1 rounded-full z-10">
                         {saleForThisItem.modifiers.discountPercent}% OFF
                     </div>
                 )}
-                <div className="p-4 border-b border-white/10">
+                <CardContent className="p-4 border-b">
                     <button
                         onClick={() => setPreviewImageUrl(asset.url)}
-                        className="w-full h-32 bg-black/20 rounded-md mb-3 flex items-center justify-center overflow-hidden group focus:outline-none focus:ring-2 focus:ring-emerald-500 ring-offset-2 ring-offset-violet-900/30"
+                        className="w-full h-32 bg-background/20 rounded-md mb-3 flex items-center justify-center overflow-hidden group focus:outline-none focus:ring-2 focus:ring-primary ring-offset-2 ring-offset-card"
                         aria-label={`View larger image of ${asset.name}`}
                     >
                         <img src={asset.url} alt={asset.name} className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-200" />
                     </button>
-                    <h4 className="font-bold text-lg text-stone-100">{asset.name}</h4>
-                    <p className="text-stone-300 text-sm mt-1">{asset.description}</p>
-                </div>
+                    <h4 className="font-bold text-lg text-foreground">{asset.name}</h4>
+                    <p className="text-muted-foreground text-sm mt-1">{asset.description}</p>
+                </CardContent>
 
-                <div className="p-4 flex-grow space-y-4">
+                <CardContent className="p-4 flex-grow space-y-4">
                     {asset.costGroups.length > 0 && (
                         <div>
                             <p className="text-xs font-semibold text-amber-400/80 uppercase tracking-wider">Cost</p>
@@ -139,56 +141,62 @@ const MarketItemView: React.FC<{ market: Market }> = ({ market }) => {
                                                 )
                                             })}
                                         </div>
-                                        {index < asset.costGroups.length - 1 && <p className="text-center text-xs font-bold text-stone-400 my-1">OR</p>}
+                                        {index < asset.costGroups.length - 1 && <p className="text-center text-xs font-bold text-muted-foreground my-1">OR</p>}
                                     </div>
                                 ))}
                             </div>
                         </div>
                     )}
-                </div>
+                </CardContent>
                 
-                 <div className="text-xs text-stone-400 px-4 pb-2">
+                 <div className="text-xs text-muted-foreground px-4 pb-2">
                     {asset.purchaseLimit !== null && asset.purchaseLimitType === 'Total' && <span>Limit: {asset.purchaseLimit} total ({asset.purchaseLimit - asset.purchaseCount} left)</span>}
                     {asset.purchaseLimit !== null && asset.purchaseLimitType === 'PerUser' && <span>Limit: {asset.purchaseLimit} per person (You own: {userPurchaseCount})</span>}
                     {asset.requiresApproval && <span className="block text-sky-300 font-semibold">Requires Approval</span>}
                 </div>
 
-                <div className="p-3 mt-auto bg-black/20 border-t border-white/10 flex items-center justify-end gap-2">
-                     <Button className="text-sm py-1 px-3" onClick={() => setItemToPurchase(asset)} disabled={!canPurchase || !canAffordAny}>
+                <div className="p-3 mt-auto bg-background/20 border-t flex items-center justify-end gap-2">
+                     <Button size="sm" onClick={() => setItemToPurchase(asset)} disabled={!canPurchase || !canAffordAny}>
                         {buttonText}
                     </Button>
                 </div>
-            </div>
+            </Card>
         )
     };
 
     return (
         <>
-            <Card 
-                headerAction={
-                    <div className="flex items-center gap-2">
-                        <label htmlFor="sort-market-items" className="text-sm font-medium text-stone-400">Sort by:</label>
-                        <select
-                            id="sort-market-items"
-                            value={sortBy}
-                            onChange={e => setSortBy(e.target.value as any)}
-                            className="px-3 py-1.5 bg-stone-700 border border-stone-600 rounded-md focus:ring-emerald-500 focus:border-emerald-500 transition text-sm"
-                        >
-                            <option value="default">Default</option>
-                            <option value="title-asc">Name (A-Z)</option>
-                            <option value="title-desc">Name (Z-A)</option>
-                        </select>
+            <Card>
+                <CardHeader className="flex flex-row items-center justify-between">
+                    <div>
+                        <p className="text-muted-foreground">{market.description}</p>
                     </div>
-                }
-            >
-                <p className="text-stone-400 mb-6 -mt-2">{market.description}</p>
+                    <div className="flex items-center gap-2">
+                        <Label htmlFor="sort-market-items" className="text-sm font-medium">Sort by:</Label>
+                        <Select
+                            value={sortBy}
+                            onValueChange={(value: string) => setSortBy(value as any)}
+                        >
+                            <SelectTrigger id="sort-market-items" className="w-[180px]">
+                                <SelectValue placeholder="Sort by..." />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="default">Default</SelectItem>
+                                <SelectItem value="title-asc">Name (A-Z)</SelectItem>
+                                <SelectItem value="title-desc">Name (Z-A)</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
+                </CardHeader>
+                <CardContent>
                 {sortedItems.length > 0 ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
                         {sortedItems.map(asset => <ItemCard key={asset.id} asset={asset} />)}
                     </div>
                 ) : (
-                    <p className="text-stone-400 text-center">This {settings.terminology.store.toLowerCase()} has no items for sale.</p>
+                    <p className="text-muted-foreground text-center">This {settings.terminology.store.toLowerCase()} has no items for sale.</p>
                 )}
+                </CardContent>
             </Card>
             {itemToPurchase && (
                 <PurchaseDialog
@@ -250,9 +258,9 @@ const MarketplacePage: React.FC = () => {
             {visibleMarkets.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {visibleMarkets.map(market => (
-                        <button key={market.id} onClick={() => setActiveMarketId(market.id)} className="text-left">
-                            <Card className="h-full hover:bg-stone-700/50 hover:border-accent transition-colors duration-200">
-                                <div className="flex flex-col items-center text-center">
+                        <button key={market.id} onClick={() => setActiveMarketId(market.id)} className="text-left h-full">
+                            <Card className="h-full hover:bg-accent/10 hover:border-accent transition-colors duration-200">
+                                <CardContent className="flex flex-col items-center text-center p-6">
                                     <div className="w-16 h-16 mb-4 rounded-full overflow-hidden">
                                         <button
                                             onClick={(e) => {
@@ -273,16 +281,21 @@ const MarketplacePage: React.FC = () => {
                                             />
                                         </button>
                                     </div>
-                                    <h3 className="text-xl font-bold text-accent-light">{market.title}</h3>
-                                    <p className="text-stone-400 mt-2 flex-grow">{market.description}</p>
-                                </div>
+                                    <h3 className="text-xl font-bold text-accent-light font-display">{market.title}</h3>
+                                    <p className="text-muted-foreground mt-2 flex-grow">{market.description}</p>
+                                </CardContent>
                             </Card>
                         </button>
                     ))}
                 </div>
             ) : (
                  <Card>
-                    <p className="text-stone-400 text-center">There are no {settings.terminology.stores.toLowerCase()} available in this mode.</p>
+                    <CardHeader>
+                        <CardTitle>No {settings.terminology.stores} available</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="text-muted-foreground text-center">There are no {settings.terminology.stores.toLowerCase()} available in this mode.</p>
+                    </CardContent>
                 </Card>
             )}
 

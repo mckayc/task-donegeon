@@ -3,6 +3,8 @@
 // This file can be removed in the future.
 import React from 'react';
 
-const ObsoleteEditThemeDialog: React.FC = () => null;
+const ObsoleteEditThemeDialog: React.FC = () => {
+    return null;
+};
 
 export default ObsoleteEditThemeDialog;

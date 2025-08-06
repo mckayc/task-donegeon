@@ -1,7 +1,5 @@
-
-
 import React, { useState, useMemo } from 'react';
-import * as Icons from '../ui/Icons';
+import * as Icons from '@/components/ui/icons';
 import ObjectExporterPage from './management/ObjectExporterPage';
 import BackupAndImportPage from './management/BackupAndImportPage';
 import AssetLibraryPage from './management/AssetLibraryPage';
@@ -22,11 +20,11 @@ const DataManagementPage: React.FC = () => {
     const { settings } = useAppState();
     
     const visibleItems = useMemo((): SidebarConfigItem[] => {
-        return settings.sidebars.dataManagement.filter(item => item.isVisible);
+        return settings.sidebars.dataManagement.filter((item: SidebarConfigItem) => item.isVisible);
     }, [settings.sidebars.dataManagement]);
 
     const initialPage = useMemo((): Page => {
-        const firstLink = visibleItems.find(item => item.type === 'link') as SidebarLink | undefined;
+        const firstLink = visibleItems.find((item): item is SidebarLink => item.type === 'link');
         return firstLink?.id ?? 'Object Exporter';
     }, [visibleItems]);
 
@@ -45,9 +43,9 @@ const DataManagementPage: React.FC = () => {
 
     return (
         <div className="h-full flex flex-col">
-            <h1 className="text-4xl font-medieval text-stone-100 mb-8 flex-shrink-0">Data Management</h1>
+            <h1 className="text-4xl font-display text-foreground mb-8 flex-shrink-0">Data Management</h1>
             <div className="flex-grow flex gap-6 overflow-hidden">
-                <nav className="w-64 bg-stone-800/50 border border-stone-700/60 rounded-xl p-4 flex-shrink-0 flex flex-col">
+                <nav className="w-64 bg-card border rounded-xl p-4 flex-shrink-0 flex flex-col">
                     <div className="space-y-2">
                         {visibleItems.map(item => {
                             if (item.type !== 'link') return null;
@@ -56,9 +54,9 @@ const DataManagementPage: React.FC = () => {
                                 <button
                                     key={item.id}
                                     onClick={() => setActivePage(item.id)}
-                                    className={`w-full flex items-center p-3 text-left rounded-lg transition-colors ${activePage === item.id ? 'bg-emerald-600/20 text-emerald-300' : 'text-stone-300 hover:bg-stone-700/50'}`}
+                                    className={`w-full flex items-center p-3 text-left rounded-lg transition-colors ${activePage === item.id ? 'bg-primary/20 text-primary' : 'text-foreground hover:bg-accent/50'}`}
                                 >
-                                    {Icon && <Icon />}
+                                    {Icon && <Icon className="w-6 h-6 mr-3" />}
                                     <span className="capitalize">{item.id}</span>
                                 </button>
                             );

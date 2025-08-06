@@ -1,5 +1,3 @@
-
-
 import React, { useMemo, useEffect, useState, useRef } from 'react';
 import Sidebar from './Sidebar';
 import Header from './Header';
@@ -21,7 +19,7 @@ import CalendarPage from '../pages/CalendarPage';
 import ProgressPage from '../pages/ProgressPage';
 import TrophiesPage from '../pages/TrophiesPage';
 import RanksPage from '../pages/RanksPage';
-import HelpPage from '../pages/HelpPage';
+// import HelpPage from '../pages/HelpPage';
 import AvatarPage from '../pages/AvatarPage';
 import VacationModeBanner from '../settings/VacationModeBanner';
 import ManageRanksPage from '../pages/ManageRanksPage';
@@ -29,7 +27,7 @@ import ManageTrophiesPage from '../pages/ManageTrophiesPage';
 import ThemesPage from '../pages/ThemesPage';
 import AboutPage from '../pages/AboutPage';
 import CollectionPage from '../pages/CollectionPage';
-import ManageItemsPage from '../pages/ManageItemsPage';
+import ManageItemsPage from '../pages/management/ManageItemsPage';
 import AiStudioPage from '../pages/AiStudioPage';
 import AppearancePage from '../pages/AppearancePage';
 import ObjectExporterPage from '../pages/management/ObjectExporterPage';
@@ -40,9 +38,10 @@ import ThemeEditorPage from '../pages/ThemeEditorPage';
 import ManageQuestGroupsPage from '../pages/ManageQuestGroupsPage';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import ChatPanel from '../chat/ChatPanel';
-import LoginNotificationPopup from '../ui/LoginNotificationPopup';
+import LoginNotificationPopup from '../ui/login-notification-popup';
 import ManageEventsPage from '../pages/management/ManageEventsPage';
 import BackupAndImportPage from '../pages/management/BackupAndImportPage';
+import ChatController from '../chat/ChatController';
 
 const MainLayout: React.FC = () => {
   const { activePage, currentUser, settings, systemNotifications } = useAppState();
@@ -62,8 +61,6 @@ const MainLayout: React.FC = () => {
   }, [systemNotifications, currentUser]);
 
   useEffect(() => {
-    // This effect resets the "shown" flag whenever the user ID changes,
-    // effectively starting a new "notification session" for the new user.
     if (currentUser?.id !== prevUserIdRef.current) {
         setNotificationsShownForSession(false);
         prevUserIdRef.current = currentUser?.id;
@@ -71,12 +68,10 @@ const MainLayout: React.FC = () => {
   }, [currentUser]);
 
   useEffect(() => {
-    // This effect handles the logic for showing the popup.
     if (currentUser && !notificationsShownForSession && settings.loginNotifications.enabled && unreadNotifications.length > 0) {
         setShowLoginNotifications(true);
-        setNotificationsShownForSession(true); // Mark as shown for this session.
+        setNotificationsShownForSession(true);
     } else if (!currentUser) {
-        // Explicitly hide popup on logout, just in case.
         setShowLoginNotifications(false);
     }
   }, [currentUser, notificationsShownForSession, settings.loginNotifications.enabled, unreadNotifications]);
@@ -84,7 +79,6 @@ const MainLayout: React.FC = () => {
   useEffect(() => {
     if (!currentUser || !settings.sidebars.main) return;
 
-    // Find the configuration for the active page from the settings, which is the single source of truth.
     const pageConfig = settings.sidebars.main.find(item => item.type === 'link' && item.id === activePage);
 
     if (!pageConfig) {
@@ -146,7 +140,8 @@ const MainLayout: React.FC = () => {
       case 'Asset Library': return <AssetLibraryPage />;
       case 'Profile': return <ProfilePage />;
       case 'About': return <AboutPage />;
-      case 'Help Guide': return <HelpPage />;
+      case 'Help Guide': return <AboutPage />;
+      case 'Chat': return <ChatPanel />;
       default: return <Dashboard />;
     }
   };
@@ -160,7 +155,7 @@ const MainLayout: React.FC = () => {
             onClose={() => setShowLoginNotifications(false)} 
         />
       )}
-      <div className="flex h-screen" style={{ backgroundColor: 'hsl(var(--color-bg-secondary))', color: 'hsl(var(--color-text-primary))' }}>
+      <div className="flex h-screen bg-background text-foreground">
         <Sidebar />
         <div className="flex-1 flex flex-col overflow-hidden transition-all duration-300">
           <Header />
@@ -171,6 +166,7 @@ const MainLayout: React.FC = () => {
         </div>
         <ChatPanel />
       </div>
+      <ChatController />
     </>
   );
 };

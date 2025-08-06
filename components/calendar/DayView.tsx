@@ -6,7 +6,7 @@ import { useAppDispatch, useAppState } from '../../context/AppContext';
 import QuestDetailDialog from '../quests/QuestDetailDialog';
 import CompleteQuestDialog from '../quests/CompleteQuestDialog';
 import { questSorter, isQuestScheduledForDay, toYMD } from '../../utils/quests';
-import Card from '../ui/Card';
+import { Card } from '@/components/ui/card';
 
 interface DayViewProps {
     currentDate: Date;
@@ -81,7 +81,7 @@ const DayView: React.FC<DayViewProps> = ({ currentDate, quests, questCompletions
             <div className="p-4 h-[70vh] flex flex-col gap-6">
                 {dailyEvents.length > 0 && (
                     <div className="flex-shrink-0">
-                        <h3 className="text-xl font-bold text-stone-300 mb-2">Today's Events</h3>
+                        <h3 className="text-xl font-bold text-foreground mb-2">Today's Events</h3>
                         <div className="space-y-2">
                              {dailyEvents.map(event => {
                                  const textColor = getTextColorForBg(event.color || '');

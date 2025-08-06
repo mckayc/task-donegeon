@@ -1,8 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { Role } from '../../types';
-import Button from '../ui/Button';
-import Input from '../ui/Input';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import UserFormFields from './UserFormFields';
 
 interface AddUserDialogProps {
@@ -41,6 +44,11 @@ const AddUserDialog: React.FC<AddUserDialogProps> = ({ onClose }) => {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
+  
+  const handleSelectChange = (name: string, value: string) => {
+    setFormData({ ...formData, [name]: value });
+  };
+
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -80,16 +88,21 @@ const AddUserDialog: React.FC<AddUserDialogProps> = ({ onClose }) => {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
-      <div className="bg-stone-800 border border-stone-700 rounded-xl shadow-2xl p-8 max-w-lg w-full">
-        <h2 className="text-3xl font-medieval text-accent mb-6">Add New {settings.terminology.group} Member</h2>
-        <form onSubmit={handleSubmit} className="space-y-4">
+    <Dialog open={true} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-[425px]">
+        <DialogHeader>
+          <DialogTitle>Add New {settings.terminology.group} Member</DialogTitle>
+          <DialogDescription>
+            Create a new profile for a member of your group.
+          </DialogDescription>
+        </DialogHeader>
+        <form onSubmit={handleSubmit} id="add-user-form" className="space-y-4 py-4">
           <UserFormFields formData={formData} handleChange={handleChange} />
            
           { (showPasswordFields) ? (
-            <div>
+            <div className="space-y-2">
+              <Label htmlFor="password">Password {isPasswordRequired ? '(min 6 characters)' : '(optional, min 6 characters)'}</Label>
               <Input 
-                label={`Password ${isPasswordRequired ? '(min 6 characters)' : '(optional, min 6 characters)'}`} 
                 id="password" 
                 name="password" 
                 type="password" 
@@ -100,23 +113,28 @@ const AddUserDialog: React.FC<AddUserDialogProps> = ({ onClose }) => {
             </div>
           ) : (
             <div className="text-center py-2">
-                <button type="button" onClick={() => setShowPasswordFields(true)} className="text-sm font-semibold text-accent hover:opacity-80">
+                <Button type="button" variant="link" onClick={() => setShowPasswordFields(true)} className="text-sm font-semibold text-accent hover:opacity-80">
                     + Add optional password
-                </button>
+                </Button>
             </div>
           )}
 
-          <div>
-            <label htmlFor="role" className="block text-sm font-medium text-stone-300 mb-1">Role</label>
-            <select id="role" name="role" value={formData.role} onChange={handleChange} className="w-full px-4 py-2 bg-stone-700 border border-stone-600 rounded-md focus:ring-emerald-500 focus:border-emerald-500 transition">
-              <option value={Role.Explorer}>{settings.terminology.user}</option>
-              <option value={Role.Gatekeeper}>{settings.terminology.moderator}</option>
-              <option value={Role.DonegeonMaster}>{settings.terminology.admin}</option>
-            </select>
+          <div className="space-y-2">
+            <Label htmlFor="role">Role</Label>
+            <Select onValueChange={(value: string) => handleSelectChange('role', value)} defaultValue={formData.role}>
+              <SelectTrigger id="role">
+                <SelectValue placeholder="Select a role" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={Role.Explorer}>{settings.terminology.user}</SelectItem>
+                <SelectItem value={Role.Gatekeeper}>{settings.terminology.moderator}</SelectItem>
+                <SelectItem value={Role.DonegeonMaster}>{settings.terminology.admin}</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
-          <div>
+          <div className="space-y-2">
+            <Label htmlFor="pin">PIN (4-10 digits{settings.security.requirePinForUsers ? '' : ', optional'})</Label>
             <Input 
-                label={`PIN (4-10 digits${!settings.security.requirePinForUsers ? ', optional' : ''})`}
                 id="pin" 
                 name="pin" 
                 type="password" 
@@ -124,16 +142,16 @@ const AddUserDialog: React.FC<AddUserDialogProps> = ({ onClose }) => {
                 onChange={handleChange} 
                 required={settings.security.requirePinForUsers} 
             />
-            <p className="text-xs text-stone-400 mt-1">An easy way for users to switch profiles securely. Can be disabled in Settings.</p>
+            <p className="text-xs text-muted-foreground">An easy way for users to switch profiles securely. Can be disabled in Settings.</p>
           </div>
-          {error && <p className="text-red-400 text-center">{error}</p>}
-          <div className="flex justify-end space-x-4 pt-4">
-            <Button type="button" variant="secondary" onClick={onClose}>Cancel</Button>
-            <Button type="submit">Add Member</Button>
-          </div>
+          {error && <p className="text-red-500 text-sm text-center">{error}</p>}
         </form>
-      </div>
-    </div>
+        <DialogFooter>
+            <Button type="button" variant="secondary" onClick={onClose}>Cancel</Button>
+            <Button type="submit" form="add-user-form">Add Member</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 };
 

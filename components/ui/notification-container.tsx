@@ -1,6 +1,6 @@
 import React from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
-import Notification from './Notification';
+import Notification from './notification';
 
 const NotificationContainer: React.FC = () => {
     const { notifications } = useAppState();

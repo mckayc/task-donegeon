@@ -1,8 +1,10 @@
-
 import React, { useState } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { Trophy, User } from '../../types';
-import Button from '../ui/Button';
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Label } from '@/components/ui/label';
 
 interface AwardTrophyDialogProps {
   user: User;
@@ -32,45 +34,42 @@ const AwardTrophyDialog: React.FC<AwardTrophyDialogProps> = ({ user, onClose }) 
     };
 
   return (
-    <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
-      <div className="bg-stone-800 border border-stone-700 rounded-xl shadow-2xl p-8 max-w-lg w-full">
-        <h2 className="text-3xl font-medieval text-emerald-400 mb-2">Award Trophy</h2>
-        <p className="text-stone-300 mb-6">Select a trophy to award to <span className="font-bold text-emerald-300">{user.gameName}</span>.</p>
-        
+    <Dialog open={true} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-lg">
+        <DialogHeader>
+          <DialogTitle>Award Trophy</DialogTitle>
+          <DialogDescription>Select a trophy to award to <span className="font-bold text-primary">{user.gameName}</span>.</DialogDescription>
+        </DialogHeader>
         {availableTrophies.length > 0 ? (
-            <form onSubmit={handleSubmit} className="space-y-4">
-                <div>
-                    <label htmlFor="trophy" className="block text-sm font-medium text-stone-300 mb-1">Available Trophies</label>
-                    <select
-                        id="trophy"
-                        value={selectedTrophyId}
-                        onChange={(e) => setSelectedTrophyId(e.target.value)}
-                        className="w-full px-4 py-2 bg-stone-700 border border-stone-600 rounded-md"
-                    >
-                        <option value="" disabled>Select a trophy...</option>
-                        {availableTrophies.map(trophy => (
-                            <option key={trophy.id} value={trophy.id}>
-                                {trophy.name}
-                            </option>
-                        ))}
-                    </select>
+            <form onSubmit={handleSubmit} id="award-trophy-form" className="space-y-4 py-4">
+                <div className="space-y-2">
+                    <Label htmlFor="trophy-select">Available Trophies</Label>
+                    <Select onValueChange={setSelectedTrophyId} defaultValue={selectedTrophyId}>
+                        <SelectTrigger id="trophy-select">
+                            <SelectValue placeholder="Select a trophy..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {availableTrophies.map(trophy => (
+                                <SelectItem key={trophy.id} value={trophy.id}>
+                                    {trophy.icon} {trophy.name}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
                 </div>
-                 {error && <p className="text-red-400 text-center">{error}</p>}
-                <div className="flex justify-end space-x-4 pt-4">
-                    <Button type="button" variant="secondary" onClick={onClose}>Cancel</Button>
-                    <Button type="submit">Award Trophy</Button>
-                </div>
+                 {error && <p className="text-red-500 text-sm text-center">{error}</p>}
             </form>
         ) : (
-             <div>
-                <p className="text-stone-400 text-center py-4">{user.gameName} has already earned all available manual trophies!</p>
-                 <div className="text-right mt-4">
-                    <Button type="button" variant="secondary" onClick={onClose}>Close</Button>
-                </div>
+             <div className="py-4">
+                <p className="text-muted-foreground text-center">{user.gameName} has already earned all available manual trophies!</p>
             </div>
         )}
-      </div>
-    </div>
+        <DialogFooter>
+            <Button type="button" variant="ghost" onClick={onClose}>Cancel</Button>
+            {availableTrophies.length > 0 && <Button type="submit" form="award-trophy-form">Award Trophy</Button>}
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 };
 

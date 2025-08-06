@@ -1,11 +1,11 @@
 import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { Role, User } from '../../types';
-import Avatar from '../ui/Avatar';
-import Input from '../ui/Input';
-import { XCircleIcon, ArrowLeftIcon } from '../ui/Icons';
-import Button from '../ui/Button';
-import ToggleSwitch from '../ui/ToggleSwitch';
+import Avatar from '../ui/avatar';
+import { Input } from '@/components/ui/input';
+import { XCircleIcon, ArrowLeftIcon } from '@/components/ui/icons';
+import { Button } from '@/components/ui/button';
+import ToggleSwitch from '../ui/toggle-switch';
 import { useLocalStorage } from '../../hooks/useLocalStorage';
 
 type ChatTarget = User | {
@@ -16,7 +16,7 @@ type ChatTarget = User | {
 };
 
 const ChatPanel: React.FC = () => {
-    const { currentUser, users, guilds, chatMessages, isChatOpen, settings } = useAppState();
+    const { currentUser, users, guilds, chatMessages, isChatOpen, settings, isAiReplying } = useAppState();
     const { toggleChat, sendMessage, markMessagesAsRead } = useAppDispatch();
     const [activeChatTarget, setActiveChatTarget] = useState<ChatTarget | null>(null);
     const [message, setMessage] = useState('');
@@ -151,7 +151,7 @@ const ChatPanel: React.FC = () => {
         if (!userScrolledUp) {
             scrollToBottom();
         }
-    }, [activeConversation, userScrolledUp, scrollToBottom]);
+    }, [activeConversation, userScrolledUp, scrollToBottom, isAiReplying]);
     
     const handleSend = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -202,7 +202,7 @@ const ChatPanel: React.FC = () => {
     return (
         <div
             ref={panelRef}
-            className={`fixed z-50 bg-stone-800 border border-stone-700 shadow-2xl flex flex-col
+            className={`fixed z-50 bg-card border shadow-2xl flex flex-col
                         ${isMobile ? 'inset-0 rounded-none' : 'rounded-xl'}`}
             style={!isMobile ? {
                 width: `${size.width}px`,
@@ -212,35 +212,35 @@ const ChatPanel: React.FC = () => {
         >
             <header 
                 onMouseDown={handleDragMouseDown}
-                className={`p-4 border-b border-stone-700 flex justify-between items-center flex-shrink-0 ${!isMobile ? 'cursor-move' : ''}`}
+                className={`p-4 border-b flex justify-between items-center flex-shrink-0 ${!isMobile ? 'cursor-move' : ''}`}
             >
-                <h3 className="font-bold text-lg text-stone-100">Chat</h3>
-                <button onClick={toggleChat} className="text-stone-400 hover:text-white"><XCircleIcon className="w-6 h-6"/></button>
+                <h3 className="font-bold text-lg text-card-foreground">Chat</h3>
+                <button onClick={toggleChat} className="text-muted-foreground hover:text-foreground"><XCircleIcon className="w-6 h-6"/></button>
             </header>
             
             <div className="flex-grow flex md:flex-row flex-col overflow-hidden relative">
-                <aside className={`w-full md:w-1/3 border-r border-stone-700 overflow-y-auto transition-transform duration-300 absolute md:static inset-0 bg-stone-800 ${activeChatTarget ? '-translate-x-full md:translate-x-0' : 'translate-x-0'}`}>
+                <aside className={`w-full md:w-1/3 border-r overflow-y-auto transition-transform duration-300 absolute md:static inset-0 bg-card ${activeChatTarget ? '-translate-x-full md:translate-x-0' : 'translate-x-0'}`}>
                     {chatPartners.map(target => {
                         const isGuild = 'isGuild' in target && target.isGuild;
                         const hasUnread = isGuild ? unreadInfo.guilds.has(target.id) : unreadInfo.dms.has(target.id);
                         return (
-                            <button key={target.id} onClick={() => setActiveChatTarget(target)} className={`w-full flex items-center gap-2 p-2 text-left hover:bg-stone-700/50 ${activeChatTarget?.id === target.id ? 'bg-emerald-900/50' : ''}`}>
-                                {isGuild ? <span className="w-8 h-8 flex-shrink-0 rounded-full bg-stone-700 flex items-center justify-center text-lg">{target.icon}</span> : <Avatar user={target as User} className="w-8 h-8 flex-shrink-0 rounded-full overflow-hidden" />}
-                                <span className="text-sm font-semibold text-stone-200 truncate flex-grow">{target.gameName}</span>
+                            <button key={target.id} onClick={() => setActiveChatTarget(target)} className={`w-full flex items-center gap-2 p-2 text-left hover:bg-accent/50 ${activeChatTarget?.id === target.id ? 'bg-primary/20' : ''}`}>
+                                {isGuild ? <span className="w-8 h-8 flex-shrink-0 rounded-full bg-background flex items-center justify-center text-lg">{target.icon}</span> : <Avatar user={target as User} className="w-8 h-8 flex-shrink-0 rounded-full overflow-hidden" />}
+                                <span className="text-sm font-semibold text-card-foreground truncate flex-grow">{target.gameName}</span>
                                 {hasUnread && <div className="w-2.5 h-2.5 bg-red-500 rounded-full flex-shrink-0"></div>}
                             </button>
                         );
                     })}
                 </aside>
 
-                <main className={`w-full md:w-2/3 flex flex-col absolute inset-0 md:static transition-transform duration-300 bg-stone-800 ${activeChatTarget ? 'translate-x-0' : 'translate-x-full md:translate-x-0'}`}>
+                <main className={`w-full md:w-2/3 flex flex-col absolute inset-0 md:static transition-transform duration-300 bg-card ${activeChatTarget ? 'translate-x-0' : 'translate-x-full md:translate-x-0'}`}>
                     {activeChatTarget ? (
                         <>
-                            <div className="p-3 border-b border-stone-700 flex-shrink-0 flex items-center justify-center relative">
-                                <button onClick={() => setActiveChatTarget(null)} className="md:hidden absolute left-4 text-stone-400 hover:text-white">
+                            <div className="p-3 border-b flex-shrink-0 flex items-center justify-center relative">
+                                <button onClick={() => setActiveChatTarget(null)} className="md:hidden absolute left-4 text-muted-foreground hover:text-foreground">
                                     <ArrowLeftIcon className="w-6 h-6" />
                                 </button>
-                                <p className="font-bold text-center text-stone-200">{activeChatTarget.gameName}</p>
+                                <p className="font-bold text-center text-card-foreground">{activeChatTarget.gameName}</p>
                             </div>
                             <div ref={messagesContainerRef} onScroll={handleScroll} className="flex-grow p-3 space-y-3 overflow-y-auto">
                                 {activeConversation.map(msg => {
@@ -256,7 +256,7 @@ const ChatPanel: React.FC = () => {
                                     return (
                                         <React.Fragment key={msg.id}>
                                             {showDateSeparator && (
-                                                <div className="text-center text-xs text-stone-500 my-2">
+                                                <div className="text-center text-xs text-muted-foreground my-2">
                                                     --- {new Date(msg.timestamp).toLocaleDateString('default', { month: 'long', day: 'numeric', year: 'numeric' })} ---
                                                 </div>
                                             )}
@@ -267,7 +267,7 @@ const ChatPanel: React.FC = () => {
                                                 <div className={`max-w-xs px-3 py-2 rounded-lg flex flex-col ${
                                                     isMsgAnnouncement 
                                                     ? 'bg-amber-800/60 border border-amber-600'
-                                                    : isOwnMessage ? 'bg-emerald-700 text-white' : 'bg-stone-600 text-stone-100'
+                                                    : isOwnMessage ? 'bg-primary text-primary-foreground' : 'bg-background text-foreground'
                                                 }`}>
                                                     {isMsgAnnouncement && (
                                                         <div className="text-xs font-bold text-amber-200 mb-1 border-b border-amber-500/50 pb-1">📢 Announcement</div>
@@ -277,15 +277,25 @@ const ChatPanel: React.FC = () => {
                                                     )}
                                                     <p className="text-sm whitespace-pre-wrap">{msg.message}</p>
                                                 </div>
-                                                <span className="text-xs text-stone-500">{new Date(msg.timestamp).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}</span>
+                                                <span className="text-xs text-muted-foreground">{new Date(msg.timestamp).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}</span>
                                             </div>
                                         </React.Fragment>
                                     );
                                 })}
+                                 {isAiReplying && activeChatTarget?.id === 'user-ai-assistant' && (
+                                    <div className="flex items-end gap-2 justify-start">
+                                        <Avatar user={users.find(u => u.id === 'user-ai-assistant')!} className="w-8 h-8 flex-shrink-0 rounded-full overflow-hidden self-start" />
+                                        <div className="max-w-xs px-4 py-3 rounded-lg flex items-center gap-1.5 bg-background text-foreground">
+                                            <span className="w-2.5 h-2.5 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: '0s' }}></span>
+                                            <span className="w-2.5 h-2.5 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></span>
+                                            <span className="w-2.5 h-2.5 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: '0.4s' }}></span>
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                             
                             {activeChatTarget && 'isGuild' in activeChatTarget && activeChatTarget.isGuild && currentUser.role === Role.DonegeonMaster && (
-                                <div className="p-2 border-t border-stone-700">
+                                <div className="p-2 border-t">
                                     <ToggleSwitch 
                                         enabled={isAnnouncement}
                                         setEnabled={setIsAnnouncement}
@@ -294,19 +304,19 @@ const ChatPanel: React.FC = () => {
                                 </div>
                             )}
 
-                            <form onSubmit={handleSend} className="p-3 border-t border-stone-700 flex-shrink-0 flex items-center gap-2">
+                            <form onSubmit={handleSend} className="p-3 border-t flex-shrink-0 flex items-center gap-2">
                                 <Input
                                     value={message}
-                                    onChange={(e) => setMessage(e.target.value)}
+                                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setMessage(e.target.value)}
                                     placeholder="Type a message..."
                                     autoComplete="off"
                                     className="flex-grow"
                                 />
-                                <Button type="submit" className="px-4 py-2">Send</Button>
+                                <Button type="submit">Send</Button>
                             </form>
                         </>
                     ) : (
-                        <div className="flex items-center justify-center h-full text-center text-stone-400 p-4">
+                        <div className="flex items-center justify-center h-full text-center text-muted-foreground p-4">
                             Select a user or guild to start chatting.
                         </div>
                     )}

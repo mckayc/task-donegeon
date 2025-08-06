@@ -104,11 +104,12 @@ const terminologyLabels: { [key in keyof Terminology]: string } = {
 
 const SettingsPage: React.FC = () => {
     const { currentUser, users, settings, rewardTypes, isAiConfigured } = useAppState();
-    const { updateSettings, resetSettings, addNotification } = useAppDispatch();
+    const { updateSettings, resetSettings, addNotification, factoryReset } = useAppDispatch();
     
     const [formState, setFormState] = useState<AppSettings>(() => JSON.parse(JSON.stringify(settings)));
     const [showSaved, setShowSaved] = useState<string | null>(null);
     const [isResetConfirmOpen, setIsResetConfirmOpen] = useState(false);
+    const [isFactoryResetConfirmOpen, setIsFactoryResetConfirmOpen] = useState(false);
     const [isFaviconPickerOpen, setIsFaviconPickerOpen] = useState(false);
     
     const [apiKeyStatus, setApiKeyStatus] = useState<'unknown' | 'testing' | 'valid' | 'invalid'>(isAiConfigured ? 'valid' : 'unknown');
@@ -256,6 +257,11 @@ const SettingsPage: React.FC = () => {
         resetSettings();
         setFormState(JSON.parse(JSON.stringify(INITIAL_SETTINGS)));
         setIsResetConfirmOpen(false);
+    };
+
+    const handleFactoryResetConfirm = () => {
+        setIsFactoryResetConfirmOpen(false);
+        factoryReset();
     };
     
     const currencyRewards = rewardTypes.filter(rt => rt.category === RewardCategory.Currency);
@@ -471,17 +477,29 @@ const SettingsPage: React.FC = () => {
             </CollapsibleSection>
 
             <CollapsibleSection title="Advanced">
-                <div className="p-4 bg-red-900/30 border border-red-700/60 rounded-lg">
-                    <h4 className="font-bold text-red-300">Reset All Settings</h4>
-                    <p className="text-sm text-red-200/80 mt-1 mb-4">
-                        If you're experiencing issues with new features not appearing (especially after an update on a local Docker install), resetting settings can help. This will revert all options on this page to their default values.
+                <div className="p-4 bg-yellow-900/30 border border-yellow-700/60 rounded-lg">
+                    <h4 className="font-bold text-yellow-300">Reset All Settings</h4>
+                    <p className="text-sm text-yellow-200/80 mt-1 mb-4">
+                        This will revert all options on this page to their default values.
                         <strong className="block mt-2">This will NOT delete users, quests, items, or any other created content.</strong>
                     </p>
                     <Button
                         onClick={() => setIsResetConfirmOpen(true)}
-                        className="!bg-red-600 hover:!bg-red-500"
+                        className="!bg-yellow-600 hover:!bg-yellow-500"
                     >
                         Reset All Settings to Default
+                    </Button>
+                </div>
+                 <div className="mt-6 p-4 bg-red-900/30 border border-red-700/60 rounded-lg">
+                    <h4 className="font-bold text-red-300">Factory Reset</h4>
+                    <p className="text-sm text-red-200/80 mt-1 mb-4">
+                        This will permanently delete ALL data, including users, quests, items, and settings, and reset the application to its initial state. This action is irreversible.
+                    </p>
+                    <Button
+                        onClick={() => setIsFactoryResetConfirmOpen(true)}
+                        className="!bg-red-600 hover:!bg-red-500"
+                    >
+                        Factory Reset Application
                     </Button>
                 </div>
             </CollapsibleSection>
@@ -492,6 +510,14 @@ const SettingsPage: React.FC = () => {
                 onConfirm={handleResetConfirm}
                 title="Confirm Settings Reset"
                 message="Are you sure you want to reset all application settings to their default values? This cannot be undone, but it will not affect your created content like users or quests."
+            />
+
+            <ConfirmDialog
+                isOpen={isFactoryResetConfirmOpen}
+                onClose={() => setIsFactoryResetConfirmOpen(false)}
+                onConfirm={handleFactoryResetConfirm}
+                title="Confirm Factory Reset"
+                message="Are you absolutely sure? This will delete ALL data and cannot be undone. The application will be reset to the initial setup wizard."
             />
         </div>
     );

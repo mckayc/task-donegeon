@@ -105,6 +105,7 @@ interface AppDispatch {
   bulkUpdateQuests: (questIds: string[], updates: BulkQuestUpdates) => void;
   uploadFile: (file: File, category?: string) => Promise<{ url: string } | null>;
   executeExchange: (userId: string, payItem: RewardItem, receiveItem: RewardItem, guildId?: string) => void;
+  factoryReset: () => void;
 
   // Settings & UI
   updateSettings: (settings: Partial<AppSettings>) => void;
@@ -1008,6 +1009,23 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     }
   }, [apiRequest, addNotification]);
 
+  const factoryReset = useCallback(async () => {
+    try {
+        await apiRequest('POST', '/api/data/factory-reset');
+        addNotification({ type: 'success', message: 'Factory reset successful! The application is reloading...' });
+        
+        // Clear all local data to ensure a clean state
+        localStorage.clear();
+
+        // Reload the page after a short delay
+        setTimeout(() => {
+            window.location.reload();
+        }, 2000);
+    } catch (e) {
+        addNotification({ type: 'error', message: 'Failed to perform factory reset.' });
+    }
+  }, [apiRequest, addNotification]);
+
   const clearAllHistory = useCallback(() => { setQuestCompletions([]); setPurchaseRequests([]); setAdminAdjustments([]); setSystemLogs([]); addNotification({ type: 'success', message: 'All historical data has been cleared.' }); }, [addNotification]);
   const resetAllPlayerData = useCallback(() => { setUsers(prev => prev.map(u => u.role !== Role.DonegeonMaster ? { ...u, personalPurse: {}, personalExperience: {}, guildBalances: {}, ownedAssetIds: [], avatar: {} } : u)); setUserTrophies(prev => prev.filter(ut => users.find(u => u.id === ut.userId)?.role === Role.DonegeonMaster)); addNotification({ type: 'success', message: "All player data has been reset." }); }, [users, addNotification]);
   const deleteAllCustomContent = useCallback(() => { setQuests([]); setQuestGroups([]); setMarkets([]); setGameAssets([]); setRewardTypes(p => p.filter(rt => rt.isCore)); setRanks(p => p.filter(r => r.xpThreshold === 0)); setTrophies([]); setGuilds(p => p.filter(g => g.isDefault)); addNotification({ type: 'success', message: 'All custom content has been deleted.' }); }, [addNotification]);
@@ -1234,6 +1252,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     deleteQuests, deleteTrophies, deleteGameAssets, updateQuestsStatus, bulkUpdateQuests,
     uploadFile,
     executeExchange,
+    factoryReset,
     updateSettings, resetSettings, setActivePage, setAppMode, addNotification, removeNotification, setActiveMarketId, toggleSidebar,
     toggleChat, sendMessage, markMessagesAsRead,
     addSystemNotification, markSystemNotificationsAsRead

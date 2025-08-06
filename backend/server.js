@@ -23,6 +23,7 @@ const app = express();
 const port = process.env.PORT || 3000;
 const server = http.createServer(app);
 const wss = new WebSocket.Server({ server });
+const dbPath = process.env.DATABASE_PATH || '/app/data/database/database.sqlite';
 
 // === WebSocket Logic ===
 wss.on('connection', ws => {
@@ -248,6 +249,34 @@ app.post('/api/data/import-assets', asyncMiddleware(async (req, res) => {
     } catch (error) {
         console.error("Error during asset import:", error);
         res.status(500).json({ error: 'Failed to import assets.' });
+    }
+}));
+
+app.post('/api/data/factory-reset', asyncMiddleware(async (req, res) => {
+    try {
+        if (dataSource.isInitialized) {
+            await dataSource.destroy();
+            console.log("Data Source connection closed.");
+        }
+
+        await fs.unlink(dbPath);
+        console.log("Database file deleted successfully.");
+        
+        res.status(200).json({ message: "Factory reset successful. The application will restart." });
+        
+        console.log("Initiating server restart for factory reset...");
+        setTimeout(() => process.exit(0), 1000);
+
+    } catch (err) {
+        if (err.code === 'ENOENT') {
+            console.log("Database file did not exist, which is fine for a factory reset.");
+            res.status(200).json({ message: "No database file found to delete. The application will restart." });
+            console.log("Initiating server restart for factory reset...");
+            setTimeout(() => process.exit(0), 1000);
+        } else {
+            console.error("Error during factory reset:", err);
+            res.status(500).json({ error: "Failed to perform factory reset." });
+        }
     }
 }));
 

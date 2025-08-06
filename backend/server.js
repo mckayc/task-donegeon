@@ -10,7 +10,7 @@ const http = require('http');
 const WebSocket = require('ws');
 const { In } = require("typeorm");
 const { dataSource, ensureDatabaseDirectoryExists } = require('./data-source');
-const { INITIAL_SETTINGS } = require('./initialData');
+const { INITIAL_SETTINGS, INITIAL_REWARD_TYPES, INITIAL_RANKS, INITIAL_TROPHIES, INITIAL_THEMES, INITIAL_QUEST_GROUPS } = require('./initialData');
 const { 
     UserEntity, QuestEntity, QuestGroupEntity, MarketEntity, RewardTypeDefinitionEntity,
     QuestCompletionEntity, PurchaseRequestEntity, GuildEntity, RankEntity, TrophyEntity,

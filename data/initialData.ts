@@ -1,4 +1,4 @@
-import { User, Role, RewardTypeDefinition, RewardCategory, Rank, Trophy, TrophyRequirementType, QuestType, Market, Quest, QuestAvailability, Guild, AppSettings, SidebarConfigItem, GameAsset, ThemeDefinition, ThemeStyle, QuestCompletion, QuestCompletionStatus, MarketStatus, QuestGroup } from '../types';
+import { Role, RewardCategory, QuestType, QuestAvailability, TrophyRequirementType, QuestCompletionStatus, AppSettings, Trophy, Rank, Market, GameAsset, Guild, QuestCompletion, User, ThemeDefinition, QuestGroup } from '../types';
 
 export const INITIAL_QUEST_GROUPS: QuestGroup[] = [
     { id: 'qg-household', name: 'Household Chores', description: 'General tasks related to keeping the house clean and tidy.', icon: '🏡' },
@@ -12,7 +12,7 @@ export const INITIAL_QUEST_GROUPS: QuestGroup[] = [
 ];
 
 export const createMockUsers = (): User[] => {
-    const usersData: Omit<User, 'id' | 'personalPurse' | 'personalExperience' | 'guildBalances' | 'avatar' | 'ownedAssetIds' | 'ownedThemes' | 'hasBeenOnboarded'>[] = [
+    const usersData = [
         // Donegeon Masters
         { firstName: 'The', lastName: 'Admin', username: 'admin', email: 'admin@donegeon.com', gameName: 'admin', birthday: '2000-01-01', role: Role.DonegeonMaster, password: '123456', pin: '1234' },
         
@@ -23,7 +23,7 @@ export const createMockUsers = (): User[] => {
         { firstName: 'New', lastName: 'Explorer', username: 'explorer', email: 'explorer@donegeon.com', gameName: 'Explorer', birthday: '2010-04-15', role: Role.Explorer, pin: '1234' },
     ];
 
-    const initialUsers = usersData.map((u, i) => ({
+    const initialUsers: User[] = usersData.map((u, i) => ({
         ...u,
         id: `user-${i + 1}`,
         avatar: {},
@@ -36,7 +36,7 @@ export const createMockUsers = (): User[] => {
     }));
 
     // Give explorer starting gold for the tutorial quest
-    const explorer = initialUsers.find((u: User) => u.username === 'explorer');
+    const explorer = initialUsers.find((u) => u.username === 'explorer');
     if (explorer) {
         explorer.personalPurse = { 'core-gold': 100 };
     }
@@ -547,7 +547,7 @@ export const createSampleQuests = (users: User[]): Quest[] => {
   return quests;
 };
 
-export function createInitialData(setupChoice = 'guided', adminUserData?: any, blueprint?: any) {
+export function createInitialData(setupChoice = 'guided', adminUserData: any, blueprint: any) {
     if (setupChoice === 'scratch') {
         const users = [adminUserData];
         const guilds = createInitialGuilds(users);

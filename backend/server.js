@@ -1,4 +1,3 @@
-
 require("reflect-metadata");
 const express = require('express');
 const cors = require('cors');
@@ -266,7 +265,10 @@ app.post('/api/first-run', asyncMiddleware(async (req, res) => {
         await manager.save(ThemeDefinitionEntity, INITIAL_THEMES);
         await manager.save(QuestGroupEntity, INITIAL_QUEST_GROUPS);
 
-        const adminUser = manager.create(UserEntity, adminUserData);
+        const adminUser = manager.create(UserEntity, {
+            ...adminUserData,
+            id: `user-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+        });
         await manager.save(adminUser);
 
         const defaultGuild = manager.create(GuildEntity, {

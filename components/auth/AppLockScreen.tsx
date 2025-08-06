@@ -1,8 +1,9 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { Role, User } from '../../types';
 import Button from '../ui/Button';
 import Input from '../ui/Input';
+import Avatar from '../ui/Avatar';
 
 const AppLockScreen: React.FC = () => {
   const { users, settings } = useAppState();
@@ -14,6 +15,14 @@ const AppLockScreen: React.FC = () => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isChecking, setIsChecking] = useState(false);
+  
+  useEffect(() => {
+    // If there's only one admin, ensure they are selected by default.
+    if (adminUsers.length === 1 && selectedAdminId !== adminUsers[0].id) {
+        setSelectedAdminId(adminUsers[0].id);
+    }
+  }, [adminUsers, selectedAdminId]);
+
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -47,10 +56,13 @@ const AppLockScreen: React.FC = () => {
     <div className="min-h-screen flex items-center justify-center bg-stone-900 p-4">
       <div className="max-w-md w-full bg-stone-800 border border-stone-700 rounded-2xl shadow-2xl p-8 md:p-12">
         <div className="text-center mb-6">
+            {selectedAdminUser && (
+                <Avatar user={selectedAdminUser} className="w-24 h-24 mb-4 bg-emerald-800 rounded-full border-4 border-emerald-600 overflow-hidden mx-auto" />
+            )}
           <h1 className="font-medieval text-accent">{settings.terminology.appName}</h1>
           <p className="text-stone-300 mt-2">
-            {adminUsers.length > 1 
-                ? `Welcome, ${selectedAdminUser?.gameName || 'Administrator'}. Enter your password to unlock.` 
+            {selectedAdminUser 
+                ? `Welcome, ${selectedAdminUser.gameName}. Enter your password to unlock.` 
                 : 'Enter the Master Password to unlock.'
             }
           </p>

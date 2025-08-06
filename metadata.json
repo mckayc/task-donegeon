@@ -1,6 +1,9 @@
 {
-  "name": "Task Donegeon - First Run Wizard",
-  "description": "A gamified chore and task tracker with a new First Run Wizard for easy setup. Users, or 'Explorers', complete tasks to earn experience points and currencies. These can be used to level up and make purchases in a virtual marketplace, turning everyday chores into an exciting adventure.",
-  "requestFramePermissions": [],
+  "name": "Task Donegeon 2.0 - 0.0.26 - Before First Run Wizard Revamp",
+  "version": "0.0.97",
+  "description": "A gamified task and chore tracker for families and groups. Complete quests, earn currency and experience, and level up your character in a fun, medieval-themed adventure.",
+  "requestFramePermissions": [
+    "camera"
+  ],
   "prompt": ""
 }

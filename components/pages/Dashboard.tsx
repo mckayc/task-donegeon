@@ -158,11 +158,16 @@ const Dashboard: React.FC = () => {
 
     const quickActionQuests = useMemo(() => {
         const today = new Date();
+        const currentGuildId = appMode.mode === 'guild' ? appMode.guildId : undefined;
+        // Correctly filter completions for the current user *before* checking availability.
+        const userCompletions = questCompletions.filter(c => c.userId === currentUser.id && c.guildId === currentGuildId);
+
         const completableQuests = quests.filter(quest => {
             return isQuestVisibleToUserInMode(quest, currentUser.id, appMode) &&
-                   isQuestAvailableForUser(quest, questCompletions, today, scheduledEvents, appMode);
+                   isQuestAvailableForUser(quest, userCompletions, today, scheduledEvents, appMode);
         });
 
+        // The sorter function correctly handles filtering completions internally, so we pass the full list.
         return completableQuests.sort(questSorter(currentUser, questCompletions, scheduledEvents, today));
     }, [quests, currentUser, questCompletions, appMode, scheduledEvents]);
 

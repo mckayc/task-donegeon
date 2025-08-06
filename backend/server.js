@@ -39,6 +39,73 @@ const broadcast = (data) => {
   });
 };
 
+const checkAndAwardTrophies = async (manager, userId, guildId) => {
+    // Automatic trophies are personal-only for now, as per frontend logic
+    if (guildId) return;
+
+    const user = await manager.findOneBy(UserEntity, { id: userId });
+    if (!user) return;
+
+    // Get all necessary data for checks
+    const userCompletedQuests = await manager.find(QuestCompletionEntity, {
+        where: { user: { id: userId }, guildId: null, status: 'Approved' },
+        relations: ['quest']
+    });
+    const userTrophies = await manager.find(UserTrophyEntity, { where: { userId, guildId: null } });
+    const ranks = await manager.find(RankEntity);
+    const automaticTrophies = await manager.find(TrophyEntity, { where: { isManual: false } });
+
+    const totalXp = Object.values(user.personalExperience || {}).reduce((sum, amount) => sum + amount, 0);
+    const userRank = ranks.slice().sort((a, b) => b.xpThreshold - a.xpThreshold).find(r => totalXp >= r.xpThreshold);
+
+    for (const trophy of automaticTrophies) {
+        // Check if user already has this personal trophy
+        if (userTrophies.some(ut => ut.trophyId === trophy.id)) continue;
+        
+        // Check requirements
+        const meetsAllRequirements = trophy.requirements.every(req => {
+            switch (req.type) {
+                case 'COMPLETE_QUEST_TYPE':
+                    return userCompletedQuests.filter(c => c.quest?.type === req.value).length >= req.count;
+                case 'COMPLETE_QUEST_TAG':
+                    return userCompletedQuests.filter(c => c.quest?.tags?.includes(req.value)).length >= req.count;
+                case 'ACHIEVE_RANK':
+                    return userRank?.id === req.value;
+                default:
+                    return false;
+            }
+        });
+
+        if (meetsAllRequirements) {
+            // Award trophy
+            const newTrophy = manager.create(UserTrophyEntity, {
+                id: `usertrophy-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+                userId,
+                trophyId: trophy.id,
+                awardedAt: new Date().toISOString(),
+                guildId: null, // Personal trophy
+            });
+            await manager.save(newTrophy);
+
+            // Create notification
+            const newNotification = manager.create(SystemNotificationEntity, {
+                 id: `sysnotif-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+                 type: 'TrophyAwarded',
+                 message: `You unlocked a new trophy: "${trophy.name}"!`,
+                 recipientUserIds: [userId],
+                 readByUserIds: [],
+                 timestamp: new Date().toISOString(),
+                 guildId: null,
+                 iconType: trophy.iconType,
+                 icon: trophy.icon,
+                 imageUrl: trophy.imageUrl,
+                 link: 'Trophies',
+            });
+            await manager.save(newNotification);
+        }
+    }
+};
+
 // === Middleware ===
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
@@ -387,6 +454,8 @@ app.post('/api/actions/complete-quest', asyncMiddleware(async (req, res) => {
                     }
                 });
                 await manager.save(UserEntity, user);
+                // After applying rewards, check for trophies
+                await checkAndAwardTrophies(manager, user.id, quest.guildId);
             }
         });
 
@@ -453,6 +522,8 @@ app.post('/api/actions/approve-quest/:id', asyncMiddleware(async (req, res) => {
             
             await manager.save(UserEntity, user);
             await manager.save(QuestCompletionEntity, completion);
+            // After applying rewards, check for trophies
+            await checkAndAwardTrophies(manager, user.id, quest.guildId);
         });
 
         broadcast({ type: 'DATA_UPDATED' });

@@ -4,16 +4,18 @@ FROM node:20-alpine AS builder
 # Set the working directory in the container
 WORKDIR /app
 
-# Copy package.json and package-lock.json first to leverage Docker layer caching
+# Copy package.json files first to leverage Docker layer caching
 COPY package*.json ./
+COPY backend/package*.json ./backend/
 
-# Install all dependencies, including devDependencies needed for the build
+# Install all dependencies for both frontend and backend, including dev dependencies
 RUN npm install
+RUN npm install --prefix backend
 
 # Copy the rest of the application source code
 COPY . .
 
-# Run the build script to compile the server and client
+# Run the build script to compile TypeScript and build the frontend
 RUN npm run build
 # Stage 2: Create the final production image
 FROM node:20-alpine
@@ -24,20 +26,22 @@ WORKDIR /app
 # Set the environment to production
 ENV NODE_ENV=production
 
-# Copy package files
+# Copy package files again
 COPY package*.json ./
+COPY backend/package*.json ./backend/
 
-# Install only production dependencies
+# Install only production dependencies for both frontend and backend
 RUN npm install --omit=dev
+RUN npm install --prefix backend --omit=dev
 
 # Copy the built frontend assets from the builder stage
 COPY --from=builder /app/dist ./dist
 
-# Copy the server files from the builder stage
-COPY --from=builder /app/server.js .
+# Copy the compiled backend server files from the builder stage
+COPY --from=builder /app/backend ./backend
 
 # Expose the port the app runs on
 EXPOSE 3001
 
 # The command to run when the container starts
-CMD [ "node", "server.js" ]
+CMD [ "node", "backend/server.js" ]

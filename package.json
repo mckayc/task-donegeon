@@ -4,17 +4,23 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
+    "start": "node server.js",
     "dev": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview"
   },
   "dependencies": {
+    "@google/genai": "^1.9.0",
+    "cors": "^2.8.5",
+    "express": "^4.19.2",
+    "multer": "^1.4.5-lts.1",
+    "sqlite3": "^5.1.7",
+    "ws": "^8.17.0",
     "emoji-picker-react": "^4.5.2",
     "react": "^18.2.0",
     "react-dom": "^18.2.0"
   },
   "devDependencies": {
-    "@google/genai": "^1.9.0",
     "@types/node": "^20.11.20",
     "@types/react": "^18.2.15",
     "@types/react-dom": "^18.2.7",

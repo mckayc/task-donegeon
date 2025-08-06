@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useAppDispatch } from '../../context/AppContext';
 import { Role, SystemStatus } from '../../types';
 import Button from '../ui/Button';
@@ -13,10 +13,17 @@ const StatusCheck: React.FC<{
   isSkipped: boolean;
   onSkipToggle: () => void;
   children: React.ReactNode;
-}> = ({ title, isOk, isSkipped, onSkipToggle, children }) => {
+  skipLabel?: string;
+}> = ({ title, isOk, isSkipped, onSkipToggle, children, skipLabel = "Skip" }) => {
   const isPassing = isOk || isSkipped;
+
+  // By giving the details element a key that changes when it passes,
+  // we force it to re-mount, which respects the new initial `open` state.
+  // This is a clean way to control the collapse behavior without complex state/refs.
+  const detailsKey = useMemo(() => isPassing, [isPassing]);
+
   return (
-    <details className="p-4 bg-stone-900/50 rounded-lg border border-stone-700" open={!isOk}>
+    <details key={`${title}-${detailsKey}`} className="p-4 bg-slate-900/50 rounded-lg border border-stone-700" open={!isPassing}>
       <summary className="flex justify-between items-center cursor-pointer">
         <div className="flex items-center gap-2">
           {isPassing ? (
@@ -26,13 +33,11 @@ const StatusCheck: React.FC<{
           )}
           <span className={`font-semibold ${isPassing ? 'text-green-400' : 'text-red-400'}`}>{title}</span>
         </div>
-        {!isOk && <ToggleSwitch enabled={isSkipped} setEnabled={onSkipToggle} label="Skip" />}
+        {!isOk && <ToggleSwitch enabled={isSkipped} setEnabled={onSkipToggle} label={skipLabel} />}
       </summary>
-      {!isOk && (
-        <div className="mt-4 pl-8 text-stone-400 text-sm prose prose-invert max-w-none">
-          {children}
-        </div>
-      )}
+      <div className="mt-4 pl-8 text-stone-400 text-sm prose prose-invert max-w-none">
+        {children}
+      </div>
     </details>
   );
 };
@@ -93,10 +98,10 @@ const FirstRunWizard: React.FC = () => {
   const allChecksPassed = status && (status.geminiConnected || skip.gemini) && (status.database.isCustomPath || skip.database) && (status.jwtSecretSet || skip.jwt);
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-stone-900 p-4">
-      <div className="max-w-3xl w-full bg-stone-800 border border-stone-700 rounded-2xl shadow-2xl p-8 md:p-12">
+    <div className="min-h-screen flex items-center justify-center bg-slate-900 p-4">
+      <div className="max-w-3xl w-full bg-slate-800 border border-stone-700 rounded-2xl shadow-2xl p-8 md:p-12">
         <div className="text-center">
-          <span className="text-8xl">🧙‍♂️</span>
+          <span className="text-9xl">🧙‍♂️</span>
           <h1 className="font-medieval text-accent mt-4">First Run Wizard</h1>
           <p className="text-stone-300 mt-2 max-w-xl mx-auto">
             Welcome to Task Donegeon! This wizard will check your server setup and help you create the first administrator account.
@@ -112,10 +117,20 @@ const FirstRunWizard: React.FC = () => {
                 <p>To fix this, set the <code>API_KEY</code> environment variable in your <code>.env</code> file or hosting provider's settings.</p>
                 <pre><code>API_KEY="your-gemini-api-key-here"</code></pre>
               </StatusCheck>
-              <StatusCheck title="Custom Database Location" isOk={status.database.isCustomPath} isSkipped={skip.database} onSkipToggle={() => handleSkipToggle('database')}>
-                <p>The database is using the default internal location. This is not recommended for production as data may not persist if the container is recreated without a mapped volume.</p>
-                <p>To fix this, set the <code>DATABASE_PATH</code> environment variable to a persistent location, like a mapped volume in Docker.</p>
-                <pre><code>DATABASE_PATH="/app/data/database/main.sqlite"</code></pre>
+              <StatusCheck title="Persistent Data Storage" isOk={status.database.isCustomPath} isSkipped={skip.database} onSkipToggle={() => handleSkipToggle('database')} skipLabel="I've mapped a volume">
+                <p>Your application data is currently stored in the default internal location. For your data (users, quests, images) to be safe and persist if the container is recreated, you must map a persistent volume from your host machine.</p>
+                <p><strong>Recommended Setup (Docker):</strong></p>
+                <p>Set the <code>APP_DATA_PATH</code> environment variable in your <code>docker-compose.yml</code> or Docker run command to map a local folder to the container's <code>/app/data</code> directory.</p>
+                <pre><code>
+services:
+  task-donegeon:
+    # ...
+    environment:
+      - APP_DATA_PATH=./my-task-data
+    volumes:
+      - "${"APP_DATA_PATH:-./data"}:/app/data"
+                </code></pre>
+                <p>If you've already done this, you can safely check the box above and continue.</p>
               </StatusCheck>
               <StatusCheck title="JWT Secret" isOk={status.jwtSecretSet} isSkipped={skip.jwt} onSkipToggle={() => handleSkipToggle('jwt')}>
                 <p>A secure secret for signing authentication tokens has not been set. Using the default is insecure.</p>
@@ -133,12 +148,12 @@ const FirstRunWizard: React.FC = () => {
               <div className="space-y-4">
                 <UserFormFields formData={formData} handleChange={handleChange} />
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <Input label="Password" id="password" name="password" type="password" value={formData.password} onChange={handleChange} required />
-                  <Input label="Confirm Password" id="confirmPassword" name="confirmPassword" type="password" value={formData.confirmPassword} onChange={handleChange} required />
+                  <Input label="Password" id="password" name="password" type="password" value={formData.password} onChange={handleChange} required className="bg-slate-700" />
+                  <Input label="Confirm Password" id="confirmPassword" name="confirmPassword" type="password" value={formData.confirmPassword} onChange={handleChange} required className="bg-slate-700" />
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <Input label="PIN (4-10 digits)" id="pin" name="pin" type="password" value={formData.pin} onChange={handleChange} required />
-                  <Input label="Confirm PIN" id="confirmPin" name="confirmPin" type="password" value={formData.confirmPin} onChange={handleChange} required />
+                  <Input label="PIN (4-10 digits)" id="pin" name="pin" type="password" value={formData.pin} onChange={handleChange} required className="bg-slate-700" />
+                  <Input label="Confirm PIN" id="confirmPin" name="confirmPin" type="password" value={formData.confirmPin} onChange={handleChange} required className="bg-slate-700" />
                 </div>
               </div>
               {error && <p className="text-red-400 text-center">{error}</p>}

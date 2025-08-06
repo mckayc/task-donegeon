@@ -167,7 +167,10 @@ app.get('/api/data/load', asyncMiddleware(async (req, res) => {
 
 // FIRST RUN
 app.post('/api/first-run', asyncMiddleware(async (req, res) => {
-    const { adminUserData, allUsers, guilds, quests, markets, gameAssets, questCompletions } = req.body;
+    const { 
+        adminUserData, allUsers, guilds, quests, markets, gameAssets, questCompletions,
+        rewardTypes, ranks, trophies, questGroups 
+    } = req.body;
     
     await dataSource.transaction(async manager => {
         // Clear everything first
@@ -175,12 +178,12 @@ app.post('/api/first-run', asyncMiddleware(async (req, res) => {
             await manager.getRepository(entity.name).clear();
         }
         
-        // Save initial static data
-        await manager.save(RewardTypeDefinitionEntity, INITIAL_REWARD_TYPES);
-        await manager.save(RankEntity, INITIAL_RANKS);
-        await manager.save(TrophyEntity, INITIAL_TROPHIES);
-        await manager.save(ThemeDefinitionEntity, INITIAL_THEMES);
-        await manager.save(QuestGroupEntity, INITIAL_QUEST_GROUPS);
+        // Save initial static data, using provided data if available, otherwise defaults
+        await manager.save(RewardTypeDefinitionEntity, rewardTypes && rewardTypes.length > 0 ? rewardTypes : INITIAL_REWARD_TYPES);
+        await manager.save(RankEntity, ranks && ranks.length > 0 ? ranks : INITIAL_RANKS);
+        await manager.save(TrophyEntity, trophies && trophies.length > 0 ? trophies : INITIAL_TROPHIES);
+        await manager.save(ThemeDefinitionEntity, INITIAL_THEMES); // Themes are always the same initial set
+        await manager.save(QuestGroupEntity, questGroups && questGroups.length > 0 ? questGroups : INITIAL_QUEST_GROUPS);
 
         // Save generated data
         const userEntities = allUsers.map(u => manager.create(UserEntity, u));

@@ -945,6 +945,10 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     let marketsToCreate: Market[] = [];
     let gameAssetsToCreate: GameAsset[] = [];
     let questCompletionsToCreate: QuestCompletion[] = [];
+    let rewardTypesToCreate: RewardTypeDefinition[] = [];
+    let ranksToCreate: Rank[] = [];
+    let trophiesToCreate: Trophy[] = [];
+    let questGroupsToCreate: QuestGroup[] = [];
     
     if (setupChoice === 'guided') {
         const sampleUsers = createMockUsers().filter(u => u.username !== 'admin');
@@ -957,15 +961,34 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         const exchangeMarket = createSampleMarkets().find(m => m.id === 'market-bank');
         if (exchangeMarket) marketsToCreate.push(exchangeMarket);
     } else if (setupChoice === 'import' && blueprint) {
-        // This flow is now handled client-side by calling `importBlueprint`
+        questsToCreate = blueprint.assets.quests || [];
+        marketsToCreate = blueprint.assets.markets || [];
+        gameAssetsToCreate = blueprint.assets.gameAssets || [];
+        rewardTypesToCreate = [...INITIAL_REWARD_TYPES, ...(blueprint.assets.rewardTypes || [])];
+        ranksToCreate = blueprint.assets.ranks || [];
+        trophiesToCreate = blueprint.assets.trophies || [];
+        questGroupsToCreate = blueprint.assets.questGroups || [];
+        
+        const hasBank = marketsToCreate.some(m => m.id === 'market-bank');
+        if (!hasBank) {
+            const exchangeMarket = createSampleMarkets().find(m => m.id === 'market-bank');
+            if (exchangeMarket) marketsToCreate.push(exchangeMarket);
+        }
     }
 
     const guildsToCreate = createInitialGuilds(allUsers);
     
     try {
         const { adminUser: savedAdmin } = await apiRequest('POST', '/api/first-run', {
-            adminUserData, allUsers, guilds: guildsToCreate, quests: questsToCreate,
-            markets: marketsToCreate, gameAssets: gameAssetsToCreate, questCompletions: questCompletionsToCreate,
+            adminUserData, allUsers, guilds: guildsToCreate, 
+            quests: questsToCreate,
+            markets: marketsToCreate,
+            gameAssets: gameAssetsToCreate,
+            questCompletions: questCompletionsToCreate,
+            rewardTypes: rewardTypesToCreate,
+            ranks: ranksToCreate,
+            trophies: trophiesToCreate,
+            questGroups: questGroupsToCreate,
         });
         await syncData(); // Fetch all the newly created data
         setCurrentUser(savedAdmin);

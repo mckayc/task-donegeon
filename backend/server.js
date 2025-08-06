@@ -182,17 +182,15 @@ app.post('/api/data/save', async (req, res, next) => {
             await queryRunner.manager.getRepository(entity.name).query(`DELETE FROM ${entity.tableName};`);
         }
 
+        // The issue was trying to instantiate an EntitySchema.
+        // We should use the manager to create entity instances from plain objects.
+
         // Save new data, handling relations
-        const userEntities = data.users.map(u => {
-            const user = new UserEntity();
-            Object.assign(user, u);
-            return user;
-        });
+        const userEntities = data.users.map(u => queryRunner.manager.create(UserEntity, u));
         await queryRunner.manager.save(userEntities);
 
         const guildEntities = data.guilds.map(g => {
-            const guild = new GuildEntity();
-            Object.assign(guild, g);
+            const guild = queryRunner.manager.create(GuildEntity, g);
             guild.members = g.memberIds ? userEntities.filter(u => g.memberIds.includes(u.id)) : [];
             return guild;
         });
@@ -207,16 +205,14 @@ app.post('/api/data/save', async (req, res, next) => {
         if (data.gameAssets && data.gameAssets.length) await queryRunner.manager.save(GameAssetEntity, data.gameAssets);
         
         const questEntities = data.quests.map(q => {
-             const quest = new QuestEntity();
-             Object.assign(quest, q);
+             const quest = queryRunner.manager.create(QuestEntity, q);
              quest.assignedUsers = q.assignedUserIds ? userEntities.filter(u => q.assignedUserIds.includes(u.id)) : [];
              return quest;
         });
         await queryRunner.manager.save(questEntities);
         
         const questCompletionEntities = data.questCompletions.map(qc => {
-            const completion = new QuestCompletionEntity();
-            Object.assign(completion, qc);
+            const completion = queryRunner.manager.create(QuestCompletionEntity, qc);
             completion.user = userEntities.find(u => u.id === qc.userId);
             completion.quest = questEntities.find(q => q.id === qc.questId);
             return completion;

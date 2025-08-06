@@ -66,7 +66,7 @@ const ThemePreview: React.FC<{ themeData: ThemeStyle }> = ({ themeData }) => {
                     This is a preview of your theme. The quick brown fox jumps over the lazy dog.
                 </p>
                 <div className="flex gap-4">
-                    <Button variant="primary">Primary Button</Button>
+                    <Button variant="default">Primary Button</Button>
                     <Button variant="secondary">Secondary</Button>
                 </div>
                 <Card title="Sample Card" className="mt-4">

@@ -41,7 +41,7 @@ COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/backend ./backend
 
 # Expose the port the app runs on
-EXPOSE 3001
+EXPOSE 3000
 
 # The command to run when the container starts
 CMD [ "node", "backend/server.js" ]

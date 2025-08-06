@@ -99,18 +99,16 @@ initializeApp().catch(err => {
 const getFullAppData = async (manager) => {
     const data = {};
     for (const entity of allEntities) {
-        const repo = manager.getRepository(entity.target);
+        const repo = manager.getRepository(entity.name);
         // Special handling for singleton entities
-        if (entity.targetName === 'Setting') {
+        if (entity.name === 'Setting') {
             const settingRow = await repo.findOneBy({ id: 1 });
             data.settings = settingRow ? settingRow.settings : INITIAL_SETTINGS;
-        } else if (entity.targetName === 'LoginHistory') {
+        } else if (entity.name === 'LoginHistory') {
             const historyRow = await repo.findOneBy({ id: 1 });
             data.loginHistory = historyRow ? historyRow.history : [];
         } else {
-            // Pluralize table name for key
-            const key = entity.tableName.endsWith('s') ? entity.tableName : `${entity.tableName}s`;
-            // Simple mapping for now
+            // Simple mapping from snake_case table name to camelCase JSON key
             const simpleKey = {
                 'users': 'users', 'quests': 'quests', 'quest_groups': 'questGroups', 'markets': 'markets',
                 'reward_types': 'rewardTypes', 'quest_completions': 'questCompletions',
@@ -119,9 +117,11 @@ const getFullAppData = async (manager) => {
                 'game_assets': 'gameAssets', 'system_logs': 'systemLogs', 'themes': 'themes',
                 'chat_messages': 'chatMessages', 'system_notifications': 'systemNotifications',
                 'scheduled_events': 'scheduledEvents'
-            }[entity.tableName] || entity.tableName;
+            }[entity.tableName];
 
-            data[simpleKey] = await repo.find();
+            if (simpleKey) {
+                data[simpleKey] = await repo.find();
+            }
         }
     }
     return data;
@@ -147,8 +147,8 @@ app.get('/api/data/load', async (req, res, next) => {
                     'game_assets': 'gameAssets', 'system_logs': 'systemLogs', 'themes': 'themes',
                     'chat_messages': 'chatMessages', 'system_notifications': 'systemNotifications',
                     'scheduled_events': 'scheduledEvents'
-                }[entity.tableName] || entity.tableName;
-                if (simpleKey !== 'settings' && simpleKey !== 'login_history') {
+                }[entity.tableName];
+                if (simpleKey) { // Avoid adding settings/loginHistory here
                     initialData[simpleKey] = [];
                 }
             }
@@ -176,13 +176,13 @@ app.post('/api/data/save', async (req, res, next) => {
     try {
         // Clear all tables first (in reverse order to respect potential foreign keys)
         for (const entity of allEntities.slice().reverse()) {
-            const repo = queryRunner.manager.getRepository(entity.target);
+            const repo = queryRunner.manager.getRepository(entity.name);
             await repo.clear();
         }
 
         // Now, insert all the new data
         for (const entity of allEntities) {
-            const repo = queryRunner.manager.getRepository(entity.target);
+            const repo = queryRunner.manager.getRepository(entity.name);
             const simpleKey = {
                 'users': 'users', 'quests': 'quests', 'quest_groups': 'questGroups', 'markets': 'markets',
                 'reward_types': 'rewardTypes', 'quest_completions': 'questCompletions',
@@ -198,9 +198,9 @@ app.post('/api/data/save', async (req, res, next) => {
 
             const itemsToSave = data[simpleKey];
 
-            if (entity.targetName === 'Setting') {
+            if (entity.name === 'Setting') {
                 if (itemsToSave) await repo.save({ id: 1, settings: itemsToSave });
-            } else if (entity.targetName === 'LoginHistory') {
+            } else if (entity.name === 'LoginHistory') {
                 if (itemsToSave) await repo.save({ id: 1, history: itemsToSave });
             } else {
                 if (itemsToSave && Array.isArray(itemsToSave) && itemsToSave.length > 0) {

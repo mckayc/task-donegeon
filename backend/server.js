@@ -281,28 +281,92 @@ app.use('/api/quests', questsRouter);
 app.post('/api/actions/complete-quest', asyncMiddleware(async (req, res) => {
     const { completionData } = req.body;
     
-    await dataSource.transaction(async manager => {
-        // **FIX:** Generate ID on the server to prevent NOT NULL constraint failure.
-        const completionWithId = {
-            ...completionData,
-            id: `qcomp-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
-        };
+    try {
+        await dataSource.transaction(async manager => {
+            const completionWithId = {
+                ...completionData,
+                id: `qcomp-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+            };
 
-        const completion = manager.create(QuestCompletionEntity, completionWithId);
-        completion.user = await manager.findOneBy(UserEntity, { id: completionData.userId });
-        completion.quest = await manager.findOneBy(QuestEntity, { id: completionData.questId });
-        
-        if (!completion.user || !completion.quest) {
-            // Use a specific error status code
-            return res.status(404).json({ error: "User or Quest not found for this completion." });
+            const completion = manager.create(QuestCompletionEntity, completionWithId);
+            completion.user = await manager.findOneBy(UserEntity, { id: completionData.userId });
+            completion.quest = await manager.findOneBy(QuestEntity, { id: completionData.questId });
+
+            if (!completion.user || !completion.quest) {
+                const error = new Error("User or Quest not found for this completion.");
+                error.statusCode = 404;
+                throw error;
+            }
+
+            await manager.save(completion);
+            
+            if (completion.status === 'Approved') {
+                const user = completion.user;
+                const quest = completion.quest;
+                const rewardTypes = await manager.find(RewardTypeDefinitionEntity);
+                const rewardTypesMap = new Map(rewardTypes.map(rt => [rt.id, rt]));
+
+                quest.rewards.forEach(reward => {
+                    const rewardDef = rewardTypesMap.get(reward.rewardTypeId);
+                    if (!rewardDef) return;
+
+                    if (quest.guildId) {
+                        user.guildBalances = user.guildBalances || {};
+                        if (!user.guildBalances[quest.guildId]) user.guildBalances[quest.guildId] = { purse: {}, experience: {} };
+                        const balanceSheet = user.guildBalances[quest.guildId];
+                        if (rewardDef.category === 'Currency') {
+                            balanceSheet.purse[reward.rewardTypeId] = (balanceSheet.purse[reward.rewardTypeId] || 0) + reward.amount;
+                        } else {
+                            balanceSheet.experience[reward.rewardTypeId] = (balanceSheet.experience[reward.rewardTypeId] || 0) + reward.amount;
+                        }
+                    } else {
+                         if (rewardDef.category === 'Currency') {
+                            user.personalPurse[reward.rewardTypeId] = (user.personalPurse[reward.rewardTypeId] || 0) + reward.amount;
+                        } else {
+                            user.personalExperience[reward.rewardTypeId] = (user.personalExperience[reward.rewardTypeId] || 0) + reward.amount;
+                        }
+                    }
+                });
+                await manager.save(UserEntity, user);
+            }
+        });
+
+        broadcast({ type: 'DATA_UPDATED' });
+        res.status(200).json({ message: 'Quest completion recorded.' });
+
+    } catch (error) {
+        if (error.statusCode) {
+            res.status(error.statusCode).json({ error: error.message });
+        } else {
+            throw error;
         }
+    }
+}));
 
-        await manager.save(completion);
-        
-        // If the quest is auto-approved, apply rewards immediately.
-        if (completion.status === 'Approved') {
+app.post('/api/actions/approve-quest/:id', asyncMiddleware(async (req, res) => {
+    const { id } = req.params;
+    const { note } = req.body;
+
+    try {
+        await dataSource.transaction(async manager => {
+            const completion = await manager.findOne(QuestCompletionEntity, { where: { id }, relations: ['user', 'quest']});
+            if (!completion || completion.status !== 'Pending') {
+                const error = new Error("Pending completion not found.");
+                error.statusCode = 404;
+                throw error;
+            }
+
+            completion.status = 'Approved';
+            if (note) completion.note = note;
+
             const user = completion.user;
             const quest = completion.quest;
+            if (!user || !quest) {
+                const error = new Error("User or Quest associated with completion not found.");
+                error.statusCode = 404;
+                throw error;
+            }
+
             const rewardTypes = await manager.find(RewardTypeDefinitionEntity);
             const rewardTypesMap = new Map(rewardTypes.map(rt => [rt.id, rt]));
 
@@ -327,64 +391,20 @@ app.post('/api/actions/complete-quest', asyncMiddleware(async (req, res) => {
                     }
                 }
             });
+            
             await manager.save(UserEntity, user);
-        }
-    });
-
-    broadcast({ type: 'DATA_UPDATED' });
-    res.status(200).json({ message: 'Quest completion recorded.' });
-}));
-
-app.post('/api/actions/approve-quest/:id', asyncMiddleware(async (req, res) => {
-    const { id } = req.params;
-    const { note } = req.body;
-
-    await dataSource.transaction(async manager => {
-        const completion = await manager.findOne(QuestCompletionEntity, { where: { id }, relations: ['user', 'quest']});
-        if (!completion || completion.status !== 'Pending') {
-            return res.status(404).json({ error: "Pending completion not found." });
-        }
-
-        completion.status = 'Approved';
-        if (note) completion.note = note;
-
-        const user = completion.user;
-        const quest = completion.quest;
-        if (!user || !quest) {
-             return res.status(404).json({ error: "User or Quest associated with completion not found." });
-        }
-
-        const rewardTypes = await manager.find(RewardTypeDefinitionEntity);
-        const rewardTypesMap = new Map(rewardTypes.map(rt => [rt.id, rt]));
-
-        quest.rewards.forEach(reward => {
-            const rewardDef = rewardTypesMap.get(reward.rewardTypeId);
-            if (!rewardDef) return;
-
-            if (quest.guildId) {
-                user.guildBalances = user.guildBalances || {};
-                if (!user.guildBalances[quest.guildId]) user.guildBalances[quest.guildId] = { purse: {}, experience: {} };
-                const balanceSheet = user.guildBalances[quest.guildId];
-                if (rewardDef.category === 'Currency') {
-                    balanceSheet.purse[reward.rewardTypeId] = (balanceSheet.purse[reward.rewardTypeId] || 0) + reward.amount;
-                } else {
-                    balanceSheet.experience[reward.rewardTypeId] = (balanceSheet.experience[reward.rewardTypeId] || 0) + reward.amount;
-                }
-            } else {
-                 if (rewardDef.category === 'Currency') {
-                    user.personalPurse[reward.rewardTypeId] = (user.personalPurse[reward.rewardTypeId] || 0) + reward.amount;
-                } else {
-                    user.personalExperience[reward.rewardTypeId] = (user.personalExperience[reward.rewardTypeId] || 0) + reward.amount;
-                }
-            }
+            await manager.save(QuestCompletionEntity, completion);
         });
-        
-        await manager.save(UserEntity, user);
-        await manager.save(QuestCompletionEntity, completion);
-    });
 
-    broadcast({ type: 'DATA_UPDATED' });
-    res.status(200).json({ message: 'Quest approved.' });
+        broadcast({ type: 'DATA_UPDATED' });
+        res.status(200).json({ message: 'Quest approved.' });
+    } catch (error) {
+        if (error.statusCode) {
+            res.status(error.statusCode).json({ error: error.message });
+        } else {
+            throw error;
+        }
+    }
 }));
 
 app.post('/api/actions/reject-quest/:id', asyncMiddleware(async (req, res) => {
@@ -484,5 +504,7 @@ app.get('*', (req, res) => {
 // Global error handler
 app.use((err, req, res, next) => {
     console.error("An error occurred:", err);
-    res.status(500).json({ error: 'An internal server error occurred' });
+    if (!res.headersSent) {
+      res.status(500).json({ error: 'An internal server error occurred' });
+    }
 });

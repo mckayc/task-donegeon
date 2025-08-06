@@ -1,4 +1,5 @@
 
+
 import React, { createContext, useState, useContext, ReactNode, useEffect, useCallback, useMemo, useRef } from 'react';
 import { AppSettings, User, Quest, RewardTypeDefinition, QuestCompletion, RewardItem, Market, PurchaseRequest, Guild, Rank, Trophy, UserTrophy, Notification, AppMode, Page, IAppData, ShareableAssetType, GameAsset, Role, QuestCompletionStatus, RewardCategory, PurchaseRequestStatus, AdminAdjustment, AdminAdjustmentType, SystemLog, QuestType, QuestAvailability, Blueprint, ImportResolution, TrophyRequirementType, ThemeDefinition, ChatMessage, SystemNotification, SystemNotificationType, MarketStatus, QuestGroup, BulkQuestUpdates, ScheduledEvent } from '../types';
 import { INITIAL_SETTINGS, createMockUsers, INITIAL_REWARD_TYPES, INITIAL_RANKS, INITIAL_TROPHIES, createSampleMarkets, createSampleQuests, createInitialGuilds, createSampleGameAssets, INITIAL_THEMES, createInitialQuestCompletions, INITIAL_TAGS, INITIAL_QUEST_GROUPS } from '../data/initialData';
@@ -860,7 +861,80 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     }
   }, [deductRewards, applyRewards, addNotification]);
   
-  const importBlueprint = useCallback((blueprint: Blueprint, resolutions: ImportResolution[]) => { const idMap = new Map<string, string>(); const genId = (p: string) => `${p}-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`; resolutions.forEach(res => { if (res.resolution !== 'skip') idMap.set(res.id, genId(res.type.slice(0, 2))); }); const newAssets: Partial<IAppData> = { quests: [], rewardTypes: [], ranks: [], trophies: [], markets: [] }; resolutions.forEach(res => { if (res.resolution === 'skip') return; const a = blueprint.assets[res.type]?.find(a => a.id === res.id); if (a) { const nA = { ...a, id: idMap.get(a.id)! }; if (res.resolution === 'rename' && res.newName) { if('title' in nA) nA.title = res.newName; else nA.name = res.newName; } newAssets[res.type]?.push(nA as any); } }); newAssets.quests?.forEach(q => { q.rewards = q.rewards.map(r => ({ ...r, rewardTypeId: idMap.get(r.rewardTypeId) || r.rewardTypeId })); q.lateSetbacks = q.lateSetbacks.map(r => ({ ...r, rewardTypeId: idMap.get(r.rewardTypeId) || r.rewardTypeId })); q.incompleteSetbacks = q.incompleteSetbacks.map(r => ({ ...r, rewardTypeId: idMap.get(r.rewardTypeId) || r.rewardTypeId })); }); newAssets.trophies?.forEach(t => t.requirements.forEach(r => { if(r.type === TrophyRequirementType.AchieveRank) r.value = idMap.get(r.value) || r.value; })); setQuests(p => [...p, ...(newAssets.quests || [])]); setRewardTypes(p => p.filter(rt => rt.isCore).concat(newAssets.rewardTypes || [])); setRanks(p => [...p, ...(newAssets.ranks || [])]); setTrophies(p => [...p, ...(newAssets.trophies || [])]); setMarkets(p => [...p, ...(newAssets.markets || [])]); addNotification({ type: 'success', message: `Imported from ${blueprint.name}!`}); }, [addNotification]);
+  const importBlueprint = useCallback(async (blueprint: Blueprint, resolutions: ImportResolution[]) => {
+    const idMap = new Map<string, string>();
+    const genId = (p: string) => `${p}-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
+    
+    resolutions.forEach(res => {
+        if (res.resolution !== 'skip') {
+            idMap.set(res.id, genId(res.type.slice(0, 2)));
+        }
+    });
+
+    const newAssets: Partial<IAppData> = {
+        quests: [],
+        rewardTypes: [],
+        ranks: [],
+        trophies: [],
+        markets: [],
+        gameAssets: [],
+        questGroups: [],
+    };
+    
+    const assetTypesToProcess: ShareableAssetType[] = ['questGroups', 'rewardTypes', 'ranks', 'trophies', 'markets', 'quests', 'gameAssets'];
+
+    for (const resType of assetTypesToProcess) {
+        const resolutionsForType = resolutions.filter(r => r.type === resType);
+        for (const res of resolutionsForType) {
+            if (res.resolution === 'skip') continue;
+
+            const assetArray = (blueprint.assets as any)[resType];
+            if (!assetArray) continue;
+
+            const asset = assetArray.find((a: any) => a.id === res.id);
+            if (!asset) continue;
+
+            const newId = idMap.get(asset.id) || genId(res.type.slice(0, 2));
+            if (!idMap.has(asset.id)) idMap.set(asset.id, newId);
+
+            const newAsset = { ...asset, id: newId };
+
+            if (res.resolution === 'rename' && res.newName) {
+                if ('title' in newAsset) newAsset.title = res.newName;
+                else newAsset.name = res.newName;
+            }
+
+            if (!newAssets[resType]) (newAssets as any)[resType] = [];
+            (newAssets[resType] as any[]).push(newAsset);
+        }
+    }
+
+    newAssets.quests?.forEach(q => {
+        q.rewards = q.rewards.map(r => ({ ...r, rewardTypeId: idMap.get(r.rewardTypeId) || r.rewardTypeId }));
+        q.lateSetbacks = q.lateSetbacks.map(r => ({ ...r, rewardTypeId: idMap.get(r.rewardTypeId) || r.rewardTypeId }));
+        q.incompleteSetbacks = q.incompleteSetbacks.map(r => ({ ...r, rewardTypeId: idMap.get(r.rewardTypeId) || r.rewardTypeId }));
+        q.groupId = q.groupId ? (idMap.get(q.groupId) || q.groupId) : undefined;
+    });
+
+    newAssets.trophies?.forEach(t => {
+        t.requirements.forEach(r => {
+            if (r.type === TrophyRequirementType.AchieveRank) r.value = idMap.get(r.value) || r.value;
+        });
+    });
+
+    newAssets.gameAssets?.forEach(ga => {
+        ga.marketIds = ga.marketIds.map(mid => idMap.get(mid) || mid);
+        ga.costGroups = ga.costGroups.map(group => group.map(c => ({ ...c, rewardTypeId: idMap.get(c.rewardTypeId) || c.rewardTypeId })));
+    });
+
+    try {
+        await apiRequest('POST', '/api/data/import-assets', { newAssets });
+        addNotification({ type: 'success', message: `Imported from ${blueprint.name}!` });
+        // The backend will broadcast a data update, so the frontend will sync automatically.
+    } catch (error) {
+        // notification is handled by apiRequest
+    }
+  }, [addNotification, apiRequest]);
   
   const completeFirstRun = useCallback(async (adminUserData: Omit<User, 'id' | 'personalPurse' | 'personalExperience' | 'guildBalances' | 'avatar' | 'ownedAssetIds' | 'ownedThemes' | 'hasBeenOnboarded'>, setupChoice: 'guided' | 'scratch' | 'import', blueprint?: Blueprint | null) => {
     let allUsers: User[] = [];

@@ -1,4 +1,5 @@
 
+
 require("reflect-metadata");
 const express = require('express');
 const cors = require('cors');
@@ -219,6 +220,32 @@ app.post('/api/first-run', asyncMiddleware(async (req, res) => {
         res.status(201).json({ adminUser });
     });
     broadcast({ type: 'DATA_UPDATED' });
+}));
+
+app.post('/api/data/import-assets', asyncMiddleware(async (req, res) => {
+    const { newAssets } = req.body;
+
+    try {
+        await dataSource.transaction(async manager => {
+            // Save in an order that respects potential (though not enforced by FK) dependencies
+            if (newAssets.questGroups?.length) await manager.save(QuestGroupEntity, newAssets.questGroups);
+            if (newAssets.rewardTypes?.length) await manager.save(RewardTypeDefinitionEntity, newAssets.rewardTypes);
+            if (newAssets.ranks?.length) await manager.save(RankEntity, newAssets.ranks);
+            if (newAssets.trophies?.length) await manager.save(TrophyEntity, newAssets.trophies);
+            if (newAssets.markets?.length) await manager.save(MarketEntity, newAssets.markets);
+            if (newAssets.gameAssets?.length) await manager.save(GameAssetEntity, newAssets.gameAssets);
+            if (newAssets.quests?.length) {
+                // Quests don't have user assignments on import, so a simple save is fine.
+                await manager.save(QuestEntity, newAssets.quests);
+            }
+        });
+
+        broadcast({ type: 'DATA_UPDATED' });
+        res.status(200).json({ message: 'Assets imported successfully.' });
+    } catch (error) {
+        console.error("Error during asset import:", error);
+        res.status(500).json({ error: 'Failed to import assets.' });
+    }
 }));
 
 // Generic CRUD factory

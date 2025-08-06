@@ -348,123 +348,137 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     }));
   }, [currentUser]);
 
-  // Polling for data sync
+  const syncData = useCallback(async () => {
+    if (document.hidden) {
+      return;
+    }
+    if (isDirtyRef.current) {
+        console.log("Local data has unsaved changes. Skipping sync to prevent data loss.");
+        return;
+    }
+
+    setSyncStatus('syncing');
+    setSyncError(null);
+
+    try {
+      const response = await window.fetch('/api/data/load');
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error(`Sync failed: Server returned status ${response.status}`);
+        throw new Error(`Server error: ${response.status} ${errorText || ''}`);
+      }
+
+      const serverData: IAppData = await response.json();
+      
+      const currentLocalData = stateRef.current ? {
+          users: stateRef.current.users, quests: stateRef.current.quests, questGroups: stateRef.current.questGroups, markets: stateRef.current.markets,
+          rewardTypes: stateRef.current.rewardTypes, questCompletions: stateRef.current.questCompletions, purchaseRequests: stateRef.current.purchaseRequests,
+          guilds: stateRef.current.guilds, ranks: stateRef.current.ranks, trophies: stateRef.current.trophies, userTrophies: stateRef.current.userTrophies,
+          adminAdjustments: stateRef.current.adminAdjustments, gameAssets: stateRef.current.gameAssets, systemLogs: stateRef.current.systemLogs,
+          settings: stateRef.current.settings, themes: stateRef.current.themes, loginHistory: stateRef.current.loginHistory,
+          chatMessages: stateRef.current.chatMessages, systemNotifications: stateRef.current.systemNotifications, scheduledEvents: stateRef.current.scheduledEvents,
+      } : null;
+
+      if (currentLocalData && JSON.stringify(currentLocalData) !== JSON.stringify(serverData)) {
+          console.log("Data out of sync. Refreshing from server.");
+          
+          const savedSettings: Partial<AppSettings> = serverData.settings || {};
+
+          const loadedSettings: AppSettings = {
+              ...INITIAL_SETTINGS, ...savedSettings,
+              questDefaults: { ...INITIAL_SETTINGS.questDefaults, ...(savedSettings.questDefaults || {}) },
+              security: { ...INITIAL_SETTINGS.security, ...(savedSettings.security || {}) },
+              sharedMode: { ...INITIAL_SETTINGS.sharedMode, ...(savedSettings.sharedMode || {}) },
+              automatedBackups: { ...INITIAL_SETTINGS.automatedBackups, ...(savedSettings.automatedBackups || {}) },
+              loginNotifications: { ...INITIAL_SETTINGS.loginNotifications, ...(savedSettings.loginNotifications || {}) },
+              chat: { ...INITIAL_SETTINGS.chat, ...(savedSettings.chat || {}) },
+              sidebars: { ...INITIAL_SETTINGS.sidebars, ...(savedSettings.sidebars || {}) },
+              terminology: { ...INITIAL_SETTINGS.terminology, ...(savedSettings.terminology || {}) },
+              rewardValuation: { ...INITIAL_SETTINGS.rewardValuation, ...(savedSettings.rewardValuation || {}) },
+          };
+
+          setUsers(serverData.users || []);
+          setQuests(serverData.quests || []);
+          if (serverData.questGroups !== undefined) setQuestGroups(serverData.questGroups);
+          setMarkets(serverData.markets || []);
+          setRewardTypes(serverData.rewardTypes || []);
+          setQuestCompletions(serverData.questCompletions || []);
+          setPurchaseRequests(serverData.purchaseRequests || []);
+          setGuilds(serverData.guilds || []);
+          setRanks(serverData.ranks || []);
+          setTrophies(serverData.trophies || []);
+          setUserTrophies(serverData.userTrophies || []);
+          setAdminAdjustments(serverData.adminAdjustments || []);
+          setGameAssets(serverData.gameAssets || []);
+          setSystemLogs(serverData.systemLogs || []);
+          setSettings(loadedSettings);
+          setThemes(serverData.themes || INITIAL_THEMES);
+          setLoginHistory(serverData.loginHistory || []);
+          setChatMessages(serverData.chatMessages || []);
+          setSystemNotifications(serverData.systemNotifications || []);
+          setScheduledEvents(serverData.scheduledEvents || []);
+
+          if (stateRef.current?.currentUser) {
+            const updatedUser = (serverData.users || []).find(u => u.id === stateRef.current!.currentUser!.id);
+            if (updatedUser) _setCurrentUser(updatedUser);
+          }
+          setSyncStatus('success');
+      } else {
+          setSyncStatus('success');
+      }
+    } catch (error) {
+      console.error("Data sync failed:", error);
+      setSyncStatus('error');
+      setSyncError(error instanceof Error ? error.message : 'An unknown error occurred during sync.');
+    }
+  }, [addNotification]);
+  
+  // Replace polling with WebSocket and visibility-based syncing
   useEffect(() => {
     if (!currentUser || isFirstRun || !isDataLoaded) return;
+    
+    let ws: WebSocket | null = null;
+    let reconnectTimeout: ReturnType<typeof setTimeout> | null = null;
 
-    const syncData = async () => {
-      if (document.hidden) {
-        return;
-      }
+    const connect = () => {
+        const proto = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        ws = new WebSocket(`${proto}//${window.location.host}`);
 
-      if (isDirtyRef.current) {
-          console.log("Local data has unsaved changes. Skipping sync to prevent data loss.");
-          return;
-      }
-
-      setSyncStatus('syncing');
-      setSyncError(null);
-
-      try {
-        const response = await window.fetch('/api/data/load');
-        if (!response.ok) {
-          const errorText = await response.text();
-          console.error(`Sync failed: Server returned status ${response.status}`);
-          throw new Error(`Server error: ${response.status} ${errorText || ''}`);
-        }
-
-        const serverData: IAppData = await response.json();
-        
-        const currentLocalData = stateRef.current ? {
-            users: stateRef.current.users,
-            quests: stateRef.current.quests,
-            questGroups: stateRef.current.questGroups,
-            markets: stateRef.current.markets,
-            rewardTypes: stateRef.current.rewardTypes,
-            questCompletions: stateRef.current.questCompletions,
-            purchaseRequests: stateRef.current.purchaseRequests,
-            guilds: stateRef.current.guilds,
-            ranks: stateRef.current.ranks,
-            trophies: stateRef.current.trophies,
-            userTrophies: stateRef.current.userTrophies,
-            adminAdjustments: stateRef.current.adminAdjustments,
-            gameAssets: stateRef.current.gameAssets,
-            systemLogs: stateRef.current.systemLogs,
-            settings: stateRef.current.settings,
-            themes: stateRef.current.themes,
-            loginHistory: stateRef.current.loginHistory,
-            chatMessages: stateRef.current.chatMessages,
-            systemNotifications: stateRef.current.systemNotifications,
-            scheduledEvents: stateRef.current.scheduledEvents,
-        } : null;
-
-        if (currentLocalData && JSON.stringify(currentLocalData) !== JSON.stringify(serverData)) {
-            console.log("Data out of sync. Refreshing from server.");
-            
-            const savedSettings: Partial<AppSettings> = serverData.settings || {};
-
-            const loadedSettings: AppSettings = {
-                ...INITIAL_SETTINGS, ...savedSettings,
-                questDefaults: { ...INITIAL_SETTINGS.questDefaults, ...(savedSettings.questDefaults || {}) },
-                security: { ...INITIAL_SETTINGS.security, ...(savedSettings.security || {}) },
-                sharedMode: { ...INITIAL_SETTINGS.sharedMode, ...(savedSettings.sharedMode || {}) },
-                automatedBackups: { ...INITIAL_SETTINGS.automatedBackups, ...(savedSettings.automatedBackups || {}) },
-                loginNotifications: { ...INITIAL_SETTINGS.loginNotifications, ...(savedSettings.loginNotifications || {}) },
-                chat: { ...INITIAL_SETTINGS.chat, ...(savedSettings.chat || {}) },
-                sidebars: { ...INITIAL_SETTINGS.sidebars, ...(savedSettings.sidebars || {}) },
-                terminology: { ...INITIAL_SETTINGS.terminology, ...(savedSettings.terminology || {}) },
-                rewardValuation: { ...INITIAL_SETTINGS.rewardValuation, ...(savedSettings.rewardValuation || {}) },
-            };
-
-            setUsers(serverData.users || []);
-            setQuests(serverData.quests || []);
-            // FIX: Check if `questGroups` exists on server data before updating, to prevent wipes from old clients.
-            if (serverData.questGroups !== undefined) {
-                setQuestGroups(serverData.questGroups);
+        ws.onopen = () => console.log('WebSocket connected');
+        ws.onmessage = (event) => {
+            try {
+                const msg = JSON.parse(event.data);
+                if (msg.type === 'DATA_UPDATED') {
+                    console.log('Syncing data due to server update.');
+                    syncData();
+                }
+            } catch (e) {
+                 console.error('Error parsing WebSocket message', e);
             }
-            setMarkets(serverData.markets || []);
-            setRewardTypes(serverData.rewardTypes || []);
-            setQuestCompletions(serverData.questCompletions || []);
-            setPurchaseRequests(serverData.purchaseRequests || []);
-            setGuilds(serverData.guilds || []);
-            setRanks(serverData.ranks || []);
-            setTrophies(serverData.trophies || []);
-            setUserTrophies(serverData.userTrophies || []);
-            setAdminAdjustments(serverData.adminAdjustments || []);
-            setGameAssets(serverData.gameAssets || []);
-            setSystemLogs(serverData.systemLogs || []);
-            setSettings(loadedSettings);
-            setThemes(serverData.themes || INITIAL_THEMES);
-            setLoginHistory(serverData.loginHistory || []);
-            setChatMessages(serverData.chatMessages || []);
-            setSystemNotifications(serverData.systemNotifications || []);
-            setScheduledEvents(serverData.scheduledEvents || []);
-
-            if (stateRef.current?.currentUser) {
-              const updatedUser = (serverData.users || []).find(u => u.id === stateRef.current!.currentUser!.id);
-              if (updatedUser) {
-                _setCurrentUser(updatedUser);
-              }
-            }
-            setSyncStatus('success');
-        } else {
-            setSyncStatus('success');
-        }
-      } catch (error) {
-        console.error("Data sync failed:", error);
-        setSyncStatus('error');
-        setSyncError(error instanceof Error ? error.message : 'An unknown error occurred during sync.');
-      }
+        };
+        ws.onclose = () => {
+            console.log('WebSocket disconnected. Reconnecting in 5s...');
+            if (reconnectTimeout) clearTimeout(reconnectTimeout);
+            reconnectTimeout = setTimeout(connect, 5000);
+        };
+        ws.onerror = (err) => {
+            console.error('WebSocket error:', err);
+            ws?.close(); // This will trigger the onclose reconnect logic
+        };
     };
 
-    const intervalId = setInterval(syncData, 15000); // Poll every 15 seconds
+    connect();
     document.addEventListener('visibilitychange', syncData);
 
     return () => {
-      clearInterval(intervalId);
-      document.removeEventListener('visibilitychange', syncData);
+        if (ws) {
+            ws.onclose = null; // Prevent reconnect on unmount
+            ws.close();
+        }
+        if (reconnectTimeout) clearTimeout(reconnectTimeout);
+        document.removeEventListener('visibilitychange', syncData);
     };
-  }, [currentUser, isFirstRun, isDataLoaded, addNotification]);
+  }, [currentUser, isFirstRun, isDataLoaded, syncData]);
 
 
   const removeNotification = useCallback((notificationId: string) => {

@@ -1,5 +1,4 @@
 
-
 import React, { createContext, useState, useContext, ReactNode, useEffect, useCallback, useMemo, useRef } from 'react';
 import { AppSettings, User, Quest, RewardTypeDefinition, QuestCompletion, RewardItem, Market, PurchaseRequest, Guild, Rank, Trophy, UserTrophy, Notification, AppMode, Page, IAppData, ShareableAssetType, GameAsset, Role, QuestCompletionStatus, RewardCategory, PurchaseRequestStatus, AdminAdjustment, AdminAdjustmentType, SystemLog, QuestType, QuestAvailability, Blueprint, ImportResolution, TrophyRequirementType, ThemeDefinition, ChatMessage, SystemNotification, SystemNotificationType, MarketStatus, QuestGroup, BulkQuestUpdates, ScheduledEvent } from '../types';
 import { INITIAL_SETTINGS, createMockUsers, INITIAL_REWARD_TYPES, INITIAL_RANKS, INITIAL_TROPHIES, createSampleMarkets, createSampleQuests, createInitialGuilds, createSampleGameAssets, INITIAL_THEMES, createInitialQuestCompletions, INITIAL_TAGS, INITIAL_QUEST_GROUPS } from '../data/initialData';
@@ -942,14 +941,15 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     const adminUser: User = { ...adminUserData, id: `user-${Date.now()}`, avatar: {}, ownedAssetIds: [], personalPurse: {}, personalExperience: {}, guildBalances: {}, ownedThemes: ['emerald', 'rose', 'sky'], hasBeenOnboarded: false };
     allUsers.push(adminUser);
     
+    // Prepare the full dataset for the backend, regardless of choice.
     let questsToCreate: Quest[] = [];
     let marketsToCreate: Market[] = [];
     let gameAssetsToCreate: GameAsset[] = [];
     let questCompletionsToCreate: QuestCompletion[] = [];
-    let rewardTypesToCreate: RewardTypeDefinition[] = [];
-    let ranksToCreate: Rank[] = [];
-    let trophiesToCreate: Trophy[] = [];
-    let questGroupsToCreate: QuestGroup[] = [];
+    let rewardTypesToCreate: RewardTypeDefinition[] = INITIAL_REWARD_TYPES;
+    let ranksToCreate: Rank[] = INITIAL_RANKS;
+    let trophiesToCreate: Trophy[] = INITIAL_TROPHIES;
+    let questGroupsToCreate: QuestGroup[] = INITIAL_QUEST_GROUPS;
     
     if (setupChoice === 'guided') {
         const sampleUsers = createMockUsers().filter(u => u.username !== 'admin');
@@ -962,13 +962,20 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         const exchangeMarket = createSampleMarkets().find(m => m.id === 'market-bank');
         if (exchangeMarket) marketsToCreate.push(exchangeMarket);
     } else if (setupChoice === 'import' && blueprint) {
+        // For import, intelligently merge blueprint assets with core defaults.
+        const blueprintRewardIds = new Set((blueprint.assets.rewardTypes || []).map(r => r.id));
+        const coreRewardsNotInBlueprint = INITIAL_REWARD_TYPES.filter(r => !blueprintRewardIds.has(r.id));
+        rewardTypesToCreate = [...coreRewardsNotInBlueprint, ...(blueprint.assets.rewardTypes || [])];
+        
+        const blueprintGroupIds = new Set((blueprint.assets.questGroups || []).map(g => g.id));
+        const coreGroupsNotInBlueprint = INITIAL_QUEST_GROUPS.filter(g => !blueprintGroupIds.has(g.id));
+        questGroupsToCreate = [...coreGroupsNotInBlueprint, ...(blueprint.assets.questGroups || [])];
+
         questsToCreate = blueprint.assets.quests || [];
         marketsToCreate = blueprint.assets.markets || [];
         gameAssetsToCreate = blueprint.assets.gameAssets || [];
-        rewardTypesToCreate = [...INITIAL_REWARD_TYPES, ...(blueprint.assets.rewardTypes || [])];
         ranksToCreate = blueprint.assets.ranks || [];
         trophiesToCreate = blueprint.assets.trophies || [];
-        questGroupsToCreate = blueprint.assets.questGroups || [];
         
         const hasBank = marketsToCreate.some(m => m.id === 'market-bank');
         if (!hasBank) {

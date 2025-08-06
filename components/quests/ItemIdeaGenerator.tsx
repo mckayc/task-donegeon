@@ -1,9 +1,8 @@
-import React, { useState, ChangeEvent } from 'react';
+import React, { useState } from 'react';
 import { GenerateContentResponse, Type } from "@google/genai";
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { SparklesIcon } from '../ui/icons';
+import Button from '../ui/Button';
+import Input from '../ui/Input';
+import { SparklesIcon } from '../ui/Icons';
 import { useAppState } from '../../context/AppContext';
 
 interface ItemIdea {
@@ -93,45 +92,43 @@ const ItemIdeaGenerator: React.FC<ItemIdeaGeneratorProps> = ({ onUseIdea, onClos
 
     return (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
-            <div className="bg-card border rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] flex flex-col">
-                <div className="p-8 border-b">
-                    <h2 className="text-3xl font-display text-accent flex items-center gap-3"><SparklesIcon className="w-8 h-8" /> Generate Item Ideas</h2>
+            <div className="bg-stone-800 border border-stone-700 rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] flex flex-col">
+                <div className="p-8 border-b border-stone-700/60">
+                    <h2 className="text-3xl font-medieval text-accent flex items-center gap-3"><SparklesIcon className="w-8 h-8" /> Generate Item Ideas</h2>
                 </div>
                 <div className="flex-1 space-y-4 p-8 overflow-y-auto scrollbar-hide">
-                    <div className="flex flex-col sm:flex-row gap-4">
-                        <div className="flex-grow space-y-2">
-                            <Label htmlFor="item-theme">Item Theme</Label>
-                            <Input
-                                id="item-theme"
-                                placeholder="e.g., 'Magical forest artifacts', 'Sci-fi gadgets'"
-                                value={prompt}
-                                onChange={(e: ChangeEvent<HTMLInputElement>) => setPrompt(e.target.value)}
-                                onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => e.key === 'Enter' && handleGenerate()}
-                                disabled={isLoading}
-                            />
-                        </div>
+                    <div className="flex gap-4">
+                        <Input
+                            label="Item Theme"
+                            placeholder="e.g., 'Magical forest artifacts', 'Sci-fi gadgets'"
+                            value={prompt}
+                            onChange={e => setPrompt(e.target.value)}
+                            onKeyDown={e => e.key === 'Enter' && handleGenerate()}
+                            className="flex-grow"
+                            disabled={isLoading}
+                        />
                         <Button onClick={handleGenerate} disabled={isLoading || !prompt.trim()} className="self-end">
                             {isLoading ? 'Generating...' : 'Generate'}
                         </Button>
                     </div>
                     {error && <p className="text-red-400 text-center">{error}</p>}
-                    {isLoading && <div className="text-center py-10"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div><p className="mt-4 text-muted-foreground">The AI is thinking...</p></div>}
+                    {isLoading && <div className="text-center py-10"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-400 mx-auto"></div><p className="mt-4 text-stone-300">The AI is thinking...</p></div>}
                     {generatedItems.length > 0 && (
                         <div className="space-y-3 pt-4">
                             {generatedItems.map((item, index) => (
-                                <div key={index} className="bg-background/50 p-4 rounded-lg flex justify-between items-center gap-4">
+                                <div key={index} className="bg-stone-900/50 p-4 rounded-lg flex justify-between items-center gap-4">
                                     <div>
-                                        <p className="font-bold text-foreground">{item.icon} {item.name} <span className="text-xs font-normal text-muted-foreground">({item.category})</span></p>
-                                        <p className="text-sm text-muted-foreground">{item.description}</p>
+                                        <p className="font-bold text-stone-200">{item.icon} {item.name} <span className="text-xs font-normal text-stone-400">({item.category})</span></p>
+                                        <p className="text-sm text-stone-400">{item.description}</p>
                                     </div>
-                                    <Button variant="secondary" size="sm" onClick={() => onUseIdea(item)}>Use Idea</Button>
+                                    <Button variant="secondary" className="text-sm py-1 px-3 flex-shrink-0" onClick={() => onUseIdea(item)}>Use Idea</Button>
                                 </div>
                             ))}
                         </div>
                     )}
                 </div>
-                <div className="p-6 border-t text-right">
-                    <Button type="button" variant="ghost" onClick={onClose}>Close</Button>
+                <div className="p-6 border-t border-stone-700/60 text-right">
+                    <Button type="button" variant="secondary" onClick={onClose}>Close</Button>
                 </div>
             </div>
         </div>

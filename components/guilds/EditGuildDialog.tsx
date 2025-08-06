@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { Guild } from '../../types';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import Button from '../ui/Button';
+import Input from '../ui/Input';
 
 interface EditGuildDialogProps {
   guild: Guild | null;
@@ -81,6 +81,7 @@ const EditGuildDialog: React.FC<EditGuildDialogProps> = ({ guild, onClose }) => 
         <h2 className="text-3xl font-medieval text-emerald-400 mb-6">{dialogTitle}</h2>
         <form onSubmit={handleSubmit} className="space-y-4">
           <Input 
+            label="Guild Name" 
             id="name" 
             name="name" 
             value={formData.name} 
@@ -115,14 +116,13 @@ const EditGuildDialog: React.FC<EditGuildDialogProps> = ({ guild, onClose }) => 
           </div>
 
           <div>
-            <label htmlFor="themeId" className="block text-sm font-medium text-stone-300 mb-1">Guild Theme (Optional)</label>
-            <select name="themeId" id="themeId" value={formData.themeId} onChange={handleChange} className="w-full px-4 py-2 bg-stone-700 border border-stone-600 rounded-md">
-                <option value="">-- Default User Theme --</option>
-                {availableThemes.map(theme => (
-                    <option key={theme.id} value={theme.id}>{theme.name}</option>
-                ))}
-            </select>
-            <p className="text-xs text-stone-400 mt-1">Assigning a theme here will lock it for this guild's use only.</p>
+              <Input as="select" label="Guild Theme (Optional)" name="themeId" value={formData.themeId} onChange={handleChange}>
+                  <option value="">-- Default User Theme --</option>
+                  {availableThemes.map(theme => (
+                      <option key={theme.id} value={theme.id}>{theme.name}</option>
+                  ))}
+              </Input>
+              <p className="text-xs text-stone-400 mt-1">Assigning a theme here will lock it for this guild's use only.</p>
           </div>
 
           <div className="flex justify-end space-x-4 pt-4">

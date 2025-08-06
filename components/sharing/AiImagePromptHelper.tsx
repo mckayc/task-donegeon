@@ -1,9 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { useAppDispatch } from '../../context/AppContext';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
+import Button from '../ui/Button';
+import Input from '../ui/Input';
 
 const AiImagePromptHelper: React.FC = () => {
     const { addNotification } = useAppDispatch();
@@ -26,13 +24,9 @@ const AiImagePromptHelper: React.FC = () => {
         ].filter(Boolean).join(', ');
     }, [promptData]);
 
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         setPromptData(prev => ({ ...prev, [e.target.name]: e.target.value }));
     };
-
-    const handleSelectChange = (name: string, value: string) => {
-        setPromptData(prev => ({ ...prev, [name]: value }));
-    }
 
     const copyToClipboard = () => {
         navigator.clipboard.writeText(finalPrompt).then(() => {
@@ -48,50 +42,72 @@ const AiImagePromptHelper: React.FC = () => {
         { name: 'Perchance AI Generator', url: 'https://perchance.org/ai-text-to-image-generator' },
         { name: 'Mage.space', url: 'https://www.mage.space/' },
         { name: 'Leonardo.Ai', url: 'https://leonardo.ai/' },
+        { name: 'Stable Diffusion Online', url: 'https://stablediffusionweb.com/' },
     ];
 
     return (
         <div className="space-y-4">
-            <p className="text-sm text-muted-foreground">Use this tool to build a detailed prompt for external AI image generators, then upload the result.</p>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                    <Label htmlFor="subject">Subject</Label>
-                    <Input id="subject" name="subject" placeholder="e.g., 'a knight in shining armor'" value={promptData.subject} onChange={handleChange} />
-                </div>
-                <div className="space-y-2">
-                    <Label htmlFor="adjectives">Adjectives</Label>
-                    <Input id="adjectives" name="adjectives" placeholder="e.g., 'epic, detailed, glowing'" value={promptData.adjectives} onChange={handleChange} />
-                </div>
-                 <div className="space-y-2">
-                    <Label htmlFor="style">Art Style</Label>
-                    <Input id="style" name="style" placeholder="e.g., 'digital painting', 'anime'" value={promptData.style} onChange={handleChange} />
-                </div>
-                <div className="space-y-2">
-                    <Label htmlFor="artist">In the style of...</Label>
-                    <Input id="artist" name="artist" placeholder="e.g., 'greg rutkowski'" value={promptData.artist} onChange={handleChange} />
+            <div>
+                <h4 className="font-bold text-lg text-stone-200">Free AI Image Generators</h4>
+                <p className="text-sm text-stone-400">Use these free services to generate images for your assets. Create a prompt below, or use your own!</p>
+                <div className="flex flex-wrap gap-3 mt-3">
+                    {freeGenerators.map(site => (
+                        <a key={site.name} href={site.url} target="_blank" rel="noopener noreferrer" className="bg-stone-700 hover:bg-stone-600 text-stone-200 font-semibold py-1 px-3 rounded-full text-sm transition-colors">
+                            {site.name} &rarr;
+                        </a>
+                    ))}
                 </div>
             </div>
-             <div className="p-4 bg-background rounded-md border">
-                <Label>Generated Prompt</Label>
-                <p className="text-foreground font-mono text-sm mt-1">{finalPrompt}</p>
+            
+            <div className="pt-4 border-t border-stone-700/60">
+                <h4 className="font-bold text-lg text-stone-200">Prompt Builder</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
+                    <Input label="Subject" name="subject" value={promptData.subject} onChange={handleChange} placeholder="e.g., fantasy sword, cute dragon" />
+                    <Input label="Adjectives" name="adjectives" value={promptData.adjectives} onChange={handleChange} placeholder="e.g., glowing, ancient, tiny" />
+                    <Input as="select" label="Style" name="style" value={promptData.style} onChange={handleChange}>
+                        <option>digital painting</option>
+                        <option>concept art</option>
+                        <option>photorealistic</option>
+                        <option>anime style</option>
+                        <option>cartoon</option>
+                        <option>pixel art</option>
+                        <option>low poly</option>
+                        <option>watercolor</option>
+                        <option>oil painting</option>
+                        <option>3d render</option>
+                    </Input>
+                    <Input as="select" label="Artist / Platform Style" name="artist" value={promptData.artist} onChange={handleChange}>
+                        <option>greg rutkowski</option>
+                        <option>artgerm</option>
+                        <option>alphonse mucha</option>
+                        <option>artstation</option>
+                        <option>studio ghibli</option>
+                        <option>disney pixar</option>
+                        <option>d&d rulebook</option>
+                        <option>unreal engine</option>
+                        <option>vray</option>
+                    </Input>
+                    <Input as="select" label="Lighting" name="lighting" value={promptData.lighting} onChange={handleChange}>
+                        <option>cinematic lighting</option>
+                        <option>dramatic lighting</option>
+                        <option>volumetric lighting</option>
+                        <option>studio lighting</option>
+                        <option>soft light</option>
+                        <option>god rays</option>
+                        <option>rim lighting</option>
+                    </Input>
+                </div>
+                 <div className="mt-4 p-3 bg-stone-900/50 rounded-md">
+                    <p className="text-xs font-semibold text-stone-400 uppercase">Generated Prompt</p>
+                    <p className="text-stone-200 font-mono text-sm mt-1">{finalPrompt}</p>
+                </div>
+                 <div className="text-right mt-2">
+                    <Button variant="secondary" onClick={copyToClipboard} className="text-xs py-1 px-3">
+                        {isCopied ? 'Copied!' : 'Copy Prompt'}
+                    </Button>
+                </div>
             </div>
-            <div className="flex items-center gap-4">
-                <Button onClick={copyToClipboard} disabled={!promptData.subject}>
-                    {isCopied ? 'Copied!' : 'Copy Prompt'}
-                </Button>
-                <Select>
-                    <SelectTrigger className="w-[200px]">
-                        <SelectValue placeholder="Go to Generator..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                        {freeGenerators.map(gen => (
-                            <SelectItem key={gen.name} value={gen.name} onSelect={() => window.open(gen.url, '_blank')}>
-                                {gen.name}
-                            </SelectItem>
-                        ))}
-                    </SelectContent>
-                </Select>
-            </div>
+
         </div>
     );
 };

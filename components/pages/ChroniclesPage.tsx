@@ -1,10 +1,8 @@
 import React, { useMemo, useState } from 'react';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import Card from '../ui/Card';
 import { useAppState } from '../../context/AppContext';
 import { QuestCompletionStatus, Role, PurchaseRequestStatus, AdminAdjustmentType, SystemNotificationType, ChronicleEvent, SystemLog } from '../../types';
-import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Label } from '@/components/ui/label';
+import Button from '../ui/Button';
 
 const ChroniclesPage: React.FC = () => {
   const { questCompletions, purchaseRequests, users, quests, gameAssets, currentUser, userTrophies, trophies, appMode, adminAdjustments, rewardTypes, systemLogs, settings, systemNotifications, guilds } = useAppState();
@@ -80,7 +78,7 @@ const ChroniclesPage: React.FC = () => {
                 case PurchaseRequestStatus.Completed:
                     actionTitle = `Purchase Approved: "${p.assetDetails.name}"`;
                     actionColor = '#22c55e';
-                    actionNote = `Paid: ${costText}. ` + (asset?.payouts && asset.payouts.length > 0 ? 'Exchange successful.' : 'Item added to collection.');
+                    actionNote = asset?.payouts && asset.payouts.length > 0 ? 'Exchange successful.' : 'Item added to collection.';
                     break;
                 case PurchaseRequestStatus.Rejected:
                     actionTitle = `Purchase Rejected: "${p.assetDetails.name}"`;
@@ -198,7 +196,7 @@ const ChroniclesPage: React.FC = () => {
       case AdminAdjustmentType.Setback:
         return 'text-red-400';
       default:
-        return 'text-muted-foreground';
+        return 'text-stone-400';
     }
   };
   
@@ -238,62 +236,68 @@ const ChroniclesPage: React.FC = () => {
             }
 
            return (
-            <span className="text-foreground" title={activity.title}>
+            <span className="text-stone-200" title={activity.title}>
                 <span className="text-accent-light">{userName} </span>
-                <span className="text-foreground/80 font-normal">
+                <span className="text-stone-300 font-normal">
                     {actionText}
                 </span>
             </span>
            )
       }
 
-      // Explorer view is now also just use the full title
-      return <span className="text-foreground" title={activity.title}>{activity.title}</span>
+      // Explorer view is simpler and can now also just use the full title
+      return <span className="text-stone-200" title={activity.title}>{activity.title}</span>
   };
 
   return (
     <div>
-      <Card>
-        <CardHeader className="flex-row items-center justify-between">
-            <CardTitle>Recent Activity</CardTitle>
-            <div className="flex items-center gap-4">
-              {currentUser.role === Role.DonegeonMaster && (
-                  <div className="flex space-x-2 p-1 bg-background rounded-lg">
-                      <Button onClick={() => setViewMode('all')} variant={viewMode === 'all' ? 'default' : 'ghost'} size="sm">All Activity</Button>
-                      <Button onClick={() => setViewMode('personal')} variant={viewMode === 'personal' ? 'default' : 'ghost'} size="sm">My Activity</Button>
-                  </div>
-              )}
-              <div className="flex items-center gap-2">
-                  <Label htmlFor="items-per-page" className="text-sm font-medium">Show:</Label>
-                   <Select onValueChange={(value: string) => { setItemsPerPage(Number(value)); setCurrentPage(1); }} defaultValue={String(itemsPerPage)}>
-                      <SelectTrigger id="items-per-page" className="w-[80px]">
-                        <SelectValue placeholder="Show..." />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="20">20</SelectItem>
-                        <SelectItem value="50">50</SelectItem>
-                        <SelectItem value="100">100</SelectItem>
-                      </SelectContent>
-                    </Select>
-              </div>
+      <div className="flex justify-between items-center mb-8 flex-wrap gap-4">
+        {currentUser.role === Role.DonegeonMaster && (
+            <div className="flex space-x-2 p-1 bg-stone-900/50 rounded-lg">
+                <button
+                    onClick={() => setViewMode('all')}
+                    className={`px-3 py-1 rounded-md font-semibold text-sm transition-colors ${viewMode === 'all' ? 'btn-primary' : 'text-stone-300 hover:bg-stone-700'}`}
+                >
+                    All Activity
+                </button>
+                <button
+                    onClick={() => setViewMode('personal')}
+                    className={`px-3 py-1 rounded-md font-semibold text-sm transition-colors ${viewMode === 'personal' ? 'btn-primary' : 'text-stone-300 hover:bg-stone-700'}`}
+                >
+                    My Activity
+                </button>
             </div>
-        </CardHeader>
-        <CardContent>
+        )}
+        <div className="flex items-center gap-2">
+            <label htmlFor="items-per-page" className="text-sm font-medium text-stone-400">Show:</label>
+            <select
+                id="items-per-page"
+                value={itemsPerPage}
+                onChange={(e) => { setItemsPerPage(Number(e.target.value)); setCurrentPage(1); }}
+                className="px-3 py-1.5 bg-stone-700 border border-stone-600 rounded-md focus:ring-emerald-500 focus:border-emerald-500 transition text-sm"
+            >
+                <option value={20}>20</option>
+                <option value={50}>50</option>
+                <option value={100}>100</option>
+            </select>
+        </div>
+      </div>
+      <Card title="Recent Activity">
         {sortedActivities.length > 0 ? (
           <>
             <ul className="space-y-4">
               {paginatedActivities.map(activity => (
-                  <li key={activity.id} className="flex items-start gap-4 p-3 bg-card rounded-lg">
+                  <li key={activity.id} className="flex items-start gap-4 p-3 bg-stone-800/60 rounded-lg">
                       <div className="w-8 flex-shrink-0 text-center text-2xl pt-1" style={{ color: activity.color }}>
                           {activity.icon}
                       </div>
                       <div className="flex-grow min-w-0">
-                          <p className="font-semibold text-foreground">
+                          <p className="font-semibold text-stone-200">
                              {renderActivityTitle(activity)}
                           </p>
-                          <p className="text-xs text-muted-foreground mt-1">{formatTimestamp(activity.date)}</p>
+                          <p className="text-xs text-stone-400 mt-1">{formatTimestamp(activity.date)}</p>
                       </div>
-                      <div className="w-2/5 flex-shrink-0 text-sm text-muted-foreground italic" title={activity.note}>
+                      <div className="w-2/5 flex-shrink-0 text-sm text-stone-400 italic" title={activity.note}>
                           {activity.note ? <p className="whitespace-pre-wrap">"{activity.note}"</p> : ''}
                       </div>
                       <div className={`w-28 flex-shrink-0 text-right font-semibold ${statusColor(activity.status)}`}>
@@ -303,17 +307,16 @@ const ChroniclesPage: React.FC = () => {
               ))}
             </ul>
             {totalPages > 1 && (
-                <div className="flex justify-between items-center mt-6 pt-4 border-t">
+                <div className="flex justify-between items-center mt-6 pt-4 border-t border-stone-700">
                     <Button variant="secondary" onClick={() => setCurrentPage(p => p - 1)} disabled={currentPage === 1}>Previous</Button>
-                    <span className="text-muted-foreground">Page {currentPage} of {totalPages}</span>
+                    <span className="text-stone-400">Page {currentPage} of {totalPages}</span>
                     <Button variant="secondary" onClick={() => setCurrentPage(p => p + 1)} disabled={currentPage === totalPages}>Next</Button>
                 </div>
             )}
           </>
         ) : (
-          <p className="text-muted-foreground text-center py-4">No activities have been recorded yet in this mode.</p>
+          <p className="text-stone-400 text-center py-4">No activities have been recorded yet in this mode.</p>
         )}
-        </CardContent>
       </Card>
     </div>
   );

@@ -1,8 +1,10 @@
+
+
 import React, { useState, useEffect, useMemo } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { ThemeDefinition, AppMode } from '../../types';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
+import Button from '../ui/Button';
+import Card from '../ui/Card';
 
 const ThemesPage: React.FC = () => {
     const { currentUser, settings, themes, markets, guilds, appMode } = useAppState();
@@ -18,9 +20,7 @@ const ThemesPage: React.FC = () => {
             Object.entries(theme.styles).forEach(([key, value]) => {
                 document.documentElement.style.setProperty(key, value);
             });
-            if (themeId) {
-                document.body.dataset.theme = themeId;
-            }
+            document.body.dataset.theme = themeId;
         }
     };
 
@@ -30,7 +30,7 @@ const ThemesPage: React.FC = () => {
 
         // Cleanup function to revert to the actual saved theme when navigating away
         return () => {
-            let activeThemeId: string | undefined = settings.theme;
+            let activeThemeId = settings.theme;
             if (appMode.mode === 'guild') {
                 const guild = guilds.find(g => g.id === appMode.guildId);
                 if (guild?.themeId) {
@@ -43,9 +43,7 @@ const ThemesPage: React.FC = () => {
                     activeThemeId = currentUser.theme;
                 }
             }
-            if(activeThemeId) {
-                applyThemeStyles(activeThemeId);
-            }
+            applyThemeStyles(activeThemeId);
         };
     }, [selectedThemeId, themes, currentUser, settings, appMode, guilds]);
 
@@ -90,7 +88,6 @@ const ThemesPage: React.FC = () => {
             </div>
             
             <Card>
-              <CardContent className="p-6">
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
                     {themes.map(theme => {
                         const isOwned = currentUser.ownedThemes.includes(theme.id);
@@ -121,16 +118,15 @@ const ThemesPage: React.FC = () => {
                                     ) : isOwned ? (
                                         <span className="text-xs font-bold text-green-400 bg-green-900/50 px-3 py-1 rounded-full">OWNED</span>
                                     ) : (
-                                        <Button onClick={goToThemeMarket} variant="link" className="text-xs font-bold">
+                                        <button onClick={goToThemeMarket} className="text-xs font-bold text-stone-400 bg-stone-700/50 px-3 py-1 rounded-full hover:bg-stone-700 hover:text-white transition-colors">
                                             Unlock ➔
-                                        </Button>
+                                        </button>
                                     )}
                                 </div>
                             </div>
                         );
                     })}
                 </div>
-              </CardContent>
             </Card>
         </div>
     );

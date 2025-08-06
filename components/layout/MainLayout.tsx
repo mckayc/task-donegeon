@@ -1,3 +1,5 @@
+
+
 import React, { useMemo, useEffect, useState, useRef } from 'react';
 import Sidebar from './Sidebar';
 import Header from './Header';
@@ -19,7 +21,7 @@ import CalendarPage from '../pages/CalendarPage';
 import ProgressPage from '../pages/ProgressPage';
 import TrophiesPage from '../pages/TrophiesPage';
 import RanksPage from '../pages/RanksPage';
-// import HelpPage from '../pages/HelpPage';
+import HelpPage from '../pages/HelpPage';
 import AvatarPage from '../pages/AvatarPage';
 import VacationModeBanner from '../settings/VacationModeBanner';
 import ManageRanksPage from '../pages/ManageRanksPage';
@@ -27,21 +29,19 @@ import ManageTrophiesPage from '../pages/ManageTrophiesPage';
 import ThemesPage from '../pages/ThemesPage';
 import AboutPage from '../pages/AboutPage';
 import CollectionPage from '../pages/CollectionPage';
-import ManageItemsPage from '../pages/management/ManageItemsPage';
+import ManageItemsPage from '../pages/ManageItemsPage';
 import AiStudioPage from '../pages/AiStudioPage';
 import AppearancePage from '../pages/AppearancePage';
 import ObjectExporterPage from '../pages/management/ObjectExporterPage';
 import AssetManagerPage from '../pages/management/MediaManagerPage';
-import DataManagementPage from '../pages/management/DataManagementPage';
+import BackupAndImportPage from '../pages/management/BackupAndImportPage';
 import AssetLibraryPage from '../pages/management/AssetLibraryPage';
 import ThemeEditorPage from '../pages/ThemeEditorPage';
 import ManageQuestGroupsPage from '../pages/ManageQuestGroupsPage';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import ChatPanel from '../chat/ChatPanel';
-import LoginNotificationPopup from '../ui/login-notification-popup';
+import LoginNotificationPopup from '../ui/LoginNotificationPopup';
 import ManageEventsPage from '../pages/management/ManageEventsPage';
-import BackupAndImportPage from '../pages/management/BackupAndImportPage';
-import ChatController from '../chat/ChatController';
 
 const MainLayout: React.FC = () => {
   const { activePage, currentUser, settings, systemNotifications } = useAppState();
@@ -51,6 +51,14 @@ const MainLayout: React.FC = () => {
   const [notificationsShownForSession, setNotificationsShownForSession] = useState(false);
   const prevUserIdRef = useRef<string | undefined>(undefined);
   
+  const ADMIN_ONLY_PAGES: Page[] = [
+    'Manage Users', 'Manage Rewards', 'Manage Quests', 'Manage Quest Groups', 'Manage Goods', 'Manage Markets',
+    'Manage Guilds', 'Manage Ranks', 'Manage Trophies', 'Settings', 'AI Studio',
+    'Appearance', 'Theme Editor', 'Object Exporter', 'Asset Manager', 'Backup & Import', 'Asset Library',
+    'Manage Events',
+  ];
+  const GATEKEEPER_PAGES: Page[] = ['Approvals'];
+
   const unreadNotifications = useMemo(() => {
     if (!currentUser) return [];
     return systemNotifications.filter(n => 
@@ -61,6 +69,8 @@ const MainLayout: React.FC = () => {
   }, [systemNotifications, currentUser]);
 
   useEffect(() => {
+    // This effect resets the "shown" flag whenever the user ID changes,
+    // effectively starting a new "notification session" for the new user.
     if (currentUser?.id !== prevUserIdRef.current) {
         setNotificationsShownForSession(false);
         prevUserIdRef.current = currentUser?.id;
@@ -68,40 +78,30 @@ const MainLayout: React.FC = () => {
   }, [currentUser]);
 
   useEffect(() => {
+    // This effect handles the logic for showing the popup.
     if (currentUser && !notificationsShownForSession && settings.loginNotifications.enabled && unreadNotifications.length > 0) {
         setShowLoginNotifications(true);
-        setNotificationsShownForSession(true);
+        setNotificationsShownForSession(true); // Mark as shown for this session.
     } else if (!currentUser) {
+        // Explicitly hide popup on logout, just in case.
         setShowLoginNotifications(false);
     }
   }, [currentUser, notificationsShownForSession, settings.loginNotifications.enabled, unreadNotifications]);
 
   useEffect(() => {
-    if (!currentUser || !settings.sidebars.main) return;
+    if (!currentUser) return;
 
-    const pageConfig = settings.sidebars.main.find(item => item.type === 'link' && item.id === activePage);
+    const isPageAdminOnly = ADMIN_ONLY_PAGES.includes(activePage);
+    const isPageForGatekeepers = GATEKEEPER_PAGES.includes(activePage);
 
-    if (!pageConfig) {
-      return;
+    if (isPageAdminOnly && currentUser.role !== Role.DonegeonMaster) {
+      addNotification({ type: 'error', message: 'You do not have permission to view this page.' });
+      setActivePage('Dashboard');
+    } else if (isPageForGatekeepers && currentUser.role === Role.Explorer) {
+      addNotification({ type: 'error', message: 'You do not have permission to view this page.' });
+      setActivePage('Dashboard');
     }
-
-    const requiredRole = pageConfig.role;
-    const userRole = currentUser.role;
-
-    let hasPermission = false;
-    if (userRole === Role.DonegeonMaster) {
-        hasPermission = true;
-    } else if (userRole === Role.Gatekeeper) {
-        hasPermission = (requiredRole === Role.Gatekeeper || requiredRole === Role.Explorer);
-    } else if (userRole === Role.Explorer) {
-        hasPermission = (requiredRole === Role.Explorer);
-    }
-
-    if (!hasPermission) {
-        addNotification({ type: 'error', message: 'You do not have permission to view this page.' });
-        setActivePage('Dashboard');
-    }
-  }, [activePage, currentUser, settings.sidebars.main, setActivePage, addNotification]);
+  }, [activePage, currentUser, setActivePage, addNotification]);
 
 
   const renderPage = () => {
@@ -135,13 +135,11 @@ const MainLayout: React.FC = () => {
       case 'Theme Editor': return <ThemeEditorPage />;
       case 'Object Exporter': return <ObjectExporterPage />;
       case 'Asset Manager': return <AssetManagerPage />;
-      case 'Data Management': return <DataManagementPage />;
       case 'Backup & Import': return <BackupAndImportPage />;
       case 'Asset Library': return <AssetLibraryPage />;
       case 'Profile': return <ProfilePage />;
       case 'About': return <AboutPage />;
-      case 'Help Guide': return <AboutPage />;
-      case 'Chat': return <ChatPanel />;
+      case 'Help Guide': return <HelpPage />;
       default: return <Dashboard />;
     }
   };
@@ -155,7 +153,7 @@ const MainLayout: React.FC = () => {
             onClose={() => setShowLoginNotifications(false)} 
         />
       )}
-      <div className="flex h-screen bg-background text-foreground">
+      <div className="flex h-screen" style={{ backgroundColor: 'hsl(var(--color-bg-secondary))', color: 'hsl(var(--color-text-primary))' }}>
         <Sidebar />
         <div className="flex-1 flex flex-col overflow-hidden transition-all duration-300">
           <Header />
@@ -166,7 +164,6 @@ const MainLayout: React.FC = () => {
         </div>
         <ChatPanel />
       </div>
-      <ChatController />
     </>
   );
 };

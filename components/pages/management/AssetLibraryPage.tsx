@@ -1,24 +1,22 @@
-import React, { useState, useMemo, ChangeEvent } from 'react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
+import React, { useState, useMemo, useEffect } from 'react';
+import Button from '../../ui/Button';
+import Card from '../../ui/Card';
 import { libraryPacks } from '../../../data/assetLibrary';
-import { LibraryPack, BlueprintAssets, TrophyRequirementType, QuestGroup, Quest, GameAsset, Market, Trophy, RewardTypeDefinition, QuestType, User, ShareableAssetType } from '../../../types';
+import { LibraryPack, BlueprintAssets, TrophyRequirementType, QuestGroup, Quest, GameAsset, Market, Trophy, RewardTypeDefinition, QuestType } from '../../../types';
 import { useAppState, useAppDispatch } from '../../../context/AppContext';
-import { Input } from '@/components/ui/input';
+import Input from '../../ui/Input';
 import CreateQuestDialog from '../../quests/CreateQuestDialog';
 import EditGameAssetDialog from '../../admin/EditGameAssetDialog';
 import EditTrophyDialog from '../../settings/EditTrophyDialog';
 import EditMarketDialog from '../../markets/EditMarketDialog';
-import UserMultiSelect from '../../ui/user-multi-select';
 
-const packTypes = ['All', 'Quests', 'Markets', 'Items', 'Trophies', 'Rewards', 'Quest Groups'];
+const packTypes = ['All', 'Quests', 'Markets', 'Items', 'Trophies', 'Rewards'];
 
 type SelectableAsset = { id: string; name: string; description: string; icon: string; type: keyof BlueprintAssets; questType?: QuestType };
 
 const AssetPreview: React.FC<{ assets: Partial<BlueprintAssets> }> = ({ assets }) => {
     const assetList = [
         ...(assets.quests || []),
-        ...(assets.questGroups || []),
         ...(assets.gameAssets || []),
         ...(assets.trophies || []),
         ...(assets.markets || []),
@@ -26,14 +24,14 @@ const AssetPreview: React.FC<{ assets: Partial<BlueprintAssets> }> = ({ assets }
     ].slice(0, 3);
 
     if (assetList.length === 0) {
-        return <div className="text-xs text-muted-foreground italic">No preview available.</div>;
+        return <div className="text-xs text-stone-500 italic">No preview available.</div>;
     }
 
     return (
-        <div className="space-y-1 mt-3 pt-3 border-t border-border">
-            <p className="text-xs font-semibold text-muted-foreground">Contains:</p>
+        <div className="space-y-1 mt-3 pt-3 border-t border-stone-700/60">
+            <p className="text-xs font-semibold text-stone-400">Contains:</p>
             {assetList.map((asset, index) => (
-                <div key={index} className="flex items-center gap-2 text-sm text-foreground">
+                <div key={index} className="flex items-center gap-2 text-sm text-stone-300">
                     <span className="text-lg">{'icon' in asset ? asset.icon : '❔'}</span>
                     <span className="truncate">{'title' in asset ? asset.title : asset.name}</span>
                 </div>
@@ -45,13 +43,13 @@ const AssetPreview: React.FC<{ assets: Partial<BlueprintAssets> }> = ({ assets }
 const PackCard: React.FC<{ pack: LibraryPack; onSelect: () => void; }> = ({ pack, onSelect }) => {
     return (
         <button onClick={onSelect} className="text-left h-full">
-            <Card className={`h-full p-4 hover:bg-accent/10 hover:border-accent transition-colors duration-200 border-2 ${pack.color || 'border-border'}`}>
+            <Card className={`h-full hover:bg-stone-700/50 hover:border-accent transition-colors duration-200 border-2 ${pack.color || 'border-stone-700/60'}`}>
                 <div className="flex items-center gap-2">
                     <span className="text-2xl">{pack.emoji}</span>
-                    <span className={`text-sm font-bold uppercase ${pack.color ? '' : 'text-primary'}`}>{pack.type}</span>
+                    <span className={`text-sm font-bold uppercase ${pack.color ? '' : 'text-emerald-400'}`}>{pack.type}</span>
                 </div>
-                <h4 className="text-lg font-bold text-foreground mt-2">{pack.title}</h4>
-                <p className="text-sm text-muted-foreground mt-2">{pack.description}</p>
+                <h4 className="text-lg font-bold text-stone-100 mt-2">{pack.title}</h4>
+                <p className="text-sm text-stone-400 mt-2">{pack.description}</p>
                 <AssetPreview assets={pack.assets} />
             </Card>
         </button>
@@ -59,17 +57,15 @@ const PackCard: React.FC<{ pack: LibraryPack; onSelect: () => void; }> = ({ pack
 };
 
 const PackDetailView: React.FC<{ pack: LibraryPack; onBack: () => void; }> = ({ pack, onBack }) => {
-    const { settings, questGroups: allQuestGroupsFromState, users, appMode } = useAppState();
+    const { settings, questGroups: allQuestGroupsFromState, users } = useAppState();
     const { addQuest, addGameAsset, addTrophy, addRewardType, addMarket, addQuestGroup, addNotification } = useAppDispatch();
     
     const [livePackAssets, setLivePackAssets] = useState<Partial<BlueprintAssets>>(() => JSON.parse(JSON.stringify(pack.assets)));
     const [assetToEdit, setAssetToEdit] = useState<{data: any, type: keyof BlueprintAssets} | null>(null);
-    const [userIdsForImport, setUserIdsForImport] = useState<string[]>(() => users.map((u: User) => u.id));
 
     const allAssets = useMemo((): SelectableAsset[] => {
         const assets: SelectableAsset[] = [];
         livePackAssets.quests?.forEach(q => assets.push({ id: q.id, name: q.title, description: q.description, icon: q.icon || '📝', type: 'quests', questType: q.type }));
-        livePackAssets.questGroups?.forEach(qg => assets.push({ id: qg.id, name: qg.name, description: qg.description, icon: qg.icon || '📂', type: 'questGroups' }));
         livePackAssets.gameAssets?.forEach(ga => assets.push({ id: ga.id, name: ga.name, description: ga.description, icon: ga.icon || '📦', type: 'gameAssets' }));
         livePackAssets.trophies?.forEach(t => assets.push({ id: t.id, name: t.name, description: t.description, icon: t.icon, type: 'trophies' }));
         livePackAssets.markets?.forEach(m => assets.push({ id: m.id, name: m.title, description: m.description, icon: m.icon || '🛒', type: 'markets' }));
@@ -105,232 +101,252 @@ const PackDetailView: React.FC<{ pack: LibraryPack; onBack: () => void; }> = ({ 
     const handleSaveEditedAsset = (updatedData: any) => {
         if (!assetToEdit) return;
         setLivePackAssets(prev => {
+            if (!prev) return null;
             const newAssets = { ...prev };
-            const assetList = [...((newAssets[assetToEdit.type] as any[]) || [])]; // Create a new array to modify
+            const assetList = (newAssets[assetToEdit.type] as any[]) || [];
             const assetIndex = assetList.findIndex(a => a.id === assetToEdit.data.id);
             if (assetIndex > -1) {
                 assetList[assetIndex] = { ...assetList[assetIndex], ...updatedData };
-                (newAssets as any)[assetToEdit.type] = assetList; // Assign the modified array back
             }
             return newAssets;
         });
         setAssetToEdit(null);
     };
 
-    const handleInstall = async () => {
+    const handleInstall = () => {
         let importedCount = 0;
         const idMaps = {
             rewardTypes: new Map<string, string>(),
             markets: new Map<string, string>(),
             trophies: new Map<string, string>(),
             questGroups: new Map<string, string>(),
-            ranks: new Map<string, string>(),
-            quests: new Map<string, string>(),
         };
 
-        // Pass 1: Base data types with few dependencies
-        if (livePackAssets.questGroups) {
-            for (const packGroup of livePackAssets.questGroups) {
-                try {
-                    const existingGroup = allQuestGroupsFromState.find((g: QuestGroup) => g.name.toLowerCase() === packGroup.name.toLowerCase());
-                    if (existingGroup) {
-                        idMaps.questGroups.set(packGroup.id, existingGroup.id);
-                    } else {
-                        const { id, ...rest } = packGroup;
-                        const newGroup = await addQuestGroup(rest);
-                        if (newGroup) {
-                            idMaps.questGroups.set(packGroup.id, newGroup.id);
-                            importedCount++;
-                        }
-                    }
-                } catch (e) {
-                    addNotification({ type: 'error', message: `Failed to import Quest Group "${packGroup.name}"` });
-                }
+        // 1. Process Quest Groups specifically to handle name conflicts and get new IDs
+        livePackAssets.questGroups?.forEach(packGroup => {
+            const existingGroup = allQuestGroupsFromState.find(g => g.name.toLowerCase() === packGroup.name.toLowerCase());
+            if (existingGroup) {
+                idMaps.questGroups.set(packGroup.id, existingGroup.id);
+            } else {
+                const { id, ...rest } = packGroup;
+                const newGroup = addQuestGroup(rest); // This function returns the new group with its generated ID
+                idMaps.questGroups.set(packGroup.id, newGroup.id);
+                importedCount++;
             }
-        }
+        });
+
+        const processAssets = <T extends { id: string }>(
+            type: 'rewardTypes' | 'markets', 
+            addFunc: (item: Omit<T, 'id'>) => void
+        ) => {
+            livePackAssets[type]?.forEach(asset => {
+                if (selectedIds.includes(asset.id)) {
+                    const { id, ...rest } = asset;
+                    addFunc(rest as Omit<T, 'id'>);
+                    importedCount++;
+                }
+            });
+        };
         
-        if (livePackAssets.rewardTypes) {
-            for (const asset of livePackAssets.rewardTypes) {
-                if (selectedIds.includes(asset.id)) {
-                    const { id, ...rest } = asset;
-                    const newAsset = await addRewardType(rest);
-                    if (newAsset) {
-                        idMaps.rewardTypes.set(id, newAsset.id);
-                        importedCount++;
-                    }
-                }
+        processAssets<RewardTypeDefinition>('rewardTypes', addRewardType);
+        processAssets<Market>('markets', addMarket);
+        
+        livePackAssets.trophies?.forEach(t => { 
+            if (selectedIds.includes(t.id)) { 
+                const { id, ...rest } = t; 
+                const newTrophy = { ...rest, requirements: (t.requirements || []).map(req => ({ ...req })) };
+                addTrophy(newTrophy as Omit<Trophy, 'id'>); 
+                importedCount++; 
             }
-        }
-        if (livePackAssets.markets) {
-            for (const asset of livePackAssets.markets) {
-                if (selectedIds.includes(asset.id)) {
-                    const { id, ...rest } = asset;
-                    const newAsset = await addMarket(rest);
-                    if (newAsset) {
-                        idMaps.markets.set(id, newAsset.id);
-                        importedCount++;
-                    }
-                }
+        });
+        
+        livePackAssets.quests?.forEach(q => {
+            if (selectedIds.includes(q.id)) {
+                const { id, ...rest } = q;
+                const newQuest = { 
+                    ...rest,
+                    assignedUserIds: users.map(u => u.id),
+                    groupId: q.groupId ? idMaps.questGroups.get(q.groupId) : undefined,
+                    rewards: q.rewards.map(r => ({ ...r, rewardTypeId: idMaps.rewardTypes.get(r.rewardTypeId) || r.rewardTypeId })),
+                    lateSetbacks: q.lateSetbacks.map(r => ({ ...r, rewardTypeId: idMaps.rewardTypes.get(r.rewardTypeId) || r.rewardTypeId })),
+                    incompleteSetbacks: q.incompleteSetbacks.map(r => ({ ...r, rewardTypeId: idMaps.rewardTypes.get(r.rewardTypeId) || r.rewardTypeId })),
+                };
+                addQuest(newQuest as Omit<Quest, 'id' | 'claimedByUserIds' | 'dismissals'>); 
+                importedCount++;
             }
-        }
-        if (livePackAssets.trophies) {
-            for (const asset of livePackAssets.trophies) {
-                if (selectedIds.includes(asset.id)) {
-                    const { id, ...rest } = asset;
-                    const newAsset = await addTrophy(rest);
-                    if (newAsset) {
-                        idMaps.trophies.set(id, newAsset.id);
-                        importedCount++;
-                    }
-                }
+        });
+        
+        livePackAssets.gameAssets?.forEach(ga => {
+            if (selectedIds.includes(ga.id)) {
+                const { id, ...rest } = ga;
+                const newAsset = { 
+                    ...rest, 
+                    marketIds: (ga.marketIds || []).map(mid => idMaps.markets.get(mid) || mid), 
+                    costGroups: (ga.costGroups || []).map(group => group.map(c => ({...c, rewardTypeId: idMaps.rewardTypes.get(c.rewardTypeId) || c.rewardTypeId })))
+                };
+                addGameAsset(newAsset as Omit<GameAsset, 'id' | 'creatorId' | 'createdAt'>); 
+                importedCount++;
             }
-        }
+        });
 
-        // Pass 2: Assets with dependencies
-        if (livePackAssets.gameAssets) {
-            for (const asset of livePackAssets.gameAssets) {
-                if (selectedIds.includes(asset.id)) {
-                    const { id, ...rest } = asset;
-                    const newCostGroups = rest.costGroups.map(g => g.map(c => ({...c, rewardTypeId: idMaps.rewardTypes.get(c.rewardTypeId) || c.rewardTypeId })));
-                    const newMarketIds = rest.marketIds.map(mid => idMaps.markets.get(mid) || mid);
-                    const newPayload = { ...rest, costGroups: newCostGroups, marketIds: newMarketIds };
-                    await addGameAsset(newPayload);
-                    importedCount++;
-                }
-            }
-        }
-
-        if (livePackAssets.quests) {
-            for (const asset of livePackAssets.quests) {
-                if (selectedIds.includes(asset.id)) {
-                    const { id, ...rest } = asset;
-                    const newRewards = rest.rewards.map(r => ({...r, rewardTypeId: idMaps.rewardTypes.get(r.rewardTypeId) || r.rewardTypeId}));
-                    const newLateSetbacks = rest.lateSetbacks.map(r => ({...r, rewardTypeId: idMaps.rewardTypes.get(r.rewardTypeId) || r.rewardTypeId}));
-                    const newIncompleteSetbacks = rest.incompleteSetbacks.map(r => ({...r, rewardTypeId: idMaps.rewardTypes.get(r.rewardTypeId) || r.rewardTypeId}));
-                    const newGroupId = rest.groupId ? (idMaps.questGroups.get(rest.groupId) || rest.groupId) : undefined;
-                    const newPayload = { ...rest, assignedUserIds: userIdsForImport, rewards: newRewards, lateSetbacks: newLateSetbacks, incompleteSetbacks: newIncompleteSetbacks, groupId: newGroupId, guildId: appMode.mode === 'guild' ? appMode.guildId : undefined };
-                    await addQuest(newPayload);
-                    importedCount++;
-                }
-            }
-        }
-
-        addNotification({ type: 'success', message: `Successfully imported ${importedCount} assets!` });
+        addNotification({type: 'success', message: `Successfully installed ${importedCount} assets from ${pack.title}!`});
         onBack();
     };
 
-    const renderAssetEditor = () => {
-        if (!assetToEdit) return null;
-        const { data, type } = assetToEdit;
-        switch(type) {
-            case 'quests': return <CreateQuestDialog initialData={data} onClose={() => setAssetToEdit(null)} onSave={handleSaveEditedAsset} mode="ai-creation" />;
-            case 'gameAssets': return <EditGameAssetDialog assetToEdit={null} initialData={data} onClose={() => setAssetToEdit(null)} onSave={handleSaveEditedAsset} mode="ai-creation" />;
-            case 'trophies': return <EditTrophyDialog trophy={null} initialData={data} onClose={() => setAssetToEdit(null)} onSave={handleSaveEditedAsset} mode="ai-creation" />;
-            case 'markets': return <EditMarketDialog market={null} initialData={data} onClose={() => setAssetToEdit(null)} onSave={handleSaveEditedAsset} mode="ai-creation" />;
-            default: return null;
-        }
+    const typeTitles: {[key: string]: string} = { 
+        Duties: settings.terminology.recurringTasks,
+        Ventures: settings.terminology.singleTasks,
+        questGroups: "Quest Groups", 
+        gameAssets: "Items", 
+        markets: settings.terminology.stores, 
+        trophies: settings.terminology.awards, 
+        rewardTypes: settings.terminology.points 
     };
-    
-    return (
-      <div className="space-y-6">
-        <div className="flex justify-between items-center">
-          <Button onClick={onBack} variant="secondary">&larr; Back to Library</Button>
-          <div className="text-right">
-            <h2 className="text-2xl font-bold text-foreground">{pack.title}</h2>
-            <p className="text-muted-foreground">{pack.description}</p>
-          </div>
-        </div>
 
-        <Card>
-            <CardContent className="p-4 grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                     <h3 className="font-semibold text-lg text-foreground mb-2">Assign to Users</h3>
-                     <UserMultiSelect allUsers={users} selectedUserIds={userIdsForImport} onSelectionChange={setUserIdsForImport} label="Quests from this pack will be assigned to:" />
+    return (
+        <>
+            <Card>
+                <div className="flex justify-between items-start mb-6">
+                    <div>
+                        <Button variant="secondary" size="sm" onClick={onBack}>&larr; Back to Library</Button>
+                        <div className="flex items-center gap-4 mt-4">
+                            <span className="text-5xl">{pack.emoji}</span>
+                            <div>
+                                <h2 className="text-3xl font-medieval text-accent">{pack.title}</h2>
+                                <p className="text-stone-400">{pack.description}</p>
+                            </div>
+                        </div>
+                    </div>
+                    <Button onClick={handleInstall} disabled={selectedIds.length === 0}>Install {selectedIds.length} Selected</Button>
                 </div>
-                 <div>
-                    <h3 className="font-semibold text-lg text-foreground mb-2">Included Assets ({selectedIds.length} / {allAssets.length})</h3>
-                    <div className="max-h-48 overflow-y-auto space-y-2 border p-2 rounded-md">
-                        <label className="flex items-center p-2 rounded-md hover:bg-accent/10 cursor-pointer">
-                           <input type="checkbox" checked={selectedIds.length === allAssets.length} onChange={handleSelectAll} className="h-4 w-4 rounded text-primary bg-background border-input focus:ring-ring" />
-                            <span className="ml-3 font-bold text-foreground">Select All</span>
-                        </label>
-                        {Object.entries(groupedAssets).map(([groupName, assets]) => (
-                            <div key={groupName}>
-                                <p className="font-semibold text-muted-foreground text-sm capitalize pl-2">{groupName}</p>
+
+                <div className="space-y-6 max-h-[60vh] overflow-y-auto pr-4 scrollbar-hide">
+                    <div className="flex justify-between items-center mb-2 sticky top-0 bg-stone-800 py-2">
+                        <h4 className="font-bold text-stone-200">Pack Contents</h4>
+                        <Button variant="secondary" onClick={handleSelectAll} className="text-xs py-1 px-2">
+                            {selectedIds.length === allAssets.length ? 'Deselect All' : 'Select All'}
+                        </Button>
+                    </div>
+                    {Object.entries(groupedAssets).map(([type, assets]) => (
+                        <div key={type}>
+                            <h5 className="font-bold text-lg text-stone-300 capitalize mb-2">{typeTitles[type] || type}</h5>
+                            <div className="space-y-2">
                                 {assets.map(asset => (
-                                     <label key={asset.id} className="flex items-center p-2 rounded-md hover:bg-accent/10 cursor-pointer">
-                                        <input type="checkbox" checked={selectedIds.includes(asset.id)} onChange={() => handleToggle(asset.id)} className="h-4 w-4 rounded text-primary bg-background border-input focus:ring-ring" />
-                                        <span className="ml-3 text-foreground">{asset.icon} {asset.name}</span>
-                                        <button onClick={(e) => { e.stopPropagation(); handleEditAsset(asset); }} className="ml-auto text-xs text-muted-foreground hover:text-primary">Edit</button>
-                                    </label>
+                                    <div key={asset.id} className="flex items-start p-3 rounded-md has-[:checked]:bg-stone-700/60 has-[:checked]:border-stone-600/80 border border-transparent transition-colors">
+                                        <input
+                                            type="checkbox"
+                                            id={`asset-${asset.id}`}
+                                            checked={selectedIds.includes(asset.id)}
+                                            onChange={() => handleToggle(asset.id)}
+                                            className="h-5 w-5 rounded text-emerald-600 bg-stone-700 border-stone-500 focus:ring-emerald-500 mt-1 flex-shrink-0"
+                                        />
+                                        <label htmlFor={`asset-${asset.id}`} className="ml-3 flex-grow">
+                                            <div className="font-semibold text-stone-200 flex items-center gap-2">
+                                                <span className="text-xl">{asset.icon}</span>
+                                                <button onClick={() => handleEditAsset(asset)} className="hover:underline hover:text-accent transition-colors text-left">
+                                                    {asset.name}
+                                                </button>
+                                            </div>
+                                            <p className="text-sm text-stone-400 mt-1">{asset.description}</p>
+                                        </label>
+                                    </div>
                                 ))}
                             </div>
-                        ))}
-                    </div>
+                        </div>
+                    ))}
                 </div>
-            </CardContent>
-        </Card>
-        
-        <div className="text-right">
-            <Button onClick={handleInstall} disabled={selectedIds.length === 0}>
-                Install {selectedIds.length} Selected Assets
-            </Button>
-        </div>
-        
-        {renderAssetEditor()}
-      </div>
+            </Card>
+
+            {assetToEdit && (
+                <>
+                    {assetToEdit.type === 'quests' && <CreateQuestDialog mode="edit" initialData={assetToEdit.data} onSave={handleSaveEditedAsset} onClose={() => setAssetToEdit(null)} />}
+                    {assetToEdit.type === 'gameAssets' && <EditGameAssetDialog mode="edit" assetToEdit={null} initialData={assetToEdit.data} onSave={handleSaveEditedAsset} onClose={() => setAssetToEdit(null)} />}
+                    {assetToEdit.type === 'trophies' && <EditTrophyDialog mode="edit" trophy={null} initialData={assetToEdit.data} onSave={handleSaveEditedAsset} onClose={() => setAssetToEdit(null)} />}
+                    {assetToEdit.type === 'markets' && <EditMarketDialog mode="edit" market={null} initialData={assetToEdit.data} onSave={handleSaveEditedAsset} onClose={() => setAssetToEdit(null)} />}
+                </>
+            )}
+        </>
     );
 };
 
-
 const AssetLibraryPage: React.FC = () => {
-    const [filter, setFilter] = useState('All');
-    const [searchTerm, setSearchTerm] = useState('');
     const [selectedPack, setSelectedPack] = useState<LibraryPack | null>(null);
+    const [activeFilter, setActiveFilter] = useState('All');
+    const [searchTerm, setSearchTerm] = useState('');
 
     const filteredPacks = useMemo(() => {
         return libraryPacks.filter(pack => {
-            const typeMatch = filter === 'All' || pack.type === filter;
-            const searchMatch = pack.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                                pack.description.toLowerCase().includes(searchTerm.toLowerCase());
-            return typeMatch && searchMatch;
+            const filterMatch = activeFilter === 'All' || pack.type === activeFilter;
+            if (!filterMatch) return false;
+
+            if (!searchTerm.trim()) return true;
+            const lowerSearch = searchTerm.toLowerCase();
+
+            const textMatch = pack.title.toLowerCase().includes(lowerSearch) || pack.description.toLowerCase().includes(lowerSearch);
+            if (textMatch) return true;
+
+            const assetContentMatch = Object.values(pack.assets).some(assetArray => {
+                if (!Array.isArray(assetArray)) return false;
+                return assetArray.some(asset => {
+                    const name = (asset as any).title || (asset as any).name || '';
+                    const desc = (asset as any).description || '';
+                    return name.toLowerCase().includes(lowerSearch) || desc.toLowerCase().includes(lowerSearch);
+                });
+            });
+            if (assetContentMatch) return true;
+
+            const questTagMatch = pack.assets.quests?.some(q => 
+                q.tags.some(t => t.toLowerCase().includes(lowerSearch))
+            );
+            if (questTagMatch) return true;
+
+            const groupNameMatch = pack.assets.questGroups?.some(g => 
+                g.name.toLowerCase().includes(lowerSearch)
+            );
+            if (groupNameMatch) return true;
+            
+            return false;
         });
-    }, [filter, searchTerm]);
-
+    }, [activeFilter, searchTerm]);
+    
     if (selectedPack) {
-        return <PackDetailView pack={selectedPack} onBack={() => setSelectedPack(null)} />;
+        return (
+            <PackDetailView
+                pack={selectedPack}
+                onBack={() => setSelectedPack(null)}
+            />
+        );
     }
-
+    
     return (
         <div className="space-y-6">
             <Card>
-                <CardContent className="p-4 space-y-4">
-                    <Input
-                        placeholder="Search packs..."
-                        value={searchTerm}
-                        onChange={(e: ChangeEvent<HTMLInputElement>) => setSearchTerm(e.target.value)}
-                        className="max-w-xs"
-                    />
-                    <div className="flex flex-wrap gap-2">
+                <div className="flex justify-between items-center mb-6 flex-wrap gap-4">
+                     <div className="flex-grow max-w-sm">
+                        <Input placeholder="Search packs..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
+                     </div>
+                    <div className="flex space-x-2 p-1 bg-stone-900/50 rounded-lg overflow-x-auto">
                         {packTypes.map(type => (
-                            <Button
+                             <button
                                 key={type}
-                                variant={filter === type ? 'default' : 'secondary'}
-                                onClick={() => setFilter(type)}
+                                onClick={() => setActiveFilter(type)}
+                                className={`px-3 py-1 rounded-md font-semibold text-sm transition-colors whitespace-nowrap ${
+                                    activeFilter === type ? 'btn-primary' : 'text-stone-300 hover:bg-stone-700'
+                                }`}
                             >
                                 {type}
-                            </Button>
+                            </button>
                         ))}
                     </div>
-                </CardContent>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {filteredPacks.map(pack => (
+                        <PackCard key={pack.id} pack={pack} onSelect={() => setSelectedPack(pack)} />
+                    ))}
+                </div>
             </Card>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                {filteredPacks.map(pack => (
-                    <PackCard key={pack.id} pack={pack} onSelect={() => setSelectedPack(pack)} />
-                ))}
-            </div>
         </div>
     );
 };
+
 export default AssetLibraryPage;

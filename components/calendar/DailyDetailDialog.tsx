@@ -1,12 +1,11 @@
 import React, { useMemo, useState } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { Quest, QuestCompletion, QuestType } from '../../types';
-import { Button } from '@/components/ui/button';
+import Button from '../ui/Button';
 import { toYMD, questSorter } from '../../utils/quests';
-import QuestDetailDialog from '@/components/quests/QuestDetailDialog';
-import CompleteQuestDialog from '@/components/quests/CompleteQuestDialog';
+import QuestDetailDialog from '../quests/QuestDetailDialog';
+import CompleteQuestDialog from '../quests/CompleteQuestDialog';
 import { useCalendarVentures } from '../../hooks/useCalendarVentures';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 
 interface DailyDetailDialogProps {
   date: Date;
@@ -29,21 +28,21 @@ const QuestListItem: React.FC<{
         todo: {
             iconContainerClass: quest.type === QuestType.Duty ? 'bg-sky-900/50' : 'bg-amber-900/50',
             iconJsx: <span className="font-bold text-xl">{quest.icon || '📝'}</span>,
-            textClass: 'font-semibold text-foreground',
+            textClass: 'font-semibold text-stone-200',
             isStrikethrough: false,
             containerOpacity: '',
         },
         pending: {
             iconContainerClass: 'bg-yellow-900/50 text-yellow-400',
             iconJsx: <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.414-1.414L11 7.586V6z" clipRule="evenodd" /></svg>,
-            textClass: 'font-semibold text-foreground/80',
+            textClass: 'font-semibold text-stone-300',
             isStrikethrough: false,
             containerOpacity: 'opacity-80',
         },
         completed: {
             iconContainerClass: 'bg-green-900/50 text-green-400',
             iconJsx: <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" /></svg>,
-            textClass: 'font-semibold text-muted-foreground',
+            textClass: 'font-semibold text-stone-300',
             isStrikethrough: true,
             containerOpacity: 'opacity-60',
         }
@@ -88,7 +87,7 @@ const QuestListItem: React.FC<{
                 <div className="flex-grow overflow-hidden">
                     <p className={`${currentConfig.textClass} truncate ${currentConfig.isStrikethrough ? 'line-through' : ''}`} title={quest.title}>{quest.title}</p>
                     {(dueTime || quest.isOptional) && (
-                        <p className="text-xs text-muted-foreground mt-1">
+                        <p className="text-xs text-stone-400 mt-1">
                             {quest.isOptional && 'Optional'}
                             {quest.isOptional && dueTime && ' · '}
                             {dueTime && `Due at ${dueTime}`}
@@ -159,19 +158,17 @@ const DailyDetailDialog: React.FC<DailyDetailDialogProps> = ({ date, onClose, sc
 
   return (
     <>
-      <Dialog open={true} onOpenChange={onClose}>
-        <DialogContent className="sm:max-w-lg">
-          <DialogHeader>
-            <DialogTitle className="text-2xl font-display text-accent">
-              {date.toLocaleDateString('default', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
-            </DialogTitle>
-          </DialogHeader>
-          <div className="py-4 space-y-6 max-h-[60vh] overflow-y-auto pr-4">
+      <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4" onClick={onClose}>
+        <div className="bg-stone-800 border border-stone-700 rounded-xl shadow-2xl max-w-lg w-full max-h-[80vh] flex flex-col" onClick={e => e.stopPropagation()}>
+          <div className="p-6 border-b border-stone-700/60">
+              <h2 className="text-2xl font-medieval text-emerald-400">{date.toLocaleDateString('default', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</h2>
+          </div>
+          <div className="p-6 space-y-6 overflow-y-auto scrollbar-hide">
               {isFutureDate && <p className="text-center text-yellow-400 bg-yellow-900/50 p-2 rounded-md">You cannot complete quests for a future date.</p>}
               
               {todoQuests.length > 0 && (
                   <div>
-                      <h3 className="text-lg font-semibold text-foreground mb-3">To-Do</h3>
+                      <h3 className="text-lg font-semibold text-stone-200 mb-3">To-Do</h3>
                       <div className="space-y-3">
                           {todoQuests.map(quest => (
                               <QuestListItem 
@@ -189,7 +186,7 @@ const DailyDetailDialog: React.FC<DailyDetailDialogProps> = ({ date, onClose, sc
 
               {pendingQuestDetails.length > 0 && (
                    <div>
-                      <h3 className="text-lg font-semibold text-foreground mb-3">Pending Approval</h3>
+                      <h3 className="text-lg font-semibold text-stone-200 mb-3">Pending Approval</h3>
                       <div className="space-y-3">
                           {pendingQuestDetails.map(quest => (
                             <QuestListItem 
@@ -207,7 +204,7 @@ const DailyDetailDialog: React.FC<DailyDetailDialogProps> = ({ date, onClose, sc
               
               {completedQuestDetails.length > 0 && (
                    <div>
-                      <h3 className="text-lg font-semibold text-foreground mb-3">Completed</h3>
+                      <h3 className="text-lg font-semibold text-stone-200 mb-3">Completed</h3>
                       <div className="space-y-3">
                           {completedQuestDetails.map(quest => (
                             <QuestListItem 
@@ -224,14 +221,14 @@ const DailyDetailDialog: React.FC<DailyDetailDialogProps> = ({ date, onClose, sc
               )}
               
               {todoQuests.length === 0 && completedQuestDetails.length === 0 && pendingQuestDetails.length === 0 && (
-                  <p className="text-muted-foreground text-center py-8">No quests scheduled for this day.</p>
+                  <p className="text-stone-400 text-center py-8">No quests scheduled for this day.</p>
               )}
           </div>
-          <DialogFooter>
+          <div className="p-4 border-t border-stone-700/60 text-right">
               <Button variant="secondary" onClick={onClose}>Close</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          </div>
+        </div>
+      </div>
       {selectedQuestForDetail && currentUser && (
           <QuestDetailDialog 
             quest={selectedQuestForDetail} 

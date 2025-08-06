@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { useAppState } from '../../context/AppContext';
 import { useRewardValue } from '../../hooks/useRewardValue';
-import DynamicIcon from './dynamic-icon';
+import DynamicIcon from './DynamicIcon';
 
 const RewardDisplay: React.FC = () => {
   const { currentUser, rewardTypes, appMode } = useAppState();
@@ -51,7 +51,7 @@ const RewardDisplay: React.FC = () => {
   };
 
   return (
-    <div className="flex items-center gap-3 border-l-2 border-r-2 border-stone-700/60 px-4">
+    <div className="flex items-center gap-3">
         {balances.map(balance => (
           <BalanceItem key={balance.id} balance={balance} />
         ))}

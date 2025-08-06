@@ -1,9 +1,6 @@
 import React, { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
+import Button from '../ui/Button';
+import Input from '../ui/Input';
 
 interface UploadWithCategoryDialogProps {
     file: File;
@@ -26,52 +23,48 @@ const UploadWithCategoryDialog: React.FC<UploadWithCategoryDialogProps> = ({ fil
     };
 
     return (
-         <Dialog open={true} onOpenChange={onClose}>
-            <DialogContent className="sm:max-w-lg">
-                <DialogHeader>
-                    <DialogTitle>Upload New Image</DialogTitle>
-                </DialogHeader>
-                <form id="upload-category-form" onSubmit={handleSubmit} className="space-y-4 py-4">
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+            <div className="bg-stone-800 border border-stone-700 rounded-xl shadow-2xl p-8 max-w-lg w-full">
+                <h2 className="text-2xl font-medieval text-accent mb-4">Upload New Image</h2>
+                <form onSubmit={handleSubmit} className="space-y-4">
                     <div className="flex gap-4 items-center">
-                        <img src={filePreviewUrl} alt="File preview" className="w-24 h-24 object-contain rounded-md bg-background flex-shrink-0" />
+                        <img src={filePreviewUrl} alt="File preview" className="w-24 h-24 object-contain rounded-md bg-stone-700 flex-shrink-0" />
                         <div className="flex-grow space-y-2 overflow-hidden">
-                             <p className="text-sm text-foreground truncate" title={file.name}>{file.name}</p>
-                             <div className="space-y-2">
-                                <Label htmlFor="upload-category">Category</Label>
-                                <Select value={selectedCategory} onValueChange={setSelectedCategory} disabled={isUploading}>
-                                    <SelectTrigger id="upload-category">
-                                        <SelectValue placeholder="Select a category..." />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {existingCategories.sort().map(cat => <SelectItem key={cat} value={cat}>{cat}</SelectItem>)}
-                                        <SelectItem value="Other">Other (Create New)...</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            </div>
+                             <p className="text-sm text-stone-300 truncate" title={file.name}>{file.name}</p>
+                             <Input
+                                as="select"
+                                label="Category"
+                                value={selectedCategory}
+                                onChange={e => setSelectedCategory(e.target.value)}
+                                disabled={isUploading}
+                                autoFocus
+                            >
+                                <option value="" disabled>Select a category...</option>
+                                {existingCategories.sort().map(cat => <option key={cat} value={cat}>{cat}</option>)}
+                                <option value="Other">Other (Create New)...</option>
+                            </Input>
                             {selectedCategory === 'Other' && (
-                                <div className="space-y-2">
-                                    <Label htmlFor="new-category-name">New Category Name</Label>
-                                    <Input
-                                        id="new-category-name"
-                                        placeholder="e.g., Pets, Weapons"
-                                        value={customCategory}
-                                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setCustomCategory(e.target.value)}
-                                        disabled={isUploading}
-                                        required
-                                    />
-                                </div>
+                                <Input
+                                    label="New Category Name"
+                                    placeholder="e.g., Pets, Weapons"
+                                    value={customCategory}
+                                    onChange={e => setCustomCategory(e.target.value)}
+                                    disabled={isUploading}
+                                    required
+                                    className="mt-2"
+                                />
                             )}
                         </div>
                     </div>
+                    <div className="flex justify-end space-x-4 pt-4">
+                        <Button type="button" variant="secondary" onClick={onClose} disabled={isUploading}>Cancel</Button>
+                        <Button type="submit" disabled={isUploading || (selectedCategory === 'Other' && !customCategory.trim())}>
+                            {isUploading ? 'Uploading...' : 'Upload & Categorize'}
+                        </Button>
+                    </div>
                 </form>
-                <DialogFooter>
-                    <Button type="button" variant="secondary" onClick={onClose} disabled={isUploading}>Cancel</Button>
-                    <Button type="submit" form="upload-category-form" disabled={isUploading || !selectedCategory || (selectedCategory === 'Other' && !customCategory.trim())}>
-                        {isUploading ? 'Uploading...' : 'Upload & Categorize'}
-                    </Button>
-                </DialogFooter>
-            </DialogContent>
-        </Dialog>
+            </div>
+        </div>
     );
 };
 

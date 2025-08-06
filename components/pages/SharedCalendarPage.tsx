@@ -2,9 +2,9 @@ import React, { useState, useMemo } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { Quest, QuestType, QuestAvailability, User, AppMode } from '../../types';
 import { isQuestAvailableForUser, toYMD, isQuestScheduledForDay, questSorter } from '../../utils/quests';
-import { Card } from '@/components/ui/card';
-import Avatar from '../ui/avatar';
-import { Button } from '@/components/ui/button';
+import Card from '../ui/Card';
+import Avatar from '../ui/Avatar';
+import Button from '../ui/Button';
 import PinEntryDialog from '../auth/PinEntryDialog';
 import QuestDetailDialog from '../quests/QuestDetailDialog';
 import CompleteQuestDialog from '../quests/CompleteQuestDialog';
@@ -120,10 +120,10 @@ const SharedCalendarPage: React.FC = () => {
                     if (!user) return null;
                     const userQuests = questsByUser.get(user.id) || [];
                     return (
-                        <div key={user.id} className="flex-shrink-0 w-80 bg-card/50 rounded-lg flex flex-col">
-                            <div className="p-3 border-b border-border flex items-center gap-3 flex-shrink-0">
+                        <div key={user.id} className="flex-shrink-0 w-80 bg-stone-800/50 rounded-lg flex flex-col">
+                            <div className="p-3 border-b border-stone-700 flex items-center gap-3 flex-shrink-0">
                                 <Avatar user={user} className="w-10 h-10 rounded-full overflow-hidden" />
-                                <h3 className="font-bold text-lg text-foreground">{user.gameName}</h3>
+                                <h3 className="font-bold text-lg text-stone-100">{user.gameName}</h3>
                             </div>
                             <div className="p-3 space-y-2 overflow-y-auto scrollbar-hide flex-grow">
                                 {userQuests.length > 0 ? userQuests.map(({ quest }) => {
@@ -140,15 +140,15 @@ const SharedCalendarPage: React.FC = () => {
                                         <div className="flex items-center gap-3 overflow-hidden">
                                             {quest.icon && <span className="text-2xl">{quest.icon}</span>}
                                             <div className="overflow-hidden">
-                                                <p className="font-semibold text-foreground truncate" title={quest.title}>{quest.title}</p>
-                                                {dueDateString && <p className="text-xs text-muted-foreground mt-1">{dueDateString}</p>}
+                                                <p className="font-semibold text-stone-200 truncate" title={quest.title}>{quest.title}</p>
+                                                {dueDateString && <p className="text-xs text-stone-400 mt-1">{dueDateString}</p>}
                                             </div>
                                         </div>
                                     </button>
                                     )
                                 }) : (
                                     <div className="flex items-center justify-center h-full">
-                                        <p className="text-center text-muted-foreground text-sm p-4">No quests today!</p>
+                                        <p className="text-center text-stone-500 text-sm p-4">No quests today!</p>
                                     </div>
                                 )}
                             </div>

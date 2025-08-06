@@ -1,9 +1,8 @@
 import React from 'react';
 import { SystemNotification, SystemNotificationType, User } from '../../types';
-import { Button } from '@/components/ui/button';
+import Button from './Button';
 import { useAppDispatch } from '../../context/AppContext';
-import { XCircleIcon } from '@/components/ui/icons';
-import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card';
+import { XCircleIcon } from './Icons';
 
 // Icons for different notification types
 const getIconForType = (type: SystemNotificationType) => {
@@ -42,16 +41,16 @@ const LoginNotificationPopup: React.FC<LoginNotificationPopupProps> = ({ notific
 
     return (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-[100] p-4">
-            <Card className="relative max-w-2xl w-full max-h-[80vh] flex flex-col backdrop-blur-sm">
-                <CardHeader>
-                    <CardTitle className="text-xl font-display text-accent">Welcome Back, {user.gameName}!</CardTitle>
-                </CardHeader>
-                 <button onClick={handleDismiss} className="absolute top-4 right-4 text-muted-foreground hover:text-foreground">
-                    <XCircleIcon className="w-6 h-6" />
-                </button>
+            <div className="relative bg-stone-900/80 border border-stone-700/60 rounded-xl shadow-lg max-w-2xl w-full max-h-[80vh] flex flex-col backdrop-blur-sm">
+                <div className="px-6 py-4 border-b border-stone-700/60 flex items-center justify-between rounded-t-xl flex-shrink-0">
+                    <h3 className="text-xl font-medieval text-emerald-400">Welcome Back, {user.gameName}!</h3>
+                     <button onClick={handleDismiss} className="text-stone-400 hover:text-white">
+                        <XCircleIcon className="w-6 h-6" />
+                    </button>
+                </div>
 
-                <CardContent className="space-y-6 overflow-y-auto scrollbar-hide flex-grow">
-                    <p className="text-foreground text-center">Here's what you missed:</p>
+                <div className="p-6 space-y-6 overflow-y-auto scrollbar-hide flex-grow">
+                    <p className="text-stone-300 text-center">Here's what you missed:</p>
                     {Object.entries(groupedNotifications).map(([type, notifs]) => (
                         <div key={type}>
                             <h4 className="text-lg font-bold text-accent-light mb-2 flex items-center gap-2">
@@ -59,19 +58,19 @@ const LoginNotificationPopup: React.FC<LoginNotificationPopupProps> = ({ notific
                             </h4>
                             <ul className="space-y-2 list-disc list-inside pl-2">
                                 {notifs.map(n => (
-                                    <li key={n.id} className="text-foreground">
+                                    <li key={n.id} className="text-stone-200">
                                         {n.message}
-                                        <span className="text-xs text-muted-foreground ml-2">({new Date(n.timestamp).toLocaleString()})</span>
+                                        <span className="text-xs text-stone-500 ml-2">({new Date(n.timestamp).toLocaleString()})</span>
                                     </li>
                                 ))}
                             </ul>
                         </div>
                     ))}
-                </CardContent>
-                <CardFooter className="justify-center">
+                </div>
+                <div className="p-4 border-t border-stone-700/60 text-center flex-shrink-0">
                     <Button onClick={handleDismiss}>Got It, Let's Go!</Button>
-                </CardFooter>
-            </Card>
+                </div>
+            </div>
         </div>
     );
 };

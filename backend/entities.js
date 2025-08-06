@@ -1,5 +1,26 @@
 const { EntitySchema } = require("typeorm");
-const { User, Quest, QuestGroup, Market, RewardTypeDefinition, QuestCompletion, PurchaseRequest, Guild, Rank, Trophy, UserTrophy, AdminAdjustment, GameAsset, SystemLog, ThemeDefinition, ChatMessage, SystemNotification, ScheduledEvent, AppSettings, LoginHistory } = require("./types-placeholder"); // Placeholder for type hinting
+
+// Placeholder classes for TypeORM entity schemas. This removes the dependency on a non-existent file.
+class User {}
+class Quest {}
+class QuestGroup {}
+class Market {}
+class RewardTypeDefinition {}
+class QuestCompletion {}
+class PurchaseRequest {}
+class Guild {}
+class Rank {}
+class Trophy {}
+class UserTrophy {}
+class AdminAdjustment {}
+class GameAsset {}
+class SystemLog {}
+class ThemeDefinition {}
+class ChatMessage {}
+class SystemNotification {}
+class ScheduledEvent {}
+class AppSettings {}
+class LoginHistory {}
 
 const UserEntity = new EntitySchema({
     name: "User",
@@ -73,6 +94,8 @@ const QuestEntity = new EntitySchema({
         claimedByUserIds: { type: "simple-array" },
         dismissals: { type: "simple-json" },
         todoUserIds: { type: "simple-array", nullable: true },
+        guildId: { type: "varchar", nullable: true },
+        groupId: { type: "varchar", nullable: true },
     },
     relations: {
         assignedUsers: {
@@ -134,25 +157,14 @@ const PurchaseRequestEntity = new EntitySchema({
     target: PurchaseRequest,
     columns: {
         id: { primary: true, type: "varchar" },
+        userId: { type: "varchar" },
+        assetId: { type: "varchar" },
         requestedAt: { type: "varchar" },
         actedAt: { type: "varchar", nullable: true },
         status: { type: "varchar" },
         assetDetails: { type: "simple-json" },
         guildId: { type: "varchar", nullable: true },
-    },
-    relations: {
-        user: {
-            type: "many-to-one",
-            target: "User",
-            inverseSide: "purchaseRequests",
-            onDelete: "CASCADE",
-        },
-        asset: {
-            type: "many-to-one",
-            target: "GameAsset",
-            onDelete: "SET NULL",
-        },
-    },
+    }
 });
 
 const GuildEntity = new EntitySchema({
@@ -180,21 +192,11 @@ const UserTrophyEntity = new EntitySchema({
     target: UserTrophy,
     columns: {
         id: { primary: true, type: "varchar" },
+        userId: { type: "varchar" },
+        trophyId: { type: "varchar" },
         awardedAt: { type: "varchar" },
         guildId: { type: "varchar", nullable: true },
-    },
-    relations: {
-        user: {
-            type: "many-to-one",
-            target: "User",
-            onDelete: "CASCADE",
-        },
-        trophy: {
-            type: "many-to-one",
-            target: "Trophy",
-            onDelete: "CASCADE",
-        },
-    },
+    }
 });
 
 const AdminAdjustmentEntity = new EntitySchema({
@@ -202,31 +204,16 @@ const AdminAdjustmentEntity = new EntitySchema({
     target: AdminAdjustment,
     columns: {
         id: { primary: true, type: "varchar" },
+        userId: { type: "varchar" },
+        adjusterId: { type: "varchar" },
         type: { type: "varchar" },
         rewards: { type: "simple-json" },
         setbacks: { type: "simple-json" },
+        trophyId: { type: "varchar", nullable: true },
         reason: { type: "text" },
         adjustedAt: { type: "varchar" },
         guildId: { type: "varchar", nullable: true },
-    },
-    relations: {
-        user: {
-            type: "many-to-one",
-            target: "User",
-            onDelete: "CASCADE",
-        },
-        adjuster: {
-            type: "many-to-one",
-            target: "User",
-            onDelete: "SET NULL",
-        },
-        trophy: {
-            type: "many-to-one",
-            target: "Trophy",
-            onDelete: "SET NULL",
-            nullable: true,
-        },
-    },
+    }
 });
 
 const allEntities = [

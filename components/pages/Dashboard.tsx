@@ -9,7 +9,7 @@ import CompleteQuestDialog from '../quests/CompleteQuestDialog';
 import { useRewardValue } from '../../hooks/useRewardValue';
 
 const Dashboard: React.FC = () => {
-    const { currentUser, quests, rewardTypes, users, ranks, userTrophies, trophies, questCompletions, purchaseRequests, appMode, settings, scheduledEvents } from useAppState();
+    const { currentUser, quests, rewardTypes, users, ranks, userTrophies, trophies, questCompletions, purchaseRequests, appMode, settings, scheduledEvents } = useAppState();
     const { completeQuest, setActivePage, markQuestAsTodo, unmarkQuestAsTodo } = useAppDispatch();
     
     const [selectedQuest, setSelectedQuest] = useState<Quest | null>(null);

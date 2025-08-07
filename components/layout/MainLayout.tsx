@@ -28,7 +28,7 @@ import ThemesPage from '../pages/ThemesPage';
 import AboutPage from '../pages/AboutPage';
 import CollectionPage from '../pages/CollectionPage';
 import ManageItemsPage from '../pages/ManageItemsPage';
-import AIStudioPage from '../pages/AIStudioPage';
+import SuggestionEnginePage from '../pages/SuggestionEnginePage';
 import AppearancePage from '../pages/AppearancePage';
 import ObjectExporterPage from '../pages/management/ObjectExporterPage';
 import AssetManagerPage from '../pages/management/MediaManagerPage';
@@ -51,7 +51,7 @@ const MainLayout: React.FC = () => {
   
   const ADMIN_ONLY_PAGES: Page[] = [
     'Manage Users', 'Manage Rewards', 'Manage Quests', 'Manage Quest Groups', 'Manage Goods', 'Manage Markets',
-    'Manage Guilds', 'Manage Ranks', 'Manage Trophies', 'Settings', 'AI Studio',
+    'Manage Guilds', 'Manage Ranks', 'Manage Trophies', 'Settings', 'Suggestion Engine',
     'Appearance', 'Theme Editor', 'Object Exporter', 'Asset Manager', 'Backup & Import', 'Asset Library',
     'Manage Events',
   ];
@@ -126,7 +126,7 @@ const MainLayout: React.FC = () => {
       case 'Manage Ranks': return <ManageRanksPage />;
       case 'Manage Trophies': return <ManageTrophiesPage />;
       case 'Manage Events': return <ManageEventsPage />;
-      case 'AI Studio': return <AIStudioPage />;
+      case 'Suggestion Engine': return <SuggestionEnginePage />;
       case 'Approvals': return <ApprovalsPage />;
       case 'Settings': return <SettingsPage />;
       case 'Appearance': return <AppearancePage />;

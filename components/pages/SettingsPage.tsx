@@ -89,7 +89,7 @@ const terminologyLabels: { [key in keyof Terminology]: string } = {
   link_approvals: 'Sidebar: Approvals',
   link_manage_users: 'Sidebar: Manage Users',
   link_manage_guilds: 'Sidebar: Manage Guilds',
-  link_ai_studio: 'Sidebar: AI Studio',
+  link_suggestion_engine: 'Sidebar: Suggestion Engine',
   link_appearance: 'Sidebar: Appearance',
   link_object_exporter: 'Sidebar: Object Exporter',
   link_asset_manager: 'Sidebar: Asset Manager',
@@ -392,7 +392,7 @@ const SettingsPage: React.FC = () => {
                         />
                         <div className="ml-6 flex-grow">
                              <p className="text-sm" style={{ color: 'hsl(var(--color-text-secondary))' }}>
-                                Allow the use of Gemini AI to power features like the Quest Idea Generator.
+                                Allow the use of Gemini AI to power features like the Suggestion Engine.
                                 This requires a valid Gemini API key to be configured by the server administrator.
                             </p>
                              {apiKeyStatus === 'testing' && <p className="text-sm text-yellow-400 mt-2">Testing API key...</p>}

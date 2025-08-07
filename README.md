@@ -4,7 +4,7 @@
 
 ---
 
-Task Donegeon is a gamified task and chore management application designed for families, groups, or individuals. It turns everyday responsibilities into an engaging medieval-themed role-playing game. Users complete "quests" (tasks), earn virtual currency and experience points (XP), customize their avatars, and level up their characters in a fun and motivating environment. It leverages a powerful backend to persist all data and includes unique features like an **Asset Library** full of pre-made content and an **AI Studio** powered by Google Gemini to help administrators generate new quests and items, making world-building a breeze.
+Task Donegeon is a gamified task and chore management application designed for families, groups, or individuals. It turns everyday responsibilities into an engaging medieval-themed role-playing game. Users complete "quests" (tasks), earn virtual currency and experience points (XP), customize their avatars, and level up their characters in a fun and motivating environment. It leverages a powerful backend to persist all data and includes unique features like an **Asset Library** full of pre-made content and a **Suggestion Engine** powered by Google Gemini to help administrators generate new quests and items, making world-building a breeze.
 
 ## Table of Contents
 - [✨ Features](#-features)
@@ -23,7 +23,7 @@ Task Donegeon is a gamified task and chore management application designed for f
 
 ### Version History
 - **v0.0.96 (July 22, 2025):** Default Quest Groups, AI-powered group suggestions, streamlined quest creation.
-- **v0.0.95 (July 22, 2025):** Smarter AI Studio, powerful bulk editing for quests, enhanced collapsed sidebar with fly-out menus, and default quest categories.
+- **v0.0.95 (July 22, 2025):** Smarter Suggestion Engine, powerful bulk editing for quests, enhanced collapsed sidebar with fly-out menus, and default quest categories.
 - **v0.0.94 (July 26, 2025):** Added default quest categories and improved the collapsed sidebar with expandable menus.
 - **v0.0.93 (July 25, 2025):** Implemented a purchase escrow system, integrated purchase requests into the Chronicles, and improved the login notification popup with a scrollbar and close button.
 - **v0.0.92 (July 24, 2025):** Added in-dialog Quest Group creation and made item titles on management pages clickable for quick editing.
@@ -45,7 +45,7 @@ Task Donegeon is a gamified task and chore management application designed for f
 -   **Bulk Content Management:** Admins can now select multiple items on management pages to perform bulk actions like deleting or changing status.
 -   **AI Image Generation Helper:** The Asset Manager now includes an AI prompt helper with links to free AI art generators to streamline asset creation.
 -   **New Default Marketplaces:** Added a bank for currency exchange, an experience shop, and a candy store, complete with new items.
--   **AI Studio Enhancements:** The asset generator now distinguishes between creating "Duties" and "Ventures" and can generate up to 20 ideas at once.
+-   **Suggestion Engine Enhancements:** The asset generator now distinguishes between creating "Duties" and "Ventures" and can generate up to 20 ideas at once.
 -   **Expanded Trophy Collection:** Added over 30 new default trophies for users to earn.
 -   **Complete Theme Editor Overhaul:** Redesigned with a live preview, more fonts, and granular controls for colors and sizes.
 -   **Enhanced Calendar Views:** Day view now has two columns (Duties/Ventures), and Week/Month "Chronicles" views are fully functional.
@@ -55,7 +55,7 @@ Task Donegeon is a gamified task and chore management application designed for f
 -   **Numerous UI/UX Improvements:** Including a redesigned PIN pad, scrollable dashboard sections, improved quest board sorting, and more customization options like editable sidebar link names.
 -   **Market Controls:** Admins can now set markets to "Open" or "Closed" status, controlling their visibility in the Marketplace.
 -   **Data Synchronization:** Automatic data syncing keeps your application state consistent across all your devices.
--   **AI-Powered Content Generation:** The AI Studio, powered by Google Gemini, can generate ideas for quests, items, markets, trophies, and themes.
+-   **AI-Powered Content Generation:** The Suggestion Engine, powered by Google Gemini, can generate ideas for quests, items, markets, trophies, and themes.
 -   **Gamified Task Management:** Create recurring "Duties" and one-time "Ventures" with customizable rewards, deadlines, and penalties.
 -   **Avatar Customization:** Unlock and equip different cosmetic items, now correctly reflected in the header and throughout the app.
 -   **Full Backup, Restore, and Sharing:** Admins can download a complete backup, restore it, or create smaller "Blueprints" to share content with others.

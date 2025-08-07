@@ -23,7 +23,7 @@ const assetTypeConfig: { [key in AssetType]: { icon: string; description: string
 
 const ApiInstructions: React.FC = () => (
     <div className="prose prose-invert max-w-none text-stone-300 text-sm space-y-4">
-        <p>To use the AI Studio, a Google Gemini API key must be configured on the server. Get your key from the <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" className="text-accent hover:underline">Google AI Studio</a>.</p>
+        <p>To use the Suggestion Engine, a Google Gemini API key must be configured on the server. Get your key from the <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" className="text-accent hover:underline">Google AI Studio</a>.</p>
         <p>The server administrator needs to set the <code>API_KEY</code> environment variable:</p>
         <ul className="list-disc list-inside space-y-1">
             <li><strong>For Local/Docker Development:</strong> Add <code>API_KEY=your_api_key_here</code> to the <code>.env</code> file in the project's root directory.</li>
@@ -33,7 +33,7 @@ const ApiInstructions: React.FC = () => (
     </div>
 );
 
-const AIStudioPage: React.FC = () => {
+const SuggestionEnginePage: React.FC = () => {
     const { settings, isAiConfigured, rewardTypes, questGroups } = useAppState();
     const { addNotification } = useAppDispatch();
     const [apiStatus, setApiStatus] = useState<'unknown' | 'testing' | 'valid' | 'invalid'>(isAiConfigured ? 'valid' : 'unknown');
@@ -243,11 +243,11 @@ const AIStudioPage: React.FC = () => {
                             <Button variant="secondary" onClick={handleSaveContext} className="text-xs py-1 px-3">Save Context</Button>
                         </div>
                     </Card>
-                    <Card title="AI Studio Setup">
+                    <Card title="Suggestion Engine Setup">
                         {!isAiAvailable ? (
                             <div className="text-amber-300 bg-amber-900/40 p-4 rounded-md border border-amber-700/60">
                                 <p className="font-bold mb-2">AI Features Disabled</p>
-                                <p className="text-sm">The AI Studio is currently disabled in the main application settings. An administrator can enable it from the Settings page.</p>
+                                <p className="text-sm">The Suggestion Engine is currently disabled in the main application settings. An administrator can enable it from the Settings page.</p>
                             </div>
                         ) : (
                             <>
@@ -323,4 +323,4 @@ const AIStudioPage: React.FC = () => {
     );
 };
 
-export default AIStudioPage;
+export default SuggestionEnginePage;

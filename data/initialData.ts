@@ -134,7 +134,7 @@ export const INITIAL_MAIN_SIDEBAR_CONFIG: SidebarConfigItem[] = [
   { type: 'link', id: 'Object Exporter', emoji: '🗂️', isVisible: true, level: 1, role: Role.DonegeonMaster, termKey: 'link_object_exporter' },
   { type: 'link', id: 'Appearance', emoji: '🖌️', isVisible: true, level: 1, role: Role.DonegeonMaster, termKey: 'link_appearance' },
   { type: 'link', id: 'Asset Library', emoji: '📚', isVisible: true, level: 1, role: Role.DonegeonMaster, termKey: 'link_asset_library' },
-  { type: 'link', id: 'AI Studio', emoji: '✨', isVisible: true, level: 1, role: Role.DonegeonMaster, termKey: 'link_ai_studio' },
+  { type: 'link', id: 'Suggestion Engine', emoji: '✨', isVisible: true, level: 1, role: Role.DonegeonMaster, termKey: 'link_suggestion_engine' },
   
   { type: 'separator', id: 'sep-system-settings', level: 0, role: Role.DonegeonMaster, isVisible: true },
 
@@ -259,7 +259,7 @@ export const INITIAL_SETTINGS: AppSettings = {
       link_approvals: 'Approvals',
       link_manage_users: 'Manage Users',
       link_manage_guilds: 'Manage Guilds',
-      link_ai_studio: 'AI Studio',
+      link_suggestion_engine: 'Suggestion Engine',
       link_appearance: 'Appearance',
       link_object_exporter: 'Object Exporter',
       link_asset_manager: 'Asset Manager',

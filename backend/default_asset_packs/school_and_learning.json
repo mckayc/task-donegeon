@@ -1,0 +1,83 @@
+{
+  "manifest": {
+    "id": "com.taskdonegeon.schoolandlearning.v1",
+    "name": "School & Learning Pack",
+    "author": "Donegeon Team",
+    "version": "1.0.0",
+    "description": "A set of quests and items to encourage learning, reading, and homework completion.",
+    "emoji": "📚"
+  },
+  "assets": {
+    "quests": [
+      {
+        "id": "school-quest-1",
+        "title": "The Homework Gauntlet",
+        "description": "Complete all of today's homework assignments without being reminded.",
+        "type": "Duty",
+        "iconType": "emoji",
+        "icon": "✍️",
+        "tags": ["School", "Homework"],
+        "rewards": [{ "rewardTypeId": "core-wisdom", "amount": 25 }],
+        "isActive": true,
+        "isOptional": false,
+        "availabilityType": "Weekly",
+        "weeklyRecurrenceDays": [1, 2, 3, 4, 5],
+        "assignedUserIds": [],
+        "groupId": "qg-school",
+        "requiresApproval": true
+      },
+      {
+        "id": "school-quest-2",
+        "title": "Sage's Wisdom",
+        "description": "Read a book for 20 minutes.",
+        "type": "Duty",
+        "iconType": "emoji",
+        "icon": "📖",
+        "tags": ["School", "Reading"],
+        "rewards": [{ "rewardTypeId": "core-wisdom", "amount": 15 }],
+        "isActive": true,
+        "isOptional": true,
+        "availabilityType": "Daily",
+        "assignedUserIds": [],
+        "groupId": "qg-school",
+        "requiresApproval": false
+      },
+      {
+        "id": "school-quest-3",
+        "title": "Prepare for the Morrow",
+        "description": "Pack your backpack and lay out your clothes for the next school day.",
+        "type": "Duty",
+        "iconType": "emoji",
+        "icon": "🎒",
+        "tags": ["School", "Organization"],
+        "rewards": [{ "rewardTypeId": "core-diligence", "amount": 10 }],
+        "isActive": true,
+        "isOptional": false,
+        "availabilityType": "Weekly",
+        "weeklyRecurrenceDays": [0, 1, 2, 3, 4],
+        "assignedUserIds": [],
+        "groupId": "qg-school",
+        "requiresApproval": false
+      }
+    ],
+    "gameAssets": [
+      {
+        "id": "school-item-1",
+        "name": "Scroll of Extra Screen Time",
+        "description": "A magical scroll that grants an extra 30 minutes of screen time. Must be approved.",
+        "url": "/uploads/scrolls/scroll-blue.png",
+        "icon": "📜",
+        "category": "Real-World Reward",
+        "isForSale": true,
+        "costGroups": [[{ "rewardTypeId": "core-crystal", "amount": 50 }]],
+        "marketIds": ["market-experiences"],
+        "creatorId": "system",
+        "createdAt": "2025-01-01T00:00:00.000Z",
+        "purchaseLimit": null,
+        "purchaseLimitType": "Total",
+        "purchaseCount": 0,
+        "requiresApproval": true
+      }
+    ]
+  }
+}

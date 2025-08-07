@@ -23,14 +23,19 @@
 
       /* THEME VARIABLES */
       :root {
-        --font-h1: 'MedievalSharp', cursive;
-        --font-size-h1: 2.5rem;
-        --font-p: 'Roboto', sans-serif;
-        --font-size-p: 1rem;
-        --font-span: 'Roboto', sans-serif;
-        --font-size-span: 1rem;
+        /* FONT DEFAULTS */
+        --font-display: 'MedievalSharp', cursive;
+        --font-body: 'Roboto', sans-serif;
+        --font-label: 'IM Fell English SC', serif;
+        --font-size-h1: 2.75rem;
+        --font-size-h2: 2.25rem;
+        --font-size-h3: 1.75rem;
+        --font-size-body: 1rem;
+        --font-size-label: 1rem;
         --font-button: 'Roboto', sans-serif;
         --font-size-button: 1rem;
+        --font-span: 'Roboto', sans-serif; /* Retained for specific span styling if needed */
+        --font-size-span: 1rem;
         
         /* Original Theme Colors */
         --color-bg-primary-hsl: 224 71% 4%;    /* stone-950 */
@@ -65,22 +70,32 @@
       }
 
       body {
-        font-family: var(--font-p);
-        font-size: var(--font-size-p);
+        font-family: var(--font-body);
+        font-size: var(--font-size-body);
         background-color: hsl(var(--background));
         color: hsl(var(--foreground));
       }
-      body[data-theme] h1 {
-        font-family: var(--font-h1);
-        font-size: var(--font-size-h1);
+      
+      body[data-theme] h1, 
+      body[data-theme] h2, 
+      body[data-theme] h3 {
+        font-family: var(--font-display);
       }
+      body[data-theme] h1 { font-size: var(--font-size-h1); }
+      body[data-theme] h2 { font-size: var(--font-size-h2); }
+      body[data-theme] h3 { font-size: var(--font-size-h3); }
+
       body[data-theme] p {
-        font-family: var(--font-p);
-        font-size: var(--font-size-p);
+        font-family: var(--font-body);
+        font-size: var(--font-size-body);
       }
       body[data-theme] span {
         font-family: var(--font-span);
         font-size: var(--font-size-span);
+      }
+      body[data-theme] label {
+        font-family: var(--font-label);
+        font-size: var(--font-size-label);
       }
       body[data-theme] button {
          font-family: var(--font-button);

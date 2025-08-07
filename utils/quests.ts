@@ -63,14 +63,35 @@ export const isQuestVisibleToUserInMode = (
   if (!quest.isActive) return false;
 
   const currentGuildId = appMode.mode === 'guild' ? appMode.guildId : undefined;
-  if (quest.guildId !== currentGuildId) return false;
 
-  if (quest.assignedUserIds.length > 0 && !quest.assignedUserIds.includes(userId)) {
-    return false;
+  // Case 1: Guild Quest (must be in correct guild mode)
+  if (quest.guildId) {
+    if (quest.guildId !== currentGuildId) {
+      return false; // Not in the right guild view
+    }
+    // It's a matching guild quest, check assignment
+    if (quest.assignedUserIds.length > 0 && !quest.assignedUserIds.includes(userId)) {
+      return false; // Assigned to others in the guild
+    }
+    return true; // It's for this guild and either unassigned or assigned to the user
+  } 
+  
+  // Case 2: Personal Quest (no guildId)
+  else {
+    // If it's a personal quest specifically assigned to the user, show it always, regardless of mode.
+    if (quest.assignedUserIds.length > 0 && quest.assignedUserIds.includes(userId)) {
+      return true;
+    }
+    
+    // If it's a generic personal quest (unassigned), only show it in personal mode.
+    if (quest.assignedUserIds.length === 0 && appMode.mode === 'personal') {
+      return true;
+    }
   }
 
-  return true;
+  return false;
 };
+
 
 /**
  * Checks if a quest is currently available for completion based on its recurrence rules

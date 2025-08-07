@@ -540,15 +540,16 @@ export interface AssetPack {
 }
 
 export interface AssetPackSummary {
-    quests: { title: string; icon: string }[];
-    gameAssets: { name: string; icon?: string }[];
-    trophies: { name: string; icon: string }[];
-    users: { gameName: string; role: Role }[];
-    markets: { title: string; icon: string }[];
+    quests: { title: string; icon: string; description: string; emoji?: string; }[];
+    gameAssets: { name: string; icon?: string; description: string; emoji?: string; }[];
+    trophies: { name: string; icon: string; description: string; emoji?: string; }[];
+    users: { gameName: string; role: Role; }[];
+    markets: { title: string; icon: string; description: string; emoji?: string; }[];
     ranks: { name: string; icon: string }[];
-    rewardTypes: { name: string; icon: string }[];
-    questGroups: { name: string; icon: string }[];
+    rewardTypes: { name: string; icon: string; description: string; emoji?: string; }[];
+    questGroups: { name: string; icon: string; description: string; emoji?: string; }[];
 }
+
 
 export interface AssetPackManifestInfo {
   manifest: AssetPackManifest;
@@ -569,8 +570,12 @@ export interface ImportResolution {
 export interface ThemeStyle {
   '--font-display': string;
   '--font-body': string;
-  '--font-size-display': string;
+  '--font-label': string;
+  '--font-size-h1': string;
+  '--font-size-h2': string;
+  '--font-size-h3': string;
   '--font-size-body': string;
+  '--font-size-label': string;
   '--color-bg-primary': string;
   '--color-bg-secondary': string;
   '--color-bg-tertiary': string;

@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useAppState } from '../../context/AppContext';
-import { AssetPack, ImportResolution, ShareableAssetType, Terminology, Role } from '../../types';
+import { AssetPack, ImportResolution, ShareableAssetType, Terminology, Role, UserTemplate, Quest } from '../../types';
 import Button from '../ui/Button';
 import Input from '../ui/Input';
 import UserMultiSelect from '../ui/UserMultiSelect';
@@ -81,31 +81,50 @@ const AssetPackInstallDialog: React.FC<AssetPackInstallDialogProps> = ({ assetPa
                             <div key={category}>
                                 <h4 className="font-semibold text-accent-light capitalize">{category}</h4>
                                 <div className="mt-2 space-y-2 max-h-40 overflow-y-auto pr-2 border-l-2 border-stone-700/60 pl-2">
-                                    {items.map(res => (
-                                        <div key={`${res.type}-${res.id}`} className={`p-2 rounded-md ${res.status === 'conflict' ? 'bg-amber-900/30' : 'bg-stone-900/50'}`}>
-                                            <label className="flex items-center gap-3 cursor-pointer">
-                                                <input
-                                                    type="checkbox"
-                                                    checked={res.selected}
-                                                    onChange={() => handleToggleSelection(res.id, res.type)}
-                                                    className="h-4 w-4 rounded text-emerald-600 bg-stone-700 border-stone-500 focus:ring-emerald-500"
-                                                />
-                                                <span className="text-stone-300">{res.name}</span>
-                                                {res.status === 'conflict' && <span className="text-xs font-bold text-amber-400">(Conflict)</span>}
-                                            </label>
-                                            {res.status === 'conflict' && res.selected && (
-                                                <div className="pl-7 mt-2 space-y-2">
-                                                     <div className="flex items-center gap-4">
-                                                        <label className="flex items-center text-sm"><input type="radio" name={`${res.type}-${res.id}`} checked={res.resolution === 'skip'} onChange={() => handleResolutionChange(res.id, res.type, 'skip')} /> <span className="ml-2">Skip</span></label>
-                                                        <label className="flex items-center text-sm"><input type="radio" name={`${res.type}-${res.id}`} checked={res.resolution === 'rename'} onChange={() => handleResolutionChange(res.id, res.type, 'rename')} /> <span className="ml-2">Rename</span></label>
+                                    {items.map(res => {
+                                        const asset = (() => {
+                                            if (!assetPack.assets || !res.type) return null;
+                                            const assetList = (assetPack.assets as any)[res.type];
+                                            if (!assetList) return null;
+                                            if (res.type === 'users') {
+                                                return assetList.find((u: any) => u.username === res.id);
+                                            }
+                                            return assetList.find((a: any) => a.id === res.id);
+                                        })();
+
+                                        const icon = asset?.icon || (res.type === 'users' ? '👤' : '▫️');
+                                        const description = asset?.description || (res.type === 'users' ? `Role: ${(asset as any)?.role}` : 'No description provided.');
+                                        
+                                        return (
+                                            <div key={`${res.type}-${res.id}`} className={`p-2 rounded-md ${res.status === 'conflict' ? 'bg-amber-900/30' : 'bg-stone-900/50'}`}>
+                                                <label className="flex items-start gap-3 cursor-pointer">
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={res.selected}
+                                                        onChange={() => handleToggleSelection(res.id, res.type)}
+                                                        className="h-4 w-4 rounded text-emerald-600 bg-stone-700 border-stone-500 focus:ring-emerald-500 mt-1 flex-shrink-0"
+                                                    />
+                                                    <span className="text-2xl flex-shrink-0">{icon}</span>
+                                                    <div className="flex-grow">
+                                                        <span className="text-stone-300">{res.name}</span>
+                                                        {res.status === 'conflict' && <span className="text-xs font-bold text-amber-400 ml-2">(Conflict)</span>}
+                                                        <p className="text-xs text-stone-400">{description}</p>
                                                     </div>
-                                                    {res.resolution === 'rename' && (
-                                                        <Input value={res.newName || `${res.name} (Imported)`} onChange={e => handleRenameChange(res.id, res.type, e.target.value)} className="text-sm h-8" />
-                                                    )}
-                                                </div>
-                                            )}
-                                        </div>
-                                    ))}
+                                                </label>
+                                                {res.status === 'conflict' && res.selected && (
+                                                    <div className="pl-12 mt-2 space-y-2">
+                                                        <div className="flex items-center gap-4">
+                                                            <label className="flex items-center text-sm"><input type="radio" name={`${res.type}-${res.id}`} checked={res.resolution === 'skip'} onChange={() => handleResolutionChange(res.id, res.type, 'skip')} /> <span className="ml-2">Skip</span></label>
+                                                            <label className="flex items-center text-sm"><input type="radio" name={`${res.type}-${res.id}`} checked={res.resolution === 'rename'} onChange={() => handleResolutionChange(res.id, res.type, 'rename')} /> <span className="ml-2">Rename</span></label>
+                                                        </div>
+                                                        {res.resolution === 'rename' && (
+                                                            <Input value={res.newName || `${res.name} (Imported)`} onChange={e => handleRenameChange(res.id, res.type, e.target.value)} className="text-sm h-8" />
+                                                        )}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        )
+                                    })}
                                 </div>
                             </div>
                         ))}

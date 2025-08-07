@@ -1,0 +1,77 @@
+{
+  "manifest": {
+    "id": "com.taskdonegeon.scifistarter.v1",
+    "name": "Sci-Fi Starter Pack",
+    "author": "Donegeon Team",
+    "version": "1.0.0",
+    "description": "Futuristic items and a high-tech market for your sci-fi adventurers.",
+    "emoji": "🚀"
+  },
+  "assets": {
+    "markets": [
+      {
+        "id": "scifi-market-1",
+        "title": "Starship Cantina",
+        "description": "A place to trade for futuristic gear, energy cells, and ship parts.",
+        "iconType": "emoji",
+        "icon": "🤖",
+        "status": { "type": "open" }
+      }
+    ],
+    "gameAssets": [
+      {
+        "id": "scifi-ga-1",
+        "name": "Plasma Pistol (Toy)",
+        "description": "A sleek, non-functional prop of a plasma pistol. Looks great on a shelf.",
+        "url": "/uploads/scifi/plasma-pistol.png",
+        "icon": "🔫",
+        "category": "Toy",
+        "isForSale": true,
+        "costGroups": [[{ "rewardTypeId": "core-gold", "amount": 50 }]],
+        "marketIds": ["scifi-market-1"],
+        "creatorId": "system",
+        "createdAt": "2025-01-01T00:00:00.000Z",
+        "purchaseLimit": 1,
+        "purchaseLimitType": "PerUser",
+        "purchaseCount": 0,
+        "requiresApproval": false
+      },
+      {
+        "id": "scifi-ga-2",
+        "name": "Energy Cell",
+        "description": "A glowing blue power source. Can be exchanged for screen time.",
+        "url": "/uploads/scifi/energy-cell.png",
+        "icon": "🔋",
+        "category": "Consumable",
+        "isForSale": true,
+        "costGroups": [[{ "rewardTypeId": "core-gold", "amount": 5 }]],
+        "payouts": [{ "rewardTypeId": "core-crystal", "amount": 20 }],
+        "marketIds": ["scifi-market-1"],
+        "creatorId": "system",
+        "createdAt": "2025-01-01T00:00:00.000Z",
+        "purchaseLimit": null,
+        "purchaseLimitType": "Total",
+        "purchaseCount": 0,
+        "requiresApproval": false
+      },
+      {
+        "id": "scifi-ga-3",
+        "name": "Holographic Visor",
+        "description": "A cool cosmetic visor for your avatar.",
+        "url": "/uploads/avatar-hats/visor-holo.png",
+        "icon": "🕶️",
+        "category": "Avatar",
+        "avatarSlot": "hat",
+        "isForSale": true,
+        "costGroups": [[{ "rewardTypeId": "core-gems", "amount": 15 }]],
+        "marketIds": ["scifi-market-1"],
+        "creatorId": "system",
+        "createdAt": "2025-01-01T00:00:00.000Z",
+        "purchaseLimit": 1,
+        "purchaseLimitType": "PerUser",
+        "purchaseCount": 0,
+        "requiresApproval": false
+      }
+    ]
+  }
+}

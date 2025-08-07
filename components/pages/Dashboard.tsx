@@ -228,7 +228,7 @@ const Dashboard: React.FC = () => {
                             <p className="text-2xl font-bold text-accent-light">{rankData.currentRank.name}</p>
                             <p className="text-stone-400">Level {rankData.currentLevel}</p>
                             <div className="w-full bg-stone-700 rounded-full h-4 mt-4 overflow-hidden">
-                                <div className="h-4 rounded-full btn-primary" style={{width: `${rankData.progressPercentage}%`}}></div>
+                                <div className="h-4 rounded-full bg-primary" style={{width: `${rankData.progressPercentage}%`}}></div>
                             </div>
                             <p className="text-sm text-stone-300 mt-2">{rankData.totalXp} / {rankData.nextRank ? rankData.nextRank.xpThreshold : rankData.totalXp} {terminology.xp}</p>
                         </div>

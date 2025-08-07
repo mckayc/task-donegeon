@@ -21,7 +21,7 @@ type CalendarMode = 'quests' | 'chronicles';
 const ViewButton: React.FC<{ type: CalendarView, currentView: CalendarView, setView: (view: CalendarView) => void, children: React.ReactNode }> = ({ type, currentView, setView, children }) => (
     <button
         onClick={() => setView(type)}
-        className={`px-3 py-1 rounded-md font-semibold text-sm transition-colors ${currentView === type ? 'btn-primary' : 'text-stone-300 hover:bg-stone-700'}`}
+        className={`px-3 py-1 rounded-md font-semibold text-sm transition-colors ${currentView === type ? 'bg-primary text-primary-foreground' : 'text-stone-300 hover:bg-stone-700'}`}
     >
         {children}
     </button>
@@ -112,8 +112,8 @@ const CalendarPage: React.FC = () => {
                             <Button size="sm" onClick={() => setActivePage('Manage Events')}>Events</Button>
                         )}
                         <div className="flex space-x-2 p-1 bg-stone-900/50 rounded-lg">
-                            <button onClick={() => setMode('quests')} className={`px-3 py-1 rounded-md font-semibold text-sm transition-colors ${mode === 'quests' ? 'btn-primary' : 'text-stone-300 hover:bg-stone-700'}`}>Quests</button>
-                            <button onClick={() => setMode('chronicles')} className={`px-3 py-1 rounded-md font-semibold text-sm transition-colors ${mode === 'chronicles' ? 'btn-primary' : 'text-stone-300 hover:bg-stone-700'}`}>Chronicles</button>
+                            <button onClick={() => setMode('quests')} className={`px-3 py-1 rounded-md font-semibold text-sm transition-colors ${mode === 'quests' ? 'bg-primary text-primary-foreground' : 'text-stone-300 hover:bg-stone-700'}`}>Quests</button>
+                            <button onClick={() => setMode('chronicles')} className={`px-3 py-1 rounded-md font-semibold text-sm transition-colors ${mode === 'chronicles' ? 'bg-primary text-primary-foreground' : 'text-stone-300 hover:bg-stone-700'}`}>Chronicles</button>
                         </div>
                         <div className="flex space-x-2 p-1 bg-stone-900/50 rounded-lg">
                             <ViewButton type="day" currentView={view} setView={setView}>Day</ViewButton>

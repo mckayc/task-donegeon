@@ -31,6 +31,7 @@ const BugReportEntity = new EntitySchema({
         title: { type: "varchar" },
         createdAt: { type: "varchar" },
         status: { type: "varchar" },
+        tags: { type: "simple-array" },
         logs: { type: "simple-json" },
     }
 });

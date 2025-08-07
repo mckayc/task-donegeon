@@ -197,7 +197,7 @@ const QuestItem: React.FC<{ quest: Quest; now: Date; onSelect: (quest: Quest) =>
 const FilterButton: React.FC<{ type: 'all' | QuestType, children: React.ReactNode, activeFilter: 'all' | QuestType, setFilter: (filter: 'all' | QuestType) => void }> = ({ type, children, activeFilter, setFilter }) => (
     <button
         onClick={() => setFilter(type)}
-        className={`w-full p-2 rounded-md font-semibold text-sm transition-colors ${activeFilter === type ? 'btn-primary' : 'text-stone-300 hover:bg-stone-700'}`}
+        className={`w-full p-2 rounded-md font-semibold text-sm transition-colors ${activeFilter === type ? 'bg-primary text-primary-foreground' : 'text-stone-300 hover:bg-stone-700'}`}
     >
         {children}
     </button>

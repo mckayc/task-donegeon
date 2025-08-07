@@ -99,13 +99,13 @@ const ChroniclesPage: React.FC = () => {
                     <div className="flex space-x-2 p-1 bg-stone-900/50 rounded-lg">
                         <button
                             onClick={() => setViewMode('all')}
-                            className={`px-3 py-1 rounded-md font-semibold text-sm transition-colors ${viewMode === 'all' ? 'btn-primary' : 'text-stone-300 hover:bg-stone-700'}`}
+                            className={`px-3 py-1 rounded-md font-semibold text-sm transition-colors ${viewMode === 'all' ? 'bg-primary text-primary-foreground' : 'text-stone-300 hover:bg-stone-700'}`}
                         >
                             All Activity
                         </button>
                         <button
                             onClick={() => setViewMode('personal')}
-                            className={`px-3 py-1 rounded-md font-semibold text-sm transition-colors ${viewMode === 'personal' ? 'btn-primary' : 'text-stone-300 hover:bg-stone-700'}`}
+                            className={`px-3 py-1 rounded-md font-semibold text-sm transition-colors ${viewMode === 'personal' ? 'bg-primary text-primary-foreground' : 'text-stone-300 hover:bg-stone-700'}`}
                         >
                             My Activity
                         </button>

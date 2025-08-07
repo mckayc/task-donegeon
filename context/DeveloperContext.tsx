@@ -88,7 +88,7 @@ export const DeveloperProvider: React.FC<{ children: ReactNode }> = ({ children 
   const handleElementHighlight = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
       if (!isPickingElement) return;
       const target = e.target as HTMLElement;
-      target.style.outline = '2px solid #3b82f6';
+      target.style.outline = '3px dashed red';
       target.style.outlineOffset = '2px';
   }, [isPickingElement]);
 

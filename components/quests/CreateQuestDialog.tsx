@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
-import { Quest, QuestType, RewardItem, RewardCategory, QuestAvailability, BugReport } from '../../types';
+import { Quest, QuestType, RewardItem, RewardCategory, QuestAvailability, BugReport, Role } from '../../types';
 import Button from '../ui/Button';
 import Input from '../ui/Input';
 import ToggleSwitch from '../ui/ToggleSwitch';
@@ -64,6 +64,46 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
           hasDeadlines: !!(questToEdit.lateDateTime || questToEdit.incompleteDateTime || questToEdit.lateTime || questToEdit.incompleteTime),
         };
       }
+      
+      const admins = users.filter(u => u.role === Role.DonegeonMaster);
+
+      if (initialDataFromBug) {
+        const formattedLogs = initialDataFromBug.logs.map(log => 
+          `[${new Date(log.timestamp).toLocaleString()}] [${log.type}] ${log.message}` +
+          (log.element ? `\n  Element: <${log.element.tag} id="${log.element.id || ''}" class="${log.element.classes || ''}">` : '')
+        ).join('\n');
+
+        const description = `From bug report #${initialDataFromBug.id.substring(0, 8)}: ${initialDataFromBug.title}\n\n--- BUG LOG ---\n${formattedLogs}`;
+        
+        return {
+          title: `Fix Bug: ${initialDataFromBug.title}`,
+          description,
+          type: QuestType.Venture,
+          iconType: 'emoji' as 'emoji' | 'image',
+          icon: '🐞',
+          imageUrl: '',
+          rewards: [{ rewardTypeId: 'core-diligence', amount: 50 }], // Default reward
+          lateSetbacks: [] as RewardItem[],
+          incompleteSetbacks: [] as RewardItem[],
+          isActive: true,
+          requiresApproval: true,
+          isOptional: false,
+          availabilityType: QuestAvailability.Unlimited,
+          availabilityCount: 1,
+          weeklyRecurrenceDays: [] as number[],
+          monthlyRecurrenceDays: [] as number[],
+          assignedUserIds: admins.map(a => a.id), // Assign to all admins by default
+          guildId: '',
+          groupId: '',
+          tags: ['bugfix', 'development'],
+          lateDateTime: '',
+          incompleteDateTime: '',
+          lateTime: '',
+          incompleteTime: '',
+          hasDeadlines: false,
+        };
+      }
+
 
       // Map AI suggested rewards to actual reward items
       const suggestedRewardItems: RewardItem[] = initialData?.suggestedRewards
@@ -83,11 +123,11 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
 
       // New quest or AI creation
       return {
-        title: initialDataFromBug?.title || initialData?.title || '',
-        description: initialDataFromBug ? `Fix bug report #${initialDataFromBug.id}. See logs for details.` : initialData?.description || '',
-        type: initialDataFromBug ? QuestType.Venture : initialData?.type || QuestType.Duty,
+        title: initialData?.title || '',
+        description: initialData?.description || '',
+        type: initialData?.type || QuestType.Duty,
         iconType: 'emoji' as 'emoji' | 'image',
-        icon: initialDataFromBug ? '🐞' : initialData?.icon || '📝',
+        icon: initialData?.icon || '📝',
         imageUrl: '',
         rewards: suggestedRewardItems,
         lateSetbacks: [] as RewardItem[],
@@ -102,7 +142,7 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
         assignedUserIds: users.map(u => u.id),
         guildId: '',
         groupId: suggestedGroupId,
-        tags: initialDataFromBug ? ['bugfix', 'development'] : initialData?.tags || [],
+        tags: initialData?.tags || [],
         lateDateTime: '',
         incompleteDateTime: '',
         lateTime: '',
@@ -118,6 +158,8 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
   const [isCreatingNewGroup, setIsCreatingNewGroup] = useState(initialData?.isNewGroup && !!initialData.groupName);
   const [newGroupName, setNewGroupName] = useState(initialData?.isNewGroup ? initialData.groupName || '' : '');
   
+  const userList = initialDataFromBug ? users.filter(u => u.role === Role.DonegeonMaster) : users;
+
   useEffect(() => {
     // This effect ensures the form updates when a new AI suggestion is passed in
     setFormData(getInitialFormData());
@@ -159,7 +201,7 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
   };
   
   const handleAssignAll = () => {
-    setFormData(prev => ({ ...prev, assignedUserIds: users.map(u => u.id) }));
+    setFormData(prev => ({ ...prev, assignedUserIds: userList.map(u => u.id) }));
   };
 
   const handleUnassignAll = () => {
@@ -250,7 +292,7 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
       }
   };
 
-  const dialogTitle = mode === 'edit' ? `Edit ${settings.terminology.task}` : `Create New ${settings.terminology.task}`;
+  const dialogTitle = initialDataFromBug ? 'Convert Bug to Quest' : (mode === 'edit' ? `Edit ${settings.terminology.task}` : `Create New ${settings.terminology.task}`);
   const currentAvailabilityOptions = formData.type === QuestType.Duty ? DUTY_AVAILABILITIES : VENTURE_AVAILABILITIES;
 
   return (
@@ -309,7 +351,7 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
           )}
           <div>
             <label htmlFor="description" className="block text-sm font-medium text-stone-300 mb-1">Description</label>
-            <textarea id="description" name="description" rows={3} value={formData.description} onChange={(e) => setFormData(p => ({...p, description: e.target.value}))} className="w-full px-4 py-2 bg-stone-700 border border-stone-600 rounded-md"/>
+            <textarea id="description" name="description" rows={initialDataFromBug ? 8 : 3} value={formData.description} onChange={(e) => setFormData(p => ({...p, description: e.target.value}))} className="w-full px-4 py-2 bg-stone-700 border border-stone-600 rounded-md font-mono text-xs"/>
           </div>
            <div>
             <label className="block text-sm font-medium text-stone-300 mb-1">Tags</label>
@@ -350,7 +392,7 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
 
           <div>
             <label htmlFor="type" className="block text-sm font-medium text-stone-300 mb-1">{settings.terminology.task} Type</label>
-            <select id="type" name="type" value={formData.type} onChange={(e) => setFormData(p => ({...p, type: e.target.value as QuestType}))} className="w-full px-4 py-2 bg-stone-700 border border-stone-600 rounded-md">
+            <select id="type" name="type" value={formData.type} onChange={(e) => setFormData(p => ({...p, type: e.target.value as QuestType}))} className="w-full px-4 py-2 bg-stone-700 border border-stone-600 rounded-md" disabled={!!initialDataFromBug}>
               <option value={QuestType.Duty}>{settings.terminology.recurringTask} (Recurring Task)</option>
               <option value={QuestType.Venture}>{settings.terminology.singleTask} (One-time Chore)</option>
             </select>
@@ -419,14 +461,14 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
           <div className="p-4 bg-stone-900/50 rounded-lg space-y-4">
             <div>
               <h3 className="font-semibold text-stone-200 mb-2">Individual User Assignment</h3>
-              <p className="text-sm text-stone-400 mb-3">Select the users who will be assigned this quest. Note: Assigning a Quest Group will override this.</p>
+              <p className="text-sm text-stone-400 mb-3">{initialDataFromBug ? `This quest can only be assigned to ${settings.terminology.admin}s.` : `Select the users who will be assigned this quest. Note: Assigning a Quest Group will override this.`}</p>
               <div className="flex justify-end gap-2 mb-2">
                 <Button type="button" variant="secondary" size="sm" onClick={handleAssignAll}>Assign All</Button>
                 <Button type="button" variant="secondary" size="sm" onClick={handleUnassignAll}>Unassign All</Button>
               </div>
               <fieldset className="disabled:opacity-50">
                 <div className="space-y-2 max-h-40 overflow-y-auto border border-stone-700 p-2 rounded-md">
-                    {users.map(user => (
+                    {userList.map(user => (
                         <div key={user.id} className="flex items-center">
                             <input type="checkbox" id={`user-${user.id}`} name={`user-${user.id}`} checked={formData.assignedUserIds.includes(user.id)} onChange={() => handleUserAssignmentChange(user.id)} className="h-4 w-4 text-emerald-600 bg-stone-700 border-stone-500 rounded focus:ring-emerald-500" />
                             <label htmlFor={`user-${user.id}`} className="ml-3 text-stone-300">{user.gameName} ({user.role})</label>

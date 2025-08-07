@@ -626,10 +626,11 @@ export interface ChatMessage {
 
 export enum BugReportStatus {
   New = 'New',
-  Investigating = 'Investigating',
-  Fixed = 'Fixed',
-  WontFix = 'WontFix',
-  Archived = 'Archived',
+  Acknowledged = 'Acknowledged',
+  InProgress = 'In Progress',
+  ConvertedToQuest = 'Converted to Quest',
+  Resolved = 'Resolved',
+  Closed = 'Closed',
 }
 
 export interface BugReportLogEntry {

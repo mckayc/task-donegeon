@@ -147,6 +147,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       if (!dataToSet) return;
 
       const savedSettings: Partial<AppSettings> = dataToSet.settings || {};
+      let settingsUpdated = false;
 
       // --- Sidebar Migration Logic ---
       const savedSidebarConfig = savedSettings.sidebars?.main || [];
@@ -155,7 +156,12 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       const savedIds = new Set(savedSidebarConfig.map(item => item.id));
       const missingItems = defaultSidebarConfig.filter(item => !savedIds.has(item.id));
       
-      const finalSidebarConfig = [...savedSidebarConfig, ...missingItems];
+      let finalSidebarConfig = savedSidebarConfig;
+      if (missingItems.length > 0) {
+          finalSidebarConfig = [...savedSidebarConfig, ...missingItems];
+          settingsUpdated = true;
+          console.log(`Migrating sidebar: Added ${missingItems.length} new items.`);
+      }
       // --- End Sidebar Migration Logic ---
 
       const loadedSettings: AppSettings = {
@@ -197,6 +203,12 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       setScheduledEvents(dataToSet.scheduledEvents || []);
       setBugReports(dataToSet.bugReports || []);
 
+      // If migration happened, save it back to the server
+      if (settingsUpdated) {
+          await apiRequest('PUT', '/api/settings', loadedSettings);
+          addNotification({ type: 'info', message: 'Application settings updated with new features.' });
+      }
+
       const lastUserId = localStorage.getItem('lastUserId');
       if (lastUserId && dataToSet.users) {
         const lastUser = dataToSet.users.find((u:User) => u.id === lastUserId);
@@ -207,7 +219,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     } catch (error) {
       console.error("Could not load data from server.", error);
     }
-  }, [apiRequest, authDispatch, economyDispatch]);
+  }, [apiRequest, authDispatch, economyDispatch, addNotification]);
 
   useEffect(() => {
     const initializeApp = async () => {

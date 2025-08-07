@@ -10,6 +10,7 @@ const BugReporter: React.FC = () => {
     const [note, setNote] = useState('');
     const [isLogVisible, setIsLogVisible] = useState(false);
     const [isMinimized, setIsMinimized] = useState(false);
+    const [isInitialBarMinimized, setIsInitialBarMinimized] = useState(false);
     const logContainerRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
@@ -127,6 +128,17 @@ const BugReporter: React.FC = () => {
         );
     }
 
+    if (isInitialBarMinimized) {
+        return (
+             <div data-bug-reporter-ignore className="fixed bottom-4 right-4 bg-stone-900/90 border-2 border-stone-700 shadow-2xl z-[99] backdrop-blur-sm rounded-full flex items-center gap-3 p-2 transition-all duration-300">
+                <span className="font-bold text-white text-lg pl-2" title="Report a Bug">🐞</span>
+                <Button variant="ghost" size="icon" onClick={() => setIsInitialBarMinimized(false)} className="h-8 w-8 !rounded-full !bg-white/10 hover:!bg-white/20">
+                    <ChevronUpIcon className="w-5 h-5 text-white" />
+                </Button>
+            </div>
+        )
+    }
+
     return (
         <div data-bug-reporter-ignore className="fixed bottom-0 left-1/2 -translate-x-1/2 mb-4 bg-stone-900/80 border border-stone-700/60 shadow-2xl p-3 rounded-full flex items-center gap-2 z-[99] backdrop-blur-sm">
             <span className="font-bold text-stone-300 ml-2">🐞 Report a Bug:</span>
@@ -138,6 +150,9 @@ const BugReporter: React.FC = () => {
             />
             <Button onClick={handleStart} disabled={!title.trim()} className="h-10">
                 Start Recording
+            </Button>
+            <Button variant="ghost" size="icon" onClick={() => setIsInitialBarMinimized(true)} className="h-10 w-10 !rounded-full !bg-white/10 hover:!bg-white/20">
+                <ChevronDownIcon className="w-6 h-6 text-white" />
             </Button>
         </div>
     );

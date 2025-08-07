@@ -625,7 +625,7 @@ export interface ChatMessage {
   isAnnouncement?: boolean;
 }
 
-export type BugReportStatus = 'Open' | 'Closed';
+export type BugReportStatus = 'Open' | 'In Progress' | 'Resolved' | 'Closed';
 
 export interface BugReportLogEntry {
   timestamp: string;

@@ -1,5 +1,4 @@
 
-
 import React, { useState, useMemo, useEffect } from 'react';
 import Button from '../../ui/Button';
 import Card from '../../ui/Card';
@@ -10,7 +9,7 @@ import { analyzeAssetPackForConflicts } from '../../../utils/sharing';
 import AssetPackInstallDialog from '../../sharing/AssetPackInstallDialog';
 import { useNotificationsDispatch } from '../../../context/NotificationsContext';
 import { useAuthState } from '../../../context/AuthContext';
-import { useEconomyState, useEconomyDispatch } from '../../context/EconomyContext';
+import { useEconomyState, useEconomyDispatch } from '../../../context/EconomyContext';
 
 const AssetLibraryPage: React.FC = () => {
     const appState = useAppState();

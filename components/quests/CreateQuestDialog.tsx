@@ -30,34 +30,33 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
   const { addQuest, updateQuest, addQuestGroup } = useAppDispatch();
 
   const getInitialFormData = useCallback(() => {
-      const data = questToEdit || initialData;
-      if (mode !== 'create' && data) {
+      if (mode === 'edit' && questToEdit) {
         return {
-          title: data.title,
-          description: data.description,
-          type: data.type,
-          iconType: data.iconType || 'emoji',
-          icon: data.icon || '📝',
-          imageUrl: data.imageUrl || '',
-          rewards: [...(data.rewards || [])],
-          lateSetbacks: data.lateSetbacks ? [...data.lateSetbacks] : [],
-          incompleteSetbacks: data.incompleteSetbacks ? [...data.incompleteSetbacks] : [],
-          isActive: data.isActive,
-          isOptional: data.isOptional || false,
-          requiresApproval: data.requiresApproval,
-          availabilityType: data.availabilityType,
-          availabilityCount: data.availabilityCount || 1,
-          weeklyRecurrenceDays: data.weeklyRecurrenceDays || [],
-          monthlyRecurrenceDays: data.monthlyRecurrenceDays || [],
-          assignedUserIds: [...(data.assignedUserIds || [])],
-          guildId: data.guildId || '',
-          groupId: data.groupId || '',
-          tags: data.tags || [],
-          lateDateTime: data.lateDateTime ? data.lateDateTime.slice(0, 16) : '',
-          incompleteDateTime: data.incompleteDateTime ? data.incompleteDateTime.slice(0, 16) : '',
-          lateTime: data.lateTime || '',
-          incompleteTime: data.incompleteTime || '',
-          hasDeadlines: !!(data.lateDateTime || data.incompleteDateTime || data.lateTime || data.incompleteTime),
+          title: questToEdit.title,
+          description: questToEdit.description,
+          type: questToEdit.type,
+          iconType: questToEdit.iconType || 'emoji',
+          icon: questToEdit.icon || '📝',
+          imageUrl: questToEdit.imageUrl || '',
+          rewards: [...(questToEdit.rewards || [])],
+          lateSetbacks: questToEdit.lateSetbacks ? [...questToEdit.lateSetbacks] : [],
+          incompleteSetbacks: questToEdit.incompleteSetbacks ? [...questToEdit.incompleteSetbacks] : [],
+          isActive: questToEdit.isActive,
+          isOptional: questToEdit.isOptional || false,
+          requiresApproval: questToEdit.requiresApproval,
+          availabilityType: questToEdit.availabilityType,
+          availabilityCount: questToEdit.availabilityCount || 1,
+          weeklyRecurrenceDays: questToEdit.weeklyRecurrenceDays || [],
+          monthlyRecurrenceDays: questToEdit.monthlyRecurrenceDays || [],
+          assignedUserIds: [...(questToEdit.assignedUserIds || [])],
+          guildId: questToEdit.guildId || '',
+          groupId: questToEdit.groupId || '',
+          tags: questToEdit.tags || [],
+          lateDateTime: questToEdit.lateDateTime ? questToEdit.lateDateTime.slice(0, 16) : '',
+          incompleteDateTime: questToEdit.incompleteDateTime ? questToEdit.incompleteDateTime.slice(0, 16) : '',
+          lateTime: questToEdit.lateTime || '',
+          incompleteTime: questToEdit.incompleteTime || '',
+          hasDeadlines: !!(questToEdit.lateDateTime || questToEdit.incompleteDateTime || questToEdit.lateTime || questToEdit.incompleteTime),
         };
       }
 
@@ -153,6 +152,15 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
   const handleUserAssignmentChange = (userId: string) => {
     setFormData(prev => ({...prev, assignedUserIds: prev.assignedUserIds.includes(userId) ? prev.assignedUserIds.filter(id => id !== userId) : [...prev.assignedUserIds, userId]}));
   };
+  
+  const handleAssignAll = () => {
+    setFormData(prev => ({ ...prev, assignedUserIds: users.map(u => u.id) }));
+  };
+
+  const handleUnassignAll = () => {
+    setFormData(prev => ({ ...prev, assignedUserIds: [] }));
+  };
+
 
   const handleRewardChange = (category: 'rewards' | 'lateSetbacks' | 'incompleteSetbacks') => (index: number, field: keyof RewardItem, value: string | number) => {
     const newItems = [...formData[category]];
@@ -407,6 +415,10 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
             <div>
               <h3 className="font-semibold text-stone-200 mb-2">Individual User Assignment</h3>
               <p className="text-sm text-stone-400 mb-3">Select the users who will be assigned this quest. Note: Assigning a Quest Group will override this.</p>
+              <div className="flex justify-end gap-2 mb-2">
+                <Button type="button" variant="secondary" size="sm" onClick={handleAssignAll}>Assign All</Button>
+                <Button type="button" variant="secondary" size="sm" onClick={handleUnassignAll}>Unassign All</Button>
+              </div>
               <fieldset className="disabled:opacity-50">
                 <div className="space-y-2 max-h-40 overflow-y-auto border border-stone-700 p-2 rounded-md">
                     {users.map(user => (

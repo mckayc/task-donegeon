@@ -26,16 +26,24 @@ export const DeveloperProvider: React.FC<{ children: ReactNode }> = ({ children 
   const [isRecording, setIsRecording] = useState(false);
   const [isPickingElement, setIsPickingElement] = useState(false);
   const [logs, setLogs] = useState<BugReportLogEntry[]>([]);
-  const [onPickCallback, setOnPickCallback] = useState<(info: any) => void>(() => () => {});
+  const [onPickCallback, setOnPickCallback] = useState<((info: any) => void) | null>(null);
+  const [highlightedElement, setHighlightedElement] = useState<HTMLElement | null>(null);
 
   const appDispatch = useAppDispatch();
 
   useEffect(() => {
-    // Subscribe to the logger and update state whenever logs change
     const unsubscribe = bugLogger.subscribe(setLogs);
     return () => unsubscribe();
   }, []);
 
+  const stopPickingElement = useCallback(() => {
+      if (highlightedElement) {
+          highlightedElement.style.outline = '';
+          setHighlightedElement(null);
+      }
+      setIsPickingElement(false);
+      setOnPickCallback(null);
+  }, [highlightedElement]);
 
   const startRecording = useCallback(() => {
     bugLogger.start();
@@ -53,7 +61,8 @@ export const DeveloperProvider: React.FC<{ children: ReactNode }> = ({ children 
     };
     appDispatch.addBugReport(newReport);
     setIsRecording(false);
-  }, [appDispatch]);
+    stopPickingElement(); // Ensure picking is stopped if recording is stopped.
+  }, [appDispatch, stopPickingElement]);
 
   const addLogEntry = useCallback((entry: Omit<BugReportLogEntry, 'timestamp'>) => {
     bugLogger.add(entry);
@@ -64,51 +73,69 @@ export const DeveloperProvider: React.FC<{ children: ReactNode }> = ({ children 
     setOnPickCallback(() => onPick);
   }, []);
 
-  const stopPickingElement = useCallback(() => {
-    setIsPickingElement(false);
-  }, []);
+  useEffect(() => {
+    if (!isPickingElement || !onPickCallback) return;
 
-  const handleElementPick = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
-    if (!isPickingElement) return;
-    e.preventDefault();
-    e.stopPropagation();
-    
-    const target = e.target as HTMLElement;
-    const elementInfo = {
-      tag: target.tagName.toLowerCase(),
-      id: target.id || undefined,
-      classes: target.className || undefined,
-      text: target.innerText?.substring(0, 50) || undefined,
+    const handleMouseOver = (e: MouseEvent) => {
+        const target = e.target as HTMLElement;
+
+        if (target?.closest('[data-bug-reporter-ignore]')) {
+             if (highlightedElement) {
+                highlightedElement.style.outline = '';
+                setHighlightedElement(null);
+            }
+            return;
+        }
+
+        if (highlightedElement && highlightedElement !== target) {
+            highlightedElement.style.outline = '';
+        }
+
+        if (target) {
+            target.style.outline = '3px dashed red';
+            target.style.outlineOffset = '2px';
+            setHighlightedElement(target);
+        }
     };
 
-    onPickCallback(elementInfo);
-    stopPickingElement();
-  }, [isPickingElement, onPickCallback, stopPickingElement]);
+    const handleClick = (e: MouseEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
 
-  const handleElementHighlight = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
-      if (!isPickingElement) return;
-      const target = e.target as HTMLElement;
-      target.style.outline = '3px dashed red';
-      target.style.outlineOffset = '2px';
-  }, [isPickingElement]);
+        const target = e.target as HTMLElement;
+        if (target?.closest('[data-bug-reporter-ignore]')) {
+            stopPickingElement();
+            return;
+        }
 
-  const handleElementUnHighlight = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
-      if (!isPickingElement) return;
-      (e.target as HTMLElement).style.outline = '';
-  }, [isPickingElement]);
+        const elementInfo = {
+            tag: target.tagName.toLowerCase(),
+            id: target.id || undefined,
+            classes: target.className || undefined,
+            text: target.innerText?.substring(0, 50) || undefined,
+        };
+
+        onPickCallback(elementInfo);
+        stopPickingElement();
+    };
+
+    document.addEventListener('mouseover', handleMouseOver);
+    document.addEventListener('click', handleClick, { capture: true });
+
+    return () => {
+        document.removeEventListener('mouseover', handleMouseOver);
+        document.removeEventListener('click', handleClick, { capture: true });
+        if (highlightedElement) {
+            highlightedElement.style.outline = '';
+        }
+    };
+  }, [isPickingElement, onPickCallback, stopPickingElement, highlightedElement]);
+
 
   return (
     <DeveloperStateContext.Provider value={{ isRecording, isPickingElement, logs }}>
       <DeveloperDispatchContext.Provider value={{ startRecording, stopRecording, addLogEntry, startPickingElement, stopPickingElement }}>
         {children}
-        {isPickingElement && (
-            <div 
-                className="fixed inset-0 z-[1000] cursor-crosshair"
-                onClick={handleElementPick}
-                onMouseOver={handleElementHighlight}
-                onMouseOut={handleElementUnHighlight}
-            />
-        )}
       </DeveloperDispatchContext.Provider>
     </DeveloperStateContext.Provider>
   );

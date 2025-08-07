@@ -575,6 +575,7 @@ export interface ThemeStyle {
   '--font-body': string;
   '--font-label': string;
   '--font-span'?: string;
+  '--font-button'?: string;
   '--font-size-h1': string;
   '--font-size-h2': string;
   '--font-size-h3': string;

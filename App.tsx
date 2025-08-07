@@ -19,7 +19,7 @@ const App: React.FC = () => {
   const { appMode } = useUIState();
 
   useEffect(() => {
-    let activeThemeId = settings.theme; // Default to system theme
+    let activeThemeId: string | undefined = settings.theme; // Default to system theme
 
     if (appMode.mode === 'guild') {
         const currentGuild = guilds.find(g => g.id === appMode.guildId);
@@ -42,7 +42,9 @@ const App: React.FC = () => {
         });
     }
 
-    document.body.dataset.theme = activeThemeId;
+    if (activeThemeId) {
+        document.body.dataset.theme = activeThemeId;
+    }
   }, [settings.theme, currentUser, appMode, guilds, themes]);
 
   useEffect(() => {

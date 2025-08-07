@@ -32,7 +32,7 @@ const AppearancePage: React.FC = () => {
                 Object.entries(theme.styles).forEach(([key, value]) => {
                     document.documentElement.style.setProperty(key, value);
                 });
-                document.body.dataset.theme = themeId;
+                if(themeId) document.body.dataset.theme = themeId;
             }
         };
 

@@ -1,7 +1,9 @@
 import { useMemo } from 'react';
 import {
   ChronicleEvent,
+  Quest,
   QuestType,
+  Trophy,
 } from '../types';
 import { useAppState } from '../context/AppContext';
 import { useUIState } from '../context/UIStateContext';
@@ -46,7 +48,7 @@ export const useChronicles = ({ startDate, endDate }: UseChroniclesProps): Map<s
       if (c.userId === currentUser.id && c.guildId === currentGuildId) {
         const dateKey = toYMD(new Date(c.completedAt));
         if (dateKey >= startYMD && dateKey <= endYMD) {
-          const quest = questMap.get(c.questId);
+          const quest = questMap.get(c.questId) as Quest | undefined;
           allEvents.push({
             id: c.id, date: c.completedAt, type: 'Quest',
             title: `Completed "${quest?.title || 'Unknown Quest'}"`,
@@ -77,7 +79,7 @@ export const useChronicles = ({ startDate, endDate }: UseChroniclesProps): Map<s
         if (ut.userId === currentUser.id && ut.guildId === currentGuildId) {
             const dateKey = toYMD(new Date(ut.awardedAt));
             if (dateKey >= startYMD && dateKey <= endYMD) {
-                const trophy = trophyMap.get(ut.trophyId);
+                const trophy = trophyMap.get(ut.trophyId) as Trophy | undefined;
                 allEvents.push({
                     id: ut.id, date: ut.awardedAt, type: 'Trophy', userId: ut.userId,
                     title: `Earned "${trophy?.name || 'Unknown Trophy'}"`,

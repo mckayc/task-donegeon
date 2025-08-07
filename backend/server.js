@@ -606,6 +606,30 @@ bugReportsRouter.delete('/', asyncMiddleware(async (req, res) => {
     res.status(204).send();
 }));
 
+bugReportsRouter.post('/import', asyncMiddleware(async (req, res) => {
+    const reportsToImport = req.body;
+    if (!Array.isArray(reportsToImport)) {
+        return res.status(400).json({ error: 'Request body must be an array of bug reports.' });
+    }
+    // Basic validation of the first report object
+    if (reportsToImport.length > 0) {
+        const firstReport = reportsToImport[0];
+        if (!firstReport.id || !firstReport.title || !firstReport.createdAt || !firstReport.logs) {
+             return res.status(400).json({ error: 'Invalid bug report format.' });
+        }
+    }
+
+    await dataSource.transaction(async manager => {
+        await manager.clear(BugReportEntity);
+        const reports = reportsToImport.map(r => manager.create(BugReportEntity, r));
+        await manager.save(reports);
+    });
+
+    broadcast({ type: 'DATA_UPDATED' });
+    res.status(200).json({ message: `${reportsToImport.length} bug reports imported successfully.` });
+}));
+
+
 app.use('/api/bug-reports', bugReportsRouter);
 
 
@@ -1196,4 +1220,50 @@ app.get('/api/chronicles', asyncMiddleware(async (req, res) => {
         const rewardsText = getRewardDisplay(adj.rewards).replace(/(\d+)/g, '+$1');
         const setbacksText = getRewardDisplay(adj.setbacks).replace(/(\d+)/g, '-$1');
         allEvents.push({
-            id: adj.id, date: adj.adjustedAt, type: 'Adjustment', userId
+            id: adj.id, date: adj.adjustedAt, type: 'Adjustment', userId: adj.userId,
+            title: `${userMap.get(adj.userId) || 'Unknown'} received an adjustment from ${userMap.get(adj.adjusterId) || 'Admin'}`,
+            status: adj.type,
+            note: `${adj.reason}\n(${rewardsText} ${setbacksText})`.trim(),
+            icon: '🛠️',
+            color: adj.type === 'Reward' ? '#10b981' : '#ef4444',
+            guildId: adj.guildId
+        });
+    });
+
+     // 5. System Logs
+     if (viewMode !== 'personal') {
+        const systemLogs = await manager.find(SystemLogEntity);
+        systemLogs.forEach(log => {
+             const quest = questMap.get(log.questId);
+             const userNames = log.userIds.map(id => userMap.get(id) || 'Unknown').join(', ');
+             const setbacksText = getRewardDisplay(log.setbacksApplied).replace(/(\d+)/g, '-$1');
+             allEvents.push({
+                id: log.id, date: log.timestamp, type: 'System',
+                title: `System: ${quest?.title || 'Unknown Quest'} marked as ${log.type.split('_')[1]}`,
+                status: log.type, note: `For: ${userNames}\n(${setbacksText})`, icon: '⚙️', color: '#64748b'
+             });
+        });
+     }
+    
+    // Sort all events by date descending
+    allEvents.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+    const total = allEvents.length;
+    const paginatedEvents = allEvents.slice(skip, skip + take);
+
+    res.json({ events: paginatedEvents, total });
+}));
+
+// Serve React App
+app.use(express.static(path.join(__dirname, '..', '..', 'dist')));
+app.use('/uploads', express.static(UPLOADS_DIR));
+
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, '..', '..', 'dist', 'index.html'));
+});
+
+// Error handling middleware
+app.use((err, req, res, next) => {
+    console.error(err.stack);
+    res.status(500).send('Something broke!');
+});

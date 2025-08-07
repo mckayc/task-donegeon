@@ -33,11 +33,13 @@ const ThemesPage: React.FC = () => {
 
     useEffect(() => {
         // Apply the selected preview theme
-        applyThemeStyles(selectedThemeId);
+        if (selectedThemeId) {
+            applyThemeStyles(selectedThemeId);
+        }
 
         // Cleanup function to revert to the actual saved theme when navigating away
         return () => {
-            let activeThemeId = settings.theme;
+            let activeThemeId: string | undefined = settings.theme;
             if (appMode.mode === 'guild') {
                 const guild = guilds.find(g => g.id === appMode.guildId);
                 if (guild?.themeId) {
@@ -50,7 +52,9 @@ const ThemesPage: React.FC = () => {
                     activeThemeId = currentUser.theme;
                 }
             }
-            applyThemeStyles(activeThemeId);
+            if (activeThemeId) {
+                applyThemeStyles(activeThemeId);
+            }
         };
     }, [selectedThemeId, themes, currentUser, settings, appMode, guilds]);
 

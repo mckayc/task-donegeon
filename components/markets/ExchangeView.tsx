@@ -99,7 +99,7 @@ const ExchangeView: React.FC<ExchangeViewProps> = ({ market }) => {
         // Calculate max amount purchasable
         const fromBalance = balances.get(fromReward.id) || 0;
         const feePercent = fromReward.category === 'Currency' ? currencyExchangeFeePercent : xpExchangeFeePercent;
-        const feeMultiplier = 1 + (feePercent / 100);
+        const feeMultiplier = 1 + (Number(feePercent) / 100);
         const maxFromBase = fromBalance / feeMultiplier;
         const maxFromInAnchor = maxFromBase / fromAnchorRate;
         const maxToAmount = maxFromInAnchor * toAnchorRate;
@@ -108,7 +108,7 @@ const ExchangeView: React.FC<ExchangeViewProps> = ({ market }) => {
         const cappedToAmount = Math.min(toAmountNum, maxToAmount);
         const toValueInAnchor = cappedToAmount / toAnchorRate;
         const fromAmountBase = toValueInAnchor * fromAnchorRate;
-        const fee = fromAmountBase * (feePercent / 100);
+        const fee = fromAmountBase * (Number(feePercent) / 100);
         const totalCost = fromAmountBase + fee;
 
         return { fromAmountBase, fee, totalCost, maxToAmount };
@@ -177,10 +177,10 @@ const ExchangeView: React.FC<ExchangeViewProps> = ({ market }) => {
                 // If buying anchor with X: rate is how many X it costs for 1 anchor.
                 
                 const feePercent = reward.category === RewardCategory.Currency ? currencyExchangeFeePercent : xpExchangeFeePercent;
-                const costMultiplier = 1 + (feePercent / 100);
+                const costMultiplier = 1 + (Number(feePercent) / 100);
                 
                 // How many of this reward equals 1 anchor?
-                const amountForOneAnchor = Math.floor(rate * (1 - (currencyExchangeFeePercent / 100)));
+                const amountForOneAnchor = Math.floor(rate * (1 - (Number(currencyExchangeFeePercent) / 100)));
                 
                 // How much of this reward does it cost to buy 1 anchor?
                 const costForOneAnchor = Math.ceil(rate * costMultiplier);

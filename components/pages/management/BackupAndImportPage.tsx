@@ -27,7 +27,7 @@ interface ServerBackup {
 
 const BackupAndImportPage: React.FC = () => {
     const appState = useAppState();
-    const { restoreFromBackup, importBlueprint, addNotification, updateSettings } = useAppDispatch();
+    const { restoreFromBackup, importAssetPack, addNotification, updateSettings } = useAppDispatch();
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const [serverBackups, setServerBackups] = useState<ServerBackup[]>([]);
@@ -137,6 +137,12 @@ const BackupAndImportPage: React.FC = () => {
                 setBackupToDelete(null);
             }
         }
+    };
+
+    const handleConfirmImport = (pack: AssetPack, res: ImportResolution[]) => {
+        importAssetPack(pack, res);
+        setAssetPackToPreview(null);
+        setInitialResolutions([]);
     };
     
     const manualBackups = serverBackups.filter(b => !b.isAuto);
@@ -248,7 +254,7 @@ const BackupAndImportPage: React.FC = () => {
             </Card>
 
             {assetPackToPreview && (
-                <BlueprintPreviewDialog blueprint={assetPackToPreview} initialResolutions={initialResolutions} onClose={() => setAssetPackToPreview(null)} onConfirm={importBlueprint} />
+                <BlueprintPreviewDialog blueprint={assetPackToPreview} initialResolutions={initialResolutions} onClose={() => setAssetPackToPreview(null)} onConfirm={handleConfirmImport} />
             )}
             <ConfirmDialog
                 isOpen={!!fileToRestore}

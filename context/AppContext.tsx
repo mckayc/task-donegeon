@@ -1,7 +1,7 @@
 
 import React, { createContext, useState, useContext, ReactNode, useEffect, useCallback, useMemo, useRef } from 'react';
 import { AppSettings, User, Quest, RewardTypeDefinition, QuestCompletion, RewardItem, Market, PurchaseRequest, Guild, Rank, Trophy, UserTrophy, Notification, AppMode, Page, IAppData, ShareableAssetType, GameAsset, Role, QuestCompletionStatus, RewardCategory, PurchaseRequestStatus, AdminAdjustment, AdminAdjustmentType, SystemLog, QuestType, QuestAvailability, AssetPack, ImportResolution, TrophyRequirementType, ThemeDefinition, ChatMessage, SystemNotification, SystemNotificationType, MarketStatus, QuestGroup, BulkQuestUpdates, ScheduledEvent } from '../types';
-import { INITIAL_SETTINGS, createMockUsers, INITIAL_REWARD_TYPES, INITIAL_RANKS, INITIAL_TROPHIES, createSampleMarkets, createSampleQuests, createInitialGuilds, createSampleGameAssets, INITIAL_THEMES, createInitialQuestCompletions, INITIAL_TAGS, INITIAL_QUEST_GROUPS } from '../data/initialData';
+import { INITIAL_SETTINGS, INITIAL_REWARD_TYPES, INITIAL_RANKS, INITIAL_TROPHIES, INITIAL_THEMES, INITIAL_QUEST_GROUPS, INITIAL_TAGS } from '../data/initialData';
 import { toYMD } from '../utils/quests';
 import { analyzeAssetPackForConflicts } from '../utils/sharing';
 
@@ -91,7 +91,7 @@ interface AppDispatch {
   updateScheduledEvent: (event: ScheduledEvent) => void;
   deleteScheduledEvent: (eventId: string) => void;
   completeFirstRun: (adminUserData: Omit<User, 'id' | 'personalPurse' | 'personalExperience' | 'guildBalances' | 'avatar' | 'ownedAssetIds' | 'ownedThemes' | 'hasBeenOnboarded'>) => void;
-  importBlueprint: (assetPack: AssetPack, resolutions: ImportResolution[]) => void;
+  importAssetPack: (assetPack: AssetPack, resolutions: ImportResolution[]) => void;
   restoreFromBackup: (backupData: IAppData) => void;
   clearAllHistory: () => void;
   resetAllPlayerData: () => void;
@@ -833,74 +833,9 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     }
   }, [deductRewards, applyRewards, addNotification]);
   
-  const importBlueprint = useCallback(async (assetPack: AssetPack, resolutions: ImportResolution[]) => {
-    const idMap = new Map<string, string>();
-    const genId = (p: string) => `${p}-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
-    
-    resolutions.forEach(res => {
-        if (res.resolution !== 'skip') {
-            idMap.set(res.id, genId(res.type.slice(0, 2)));
-        }
-    });
-
-    const newAssets: Partial<IAppData> = {
-        quests: [],
-        rewardTypes: [],
-        ranks: [],
-        trophies: [],
-        markets: [],
-        gameAssets: [],
-        questGroups: [],
-    };
-    
-    const assetTypesToProcess: ShareableAssetType[] = ['questGroups', 'rewardTypes', 'ranks', 'trophies', 'markets', 'quests', 'gameAssets'];
-
-    for (const resType of assetTypesToProcess) {
-        const resolutionsForType = resolutions.filter(r => r.type === resType);
-        for (const res of resolutionsForType) {
-            if (res.resolution === 'skip') continue;
-
-            const assetArray = (assetPack.assets as any)[resType];
-            if (!assetArray) continue;
-
-            const asset = assetArray.find((a: any) => a.id === res.id);
-            if (!asset) continue;
-
-            const newId = idMap.get(asset.id) || genId(res.type.slice(0, 2));
-            if (!idMap.has(asset.id)) idMap.set(asset.id, newId);
-
-            const newAsset = { ...asset, id: newId };
-
-            if (res.resolution === 'rename' && res.newName) {
-                if ('title' in newAsset) newAsset.title = res.newName;
-                else newAsset.name = res.newName;
-            }
-
-            if (!newAssets[resType]) (newAssets as any)[resType] = [];
-            (newAssets[resType] as any[]).push(newAsset);
-        }
-    }
-
-    newAssets.quests?.forEach(q => {
-        q.rewards = q.rewards.map(r => ({ ...r, rewardTypeId: idMap.get(r.rewardTypeId) || r.rewardTypeId }));
-        q.lateSetbacks = q.lateSetbacks.map(r => ({ ...r, rewardTypeId: idMap.get(r.rewardTypeId) || r.rewardTypeId }));
-        q.incompleteSetbacks = q.incompleteSetbacks.map(r => ({ ...r, rewardTypeId: idMap.get(r.rewardTypeId) || r.rewardTypeId }));
-        q.groupId = q.groupId ? (idMap.get(q.groupId) || q.groupId) : undefined;
-    });
-
-    newAssets.trophies?.forEach(t => {
-        t.requirements.forEach(r => {
-            if (r.type === TrophyRequirementType.AchieveRank) r.value = idMap.get(r.value) || r.value;
-        });
-    });
-
-    newAssets.gameAssets?.forEach(ga => {
-        ga.marketIds = ga.marketIds.map(mid => idMap.get(mid) || mid);
-        ga.costGroups = ga.costGroups.map(group => group.map(c => ({ ...c, rewardTypeId: idMap.get(c.rewardTypeId) || c.rewardTypeId })));
-    });
-
+  const importAssetPack = useCallback(async (assetPack: AssetPack, resolutions: ImportResolution[]) => {
     try {
-        await apiRequest('POST', '/api/data/import-assets', { newAssets });
+        await apiRequest('POST', '/api/data/import-assets', { assetPack, resolutions });
         addNotification({ type: 'success', message: `Imported from ${assetPack.manifest.name}!` });
         // The backend will broadcast a data update, so the frontend will sync automatically.
     } catch (error) {
@@ -1170,7 +1105,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     addGuild, updateGuild, deleteGuild, setRanks, addTrophy, updateTrophy, deleteTrophy, awardTrophy, applyManualAdjustment, addGameAsset, updateGameAsset, deleteGameAsset, cloneGameAsset,
     addTheme, updateTheme, deleteTheme,
     addScheduledEvent, updateScheduledEvent, deleteScheduledEvent,
-    completeFirstRun, importBlueprint, restoreFromBackup, clearAllHistory, resetAllPlayerData, deleteAllCustomContent, deleteSelectedAssets, 
+    completeFirstRun, importAssetPack, restoreFromBackup, clearAllHistory, resetAllPlayerData, deleteAllCustomContent, deleteSelectedAssets, 
     deleteQuests, deleteTrophies, deleteGameAssets, updateQuestsStatus, bulkUpdateQuests,
     uploadFile,
     executeExchange,

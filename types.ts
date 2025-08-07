@@ -522,15 +522,23 @@ export interface AssetPackAssets {
   gameAssets: GameAsset[];
 }
 
+export interface AssetPackManifest {
+  id: string;
+  name: string;
+  author: string;
+  version: string;
+  description: string;
+  emoji?: string;
+}
+
 export interface AssetPack {
-  manifest: {
-    id: string;
-    name: string;
-    author: string;
-    version: string;
-    description: string;
-  };
+  manifest: AssetPackManifest;
   assets: AssetPackAssets;
+}
+
+export interface AssetPackManifestInfo {
+  manifest: AssetPackManifest;
+  filename: string;
 }
 
 export interface ImportResolution {
@@ -605,18 +613,6 @@ export interface IAppData {
   chatMessages: ChatMessage[];
   systemNotifications: SystemNotification[];
   scheduledEvents: ScheduledEvent[];
-}
-
-export type LibraryAssetPackType = 'Quests' | 'Markets' | 'Items' | 'Trophies' | 'Rewards' | 'Quest Groups';
-
-export interface LibraryAssetPack {
-  id: string;
-  type: LibraryAssetPackType;
-  title: string;
-  description: string;
-  emoji: string;
-  color: string;
-  assets: Partial<AssetPackAssets>;
 }
 
 export type ChronicleEvent = {

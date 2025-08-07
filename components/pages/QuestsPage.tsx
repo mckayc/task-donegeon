@@ -173,7 +173,7 @@ const QuestItem: React.FC<{ quest: Quest; now: Date; onSelect: (quest: Quest) =>
                 <div className="flex items-center gap-2 text-xs text-stone-400 overflow-hidden">
                     <span title={questGroup ? questGroup.name : 'Uncategorized'}>{questGroup ? questGroup.icon : '📂'}</span>
                     <span className="truncate">{questGroup ? questGroup.name : 'Uncategorized'}</span>
-                    <span className="font-semibold text-blue-400 bg-blue-900/50 px-2 py-0.5 rounded-full text-xs">{scopeName}</span>
+                    <span className="font-semibold text-blue-400 bg-blue-900/50 px-2 py-0.5 rounded-full text-xs" title={`This quest exists in the ${scopeName} scope.`}>{scopeName}</span>
                 </div>
                 <div className="text-right">
                     {timeStatusText && (

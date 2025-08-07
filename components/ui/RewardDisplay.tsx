@@ -1,12 +1,12 @@
 import React, { useMemo } from 'react';
-import { useAppState } from '../../context/AppContext';
+import { useEconomyState } from '../../context/EconomyContext';
 import { useAuthState } from '../../context/AuthContext';
 import { useUIState } from '../../context/UIStateContext';
 import { useRewardValue } from '../../hooks/useRewardValue';
 import DynamicIcon from './DynamicIcon';
 
 const RewardDisplay: React.FC = () => {
-  const { rewardTypes } = useAppState();
+  const { rewardTypes } = useEconomyState();
   const { currentUser } = useAuthState();
   const { appMode } = useUIState();
 

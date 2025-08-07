@@ -2,7 +2,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import Card from '../ui/Card';
 import Button from '../ui/Button';
 import CreateQuestDialog from '../quests/CreateQuestDialog';
-import { useAppState, useAppDispatch } from '../../context/AppContext';
+import { useAppState } from '../../context/AppContext';
 import { useUIState } from '../../context/UIStateContext';
 import { Role, QuestType, Quest, QuestAvailability } from '../../types';
 import { isQuestAvailableForUser, questSorter, isQuestVisibleToUserInMode } from '../../utils/quests';
@@ -11,6 +11,8 @@ import QuestDetailDialog from '../quests/QuestDetailDialog';
 import DynamicIcon from '../ui/DynamicIcon';
 import ImagePreviewDialog from '../ui/ImagePreviewDialog';
 import { useAuthState } from '../../context/AuthContext';
+import { useQuestsState, useQuestsDispatch } from '../../context/QuestsContext';
+import { useEconomyState } from '../../context/EconomyContext';
 
 const getAvailabilityText = (quest: Quest, completionsCount: number): string => {
     switch (quest.availabilityType) {
@@ -48,7 +50,9 @@ const formatTimeRemaining = (targetDate: Date, now: Date): string => {
 };
 
 const QuestItem: React.FC<{ quest: Quest; now: Date; onSelect: (quest: Quest) => void; onImagePreview: (url: string) => void; }> = ({ quest, now, onSelect, onImagePreview }) => {
-    const { rewardTypes, questCompletions, settings, questGroups, scheduledEvents, guilds } = useAppState();
+    const { settings, scheduledEvents, guilds } = useAppState();
+    const { rewardTypes } = useEconomyState();
+    const { questCompletions, questGroups } = useQuestsState();
     const { currentUser } = useAuthState();
     const { appMode } = useUIState();
     
@@ -202,10 +206,11 @@ const FilterButton: React.FC<{ type: 'all' | QuestType, children: React.ReactNod
 );
 
 const QuestsPage: React.FC = () => {
-    const { quests, questCompletions, settings, scheduledEvents } = useAppState();
+    const { settings, scheduledEvents } = useAppState();
+    const { quests, questCompletions } = useQuestsState();
     const { currentUser } = useAuthState();
     const { appMode } = useUIState();
-    const { markQuestAsTodo, unmarkQuestAsTodo } = useAppDispatch();
+    const { markQuestAsTodo, unmarkQuestAsTodo } = useQuestsDispatch();
     const [filter, setFilter] = useState<'all' | QuestType>('all');
     const [selectedQuest, setSelectedQuest] = useState<Quest | null>(null);
     const [completingQuest, setCompletingQuest] = useState<Quest | null>(null);

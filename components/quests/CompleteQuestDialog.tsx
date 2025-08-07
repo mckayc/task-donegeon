@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Quest, User } from '../../types';
-import { useAppDispatch } from '../../context/AppContext';
+import { useQuestsDispatch } from '../../context/QuestsContext';
 import { useAuthState } from '../../context/AuthContext';
 import Button from '../ui/Button';
 
@@ -12,7 +12,7 @@ interface CompleteQuestDialogProps {
 }
 
 const CompleteQuestDialog: React.FC<CompleteQuestDialogProps> = ({ quest, onClose, completionDate, user }) => {
-  const { completeQuest } = useAppDispatch();
+  const { completeQuest } = useQuestsDispatch();
   const { currentUser } = useAuthState();
   const [note, setNote] = useState('');
 
@@ -21,7 +21,16 @@ const CompleteQuestDialog: React.FC<CompleteQuestDialogProps> = ({ quest, onClos
     const userToComplete = user || currentUser;
     if (!userToComplete) return;
 
-    completeQuest(quest.id, userToComplete.id, quest.rewards, quest.requiresApproval, quest.guildId, { note: note || undefined, completionDate });
+    const completionData = {
+      questId: quest.id,
+      userId: userToComplete.id,
+      completedAt: (completionDate || new Date()).toISOString(),
+      status: quest.requiresApproval ? 'Pending' : 'Approved',
+      note: note || undefined,
+      guildId: quest.guildId
+    };
+
+    completeQuest(completionData);
     onClose();
   };
 

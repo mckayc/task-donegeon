@@ -10,6 +10,8 @@ import NotificationContainer from './components/ui/NotificationContainer';
 import AppLockScreen from './components/auth/AppLockScreen';
 import OnboardingWizard from './components/auth/OnboardingWizard';
 import SharedLayout from './components/layout/SharedLayout';
+import BugReporter from './components/dev/BugReporter';
+import { Role } from './types';
 
 const App: React.FC = () => {
   const { isDataLoaded, settings, guilds, themes } = useAppState();
@@ -66,6 +68,7 @@ const App: React.FC = () => {
   }
 
   const showOnboarding = currentUser && !currentUser.hasBeenOnboarded;
+  const showBugReporter = settings.developerMode.enabled && currentUser?.role === Role.DonegeonMaster;
 
   return (
     <>
@@ -88,6 +91,8 @@ const App: React.FC = () => {
       
         return <MainLayout />;
       })()}
+
+      {showBugReporter && <BugReporter />}
     </>
   );
 };

@@ -2,6 +2,7 @@ import React from 'react';
 import { ScheduledEvent } from '../../types';
 import Button from '../ui/Button';
 import { useAppState } from '../../context/AppContext';
+import { useEconomyState } from '../../context/EconomyContext';
 
 interface EventDetailDialogProps {
   event: ScheduledEvent;
@@ -9,7 +10,7 @@ interface EventDetailDialogProps {
 }
 
 const EventDetailDialog: React.FC<EventDetailDialogProps> = ({ event, onClose }) => {
-    const { markets } = useAppState();
+    const { markets } = useEconomyState();
 
     const getModifierDetails = () => {
         const { modifiers } = event;

@@ -11,7 +11,7 @@ import { TrophyIcon, EllipsisVerticalIcon } from '../ui/Icons';
 
 const ManageTrophiesPage: React.FC = () => {
     const { trophies, settings, isAiConfigured } = useAppState();
-    const { deleteTrophies } = useAppDispatch();
+    const { deleteSelectedAssets } = useAppDispatch();
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [editingTrophy, setEditingTrophy] = useState<Trophy | null>(null);
     const [deletingIds, setDeletingIds] = useState<string[]>([]);
@@ -51,7 +51,7 @@ const ManageTrophiesPage: React.FC = () => {
 
     const handleConfirmDelete = () => {
         if (deletingIds.length > 0) {
-            deleteTrophies(deletingIds);
+            deleteSelectedAssets({ trophies: deletingIds });
             setSelectedTrophies([]);
         }
         setDeletingIds([]);

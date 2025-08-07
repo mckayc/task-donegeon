@@ -1,15 +1,20 @@
 import React, { useState } from 'react';
 import { useAppState } from '../../context/AppContext';
-import { ShareableAssetType, Terminology } from '../../types';
+import { ShareableAssetType, Terminology, IAppData } from '../../types';
 import Button from '../ui/Button';
 import Input from '../ui/Input';
 import { generateAssetPack } from '../../utils/sharing';
 import { useAuthState } from '../../context/AuthContext';
+import { useQuestsState } from '../../context/QuestsContext';
+import { useEconomyState } from '../../context/EconomyContext';
 
 const ExportPanel: React.FC = () => {
     const appState = useAppState();
-    const { users, loginHistory } = useAuthState();
+    const authState = useAuthState();
+    const questsState = useQuestsState();
+    const economyState = useEconomyState();
     const { settings } = appState;
+    const { users } = authState;
     const [selected, setSelected] = useState<{ [key in ShareableAssetType]: string[] }>({
         quests: [],
         questGroups: [],
@@ -46,23 +51,31 @@ const ExportPanel: React.FC = () => {
             alert('Please provide a name for your Blueprint.');
             return;
         }
+
+        const fullAppData: IAppData = {
+            ...appState,
+            ...authState,
+            ...questsState,
+            ...economyState
+        };
+
         generateAssetPack(
             blueprintName,
             blueprintDesc,
             settings.terminology.appName,
             selected,
-            { ...appState, users, loginHistory }
+            fullAppData
         );
     };
 
     const assetTypes: { key: ShareableAssetType, label: keyof Terminology, data: any[] }[] = [
-        { key: 'quests', label: 'tasks', data: appState.quests },
-        { key: 'questGroups', label: 'link_manage_quest_groups', data: appState.questGroups },
-        { key: 'rewardTypes', label: 'points', data: appState.rewardTypes.filter(rt => !rt.isCore) },
+        { key: 'quests', label: 'tasks', data: questsState.quests },
+        { key: 'questGroups', label: 'link_manage_quest_groups', data: questsState.questGroups },
+        { key: 'rewardTypes', label: 'points', data: economyState.rewardTypes.filter(rt => !rt.isCore) },
         { key: 'ranks', label: 'levels', data: appState.ranks },
         { key: 'trophies', label: 'awards', data: appState.trophies },
-        { key: 'markets', label: 'stores', data: appState.markets },
-        { key: 'gameAssets', label: 'link_manage_items', data: appState.gameAssets },
+        { key: 'markets', label: 'stores', data: economyState.markets },
+        { key: 'gameAssets', label: 'link_manage_items', data: economyState.gameAssets },
         { key: 'users', label: 'link_manage_users', data: users },
     ];
 

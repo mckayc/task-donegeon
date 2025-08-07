@@ -17,15 +17,11 @@ interface LocalGalleryImage {
 }
 
 const AssetManagerPage: React.FC = () => {
-    const { uploadFile } = useAppDispatch();
     const { addNotification } = useNotificationsDispatch();
-    const [isDragging, setIsDragging] = useState(false);
     
     const [assetToCreateData, setAssetToCreateData] = useState<{ url: string; name: string; category: string; } | null>(null);
-    const [fileToCategorize, setFileToCategorize] = useState<File | null>(null);
     const [isImporterOpen, setIsImporterOpen] = useState(false);
 
-    const [isUploading, setIsUploading] = useState(false);
     const [localGallery, setLocalGallery] = useState<LocalGalleryImage[]>([]);
     const [isGalleryLoading, setIsGalleryLoading] = useState(true);
 
@@ -58,56 +54,6 @@ const AssetManagerPage: React.FC = () => {
             return acc;
         }, {} as Record<string, LocalGalleryImage[]>);
     }, [localGallery]);
-    
-    const galleryCategories = useMemo(() => Object.keys(categorizedGallery), [categorizedGallery]);
-
-
-    const handleFileProcess = useCallback(async (file: File) => {
-        setFileToCategorize(file);
-    }, []);
-    
-    const handleUploadWithCategory = async (file: File, category: string) => {
-        setIsUploading(true);
-        try {
-            const uploadedAsset = await uploadFile(file, category);
-            if (uploadedAsset?.url) {
-                addNotification({ type: 'success', message: 'Image uploaded successfully!' });
-                fetchLocalGallery(); // Refresh gallery
-            } else {
-                throw new Error('Upload failed to return a URL.');
-            }
-        } catch (error) {
-            const message = error instanceof Error ? error.message : 'Unknown error';
-            addNotification({ type: 'error', message: `Upload failed: ${message}` });
-        } finally {
-            setIsUploading(false);
-            setFileToCategorize(null);
-        }
-    };
-
-    const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
-        if (event.target.files) {
-            Array.from(event.target.files).forEach(handleFileProcess);
-        }
-        event.target.value = ''; // Allow re-uploading the same file
-    };
-
-    const handleDrop = useCallback((event: React.DragEvent<HTMLDivElement>) => {
-        event.preventDefault();
-        event.stopPropagation();
-        setIsDragging(false);
-        if (event.dataTransfer.files && event.dataTransfer.files.length > 0) {
-            Array.from(event.dataTransfer.files).forEach(handleFileProcess);
-            event.dataTransfer.clearData();
-        }
-    }, [handleFileProcess]);
-
-    const handleDragEvents = (event: React.DragEvent<HTMLDivElement>) => {
-        event.preventDefault();
-        event.stopPropagation();
-        if (event.type === 'dragenter' || event.type === 'dragover') setIsDragging(true);
-        else if (event.type === 'dragleave') setIsDragging(false);
-    };
 
     const handleCreateFromGallery = (image: LocalGalleryImage) => {
         const assetName = image.name.replace(/\.[^/.]+$/, "").replace(/[-_]/g, ' ');
@@ -124,22 +70,6 @@ const AssetManagerPage: React.FC = () => {
 
     return (
         <div className="space-y-6">
-            <Card title="Upload New Asset">
-                <div
-                    onDrop={handleDrop}
-                    onDragEnter={handleDragEvents} onDragOver={handleDragEvents} onDragLeave={handleDragEvents}
-                    className={`p-8 border-2 border-dashed rounded-lg text-center transition-colors ${
-                        isDragging ? 'border-emerald-500 bg-emerald-900/20' : 'border-stone-600'
-                    }`}
-                >
-                    <input id="file-upload" type="file" multiple onChange={handleFileSelect} className="hidden" disabled={isUploading} />
-                    <p className="text-stone-400 mb-4">Drag & drop files here, or click to select.</p>
-                    <Button onClick={() => document.getElementById('file-upload')?.click()} disabled={isUploading}>
-                        {isUploading ? 'Processing...' : 'Upload Image'}
-                    </Button>
-                </div>
-            </Card>
-
             <Card title="Import Image Packs from Library">
                 <p className="text-stone-400 text-sm mb-4">
                     Quickly add curated sets of images to your library from the project's GitHub repository. This is great for getting started or adding new themes.
@@ -182,15 +112,6 @@ const AssetManagerPage: React.FC = () => {
                 )}
             </Card>
             
-            {fileToCategorize && (
-                <UploadWithCategoryDialog
-                    file={fileToCategorize}
-                    onClose={() => setFileToCategorize(null)}
-                    onUpload={handleUploadWithCategory}
-                    existingCategories={galleryCategories}
-                />
-            )}
-
             {assetToCreateData && (
                 <EditGameAssetDialog
                     assetToEdit={null}

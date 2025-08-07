@@ -128,12 +128,6 @@ const INITIAL_SETTINGS = {
     },
     sidebars: {
         main: INITIAL_MAIN_SIDEBAR_CONFIG,
-        dataManagement: [
-            { type: 'link', id: 'Object Exporter', emoji: '🗂️', isVisible: true, level: 0, role: 'Donegeon Master', termKey: 'link_object_exporter' },
-            { type: 'link', id: 'Asset Manager', emoji: '🖼️', isVisible: true, level: 0, role: 'Donegeon Master', termKey: 'link_asset_manager' },
-            { type: 'link', id: 'Asset Library', emoji: '📚', isVisible: true, level: 0, role: 'Donegeon Master', termKey: 'link_asset_library' },
-            { type: 'link', id: 'Backup & Import', emoji: '💾', isVisible: true, level: 0, role: 'Donegeon Master', termKey: 'link_backup_import' },
-        ]
     }
 };
 

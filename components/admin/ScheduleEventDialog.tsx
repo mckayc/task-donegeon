@@ -4,6 +4,7 @@ import { ScheduledEvent, RewardCategory } from '../../types';
 import Button from '../ui/Button';
 import Input from '../ui/Input';
 import EmojiPicker from '../ui/EmojiPicker';
+import { useEconomyState } from '../../context/EconomyContext';
 
 interface ScheduleEventDialogProps {
   event: ScheduledEvent | null;
@@ -25,7 +26,8 @@ const colorPalette = [
 
 const ScheduleEventDialog: React.FC<ScheduleEventDialogProps> = ({ event, onClose }) => {
     const { addScheduledEvent, updateScheduledEvent, deleteScheduledEvent } = useAppDispatch();
-    const { guilds, markets, rewardTypes } = useAppState();
+    const { guilds } = useAppState();
+    const { markets, rewardTypes } = useEconomyState();
     
     const [formData, setFormData] = useState<Omit<ScheduledEvent, 'id'>>({
         title: '', description: '', startDate: '', endDate: '', isAllDay: true, eventType: 'Announcement', guildId: '',
@@ -67,7 +69,7 @@ const ScheduleEventDialog: React.FC<ScheduleEventDialogProps> = ({ event, onClos
     };
 
     const xpRewardTypes = rewardTypes.filter(rt => rt.category === RewardCategory.XP);
-
+    
     const showModifiers = formData.eventType !== 'Announcement' && formData.eventType !== 'Vacation';
 
     return (

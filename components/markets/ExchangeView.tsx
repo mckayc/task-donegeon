@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { useAppState, useAppDispatch } from '../../context/AppContext';
+import { useAppState } from '../../context/AppContext';
 import { useAuthState } from '../../context/AuthContext';
 import { useUIState, useUIDispatch } from '../../context/UIStateContext';
 import { RewardTypeDefinition, RewardCategory, Market, RewardItem } from '../../types';
@@ -8,6 +8,7 @@ import Card from '../ui/Card';
 import Input from '../ui/Input';
 import { ArrowRightIcon } from '../ui/Icons';
 import { useNotificationsDispatch } from '../../context/NotificationsContext';
+import { useEconomyDispatch, useEconomyState } from '../../context/EconomyContext';
 
 interface ExchangeViewProps {
     market: Market;
@@ -41,10 +42,11 @@ const RewardButton: React.FC<{
 
 
 const ExchangeView: React.FC<ExchangeViewProps> = ({ market }) => {
-    const { rewardTypes, settings } = useAppState();
+    const { settings } = useAppState();
+    const { rewardTypes } = useEconomyState();
     const { currentUser } = useAuthState();
     const { appMode } = useUIState();
-    const { executeExchange } = useAppDispatch();
+    const { executeExchange } = useEconomyDispatch();
     const { addNotification } = useNotificationsDispatch();
     const { setActiveMarketId } = useUIDispatch();
 

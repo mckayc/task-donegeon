@@ -12,9 +12,14 @@ import Input from '../ui/Input';
 import ImagePreviewDialog from '../ui/ImagePreviewDialog';
 import { useDebounce } from '../../hooks/useDebounce';
 import { useNotificationsDispatch } from '../../context/NotificationsContext';
+import { useEconomyState } from '../../context/EconomyContext';
+import UploadWithCategoryDialog from '../admin/UploadWithCategoryDialog';
+import { useAppDispatch } from '../../context/AppContext';
 
 const ManageItemsPage: React.FC = () => {
-    const { settings, isAiConfigured, gameAssets: allGameAssets } = useAppState();
+    const { settings, isAiConfigured } = useAppState();
+    const { uploadFile } = useAppDispatch();
+    const { gameAssets: allGameAssets } = useEconomyState();
     const { addNotification } = useNotificationsDispatch();
     
     const [pageAssets, setPageAssets] = useState<GameAsset[]>([]);
@@ -33,6 +38,10 @@ const ManageItemsPage: React.FC = () => {
     const [sortBy, setSortBy] = useState<'createdAt-desc' | 'createdAt-asc' | 'name-asc' | 'name-desc'>('createdAt-desc');
     const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null);
     const debouncedSearchTerm = useDebounce(searchTerm, 300);
+
+    const [isDragging, setIsDragging] = useState(false);
+    const [fileToCategorize, setFileToCategorize] = useState<File | null>(null);
+    const [isUploading, setIsUploading] = useState(false);
 
     const isAiAvailable = settings.enableAiFeatures && isAiConfigured;
 
@@ -66,7 +75,7 @@ const ManageItemsPage: React.FC = () => {
             params.append('sortBy', sortBy);
 
             const data = await apiRequest('GET', `/api/assets?${params.toString()}`);
-            setPageAssets(data);
+            setPageAssets(data as GameAsset[]);
         } catch (error) {
             console.error("Failed to fetch assets:", error);
         } finally {
@@ -81,6 +90,58 @@ const ManageItemsPage: React.FC = () => {
     useEffect(() => {
         setSelectedAssets([]);
     }, [activeTab, searchTerm, sortBy]);
+    
+    const handleFileProcess = useCallback((file: File) => {
+        setFileToCategorize(file);
+    }, []);
+
+    const handleUploadWithCategory = async (file: File, category: string) => {
+        setIsUploading(true);
+        try {
+            const uploadedAsset = await uploadFile(file, category);
+            if (uploadedAsset?.url) {
+                addNotification({ type: 'success', message: 'Image uploaded! Now add asset details.' });
+                const assetName = file.name.replace(/\.[^/.]+$/, "").replace(/[-_]/g, ' ');
+                setInitialCreateData({
+                    url: uploadedAsset.url,
+                    name: assetName.charAt(0).toUpperCase() + assetName.slice(1),
+                    category,
+                });
+                setIsCreateDialogOpen(true);
+            } else {
+                throw new Error('Upload failed to return a URL.');
+            }
+        } catch (error) {
+            const message = error instanceof Error ? error.message : 'Unknown error';
+            addNotification({ type: 'error', message: `Upload failed: ${message}` });
+        } finally {
+            setIsUploading(false);
+            setFileToCategorize(null);
+        }
+    };
+    
+    const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+        if (event.target.files) Array.from(event.target.files).forEach(handleFileProcess);
+        event.target.value = '';
+    };
+
+    const handleDrop = useCallback((event: React.DragEvent<HTMLDivElement>) => {
+        event.preventDefault();
+        event.stopPropagation();
+        setIsDragging(false);
+        if (event.dataTransfer.files?.length > 0) {
+            Array.from(event.dataTransfer.files).forEach(handleFileProcess);
+            event.dataTransfer.clearData();
+        }
+    }, [handleFileProcess]);
+
+    const handleDragEvents = (event: React.DragEvent<HTMLDivElement>) => {
+        event.preventDefault();
+        event.stopPropagation();
+        if (event.type === 'dragenter' || event.type === 'dragover') setIsDragging(true);
+        else if (event.type === 'dragleave') setIsDragging(false);
+    };
+
 
     const handleEdit = (asset: GameAsset) => {
         setEditingAsset(asset);
@@ -141,18 +202,30 @@ const ManageItemsPage: React.FC = () => {
         setSelectedAssets(prev => isChecked ? [...prev, id] : prev.filter(assetId => assetId !== id));
     };
 
-    const headerActions = (
-        <div className="flex items-center gap-2 flex-wrap">
-            {isAiAvailable && (
-                <Button size="sm" onClick={() => setIsGeneratorOpen(true)} variant="secondary">Create with AI</Button>
-            )}
-            <Button size="sm" onClick={handleCreate}>Create New Asset</Button>
-        </div>
-    );
-
     return (
         <div className="space-y-6">
-            <Card title="All Created Items & Assets" headerAction={headerActions}>
+             <Card title="Quick Add Asset">
+                <div
+                    onDrop={handleDrop}
+                    onDragEnter={handleDragEvents} onDragOver={handleDragEvents} onDragLeave={handleDragEvents}
+                    className={`p-8 border-2 border-dashed rounded-lg text-center transition-colors ${
+                        isDragging ? 'border-emerald-500 bg-emerald-900/20' : 'border-stone-600'
+                    }`}
+                >
+                    <input id="file-upload" type="file" multiple onChange={handleFileSelect} className="hidden" disabled={isUploading} />
+                    <p className="text-stone-400 mb-4">Drag & drop files here, or click to select.</p>
+                    <div className="flex justify-center gap-4">
+                        <Button onClick={() => document.getElementById('file-upload')?.click()} disabled={isUploading}>
+                            {isUploading ? 'Processing...' : 'Upload Image'}
+                        </Button>
+                         {isAiAvailable && (
+                            <Button onClick={() => setIsGeneratorOpen(true)} variant="secondary">Create with AI</Button>
+                        )}
+                        <Button onClick={handleCreate} variant="secondary">Create Manually</Button>
+                    </div>
+                </div>
+            </Card>
+            <Card title="All Created Items & Assets">
                 <div className="border-b border-stone-700 mb-4">
                     <nav className="-mb-px flex space-x-4 overflow-x-auto">
                         {categories.map(category => (
@@ -170,7 +243,7 @@ const ManageItemsPage: React.FC = () => {
 
                 <div className="flex flex-wrap gap-4 mb-4">
                     <Input placeholder="Search assets..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="max-w-xs" />
-                    <Input as="select" value={sortBy} onChange={e => setSortBy(e.target.value as any)}>
+                    <Input as="select" value={sortBy} onChange={e => setSortBy(e.target.value as typeof sortBy)}>
                         <option value="createdAt-desc">Date (Newest)</option>
                         <option value="createdAt-asc">Date (Oldest)</option>
                         <option value="name-asc">Name (A-Z)</option>
@@ -226,24 +299,6 @@ const ManageItemsPage: React.FC = () => {
                                         <p className="text-xs text-stone-400">{asset.category}</p>
                                     </div>
                                 </label>
-                                <div className="absolute top-2 right-2">
-                                    <button
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            setOpenDropdownId(openDropdownId === asset.id ? null : asset.id);
-                                        }}
-                                        className="p-1.5 rounded-full bg-black/40 hover:bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity"
-                                    >
-                                        <EllipsisVerticalIcon className="w-5 h-5 text-white" />
-                                    </button>
-                                    {openDropdownId === asset.id && (
-                                        <div ref={dropdownRef} className="absolute right-0 mt-2 w-36 bg-stone-900 border border-stone-700 rounded-lg shadow-xl z-20">
-                                            <a href="#" onClick={(e) => { e.preventDefault(); handleEdit(asset); setOpenDropdownId(null); }} className="block px-4 py-2 text-sm text-stone-300 hover:bg-stone-700/50">Edit</a>
-                                            <button onClick={() => { handleClone(asset.id); setOpenDropdownId(null); }} className="w-full text-left block px-4 py-2 text-sm text-stone-300 hover:bg-stone-700/50">Clone</button>
-                                            <button onClick={() => { setConfirmation({action: 'delete', ids: [asset.id]}); setOpenDropdownId(null); }} className="w-full text-left block px-4 py-2 text-sm text-red-400 hover:bg-stone-700/50">Delete</button>
-                                        </div>
-                                    )}
-                                </div>
                             </div>
                         ))}
                     </div>
@@ -257,10 +312,19 @@ const ManageItemsPage: React.FC = () => {
                 )}
             </Card>
             
+            {fileToCategorize && (
+                <UploadWithCategoryDialog
+                    file={fileToCategorize}
+                    onClose={() => setFileToCategorize(null)}
+                    onUpload={handleUploadWithCategory}
+                    existingCategories={categories.filter(c => c !== 'All')}
+                />
+            )}
+            
             {isCreateDialogOpen && <EditGameAssetDialog 
                 assetToEdit={editingAsset} 
                 initialData={initialCreateData} 
-                onClose={() => { setEditingAsset(null); setIsCreateDialogOpen(false); }}
+                onClose={() => { setEditingAsset(null); setIsCreateDialogOpen(false); setInitialCreateData(null); }}
                 onSave={handleSaveAsset}
             />}
             {isGeneratorOpen && <ItemIdeaGenerator onUseIdea={handleUseIdea} onClose={() => setIsGeneratorOpen(false)} />}

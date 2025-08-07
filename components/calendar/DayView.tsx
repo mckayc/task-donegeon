@@ -2,7 +2,8 @@ import React, { useMemo, useState } from 'react';
 import { Quest, QuestCompletion, QuestType, ScheduledEvent } from '../../types';
 import QuestList from './QuestList';
 import { useCalendarVentures } from '../../hooks/useCalendarVentures';
-import { useAppDispatch, useAppState } from '../../context/AppContext';
+import { useAppState } from '../../context/AppContext';
+import { useQuestsDispatch } from '../../context/QuestsContext';
 import { useUIState } from '../../context/UIStateContext';
 import QuestDetailDialog from '../quests/QuestDetailDialog';
 import CompleteQuestDialog from '../quests/CompleteQuestDialog';
@@ -29,7 +30,7 @@ const DayView: React.FC<DayViewProps> = ({ currentDate, quests, questCompletions
     const calendarVentures = useCalendarVentures(currentDate);
     const [selectedQuest, setSelectedQuest] = useState<Quest | null>(null);
     const [completingQuest, setCompletingQuest] = useState<Quest | null>(null);
-    const { markQuestAsTodo, unmarkQuestAsTodo } = useAppDispatch();
+    const { markQuestAsTodo, unmarkQuestAsTodo } = useQuestsDispatch();
     const { settings, scheduledEvents: allScheduledEvents } = useAppState();
     const { currentUser } = useAuthState();
     const { appMode } = useUIState();

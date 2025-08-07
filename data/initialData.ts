@@ -135,6 +135,7 @@ export const INITIAL_MAIN_SIDEBAR_CONFIG: SidebarConfigItem[] = [
   { type: 'link', id: 'Appearance', emoji: '🖌️', isVisible: true, level: 1, role: Role.DonegeonMaster, termKey: 'link_appearance' },
   { type: 'link', id: 'Asset Library', emoji: '📚', isVisible: true, level: 1, role: Role.DonegeonMaster, termKey: 'link_asset_library' },
   { type: 'link', id: 'Suggestion Engine', emoji: '✨', isVisible: true, level: 1, role: Role.DonegeonMaster, termKey: 'link_suggestion_engine' },
+  { type: 'link', id: 'Bug Tracker', emoji: '🐞', isVisible: true, level: 1, role: Role.DonegeonMaster, termKey: 'link_bug_tracker' },
   
   { type: 'separator', id: 'sep-system-settings', level: 0, role: Role.DonegeonMaster, isVisible: true },
 
@@ -269,6 +270,7 @@ export const INITIAL_SETTINGS: AppSettings = {
       link_about: 'About',
       link_help_guide: 'Help Guide',
       link_chat: 'Chat',
+      link_bug_tracker: 'Bug Tracker',
     },
     enableAiFeatures: false,
     rewardValuation: {
@@ -292,7 +294,10 @@ export const INITIAL_SETTINGS: AppSettings = {
     },
     sidebars: {
         main: INITIAL_MAIN_SIDEBAR_CONFIG,
-    }
+    },
+    developerMode: {
+      enabled: false,
+    },
 };
 
 export const INITIAL_TROPHIES: Trophy[] = [

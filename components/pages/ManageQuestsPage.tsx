@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import { useAppState } from '../../context/AppContext';
+import { useQuestsState } from '../../context/QuestsContext';
 import { Quest, QuestType, QuestGroup } from '../../types';
 import Button from '../ui/Button';
 import Card from '../ui/Card';
@@ -14,7 +15,8 @@ import { useDebounce } from '../../hooks/useDebounce';
 import { useNotificationsDispatch } from '../../context/NotificationsContext';
 
 const ManageQuestsPage: React.FC = () => {
-    const { settings, isAiConfigured, questGroups } = useAppState();
+    const { settings, isAiConfigured } = useAppState();
+    const { questGroups } = useQuestsState();
     const { addNotification } = useNotificationsDispatch();
     
     const [pageQuests, setPageQuests] = useState<Quest[]>([]);
@@ -72,7 +74,7 @@ const ManageQuestsPage: React.FC = () => {
             params.append('sortBy', sortBy);
 
             const data = await apiRequest('GET', `/api/quests?${params.toString()}`);
-            setPageQuests(data);
+            setPageQuests(data as Quest[]);
         } catch (error) {
             console.error("Failed to fetch quests:", error);
         } finally {

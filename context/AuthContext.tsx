@@ -1,6 +1,7 @@
 import React, { createContext, useState, useContext, ReactNode, useCallback } from 'react';
 import { User, Role } from '../types';
 import { useNotificationsDispatch } from './NotificationsContext';
+import { useDeveloper } from './DeveloperContext';
 
 // State managed by this context
 interface AuthState {
@@ -29,6 +30,7 @@ interface AuthDispatch {
   exitToSharedView: () => void;
   setIsSharedViewActive: (isActive: boolean) => void;
   resetAllUsersData: () => void;
+  completeFirstRun: (adminUserData: any) => void;
 }
 
 const AuthStateContext = createContext<AuthState | undefined>(undefined);
@@ -36,6 +38,7 @@ const AuthDispatchContext = createContext<AuthDispatch | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const { addNotification } = useNotificationsDispatch();
+  const { isRecording, addLogEntry } = useDeveloper();
   const [users, setUsers] = useState<User[]>([]);
   const [currentUser, _setCurrentUser] = useState<User | null>(null);
   const [isAppUnlocked, _setAppUnlocked] = useState<boolean>(() => localStorage.getItem('isAppUnlocked') === 'true');
@@ -65,8 +68,21 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         throw error;
     }
   }, [addNotification]);
+  
+  const completeFirstRun = useCallback(async (adminUserData: any) => {
+    try {
+        await apiRequest('POST', '/api/first-run', { adminUserData });
+        addNotification({ type: 'success', message: 'Setup complete! The app will now reload.' });
+        setTimeout(() => window.location.reload(), 2000);
+    } catch (error) {
+        // Error is already handled by apiRequest
+    }
+  }, [apiRequest, addNotification]);
 
   const setCurrentUser = useCallback((user: User | null) => {
+    if (isRecording) {
+        addLogEntry({ type: 'STATE_CHANGE', message: `Setting current user to: ${user?.gameName || 'null'}` });
+    }
     _setCurrentUser(user);
     setIsSharedViewActive(false);
     if (user) {
@@ -75,7 +91,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     } else {
         localStorage.removeItem('lastUserId');
     }
-  }, []);
+  }, [isRecording, addLogEntry]);
 
   const exitToSharedView = useCallback(() => {
     _setCurrentUser(null);
@@ -84,6 +100,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   }, []);
 
   const addUser = useCallback(async (userData: Omit<User, 'id' | 'personalPurse' | 'personalExperience' | 'guildBalances' | 'avatar' | 'ownedAssetIds' | 'ownedThemes' | 'hasBeenOnboarded'>): Promise<User | null> => {
+    if (isRecording) {
+        addLogEntry({ type: 'ACTION', message: `Attempting to add user: ${userData.gameName}` });
+    }
     try {
         const newUser = await apiRequest('POST', '/api/users', userData);
         // The backend will broadcast a data update, so a manual state update here is not needed.
@@ -93,9 +112,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         console.error("Failed to add user on server.", error);
         return null;
     }
-  }, [apiRequest]);
+  }, [apiRequest, isRecording, addLogEntry]);
 
   const updateUser = useCallback((userId: string, update: Partial<User> | ((user: User) => User)) => {
+    if (isRecording) {
+        addLogEntry({ type: 'ACTION', message: `Updating user ID: ${userId}` });
+    }
     // Optimistic UI update
     const userToUpdate = users.find(u => u.id === userId);
     if (!userToUpdate) return;
@@ -113,14 +135,17 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         console.error("Failed to update user on server, optimistic update may be stale.", error);
         // Error notification is handled by apiRequest. Sync will correct the state.
     });
-  }, [users, currentUser, apiRequest]);
+  }, [users, currentUser, apiRequest, isRecording, addLogEntry]);
   
   const deleteUser = useCallback((userId: string) => {
+    if (isRecording) {
+        addLogEntry({ type: 'ACTION', message: `Deleting user ID: ${userId}` });
+    }
     setUsers(prev => prev.filter(u => u.id !== userId));
     apiRequest('DELETE', `/api/users/${userId}`).catch(error => {
        console.error("Failed to delete user on server.", error);
     });
-  }, [apiRequest]);
+  }, [apiRequest, isRecording, addLogEntry]);
 
   const markUserAsOnboarded = useCallback((userId: string) => updateUser(userId, { hasBeenOnboarded: true }), [updateUser]);
 
@@ -143,7 +168,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const dispatchValue: AuthDispatch = {
     setUsers, setLoginHistory, addUser, updateUser, deleteUser, setCurrentUser, markUserAsOnboarded,
     setAppUnlocked, setIsSwitchingUser, setTargetedUserForLogin,
-    exitToSharedView, setIsSharedViewActive, resetAllUsersData
+    exitToSharedView, setIsSharedViewActive, resetAllUsersData,
+    completeFirstRun,
   };
 
   return (

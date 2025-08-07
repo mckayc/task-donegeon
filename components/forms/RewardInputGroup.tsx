@@ -1,9 +1,8 @@
-
 import React from 'react';
 import { RewardCategory, RewardItem } from '../../types';
 import Input from '../ui/Input';
 import Button from '../ui/Button';
-import { useAppState } from '../../context/AppContext';
+import { useEconomyState } from '../../context/EconomyContext';
 import { useAnchorEquivalent } from '../../hooks/useRewardValue';
 
 interface RewardInputGroupProps {
@@ -47,7 +46,7 @@ const RewardItemRow: React.FC<{
 
 
 const RewardInputGroup: React.FC<RewardInputGroupProps> = ({ category, items, onChange, onAdd, onRemove }) => {
-  const { rewardTypes } = useAppState();
+  const { rewardTypes } = useEconomyState();
 
   const currencyTypes = rewardTypes.filter(rt => rt.category === RewardCategory.Currency);
   const xpTypes = rewardTypes.filter(rt => rt.category === RewardCategory.XP);

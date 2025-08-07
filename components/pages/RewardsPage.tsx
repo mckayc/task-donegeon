@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { useAppState, useAppDispatch } from '../../context/AppContext';
+import { useEconomyState, useEconomyDispatch } from '../../context/EconomyContext';
 import { RewardCategory, RewardTypeDefinition } from '../../types';
 import Button from '../ui/Button';
 import Card from '../ui/Card';
@@ -74,8 +74,8 @@ const RewardList: React.FC<{ title: string; rewards: RewardTypeDefinition[]; onE
 );
 
 const RewardsPage: React.FC = () => {
-    const { rewardTypes } = useAppState();
-    const { deleteRewardType, cloneRewardType } = useAppDispatch();
+    const { rewardTypes } = useEconomyState();
+    const { deleteRewardType, cloneRewardType } = useEconomyDispatch();
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [editingReward, setEditingReward] = useState<RewardTypeDefinition | null>(null);
     const [isConfirmOpen, setIsConfirmOpen] = useState(false);

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useAppState, useAppDispatch } from '../../context/AppContext';
+import { useAppDispatch } from '../../context/AppContext';
 import { GameAsset, RewardItem, RewardCategory } from '../../types';
 import Button from '../ui/Button';
 import Input from '../ui/Input';
@@ -7,6 +7,7 @@ import RewardInputGroup from '../forms/RewardInputGroup';
 import ToggleSwitch from '../ui/ToggleSwitch';
 import ImageSelectionDialog from '../ui/ImageSelectionDialog';
 import { useNotificationsDispatch } from '../../context/NotificationsContext';
+import { useEconomyState, useEconomyDispatch } from '../../context/EconomyContext';
 
 interface EditGameAssetDialogProps {
   assetToEdit: GameAsset | null;
@@ -31,9 +32,10 @@ const PREDEFINED_CATEGORIES = [
 ];
 
 const EditGameAssetDialog: React.FC<EditGameAssetDialogProps> = ({ assetToEdit, initialData, onClose, mode = (assetToEdit ? 'edit' : 'create'), onTryAgain, isGenerating, onSave }) => {
-  const { addGameAsset, updateGameAsset, uploadFile } = useAppDispatch();
+  const { uploadFile } = useAppDispatch();
+  const { addGameAsset, updateGameAsset } = useEconomyDispatch();
   const { addNotification } = useNotificationsDispatch();
-  const { markets, rewardTypes } = useAppState();
+  const { markets, rewardTypes } = useEconomyState();
 
   const getInitialFormData = useCallback(() => {
     const data = assetToEdit || initialData;

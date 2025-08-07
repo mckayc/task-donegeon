@@ -1,5 +1,6 @@
 import React, { createContext, useState, useContext, ReactNode, useCallback } from 'react';
 import { Page, AppMode } from '../types';
+import { useDeveloper } from './DeveloperContext';
 
 // State managed by this context
 interface UIState {
@@ -23,11 +24,21 @@ const UIStateContext = createContext<UIState | undefined>(undefined);
 const UIDispatchContext = createContext<UIDispatch | undefined>(undefined);
 
 export const UIStateProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [activePage, setActivePage] = useState<Page>('Dashboard');
+  const [activePage, _setActivePage] = useState<Page>('Dashboard');
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState<boolean>(() => localStorage.getItem('isSidebarCollapsed') === 'true');
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [appMode, setAppMode] = useState<AppMode>({ mode: 'personal' });
   const [activeMarketId, setActiveMarketId] = useState<string | null>(null);
+
+  const { isRecording, addLogEntry } = useDeveloper();
+
+  const setActivePage = useCallback((page: Page) => {
+      if (isRecording) {
+        addLogEntry({ type: 'NAVIGATION', message: `Navigated to ${page} page.`});
+      }
+      _setActivePage(page);
+  }, [isRecording, addLogEntry]);
+
 
   const toggleSidebar = useCallback(() => {
     setIsSidebarCollapsed(prev => {

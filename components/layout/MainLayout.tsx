@@ -43,6 +43,7 @@ import { useUIState, useUIDispatch } from '../../context/UIStateContext';
 import ChatPanel from '../chat/ChatPanel';
 import LoginNotificationPopup from '../ui/LoginNotificationPopup';
 import ManageEventsPage from '../pages/management/ManageEventsPage';
+import BugTrackingPage from '../dev/BugTrackingPage';
 
 const MainLayout: React.FC = () => {
   const { settings, systemNotifications } = useAppState();
@@ -59,7 +60,7 @@ const MainLayout: React.FC = () => {
     'Manage Users', 'Manage Rewards', 'Manage Quests', 'Manage Quest Groups', 'Manage Goods', 'Manage Markets',
     'Manage Guilds', 'Manage Ranks', 'Manage Trophies', 'Settings', 'Suggestion Engine',
     'Appearance', 'Theme Editor', 'Object Exporter', 'Asset Manager', 'Backup & Import', 'Asset Library',
-    'Manage Events',
+    'Manage Events', 'Bug Tracker'
   ];
   const GATEKEEPER_PAGES: Page[] = ['Approvals'];
 
@@ -144,6 +145,7 @@ const MainLayout: React.FC = () => {
       case 'Profile': return <ProfilePage />;
       case 'About': return <AboutPage />;
       case 'Help Guide': return <HelpPage />;
+      case 'Bug Tracker': return <BugTrackingPage />;
       default: return <Dashboard />;
     }
   };

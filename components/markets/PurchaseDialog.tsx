@@ -1,21 +1,23 @@
 import React, { useMemo } from 'react';
-import { useAppState, useAppDispatch } from '../../context/AppContext';
+import { useEconomyState, useEconomyDispatch } from '../../context/EconomyContext';
 import { useAuthState } from '../../context/AuthContext';
 import { useUIState } from '../../context/UIStateContext';
-import { GameAsset, RewardItem } from '../../types';
+import { GameAsset, RewardItem, ScheduledEvent } from '../../types';
 import Button from '../ui/Button';
+import { toYMD } from '../../utils/quests';
 
 interface PurchaseDialogProps {
   asset: GameAsset;
   marketId: string;
   onClose: () => void;
+  scheduledEvents: ScheduledEvent[];
 }
 
-const PurchaseDialog: React.FC<PurchaseDialogProps> = ({ asset, marketId, onClose }) => {
-    const { rewardTypes } = useAppState();
+const PurchaseDialog: React.FC<PurchaseDialogProps> = ({ asset, marketId, onClose, scheduledEvents }) => {
+    const { rewardTypes } = useEconomyState();
     const { currentUser } = useAuthState();
     const { appMode } = useUIState();
-    const { purchaseMarketItem } = useAppDispatch();
+    const { purchaseMarketItem } = useEconomyDispatch();
     
     if (!currentUser) return null;
 
@@ -33,6 +35,25 @@ const PurchaseDialog: React.FC<PurchaseDialogProps> = ({ asset, marketId, onClos
             ? currentBalances.purse[rewardTypeId] || 0
             : currentBalances.experience[rewardTypeId] || 0;
     };
+
+    const getFinalCostGroups = () => {
+        const todayYMD = toYMD(new Date());
+        const activeSaleEvent = scheduledEvents.find(event => 
+            event.eventType === 'MarketSale' && event.modifiers.marketId === marketId &&
+            todayYMD >= event.startDate && todayYMD <= event.endDate &&
+            (!event.modifiers.assetIds || event.modifiers.assetIds.length === 0 || event.modifiers.assetIds.includes(asset.id))
+        );
+
+        if (activeSaleEvent && activeSaleEvent.modifiers.discountPercent) {
+            const discount = activeSaleEvent.modifiers.discountPercent / 100;
+            return asset.costGroups.map(group =>
+                group.map(c => ({ ...c, amount: Math.max(0, Math.ceil(c.amount * (1 - discount))) }))
+            );
+        }
+        return asset.costGroups;
+    };
+
+    const finalCostGroups = getFinalCostGroups();
     
     const canAfford = (costGroup: RewardItem[]) => {
         return costGroup.every(c => getBalance(c.rewardTypeId) >= c.amount);
@@ -44,7 +65,8 @@ const PurchaseDialog: React.FC<PurchaseDialogProps> = ({ asset, marketId, onClos
     };
 
     const handlePurchase = (costGroupIndex: number) => {
-        purchaseMarketItem(asset.id, marketId, currentUser, costGroupIndex);
+        // Pass scheduledEvents to the dispatch function
+        purchaseMarketItem(asset.id, marketId, currentUser, costGroupIndex, scheduledEvents);
         onClose();
     };
 
@@ -57,8 +79,11 @@ const PurchaseDialog: React.FC<PurchaseDialogProps> = ({ asset, marketId, onClos
                 </div>
 
                 <div className="p-6 space-y-4">
-                    {asset.costGroups.map((group, index) => {
+                    {finalCostGroups.map((group, index) => {
                         const isAffordable = canAfford(group);
+                        const originalGroup = asset.costGroups[index];
+                        const hasDiscount = JSON.stringify(group) !== JSON.stringify(originalGroup);
+
                         return (
                             <button
                                 key={index}
@@ -69,12 +94,22 @@ const PurchaseDialog: React.FC<PurchaseDialogProps> = ({ asset, marketId, onClos
                                 <div className="flex flex-wrap gap-x-4 gap-y-1 text-lg font-semibold">
                                 {group.map((r, rIndex) => {
                                     const info = getRewardInfo(r.rewardTypeId);
-                                    return <span key={r.rewardTypeId} className="text-amber-300 flex items-center gap-1.5" title={info.name}>{r.amount} <span className="text-xl">{info.icon}</span></span>
+                                    const originalCost = originalGroup[rIndex].amount;
+                                    return (
+                                    <span key={r.rewardTypeId} className="text-amber-300 flex items-center gap-1.5" title={info.name}>
+                                        {hasDiscount && <span className="line-through text-amber-300/60 text-base">{originalCost}</span>}
+                                        {r.amount} 
+                                        <span className="text-xl">{info.icon}</span>
+                                    </span>
+                                    )
                                 })}
                                 </div>
                             </button>
                         )
                     })}
+                </div>
+                 <div className="p-4 bg-black/20 rounded-b-xl flex justify-end items-center gap-2 flex-wrap">
+                    <Button variant="secondary" onClick={onClose}>Cancel</Button>
                 </div>
             </div>
         </div>

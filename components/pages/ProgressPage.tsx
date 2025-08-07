@@ -5,9 +5,12 @@ import { RewardCategory, QuestCompletionStatus, RewardItem } from '../../types';
 import Card from '../ui/Card';
 import LineChart from '../ui/LineChart';
 import { useAuthState } from '../../context/AuthContext';
+import { useQuestsState } from '../../context/QuestsContext';
+import { useEconomyState } from '../../context/EconomyContext';
 
 const ProgressPage: React.FC = () => {
-    const { questCompletions, quests, rewardTypes } = useAppState();
+    const { quests, questCompletions } = useQuestsState();
+    const { rewardTypes } = useEconomyState();
     const { currentUser } = useAuthState();
     const { appMode } = useUIState();
     

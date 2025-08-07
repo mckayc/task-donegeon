@@ -1,53 +1,22 @@
 import React, { createContext, useState, useContext, ReactNode, useEffect, useCallback, useMemo, useRef } from 'react';
-import { AppSettings, User, Quest, RewardTypeDefinition, QuestCompletion, RewardItem, Market, PurchaseRequest, Guild, Rank, Trophy, UserTrophy, AppMode, Page, IAppData, ShareableAssetType, GameAsset, Role, QuestCompletionStatus, RewardCategory, PurchaseRequestStatus, AdminAdjustment, AdminAdjustmentType, SystemLog, QuestType, QuestAvailability, AssetPack, ImportResolution, TrophyRequirementType, ThemeDefinition, ChatMessage, SystemNotification, SystemNotificationType, MarketStatus, QuestGroup, BulkQuestUpdates, ScheduledEvent } from '../types';
-import { INITIAL_SETTINGS, INITIAL_REWARD_TYPES, INITIAL_RANKS, INITIAL_TROPHIES, INITIAL_THEMES, INITIAL_QUEST_GROUPS, INITIAL_TAGS } from '../data/initialData';
-import { toYMD } from '../utils/quests';
-import { analyzeAssetPackForConflicts } from '../utils/sharing';
+import { AppSettings, User, Quest, RewardItem, Guild, Rank, Trophy, UserTrophy, AppMode, Page, IAppData, ShareableAssetType, GameAsset, Role, RewardCategory, AdminAdjustment, AdminAdjustmentType, SystemLog, QuestType, QuestAvailability, AssetPack, ImportResolution, TrophyRequirementType, ThemeDefinition, ChatMessage, SystemNotification, SystemNotificationType, MarketStatus, QuestGroup, BulkQuestUpdates, ScheduledEvent, BugReport } from '../types';
+import { INITIAL_SETTINGS, INITIAL_RANKS, INITIAL_TROPHIES, INITIAL_THEMES } from '../data/initialData';
 import { useNotificationsDispatch } from './NotificationsContext';
 import { useAuthState, useAuthDispatch } from './AuthContext';
+import { useQuestsDispatch } from './QuestsContext';
+import { useEconomyDispatch } from './EconomyContext';
 
-// The single, unified state for the non-auth parts of the application
-interface AppState extends Omit<IAppData, 'users' | 'loginHistory'> {
+// The single, unified state for the non-auth/quest parts of the application
+interface AppState extends Omit<IAppData, 'users' | 'loginHistory' | 'quests' | 'questGroups' | 'questCompletions' | 'markets' | 'rewardTypes' | 'purchaseRequests' | 'gameAssets'> {
   isDataLoaded: boolean;
-  allTags: string[];
   isAiConfigured: boolean;
   syncStatus: 'idle' | 'syncing' | 'success' | 'error';
   syncError: string | null;
 }
 
-// The single, unified dispatch for the non-auth parts of the application
+// The single, unified dispatch for the non-auth/quest parts of the application
 interface AppDispatch {
   // Game Data
-  addQuest: (quest: Omit<Quest, 'id' | 'claimedByUserIds' | 'dismissals'>) => void;
-  updateQuest: (updatedQuest: Quest) => void;
-  deleteQuest: (questId: string) => void;
-  cloneQuest: (questId: string) => void;
-  dismissQuest: (questId: string, userId: string) => void;
-  claimQuest: (questId: string, userId: string) => void;
-  releaseQuest: (questId: string, userId: string) => void;
-  markQuestAsTodo: (questId: string, userId: string) => void;
-  unmarkQuestAsTodo: (questId: string, userId: string) => void;
-  completeQuest: (questId: string, userId: string, rewards: RewardItem[], requiresApproval: boolean, guildId?: string, options?: { note?: string; completionDate?: Date }) => void;
-  approveQuestCompletion: (completionId: string, note?: string) => void;
-  rejectQuestCompletion: (completionId: string, note?: string) => void;
-  addQuestGroup: (group: Omit<QuestGroup, 'id'>) => QuestGroup;
-  updateQuestGroup: (group: QuestGroup) => void;
-  deleteQuestGroup: (groupId: string) => void;
-  assignQuestGroupToUsers: (groupId: string, userIds: string[]) => void;
-  addRewardType: (rewardType: Omit<RewardTypeDefinition, 'id' | 'isCore'>) => void;
-  updateRewardType: (rewardType: RewardTypeDefinition) => void;
-  deleteRewardType: (rewardTypeId: string) => void;
-  cloneRewardType: (rewardTypeId: string) => void;
-  addMarket: (market: Omit<Market, 'id'>) => void;
-  updateMarket: (market: Market) => void;
-  deleteMarket: (marketId: string) => void;
-  cloneMarket: (marketId: string) => void;
-  deleteMarkets: (marketIds: string[]) => void;
-  updateMarketsStatus: (marketIds: string[], statusType: 'open' | 'closed') => void;
-  purchaseMarketItem: (assetId: string, marketId: string, user: User, costGroupIndex: number) => void;
-  cancelPurchaseRequest: (purchaseId: string) => void;
-  approvePurchaseRequest: (purchaseId: string) => void;
-  rejectPurchaseRequest: (purchaseId: string) => void;
   addGuild: (guild: Omit<Guild, 'id'>) => void;
   updateGuild: (guild: Guild) => void;
   deleteGuild: (guildId: string) => void;
@@ -57,30 +26,19 @@ interface AppDispatch {
   deleteTrophy: (trophyId: string) => void;
   awardTrophy: (userId: string, trophyId: string, guildId?: string) => void;
   applyManualAdjustment: (adjustment: Omit<AdminAdjustment, 'id' | 'adjustedAt'>) => boolean;
-  addGameAsset: (asset: Omit<GameAsset, 'id' | 'creatorId' | 'createdAt'>) => void;
-  updateGameAsset: (asset: GameAsset) => void;
-  deleteGameAsset: (assetId: string) => void;
-  cloneGameAsset: (assetId: string) => void;
   addTheme: (theme: Omit<ThemeDefinition, 'id'>) => void;
   updateTheme: (theme: ThemeDefinition) => void;
   deleteTheme: (themeId: string) => void;
   addScheduledEvent: (event: Omit<ScheduledEvent, 'id'>) => void;
   updateScheduledEvent: (event: ScheduledEvent) => void;
   deleteScheduledEvent: (eventId: string) => void;
-  completeFirstRun: (adminUserData: Omit<User, 'id' | 'personalPurse' | 'personalExperience' | 'guildBalances' | 'avatar' | 'ownedAssetIds' | 'ownedThemes' | 'hasBeenOnboarded'>) => void;
-  importAssetPack: (assetPack: AssetPack, resolutions: ImportResolution[]) => void;
+  addBugReport: (report: Omit<BugReport, 'id'>) => void;
   restoreFromBackup: (backupData: IAppData) => void;
   clearAllHistory: () => void;
   resetAllPlayerData: () => void;
   deleteAllCustomContent: () => void;
-  deleteSelectedAssets: (selection: Record<ShareableAssetType, string[]>) => void;
-  deleteQuests: (questIds: string[]) => void;
-  deleteTrophies: (trophyIds: string[]) => void;
-  deleteGameAssets: (assetIds: string[]) => void;
-  updateQuestsStatus: (questIds: string[], isActive: boolean) => void;
-  bulkUpdateQuests: (questIds: string[], updates: BulkQuestUpdates) => void;
+  deleteSelectedAssets: (selection: Partial<Record<ShareableAssetType, string[]>>) => void;
   uploadFile: (file: File, category?: string) => Promise<{ url: string } | null>;
-  executeExchange: (userId: string, payItem: RewardItem, receiveItem: RewardItem, guildId?: string) => void;
   factoryReset: () => void;
 
   // Settings & UI
@@ -99,26 +57,22 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const { addNotification } = useNotificationsDispatch();
   const { currentUser, users } = useAuthState();
   const authDispatch = useAuthDispatch();
+  const questsDispatch = useQuestsDispatch();
+  const economyDispatch = useEconomyDispatch();
 
   // === STATE MANAGEMENT ===
-  const [quests, setQuests] = useState<Quest[]>([]);
-  const [questGroups, setQuestGroups] = useState<QuestGroup[]>([]);
-  const [markets, setMarkets] = useState<Market[]>([]);
-  const [rewardTypes, setRewardTypes] = useState<RewardTypeDefinition[]>([]);
-  const [questCompletions, setQuestCompletions] = useState<QuestCompletion[]>([]);
-  const [purchaseRequests, setPurchaseRequests] = useState<PurchaseRequest[]>([]);
   const [guilds, setGuilds] = useState<Guild[]>([]);
   const [ranks, setRanks] = useState<Rank[]>([]);
   const [trophies, setTrophies] = useState<Trophy[]>([]);
   const [userTrophies, setUserTrophies] = useState<UserTrophy[]>([]);
   const [adminAdjustments, setAdminAdjustments] = useState<AdminAdjustment[]>([]);
-  const [gameAssets, setGameAssets] = useState<GameAsset[]>([]);
   const [systemLogs, setSystemLogs] = useState<SystemLog[]>([]);
   const [settings, setSettings] = useState<AppSettings>(INITIAL_SETTINGS);
   const [themes, setThemes] = useState<ThemeDefinition[]>(INITIAL_THEMES);
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [systemNotifications, setSystemNotifications] = useState<SystemNotification[]>([]);
   const [scheduledEvents, setScheduledEvents] = useState<ScheduledEvent[]>([]);
+  const [bugReports, setBugReports] = useState<BugReport[]>([]);
 
   // UI State that remains global due to cross-cutting concerns
   const [isDataLoaded, setIsDataLoaded] = useState(false);
@@ -167,6 +121,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         sharedMode: { ...INITIAL_SETTINGS.sharedMode, ...(savedSettings.sharedMode || {}) },
         automatedBackups: { ...INITIAL_SETTINGS.automatedBackups, ...(savedSettings.automatedBackups || {}) },
         loginNotifications: { ...INITIAL_SETTINGS.loginNotifications, ...(savedSettings.loginNotifications || {}) },
+        developerMode: { ...INITIAL_SETTINGS.developerMode, ...(savedSettings.developerMode || {}) },
         chat: { ...INITIAL_SETTINGS.chat, ...(savedSettings.chat || {}) },
         sidebars: { ...INITIAL_SETTINGS.sidebars, ...(savedSettings.sidebars || {}) },
         terminology: { ...INITIAL_SETTINGS.terminology, ...(savedSettings.terminology || {}) },
@@ -174,25 +129,29 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       };
 
       authDispatch.setUsers(dataToSet.users || []);
-      setQuests(dataToSet.quests || []);
-      setQuestGroups(dataToSet.questGroups || []);
-      setMarkets(dataToSet.markets || []);
-      setRewardTypes(dataToSet.rewardTypes || []);
-      setQuestCompletions(dataToSet.questCompletions || []);
-      setPurchaseRequests(dataToSet.purchaseRequests || []);
+      authDispatch.setLoginHistory(dataToSet.loginHistory || []);
+      
+      questsDispatch.setQuests(dataToSet.quests || []);
+      questsDispatch.setQuestGroups(dataToSet.questGroups || []);
+      questsDispatch.setQuestCompletions(dataToSet.questCompletions || []);
+      
+      economyDispatch.setMarkets(dataToSet.markets || []);
+      economyDispatch.setRewardTypes(dataToSet.rewardTypes || []);
+      economyDispatch.setPurchaseRequests(dataToSet.purchaseRequests || []);
+      economyDispatch.setGameAssets(dataToSet.gameAssets || []);
+
       setGuilds(dataToSet.guilds || []);
       setRanks(dataToSet.ranks || []);
       setTrophies(dataToSet.trophies || []);
       setUserTrophies(dataToSet.userTrophies || []);
       setAdminAdjustments(dataToSet.adminAdjustments || []);
-      setGameAssets(dataToSet.gameAssets || []);
       setSystemLogs(dataToSet.systemLogs || []);
       setSettings(loadedSettings);
       setThemes(dataToSet.themes || INITIAL_THEMES);
-      authDispatch.setLoginHistory(dataToSet.loginHistory || []);
       setChatMessages(dataToSet.chatMessages || []);
       setSystemNotifications(dataToSet.systemNotifications || []);
       setScheduledEvents(dataToSet.scheduledEvents || []);
+      setBugReports(dataToSet.bugReports || []);
 
       const lastUserId = localStorage.getItem('lastUserId');
       if (lastUserId && dataToSet.users) {
@@ -204,7 +163,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     } catch (error) {
       console.error("Could not load data from server.", error);
     }
-  }, [apiRequest, authDispatch]);
+  }, [apiRequest, authDispatch, questsDispatch, economyDispatch]);
 
   useEffect(() => {
     const initializeApp = async () => {
@@ -304,37 +263,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     }));
   }, [currentUser]);
 
-  const applyRewards = useCallback((userId: string, rewardsToApply: RewardItem[], guildId?: string) => {
-    authDispatch.updateUser(userId, userToUpdate => {
-        rewardsToApply.forEach(reward => {
-            const rewardDef = rewardTypes.find(rd => rd.id === reward.rewardTypeId);
-            if (!rewardDef) return;
-            if (guildId) {
-                userToUpdate.guildBalances = { ...userToUpdate.guildBalances };
-                if (!userToUpdate.guildBalances[guildId]) userToUpdate.guildBalances[guildId] = { purse: {}, experience: {} };
-                const balanceSheet = { ...userToUpdate.guildBalances[guildId] };
-                if (rewardDef.category === RewardCategory.Currency) {
-                    balanceSheet.purse = { ...balanceSheet.purse };
-                    balanceSheet.purse[reward.rewardTypeId] = (balanceSheet.purse[reward.rewardTypeId] || 0) + reward.amount;
-                } else {
-                    balanceSheet.experience = { ...balanceSheet.experience };
-                    balanceSheet.experience[reward.rewardTypeId] = (balanceSheet.experience[reward.rewardTypeId] || 0) + reward.amount;
-                }
-                userToUpdate.guildBalances[guildId] = balanceSheet;
-            } else {
-                if (rewardDef.category === RewardCategory.Currency) {
-                    userToUpdate.personalPurse = { ...userToUpdate.personalPurse };
-                    userToUpdate.personalPurse[reward.rewardTypeId] = (userToUpdate.personalPurse[reward.rewardTypeId] || 0) + reward.amount;
-                } else {
-                    userToUpdate.personalExperience = { ...userToUpdate.personalExperience };
-                    userToUpdate.personalExperience[reward.rewardTypeId] = (userToUpdate.personalExperience[reward.rewardTypeId] || 0) + reward.amount;
-                }
-            }
-        });
-        return userToUpdate;
-    });
-  }, [rewardTypes, authDispatch]);
-  
   const awardTrophy = useCallback((userId: string, trophyId: string, guildId?: string) => {
     const t = trophies.find(t => t.id === trophyId);
     if (t) {
@@ -350,283 +278,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       });
     }
   }, [trophies, addNotification, addSystemNotification]);
-
-  // GameData
-  const addQuest = useCallback((quest: Omit<Quest, 'id' | 'claimedByUserIds' | 'dismissals'>) => {
-    const newQuest: Quest = { ...quest, id: `quest-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`, claimedByUserIds: [], dismissals: [], todoUserIds: [] };
-    setQuests(prev => [...prev, newQuest]);
-    if (newQuest.assignedUserIds.length > 0) {
-        addSystemNotification({
-            type: SystemNotificationType.QuestAssigned,
-            message: `You have been assigned a new quest: "${newQuest.title}"`,
-            recipientUserIds: newQuest.assignedUserIds,
-            guildId: newQuest.guildId,
-            link: 'Quests',
-        });
-    } else if (newQuest.guildId) {
-        const guild = guilds.find(g => g.id === newQuest.guildId);
-        if (guild) {
-             addSystemNotification({
-                type: SystemNotificationType.QuestAssigned,
-                message: `A new guild quest is available: "${newQuest.title}"`,
-                recipientUserIds: guild.memberIds,
-                guildId: newQuest.guildId,
-                link: 'Quests',
-            });
-        }
-    }
-  }, [addSystemNotification, guilds]);
-
-  const cloneQuest = useCallback((questId: string) => {
-    const questToClone = quests.find(q => q.id === questId);
-    if (!questToClone) return;
-
-    const newQuest: Quest = {
-        ...JSON.parse(JSON.stringify(questToClone)), // Deep copy
-        id: `quest-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
-        title: `${questToClone.title} (Copy)`,
-        claimedByUserIds: [],
-        dismissals: [],
-        todoUserIds: [],
-    };
-    setQuests(prev => [...prev, newQuest]);
-    addNotification({ type: 'success', message: `Cloned quest: ${newQuest.title}` });
-  }, [quests, addNotification]);
-
-  const updateQuest = useCallback(async (updatedQuest: Quest) => {
-    try {
-        const returnedQuest = await apiRequest('PUT', `/api/quests/${updatedQuest.id}`, updatedQuest);
-        setQuests(prev => prev.map(q => q.id === returnedQuest.id ? { ...q, ...returnedQuest } : q));
-    } catch (error) {
-        // notification is handled by apiRequest
-    }
-  }, [apiRequest]);
-
-  const deleteQuest = useCallback((questId: string) => setQuests(prev => prev.filter(q => q.id !== questId)), []);
-  const dismissQuest = useCallback((questId: string, userId: string) => { setQuests(prevQuests => prevQuests.map(q => q.id === questId ? { ...q, dismissals: [...q.dismissals.filter(d => d.userId !== userId), { userId, dismissedAt: new Date().toISOString() }] } : q)); }, []);
-  const claimQuest = useCallback((questId: string, userId: string) => setQuests(prev => prev.map(q => q.id === questId ? { ...q, claimedByUserIds: [...q.claimedByUserIds, userId] } : q)), []);
-  const releaseQuest = useCallback((questId: string, userId: string) => setQuests(prev => prev.map(q => q.id === questId ? { ...q, claimedByUserIds: q.claimedByUserIds.filter(id => id !== userId) } : q)), []);
-  const markQuestAsTodo = useCallback((questId: string, userId: string) => { setQuests(prevQuests => prevQuests.map(q => q.id === questId ? { ...q, todoUserIds: Array.from(new Set([...(q.todoUserIds || []), userId])) } : q)); }, []);
-  const unmarkQuestAsTodo = useCallback((questId: string, userId: string) => { setQuests(prevQuests => prevQuests.map(q => q.id === questId ? { ...q, todoUserIds: (q.todoUserIds || []).filter(id => id !== userId) } : q)); }, []);
-  
-  const completeQuest = useCallback(async (questId: string, userId: string, rewards: RewardItem[], requiresApproval: boolean, guildId?: string, options?: { note?: string; completionDate?: Date }) => {
-    const completionData = {
-        questId, userId,
-        completedAt: (options?.completionDate || new Date()).toISOString(),
-        status: requiresApproval ? QuestCompletionStatus.Pending : QuestCompletionStatus.Approved,
-        guildId,
-        note: options?.note
-    };
-
-    try {
-      // The backend now handles reward application for auto-approved quests and trophy checks.
-      await apiRequest('POST', '/api/actions/complete-quest', { completionData });
-      // The backend will broadcast a data update, and the frontend will sync.
-    } catch (error) {
-       // error is handled by the apiRequest helper
-    }
-  }, [apiRequest]);
-
-  const approveQuestCompletion = useCallback(async (completionId: string, note?: string) => {
-    try {
-        await apiRequest('POST', `/api/actions/approve-quest/${completionId}`, { note });
-        addNotification({ type: 'success', message: 'Quest approved!' });
-        // State updates are now handled via WebSocket broadcast from the server.
-    } catch (error) {
-        // Error notification is handled by apiRequest helper.
-    }
-  }, [apiRequest, addNotification]);
-
-  const rejectQuestCompletion = useCallback(async (completionId: string, note?: string) => {
-    try {
-        await apiRequest('POST', `/api/actions/reject-quest/${completionId}`, { note });
-        addNotification({ type: 'info', message: 'Quest rejected.' });
-        // State updates are now handled via WebSocket broadcast from the server.
-    } catch (error) {
-        // Error notification is handled by apiRequest helper.
-    }
-  }, [apiRequest, addNotification]);
-
-  const addRewardType = useCallback((rewardType: Omit<RewardTypeDefinition, 'id' | 'isCore'>) => setRewardTypes(prev => [...prev, { ...rewardType, id: `custom-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`, isCore: false }]), []);
-  const updateRewardType = useCallback((rewardType: RewardTypeDefinition) => setRewardTypes(prev => prev.map(rt => rt.id === rewardType.id ? rewardType : rt)), []);
-  const deleteRewardType = useCallback((rewardTypeId: string) => setRewardTypes(prev => prev.filter(rt => rt.id !== rewardTypeId)), []);
-  const cloneRewardType = useCallback((rewardTypeId: string) => {
-    const rewardToClone = rewardTypes.find(rt => rt.id === rewardTypeId);
-    if (!rewardToClone || rewardToClone.isCore) {
-        addNotification({ type: 'error', message: 'Core rewards cannot be cloned.' });
-        return;
-    }
-    const newReward: RewardTypeDefinition = {
-        ...JSON.parse(JSON.stringify(rewardToClone)),
-        id: `custom-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
-        name: `${rewardToClone.name} (Copy)`,
-        isCore: false,
-    };
-    setRewardTypes(prev => [...prev, newReward]);
-    addNotification({ type: 'success', message: `Cloned reward: ${newReward.name}` });
-  }, [rewardTypes, addNotification]);
-  const addMarket = useCallback((market: Omit<Market, 'id'>) => setMarkets(prev => [...prev, { ...market, id: `market-${Date.now()}-${Math.random().toString(36).substring(2, 9)}` }]), []);
-  const updateMarket = useCallback((market: Market) => setMarkets(prev => prev.map(m => m.id === market.id ? market : m)), []);
-  const deleteMarket = useCallback((marketId: string) => setMarkets(prev => prev.filter(m => m.id !== marketId)), []);
-  const cloneMarket = useCallback((marketId: string) => {
-    if (marketId === 'market-bank') {
-        addNotification({ type: 'error', message: 'The Exchange Post cannot be cloned.' });
-        return;
-    }
-    const marketToClone = markets.find(m => m.id === marketId);
-    if (!marketToClone) return;
-    const newMarket: Market = {
-        ...JSON.parse(JSON.stringify(marketToClone)),
-        id: `market-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
-        title: `${marketToClone.title} (Copy)`,
-    };
-    setMarkets(prev => [...prev, newMarket]);
-    addNotification({ type: 'success', message: `Cloned market: ${newMarket.title}` });
-  }, [markets, addNotification]);
-  const deleteMarkets = useCallback((marketIds: string[]) => {
-      const idsToDelete = new Set(marketIds.filter(id => id !== 'market-bank'));
-      if (marketIds.includes('market-bank')) {
-          addNotification({ type: 'error', message: 'The Exchange Post cannot be deleted.' });
-      }
-      setMarkets(prev => prev.filter(m => !idsToDelete.has(m.id)));
-      if (idsToDelete.size > 0) {
-        addNotification({ type: 'info', message: `${idsToDelete.size} market(s) deleted.` });
-      }
-  }, [addNotification]);
-  const updateMarketsStatus = useCallback((marketIds: string[], statusType: 'open' | 'closed') => {
-      const idsToUpdate = new Set(marketIds);
-      const newStatus: MarketStatus = { type: statusType };
-      setMarkets(prev => prev.map(m => {
-          if (idsToUpdate.has(m.id) && m.status.type !== 'conditional') {
-              return { ...m, status: newStatus };
-          }
-          return m;
-      }));
-      addNotification({ type: 'success', message: `${marketIds.length} market(s) updated.` });
-  }, [addNotification]);
-  
-  const deductRewards = useCallback((userId: string, cost: RewardItem[], guildId?: string): Promise<boolean> => {
-    return new Promise((resolve) => {
-        authDispatch.updateUser(userId, user => {
-            const canAfford = cost.every(item => {
-                const rd = rewardTypes.find(rt => rt.id === item.rewardTypeId);
-                if (!rd) return false;
-                const bal = guildId 
-                    ? (rd.category === 'Currency' ? user.guildBalances[guildId]?.purse[item.rewardTypeId] : user.guildBalances[guildId]?.experience[item.rewardTypeId])
-                    : (rd.category === 'Currency' ? user.personalPurse[item.rewardTypeId] : user.personalExperience[item.rewardTypeId]);
-                return (bal || 0) >= item.amount;
-            });
-
-            if (!canAfford) {
-                resolve(false);
-                return user;
-            }
-
-            cost.forEach(c => {
-                const rd = rewardTypes.find(rt => rt.id === c.rewardTypeId);
-                if (!rd) return;
-                if (guildId) {
-                    if (rd.category === 'Currency') user.guildBalances[guildId].purse[c.rewardTypeId] -= c.amount;
-                    else user.guildBalances[guildId].experience[c.rewardTypeId] -= c.amount;
-                } else {
-                    if (rd.category === 'Currency') user.personalPurse[c.rewardTypeId] -= c.amount;
-                    else user.personalExperience[c.rewardTypeId] -= c.amount;
-                }
-            });
-            resolve(true);
-            return user;
-        });
-    });
-  }, [rewardTypes, authDispatch]);
-  
-  const purchaseMarketItem = useCallback(async (assetId: string, marketId: string, user: User, costGroupIndex: number) => {
-    const market = markets.find(m => m.id === marketId);
-    const asset = gameAssets.find(ga => ga.id === assetId);
-    if (!market || !asset) return;
-    
-    const cost = asset.costGroups[costGroupIndex];
-    if (!cost) {
-        addNotification({ type: 'error', message: 'Invalid cost option selected.' });
-        return;
-    }
-
-    const todayYMD = toYMD(new Date());
-    const activeSaleEvent = scheduledEvents.find(event => 
-        event.eventType === 'MarketSale' && event.modifiers.marketId === marketId &&
-        todayYMD >= event.startDate && todayYMD <= event.endDate && event.guildId === market.guildId &&
-        (!event.modifiers.assetIds || event.modifiers.assetIds.length === 0 || event.modifiers.assetIds.includes(assetId))
-    );
-
-    let finalCost = cost;
-    if (activeSaleEvent && activeSaleEvent.modifiers.discountPercent) {
-        const discount = activeSaleEvent.modifiers.discountPercent / 100;
-        finalCost = cost.map(c => ({ ...c, amount: Math.max(0, Math.ceil(c.amount * (1 - discount))) }));
-        addNotification({type: 'info', message: `${activeSaleEvent.title}: ${activeSaleEvent.modifiers.discountPercent}% discount applied!`})
-    }
-    
-    const canAfford = await deductRewards(user.id, finalCost, market.guildId);
-
-    if (canAfford) {
-        if (asset.requiresApproval) {
-            const newRequest: PurchaseRequest = {
-                id: `purchase-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
-                userId: user.id, assetId, requestedAt: new Date().toISOString(), status: PurchaseRequestStatus.Pending,
-                assetDetails: { name: asset.name, description: asset.description, cost: finalCost }, guildId: market.guildId,
-            };
-            setPurchaseRequests(p => [...p, newRequest]);
-            addNotification({ type: 'info', message: 'Purchase requested. Funds have been held.' });
-        } else {
-            authDispatch.updateUser(user.id, updatedUser => {
-                if (asset.payouts && asset.payouts.length > 0) applyRewards(user.id, asset.payouts, market.guildId);
-                if (asset.linkedThemeId && !updatedUser.ownedThemes.includes(asset.linkedThemeId)) updatedUser.ownedThemes.push(asset.linkedThemeId);
-                if (!asset.payouts || asset.payouts.length === 0) updatedUser.ownedAssetIds.push(asset.id);
-                return updatedUser;
-            });
-            addNotification({ type: 'success', message: `Purchased "${asset.name}"!` });
-            setPurchaseRequests(p => [...p, { id: `purchase-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`, userId: user.id, assetId, requestedAt: new Date().toISOString(), status: PurchaseRequestStatus.Completed, assetDetails: { name: asset.name, description: asset.description, cost: finalCost }, guildId: market.guildId }]);
-        }
-    } else {
-        addNotification({ type: 'error', message: 'You cannot afford this item.' });
-    }
-  }, [markets, gameAssets, deductRewards, addNotification, applyRewards, authDispatch, scheduledEvents]);
-
-  const cancelPurchaseRequest = useCallback((purchaseId: string) => {
-    const r = purchaseRequests.find(p => p.id === purchaseId);
-    if (r && r.status === PurchaseRequestStatus.Pending) {
-        applyRewards(r.userId, r.assetDetails.cost, r.guildId);
-        addNotification({ type: 'info', message: 'Purchase cancelled. Funds returned.' });
-    }
-    setPurchaseRequests(prev => prev.map(p => p.id === purchaseId ? { ...p, status: PurchaseRequestStatus.Cancelled, actedAt: new Date().toISOString() } : p));
-  }, [purchaseRequests, applyRewards, addNotification]);
-  
-  const approvePurchaseRequest = useCallback((purchaseId: string) => {
-    const r = purchaseRequests.find(p => p.id === purchaseId);
-    if (!r) return;
-    const asset = gameAssets.find(a => a.id === r.assetId);
-    if (!asset) return;
-    
-    authDispatch.updateUser(r.userId, updatedUser => {
-        if (asset.linkedThemeId && !updatedUser.ownedThemes.includes(asset.linkedThemeId)) updatedUser.ownedThemes.push(asset.linkedThemeId);
-        if (!asset.payouts || asset.payouts.length === 0) updatedUser.ownedAssetIds.push(r.assetId);
-        return updatedUser;
-    });
-
-    if (asset.payouts && asset.payouts.length > 0) {
-      applyRewards(r.userId, asset.payouts, r.guildId);
-    }
-
-    setPurchaseRequests(p => p.map(pr => pr.id === purchaseId ? { ...pr, status: PurchaseRequestStatus.Completed, actedAt: new Date().toISOString() } : pr));
-    addNotification({type: 'success', message: 'Purchase approved.'});
-  }, [purchaseRequests, gameAssets, addNotification, applyRewards, authDispatch]);
-  
-  const rejectPurchaseRequest = useCallback((purchaseId: string) => {
-    const r = purchaseRequests.find(p => p.id === purchaseId);
-    if (r && r.status === PurchaseRequestStatus.Pending) {
-        applyRewards(r.userId, r.assetDetails.cost, r.guildId);
-        addNotification({ type: 'info', message: 'Purchase rejected. Funds returned.' });
-    }
-    setPurchaseRequests(prev => prev.map(p => p.id === purchaseId ? { ...p, status: PurchaseRequestStatus.Rejected, actedAt: new Date().toISOString() } : p));
-  }, [purchaseRequests, applyRewards, addNotification]);
   
   const addGuild = useCallback(async (guild: Omit<Guild, 'id'>) => {
     try {
@@ -650,54 +301,18 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const updateTrophy = useCallback((trophy: Trophy) => setTrophies(prev => prev.map(t => t.id === trophy.id ? trophy : t)), []);
   const deleteTrophy = useCallback((trophyId: string) => setTrophies(prev => prev.filter(t => t.id !== trophyId)), []);
 
-  const applyManualAdjustment = useCallback((adj: Omit<AdminAdjustment, 'id' | 'adjustedAt'>): boolean => { const newAdj: AdminAdjustment = { ...adj, id: `adj-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`, adjustedAt: new Date().toISOString() }; setAdminAdjustments(p => [...p, newAdj]); if (newAdj.type === AdminAdjustmentType.Reward) applyRewards(newAdj.userId, newAdj.rewards, newAdj.guildId); else if (newAdj.type === AdminAdjustmentType.Setback) deductRewards(newAdj.userId, newAdj.setbacks, newAdj.guildId); else if (newAdj.type === AdminAdjustmentType.Trophy && newAdj.trophyId) awardTrophy(newAdj.userId, newAdj.trophyId, newAdj.guildId); addNotification({type: 'success', message: 'Manual adjustment applied.'}); return true; }, [applyRewards, deductRewards, awardTrophy, addNotification]);
-  const addGameAsset = useCallback((asset: Omit<GameAsset, 'id'|'creatorId'|'createdAt'>) => { setGameAssets(p => [...p, { ...asset, id: `g-asset-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`, creatorId: 'admin', createdAt: new Date().toISOString() }]); addNotification({ type: 'success', message: `Asset "${asset.name}" created.` }); }, [addNotification]);
-  const updateGameAsset = useCallback((asset: GameAsset) => setGameAssets(prev => prev.map(ga => ga.id === asset.id ? asset : ga)), []);
-  const deleteGameAsset = useCallback((assetId: string) => { setGameAssets(prev => prev.filter(ga => ga.id !== assetId)); addNotification({ type: 'info', message: 'Asset deleted.' }); }, [addNotification]);
-  const cloneGameAsset = useCallback((assetId: string) => {
-    const assetToClone = gameAssets.find(a => a.id === assetId);
-    if (!assetToClone) return;
-
-    const newAsset: GameAsset = {
-        ...JSON.parse(JSON.stringify(assetToClone)),
-        id: `g-asset-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
-        name: `${assetToClone.name} (Copy)`,
-        purchaseCount: 0,
-        createdAt: new Date().toISOString(),
-    };
-    setGameAssets(prev => [...prev, newAsset]);
-    addNotification({ type: 'success', message: `Cloned asset: ${newAsset.name}` });
-  }, [gameAssets, addNotification]);
+  const applyManualAdjustment = useCallback((adj: Omit<AdminAdjustment, 'id' | 'adjustedAt'>): boolean => { 
+    const newAdj: AdminAdjustment = { ...adj, id: `adj-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`, adjustedAt: new Date().toISOString() }; 
+    setAdminAdjustments(p => [...p, newAdj]); 
+    if (newAdj.type === AdminAdjustmentType.Reward) economyDispatch.applyRewards(newAdj.userId, newAdj.rewards, newAdj.guildId); 
+    else if (newAdj.type === AdminAdjustmentType.Setback) economyDispatch.deductRewards(newAdj.userId, newAdj.setbacks, newAdj.guildId); 
+    else if (newAdj.type === AdminAdjustmentType.Trophy && newAdj.trophyId) awardTrophy(newAdj.userId, newAdj.trophyId, newAdj.guildId); 
+    addNotification({type: 'success', message: 'Manual adjustment applied.'}); 
+    return true; 
+  }, [economyDispatch, awardTrophy, addNotification]);
+  
   const uploadFile = useCallback(async (file: File, category: string = 'Miscellaneous'): Promise<{ url: string } | null> => { const fd = new FormData(); fd.append('file', file); fd.append('category', category); try { const r = await window.fetch('/api/media/upload', { method: 'POST', body: fd }); if (!r.ok) { const e = await r.json(); throw new Error(e.error || 'Upload failed'); } return await r.json(); } catch (e) { const m = e instanceof Error ? e.message : 'Unknown error'; addNotification({ type: 'error', message: `Upload failed: ${m}` }); return null; } }, [addNotification]);
   
-  const executeExchange = useCallback((userId: string, payItem: RewardItem, receiveItem: RewardItem, guildId?: string) => {
-      deductRewards(userId, [payItem], guildId).then(canAfford => {
-        if (canAfford) {
-            applyRewards(userId, [receiveItem], guildId);
-        } else {
-            addNotification({ type: 'error', message: 'Exchange failed due to insufficient funds.' });
-        }
-      });
-  }, [deductRewards, applyRewards, addNotification]);
-  
-  const importAssetPack = useCallback(async (assetPack: AssetPack, resolutions: ImportResolution[]) => {
-    try {
-        await apiRequest('POST', '/api/data/import-assets', { assetPack, resolutions });
-        addNotification({ type: 'success', message: `Imported from ${assetPack.manifest.name}!` });
-    } catch (error) {}
-  }, [addNotification, apiRequest]);
-  
-  const completeFirstRun = useCallback(async (adminUserData: Omit<User, 'id' | 'personalPurse' | 'personalExperience' | 'guildBalances' | 'avatar' | 'ownedAssetIds' | 'ownedThemes' | 'hasBeenOnboarded'>) => {
-    try {
-        const { adminUser: savedAdmin } = await apiRequest('POST', '/api/first-run', { adminUserData });
-        await syncData(); // Fetch all the newly created data
-        authDispatch.setCurrentUser(savedAdmin);
-        authDispatch.setAppUnlocked(true);
-    } catch (e) {
-        addNotification({type: 'error', message: `First run setup failed: ${e instanceof Error ? e.message : 'Unknown error'}`});
-    }
-  }, [apiRequest, syncData, authDispatch, addNotification]);
-
   const restoreFromBackup = useCallback(async (backupData: IAppData) => {
     try {
         await apiRequest('POST', '/api/data/save', backupData);
@@ -719,81 +334,48 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     }
   }, [apiRequest, addNotification]);
 
-  const clearAllHistory = useCallback(() => { setQuestCompletions([]); setPurchaseRequests([]); setAdminAdjustments([]); setSystemLogs([]); addNotification({ type: 'success', message: 'All historical data has been cleared.' }); }, [addNotification]);
-  const resetAllPlayerData = useCallback(() => { authDispatch.resetAllUsersData(); setUserTrophies(prev => prev.filter(ut => users.find(u => u.id === ut.userId)?.role === Role.DonegeonMaster)); addNotification({ type: 'success', message: "All player data has been reset." }); }, [authDispatch, users, addNotification]);
-  const deleteAllCustomContent = useCallback(() => { setQuests([]); setQuestGroups([]); setMarkets([]); setGameAssets([]); setRewardTypes(p => p.filter(rt => rt.isCore)); setRanks(p => p.filter(r => r.xpThreshold === 0)); setTrophies([]); setGuilds(p => p.filter(g => g.isDefault)); addNotification({ type: 'success', message: 'All custom content has been deleted.' }); }, [addNotification]);
-  const deleteSelectedAssets = useCallback((selection: Record<ShareableAssetType, string[]>) => { (Object.keys(selection) as ShareableAssetType[]).forEach(assetType => { const ids = new Set(selection[assetType]); if (ids.size > 0) { switch (assetType) { case 'quests': setQuests(p => p.filter(i => !ids.has(i.id))); break; case 'markets': setMarkets(p => p.filter(i => !ids.has(i.id))); break; case 'rewardTypes': setRewardTypes(p => p.filter(i => !ids.has(i.id))); break; case 'ranks': setRanks(p => p.filter(i => !ids.has(i.id))); break; case 'trophies': setTrophies(p => p.filter(i => !ids.has(i.id))); break; case 'gameAssets': setGameAssets(p => p.filter(i => !ids.has(i.id))); break; } } }); addNotification({ type: 'success', message: 'Selected assets have been deleted.' }); }, [addNotification]);
-  const deleteQuests = useCallback((questIds: string[]) => { setQuests(prev => prev.filter(q => !questIds.includes(q.id))); addNotification({ type: 'info', message: `${questIds.length} quest(s) deleted.` }); }, [addNotification]);
-  const deleteTrophies = useCallback((trophyIds: string[]) => { setTrophies(prev => prev.filter(t => !trophyIds.includes(t.id))); addNotification({ type: 'info', message: `${trophyIds.length} trophy(s) deleted.` }); }, [addNotification]);
-  const deleteGameAssets = useCallback((assetIds: string[]) => { setGameAssets(prev => prev.filter(ga => !assetIds.includes(ga.id))); addNotification({ type: 'info', message: `${assetIds.length} asset(s) deleted.` }); }, [addNotification]);
-  const updateQuestsStatus = useCallback((questIds: string[], isActive: boolean) => { setQuests(prev => prev.map(q => questIds.includes(q.id) ? { ...q, isActive } : q)); addNotification({ type: 'success', message: `${questIds.length} quest(s) updated.` }); }, [addNotification]);
-
-  const bulkUpdateQuests = useCallback((questIds: string[], updates: BulkQuestUpdates) => {
-    setQuests(prevQuests => {
-        const questIdSet = new Set(questIds);
-        return prevQuests.map(quest => {
-            if (questIdSet.has(quest.id)) {
-                const updatedQuest = { ...quest };
-
-                if (updates.isActive !== undefined) updatedQuest.isActive = updates.isActive;
-                if (updates.isOptional !== undefined) updatedQuest.isOptional = updates.isOptional;
-                if (updates.requiresApproval !== undefined) updatedQuest.requiresApproval = updates.requiresApproval;
-                if (updates.groupId !== undefined) updatedQuest.groupId = updates.groupId === null ? undefined : updates.groupId;
-                
-                if (updates.addTags) updatedQuest.tags = Array.from(new Set([...quest.tags, ...updates.addTags]));
-                if (updates.removeTags) updatedQuest.tags = quest.tags.filter(tag => !updates.removeTags!.includes(tag));
-                
-                if (updates.assignUsers) updatedQuest.assignedUserIds = Array.from(new Set([...quest.assignedUserIds, ...updates.assignUsers]));
-                if (updates.unassignUsers) updatedQuest.assignedUserIds = quest.assignedUserIds.filter(id => !updates.unassignUsers!.includes(id));
-                
-                return updatedQuest;
-            }
-            return quest;
-        });
-    });
-    addNotification({type: 'success', message: `Bulk updated ${questIds.length} quest(s).`});
-  }, [addNotification]);
-
-  // Quest Group Management
-  const addQuestGroup = useCallback((group: Omit<QuestGroup, 'id'>): QuestGroup => {
-    const newGroup: QuestGroup = { ...group, id: `q-group-${Date.now()}-${Math.random().toString(36).substring(2, 9)}` };
-    setQuestGroups(prev => [...prev, newGroup]);
-    addNotification({ type: 'success', message: `Quest group "${newGroup.name}" created.` });
-    return newGroup;
-  }, [addNotification]);
-  const updateQuestGroup = useCallback((group: QuestGroup) => { setQuestGroups(prev => prev.map(g => g.id === group.id ? group : g)); addNotification({ type: 'success', message: `Quest group "${group.name}" updated.` }); }, [addNotification]);
-  const deleteQuestGroup = useCallback((groupId: string) => { setQuestGroups(prev => prev.filter(g => g.id !== groupId)); setQuests(prevQuests => prevQuests.map(q => q.groupId === groupId ? { ...q, groupId: undefined } : q)); addNotification({ type: 'info', message: 'Quest group deleted.' }); }, [addNotification]);
-  const assignQuestGroupToUsers = useCallback((groupId: string, userIds: string[]) => {
-    const group = questGroups.find(g => g.id === groupId);
-    if (!group) return;
-
-    setQuests(prevQuests => {
-        const groupQuests = prevQuests.filter(q => q.groupId === groupId);
-
-        if (groupQuests.length > 0) {
-            userIds.forEach(userId => {
-                const newlyAssignedQuests = groupQuests.filter(q => !q.assignedUserIds.includes(userId));
-                if (newlyAssignedQuests.length > 0) {
-                    addSystemNotification({
-                        type: SystemNotificationType.QuestAssigned,
-                        message: `You have been assigned ${newlyAssignedQuests.length} new quest(s) from the "${group.name}" group.`,
-                        recipientUserIds: [userId],
-                        link: 'Quests',
-                    });
-                }
-            });
-        }
-
-        return prevQuests.map(q => {
-            if (q.groupId === groupId) {
-                const newAssignees = Array.from(new Set([...q.assignedUserIds, ...userIds]));
-                return { ...q, assignedUserIds: newAssignees };
-            }
-            return q;
-        });
-    });
-  }, [addSystemNotification, questGroups]);
-
+  const clearAllHistory = useCallback(() => { 
+      questsDispatch.setQuestCompletions([]); 
+      economyDispatch.setPurchaseRequests([]); 
+      setAdminAdjustments([]); 
+      setSystemLogs([]); 
+      addNotification({ type: 'success', message: 'All historical data has been cleared.' }); 
+  }, [questsDispatch, economyDispatch, addNotification]);
+  
+  const resetAllPlayerData = useCallback(() => { 
+      authDispatch.resetAllUsersData(); 
+      setUserTrophies(prev => prev.filter(ut => users.find(u => u.id === ut.userId)?.role === Role.DonegeonMaster)); 
+      addNotification({ type: 'success', message: "All player data has been reset." }); 
+  }, [authDispatch, users, addNotification]);
+  
+  const deleteAllCustomContent = useCallback(() => { 
+      questsDispatch.setQuests([]); 
+      questsDispatch.setQuestGroups([]); 
+      economyDispatch.deleteAllCustomContent();
+      setRanks(p => p.filter(r => r.xpThreshold === 0)); 
+      setTrophies([]); 
+      setGuilds(p => p.filter(g => g.isDefault)); 
+      addNotification({ type: 'success', message: 'All custom content has been deleted.' }); 
+  }, [questsDispatch, economyDispatch, addNotification]);
+  
+  const deleteSelectedAssets = useCallback((selection: Partial<Record<ShareableAssetType, string[]>>) => { 
+      (Object.keys(selection) as ShareableAssetType[]).forEach(assetType => { 
+          const ids = new Set(selection[assetType]); 
+          if (ids.size > 0) { 
+              switch (assetType) { 
+                  case 'quests': questsDispatch.deleteQuests(Array.from(ids)); break; 
+                  case 'ranks': setRanks(p => p.filter(i => !ids.has(i.id))); break; 
+                  case 'trophies': setTrophies(p => p.filter(i => !ids.has(i.id))); break; 
+                  // Let EconomyContext handle its own types
+                  case 'markets': case 'rewardTypes': case 'gameAssets':
+                      economyDispatch.deleteSelectedAssets({ [assetType]: Array.from(ids) } as any);
+                      break;
+              } 
+          } 
+      }); 
+      addNotification({ type: 'success', message: 'Selected assets have been deleted.' }); 
+  }, [questsDispatch, economyDispatch, addNotification]);
+  
   // Theme Management
   const addTheme = useCallback((theme: Omit<ThemeDefinition, 'id'>) => {
     const newTheme: ThemeDefinition = { ...theme, id: `custom-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`, isCustom: true };
@@ -831,6 +413,15 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     addNotification({ type: 'info', message: 'Event deleted.' });
   }, [addNotification]);
   
+    const addBugReport = useCallback((report: Omit<BugReport, 'id'>) => {
+        const newReport: BugReport = {
+            ...report,
+            id: `bug-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+        };
+        setBugReports(prev => [...prev, newReport]);
+        addNotification({ type: 'success', message: `Bug report "${report.title}" submitted!` });
+    }, [addNotification]);
+
   const updateSettings = useCallback(async (settingsToUpdate: Partial<AppSettings>) => {
     const newSettings = { ...settings, ...settingsToUpdate };
     try {
@@ -919,24 +510,19 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
   // === CONTEXT PROVIDER VALUE ===
   const stateValue: AppState = {
-    quests, questGroups, markets, rewardTypes, questCompletions, purchaseRequests, guilds, ranks, trophies, userTrophies, adminAdjustments, gameAssets, systemLogs, settings, themes, chatMessages, systemNotifications, scheduledEvents,
+    guilds, ranks, trophies, userTrophies, adminAdjustments, systemLogs, settings, themes, chatMessages, systemNotifications, scheduledEvents, bugReports,
     isDataLoaded, 
-    allTags: useMemo(() => Array.from(new Set([...INITIAL_TAGS, ...quests.flatMap(q => q.tags || [])])).sort(), [quests]),
     isAiConfigured,
     syncStatus, syncError,
   };
 
   const dispatchValue: AppDispatch = {
-    addQuest, updateQuest, deleteQuest, cloneQuest, dismissQuest, claimQuest, releaseQuest, markQuestAsTodo, unmarkQuestAsTodo, completeQuest, approveQuestCompletion, rejectQuestCompletion,
-    addQuestGroup, updateQuestGroup, deleteQuestGroup, assignQuestGroupToUsers,
-    addRewardType, updateRewardType, deleteRewardType, cloneRewardType, addMarket, updateMarket, deleteMarket, cloneMarket, deleteMarkets, updateMarketsStatus, purchaseMarketItem, cancelPurchaseRequest, approvePurchaseRequest, rejectPurchaseRequest,
-    addGuild, updateGuild, deleteGuild, setRanks, addTrophy, updateTrophy, deleteTrophy, awardTrophy, applyManualAdjustment, addGameAsset, updateGameAsset, deleteGameAsset, cloneGameAsset,
+    addGuild, updateGuild, deleteGuild, setRanks, addTrophy, updateTrophy, deleteTrophy, awardTrophy, applyManualAdjustment,
     addTheme, updateTheme, deleteTheme,
     addScheduledEvent, updateScheduledEvent, deleteScheduledEvent,
-    completeFirstRun, importAssetPack, restoreFromBackup, clearAllHistory, resetAllPlayerData, deleteAllCustomContent, deleteSelectedAssets, 
-    deleteQuests, deleteTrophies, deleteGameAssets, updateQuestsStatus, bulkUpdateQuests,
+    addBugReport,
+    restoreFromBackup, clearAllHistory, resetAllPlayerData, deleteAllCustomContent, deleteSelectedAssets, 
     uploadFile,
-    executeExchange,
     factoryReset,
     updateSettings, resetSettings,
     sendMessage, markMessagesAsRead,

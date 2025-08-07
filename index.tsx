@@ -5,6 +5,9 @@ import { AppProvider } from './context/AppContext';
 import { UIStateProvider } from './context/UIStateContext';
 import { NotificationsProvider } from './context/NotificationsContext';
 import { AuthProvider } from './context/AuthContext';
+import { QuestsProvider } from './context/QuestsContext';
+import { EconomyProvider } from './context/EconomyContext';
+import { DeveloperProvider } from './context/DeveloperContext';
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
@@ -26,11 +29,17 @@ root.render(
   <React.StrictMode>
     <NotificationsProvider>
       <AuthProvider>
-        <AppProvider>
-          <UIStateProvider>
-            <App />
-          </UIStateProvider>
-        </AppProvider>
+        <QuestsProvider>
+          <EconomyProvider>
+            <AppProvider>
+              <UIStateProvider>
+                <DeveloperProvider>
+                  <App />
+                </DeveloperProvider>
+              </UIStateProvider>
+            </AppProvider>
+          </EconomyProvider>
+        </QuestsProvider>
       </AuthProvider>
     </NotificationsProvider>
   </React.StrictMode>

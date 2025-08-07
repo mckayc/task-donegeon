@@ -1,14 +1,16 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { useAppState, useAppDispatch } from '../../context/AppContext';
+import { useAppState } from '../../context/AppContext';
 import { useAuthState, useAuthDispatch } from '../../context/AuthContext';
 import { useUIState, useUIDispatch } from '../../context/UIStateContext';
 import { ThemeDefinition, AppMode } from '../../types';
 import Button from '../ui/Button';
 import Card from '../ui/Card';
 import { useNotificationsDispatch } from '../../context/NotificationsContext';
+import { useEconomyState } from '../../context/EconomyContext';
 
 const ThemesPage: React.FC = () => {
-    const { settings, themes, markets, guilds } = useAppState();
+    const { settings, themes, guilds } = useAppState();
+    const { markets } = useEconomyState();
     const { currentUser } = useAuthState();
     const { appMode } = useUIState();
     const { updateUser } = useAuthDispatch();

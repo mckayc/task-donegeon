@@ -1,4 +1,5 @@
 import { useAppState } from '../context/AppContext';
+import { useEconomyState } from '../context/EconomyContext';
 import { RewardCategory, RewardTypeDefinition } from '../types';
 
 /**
@@ -6,7 +7,8 @@ import { RewardCategory, RewardTypeDefinition } from '../types';
  * @returns A string like "10 💰" or null if valuation is disabled or not applicable.
  */
 export const useRewardValue = (amount: number, rewardTypeId: string): string | null => {
-    const { settings, rewardTypes } = useAppState();
+    const { settings } = useAppState();
+    const { rewardTypes } = useEconomyState();
     const { rewardValuation } = settings;
 
     if (!rewardValuation.enabled) return null;

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
-import { Quest, QuestType, RewardItem, RewardCategory, QuestAvailability } from '../../types';
+import { Quest, QuestType, RewardItem, RewardCategory, QuestAvailability, BugReport } from '../../types';
 import Button from '../ui/Button';
 import Input from '../ui/Input';
 import ToggleSwitch from '../ui/ToggleSwitch';
@@ -10,6 +10,8 @@ import TagInput from '../ui/TagInput';
 import ImageSelectionDialog from '../ui/ImageSelectionDialog';
 import DynamicIcon from '../ui/DynamicIcon';
 import { useAuthState } from '../../context/AuthContext';
+import { useEconomyState } from '../../context/EconomyContext';
+import { useQuestsState, useQuestsDispatch as useQuestsDispatchLocal } from '../../context/QuestsContext';
 
 interface QuestDialogProps {
   questToEdit?: Quest;
@@ -19,6 +21,7 @@ interface QuestDialogProps {
   onTryAgain?: () => void;
   isGenerating?: boolean;
   onSave?: (updatedData: any) => void;
+  initialDataFromBug?: BugReport;
 }
 
 const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -26,10 +29,12 @@ const DUTY_AVAILABILITIES = [QuestAvailability.Daily, QuestAvailability.Weekly, 
 const VENTURE_AVAILABILITIES = [QuestAvailability.Frequency, QuestAvailability.Unlimited];
 
 
-const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialData, onClose, mode = (questToEdit ? 'edit' : 'create'), onTryAgain, isGenerating, onSave }) => {
-  const { guilds, rewardTypes, allTags, settings, questGroups } = useAppState();
+const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialData, onClose, mode = (questToEdit ? 'edit' : 'create'), onTryAgain, isGenerating, onSave, initialDataFromBug }) => {
+  const { guilds, settings } = useAppState();
   const { users } = useAuthState();
-  const { addQuest, updateQuest, addQuestGroup } = useAppDispatch();
+  const { rewardTypes } = useEconomyState();
+  const { allTags, questGroups } = useQuestsState();
+  const { addQuest, updateQuest, addQuestGroup } = useQuestsDispatchLocal();
 
   const getInitialFormData = useCallback(() => {
       if (mode === 'edit' && questToEdit) {
@@ -80,11 +85,11 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
 
       // New quest or AI creation
       return {
-        title: initialData?.title || '',
-        description: initialData?.description || '',
-        type: initialData?.type || QuestType.Duty,
+        title: initialDataFromBug?.title || initialData?.title || '',
+        description: initialDataFromBug ? `Fix bug report #${initialDataFromBug.id}. See logs for details.` : initialData?.description || '',
+        type: initialDataFromBug ? QuestType.Venture : initialData?.type || QuestType.Duty,
         iconType: 'emoji' as 'emoji' | 'image',
-        icon: initialData?.icon || '📝',
+        icon: initialDataFromBug ? '🐞' : initialData?.icon || '📝',
         imageUrl: '',
         rewards: suggestedRewardItems,
         lateSetbacks: [] as RewardItem[],
@@ -99,14 +104,14 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
         assignedUserIds: users.map(u => u.id),
         guildId: '',
         groupId: suggestedGroupId,
-        tags: initialData?.tags || [],
+        tags: initialDataFromBug ? ['bugfix', 'development'] : initialData?.tags || [],
         lateDateTime: '',
         incompleteDateTime: '',
         lateTime: '',
         incompleteTime: '',
         hasDeadlines: false,
       };
-  }, [questToEdit, initialData, mode, rewardTypes, questGroups, settings.questDefaults, users]);
+  }, [questToEdit, initialData, initialDataFromBug, mode, rewardTypes, questGroups, settings.questDefaults, users]);
 
   const [formData, setFormData] = useState(getInitialFormData);
   const [error, setError] = useState('');

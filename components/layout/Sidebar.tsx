@@ -3,7 +3,9 @@ import { Role, Page, QuestCompletionStatus, PurchaseRequestStatus, Terminology, 
 import { ChevronDownIcon, ArrowLeftIcon, ArrowRightIcon } from '../ui/Icons';
 import { useAppState } from '../../context/AppContext';
 import { useAuthState } from '../../context/AuthContext';
+import { useQuestsState } from '../../context/QuestsContext';
 import { useUIState, useUIDispatch } from '../../context/UIStateContext';
+import { useEconomyState } from '../../context/EconomyContext';
 
 const FlyoutPanel: React.FC<{ title: string; items?: SidebarLink[]; isVisible: boolean }> = ({ title, items, isVisible }) => {
     const { settings } = useAppState();
@@ -145,7 +147,9 @@ const CollapsibleNavGroup: React.FC<CollapsibleNavGroupProps> = ({ header, child
 
 
 const Sidebar: React.FC = () => {
-  const { questCompletions, purchaseRequests, settings, isAiConfigured, chatMessages, guilds } = useAppState();
+  const { settings, isAiConfigured, chatMessages, guilds } = useAppState();
+  const { purchaseRequests } = useEconomyState();
+  const { questCompletions } = useQuestsState();
   const { currentUser } = useAuthState();
   const { activePage, isSidebarCollapsed, isChatOpen } = useUIState();
   const { setActivePage, toggleSidebar, toggleChat } = useUIDispatch();
@@ -157,10 +161,11 @@ const Sidebar: React.FC = () => {
     if (!link.isVisible) return false;
     if (link.type === 'link' && link.id === 'Suggestion Engine' && !isAiAvailable) return false;
     if (link.type === 'link' && link.id === 'Chat' && !settings.chat.enabled) return false;
+    if (link.type === 'link' && link.id === 'Bug Tracker' && !settings.developerMode.enabled) return false;
     if (currentUser.role === Role.DonegeonMaster) return true;
     if (currentUser.role === Role.Gatekeeper) return link.role === Role.Gatekeeper || link.role === Role.Explorer;
     return link.role === Role.Explorer;
-  }), [settings.sidebars.main, currentUser.role, isAiAvailable, settings.chat.enabled]);
+  }), [settings.sidebars.main, currentUser.role, isAiAvailable, settings.chat.enabled, settings.developerMode.enabled]);
 
   const pendingQuestApprovals = questCompletions.filter(c => c.status === QuestCompletionStatus.Pending).length;
   const pendingPurchaseApprovals = purchaseRequests.filter(p => p.status === PurchaseRequestStatus.Pending).length;

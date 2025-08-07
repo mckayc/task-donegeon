@@ -420,12 +420,13 @@ export interface Terminology {
   link_about: string;
   link_help_guide: string;
   link_chat: string;
+  link_bug_tracker: string;
 }
 
 export type Page = 'Dashboard' | 'Avatar' | 'Quests' | 'Marketplace' | 'Chronicles' | 'Guild' | 'Calendar' | 'Progress' | 'Trophies' | 'Ranks' | 'Manage Users' | 'Manage Rewards' | 'Manage Quests' | 'Manage Goods' | 'Approvals' | 'Manage Markets' | 'Manage Guilds' | 'Settings' | 'Profile' | 'About' | 'Help Guide' | 'Manage Ranks' | 'Manage Trophies' | 'Themes' | 'Collection' | 'Suggestion Engine' | 'Appearance'
 | 'Object Exporter' | 'Asset Manager' | 'Backup & Import' | 'Asset Library'
 | 'Theme Editor' | 'Chat' | 'Manage Quest Groups' | 'Manage Events'
-;
+| 'Bug Tracker';
 
 export interface SidebarLink {
   type: 'link';
@@ -506,6 +507,9 @@ export interface AppSettings {
   };
   sidebars: {
       main: SidebarConfigItem[];
+  };
+  developerMode: {
+    enabled: boolean;
   };
 }
 
@@ -620,6 +624,34 @@ export interface ChatMessage {
   isAnnouncement?: boolean;
 }
 
+export enum BugReportStatus {
+  New = 'New',
+  Investigating = 'Investigating',
+  Fixed = 'Fixed',
+  WontFix = 'WontFix',
+  Archived = 'Archived',
+}
+
+export interface BugReportLogEntry {
+  timestamp: string;
+  type: 'ACTION' | 'NOTE' | 'NAVIGATION' | 'STATE_CHANGE' | 'ELEMENT_PICK';
+  message: string;
+  element?: {
+    tag: string;
+    id?: string;
+    classes?: string;
+    text?: string;
+  };
+}
+
+export interface BugReport {
+  id: string;
+  title: string;
+  createdAt: string;
+  status: BugReportStatus;
+  logs: BugReportLogEntry[];
+}
+
 export interface IAppData {
   users: User[];
   quests: Quest[];
@@ -641,6 +673,7 @@ export interface IAppData {
   chatMessages: ChatMessage[];
   systemNotifications: SystemNotification[];
   scheduledEvents: ScheduledEvent[];
+  bugReports: BugReport[];
 }
 
 export type ChronicleEvent = {

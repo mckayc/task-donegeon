@@ -1,7 +1,8 @@
 import React, { useMemo, useState } from 'react';
 import { Quest, QuestCompletion, QuestType, ScheduledEvent } from '../../types';
 import { isQuestScheduledForDay, questSorter, toYMD } from '../../utils/quests';
-import { useAppState, useAppDispatch } from '../../context/AppContext';
+import { useAppState } from '../../context/AppContext';
+import { useQuestsDispatch } from '../../context/QuestsContext';
 import { useUIState } from '../../context/UIStateContext';
 import { useCalendarVentures } from '../../hooks/useCalendarVentures';
 import QuestList from './QuestList';
@@ -26,7 +27,7 @@ const getTextColorForBg = (bgColorHsl: string) => {
 
 const WeekView: React.FC<WeekViewProps> = ({ currentDate, quests, questCompletions, scheduledEvents, onEventSelect }) => {
     const { currentUser } = useAuthState();
-    const { markQuestAsTodo, unmarkQuestAsTodo } = useAppDispatch();
+    const { markQuestAsTodo, unmarkQuestAsTodo } = useQuestsDispatch();
     const [selectedQuest, setSelectedQuest] = useState<{quest: Quest, date: Date} | null>(null);
     const [completingQuest, setCompletingQuest] = useState<{quest: Quest, date: Date} | null>(null);
 

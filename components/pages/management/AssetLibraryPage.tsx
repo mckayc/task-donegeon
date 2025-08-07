@@ -2,17 +2,21 @@ import React, { useState, useMemo, useEffect } from 'react';
 import Button from '../../ui/Button';
 import Card from '../../ui/Card';
 import { AssetPack, AssetPackManifestInfo, IAppData, ImportResolution } from '../../../types';
-import { useAppState, useAppDispatch } from '../../../context/AppContext';
+import { useAppState } from '../../context/AppContext';
 import Input from '../../ui/Input';
 import { analyzeAssetPackForConflicts } from '../../../utils/sharing';
 import AssetPackInstallDialog from '../../sharing/AssetPackInstallDialog';
 import { useNotificationsDispatch } from '../../../context/NotificationsContext';
-import { useAuthState } from '../../../context/AuthContext';
+import { useAuthState } from '../../context/AuthContext';
+import { useQuestsState } from '../../context/QuestsContext';
+import { useEconomyState, useEconomyDispatch } from '../../context/EconomyContext';
 
 const AssetLibraryPage: React.FC = () => {
     const appState = useAppState();
     const authState = useAuthState();
-    const { importAssetPack } = useAppDispatch();
+    const questsState = useQuestsState();
+    const economyState = useEconomyState();
+    const { importAssetPack } = useEconomyDispatch();
     const { addNotification } = useNotificationsDispatch();
     const [localPacks, setLocalPacks] = useState<AssetPackManifestInfo[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -44,7 +48,7 @@ const AssetLibraryPage: React.FC = () => {
         try {
             setIsLoading(true);
             const packData = await packFetcher();
-            const fullCurrentData: IAppData = { ...appState, ...authState };
+            const fullCurrentData: IAppData = { ...appState, ...authState, ...questsState, ...economyState };
             const conflictResolutions = analyzeAssetPackForConflicts(packData, fullCurrentData);
             setResolutions(conflictResolutions);
             setPackToInstall(packData);
@@ -80,7 +84,8 @@ const AssetLibraryPage: React.FC = () => {
     };
 
     const handleConfirmImport = (pack: AssetPack, res: ImportResolution[]) => {
-        importAssetPack(pack, res);
+        const fullCurrentData: IAppData = { ...appState, ...authState, ...questsState, ...economyState };
+        importAssetPack(pack, res, fullCurrentData);
         setPackToInstall(null);
         setResolutions([]);
     };

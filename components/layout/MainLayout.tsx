@@ -1,5 +1,3 @@
-
-
 import React, { useMemo, useEffect, useState, useRef } from 'react';
 import Sidebar from './Sidebar';
 import Header from './Header';

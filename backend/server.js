@@ -144,6 +144,7 @@ const upload = multer({
 
 // === Backup Configuration ===
 const BACKUP_DIR = '/app/data/backups';
+const ASSET_PACKS_DIR = '/app/data/asset_packs';
 
 // === Database Initialization and Server Start ===
 const initializeApp = async () => {
@@ -154,8 +155,10 @@ const initializeApp = async () => {
     // Ensure asset and backup directories exist
     await fs.mkdir(UPLOADS_DIR, { recursive: true });
     await fs.mkdir(BACKUP_DIR, { recursive: true });
+    await fs.mkdir(ASSET_PACKS_DIR, { recursive: true });
     console.log(`Asset directory is ready at: ${UPLOADS_DIR}`);
     console.log(`Backup directory is ready at: ${BACKUP_DIR}`);
+    console.log(`Asset Pack directory is ready at: ${ASSET_PACKS_DIR}`);
 
     server.listen(port, () => {
         console.log(`Task Donegeon backend listening at http://localhost:${port}`);
@@ -603,6 +606,59 @@ app.get('/api/media/local-gallery', async (req, res, next) => {
     }
 });
 
+
+// === Asset Pack Endpoints ===
+app.get('/api/asset-packs/discover', asyncMiddleware(async (req, res) => {
+    try {
+        const dirents = await fs.readdir(ASSET_PACKS_DIR, { withFileTypes: true });
+        const packPromises = dirents
+            .filter(dirent => dirent.isFile() && dirent.name.endsWith('.json'))
+            .map(async (dirent) => {
+                try {
+                    const filePath = path.join(ASSET_PACKS_DIR, dirent.name);
+                    const fileContent = await fs.readFile(filePath, 'utf-8');
+                    const packData = JSON.parse(fileContent);
+                    if (packData.manifest) {
+                        return { manifest: packData.manifest, filename: dirent.name };
+                    }
+                } catch (e) {
+                    console.error(`Could not parse asset pack: ${dirent.name}`, e);
+                }
+                return null;
+            });
+        
+        const packs = (await Promise.all(packPromises)).filter(p => p !== null);
+        res.json(packs);
+    } catch (err) {
+        if (err.code === 'ENOENT') {
+            console.log("Asset pack directory does not exist, returning empty array.");
+            res.json([]);
+        } else {
+            throw err;
+        }
+    }
+}));
+
+app.get('/api/asset-packs/get/:filename', asyncMiddleware(async (req, res) => {
+    const { filename } = req.params;
+    // Basic sanitation
+    if (path.basename(filename) !== filename || !filename.endsWith('.json')) {
+        return res.status(400).json({ error: 'Invalid filename.' });
+    }
+    const filePath = path.join(ASSET_PACKS_DIR, filename);
+
+    try {
+        const fileContent = await fs.readFile(filePath, 'utf-8');
+        res.setHeader('Content-Type', 'application/json');
+        res.send(fileContent);
+    } catch (err) {
+        if (err.code === 'ENOENT') {
+            res.status(404).json({ error: 'Asset pack not found.' });
+        } else {
+            throw err;
+        }
+    }
+}));
 
 // === AI Endpoints (Unchanged) ===
 app.get('/api/ai/status', (req, res) => res.json({ isConfigured: !!ai }));

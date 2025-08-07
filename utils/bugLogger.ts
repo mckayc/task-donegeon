@@ -35,11 +35,26 @@ class BugLogger {
     }
 
     add(entry: Omit<BugReportLogEntry, 'timestamp'>) {
-        if (this.isRecordingGlobally) {
+        if (!this.isRecordingGlobally) return;
+
+        const lastLog = this.globalLogs.length > 0 ? this.globalLogs[this.globalLogs.length - 1] : null;
+
+        // Check for duplication of type and message. Element info is too complex to compare simply.
+        if (lastLog && lastLog.type === entry.type && lastLog.message === entry.message && !lastLog.element && !entry.element) {
+            const match = lastLog.message.match(/ \[\d+\]$/);
+            if (match) {
+                const count = parseInt(match[0].slice(2, -1)) + 1;
+                lastLog.message = lastLog.message.replace(/ \[\d+\]$/, ` [${count}]`);
+            } else {
+                lastLog.message = `${lastLog.message} [2]`;
+            }
+            lastLog.timestamp = new Date().toISOString();
+        } else {
             const newEntry = { ...entry, timestamp: new Date().toISOString() };
             this.globalLogs.push(newEntry);
-            this.notify();
         }
+        
+        this.notify();
     }
 
     isRecording(): boolean {

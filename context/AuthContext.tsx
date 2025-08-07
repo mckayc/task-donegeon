@@ -79,6 +79,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   }, [apiRequest, addNotification]);
 
   const setCurrentUser = useCallback((user: User | null) => {
+    // Prevent redundant state sets and log entries
+    if (currentUser?.id === user?.id) return;
+
     if (bugLogger.isRecording()) {
         bugLogger.add({ type: 'STATE_CHANGE', message: `Setting current user to: ${user?.gameName || 'null'}` });
     }
@@ -90,7 +93,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     } else {
         localStorage.removeItem('lastUserId');
     }
-  }, []);
+  }, [currentUser]);
 
   const exitToSharedView = useCallback(() => {
     _setCurrentUser(null);

@@ -332,14 +332,19 @@ app.post('/api/data/import-assets', asyncMiddleware(async (req, res) => {
 
     const newAssets = {
         quests: [], questGroups: [], rewardTypes: [], ranks: [],
-        trophies: [], markets: [], gameAssets: []
+        trophies: [], markets: [], gameAssets: [], users: []
     };
 
     resolutions.forEach(res => {
         if (res.resolution === 'skip') return;
         const assetList = assetPack.assets[res.type];
         if (!assetList) return;
-        const originalAsset = assetList.find(a => a.id === res.id);
+
+        // For users, the ID is the username from the resolution step
+        const originalAsset = res.type === 'users' 
+            ? assetList.find(a => a.username === res.id)
+            : assetList.find(a => a.id === res.id);
+            
         if (originalAsset) {
             const newAsset = { ...originalAsset };
             if (res.resolution === 'rename' && res.newName) {
@@ -359,6 +364,21 @@ app.post('/api/data/import-assets', asyncMiddleware(async (req, res) => {
             if (newAssets.markets.length) await manager.save(MarketEntity, newAssets.markets);
             if (newAssets.gameAssets.length) await manager.save(GameAssetEntity, newAssets.gameAssets);
             if (newAssets.quests.length) await manager.save(QuestEntity, newAssets.quests);
+
+            if (newAssets.users && newAssets.users.length) {
+                const defaultGuild = await manager.findOneBy(GuildEntity, { isDefault: true });
+                const usersToSave = newAssets.users.map(u => manager.create(UserEntity, {
+                    ...u,
+                    id: `user-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+                    avatar: {}, ownedAssetIds: [], personalPurse: {}, personalExperience: {}, guildBalances: {},
+                    ownedThemes: ['emerald', 'rose', 'sky'], hasBeenOnboarded: false,
+                }));
+                await manager.save(UserEntity, usersToSave);
+                if (defaultGuild) {
+                    defaultGuild.members = [...defaultGuild.members, ...usersToSave];
+                    await manager.save(GuildEntity, defaultGuild);
+                }
+            }
         });
 
         broadcast({ type: 'DATA_UPDATED' });
@@ -688,8 +708,14 @@ app.get('/api/asset-packs/discover', asyncMiddleware(async (req, res) => {
                     const filePath = path.join(ASSET_PACKS_DIR, dirent.name);
                     const fileContent = await fs.readFile(filePath, 'utf-8');
                     const packData = JSON.parse(fileContent);
-                    if (packData.manifest) {
-                        return { manifest: packData.manifest, filename: dirent.name };
+                    if (packData.manifest && packData.assets) {
+                         const summary = {
+                            quests: (packData.assets.quests || []).slice(0, 3).map(q => ({ title: q.title, icon: q.icon })),
+                            gameAssets: (packData.assets.gameAssets || []).slice(0, 3).map(a => ({ name: a.name, icon: a.icon })),
+                            trophies: (packData.assets.trophies || []).slice(0, 3).map(t => ({ name: t.name, icon: t.icon })),
+                            users: (packData.assets.users || []).slice(0, 3).map(u => ({ gameName: u.gameName, role: u.role })),
+                        };
+                        return { manifest: packData.manifest, filename: dirent.name, summary };
                     }
                 } catch (e) {
                     console.error(`Could not parse asset pack: ${dirent.name}`, e);

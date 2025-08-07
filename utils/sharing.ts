@@ -1,6 +1,4 @@
-
-
-import { AssetPack, AssetPackAssets, Quest, RewardItem, RewardTypeDefinition, ShareableAssetType, Trophy, Rank, Market, IAppData, ImportResolution, GameAsset, QuestGroup } from '../types';
+import { AssetPack, AssetPackAssets, Quest, RewardItem, RewardTypeDefinition, ShareableAssetType, Trophy, Rank, Market, IAppData, ImportResolution, GameAsset, QuestGroup, UserTemplate } from '../types';
 
 /**
  * Finds all unique dependency IDs (e.g., rewardType IDs) from a collection of assets.
@@ -52,6 +50,7 @@ export const generateAssetPack = (
             trophies: [],
             markets: [],
             gameAssets: [],
+            users: [],
         }
     };
 
@@ -128,6 +127,23 @@ export const analyzeAssetPackForConflicts = (
     checkConflicts('trophies', assetPack.assets.trophies, currentData.trophies);
     checkConflicts('markets', assetPack.assets.markets, currentData.markets);
     checkConflicts('gameAssets', assetPack.assets.gameAssets, currentData.gameAssets);
+
+    // Special handling for users
+    if (assetPack.assets.users) {
+        assetPack.assets.users.forEach(pAsset => {
+            const conflict = currentData.users.find(cAsset => 
+                cAsset.username.toLowerCase() === pAsset.username.toLowerCase() ||
+                cAsset.email.toLowerCase() === pAsset.email.toLowerCase()
+            );
+            resolutions.push({
+                type: 'users',
+                id: pAsset.username, // Using username as a temporary ID for resolution tracking
+                name: pAsset.gameName,
+                status: conflict ? 'conflict' : 'new',
+                resolution: conflict ? 'skip' : 'keep',
+            });
+        });
+    }
 
     return resolutions;
 };

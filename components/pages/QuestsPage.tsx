@@ -46,13 +46,14 @@ const formatTimeRemaining = (targetDate: Date, now: Date): string => {
 };
 
 const QuestItem: React.FC<{ quest: Quest; now: Date; onSelect: (quest: Quest) => void; onImagePreview: (url: string) => void; }> = ({ quest, now, onSelect, onImagePreview }) => {
-    const { rewardTypes, currentUser, questCompletions, settings, questGroups, scheduledEvents, appMode } = useAppState();
+    const { rewardTypes, currentUser, questCompletions, settings, questGroups, scheduledEvents, appMode, guilds } = useAppState();
     
     if (!currentUser) return null;
 
     const isAvailable = useMemo(() => isQuestAvailableForUser(quest, questCompletions.filter(c => c.userId === currentUser.id), now, scheduledEvents, appMode), [quest, questCompletions, currentUser.id, now, scheduledEvents, appMode]);
     const isTodo = quest.type === QuestType.Venture && quest.todoUserIds?.includes(currentUser.id);
     const questGroup = useMemo(() => quest.groupId ? questGroups.find(g => g.id === quest.groupId) : null, [quest.groupId, questGroups]);
+    const scopeName = useMemo(() => quest.guildId ? guilds.find(g => g.id === quest.guildId)?.name || 'Guild Scope' : 'Personal', [quest.guildId, guilds]);
 
     const getRewardInfo = (id: string) => {
         const rewardDef = rewardTypes.find(rt => rt.id === id);
@@ -172,6 +173,7 @@ const QuestItem: React.FC<{ quest: Quest; now: Date; onSelect: (quest: Quest) =>
                 <div className="flex items-center gap-2 text-xs text-stone-400 overflow-hidden">
                     <span title={questGroup ? questGroup.name : 'Uncategorized'}>{questGroup ? questGroup.icon : '📂'}</span>
                     <span className="truncate">{questGroup ? questGroup.name : 'Uncategorized'}</span>
+                    <span className="font-semibold text-blue-400 bg-blue-900/50 px-2 py-0.5 rounded-full text-xs">{scopeName}</span>
                 </div>
                 <div className="text-right">
                     {timeStatusText && (

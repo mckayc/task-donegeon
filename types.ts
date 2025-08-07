@@ -510,7 +510,9 @@ export interface AppSettings {
   };
 }
 
-export type ShareableAssetType = 'quests' | 'rewardTypes' | 'ranks' | 'trophies' | 'markets' | 'gameAssets' | 'questGroups';
+export type ShareableAssetType = 'quests' | 'rewardTypes' | 'ranks' | 'trophies' | 'markets' | 'gameAssets' | 'questGroups' | 'users';
+
+export type UserTemplate = Omit<User, 'id' | 'personalPurse' | 'personalExperience' | 'guildBalances' | 'avatar' | 'ownedAssetIds' | 'ownedThemes' | 'hasBeenOnboarded'>;
 
 export interface AssetPackAssets {
   quests: Quest[];
@@ -520,6 +522,7 @@ export interface AssetPackAssets {
   trophies: Trophy[];
   markets: Market[];
   gameAssets: GameAsset[];
+  users?: UserTemplate[];
 }
 
 export interface AssetPackManifest {
@@ -536,9 +539,17 @@ export interface AssetPack {
   assets: AssetPackAssets;
 }
 
+export interface AssetPackSummary {
+    quests: { title: string; icon: string }[];
+    gameAssets: { name: string; icon?: string }[];
+    trophies: { name: string; icon: string }[];
+    users: { gameName: string; role: Role }[];
+}
+
 export interface AssetPackManifestInfo {
   manifest: AssetPackManifest;
   filename: string;
+  summary: AssetPackSummary;
 }
 
 export interface ImportResolution {

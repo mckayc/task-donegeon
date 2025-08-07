@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useAppState } from '../../context/AppContext';
 import { ShareableAssetType, Terminology } from '../../types';
@@ -17,6 +16,7 @@ const ExportPanel: React.FC = () => {
         trophies: [],
         markets: [],
         gameAssets: [],
+        users: [],
     });
     const [blueprintName, setBlueprintName] = useState('');
     const [blueprintDesc, setBlueprintDesc] = useState('');
@@ -61,6 +61,7 @@ const ExportPanel: React.FC = () => {
         { key: 'trophies', label: 'awards', data: appState.trophies },
         { key: 'markets', label: 'stores', data: appState.markets },
         { key: 'gameAssets', label: 'link_manage_items', data: appState.gameAssets },
+        { key: 'users', label: 'link_manage_users', data: appState.users },
     ];
 
     return (
@@ -90,7 +91,7 @@ const ExportPanel: React.FC = () => {
                                         onChange={() => handleToggle(key, item.id)}
                                         className="h-4 w-4 rounded text-emerald-600 bg-stone-700 border-stone-500 focus:ring-emerald-500"
                                     />
-                                    <span className="ml-3 text-stone-300">{item.title || item.name}</span>
+                                    <span className="ml-3 text-stone-300">{item.title || item.name || item.gameName}</span>
                                 </label>
                             ))}
                         </div>

@@ -17,6 +17,7 @@ const ObjectExporterPage: React.FC = () => {
         trophies: [],
         markets: [],
         gameAssets: [],
+        users: [],
     });
     const [assetPackName, setAssetPackName] = useState('');
     const [assetPackDesc, setAssetPackDesc] = useState('');
@@ -61,6 +62,7 @@ const ObjectExporterPage: React.FC = () => {
         { key: 'trophies', label: 'awards', data: appState.trophies },
         { key: 'markets', label: 'stores', data: appState.markets },
         { key: 'gameAssets', label: 'link_manage_items', data: appState.gameAssets },
+        { key: 'users', label: 'link_manage_users', data: appState.users },
     ];
 
     const totalSelected = Object.values(selected).reduce((acc, curr) => acc + curr.length, 0);
@@ -100,7 +102,7 @@ const ObjectExporterPage: React.FC = () => {
                                         onChange={() => handleToggle(key, item.id)}
                                         className="h-4 w-4 rounded text-emerald-600 bg-stone-700 border-stone-500 focus:ring-emerald-500"
                                     />
-                                    <span className="ml-3 text-stone-300">{item.title || item.name}</span>
+                                    <span className="ml-3 text-stone-300">{item.title || item.name || item.gameName}</span>
                                 </label>
                             ))}
                         </div>

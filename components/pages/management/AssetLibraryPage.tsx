@@ -2,7 +2,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import Button from '../../ui/Button';
 import Card from '../../ui/Card';
 import { AssetPack, AssetPackManifestInfo, ImportResolution } from '../../../types';
-import { useAppState, useAppDispatch } from '../../context/AppContext';
+import { useAppState, useAppDispatch } from '../../../context/AppContext';
 import Input from '../../ui/Input';
 import { analyzeAssetPackForConflicts } from '../../../utils/sharing';
 import BlueprintPreviewDialog from '../../sharing/BlueprintPreviewDialog';

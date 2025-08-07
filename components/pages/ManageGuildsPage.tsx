@@ -62,12 +62,12 @@ const ManageGuildsPage: React.FC = () => {
                                             </span>
                                         )}
                                     </div>
-                                    {!guild.isDefault && (
-                                        <div className="flex space-x-2 flex-shrink-0">
-                                            <Button size="sm" variant="secondary" onClick={() => handleEditGuild(guild)}>Edit</Button>
+                                    <div className="flex space-x-2 flex-shrink-0">
+                                        <Button size="sm" variant="secondary" onClick={() => handleEditGuild(guild)}>Edit</Button>
+                                        {!guild.isDefault && (
                                             <Button size="sm" variant="secondary" className="!bg-red-900/50 hover:!bg-red-800/60 text-red-300" onClick={() => handleDeleteRequest(guild)}>Delete</Button>
-                                        </div>
-                                    )}
+                                        )}
+                                    </div>
                                 </div>
                                 <div className="p-6">
                                     <h4 className="font-semibold text-sm mb-2 text-stone-300">{guild.memberIds.length} Members</h4>

@@ -40,7 +40,7 @@ const EditGuildDialog: React.FC<EditGuildDialogProps> = ({ guild, onClose }) => 
 
   const availableThemes = useMemo(() => {
       const lockedThemeIds = new Set(
-          guilds.filter(g => g.id !== guild?.id).map(g => g.themeId)
+          guilds.filter(g => g.id !== guild?.id).map(g => g.themeId).filter(Boolean)
       );
       return themes.filter(t => !lockedThemeIds.has(t.id));
   }, [themes, guilds, guild]);

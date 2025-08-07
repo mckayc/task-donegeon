@@ -435,20 +435,12 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     setUsers(prev => [...prev, newUser]);
     setGuilds(prev => prev.map(g => g.isDefault ? { ...g, memberIds: [...g.memberIds, newUser.id] } : g));
     
-    const roleTag = `tutorial-${newUser.role.toLowerCase().replace(/ /g, '-')}`;
-    setQuests(prevQuests => {
-        return prevQuests.map(q => {
-            if (q.tags.includes(roleTag)) {
-                if (!q.assignedUserIds.includes(newUser.id)) {
-                    return { ...q, assignedUserIds: [...q.assignedUserIds, newUser.id] };
-                }
-            }
-            return q;
-        });
+    apiRequest('POST', '/api/users', newUser).catch(error => {
+      console.error("Failed to add user on server. State will be corrected on next sync.", error);
     });
 
     return newUser;
-  }, []);
+  }, [apiRequest]);
   const updateUser = useCallback(async (userId: string, updatedData: Partial<User>) => {
     // Perform optimistic update for UI responsiveness
     setUsers(prev => prev.map(u => u.id === userId ? { ...u, ...updatedData } : u));
@@ -466,7 +458,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       console.error("Failed to update user on server, optimistic update may be stale.", error);
     }
   }, [currentUser, apiRequest]);
-  const deleteUser = useCallback((userId: string) => { setUsers(prev => prev.filter(u => u.id !== userId)); setGuilds(prev => prev.map(g => ({ ...g, memberIds: g.memberIds.filter(id => id !== userId) }))); setQuests(prev => prev.map(q => ({ ...q, assignedUserIds: q.assignedUserIds.filter(id => id !== userId) }))); }, []);
+  const deleteUser = useCallback((userId: string) => setUsers(prev => prev.filter(u => u.id !== userId)), []);
   const markUserAsOnboarded = useCallback((userId: string) => updateUser(userId, { hasBeenOnboarded: true }), [updateUser]);
   const setAppUnlocked = useCallback((isUnlocked: boolean) => { localStorage.setItem('isAppUnlocked', String(isUnlocked)); _setAppUnlocked(isUnlocked); }, []);
   
@@ -976,10 +968,19 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     setThemes(prev => [...prev, newTheme]);
     addNotification({ type: 'success', message: 'Theme created!' });
   }, [addNotification]);
-  const updateTheme = useCallback((theme: ThemeDefinition) => {
+  const updateTheme = useCallback(async (theme: ThemeDefinition) => {
+    if (!theme.isCustom) {
+      addNotification({ type: 'error', message: 'Default themes cannot be modified.' });
+      return;
+    }
     setThemes(prev => prev.map(t => t.id === theme.id ? theme : t));
-    addNotification({ type: 'success', message: 'Theme updated!' });
-  }, [addNotification]);
+    try {
+      await apiRequest('PUT', `/api/themes/${theme.id}`, theme);
+      addNotification({ type: 'success', message: 'Theme updated!' });
+    } catch (error) {
+        // Error is handled by apiRequest
+    }
+  }, [addNotification, apiRequest]);
   const deleteTheme = useCallback((themeId: string) => {
     setThemes(prev => prev.filter(t => t.id !== themeId));
     addNotification({ type: 'info', message: 'Theme deleted.' });

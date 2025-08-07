@@ -27,15 +27,15 @@
         --font-display: 'MedievalSharp', cursive;
         --font-body: 'Roboto', sans-serif;
         --font-label: 'IM Fell English SC', serif;
-        --font-size-h1: 2.75rem;
-        --font-size-h2: 2.25rem;
+        --font-span: 'Roboto', sans-serif;
+        --font-button: 'Roboto', sans-serif;
+        --font-size-h1: 2.5rem;
+        --font-size-h2: 2.0rem;
         --font-size-h3: 1.75rem;
         --font-size-body: 1rem;
         --font-size-label: 1rem;
-        --font-button: 'Roboto', sans-serif;
-        --font-size-button: 1rem;
-        --font-span: 'Roboto', sans-serif; /* Retained for specific span styling if needed */
         --font-size-span: 1rem;
+        --font-size-button: 1rem;
         
         /* Original Theme Colors */
         --color-bg-primary-hsl: 224 71% 4%;    /* stone-950 */
@@ -46,6 +46,14 @@
         --color-border-hsl: 240 6% 30%; /* stone-700/60 */
         --color-primary-hue: 158; --color-primary-saturation: 84%; --color-primary-lightness: 39%;
         
+        /* New Per-Element Colors */
+        --color-h1: var(--color-text-primary-hsl);
+        --color-h2: var(--color-text-primary-hsl);
+        --color-h3: var(--color-text-primary-hsl);
+        --color-body: var(--color-text-primary-hsl);
+        --color-label: var(--color-text-secondary-hsl);
+        --color-span: var(--color-text-secondary-hsl);
+
         /* ShadCN/UI Theme Variables */
         --background: var(--color-bg-primary-hsl);
         --foreground: var(--color-text-primary-hsl);
@@ -73,7 +81,7 @@
         font-family: var(--font-body);
         font-size: var(--font-size-body);
         background-color: hsl(var(--background));
-        color: hsl(var(--foreground));
+        color: hsl(var(--color-body));
       }
       
       body[data-theme] h1, 
@@ -81,21 +89,24 @@
       body[data-theme] h3 {
         font-family: var(--font-display);
       }
-      body[data-theme] h1 { font-size: var(--font-size-h1); }
-      body[data-theme] h2 { font-size: var(--font-size-h2); }
-      body[data-theme] h3 { font-size: var(--font-size-h3); }
+      body[data-theme] h1 { font-size: var(--font-size-h1); color: hsl(var(--color-h1)); }
+      body[data-theme] h2 { font-size: var(--font-size-h2); color: hsl(var(--color-h2)); }
+      body[data-theme] h3 { font-size: var(--font-size-h3); color: hsl(var(--color-h3)); }
 
       body[data-theme] p {
         font-family: var(--font-body);
         font-size: var(--font-size-body);
+        color: hsl(var(--color-body));
       }
       body[data-theme] span {
         font-family: var(--font-span);
         font-size: var(--font-size-span);
+        color: hsl(var(--color-span));
       }
       body[data-theme] label {
         font-family: var(--font-label);
         font-size: var(--font-size-label);
+        color: hsl(var(--color-label));
       }
       body[data-theme] button {
          font-family: var(--font-button);

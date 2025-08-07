@@ -23,10 +23,10 @@ const FONT_OPTIONS = [
 
 const ContrastChecker: React.FC<{ styles: ThemeStyle }> = ({ styles }) => {
     const pairs = [
-        { label: "Text on Primary BG", fg: styles['--color-text-primary'], bg: styles['--color-bg-primary'] },
-        { label: "Secondary Text on Primary BG", fg: styles['--color-text-secondary'], bg: styles['--color-bg-primary'] },
-        { label: "Text on Secondary BG", fg: styles['--color-text-primary'], bg: styles['--color-bg-secondary'] },
-        { label: "Accent Text on Primary BG", fg: `hsl(${styles['--color-accent-hue']} ${styles['--color-accent-saturation']} ${styles['--color-accent-lightness']})`, bg: styles['--color-bg-primary']},
+        { label: "Text on Primary BG", fg: styles['--color-text-primary-hsl'], bg: styles['--color-bg-primary-hsl'] },
+        { label: "Secondary Text on Primary BG", fg: styles['--color-text-secondary-hsl'], bg: styles['--color-bg-primary-hsl'] },
+        { label: "Text on Secondary BG", fg: styles['--color-text-primary-hsl'], bg: styles['--color-bg-secondary-hsl'] },
+        { label: "Accent Text on Primary BG", fg: `hsl(${styles['--color-accent-hue']} ${styles['--color-accent-saturation']} ${styles['--color-accent-lightness']})`, bg: styles['--color-bg-primary-hsl']},
         { label: "Button Text on Button BG", fg: '0 0% 100%', bg: `hsl(${styles['--color-primary-hue']} ${styles['--color-primary-saturation']} ${styles['--color-primary-lightness']})`}
     ];
 
@@ -195,7 +195,7 @@ const ThemeEditorPage: React.FC = () => {
                                 <button
                                     onClick={() => setSelectedThemeId(theme.id)}
                                     className={`w-full aspect-square rounded-lg transition-all duration-200 border-4 ${selectedThemeId === theme.id ? 'border-white shadow-lg' : 'border-transparent opacity-70 hover:opacity-100'}`}
-                                    style={{ fontFamily: theme.styles['--font-display'], backgroundColor: `hsl(${theme.styles['--color-bg-primary']})`, color: `hsl(${theme.styles['--color-text-primary']})` }}
+                                    style={{ fontFamily: theme.styles['--font-display'], backgroundColor: `hsl(${theme.styles['--color-bg-primary-hsl']})`, color: `hsl(${theme.styles['--color-text-primary-hsl']})` }}
                                 >
                                     <div className="p-1 flex flex-col justify-between h-full">
                                         <h3 className="text-sm font-bold capitalize truncate">{theme.name}</h3>
@@ -268,12 +268,12 @@ const ThemeEditorPage: React.FC = () => {
                              {activeTab === 'colors' && (
                                 <div className="space-y-4">
                                     <div className="grid grid-cols-2 gap-4">
-                                        <SimpleColorPicker label="Primary Background" hslValue={formData.styles['--color-bg-primary']} onChange={v => handleStyleChange('--color-bg-primary', v)} />
-                                        <SimpleColorPicker label="Secondary Background" hslValue={formData.styles['--color-bg-secondary']} onChange={v => handleStyleChange('--color-bg-secondary', v)} />
-                                        <SimpleColorPicker label="Tertiary Background" hslValue={formData.styles['--color-bg-tertiary']} onChange={v => handleStyleChange('--color-bg-tertiary', v)} />
-                                        <SimpleColorPicker label="Primary Text" hslValue={formData.styles['--color-text-primary']} onChange={v => handleStyleChange('--color-text-primary', v)} />
-                                        <SimpleColorPicker label="Secondary Text" hslValue={formData.styles['--color-text-secondary']} onChange={v => handleStyleChange('--color-text-secondary', v)} />
-                                        <SimpleColorPicker label="Border" hslValue={formData.styles['--color-border']} onChange={v => handleStyleChange('--color-border', v)} />
+                                        <SimpleColorPicker label="Primary Background" hslValue={formData.styles['--color-bg-primary-hsl']} onChange={v => handleStyleChange('--color-bg-primary-hsl', v)} />
+                                        <SimpleColorPicker label="Secondary Background" hslValue={formData.styles['--color-bg-secondary-hsl']} onChange={v => handleStyleChange('--color-bg-secondary-hsl', v)} />
+                                        <SimpleColorPicker label="Tertiary Background" hslValue={formData.styles['--color-bg-tertiary-hsl']} onChange={v => handleStyleChange('--color-bg-tertiary-hsl', v)} />
+                                        <SimpleColorPicker label="Primary Text" hslValue={formData.styles['--color-text-primary-hsl']} onChange={v => handleStyleChange('--color-text-primary-hsl', v)} />
+                                        <SimpleColorPicker label="Secondary Text" hslValue={formData.styles['--color-text-secondary-hsl']} onChange={v => handleStyleChange('--color-text-secondary-hsl', v)} />
+                                        <SimpleColorPicker label="Border" hslValue={formData.styles['--color-border-hsl']} onChange={v => handleStyleChange('--color-border-hsl', v)} />
                                     </div>
                                     <div className="pt-4 mt-4 border-t border-stone-700/60 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                                         <SimpleColorPicker label="Primary/Button" hslValue={`hsl(${formData.styles['--color-primary-hue']} ${formData.styles['--color-primary-saturation']} ${formData.styles['--color-primary-lightness']})`} 

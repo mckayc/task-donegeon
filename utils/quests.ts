@@ -53,7 +53,7 @@ export const isQuestScheduledForDay = (quest: Quest, day: Date): boolean => {
 
 /**
  * Checks if a quest should be visible to a user in the current app mode.
- * Verifies active status, guild scope, and user assignment.
+ * Verifies active status, guild scope, and user assignment, strictly separating personal and guild contexts.
  */
 export const isQuestVisibleToUserInMode = (
   quest: Quest,
@@ -64,32 +64,28 @@ export const isQuestVisibleToUserInMode = (
 
   const currentGuildId = appMode.mode === 'guild' ? appMode.guildId : undefined;
 
-  // Case 1: Guild Quest (must be in correct guild mode)
+  // If quest is a guild quest, it's only visible in that guild's view.
   if (quest.guildId) {
     if (quest.guildId !== currentGuildId) {
-      return false; // Not in the right guild view
+      return false;
     }
-    // It's a matching guild quest, check assignment
+    // Check assignment within the guild
     if (quest.assignedUserIds.length > 0 && !quest.assignedUserIds.includes(userId)) {
-      return false; // Assigned to others in the guild
+      return false;
     }
-    return true; // It's for this guild and either unassigned or assigned to the user
+    return true;
   } 
-  
-  // Case 2: Personal Quest (no guildId)
+  // If quest is a personal quest, it's only visible in personal view.
   else {
-    // If it's a personal quest specifically assigned to the user, show it always, regardless of mode.
-    if (quest.assignedUserIds.length > 0 && quest.assignedUserIds.includes(userId)) {
-      return true;
+    if (appMode.mode !== 'personal') {
+      return false;
     }
-    
-    // If it's a generic personal quest (unassigned), only show it in personal mode.
-    if (quest.assignedUserIds.length === 0 && appMode.mode === 'personal') {
-      return true;
+    // Check assignment for personal quests
+    if (quest.assignedUserIds.length > 0 && !quest.assignedUserIds.includes(userId)) {
+      return false;
     }
+    return true;
   }
-
-  return false;
 };
 
 

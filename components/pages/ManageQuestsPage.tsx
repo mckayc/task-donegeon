@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useMemo } from 'react';
+import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { Quest, QuestType, QuestGroup } from '../../types';
 import Button from '../ui/Button';
@@ -10,17 +10,20 @@ import { QuestsIcon, EllipsisVerticalIcon } from '../ui/Icons';
 import EmptyState from '../ui/EmptyState';
 import Input from '../ui/Input';
 import BulkEditQuestsDialog from '../quests/BulkEditQuestsDialog';
+import { useDebounce } from '../../hooks/useDebounce';
 
 const ManageQuestsPage: React.FC = () => {
-    const { quests, settings, isAiConfigured, questGroups } = useAppState();
-    const { deleteQuests, updateQuestsStatus, cloneQuest } = useAppDispatch();
+    const { settings, isAiConfigured, questGroups } = useAppState();
+    const { addNotification } = useAppDispatch();
     
+    const [pageQuests, setPageQuests] = useState<Quest[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
     const [editingQuest, setEditingQuest] = useState<Quest | null>(null);
     const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
     const [isGeneratorOpen, setIsGeneratorOpen] = useState(false);
     const [isBulkEditDialogOpen, setIsBulkEditDialogOpen] = useState(false);
     const [confirmation, setConfirmation] = useState<{ action: 'delete' | 'activate' | 'deactivate', ids: string[] } | null>(null);
-    const [initialCreateData, setInitialCreateData] = useState<{ title: string; description: string; type: QuestType, tags?: string[], rewards?: any[] } | null>(null);
+    const [initialCreateData, setInitialCreateData] = useState<any | null>(null);
     const [selectedQuests, setSelectedQuests] = useState<string[]>([]);
     const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
     const dropdownRef = useRef<HTMLDivElement | null>(null);
@@ -28,8 +31,57 @@ const ManageQuestsPage: React.FC = () => {
     const [activeTab, setActiveTab] = useState('All');
     const [searchTerm, setSearchTerm] = useState('');
     const [sortBy, setSortBy] = useState<'title-asc' | 'title-desc' | 'status-asc' | 'status-desc'>('title-asc');
+    const debouncedSearchTerm = useDebounce(searchTerm, 300);
 
     const isAiAvailable = settings.enableAiFeatures && isAiConfigured;
+
+    const apiRequest = useCallback(async (method: string, path: string, body?: any) => {
+        try {
+            const options: RequestInit = {
+                method,
+                headers: { 'Content-Type': 'application/json' },
+            };
+            if (body) {
+                options.body = JSON.stringify(body);
+            }
+            const response = await window.fetch(path, options);
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({ error: 'Server error' }));
+                throw new Error(errorData.error || `Request failed with status ${response.status}`);
+            }
+            if (response.status === 204) {
+                 return null;
+            }
+            return await response.json();
+        } catch (error) {
+            addNotification({ type: 'error', message: error instanceof Error ? error.message : 'An unknown network error occurred.' });
+            throw error;
+        }
+    }, [addNotification]);
+
+    const fetchQuests = useCallback(async () => {
+        setIsLoading(true);
+        try {
+            const params = new URLSearchParams();
+            const group = questGroups.find(g => g.name === activeTab);
+            const groupId = activeTab === 'All' ? 'All' : (group ? group.id : 'Uncategorized');
+            
+            params.append('groupId', groupId);
+            if (debouncedSearchTerm) params.append('searchTerm', debouncedSearchTerm);
+            params.append('sortBy', sortBy);
+
+            const data = await apiRequest('GET', `/api/quests?${params.toString()}`);
+            setPageQuests(data);
+        } catch (error) {
+            console.error("Failed to fetch quests:", error);
+        } finally {
+            setIsLoading(false);
+        }
+    }, [activeTab, debouncedSearchTerm, sortBy, questGroups, apiRequest]);
+
+    useEffect(() => {
+        fetchQuests();
+    }, [fetchQuests]);
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
@@ -46,42 +98,6 @@ const ManageQuestsPage: React.FC = () => {
     useEffect(() => {
         setSelectedQuests([]);
     }, [activeTab, searchTerm, sortBy]);
-    
-    const filteredAndSortedQuests = useMemo(() => {
-        let filtered = [...quests];
-
-        // Filter by tab
-        if (activeTab === 'Uncategorized') {
-            filtered = filtered.filter(q => !q.groupId);
-        } else if (activeTab !== 'All') {
-            const group = questGroups.find(g => g.name === activeTab);
-            if (group) {
-                filtered = filtered.filter(q => q.groupId === group.id);
-            }
-        }
-
-        // Filter by search term
-        if (searchTerm) {
-            filtered = filtered.filter(q => 
-                q.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                q.description.toLowerCase().includes(searchTerm.toLowerCase())
-            );
-        }
-
-        // Sort
-        filtered.sort((a, b) => {
-            switch (sortBy) {
-                case 'title-asc': return a.title.localeCompare(b.title);
-                case 'title-desc': return b.title.localeCompare(a.title);
-                case 'status-asc': return (a.isActive ? 1 : 0) - (b.isActive ? 1 : 0);
-                case 'status-desc': return (b.isActive ? 1 : 0) - (a.isActive ? 1 : 0);
-                default: return 0;
-            }
-        });
-        
-        return filtered;
-    }, [quests, questGroups, activeTab, searchTerm, sortBy]);
-    
 
     const handleEdit = (quest: Quest) => {
         setInitialCreateData(null);
@@ -94,23 +110,45 @@ const ManageQuestsPage: React.FC = () => {
         setEditingQuest(null);
         setIsCreateDialogOpen(true);
     };
+    
+    const handleSaveQuest = async (questData: any) => {
+        const isEditing = !!editingQuest;
+        const method = isEditing ? 'PUT' : 'POST';
+        const url = isEditing ? `/api/quests/${editingQuest!.id}` : '/api/quests';
+        try {
+            await apiRequest(method, url, questData);
+            addNotification({ type: 'success', message: `Quest ${isEditing ? 'updated' : 'created'} successfully!` });
+            fetchQuests();
+        } catch (e) { /* error handled by apiRequest helper */ }
+    };
 
-    const handleConfirmAction = () => {
+    const handleClone = async (questId: string) => {
+        try {
+            await apiRequest('POST', `/api/quests/clone/${questId}`);
+            addNotification({ type: 'success', message: 'Quest cloned successfully!' });
+            fetchQuests();
+        } catch (e) { /* error handled */ }
+    };
+
+    const handleConfirmAction = async () => {
         if (!confirmation) return;
         
-        switch(confirmation.action) {
-            case 'delete':
-                deleteQuests(confirmation.ids);
-                break;
-            case 'activate':
-                updateQuestsStatus(confirmation.ids, true);
-                break;
-            case 'deactivate':
-                updateQuestsStatus(confirmation.ids, false);
-                break;
-        }
-
-        setSelectedQuests([]);
+        try {
+            switch(confirmation.action) {
+                case 'delete':
+                    await apiRequest('DELETE', '/api/quests', { ids: confirmation.ids });
+                    addNotification({ type: 'info', message: `${confirmation.ids.length} quest(s) deleted.` });
+                    break;
+                case 'activate':
+                case 'deactivate':
+                    await apiRequest('PUT', '/api/quests/bulk-status', { ids: confirmation.ids, isActive: confirmation.action === 'activate' });
+                    addNotification({ type: 'success', message: `${confirmation.ids.length} quest(s) updated.` });
+                    break;
+            }
+            setSelectedQuests([]);
+            fetchQuests();
+        } catch (e) { /* error handled */ }
+        
         setConfirmation(null);
     };
     
@@ -120,7 +158,7 @@ const ManageQuestsPage: React.FC = () => {
         setInitialCreateData(null);
     }
     
-    const handleUseIdea = (idea: { title: string; description: string; type: QuestType, tags?: string[], rewards?: any[] }) => {
+    const handleUseIdea = (idea: any) => {
         setIsGeneratorOpen(false);
         setInitialCreateData(idea);
         setEditingQuest(null);
@@ -129,7 +167,7 @@ const ManageQuestsPage: React.FC = () => {
 
     const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.checked) {
-            setSelectedQuests(filteredAndSortedQuests.map(q => q.id));
+            setSelectedQuests(pageQuests.map(q => q.id));
         } else {
             setSelectedQuests([]);
         }
@@ -143,6 +181,15 @@ const ManageQuestsPage: React.FC = () => {
         }
     };
     
+    const handleBulkSave = async (updates: any) => {
+        try {
+            await apiRequest('PUT', '/api/quests/bulk-update', { ids: selectedQuests, updates });
+            addNotification({ type: 'success', message: `Bulk updated ${selectedQuests.length} quest(s).` });
+            setSelectedQuests([]);
+            fetchQuests();
+        } catch(e) { /* error handled */ }
+    };
+
     const getConfirmationMessage = () => {
         if (!confirmation) return '';
         const count = confirmation.ids.length;
@@ -209,12 +256,14 @@ const ManageQuestsPage: React.FC = () => {
                     )}
                 </div>
 
-                {filteredAndSortedQuests.length > 0 ? (
+                {isLoading ? (
+                    <div className="text-center py-10"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-400 mx-auto"></div></div>
+                ) : pageQuests.length > 0 ? (
                     <div className="overflow-x-auto">
                         <table className="w-full text-left">
                             <thead className="border-b border-stone-700/60">
                                 <tr>
-                                    <th className="p-4 w-12"><input type="checkbox" onChange={handleSelectAll} checked={selectedQuests.length === filteredAndSortedQuests.length && filteredAndSortedQuests.length > 0} className="h-4 w-4 rounded text-emerald-600 bg-stone-700 border-stone-600 focus:ring-emerald-500" /></th>
+                                    <th className="p-4 w-12"><input type="checkbox" onChange={handleSelectAll} checked={selectedQuests.length === pageQuests.length && pageQuests.length > 0} className="h-4 w-4 rounded text-emerald-600 bg-stone-700 border-stone-600 focus:ring-emerald-500" /></th>
                                     <th className="p-4 font-semibold">Title</th>
                                     <th className="p-4 font-semibold">Type</th>
                                     <th className="p-4 font-semibold">Status</th>
@@ -223,7 +272,7 @@ const ManageQuestsPage: React.FC = () => {
                                 </tr>
                             </thead>
                             <tbody>
-                                {filteredAndSortedQuests.map(quest => (
+                                {pageQuests.map(quest => (
                                     <tr key={quest.id} className="border-b border-stone-700/40 last:border-b-0">
                                         <td className="p-4"><input type="checkbox" checked={selectedQuests.includes(quest.id)} onChange={e => handleSelectOne(quest.id, e.target.checked)} className="h-4 w-4 rounded text-emerald-600 bg-stone-700 border-stone-600 focus:ring-emerald-500" /></td>
                                         <td className="p-4 font-bold">
@@ -253,7 +302,7 @@ const ManageQuestsPage: React.FC = () => {
                                             {openDropdownId === quest.id && (
                                                 <div ref={dropdownRef} className="absolute right-10 top-0 mt-2 w-36 bg-stone-900 border border-stone-700 rounded-lg shadow-xl z-20">
                                                     <a href="#" onClick={(e) => { e.preventDefault(); handleEdit(quest); setOpenDropdownId(null); }} className="block px-4 py-2 text-sm text-stone-300 hover:bg-stone-700/50">Edit</a>
-                                                    <button onClick={() => { cloneQuest(quest.id); setOpenDropdownId(null); }} className="w-full text-left block px-4 py-2 text-sm text-stone-300 hover:bg-stone-700/50">Clone</button>
+                                                    <button onClick={() => { handleClone(quest.id); setOpenDropdownId(null); }} className="w-full text-left block px-4 py-2 text-sm text-stone-300 hover:bg-stone-700/50">Clone</button>
                                                     <button onClick={() => { setConfirmation({ action: 'delete', ids: [quest.id] }); setOpenDropdownId(null); }} className="w-full text-left block px-4 py-2 text-sm text-red-400 hover:bg-stone-700/50">Delete</button>
                                                 </div>
                                             )}
@@ -273,11 +322,11 @@ const ManageQuestsPage: React.FC = () => {
                 )}
             </Card>
             
-            {isCreateDialogOpen && <CreateQuestDialog questToEdit={editingQuest || undefined} initialData={initialCreateData || undefined} onClose={handleCloseDialog} />}
+            {isCreateDialogOpen && <CreateQuestDialog questToEdit={editingQuest || undefined} initialData={initialCreateData || undefined} onClose={handleCloseDialog} onSave={handleSaveQuest} />}
             
             {isGeneratorOpen && <QuestIdeaGenerator onUseIdea={handleUseIdea} onClose={() => setIsGeneratorOpen(false)} />}
 
-            {isBulkEditDialogOpen && <BulkEditQuestsDialog questIds={selectedQuests} onClose={() => setIsBulkEditDialogOpen(false)} />}
+            {isBulkEditDialogOpen && <BulkEditQuestsDialog questIds={selectedQuests} onClose={() => setIsBulkEditDialogOpen(false)} onSave={handleBulkSave} />}
 
             <ConfirmDialog
                 isOpen={!!confirmation}

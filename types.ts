@@ -422,7 +422,7 @@ export interface Terminology {
   link_chat: string;
 }
 
-export type Page = 'Dashboard' | 'Avatar' | 'Quests' | 'Marketplace' | 'Chronicles' | 'Guild' | 'Calendar' | 'Progress' | 'Trophies' | 'Ranks' | 'Manage Users' | 'Manage Rewards' | 'Manage Quests' | 'Manage Goods' | 'Approvals' | 'Manage Markets' | 'Manage Guilds' | 'Settings' | 'Profile' | 'About' | 'Help Guide' | 'Manage Ranks' | 'Manage Trophies' | 'Themes' | 'Data Management' | 'Collection' | 'Suggestion Engine' | 'Appearance'
+export type Page = 'Dashboard' | 'Avatar' | 'Quests' | 'Marketplace' | 'Chronicles' | 'Guild' | 'Calendar' | 'Progress' | 'Trophies' | 'Ranks' | 'Manage Users' | 'Manage Rewards' | 'Manage Quests' | 'Manage Goods' | 'Approvals' | 'Manage Markets' | 'Manage Guilds' | 'Settings' | 'Profile' | 'About' | 'Help Guide' | 'Manage Ranks' | 'Manage Trophies' | 'Themes' | 'Collection' | 'Suggestion Engine' | 'Appearance'
 | 'Object Exporter' | 'Asset Manager' | 'Backup & Import' | 'Asset Library'
 | 'Theme Editor' | 'Chat' | 'Manage Quest Groups' | 'Manage Events'
 ;
@@ -506,7 +506,6 @@ export interface AppSettings {
   };
   sidebars: {
       main: SidebarConfigItem[];
-      dataManagement: SidebarConfigItem[];
   };
 }
 

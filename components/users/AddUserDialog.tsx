@@ -42,7 +42,7 @@ const AddUserDialog: React.FC<AddUserDialogProps> = ({ onClose }) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
 
@@ -75,8 +75,10 @@ const AddUserDialog: React.FC<AddUserDialogProps> = ({ onClose }) => {
         password: formData.password || undefined,
     };
 
-    addUser(newUserPayload);
-    onClose();
+    const createdUser = await addUser(newUserPayload);
+    if (createdUser) {
+      onClose();
+    }
   };
 
   return (

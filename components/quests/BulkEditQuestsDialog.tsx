@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useAppState, useAppDispatch } from '../../context/AppContext';
+import { useAppState } from '../../context/AppContext';
 import { BulkQuestUpdates } from '../../types';
 import Button from '../ui/Button';
 import Input from '../ui/Input';
@@ -9,14 +9,15 @@ import UserMultiSelect from '../ui/UserMultiSelect';
 interface BulkEditQuestsDialogProps {
     questIds: string[];
     onClose: () => void;
+    onSave: (updates: BulkQuestUpdates) => Promise<void>;
 }
 
 type TriState = 'no-change' | 'true' | 'false';
 
-const BulkEditQuestsDialog: React.FC<BulkEditQuestsDialogProps> = ({ questIds, onClose }) => {
+const BulkEditQuestsDialog: React.FC<BulkEditQuestsDialogProps> = ({ questIds, onClose, onSave }) => {
     const { questGroups, allTags, users } = useAppState();
-    const { bulkUpdateQuests } = useAppDispatch();
 
+    const [isSaving, setIsSaving] = useState(false);
     const [status, setStatus] = useState<TriState>('no-change');
     const [isOptional, setIsOptional] = useState<TriState>('no-change');
     const [requiresApproval, setRequiresApproval] = useState<TriState>('no-change');
@@ -26,7 +27,7 @@ const BulkEditQuestsDialog: React.FC<BulkEditQuestsDialogProps> = ({ questIds, o
     const [assignUsers, setAssignUsers] = useState<string[]>([]);
     const [unassignUsers, setUnassignUsers] = useState<string[]>([]);
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         const updates: BulkQuestUpdates = {};
 
@@ -40,7 +41,9 @@ const BulkEditQuestsDialog: React.FC<BulkEditQuestsDialogProps> = ({ questIds, o
         if (unassignUsers.length > 0) updates.unassignUsers = unassignUsers;
         
         if (Object.keys(updates).length > 0) {
-            bulkUpdateQuests(questIds, updates);
+            setIsSaving(true);
+            await onSave(updates);
+            setIsSaving(false);
         }
         onClose();
     };
@@ -92,8 +95,10 @@ const BulkEditQuestsDialog: React.FC<BulkEditQuestsDialogProps> = ({ questIds, o
                 </form>
                 <div className="p-6 border-t border-stone-700/60 mt-auto">
                     <div className="flex justify-end space-x-4">
-                        <Button type="button" variant="secondary" onClick={onClose}>Cancel</Button>
-                        <Button type="submit" form="quest-dialog-form">Apply Changes</Button>
+                        <Button type="button" variant="secondary" onClick={onClose} disabled={isSaving}>Cancel</Button>
+                        <Button type="submit" form="quest-dialog-form" disabled={isSaving}>
+                            {isSaving ? 'Applying...' : 'Apply Changes'}
+                        </Button>
                     </div>
                 </div>
             </div>

@@ -7,7 +7,7 @@ const fs = require('fs').promises;
 const { GoogleGenAI } = require('@google/genai');
 const http = require('http');
 const WebSocket = require('ws');
-const { In } = require("typeorm");
+const { In, Brackets } = require("typeorm");
 const { dataSource, ensureDatabaseDirectoryExists } = require('./data-source');
 const { INITIAL_SETTINGS, INITIAL_REWARD_TYPES, INITIAL_RANKS, INITIAL_TROPHIES, INITIAL_THEMES, INITIAL_QUEST_GROUPS } = require('./initialData');
 const { 
@@ -496,23 +496,150 @@ app.put('/api/settings', asyncMiddleware(async (req, res) => {
 
 // Specific endpoint for quests (due to relations)
 const questsRouter = express.Router();
-questsRouter.put('/:id', asyncMiddleware(async (req, res) => {
-    const repo = dataSource.getRepository(QuestEntity);
+const questRepo = dataSource.getRepository(QuestEntity);
+
+// GET /api/quests - List with filtering and sorting
+questsRouter.get('/', asyncMiddleware(async (req, res) => {
+    const { groupId, searchTerm, sortBy } = req.query;
+    const qb = questRepo.createQueryBuilder("quest")
+        .leftJoinAndSelect("quest.assignedUsers", "user");
+
+    // groupId 'All' is default, no filter needed.
+    if (groupId && groupId !== 'All') {
+        if (groupId === 'Uncategorized') {
+            qb.where("quest.groupId IS NULL OR quest.groupId = ''");
+        } else {
+            qb.where("quest.groupId = :groupId", { groupId });
+        }
+    }
+
+    if (searchTerm) {
+        qb.andWhere(new Brackets(subQuery => {
+            subQuery.where("LOWER(quest.title) LIKE LOWER(:searchTerm)", { searchTerm: `%${searchTerm}%` })
+                  .orWhere("LOWER(quest.description) LIKE LOWER(:searchTerm)", { searchTerm: `%${searchTerm}%` });
+        }));
+    }
+
+    switch (sortBy) {
+        case 'title-desc': qb.orderBy("quest.title", "DESC"); break;
+        case 'status-asc': qb.orderBy("quest.isActive", "ASC"); break;
+        case 'status-desc': qb.orderBy("quest.isActive", "DESC"); break;
+        case 'createdAt-asc': qb.orderBy("quest.id", "ASC"); break;
+        case 'createdAt-desc': qb.orderBy("quest.id", "DESC"); break;
+        case 'title-asc': default: qb.orderBy("quest.title", "ASC"); break;
+    }
+
+    const quests = await qb.getMany();
+    res.json(quests.map(q => ({ ...q, assignedUserIds: q.assignedUsers?.map(u => u.id) || [] })));
+}));
+
+// POST /api/quests - Create new quest
+questsRouter.post('/', asyncMiddleware(async (req, res) => {
     const { assignedUserIds, ...questData } = req.body;
-    const quest = await repo.findOneBy({ id: req.params.id });
+    const newQuest = questRepo.create({
+        ...questData,
+        id: `quest-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+        claimedByUserIds: [],
+        dismissals: [],
+        todoUserIds: []
+    });
+    if (assignedUserIds) {
+        newQuest.assignedUsers = await dataSource.getRepository(UserEntity).findBy({ id: In(assignedUserIds) });
+    }
+    await questRepo.save(newQuest);
+    broadcast({ type: 'DATA_UPDATED' });
+    const savedQuest = await questRepo.findOne({ where: { id: newQuest.id }, relations: ['assignedUsers'] });
+    res.status(201).json({ ...savedQuest, assignedUserIds: savedQuest.assignedUsers?.map(u => u.id) || [] });
+}));
+
+
+questsRouter.put('/:id', asyncMiddleware(async (req, res) => {
+    const { assignedUserIds, ...questData } = req.body;
+    const quest = await questRepo.findOneBy({ id: req.params.id });
     if (!quest) return res.status(404).send('Quest not found');
     
-    repo.merge(quest, questData);
+    questRepo.merge(quest, questData);
     if (assignedUserIds) {
         quest.assignedUsers = await dataSource.getRepository(UserEntity).findBy({ id: In(assignedUserIds) });
     }
-    await repo.save(quest);
+    await questRepo.save(quest);
     broadcast({ type: 'DATA_UPDATED' });
-    const updatedQuest = await repo.findOne({ where: { id: req.params.id }, relations: ['assignedUsers'] });
-    res.json({ ...updatedQuest, assignedUserIds: updatedQuest.assignedUsers.map(u => u.id) });
+    const updatedQuest = await questRepo.findOne({ where: { id: req.params.id }, relations: ['assignedUsers'] });
+    res.json({ ...updatedQuest, assignedUserIds: updatedQuest.assignedUsers?.map(u => u.id) || [] });
 }));
-app.use('/api/quests', questsRouter);
 
+// POST /api/quests/clone/:id
+questsRouter.post('/clone/:id', asyncMiddleware(async (req, res) => {
+    const questToClone = await questRepo.findOne({ where: { id: req.params.id }, relations: ['assignedUsers'] });
+    if (!questToClone) return res.status(404).send('Quest not found');
+
+    const newQuest = questRepo.create({
+        ...questToClone,
+        id: `quest-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+        title: `${questToClone.title} (Copy)`,
+        claimedByUserIds: [],
+        dismissals: [],
+        todoUserIds: [],
+        assignedUsers: questToClone.assignedUsers // keep assignments
+    });
+    await questRepo.save(newQuest);
+    broadcast({ type: 'DATA_UPDATED' });
+    const savedQuest = await questRepo.findOne({ where: { id: newQuest.id }, relations: ['assignedUsers'] });
+    res.status(201).json({ ...savedQuest, assignedUserIds: savedQuest.assignedUsers?.map(u => u.id) || [] });
+}));
+
+// DELETE /api/quests
+questsRouter.delete('/', asyncMiddleware(async (req, res) => {
+    const { ids } = req.body;
+    if (!ids || !Array.isArray(ids)) return res.status(400).send('Invalid request body, expected { ids: [...] }');
+    await questRepo.delete(ids);
+    broadcast({ type: 'DATA_UPDATED' });
+    res.status(204).send();
+}));
+
+// PUT /api/quests/bulk-status
+questsRouter.put('/bulk-status', asyncMiddleware(async (req, res) => {
+    const { ids, isActive } = req.body;
+    await questRepo.update(ids, { isActive });
+    broadcast({ type: 'DATA_UPDATED' });
+    res.status(204).send();
+}));
+
+// PUT /api/quests/bulk-update
+questsRouter.put('/bulk-update', asyncMiddleware(async (req, res) => {
+    const { ids, updates } = req.body;
+    const { addTags, removeTags, assignUsers, unassignUsers, ...simpleUpdates } = updates;
+
+    await dataSource.transaction(async manager => {
+        const questsToUpdate = await manager.getRepository(QuestEntity).find({ where: { id: In(ids) }, relations: ['assignedUsers'] });
+        
+        for (const quest of questsToUpdate) {
+            // Apply simple updates
+            Object.assign(quest, simpleUpdates);
+
+            // Handle tags
+            if (addTags) quest.tags = Array.from(new Set([...quest.tags, ...addTags]));
+            if (removeTags) quest.tags = quest.tags.filter(tag => !removeTags.includes(tag));
+            
+            // Handle user assignments
+            if (assignUsers) {
+                const usersToAdd = await manager.getRepository(UserEntity).findBy({ id: In(assignUsers) });
+                const newAssignedUsers = new Map(quest.assignedUsers.map(u => [u.id, u]));
+                usersToAdd.forEach(u => newAssignedUsers.set(u.id, u));
+                quest.assignedUsers = Array.from(newAssignedUsers.values());
+            }
+            if (unassignUsers) {
+                quest.assignedUsers = quest.assignedUsers.filter(u => !unassignUsers.includes(u.id));
+            }
+        }
+        await manager.save(questsToUpdate);
+    });
+
+    broadcast({ type: 'DATA_UPDATED' });
+    res.status(204).send();
+}));
+
+app.use('/api/quests', questsRouter);
 
 // Business Logic Actions
 app.post('/api/actions/complete-quest', asyncMiddleware(async (req, res) => {

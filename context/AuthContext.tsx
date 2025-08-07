@@ -1,7 +1,7 @@
 import React, { createContext, useState, useContext, ReactNode, useCallback } from 'react';
 import { User, Role } from '../types';
 import { useNotificationsDispatch } from './NotificationsContext';
-import { useDeveloper } from './DeveloperContext';
+import { bugLogger } from '../utils/bugLogger';
 
 // State managed by this context
 interface AuthState {
@@ -38,7 +38,6 @@ const AuthDispatchContext = createContext<AuthDispatch | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const { addNotification } = useNotificationsDispatch();
-  const { isRecording, addLogEntry } = useDeveloper();
   const [users, setUsers] = useState<User[]>([]);
   const [currentUser, _setCurrentUser] = useState<User | null>(null);
   const [isAppUnlocked, _setAppUnlocked] = useState<boolean>(() => localStorage.getItem('isAppUnlocked') === 'true');
@@ -80,8 +79,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   }, [apiRequest, addNotification]);
 
   const setCurrentUser = useCallback((user: User | null) => {
-    if (isRecording) {
-        addLogEntry({ type: 'STATE_CHANGE', message: `Setting current user to: ${user?.gameName || 'null'}` });
+    if (bugLogger.isRecording()) {
+        bugLogger.add({ type: 'STATE_CHANGE', message: `Setting current user to: ${user?.gameName || 'null'}` });
     }
     _setCurrentUser(user);
     setIsSharedViewActive(false);
@@ -91,7 +90,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     } else {
         localStorage.removeItem('lastUserId');
     }
-  }, [isRecording, addLogEntry]);
+  }, []);
 
   const exitToSharedView = useCallback(() => {
     _setCurrentUser(null);
@@ -100,8 +99,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   }, []);
 
   const addUser = useCallback(async (userData: Omit<User, 'id' | 'personalPurse' | 'personalExperience' | 'guildBalances' | 'avatar' | 'ownedAssetIds' | 'ownedThemes' | 'hasBeenOnboarded'>): Promise<User | null> => {
-    if (isRecording) {
-        addLogEntry({ type: 'ACTION', message: `Attempting to add user: ${userData.gameName}` });
+    if (bugLogger.isRecording()) {
+        bugLogger.add({ type: 'ACTION', message: `Attempting to add user: ${userData.gameName}` });
     }
     try {
         const newUser = await apiRequest('POST', '/api/users', userData);
@@ -112,11 +111,11 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         console.error("Failed to add user on server.", error);
         return null;
     }
-  }, [apiRequest, isRecording, addLogEntry]);
+  }, [apiRequest]);
 
   const updateUser = useCallback((userId: string, update: Partial<User> | ((user: User) => User)) => {
-    if (isRecording) {
-        addLogEntry({ type: 'ACTION', message: `Updating user ID: ${userId}` });
+    if (bugLogger.isRecording()) {
+        bugLogger.add({ type: 'ACTION', message: `Updating user ID: ${userId}` });
     }
     // Optimistic UI update
     const userToUpdate = users.find(u => u.id === userId);
@@ -135,17 +134,17 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         console.error("Failed to update user on server, optimistic update may be stale.", error);
         // Error notification is handled by apiRequest. Sync will correct the state.
     });
-  }, [users, currentUser, apiRequest, isRecording, addLogEntry]);
+  }, [users, currentUser, apiRequest]);
   
   const deleteUser = useCallback((userId: string) => {
-    if (isRecording) {
-        addLogEntry({ type: 'ACTION', message: `Deleting user ID: ${userId}` });
+    if (bugLogger.isRecording()) {
+        bugLogger.add({ type: 'ACTION', message: `Deleting user ID: ${userId}` });
     }
     setUsers(prev => prev.filter(u => u.id !== userId));
     apiRequest('DELETE', `/api/users/${userId}`).catch(error => {
        console.error("Failed to delete user on server.", error);
     });
-  }, [apiRequest, isRecording, addLogEntry]);
+  }, [apiRequest]);
 
   const markUserAsOnboarded = useCallback((userId: string) => updateUser(userId, { hasBeenOnboarded: true }), [updateUser]);
 

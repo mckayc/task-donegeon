@@ -1,6 +1,6 @@
 import React, { createContext, useState, useContext, ReactNode, useCallback } from 'react';
 import { Page, AppMode } from '../types';
-import { useDeveloper } from './DeveloperContext';
+import { bugLogger } from '../utils/bugLogger';
 
 // State managed by this context
 interface UIState {
@@ -30,14 +30,12 @@ export const UIStateProvider: React.FC<{ children: ReactNode }> = ({ children })
   const [appMode, setAppMode] = useState<AppMode>({ mode: 'personal' });
   const [activeMarketId, setActiveMarketId] = useState<string | null>(null);
 
-  const { isRecording, addLogEntry } = useDeveloper();
-
   const setActivePage = useCallback((page: Page) => {
-      if (isRecording) {
-        addLogEntry({ type: 'NAVIGATION', message: `Navigated to ${page} page.`});
+      if (bugLogger.isRecording()) {
+        bugLogger.add({ type: 'NAVIGATION', message: `Navigated to ${page} page.`});
       }
       _setActivePage(page);
-  }, [isRecording, addLogEntry]);
+  }, []);
 
 
   const toggleSidebar = useCallback(() => {

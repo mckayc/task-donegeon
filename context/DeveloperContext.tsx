@@ -1,6 +1,7 @@
 import React, { createContext, useState, useContext, ReactNode, useCallback } from 'react';
 import { BugReport, BugReportLogEntry, BugReportStatus } from '../types';
 import { useAppDispatch } from './AppContext';
+import { bugLogger } from '../utils/bugLogger';
 
 // State
 interface DeveloperState {
@@ -23,32 +24,31 @@ const DeveloperDispatchContext = createContext<DeveloperDispatch | undefined>(un
 export const DeveloperProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [isRecording, setIsRecording] = useState(false);
   const [isPickingElement, setIsPickingElement] = useState(false);
-  const [currentReportLogs, setCurrentReportLogs] = useState<BugReportLogEntry[]>([]);
   const [onPickCallback, setOnPickCallback] = useState<(info: any) => void>(() => () => {});
 
   const appDispatch = useAppDispatch();
 
   const startRecording = useCallback(() => {
-    setCurrentReportLogs([]);
+    bugLogger.start();
     setIsRecording(true);
+    bugLogger.add({ type: 'STATE_CHANGE', message: 'Recording started.' });
   }, []);
 
   const stopRecording = useCallback((title: string) => {
+    const logs = bugLogger.stop();
     const newReport: Omit<BugReport, 'id'> = {
         title,
         createdAt: new Date().toISOString(),
         status: BugReportStatus.New,
-        logs: currentReportLogs,
+        logs,
     };
     appDispatch.addBugReport(newReport);
     setIsRecording(false);
-    setCurrentReportLogs([]);
-  }, [currentReportLogs, appDispatch]);
+  }, [appDispatch]);
 
   const addLogEntry = useCallback((entry: Omit<BugReportLogEntry, 'timestamp'>) => {
-    if (!isRecording) return;
-    setCurrentReportLogs(prev => [...prev, { ...entry, timestamp: new Date().toISOString() }]);
-  }, [isRecording]);
+    bugLogger.add(entry);
+  }, []);
 
   const startPickingElement = useCallback((onPick: (elementInfo: any) => void) => {
     setIsPickingElement(true);

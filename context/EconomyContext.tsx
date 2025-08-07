@@ -7,7 +7,7 @@ import {
 import { useNotificationsDispatch } from './NotificationsContext';
 import { useAuthState, useAuthDispatch } from './AuthContext';
 import { toYMD } from '../utils/quests';
-import { useDeveloper } from './DeveloperContext';
+import { bugLogger } from '../utils/bugLogger';
 
 // State managed by this context
 interface EconomyState {
@@ -69,7 +69,6 @@ const EconomyDispatchContext = createContext<EconomyDispatch | undefined>(undefi
 export const EconomyProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const { addNotification } = useNotificationsDispatch();
   const authDispatch = useAuthDispatch();
-  const { isRecording, addLogEntry } = useDeveloper();
 
   const [markets, setMarkets] = useState<Market[]>([]);
   const [rewardTypes, setRewardTypes] = useState<RewardTypeDefinition[]>([]);
@@ -144,8 +143,8 @@ export const EconomyProvider: React.FC<{ children: ReactNode }> = ({ children })
   }, [rewardTypes, authDispatch]);
 
   const purchaseMarketItem = useCallback(async (assetId: string, marketId: string, user: User, costGroupIndex: number, scheduledEvents: ScheduledEvent[]) => {
-    if (isRecording) {
-      addLogEntry({ type: 'ACTION', message: `User ${user.gameName} attempting to purchase asset ${assetId}` });
+    if (bugLogger.isRecording()) {
+      bugLogger.add({ type: 'ACTION', message: `User ${user.gameName} attempting to purchase asset ${assetId}` });
     }
     const market = markets.find(m => m.id === marketId);
     const asset = gameAssets.find(ga => ga.id === assetId);
@@ -195,7 +194,7 @@ export const EconomyProvider: React.FC<{ children: ReactNode }> = ({ children })
     } else {
         addNotification({ type: 'error', message: 'You cannot afford this item.' });
     }
-  }, [markets, gameAssets, deductRewards, addNotification, applyRewards, authDispatch, isRecording, addLogEntry]);
+  }, [markets, gameAssets, deductRewards, addNotification, applyRewards, authDispatch]);
 
   const cancelPurchaseRequest = useCallback((purchaseId: string) => {
     const r = purchaseRequests.find(p => p.id === purchaseId);

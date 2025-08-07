@@ -4,7 +4,7 @@ import { useNotificationsDispatch } from './NotificationsContext';
 import { useAuthDispatch } from './AuthContext';
 import { useAppDispatch } from './AppContext'; // For addSystemNotification
 import { useEconomyDispatch } from './EconomyContext'; // For applyRewards
-import { useDeveloper } from './DeveloperContext';
+import { bugLogger } from '../utils/bugLogger';
 
 // State managed by this context
 interface QuestsState {
@@ -46,7 +46,6 @@ const QuestsDispatchContext = createContext<QuestsDispatch | undefined>(undefine
 export const QuestsProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const { addNotification } = useNotificationsDispatch();
   const appDispatch = useAppDispatch(); // Using a stable reference
-  const { isRecording, addLogEntry } = useDeveloper();
 
   // === STATE MANAGEMENT ===
   const [quests, setQuests] = useState<Quest[]>([]);
@@ -75,8 +74,8 @@ export const QuestsProvider: React.FC<{ children: ReactNode }> = ({ children }) 
   
   // === DISPATCH FUNCTIONS ===
   const addQuest = useCallback((quest: Omit<Quest, 'id' | 'claimedByUserIds' | 'dismissals'>) => {
-    if (isRecording) {
-      addLogEntry({ type: 'ACTION', message: `addQuest called for "${quest.title}"`});
+    if (bugLogger.isRecording()) {
+      bugLogger.add({ type: 'ACTION', message: `addQuest called for "${quest.title}"`});
     }
     const newQuest: Quest = { ...quest, id: `quest-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`, claimedByUserIds: [], dismissals: [], todoUserIds: [] };
     setQuests(prev => [...prev, newQuest]);
@@ -93,17 +92,17 @@ export const QuestsProvider: React.FC<{ children: ReactNode }> = ({ children }) 
             });
         }
     }
-  }, [appDispatch, isRecording, addLogEntry]);
+  }, [appDispatch]);
 
   const updateQuest = useCallback(async (updatedQuest: Quest) => {
-    if (isRecording) {
-      addLogEntry({ type: 'ACTION', message: `updateQuest called for "${updatedQuest.title}" (ID: ${updatedQuest.id})`});
+    if (bugLogger.isRecording()) {
+      bugLogger.add({ type: 'ACTION', message: `updateQuest called for "${updatedQuest.title}" (ID: ${updatedQuest.id})`});
     }
     try {
         await apiRequest('PUT', `/api/quests/${updatedQuest.id}`, updatedQuest);
         // State updates are handled via WebSocket broadcast
     } catch (error) {}
-  }, [apiRequest, isRecording, addLogEntry]);
+  }, [apiRequest]);
   
   const deleteQuest = useCallback((questId: string) => setQuests(prev => prev.filter(q => q.id !== questId)), []);
   const cloneQuest = useCallback((questId: string) => {
@@ -120,33 +119,33 @@ export const QuestsProvider: React.FC<{ children: ReactNode }> = ({ children }) 
   const unmarkQuestAsTodo = useCallback((questId: string, userId: string) => setQuests(prev => prev.map(q => q.id === questId ? { ...q, todoUserIds: (q.todoUserIds || []).filter(id => id !== userId) } : q)), []);
   
   const completeQuest = useCallback(async (completionData: any) => {
-    if (isRecording) {
-      addLogEntry({ type: 'ACTION', message: `Completing quest ID ${completionData.questId} for user ID ${completionData.userId}`});
+    if (bugLogger.isRecording()) {
+      bugLogger.add({ type: 'ACTION', message: `Completing quest ID ${completionData.questId} for user ID ${completionData.userId}`});
     }
     try {
       await apiRequest('POST', '/api/actions/complete-quest', { completionData });
     } catch (error) {}
-  }, [apiRequest, isRecording, addLogEntry]);
+  }, [apiRequest]);
 
   const approveQuestCompletion = useCallback(async (completionId: string, note?: string) => {
-    if (isRecording) {
-      addLogEntry({ type: 'ACTION', message: `Approving quest completion ID ${completionId}`});
+    if (bugLogger.isRecording()) {
+      bugLogger.add({ type: 'ACTION', message: `Approving quest completion ID ${completionId}`});
     }
     try {
         await apiRequest('POST', `/api/actions/approve-quest/${completionId}`, { note });
         addNotification({ type: 'success', message: 'Quest approved!' });
     } catch (error) {}
-  }, [apiRequest, addNotification, isRecording, addLogEntry]);
+  }, [apiRequest, addNotification]);
 
   const rejectQuestCompletion = useCallback(async (completionId: string, note?: string) => {
-    if (isRecording) {
-      addLogEntry({ type: 'ACTION', message: `Rejecting quest completion ID ${completionId}`});
+    if (bugLogger.isRecording()) {
+      bugLogger.add({ type: 'ACTION', message: `Rejecting quest completion ID ${completionId}`});
     }
     try {
         await apiRequest('POST', `/api/actions/reject-quest/${completionId}`, { note });
         addNotification({ type: 'info', message: 'Quest rejected.' });
     } catch (error) {}
-  }, [apiRequest, addNotification, isRecording, addLogEntry]);
+  }, [apiRequest, addNotification]);
 
   const addQuestGroup = useCallback((group: Omit<QuestGroup, 'id'>): QuestGroup => {
     const newGroup: QuestGroup = { ...group, id: `q-group-${Date.now()}-${Math.random().toString(36).substring(2, 9)}` };

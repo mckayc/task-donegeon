@@ -60,7 +60,7 @@ interface EconomyDispatch {
   // Bulk/Admin Actions
   importAssetPack: (assetPack: AssetPack, resolutions: ImportResolution[], allData: IAppData) => Promise<void>;
   deleteAllCustomContent: () => void;
-  deleteSelectedAssets: (selection: Record<ShareableAssetType, string[]>) => void;
+  deleteSelectedAssets: (selection: Partial<Record<ShareableAssetType, string[]>>) => void;
 }
 
 const EconomyStateContext = createContext<EconomyState | undefined>(undefined);
@@ -362,10 +362,10 @@ export const EconomyProvider: React.FC<{ children: ReactNode }> = ({ children })
     setRewardTypes(p => p.filter(rt => rt.isCore)); 
   }, []);
 
-  const deleteSelectedAssets = useCallback((selection: Record<ShareableAssetType, string[]>) => {
-    if (selection.markets) setMarkets(p => p.filter(i => !selection.markets.includes(i.id)));
-    if (selection.rewardTypes) setRewardTypes(p => p.filter(i => !selection.rewardTypes.includes(i.id)));
-    if (selection.gameAssets) setGameAssets(p => p.filter(i => !selection.gameAssets.includes(i.id)));
+  const deleteSelectedAssets = useCallback((selection: Partial<Record<ShareableAssetType, string[]>>) => {
+    if (selection.markets) setMarkets(p => p.filter(i => !selection.markets!.includes(i.id)));
+    if (selection.rewardTypes) setRewardTypes(p => p.filter(i => !selection.rewardTypes!.includes(i.id)));
+    if (selection.gameAssets) setGameAssets(p => p.filter(i => !selection.gameAssets!.includes(i.id)));
     addNotification({ type: 'success', message: 'Selected assets have been deleted.' });
   }, [addNotification]);
 

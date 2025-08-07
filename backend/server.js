@@ -145,6 +145,26 @@ const upload = multer({
 // === Backup Configuration ===
 const BACKUP_DIR = '/app/data/backups';
 const ASSET_PACKS_DIR = '/app/data/asset_packs';
+const DEFAULT_ASSET_PACKS_SOURCE_DIR = path.join(__dirname, 'default_asset_packs');
+
+const ensureDefaultAssetPacksExist = async () => {
+    try {
+        const defaultPacks = await fs.readdir(DEFAULT_ASSET_PACKS_SOURCE_DIR);
+        for (const packFilename of defaultPacks) {
+            const sourcePath = path.join(DEFAULT_ASSET_PACKS_SOURCE_DIR, packFilename);
+            const destPath = path.join(ASSET_PACKS_DIR, packFilename);
+            try {
+                await fs.access(destPath);
+            } catch (error) {
+                await fs.copyFile(sourcePath, destPath);
+                console.log(`Copied default asset pack: ${packFilename}`);
+            }
+        }
+    } catch (error) {
+        console.error('Could not ensure default asset packs exist:', error);
+    }
+};
+
 
 // === Database Initialization and Server Start ===
 const initializeApp = async () => {
@@ -156,6 +176,10 @@ const initializeApp = async () => {
     await fs.mkdir(UPLOADS_DIR, { recursive: true });
     await fs.mkdir(BACKUP_DIR, { recursive: true });
     await fs.mkdir(ASSET_PACKS_DIR, { recursive: true });
+    
+    // Copy default asset packs if they don't exist in the user's volume
+    await ensureDefaultAssetPacksExist();
+
     console.log(`Asset directory is ready at: ${UPLOADS_DIR}`);
     console.log(`Backup directory is ready at: ${BACKUP_DIR}`);
     console.log(`Asset Pack directory is ready at: ${ASSET_PACKS_DIR}`);
@@ -303,21 +327,38 @@ app.post('/api/first-run', asyncMiddleware(async (req, res) => {
 }));
 
 app.post('/api/data/import-assets', asyncMiddleware(async (req, res) => {
-    const { newAssets } = req.body;
+    const { assetPack, resolutions } = req.body;
+    if (!assetPack || !resolutions) return res.status(400).json({ error: 'Missing asset pack or resolutions.' });
 
+    const newAssets = {
+        quests: [], questGroups: [], rewardTypes: [], ranks: [],
+        trophies: [], markets: [], gameAssets: []
+    };
+
+    resolutions.forEach(res => {
+        if (res.resolution === 'skip') return;
+        const assetList = assetPack.assets[res.type];
+        if (!assetList) return;
+        const originalAsset = assetList.find(a => a.id === res.id);
+        if (originalAsset) {
+            const newAsset = { ...originalAsset };
+            if (res.resolution === 'rename' && res.newName) {
+                if ('title' in newAsset) newAsset.title = res.newName;
+                else newAsset.name = res.newName;
+            }
+            newAssets[res.type].push(newAsset);
+        }
+    });
+    
     try {
         await dataSource.transaction(async manager => {
-            // Save in an order that respects potential (though not enforced by FK) dependencies
-            if (newAssets.questGroups?.length) await manager.save(QuestGroupEntity, newAssets.questGroups);
-            if (newAssets.rewardTypes?.length) await manager.save(RewardTypeDefinitionEntity, newAssets.rewardTypes);
-            if (newAssets.ranks?.length) await manager.save(RankEntity, newAssets.ranks);
-            if (newAssets.trophies?.length) await manager.save(TrophyEntity, newAssets.trophies);
-            if (newAssets.markets?.length) await manager.save(MarketEntity, newAssets.markets);
-            if (newAssets.gameAssets?.length) await manager.save(GameAssetEntity, newAssets.gameAssets);
-            if (newAssets.quests?.length) {
-                // Quests don't have user assignments on import, so a simple save is fine.
-                await manager.save(QuestEntity, newAssets.quests);
-            }
+            if (newAssets.questGroups.length) await manager.save(QuestGroupEntity, newAssets.questGroups);
+            if (newAssets.rewardTypes.length) await manager.save(RewardTypeDefinitionEntity, newAssets.rewardTypes);
+            if (newAssets.ranks.length) await manager.save(RankEntity, newAssets.ranks);
+            if (newAssets.trophies.length) await manager.save(TrophyEntity, newAssets.trophies);
+            if (newAssets.markets.length) await manager.save(MarketEntity, newAssets.markets);
+            if (newAssets.gameAssets.length) await manager.save(GameAssetEntity, newAssets.gameAssets);
+            if (newAssets.quests.length) await manager.save(QuestEntity, newAssets.quests);
         });
 
         broadcast({ type: 'DATA_UPDATED' });
@@ -327,6 +368,7 @@ app.post('/api/data/import-assets', asyncMiddleware(async (req, res) => {
         res.status(500).json({ error: 'Failed to import assets.' });
     }
 }));
+
 
 app.post('/api/data/factory-reset', asyncMiddleware(async (req, res) => {
     try {
@@ -608,6 +650,34 @@ app.get('/api/media/local-gallery', async (req, res, next) => {
 
 
 // === Asset Pack Endpoints ===
+app.get('/api/asset-packs/fetch-remote', asyncMiddleware(async (req, res) => {
+    const { url } = req.query;
+    if (!url) {
+        return res.status(400).json({ error: 'URL parameter is required.' });
+    }
+
+    try {
+        const validatedUrl = new URL(url); // Basic validation
+        if (!validatedUrl.pathname.endsWith('.json')) {
+            return res.status(400).json({ error: 'URL must point to a .json file.' });
+        }
+        
+        const response = await fetch(validatedUrl.toString());
+
+        if (!response.ok) {
+            throw new Error(`Failed to fetch from URL with status ${response.status}`);
+        }
+
+        const data = await response.json();
+        res.json(data);
+
+    } catch (error) {
+        console.error('Error fetching remote asset pack:', error);
+        const message = error instanceof Error ? error.message : 'An unknown error occurred';
+        res.status(500).json({ error: `Could not fetch or parse remote pack: ${message}` });
+    }
+}));
+
 app.get('/api/asset-packs/discover', asyncMiddleware(async (req, res) => {
     try {
         const dirents = await fs.readdir(ASSET_PACKS_DIR, { withFileTypes: true });

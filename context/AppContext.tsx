@@ -1,4 +1,5 @@
 
+
 import React, { createContext, useState, useContext, ReactNode, useEffect, useCallback, useMemo, useRef } from 'react';
 import { AppSettings, User, Quest, RewardTypeDefinition, QuestCompletion, RewardItem, Market, PurchaseRequest, Guild, Rank, Trophy, UserTrophy, Notification, AppMode, Page, IAppData, ShareableAssetType, GameAsset, Role, QuestCompletionStatus, RewardCategory, PurchaseRequestStatus, AdminAdjustment, AdminAdjustmentType, SystemLog, QuestType, QuestAvailability, AssetPack, ImportResolution, TrophyRequirementType, ThemeDefinition, ChatMessage, SystemNotification, SystemNotificationType, MarketStatus, QuestGroup, BulkQuestUpdates, ScheduledEvent } from '../types';
 import { INITIAL_SETTINGS, INITIAL_REWARD_TYPES, INITIAL_RANKS, INITIAL_TROPHIES, INITIAL_THEMES, INITIAL_QUEST_GROUPS, INITIAL_TAGS } from '../data/initialData';
@@ -448,12 +449,23 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
     return newUser;
   }, []);
-  const updateUser = useCallback((userId: string, updatedData: Partial<User>) => {
+  const updateUser = useCallback(async (userId: string, updatedData: Partial<User>) => {
+    // Perform optimistic update for UI responsiveness
     setUsers(prev => prev.map(u => u.id === userId ? { ...u, ...updatedData } : u));
     if (currentUser?.id === userId) {
         _setCurrentUser(prev => prev ? { ...prev, ...updatedData } as User : null);
     }
-  }, [currentUser]);
+
+    try {
+      // Persist the change to the backend
+      await apiRequest('PUT', `/api/users/${userId}`, updatedData);
+      // The backend will broadcast a 'DATA_UPDATED' message, which will sync all clients.
+    } catch (error) {
+      // The apiRequest helper handles showing an error notification.
+      // The optimistic update will be corrected on the next successful sync.
+      console.error("Failed to update user on server, optimistic update may be stale.", error);
+    }
+  }, [currentUser, apiRequest]);
   const deleteUser = useCallback((userId: string) => { setUsers(prev => prev.filter(u => u.id !== userId)); setGuilds(prev => prev.map(g => ({ ...g, memberIds: g.memberIds.filter(id => id !== userId) }))); setQuests(prev => prev.map(q => ({ ...q, assignedUserIds: q.assignedUserIds.filter(id => id !== userId) }))); }, []);
   const markUserAsOnboarded = useCallback((userId: string) => updateUser(userId, { hasBeenOnboarded: true }), [updateUser]);
   const setAppUnlocked = useCallback((isUnlocked: boolean) => { localStorage.setItem('isAppUnlocked', String(isUnlocked)); _setAppUnlocked(isUnlocked); }, []);

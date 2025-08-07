@@ -62,8 +62,11 @@ const AssetPacksPage: React.FC = () => {
         }
         try {
             setIsLoading(true);
-            const response = await fetch(remoteUrl);
-            if (!response.ok) throw new Error(`Could not fetch asset pack from URL.`);
+            const response = await fetch(`/api/asset-packs/fetch-remote?url=${encodeURIComponent(remoteUrl)}`);
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || `Could not fetch asset pack from URL.`);
+            }
             const packData: AssetPack = await response.json();
 
             const conflictResolutions = analyzeAssetPackForConflicts(packData, appState);

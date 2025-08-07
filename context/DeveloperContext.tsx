@@ -1,4 +1,4 @@
-import React, { createContext, useState, useContext, ReactNode, useCallback } from 'react';
+import React, { createContext, useState, useContext, ReactNode, useCallback, useEffect } from 'react';
 import { BugReport, BugReportLogEntry, BugReportStatus } from '../types';
 import { useAppDispatch } from './AppContext';
 import { bugLogger } from '../utils/bugLogger';
@@ -7,6 +7,7 @@ import { bugLogger } from '../utils/bugLogger';
 interface DeveloperState {
   isRecording: boolean;
   isPickingElement: boolean;
+  logs: BugReportLogEntry[];
 }
 
 // Dispatch
@@ -24,9 +25,17 @@ const DeveloperDispatchContext = createContext<DeveloperDispatch | undefined>(un
 export const DeveloperProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [isRecording, setIsRecording] = useState(false);
   const [isPickingElement, setIsPickingElement] = useState(false);
+  const [logs, setLogs] = useState<BugReportLogEntry[]>([]);
   const [onPickCallback, setOnPickCallback] = useState<(info: any) => void>(() => () => {});
 
   const appDispatch = useAppDispatch();
+
+  useEffect(() => {
+    // Subscribe to the logger and update state whenever logs change
+    const unsubscribe = bugLogger.subscribe(setLogs);
+    return () => unsubscribe();
+  }, []);
+
 
   const startRecording = useCallback(() => {
     bugLogger.start();
@@ -35,12 +44,12 @@ export const DeveloperProvider: React.FC<{ children: ReactNode }> = ({ children 
   }, []);
 
   const stopRecording = useCallback((title: string) => {
-    const logs = bugLogger.stop();
+    const finalLogs = bugLogger.stop();
     const newReport: Omit<BugReport, 'id'> = {
         title,
         createdAt: new Date().toISOString(),
         status: BugReportStatus.New,
-        logs,
+        logs: finalLogs,
     };
     appDispatch.addBugReport(newReport);
     setIsRecording(false);
@@ -89,7 +98,7 @@ export const DeveloperProvider: React.FC<{ children: ReactNode }> = ({ children 
   }, [isPickingElement]);
 
   return (
-    <DeveloperStateContext.Provider value={{ isRecording, isPickingElement }}>
+    <DeveloperStateContext.Provider value={{ isRecording, isPickingElement, logs }}>
       <DeveloperDispatchContext.Provider value={{ startRecording, stopRecording, addLogEntry, startPickingElement, stopPickingElement }}>
         {children}
         {isPickingElement && (

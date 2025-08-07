@@ -1,22 +1,54 @@
 import { BugReportLogEntry } from '../types';
 
-let isRecordingGlobally = false;
-let globalLogs: BugReportLogEntry[] = [];
+type Subscriber = (logs: BugReportLogEntry[]) => void;
 
-export const bugLogger = {
-  start: () => {
-    isRecordingGlobally = true;
-    globalLogs = [];
-  },
-  stop: (): BugReportLogEntry[] => {
-    isRecordingGlobally = false;
-    return globalLogs;
-  },
-  add: (entry: Omit<BugReportLogEntry, 'timestamp'>) => {
-    if (isRecordingGlobally) {
-      const newEntry = { ...entry, timestamp: new Date().toISOString() };
-      globalLogs.push(newEntry);
+class BugLogger {
+    private isRecordingGlobally = false;
+    private globalLogs: BugReportLogEntry[] = [];
+    private subscribers: Subscriber[] = [];
+
+    subscribe(callback: Subscriber) {
+        this.subscribers.push(callback);
+        // Immediately provide the current logs to the new subscriber
+        callback([...this.globalLogs]);
+        return () => this.unsubscribe(callback);
     }
-  },
-  isRecording: (): boolean => isRecordingGlobally,
-};
+
+    private unsubscribe(callback: Subscriber) {
+        this.subscribers = this.subscribers.filter(sub => sub !== callback);
+    }
+
+    private notify() {
+        this.subscribers.forEach(sub => sub([...this.globalLogs]));
+    }
+
+    start() {
+        this.isRecordingGlobally = true;
+        this.globalLogs = [];
+        this.notify();
+    }
+
+    stop(): BugReportLogEntry[] {
+        this.isRecordingGlobally = false;
+        const finalLogs = [...this.globalLogs];
+        return finalLogs;
+    }
+
+    add(entry: Omit<BugReportLogEntry, 'timestamp'>) {
+        if (this.isRecordingGlobally) {
+            const newEntry = { ...entry, timestamp: new Date().toISOString() };
+            this.globalLogs.push(newEntry);
+            this.notify();
+        }
+    }
+
+    isRecording(): boolean {
+        return this.isRecordingGlobally;
+    }
+
+    getLogs(): BugReportLogEntry[] {
+        return [...this.globalLogs];
+    }
+}
+
+export const bugLogger = new BugLogger();

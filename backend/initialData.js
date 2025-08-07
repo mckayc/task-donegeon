@@ -130,7 +130,10 @@ const INITIAL_SETTINGS = {
     },
     sidebars: {
         main: INITIAL_MAIN_SIDEBAR_CONFIG,
-    }
+    },
+    developerMode: {
+      enabled: false,
+    },
 };
 
 const INITIAL_QUEST_GROUPS = [

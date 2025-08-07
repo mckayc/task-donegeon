@@ -9,6 +9,7 @@ import { TrophyIcon, RankIcon } from '../ui/Icons';
 import ThemeIdeaGenerator from '../quests/ThemeIdeaGenerator';
 import ConfirmDialog from '../ui/ConfirmDialog';
 import SimpleColorPicker from '../ui/SimpleColorPicker';
+import { useNotificationsDispatch } from '../../context/NotificationsContext';
 
 const FONT_OPTIONS = [
     "'MedievalSharp', cursive", "'Uncial Antiqua', cursive", "'Press Start 2P', cursive", "'IM Fell English SC', serif", 
@@ -80,7 +81,8 @@ const ThemePreview: React.FC<{ themeData: ThemeStyle }> = ({ themeData }) => {
 
 const ThemeEditorPage: React.FC = () => {
     const { themes, isAiConfigured } = useAppState();
-    const { addTheme, updateTheme, deleteTheme, addNotification } = useAppDispatch();
+    const { addTheme, updateTheme, deleteTheme } = useAppDispatch();
+    const { addNotification } = useNotificationsDispatch();
 
     const [selectedThemeId, setSelectedThemeId] = useState<string>(themes[0]?.id || 'new');
     const [formData, setFormData] = useState<ThemeDefinition | null>(null);

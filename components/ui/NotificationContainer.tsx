@@ -1,11 +1,11 @@
 import React from 'react';
-import { useAppState, useAppDispatch } from '../../context/AppContext';
+import { useNotificationsState, useNotificationsDispatch } from '../../context/NotificationsContext';
 import Notification from './Notification';
 import { AnimatePresence } from 'framer-motion';
 
 const NotificationContainer: React.FC = () => {
-    const { notifications } = useAppState();
-    const { removeNotification } = useAppDispatch();
+    const { notifications } = useNotificationsState();
+    const { removeNotification } = useNotificationsDispatch();
 
     return (
         <div

@@ -5,10 +5,11 @@ import Button from '../ui/Button';
 import Input from '../ui/Input';
 import UserFormFields from '../users/UserFormFields';
 import Avatar from '../ui/Avatar';
+import { useAuthState, useAuthDispatch } from '../../context/AuthContext';
 
 const LoginForm: React.FC<{ onSwitchMode: () => void; }> = ({ onSwitchMode }) => {
-    const { users } = useAppState();
-    const { setCurrentUser, setAppUnlocked } = useAppDispatch();
+    const { users } = useAuthState();
+    const { setCurrentUser, setAppUnlocked } = useAuthDispatch();
     
     const [password, setPassword] = useState('');
     const [identifier, setIdentifier] = useState('');
@@ -75,8 +76,8 @@ const LoginForm: React.FC<{ onSwitchMode: () => void; }> = ({ onSwitchMode }) =>
 };
 
 const RegisterForm: React.FC<{ onSwitchMode: () => void }> = ({ onSwitchMode }) => {
-    const { users } = useAppState();
-    const { addUser, setCurrentUser } = useAppDispatch();
+    const { users } = useAuthState();
+    const { addUser, setCurrentUser } = useAuthDispatch();
     const [formData, setFormData] = useState({
         firstName: '',
         lastName: '',
@@ -93,7 +94,7 @@ const RegisterForm: React.FC<{ onSwitchMode: () => void }> = ({ onSwitchMode }) 
         setFormData({ ...formData, [e.target.name]: e.target.value });
     };
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setError('');
 
@@ -125,8 +126,10 @@ const RegisterForm: React.FC<{ onSwitchMode: () => void }> = ({ onSwitchMode }) 
             pin: '',
         };
 
-        const createdUser = addUser(newUser);
-        setCurrentUser(createdUser);
+        const createdUser = await addUser(newUser);
+        if (createdUser) {
+            setCurrentUser(createdUser);
+        }
     };
 
     return (
@@ -157,7 +160,7 @@ const RegisterForm: React.FC<{ onSwitchMode: () => void }> = ({ onSwitchMode }) 
 
 const AuthPage: React.FC = () => {
     const { settings } = useAppState();
-    const { setIsSwitchingUser } = useAppDispatch();
+    const { setIsSwitchingUser } = useAuthDispatch();
     const [isLoginMode, setIsLoginMode] = useState(true);
     
     return (

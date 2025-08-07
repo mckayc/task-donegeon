@@ -1,14 +1,18 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
+import { useAuthState, useAuthDispatch } from '../../context/AuthContext';
 import { useUIState, useUIDispatch } from '../../context/UIStateContext';
 import { ThemeDefinition, AppMode } from '../../types';
 import Button from '../ui/Button';
 import Card from '../ui/Card';
+import { useNotificationsDispatch } from '../../context/NotificationsContext';
 
 const ThemesPage: React.FC = () => {
-    const { currentUser, settings, themes, markets, guilds } = useAppState();
+    const { settings, themes, markets, guilds } = useAppState();
+    const { currentUser } = useAuthState();
     const { appMode } = useUIState();
-    const { updateUser, addNotification } = useAppDispatch();
+    const { updateUser } = useAuthDispatch();
+    const { addNotification } = useNotificationsDispatch();
     const { setActivePage, setActiveMarketId } = useUIDispatch();
     
     if (!currentUser) return null;

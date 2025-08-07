@@ -1,10 +1,10 @@
 import React, { useState, useMemo } from 'react';
-import { useAppDispatch } from '../../context/AppContext';
+import { useNotificationsDispatch } from '../../context/NotificationsContext';
 import Button from '../ui/Button';
 import Input from '../ui/Input';
 
 const AiImagePromptHelper: React.FC = () => {
-    const { addNotification } = useAppDispatch();
+    const { addNotification } = useNotificationsDispatch();
     const [isCopied, setIsCopied] = useState(false);
     const [promptData, setPromptData] = useState({
         subject: '',

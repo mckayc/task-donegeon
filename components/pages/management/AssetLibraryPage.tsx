@@ -2,14 +2,18 @@ import React, { useState, useMemo, useEffect } from 'react';
 import Button from '../../ui/Button';
 import Card from '../../ui/Card';
 import { AssetPack, AssetPackManifestInfo, ImportResolution } from '../../../types';
-import { useAppState, useAppDispatch } from '../../../context/AppContext';
+import { useAppState, useAppDispatch } from '../../context/AppContext';
 import Input from '../../ui/Input';
 import { analyzeAssetPackForConflicts } from '../../../utils/sharing';
 import AssetPackInstallDialog from '../../sharing/AssetPackInstallDialog';
+import { useNotificationsDispatch } from '../../context/NotificationsContext';
+import { useAuthState } from '../../context/AuthContext';
 
 const AssetLibraryPage: React.FC = () => {
     const appState = useAppState();
-    const { addNotification, importAssetPack } = useAppDispatch();
+    const authState = useAuthState();
+    const { importAssetPack } = useAppDispatch();
+    const { addNotification } = useNotificationsDispatch();
     const [localPacks, setLocalPacks] = useState<AssetPackManifestInfo[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState('');
@@ -40,7 +44,8 @@ const AssetLibraryPage: React.FC = () => {
         try {
             setIsLoading(true);
             const packData = await packFetcher();
-            const conflictResolutions = analyzeAssetPackForConflicts(packData, appState);
+            const fullCurrentData = { ...appState, users: authState.users, loginHistory: authState.loginHistory };
+            const conflictResolutions = analyzeAssetPackForConflicts(packData, fullCurrentData);
             setResolutions(conflictResolutions);
             setPackToInstall(packData);
         } catch(e) {

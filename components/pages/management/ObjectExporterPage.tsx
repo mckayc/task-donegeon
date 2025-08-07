@@ -1,13 +1,15 @@
 import React, { useState } from 'react';
-import { useAppState } from '../../../context/AppContext';
+import { useAppState } from '../../context/AppContext';
 import { ShareableAssetType, Terminology } from '../../../types';
 import Button from '../../ui/Button';
 import Input from '../../ui/Input';
 import { generateAssetPack } from '../../../utils/sharing';
 import Card from '../../ui/Card';
+import { useAuthState } from '../../context/AuthContext';
 
 const ObjectExporterPage: React.FC = () => {
     const appState = useAppState();
+    const { users } = useAuthState();
     const { settings } = appState;
     const [selected, setSelected] = useState<{ [key in ShareableAssetType]: string[] }>({
         quests: [],
@@ -50,7 +52,7 @@ const ObjectExporterPage: React.FC = () => {
             assetPackDesc,
             settings.terminology.appName,
             selected,
-            appState
+            {...appState, users}
         );
     };
 
@@ -62,7 +64,7 @@ const ObjectExporterPage: React.FC = () => {
         { key: 'trophies', label: 'awards', data: appState.trophies },
         { key: 'markets', label: 'stores', data: appState.markets },
         { key: 'gameAssets', label: 'link_manage_items', data: appState.gameAssets },
-        { key: 'users', label: 'link_manage_users', data: appState.users },
+        { key: 'users', label: 'link_manage_users', data: users },
     ];
 
     const totalSelected = Object.values(selected).reduce((acc, curr) => acc + curr.length, 0);

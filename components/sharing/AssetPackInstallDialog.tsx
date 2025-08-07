@@ -4,6 +4,7 @@ import { AssetPack, ImportResolution, ShareableAssetType, Terminology, Role, Use
 import Button from '../ui/Button';
 import Input from '../ui/Input';
 import UserMultiSelect from '../ui/UserMultiSelect';
+import { useAuthState } from '../../context/AuthContext';
 
 interface AssetPackInstallDialogProps {
   assetPack: AssetPack;
@@ -24,7 +25,8 @@ const terminologyMap: { [key in ShareableAssetType]: keyof Terminology } = {
 };
 
 const AssetPackInstallDialog: React.FC<AssetPackInstallDialogProps> = ({ assetPack, initialResolutions, onClose, onConfirm }) => {
-    const { settings, users } = useAppState();
+    const { settings } = useAppState();
+    const { users } = useAuthState();
     const [resolutions, setResolutions] = useState(initialResolutions);
     const [assignedUserIds, setAssignedUserIds] = useState<string[]>(() => users.map(u => u.id));
 

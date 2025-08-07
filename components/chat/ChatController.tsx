@@ -1,9 +1,11 @@
 import React, { useMemo } from 'react';
 import { useAppState } from '../../context/AppContext';
+import { useAuthState } from '../../context/AuthContext';
 import { useUIState, useUIDispatch } from '../../context/UIStateContext';
 
 const ChatController: React.FC = () => {
-    const { settings, chatMessages, currentUser } = useAppState();
+    const { settings, chatMessages } = useAppState();
+    const { currentUser } = useAuthState();
     const { isChatOpen } = useUIState();
     const { toggleChat } = useUIDispatch();
 

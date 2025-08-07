@@ -9,6 +9,7 @@ import EmojiPicker from '../ui/EmojiPicker';
 import TagInput from '../ui/TagInput';
 import ImageSelectionDialog from '../ui/ImageSelectionDialog';
 import DynamicIcon from '../ui/DynamicIcon';
+import { useAuthState } from '../../context/AuthContext';
 
 interface QuestDialogProps {
   questToEdit?: Quest;
@@ -26,7 +27,8 @@ const VENTURE_AVAILABILITIES = [QuestAvailability.Frequency, QuestAvailability.U
 
 
 const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialData, onClose, mode = (questToEdit ? 'edit' : 'create'), onTryAgain, isGenerating, onSave }) => {
-  const { users, guilds, rewardTypes, allTags, settings, questGroups } = useAppState();
+  const { guilds, rewardTypes, allTags, settings, questGroups } = useAppState();
+  const { users } = useAuthState();
   const { addQuest, updateQuest, addQuestGroup } = useAppDispatch();
 
   const getInitialFormData = useCallback(() => {

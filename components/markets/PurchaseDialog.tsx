@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
+import { useAuthState } from '../../context/AuthContext';
 import { useUIState } from '../../context/UIStateContext';
 import { GameAsset, RewardItem } from '../../types';
 import Button from '../ui/Button';
@@ -11,7 +12,8 @@ interface PurchaseDialogProps {
 }
 
 const PurchaseDialog: React.FC<PurchaseDialogProps> = ({ asset, marketId, onClose }) => {
-    const { currentUser, rewardTypes } = useAppState();
+    const { rewardTypes } = useAppState();
+    const { currentUser } = useAuthState();
     const { appMode } = useUIState();
     const { purchaseMarketItem } = useAppDispatch();
     

@@ -1,14 +1,16 @@
 import React, { useState } from 'react';
-import { useAppState, useAppDispatch } from '../../context/AppContext';
+import { useAuthState, useAuthDispatch } from '../../context/AuthContext';
 import Button from '../ui/Button';
 import Card from '../ui/Card';
 import Input from '../ui/Input';
 import { Role, User } from '../../types';
 import UserFormFields from '../users/UserFormFields';
+import { useNotificationsDispatch } from '../../context/NotificationsContext';
 
 const ProfilePage: React.FC = () => {
-    const { currentUser, users } = useAppState();
-    const { updateUser, addNotification } = useAppDispatch();
+    const { currentUser, users } = useAuthState();
+    const { updateUser } = useAuthDispatch();
+    const { addNotification } = useNotificationsDispatch();
     
     if (!currentUser) {
         return <Card><p>User not found. Please log in again.</p></Card>;

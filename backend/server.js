@@ -7,7 +7,7 @@ const fs = require('fs').promises;
 const { GoogleGenAI } = require('@google/genai');
 const http = require('http');
 const WebSocket = require('ws');
-const { In, Brackets } = require("typeorm");
+const { In, Brackets, Like } = require("typeorm");
 const { dataSource, ensureDatabaseDirectoryExists } = require('./data-source');
 const { INITIAL_SETTINGS, INITIAL_REWARD_TYPES, INITIAL_RANKS, INITIAL_TROPHIES, INITIAL_THEMES, INITIAL_QUEST_GROUPS } = require('./initialData');
 const { 
@@ -437,7 +437,6 @@ const createCrudEndpoints = (entity, relations = []) => {
 // Guilds Router (custom handling for members)
 const guildsRouter = express.Router();
 const guildRepo = dataSource.getRepository(GuildEntity);
-const userRepo = dataSource.getRepository(UserEntity);
 
 guildsRouter.get('/', asyncMiddleware(async (req, res) => {
     const guilds = await guildRepo.find({ relations: ['members'] });
@@ -452,7 +451,7 @@ guildsRouter.post('/', asyncMiddleware(async (req, res) => {
     });
 
     if (memberIds && memberIds.length > 0) {
-        newGuild.members = await userRepo.findBy({ id: In(memberIds) });
+        newGuild.members = await dataSource.getRepository(UserEntity).findBy({ id: In(memberIds) });
     }
 
     await guildRepo.save(newGuild);
@@ -468,7 +467,7 @@ guildsRouter.put('/:id', asyncMiddleware(async (req, res) => {
     guildRepo.merge(guild, guildData);
     
     if (memberIds) {
-        guild.members = await userRepo.findBy({ id: In(memberIds) });
+        guild.members = await dataSource.getRepository(UserEntity).findBy({ id: In(memberIds) });
     }
 
     await guildRepo.save(guild);
@@ -482,9 +481,98 @@ guildsRouter.delete('/:id', asyncMiddleware(async (req, res) => {
     res.status(204).send();
 }));
 
+// Users Router (custom handling)
+const usersRouter = express.Router();
+const userRepo = dataSource.getRepository(UserEntity);
+
+usersRouter.get('/', asyncMiddleware(async (req, res) => {
+    const { searchTerm, sortBy } = req.query;
+    const qb = userRepo.createQueryBuilder("user");
+
+    if (searchTerm) {
+        qb.where(new Brackets(subQuery => {
+            subQuery.where("LOWER(user.gameName) LIKE LOWER(:searchTerm)", { searchTerm: `%${searchTerm}%` })
+                  .orWhere("LOWER(user.username) LIKE LOWER(:searchTerm)", { searchTerm: `%${searchTerm}%` });
+        }));
+    }
+
+    switch (sortBy) {
+        case 'gameName-desc': qb.orderBy("user.gameName", "DESC"); break;
+        case 'username-asc': qb.orderBy("user.username", "ASC"); break;
+        case 'username-desc': qb.orderBy("user.username", "DESC"); break;
+        case 'role-asc': qb.orderBy("user.role", "ASC"); break;
+        case 'role-desc': qb.orderBy("user.role", "DESC"); break;
+        case 'gameName-asc': default: qb.orderBy("user.gameName", "ASC"); break;
+    }
+
+    res.json(await qb.getMany());
+}));
+
+usersRouter.post('/', asyncMiddleware(async (req, res) => {
+    const userData = req.body;
+    
+    const conflict = await userRepo.findOne({
+        where: [
+            { username: userData.username },
+            { email: userData.email }
+        ]
+    });
+    if (conflict) {
+        return res.status(409).json({ error: 'Username or email is already in use.' });
+    }
+
+    const newUser = userRepo.create({
+        ...userData,
+        id: `user-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+        avatar: {}, ownedAssetIds: [], personalPurse: {}, personalExperience: {},
+        guildBalances: {}, ownedThemes: ['emerald', 'rose', 'sky'], hasBeenOnboarded: false,
+    });
+    await userRepo.save(newUser);
+    
+    const defaultGuild = await guildRepo.findOne({ where: { isDefault: true }, relations: ['members'] });
+    if (defaultGuild) {
+        defaultGuild.members.push(newUser);
+        await guildRepo.save(defaultGuild);
+    }
+
+    broadcast({ type: 'DATA_UPDATED' });
+    res.status(201).json(newUser);
+}));
+
+usersRouter.put('/:id', asyncMiddleware(async (req, res) => {
+    const { id } = req.params;
+    const userData = req.body;
+
+    if (userData.username || userData.email) {
+        const qb = userRepo.createQueryBuilder("user").where("user.id != :id", { id });
+        const orConditions = [];
+        if (userData.username) orConditions.push({ username: userData.username });
+        if (userData.email) orConditions.push({ email: userData.email });
+        if (orConditions.length > 0) {
+            qb.andWhere(new Brackets(subQb => subQb.where(orConditions[0]).orWhere(orConditions.slice(1))));
+        }
+        
+        const conflict = await qb.getOne();
+        if (conflict) {
+            return res.status(409).json({ error: 'Username or email is already in use by another user.' });
+        }
+    }
+
+    await userRepo.update(id, userData);
+    broadcast({ type: 'DATA_UPDATED' });
+    res.json(await userRepo.findOneBy({ id }));
+}));
+
+usersRouter.delete('/', asyncMiddleware(async (req, res) => {
+    const { ids } = req.body;
+    if (!ids || !Array.isArray(ids)) return res.status(400).send('Invalid request body, expected { ids: [...] }');
+    await userRepo.delete(ids);
+    broadcast({ type: 'DATA_UPDATED' });
+    res.status(204).send();
+}));
+
+app.use('/api/users', usersRouter);
 app.use('/api/guilds', guildsRouter);
-app.use('/api/users', createCrudEndpoints(UserEntity, ['guilds']));
-// ... Add more simple CRUD routes here if needed for other entities.
 
 // Specific endpoint for settings
 app.put('/api/settings', asyncMiddleware(async (req, res) => {
@@ -640,6 +728,82 @@ questsRouter.put('/bulk-update', asyncMiddleware(async (req, res) => {
 }));
 
 app.use('/api/quests', questsRouter);
+
+// Specific endpoint for game assets
+const assetsRouter = express.Router();
+const assetRepo = dataSource.getRepository(GameAssetEntity);
+
+assetsRouter.get('/', asyncMiddleware(async (req, res) => {
+    const { category, searchTerm, sortBy } = req.query;
+    const qb = assetRepo.createQueryBuilder("asset");
+
+    if (category && category !== 'All') {
+        qb.where("asset.category = :category", { category });
+    }
+
+    if (searchTerm) {
+        qb.andWhere(new Brackets(subQuery => {
+            subQuery.where("LOWER(asset.name) LIKE LOWER(:searchTerm)", { searchTerm: `%${searchTerm}%` })
+                  .orWhere("LOWER(asset.description) LIKE LOWER(:searchTerm)", { searchTerm: `%${searchTerm}%` });
+        }));
+    }
+
+    switch (sortBy) {
+        case 'name-asc': qb.orderBy("asset.name", "ASC"); break;
+        case 'name-desc': qb.orderBy("asset.name", "DESC"); break;
+        case 'createdAt-asc': qb.orderBy("asset.createdAt", "ASC"); break;
+        case 'createdAt-desc': default: qb.orderBy("asset.createdAt", "DESC"); break;
+    }
+
+    res.json(await qb.getMany());
+}));
+
+assetsRouter.post('/', asyncMiddleware(async (req, res) => {
+    const currentUser = { id: 'admin' }; // Placeholder for actual auth
+    const newAssetData = {
+        ...req.body,
+        id: `g-asset-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+        creatorId: currentUser.id,
+        createdAt: new Date().toISOString(),
+        purchaseCount: 0,
+    };
+    const newAsset = assetRepo.create(newAssetData);
+    await assetRepo.save(newAsset);
+    broadcast({ type: 'DATA_UPDATED' });
+    res.status(201).json(newAsset);
+}));
+
+assetsRouter.put('/:id', asyncMiddleware(async (req, res) => {
+    await assetRepo.update(req.params.id, req.body);
+    broadcast({ type: 'DATA_UPDATED' });
+    res.json(await assetRepo.findOneBy({ id: req.params.id }));
+}));
+
+assetsRouter.post('/clone/:id', asyncMiddleware(async (req, res) => {
+    const assetToClone = await assetRepo.findOneBy({ id: req.params.id });
+    if (!assetToClone) return res.status(404).send('Asset not found');
+
+    const newAsset = assetRepo.create({
+        ...assetToClone,
+        id: `g-asset-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+        name: `${assetToClone.name} (Copy)`,
+        purchaseCount: 0,
+        createdAt: new Date().toISOString(),
+    });
+    await assetRepo.save(newAsset);
+    broadcast({ type: 'DATA_UPDATED' });
+    res.status(201).json(newAsset);
+}));
+
+assetsRouter.delete('/', asyncMiddleware(async (req, res) => {
+    const { ids } = req.body;
+    if (!ids || !Array.isArray(ids)) return res.status(400).send('Invalid request body, expected { ids: [...] }');
+    await assetRepo.delete(ids);
+    broadcast({ type: 'DATA_UPDATED' });
+    res.status(204).send();
+}));
+
+app.use('/api/assets', assetsRouter);
 
 // Business Logic Actions
 app.post('/api/actions/complete-quest', asyncMiddleware(async (req, res) => {
@@ -925,6 +1089,125 @@ app.get('/api/asset-packs/get/:filename', asyncMiddleware(async (req, res) => {
             throw err;
         }
     }
+}));
+
+app.get('/api/chronicles', asyncMiddleware(async (req, res) => {
+    const { page = 1, limit = 50, userId, guildId, viewMode } = req.query;
+    const manager = dataSource.manager;
+
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+    const take = parseInt(limit);
+
+    const [users, quests, trophies, rewardTypes] = await Promise.all([
+        manager.find(UserEntity),
+        manager.find(QuestEntity),
+        manager.find(TrophyEntity),
+        manager.find(RewardTypeDefinitionEntity)
+    ]);
+    const userMap = new Map(users.map(u => [u.id, u.gameName]));
+    const questMap = new Map(quests.map(q => [q.id, q]));
+    const trophyMap = new Map(trophies.map(t => [t.id, t]));
+    const rewardMap = new Map(rewardTypes.map(rt => [rt.id, rt]));
+    
+    const getRewardDisplay = (rewardItems) => (rewardItems || []).map(r => {
+        const reward = rewardMap.get(r.rewardTypeId);
+        return `${r.amount} ${reward ? reward.icon : '❓'}`;
+    }).join(' ');
+
+    let allEvents = [];
+    const guildIdQuery = guildId === 'null' ? null : guildId;
+
+    let baseUserConditions = { guildId: guildIdQuery };
+    if (viewMode === 'personal' && userId) {
+        baseUserConditions.userId = userId;
+    }
+
+    // 1. Quest Completions
+    const questCompletions = await manager.find(QuestCompletionEntity, { where: { ...baseUserConditions } });
+    questCompletions.forEach(c => {
+        const quest = questMap.get(c.questId);
+        let finalNote = c.note || '';
+        if (c.status === 'Approved' && quest && quest.rewards.length > 0) {
+            const rewardsText = getRewardDisplay(quest.rewards).replace(/(\d+)/g, '+$1');
+            finalNote = finalNote ? `${finalNote}\n(${rewardsText})` : rewardsText;
+        }
+        allEvents.push({
+            id: c.id, date: c.completedAt, type: 'Quest', userId: c.userId,
+            title: `${userMap.get(c.userId) || 'Unknown'} completed "${quest?.title || 'Unknown Quest'}"`,
+            status: c.status, note: finalNote, icon: quest?.icon || '📜',
+            color: '#3b82f6', guildId: c.guildId
+        });
+    });
+
+    // 2. Purchase Requests
+    const purchaseRequests = await manager.find(PurchaseRequestEntity, { where: { ...baseUserConditions } });
+    purchaseRequests.forEach(p => {
+        const costText = getRewardDisplay(p.assetDetails.cost).replace(/(\d+)/g, '-$1');
+        allEvents.push({
+            id: p.id, date: p.requestedAt, type: 'Purchase', userId: p.userId,
+            title: `${userMap.get(p.userId) || 'Unknown'} purchased "${p.assetDetails.name}"`,
+            status: p.status, note: costText, icon: '💰',
+            color: '#22c55e', guildId: p.guildId
+        });
+    });
+
+    // 3. User Trophies
+    const userTrophies = await manager.find(UserTrophyEntity, { where: { ...baseUserConditions } });
+    userTrophies.forEach(ut => {
+        const trophy = trophyMap.get(ut.trophyId);
+        allEvents.push({
+            id: ut.id, date: ut.awardedAt, type: 'Trophy', userId: ut.userId,
+            title: `${userMap.get(ut.userId) || 'Unknown'} earned "${trophy?.name || 'Unknown Trophy'}"`,
+            status: "Awarded", note: trophy?.description, icon: trophy?.icon || '🏆',
+            color: '#f59e0b', guildId: ut.guildId
+        });
+    });
+    
+    // 4. Admin Adjustments
+    const adjustments = await manager.find(AdminAdjustmentEntity, { where: { ...baseUserConditions } });
+    adjustments.forEach(adj => {
+        const rewardsText = getRewardDisplay(adj.rewards).replace(/(\d+)/g, '+$1');
+        const setbacksText = getRewardDisplay(adj.setbacks).replace(/(\d+)/g, '-$1');
+        allEvents.push({
+            id: adj.id, date: adj.adjustedAt, type: 'Adjustment', userId: adj.userId,
+            title: `Adjustment for ${userMap.get(adj.userId) || 'Unknown'} by ${userMap.get(adj.adjusterId) || 'Admin'}`,
+            status: adj.type, note: `${adj.reason}\n${rewardsText} ${setbacksText}`.trim(),
+            icon: '🛠️', color: '#64748b', guildId: adj.guildId
+        });
+    });
+    
+    // 5. System Logs & Announcements (Guild-wide or personal if no guild)
+    if (viewMode === 'all') {
+        const systemLogs = await manager.find(SystemLogEntity, { where: { guildId: guildIdQuery } });
+        systemLogs.forEach(log => {
+            const quest = questMap.get(log.questId);
+            const logType = log.type === 'QUEST_LATE' ? 'became LATE' : 'became INCOMPLETE';
+            const setbacksText = getRewardDisplay(log.setbacksApplied).replace(/(\d+)/g, '-$1');
+            allEvents.push({
+                id: log.id, date: log.timestamp, type: 'System',
+                title: `Quest "${quest?.title || 'Unknown'}" ${logType}`,
+                status: log.type, note: `Applied to ${log.userIds.map(id => userMap.get(id) || id).join(', ')}\n${setbacksText}`,
+                icon: '⚙️', color: '#ef4444', guildId: log.guildId
+            });
+        });
+        
+        const announcements = await manager.find(SystemNotificationEntity, { where: { type: 'Announcement', guildId: guildIdQuery } });
+        announcements.forEach(n => {
+            allEvents.push({
+                id: n.id, date: n.timestamp, type: 'Announcement',
+                title: `Announcement by ${userMap.get(n.senderId) || 'System'}`,
+                status: 'Announcement', note: n.message, icon: '📢', color: '#10b981',
+                guildId: n.guildId, recipientUserIds: n.recipientUserIds
+            });
+        });
+    }
+
+
+    // Final sort and paginate
+    allEvents.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    
+    const paginatedEvents = allEvents.slice(skip, skip + take);
+    res.json({ events: paginatedEvents, total: allEvents.length });
 }));
 
 // === AI Endpoints (Unchanged) ===

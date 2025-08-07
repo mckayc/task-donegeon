@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
-import { useAppState, useAppDispatch } from '../../context/AppContext';
+import { useAppState } from '../../context/AppContext';
 import { Quest, QuestType, QuestGroup } from '../../types';
 import Button from '../ui/Button';
 import Card from '../ui/Card';
@@ -11,10 +11,11 @@ import EmptyState from '../ui/EmptyState';
 import Input from '../ui/Input';
 import BulkEditQuestsDialog from '../quests/BulkEditQuestsDialog';
 import { useDebounce } from '../../hooks/useDebounce';
+import { useNotificationsDispatch } from '../../context/NotificationsContext';
 
 const ManageQuestsPage: React.FC = () => {
     const { settings, isAiConfigured, questGroups } = useAppState();
-    const { addNotification } = useAppDispatch();
+    const { addNotification } = useNotificationsDispatch();
     
     const [pageQuests, setPageQuests] = useState<Quest[]>([]);
     const [isLoading, setIsLoading] = useState(true);

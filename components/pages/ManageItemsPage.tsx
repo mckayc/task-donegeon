@@ -1,5 +1,5 @@
-import React, { useState, useRef, useEffect, useMemo } from 'react';
-import { useAppState, useAppDispatch } from '../../context/AppContext';
+import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
+import { useAppState } from '../../context/AppContext';
 import { GameAsset } from '../../types';
 import Button from '../ui/Button';
 import Card from '../ui/Card';
@@ -10,63 +10,80 @@ import { ItemManagerIcon, EllipsisVerticalIcon } from '../ui/Icons';
 import ItemIdeaGenerator from '../quests/ItemIdeaGenerator';
 import Input from '../ui/Input';
 import ImagePreviewDialog from '../ui/ImagePreviewDialog';
+import { useDebounce } from '../../hooks/useDebounce';
+import { useNotificationsDispatch } from '../../context/NotificationsContext';
 
 const ManageItemsPage: React.FC = () => {
-    const { gameAssets, settings, isAiConfigured } = useAppState();
-    const { deleteGameAssets, cloneGameAsset } = useAppDispatch();
+    const { settings, isAiConfigured, gameAssets: allGameAssets } = useAppState();
+    const { addNotification } = useNotificationsDispatch();
     
+    const [pageAssets, setPageAssets] = useState<GameAsset[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
     const [editingAsset, setEditingAsset] = useState<GameAsset | null>(null);
     const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
-    const [deletingIds, setDeletingIds] = useState<string[]>([]);
     const [isGeneratorOpen, setIsGeneratorOpen] = useState(false);
-    const [initialCreateData, setInitialCreateData] = useState<{ name: string; description: string; category: string; icon: string; } | null>(null);
+    const [confirmation, setConfirmation] = useState<{ action: 'delete', ids: string[] } | null>(null);
+    const [initialCreateData, setInitialCreateData] = useState<any | null>(null);
     const [selectedAssets, setSelectedAssets] = useState<string[]>([]);
     const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
     const dropdownRef = useRef<HTMLDivElement | null>(null);
+    
     const [activeTab, setActiveTab] = useState('All');
     const [searchTerm, setSearchTerm] = useState('');
     const [sortBy, setSortBy] = useState<'createdAt-desc' | 'createdAt-asc' | 'name-asc' | 'name-desc'>('createdAt-desc');
     const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null);
-
+    const debouncedSearchTerm = useDebounce(searchTerm, 300);
 
     const isAiAvailable = settings.enableAiFeatures && isAiConfigured;
 
+    const categories = useMemo(() => ['All', ...Array.from(new Set(allGameAssets.map(a => a.category)))], [allGameAssets]);
+
+    const apiRequest = useCallback(async (method: string, path: string, body?: any) => {
+        try {
+            const options: RequestInit = {
+                method,
+                headers: { 'Content-Type': 'application/json' },
+            };
+            if (body) options.body = JSON.stringify(body);
+            const response = await window.fetch(path, options);
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({ error: 'Server error' }));
+                throw new Error(errorData.error || `Request failed with status ${response.status}`);
+            }
+            return response.status === 204 ? null : await response.json();
+        } catch (error) {
+            addNotification({ type: 'error', message: error instanceof Error ? error.message : 'An unknown network error occurred.' });
+            throw error;
+        }
+    }, [addNotification]);
+
+    const fetchAssets = useCallback(async () => {
+        setIsLoading(true);
+        try {
+            const params = new URLSearchParams();
+            if (activeTab !== 'All') params.append('category', activeTab);
+            if (debouncedSearchTerm) params.append('searchTerm', debouncedSearchTerm);
+            params.append('sortBy', sortBy);
+
+            const data = await apiRequest('GET', `/api/assets?${params.toString()}`);
+            setPageAssets(data);
+        } catch (error) {
+            console.error("Failed to fetch assets:", error);
+        } finally {
+            setIsLoading(false);
+        }
+    }, [activeTab, debouncedSearchTerm, sortBy, apiRequest]);
+
     useEffect(() => {
-        const handleClickOutside = (event: MouseEvent) => {
-            if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-                setOpenDropdownId(null);
-            }
-        };
-        document.addEventListener('mousedown', handleClickOutside);
-        return () => document.removeEventListener('mousedown', handleClickOutside);
-    }, []);
+        fetchAssets();
+    }, [fetchAssets]);
 
-    const categories = useMemo(() => ['All', ...Array.from(new Set(gameAssets.map(a => a.category)))], [gameAssets]);
-
-    const filteredAndSortedAssets = useMemo(() => {
-        let assets = [...gameAssets];
-        if (activeTab !== 'All') {
-            assets = assets.filter(a => a.category === activeTab);
-        }
-        if (searchTerm) {
-            assets = assets.filter(a => a.name.toLowerCase().includes(searchTerm.toLowerCase()) || a.description.toLowerCase().includes(searchTerm.toLowerCase()));
-        }
-        assets.sort((a, b) => {
-            switch (sortBy) {
-                case 'name-asc': return a.name.localeCompare(b.name);
-                case 'name-desc': return b.name.localeCompare(a.name);
-                case 'createdAt-asc': return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
-                case 'createdAt-desc':
-                default:
-                    return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-            }
-        });
-        return assets;
-    }, [gameAssets, activeTab, searchTerm, sortBy]);
+    useEffect(() => {
+        setSelectedAssets([]);
+    }, [activeTab, searchTerm, sortBy]);
 
     const handleEdit = (asset: GameAsset) => {
         setEditingAsset(asset);
-        setInitialCreateData(null);
         setIsCreateDialogOpen(true);
     };
 
@@ -76,54 +93,58 @@ const ManageItemsPage: React.FC = () => {
         setIsCreateDialogOpen(true);
     };
 
-    const handleDeleteRequest = (assetIds: string[]) => {
-        setDeletingIds(assetIds);
+    const handleSaveAsset = async (assetData: any) => {
+        const isEditing = !!editingAsset;
+        const method = isEditing ? 'PUT' : 'POST';
+        const url = isEditing ? `/api/assets/${editingAsset!.id}` : '/api/assets';
+        try {
+            await apiRequest(method, url, assetData);
+            addNotification({ type: 'success', message: `Asset ${isEditing ? 'updated' : 'created'} successfully!` });
+            fetchAssets(); // Refresh data
+        } catch (e) { /* error handled by apiRequest */ }
     };
 
-    const handleConfirmDelete = () => {
-        if (deletingIds.length > 0) {
-            deleteGameAssets(deletingIds);
-            setSelectedAssets([]);
-        }
-        setDeletingIds([]);
+    const handleClone = async (assetId: string) => {
+        try {
+            await apiRequest('POST', `/api/assets/clone/${assetId}`);
+            addNotification({ type: 'success', message: 'Asset cloned successfully!' });
+            fetchAssets();
+        } catch (e) { /* error handled */ }
     };
-    
-    const handleCloseDialog = () => {
-        setEditingAsset(null);
-        setIsCreateDialogOpen(false);
-        setInitialCreateData(null);
-    }
-    
-    const handleUseIdea = (idea: { name: string; description: string; category: string; icon: string; }) => {
+
+    const handleConfirmAction = async () => {
+        if (!confirmation || confirmation.action !== 'delete') return;
+        try {
+            await apiRequest('DELETE', '/api/assets', { ids: confirmation.ids });
+            addNotification({ type: 'info', message: `${confirmation.ids.length} asset(s) deleted.` });
+            setSelectedAssets([]);
+            fetchAssets();
+        } catch (e) { /* error handled */ }
+        setConfirmation(null);
+    };
+
+    const handleUseIdea = (idea: any) => {
         setIsGeneratorOpen(false);
-        setInitialCreateData(idea);
+        setInitialCreateData({
+            ...idea,
+            url: `https://placehold.co/150/FFFFFF/000000?text=${encodeURIComponent(idea.icon)}`
+        });
         setEditingAsset(null);
         setIsCreateDialogOpen(true);
     };
-    
+
     const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
-        if (e.target.checked) {
-            setSelectedAssets(filteredAndSortedAssets.map(a => a.id));
-        } else {
-            setSelectedAssets([]);
-        }
+        setSelectedAssets(e.target.checked ? pageAssets.map(a => a.id) : []);
     };
     
     const handleSelectOne = (id: string, isChecked: boolean) => {
-        if (isChecked) {
-            setSelectedAssets(prev => [...prev, id]);
-        } else {
-            setSelectedAssets(prev => prev.filter(assetId => assetId !== id));
-        }
+        setSelectedAssets(prev => isChecked ? [...prev, id] : prev.filter(assetId => assetId !== id));
     };
-    
 
     const headerActions = (
         <div className="flex items-center gap-2 flex-wrap">
             {isAiAvailable && (
-                <Button size="sm" onClick={() => setIsGeneratorOpen(true)} variant="secondary">
-                    Create with AI
-                </Button>
+                <Button size="sm" onClick={() => setIsGeneratorOpen(true)} variant="secondary">Create with AI</Button>
             )}
             <Button size="sm" onClick={handleCreate}>Create New Asset</Button>
         </div>
@@ -131,22 +152,16 @@ const ManageItemsPage: React.FC = () => {
 
     return (
         <div className="space-y-6">
-            <Card
-                title="All Created Items & Assets"
-                headerAction={headerActions}
-            >
+            <Card title="All Created Items & Assets" headerAction={headerActions}>
                 <div className="border-b border-stone-700 mb-4">
                     <nav className="-mb-px flex space-x-4 overflow-x-auto">
                         {categories.map(category => (
-                            <button
-                                key={category}
-                                onClick={() => setActiveTab(category)}
+                            <button key={category} onClick={() => setActiveTab(category)}
                                 className={`capitalize whitespace-nowrap pb-4 px-1 border-b-2 font-medium text-sm transition-colors ${
                                     activeTab === category
                                     ? 'border-emerald-500 text-emerald-400'
                                     : 'border-transparent text-stone-400 hover:text-stone-200 hover:border-stone-500'
-                                }`}
-                            >
+                                }`}>
                                 {category}
                             </button>
                         ))}
@@ -164,14 +179,16 @@ const ManageItemsPage: React.FC = () => {
                     {selectedAssets.length > 0 && (
                         <div className="flex items-center gap-2 p-2 bg-stone-900/50 rounded-lg">
                             <span className="text-sm font-semibold text-stone-300 px-2">{selectedAssets.length} selected</span>
-                            <Button size="sm" variant="secondary" className="!bg-red-900/50 hover:!bg-red-800/60 text-red-300" onClick={() => handleDeleteRequest(selectedAssets)}>Delete</Button>
+                            <Button size="sm" variant="secondary" className="!bg-red-900/50 hover:!bg-red-800/60 text-red-300" onClick={() => setConfirmation({ action: 'delete', ids: selectedAssets })}>Delete</Button>
                         </div>
                     )}
                 </div>
 
-                {filteredAndSortedAssets.length > 0 ? (
+                {isLoading ? (
+                    <div className="text-center py-10"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-400 mx-auto"></div></div>
+                ) : pageAssets.length > 0 ? (
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-                        {filteredAndSortedAssets.map(asset => (
+                        {pageAssets.map(asset => (
                              <div key={asset.id} className="relative group">
                                 <label
                                     htmlFor={`select-asset-${asset.id}`}
@@ -222,8 +239,8 @@ const ManageItemsPage: React.FC = () => {
                                     {openDropdownId === asset.id && (
                                         <div ref={dropdownRef} className="absolute right-0 mt-2 w-36 bg-stone-900 border border-stone-700 rounded-lg shadow-xl z-20">
                                             <a href="#" onClick={(e) => { e.preventDefault(); handleEdit(asset); setOpenDropdownId(null); }} className="block px-4 py-2 text-sm text-stone-300 hover:bg-stone-700/50">Edit</a>
-                                            <button onClick={() => { cloneGameAsset(asset.id); setOpenDropdownId(null); }} className="w-full text-left block px-4 py-2 text-sm text-stone-300 hover:bg-stone-700/50">Clone</button>
-                                            <button onClick={() => { handleDeleteRequest([asset.id]); setOpenDropdownId(null); }} className="w-full text-left block px-4 py-2 text-sm text-red-400 hover:bg-stone-700/50">Delete</button>
+                                            <button onClick={() => { handleClone(asset.id); setOpenDropdownId(null); }} className="w-full text-left block px-4 py-2 text-sm text-stone-300 hover:bg-stone-700/50">Clone</button>
+                                            <button onClick={() => { setConfirmation({action: 'delete', ids: [asset.id]}); setOpenDropdownId(null); }} className="w-full text-left block px-4 py-2 text-sm text-red-400 hover:bg-stone-700/50">Delete</button>
                                         </div>
                                     )}
                                 </div>
@@ -242,23 +259,18 @@ const ManageItemsPage: React.FC = () => {
             
             {isCreateDialogOpen && <EditGameAssetDialog 
                 assetToEdit={editingAsset} 
-                initialData={initialCreateData ? { 
-                    url: `https://placehold.co/150/FFFFFF/000000?text=${encodeURIComponent(initialCreateData.icon)}`, 
-                    name: initialCreateData.name, 
-                    category: initialCreateData.category, 
-                    description: initialCreateData.description 
-                } : null} 
-                onClose={handleCloseDialog} 
+                initialData={initialCreateData} 
+                onClose={() => { setEditingAsset(null); setIsCreateDialogOpen(false); }}
+                onSave={handleSaveAsset}
             />}
             {isGeneratorOpen && <ItemIdeaGenerator onUseIdea={handleUseIdea} onClose={() => setIsGeneratorOpen(false)} />}
 
-
             <ConfirmDialog
-                isOpen={deletingIds.length > 0}
-                onClose={() => setDeletingIds([])}
-                onConfirm={handleConfirmDelete}
+                isOpen={!!confirmation}
+                onClose={() => setConfirmation(null)}
+                onConfirm={handleConfirmAction}
                 title="Delete Asset(s)"
-                message={`Are you sure you want to delete ${deletingIds.length} asset(s)? This action is permanent.`}
+                message={`Are you sure you want to delete ${confirmation?.ids.length} asset(s)? This action is permanent.`}
             />
 
             {previewImageUrl && (

@@ -6,6 +6,7 @@ import Input from '../ui/Input';
 import RewardInputGroup from '../forms/RewardInputGroup';
 import ToggleSwitch from '../ui/ToggleSwitch';
 import ImageSelectionDialog from '../ui/ImageSelectionDialog';
+import { useNotificationsDispatch } from '../../context/NotificationsContext';
 
 interface EditGameAssetDialogProps {
   assetToEdit: GameAsset | null;
@@ -30,7 +31,8 @@ const PREDEFINED_CATEGORIES = [
 ];
 
 const EditGameAssetDialog: React.FC<EditGameAssetDialogProps> = ({ assetToEdit, initialData, onClose, mode = (assetToEdit ? 'edit' : 'create'), onTryAgain, isGenerating, onSave }) => {
-  const { addGameAsset, updateGameAsset, uploadFile, addNotification } = useAppDispatch();
+  const { addGameAsset, updateGameAsset, uploadFile } = useAppDispatch();
+  const { addNotification } = useNotificationsDispatch();
   const { markets, rewardTypes } = useAppState();
 
   const getInitialFormData = useCallback(() => {

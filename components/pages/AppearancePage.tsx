@@ -7,12 +7,14 @@ import Card from '../ui/Card';
 import ToggleSwitch from '../ui/ToggleSwitch';
 import EmojiPicker from '../ui/EmojiPicker';
 import { GrabHandleIcon, ArrowLeftIcon, ArrowRightIcon } from '../ui/Icons';
+import { useNotificationsDispatch } from '../../context/NotificationsContext';
 
 type SidebarKey = keyof AppSettings['sidebars'];
 
 const AppearancePage: React.FC = () => {
     const { settings, themes: allThemes } = useAppState();
-    const { updateSettings, addNotification } = useAppDispatch();
+    const { updateSettings } = useAppDispatch();
+    const { addNotification } = useNotificationsDispatch();
     
     // Initialize state once from settings, preventing resets on re-render from sync
     const [formState, setFormState] = useState<AppSettings>(() => JSON.parse(JSON.stringify(settings)));

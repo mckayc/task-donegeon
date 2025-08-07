@@ -1,18 +1,20 @@
 import React, { useState } from 'react';
-import { useAppState, useAppDispatch } from '../../context/AppContext';
+import { useAuthState } from '../../context/AuthContext';
 import { Role, User } from '../../types';
 import Button from '../ui/Button';
 import Input from '../ui/Input';
 import UserFormFields from './UserFormFields';
+import { useNotificationsDispatch } from '../../context/NotificationsContext';
 
 interface EditUserDialogProps {
   user: User;
   onClose: () => void;
+  onUserUpdated: () => void;
 }
 
-const EditUserDialog: React.FC<EditUserDialogProps> = ({ user, onClose }) => {
-  const { users, currentUser } = useAppState();
-  const { updateUser } = useAppDispatch();
+const EditUserDialog: React.FC<EditUserDialogProps> = ({ user, onClose, onUserUpdated }) => {
+  const { users: allUsers, currentUser } = useAuthState();
+  const { addNotification } = useNotificationsDispatch();
   const [formData, setFormData] = useState({
     firstName: user.firstName,
     lastName: user.lastName,
@@ -24,12 +26,13 @@ const EditUserDialog: React.FC<EditUserDialogProps> = ({ user, onClose }) => {
     pin: user.pin || '',
   });
   const [error, setError] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
 
@@ -38,27 +41,43 @@ const EditUserDialog: React.FC<EditUserDialogProps> = ({ user, onClose }) => {
         return;
     }
 
-    if (users.some(u => u.id !== user.id && u.username.toLowerCase() === formData.username.toLowerCase())) {
-        setError("Username is already taken by another user.");
-        return;
-    }
-    if (users.some(u => u.id !== user.id && u.email.toLowerCase() === formData.email.toLowerCase())) {
-        setError("Email is already in use by another user.");
-        return;
-    }
+    const payload: Partial<User> = {};
+    Object.keys(formData).forEach(key => {
+        const typedKey = key as keyof typeof formData;
+        // Compare with the original user object to find changes
+        if (formData[typedKey] !== (user as any)[typedKey]) {
+            (payload as any)[typedKey] = formData[typedKey];
+        }
+    });
 
-    const { birthday, ...payload } = formData;
-    const updatedPayload = {
-      ...payload,
-      role: formData.role as Role,
-      pin: formData.pin || undefined,
-    };
+    if (Object.keys(payload).length === 0) {
+        onClose();
+        return;
+    }
     
-    updateUser(user.id, updatedPayload);
-    onClose();
+    setIsSaving(true);
+    try {
+        const response = await fetch(`/api/users/${user.id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        if (!response.ok) {
+            const errData = await response.json();
+            throw new Error(errData.error || 'Failed to update user.');
+        }
+        addNotification({ type: 'success', message: 'User updated successfully!' });
+        onUserUpdated();
+        onClose();
+    } catch (err) {
+        const message = err instanceof Error ? err.message : 'An unknown error occurred.';
+        setError(message);
+    } finally {
+        setIsSaving(false);
+    }
   };
 
-  const donegeonMasters = users.filter(u => u.role === Role.DonegeonMaster);
+  const donegeonMasters = allUsers.filter(u => u.role === Role.DonegeonMaster);
   const isLastDonegeonMaster = user.role === Role.DonegeonMaster && donegeonMasters.length === 1;
   const canChangeRole = currentUser?.role === Role.DonegeonMaster && !isLastDonegeonMaster;
 
@@ -85,13 +104,13 @@ const EditUserDialog: React.FC<EditUserDialogProps> = ({ user, onClose }) => {
             {!canChangeRole && <p className="text-xs text-stone-400 mt-1">The last Donegeon Master's role cannot be changed.</p>}
           </div>
           <div>
-            <Input label="PIN (4-10 digits, optional)" id="edit-pin" name="pin" type="text" value={formData.pin} onChange={handleChange} />
+            <Input label="PIN (4-10 digits, optional)" id="edit-pin" name="pin" type="password" value={formData.pin} onChange={handleChange} />
             <p className="text-xs text-stone-400 mt-1">A PIN is an easy way for kids to switch profiles securely.</p>
           </div>
           {error && <p className="text-red-400 text-center">{error}</p>}
           <div className="flex justify-end space-x-4 pt-4">
-            <Button type="button" variant="secondary" onClick={onClose}>Cancel</Button>
-            <Button type="submit">Save Changes</Button>
+            <Button type="button" variant="secondary" onClick={onClose} disabled={isSaving}>Cancel</Button>
+            <Button type="submit" disabled={isSaving}>{isSaving ? 'Saving...' : 'Save Changes'}</Button>
           </div>
         </form>
       </div>

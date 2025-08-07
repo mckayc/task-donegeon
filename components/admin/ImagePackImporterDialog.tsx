@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import Button from '../ui/Button';
-import { useAppDispatch } from '../../context/AppContext';
+import { useNotificationsDispatch } from '../../context/NotificationsContext';
 
 interface AvailablePack {
     name: string;
@@ -30,7 +30,7 @@ const ImagePackImporterDialog: React.FC<ImagePackImporterDialogProps> = ({ onClo
     const [error, setError] = useState('');
     const [selectedFiles, setSelectedFiles] = useState<PackFile[]>([]);
     
-    const { addNotification } = useAppDispatch();
+    const { addNotification } = useNotificationsDispatch();
 
     useEffect(() => {
         const fetchPacks = async () => {

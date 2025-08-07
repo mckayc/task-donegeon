@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
+import { useAuthState } from '../../context/AuthContext';
 import { Guild } from '../../types';
 import Button from '../ui/Button';
 import Input from '../ui/Input';
@@ -10,7 +11,8 @@ interface EditGuildDialogProps {
 }
 
 const EditGuildDialog: React.FC<EditGuildDialogProps> = ({ guild, onClose }) => {
-  const { users, guilds, themes } = useAppState();
+  const { guilds, themes } = useAppState();
+  const { users } = useAuthState();
   const { addGuild, updateGuild } = useAppDispatch();
   const [formData, setFormData] = useState({
     name: '',

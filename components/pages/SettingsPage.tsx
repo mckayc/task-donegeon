@@ -1,5 +1,6 @@
 import React, { useState, ChangeEvent, ReactNode, useEffect } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
+import { useAuthState, useAuthDispatch } from '../../context/AuthContext';
 import { Role, AppSettings, Terminology, RewardCategory, RewardTypeDefinition } from '../../types';
 import Button from '../ui/Button';
 import { ChevronDownIcon } from '../ui/Icons';
@@ -8,6 +9,7 @@ import ToggleSwitch from '../ui/ToggleSwitch';
 import ConfirmDialog from '../ui/ConfirmDialog';
 import { INITIAL_SETTINGS } from '../../data/initialData';
 import EmojiPicker from '../ui/EmojiPicker';
+import { useNotificationsDispatch } from '../../context/NotificationsContext';
 
 
 const CollapsibleSection: React.FC<{ title: string; children: React.ReactNode; defaultOpen?: boolean; onSave?: () => void; showSavedIndicator?: boolean; }> = ({ title, children, defaultOpen = false, onSave, showSavedIndicator }) => {
@@ -103,8 +105,10 @@ const terminologyLabels: { [key in keyof Terminology]: string } = {
 
 
 const SettingsPage: React.FC = () => {
-    const { currentUser, users, settings, rewardTypes, isAiConfigured } = useAppState();
-    const { updateSettings, resetSettings, addNotification, factoryReset } = useAppDispatch();
+    const { settings, rewardTypes, isAiConfigured } = useAppState();
+    const { currentUser, users } = useAuthState();
+    const { updateSettings, resetSettings, factoryReset } = useAppDispatch();
+    const { addNotification } = useNotificationsDispatch();
     
     const [formState, setFormState] = useState<AppSettings>(() => JSON.parse(JSON.stringify(settings)));
     const [showSaved, setShowSaved] = useState<string | null>(null);

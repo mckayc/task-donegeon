@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
-import { useAppState, useAppDispatch } from '../../../context/AppContext';
+import { useAppDispatch } from '../../../context/AppContext';
 import { GameAsset } from '../../../types';
 import Button from '../../ui/Button';
 import Card from '../../ui/Card';
@@ -8,6 +8,7 @@ import EditGameAssetDialog from '../../admin/EditGameAssetDialog';
 import AiImagePromptHelper from '../../sharing/AiImagePromptHelper';
 import UploadWithCategoryDialog from '../../admin/UploadWithCategoryDialog';
 import ImagePackImporterDialog from '../../admin/ImagePackImporterDialog';
+import { useNotificationsDispatch } from '../../../context/NotificationsContext';
 
 interface LocalGalleryImage {
     url: string;
@@ -16,7 +17,8 @@ interface LocalGalleryImage {
 }
 
 const AssetManagerPage: React.FC = () => {
-    const { addNotification, uploadFile } = useAppDispatch();
+    const { uploadFile } = useAppDispatch();
+    const { addNotification } = useNotificationsDispatch();
     const [isDragging, setIsDragging] = useState(false);
     
     const [assetToCreateData, setAssetToCreateData] = useState<{ url: string; name: string; category: string; } | null>(null);

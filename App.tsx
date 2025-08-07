@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { useAppState } from './context/AppContext';
 import { useUIState } from './context/UIStateContext';
+import { useAuthState } from './context/AuthContext';
 import FirstRunWizard from './components/auth/FirstRunWizard';
 import MainLayout from './components/layout/MainLayout';
 import SwitchUser from './components/auth/SwitchUser';
@@ -11,7 +12,8 @@ import OnboardingWizard from './components/auth/OnboardingWizard';
 import SharedLayout from './components/layout/SharedLayout';
 
 const App: React.FC = () => {
-  const { users, isAppUnlocked, isFirstRun, currentUser, isSwitchingUser, isDataLoaded, settings, isSharedViewActive, guilds, themes } = useAppState();
+  const { isDataLoaded, settings, guilds, themes } = useAppState();
+  const { currentUser, isAppUnlocked, isFirstRun, isSwitchingUser, isSharedViewActive } = useAuthState();
   const { appMode } = useUIState();
 
   useEffect(() => {

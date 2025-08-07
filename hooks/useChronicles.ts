@@ -1,57 +1,138 @@
 import { useMemo } from 'react';
+import {
+  ChronicleEvent,
+  QuestType,
+} from '../types';
 import { useAppState } from '../context/AppContext';
 import { useUIState } from '../context/UIStateContext';
-import { ChronicleEvent, AdminAdjustmentType, QuestCompletionStatus, PurchaseRequestStatus, QuestType, Role } from '../types';
 import { toYMD } from '../utils/quests';
+import { useAuthState } from '../context/AuthContext';
 
-export const useChronicles = ({ startDate, endDate }: { startDate: Date; endDate: Date; }) => {
-    const { 
-        currentUser, users, quests, rewardTypes,
-        questCompletions, purchaseRequests, userTrophies, trophies, 
-        adminAdjustments, systemLogs 
-    } = useAppState();
-    const { appMode } = useUIState();
+interface UseChroniclesProps {
+  startDate: Date;
+  endDate: Date;
+}
 
-    const chroniclesByDate = useMemo(() => {
-        const eventsByDate = new Map<string, ChronicleEvent[]>();
-        if (!currentUser) return eventsByDate;
+export const useChronicles = ({ startDate, endDate }: UseChroniclesProps): Map<string, ChronicleEvent[]> => {
+  const {
+    quests,
+    questCompletions,
+    purchaseRequests,
+    userTrophies,
+    trophies,
+    adminAdjustments,
+    systemNotifications,
+  } = useAppState();
+  const { currentUser, users } = useAuthState();
+  const { appMode } = useUIState();
 
-        const startYMD = toYMD(startDate);
-        const endYMD = toYMD(endDate);
-        const currentGuildId = appMode.mode === 'guild' ? appMode.guildId : undefined;
-        
-        const getUserName = (userId: string) => users.find(u => u.id === userId)?.gameName || 'Unknown User';
-        const getTrophyName = (trophyId: string) => trophies.find(t => t.id === trophyId)?.name || `Unknown Award`;
+  return useMemo(() => {
+    const chroniclesByDate = new Map<string, ChronicleEvent[]>();
+    if (!currentUser) return chroniclesByDate;
 
-        // Process Quest Completions
-        questCompletions.forEach(c => {
-            const dateKey = toYMD(new Date(c.completedAt));
-            if (dateKey >= startYMD && dateKey <= endYMD && c.userId === currentUser.id && c.guildId === currentGuildId) {
-                const quest = quests.find(q => q.id === c.questId);
-                const event: ChronicleEvent = {
-                    id: c.id, date: c.completedAt, type: 'Quest',
-                    title: quest?.title || 'Unknown Quest',
-                    note: c.note, status: c.status,
-                    icon: quest?.icon || '📜',
-                    color: c.status === QuestCompletionStatus.Approved ? '#22c55e' : c.status === QuestCompletionStatus.Pending ? '#eab308' : '#ef4444',
-                    userId: c.userId, questType: quest?.type
-                };
-                if (!eventsByDate.has(dateKey)) eventsByDate.set(dateKey, []);
-                eventsByDate.get(dateKey)!.push(event);
-            }
-        });
+    const startYMD = toYMD(startDate);
+    const endYMD = toYMD(endDate);
 
-        // Add other event types here (Purchases, Trophies, etc.)
-        // For simplicity, we'll focus on quests for now in the calendar chronicle view.
+    const currentGuildId = appMode.mode === 'guild' ? appMode.guildId : undefined;
+    const allEvents: ChronicleEvent[] = [];
 
-        // Sort events within each day
-        for (const events of eventsByDate.values()) {
-            events.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    const userMap = new Map(users.map(u => [u.id, u.gameName]));
+    const questMap = new Map(quests.map(q => [q.id, q]));
+    const trophyMap = new Map(trophies.map(t => [t.id, t]));
+
+    // 1. Quest Completions
+    questCompletions.forEach(c => {
+      if (c.userId === currentUser.id && c.guildId === currentGuildId) {
+        const dateKey = toYMD(new Date(c.completedAt));
+        if (dateKey >= startYMD && dateKey <= endYMD) {
+          const quest = questMap.get(c.questId);
+          allEvents.push({
+            id: c.id, date: c.completedAt, type: 'Quest',
+            title: `Completed "${quest?.title || 'Unknown Quest'}"`,
+            status: c.status, note: c.note, icon: quest?.icon || '📜',
+            color: quest?.type === QuestType.Duty ? '#38bdf8' : '#f59e0b', userId: c.userId,
+            questType: quest?.type, guildId: c.guildId
+          });
         }
-        
-        return eventsByDate;
+      }
+    });
 
-    }, [currentUser, appMode, startDate, endDate, questCompletions, quests]);
+    // 2. Purchase Requests
+    purchaseRequests.forEach(p => {
+        if (p.userId === currentUser.id && p.guildId === currentGuildId) {
+            const dateKey = toYMD(new Date(p.requestedAt));
+            if (dateKey >= startYMD && dateKey <= endYMD) {
+                allEvents.push({
+                    id: p.id, date: p.requestedAt, type: 'Purchase', userId: p.userId,
+                    title: `Purchased "${p.assetDetails.name}"`,
+                    status: p.status, icon: '💰', color: '#22c55e', guildId: p.guildId
+                });
+            }
+        }
+    });
+
+    // 3. User Trophies
+    userTrophies.forEach(ut => {
+        if (ut.userId === currentUser.id && ut.guildId === currentGuildId) {
+            const dateKey = toYMD(new Date(ut.awardedAt));
+            if (dateKey >= startYMD && dateKey <= endYMD) {
+                const trophy = trophyMap.get(ut.trophyId);
+                allEvents.push({
+                    id: ut.id, date: ut.awardedAt, type: 'Trophy', userId: ut.userId,
+                    title: `Earned "${trophy?.name || 'Unknown Trophy'}"`,
+                    status: "Awarded", note: trophy?.description, icon: trophy?.icon || '🏆',
+                    color: '#f59e0b', guildId: ut.guildId
+                });
+            }
+        }
+    });
+    
+    // 4. Admin Adjustments
+    adminAdjustments.forEach(adj => {
+        if (adj.userId === currentUser.id && adj.guildId === currentGuildId) {
+            const dateKey = toYMD(new Date(adj.adjustedAt));
+            if (dateKey >= startYMD && dateKey <= endYMD) {
+                allEvents.push({
+                    id: adj.id, date: adj.adjustedAt, type: 'Adjustment', userId: adj.userId,
+                    title: `Adjustment by ${userMap.get(adj.adjusterId) || 'Admin'}`,
+                    status: adj.type, note: adj.reason, icon: '🛠️', color: '#64748b', guildId: adj.guildId
+                });
+            }
+        }
+    });
+    
+    // 5. Announcements
+    systemNotifications.forEach(n => {
+        if(n.type === 'Announcement' && n.recipientUserIds.includes(currentUser.id) && n.guildId === currentGuildId) {
+            const dateKey = toYMD(new Date(n.timestamp));
+             if (dateKey >= startYMD && dateKey <= endYMD) {
+                 allEvents.push({
+                    id: n.id, date: n.timestamp, type: 'Announcement',
+                    title: `Announcement from ${userMap.get(n.senderId || '') || 'System'}`,
+                    status: 'Announcement', note: n.message, icon: '📢', color: '#10b981',
+                    guildId: n.guildId, recipientUserIds: n.recipientUserIds
+                });
+             }
+        }
+    });
+
+    // Group events by date
+    allEvents.forEach(event => {
+      const dateKey = toYMD(new Date(event.date));
+      const collection = chroniclesByDate.get(dateKey) || [];
+      collection.push(event);
+      chroniclesByDate.set(dateKey, collection);
+    });
+
+    // Sort events within each day
+    for (const events of chroniclesByDate.values()) {
+      events.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    }
 
     return chroniclesByDate;
+
+  }, [
+    currentUser, appMode, startDate, endDate, users, quests, questCompletions,
+    purchaseRequests, userTrophies, trophies, adminAdjustments, systemNotifications
+  ]);
 };

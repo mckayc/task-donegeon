@@ -4,9 +4,11 @@ import { ShareableAssetType, Terminology } from '../../types';
 import Button from '../ui/Button';
 import Input from '../ui/Input';
 import { generateAssetPack } from '../../utils/sharing';
+import { useAuthState } from '../../context/AuthContext';
 
 const ExportPanel: React.FC = () => {
     const appState = useAppState();
+    const { users, loginHistory } = useAuthState();
     const { settings } = appState;
     const [selected, setSelected] = useState<{ [key in ShareableAssetType]: string[] }>({
         quests: [],
@@ -49,7 +51,7 @@ const ExportPanel: React.FC = () => {
             blueprintDesc,
             settings.terminology.appName,
             selected,
-            appState
+            { ...appState, users, loginHistory }
         );
     };
 
@@ -61,7 +63,7 @@ const ExportPanel: React.FC = () => {
         { key: 'trophies', label: 'awards', data: appState.trophies },
         { key: 'markets', label: 'stores', data: appState.markets },
         { key: 'gameAssets', label: 'link_manage_items', data: appState.gameAssets },
-        { key: 'users', label: 'link_manage_users', data: appState.users },
+        { key: 'users', label: 'link_manage_users', data: users },
     ];
 
     return (

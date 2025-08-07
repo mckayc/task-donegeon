@@ -1,27 +1,37 @@
 import React from 'react';
 import { useAppState } from '../../context/AppContext';
+import { useAuthState } from '../../context/AuthContext';
 import Button from '../ui/Button';
+import { IAppData } from '../../types';
 
 const BackupPanel: React.FC = () => {
     const appState = useAppState();
+    const authState = useAuthState();
 
     const handleBackup = () => {
-        // Exclude transient UI state from the backup
-        const {
-            isAppUnlocked,
-            isFirstRun,
-            notifications,
-            isSwitchingUser,
-            isSharedViewActive,
-            targetedUserForLogin,
-            isAiConfigured,
-            syncStatus,
-            syncError,
-            currentUser,
-            isDataLoaded,
-            allTags,
-            ...dataToBackup
-        } = appState;
+        // Construct the full IAppData object for backup
+        const dataToBackup: IAppData = {
+            users: authState.users,
+            loginHistory: authState.loginHistory,
+            quests: appState.quests,
+            questGroups: appState.questGroups,
+            markets: appState.markets,
+            rewardTypes: appState.rewardTypes,
+            questCompletions: appState.questCompletions,
+            purchaseRequests: appState.purchaseRequests,
+            guilds: appState.guilds,
+            ranks: appState.ranks,
+            trophies: appState.trophies,
+            userTrophies: appState.userTrophies,
+            adminAdjustments: appState.adminAdjustments,
+            gameAssets: appState.gameAssets,
+            systemLogs: appState.systemLogs,
+            settings: appState.settings,
+            themes: appState.themes,
+            chatMessages: appState.chatMessages,
+            systemNotifications: appState.systemNotifications,
+            scheduledEvents: appState.scheduledEvents,
+        };
 
         const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(dataToBackup, null, 2));
         const timestamp = new Date().toISOString().replace(/:/g, '-').slice(0, 19);

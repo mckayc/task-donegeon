@@ -8,6 +8,8 @@ import BlueprintPreviewDialog from '../../sharing/BlueprintPreviewDialog';
 import ConfirmDialog from '../../ui/ConfirmDialog';
 import ToggleSwitch from '../../ui/ToggleSwitch';
 import Input from '../../ui/Input';
+import { useNotificationsDispatch } from '../../../context/NotificationsContext';
+import { useAuthState } from '../../../context/AuthContext';
 
 const formatBytes = (bytes: number, decimals = 2) => {
     if (!bytes || bytes === 0) return '0 Bytes';
@@ -27,7 +29,9 @@ interface ServerBackup {
 
 const BackupAndImportPage: React.FC = () => {
     const appState = useAppState();
-    const { restoreFromBackup, importAssetPack, addNotification, updateSettings } = useAppDispatch();
+    const authState = useAuthState();
+    const { restoreFromBackup, importAssetPack, updateSettings } = useAppDispatch();
+    const { addNotification } = useNotificationsDispatch();
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const [serverBackups, setServerBackups] = useState<ServerBackup[]>([]);
@@ -79,7 +83,8 @@ const BackupAndImportPage: React.FC = () => {
                 if (parsed.users && parsed.settings) {
                     setFileToRestore(parsed);
                 } else if (parsed.manifest && parsed.assets) {
-                    const conflicts = analyzeAssetPackForConflicts(parsed, appState);
+                    const fullCurrentData: IAppData = { ...appState, users: authState.users, loginHistory: authState.loginHistory };
+                    const conflicts = analyzeAssetPackForConflicts(parsed, fullCurrentData);
                     setInitialResolutions(conflicts);
                     setAssetPackToPreview(parsed);
                 } else {

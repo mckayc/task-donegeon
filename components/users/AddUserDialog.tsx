@@ -1,17 +1,22 @@
 import React, { useState, useEffect } from 'react';
-import { useAppState, useAppDispatch } from '../../context/AppContext';
+import { useAppState } from '../../context/AppContext';
 import { Role } from '../../types';
 import Button from '../ui/Button';
 import Input from '../ui/Input';
 import UserFormFields from './UserFormFields';
+import { useNotificationsDispatch } from '../../context/NotificationsContext';
+import { useAuthState, useAuthDispatch } from '../../context/AuthContext';
 
 interface AddUserDialogProps {
   onClose: () => void;
+  onUserAdded: () => void;
 }
 
-const AddUserDialog: React.FC<AddUserDialogProps> = ({ onClose }) => {
-  const { users, settings } = useAppState();
-  const { addUser } = useAppDispatch();
+const AddUserDialog: React.FC<AddUserDialogProps> = ({ onClose, onUserAdded }) => {
+  const { settings } = useAppState();
+  const { users } = useAuthState();
+  const { addUser } = useAuthDispatch();
+  const { addNotification } = useNotificationsDispatch();
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -24,6 +29,7 @@ const AddUserDialog: React.FC<AddUserDialogProps> = ({ onClose }) => {
     password: '',
   });
   const [error, setError] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
   const [showPasswordFields, setShowPasswordFields] = useState(false);
 
   const isPasswordRequired = formData.role === Role.DonegeonMaster;
@@ -32,7 +38,6 @@ const AddUserDialog: React.FC<AddUserDialogProps> = ({ onClose }) => {
     if (isPasswordRequired) {
       setShowPasswordFields(true);
     } else {
-      // If user switches away from DM, hide the optional password field again for a cleaner form
       setShowPasswordFields(false);
     }
   }, [isPasswordRequired]);
@@ -46,8 +51,7 @@ const AddUserDialog: React.FC<AddUserDialogProps> = ({ onClose }) => {
     e.preventDefault();
     setError('');
 
-    const isPinRequired = settings.security.requirePinForUsers;
-    if (isPinRequired && (formData.pin.length < 4 || formData.pin.length > 10 || !/^\d+$/.test(formData.pin))) {
+    if (formData.pin && (formData.pin.length < 4 || formData.pin.length > 10 || !/^\d+$/.test(formData.pin))) {
         setError('PIN must be 4-10 numbers.');
         return;
     }
@@ -59,25 +63,26 @@ const AddUserDialog: React.FC<AddUserDialogProps> = ({ onClose }) => {
         }
     }
 
-    if (users.some(u => u.username.toLowerCase() === formData.username.toLowerCase())) {
-        setError("Username is already taken.");
-        return;
-    }
-    if (users.some(u => u.email.toLowerCase() === formData.email.toLowerCase())) {
-        setError("Email is already in use.");
-        return;
-    }
-
     const newUserPayload = {
         ...formData,
         role: formData.role as Role,
-        pin: formData.pin, // PIN can be an empty string if not required
         password: formData.password || undefined,
     };
-
-    const createdUser = await addUser(newUserPayload);
-    if (createdUser) {
-      onClose();
+    
+    setIsSaving(true);
+    try {
+        const createdUser = await addUser(newUserPayload);
+        if (!createdUser) {
+          throw new Error('Failed to create user. The username or email might already be taken.');
+        }
+        addNotification({ type: 'success', message: `User "${formData.gameName}" created!` });
+        onUserAdded();
+        onClose();
+    } catch (err) {
+        const message = err instanceof Error ? err.message : 'An unknown error occurred.';
+        setError(message);
+    } finally {
+        setIsSaving(false);
     }
   };
 
@@ -130,8 +135,8 @@ const AddUserDialog: React.FC<AddUserDialogProps> = ({ onClose }) => {
           </div>
           {error && <p className="text-red-400 text-center">{error}</p>}
           <div className="flex justify-end space-x-4 pt-4">
-            <Button type="button" variant="secondary" onClick={onClose}>Cancel</Button>
-            <Button type="submit">Add Member</Button>
+            <Button type="button" variant="secondary" onClick={onClose} disabled={isSaving}>Cancel</Button>
+            <Button type="submit" disabled={isSaving}>{isSaving ? 'Saving...' : 'Add Member'}</Button>
           </div>
         </form>
       </div>

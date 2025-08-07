@@ -3,9 +3,11 @@ import { useAppState } from '../context/AppContext';
 import { useUIState } from '../context/UIStateContext';
 import { QuestType } from '../types';
 import { isQuestAvailableForUser } from '../utils/quests';
+import { useAuthState } from '../context/AuthContext';
 
 export const useAvailableVentures = () => {
-    const { quests, currentUser, questCompletions, scheduledEvents } = useAppState();
+    const { quests, questCompletions, scheduledEvents } = useAppState();
+    const { currentUser } = useAuthState();
     const { appMode } = useUIState();
 
     const top10AvailableVentures = useMemo(() => {

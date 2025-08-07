@@ -1,11 +1,13 @@
 import React, { useMemo, useState } from 'react';
 import { useAppState } from '../../context/AppContext';
+import { useAuthState } from '../../context/AuthContext';
 import Card from '../ui/Card';
 import { CollectionIcon } from '../ui/Icons';
 import ImagePreviewDialog from '../ui/ImagePreviewDialog';
 
 const CollectionPage: React.FC = () => {
-    const { currentUser, gameAssets } = useAppState();
+    const { gameAssets } = useAppState();
+    const { currentUser } = useAuthState();
     const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null);
 
     const myCollection = useMemo(() => {

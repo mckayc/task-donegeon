@@ -1,39 +1,22 @@
 import React, { createContext, useState, useContext, ReactNode, useEffect, useCallback, useMemo, useRef } from 'react';
-import { AppSettings, User, Quest, RewardTypeDefinition, QuestCompletion, RewardItem, Market, PurchaseRequest, Guild, Rank, Trophy, UserTrophy, Notification, AppMode, Page, IAppData, ShareableAssetType, GameAsset, Role, QuestCompletionStatus, RewardCategory, PurchaseRequestStatus, AdminAdjustment, AdminAdjustmentType, SystemLog, QuestType, QuestAvailability, AssetPack, ImportResolution, TrophyRequirementType, ThemeDefinition, ChatMessage, SystemNotification, SystemNotificationType, MarketStatus, QuestGroup, BulkQuestUpdates, ScheduledEvent } from '../types';
+import { AppSettings, User, Quest, RewardTypeDefinition, QuestCompletion, RewardItem, Market, PurchaseRequest, Guild, Rank, Trophy, UserTrophy, AppMode, Page, IAppData, ShareableAssetType, GameAsset, Role, QuestCompletionStatus, RewardCategory, PurchaseRequestStatus, AdminAdjustment, AdminAdjustmentType, SystemLog, QuestType, QuestAvailability, AssetPack, ImportResolution, TrophyRequirementType, ThemeDefinition, ChatMessage, SystemNotification, SystemNotificationType, MarketStatus, QuestGroup, BulkQuestUpdates, ScheduledEvent } from '../types';
 import { INITIAL_SETTINGS, INITIAL_REWARD_TYPES, INITIAL_RANKS, INITIAL_TROPHIES, INITIAL_THEMES, INITIAL_QUEST_GROUPS, INITIAL_TAGS } from '../data/initialData';
 import { toYMD } from '../utils/quests';
 import { analyzeAssetPackForConflicts } from '../utils/sharing';
+import { useNotificationsDispatch } from './NotificationsContext';
+import { useAuthState, useAuthDispatch } from './AuthContext';
 
-// The single, unified state for the entire application
-interface AppState extends IAppData {
-  isAppUnlocked: boolean;
-  isFirstRun: boolean;
-  currentUser: User | null;
-  notifications: Notification[];
+// The single, unified state for the non-auth parts of the application
+interface AppState extends Omit<IAppData, 'users' | 'loginHistory'> {
   isDataLoaded: boolean;
   allTags: string[];
-  isSwitchingUser: boolean;
-  isSharedViewActive: boolean;
-  targetedUserForLogin: User | null;
   isAiConfigured: boolean;
   syncStatus: 'idle' | 'syncing' | 'success' | 'error';
   syncError: string | null;
 }
 
-// The single, unified dispatch for the entire application
+// The single, unified dispatch for the non-auth parts of the application
 interface AppDispatch {
-  // Auth
-  addUser: (user: Omit<User, 'id' | 'personalPurse' | 'personalExperience' | 'guildBalances' | 'avatar' | 'ownedAssetIds' | 'ownedThemes' | 'hasBeenOnboarded'>) => User;
-  updateUser: (userId: string, updatedData: Partial<User>) => void;
-  deleteUser: (userId: string) => void;
-  setCurrentUser: (user: User | null) => void;
-  markUserAsOnboarded: (userId: string) => void;
-  setAppUnlocked: (isUnlocked: boolean) => void;
-  setIsSwitchingUser: (isSwitching: boolean) => void;
-  setTargetedUserForLogin: (user: User | null) => void;
-  exitToSharedView: () => void;
-  setIsSharedViewActive: (isActive: boolean) => void;
-
   // Game Data
   addQuest: (quest: Omit<Quest, 'id' | 'claimedByUserIds' | 'dismissals'>) => void;
   updateQuest: (updatedQuest: Quest) => void;
@@ -103,8 +86,6 @@ interface AppDispatch {
   // Settings & UI
   updateSettings: (settings: Partial<AppSettings>) => void;
   resetSettings: () => void;
-  addNotification: (notification: Omit<Notification, 'id'>) => void;
-  removeNotification: (notificationId: string) => void;
   sendMessage: (message: Omit<ChatMessage, 'id' | 'timestamp' | 'readBy' | 'senderId'> & { isAnnouncement?: boolean }) => void;
   markMessagesAsRead: (params: { partnerId?: string; guildId?: string; }) => void;
   addSystemNotification: (notification: Omit<SystemNotification, 'id' | 'timestamp' | 'readByUserIds'>) => void;
@@ -115,8 +96,11 @@ const AppStateContext = createContext<AppState | undefined>(undefined);
 const AppDispatchContext = createContext<AppDispatch | undefined>(undefined);
 
 export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+  const { addNotification } = useNotificationsDispatch();
+  const { currentUser, users } = useAuthState();
+  const authDispatch = useAuthDispatch();
+
   // === STATE MANAGEMENT ===
-  const [users, setUsers] = useState<User[]>([]);
   const [quests, setQuests] = useState<Quest[]>([]);
   const [questGroups, setQuestGroups] = useState<QuestGroup[]>([]);
   const [markets, setMarkets] = useState<Market[]>([]);
@@ -132,35 +116,19 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [systemLogs, setSystemLogs] = useState<SystemLog[]>([]);
   const [settings, setSettings] = useState<AppSettings>(INITIAL_SETTINGS);
   const [themes, setThemes] = useState<ThemeDefinition[]>(INITIAL_THEMES);
-  const [loginHistory, setLoginHistory] = useState<string[]>([]);
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [systemNotifications, setSystemNotifications] = useState<SystemNotification[]>([]);
   const [scheduledEvents, setScheduledEvents] = useState<ScheduledEvent[]>([]);
 
   // UI State that remains global due to cross-cutting concerns
-  const [notifications, setNotifications] = useState<Notification[]>([]);
   const [isDataLoaded, setIsDataLoaded] = useState(false);
   const [syncStatus, setSyncStatus] = useState<'idle' | 'syncing' | 'success' | 'error'>('idle');
   const [syncError, setSyncError] = useState<string | null>(null);
-
-  // Auth/Session State
-  const [currentUser, _setCurrentUser] = useState<User | null>(null);
-  const [isAppUnlocked, _setAppUnlocked] = useState<boolean>(() => localStorage.getItem('isAppUnlocked') === 'true');
-  const [isSwitchingUser, setIsSwitchingUser] = useState<boolean>(false);
-  const [isSharedViewActive, _setIsSharedViewActive] = useState(false);
-  const [targetedUserForLogin, setTargetedUserForLogin] = useState<User | null>(null);
   const [isAiConfigured, setIsAiConfigured] = useState(false);
   
   const inactivityTimer = useRef<number | null>(null);
-  const stateRef = useRef<AppState | null>(null);
-  const isFirstRun = isDataLoaded && users.length === 0;
   
   // === API HELPERS ===
-  const addNotification = useCallback((notification: Omit<Notification, 'id'>) => {
-    const uniqueId = `notif-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
-    setNotifications(prev => [...prev, { ...notification, id: uniqueId }]);
-  }, []);
-
   const apiRequest = useCallback(async (method: string, path: string, body?: any) => {
     try {
         const options: RequestInit = {
@@ -205,7 +173,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         rewardValuation: { ...INITIAL_SETTINGS.rewardValuation, ...(savedSettings.rewardValuation || {}) },
       };
 
-      setUsers(dataToSet.users || []);
+      authDispatch.setUsers(dataToSet.users || []);
       setQuests(dataToSet.quests || []);
       setQuestGroups(dataToSet.questGroups || []);
       setMarkets(dataToSet.markets || []);
@@ -221,7 +189,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       setSystemLogs(dataToSet.systemLogs || []);
       setSettings(loadedSettings);
       setThemes(dataToSet.themes || INITIAL_THEMES);
-      setLoginHistory(dataToSet.loginHistory || []);
+      authDispatch.setLoginHistory(dataToSet.loginHistory || []);
       setChatMessages(dataToSet.chatMessages || []);
       setSystemNotifications(dataToSet.systemNotifications || []);
       setScheduledEvents(dataToSet.scheduledEvents || []);
@@ -229,14 +197,14 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       const lastUserId = localStorage.getItem('lastUserId');
       if (lastUserId && dataToSet.users) {
         const lastUser = dataToSet.users.find((u:User) => u.id === lastUserId);
-        if (lastUser) _setCurrentUser(lastUser);
+        if (lastUser) authDispatch.setCurrentUser(lastUser);
       }
-      _setIsSharedViewActive(loadedSettings.sharedMode.enabled && !localStorage.getItem('lastUserId'));
+      authDispatch.setIsSharedViewActive(loadedSettings.sharedMode.enabled && !localStorage.getItem('lastUserId'));
 
     } catch (error) {
       console.error("Could not load data from server.", error);
     }
-  }, [apiRequest]);
+  }, [apiRequest, authDispatch]);
 
   useEffect(() => {
     const initializeApp = async () => {
@@ -336,50 +304,36 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     }));
   }, [currentUser]);
 
-  const removeNotification = useCallback((notificationId: string) => {
-    setNotifications(prev => prev.filter(n => n.id !== notificationId));
-  }, []);
-
   const applyRewards = useCallback((userId: string, rewardsToApply: RewardItem[], guildId?: string) => {
-    setUsers(prevUsers => {
-      const userIndex = prevUsers.findIndex(u => u.id === userId);
-      if (userIndex === -1) return prevUsers;
-      const newUsers = [...prevUsers];
-      const userToUpdate = { ...newUsers[userIndex] };
-      rewardsToApply.forEach(reward => {
-          const rewardDef = rewardTypes.find(rd => rd.id === reward.rewardTypeId);
-          if (!rewardDef) return;
-          if (guildId) {
-              userToUpdate.guildBalances = { ...userToUpdate.guildBalances };
-              if (!userToUpdate.guildBalances[guildId]) userToUpdate.guildBalances[guildId] = { purse: {}, experience: {} };
-              const balanceSheet = { ...userToUpdate.guildBalances[guildId] };
-              if (rewardDef.category === RewardCategory.Currency) {
-                  balanceSheet.purse = { ...balanceSheet.purse };
-                  balanceSheet.purse[reward.rewardTypeId] = (balanceSheet.purse[reward.rewardTypeId] || 0) + reward.amount;
-              } else {
-                  balanceSheet.experience = { ...balanceSheet.experience };
-                  balanceSheet.experience[reward.rewardTypeId] = (balanceSheet.experience[reward.rewardTypeId] || 0) + reward.amount;
-              }
-              userToUpdate.guildBalances[guildId] = balanceSheet;
-          } else {
-              if (rewardDef.category === RewardCategory.Currency) {
-                  userToUpdate.personalPurse = { ...userToUpdate.personalPurse };
-                  userToUpdate.personalPurse[reward.rewardTypeId] = (userToUpdate.personalPurse[reward.rewardTypeId] || 0) + reward.amount;
-              } else {
-                  userToUpdate.personalExperience = { ...userToUpdate.personalExperience };
-                  userToUpdate.personalExperience[reward.rewardTypeId] = (userToUpdate.personalExperience[reward.rewardTypeId] || 0) + reward.amount;
-              }
-          }
-      });
-      newUsers[userIndex] = userToUpdate;
-      
-      if (currentUser?.id === userId) {
-        _setCurrentUser(userToUpdate);
-      }
-
-      return newUsers;
+    authDispatch.updateUser(userId, userToUpdate => {
+        rewardsToApply.forEach(reward => {
+            const rewardDef = rewardTypes.find(rd => rd.id === reward.rewardTypeId);
+            if (!rewardDef) return;
+            if (guildId) {
+                userToUpdate.guildBalances = { ...userToUpdate.guildBalances };
+                if (!userToUpdate.guildBalances[guildId]) userToUpdate.guildBalances[guildId] = { purse: {}, experience: {} };
+                const balanceSheet = { ...userToUpdate.guildBalances[guildId] };
+                if (rewardDef.category === RewardCategory.Currency) {
+                    balanceSheet.purse = { ...balanceSheet.purse };
+                    balanceSheet.purse[reward.rewardTypeId] = (balanceSheet.purse[reward.rewardTypeId] || 0) + reward.amount;
+                } else {
+                    balanceSheet.experience = { ...balanceSheet.experience };
+                    balanceSheet.experience[reward.rewardTypeId] = (balanceSheet.experience[reward.rewardTypeId] || 0) + reward.amount;
+                }
+                userToUpdate.guildBalances[guildId] = balanceSheet;
+            } else {
+                if (rewardDef.category === RewardCategory.Currency) {
+                    userToUpdate.personalPurse = { ...userToUpdate.personalPurse };
+                    userToUpdate.personalPurse[reward.rewardTypeId] = (userToUpdate.personalPurse[reward.rewardTypeId] || 0) + reward.amount;
+                } else {
+                    userToUpdate.personalExperience = { ...userToUpdate.personalExperience };
+                    userToUpdate.personalExperience[reward.rewardTypeId] = (userToUpdate.personalExperience[reward.rewardTypeId] || 0) + reward.amount;
+                }
+            }
+        });
+        return userToUpdate;
     });
-  }, [rewardTypes, currentUser]);
+  }, [rewardTypes, authDispatch]);
   
   const awardTrophy = useCallback((userId: string, trophyId: string, guildId?: string) => {
     const t = trophies.find(t => t.id === trophyId);
@@ -397,56 +351,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     }
   }, [trophies, addNotification, addSystemNotification]);
 
-  // Auth
-  const setCurrentUser = (user: User | null) => {
-    _setCurrentUser(user);
-    _setIsSharedViewActive(false); // Entering a user profile always deactivates shared view
-    if (user) {
-        // setActivePage('Dashboard'); // This will now be handled in UI context, likely on user change effect.
-        localStorage.setItem('lastUserId', user.id);
-        setLoginHistory(prev => [user.id, ...prev.filter(id => id !== user.id).slice(0, 9)]);
-    } else {
-        localStorage.removeItem('lastUserId');
-    }
-  };
-  const exitToSharedView = useCallback(() => {
-    _setCurrentUser(null);
-    _setIsSharedViewActive(true);
-    localStorage.removeItem('lastUserId');
-  }, []);
-
-  const addUser = useCallback((userData: Omit<User, 'id' | 'personalPurse' | 'personalExperience' | 'guildBalances' | 'avatar' | 'ownedAssetIds' | 'ownedThemes' | 'hasBeenOnboarded'>): User => {
-    const newUser: User = { ...userData, id: `user-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`, avatar: {}, ownedAssetIds: [], personalPurse: {}, personalExperience: {}, guildBalances: {}, ownedThemes: ['emerald', 'rose', 'sky'], hasBeenOnboarded: false };
-    setUsers(prev => [...prev, newUser]);
-    setGuilds(prev => prev.map(g => g.isDefault ? { ...g, memberIds: [...g.memberIds, newUser.id] } : g));
-    
-    apiRequest('POST', '/api/users', newUser).catch(error => {
-      console.error("Failed to add user on server. State will be corrected on next sync.", error);
-    });
-
-    return newUser;
-  }, [apiRequest]);
-  const updateUser = useCallback(async (userId: string, updatedData: Partial<User>) => {
-    // Perform optimistic update for UI responsiveness
-    setUsers(prev => prev.map(u => u.id === userId ? { ...u, ...updatedData } : u));
-    if (currentUser?.id === userId) {
-        _setCurrentUser(prev => prev ? { ...prev, ...updatedData } as User : null);
-    }
-
-    try {
-      // Persist the change to the backend
-      await apiRequest('PUT', `/api/users/${userId}`, updatedData);
-      // The backend will broadcast a 'DATA_UPDATED' message, which will sync all clients.
-    } catch (error) {
-      // The apiRequest helper handles showing an error notification.
-      // The optimistic update will be corrected on the next successful sync.
-      console.error("Failed to update user on server, optimistic update may be stale.", error);
-    }
-  }, [currentUser, apiRequest]);
-  const deleteUser = useCallback((userId: string) => setUsers(prev => prev.filter(u => u.id !== userId)), []);
-  const markUserAsOnboarded = useCallback((userId: string) => updateUser(userId, { hasBeenOnboarded: true }), [updateUser]);
-  const setAppUnlocked = useCallback((isUnlocked: boolean) => { localStorage.setItem('isAppUnlocked', String(isUnlocked)); _setAppUnlocked(isUnlocked); }, []);
-  
   // GameData
   const addQuest = useCallback((quest: Omit<Quest, 'id' | 'claimedByUserIds' | 'dismissals'>) => {
     const newQuest: Quest = { ...quest, id: `quest-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`, claimedByUserIds: [], dismissals: [], todoUserIds: [] };
@@ -472,6 +376,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         }
     }
   }, [addSystemNotification, guilds]);
+
   const cloneQuest = useCallback((questId: string) => {
     const questToClone = quests.find(q => q.id === questId);
     if (!questToClone) return;
@@ -487,6 +392,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     setQuests(prev => [...prev, newQuest]);
     addNotification({ type: 'success', message: `Cloned quest: ${newQuest.title}` });
   }, [quests, addNotification]);
+
   const updateQuest = useCallback(async (updatedQuest: Quest) => {
     try {
         const returnedQuest = await apiRequest('PUT', `/api/quests/${updatedQuest.id}`, updatedQuest);
@@ -495,6 +401,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         // notification is handled by apiRequest
     }
   }, [apiRequest]);
+
   const deleteQuest = useCallback((questId: string) => setQuests(prev => prev.filter(q => q.id !== questId)), []);
   const dismissQuest = useCallback((questId: string, userId: string) => { setQuests(prevQuests => prevQuests.map(q => q.id === questId ? { ...q, dismissals: [...q.dismissals.filter(d => d.userId !== userId), { userId, dismissedAt: new Date().toISOString() }] } : q)); }, []);
   const claimQuest = useCallback((questId: string, userId: string) => setQuests(prev => prev.map(q => q.id === questId ? { ...q, claimedByUserIds: [...q.claimedByUserIds, userId] } : q)), []);
@@ -598,50 +505,41 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       addNotification({ type: 'success', message: `${marketIds.length} market(s) updated.` });
   }, [addNotification]);
   
-  const deductRewards = useCallback((userId: string, cost: RewardItem[], guildId?: string): boolean => {
-    const user = users.find(u => u.id === userId);
-    if (!user) return false;
+  const deductRewards = useCallback((userId: string, cost: RewardItem[], guildId?: string): Promise<boolean> => {
+    return new Promise((resolve) => {
+        authDispatch.updateUser(userId, user => {
+            const canAfford = cost.every(item => {
+                const rd = rewardTypes.find(rt => rt.id === item.rewardTypeId);
+                if (!rd) return false;
+                const bal = guildId 
+                    ? (rd.category === 'Currency' ? user.guildBalances[guildId]?.purse[item.rewardTypeId] : user.guildBalances[guildId]?.experience[item.rewardTypeId])
+                    : (rd.category === 'Currency' ? user.personalPurse[item.rewardTypeId] : user.personalExperience[item.rewardTypeId]);
+                return (bal || 0) >= item.amount;
+            });
 
-    const canAfford = cost.every(item => {
-        const rd = rewardTypes.find(rt => rt.id === item.rewardTypeId);
-        if (!rd) return false;
-        const bal = guildId ? 
-            (rd.category === 'Currency' ? user.guildBalances[guildId]?.purse[item.rewardTypeId] : user.guildBalances[guildId]?.experience[item.rewardTypeId])
-            : (rd.category === 'Currency' ? user.personalPurse[item.rewardTypeId] : user.personalExperience[item.rewardTypeId]);
-        return (bal || 0) >= item.amount;
-    });
-
-    if (!canAfford) return false;
-
-    const updatedUser = { ...user };
-    cost.forEach(c => {
-        const rd = rewardTypes.find(rt => rt.id === c.rewardTypeId);
-        if (!rd) return;
-
-        if (guildId) {
-            if (!updatedUser.guildBalances[guildId]) updatedUser.guildBalances[guildId] = { purse: {}, experience: {} };
-            if (rd.category === 'Currency') {
-                updatedUser.guildBalances[guildId].purse[c.rewardTypeId] = (updatedUser.guildBalances[guildId].purse[c.rewardTypeId] || 0) - c.amount;
-            } else {
-                updatedUser.guildBalances[guildId].experience[c.rewardTypeId] = (updatedUser.guildBalances[guildId].experience[c.rewardTypeId] || 0) - c.amount;
+            if (!canAfford) {
+                resolve(false);
+                return user;
             }
-        } else {
-            if (rd.category === 'Currency') {
-                updatedUser.personalPurse[c.rewardTypeId] = (updatedUser.personalPurse[c.rewardTypeId] || 0) - c.amount;
-            } else {
-                updatedUser.personalExperience[c.rewardTypeId] = (updatedUser.personalExperience[c.rewardTypeId] || 0) - c.amount;
-            }
-        }
-    });
 
-    setUsers(prevUsers => prevUsers.map(u => u.id === userId ? updatedUser : u));
-    if (currentUser?.id === userId) {
-        _setCurrentUser(updatedUser);
-    }
-    return true;
-  }, [users, rewardTypes, currentUser]);
+            cost.forEach(c => {
+                const rd = rewardTypes.find(rt => rt.id === c.rewardTypeId);
+                if (!rd) return;
+                if (guildId) {
+                    if (rd.category === 'Currency') user.guildBalances[guildId].purse[c.rewardTypeId] -= c.amount;
+                    else user.guildBalances[guildId].experience[c.rewardTypeId] -= c.amount;
+                } else {
+                    if (rd.category === 'Currency') user.personalPurse[c.rewardTypeId] -= c.amount;
+                    else user.personalExperience[c.rewardTypeId] -= c.amount;
+                }
+            });
+            resolve(true);
+            return user;
+        });
+    });
+  }, [rewardTypes, authDispatch]);
   
-  const purchaseMarketItem = useCallback((assetId: string, marketId: string, user: User, costGroupIndex: number) => {
+  const purchaseMarketItem = useCallback(async (assetId: string, marketId: string, user: User, costGroupIndex: number) => {
     const market = markets.find(m => m.id === marketId);
     const asset = gameAssets.find(ga => ga.id === assetId);
     if (!market || !asset) return;
@@ -652,29 +550,24 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         return;
     }
 
-    // Check for market sale events
     const todayYMD = toYMD(new Date());
     const activeSaleEvent = scheduledEvents.find(event => 
-        event.eventType === 'MarketSale' &&
-        event.modifiers.marketId === marketId &&
-        todayYMD >= event.startDate &&
-        todayYMD <= event.endDate &&
-        event.guildId === market.guildId &&
+        event.eventType === 'MarketSale' && event.modifiers.marketId === marketId &&
+        todayYMD >= event.startDate && todayYMD <= event.endDate && event.guildId === market.guildId &&
         (!event.modifiers.assetIds || event.modifiers.assetIds.length === 0 || event.modifiers.assetIds.includes(assetId))
     );
 
     let finalCost = cost;
     if (activeSaleEvent && activeSaleEvent.modifiers.discountPercent) {
         const discount = activeSaleEvent.modifiers.discountPercent / 100;
-        finalCost = cost.map(c => ({
-            ...c,
-            amount: Math.max(0, Math.ceil(c.amount * (1 - discount)))
-        }));
+        finalCost = cost.map(c => ({ ...c, amount: Math.max(0, Math.ceil(c.amount * (1 - discount))) }));
         addNotification({type: 'info', message: `${activeSaleEvent.title}: ${activeSaleEvent.modifiers.discountPercent}% discount applied!`})
     }
+    
+    const canAfford = await deductRewards(user.id, finalCost, market.guildId);
 
-    if (asset.requiresApproval) {
-        if (deductRewards(user.id, finalCost, market.guildId)) {
+    if (canAfford) {
+        if (asset.requiresApproval) {
             const newRequest: PurchaseRequest = {
                 id: `purchase-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
                 userId: user.id, assetId, requestedAt: new Date().toISOString(), status: PurchaseRequestStatus.Pending,
@@ -682,55 +575,20 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             };
             setPurchaseRequests(p => [...p, newRequest]);
             addNotification({ type: 'info', message: 'Purchase requested. Funds have been held.' });
-            
-            const recipients = users.filter(u => {
-                const isAdmin = u.role === Role.DonegeonMaster;
-                if (market.guildId) {
-                    const guild = guilds.find(g => g.id === market.guildId);
-                    return guild?.memberIds.includes(u.id) && isAdmin;
-                }
-                return isAdmin;
-            }).map(u => u.id).filter(id => id !== user.id);
-
-            if (recipients.length > 0) {
-                addSystemNotification({
-                    type: SystemNotificationType.ApprovalRequired,
-                    message: `${user.gameName} requested to purchase "${asset.name}".`,
-                    recipientUserIds: recipients, guildId: market.guildId, link: 'Approvals',
-                });
-            }
         } else {
-            addNotification({ type: 'error', message: 'You cannot afford this item.' });
+            authDispatch.updateUser(user.id, updatedUser => {
+                if (asset.payouts && asset.payouts.length > 0) applyRewards(user.id, asset.payouts, market.guildId);
+                if (asset.linkedThemeId && !updatedUser.ownedThemes.includes(asset.linkedThemeId)) updatedUser.ownedThemes.push(asset.linkedThemeId);
+                if (!asset.payouts || asset.payouts.length === 0) updatedUser.ownedAssetIds.push(asset.id);
+                return updatedUser;
+            });
+            addNotification({ type: 'success', message: `Purchased "${asset.name}"!` });
+            setPurchaseRequests(p => [...p, { id: `purchase-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`, userId: user.id, assetId, requestedAt: new Date().toISOString(), status: PurchaseRequestStatus.Completed, assetDetails: { name: asset.name, description: asset.description, cost: finalCost }, guildId: market.guildId }]);
         }
     } else {
-        if (deductRewards(user.id, finalCost, market.guildId)) {
-            let wasModified = false;
-            const updatedUser = { ...user };
-
-            if (asset.payouts && asset.payouts.length > 0) {
-                applyRewards(user.id, asset.payouts, market.guildId);
-                addNotification({ type: 'success', message: `Exchanged for ${asset.name}!` });
-                wasModified = true;
-            }
-            if (asset.linkedThemeId && !updatedUser.ownedThemes.includes(asset.linkedThemeId)) {
-                updatedUser.ownedThemes = [...updatedUser.ownedThemes, asset.linkedThemeId];
-                addNotification({ type: 'success', message: `Theme Unlocked: ${asset.name}!` });
-                wasModified = true;
-            }
-            if (!asset.payouts || asset.payouts.length === 0) {
-                 updatedUser.ownedAssetIds = [...updatedUser.ownedAssetIds, asset.id];
-                 addNotification({ type: 'success', message: `Purchased "${asset.name}"!` });
-                 wasModified = true;
-            }
-
-            if (wasModified) updateUser(user.id, updatedUser);
-
-            setPurchaseRequests(p => [...p, { id: `purchase-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`, userId: user.id, assetId, requestedAt: new Date().toISOString(), status: PurchaseRequestStatus.Completed, assetDetails: { name: asset.name, description: asset.description, cost: finalCost }, guildId: market.guildId }]);
-        } else {
-          addNotification({ type: 'error', message: 'You cannot afford this item.' });
-        }
+        addNotification({ type: 'error', message: 'You cannot afford this item.' });
     }
-  }, [markets, gameAssets, deductRewards, addNotification, applyRewards, updateUser, users, guilds, addSystemNotification, scheduledEvents]);
+  }, [markets, gameAssets, deductRewards, addNotification, applyRewards, authDispatch, scheduledEvents]);
 
   const cancelPurchaseRequest = useCallback((purchaseId: string) => {
     const r = purchaseRequests.find(p => p.id === purchaseId);
@@ -747,26 +605,10 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     const asset = gameAssets.find(a => a.id === r.assetId);
     if (!asset) return;
     
-    setUsers(prevUsers => {
-      const newUsers = prevUsers.map(u => {
-        if (u.id === r.userId) {
-          const updatedUser = { ...u };
-          if (asset.linkedThemeId && !updatedUser.ownedThemes.includes(asset.linkedThemeId)) {
-              updatedUser.ownedThemes = [...updatedUser.ownedThemes, asset.linkedThemeId];
-          }
-          if (!asset.payouts || asset.payouts.length === 0) {
-              updatedUser.ownedAssetIds = [...updatedUser.ownedAssetIds, r.assetId];
-          }
-          return updatedUser;
-        }
-        return u;
-      });
-      
-      if (currentUser?.id === r.userId) {
-        const updatedCurrentUser = newUsers.find(u => u.id === r.userId);
-        if (updatedCurrentUser) _setCurrentUser(updatedCurrentUser);
-      }
-      return newUsers;
+    authDispatch.updateUser(r.userId, updatedUser => {
+        if (asset.linkedThemeId && !updatedUser.ownedThemes.includes(asset.linkedThemeId)) updatedUser.ownedThemes.push(asset.linkedThemeId);
+        if (!asset.payouts || asset.payouts.length === 0) updatedUser.ownedAssetIds.push(r.assetId);
+        return updatedUser;
     });
 
     if (asset.payouts && asset.payouts.length > 0) {
@@ -775,7 +617,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
     setPurchaseRequests(p => p.map(pr => pr.id === purchaseId ? { ...pr, status: PurchaseRequestStatus.Completed, actedAt: new Date().toISOString() } : pr));
     addNotification({type: 'success', message: 'Purchase approved.'});
-  }, [purchaseRequests, gameAssets, addNotification, currentUser, applyRewards]);
+  }, [purchaseRequests, gameAssets, addNotification, applyRewards, authDispatch]);
   
   const rejectPurchaseRequest = useCallback((purchaseId: string) => {
     const r = purchaseRequests.find(p => p.id === purchaseId);
@@ -789,25 +631,19 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const addGuild = useCallback(async (guild: Omit<Guild, 'id'>) => {
     try {
         await apiRequest('POST', '/api/guilds', guild);
-    } catch (error) {
-        // notification is handled by apiRequest
-    }
+    } catch (error) {}
   }, [apiRequest]);
 
   const updateGuild = useCallback(async (guild: Guild) => {
       try {
           await apiRequest('PUT', `/api/guilds/${guild.id}`, guild);
-      } catch (error) {
-          // notification is handled by apiRequest
-      }
+      } catch (error) {}
   }, [apiRequest]);
 
   const deleteGuild = useCallback(async (guildId: string) => {
       try {
           await apiRequest('DELETE', `/api/guilds/${guildId}`);
-      } catch (error) {
-          // notification is handled by apiRequest
-      }
+      } catch (error) {}
   }, [apiRequest]);
 
   const addTrophy = useCallback((trophy: Omit<Trophy, 'id'>) => setTrophies(prev => [...prev, { ...trophy, id: `trophy-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`}]), []);
@@ -835,41 +671,36 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const uploadFile = useCallback(async (file: File, category: string = 'Miscellaneous'): Promise<{ url: string } | null> => { const fd = new FormData(); fd.append('file', file); fd.append('category', category); try { const r = await window.fetch('/api/media/upload', { method: 'POST', body: fd }); if (!r.ok) { const e = await r.json(); throw new Error(e.error || 'Upload failed'); } return await r.json(); } catch (e) { const m = e instanceof Error ? e.message : 'Unknown error'; addNotification({ type: 'error', message: `Upload failed: ${m}` }); return null; } }, [addNotification]);
   
   const executeExchange = useCallback((userId: string, payItem: RewardItem, receiveItem: RewardItem, guildId?: string) => {
-    // This function assumes payItem.amount already includes any fees and is a whole number.
-    // receiveItem.amount should also be a whole number.
-    if (deductRewards(userId, [payItem], guildId)) {
-        applyRewards(userId, [receiveItem], guildId);
-    } else {
-        addNotification({ type: 'error', message: 'Exchange failed due to insufficient funds.' });
-    }
+      deductRewards(userId, [payItem], guildId).then(canAfford => {
+        if (canAfford) {
+            applyRewards(userId, [receiveItem], guildId);
+        } else {
+            addNotification({ type: 'error', message: 'Exchange failed due to insufficient funds.' });
+        }
+      });
   }, [deductRewards, applyRewards, addNotification]);
   
   const importAssetPack = useCallback(async (assetPack: AssetPack, resolutions: ImportResolution[]) => {
     try {
         await apiRequest('POST', '/api/data/import-assets', { assetPack, resolutions });
         addNotification({ type: 'success', message: `Imported from ${assetPack.manifest.name}!` });
-        // The backend will broadcast a data update, so the frontend will sync automatically.
-    } catch (error) {
-        // notification is handled by apiRequest
-    }
+    } catch (error) {}
   }, [addNotification, apiRequest]);
   
   const completeFirstRun = useCallback(async (adminUserData: Omit<User, 'id' | 'personalPurse' | 'personalExperience' | 'guildBalances' | 'avatar' | 'ownedAssetIds' | 'ownedThemes' | 'hasBeenOnboarded'>) => {
     try {
-        const { adminUser: savedAdmin } = await apiRequest('POST', '/api/first-run', {
-            adminUserData,
-        });
+        const { adminUser: savedAdmin } = await apiRequest('POST', '/api/first-run', { adminUserData });
         await syncData(); // Fetch all the newly created data
-        setCurrentUser(savedAdmin);
-        setAppUnlocked(true);
+        authDispatch.setCurrentUser(savedAdmin);
+        authDispatch.setAppUnlocked(true);
     } catch (e) {
         addNotification({type: 'error', message: `First run setup failed: ${e instanceof Error ? e.message : 'Unknown error'}`});
     }
-  }, [apiRequest, syncData, setCurrentUser, setAppUnlocked, addNotification]);
+  }, [apiRequest, syncData, authDispatch, addNotification]);
 
   const restoreFromBackup = useCallback(async (backupData: IAppData) => {
     try {
-        await apiRequest('POST', '/api/data/save', backupData); // Using a temporary save route for restore
+        await apiRequest('POST', '/api/data/save', backupData);
         addNotification({ type: 'success', message: 'Restore successful! The app will now reload.' });
         setTimeout(() => window.location.reload(), 1500);
     } catch (e) {
@@ -881,21 +712,15 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     try {
         await apiRequest('POST', '/api/data/factory-reset');
         addNotification({ type: 'success', message: 'Factory reset successful! The application is reloading...' });
-        
-        // Clear all local data to ensure a clean state
         localStorage.clear();
-
-        // Reload the page after a short delay
-        setTimeout(() => {
-            window.location.reload();
-        }, 2000);
+        setTimeout(() => window.location.reload(), 2000);
     } catch (e) {
         addNotification({ type: 'error', message: 'Failed to perform factory reset.' });
     }
   }, [apiRequest, addNotification]);
 
   const clearAllHistory = useCallback(() => { setQuestCompletions([]); setPurchaseRequests([]); setAdminAdjustments([]); setSystemLogs([]); addNotification({ type: 'success', message: 'All historical data has been cleared.' }); }, [addNotification]);
-  const resetAllPlayerData = useCallback(() => { setUsers(prev => prev.map(u => u.role !== Role.DonegeonMaster ? { ...u, personalPurse: {}, personalExperience: {}, guildBalances: {}, ownedAssetIds: [], avatar: {} } : u)); setUserTrophies(prev => prev.filter(ut => users.find(u => u.id === ut.userId)?.role === Role.DonegeonMaster)); addNotification({ type: 'success', message: "All player data has been reset." }); }, [users, addNotification]);
+  const resetAllPlayerData = useCallback(() => { authDispatch.resetAllUsersData(); setUserTrophies(prev => prev.filter(ut => users.find(u => u.id === ut.userId)?.role === Role.DonegeonMaster)); addNotification({ type: 'success', message: "All player data has been reset." }); }, [authDispatch, users, addNotification]);
   const deleteAllCustomContent = useCallback(() => { setQuests([]); setQuestGroups([]); setMarkets([]); setGameAssets([]); setRewardTypes(p => p.filter(rt => rt.isCore)); setRanks(p => p.filter(r => r.xpThreshold === 0)); setTrophies([]); setGuilds(p => p.filter(g => g.isDefault)); addNotification({ type: 'success', message: 'All custom content has been deleted.' }); }, [addNotification]);
   const deleteSelectedAssets = useCallback((selection: Record<ShareableAssetType, string[]>) => { (Object.keys(selection) as ShareableAssetType[]).forEach(assetType => { const ids = new Set(selection[assetType]); if (ids.size > 0) { switch (assetType) { case 'quests': setQuests(p => p.filter(i => !ids.has(i.id))); break; case 'markets': setMarkets(p => p.filter(i => !ids.has(i.id))); break; case 'rewardTypes': setRewardTypes(p => p.filter(i => !ids.has(i.id))); break; case 'ranks': setRanks(p => p.filter(i => !ids.has(i.id))); break; case 'trophies': setTrophies(p => p.filter(i => !ids.has(i.id))); break; case 'gameAssets': setGameAssets(p => p.filter(i => !ids.has(i.id))); break; } } }); addNotification({ type: 'success', message: 'Selected assets have been deleted.' }); }, [addNotification]);
   const deleteQuests = useCallback((questIds: string[]) => { setQuests(prev => prev.filter(q => !questIds.includes(q.id))); addNotification({ type: 'info', message: `${questIds.length} quest(s) deleted.` }); }, [addNotification]);
@@ -984,9 +809,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     try {
       await apiRequest('PUT', `/api/themes/${theme.id}`, theme);
       addNotification({ type: 'success', message: 'Theme updated!' });
-    } catch (error) {
-        // Error is handled by apiRequest
-    }
+    } catch (error) {}
   }, [addNotification, apiRequest]);
   const deleteTheme = useCallback((themeId: string) => {
     setThemes(prev => prev.filter(t => t.id !== themeId));
@@ -1013,9 +836,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     try {
         const returnedSettings = await apiRequest('PUT', '/api/settings', newSettings);
         setSettings(returnedSettings);
-    } catch (e) {
-        // error handled by apiRequest
-    }
+    } catch (e) {}
   }, [settings, apiRequest]);
 
   const resetSettings = useCallback(() => {
@@ -1028,11 +849,11 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     if (inactivityTimer.current) clearTimeout(inactivityTimer.current);
     if (settings.sharedMode.enabled && settings.sharedMode.autoExit && currentUser) {
         inactivityTimer.current = window.setTimeout(
-            exitToSharedView,
+            authDispatch.exitToSharedView,
             settings.sharedMode.autoExitMinutes * 60 * 1000
         );
     }
-  }, [settings.sharedMode, currentUser, exitToSharedView]);
+  }, [settings.sharedMode, currentUser, authDispatch.exitToSharedView]);
 
   useEffect(() => {
       window.addEventListener('mousemove', resetInactivityTimer);
@@ -1057,7 +878,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       id: `msg-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
       senderId: currentUser.id,
       timestamp: new Date().toISOString(),
-      readBy: [currentUser.id], // Sender has read their own message
+      readBy: [currentUser.id],
       ...chatMessageData,
       isAnnouncement: isAnnouncement || undefined,
     };
@@ -1069,15 +890,13 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
                 type: SystemNotificationType.Announcement,
                 message: message.message,
                 senderId: currentUser.id,
-                recipientUserIds: guild.memberIds, // Send to all members, including sender
+                recipientUserIds: guild.memberIds,
                 guildId: message.guildId,
             });
         }
     }
 
-    // Optimistic update
     setChatMessages(prevMessages => [...prevMessages, newMessage]);
-    // API call to persist and broadcast
     apiRequest('POST', '/api/chat/messages', newMessage).catch(error => {
         console.error("Failed to send message to server. State will be corrected on next sync.", error);
     });
@@ -1088,9 +907,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     const { partnerId, guildId } = params;
 
     setChatMessages(prev => prev.map(msg => {
-        // Condition for DM
         const isUnreadDm = partnerId && msg.recipientId === currentUser.id && msg.senderId === partnerId;
-        // Condition for Guild Chat
         const isUnreadGuildMsg = guildId && msg.guildId === guildId;
 
         if ((isUnreadDm || isUnreadGuildMsg) && !msg.readBy.includes(currentUser.id)) {
@@ -1102,18 +919,14 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
   // === CONTEXT PROVIDER VALUE ===
   const stateValue: AppState = {
-    users, quests, questGroups, markets, rewardTypes, questCompletions, purchaseRequests, guilds, ranks, trophies, userTrophies, adminAdjustments, gameAssets, systemLogs, settings, themes, loginHistory, chatMessages, systemNotifications, scheduledEvents,
-    currentUser, isAppUnlocked, isFirstRun, notifications, isDataLoaded, 
+    quests, questGroups, markets, rewardTypes, questCompletions, purchaseRequests, guilds, ranks, trophies, userTrophies, adminAdjustments, gameAssets, systemLogs, settings, themes, chatMessages, systemNotifications, scheduledEvents,
+    isDataLoaded, 
     allTags: useMemo(() => Array.from(new Set([...INITIAL_TAGS, ...quests.flatMap(q => q.tags || [])])).sort(), [quests]),
-    isSwitchingUser, isSharedViewActive, targetedUserForLogin, isAiConfigured,
+    isAiConfigured,
     syncStatus, syncError,
   };
 
-  // Keep a ref to the state to use in the polling effect without causing re-renders
-  stateRef.current = stateValue;
-
   const dispatchValue: AppDispatch = {
-    addUser, updateUser, deleteUser, setCurrentUser, markUserAsOnboarded, setAppUnlocked, setIsSwitchingUser, setTargetedUserForLogin, exitToSharedView, setIsSharedViewActive: _setIsSharedViewActive,
     addQuest, updateQuest, deleteQuest, cloneQuest, dismissQuest, claimQuest, releaseQuest, markQuestAsTodo, unmarkQuestAsTodo, completeQuest, approveQuestCompletion, rejectQuestCompletion,
     addQuestGroup, updateQuestGroup, deleteQuestGroup, assignQuestGroupToUsers,
     addRewardType, updateRewardType, deleteRewardType, cloneRewardType, addMarket, updateMarket, deleteMarket, cloneMarket, deleteMarkets, updateMarketsStatus, purchaseMarketItem, cancelPurchaseRequest, approvePurchaseRequest, rejectPurchaseRequest,
@@ -1126,7 +939,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     executeExchange,
     factoryReset,
     updateSettings, resetSettings,
-    addNotification, removeNotification,
     sendMessage, markMessagesAsRead,
     addSystemNotification, markSystemNotificationsAsRead
   };

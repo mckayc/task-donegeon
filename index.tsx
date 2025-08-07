@@ -3,6 +3,8 @@ import ReactDOM from 'react-dom/client';
 import App from './App';
 import { AppProvider } from './context/AppContext';
 import { UIStateProvider } from './context/UIStateContext';
+import { NotificationsProvider } from './context/NotificationsContext';
+import { AuthProvider } from './context/AuthContext';
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
@@ -22,10 +24,14 @@ if (!rootElement) {
 const root = ReactDOM.createRoot(rootElement);
 root.render(
   <React.StrictMode>
-    <AppProvider>
-      <UIStateProvider>
-        <App />
-      </UIStateProvider>
-    </AppProvider>
+    <NotificationsProvider>
+      <AuthProvider>
+        <AppProvider>
+          <UIStateProvider>
+            <App />
+          </UIStateProvider>
+        </AppProvider>
+      </AuthProvider>
+    </NotificationsProvider>
   </React.StrictMode>
 );

@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import { QuestGroup } from '../../types';
 import Button from '../ui/Button';
-import { useAppDispatch, useAppState } from '../../context/AppContext';
+import { useAppDispatch } from '../../context/AppContext';
+import { useAuthState } from '../../context/AuthContext';
+import { useNotificationsDispatch } from '../../context/NotificationsContext';
 
 interface AssignQuestGroupDialogProps {
     group: QuestGroup;
@@ -9,8 +11,9 @@ interface AssignQuestGroupDialogProps {
 }
 
 const AssignQuestGroupDialog: React.FC<AssignQuestGroupDialogProps> = ({ group, onClose }) => {
-    const { users } = useAppState();
-    const { assignQuestGroupToUsers, addNotification } = useAppDispatch();
+    const { users } = useAuthState();
+    const { assignQuestGroupToUsers } = useAppDispatch();
+    const { addNotification } = useNotificationsDispatch();
     const [selectedUserIds, setSelectedUserIds] = useState<string[]>(() => users.map(u => u.id));
 
     const handleToggleUser = (userId: string) => {

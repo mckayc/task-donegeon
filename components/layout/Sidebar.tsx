@@ -2,6 +2,7 @@ import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { Role, Page, QuestCompletionStatus, PurchaseRequestStatus, Terminology, SidebarConfigItem, SidebarLink, SidebarHeader } from '../../types';
 import { ChevronDownIcon, ArrowLeftIcon, ArrowRightIcon } from '../ui/Icons';
 import { useAppState } from '../../context/AppContext';
+import { useAuthState } from '../../context/AuthContext';
 import { useUIState, useUIDispatch } from '../../context/UIStateContext';
 
 const FlyoutPanel: React.FC<{ title: string; items?: SidebarLink[]; isVisible: boolean }> = ({ title, items, isVisible }) => {
@@ -144,7 +145,8 @@ const CollapsibleNavGroup: React.FC<CollapsibleNavGroupProps> = ({ header, child
 
 
 const Sidebar: React.FC = () => {
-  const { currentUser, questCompletions, purchaseRequests, settings, isAiConfigured, chatMessages, guilds } = useAppState();
+  const { questCompletions, purchaseRequests, settings, isAiConfigured, chatMessages, guilds } = useAppState();
+  const { currentUser } = useAuthState();
   const { activePage, isSidebarCollapsed, isChatOpen } = useUIState();
   const { setActivePage, toggleSidebar, toggleChat } = useUIDispatch();
   const isAiAvailable = settings.enableAiFeatures && isAiConfigured;

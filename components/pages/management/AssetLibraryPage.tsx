@@ -9,6 +9,7 @@ import AssetPackInstallDialog from '../../sharing/AssetPackInstallDialog';
 import { useNotificationsDispatch } from '../../../context/NotificationsContext';
 import { useAuthState } from '../../../context/AuthContext';
 import { useEconomyState, useEconomyDispatch } from '../../../context/EconomyContext';
+import { bugLogger } from '../../../utils/bugLogger';
 
 const AssetLibraryPage: React.FC = () => {
     const appState = useAppState();
@@ -59,6 +60,9 @@ const AssetLibraryPage: React.FC = () => {
     };
 
     const handleInstallLocal = (filename: string) => {
+        if (bugLogger.isRecording()) {
+            bugLogger.add({ type: 'ACTION', message: `Clicked to install local asset pack: ${filename}` });
+        }
         beginInstallProcess(async () => {
             const response = await fetch(`/api/asset-packs/get/${encodeURIComponent(filename)}`);
             if (!response.ok) throw new Error(`Could not fetch asset pack: ${filename}`);
@@ -70,6 +74,9 @@ const AssetLibraryPage: React.FC = () => {
         if (!remoteUrl.trim() || !remoteUrl.trim().endsWith('.json')) {
             addNotification({type: 'error', message: 'Please enter a valid URL to a .json file.'});
             return;
+        }
+        if (bugLogger.isRecording()) {
+            bugLogger.add({ type: 'ACTION', message: `Clicked to install remote asset pack from URL: ${remoteUrl}` });
         }
         beginInstallProcess(async () => {
             const response = await fetch(`/api/asset-packs/fetch-remote?url=${encodeURIComponent(remoteUrl)}`);

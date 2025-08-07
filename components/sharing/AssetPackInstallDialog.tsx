@@ -5,6 +5,7 @@ import Button from '../ui/Button';
 import Input from '../ui/Input';
 import UserMultiSelect from '../ui/UserMultiSelect';
 import { useAuthState } from '../../context/AuthContext';
+import { bugLogger } from '../../utils/bugLogger';
 
 interface AssetPackInstallDialogProps {
   assetPack: AssetPack;
@@ -39,6 +40,9 @@ const AssetPackInstallDialog: React.FC<AssetPackInstallDialogProps> = ({ assetPa
     };
 
     const handleConfirm = () => {
+        if (bugLogger.isRecording()) {
+            bugLogger.add({ type: 'ACTION', message: `Confirmed installation of asset pack: ${assetPack.manifest.name}` });
+        }
         const packToInstall = JSON.parse(JSON.stringify(assetPack));
         
         if (packToInstall.assets.quests && packToInstall.assets.quests.length > 0) {

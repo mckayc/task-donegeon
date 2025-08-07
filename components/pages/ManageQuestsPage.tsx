@@ -60,29 +60,45 @@ const ManageQuestsPage: React.FC = () => {
         }
     }, [addNotification]);
 
-    const fetchQuests = useCallback(async () => {
-        setIsLoading(true);
-        try {
-            const params = new URLSearchParams();
-            const group = questGroups.find(g => g.name === activeTab);
-            const groupId = activeTab === 'All' ? 'All' : (group ? group.id : 'Uncategorized');
-            
-            params.append('groupId', groupId);
-            if (debouncedSearchTerm) params.append('searchTerm', debouncedSearchTerm);
-            params.append('sortBy', sortBy);
-
-            const data = await apiRequest('GET', `/api/quests?${params.toString()}`);
-            setPageQuests(data as Quest[]);
-        } catch (error) {
-            console.error("Failed to fetch quests:", error);
-        } finally {
-            setIsLoading(false);
-        }
-    }, [activeTab, debouncedSearchTerm, sortBy, questGroups, apiRequest]);
-
     useEffect(() => {
-        fetchQuests();
-    }, [fetchQuests, globalQuests]);
+        setIsLoading(true);
+        let filteredQuests = [...globalQuests];
+
+        // Filter by group/tab
+        const group = questGroups.find(g => g.name === activeTab);
+        const groupId = activeTab === 'All' ? 'All' : (group ? group.id : 'Uncategorized');
+        
+        if (groupId && groupId !== 'All') {
+            if (groupId === 'Uncategorized') {
+                filteredQuests = filteredQuests.filter(q => !q.groupId || q.groupId === '');
+            } else {
+                filteredQuests = filteredQuests.filter(q => q.groupId === groupId);
+            }
+        }
+
+        // Filter by search term
+        if (debouncedSearchTerm) {
+            filteredQuests = filteredQuests.filter(q =>
+                q.title.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
+                q.description.toLowerCase().includes(debouncedSearchTerm.toLowerCase())
+            );
+        }
+
+        // Sort
+        filteredQuests.sort((a, b) => {
+            switch (sortBy) {
+                case 'title-asc': return a.title.localeCompare(b.title);
+                case 'title-desc': return b.title.localeCompare(a.title);
+                case 'status-asc': return (a.isActive ? 1 : 0) - (b.isActive ? 1 : 0);
+                case 'status-desc': return (b.isActive ? 1 : 0) - (a.isActive ? 1 : 0);
+                default: return 0;
+            }
+        });
+
+        setPageQuests(filteredQuests);
+        setIsLoading(false);
+    }, [globalQuests, activeTab, debouncedSearchTerm, sortBy, questGroups]);
+
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
@@ -119,7 +135,7 @@ const ManageQuestsPage: React.FC = () => {
         try {
             await apiRequest(method, url, questData);
             addNotification({ type: 'success', message: `Quest ${isEditing ? 'updated' : 'created'} successfully!` });
-            fetchQuests();
+            // Data will refresh via websocket sync
         } catch (e) { /* error handled by apiRequest helper */ }
     };
 
@@ -127,7 +143,7 @@ const ManageQuestsPage: React.FC = () => {
         try {
             await apiRequest('POST', `/api/quests/clone/${questId}`);
             addNotification({ type: 'success', message: 'Quest cloned successfully!' });
-            fetchQuests();
+            // Data will refresh via websocket sync
         } catch (e) { /* error handled */ }
     };
 
@@ -147,7 +163,7 @@ const ManageQuestsPage: React.FC = () => {
                     break;
             }
             setSelectedQuests([]);
-            fetchQuests();
+            // Data will refresh via websocket sync
         } catch (e) { /* error handled */ }
         
         setConfirmation(null);
@@ -187,7 +203,7 @@ const ManageQuestsPage: React.FC = () => {
             await apiRequest('PUT', '/api/quests/bulk-update', { ids: selectedQuests, updates });
             addNotification({ type: 'success', message: `Bulk updated ${selectedQuests.length} quest(s).` });
             setSelectedQuests([]);
-            fetchQuests();
+            // Data will refresh via websocket sync
         } catch(e) { /* error handled */ }
     };
 

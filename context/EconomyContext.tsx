@@ -58,7 +58,7 @@ interface EconomyDispatch {
   executeExchange: (userId: string, payItem: RewardItem, receiveItem: RewardItem, guildId?: string) => void;
   
   // Bulk/Admin Actions
-  importAssetPack: (assetPack: AssetPack, resolutions: ImportResolution[], allData: IAppData) => void;
+  importAssetPack: (assetPack: AssetPack, resolutions: ImportResolution[], allData: IAppData) => Promise<void>;
   deleteAllCustomContent: () => void;
   deleteSelectedAssets: (selection: Record<ShareableAssetType, string[]>) => void;
 }
@@ -74,6 +74,30 @@ export const EconomyProvider: React.FC<{ children: ReactNode }> = ({ children })
   const [rewardTypes, setRewardTypes] = useState<RewardTypeDefinition[]>([]);
   const [purchaseRequests, setPurchaseRequests] = useState<PurchaseRequest[]>([]);
   const [gameAssets, setGameAssets] = useState<GameAsset[]>([]);
+
+  const apiRequest = useCallback(async (method: string, path: string, body?: any) => {
+    try {
+        const options: RequestInit = {
+            method,
+            headers: { 'Content-Type': 'application/json' },
+        };
+        if (body) {
+            options.body = JSON.stringify(body);
+        }
+        const response = await window.fetch(path, options);
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({ error: 'Server error' }));
+            throw new Error(errorData.error || `Request failed with status ${response.status}`);
+        }
+        if (response.status === 204) {
+             return null;
+        }
+        return await response.json();
+    } catch (error) {
+        addNotification({ type: 'error', message: error instanceof Error ? error.message : 'An unknown network error occurred.' });
+        throw error;
+    }
+  }, [addNotification]);
 
   // === CORE ECONOMY LOGIC ===
 
@@ -322,15 +346,15 @@ export const EconomyProvider: React.FC<{ children: ReactNode }> = ({ children })
   }, [gameAssets, addNotification]);
   const deleteGameAssets = useCallback((assetIds: string[]) => { setGameAssets(prev => prev.filter(ga => !assetIds.includes(ga.id))); addNotification({ type: 'info', message: `${assetIds.length} asset(s) deleted.` }); }, [addNotification]);
   
-  const importAssetPack = useCallback((assetPack: AssetPack, resolutions: ImportResolution[], allData: IAppData) => {
-      // This logic will be handled by a backend call in the future,
-      // but for now, we process it client-side.
-      // This is a simplified version.
-      const selectedResolutions = resolutions.filter(r => r.selected);
-
-      // ... logic to add assets based on resolutions to gameAssets, markets, rewardTypes ...
-      addNotification({type: 'success', message: `Imported from ${assetPack.manifest.name}!`});
-  }, [addNotification]);
+  const importAssetPack = useCallback(async (assetPack: AssetPack, resolutions: ImportResolution[], allData: IAppData): Promise<void> => {
+      try {
+          await apiRequest('POST', '/api/data/import-assets', { assetPack, resolutions });
+          addNotification({type: 'success', message: `Imported from ${assetPack.manifest.name}!`});
+          // The backend will broadcast a data update, which should trigger a full data reload via websocket.
+      } catch(e) {
+        // Error is handled and notified by apiRequest helper
+      }
+  }, [apiRequest, addNotification]);
 
   const deleteAllCustomContent = useCallback(() => {
     setMarkets([]); 

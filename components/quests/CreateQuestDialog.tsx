@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { Quest, QuestType, RewardItem, RewardCategory, QuestAvailability, BugReport, Role } from '../../types';
 import Button from '../ui/Button';
@@ -11,6 +11,7 @@ import ImageSelectionDialog from '../ui/ImageSelectionDialog';
 import DynamicIcon from '../ui/DynamicIcon';
 import { useAuthState } from '../../context/AuthContext';
 import { useEconomyState } from '../../context/EconomyContext';
+import { bugLogger } from '../../utils/bugLogger';
 
 interface QuestDialogProps {
   questToEdit?: Quest;
@@ -33,6 +34,7 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
   const { users } = useAuthState();
   const { rewardTypes } = useEconomyState();
   const { addQuest, updateQuest, addQuestGroup } = useAppDispatch();
+  const hasLoggedOpen = useRef(false);
 
   const getInitialFormData = useCallback(() => {
       if (mode === 'edit' && questToEdit) {
@@ -160,6 +162,21 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
   
   const userList = initialDataFromBug ? users.filter(u => u.role === Role.DonegeonMaster) : users;
 
+  const dialogTitle = initialDataFromBug ? 'Convert Bug to Quest' : (mode === 'edit' ? `Edit ${settings.terminology.task}` : `Create New ${settings.terminology.task}`);
+  
+  useEffect(() => {
+    if (bugLogger.isRecording() && !hasLoggedOpen.current) {
+        let logMessage = `Opened '${dialogTitle}' dialog.`;
+        if (mode === 'edit' && questToEdit) {
+          logMessage += ` for quest "${questToEdit.title}".`;
+        } else if (initialDataFromBug) {
+          logMessage += ` from bug report "${initialDataFromBug.title}".`;
+        }
+        bugLogger.add({ type: 'ACTION', message: logMessage });
+        hasLoggedOpen.current = true;
+    }
+  }, [dialogTitle, mode, questToEdit, initialDataFromBug]);
+
   useEffect(() => {
     // This effect ensures the form updates when a new AI suggestion is passed in
     setFormData(getInitialFormData());
@@ -241,6 +258,10 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
     }
     setError('');
 
+    if (bugLogger.isRecording()) {
+      bugLogger.add({ type: 'ACTION', message: `Submitted '${dialogTitle}' form.` });
+    }
+
     let finalGroupId = formData.groupId;
     if (isCreatingNewGroup && newGroupName.trim()) {
         const newGroup = addQuestGroup({ name: newGroupName.trim(), description: '', icon: '📂' });
@@ -292,7 +313,6 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
       }
   };
 
-  const dialogTitle = initialDataFromBug ? 'Convert Bug to Quest' : (mode === 'edit' ? `Edit ${settings.terminology.task}` : `Create New ${settings.terminology.task}`);
   const currentAvailabilityOptions = formData.type === QuestType.Duty ? DUTY_AVAILABILITIES : VENTURE_AVAILABILITIES;
 
   return (

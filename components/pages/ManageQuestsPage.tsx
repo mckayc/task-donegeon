@@ -14,7 +14,7 @@ import { useDebounce } from '../../hooks/useDebounce';
 import { useNotificationsDispatch } from '../../context/NotificationsContext';
 
 const ManageQuestsPage: React.FC = () => {
-    const { settings, isAiConfigured, questGroups } = useAppState();
+    const { settings, isAiConfigured, questGroups, quests: globalQuests } = useAppState();
     const { addNotification } = useNotificationsDispatch();
     
     const [pageQuests, setPageQuests] = useState<Quest[]>([]);
@@ -82,7 +82,7 @@ const ManageQuestsPage: React.FC = () => {
 
     useEffect(() => {
         fetchQuests();
-    }, [fetchQuests]);
+    }, [fetchQuests, globalQuests]);
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {

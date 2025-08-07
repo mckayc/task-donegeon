@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Quest, RewardCategory, RewardItem, QuestType } from '../../types';
 import { useAppState } from '../../context/AppContext';
 import Button from '../ui/Button';
 import ToggleSwitch from '../ui/ToggleSwitch';
 import { useEconomyState } from '../../context/EconomyContext';
+import { bugLogger } from '../../utils/bugLogger';
 
 interface QuestDetailDialogProps {
   quest: Quest;
@@ -17,6 +18,28 @@ interface QuestDetailDialogProps {
 const QuestDetailDialog: React.FC<QuestDetailDialogProps> = ({ quest, onClose, onComplete, onToggleTodo, isTodo, dialogTitle }) => {
     const { settings } = useAppState();
     const { rewardTypes } = useEconomyState();
+
+    useEffect(() => {
+        if (bugLogger.isRecording()) {
+          bugLogger.add({ type: 'ACTION', message: `Opened Quest Detail dialog for "${quest.title}".` });
+        }
+    }, []); // Only on mount.
+
+    const handleClose = () => {
+        if (bugLogger.isRecording()) {
+            bugLogger.add({ type: 'ACTION', message: `Closed Quest Detail dialog for "${quest.title}".` });
+        }
+        onClose();
+    };
+
+    const handleComplete = () => {
+        if (onComplete) {
+            if (bugLogger.isRecording()) {
+                bugLogger.add({ type: 'ACTION', message: `Clicked 'Complete' in Quest Detail dialog for "${quest.title}".` });
+            }
+            onComplete();
+        }
+    };
 
     const getRewardInfo = (id: string) => {
         const rewardDef = rewardTypes.find(rt => rt.id === id);
@@ -47,7 +70,7 @@ const QuestDetailDialog: React.FC<QuestDetailDialogProps> = ({ quest, onClose, o
     const todoClass = isTodo ? '!border-purple-500 ring-2 ring-purple-500/50' : '';
     
     return (
-        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-[60]" onClick={onClose}>
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-[60]" onClick={handleClose}>
             <div className={`backdrop-blur-sm border rounded-xl shadow-2xl max-w-lg w-full ${themeClasses} ${todoClass}`} onClick={e => e.stopPropagation()}>
                 <div className="p-6 border-b border-white/10">
                      {dialogTitle && (
@@ -99,7 +122,7 @@ const QuestDetailDialog: React.FC<QuestDetailDialogProps> = ({ quest, onClose, o
                 </div>
 
                 <div className="p-4 bg-black/20 rounded-b-xl flex justify-between items-center gap-2 flex-wrap">
-                    <Button variant="secondary" onClick={onClose}>Close</Button>
+                    <Button variant="secondary" onClick={handleClose}>Close</Button>
                     <div className="flex items-center gap-4">
                         {onToggleTodo && quest.type === QuestType.Venture && (
                             <ToggleSwitch
@@ -109,7 +132,7 @@ const QuestDetailDialog: React.FC<QuestDetailDialogProps> = ({ quest, onClose, o
                             />
                         )}
                         {onComplete && (
-                            <Button onClick={onComplete}>Complete</Button>
+                            <Button onClick={handleComplete}>Complete</Button>
                         )}
                     </div>
                 </div>

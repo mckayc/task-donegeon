@@ -9,6 +9,7 @@ import Input from '../ui/Input';
 import ConfirmDialog from '../ui/ConfirmDialog';
 import { motion, AnimatePresence } from 'framer-motion';
 import TagInput from '../ui/TagInput';
+import { bugLogger } from '../../utils/bugLogger';
 
 const BugDetailPanel: React.FC<{ report: BugReport; onClose: () => void; }> = ({ report, onClose }) => {
     const { updateBugReport } = useAppDispatch();
@@ -17,17 +18,30 @@ const BugDetailPanel: React.FC<{ report: BugReport; onClose: () => void; }> = ({
     const [deletingReport, setDeletingReport] = useState<BugReport | null>(null);
     const allTags = useMemo(() => Array.from(new Set(['Bug', 'Feature Request', 'UI/UX', 'In Progress', 'Acknowledged', 'Resolved', 'Converted to Quest'])), []);
 
+    const handleCloseWithLogging = () => {
+        if (bugLogger.isRecording()) {
+            bugLogger.add({ type: 'ACTION', message: `Closed bug detail panel for "${report.title}".` });
+        }
+        onClose();
+    };
+
     const handleTagsChange = (newTags: string[]) => {
         updateBugReport(report.id, { tags: newTags });
     };
 
     const handleStatusToggle = () => {
         const newStatus = report.status === 'Open' ? 'Closed' : 'Open';
+        if (bugLogger.isRecording()) {
+            bugLogger.add({ type: 'ACTION', message: `Changed status of "${report.title}" to ${newStatus}.` });
+        }
         updateBugReport(report.id, { status: newStatus });
         addNotification({ type: 'info', message: `Report marked as ${newStatus}.` });
     };
     
     const copyLogToClipboard = () => {
+        if (bugLogger.isRecording()) {
+            bugLogger.add({ type: 'ACTION', message: `Copied log for "${report.title}".` });
+        }
         const logText = report.logs.map(log =>
             `[${new Date(log.timestamp).toLocaleString()}] [${log.type}] ${log.message}` +
             (log.element ? `\n  Element: <${log.element.tag} id="${log.element.id || ''}" class="${log.element.classes || ''}">` : '')
@@ -38,6 +52,9 @@ const BugDetailPanel: React.FC<{ report: BugReport; onClose: () => void; }> = ({
     };
     
     const handleTurnToQuest = () => {
+        if (bugLogger.isRecording()) {
+            bugLogger.add({ type: 'ACTION', message: `Initiated 'Convert to Quest' for "${report.title}".` });
+        }
         setQuestFromBug(report);
     };
 
@@ -66,7 +83,7 @@ const BugDetailPanel: React.FC<{ report: BugReport; onClose: () => void; }> = ({
                         <h3 className="text-xl font-bold text-stone-100">{report.title}</h3>
                         <p className="text-sm text-stone-400">Reported on {new Date(report.createdAt).toLocaleString()}</p>
                     </div>
-                    <Button variant="ghost" size="icon" onClick={onClose}>&times;</Button>
+                    <Button variant="ghost" size="icon" onClick={handleCloseWithLogging}>&times;</Button>
                 </div>
 
                 <div className="p-6 flex-grow overflow-y-auto scrollbar-hide space-y-4">
@@ -180,7 +197,12 @@ const BugTrackingPage: React.FC = () => {
                                 {filteredAndSortedReports.map(report => (
                                     <tr
                                         key={report.id}
-                                        onClick={() => setDetailedReport(report)}
+                                        onClick={() => {
+                                            if (bugLogger.isRecording()) {
+                                                bugLogger.add({ type: 'ACTION', message: `Opened bug detail panel for "${report.title}".` });
+                                            }
+                                            setDetailedReport(report);
+                                        }}
                                         className={`border-b border-stone-700/40 last:border-b-0 hover:bg-stone-700/50 cursor-pointer transition-opacity ${
                                             report.status === 'Closed' ? 'opacity-60 text-stone-500' : ''
                                         }`}

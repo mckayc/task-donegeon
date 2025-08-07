@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo, useEffect } from 'react';
 import Button from '../../ui/Button';
 import Card from '../../ui/Card';
@@ -82,9 +81,9 @@ const AssetLibraryPage: React.FC = () => {
         });
     };
 
-    const handleConfirmImport = (pack: AssetPack, res: ImportResolution[]) => {
+    const handleConfirmImport = async (pack: AssetPack, res: ImportResolution[]) => {
         const fullCurrentData: IAppData = { ...appState, ...authState, ...economyState };
-        importAssetPack(pack, res, fullCurrentData);
+        await importAssetPack(pack, res, fullCurrentData);
         setPackToInstall(null);
         setResolutions([]);
     };

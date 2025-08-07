@@ -72,7 +72,12 @@ const BugReporter: React.FC = () => {
                         <div className="flex items-center gap-2">
                             <div className="w-4 h-4 bg-red-500 rounded-full animate-pulse"></div>
                             <span className="font-bold text-white">Recording Bug: {title}</span>
-                             <Button variant="secondary" size="sm" className="!text-xs !py-1 !px-2 !h-auto" onClick={() => setIsLogVisible(p => !p)}>
+                             <Button variant="secondary" size="sm" className="!text-xs !py-1 !px-2 !h-auto" onClick={() => {
+                                if (isRecording) {
+                                    addLogEntry({ type: 'ACTION', message: isLogVisible ? 'Hid bug reporter log.' : 'Showed bug reporter log.' });
+                                }
+                                setIsLogVisible(p => !p)
+                             }}>
                                 {isLogVisible ? 'Hide Log' : 'Show Log'}
                             </Button>
                         </div>

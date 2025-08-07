@@ -8,11 +8,9 @@ import EmptyState from '../ui/EmptyState';
 import DynamicIcon from '../ui/DynamicIcon';
 import ImagePreviewDialog from '../ui/ImagePreviewDialog';
 import { useAuthState } from '../../context/AuthContext';
-import { useQuestsState } from '../../context/QuestsContext';
 
 const TrophiesPage: React.FC = () => {
-    const { trophies, userTrophies, settings, ranks } = useAppState();
-    const { questCompletions, quests } = useQuestsState();
+    const { trophies, userTrophies, settings, ranks, questCompletions, quests } = useAppState();
     const { currentUser } = useAuthState();
     const { appMode } = useUIState();
     const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null);

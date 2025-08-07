@@ -1,4 +1,5 @@
 
+
 import React, { useState, useMemo, useEffect } from 'react';
 import Button from '../../ui/Button';
 import Card from '../../ui/Card';
@@ -9,13 +10,11 @@ import { analyzeAssetPackForConflicts } from '../../../utils/sharing';
 import AssetPackInstallDialog from '../../sharing/AssetPackInstallDialog';
 import { useNotificationsDispatch } from '../../../context/NotificationsContext';
 import { useAuthState } from '../../../context/AuthContext';
-import { useQuestsState } from '../../../context/QuestsContext';
-import { useEconomyState, useEconomyDispatch } from '../../../context/EconomyContext';
+import { useEconomyState, useEconomyDispatch } from '../../context/EconomyContext';
 
 const AssetLibraryPage: React.FC = () => {
     const appState = useAppState();
     const authState = useAuthState();
-    const questsState = useQuestsState();
     const economyState = useEconomyState();
     const { importAssetPack } = useEconomyDispatch();
     const { addNotification } = useNotificationsDispatch();
@@ -49,7 +48,7 @@ const AssetLibraryPage: React.FC = () => {
         try {
             setIsLoading(true);
             const packData = await packFetcher();
-            const fullCurrentData: IAppData = { ...appState, ...authState, ...questsState, ...economyState };
+            const fullCurrentData: IAppData = { ...appState, ...authState, ...economyState };
             const conflictResolutions = analyzeAssetPackForConflicts(packData, fullCurrentData);
             setResolutions(conflictResolutions);
             setPackToInstall(packData);
@@ -85,7 +84,7 @@ const AssetLibraryPage: React.FC = () => {
     };
 
     const handleConfirmImport = (pack: AssetPack, res: ImportResolution[]) => {
-        const fullCurrentData: IAppData = { ...appState, ...authState, ...questsState, ...economyState };
+        const fullCurrentData: IAppData = { ...appState, ...authState, ...economyState };
         importAssetPack(pack, res, fullCurrentData);
         setPackToInstall(null);
         setResolutions([]);

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { QuestGroup } from '../../types';
 import Button from '../ui/Button';
-import { useQuestsDispatch } from '../../context/QuestsContext';
+import { useAppDispatch } from '../../context/AppContext';
 import { useAuthState } from '../../context/AuthContext';
 import { useNotificationsDispatch } from '../../context/NotificationsContext';
 
@@ -12,7 +12,7 @@ interface AssignQuestGroupDialogProps {
 
 const AssignQuestGroupDialog: React.FC<AssignQuestGroupDialogProps> = ({ group, onClose }) => {
     const { users } = useAuthState();
-    const { assignQuestGroupToUsers } = useQuestsDispatch();
+    const { assignQuestGroupToUsers } = useAppDispatch();
     const { addNotification } = useNotificationsDispatch();
     const [selectedUserIds, setSelectedUserIds] = useState<string[]>(() => users.map(u => u.id));
 

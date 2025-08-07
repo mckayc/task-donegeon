@@ -3,7 +3,6 @@ import { Role, Page, QuestCompletionStatus, PurchaseRequestStatus, Terminology, 
 import { ChevronDownIcon, ArrowLeftIcon, ArrowRightIcon } from '../ui/Icons';
 import { useAppState } from '../../context/AppContext';
 import { useAuthState } from '../../context/AuthContext';
-import { useQuestsState } from '../../context/QuestsContext';
 import { useUIState, useUIDispatch } from '../../context/UIStateContext';
 import { useEconomyState } from '../../context/EconomyContext';
 
@@ -147,9 +146,8 @@ const CollapsibleNavGroup: React.FC<CollapsibleNavGroupProps> = ({ header, child
 
 
 const Sidebar: React.FC = () => {
-  const { settings, isAiConfigured, chatMessages, guilds } = useAppState();
+  const { settings, isAiConfigured, chatMessages, guilds, questCompletions } = useAppState();
   const { purchaseRequests } = useEconomyState();
-  const { questCompletions } = useQuestsState();
   const { currentUser } = useAuthState();
   const { activePage, isSidebarCollapsed, isChatOpen } = useUIState();
   const { setActivePage, toggleSidebar, toggleChat } = useUIDispatch();

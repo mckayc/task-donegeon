@@ -1,18 +1,18 @@
 
+
 import React, { useState, useCallback } from 'react';
 import Card from '../../ui/Card';
 import BackupPanel from '../../sharing/BackupPanel';
 import RestorePanel from '../../sharing/RestorePanel';
 import ImportPanel from '../../sharing/ImportPanel';
-import { useAppDispatch } from '../../../context/AppContext';
-import { useEconomyDispatch } from '../../../context/EconomyContext';
+import { useAppDispatch } from '../../context/AppContext';
+import { useEconomyDispatch } from '../../context/EconomyContext';
 import { IAppData, AssetPack, ImportResolution } from '../../../types';
 import BlueprintPreviewDialog from '../../sharing/BlueprintPreviewDialog';
 import ConfirmDialog from '../../ui/ConfirmDialog';
 import { analyzeAssetPackForConflicts } from '../../../utils/sharing';
 import { useAppState } from '../../../context/AppContext';
 import { useAuthState } from '../../../context/AuthContext';
-import { useQuestsState } from '../../../context/QuestsContext';
 import { useEconomyState } from '../../../context/EconomyContext';
 import { useNotificationsDispatch } from '../../../context/NotificationsContext';
 
@@ -20,7 +20,6 @@ const BackupAndImportPage: React.FC = () => {
     const [activeTab, setActiveTab] = useState('backup');
     const appState = useAppState();
     const authState = useAuthState();
-    const questsState = useQuestsState();
     const economyState = useEconomyState();
 
     const { restoreFromBackup } = useAppDispatch();
@@ -46,7 +45,7 @@ const BackupAndImportPage: React.FC = () => {
                 } else { // import
                     // Basic validation for an asset pack
                     if (json.manifest && json.assets) {
-                        const fullCurrentData: IAppData = { ...appState, ...authState, ...questsState, ...economyState };
+                        const fullCurrentData: IAppData = { ...appState, ...authState, ...economyState };
                         const conflictResolutions = analyzeAssetPackForConflicts(json, fullCurrentData);
                         setInitialResolutions(conflictResolutions);
                         setAssetPackToPreview(json);
@@ -62,7 +61,7 @@ const BackupAndImportPage: React.FC = () => {
     };
 
     const handleConfirmImport = (pack: AssetPack, resolutions: ImportResolution[]) => {
-        const fullCurrentData: IAppData = { ...appState, ...authState, ...questsState, ...economyState };
+        const fullCurrentData: IAppData = { ...appState, ...authState, ...economyState };
         importAssetPack(pack, resolutions, fullCurrentData);
         setAssetPackToPreview(null);
         setInitialResolutions([]);

@@ -6,7 +6,6 @@ import Input from '../ui/Input';
 import EmojiPicker from '../ui/EmojiPicker';
 import ImageSelectionDialog from '../ui/ImageSelectionDialog';
 import DynamicIcon from '../ui/DynamicIcon';
-import { useQuestsState } from '../../context/QuestsContext';
 import { useEconomyDispatch } from '../../context/EconomyContext';
 
 interface EditMarketDialogProps {
@@ -22,8 +21,7 @@ interface EditMarketDialogProps {
 const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
 const EditMarketDialog: React.FC<EditMarketDialogProps> = ({ market, initialData, onClose, mode = (market ? 'edit' : 'create'), onTryAgain, isGenerating, onSave }) => {
-  const { guilds, ranks } = useAppState();
-  const { quests } = useQuestsState();
+  const { guilds, ranks, quests } = useAppState();
   const { addMarket, updateMarket } = useEconomyDispatch();
   
   const getInitialFormData = useCallback(() => {

@@ -36,6 +36,7 @@ const INITIAL_MAIN_SIDEBAR_CONFIG = [
     { type: 'link', id: 'Appearance', emoji: '🖌️', isVisible: true, level: 1, role: 'Donegeon Master', termKey: 'link_appearance' },
     { type: 'link', id: 'Asset Library', emoji: '📚', isVisible: true, level: 1, role: 'Donegeon Master', termKey: 'link_asset_library' },
     { type: 'link', id: 'Suggestion Engine', emoji: '✨', isVisible: true, level: 1, role: 'Donegeon Master', termKey: 'link_suggestion_engine' },
+    { type: 'link', id: 'Bug Tracker', emoji: '🐞', isVisible: true, level: 1, role: 'Donegeon Master', termKey: 'link_bug_tracker' },
     { type: 'separator', id: 'sep-system-settings', level: 0, role: 'Donegeon Master', isVisible: true },
     { type: 'link', id: 'Settings', emoji: '⚙️', isVisible: true, level: 0, role: 'Donegeon Master', termKey: 'link_settings' },
     { type: 'separator', id: 'sep-settings-chat', level: 0, role: 'Explorer', isVisible: true },
@@ -110,6 +111,7 @@ const INITIAL_SETTINGS = {
       link_about: 'About',
       link_help_guide: 'Help Guide',
       link_chat: 'Chat',
+      link_bug_tracker: 'Bug Tracker',
     },
     enableAiFeatures: false,
     rewardValuation: {

@@ -5,7 +5,6 @@ import { QuestCompletionStatus, QuestType, ChronicleEvent } from '../../types';
 import { toYMD } from '../../utils/quests';
 import Card from '../ui/Card';
 import { useAuthState } from '../../context/AuthContext';
-import { useQuestsState } from '../../context/QuestsContext';
 import { useEconomyState } from '../../context/EconomyContext';
 
 interface ChroniclesDayViewProps {
@@ -26,9 +25,8 @@ const ChronicleItem: React.FC<{ event: ChronicleEvent }> = ({ event }) => (
 );
 
 const ChroniclesDayView: React.FC<ChroniclesDayViewProps> = ({ currentDate }) => {
-    const { userTrophies, trophies, adminAdjustments, settings } = useAppState();
+    const { userTrophies, trophies, adminAdjustments, settings, quests, questCompletions } = useAppState();
     const { purchaseRequests, rewardTypes } = useEconomyState();
-    const { quests, questCompletions } = useQuestsState();
     const { currentUser, users } = useAuthState();
     const { appMode } = useUIState();
 

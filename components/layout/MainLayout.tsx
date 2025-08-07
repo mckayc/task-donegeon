@@ -28,7 +28,7 @@ import ThemesPage from '../pages/ThemesPage';
 import AboutPage from '../pages/AboutPage';
 import CollectionPage from '../pages/CollectionPage';
 import ManageItemsPage from '../pages/ManageItemsPage';
-import AiStudioPage from '../pages/AiStudioPage';
+import AiStudioPage from '../pages/AIStudioPage';
 import AppearancePage from '../pages/AppearancePage';
 import ObjectExporterPage from '../pages/management/ObjectExporterPage';
 import AssetManagerPage from '../pages/management/MediaManagerPage';

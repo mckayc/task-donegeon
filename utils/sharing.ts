@@ -116,17 +116,18 @@ export const analyzeAssetPackForConflicts = (
                 name: assetName,
                 status: conflict ? 'conflict' : 'new',
                 resolution: conflict ? 'skip' : 'keep',
+                selected: !conflict,
             });
         });
     };
 
-    checkConflicts('quests', assetPack.assets.quests, currentData.quests);
+    checkConflicts('quests', assetPack.assets.quests || [], currentData.quests);
     checkConflicts('questGroups', assetPack.assets.questGroups || [], currentData.questGroups);
-    checkConflicts('rewardTypes', assetPack.assets.rewardTypes, currentData.rewardTypes);
-    checkConflicts('ranks', assetPack.assets.ranks, currentData.ranks);
-    checkConflicts('trophies', assetPack.assets.trophies, currentData.trophies);
-    checkConflicts('markets', assetPack.assets.markets, currentData.markets);
-    checkConflicts('gameAssets', assetPack.assets.gameAssets, currentData.gameAssets);
+    checkConflicts('rewardTypes', assetPack.assets.rewardTypes || [], currentData.rewardTypes);
+    checkConflicts('ranks', assetPack.assets.ranks || [], currentData.ranks);
+    checkConflicts('trophies', assetPack.assets.trophies || [], currentData.trophies);
+    checkConflicts('markets', assetPack.assets.markets || [], currentData.markets);
+    checkConflicts('gameAssets', assetPack.assets.gameAssets || [], currentData.gameAssets);
 
     // Special handling for users
     if (assetPack.assets.users) {
@@ -141,6 +142,7 @@ export const analyzeAssetPackForConflicts = (
                 name: pAsset.gameName,
                 status: conflict ? 'conflict' : 'new',
                 resolution: conflict ? 'skip' : 'keep',
+                selected: !conflict,
             });
         });
     }

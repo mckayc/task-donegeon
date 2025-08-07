@@ -5,9 +5,9 @@ import { AssetPack, AssetPackManifestInfo, ImportResolution } from '../../../typ
 import { useAppState, useAppDispatch } from '../../../context/AppContext';
 import Input from '../../ui/Input';
 import { analyzeAssetPackForConflicts } from '../../../utils/sharing';
-import BlueprintPreviewDialog from '../../sharing/BlueprintPreviewDialog';
+import AssetPackInstallDialog from '../../sharing/AssetPackInstallDialog';
 
-const AssetPacksPage: React.FC = () => {
+const AssetLibraryPage: React.FC = () => {
     const appState = useAppState();
     const { addNotification, importAssetPack } = useAppDispatch();
     const [localPacks, setLocalPacks] = useState<AssetPackManifestInfo[]>([]);
@@ -15,7 +15,7 @@ const AssetPacksPage: React.FC = () => {
     const [error, setError] = useState('');
     const [remoteUrl, setRemoteUrl] = useState('');
     
-    const [packToPreview, setPackToPreview] = useState<AssetPack | null>(null);
+    const [packToInstall, setPackToInstall] = useState<AssetPack | null>(null);
     const [resolutions, setResolutions] = useState<ImportResolution[]>([]);
 
     useEffect(() => {
@@ -36,55 +36,56 @@ const AssetPacksPage: React.FC = () => {
         discoverPacks();
     }, [addNotification]);
     
-    const handleInstallLocal = async (filename: string) => {
+    const beginInstallProcess = async (packFetcher: () => Promise<AssetPack>) => {
         try {
             setIsLoading(true);
-            const response = await fetch(`/api/asset-packs/get/${encodeURIComponent(filename)}`);
-            if (!response.ok) throw new Error(`Could not fetch asset pack: ${filename}`);
-            const packData: AssetPack = await response.json();
-            
+            const packData = await packFetcher();
             const conflictResolutions = analyzeAssetPackForConflicts(packData, appState);
             setResolutions(conflictResolutions);
-            setPackToPreview(packData);
-
+            setPackToInstall(packData);
         } catch(e) {
             const msg = e instanceof Error ? e.message : 'Unknown error';
-            addNotification({type: 'error', message: `Failed to install pack: ${msg}`});
+            addNotification({type: 'error', message: `Failed to start installation: ${msg}`});
         } finally {
             setIsLoading(false);
         }
     };
+
+    const handleInstallLocal = (filename: string) => {
+        beginInstallProcess(async () => {
+            const response = await fetch(`/api/asset-packs/get/${encodeURIComponent(filename)}`);
+            if (!response.ok) throw new Error(`Could not fetch asset pack: ${filename}`);
+            return await response.json();
+        });
+    };
     
-    const handleInstallRemote = async () => {
+    const handleInstallRemote = () => {
         if (!remoteUrl.trim() || !remoteUrl.trim().endsWith('.json')) {
             addNotification({type: 'error', message: 'Please enter a valid URL to a .json file.'});
             return;
         }
-        try {
-            setIsLoading(true);
+        beginInstallProcess(async () => {
             const response = await fetch(`/api/asset-packs/fetch-remote?url=${encodeURIComponent(remoteUrl)}`);
             if (!response.ok) {
                 const errorData = await response.json();
                 throw new Error(errorData.error || `Could not fetch asset pack from URL.`);
             }
-            const packData: AssetPack = await response.json();
-
-            const conflictResolutions = analyzeAssetPackForConflicts(packData, appState);
-            setResolutions(conflictResolutions);
-            setPackToPreview(packData);
-        } catch(e) {
-             const msg = e instanceof Error ? e.message : 'Unknown error';
-            addNotification({type: 'error', message: `Failed to install remote pack: ${msg}`});
-        } finally {
-            setIsLoading(false);
-        }
+            return await response.json();
+        });
     };
 
     const handleConfirmImport = (pack: AssetPack, res: ImportResolution[]) => {
         importAssetPack(pack, res);
-        setPackToPreview(null);
+        setPackToInstall(null);
         setResolutions([]);
     };
+    
+    const SummaryItem: React.FC<{ icon: string | undefined, name: string }> = ({ icon, name }) => (
+      <li className="flex items-center gap-2 text-sm text-stone-300">
+        <span className="text-lg">{icon || '▫️'}</span>
+        <span className="truncate" title={name}>{name}</span>
+      </li>
+    );
 
     return (
         <div className="space-y-6">
@@ -95,18 +96,28 @@ const AssetPacksPage: React.FC = () => {
                 ) : error ? (
                     <div className="text-center text-red-400">{error}</div>
                 ) : localPacks.length > 0 ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         {localPacks.map(packInfo => (
-                            <Card key={packInfo.filename} className="h-full">
-                                <h4 className="font-bold text-lg text-stone-100 flex items-center gap-2">
-                                    {packInfo.manifest.emoji || '📦'} {packInfo.manifest.name}
-                                </h4>
-                                <p className="text-xs text-stone-500">v{packInfo.manifest.version} by {packInfo.manifest.author}</p>
-                                <p className="text-sm text-stone-400 mt-2 flex-grow">{packInfo.manifest.description}</p>
-                                <div className="mt-4 text-right">
-                                    <Button size="sm" onClick={() => handleInstallLocal(packInfo.filename)}>Install</Button>
-                                </div>
-                            </Card>
+                            <button key={packInfo.filename} onClick={() => handleInstallLocal(packInfo.filename)} className="h-full w-full text-left">
+                                <Card className="h-full hover:border-accent transition-colors">
+                                    <h4 className="font-bold text-lg text-stone-100 flex items-center gap-2">
+                                        {packInfo.manifest.emoji || '📦'} {packInfo.manifest.name}
+                                    </h4>
+                                    <p className="text-xs text-stone-500">v{packInfo.manifest.version} by {packInfo.manifest.author}</p>
+                                    <p className="text-sm text-stone-400 mt-2 flex-grow">{packInfo.manifest.description}</p>
+                                    
+                                    <div className="mt-4 pt-4 border-t border-stone-700/60 grid grid-cols-2 gap-x-4 gap-y-2">
+                                        <ul className="space-y-1">
+                                          {packInfo.summary.quests.map(q => <SummaryItem key={q.title} icon={q.icon} name={q.title} />)}
+                                          {packInfo.summary.gameAssets.map(a => <SummaryItem key={a.name} icon={a.icon} name={a.name} />)}
+                                        </ul>
+                                        <ul className="space-y-1">
+                                          {packInfo.summary.trophies.map(t => <SummaryItem key={t.name} icon={t.icon} name={t.name} />)}
+                                          {packInfo.summary.users.map(u => <SummaryItem key={u.gameName} icon={'👤'} name={u.gameName} />)}
+                                        </ul>
+                                    </div>
+                                </Card>
+                            </button>
                         ))}
                     </div>
                 ) : (
@@ -127,11 +138,11 @@ const AssetPacksPage: React.FC = () => {
                 </div>
             </Card>
 
-            {packToPreview && (
-                <BlueprintPreviewDialog
-                    blueprint={packToPreview}
+            {packToInstall && (
+                <AssetPackInstallDialog
+                    assetPack={packToInstall}
                     initialResolutions={resolutions}
-                    onClose={() => setPackToPreview(null)}
+                    onClose={() => setPackToInstall(null)}
                     onConfirm={handleConfirmImport}
                 />
             )}
@@ -139,4 +150,4 @@ const AssetPacksPage: React.FC = () => {
     );
 };
 
-export default AssetPacksPage;
+export default AssetLibraryPage;

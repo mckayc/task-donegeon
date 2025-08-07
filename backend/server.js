@@ -330,63 +330,54 @@ app.post('/api/data/import-assets', asyncMiddleware(async (req, res) => {
     const { assetPack, resolutions } = req.body;
     if (!assetPack || !resolutions) return res.status(400).json({ error: 'Missing asset pack or resolutions.' });
 
-    const newAssets = {
-        quests: [], questGroups: [], rewardTypes: [], ranks: [],
-        trophies: [], markets: [], gameAssets: [], users: []
-    };
+    await dataSource.transaction(async manager => {
+        const selectedResolutions = resolutions.filter(r => r.selected);
 
-    resolutions.forEach(res => {
-        if (res.resolution === 'skip') return;
-        const assetList = assetPack.assets[res.type];
-        if (!assetList) return;
+        for (const resolution of selectedResolutions) {
+            const assetList = assetPack.assets[resolution.type];
+            if (!assetList) continue;
 
-        // For users, the ID is the username from the resolution step
-        const originalAsset = res.type === 'users' 
-            ? assetList.find(a => a.username === res.id)
-            : assetList.find(a => a.id === res.id);
+            const originalAsset = resolution.type === 'users'
+                ? assetList.find(a => a.username === resolution.id)
+                : assetList.find(a => a.id === resolution.id);
             
-        if (originalAsset) {
+            if (!originalAsset) continue;
+
             const newAsset = { ...originalAsset };
-            if (res.resolution === 'rename' && res.newName) {
-                if ('title' in newAsset) newAsset.title = res.newName;
-                else newAsset.name = res.newName;
+            if (resolution.resolution === 'rename' && resolution.newName) {
+                if ('title' in newAsset) newAsset.title = resolution.newName;
+                else newAsset.name = resolution.newName;
             }
-            newAssets[res.type].push(newAsset);
+
+            switch (resolution.type) {
+                case 'quests': await manager.save(QuestEntity, newAsset); break;
+                case 'questGroups': await manager.save(QuestGroupEntity, newAsset); break;
+                case 'rewardTypes': await manager.save(RewardTypeDefinitionEntity, newAsset); break;
+                case 'ranks': await manager.save(RankEntity, newAsset); break;
+                case 'trophies': await manager.save(TrophyEntity, newAsset); break;
+                case 'markets': await manager.save(MarketEntity, newAsset); break;
+                case 'gameAssets': await manager.save(GameAssetEntity, newAsset); break;
+                case 'users':
+                    const defaultGuild = await manager.findOneBy(GuildEntity, { isDefault: true });
+                    const userToSave = manager.create(UserEntity, {
+                        ...newAsset,
+                        id: `user-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+                        avatar: {}, ownedAssetIds: [], personalPurse: {}, personalExperience: {}, guildBalances: {},
+                        ownedThemes: ['emerald', 'rose', 'sky'], hasBeenOnboarded: false,
+                    });
+                    await manager.save(UserEntity, userToSave);
+                    if (defaultGuild) {
+                        if (!defaultGuild.members) defaultGuild.members = [];
+                        defaultGuild.members.push(userToSave);
+                        await manager.save(GuildEntity, defaultGuild);
+                    }
+                    break;
+            }
         }
     });
-    
-    try {
-        await dataSource.transaction(async manager => {
-            if (newAssets.questGroups.length) await manager.save(QuestGroupEntity, newAssets.questGroups);
-            if (newAssets.rewardTypes.length) await manager.save(RewardTypeDefinitionEntity, newAssets.rewardTypes);
-            if (newAssets.ranks.length) await manager.save(RankEntity, newAssets.ranks);
-            if (newAssets.trophies.length) await manager.save(TrophyEntity, newAssets.trophies);
-            if (newAssets.markets.length) await manager.save(MarketEntity, newAssets.markets);
-            if (newAssets.gameAssets.length) await manager.save(GameAssetEntity, newAssets.gameAssets);
-            if (newAssets.quests.length) await manager.save(QuestEntity, newAssets.quests);
 
-            if (newAssets.users && newAssets.users.length) {
-                const defaultGuild = await manager.findOneBy(GuildEntity, { isDefault: true });
-                const usersToSave = newAssets.users.map(u => manager.create(UserEntity, {
-                    ...u,
-                    id: `user-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
-                    avatar: {}, ownedAssetIds: [], personalPurse: {}, personalExperience: {}, guildBalances: {},
-                    ownedThemes: ['emerald', 'rose', 'sky'], hasBeenOnboarded: false,
-                }));
-                await manager.save(UserEntity, usersToSave);
-                if (defaultGuild) {
-                    defaultGuild.members = [...defaultGuild.members, ...usersToSave];
-                    await manager.save(GuildEntity, defaultGuild);
-                }
-            }
-        });
-
-        broadcast({ type: 'DATA_UPDATED' });
-        res.status(200).json({ message: 'Assets imported successfully.' });
-    } catch (error) {
-        console.error("Error during asset import:", error);
-        res.status(500).json({ error: 'Failed to import assets.' });
-    }
+    broadcast({ type: 'DATA_UPDATED' });
+    res.status(200).json({ message: 'Assets imported successfully.' });
 }));
 
 
@@ -714,6 +705,10 @@ app.get('/api/asset-packs/discover', asyncMiddleware(async (req, res) => {
                             gameAssets: (packData.assets.gameAssets || []).slice(0, 3).map(a => ({ name: a.name, icon: a.icon })),
                             trophies: (packData.assets.trophies || []).slice(0, 3).map(t => ({ name: t.name, icon: t.icon })),
                             users: (packData.assets.users || []).slice(0, 3).map(u => ({ gameName: u.gameName, role: u.role })),
+                            markets: (packData.assets.markets || []).slice(0, 3).map(m => ({ title: m.title, icon: m.icon })),
+                            ranks: (packData.assets.ranks || []).slice(0, 3).map(r => ({ name: r.name, icon: r.icon })),
+                            rewardTypes: (packData.assets.rewardTypes || []).slice(0, 3).map(rt => ({ name: rt.name, icon: rt.icon })),
+                            questGroups: (packData.assets.questGroups || []).slice(0, 3).map(qg => ({ name: qg.name, icon: qg.icon })),
                         };
                         return { manifest: packData.manifest, filename: dirent.name, summary };
                     }

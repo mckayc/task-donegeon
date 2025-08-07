@@ -7,6 +7,7 @@ import { useCalendarVentures } from '../../hooks/useCalendarVentures';
 import QuestList from './QuestList';
 import QuestDetailDialog from '../quests/QuestDetailDialog';
 import CompleteQuestDialog from '../quests/CompleteQuestDialog';
+import { useAuthState } from '../../context/AuthContext';
 
 interface WeekViewProps {
     currentDate: Date;
@@ -24,7 +25,7 @@ const getTextColorForBg = (bgColorHsl: string) => {
 };
 
 const WeekView: React.FC<WeekViewProps> = ({ currentDate, quests, questCompletions, scheduledEvents, onEventSelect }) => {
-    const { currentUser } = useAppState();
+    const { currentUser } = useAuthState();
     const { markQuestAsTodo, unmarkQuestAsTodo } = useAppDispatch();
     const [selectedQuest, setSelectedQuest] = useState<{quest: Quest, date: Date} | null>(null);
     const [completingQuest, setCompletingQuest] = useState<{quest: Quest, date: Date} | null>(null);
@@ -103,7 +104,8 @@ const WeekView: React.FC<WeekViewProps> = ({ currentDate, quests, questCompletio
 // Memoize DayColumn to prevent re-renders when other days' data changes.
 const DayColumn = React.memo(({ day, quests, questCompletions, scheduledEvents, onSelectQuest, onEventSelect }: { day: Date, quests: Quest[], questCompletions: QuestCompletion[], scheduledEvents: ScheduledEvent[], onSelectQuest: (quest: Quest) => void, onEventSelect: (event: ScheduledEvent) => void }) => {
     const calendarVentures = useCalendarVentures(day);
-    const { currentUser, scheduledEvents: allScheduledEvents } = useAppState();
+    const { scheduledEvents: allScheduledEvents } = useAppState();
+    const { currentUser } = useAuthState();
     const { appMode } = useUIState();
 
     const sortedQuests = useMemo(() => {

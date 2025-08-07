@@ -8,6 +8,7 @@ import QuestDetailDialog from '../quests/QuestDetailDialog';
 import CompleteQuestDialog from '../quests/CompleteQuestDialog';
 import { questSorter, isQuestScheduledForDay, toYMD } from '../../utils/quests';
 import Card from '../ui/Card';
+import { useAuthState } from '../../context/AuthContext';
 
 interface DayViewProps {
     currentDate: Date;
@@ -29,7 +30,8 @@ const DayView: React.FC<DayViewProps> = ({ currentDate, quests, questCompletions
     const [selectedQuest, setSelectedQuest] = useState<Quest | null>(null);
     const [completingQuest, setCompletingQuest] = useState<Quest | null>(null);
     const { markQuestAsTodo, unmarkQuestAsTodo } = useAppDispatch();
-    const { currentUser, settings, scheduledEvents: allScheduledEvents } = useAppState();
+    const { settings, scheduledEvents: allScheduledEvents } = useAppState();
+    const { currentUser } = useAuthState();
     const { appMode } = useUIState();
 
     const scheduledDuties = useMemo(() => {

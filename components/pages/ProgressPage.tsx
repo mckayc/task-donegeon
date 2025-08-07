@@ -4,9 +4,11 @@ import { useUIState } from '../../context/UIStateContext';
 import { RewardCategory, QuestCompletionStatus, RewardItem } from '../../types';
 import Card from '../ui/Card';
 import LineChart from '../ui/LineChart';
+import { useAuthState } from '../../context/AuthContext';
 
 const ProgressPage: React.FC = () => {
-    const { currentUser, questCompletions, quests, rewardTypes } = useAppState();
+    const { questCompletions, quests, rewardTypes } = useAppState();
+    const { currentUser } = useAuthState();
     const { appMode } = useUIState();
     
     const xpTypes = useMemo(() => {

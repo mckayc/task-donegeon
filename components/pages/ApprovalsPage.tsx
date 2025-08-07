@@ -6,12 +6,14 @@ import Button from '../ui/Button';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { QuestCompletionStatus, Role, PurchaseRequestStatus } from '../../types';
 import Input from '../ui/Input';
+import { useAuthState } from '../../context/AuthContext';
 
 const ApprovalsPage: React.FC = () => {
     const { 
-      questCompletions, users, quests, currentUser,
+      questCompletions, quests,
       purchaseRequests, guilds, gameAssets
     } = useAppState();
+    const { currentUser, users } = useAuthState();
 
     const {
         approveQuestCompletion, rejectQuestCompletion,

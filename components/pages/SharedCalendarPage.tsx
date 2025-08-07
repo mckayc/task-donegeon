@@ -8,6 +8,7 @@ import Button from '../ui/Button';
 import PinEntryDialog from '../auth/PinEntryDialog';
 import QuestDetailDialog from '../quests/QuestDetailDialog';
 import CompleteQuestDialog from '../quests/CompleteQuestDialog';
+import { useAuthState } from '../../context/AuthContext';
 
 const getDueDateString = (quest: Quest): string | null => {
     if (quest.type === QuestType.Venture && quest.lateDateTime) {
@@ -23,7 +24,8 @@ const getDueDateString = (quest: Quest): string | null => {
 };
 
 const SharedCalendarPage: React.FC = () => {
-    const { settings, users, quests, questCompletions, guilds, scheduledEvents } = useAppState();
+    const { settings, quests, questCompletions, guilds, scheduledEvents } = useAppState();
+    const { users } = useAuthState();
     const { markQuestAsTodo, unmarkQuestAsTodo } = useAppDispatch();
     const [currentDate, setCurrentDate] = useState(new Date());
     const [verifyingQuest, setVerifyingQuest] = useState<{ quest: Quest; user: User } | null>(null);

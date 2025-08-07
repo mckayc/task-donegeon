@@ -1,16 +1,17 @@
 import React, { useState } from 'react';
-import { useAppState } from '../../context/AppContext';
-import { ShareableAssetType, Terminology } from '../../../types';
+import { useAppState } from '../../../context/AppContext';
+import { ShareableAssetType, Terminology, IAppData } from '../../../types';
 import Button from '../../ui/Button';
 import Input from '../../ui/Input';
 import { generateAssetPack } from '../../../utils/sharing';
 import Card from '../../ui/Card';
-import { useAuthState } from '../../context/AuthContext';
+import { useAuthState } from '../../../context/AuthContext';
 
 const ObjectExporterPage: React.FC = () => {
     const appState = useAppState();
-    const { users } = useAuthState();
+    const authState = useAuthState();
     const { settings } = appState;
+    const { users } = authState;
     const [selected, setSelected] = useState<{ [key in ShareableAssetType]: string[] }>({
         quests: [],
         questGroups: [],
@@ -47,12 +48,15 @@ const ObjectExporterPage: React.FC = () => {
             alert('Please provide a name for your Asset Pack.');
             return;
         }
+        
+        const fullAppData: IAppData = { ...appState, ...authState };
+
         generateAssetPack(
             assetPackName,
             assetPackDesc,
             settings.terminology.appName,
             selected,
-            {...appState, users}
+            fullAppData
         );
     };
 

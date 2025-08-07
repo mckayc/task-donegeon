@@ -5,6 +5,7 @@ import Button from '../ui/Button';
 import { useAppDispatch, useAppState } from '../../context/AppContext';
 import { useUIState } from '../../context/UIStateContext';
 import QuestDetailDialog from '../quests/QuestDetailDialog';
+import { useAuthState } from '../../context/AuthContext';
 
 interface QuestListProps {
     title?: string;
@@ -28,7 +29,8 @@ const getDueDateString = (quest: Quest): string | null => {
 };
 
 const QuestList: React.FC<QuestListProps> = ({ title, date, quests, questCompletions, onQuestSelect }) => {
-    const { currentUser, scheduledEvents } = useAppState();
+    const { scheduledEvents } = useAppState();
+    const { currentUser } = useAuthState();
     const { appMode } = useUIState();
     const isFuture = toYMD(date) > toYMD(new Date());
 

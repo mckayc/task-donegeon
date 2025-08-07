@@ -13,6 +13,7 @@ import ChroniclesWeekView from '../calendar/ChroniclesWeekView';
 import Button from '../ui/Button';
 import ScheduleEventDialog from '../admin/ScheduleEventDialog';
 import EventDetailDialog from '../calendar/EventDetailDialog';
+import { useAuthState } from '../../context/AuthContext';
 
 type CalendarView = 'month' | 'week' | 'day';
 type CalendarMode = 'quests' | 'chronicles';
@@ -27,7 +28,8 @@ const ViewButton: React.FC<{ type: CalendarView, currentView: CalendarView, setV
 );
 
 const CalendarPage: React.FC = () => {
-    const { quests, currentUser, questCompletions, scheduledEvents } = useAppState();
+    const { quests, questCompletions, scheduledEvents } = useAppState();
+    const { currentUser } = useAuthState();
     const { appMode } = useUIState();
     const { setActivePage } = useUIDispatch();
     const [view, setView] = useState<CalendarView>('month');

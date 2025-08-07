@@ -1,6 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { useAppState } from '../../context/AppContext';
-import { useQuestsState, useQuestsDispatch } from '../../context/QuestsContext';
+import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { useAuthState } from '../../context/AuthContext';
 import { useUIState, useUIDispatch } from '../../context/UIStateContext';
 import { Quest, QuestAvailability, QuestCompletionStatus, RewardCategory, Role, User, QuestType, PurchaseRequest, UserTrophy } from '../../types';
@@ -13,12 +12,11 @@ import { useRewardValue } from '../../hooks/useRewardValue';
 import { useEconomyState } from '../../context/EconomyContext';
 
 const Dashboard: React.FC = () => {
-    const { ranks, userTrophies, trophies, settings, scheduledEvents } = useAppState();
+    const { ranks, userTrophies, trophies, settings, scheduledEvents, quests, questCompletions } = useAppState();
     const { rewardTypes, purchaseRequests } = useEconomyState();
-    const { quests, questCompletions } = useQuestsState();
     const { currentUser, users } = useAuthState();
     const { appMode } = useUIState();
-    const { markQuestAsTodo, unmarkQuestAsTodo } = useQuestsDispatch();
+    const { markQuestAsTodo, unmarkQuestAsTodo } = useAppDispatch();
     const { setActivePage } = useUIDispatch();
     
     const [selectedQuest, setSelectedQuest] = useState<Quest | null>(null);

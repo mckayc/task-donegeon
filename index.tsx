@@ -5,7 +5,6 @@ import { AppProvider } from './context/AppContext';
 import { UIStateProvider } from './context/UIStateContext';
 import { NotificationsProvider } from './context/NotificationsContext';
 import { AuthProvider } from './context/AuthContext';
-import { QuestsProvider } from './context/QuestsContext';
 import { EconomyProvider } from './context/EconomyContext';
 import { DeveloperProvider } from './context/DeveloperContext';
 
@@ -29,17 +28,15 @@ root.render(
   <React.StrictMode>
     <NotificationsProvider>
       <AuthProvider>
-        <QuestsProvider>
-          <EconomyProvider>
-            <AppProvider>
-              <UIStateProvider>
-                <DeveloperProvider>
-                  <App />
-                </DeveloperProvider>
-              </UIStateProvider>
-            </AppProvider>
-          </EconomyProvider>
-        </QuestsProvider>
+        <EconomyProvider>
+          <AppProvider>
+            <UIStateProvider>
+              <DeveloperProvider>
+                <App />
+              </DeveloperProvider>
+            </UIStateProvider>
+          </AppProvider>
+        </EconomyProvider>
       </AuthProvider>
     </NotificationsProvider>
   </React.StrictMode>

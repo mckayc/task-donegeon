@@ -11,7 +11,6 @@ import ImageSelectionDialog from '../ui/ImageSelectionDialog';
 import DynamicIcon from '../ui/DynamicIcon';
 import { useAuthState } from '../../context/AuthContext';
 import { useEconomyState } from '../../context/EconomyContext';
-import { useQuestsState, useQuestsDispatch as useQuestsDispatchLocal } from '../../context/QuestsContext';
 
 interface QuestDialogProps {
   questToEdit?: Quest;
@@ -30,11 +29,10 @@ const VENTURE_AVAILABILITIES = [QuestAvailability.Frequency, QuestAvailability.U
 
 
 const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialData, onClose, mode = (questToEdit ? 'edit' : 'create'), onTryAgain, isGenerating, onSave, initialDataFromBug }) => {
-  const { guilds, settings } = useAppState();
+  const { guilds, settings, allTags, questGroups } = useAppState();
   const { users } = useAuthState();
   const { rewardTypes } = useEconomyState();
-  const { allTags, questGroups } = useQuestsState();
-  const { addQuest, updateQuest, addQuestGroup } = useQuestsDispatchLocal();
+  const { addQuest, updateQuest, addQuestGroup } = useAppDispatch();
 
   const getInitialFormData = useCallback(() => {
       if (mode === 'edit' && questToEdit) {

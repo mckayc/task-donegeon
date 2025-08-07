@@ -4,11 +4,9 @@ import { useUIState } from '../context/UIStateContext';
 import { Quest, QuestType } from '../types';
 import { isQuestAvailableForUser, toYMD } from '../utils/quests';
 import { useAuthState } from '../context/AuthContext';
-import { useQuestsState } from '../context/QuestsContext';
 
 export const useCalendarVentures = (date: Date) => {
-    const { scheduledEvents } = useAppState();
-    const { quests, questCompletions } = useQuestsState();
+    const { scheduledEvents, quests, questCompletions } = useAppState();
     const { currentUser } = useAuthState();
     const { appMode } = useUIState();
 

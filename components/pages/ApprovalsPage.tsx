@@ -1,22 +1,20 @@
 import React, { useState } from 'react';
 import Card from '../ui/Card';
 import Button from '../ui/Button';
-import { useAppState } from '../../context/AppContext';
-import { useQuestsState, useQuestsDispatch } from '../../context/QuestsContext';
+import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { QuestCompletionStatus, Role, PurchaseRequestStatus } from '../../types';
 import Input from '../ui/Input';
 import { useAuthState } from '../../context/AuthContext';
 import { useEconomyState, useEconomyDispatch } from '../../context/EconomyContext';
 
 const ApprovalsPage: React.FC = () => {
-    const { guilds } = useAppState();
+    const { guilds, quests, questCompletions } = useAppState();
     const { purchaseRequests, gameAssets } = useEconomyState();
-    const { questCompletions, quests } = useQuestsState();
     const { currentUser, users } = useAuthState();
 
     const {
         approveQuestCompletion, rejectQuestCompletion
-    } = useQuestsDispatch();
+    } = useAppDispatch();
     const {
         approvePurchaseRequest, rejectPurchaseRequest
     } = useEconomyDispatch();

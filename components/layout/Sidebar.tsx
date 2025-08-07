@@ -151,7 +151,7 @@ const Sidebar: React.FC = () => {
 
   const visibleLinks = useMemo(() => settings.sidebars.main.filter(link => {
     if (!link.isVisible) return false;
-    if (link.type === 'link' && link.id === 'AI Studio' && !isAiAvailable) return false;
+    if (link.type === 'link' && link.id === 'Suggestion Engine' && !isAiAvailable) return false;
     if (link.type === 'link' && link.id === 'Chat' && !settings.chat.enabled) return false;
     if (currentUser.role === Role.DonegeonMaster) return true;
     if (currentUser.role === Role.Gatekeeper) return link.role === Role.Gatekeeper || link.role === Role.Explorer;

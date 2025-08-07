@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#1c1917" />
+    <title>Task Donegeon</title>
+    <link rel="manifest" href="/manifest.json" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <style>
+      /* For hiding scrollbars */
+      .scrollbar-hide::-webkit-scrollbar {
+          display: none;
+      }
+      .scrollbar-hide {
+          -ms-overflow-style: none;
+          scrollbar-width: none;
+      }
+
+      /* THEME VARIABLES */
+      :root {
+        /* FONT DEFAULTS */
+        --font-display: 'MedievalSharp', cursive;
+        --font-body: 'Roboto', sans-serif;
+        --font-label: 'IM Fell English SC', serif;
+        --font-span: 'Roboto', sans-serif;
+        --font-button: 'Roboto', sans-serif;
+        --font-size-h1: 2.5rem;
+        --font-size-h2: 2.0rem;
+        --font-size-h3: 1.75rem;
+        --font-size-body: 1rem;
+        --font-size-label: 1rem;
+        --font-size-span: 1rem;
+        --font-size-button: 1rem;
+        
+        /* Original Theme Colors */
+        --color-bg-primary-hsl: 224 71% 4%;    /* stone-950 */
+        --color-bg-secondary-hsl: 224 39% 10%; /* stone-900 */
+        --color-bg-tertiary-hsl: 240 10% 19%;  /* stone-800 */
+        --color-text-primary-hsl: 240 8% 90%;   /* stone-200 */
+        --color-text-secondary-hsl: 240 6% 65%; /* stone-400 */
+        --color-border-hsl: 240 6% 30%; /* stone-700/60 */
+        --color-primary-hue: 158; --color-primary-saturation: 84%; --color-primary-lightness: 39%;
+        
+        /* New Per-Element Colors */
+        --color-h1: var(--color-text-primary-hsl);
+        --color-h2: var(--color-text-primary-hsl);
+        --color-h3: var(--color-text-primary-hsl);
+        --color-body: var(--color-text-primary-hsl);
+        --color-label: var(--color-text-secondary-hsl);
+        --color-span: var(--color-text-secondary-hsl);
+
+        /* ShadCN/UI Theme Variables */
+        --background: var(--color-bg-primary-hsl);
+        --foreground: var(--color-text-primary-hsl);
+        --card: var(--color-bg-secondary-hsl);
+        --card-foreground: var(--color-text-primary-hsl);
+        --popover: var(--color-bg-primary-hsl);
+        --popover-foreground: var(--color-text-primary-hsl);
+        --primary: var(--color-primary-hue) var(--color-primary-saturation) var(--color-primary-lightness);
+        --primary-foreground: 210 40% 98%;
+        --secondary: 240 10% 19%;
+        --secondary-foreground: var(--color-text-primary-hsl);
+        --muted: 240 6% 30%;
+        --muted-foreground: var(--color-text-secondary-hsl);
+        --accent: var(--color-primary-hue) var(--color-primary-saturation) 45%;
+        --accent-foreground: 210 40% 98%;
+        --destructive: 0 84.2% 60.2%;
+        --destructive-foreground: 210 40% 98%;
+        --border: var(--color-border-hsl);
+        --input: 240 6% 30%;
+        --ring: 158 84% 45%;
+        --radius: 0.5rem;
+      }
+
+      body {
+        font-family: var(--font-body);
+        font-size: var(--font-size-body);
+        background-color: hsl(var(--background));
+        color: hsl(var(--color-body));
+      }
+      
+      body[data-theme] h1, 
+      body[data-theme] h2, 
+      body[data-theme] h3 {
+        font-family: var(--font-display);
+      }
+      body[data-theme] h1 { font-size: var(--font-size-h1); color: hsl(var(--color-h1)); }
+      body[data-theme] h2 { font-size: var(--font-size-h2); color: hsl(var(--color-h2)); }
+      body[data-theme] h3 { font-size: var(--font-size-h3); color: hsl(var(--color-h3)); }
+
+      body[data-theme] p {
+        font-family: var(--font-body);
+        font-size: var(--font-size-body);
+        color: hsl(var(--color-body));
+      }
+      body[data-theme] span {
+        font-family: var(--font-span);
+        font-size: var(--font-size-span);
+        color: hsl(var(--color-span));
+      }
+      body[data-theme] label {
+        font-family: var(--font-label);
+        font-size: var(--font-size-label);
+        color: hsl(var(--color-label));
+      }
+      body[data-theme] button {
+         font-family: var(--font-button);
+         font-size: var(--font-size-button);
+         font-weight: 500;
+      }
+      
+      @keyframes fadeInOut {
+        0% { opacity: 0; transform: translateY(5px); }
+        10% { opacity: 1; transform: translateY(0); }
+        90% { opacity: 1; transform: translateY(0); }
+        100% { opacity: 0; transform: translateY(-5px); }
+      }
+      .saved-animation {
+        animation: fadeInOut 2s ease-in-out forwards;
+      }
+
+      @keyframes slide-in {
+        from { transform: translateX(100%); }
+        to { transform: translateX(0); }
+      }
+      @keyframes slide-out {
+        from { transform: translateX(0); }
+        to { transform: translateX(100%); }
+      }
+      .animate-in {
+        animation-name: slide-in;
+        animation-duration: 0.3s;
+        animation-timing-function: ease-out;
+      }
+      .animate-out {
+         animation-name: slide-out;
+         animation-duration: 0.2s;
+         animation-timing-function: ease-in;
+      }
+
+    </style>
+  <script type="importmap">
+{
+  "imports": {
+    "react": "https://esm.sh/react@^18.2.0",
+    "react-dom/": "https://esm.sh/react-dom@^18.2.0/",
+    "react/": "https://esm.sh/react@^18.2.0/",
+    "@google/genai": "https://esm.sh/@google/genai@^1.9.0",
+    "emoji-picker-react": "https://esm.sh/emoji-picker-react@^4.13.1",
+    "vite": "https://esm.sh/vite@^7.0.4",
+    "@vitejs/plugin-react": "https://esm.sh/@vitejs/plugin-react@^4.6.0",
+    "framer-motion": "https://esm.sh/framer-motion@^11.2.10",
+    "class-variance-authority": "https://esm.sh/class-variance-authority@^0.7.0",
+    "clsx": "https://esm.sh/clsx@^2.1.1",
+    "tailwind-merge": "https://esm.sh/tailwind-merge@^2.3.0",
+    "@radix-ui/react-slot": "https://esm.sh/@radix-ui/react-slot@^1.0.2",
+    "lucide-react": "https://esm.sh/lucide-react@^0.395.0"
+  }
+}
+</script>
+<link rel="stylesheet" href="/index.css">
+</head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/index.tsx"></script>
+  </body>
+</html>

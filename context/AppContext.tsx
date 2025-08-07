@@ -34,7 +34,7 @@ interface AppDispatch {
   addScheduledEvent: (event: Omit<ScheduledEvent, 'id'>) => void;
   updateScheduledEvent: (event: ScheduledEvent) => void;
   deleteScheduledEvent: (eventId: string) => void;
-  addBugReport: (report: Omit<BugReport, 'id'>) => void;
+  addBugReport: (report: Omit<BugReport, 'id' | 'status' | 'tags'>) => void;
   updateBugReport: (reportId: string, updates: Partial<BugReport>) => void;
   restoreFromBackup: (backupData: IAppData) => void;
   clearAllHistory: () => void;
@@ -201,7 +201,52 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       setChatMessages(dataToSet.chatMessages || []);
       setSystemNotifications(dataToSet.systemNotifications || []);
       setScheduledEvents(dataToSet.scheduledEvents || []);
-      setBugReports(dataToSet.bugReports || []);
+      
+      // --- Bug Report Migration ---
+      const bugReportsToSet = dataToSet.bugReports || [];
+      const reportsToUpdateOnServer: Partial<BugReport>[] = [];
+      const migratedBugReports = bugReportsToSet.map(report => {
+          let hasChanged = false;
+          const newReport = { ...report };
+
+          if (report.status && !['Open', 'Closed'].includes(report.status)) {
+              hasChanged = true;
+              const oldStatus = report.status as any;
+              newReport.tags = newReport.tags || ['Bug'];
+              
+              switch (oldStatus) {
+                  case 'New': newReport.status = 'Open'; break;
+                  case 'Acknowledged': newReport.status = 'Open'; newReport.tags.push('Acknowledged'); break;
+                  case 'In Progress': newReport.status = 'Open'; newReport.tags.push('In Progress'); break;
+                  case 'Converted to Quest': newReport.status = 'Closed'; newReport.tags.push('Converted to Quest'); break;
+                  case 'Resolved': newReport.status = 'Closed'; newReport.tags.push('Resolved'); break;
+                  case 'Closed': newReport.status = 'Closed'; break;
+                  default: newReport.status = 'Open';
+              }
+          }
+          if (!newReport.tags) {
+              hasChanged = true;
+              newReport.tags = ['Bug'];
+          }
+
+          if (hasChanged) {
+              reportsToUpdateOnServer.push({ id: newReport.id, status: newReport.status, tags: newReport.tags });
+          }
+          return newReport as BugReport;
+      });
+      setBugReports(migratedBugReports);
+
+      if (reportsToUpdateOnServer.length > 0) {
+          Promise.all(reportsToUpdateOnServer.map(report =>
+              apiRequest('PUT', `/api/bug-reports/${report.id}`, { status: report.status, tags: report.tags })
+          )).then(() => {
+              addNotification({ type: 'info', message: 'Bug reports migrated to new format.' });
+          }).catch(err => {
+              console.error("Failed to save migrated bug reports", err);
+              addNotification({ type: 'error', message: 'Failed to save bug report migration.' });
+          });
+      }
+
 
       // If migration happened, save it back to the server
       if (settingsUpdated) {
@@ -469,10 +514,12 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     addNotification({ type: 'info', message: 'Event deleted.' });
   }, [addNotification]);
   
-    const addBugReport = useCallback(async (report: Omit<BugReport, 'id'>) => {
+    const addBugReport = useCallback(async (report: Omit<BugReport, 'id' | 'status' | 'tags'>) => {
         const newReport: BugReport = {
             ...report,
             id: `bug-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+            status: 'Open',
+            tags: ['Bug'],
         };
         // Optimistic update
         setBugReports(prev => [newReport, ...prev]);

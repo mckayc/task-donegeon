@@ -1,5 +1,5 @@
 import React, { createContext, useState, useContext, ReactNode, useCallback, useEffect } from 'react';
-import { BugReport, BugReportLogEntry, BugReportStatus } from '../types';
+import { BugReport, BugReportLogEntry } from '../types';
 import { useAppDispatch } from './AppContext';
 import { bugLogger } from '../utils/bugLogger';
 
@@ -53,10 +53,9 @@ export const DeveloperProvider: React.FC<{ children: ReactNode }> = ({ children 
 
   const stopRecording = useCallback((title: string) => {
     const finalLogs = bugLogger.stop();
-    const newReport: Omit<BugReport, 'id'> = {
+    const newReport: Omit<BugReport, 'id' | 'status' | 'tags'> = {
         title,
         createdAt: new Date().toISOString(),
-        status: BugReportStatus.New,
         logs: finalLogs,
     };
     appDispatch.addBugReport(newReport);

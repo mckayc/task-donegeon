@@ -625,14 +625,7 @@ export interface ChatMessage {
   isAnnouncement?: boolean;
 }
 
-export enum BugReportStatus {
-  New = 'New',
-  Acknowledged = 'Acknowledged',
-  InProgress = 'In Progress',
-  ConvertedToQuest = 'Converted to Quest',
-  Resolved = 'Resolved',
-  Closed = 'Closed',
-}
+export type BugReportStatus = 'Open' | 'Closed';
 
 export interface BugReportLogEntry {
   timestamp: string;
@@ -651,6 +644,7 @@ export interface BugReport {
   title: string;
   createdAt: string;
   status: BugReportStatus;
+  tags: string[];
   logs: BugReportLogEntry[];
 }
 

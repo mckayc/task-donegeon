@@ -35,6 +35,7 @@ interface AppDispatch {
   updateScheduledEvent: (event: ScheduledEvent) => void;
   deleteScheduledEvent: (eventId: string) => void;
   addBugReport: (report: Omit<BugReport, 'id'>) => void;
+  updateBugReport: (reportId: string, updates: Partial<BugReport>) => void;
   restoreFromBackup: (backupData: IAppData) => void;
   clearAllHistory: () => void;
   resetAllPlayerData: () => void;
@@ -146,6 +147,17 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       if (!dataToSet) return;
 
       const savedSettings: Partial<AppSettings> = dataToSet.settings || {};
+
+      // --- Sidebar Migration Logic ---
+      const savedSidebarConfig = savedSettings.sidebars?.main || [];
+      const defaultSidebarConfig = INITIAL_SETTINGS.sidebars.main;
+      
+      const savedIds = new Set(savedSidebarConfig.map(item => item.id));
+      const missingItems = defaultSidebarConfig.filter(item => !savedIds.has(item.id));
+      
+      const finalSidebarConfig = [...savedSidebarConfig, ...missingItems];
+      // --- End Sidebar Migration Logic ---
+
       const loadedSettings: AppSettings = {
         ...INITIAL_SETTINGS, ...savedSettings,
         questDefaults: { ...INITIAL_SETTINGS.questDefaults, ...(savedSettings.questDefaults || {}) },
@@ -155,7 +167,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         loginNotifications: { ...INITIAL_SETTINGS.loginNotifications, ...(savedSettings.loginNotifications || {}) },
         developerMode: { ...INITIAL_SETTINGS.developerMode, ...(savedSettings.developerMode || {}) },
         chat: { ...INITIAL_SETTINGS.chat, ...(savedSettings.chat || {}) },
-        sidebars: { ...INITIAL_SETTINGS.sidebars, ...(savedSettings.sidebars || {}) },
+        sidebars: { main: finalSidebarConfig },
         terminology: { ...INITIAL_SETTINGS.terminology, ...(savedSettings.terminology || {}) },
         rewardValuation: { ...INITIAL_SETTINGS.rewardValuation, ...(savedSettings.rewardValuation || {}) },
       };
@@ -445,14 +457,31 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     addNotification({ type: 'info', message: 'Event deleted.' });
   }, [addNotification]);
   
-    const addBugReport = useCallback((report: Omit<BugReport, 'id'>) => {
+    const addBugReport = useCallback(async (report: Omit<BugReport, 'id'>) => {
         const newReport: BugReport = {
             ...report,
             id: `bug-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
         };
-        setBugReports(prev => [...prev, newReport]);
+        // Optimistic update
+        setBugReports(prev => [newReport, ...prev]);
         addNotification({ type: 'success', message: `Bug report "${report.title}" submitted!` });
-    }, [addNotification]);
+        try {
+            await apiRequest('POST', '/api/bug-reports', newReport);
+        } catch (error) {
+            console.error("Failed to save bug report to server", error);
+            setBugReports(prev => prev.filter(b => b.id !== newReport.id));
+        }
+    }, [addNotification, apiRequest]);
+
+    const updateBugReport = useCallback(async (reportId: string, updates: Partial<BugReport>) => {
+        setBugReports(prev => prev.map(r => r.id === reportId ? { ...r, ...updates } : r));
+        try {
+            await apiRequest('PUT', `/api/bug-reports/${reportId}`, updates);
+        } catch (error) {
+            console.error('Failed to update bug report on server', error);
+            // Sync will eventually fix the state if the request fails
+        }
+    }, [apiRequest]);
 
   const updateSettings = useCallback(async (settingsToUpdate: Partial<AppSettings>) => {
     const newSettings = { ...settings, ...settingsToUpdate };
@@ -670,7 +699,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     addGuild, updateGuild, deleteGuild, setRanks, addTrophy, updateTrophy, deleteTrophy, awardTrophy, applyManualAdjustment,
     addTheme, updateTheme, deleteTheme,
     addScheduledEvent, updateScheduledEvent, deleteScheduledEvent,
-    addBugReport,
+    addBugReport, updateBugReport,
     restoreFromBackup, clearAllHistory, resetAllPlayerData, deleteAllCustomContent, deleteSelectedAssets, 
     uploadFile,
     factoryReset,

@@ -14,7 +14,8 @@ const {
     UserEntity, QuestEntity, QuestGroupEntity, MarketEntity, RewardTypeDefinitionEntity,
     QuestCompletionEntity, PurchaseRequestEntity, GuildEntity, RankEntity, TrophyEntity,
     UserTrophyEntity, AdminAdjustmentEntity, GameAssetEntity, SystemLogEntity, ThemeDefinitionEntity,
-    ChatMessageEntity, SystemNotificationEntity, ScheduledEventEntity, SettingEntity, LoginHistoryEntity
+    ChatMessageEntity, SystemNotificationEntity, ScheduledEventEntity, SettingEntity, LoginHistoryEntity,
+    BugReportEntity
 } = require('./entities');
 
 const app = express();
@@ -222,6 +223,7 @@ const getFullAppData = async (manager) => {
     data.chatMessages = await manager.find(ChatMessageEntity);
     data.systemNotifications = await manager.find(SystemNotificationEntity);
     data.scheduledEvents = await manager.find(ScheduledEventEntity);
+    data.bugReports = await manager.find(BugReportEntity, { order: { createdAt: "DESC" } });
     
     const settingRow = await manager.findOneBy(SettingEntity, { id: 1 });
     data.settings = settingRow ? settingRow.settings : INITIAL_SETTINGS;
@@ -266,7 +268,7 @@ app.get('/api/data/load', asyncMiddleware(async (req, res) => {
             users: [], quests: [], questGroups: [], markets: [], rewardTypes: [], questCompletions: [],
             purchaseRequests: [], guilds: [], ranks: [], trophies: [], userTrophies: [],
             adminAdjustments: [], gameAssets: [], systemLogs: [], themes: [], chatMessages: [],
-            systemNotifications: [], scheduledEvents: [],
+            systemNotifications: [], scheduledEvents: [], bugReports: [],
             settings: { ...INITIAL_SETTINGS, contentVersion: 0 },
             loginHistory: [],
         });
@@ -408,31 +410,6 @@ app.post('/api/data/factory-reset', asyncMiddleware(async (req, res) => {
         }
     }
 }));
-
-// Generic CRUD factory
-const createCrudEndpoints = (entity, relations = []) => {
-    const router = express.Router();
-    const repo = dataSource.getRepository(entity);
-
-    router.get('/', asyncMiddleware(async (req, res) => res.json(await repo.find({ relations }))));
-    router.post('/', asyncMiddleware(async (req, res) => {
-        const newItem = repo.create(req.body);
-        await repo.save(newItem);
-        broadcast({ type: 'DATA_UPDATED' });
-        res.status(201).json(newItem);
-    }));
-    router.put('/:id', asyncMiddleware(async (req, res) => {
-        await repo.update(req.params.id, req.body);
-        broadcast({ type: 'DATA_UPDATED' });
-        res.json(await repo.findOneBy({ id: req.params.id }));
-    }));
-    router.delete('/:id', asyncMiddleware(async (req, res) => {
-        await repo.delete(req.params.id);
-        broadcast({ type: 'DATA_UPDATED' });
-        res.status(204).send();
-    }));
-    return router;
-};
 
 // Guilds Router (custom handling for members)
 const guildsRouter = express.Router();
@@ -581,6 +558,31 @@ app.put('/api/settings', asyncMiddleware(async (req, res) => {
     broadcast({ type: 'DATA_UPDATED' });
     res.json(req.body);
 }));
+
+// Bug Reports Router
+const bugReportsRouter = express.Router();
+const bugReportRepo = dataSource.getRepository(BugReportEntity);
+
+bugReportsRouter.get('/', asyncMiddleware(async (req, res) => {
+    const reports = await bugReportRepo.find({ order: { createdAt: "DESC" } });
+    res.json(reports);
+}));
+
+bugReportsRouter.post('/', asyncMiddleware(async (req, res) => {
+    const newReport = bugReportRepo.create(req.body);
+    await bugReportRepo.save(newReport);
+    broadcast({ type: 'DATA_UPDATED' });
+    res.status(201).json(newReport);
+}));
+
+bugReportsRouter.put('/:id', asyncMiddleware(async (req, res) => {
+    await bugReportRepo.update(req.params.id, req.body);
+    broadcast({ type: 'DATA_UPDATED' });
+    res.json(await bugReportRepo.findOneBy({ id: req.params.id }));
+}));
+
+app.use('/api/bug-reports', bugReportsRouter);
+
 
 // Specific endpoint for quests (due to relations)
 const questsRouter = express.Router();

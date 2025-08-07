@@ -21,6 +21,19 @@ class SystemNotification {}
 class ScheduledEvent {}
 class Setting {}
 class LoginHistory {}
+class BugReport {}
+
+const BugReportEntity = new EntitySchema({
+    name: "BugReport",
+    target: BugReport,
+    columns: {
+        id: { primary: true, type: "varchar" },
+        title: { type: "varchar" },
+        createdAt: { type: "varchar" },
+        status: { type: "varchar" },
+        logs: { type: "simple-json" },
+    }
+});
 
 const UserEntity = new EntitySchema({
     name: "User",
@@ -220,7 +233,8 @@ const allEntities = [
     UserEntity, QuestEntity, QuestGroupEntity, MarketEntity, RewardTypeDefinitionEntity,
     QuestCompletionEntity, PurchaseRequestEntity, GuildEntity, RankEntity, TrophyEntity,
     UserTrophyEntity, AdminAdjustmentEntity, GameAssetEntity, SystemLogEntity, ThemeDefinitionEntity,
-    ChatMessageEntity, SystemNotificationEntity, ScheduledEventEntity, SettingEntity, LoginHistoryEntity
+    ChatMessageEntity, SystemNotificationEntity, ScheduledEventEntity, SettingEntity, LoginHistoryEntity,
+    BugReportEntity
 ];
 
 module.exports = { 
@@ -228,5 +242,6 @@ module.exports = {
     UserEntity, QuestEntity, QuestGroupEntity, MarketEntity, RewardTypeDefinitionEntity,
     QuestCompletionEntity, PurchaseRequestEntity, GuildEntity, RankEntity, TrophyEntity,
     UserTrophyEntity, AdminAdjustmentEntity, GameAssetEntity, SystemLogEntity, ThemeDefinitionEntity,
-    ChatMessageEntity, SystemNotificationEntity, ScheduledEventEntity, SettingEntity, LoginHistoryEntity
+    ChatMessageEntity, SystemNotificationEntity, ScheduledEventEntity, SettingEntity, LoginHistoryEntity,
+    BugReportEntity
 };

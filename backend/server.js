@@ -434,6 +434,55 @@ const createCrudEndpoints = (entity, relations = []) => {
     return router;
 };
 
+// Guilds Router (custom handling for members)
+const guildsRouter = express.Router();
+const guildRepo = dataSource.getRepository(GuildEntity);
+const userRepo = dataSource.getRepository(UserEntity);
+
+guildsRouter.get('/', asyncMiddleware(async (req, res) => {
+    const guilds = await guildRepo.find({ relations: ['members'] });
+    res.json(guilds.map(g => ({ ...g, memberIds: g.members.map(m => m.id) })));
+}));
+
+guildsRouter.post('/', asyncMiddleware(async (req, res) => {
+    const { memberIds, ...guildData } = req.body;
+    const newGuild = guildRepo.create({
+        ...guildData,
+        id: `guild-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+    });
+
+    if (memberIds && memberIds.length > 0) {
+        newGuild.members = await userRepo.findBy({ id: In(memberIds) });
+    }
+
+    await guildRepo.save(newGuild);
+    broadcast({ type: 'DATA_UPDATED' });
+    res.status(201).json(newGuild);
+}));
+
+guildsRouter.put('/:id', asyncMiddleware(async (req, res) => {
+    const { memberIds, ...guildData } = req.body;
+    const guild = await guildRepo.findOneBy({ id: req.params.id });
+    if (!guild) return res.status(404).send('Guild not found');
+
+    guildRepo.merge(guild, guildData);
+    
+    if (memberIds) {
+        guild.members = await userRepo.findBy({ id: In(memberIds) });
+    }
+
+    await guildRepo.save(guild);
+    broadcast({ type: 'DATA_UPDATED' });
+    res.json(guild);
+}));
+
+guildsRouter.delete('/:id', asyncMiddleware(async (req, res) => {
+    await guildRepo.delete(req.params.id);
+    broadcast({ type: 'DATA_UPDATED' });
+    res.status(204).send();
+}));
+
+app.use('/api/guilds', guildsRouter);
 app.use('/api/users', createCrudEndpoints(UserEntity, ['guilds']));
 // ... Add more simple CRUD routes here if needed for other entities.
 

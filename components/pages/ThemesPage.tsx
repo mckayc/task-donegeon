@@ -71,8 +71,8 @@ const ThemesPage: React.FC = () => {
 
     const getPreviewStyle = (theme: ThemeDefinition) => ({
         fontFamily: theme.styles['--font-display'],
-        backgroundColor: `hsl(${theme.styles['--color-bg-primary']})`,
-        color: `hsl(${theme.styles['--color-text-primary']})`,
+        backgroundColor: `hsl(${theme.styles['--color-bg-primary-hsl']})`,
+        color: `hsl(${theme.styles['--color-text-primary-hsl']})`,
     });
     
     const getAccentStyle = (theme: ThemeDefinition, type: 'primary' | 'accent' | 'accent-light') => ({

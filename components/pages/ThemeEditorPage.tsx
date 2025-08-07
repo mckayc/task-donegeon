@@ -59,10 +59,10 @@ const ThemePreview: React.FC<{ themeData: ThemeStyle }> = ({ themeData }) => {
     return (
         <div style={livePreviewStyles} className="p-4 rounded-lg transition-all duration-300 flex flex-col border-2 border-stone-700" data-theme>
              <div className="flex-grow p-4 rounded-lg space-y-4" style={{ backgroundColor: 'hsl(var(--color-bg-tertiary))' }}>
-                <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--font-size-h1)', color: 'hsl(var(--color-text-primary))' }}>
+                <h1 style={{ fontFamily: 'var(--font-display)' }}>
                     {settings.terminology.appName}
                 </h1>
-                <p style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--font-size-body)', color: 'hsl(var(--color-text-secondary))' }}>
+                <p style={{ fontFamily: 'var(--font-body)' }}>
                     This is a preview of your theme. The quick brown fox jumps over the lazy dog.
                 </p>
                 <div className="flex gap-4">
@@ -71,7 +71,7 @@ const ThemePreview: React.FC<{ themeData: ThemeStyle }> = ({ themeData }) => {
                 </div>
                 <Card title="Sample Card" className="mt-4">
                     <p>This card uses the secondary background color. The text inside is the primary text color.</p>
-                    <p className="text-accent mt-2">This text has the accent color.</p>
+                    <p className="mt-2" style={{ color: 'hsl(var(--color-accent-hsl))' }}>This text has the accent color.</p>
                 </Card>
              </div>
         </div>
@@ -243,6 +243,10 @@ const ThemeEditorPage: React.FC = () => {
                                      <Input as="select" label="Label Font" value={formData.styles['--font-label']} onChange={e => handleStyleChange('--font-label', e.target.value)}>
                                         {FONT_OPTIONS.map(f => <option key={f} value={f}>{f.split(',')[0].replace(/'/g, '')}</option>)}
                                     </Input>
+                                     <Input as="select" label="Span Font (Optional)" value={formData.styles['--font-span'] || ''} onChange={e => handleStyleChange('--font-span', e.target.value)}>
+                                        <option value="">-- Inherit from Body --</option>
+                                        {FONT_OPTIONS.map(f => <option key={f} value={f}>{f.split(',')[0].replace(/'/g, '')}</option>)}
+                                    </Input>
                                     <div>
                                         <label className="flex justify-between text-sm font-medium mb-1">H1 Font Size <span>({formData.styles['--font-size-h1']})</span></label>
                                         <input type="range" min="1.5" max="4" step="0.1" value={parseFloat(formData.styles['--font-size-h1'])} onChange={e => handleStyleChange('--font-size-h1', `${e.target.value}rem`)} className="w-full h-2 bg-stone-700 rounded-lg appearance-none cursor-pointer" />
@@ -263,6 +267,10 @@ const ThemeEditorPage: React.FC = () => {
                                         <label className="flex justify-between text-sm font-medium mb-1">Label Font Size <span>({formData.styles['--font-size-label']})</span></label>
                                         <input type="range" min="0.7" max="1.1" step="0.05" value={parseFloat(formData.styles['--font-size-label'])} onChange={e => handleStyleChange('--font-size-label', `${e.target.value}rem`)} className="w-full h-2 bg-stone-700 rounded-lg appearance-none cursor-pointer" />
                                     </div>
+                                     <div>
+                                        <label className="flex justify-between text-sm font-medium mb-1">Span Font Size <span>({formData.styles['--font-size-span'] || '1rem'})</span></label>
+                                        <input type="range" min="0.7" max="1.1" step="0.05" value={parseFloat(formData.styles['--font-size-span'] || '1')} onChange={e => handleStyleChange('--font-size-span', `${e.target.value}rem`)} className="w-full h-2 bg-stone-700 rounded-lg appearance-none cursor-pointer" />
+                                    </div>
                                 </div>
                             )}
                              {activeTab === 'colors' && (
@@ -275,7 +283,7 @@ const ThemeEditorPage: React.FC = () => {
                                         <SimpleColorPicker label="Secondary Text" hslValue={formData.styles['--color-text-secondary-hsl']} onChange={v => handleStyleChange('--color-text-secondary-hsl', v)} />
                                         <SimpleColorPicker label="Border" hslValue={formData.styles['--color-border-hsl']} onChange={v => handleStyleChange('--color-border-hsl', v)} />
                                     </div>
-                                    <div className="pt-4 mt-4 border-t border-stone-700/60 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                     <div className="pt-4 mt-4 border-t border-stone-700/60 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                                         <SimpleColorPicker label="Primary/Button" hslValue={`hsl(${formData.styles['--color-primary-hue']} ${formData.styles['--color-primary-saturation']} ${formData.styles['--color-primary-lightness']})`} 
                                             onChange={v => {
                                                 const {h, s, l} = parseHslString(v);
@@ -297,6 +305,17 @@ const ThemeEditorPage: React.FC = () => {
                                                 handleHslPartChange('accent-light', 'saturation', `${s}%`);
                                                 handleHslPartChange('accent-light', 'lightness', `${l}%`);
                                             }} />
+                                    </div>
+                                    <div className="pt-4 mt-4 border-t border-stone-700/60">
+                                        <h4 className="font-semibold text-stone-200 mb-2">Text Colors</h4>
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <SimpleColorPicker label="H1 Color" hslValue={formData.styles['--color-h1'] || formData.styles['--color-text-primary-hsl']} onChange={v => handleStyleChange('--color-h1', v)} />
+                                            <SimpleColorPicker label="H2 Color" hslValue={formData.styles['--color-h2'] || formData.styles['--color-text-primary-hsl']} onChange={v => handleStyleChange('--color-h2', v)} />
+                                            <SimpleColorPicker label="H3 Color" hslValue={formData.styles['--color-h3'] || formData.styles['--color-text-primary-hsl']} onChange={v => handleStyleChange('--color-h3', v)} />
+                                            <SimpleColorPicker label="Body Text Color" hslValue={formData.styles['--color-body'] || formData.styles['--color-text-primary-hsl']} onChange={v => handleStyleChange('--color-body', v)} />
+                                            <SimpleColorPicker label="Label Color" hslValue={formData.styles['--color-label'] || formData.styles['--color-text-secondary-hsl']} onChange={v => handleStyleChange('--color-label', v)} />
+                                            <SimpleColorPicker label="Span Color" hslValue={formData.styles['--color-span'] || formData.styles['--color-text-secondary-hsl']} onChange={v => handleStyleChange('--color-span', v)} />
+                                        </div>
                                     </div>
                                 </div>
                             )}

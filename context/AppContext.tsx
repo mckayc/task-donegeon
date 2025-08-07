@@ -800,9 +800,31 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     }
     setPurchaseRequests(prev => prev.map(p => p.id === purchaseId ? { ...p, status: PurchaseRequestStatus.Rejected, actedAt: new Date().toISOString() } : p));
   }, [purchaseRequests, applyRewards, addNotification]);
-  const addGuild = useCallback((guild: Omit<Guild, 'id'>) => setGuilds(prev => [...prev, { ...guild, id: `guild-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`}]), []);
-  const updateGuild = useCallback((guild: Guild) => setGuilds(prev => prev.map(g => g.id === guild.id ? guild : g)), []);
-  const deleteGuild = useCallback((guildId: string) => setGuilds(prev => prev.filter(g => g.id !== guildId)), []);
+  
+  const addGuild = useCallback(async (guild: Omit<Guild, 'id'>) => {
+    try {
+        await apiRequest('POST', '/api/guilds', guild);
+    } catch (error) {
+        // notification is handled by apiRequest
+    }
+  }, [apiRequest]);
+
+  const updateGuild = useCallback(async (guild: Guild) => {
+      try {
+          await apiRequest('PUT', `/api/guilds/${guild.id}`, guild);
+      } catch (error) {
+          // notification is handled by apiRequest
+      }
+  }, [apiRequest]);
+
+  const deleteGuild = useCallback(async (guildId: string) => {
+      try {
+          await apiRequest('DELETE', `/api/guilds/${guildId}`);
+      } catch (error) {
+          // notification is handled by apiRequest
+      }
+  }, [apiRequest]);
+
   const addTrophy = useCallback((trophy: Omit<Trophy, 'id'>) => setTrophies(prev => [...prev, { ...trophy, id: `trophy-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`}]), []);
   const updateTrophy = useCallback((trophy: Trophy) => setTrophies(prev => prev.map(t => t.id === trophy.id ? trophy : t)), []);
   const deleteTrophy = useCallback((trophyId: string) => setTrophies(prev => prev.filter(t => t.id !== trophyId)), []);

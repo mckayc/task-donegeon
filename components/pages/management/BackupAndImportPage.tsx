@@ -97,14 +97,9 @@ const BackupAndImportPage: React.FC = () => {
     
     const handleGenerateBackup = async () => {
         addNotification({ type: 'info', message: 'Generating manual backup...' });
-        const { isAppUnlocked, isFirstRun, notifications, isSwitchingUser, targetedUserForLogin, activePage, activeMarketId, allTags, isDataLoaded, isSidebarCollapsed, syncStatus, syncError, isChatOpen, currentUser } = appState;
-        const dataToBackup = { users: appState.users, quests: appState.quests, markets: appState.markets, rewardTypes: appState.rewardTypes, questCompletions: appState.questCompletions, purchaseRequests: appState.purchaseRequests, guilds: appState.guilds, ranks: appState.ranks, trophies: appState.trophies, userTrophies: appState.userTrophies, adminAdjustments: appState.adminAdjustments, gameAssets: appState.gameAssets, systemLogs: appState.systemLogs, settings: appState.settings, themes: appState.themes, loginHistory: appState.loginHistory, chatMessages: appState.chatMessages, systemNotifications: appState.systemNotifications };
-
         try {
             const response = await fetch('/api/backups', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(dataToBackup),
             });
             if (response.ok) {
                 addNotification({type: 'success', message: 'Manual backup generated successfully!'});

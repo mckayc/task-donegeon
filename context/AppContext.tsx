@@ -1100,8 +1100,13 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         }
     }
 
+    // Optimistic update
     setChatMessages(prevMessages => [...prevMessages, newMessage]);
-  }, [currentUser, guilds, addSystemNotification]);
+    // API call to persist and broadcast
+    apiRequest('POST', '/api/chat/messages', newMessage).catch(error => {
+        console.error("Failed to send message to server. State will be corrected on next sync.", error);
+    });
+  }, [currentUser, guilds, addSystemNotification, apiRequest]);
 
   const markMessagesAsRead = useCallback((params: { partnerId?: string; guildId?: string; }) => {
     if (!currentUser) return;

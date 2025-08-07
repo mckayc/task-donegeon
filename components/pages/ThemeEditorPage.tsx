@@ -71,7 +71,6 @@ const ThemePreview: React.FC<{ themeData: ThemeStyle }> = ({ themeData }) => {
                 </div>
                 <Card title="Sample Card" className="mt-4">
                     <p>This card uses the secondary background color. The text inside is the primary text color.</p>
-                    <p className="mt-2" style={{ color: 'hsl(var(--color-accent-hsl))' }}>This text has the accent color.</p>
                 </Card>
              </div>
         </div>

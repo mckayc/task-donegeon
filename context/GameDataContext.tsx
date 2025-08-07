@@ -1,5 +1,6 @@
+
 import React from 'react';
-import { User, Quest, RewardTypeDefinition, QuestCompletion, RewardItem, Market, PurchaseRequest, Guild, Rank, Trophy, UserTrophy, Notification, AdminAdjustment, SystemLog, Blueprint, ImportResolution, GameAsset } from '../types';
+import { User, Quest, RewardTypeDefinition, QuestCompletion, RewardItem, Market, PurchaseRequest, Guild, Rank, Trophy, UserTrophy, Notification, AdminAdjustment, SystemLog, AssetPack, ImportResolution, GameAsset } from '../types';
 import { useAppState, useAppDispatch } from './AppContext';
 
 // The state slice provided by this context
@@ -61,7 +62,7 @@ export interface GameDataDispatch {
   addNotification: (notification: Omit<Notification, 'id'>) => void;
   removeNotification: (notificationId: string) => void;
   setActiveMarketId: (marketId: string | null) => void;
-  importBlueprint: (blueprint: Blueprint, resolutions: ImportResolution[]) => void;
+  importBlueprint: (assetPack: AssetPack, resolutions: ImportResolution[]) => void;
   restoreFromBackup: (backupData: any) => void;
   populateInitialGameData: (adminUser: User) => void;
   clearAllHistory: () => void;

@@ -3,7 +3,7 @@ import { useAppState } from '../../../context/AppContext';
 import { ShareableAssetType, Terminology } from '../../../types';
 import Button from '../../ui/Button';
 import Input from '../../ui/Input';
-import { generateBlueprint } from '../../../utils/sharing';
+import { generateAssetPack } from '../../../utils/sharing';
 import Card from '../../ui/Card';
 
 const ObjectExporterPage: React.FC = () => {
@@ -18,8 +18,8 @@ const ObjectExporterPage: React.FC = () => {
         markets: [],
         gameAssets: [],
     });
-    const [blueprintName, setBlueprintName] = useState('');
-    const [blueprintDesc, setBlueprintDesc] = useState('');
+    const [assetPackName, setAssetPackName] = useState('');
+    const [assetPackDesc, setAssetPackDesc] = useState('');
 
     const handleToggle = (type: ShareableAssetType, id: string) => {
         setSelected(prev => ({
@@ -40,13 +40,13 @@ const ObjectExporterPage: React.FC = () => {
     };
 
     const handleExport = () => {
-        if (!blueprintName.trim()) {
-            alert('Please provide a name for your Blueprint.');
+        if (!assetPackName.trim()) {
+            alert('Please provide a name for your Asset Pack.');
             return;
         }
-        generateBlueprint(
-            blueprintName,
-            blueprintDesc,
+        generateAssetPack(
+            assetPackName,
+            assetPackDesc,
             settings.terminology.appName,
             selected,
             appState
@@ -71,13 +71,13 @@ const ObjectExporterPage: React.FC = () => {
                  <div className="flex items-center gap-4 w-full">
                     <span className="font-bold text-lg text-stone-200 whitespace-nowrap">Export Options:</span>
                     <div className="flex-grow">
-                        <Input placeholder="Blueprint Name*" value={blueprintName} onChange={e => setBlueprintName(e.target.value)} required />
+                        <Input placeholder="Asset Pack Name*" value={assetPackName} onChange={e => setAssetPackName(e.target.value)} required />
                     </div>
                      <div className="flex-grow">
-                        <Input placeholder="Description (Optional)" value={blueprintDesc} onChange={e => setBlueprintDesc(e.target.value)} />
+                        <Input placeholder="Description (Optional)" value={assetPackDesc} onChange={e => setAssetPackDesc(e.target.value)} />
                     </div>
                     <div>
-                        <Button onClick={handleExport} disabled={!blueprintName.trim() || totalSelected === 0}>
+                        <Button onClick={handleExport} disabled={!assetPackName.trim() || totalSelected === 0}>
                             Export ({totalSelected})
                         </Button>
                     </div>

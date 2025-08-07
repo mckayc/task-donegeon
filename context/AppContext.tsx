@@ -1,9 +1,9 @@
 
 import React, { createContext, useState, useContext, ReactNode, useEffect, useCallback, useMemo, useRef } from 'react';
-import { AppSettings, User, Quest, RewardTypeDefinition, QuestCompletion, RewardItem, Market, PurchaseRequest, Guild, Rank, Trophy, UserTrophy, Notification, AppMode, Page, IAppData, ShareableAssetType, GameAsset, Role, QuestCompletionStatus, RewardCategory, PurchaseRequestStatus, AdminAdjustment, AdminAdjustmentType, SystemLog, QuestType, QuestAvailability, Blueprint, ImportResolution, TrophyRequirementType, ThemeDefinition, ChatMessage, SystemNotification, SystemNotificationType, MarketStatus, QuestGroup, BulkQuestUpdates, ScheduledEvent } from '../types';
+import { AppSettings, User, Quest, RewardTypeDefinition, QuestCompletion, RewardItem, Market, PurchaseRequest, Guild, Rank, Trophy, UserTrophy, Notification, AppMode, Page, IAppData, ShareableAssetType, GameAsset, Role, QuestCompletionStatus, RewardCategory, PurchaseRequestStatus, AdminAdjustment, AdminAdjustmentType, SystemLog, QuestType, QuestAvailability, AssetPack, ImportResolution, TrophyRequirementType, ThemeDefinition, ChatMessage, SystemNotification, SystemNotificationType, MarketStatus, QuestGroup, BulkQuestUpdates, ScheduledEvent } from '../types';
 import { INITIAL_SETTINGS, createMockUsers, INITIAL_REWARD_TYPES, INITIAL_RANKS, INITIAL_TROPHIES, createSampleMarkets, createSampleQuests, createInitialGuilds, createSampleGameAssets, INITIAL_THEMES, createInitialQuestCompletions, INITIAL_TAGS, INITIAL_QUEST_GROUPS } from '../data/initialData';
 import { toYMD } from '../utils/quests';
-import { analyzeBlueprintForConflicts } from '../utils/sharing';
+import { analyzeAssetPackForConflicts } from '../utils/sharing';
 
 // The single, unified state for the entire application
 interface AppState extends IAppData {
@@ -91,7 +91,7 @@ interface AppDispatch {
   updateScheduledEvent: (event: ScheduledEvent) => void;
   deleteScheduledEvent: (eventId: string) => void;
   completeFirstRun: (adminUserData: Omit<User, 'id' | 'personalPurse' | 'personalExperience' | 'guildBalances' | 'avatar' | 'ownedAssetIds' | 'ownedThemes' | 'hasBeenOnboarded'>) => void;
-  importBlueprint: (blueprint: Blueprint, resolutions: ImportResolution[]) => void;
+  importBlueprint: (assetPack: AssetPack, resolutions: ImportResolution[]) => void;
   restoreFromBackup: (backupData: IAppData) => void;
   clearAllHistory: () => void;
   resetAllPlayerData: () => void;
@@ -833,7 +833,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     }
   }, [deductRewards, applyRewards, addNotification]);
   
-  const importBlueprint = useCallback(async (blueprint: Blueprint, resolutions: ImportResolution[]) => {
+  const importBlueprint = useCallback(async (assetPack: AssetPack, resolutions: ImportResolution[]) => {
     const idMap = new Map<string, string>();
     const genId = (p: string) => `${p}-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
     
@@ -860,7 +860,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         for (const res of resolutionsForType) {
             if (res.resolution === 'skip') continue;
 
-            const assetArray = (blueprint.assets as any)[resType];
+            const assetArray = (assetPack.assets as any)[resType];
             if (!assetArray) continue;
 
             const asset = assetArray.find((a: any) => a.id === res.id);
@@ -901,7 +901,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
     try {
         await apiRequest('POST', '/api/data/import-assets', { newAssets });
-        addNotification({ type: 'success', message: `Imported from ${blueprint.name}!` });
+        addNotification({ type: 'success', message: `Imported from ${assetPack.manifest.name}!` });
         // The backend will broadcast a data update, so the frontend will sync automatically.
     } catch (error) {
         // notification is handled by apiRequest

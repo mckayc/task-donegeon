@@ -1,9 +1,10 @@
+
 import React, { useState } from 'react';
 import { useAppState } from '../../context/AppContext';
 import { ShareableAssetType, Terminology } from '../../types';
 import Button from '../ui/Button';
 import Input from '../ui/Input';
-import { generateBlueprint } from '../../utils/sharing';
+import { generateAssetPack } from '../../utils/sharing';
 
 const ExportPanel: React.FC = () => {
     const appState = useAppState();
@@ -43,7 +44,7 @@ const ExportPanel: React.FC = () => {
             alert('Please provide a name for your Blueprint.');
             return;
         }
-        generateBlueprint(
+        generateAssetPack(
             blueprintName,
             blueprintDesc,
             settings.terminology.appName,

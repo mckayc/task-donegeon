@@ -1,8 +1,9 @@
+
 import React, { useState, useMemo, useEffect } from 'react';
 import Button from '../../ui/Button';
 import Card from '../../ui/Card';
 import { libraryPacks } from '../../../data/assetLibrary';
-import { LibraryPack, BlueprintAssets, TrophyRequirementType, QuestGroup, Quest, GameAsset, Market, Trophy, RewardTypeDefinition, QuestType } from '../../../types';
+import { LibraryAssetPack, AssetPackAssets, TrophyRequirementType, QuestGroup, Quest, GameAsset, Market, Trophy, RewardTypeDefinition, QuestType } from '../../../types';
 import { useAppState, useAppDispatch } from '../../../context/AppContext';
 import Input from '../../ui/Input';
 import CreateQuestDialog from '../../quests/CreateQuestDialog';
@@ -12,9 +13,9 @@ import EditMarketDialog from '../../markets/EditMarketDialog';
 
 const packTypes = ['All', 'Quests', 'Markets', 'Items', 'Trophies', 'Rewards'];
 
-type SelectableAsset = { id: string; name: string; description: string; icon: string; type: keyof BlueprintAssets; questType?: QuestType };
+type SelectableAsset = { id: string; name: string; description: string; icon: string; type: keyof AssetPackAssets; questType?: QuestType };
 
-const AssetPreview: React.FC<{ assets: Partial<BlueprintAssets> }> = ({ assets }) => {
+const AssetPreview: React.FC<{ assets: Partial<AssetPackAssets> }> = ({ assets }) => {
     const assetList = [
         ...(assets.quests || []),
         ...(assets.gameAssets || []),
@@ -40,7 +41,7 @@ const AssetPreview: React.FC<{ assets: Partial<BlueprintAssets> }> = ({ assets }
     );
 };
 
-const PackCard: React.FC<{ pack: LibraryPack; onSelect: () => void; }> = ({ pack, onSelect }) => {
+const PackCard: React.FC<{ pack: LibraryAssetPack; onSelect: () => void; }> = ({ pack, onSelect }) => {
     return (
         <button onClick={onSelect} className="text-left h-full">
             <Card className={`h-full hover:bg-stone-700/50 hover:border-accent transition-colors duration-200 border-2 ${pack.color || 'border-stone-700/60'}`}>
@@ -56,12 +57,12 @@ const PackCard: React.FC<{ pack: LibraryPack; onSelect: () => void; }> = ({ pack
     );
 };
 
-const PackDetailView: React.FC<{ pack: LibraryPack; onBack: () => void; }> = ({ pack, onBack }) => {
+const PackDetailView: React.FC<{ pack: LibraryAssetPack; onBack: () => void; }> = ({ pack, onBack }) => {
     const { settings, questGroups: allQuestGroupsFromState, users } = useAppState();
     const { addQuest, addGameAsset, addTrophy, addRewardType, addMarket, addQuestGroup, addNotification } = useAppDispatch();
     
-    const [livePackAssets, setLivePackAssets] = useState<Partial<BlueprintAssets>>(() => JSON.parse(JSON.stringify(pack.assets)));
-    const [assetToEdit, setAssetToEdit] = useState<{data: any, type: keyof BlueprintAssets} | null>(null);
+    const [livePackAssets, setLivePackAssets] = useState<Partial<AssetPackAssets>>(() => JSON.parse(JSON.stringify(pack.assets)));
+    const [assetToEdit, setAssetToEdit] = useState<{data: any, type: keyof AssetPackAssets} | null>(null);
 
     const allAssets = useMemo((): SelectableAsset[] => {
         const assets: SelectableAsset[] = [];
@@ -270,7 +271,7 @@ const PackDetailView: React.FC<{ pack: LibraryPack; onBack: () => void; }> = ({ 
 };
 
 const AssetLibraryPage: React.FC = () => {
-    const [selectedPack, setSelectedPack] = useState<LibraryPack | null>(null);
+    const [selectedPack, setSelectedPack] = useState<LibraryAssetPack | null>(null);
     const [activeFilter, setActiveFilter] = useState('All');
     const [searchTerm, setSearchTerm] = useState('');
 

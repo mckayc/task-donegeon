@@ -1,9 +1,9 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { useAppState, useAppDispatch } from '../../../context/AppContext';
-import { Blueprint, IAppData, ImportResolution } from '../../../types';
+import { AssetPack, IAppData, ImportResolution } from '../../../types';
 import Button from '../../ui/Button';
 import Card from '../../ui/Card';
-import { analyzeBlueprintForConflicts } from '../../../utils/sharing';
+import { analyzeAssetPackForConflicts } from '../../../utils/sharing';
 import BlueprintPreviewDialog from '../../sharing/BlueprintPreviewDialog';
 import ConfirmDialog from '../../ui/ConfirmDialog';
 import ToggleSwitch from '../../ui/ToggleSwitch';
@@ -32,7 +32,7 @@ const BackupAndImportPage: React.FC = () => {
 
     const [serverBackups, setServerBackups] = useState<ServerBackup[]>([]);
     const [isLoading, setIsLoading] = useState(true);
-    const [blueprintToPreview, setBlueprintToPreview] = useState<Blueprint | null>(null);
+    const [assetPackToPreview, setAssetPackToPreview] = useState<AssetPack | null>(null);
     const [initialResolutions, setInitialResolutions] = useState<ImportResolution[]>([]);
     const [fileToRestore, setFileToRestore] = useState<IAppData | null>(null);
     const [backupToDelete, setBackupToDelete] = useState<ServerBackup | null>(null);
@@ -78,12 +78,12 @@ const BackupAndImportPage: React.FC = () => {
 
                 if (parsed.users && parsed.settings) {
                     setFileToRestore(parsed);
-                } else if (parsed.name && parsed.assets) {
-                    const conflicts = analyzeBlueprintForConflicts(parsed, appState);
+                } else if (parsed.manifest && parsed.assets) {
+                    const conflicts = analyzeAssetPackForConflicts(parsed, appState);
                     setInitialResolutions(conflicts);
-                    setBlueprintToPreview(parsed);
+                    setAssetPackToPreview(parsed);
                 } else {
-                    throw new Error("File does not appear to be a valid backup or blueprint.");
+                    throw new Error("File does not appear to be a valid backup or asset pack.");
                 }
             } catch (error) {
                 console.error("Error parsing file:", error);
@@ -151,7 +151,7 @@ const BackupAndImportPage: React.FC = () => {
                         <li>This system is designed for self-hosted Docker environments where you can map a volume to the backup directory.</li>
                         <li>Automated backups provide a convenient safety net for recent changes.</li>
                         <li>For true safekeeping, it's still recommended to regularly download important manual backups to your local computer.</li>
-                        <li>Before any major data change, like restoring a backup or importing a large blueprint, always create and download a fresh manual backup.</li>
+                        <li>Before any major data change, like restoring a backup or importing a large asset pack, always create and download a fresh manual backup.</li>
                     </ul>
                 </div>
             </Card>
@@ -239,7 +239,7 @@ const BackupAndImportPage: React.FC = () => {
             </Card>
 
             <Card title="Import / Restore from File">
-                <p className="text-stone-400 text-sm mb-4">Select a Blueprint or full backup `.json` file. The app will automatically detect which it is and guide you through the next steps.</p>
+                <p className="text-stone-400 text-sm mb-4">Select an Asset Pack or full backup `.json` file. The app will automatically detect which it is and guide you through the next steps.</p>
                 <div className="p-8 border-2 border-dashed border-stone-600 rounded-lg text-center">
                     <input type="file" ref={fileInputRef} onChange={handleFileSelect} accept=".json,application/json" className="hidden" />
                     <Button variant="secondary" onClick={() => fileInputRef.current?.click()}>Select File</Button>
@@ -247,8 +247,8 @@ const BackupAndImportPage: React.FC = () => {
                 </div>
             </Card>
 
-            {blueprintToPreview && (
-                <BlueprintPreviewDialog blueprint={blueprintToPreview} initialResolutions={initialResolutions} onClose={() => setBlueprintToPreview(null)} onConfirm={importBlueprint} />
+            {assetPackToPreview && (
+                <BlueprintPreviewDialog blueprint={assetPackToPreview} initialResolutions={initialResolutions} onClose={() => setAssetPackToPreview(null)} onConfirm={importBlueprint} />
             )}
             <ConfirmDialog
                 isOpen={!!fileToRestore}

@@ -102,8 +102,8 @@ const FirstRunWizard: React.FC = () => {
     <div className="min-h-screen flex items-center justify-center bg-slate-900 p-4">
       <div className="max-w-3xl w-full bg-slate-800 border border-stone-700 rounded-2xl shadow-2xl p-8 md:p-12">
         <div className="text-center">
-          <div className="text-[300px] leading-none">
-            <span>🧙‍♂️</span>
+          <div className="text leading-none">
+            <span style={{fontSize: '300px'}}>🧙‍♂️</span>
           </div>
           <h1 className="font-medieval text-accent mt-2">First Run Wizard</h1>
           <p className="text-stone-300 mt-2 max-w-xl mx-auto">

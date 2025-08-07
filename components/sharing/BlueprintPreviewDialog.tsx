@@ -1,14 +1,14 @@
 import React, { useState } from 'react';
 import { useAppState } from '../../context/AppContext';
-import { Blueprint, ImportResolution, ShareableAssetType, Terminology } from '../../types';
+import { AssetPack, ImportResolution, ShareableAssetType, Terminology } from '../../types';
 import Button from '../ui/Button';
 import Input from '../ui/Input';
 
 interface BlueprintPreviewDialogProps {
-  blueprint: Blueprint;
+  blueprint: AssetPack;
   initialResolutions: ImportResolution[];
   onClose: () => void;
-  onConfirm: (blueprint: Blueprint, resolutions: ImportResolution[]) => void;
+  onConfirm: (blueprint: AssetPack, resolutions: ImportResolution[]) => void;
 }
 
 const terminologyMap: { [key in ShareableAssetType]: keyof Terminology } = {
@@ -40,15 +40,15 @@ const BlueprintPreviewDialog: React.FC<BlueprintPreviewDialogProps> = ({ bluepri
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
             <div className="bg-stone-800 border border-stone-700 rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] flex flex-col">
                 <div className="p-8 border-b border-stone-700/60">
-                    <h2 className="text-3xl font-medieval text-accent">Blueprint Preview</h2>
+                    <h2 className="text-3xl font-medieval text-accent">Asset Pack Preview</h2>
                     <p className="text-stone-300 mt-1">Review the contents before importing.</p>
                 </div>
 
                 <div className="flex-1 space-y-4 p-8 overflow-y-auto scrollbar-hide">
                     <div className="p-4 bg-stone-900/50 rounded-lg">
-                        <h3 className="font-bold text-lg text-stone-100">{blueprint.name}</h3>
-                        <p className="text-sm text-stone-400">by {blueprint.author}</p>
-                        <p className="text-stone-300 mt-2">{blueprint.description}</p>
+                        <h3 className="font-bold text-lg text-stone-100">{blueprint.manifest.name}</h3>
+                        <p className="text-sm text-stone-400">by {blueprint.manifest.author}</p>
+                        <p className="text-stone-300 mt-2">{blueprint.manifest.description}</p>
                     </div>
 
                     {newItems.length > 0 && (
@@ -63,7 +63,7 @@ const BlueprintPreviewDialog: React.FC<BlueprintPreviewDialogProps> = ({ bluepri
                     {conflictingItems.length > 0 && (
                         <div className="p-4 bg-amber-900/30 border border-amber-700/60 rounded-lg">
                             <h4 className="font-semibold text-amber-400 mb-2">Name Conflicts ({conflictingItems.length})</h4>
-                            <p className="text-sm text-amber-300/80 mb-4">Some items in this blueprint have the same name as items you already have. Please choose how to handle them.</p>
+                            <p className="text-sm text-amber-300/80 mb-4">Some items in this asset pack have the same name as items you already have. Please choose how to handle them.</p>
                             <div className="space-y-3 max-h-60 overflow-y-auto pr-2">
                                 {conflictingItems.map(res => (
                                     <div key={`${res.type}-${res.id}`} className="bg-stone-800/50 p-3 rounded-md">

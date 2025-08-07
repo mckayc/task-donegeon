@@ -1,4 +1,5 @@
-import { User, Role, RewardTypeDefinition, RewardCategory, Rank, Trophy, TrophyRequirementType, QuestType, Market, Quest, QuestAvailability, Guild, AppSettings, SidebarConfigItem, GameAsset, ThemeDefinition, ThemeStyle, QuestCompletion, QuestCompletionStatus, MarketStatus, LibraryPack, BlueprintAssets, RewardItem, TrophyRequirement, QuestGroup } from '../types';
+
+import { User, Role, RewardTypeDefinition, RewardCategory, Rank, Trophy, TrophyRequirementType, QuestType, Market, Quest, QuestAvailability, Guild, AppSettings, SidebarConfigItem, GameAsset, ThemeDefinition, ThemeStyle, QuestCompletion, QuestCompletionStatus, MarketStatus, LibraryAssetPack, AssetPackAssets, RewardItem, TrophyRequirement, QuestGroup } from '../types';
 
 // ====================================================================================
 // == ASSET CREATION HELPERS ==========================================================
@@ -83,7 +84,7 @@ const createQuestGroup = (data: Partial<QuestGroup> & { name: string; }): QuestG
 // == LIBRARY PACK DEFINITIONS ========================================================
 // ====================================================================================
 
-export const libraryPacks: LibraryPack[] = [
+export const libraryPacks: LibraryAssetPack[] = [
   // =================================================================================
   // == QUEST PACKS ==================================================================
   // =================================================================================

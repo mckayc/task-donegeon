@@ -512,7 +512,7 @@ export interface AppSettings {
 
 export type ShareableAssetType = 'quests' | 'rewardTypes' | 'ranks' | 'trophies' | 'markets' | 'gameAssets' | 'questGroups';
 
-export interface BlueprintAssets {
+export interface AssetPackAssets {
   quests: Quest[];
   questGroups?: QuestGroup[];
   rewardTypes: RewardTypeDefinition[];
@@ -522,13 +522,15 @@ export interface BlueprintAssets {
   gameAssets: GameAsset[];
 }
 
-export interface Blueprint {
-  name: string;
-  author: string;
-  description: string;
-  version: 1;
-  exportedAt: string;
-  assets: BlueprintAssets;
+export interface AssetPack {
+  manifest: {
+    id: string;
+    name: string;
+    author: string;
+    version: string;
+    description: string;
+  };
+  assets: AssetPackAssets;
 }
 
 export interface ImportResolution {
@@ -605,16 +607,16 @@ export interface IAppData {
   scheduledEvents: ScheduledEvent[];
 }
 
-export type LibraryPackType = 'Quests' | 'Markets' | 'Items' | 'Trophies' | 'Rewards' | 'Quest Groups';
+export type LibraryAssetPackType = 'Quests' | 'Markets' | 'Items' | 'Trophies' | 'Rewards' | 'Quest Groups';
 
-export interface LibraryPack {
+export interface LibraryAssetPack {
   id: string;
-  type: LibraryPackType;
+  type: LibraryAssetPackType;
   title: string;
   description: string;
   emoji: string;
   color: string;
-  assets: Partial<BlueprintAssets>;
+  assets: Partial<AssetPackAssets>;
 }
 
 export type ChronicleEvent = {

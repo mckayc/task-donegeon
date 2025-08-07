@@ -170,7 +170,7 @@ const QuestItem: React.FC<{ quest: Quest; now: Date; onSelect: (quest: Quest) =>
             {/* Footer */}
             <div className="p-3 mt-auto bg-black/20 border-t border-white/10 flex items-center justify-between gap-2">
                 <div className="flex items-center gap-2 text-xs text-stone-400 overflow-hidden">
-                    <span title={questGroup ? questGroup.name : 'Uncategorized'}>📂</span>
+                    <span title={questGroup ? questGroup.name : 'Uncategorized'}>{questGroup ? questGroup.icon : '📂'}</span>
                     <span className="truncate">{questGroup ? questGroup.name : 'Uncategorized'}</span>
                 </div>
                 <div className="text-right">

@@ -3,6 +3,7 @@ import { Quest, QuestCompletion, QuestType, QuestAvailability } from '../../type
 import { isQuestAvailableForUser, toYMD } from '../../utils/quests';
 import Button from '../ui/Button';
 import { useAppDispatch, useAppState } from '../../context/AppContext';
+import { useUIState } from '../../context/UIStateContext';
 import QuestDetailDialog from '../quests/QuestDetailDialog';
 
 interface QuestListProps {
@@ -27,7 +28,8 @@ const getDueDateString = (quest: Quest): string | null => {
 };
 
 const QuestList: React.FC<QuestListProps> = ({ title, date, quests, questCompletions, onQuestSelect }) => {
-    const { currentUser, scheduledEvents, appMode } = useAppState();
+    const { currentUser, scheduledEvents } = useAppState();
+    const { appMode } = useUIState();
     const isFuture = toYMD(date) > toYMD(new Date());
 
     if (quests.length === 0) {

@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useAppState } from '../../context/AppContext';
 import Button from '../ui/Button';
@@ -13,9 +12,13 @@ const BackupPanel: React.FC = () => {
             isFirstRun,
             notifications,
             isSwitchingUser,
+            isSharedViewActive,
             targetedUserForLogin,
-            activePage,
-            activeMarketId,
+            isAiConfigured,
+            syncStatus,
+            syncError,
+            currentUser,
+            isDataLoaded,
             allTags,
             ...dataToBackup
         } = appState;

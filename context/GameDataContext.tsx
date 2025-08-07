@@ -1,7 +1,9 @@
+// This file is obsolete. Please use useAppState() and useAppDispatch() from context/AppContext.tsx directly.
 
 import React from 'react';
 import { User, Quest, RewardTypeDefinition, QuestCompletion, RewardItem, Market, PurchaseRequest, Guild, Rank, Trophy, UserTrophy, Notification, AdminAdjustment, SystemLog, AssetPack, ImportResolution, GameAsset } from '../types';
 import { useAppState, useAppDispatch } from './AppContext';
+import { useUIState, useUIDispatch } from './UIStateContext';
 
 // The state slice provided by this context
 export interface GameDataState {
@@ -76,8 +78,9 @@ export interface GameDataDispatch {
 export const useGameData = (): GameDataState => {
   const {
     users, quests, markets, rewardTypes, questCompletions, purchaseRequests, guilds, ranks, trophies, userTrophies, adminAdjustments, gameAssets, systemLogs,
-    notifications, activeMarketId, allTags, isDataLoaded
+    notifications, isDataLoaded, allTags
   } = useAppState();
+  const { activeMarketId } = useUIState(); // This hook is now split
 
   return {
     users, quests, markets, rewardTypes, questCompletions, purchaseRequests, guilds, ranks, trophies, userTrophies, adminAdjustments, gameAssets, systemLogs,
@@ -88,8 +91,9 @@ export const useGameData = (): GameDataState => {
 // Hook to consume the game data dispatch functions
 export const useGameDataDispatch = (): GameDataDispatch => {
   const dispatch = useAppDispatch();
+  const uiDispatch = useUIDispatch();
   // We can return the entire dispatch object or a slice of it
-  return dispatch as unknown as GameDataDispatch;
+  return { ...dispatch, ...uiDispatch } as unknown as GameDataDispatch;
 };
 
 // Note: The GameDataProvider is no longer needed here as AppProvider in AppContext.tsx handles everything.

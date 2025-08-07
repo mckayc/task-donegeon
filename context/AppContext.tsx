@@ -1,5 +1,3 @@
-
-
 import React, { createContext, useState, useContext, ReactNode, useEffect, useCallback, useMemo, useRef } from 'react';
 import { AppSettings, User, Quest, RewardTypeDefinition, QuestCompletion, RewardItem, Market, PurchaseRequest, Guild, Rank, Trophy, UserTrophy, Notification, AppMode, Page, IAppData, ShareableAssetType, GameAsset, Role, QuestCompletionStatus, RewardCategory, PurchaseRequestStatus, AdminAdjustment, AdminAdjustmentType, SystemLog, QuestType, QuestAvailability, AssetPack, ImportResolution, TrophyRequirementType, ThemeDefinition, ChatMessage, SystemNotification, SystemNotificationType, MarketStatus, QuestGroup, BulkQuestUpdates, ScheduledEvent } from '../types';
 import { INITIAL_SETTINGS, INITIAL_REWARD_TYPES, INITIAL_RANKS, INITIAL_TROPHIES, INITIAL_THEMES, INITIAL_QUEST_GROUPS, INITIAL_TAGS } from '../data/initialData';
@@ -11,20 +9,15 @@ interface AppState extends IAppData {
   isAppUnlocked: boolean;
   isFirstRun: boolean;
   currentUser: User | null;
-  activePage: Page;
-  appMode: AppMode;
   notifications: Notification[];
   isDataLoaded: boolean;
-  activeMarketId: string | null;
   allTags: string[];
   isSwitchingUser: boolean;
   isSharedViewActive: boolean;
   targetedUserForLogin: User | null;
   isAiConfigured: boolean;
-  isSidebarCollapsed: boolean;
   syncStatus: 'idle' | 'syncing' | 'success' | 'error';
   syncError: string | null;
-  isChatOpen: boolean;
 }
 
 // The single, unified dispatch for the entire application
@@ -110,13 +103,8 @@ interface AppDispatch {
   // Settings & UI
   updateSettings: (settings: Partial<AppSettings>) => void;
   resetSettings: () => void;
-  setActivePage: (page: Page) => void;
-  setAppMode: (mode: AppMode) => void;
   addNotification: (notification: Omit<Notification, 'id'>) => void;
   removeNotification: (notificationId: string) => void;
-  setActiveMarketId: (marketId: string | null) => void;
-  toggleSidebar: () => void;
-  toggleChat: () => void;
   sendMessage: (message: Omit<ChatMessage, 'id' | 'timestamp' | 'readBy' | 'senderId'> & { isAnnouncement?: boolean }) => void;
   markMessagesAsRead: (params: { partnerId?: string; guildId?: string; }) => void;
   addSystemNotification: (notification: Omit<SystemNotification, 'id' | 'timestamp' | 'readByUserIds'>) => void;
@@ -149,24 +137,21 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [systemNotifications, setSystemNotifications] = useState<SystemNotification[]>([]);
   const [scheduledEvents, setScheduledEvents] = useState<ScheduledEvent[]>([]);
 
-  // UI State
-  const [currentUser, _setCurrentUser] = useState<User | null>(null);
-  const [isAppUnlocked, _setAppUnlocked] = useState<boolean>(() => localStorage.getItem('isAppUnlocked') === 'true');
-  const [activePage, setActivePage] = useState<Page>('Dashboard');
-  const [appMode, setAppMode] = useState<AppMode>({ mode: 'personal' });
+  // UI State that remains global due to cross-cutting concerns
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [isDataLoaded, setIsDataLoaded] = useState(false);
-  const [activeMarketId, setActiveMarketId] = useState<string | null>(null);
+  const [syncStatus, setSyncStatus] = useState<'idle' | 'syncing' | 'success' | 'error'>('idle');
+  const [syncError, setSyncError] = useState<string | null>(null);
+
+  // Auth/Session State
+  const [currentUser, _setCurrentUser] = useState<User | null>(null);
+  const [isAppUnlocked, _setAppUnlocked] = useState<boolean>(() => localStorage.getItem('isAppUnlocked') === 'true');
   const [isSwitchingUser, setIsSwitchingUser] = useState<boolean>(false);
   const [isSharedViewActive, _setIsSharedViewActive] = useState(false);
   const [targetedUserForLogin, setTargetedUserForLogin] = useState<User | null>(null);
   const [isAiConfigured, setIsAiConfigured] = useState(false);
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState<boolean>(() => localStorage.getItem('isSidebarCollapsed') === 'true');
-  const [syncStatus, setSyncStatus] = useState<'idle' | 'syncing' | 'success' | 'error'>('idle');
-  const [syncError, setSyncError] = useState<string | null>(null);
-  const [isChatOpen, setIsChatOpen] = useState(false);
-  const inactivityTimer = useRef<number | null>(null);
   
+  const inactivityTimer = useRef<number | null>(null);
   const stateRef = useRef<AppState | null>(null);
   const isFirstRun = isDataLoaded && users.length === 0;
   
@@ -417,7 +402,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     _setCurrentUser(user);
     _setIsSharedViewActive(false); // Entering a user profile always deactivates shared view
     if (user) {
-        setActivePage('Dashboard');
+        // setActivePage('Dashboard'); // This will now be handled in UI context, likely on user change effect.
         localStorage.setItem('lastUserId', user.id);
         setLoginHistory(prev => [user.id, ...prev.filter(id => id !== user.id).slice(0, 9)]);
     } else {
@@ -1023,14 +1008,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     addNotification({ type: 'info', message: 'Event deleted.' });
   }, [addNotification]);
   
-  const toggleSidebar = useCallback(() => {
-    setIsSidebarCollapsed(prev => {
-        const newState = !prev;
-        localStorage.setItem('isSidebarCollapsed', String(newState));
-        return newState;
-    });
-  }, []);
-
   const updateSettings = useCallback(async (settingsToUpdate: Partial<AppSettings>) => {
     const newSettings = { ...settings, ...settingsToUpdate };
     try {
@@ -1071,8 +1048,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   }, [resetInactivityTimer]);
 
   // Chat functions
-  const toggleChat = useCallback(() => setIsChatOpen(prev => !prev), []);
-
   const sendMessage = useCallback((message: Omit<ChatMessage, 'id' | 'timestamp' | 'readBy' | 'senderId'> & { isAnnouncement?: boolean }) => {
     if (!currentUser) return;
 
@@ -1128,10 +1103,10 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   // === CONTEXT PROVIDER VALUE ===
   const stateValue: AppState = {
     users, quests, questGroups, markets, rewardTypes, questCompletions, purchaseRequests, guilds, ranks, trophies, userTrophies, adminAdjustments, gameAssets, systemLogs, settings, themes, loginHistory, chatMessages, systemNotifications, scheduledEvents,
-    currentUser, isAppUnlocked, isFirstRun, activePage, appMode, notifications, isDataLoaded, activeMarketId, 
+    currentUser, isAppUnlocked, isFirstRun, notifications, isDataLoaded, 
     allTags: useMemo(() => Array.from(new Set([...INITIAL_TAGS, ...quests.flatMap(q => q.tags || [])])).sort(), [quests]),
-    isSwitchingUser, isSharedViewActive, targetedUserForLogin, isAiConfigured, isSidebarCollapsed,
-    syncStatus, syncError, isChatOpen,
+    isSwitchingUser, isSharedViewActive, targetedUserForLogin, isAiConfigured,
+    syncStatus, syncError,
   };
 
   // Keep a ref to the state to use in the polling effect without causing re-renders
@@ -1150,8 +1125,9 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     uploadFile,
     executeExchange,
     factoryReset,
-    updateSettings, resetSettings, setActivePage, setAppMode, addNotification, removeNotification, setActiveMarketId, toggleSidebar,
-    toggleChat, sendMessage, markMessagesAsRead,
+    updateSettings, resetSettings,
+    addNotification, removeNotification,
+    sendMessage, markMessagesAsRead,
     addSystemNotification, markSystemNotificationsAsRead
   };
 

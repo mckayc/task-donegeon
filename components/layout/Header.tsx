@@ -2,6 +2,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { Page, Role, AppMode, User } from '../../types';
 import Avatar from '../ui/Avatar';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
+import { useUIState, useUIDispatch } from '../../context/UIStateContext';
 import FullscreenToggle from '../ui/FullscreenToggle';
 import { ChevronDownIcon } from '../ui/Icons';
 import RewardDisplay from '../ui/RewardDisplay';
@@ -35,8 +36,10 @@ const Clock: React.FC = () => {
 };
 
 const Header: React.FC = () => {
-  const { currentUser, guilds, appMode, settings } = useAppState();
-  const { setCurrentUser, setIsSwitchingUser, setAppUnlocked, exitToSharedView, setAppMode, setActivePage } = useAppDispatch();
+  const { currentUser, guilds, settings } = useAppState();
+  const { setCurrentUser, setIsSwitchingUser, setAppUnlocked, exitToSharedView } = useAppDispatch();
+  const { appMode } = useUIState();
+  const { setAppMode, setActivePage } = useUIDispatch();
 
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
   const [guildDropdownOpen, setGuildDropdownOpen] = useState(false);
@@ -63,6 +66,7 @@ const Header: React.FC = () => {
   const handleModeChange = (mode: AppMode) => {
     setAppMode(mode);
     setGuildDropdownOpen(false);
+    setActivePage('Dashboard');
   };
 
   const userGuilds = useMemo(() => {

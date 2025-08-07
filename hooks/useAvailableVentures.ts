@@ -1,10 +1,12 @@
 import { useMemo } from 'react';
 import { useAppState } from '../context/AppContext';
+import { useUIState } from '../context/UIStateContext';
 import { QuestType } from '../types';
 import { isQuestAvailableForUser } from '../utils/quests';
 
 export const useAvailableVentures = () => {
-    const { quests, currentUser, questCompletions, appMode, scheduledEvents } = useAppState();
+    const { quests, currentUser, questCompletions, scheduledEvents } = useAppState();
+    const { appMode } = useUIState();
 
     const top10AvailableVentures = useMemo(() => {
         if (!currentUser) return [];

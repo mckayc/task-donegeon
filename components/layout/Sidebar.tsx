@@ -1,11 +1,12 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { Role, Page, QuestCompletionStatus, PurchaseRequestStatus, Terminology, SidebarConfigItem, SidebarLink, SidebarHeader } from '../../types';
 import { ChevronDownIcon, ArrowLeftIcon, ArrowRightIcon } from '../ui/Icons';
-import { useAppState, useAppDispatch } from '../../context/AppContext';
+import { useAppState } from '../../context/AppContext';
+import { useUIState, useUIDispatch } from '../../context/UIStateContext';
 
 const FlyoutPanel: React.FC<{ title: string; items?: SidebarLink[]; isVisible: boolean }> = ({ title, items, isVisible }) => {
     const { settings } = useAppState();
-    const { setActivePage } = useAppDispatch();
+    const { setActivePage } = useUIDispatch();
     
     if (!isVisible) return null;
 
@@ -74,7 +75,7 @@ interface CollapsibleNavGroupProps {
 }
 
 const CollapsibleNavGroup: React.FC<CollapsibleNavGroupProps> = ({ header, childItems, activePage, badgeCount, isCollapsed }) => {
-    const { setActivePage } = useAppDispatch();
+    const { setActivePage } = useUIDispatch();
     const isGroupActive = childItems.some(child => child.id === activePage);
     const [isOpen, setIsOpen] = useState(isGroupActive);
     const [isHovered, setIsHovered] = useState(false);
@@ -143,8 +144,9 @@ const CollapsibleNavGroup: React.FC<CollapsibleNavGroupProps> = ({ header, child
 
 
 const Sidebar: React.FC = () => {
-  const { currentUser, questCompletions, purchaseRequests, activePage, settings, isAiConfigured, isSidebarCollapsed, chatMessages, isChatOpen, guilds } = useAppState();
-  const { setActivePage, toggleSidebar, toggleChat } = useAppDispatch();
+  const { currentUser, questCompletions, purchaseRequests, settings, isAiConfigured, chatMessages, guilds } = useAppState();
+  const { activePage, isSidebarCollapsed, isChatOpen } = useUIState();
+  const { setActivePage, toggleSidebar, toggleChat } = useUIDispatch();
   const isAiAvailable = settings.enableAiFeatures && isAiConfigured;
   
   if (!currentUser) return null;

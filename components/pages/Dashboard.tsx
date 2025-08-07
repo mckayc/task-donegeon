@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
+import { useUIState, useUIDispatch } from '../../context/UIStateContext';
 import { Quest, QuestAvailability, QuestCompletionStatus, RewardCategory, Role, User, QuestType, PurchaseRequest, UserTrophy } from '../../types';
 import Card from '../ui/Card';
 import Button from '../ui/Button';
@@ -9,8 +10,10 @@ import CompleteQuestDialog from '../quests/CompleteQuestDialog';
 import { useRewardValue } from '../../hooks/useRewardValue';
 
 const Dashboard: React.FC = () => {
-    const { currentUser, quests, rewardTypes, users, ranks, userTrophies, trophies, questCompletions, purchaseRequests, appMode, settings, scheduledEvents } = useAppState();
-    const { completeQuest, setActivePage, markQuestAsTodo, unmarkQuestAsTodo } = useAppDispatch();
+    const { currentUser, quests, rewardTypes, users, ranks, userTrophies, trophies, questCompletions, purchaseRequests, settings, scheduledEvents } = useAppState();
+    const { appMode } = useUIState();
+    const { completeQuest, markQuestAsTodo, unmarkQuestAsTodo } = useAppDispatch();
+    const { setActivePage } = useUIDispatch();
     
     const [selectedQuest, setSelectedQuest] = useState<Quest | null>(null);
     const [completingQuest, setCompletingQuest] = useState<Quest | null>(null);

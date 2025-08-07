@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { useAppState } from '../../context/AppContext';
+import { useUIState } from '../../context/UIStateContext';
 import { Rank } from '../../types';
 import Card from '../ui/Card';
 import { RankIcon } from '../ui/Icons';
@@ -7,7 +8,8 @@ import DynamicIcon from '../ui/DynamicIcon';
 import ImagePreviewDialog from '../ui/ImagePreviewDialog';
 
 const RanksPage: React.FC = () => {
-    const { currentUser, ranks, appMode } = useAppState();
+    const { currentUser, ranks } = useAppState();
+    const { appMode } = useUIState();
     const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null);
 
     const { currentRank, nextRank, totalXp, progressPercentage, sortedRanks } = useMemo(() => {

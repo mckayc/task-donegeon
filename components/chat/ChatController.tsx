@@ -1,9 +1,11 @@
 import React, { useMemo } from 'react';
-import { useAppState, useAppDispatch } from '../../context/AppContext';
+import { useAppState } from '../../context/AppContext';
+import { useUIState, useUIDispatch } from '../../context/UIStateContext';
 
 const ChatController: React.FC = () => {
-    const { settings, isChatOpen, chatMessages, currentUser } = useAppState();
-    const { toggleChat } = useAppDispatch();
+    const { settings, chatMessages, currentUser } = useAppState();
+    const { isChatOpen } = useUIState();
+    const { toggleChat } = useUIDispatch();
 
     const unreadMessagesCount = useMemo(() => {
         if (!currentUser) return 0;

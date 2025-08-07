@@ -1,13 +1,13 @@
-
-
 import React, { useState, useMemo } from 'react';
 import { useAppState } from '../../context/AppContext';
+import { useUIState } from '../../context/UIStateContext';
 import { RewardCategory, QuestCompletionStatus, RewardItem } from '../../types';
 import Card from '../ui/Card';
 import LineChart from '../ui/LineChart';
 
 const ProgressPage: React.FC = () => {
-    const { currentUser, questCompletions, quests, rewardTypes, appMode } = useAppState();
+    const { currentUser, questCompletions, quests, rewardTypes } = useAppState();
+    const { appMode } = useUIState();
     
     const xpTypes = useMemo(() => {
         const allXpTypes = rewardTypes.filter(rt => rt.category === RewardCategory.XP);

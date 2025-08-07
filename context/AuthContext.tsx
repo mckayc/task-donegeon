@@ -1,3 +1,4 @@
+// This file is obsolete. Please use useAppState() and useAppDispatch() from context/AppContext.tsx directly.
 
 import React from 'react';
 import { User } from '../types';

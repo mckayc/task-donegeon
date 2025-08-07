@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import Card from '../ui/Card';
-import { useAppState, useAppDispatch } from '../../context/AppContext';
+import { useAppState } from '../../context/AppContext';
+import { useUIState, useUIDispatch } from '../../context/UIStateContext';
 import Button from '../ui/Button';
 import { PurchaseRequestStatus, RewardCategory, Market, GameAsset, RewardItem, ScheduledEvent } from '../../types';
 import PurchaseDialog from '../markets/PurchaseDialog';
@@ -11,7 +12,8 @@ import DynamicIcon from '../ui/DynamicIcon';
 import { toYMD } from '../../utils/quests';
 
 const MarketItemView: React.FC<{ market: Market }> = ({ market }) => {
-    const { rewardTypes, currentUser, purchaseRequests, appMode, settings, gameAssets, scheduledEvents } = useAppState();
+    const { rewardTypes, currentUser, purchaseRequests, settings, gameAssets, scheduledEvents } = useAppState();
+    const { appMode } = useUIState();
     const [sortBy, setSortBy] = useState<'default' | 'title-asc' | 'title-desc'>('default');
     const [itemToPurchase, setItemToPurchase] = useState<GameAsset | null>(null);
     const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null);
@@ -211,8 +213,9 @@ const MarketItemView: React.FC<{ market: Market }> = ({ market }) => {
 
 const MarketplacePage: React.FC = () => {
     const appState = useAppState();
-    const { markets, appMode, activeMarketId, settings, currentUser } = appState;
-    const { setActiveMarketId } = useAppDispatch();
+    const { markets, settings, currentUser } = appState;
+    const { appMode, activeMarketId } = useUIState();
+    const { setActiveMarketId } = useUIDispatch();
     const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null);
     
     const visibleMarkets = React.useMemo(() => {

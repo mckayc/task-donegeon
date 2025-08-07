@@ -1,14 +1,16 @@
 import { useMemo } from 'react';
 import { useAppState } from '../context/AppContext';
+import { useUIState } from '../context/UIStateContext';
 import { ChronicleEvent, AdminAdjustmentType, QuestCompletionStatus, PurchaseRequestStatus, QuestType, Role } from '../types';
 import { toYMD } from '../utils/quests';
 
 export const useChronicles = ({ startDate, endDate }: { startDate: Date; endDate: Date; }) => {
     const { 
-        currentUser, appMode, users, quests, rewardTypes,
+        currentUser, users, quests, rewardTypes,
         questCompletions, purchaseRequests, userTrophies, trophies, 
         adminAdjustments, systemLogs 
     } = useAppState();
+    const { appMode } = useUIState();
 
     const chroniclesByDate = useMemo(() => {
         const eventsByDate = new Map<string, ChronicleEvent[]>();

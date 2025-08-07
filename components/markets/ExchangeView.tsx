@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
+import { useUIState, useUIDispatch } from '../../context/UIStateContext';
 import { RewardTypeDefinition, RewardCategory, Market, RewardItem } from '../../types';
 import Button from '../ui/Button';
 import Card from '../ui/Card';
@@ -38,8 +39,10 @@ const RewardButton: React.FC<{
 
 
 const ExchangeView: React.FC<ExchangeViewProps> = ({ market }) => {
-    const { currentUser, rewardTypes, settings, appMode } = useAppState();
-    const { executeExchange, addNotification, setActiveMarketId } = useAppDispatch();
+    const { currentUser, rewardTypes, settings } = useAppState();
+    const { appMode } = useUIState();
+    const { executeExchange, addNotification } = useAppDispatch();
+    const { setActiveMarketId } = useUIDispatch();
 
     const [fromRewardId, setFromRewardId] = useState<string>('');
     const [toRewardId, setToRewardId] = useState<string>('');

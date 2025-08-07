@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { useAppState } from '../../context/AppContext';
+import { useUIState } from '../../context/UIStateContext';
 import { Role, Trophy, UserTrophy, TrophyRequirementType, QuestType, QuestCompletionStatus, Quest, AppMode, User } from '../../types';
 import Card from '../ui/Card';
 import { fromYMD } from '../../utils/quests';
@@ -8,7 +9,8 @@ import DynamicIcon from '../ui/DynamicIcon';
 import ImagePreviewDialog from '../ui/ImagePreviewDialog';
 
 const TrophiesPage: React.FC = () => {
-    const { currentUser, trophies, userTrophies, appMode, settings, questCompletions, quests, ranks } = useAppState();
+    const { currentUser, trophies, userTrophies, settings, questCompletions, quests, ranks } = useAppState();
+    const { appMode } = useUIState();
     const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null);
 
     const RequirementStatus: React.FC<{ trophy: Trophy }> = ({ trophy }) => {

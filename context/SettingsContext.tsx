@@ -1,7 +1,9 @@
+// This file is obsolete. Please use useAppState(), useUIState(), and their respective dispatch hooks directly.
 
 import React from 'react';
 import { AppSettings, Page, AppMode } from '../types';
 import { useAppState, useAppDispatch } from './AppContext';
+import { useUIState, useUIDispatch } from './UIStateContext';
 
 // The state slice provided by this context
 export interface SettingsState {
@@ -21,18 +23,20 @@ export interface SettingsDispatch {
 
 // Hook to consume the settings state slice
 export const useSettings = (): SettingsState => {
-  const { settings, activePage, appMode } = useAppState();
+  const { settings, isAiConfigured } = useAppState();
+  const { activePage, appMode } = useUIState();
   return { 
     settings, 
     activePage, 
     appMode,
-    isAiAvailable: settings.enableAiFeatures,
+    isAiAvailable: settings.enableAiFeatures && isAiConfigured,
   };
 };
 
 // Hook to consume the settings dispatch functions
 export const useSettingsDispatch = (): SettingsDispatch => {
-  const { updateSettings, setActivePage, setAppMode } = useAppDispatch();
+  const { updateSettings } = useAppDispatch();
+  const { setActivePage, setAppMode } = useUIDispatch();
   return { updateSettings, setActivePage, setAppMode };
 };
 

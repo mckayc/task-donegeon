@@ -3,6 +3,7 @@ import Card from '../ui/Card';
 import Button from '../ui/Button';
 import CreateQuestDialog from '../quests/CreateQuestDialog';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
+import { useUIState } from '../../context/UIStateContext';
 import { Role, QuestType, Quest, QuestAvailability } from '../../types';
 import { isQuestAvailableForUser, questSorter, isQuestVisibleToUserInMode } from '../../utils/quests';
 import CompleteQuestDialog from '../quests/CompleteQuestDialog';
@@ -46,7 +47,8 @@ const formatTimeRemaining = (targetDate: Date, now: Date): string => {
 };
 
 const QuestItem: React.FC<{ quest: Quest; now: Date; onSelect: (quest: Quest) => void; onImagePreview: (url: string) => void; }> = ({ quest, now, onSelect, onImagePreview }) => {
-    const { rewardTypes, currentUser, questCompletions, settings, questGroups, scheduledEvents, appMode, guilds } = useAppState();
+    const { rewardTypes, currentUser, questCompletions, settings, questGroups, scheduledEvents, guilds } = useAppState();
+    const { appMode } = useUIState();
     
     if (!currentUser) return null;
 
@@ -198,7 +200,8 @@ const FilterButton: React.FC<{ type: 'all' | QuestType, children: React.ReactNod
 );
 
 const QuestsPage: React.FC = () => {
-    const { currentUser, quests, questCompletions, appMode, settings, scheduledEvents } = useAppState();
+    const { currentUser, quests, questCompletions, settings, scheduledEvents } = useAppState();
+    const { appMode } = useUIState();
     const { markQuestAsTodo, unmarkQuestAsTodo } = useAppDispatch();
     const [filter, setFilter] = useState<'all' | QuestType>('all');
     const [selectedQuest, setSelectedQuest] = useState<Quest | null>(null);

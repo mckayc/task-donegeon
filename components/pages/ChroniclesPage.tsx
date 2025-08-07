@@ -1,11 +1,13 @@
 import React, { useMemo, useState } from 'react';
 import Card from '../ui/Card';
 import { useAppState } from '../../context/AppContext';
+import { useUIState } from '../../context/UIStateContext';
 import { QuestCompletionStatus, Role, PurchaseRequestStatus, AdminAdjustmentType, SystemNotificationType, ChronicleEvent, SystemLog } from '../../types';
 import Button from '../ui/Button';
 
 const ChroniclesPage: React.FC = () => {
-  const { questCompletions, purchaseRequests, users, quests, gameAssets, currentUser, userTrophies, trophies, appMode, adminAdjustments, rewardTypes, systemLogs, settings, systemNotifications, guilds } = useAppState();
+  const { questCompletions, purchaseRequests, users, quests, gameAssets, currentUser, userTrophies, trophies, adminAdjustments, rewardTypes, systemLogs, settings, systemNotifications, guilds } = useAppState();
+  const { appMode } = useUIState();
   const [viewMode, setViewMode] = useState<'all' | 'personal'>('all');
   const [itemsPerPage, setItemsPerPage] = useState(50);
   const [currentPage, setCurrentPage] = useState(1);

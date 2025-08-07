@@ -1,8 +1,8 @@
-
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
 import { AppProvider } from './context/AppContext';
+import { UIStateProvider } from './context/UIStateContext';
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
@@ -23,7 +23,9 @@ const root = ReactDOM.createRoot(rootElement);
 root.render(
   <React.StrictMode>
     <AppProvider>
-      <App />
+      <UIStateProvider>
+        <App />
+      </UIStateProvider>
     </AppProvider>
   </React.StrictMode>
 );

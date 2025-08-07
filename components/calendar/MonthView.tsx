@@ -3,6 +3,7 @@ import { Quest, QuestCompletion, QuestAvailability, QuestType, QuestCompletionSt
 import { toYMD } from '../../utils/quests';
 import DailyDetailDialog from './DailyDetailDialog';
 import { useAppState } from '../../context/AppContext';
+import { useUIState } from '../../context/UIStateContext';
 
 interface MonthViewProps {
     currentDate: Date;
@@ -21,7 +22,8 @@ const getTextColorForBg = (bgColorHsl: string) => {
 
 const MonthView: React.FC<MonthViewProps> = ({ currentDate, quests, questCompletions, scheduledEvents, onEventSelect }) => {
     const [selectedDate, setSelectedDate] = useState<Date | null>(null);
-    const { currentUser, appMode } = useAppState();
+    const { currentUser } = useAppState();
+    const { appMode } = useUIState();
 
     useEffect(() => {
         setSelectedDate(null);

@@ -1,5 +1,5 @@
 import React, { createContext, useState, useContext, ReactNode, useEffect, useCallback, useMemo, useRef } from 'react';
-import { AppSettings, User, Quest, RewardItem, Guild, Rank, Trophy, UserTrophy, AppMode, Page, IAppData, ShareableAssetType, GameAsset, Role, RewardCategory, AdminAdjustment, AdminAdjustmentType, SystemLog, QuestType, QuestAvailability, AssetPack, ImportResolution, TrophyRequirementType, ThemeDefinition, ChatMessage, SystemNotification, SystemNotificationType, MarketStatus, QuestGroup, BulkQuestUpdates, ScheduledEvent, BugReport, QuestCompletion } from '../types';
+import { AppSettings, User, Quest, RewardItem, Guild, Rank, Trophy, UserTrophy, AppMode, Page, IAppData, ShareableAssetType, GameAsset, Role, RewardCategory, AdminAdjustment, AdminAdjustmentType, SystemLog, QuestType, QuestAvailability, AssetPack, ImportResolution, TrophyRequirementType, ThemeDefinition, ChatMessage, SystemNotification, SystemNotificationType, MarketStatus, QuestGroup, BulkQuestUpdates, ScheduledEvent, BugReport, QuestCompletion, BugReportType } from '../types';
 import { INITIAL_SETTINGS, INITIAL_RANKS, INITIAL_TROPHIES, INITIAL_THEMES } from '../data/initialData';
 import { useNotificationsDispatch } from './NotificationsContext';
 import { useAuthState, useAuthDispatch } from './AuthContext';
@@ -34,7 +34,7 @@ interface AppDispatch {
   addScheduledEvent: (event: Omit<ScheduledEvent, 'id'>) => void;
   updateScheduledEvent: (event: ScheduledEvent) => void;
   deleteScheduledEvent: (eventId: string) => void;
-  addBugReport: (report: Omit<BugReport, 'id' | 'status' | 'tags'>) => void;
+  addBugReport: (report: Omit<BugReport, 'id' | 'status' | 'tags'> & { reportType: BugReportType }) => void;
   updateBugReport: (reportId: string, updates: Partial<BugReport>) => void;
   restoreFromBackup: (backupData: IAppData) => void;
   clearAllHistory: () => void;
@@ -202,31 +202,31 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       setSystemNotifications(dataToSet.systemNotifications || []);
       setScheduledEvents(dataToSet.scheduledEvents || []);
       
-      // --- Bug Report Migration ---
+      // --- Bug Report Migration to expanded statuses and tags ---
       const bugReportsToSet = dataToSet.bugReports || [];
       const reportsToUpdateOnServer: Partial<BugReport>[] = [];
+
       const migratedBugReports = bugReportsToSet.map(report => {
           let hasChanged = false;
           const newReport = { ...report };
 
-          if (report.status && !['Open', 'Closed'].includes(report.status)) {
+          // Check for old statuses and convert them to tags, setting a new status
+          if (report.status && !['Open', 'In Progress', 'Resolved', 'Closed'].includes(report.status)) {
               hasChanged = true;
               const oldStatus = report.status as any;
-              newReport.tags = newReport.tags || ['Bug'];
-              
+              newReport.tags = newReport.tags || [];
+
               switch (oldStatus) {
                   case 'New': newReport.status = 'Open'; break;
-                  case 'Acknowledged': newReport.status = 'Open'; newReport.tags.push('Acknowledged'); break;
-                  case 'In Progress': newReport.status = 'Open'; newReport.tags.push('In Progress'); break;
-                  case 'Converted to Quest': newReport.status = 'Closed'; newReport.tags.push('Converted to Quest'); break;
-                  case 'Resolved': newReport.status = 'Closed'; newReport.tags.push('Resolved'); break;
-                  case 'Closed': newReport.status = 'Closed'; break;
+                  case 'Acknowledged': newReport.status = 'In Progress'; newReport.tags.push('Acknowledged'); break;
+                  case 'Converted to Quest': newReport.status = 'Resolved'; newReport.tags.push('Converted to Quest'); break;
                   default: newReport.status = 'Open';
               }
           }
+          // Ensure tags array exists
           if (!newReport.tags) {
               hasChanged = true;
-              newReport.tags = ['Bug'];
+              newReport.tags = [];
           }
 
           if (hasChanged) {
@@ -234,6 +234,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
           }
           return newReport as BugReport;
       });
+      
       setBugReports(migratedBugReports);
 
       if (reportsToUpdateOnServer.length > 0) {
@@ -514,12 +515,13 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     addNotification({ type: 'info', message: 'Event deleted.' });
   }, [addNotification]);
   
-    const addBugReport = useCallback(async (report: Omit<BugReport, 'id' | 'status' | 'tags'>) => {
+    const addBugReport = useCallback(async (report: Omit<BugReport, 'id' | 'status' | 'tags'> & { reportType: BugReportType }) => {
+        const { reportType, ...baseReport } = report;
         const newReport: BugReport = {
-            ...report,
+            ...baseReport,
             id: `bug-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
             status: 'Open',
-            tags: ['Bug'],
+            tags: [reportType],
         };
         // Optimistic update
         setBugReports(prev => [newReport, ...prev]);

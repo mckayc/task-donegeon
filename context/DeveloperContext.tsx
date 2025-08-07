@@ -1,5 +1,5 @@
 import React, { createContext, useState, useContext, ReactNode, useCallback, useEffect } from 'react';
-import { BugReport, BugReportLogEntry } from '../types';
+import { BugReport, BugReportLogEntry, BugReportType } from '../types';
 import { useAppDispatch } from './AppContext';
 import { bugLogger } from '../utils/bugLogger';
 
@@ -13,7 +13,7 @@ interface DeveloperState {
 // Dispatch
 interface DeveloperDispatch {
   startRecording: () => void;
-  stopRecording: (title: string) => void;
+  stopRecording: (title: string, reportType: BugReportType) => void;
   addLogEntry: (entry: Omit<BugReportLogEntry, 'timestamp'>) => void;
   startPickingElement: (onPick: (elementInfo: any) => void) => void;
   stopPickingElement: () => void;
@@ -51,10 +51,11 @@ export const DeveloperProvider: React.FC<{ children: ReactNode }> = ({ children 
     bugLogger.add({ type: 'STATE_CHANGE', message: 'Recording started.' });
   }, []);
 
-  const stopRecording = useCallback((title: string) => {
+  const stopRecording = useCallback((title: string, reportType: BugReportType) => {
     const finalLogs = bugLogger.stop();
-    const newReport: Omit<BugReport, 'id' | 'status' | 'tags'> = {
+    const newReport = {
         title,
+        reportType,
         createdAt: new Date().toISOString(),
         logs: finalLogs,
     };

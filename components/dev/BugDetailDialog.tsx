@@ -18,7 +18,7 @@ const BugDetailDialog: React.FC<BugDetailDialogProps> = ({ report, onClose }) =>
     const { addNotification } = useNotificationsDispatch();
     const [questFromBug, setQuestFromBug] = useState<BugReport | null>(null);
 
-    const allTags = useMemo(() => Array.from(new Set(['Bug', 'Feature Request', 'UI/UX', 'In Progress', 'Acknowledged', 'Resolved', 'Converted to Quest'])), []);
+    const allTags = useMemo(() => Array.from(new Set(['Bug Report', 'Feature Request', 'UI/UX Feedback', 'Content Suggestion', 'In Progress', 'Acknowledged', 'Resolved', 'Converted to Quest'])), []);
     const statuses: BugReportStatus[] = ['Open', 'In Progress', 'Resolved', 'Closed'];
 
     const handleTagsChange = (newTags: string[]) => {

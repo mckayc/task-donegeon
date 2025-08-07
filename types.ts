@@ -627,6 +627,13 @@ export interface ChatMessage {
 
 export type BugReportStatus = 'Open' | 'In Progress' | 'Resolved' | 'Closed';
 
+export enum BugReportType {
+    Bug = 'Bug Report',
+    Feature = 'Feature Request',
+    Feedback = 'UI/UX Feedback',
+    Content = 'Content Suggestion',
+}
+
 export interface BugReportLogEntry {
   timestamp: string;
   type: 'ACTION' | 'NOTE' | 'NAVIGATION' | 'STATE_CHANGE' | 'ELEMENT_PICK';

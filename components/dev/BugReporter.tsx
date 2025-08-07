@@ -3,11 +3,13 @@ import Button from '../ui/Button';
 import Input from '../ui/Input';
 import { useDeveloper } from '../../context/DeveloperContext';
 import { ChevronDownIcon, ChevronUpIcon } from '../ui/Icons';
+import { BugReportType } from '../../types';
 
 const BugReporter: React.FC = () => {
     const { isRecording, startRecording, stopRecording, addLogEntry, isPickingElement, startPickingElement, stopPickingElement, logs } = useDeveloper();
     const [title, setTitle] = useState('');
     const [note, setNote] = useState('');
+    const [reportType, setReportType] = useState<BugReportType>(BugReportType.Bug);
     const [isLogVisible, setIsLogVisible] = useState(false);
     const [isMinimized, setIsMinimized] = useState(false);
     const [isInitialBarMinimized, setIsInitialBarMinimized] = useState(false);
@@ -22,14 +24,16 @@ const BugReporter: React.FC = () => {
     const handleStart = () => {
         if (title.trim()) {
             startRecording();
+            addLogEntry({ type: 'STATE_CHANGE', message: `Report type set to: ${reportType}` });
         }
     };
     
     const handleStop = () => {
         if (title.trim()) {
-            stopRecording(title);
+            stopRecording(title, reportType);
             setTitle('');
             setNote('');
+            setReportType(BugReportType.Bug);
             setIsLogVisible(false);
             setIsMinimized(false);
         }
@@ -93,7 +97,7 @@ const BugReporter: React.FC = () => {
                 <div className="p-4 flex items-center justify-between gap-4">
                     <div className="flex items-center gap-2">
                         <div className="w-4 h-4 bg-red-500 rounded-full animate-pulse"></div>
-                        <span className="font-bold text-white">Recording Bug: {title}</span>
+                        <span className="font-bold text-white">Recording: {title}</span>
                          <Button variant="secondary" size="sm" className="!text-xs !py-1 !px-2 !h-auto" onClick={() => {
                             if (isRecording) {
                                 addLogEntry({ type: 'ACTION', message: isLogVisible ? 'Hid bug reporter log.' : 'Showed bug reporter log.' });
@@ -141,11 +145,21 @@ const BugReporter: React.FC = () => {
 
     return (
         <div data-bug-reporter-ignore className="fixed bottom-0 left-1/2 -translate-x-1/2 mb-4 bg-stone-900/80 border border-stone-700/60 shadow-2xl p-3 rounded-full flex items-center gap-2 z-[99] backdrop-blur-sm">
-            <span className="font-bold text-stone-300 ml-2">🐞 Report a Bug:</span>
+            <span className="font-bold text-stone-300 ml-2">🐞 Report:</span>
+             <Input 
+                as="select"
+                value={reportType}
+                onChange={e => setReportType(e.target.value as BugReportType)}
+                className="w-48 h-10"
+            >
+                {Object.values(BugReportType).map(type => (
+                    <option key={type} value={type}>{type}</option>
+                ))}
+            </Input>
             <Input 
                 value={title} 
                 onChange={(e) => setTitle(e.target.value)}
-                placeholder="Title of the bug report..."
+                placeholder="Title of the report..."
                 className="w-80 h-10"
             />
             <Button onClick={handleStart} disabled={!title.trim()} className="h-10">

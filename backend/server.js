@@ -339,30 +339,45 @@ app.post('/api/data/import-assets', asyncMiddleware(async (req, res) => {
             const assetList = assetPack.assets[resolution.type];
             if (!assetList) continue;
 
-            const originalAsset = resolution.type === 'users'
-                ? assetList.find(a => a.username === resolution.id)
-                : assetList.find(a => a.id === resolution.id);
-            
-            if (!originalAsset) continue;
+            // Use username for user ID during resolution, but all others use the pack's internal ID
+            const idField = resolution.type === 'users' ? 'username' : 'id';
+            const originalAsset = assetList.find(a => a[idField] === resolution.id);
 
-            const newAsset = { ...originalAsset };
+            if (!originalAsset) continue;
+            
+            // Create a mutable copy and generate a new ID to prevent collisions
+            const newAssetData = { ...originalAsset };
+            const newId = `${resolution.type.slice(0, -1)}-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+
             if (resolution.resolution === 'rename' && resolution.newName) {
-                if ('title' in newAsset) newAsset.title = resolution.newName;
-                else newAsset.name = resolution.newName;
+                if ('title' in newAssetData) newAssetData.title = resolution.newName;
+                else newAssetData.name = resolution.newName;
             }
 
+            // Destructure relation-based fields
+            const { assignedUserIds, ...restOfData } = newAssetData;
+
+            const entityToSave = { ...restOfData, id: newId };
+
             switch (resolution.type) {
-                case 'quests': await manager.save(QuestEntity, newAsset); break;
-                case 'questGroups': await manager.save(QuestGroupEntity, newAsset); break;
-                case 'rewardTypes': await manager.save(RewardTypeDefinitionEntity, newAsset); break;
-                case 'ranks': await manager.save(RankEntity, newAsset); break;
-                case 'trophies': await manager.save(TrophyEntity, newAsset); break;
-                case 'markets': await manager.save(MarketEntity, newAsset); break;
-                case 'gameAssets': await manager.save(GameAssetEntity, newAsset); break;
+                case 'quests': {
+                    const quest = manager.create(QuestEntity, entityToSave);
+                    if (assignedUserIds && assignedUserIds.length > 0) {
+                        quest.assignedUsers = await manager.getRepository(UserEntity).findBy({ id: In(assignedUserIds) });
+                    }
+                    await manager.save(quest);
+                    break;
+                }
+                case 'questGroups': await manager.save(QuestGroupEntity, entityToSave); break;
+                case 'rewardTypes': await manager.save(RewardTypeDefinitionEntity, { ...entityToSave, isCore: false }); break;
+                case 'ranks': await manager.save(RankEntity, entityToSave); break;
+                case 'trophies': await manager.save(TrophyEntity, entityToSave); break;
+                case 'markets': await manager.save(MarketEntity, entityToSave); break;
+                case 'gameAssets': await manager.save(GameAssetEntity, entityToSave); break;
                 case 'users':
                     const defaultGuild = await manager.findOneBy(GuildEntity, { isDefault: true });
                     const userToSave = manager.create(UserEntity, {
-                        ...newAsset,
+                        ...newAssetData, // use original data here before id was changed
                         id: `user-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
                         avatar: {}, ownedAssetIds: [], personalPurse: {}, personalExperience: {}, guildBalances: {},
                         ownedThemes: ['emerald', 'rose', 'sky'], hasBeenOnboarded: false,

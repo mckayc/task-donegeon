@@ -596,6 +596,16 @@ bugReportsRouter.put('/:id', asyncMiddleware(async (req, res) => {
     res.json(await bugReportRepo.findOneBy({ id: req.params.id }));
 }));
 
+bugReportsRouter.delete('/', asyncMiddleware(async (req, res) => {
+    const { ids } = req.body;
+    if (!ids || !Array.isArray(ids) || ids.length === 0) {
+        return res.status(400).json({ error: 'Report IDs must be provided in an array.' });
+    }
+    await bugReportRepo.delete(ids);
+    broadcast({ type: 'DATA_UPDATED' });
+    res.status(204).send();
+}));
+
 app.use('/api/bug-reports', bugReportsRouter);
 
 
@@ -1186,84 +1196,4 @@ app.get('/api/chronicles', asyncMiddleware(async (req, res) => {
         const rewardsText = getRewardDisplay(adj.rewards).replace(/(\d+)/g, '+$1');
         const setbacksText = getRewardDisplay(adj.setbacks).replace(/(\d+)/g, '-$1');
         allEvents.push({
-            id: adj.id, date: adj.adjustedAt, type: 'Adjustment', userId: adj.userId,
-            title: `Adjustment for ${userMap.get(adj.userId) || 'Unknown'} by ${userMap.get(adj.adjusterId) || 'Admin'}`,
-            status: adj.type, note: `${adj.reason}\n${rewardsText} ${setbacksText}`.trim(),
-            icon: '🛠️', color: '#64748b', guildId: adj.guildId
-        });
-    });
-    
-    // 5. System Logs & Announcements (Guild-wide or personal if no guild)
-    if (viewMode === 'all') {
-        const systemLogs = await manager.find(SystemLogEntity, { where: { guildId: guildIdQuery } });
-        systemLogs.forEach(log => {
-            const quest = questMap.get(log.questId);
-            const logType = log.type === 'QUEST_LATE' ? 'became LATE' : 'became INCOMPLETE';
-            const setbacksText = getRewardDisplay(log.setbacksApplied).replace(/(\d+)/g, '-$1');
-            allEvents.push({
-                id: log.id, date: log.timestamp, type: 'System',
-                title: `Quest "${quest?.title || 'Unknown'}" ${logType}`,
-                status: log.type, note: `Applied to ${log.userIds.map(id => userMap.get(id) || id).join(', ')}\n${setbacksText}`,
-                icon: '⚙️', color: '#ef4444', guildId: log.guildId
-            });
-        });
-        
-        const announcements = await manager.find(SystemNotificationEntity, { where: { type: 'Announcement', guildId: guildIdQuery } });
-        announcements.forEach(n => {
-            allEvents.push({
-                id: n.id, date: n.timestamp, type: 'Announcement',
-                title: `Announcement by ${userMap.get(n.senderId) || 'System'}`,
-                status: 'Announcement', note: n.message, icon: '📢', color: '#10b981',
-                guildId: n.guildId, recipientUserIds: n.recipientUserIds
-            });
-        });
-    }
-
-
-    // Final sort and paginate
-    allEvents.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-    
-    const paginatedEvents = allEvents.slice(skip, skip + take);
-    res.json({ events: paginatedEvents, total: allEvents.length });
-}));
-
-// === AI Endpoints (Unchanged) ===
-app.get('/api/ai/status', (req, res) => res.json({ isConfigured: !!ai }));
-
-app.post('/api/ai/test', async (req, res, next) => {
-    if (!ai) return res.status(400).json({ success: false, error: "AI not configured on server." });
-    try {
-        const response = await ai.models.generateContent({ model: 'gemini-2.5-flash', contents: 'test' });
-        if (response && response.text) res.json({ success: true });
-        else throw new Error("Invalid response from API.");
-    } catch (error) {
-        res.status(400).json({ success: false, error: 'API key is invalid.' });
-    }
-});
-
-app.post('/api/ai/generate', async (req, res, next) => {
-    if (!ai) return res.status(503).json({ error: "AI not configured on server." });
-    try {
-        const { model, prompt, generationConfig } = req.body;
-        const response = await ai.models.generateContent({ model, contents: prompt, config: generationConfig });
-        res.json({ text: response.text });
-    } catch (err) { next(err); }
-});
-
-
-// === Static File Serving ===
-app.use(express.static(path.join(__dirname, '../dist')));
-app.use('/uploads', express.static(UPLOADS_DIR));
-
-// Fallback to index.html for single-page application routing
-app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, '../dist/index.html'));
-});
-
-// Global error handler
-app.use((err, req, res, next) => {
-    console.error("An error occurred:", err);
-    if (!res.headersSent) {
-      res.status(500).json({ error: 'An internal server error occurred' });
-    }
-});
+            id: adj.id, date: adj.adjustedAt, type: 'Adjustment', userId

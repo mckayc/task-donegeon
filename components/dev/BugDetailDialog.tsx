@@ -46,6 +46,10 @@ const BugDetailDialog: React.FC<BugDetailDialogProps> = ({ report, onClose }) =>
         ).join('\n');
         navigator.clipboard.writeText(logText).then(() => {
             addNotification({ type: 'success', message: 'Log copied to clipboard!' });
+            if (report.status === 'Open') {
+                handleStatusChange('In Progress');
+                addNotification({ type: 'info', message: `Status automatically updated to "In Progress".` });
+            }
         });
     };
     

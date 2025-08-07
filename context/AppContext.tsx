@@ -36,6 +36,7 @@ interface AppDispatch {
   deleteScheduledEvent: (eventId: string) => void;
   addBugReport: (report: Omit<BugReport, 'id' | 'status' | 'tags'> & { reportType: BugReportType }) => void;
   updateBugReport: (reportId: string, updates: Partial<BugReport>) => void;
+  deleteBugReports: (reportIds: string[]) => void;
   restoreFromBackup: (backupData: IAppData) => void;
   clearAllHistory: () => void;
   resetAllPlayerData: () => void;
@@ -544,6 +545,23 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         }
     }, [apiRequest]);
 
+    const deleteBugReports = useCallback(async (reportIds: string[]) => {
+        const reportsToDelete = bugReports.filter(r => reportIds.includes(r.id));
+        if (reportsToDelete.length === 0) return;
+
+        // Optimistic update
+        setBugReports(prev => prev.filter(r => !reportIds.includes(r.id)));
+        addNotification({ type: 'info', message: `${reportIds.length} report(s) deleted.` });
+
+        try {
+            await apiRequest('DELETE', '/api/bug-reports', { ids: reportIds });
+        } catch (error) {
+            console.error("Failed to delete bug reports from server", error);
+            // The main sync will handle reverting state if the API call fails.
+        }
+    }, [bugReports, addNotification, apiRequest]);
+
+
   const updateSettings = useCallback(async (settingsToUpdate: Partial<AppSettings>) => {
     const newSettings = { ...settings, ...settingsToUpdate };
     try {
@@ -760,7 +778,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     addGuild, updateGuild, deleteGuild, setRanks, addTrophy, updateTrophy, deleteTrophy, awardTrophy, applyManualAdjustment,
     addTheme, updateTheme, deleteTheme,
     addScheduledEvent, updateScheduledEvent, deleteScheduledEvent,
-    addBugReport, updateBugReport,
+    addBugReport, updateBugReport, deleteBugReports,
     restoreFromBackup, clearAllHistory, resetAllPlayerData, deleteAllCustomContent, deleteSelectedAssets, 
     uploadFile,
     factoryReset,

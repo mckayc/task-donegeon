@@ -503,8 +503,10 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     }, [currentUser, apiRequest]);
 
     const markMessagesAsRead = useCallback(async (params: { partnerId?: string; guildId?: string; }) => {
-        await apiRequest('POST', '/api/chat/read', params);
-    }, [apiRequest]);
+        if (!currentUser) return;
+        const payload = { ...params, userId: currentUser.id };
+        await apiRequest('POST', '/api/chat/read', payload);
+    }, [currentUser, apiRequest]);
 
     const state = {
         isDataLoaded, isAiConfigured, syncStatus, syncError,

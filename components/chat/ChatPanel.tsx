@@ -65,6 +65,22 @@ const ChatPanel: React.FC = () => {
             (msg.senderId === activeChatTarget.id && msg.recipientId === currentUser.id)
         ).sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
     }, [chatMessages, currentUser, activeChatTarget]);
+    
+    const unreadInActiveConvo = useMemo(() => {
+        if (!currentUser || !activeConversation) return 0;
+        // Don't count our own messages as unread
+        return activeConversation.filter(msg => msg.senderId !== currentUser.id && !msg.readBy.includes(currentUser.id)).length;
+    }, [activeConversation, currentUser]);
+
+    useEffect(() => {
+        if (activeChatTarget && unreadInActiveConvo > 0) {
+            if ('isGuild' in activeChatTarget && activeChatTarget.isGuild) {
+                markMessagesAsRead({ guildId: activeChatTarget.id });
+            } else {
+                markMessagesAsRead({ partnerId: activeChatTarget.id });
+            }
+        }
+    }, [activeChatTarget, unreadInActiveConvo, markMessagesAsRead]);
 
     const scrollToBottom = useCallback(() => {
         if (messagesContainerRef.current) {
@@ -79,16 +95,6 @@ const ChatPanel: React.FC = () => {
             setUserScrolledUp(!atBottom);
         }
     };
-
-    useEffect(() => {
-        if (activeChatTarget) {
-            if ('isGuild' in activeChatTarget && activeChatTarget.isGuild) {
-                markMessagesAsRead({ guildId: activeChatTarget.id });
-            } else {
-                markMessagesAsRead({ partnerId: activeChatTarget.id });
-            }
-        }
-    }, [activeChatTarget, activeConversation, markMessagesAsRead]);
     
     useEffect(() => {
         if (!userScrolledUp) {

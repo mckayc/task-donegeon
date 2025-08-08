@@ -1339,6 +1339,72 @@ app.get('/api/chronicles', asyncMiddleware(async (req, res) => {
     res.json({ events: paginatedEvents, total });
 }));
 
+// Chat Router
+const chatRouter = express.Router();
+const chatRepo = dataSource.getRepository(ChatMessageEntity);
+
+chatRouter.post('/send', asyncMiddleware(async (req, res) => {
+    const { senderId, recipientId, guildId, message, isAnnouncement } = req.body;
+    if (!senderId || !message || (!recipientId && !guildId)) {
+        return res.status(400).json({ error: 'Missing required fields for chat message.' });
+    }
+
+    const newMessage = chatRepo.create({
+        id: `chat-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+        senderId,
+        recipientId,
+        guildId,
+        message,
+        isAnnouncement: isAnnouncement || false,
+        timestamp: new Date().toISOString(),
+        readBy: [senderId], // Sender has implicitly read the message
+    });
+
+    await chatRepo.save(newMessage);
+    broadcast({ type: 'DATA_UPDATED' });
+    res.status(201).json(newMessage);
+}));
+
+chatRouter.post('/read', asyncMiddleware(async (req, res) => {
+    const { userId, partnerId, guildId } = req.body;
+    if (!userId || (!partnerId && !guildId)) {
+        return res.status(400).json({ error: 'Missing required fields to mark messages as read.' });
+    }
+
+    let messagesToUpdate;
+    if (partnerId) {
+        messagesToUpdate = await chatRepo.find({
+            where: {
+                senderId: partnerId,
+                recipientId: userId,
+            }
+        });
+    } else { // guildId
+        messagesToUpdate = await chatRepo.find({
+            where: {
+                guildId: guildId,
+            }
+        });
+    }
+
+    let updated = false;
+    for (const message of messagesToUpdate) {
+        if (!message.readBy.includes(userId)) {
+            message.readBy.push(userId);
+            updated = true;
+        }
+    }
+
+    if (updated) {
+        await chatRepo.save(messagesToUpdate);
+        broadcast({ type: 'DATA_UPDATED' });
+    }
+
+    res.status(204).send();
+}));
+
+app.use('/api/chat', chatRouter);
+
 // Serve React App
 app.use(express.static(path.join(__dirname, '..', 'dist')));
 app.use('/uploads', express.static(UPLOADS_DIR));

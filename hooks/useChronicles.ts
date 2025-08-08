@@ -28,13 +28,13 @@ export const useChronicles = ({ startDate, endDate }: UseChroniclesProps): Map<s
   const { purchaseRequests } = useEconomyState();
   const { currentUser, users } = useAuthState();
   const { appMode } = useUIState();
+  
+  const startYMD = useMemo(() => toYMD(startDate), [startDate]);
+  const endYMD = useMemo(() => toYMD(endDate), [endDate]);
 
   return useMemo(() => {
     const chroniclesByDate = new Map<string, ChronicleEvent[]>();
     if (!currentUser) return chroniclesByDate;
-
-    const startYMD = toYMD(startDate);
-    const endYMD = toYMD(endDate);
 
     const currentGuildId = appMode.mode === 'guild' ? appMode.guildId : undefined;
     const allEvents: ChronicleEvent[] = [];
@@ -135,7 +135,7 @@ export const useChronicles = ({ startDate, endDate }: UseChroniclesProps): Map<s
     return chroniclesByDate;
 
   }, [
-    currentUser, appMode, startDate, endDate, users, quests, questCompletions,
+    currentUser, appMode, startYMD, endYMD, users, quests, questCompletions,
     purchaseRequests, userTrophies, trophies, adminAdjustments, systemNotifications
   ]);
 };

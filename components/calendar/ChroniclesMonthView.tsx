@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { toYMD } from '../../utils/quests';
 import { useChronicles } from '../../hooks/useChronicles';
 import ChroniclesDetailDialog from './ChroniclesDetailDialog';
@@ -14,8 +14,11 @@ const ChroniclesMonthView: React.FC<ChroniclesMonthViewProps> = ({ currentDate }
         setSelectedDate(null);
     }, [currentDate]);
 
-    const startOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
-    const endOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
+    const { startOfMonth, endOfMonth } = useMemo(() => {
+        const start = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+        const end = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
+        return { startOfMonth: start, endOfMonth: end };
+    }, [currentDate]);
 
     const chroniclesByDate = useChronicles({ startDate: startOfMonth, endDate: endOfMonth });
 

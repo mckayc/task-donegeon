@@ -174,7 +174,7 @@ const AppearancePage: React.FC = () => {
             <Card>
                  <div className="border-b border-stone-700 mb-6">
                     <nav className="-mb-px flex space-x-6">
-                        <button onClick={() => setActiveTab('main')} className={`whitespace-nowrap pb-4 px-1 border-b-2 font-medium text-sm transition-colors ${activeTab === 'main' ? 'border-emerald-500 text-emerald-400' : 'border-transparent text-stone-400 hover:text-stone-200'}`}>Main Sidebar</button>
+                        <button onClick={() => setActiveTab('main')} className={`whitespace-nowrap pb-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'main' ? 'border-emerald-500 text-emerald-400' : 'border-transparent text-stone-400 hover:text-stone-200'}`}>Main Sidebar</button>
                     </nav>
                 </div>
                 <p className="text-stone-400 text-sm mb-4">Drag and drop to reorder links. Use arrows to create nested groups.</p>

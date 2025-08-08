@@ -11,11 +11,11 @@ export const useCalendarVentures = (date: Date) => {
     const { quests, questCompletions } = useQuestState();
     const { currentUser } = useAuthState();
     const { appMode } = useUIState();
+    const dateYMD = useMemo(() => toYMD(date), [date]);
 
     return useMemo(() => {
         if (!currentUser || !date) return [];
 
-        const dateYMD = toYMD(date);
         const currentGuildId = appMode.mode === 'guild' ? appMode.guildId : undefined;
         const userCompletionsForMode = questCompletions.filter(c => c.userId === currentUser.id && c.guildId === currentGuildId);
 
@@ -39,5 +39,5 @@ export const useCalendarVentures = (date: Date) => {
         // Return unique list
         return Array.from(new Set(venturesToShow.map(q => q.id))).map(id => venturesToShow.find(q => q.id === id)!);
 
-    }, [quests, currentUser, questCompletions, appMode, date, scheduledEvents]);
+    }, [quests, currentUser, questCompletions, appMode, date, dateYMD, scheduledEvents]);
 };

@@ -31,14 +31,15 @@ const WeekView: React.FC<WeekViewProps> = ({ currentDate, quests, questCompletio
     const [selectedQuest, setSelectedQuest] = useState<{quest: Quest, date: Date} | null>(null);
     const [completingQuest, setCompletingQuest] = useState<{quest: Quest, date: Date} | null>(null);
 
-    const startOfWeek = new Date(currentDate);
-    startOfWeek.setDate(currentDate.getDate() - currentDate.getDay());
-
-    const days = Array.from({ length: 7 }, (_, i) => {
-        const day = new Date(startOfWeek);
-        day.setDate(startOfWeek.getDate() + i);
-        return day;
-    });
+    const days = useMemo(() => {
+        const startOfWeek = new Date(currentDate);
+        startOfWeek.setDate(currentDate.getDate() - currentDate.getDay());
+        return Array.from({ length: 7 }, (_, i) => {
+            const day = new Date(startOfWeek);
+            day.setDate(startOfWeek.getDate() + i);
+            return day;
+        });
+    }, [currentDate]);
 
     const handleStartCompletion = (quest: Quest, date: Date) => {
         setCompletingQuest({ quest, date });

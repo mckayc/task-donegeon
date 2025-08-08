@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { toYMD } from '../../utils/quests';
 import { useChronicles } from '../../hooks/useChronicles';
 import { ChronicleEvent } from '../../types';
@@ -41,17 +41,20 @@ interface ChroniclesWeekViewProps {
 }
 
 const ChroniclesWeekView: React.FC<ChroniclesWeekViewProps> = ({ currentDate }) => {
-    const startOfWeek = new Date(currentDate);
-    startOfWeek.setDate(currentDate.getDate() - currentDate.getDay());
-    const endOfWeek = new Date(startOfWeek);
-    endOfWeek.setDate(startOfWeek.getDate() + 6);
+    const { startOfWeek, endOfWeek, days } = useMemo(() => {
+        const start = new Date(currentDate);
+        start.setDate(currentDate.getDate() - currentDate.getDay());
+        const end = new Date(start);
+        end.setDate(start.getDate() + 6);
+        
+        const dayArray = Array.from({ length: 7 }, (_, i) => {
+            const day = new Date(start);
+            day.setDate(start.getDate() + i);
+            return day;
+        });
+        return { startOfWeek: start, endOfWeek: end, days: dayArray };
+    }, [currentDate]);
     
-    const days = Array.from({ length: 7 }, (_, i) => {
-        const day = new Date(startOfWeek);
-        day.setDate(startOfWeek.getDate() + i);
-        return day;
-    });
-
     const chroniclesByDate = useChronicles({ startDate: startOfWeek, endDate: endOfWeek });
 
     return (

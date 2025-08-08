@@ -12,9 +12,11 @@ import Input from '../ui/Input';
 import BulkEditQuestsDialog from '../quests/BulkEditQuestsDialog';
 import { useDebounce } from '../../hooks/useDebounce';
 import { useNotificationsDispatch } from '../../context/NotificationsContext';
+import { useQuestState } from '../../context/QuestContext';
 
 const ManageQuestsPage: React.FC = () => {
-    const { settings, isAiConfigured, questGroups } = useAppState();
+    const { settings, isAiConfigured } = useAppState();
+    const { questGroups } = useQuestState();
     const { addNotification } = useNotificationsDispatch();
     
     const [pageQuests, setPageQuests] = useState<Quest[]>([]);

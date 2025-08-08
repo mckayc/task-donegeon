@@ -7,9 +7,10 @@ import {
 } from '../types';
 import { useAppState } from '../context/AppContext';
 import { useUIState } from '../context/UIStateContext';
-import { toYMD } from '../utils/quests';
+import { toYMD } from './quests';
 import { useAuthState } from '../context/AuthContext';
 import { useEconomyState } from '../context/EconomyContext';
+import { useQuestState } from '../context/QuestContext';
 
 interface UseChroniclesProps {
   startDate: Date;
@@ -22,9 +23,8 @@ export const useChronicles = ({ startDate, endDate }: UseChroniclesProps): Map<s
     trophies,
     adminAdjustments,
     systemNotifications,
-    quests, 
-    questCompletions,
   } = useAppState();
+  const { quests, questCompletions } = useQuestState();
   const { purchaseRequests } = useEconomyState();
   const { currentUser, users } = useAuthState();
   const { appMode } = useUIState();

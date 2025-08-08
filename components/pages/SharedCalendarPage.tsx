@@ -10,6 +10,7 @@ import QuestDetailDialog from '../quests/QuestDetailDialog';
 import CompleteQuestDialog from '../quests/CompleteQuestDialog';
 import { useAuthState } from '../../context/AuthContext';
 import { useQuestDispatch, useQuestState } from '../../context/QuestContext';
+import { useNotificationsDispatch } from '../../context/NotificationsContext';
 
 const getDueDateString = (quest: Quest): string | null => {
     if (quest.type === QuestType.Venture && quest.lateDateTime) {
@@ -27,8 +28,10 @@ const getDueDateString = (quest: Quest): string | null => {
 const SharedCalendarPage: React.FC = () => {
     const { settings, guilds, scheduledEvents } = useAppState();
     const { quests, questCompletions } = useQuestState();
-    const { markQuestAsTodo, unmarkQuestAsTodo } = useQuestDispatch();
+    const { markQuestAsTodo, unmarkQuestAsTodo, completeQuest } = useQuestDispatch();
     const { users } = useAuthState();
+    const { addNotification } = useNotificationsDispatch();
+
     const [currentDate, setCurrentDate] = useState(new Date());
     const [verifyingQuest, setVerifyingQuest] = useState<{ quest: Quest; user: User } | null>(null);
     const [questForNoteCompletion, setQuestForNoteCompletion] = useState<{ quest: Quest; user: User } | null>(null);
@@ -51,18 +54,16 @@ const SharedCalendarPage: React.FC = () => {
             
             quests.forEach(quest => {
                  if (!quest.isActive) return;
-                 // Check assignment
                  let isAssigned = false;
                  if (quest.assignedUserIds.length > 0) {
                      isAssigned = quest.assignedUserIds.includes(user.id);
                  } else if (quest.guildId) {
                      isAssigned = guilds.find(g => g.id === quest.guildId)?.memberIds.includes(user.id) || false;
                  } else {
-                     isAssigned = true; // Personal quest for everyone
+                     isAssigned = true; 
                  }
                  if (!isAssigned) return;
                  
-                 // Check if quest should appear today for this user
                  const isDutyToday = quest.type === QuestType.Duty && isQuestScheduledForDay(quest, currentDate);
                  const isVentureDueToday = quest.type === QuestType.Venture && quest.lateDateTime && toYMD(new Date(quest.lateDateTime)) === dateKey;
                  const isTodoForUser = quest.type === QuestType.Venture && quest.todoUserIds?.includes(user.id);
@@ -76,4 +77,131 @@ const SharedCalendarPage: React.FC = () => {
             });
             
             const uniqueQuests = Array.from(new Set(userQuests.map(q => q.id))).map(id => userQuests.find(q => q.id === id)!);
-            unique
+            const sortedQuests = uniqueQuests.sort(questSorter(user, userCompletions, scheduledEvents, currentDate));
+            questsMap.set(user.id, sortedQuests.map(quest => ({ quest, user })));
+        });
+
+        return questsMap;
+    }, [sharedUsers, quests, currentDate, questCompletions, guilds, scheduledEvents]);
+    
+    const completeQuestWithoutPin = (quest: Quest, user: User) => {
+        if (quest.requiresApproval) {
+            setQuestForNoteCompletion({ quest, user });
+            return;
+        }
+
+        const completionData = {
+          questId: quest.id,
+          userId: user.id,
+          completedAt: currentDate.toISOString(),
+          status: 'Approved',
+          note: 'Quick completed from shared view.',
+          guildId: quest.guildId
+        };
+        
+        completeQuest(completionData);
+        addNotification({ type: 'success', message: `"${quest.title}" completed for ${user.gameName}!` });
+    };
+
+    const handleNoteCompletion = (quest: Quest, user: User) => {
+        setQuestForNoteCompletion({ quest, user });
+    };
+    
+    const handleQuickComplete = (quest: Quest, user: User) => {
+        if (settings.security.requirePinForUsers && user.pin) {
+            setVerifyingQuest({ quest, user });
+        } else {
+            completeQuestWithoutPin(quest, user);
+        }
+    };
+    
+    const onPinSuccess = () => {
+        if (verifyingQuest) {
+            completeQuestWithoutPin(verifyingQuest.quest, verifyingQuest.user);
+            setVerifyingQuest(null);
+        }
+    };
+
+    const handleDetailView = (quest: Quest, user: User) => {
+        setSelectedQuestDetails({ quest, user });
+    };
+
+    const handleToggleTodo = () => {
+        if (!selectedQuestDetails) return;
+        const { quest, user } = selectedQuestDetails;
+        const isCurrentlyTodo = quest.todoUserIds?.includes(user.id);
+
+        if (isCurrentlyTodo) {
+            unmarkQuestAsTodo(quest.id, user.id);
+        } else {
+            markQuestAsTodo(quest.id, user.id);
+        }
+        
+        setSelectedQuestDetails(prev => {
+            if (!prev) return null;
+            const newTodoUserIds = isCurrentlyTodo
+                ? (prev.quest.todoUserIds || []).filter(id => id !== user.id)
+                : [...(prev.quest.todoUserIds || []), user.id];
+            return { ...prev, quest: { ...prev.quest, todoUserIds: newTodoUserIds } };
+        });
+    };
+    
+    return (
+        <div className="h-full flex flex-col p-4 md:p-8">
+            <div className="flex-grow overflow-x-auto scrollbar-hide">
+                <div className="flex space-x-6 min-w-max h-full">
+                    {sharedUsers.map(user => (
+                        <div key={user.id} className="w-80 flex-shrink-0 flex flex-col">
+                            <div className="flex items-center gap-3 mb-4 flex-shrink-0">
+                                <Avatar user={user} className="w-12 h-12 rounded-full border-2 border-accent" />
+                                <h2 className="text-xl font-bold text-stone-200">{user.gameName}</h2>
+                            </div>
+                            <div className="flex-grow bg-stone-800/50 rounded-lg p-4 space-y-3 overflow-y-auto scrollbar-hide">
+                                {(questsByUser.get(user.id) || []).map(({ quest }) => (
+                                     <div key={quest.id} className="bg-stone-900/50 rounded-lg p-3">
+                                         <div onClick={() => handleDetailView(quest, user)} className="cursor-pointer">
+                                            <p className="font-semibold text-stone-100 flex items-center gap-2">{quest.icon} {quest.title}</p>
+                                            <p className="text-xs text-stone-400 mt-1">{getDueDateString(quest)}</p>
+                                         </div>
+                                         {settings.sharedMode.allowCompletion && (
+                                            <div className="mt-2 pt-2 border-t border-stone-700/60 flex justify-end">
+                                                <Button size="sm" onClick={() => quest.requiresApproval ? handleNoteCompletion(quest, user) : handleQuickComplete(quest, user)}>
+                                                    Complete
+                                                </Button>
+                                            </div>
+                                         )}
+                                     </div>
+                                ))}
+                                {(questsByUser.get(user.id) || []).length === 0 && (
+                                    <p className="text-center text-stone-500 pt-8">No quests for today.</p>
+                                )}
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            </div>
+            {verifyingQuest && (
+                <PinEntryDialog user={verifyingQuest.user} onClose={() => setVerifyingQuest(null)} onSuccess={onPinSuccess} />
+            )}
+            {questForNoteCompletion && (
+                <CompleteQuestDialog 
+                    quest={questForNoteCompletion.quest}
+                    user={questForNoteCompletion.user}
+                    onClose={() => setQuestForNoteCompletion(null)} 
+                    completionDate={currentDate}
+                />
+            )}
+             {selectedQuestDetails && (
+                <QuestDetailDialog
+                    quest={selectedQuestDetails.quest}
+                    onClose={() => setSelectedQuestDetails(null)}
+                    onToggleTodo={handleToggleTodo}
+                    isTodo={selectedQuestDetails.quest.type === QuestType.Venture && !!selectedQuestDetails.quest.todoUserIds?.includes(selectedQuestDetails.user.id)}
+                    dialogTitle={`For ${selectedQuestDetails.user.gameName}`}
+                />
+            )}
+        </div>
+    );
+};
+
+export default SharedCalendarPage;

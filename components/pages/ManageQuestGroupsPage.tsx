@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { useAppState, useAppDispatch } from '../../context/AppContext';
+import { useAppState } from '../../context/AppContext';
 import { QuestGroup } from '../../types';
 import Button from '../ui/Button';
 import Card from '../ui/Card';
@@ -8,10 +8,12 @@ import EmptyState from '../ui/EmptyState';
 import EditQuestGroupDialog from '../quests/EditQuestGroupDialog';
 import ConfirmDialog from '../ui/ConfirmDialog';
 import AssignQuestGroupDialog from '../quests/AssignQuestGroupDialog';
+import { useQuestState, useQuestDispatch } from '../../context/QuestContext';
 
 const ManageQuestGroupsPage: React.FC = () => {
-    const { settings, questGroups } = useAppState();
-    const { deleteQuestGroup } = useAppDispatch();
+    const { settings } = useAppState();
+    const { questGroups } = useQuestState();
+    const { deleteQuestGroup } = useQuestDispatch();
     
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [editingGroup, setEditingGroup] = useState<QuestGroup | null>(null);

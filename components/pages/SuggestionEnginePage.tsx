@@ -12,6 +12,7 @@ import EditTrophyDialog from '../settings/EditTrophyDialog';
 import EditMarketDialog from '../markets/EditMarketDialog';
 import { useNotificationsDispatch } from '../../context/NotificationsContext';
 import { useEconomyState } from '../../context/EconomyContext';
+import { useQuestState } from '../../context/QuestContext';
 
 type AssetType = 'Duties' | 'Ventures' | 'Trophies' | 'Items' | 'Markets';
 
@@ -36,7 +37,8 @@ const ApiInstructions: React.FC = () => (
 );
 
 const SuggestionEnginePage: React.FC = () => {
-    const { settings, isAiConfigured, questGroups } = useAppState();
+    const { settings, isAiConfigured } = useAppState();
+    const { questGroups } = useQuestState();
     const { rewardTypes } = useEconomyState();
     const { addNotification } = useNotificationsDispatch();
     const [apiStatus, setApiStatus] = useState<'unknown' | 'testing' | 'valid' | 'invalid'>(isAiConfigured ? 'valid' : 'unknown');

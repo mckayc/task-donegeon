@@ -4,9 +4,11 @@ import { useUIState } from '../context/UIStateContext';
 import { QuestType } from '../types';
 import { isQuestAvailableForUser } from '../utils/quests';
 import { useAuthState } from '../context/AuthContext';
+import { useQuestState } from '../context/QuestContext';
 
 export const useAvailableVentures = () => {
-    const { scheduledEvents, quests, questCompletions } = useAppState();
+    const { scheduledEvents } = useAppState();
+    const { quests, questCompletions } = useQuestState();
     const { currentUser } = useAuthState();
     const { appMode } = useUIState();
 

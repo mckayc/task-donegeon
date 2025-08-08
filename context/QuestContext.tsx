@@ -30,6 +30,7 @@ interface QuestDispatch {
   addQuestGroup: (group: Omit<QuestGroup, 'id'>) => QuestGroup;
   updateQuestGroup: (group: QuestGroup) => void;
   deleteQuestGroup: (groupId: string) => void;
+  deleteQuestGroups: (groupIds: string[]) => void;
   assignQuestGroupToUsers: (groupId: string, userIds: string[]) => void;
   deleteQuests: (questIds: string[]) => void;
   updateQuestsStatus: (questIds: string[], isActive: boolean) => void;
@@ -130,7 +131,18 @@ export const QuestProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   }, []);
   
   const updateQuestGroup = useCallback((group: QuestGroup) => setQuestGroups(prev => prev.map(g => g.id === group.id ? group : g)), []);
-  const deleteQuestGroup = useCallback((groupId: string) => setQuestGroups(prev => prev.filter(g => g.id !== groupId)), []);
+  
+  const deleteQuestGroup = useCallback((groupId: string) => {
+    setQuestGroups(prev => prev.filter(g => g.id !== groupId));
+    // Also unset from quests
+    setQuests(prev => prev.map(q => q.groupId === groupId ? { ...q, groupId: undefined } : q));
+  }, []);
+
+  const deleteQuestGroups = useCallback((groupIds: string[]) => {
+      const idsToDelete = new Set(groupIds);
+      setQuestGroups(prev => prev.filter(g => !idsToDelete.has(g.id)));
+      setQuests(prev => prev.map(q => idsToDelete.has(q.groupId || '') ? { ...q, groupId: undefined } : q));
+  }, []);
 
   const assignQuestGroupToUsers = useCallback((groupId: string, userIds: string[]) => {
       setQuests(prev => prev.map(q => q.groupId === groupId ? { ...q, assignedUserIds: userIds } : q));
@@ -158,7 +170,7 @@ export const QuestProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       claimQuest, releaseQuest, markQuestAsTodo, unmarkQuestAsTodo, completeQuest,
       approveQuestCompletion, rejectQuestCompletion, addQuestGroup, updateQuestGroup,
       deleteQuestGroup, assignQuestGroupToUsers, deleteQuests, updateQuestsStatus,
-      bulkUpdateQuests
+      bulkUpdateQuests, deleteQuestGroups
   };
 
   return (

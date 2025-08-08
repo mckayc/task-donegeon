@@ -366,18 +366,28 @@ app.post('/api/data/import-assets', asyncMiddleware(async (req, res) => {
             const newAssetData = JSON.parse(JSON.stringify(originalAsset));
 
             if (res.resolution === 'rename' && res.newName) {
+                const oldName = newAssetData.title || newAssetData.name;
                 if ('title' in newAssetData) newAssetData.title = res.newName;
                 else newAssetData.name = res.newName;
+                console.log(`[IMPORT] Renaming ${res.type} [${oldName}] -> [${res.newName}]`);
             }
             
-            // FIX: Use asset ID if available, otherwise fall back to username for users.
-            // This handles user templates that might not have a dedicated 'id' field.
-            const oldId = res.type === 'users' ? (originalAsset.id || originalAsset.username) : originalAsset.id;
             const newId = `${res.type.slice(0, -1)}-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
             
-            if (oldId) {
-                idMap.set(oldId, newId);
-                console.log(`[IMPORT] Mapping ${res.type} [${oldId}] -> [${newId}]`);
+            if (res.type === 'users') {
+                if (originalAsset.id) {
+                    idMap.set(originalAsset.id, newId);
+                    console.log(`[IMPORT] Mapping user [ID: ${originalAsset.id}] -> [${newId}]`);
+                }
+                if (originalAsset.username) {
+                    idMap.set(originalAsset.username, newId);
+                    console.log(`[IMPORT] Mapping user [Username: ${originalAsset.username}] -> [${newId}]`);
+                }
+            } else {
+                if (originalAsset.id) {
+                    idMap.set(originalAsset.id, newId);
+                    console.log(`[IMPORT] Mapping ${res.type} [${originalAsset.id}] -> [${newId}]`);
+                }
             }
             newAssetData.id = newId;
 
@@ -404,28 +414,38 @@ app.post('/api/data/import-assets', asyncMiddleware(async (req, res) => {
         
         processAssets('quests', quest => {
             if (quest.groupId) quest.groupId = remap(quest.groupId);
-            if (quest.assignedUserIds) quest.assignedUserIds = quest.assignedUserIds.map(remap);
-            quest.rewards = quest.rewards.map(r => ({ ...r, rewardTypeId: remap(r.rewardTypeId) }));
-            quest.lateSetbacks = quest.lateSetbacks.map(r => ({ ...r, rewardTypeId: remap(r.rewardTypeId) }));
-            quest.incompleteSetbacks = quest.incompleteSetbacks.map(r => ({ ...r, rewardTypeId: remap(r.rewardTypeId) }));
+            if (Array.isArray(quest.assignedUserIds)) quest.assignedUserIds = quest.assignedUserIds.map(remap);
+            if (Array.isArray(quest.rewards)) {
+                quest.rewards = quest.rewards.map(r => ({ ...r, rewardTypeId: remap(r.rewardTypeId) }));
+            }
+            if (Array.isArray(quest.lateSetbacks)) {
+                quest.lateSetbacks = quest.lateSetbacks.map(r => ({ ...r, rewardTypeId: remap(r.rewardTypeId) }));
+            }
+            if (Array.isArray(quest.incompleteSetbacks)) {
+                quest.incompleteSetbacks = quest.incompleteSetbacks.map(r => ({ ...r, rewardTypeId: remap(r.rewardTypeId) }));
+            }
         });
 
         processAssets('gameAssets', asset => {
-            asset.marketIds = asset.marketIds.map(remap);
-            asset.costGroups = asset.costGroups.map(group => group.map(c => ({ ...c, rewardTypeId: remap(c.rewardTypeId) })));
-            if (asset.payouts) asset.payouts = asset.payouts.map(p => ({ ...p, rewardTypeId: remap(p.rewardTypeId) }));
+            if (Array.isArray(asset.marketIds)) asset.marketIds = asset.marketIds.map(remap);
+            if (Array.isArray(asset.costGroups)) {
+                asset.costGroups = asset.costGroups.map(group => group.map(c => ({ ...c, rewardTypeId: remap(c.rewardTypeId) })));
+            }
+            if (Array.isArray(asset.payouts)) asset.payouts = asset.payouts.map(p => ({ ...p, rewardTypeId: remap(p.rewardTypeId) }));
             if (asset.linkedThemeId) asset.linkedThemeId = remap(asset.linkedThemeId);
         });
 
         processAssets('trophies', trophy => {
-            trophy.requirements = trophy.requirements.map(req => {
-                if (req.type === 'ACHIEVE_RANK' || req.type === 'QUEST_COMPLETED') return { ...req, value: remap(req.value) };
-                return req;
-            });
+            if (Array.isArray(trophy.requirements)) {
+                trophy.requirements = trophy.requirements.map(req => {
+                    if (req.type === 'ACHIEVE_RANK' || req.type === 'QUEST_COMPLETED') return { ...req, value: remap(req.value) };
+                    return req;
+                });
+            }
         });
         
         processAssets('markets', market => {
-            if (market.status.type === 'conditional') {
+            if (market.status.type === 'conditional' && Array.isArray(market.status.conditions)) {
                 market.status.conditions = market.status.conditions.map(cond => {
                     if (cond.type === 'MIN_RANK') return { ...cond, rankId: remap(cond.rankId) };
                     if (cond.type === 'QUEST_COMPLETED') return { ...cond, questId: remap(cond.questId) };

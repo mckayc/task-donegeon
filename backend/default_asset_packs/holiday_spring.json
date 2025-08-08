@@ -170,7 +170,7 @@
         "id": "spq6",
         "title": "Hide the Eggs",
         "description": "Help hide the decorated eggs for the hunt.",
-        "type": "Duty",
+        "type": "Venture",
         "iconType": "emoji",
         "icon": "🥚",
         "rewards": [
@@ -196,90 +196,6 @@
         "guildId": null,
         "claimedByUserIds": [],
         "dismissals": []
-      }
-    ],
-    "markets": [
-      {
-        "id": "spm1",
-        "title": "The Blooming Market",
-        "description": "Fresh goods and festive attire for the spring season.",
-        "icon": "🌷",
-        "iconType": "emoji",
-        "status": {
-          "type": "open"
-        }
-      }
-    ],
-    "gameAssets": [
-      {
-        "id": "spga1",
-        "name": "Bunny Ears",
-        "description": "A pair of floppy bunny ears for your avatar.",
-        "url": "/uploads/avatar-hats/bunny-ears.png",
-        "category": "Avatar",
-        "avatarSlot": "hat",
-        "isForSale": true,
-        "costGroups": [
-          [
-            {
-              "rewardTypeId": "core-gold",
-              "amount": 20
-            }
-          ]
-        ],
-        "marketIds": [
-          "spm1"
-        ]
-      },
-      {
-        "id": "spga2",
-        "name": "Basket of Plenty",
-        "description": "A decorative basket to hold all your spring treasures.",
-        "url": "/uploads/baskets/spring-basket.png",
-        "category": "Tool",
-        "isForSale": true,
-        "costGroups": [
-          [
-            {
-              "rewardTypeId": "core-gold",
-              "amount": 15
-            }
-          ]
-        ],
-        "marketIds": [
-          "spm1"
-        ]
-      },
-      {
-        "id": "spga3",
-        "name": "Forest Theme",
-        "description": "Unlocks the lush 'Forest' theme for your app.",
-        "url": "/uploads/themes/forest-theme.png",
-        "category": "Theme",
-        "isForSale": true,
-        "costGroups": [
-          [
-            {
-              "rewardTypeId": "core-gems",
-              "amount": 50
-            }
-          ]
-        ],
-        "marketIds": [
-          "spm1"
-        ],
-        "linkedThemeId": "forest"
-      }
-    ],
-    "trophies": [
-      {
-        "id": "spt1",
-        "name": "Egg Hunt Champion",
-        "description": "Find the most eggs during the spring hunt.",
-        "icon": "🥇",
-        "iconType": "emoji",
-        "isManual": true,
-        "requirements": []
       }
     ]
   }

@@ -119,46 +119,6 @@
         "claimedByUserIds": [],
         "dismissals": []
       }
-    ],
-    "markets": [
-      {
-        "id": "market-scholar-shop",
-        "title": "The Scholar's Shop",
-        "description": "Trade your crystals for educational rewards and screen time.",
-        "iconType": "emoji",
-        "icon": "🏫",
-        "status": {
-          "type": "open"
-        }
-      }
-    ],
-    "gameAssets": [
-      {
-        "id": "school-item-1",
-        "name": "Scroll of Extra Screen Time",
-        "description": "A magical scroll that grants an extra 30 minutes of screen time. Must be approved.",
-        "url": "/uploads/scrolls/scroll-blue.png",
-        "icon": "📜",
-        "category": "Real-World Reward",
-        "isForSale": true,
-        "costGroups": [
-          [
-            {
-              "rewardTypeId": "core-crystal",
-              "amount": 50
-            }
-          ]
-        ],
-        "marketIds": [
-          "market-scholar-shop"
-        ],
-        "creatorId": "system",
-        "createdAt": "2025-01-01T00:00:00.000Z",
-        "purchaseLimit": null,
-        "purchaseLimitType": "Total",
-        "purchaseCount": 0,
-        "requiresApproval": true
-      }
     ]
   }
 }

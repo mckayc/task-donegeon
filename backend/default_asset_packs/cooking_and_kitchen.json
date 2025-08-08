@@ -112,47 +112,6 @@
         "claimedByUserIds": [],
         "dismissals": []
       }
-    ],
-    "markets": [
-      {
-        "id": "market-experiences",
-        "title": "The Experience Emporium",
-        "description": "Trade your hard-earned gems for real-world experiences and privileges.",
-        "iconType": "emoji",
-        "icon": "🎟️",
-        "status": {
-          "type": "open"
-        }
-      }
-    ],
-    "gameAssets": [
-      {
-        "id": "kitchen-item-1",
-        "name": "Chef's Hat",
-        "description": "A tall, puffy hat for a master chef's avatar.",
-        "url": "/uploads/avatar-hats/chef-hat.png",
-        "icon": "👨‍🍳",
-        "category": "Avatar",
-        "avatarSlot": "hat",
-        "isForSale": true,
-        "costGroups": [
-          [
-            {
-              "rewardTypeId": "core-gems",
-              "amount": 10
-            }
-          ]
-        ],
-        "marketIds": [
-          "market-experiences"
-        ],
-        "creatorId": "system",
-        "createdAt": "2025-01-01T00:00:00.000Z",
-        "purchaseLimit": 1,
-        "purchaseLimitType": "PerUser",
-        "purchaseCount": 0,
-        "requiresApproval": false
-      }
     ]
   }
 }

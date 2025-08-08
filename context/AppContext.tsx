@@ -612,14 +612,19 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         await apiRequest('PUT', '/api/quests/bulk-update', { ids: questIds, updates });
     }, [apiRequest]);
 
-    const state: AppState = {
+    const state = useMemo(() => ({
         isDataLoaded, isAiConfigured, syncStatus, syncError,
         quests, questGroups, guilds, ranks, trophies, userTrophies,
         adminAdjustments, systemLogs, settings, themes, chatMessages,
         systemNotifications, scheduledEvents, bugReports, questCompletions, allTags
-    };
+    }), [
+        isDataLoaded, isAiConfigured, syncStatus, syncError,
+        quests, questGroups, guilds, ranks, trophies, userTrophies,
+        adminAdjustments, systemLogs, settings, themes, chatMessages,
+        systemNotifications, scheduledEvents, bugReports, questCompletions, allTags
+    ]);
 
-    const dispatch: AppDispatch = {
+    const dispatch = useMemo(() => ({
         addGuild, updateGuild, deleteGuild, setRanks, addTrophy, updateTrophy, deleteTrophy,
         awardTrophy, applyManualAdjustment, addTheme, updateTheme, deleteTheme,
         addScheduledEvent, updateScheduledEvent, deleteScheduledEvent, addBugReport,
@@ -632,7 +637,20 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         approveQuestCompletion, rejectQuestCompletion, addQuestGroup, updateQuestGroup,
         deleteQuestGroup, assignQuestGroupToUsers, deleteQuests, updateQuestsStatus,
         bulkUpdateQuests
-    };
+    }), [
+        addGuild, updateGuild, deleteGuild, setRanks, addTrophy, updateTrophy, deleteTrophy,
+        awardTrophy, applyManualAdjustment, addTheme, updateTheme, deleteTheme,
+        addScheduledEvent, updateScheduledEvent, deleteScheduledEvent, addBugReport,
+        updateBugReport, deleteBugReports, importBugReports, restoreFromBackup, clearAllHistory,
+        resetAllPlayerData, deleteAllCustomContent, deleteSelectedAssets, uploadFile,
+        factoryReset, updateSettings, resetSettings, sendMessage, markMessagesAsRead,
+        addSystemNotification, markSystemNotificationsAsRead, setQuests, setQuestGroups,
+        setQuestCompletions, addQuest, updateQuest, deleteQuest, cloneQuest, dismissQuest,
+        claimQuest, releaseQuest, markQuestAsTodo, unmarkQuestAsTodo, completeQuest,
+        approveQuestCompletion, rejectQuestCompletion, addQuestGroup, updateQuestGroup,
+        deleteQuestGroup, assignQuestGroupToUsers, deleteQuests, updateQuestsStatus,
+        bulkUpdateQuests
+    ]);
 
     return (
         <AppStateContext.Provider value={state}>

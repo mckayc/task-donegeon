@@ -2,10 +2,13 @@ import React, { forwardRef } from 'react';
 import { cn } from '../../lib/utils';
 
 // Extends base props to allow for a 'select' or 'textarea' type input
-interface InputProps extends React.InputHTMLAttributes<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement> {
+// Also allows any data-* attributes to be passed through.
+interface InputProps extends Omit<React.InputHTMLAttributes<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>, 'type'> {
   label?: string;
   as?: 'input' | 'select' | 'textarea';
+  type?: string;
   children?: React.ReactNode;
+  'data-log-id'?: string;
 }
 
 const Input = forwardRef<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement, InputProps>(({ label, id, className, as = 'input', children, ...props }, ref) => {
@@ -40,6 +43,7 @@ const Input = forwardRef<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElem
         return (
           <input
             id={id}
+            type={props.type || 'text'}
             ref={ref as React.ForwardedRef<HTMLInputElement>}
             {...(props as React.InputHTMLAttributes<HTMLInputElement>)}
             className={cn(shadCnInputClasses, className)}

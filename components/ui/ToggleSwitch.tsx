@@ -4,9 +4,10 @@ interface ToggleSwitchProps {
     enabled: boolean;
     setEnabled: (enabled: boolean) => void;
     label: string;
+    'data-log-id'?: string;
 }
 
-const ToggleSwitch: React.FC<ToggleSwitchProps> = ({ enabled, setEnabled, label }) => {
+const ToggleSwitch: React.FC<ToggleSwitchProps> = ({ enabled, setEnabled, label, 'data-log-id': dataLogId }) => {
   return (
     <div className="flex items-center">
       <label htmlFor={label} className="text-sm font-medium text-stone-300 mr-3">
@@ -15,6 +16,7 @@ const ToggleSwitch: React.FC<ToggleSwitchProps> = ({ enabled, setEnabled, label 
       <button
         type="button"
         id={label}
+        data-log-id={dataLogId}
         className={`${
           enabled ? 'bg-emerald-600' : 'bg-stone-600'
         } relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 focus:ring-offset-stone-900`}

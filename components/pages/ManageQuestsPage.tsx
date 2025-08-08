@@ -31,7 +31,7 @@ const ManageQuestsPage: React.FC = () => {
     const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
     const dropdownRef = useRef<HTMLDivElement | null>(null);
     
-    const [activeTabId, setActiveTabId] = useState('All');
+    const [activeTab, setActiveTab] = useState('All');
     const [searchTerm, setSearchTerm] = useState('');
     const [sortBy, setSortBy] = useState<'title-asc' | 'title-desc' | 'status-asc' | 'status-desc'>('title-asc');
     const debouncedSearchTerm = useDebounce(searchTerm, 300);
@@ -66,7 +66,10 @@ const ManageQuestsPage: React.FC = () => {
         setIsLoading(true);
         try {
             const params = new URLSearchParams();
-            params.append('groupId', activeTabId);
+            const group = questGroups.find(g => g.name === activeTab);
+            const groupId = activeTab === 'All' ? 'All' : (group ? group.id : 'Uncategorized');
+            
+            params.append('groupId', groupId);
             if (debouncedSearchTerm) params.append('searchTerm', debouncedSearchTerm);
             params.append('sortBy', sortBy);
 
@@ -77,7 +80,7 @@ const ManageQuestsPage: React.FC = () => {
         } finally {
             setIsLoading(false);
         }
-    }, [activeTabId, debouncedSearchTerm, sortBy, apiRequest]);
+    }, [activeTab, debouncedSearchTerm, sortBy, questGroups, apiRequest]);
 
     useEffect(() => {
         fetchQuests();
@@ -94,15 +97,11 @@ const ManageQuestsPage: React.FC = () => {
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
-    const tabs = useMemo(() => [
-        { id: 'All', name: 'All' },
-        { id: 'Uncategorized', name: 'Uncategorized' },
-        ...questGroups.map(g => ({ id: g.id, name: g.name }))
-    ], [questGroups]);
+    const tabs = useMemo(() => ['All', 'Uncategorized', ...questGroups.map(g => g.name)], [questGroups]);
     
     useEffect(() => {
         setSelectedQuests([]);
-    }, [activeTabId, searchTerm, sortBy]);
+    }, [activeTab, searchTerm, sortBy]);
 
     const handleEdit = (quest: Quest) => {
         setInitialCreateData(null);
@@ -210,11 +209,11 @@ const ManageQuestsPage: React.FC = () => {
     const headerActions = (
         <div className="flex items-center gap-2 flex-wrap">
              {isAiAvailable && (
-                <Button size="sm" onClick={() => setIsGeneratorOpen(true)} variant="secondary">
+                <Button size="sm" onClick={() => setIsGeneratorOpen(true)} variant="secondary" data-log-id="manage-quests-create-with-ai">
                     Create with AI
                 </Button>
             )}
-            <Button size="sm" onClick={handleCreate}>Create New {settings.terminology.task}</Button>
+            <Button size="sm" onClick={handleCreate} data-log-id="manage-quests-create-new">Create New {settings.terminology.task}</Button>
         </div>
     );
 
@@ -228,15 +227,16 @@ const ManageQuestsPage: React.FC = () => {
                     <nav className="-mb-px flex space-x-4 overflow-x-auto">
                         {tabs.map(tab => (
                             <button
-                                key={tab.id}
-                                onClick={() => setActiveTabId(tab.id)}
+                                key={tab}
+                                onClick={() => setActiveTab(tab)}
+                                data-log-id={`manage-quests-tab-${tab.toLowerCase().replace(' ', '-')}`}
                                 className={`capitalize whitespace-nowrap pb-4 px-1 border-b-2 font-medium text-sm transition-colors ${
-                                    activeTabId === tab.id
+                                    activeTab === tab
                                     ? 'border-emerald-500 text-emerald-400'
                                     : 'border-transparent text-stone-400 hover:text-stone-200 hover:border-stone-500'
                                 }`}
                             >
-                                {tab.name}
+                                {tab}
                             </button>
                         ))}
                     </nav>
@@ -253,10 +253,10 @@ const ManageQuestsPage: React.FC = () => {
                     {selectedQuests.length > 0 && (
                         <div className="flex items-center gap-2 p-2 bg-stone-900/50 rounded-lg">
                             <span className="text-sm font-semibold text-stone-300 px-2">{selectedQuests.length} selected</span>
-                            <Button size="sm" variant="secondary" onClick={() => setIsBulkEditDialogOpen(true)}>Bulk Edit</Button>
-                            <Button size="sm" variant="secondary" className="!bg-green-800/60 hover:!bg-green-700/70 text-green-200" onClick={() => setConfirmation({ action: 'activate', ids: selectedQuests })}>Mark Active</Button>
-                            <Button size="sm" variant="secondary" className="!bg-yellow-800/60 hover:!bg-yellow-700/70 text-yellow-200" onClick={() => setConfirmation({ action: 'deactivate', ids: selectedQuests })}>Mark Inactive</Button>
-                            <Button size="sm" variant="secondary" className="!bg-red-900/50 hover:!bg-red-800/60 text-red-300" onClick={() => setConfirmation({ action: 'delete', ids: selectedQuests })}>Delete</Button>
+                            <Button size="sm" variant="secondary" onClick={() => setIsBulkEditDialogOpen(true)} data-log-id="manage-quests-bulk-edit">Bulk Edit</Button>
+                            <Button size="sm" variant="secondary" className="!bg-green-800/60 hover:!bg-green-700/70 text-green-200" onClick={() => setConfirmation({ action: 'activate', ids: selectedQuests })} data-log-id="manage-quests-bulk-activate">Mark Active</Button>
+                            <Button size="sm" variant="secondary" className="!bg-yellow-800/60 hover:!bg-yellow-700/70 text-yellow-200" onClick={() => setConfirmation({ action: 'deactivate', ids: selectedQuests })} data-log-id="manage-quests-bulk-deactivate">Mark Inactive</Button>
+                            <Button size="sm" variant="secondary" className="!bg-red-900/50 hover:!bg-red-800/60 text-red-300" onClick={() => setConfirmation({ action: 'delete', ids: selectedQuests })} data-log-id="manage-quests-bulk-delete">Delete</Button>
                         </div>
                     )}
                 </div>
@@ -281,7 +281,7 @@ const ManageQuestsPage: React.FC = () => {
                                     <tr key={quest.id} className="border-b border-stone-700/40 last:border-b-0">
                                         <td className="p-4"><input type="checkbox" checked={selectedQuests.includes(quest.id)} onChange={e => handleSelectOne(quest.id, e.target.checked)} className="h-4 w-4 rounded text-emerald-600 bg-stone-700 border-stone-600 focus:ring-emerald-500" /></td>
                                         <td className="p-4 font-bold">
-                                            <button onClick={() => handleEdit(quest)} className="hover:underline hover:text-accent transition-colors text-left">
+                                            <button onClick={() => handleEdit(quest)} data-log-id={`manage-quests-edit-title-${quest.id}`} className="hover:underline hover:text-accent transition-colors text-left">
                                                 {quest.title}
                                             </button>
                                         </td>
@@ -306,9 +306,9 @@ const ManageQuestsPage: React.FC = () => {
                                             </button>
                                             {openDropdownId === quest.id && (
                                                 <div ref={dropdownRef} className="absolute right-10 top-0 mt-2 w-36 bg-stone-900 border border-stone-700 rounded-lg shadow-xl z-20">
-                                                    <a href="#" onClick={(e) => { e.preventDefault(); handleEdit(quest); setOpenDropdownId(null); }} className="block px-4 py-2 text-sm text-stone-300 hover:bg-stone-700/50">Edit</a>
-                                                    <button onClick={() => { handleClone(quest.id); setOpenDropdownId(null); }} className="w-full text-left block px-4 py-2 text-sm text-stone-300 hover:bg-stone-700/50">Clone</button>
-                                                    <button onClick={() => { setConfirmation({ action: 'delete', ids: [quest.id] }); setOpenDropdownId(null); }} className="w-full text-left block px-4 py-2 text-sm text-red-400 hover:bg-stone-700/50">Delete</button>
+                                                    <a href="#" onClick={(e) => { e.preventDefault(); handleEdit(quest); setOpenDropdownId(null); }} data-log-id={`manage-quests-action-edit-${quest.id}`} className="block px-4 py-2 text-sm text-stone-300 hover:bg-stone-700/50">Edit</a>
+                                                    <button onClick={() => { handleClone(quest.id); setOpenDropdownId(null); }} data-log-id={`manage-quests-action-clone-${quest.id}`} className="w-full text-left block px-4 py-2 text-sm text-stone-300 hover:bg-stone-700/50">Clone</button>
+                                                    <button onClick={() => { setConfirmation({ action: 'delete', ids: [quest.id] }); setOpenDropdownId(null); }} data-log-id={`manage-quests-action-delete-${quest.id}`} className="w-full text-left block px-4 py-2 text-sm text-red-400 hover:bg-stone-700/50">Delete</button>
                                                 </div>
                                             )}
                                         </td>
@@ -322,7 +322,7 @@ const ManageQuestsPage: React.FC = () => {
                         Icon={QuestsIcon}
                         title={`No ${settings.terminology.tasks} Found`}
                         message={searchTerm ? "No quests match your search." : `Create your first ${settings.terminology.task.toLowerCase()} to get your adventurers started.`}
-                        actionButton={<Button onClick={handleCreate}>Create {settings.terminology.task}</Button>}
+                        actionButton={<Button onClick={handleCreate} data-log-id="manage-quests-create-empty-state">Create {settings.terminology.task}</Button>}
                     />
                 )}
             </Card>

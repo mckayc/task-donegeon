@@ -69,24 +69,33 @@ const App: React.FC = () => {
 
     const handleGlobalClick = (event: MouseEvent) => {
       const target = event.target as HTMLElement;
+      const loggableTarget = target.closest('[data-log-id]');
 
       // Ignore clicks on the bug reporter UI itself
       if (target.closest('[data-bug-reporter-ignore]')) {
         return;
       }
-      
-      const elementInfo = {
-        tag: target.tagName.toLowerCase(),
-        id: target.id || undefined,
-        classes: typeof target.className === 'string' ? target.className : undefined,
-        text: target.innerText?.substring(0, 50).replace(/\n/g, ' ') || undefined,
-      };
 
-      addLogEntry({
-        type: 'ACTION',
-        message: `Clicked element: <${elementInfo.tag}>`,
-        element: elementInfo,
-      });
+      if (loggableTarget) {
+          const logId = loggableTarget.getAttribute('data-log-id');
+          addLogEntry({
+              type: 'ACTION',
+              message: `Clicked: ${logId}`,
+          });
+      } else {
+          const elementInfo = {
+            tag: target.tagName.toLowerCase(),
+            id: target.id || undefined,
+            classes: typeof target.className === 'string' ? target.className : undefined,
+            text: target.innerText?.substring(0, 50).replace(/\n/g, ' ') || undefined,
+          };
+
+          addLogEntry({
+            type: 'ACTION',
+            message: `Clicked element: <${elementInfo.tag}>`,
+            element: elementInfo,
+          });
+      }
     };
 
     // Use capture phase to get the click before other handlers might stop it

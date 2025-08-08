@@ -90,11 +90,12 @@ const Header: React.FC = () => {
       {/* Left Group */}
       <div className="flex items-center gap-2 md:gap-4">
         <div className="flex bg-stone-800/50 p-1 rounded-full border border-stone-700/60">
-            <button onClick={() => handleModeChange({ mode: 'personal' })} className={`px-4 py-1.5 text-sm font-semibold rounded-full transition-colors ${appMode.mode === 'personal' ? 'bg-emerald-600 text-white' : 'text-stone-300 hover:bg-stone-700'}`}>
+            <button data-log-id="header-mode-personal" onClick={() => handleModeChange({ mode: 'personal' })} className={`px-4 py-1.5 text-sm font-semibold rounded-full transition-colors ${appMode.mode === 'personal' ? 'bg-emerald-600 text-white' : 'text-stone-300 hover:bg-stone-700'}`}>
                 Personal
             </button>
             <div className="relative">
                 <button
+                    data-log-id="header-mode-guild-dropdown"
                     onClick={() => {
                         if (userGuilds.length === 1) {
                             handleModeChange({ mode: 'guild', guildId: userGuilds[0].id });
@@ -112,7 +113,7 @@ const Header: React.FC = () => {
                     <div className="absolute left-0 mt-2 w-56 bg-stone-800 border border-stone-700 rounded-lg shadow-xl z-20">
                         <div className="px-4 pt-2 pb-1 text-xs text-stone-500 font-semibold uppercase">Select a {settings.terminology.group}</div>
                          {userGuilds.map(guild => (
-                            <a href="#" key={guild.id} onClick={() => handleModeChange({ mode: 'guild', guildId: guild.id })} className="block px-4 py-2 text-stone-300 hover:bg-stone-700">{guild.name}</a>
+                            <a href="#" key={guild.id} data-log-id={`header-mode-guild-select-${guild.id}`} onClick={() => handleModeChange({ mode: 'guild', guildId: guild.id })} className="block px-4 py-2 text-stone-300 hover:bg-stone-700">{guild.name}</a>
                         ))}
                     </div>
                  )}
@@ -132,25 +133,26 @@ const Header: React.FC = () => {
         {settings.sharedMode.enabled && (
             <button
                 onClick={exitToSharedView}
+                data-log-id="header-exit-shared-view"
                 className="bg-amber-600 text-white px-4 py-1.5 rounded-full font-bold text-lg hover:bg-amber-500 transition-colors"
             >
                 Exit User
             </button>
         )}
         <div className="relative">
-          <button onClick={() => setProfileDropdownOpen(!profileDropdownOpen)} className="flex items-center space-x-3">
+          <button data-log-id="header-profile-dropdown-button" onClick={() => setProfileDropdownOpen(!profileDropdownOpen)} className="flex items-center space-x-3">
             <span className="hidden sm:inline text-stone-200 font-medium">{currentUser.gameName}</span>
             <Avatar user={currentUser} className="w-12 h-12 bg-emerald-800 rounded-full border-2 border-accent overflow-hidden" />
           </button>
           {profileDropdownOpen && (
             <div className="absolute right-0 mt-2 w-48 bg-stone-800 border border-stone-700 rounded-lg shadow-xl z-20">
-              <a href="#" onClick={handleSwitchUser} className="block px-4 py-2 text-stone-300 hover:bg-stone-700">Switch User</a>
-              <a href="#" onClick={() => navigateTo('Profile')} className="block px-4 py-2 text-stone-300 hover:bg-stone-700">Profile</a>
+              <a href="#" data-log-id="header-profile-dropdown-switch-user" onClick={handleSwitchUser} className="block px-4 py-2 text-stone-300 hover:bg-stone-700">Switch User</a>
+              <a href="#" data-log-id="header-profile-dropdown-profile" onClick={() => navigateTo('Profile')} className="block px-4 py-2 text-stone-300 hover:bg-stone-700">Profile</a>
               {currentUser.role === Role.DonegeonMaster && (
-                  <a href="#" onClick={() => navigateTo('Settings')} className="block px-4 py-2 text-stone-300 hover:bg-stone-700">Settings</a>
+                  <a href="#" data-log-id="header-profile-dropdown-settings" onClick={() => navigateTo('Settings')} className="block px-4 py-2 text-stone-300 hover:bg-stone-700">Settings</a>
               )}
               <div className="border-t border-stone-700"></div>
-              <a href="#" onClick={handleLogout} className="block px-4 py-2 text-red-400 hover:bg-stone-700">Logout</a>
+              <a href="#" data-log-id="header-profile-dropdown-logout" onClick={handleLogout} className="block px-4 py-2 text-red-400 hover:bg-stone-700">Logout</a>
             </div>
           )}
         </div>

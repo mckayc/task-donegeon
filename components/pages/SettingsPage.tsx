@@ -245,7 +245,7 @@ export const SettingsPage: React.FC = () => {
                     ✓ Saved!
                 </span>
             )}
-            <Button onClick={handleSave}>Save Changes</Button>
+            <Button onClick={handleSave} data-log-id="settings-save-changes">Save Changes</Button>
         </div>
     );
 
@@ -255,7 +255,7 @@ export const SettingsPage: React.FC = () => {
                 <CollapsibleSection title="General Settings" defaultOpen onToggle={(isOpen) => bugLogger.isRecording() && bugLogger.add({ type: 'ACTION', message: `${isOpen ? 'Expanded' : 'Collapsed'} "General Settings" section.` })}>
                     <div className="space-y-6">
                         <div className="flex items-start">
-                            <ToggleSwitch enabled={formState.chat.enabled} setEnabled={(val) => handleToggleChange('chat.enabled', val, 'General Settings', 'Enable Sitewide Chat')} label="Enable Sitewide Chat" />
+                            <ToggleSwitch enabled={formState.chat.enabled} setEnabled={(val) => handleToggleChange('chat.enabled', val, 'General Settings', 'Enable Sitewide Chat')} label="Enable Sitewide Chat" data-log-id="settings-toggle-chat" />
                             <p className="text-sm ml-6" style={{ color: 'hsl(var(--color-text-secondary))' }}>Allow users to send direct messages and participate in guild chats.</p>
                         </div>
 
@@ -264,6 +264,7 @@ export const SettingsPage: React.FC = () => {
                             <div className="relative">
                                 <button
                                     type="button"
+                                    data-log-id="settings-favicon-picker-button"
                                     onClick={() => {
                                         if(bugLogger.isRecording()) { bugLogger.add({ type: 'ACTION', message: 'Opened favicon emoji picker.' }); }
                                         setIsFaviconPickerOpen(prev => !prev)
@@ -287,7 +288,7 @@ export const SettingsPage: React.FC = () => {
                         </div>
 
                         <div className="pt-4 border-t flex items-start" style={{ borderColor: 'hsl(var(--color-border))' }}>
-                            <ToggleSwitch enabled={formState.forgivingSetbacks} setEnabled={(val) => handleToggleChange('forgivingSetbacks', val, 'General Settings', 'Forgiving Setbacks')} label="Forgiving Setbacks" />
+                            <ToggleSwitch enabled={formState.forgivingSetbacks} setEnabled={(val) => handleToggleChange('forgivingSetbacks', val, 'General Settings', 'Forgiving Setbacks')} label="Forgiving Setbacks" data-log-id="settings-toggle-forgiving-setbacks" />
                             <p className="text-sm ml-6" style={{ color: 'hsl(var(--color-text-secondary))' }}>If enabled, time-based setbacks are only applied if a quest remains uncompleted at the end of the day.</p>
                         </div>
                     </div>
@@ -296,7 +297,7 @@ export const SettingsPage: React.FC = () => {
                 <CollapsibleSection title="Notifications" onToggle={(isOpen) => bugLogger.isRecording() && bugLogger.add({ type: 'ACTION', message: `${isOpen ? 'Expanded' : 'Collapsed'} "Notifications" section.` })}>
                     <div className="space-y-6">
                         <div className="flex items-start">
-                            <ToggleSwitch enabled={formState.loginNotifications.enabled} setEnabled={(val) => handleToggleChange('loginNotifications.enabled', val, 'Notifications', 'Enable popup notifications on login')} label="Enable popup notifications on login" />
+                            <ToggleSwitch enabled={formState.loginNotifications.enabled} setEnabled={(val) => handleToggleChange('loginNotifications.enabled', val, 'Notifications', 'Enable popup notifications on login')} label="Enable popup notifications on login" data-log-id="settings-toggle-login-notifications" />
                             <p className="text-sm ml-6" style={{ color: 'hsl(var(--color-text-secondary))' }}>
                                 When this is turned on, if there are any new notifications when a user enters their account it will show a large popup with all the notifications.
                             </p>
@@ -307,21 +308,21 @@ export const SettingsPage: React.FC = () => {
                 <CollapsibleSection title="Shared Mode" onToggle={(isOpen) => bugLogger.isRecording() && bugLogger.add({ type: 'ACTION', message: `${isOpen ? 'Expanded' : 'Collapsed'} "Shared Mode" section.` })}>
                     <div className="space-y-6">
                         <div className="flex items-start">
-                            <ToggleSwitch enabled={formState.sharedMode.enabled} setEnabled={(val) => handleToggleChange('sharedMode.enabled', val, 'Shared Mode', 'Enable Shared Mode')} label="Enable Shared Mode" />
+                            <ToggleSwitch enabled={formState.sharedMode.enabled} setEnabled={(val) => handleToggleChange('sharedMode.enabled', val, 'Shared Mode', 'Enable Shared Mode')} label="Enable Shared Mode" data-log-id="settings-toggle-shared-mode" />
                             <p className="text-sm ml-6" style={{ color: 'hsl(var(--color-text-secondary))' }}>This mode is for a device in a shared location (like a family tablet) where multiple people can view and use the app like a kiosk.</p>
                         </div>
 
                         <div className={`space-y-6 pl-8 mt-4 border-l-2 border-stone-700 ${!formState.sharedMode.enabled ? 'opacity-50 pointer-events-none' : ''}`}>
                              <div className="flex items-start">
-                                <ToggleSwitch enabled={formState.sharedMode.quickUserSwitchingEnabled} setEnabled={(val) => handleToggleChange('sharedMode.quickUserSwitchingEnabled', val, 'Shared Mode', 'Quick User Switching Bar')} label="Quick User Switching Bar" />
+                                <ToggleSwitch enabled={formState.sharedMode.quickUserSwitchingEnabled} setEnabled={(val) => handleToggleChange('sharedMode.quickUserSwitchingEnabled', val, 'Shared Mode', 'Quick User Switching Bar')} label="Quick User Switching Bar" data-log-id="settings-toggle-quick-switch" />
                                 <p className="text-sm ml-6" style={{ color: 'hsl(var(--color-text-secondary))' }}>If enabled, a bar with user avatars will appear at the top for one-click switching.</p>
                             </div>
                              <div className="flex items-start">
-                                <ToggleSwitch enabled={formState.sharedMode.allowCompletion} setEnabled={(val) => handleToggleChange('sharedMode.allowCompletion', val, 'Shared Mode', 'Allow Completion in Shared View')} label="Allow Completion in Shared View" />
+                                <ToggleSwitch enabled={formState.sharedMode.allowCompletion} setEnabled={(val) => handleToggleChange('sharedMode.allowCompletion', val, 'Shared Mode', 'Allow Completion in Shared View')} label="Allow Completion in Shared View" data-log-id="settings-toggle-allow-shared-completion" />
                                 <p className="text-sm ml-6" style={{ color: 'hsl(var(--color-text-secondary))' }}>If enabled, a "Complete" button will appear next to tasks in the shared calendar view. Recommended to keep off for security.</p>
                             </div>
                             <div className="flex items-start">
-                                 <ToggleSwitch enabled={formState.sharedMode.autoExit} setEnabled={(val) => handleToggleChange('sharedMode.autoExit', val, 'Shared Mode', 'Auto Exit to Shared View')} label="Auto Exit to Shared View" />
+                                 <ToggleSwitch enabled={formState.sharedMode.autoExit} setEnabled={(val) => handleToggleChange('sharedMode.autoExit', val, 'Shared Mode', 'Auto Exit to Shared View')} label="Auto Exit to Shared View" data-log-id="settings-toggle-auto-exit-shared" />
                                  <div className="ml-6 flex-grow">
                                     <p className="text-sm" style={{ color: 'hsl(var(--color-text-secondary))' }}>Automatically return to the shared calendar view after a period of inactivity.</p>
                                     {formState.sharedMode.autoExit && (
@@ -351,11 +352,11 @@ export const SettingsPage: React.FC = () => {
                 <CollapsibleSection title="Security" onToggle={(isOpen) => bugLogger.isRecording() && bugLogger.add({ type: 'ACTION', message: `${isOpen ? 'Expanded' : 'Collapsed'} "Security" section.` })}>
                      <div className="space-y-6">
                          <div className="pt-4 border-t flex items-start" style={{ borderColor: 'hsl(var(--color-border))' }}>
-                            <ToggleSwitch enabled={formState.security.requirePinForUsers} setEnabled={(val) => handleToggleChange('security.requirePinForUsers', val, 'Security', 'Require PIN for Users')} label="Require PIN for Users" />
+                            <ToggleSwitch enabled={formState.security.requirePinForUsers} setEnabled={(val) => handleToggleChange('security.requirePinForUsers', val, 'Security', 'Require PIN for Users')} label="Require PIN for Users" data-log-id="settings-toggle-require-pin" />
                             <p className="text-sm ml-6" style={{ color: 'hsl(var(--color-text-secondary))' }}>If disabled, users will not be prompted for a PIN when switching profiles. This is less secure but faster for trusted environments.</p>
                         </div>
                          <div className="pt-4 border-t flex items-start" style={{ borderColor: 'hsl(var(--color-border))' }}>
-                            <ToggleSwitch enabled={formState.security.requirePasswordForAdmin} setEnabled={(val) => handleToggleChange('security.requirePasswordForAdmin', val, 'Security', 'Require Password for Admins')} label={`Require Password for ${formState.terminology.admin} & ${formState.terminology.moderator}`} />
+                            <ToggleSwitch enabled={formState.security.requirePasswordForAdmin} setEnabled={(val) => handleToggleChange('security.requirePasswordForAdmin', val, 'Security', 'Require Password for Admins')} label={`Require Password for ${formState.terminology.admin} & ${formState.terminology.moderator}`} data-log-id="settings-toggle-require-admin-password" />
                             <p className="text-sm ml-6" style={{ color: 'hsl(var(--color-text-secondary))' }}>If enabled, these roles must use their password to log in. If disabled, they can use their PIN like regular users.</p>
                         </div>
                     </div>
@@ -368,13 +369,14 @@ export const SettingsPage: React.FC = () => {
                                 enabled={formState.enableAiFeatures}
                                 setEnabled={(val) => handleToggleChange('enableAiFeatures', val, 'AI Features', 'Enable AI-Powered Features')}
                                 label="Enable AI-Powered Features"
+                                data-log-id="settings-toggle-ai-features"
                             />
                             <div className="ml-6 flex-grow">
                                 <p className="text-sm" style={{ color: 'hsl(var(--color-text-secondary))' }}>
                                     Allow the use of Gemini AI to power features like the Suggestion Engine. This requires a valid Gemini API key to be configured by the server administrator.
                                 </p>
                                 <div className="flex items-center gap-4 mt-4">
-                                    <Button variant="secondary" onClick={testApiKey} disabled={apiKeyStatus === 'testing'}>
+                                    <Button variant="secondary" onClick={testApiKey} disabled={apiKeyStatus === 'testing'} data-log-id="settings-test-api-key">
                                         {apiKeyStatus === 'testing' ? 'Testing...' : 'Test API Key'}
                                     </Button>
                                     {apiKeyStatus === 'valid' && <span className="text-sm font-semibold text-green-400">✓ Valid Key</span>}
@@ -396,6 +398,7 @@ export const SettingsPage: React.FC = () => {
                             enabled={formState.rewardValuation.enabled}
                             setEnabled={(val) => handleToggleChange('rewardValuation.enabled', val, 'Economy & Valuation', 'Enable Economy Valuation')}
                             label="Enable Economy Valuation & Exchanges"
+                            data-log-id="settings-toggle-economy-valuation"
                         />
                         <div className={`grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 mt-4 border-t border-stone-700/60 ${!formState.rewardValuation.enabled ? 'opacity-50 pointer-events-none' : ''}`}>
                             {/* Left Column: Anchor & Fees */}
@@ -426,15 +429,15 @@ export const SettingsPage: React.FC = () => {
                 <CollapsibleSection title={`Default ${formState.terminology.task} Values`} onToggle={(isOpen) => bugLogger.isRecording() && bugLogger.add({ type: 'ACTION', message: `${isOpen ? 'Expanded' : 'Collapsed'} "Default Task Values" section.` })}>
                      <div className="space-y-6">
                         <div className="flex items-start">
-                            <ToggleSwitch enabled={formState.questDefaults.requiresApproval} setEnabled={(val) => handleToggleChange('questDefaults.requiresApproval', val, `Default ${formState.terminology.task} Values`, 'Requires Approval')} label="Requires Approval" />
+                            <ToggleSwitch enabled={formState.questDefaults.requiresApproval} setEnabled={(val) => handleToggleChange('questDefaults.requiresApproval', val, `Default ${formState.terminology.task} Values`, 'Requires Approval')} label="Requires Approval" data-log-id="settings-toggle-default-approval" />
                             <p className="text-sm ml-6" style={{ color: 'hsl(var(--color-text-secondary))' }}>If enabled, new {formState.terminology.tasks.toLowerCase()} will default to requiring approval from a {formState.terminology.moderator} or {formState.terminology.admin}.</p>
                         </div>
                         <div className="flex items-start">
-                            <ToggleSwitch enabled={formState.questDefaults.isOptional} setEnabled={(val) => handleToggleChange('questDefaults.isOptional', val, `Default ${formState.terminology.task} Values`, 'Is Optional')} label="Is Optional" />
+                            <ToggleSwitch enabled={formState.questDefaults.isOptional} setEnabled={(val) => handleToggleChange('questDefaults.isOptional', val, `Default ${formState.terminology.task} Values`, 'Is Optional')} label="Is Optional" data-log-id="settings-toggle-default-optional" />
                             <p className="text-sm ml-6" style={{ color: 'hsl(var(--color-text-secondary))' }}>If enabled, new {formState.terminology.tasks.toLowerCase()} will default to being optional, meaning they don't count against a user if not completed.</p>
                         </div>
                         <div className="flex items-start">
-                            <ToggleSwitch enabled={formState.questDefaults.isActive} setEnabled={(val) => handleToggleChange('questDefaults.isActive', val, `Default ${formState.terminology.task} Values`, 'Is Active')} label="Is Active" />
+                            <ToggleSwitch enabled={formState.questDefaults.isActive} setEnabled={(val) => handleToggleChange('questDefaults.isActive', val, `Default ${formState.terminology.task} Values`, 'Is Active')} label="Is Active" data-log-id="settings-toggle-default-active" />
                             <p className="text-sm ml-6" style={{ color: 'hsl(var(--color-text-secondary))' }}>If enabled, new {formState.terminology.tasks.toLowerCase()} will be active and visible on the board immediately upon creation.</p>
                         </div>
                     </div>
@@ -461,6 +464,7 @@ export const SettingsPage: React.FC = () => {
                                 enabled={formState.developerMode.enabled} 
                                 setEnabled={(val) => handleToggleChange('developerMode.enabled', val, 'Advanced', 'Enable Developer Mode')} 
                                 label="Enable Developer Mode" 
+                                data-log-id="settings-toggle-developer-mode"
                             />
                             <p className="text-sm ml-6" style={{ color: 'hsl(var(--color-text-secondary))' }}>
                                 Enables bug tracking tools for collaboration with the AI assistant. A "Bug Reporter" will appear at the bottom of the screen.
@@ -475,6 +479,7 @@ export const SettingsPage: React.FC = () => {
                             <Button
                                 onClick={() => setIsResetConfirmOpen(true)}
                                 className="!bg-yellow-600 hover:!bg-yellow-500"
+                                data-log-id="settings-reset-all-settings"
                             >
                                 Reset All Settings to Default
                             </Button>
@@ -487,6 +492,7 @@ export const SettingsPage: React.FC = () => {
                             <Button
                                 onClick={() => setIsFactoryResetConfirmOpen(true)}
                                 className="!bg-red-600 hover:!bg-red-500"
+                                data-log-id="settings-factory-reset"
                             >
                                 Factory Reset Application
                             </Button>

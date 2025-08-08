@@ -23,6 +23,7 @@ const FlyoutPanel: React.FC<{ title: string; items?: SidebarLink[]; isVisible: b
                         href="#"
                         onClick={(e) => { e.preventDefault(); setActivePage(item.id); }}
                         className="flex items-center px-4 py-2 text-stone-300 hover:bg-stone-700/50"
+                        data-log-id={`sidebar-flyout-link-${item.id.toLowerCase().replace(' ', '-')}`}
                      >
                         {item.emoji} <span className="ml-2">{item.termKey ? settings.terminology[item.termKey] : item.id}</span>
                      </a>
@@ -49,6 +50,7 @@ const NavLink: React.FC<{ item: SidebarLink, activePage: Page, setActivePage: (p
           onMouseEnter={() => setIsHovered(true)}
           onMouseLeave={() => setIsHovered(false)}
           onClick={(e) => { e.preventDefault(); setActivePage(item.id); }}
+          data-log-id={`sidebar-link-${item.id.toLowerCase().replace(' ', '-')}`}
           className={`relative flex items-center py-3 text-lg rounded-lg transition-colors duration-200 ${isNested ? 'pl-12' : 'px-4'} ${ isCollapsed ? 'justify-center' : ''} ${
             isActive
               ? 'bg-emerald-600/20 text-emerald-300'
@@ -92,6 +94,7 @@ const CollapsibleNavGroup: React.FC<CollapsibleNavGroupProps> = ({ header, child
             >
                 <button
                     onClick={() => setIsOpen(!isOpen)}
+                    data-log-id={`sidebar-group-toggle-collapsed-${header.id}`}
                     className="relative w-full flex flex-col items-center justify-center py-2 text-lg rounded-lg text-stone-400 hover:bg-stone-700/50 hover:text-white"
                     title={header.title}
                 >
@@ -119,6 +122,7 @@ const CollapsibleNavGroup: React.FC<CollapsibleNavGroupProps> = ({ header, child
         <div className="border-t border-stone-700/60 my-2 pt-2">
             <button
                 onClick={() => setIsOpen(!isOpen)}
+                data-log-id={`sidebar-group-toggle-${header.id}`}
                 className="w-full flex items-center justify-between px-4 py-3 text-lg rounded-lg text-stone-300 hover:bg-stone-700/50 hover:text-white"
             >
                 <div className="flex items-center">
@@ -233,6 +237,7 @@ const Sidebar: React.FC = () => {
                     <a
                       key={item.id}
                       href="#"
+                      data-log-id="sidebar-chat-toggle"
                       onClick={(e) => { e.preventDefault(); toggleChat(); }}
                       className={`relative flex items-center py-3 text-lg rounded-lg transition-colors duration-200 px-4 ${isSidebarCollapsed ? 'justify-center' : ''} text-stone-300 hover:bg-stone-700/50 hover:text-white`}
                       title={isSidebarCollapsed ? linkName : ''}
@@ -273,6 +278,7 @@ const Sidebar: React.FC = () => {
     <div className={`flex flex-col flex-shrink-0 transition-all duration-300 ${isSidebarCollapsed ? 'w-20' : 'w-72'}`} style={{ backgroundColor: 'hsl(var(--color-bg-primary))', borderRight: '1px solid hsl(var(--color-border))' }}>
       <button 
         onClick={() => setActivePage('Dashboard')} 
+        data-log-id="sidebar-header-logo"
         className="flex items-center justify-center h-20 border-b cursor-pointer hover:bg-stone-800/50 transition-colors" 
         style={{ borderColor: 'hsl(var(--color-border))' }}
       >
@@ -284,6 +290,7 @@ const Sidebar: React.FC = () => {
       <div className="px-2 py-4 border-t" style={{ borderColor: 'hsl(var(--color-border))' }}>
          <button 
             onClick={toggleSidebar}
+            data-log-id="sidebar-toggle-collapse"
             title={isSidebarCollapsed ? 'Expand Sidebar' : 'Collapse Sidebar'}
             className="w-full flex items-center justify-center py-2 text-stone-400 hover:bg-stone-700/50 hover:text-white rounded-lg transition-colors"
          >

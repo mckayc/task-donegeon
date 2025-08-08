@@ -11,6 +11,7 @@ import { analyzeAssetPackForConflicts } from '../../../utils/sharing';
 import { useAppState } from '../../../context/AppContext';
 import { useAuthState } from '../../../context/AuthContext';
 import { useEconomyState, useEconomyDispatch } from '../../../context/EconomyContext';
+import { useQuestState } from '../../../context/QuestContext';
 import { useNotificationsDispatch } from '../../../context/NotificationsContext';
 import Button from '../../ui/Button';
 
@@ -90,6 +91,7 @@ const BackupAndImportPage: React.FC = () => {
     const appState = useAppState();
     const authState = useAuthState();
     const economyState = useEconomyState();
+    const questState = useQuestState();
 
     const { restoreFromBackup, importBugReports } = useAppDispatch();
     const { importAssetPack } = useEconomyDispatch();
@@ -115,7 +117,7 @@ const BackupAndImportPage: React.FC = () => {
                 } else { // import
                     // Basic validation for an asset pack
                     if (json.manifest && json.assets) {
-                        const fullCurrentData: IAppData = { ...appState, ...authState, ...economyState };
+                        const fullCurrentData: IAppData = { ...appState, ...authState, ...economyState, ...questState };
                         const conflictResolutions = analyzeAssetPackForConflicts(json, fullCurrentData);
                         setInitialResolutions(conflictResolutions);
                         setAssetPackToPreview(json);
@@ -148,7 +150,7 @@ const BackupAndImportPage: React.FC = () => {
     };
 
     const handleConfirmImport = (pack: AssetPack, resolutions: ImportResolution[]) => {
-        const fullCurrentData: IAppData = { ...appState, ...authState, ...economyState };
+        const fullCurrentData: IAppData = { ...appState, ...authState, ...economyState, ...questState };
         importAssetPack(pack, resolutions, fullCurrentData);
         setAssetPackToPreview(null);
         setInitialResolutions([]);

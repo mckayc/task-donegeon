@@ -5,6 +5,7 @@ import { useAppState } from '../../context/AppContext';
 import { useAuthState } from '../../context/AuthContext';
 import { useUIState, useUIDispatch } from '../../context/UIStateContext';
 import { useEconomyState } from '../../context/EconomyContext';
+import { useQuestState } from '../../context/QuestContext';
 
 const FlyoutPanel: React.FC<{ title: string; items?: SidebarLink[]; isVisible: boolean }> = ({ title, items, isVisible }) => {
     const { settings } = useAppState();
@@ -146,8 +147,9 @@ const CollapsibleNavGroup: React.FC<CollapsibleNavGroupProps> = ({ header, child
 
 
 const Sidebar: React.FC = () => {
-  const { settings, isAiConfigured, chatMessages, guilds, questCompletions } = useAppState();
+  const { settings, isAiConfigured, chatMessages, guilds } = useAppState();
   const { purchaseRequests } = useEconomyState();
+  const { questCompletions } = useQuestState();
   const { currentUser } = useAuthState();
   const { activePage, isSidebarCollapsed, isChatOpen } = useUIState();
   const { setActivePage, toggleSidebar, toggleChat } = useUIDispatch();

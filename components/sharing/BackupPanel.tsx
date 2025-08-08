@@ -2,6 +2,7 @@ import React from 'react';
 import { useAppState } from '../../context/AppContext';
 import { useAuthState } from '../../context/AuthContext';
 import { useEconomyState } from '../../context/EconomyContext';
+import { useQuestState } from '../../context/QuestContext';
 import Button from '../ui/Button';
 import { IAppData } from '../../types';
 
@@ -9,13 +10,15 @@ const BackupPanel: React.FC = () => {
     const appState = useAppState();
     const authState = useAuthState();
     const economyState = useEconomyState();
+    const questState = useQuestState();
 
     const handleBackup = () => {
         // Construct the full IAppData object for backup
         const dataToBackup: IAppData = {
             ...appState,
             ...authState,
-            ...economyState
+            ...economyState,
+            ...questState
         };
 
         const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(dataToBackup, null, 2));

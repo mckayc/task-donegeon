@@ -10,13 +10,15 @@ import QuestDetailDialog from '../quests/QuestDetailDialog';
 import CompleteQuestDialog from '../quests/CompleteQuestDialog';
 import { useRewardValue } from '../../hooks/useRewardValue';
 import { useEconomyState } from '../../context/EconomyContext';
+import { useQuestState, useQuestDispatch } from '../../context/QuestContext';
 
 const Dashboard: React.FC = () => {
-    const { ranks, userTrophies, trophies, settings, scheduledEvents, quests, questCompletions } = useAppState();
+    const { ranks, userTrophies, trophies, settings, scheduledEvents } = useAppState();
+    const { quests, questCompletions } = useQuestState();
     const { rewardTypes, purchaseRequests } = useEconomyState();
     const { currentUser, users } = useAuthState();
     const { appMode } = useUIState();
-    const { markQuestAsTodo, unmarkQuestAsTodo } = useAppDispatch();
+    const { markQuestAsTodo, unmarkQuestAsTodo } = useQuestDispatch();
     const { setActivePage } = useUIDispatch();
     
     const [selectedQuest, setSelectedQuest] = useState<Quest | null>(null);

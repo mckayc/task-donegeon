@@ -7,6 +7,7 @@ import QuestDetailDialog from '../quests/QuestDetailDialog';
 import CompleteQuestDialog from '../quests/CompleteQuestDialog';
 import { useCalendarVentures } from '../../hooks/useCalendarVentures';
 import { useAuthState } from '../../context/AuthContext';
+import { useQuestState, useQuestDispatch } from '../../context/QuestContext';
 
 interface DailyDetailDialogProps {
   date: Date;
@@ -102,9 +103,10 @@ const QuestListItem: React.FC<{
 
 
 const DailyDetailDialog: React.FC<DailyDetailDialogProps> = ({ date, onClose, scheduledQuests, completedForDay, pendingForDay, questCompletions }) => {
-  const { scheduledEvents, quests } = useAppState();
+  const { scheduledEvents } = useAppState();
+  const { quests } = useQuestState();
   const { currentUser } = useAuthState();
-  const { markQuestAsTodo, unmarkQuestAsTodo } = useAppDispatch();
+  const { markQuestAsTodo, unmarkQuestAsTodo } = useQuestDispatch();
   const [selectedQuestForDetail, setSelectedQuestForDetail] = useState<Quest | null>(null);
   const [completingQuest, setCompletingQuest] = useState<Quest | null>(null);
   const availableVentures = useCalendarVentures(date);

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Quest, User } from '../../types';
-import { useAppDispatch } from '../../context/AppContext';
+import { useQuestDispatch } from '../../context/QuestContext';
 import { useAuthState } from '../../context/AuthContext';
 import Button from '../ui/Button';
 
@@ -12,7 +12,7 @@ interface CompleteQuestDialogProps {
 }
 
 const CompleteQuestDialog: React.FC<CompleteQuestDialogProps> = ({ quest, onClose, completionDate, user }) => {
-  const { completeQuest } = useAppDispatch();
+  const { completeQuest } = useQuestDispatch();
   const { currentUser } = useAuthState();
   const [note, setNote] = useState('');
 

@@ -5,7 +5,7 @@ import {
     AssetPack, ImportResolution, MarketStatus, User, ScheduledEvent 
 } from '../types';
 import { useNotificationsDispatch } from './NotificationsContext';
-import { useAuthState, useAuthDispatch } from './AuthContext';
+import { useAuthDispatch } from './AuthContext';
 import { toYMD } from '../utils/quests';
 import { bugLogger } from '../utils/bugLogger';
 
@@ -40,7 +40,7 @@ interface EconomyDispatch {
   updateMarketsStatus: (marketIds: string[], statusType: 'open' | 'closed') => void;
 
   // Game Assets
-  addGameAsset: (asset: Omit<GameAsset, 'id' | 'creatorId' | 'createdAt'>) => void;
+  addGameAsset: (asset: Omit<GameAsset, 'id' | 'creatorId' | 'createdAt' | 'purchaseCount'>) => void;
   updateGameAsset: (asset: GameAsset) => void;
   deleteGameAsset: (assetId: string) => void;
   cloneGameAsset: (assetId: string) => void;
@@ -103,66 +103,64 @@ export const EconomyProvider: React.FC<{ children: ReactNode }> = ({ children })
 
   const applyRewards = useCallback((userId: string, rewardsToApply: RewardItem[], guildId?: string) => {
     authDispatch.updateUser(userId, userToUpdate => {
+        const newUser = JSON.parse(JSON.stringify(userToUpdate));
         rewardsToApply.forEach(reward => {
             const rewardDef = rewardTypes.find(rd => rd.id === reward.rewardTypeId);
             if (!rewardDef) return;
             if (guildId) {
-                userToUpdate.guildBalances = { ...userToUpdate.guildBalances };
-                if (!userToUpdate.guildBalances[guildId]) userToUpdate.guildBalances[guildId] = { purse: {}, experience: {} };
-                const balanceSheet = { ...userToUpdate.guildBalances[guildId] };
+                if (!newUser.guildBalances[guildId]) newUser.guildBalances[guildId] = { purse: {}, experience: {} };
+                const balanceSheet = newUser.guildBalances[guildId];
                 if (rewardDef.category === RewardCategory.Currency) {
-                    balanceSheet.purse = { ...balanceSheet.purse };
                     balanceSheet.purse[reward.rewardTypeId] = (balanceSheet.purse[reward.rewardTypeId] || 0) + reward.amount;
                 } else {
-                    balanceSheet.experience = { ...balanceSheet.experience };
                     balanceSheet.experience[reward.rewardTypeId] = (balanceSheet.experience[reward.rewardTypeId] || 0) + reward.amount;
                 }
-                userToUpdate.guildBalances[guildId] = balanceSheet;
             } else {
                 if (rewardDef.category === RewardCategory.Currency) {
-                    userToUpdate.personalPurse = { ...userToUpdate.personalPurse };
-                    userToUpdate.personalPurse[reward.rewardTypeId] = (userToUpdate.personalPurse[reward.rewardTypeId] || 0) + reward.amount;
+                    newUser.personalPurse[reward.rewardTypeId] = (newUser.personalPurse[reward.rewardTypeId] || 0) + reward.amount;
                 } else {
-                    userToUpdate.personalExperience = { ...userToUpdate.personalExperience };
-                    userToUpdate.personalExperience[reward.rewardTypeId] = (userToUpdate.personalExperience[reward.rewardTypeId] || 0) + reward.amount;
+                    newUser.personalExperience[reward.rewardTypeId] = (newUser.personalExperience[reward.rewardTypeId] || 0) + reward.amount;
                 }
             }
         });
-        return userToUpdate;
+        return newUser;
     });
   }, [rewardTypes, authDispatch]);
 
   const deductRewards = useCallback((userId: string, cost: RewardItem[], guildId?: string): Promise<boolean> => {
     return new Promise((resolve) => {
+        let success = false;
         authDispatch.updateUser(userId, user => {
+            const userCopy = JSON.parse(JSON.stringify(user));
             const canAfford = cost.every(item => {
                 const rd = rewardTypes.find(rt => rt.id === item.rewardTypeId);
                 if (!rd) return false;
                 const bal = guildId 
-                    ? (rd.category === 'Currency' ? user.guildBalances[guildId]?.purse[item.rewardTypeId] : user.guildBalances[guildId]?.experience[item.rewardTypeId])
-                    : (rd.category === 'Currency' ? user.personalPurse[item.rewardTypeId] : user.personalExperience[item.rewardTypeId]);
+                    ? (rd.category === 'Currency' ? userCopy.guildBalances[guildId]?.purse[item.rewardTypeId] : userCopy.guildBalances[guildId]?.experience[item.rewardTypeId])
+                    : (rd.category === 'Currency' ? userCopy.personalPurse[item.rewardTypeId] : userCopy.personalExperience[item.rewardTypeId]);
                 return (bal || 0) >= item.amount;
             });
 
             if (!canAfford) {
-                resolve(false);
-                return user;
+                success = false;
+                return user; // Return original user if cannot afford
             }
 
             cost.forEach(c => {
                 const rd = rewardTypes.find(rt => rt.id === c.rewardTypeId);
                 if (!rd) return;
                 if (guildId) {
-                    if (rd.category === 'Currency') user.guildBalances[guildId].purse[c.rewardTypeId] -= c.amount;
-                    else user.guildBalances[guildId].experience[c.rewardTypeId] -= c.amount;
+                    if (rd.category === 'Currency') userCopy.guildBalances[guildId].purse[c.rewardTypeId] -= c.amount;
+                    else userCopy.guildBalances[guildId].experience[c.rewardTypeId] -= c.amount;
                 } else {
-                    if (rd.category === 'Currency') user.personalPurse[c.rewardTypeId] -= c.amount;
-                    else user.personalExperience[c.rewardTypeId] -= c.amount;
+                    if (rd.category === 'Currency') userCopy.personalPurse[c.rewardTypeId] -= c.amount;
+                    else userCopy.personalExperience[c.rewardTypeId] -= c.amount;
                 }
             });
-            resolve(true);
-            return user;
+            success = true;
+            return userCopy;
         });
+        resolve(success);
     });
   }, [rewardTypes, authDispatch]);
 
@@ -207,10 +205,11 @@ export const EconomyProvider: React.FC<{ children: ReactNode }> = ({ children })
             addNotification({ type: 'info', message: 'Purchase requested. Funds have been held.' });
         } else {
             authDispatch.updateUser(user.id, updatedUser => {
+                const userCopy = JSON.parse(JSON.stringify(updatedUser));
                 if (asset.payouts && asset.payouts.length > 0) applyRewards(user.id, asset.payouts, market.guildId);
-                if (asset.linkedThemeId && !updatedUser.ownedThemes.includes(asset.linkedThemeId)) updatedUser.ownedThemes.push(asset.linkedThemeId);
-                if (!asset.payouts || asset.payouts.length === 0) updatedUser.ownedAssetIds.push(asset.id);
-                return updatedUser;
+                if (asset.linkedThemeId && !userCopy.ownedThemes.includes(asset.linkedThemeId)) userCopy.ownedThemes.push(asset.linkedThemeId);
+                if (!asset.payouts || asset.payouts.length === 0) userCopy.ownedAssetIds.push(asset.id);
+                return userCopy;
             });
             addNotification({ type: 'success', message: `Purchased "${asset.name}"!` });
             setPurchaseRequests(p => [...p, { id: `purchase-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`, userId: user.id, assetId, requestedAt: new Date().toISOString(), status: PurchaseRequestStatus.Completed, assetDetails: { name: asset.name, description: asset.description, cost: finalCost }, guildId: market.guildId }]);
@@ -236,9 +235,10 @@ export const EconomyProvider: React.FC<{ children: ReactNode }> = ({ children })
     if (!asset) return;
     
     authDispatch.updateUser(r.userId, updatedUser => {
-        if (asset.linkedThemeId && !updatedUser.ownedThemes.includes(asset.linkedThemeId)) updatedUser.ownedThemes.push(asset.linkedThemeId);
-        if (!asset.payouts || asset.payouts.length === 0) updatedUser.ownedAssetIds.push(r.assetId);
-        return updatedUser;
+        const userCopy = JSON.parse(JSON.stringify(updatedUser));
+        if (asset.linkedThemeId && !userCopy.ownedThemes.includes(asset.linkedThemeId)) userCopy.ownedThemes.push(asset.linkedThemeId);
+        if (!asset.payouts || asset.payouts.length === 0) userCopy.ownedAssetIds.push(r.assetId);
+        return userCopy;
     });
 
     if (asset.payouts && asset.payouts.length > 0) {
@@ -327,24 +327,30 @@ export const EconomyProvider: React.FC<{ children: ReactNode }> = ({ children })
       }));
       addNotification({ type: 'success', message: `${marketIds.length} market(s) updated.` });
   }, [addNotification]);
-  const addGameAsset = useCallback((asset: Omit<GameAsset, 'id'|'creatorId'|'createdAt'>) => { setGameAssets(p => [...p, { ...asset, id: `g-asset-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`, creatorId: 'admin', createdAt: new Date().toISOString() }]); addNotification({ type: 'success', message: `Asset "${asset.name}" created.` }); }, [addNotification]);
-  const updateGameAsset = useCallback((asset: GameAsset) => setGameAssets(prev => prev.map(ga => ga.id === asset.id ? asset : ga)), []);
+  const addGameAsset = useCallback(async (asset: Omit<GameAsset, 'id'|'creatorId'|'createdAt'|'purchaseCount'>) => {
+    try {
+        await apiRequest('POST', '/api/assets', asset);
+        addNotification({ type: 'success', message: `Asset "${asset.name}" created.` });
+    } catch(e){}
+  }, [apiRequest, addNotification]);
+  const updateGameAsset = useCallback(async (asset: GameAsset) => {
+    try {
+        await apiRequest('PUT', `/api/assets/${asset.id}`, asset);
+    } catch (e) {}
+  }, [apiRequest]);
   const deleteGameAsset = useCallback((assetId: string) => { setGameAssets(prev => prev.filter(ga => ga.id !== assetId)); addNotification({ type: 'info', message: 'Asset deleted.' }); }, [addNotification]);
-  const cloneGameAsset = useCallback((assetId: string) => {
-    const assetToClone = gameAssets.find(a => a.id === assetId);
-    if (!assetToClone) return;
-
-    const newAsset: GameAsset = {
-        ...JSON.parse(JSON.stringify(assetToClone)),
-        id: `g-asset-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
-        name: `${assetToClone.name} (Copy)`,
-        purchaseCount: 0,
-        createdAt: new Date().toISOString(),
-    };
-    setGameAssets(prev => [...prev, newAsset]);
-    addNotification({ type: 'success', message: `Cloned asset: ${newAsset.name}` });
-  }, [gameAssets, addNotification]);
-  const deleteGameAssets = useCallback((assetIds: string[]) => { setGameAssets(prev => prev.filter(ga => !assetIds.includes(ga.id))); addNotification({ type: 'info', message: `${assetIds.length} asset(s) deleted.` }); }, [addNotification]);
+  const cloneGameAsset = useCallback(async (assetId: string) => {
+    try {
+        await apiRequest('POST', `/api/assets/clone/${assetId}`);
+        addNotification({ type: 'success', message: 'Asset cloned successfully!' });
+    } catch (e) {}
+  }, [apiRequest, addNotification]);
+  const deleteGameAssets = useCallback(async (assetIds: string[]) => {
+    try {
+        await apiRequest('DELETE', '/api/assets', { ids: assetIds });
+        addNotification({ type: 'info', message: `${assetIds.length} asset(s) deleted.` });
+    } catch (e) {}
+  }, [apiRequest, addNotification]);
   
   const importAssetPack = useCallback(async (assetPack: AssetPack, resolutions: ImportResolution[], allData: IAppData): Promise<void> => {
       try {
@@ -371,11 +377,11 @@ export const EconomyProvider: React.FC<{ children: ReactNode }> = ({ children })
 
 
   // === CONTEXT PROVIDER VALUE ===
-  const stateValue: EconomyState = {
+  const state = {
     markets, rewardTypes, purchaseRequests, gameAssets,
   };
 
-  const dispatchValue: EconomyDispatch = {
+  const dispatch = {
     setMarkets, setRewardTypes, setPurchaseRequests, setGameAssets,
     addRewardType, updateRewardType, deleteRewardType, cloneRewardType,
     addMarket, updateMarket, deleteMarket, cloneMarket, deleteMarkets, updateMarketsStatus,
@@ -386,8 +392,8 @@ export const EconomyProvider: React.FC<{ children: ReactNode }> = ({ children })
   };
 
   return (
-    <EconomyStateContext.Provider value={stateValue}>
-      <EconomyDispatchContext.Provider value={dispatchValue}>
+    <EconomyStateContext.Provider value={state}>
+      <EconomyDispatchContext.Provider value={dispatch}>
         {children}
       </EconomyDispatchContext.Provider>
     </EconomyStateContext.Provider>

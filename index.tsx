@@ -7,6 +7,7 @@ import { NotificationsProvider } from './context/NotificationsContext';
 import { AuthProvider } from './context/AuthContext';
 import { EconomyProvider } from './context/EconomyContext';
 import { DeveloperProvider } from './context/DeveloperContext';
+import { QuestProvider } from './context/QuestContext';
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
@@ -29,13 +30,15 @@ root.render(
     <NotificationsProvider>
       <AuthProvider>
         <EconomyProvider>
-          <AppProvider>
-            <UIStateProvider>
-              <DeveloperProvider>
-                <App />
-              </DeveloperProvider>
-            </UIStateProvider>
-          </AppProvider>
+          <QuestProvider>
+            <AppProvider>
+              <UIStateProvider>
+                <DeveloperProvider>
+                  <App />
+                </DeveloperProvider>
+              </UIStateProvider>
+            </AppProvider>
+          </QuestProvider>
         </EconomyProvider>
       </AuthProvider>
     </NotificationsProvider>

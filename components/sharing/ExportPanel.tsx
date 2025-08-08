@@ -6,11 +6,13 @@ import Input from '../ui/Input';
 import { generateAssetPack } from '../../utils/sharing';
 import { useAuthState } from '../../context/AuthContext';
 import { useEconomyState } from '../../context/EconomyContext';
+import { useQuestState } from '../../context/QuestContext';
 
 const ExportPanel: React.FC = () => {
     const appState = useAppState();
     const authState = useAuthState();
     const economyState = useEconomyState();
+    const questState = useQuestState();
     const { settings } = appState;
     const { users } = authState;
     const [selected, setSelected] = useState<{ [key in ShareableAssetType]: string[] }>({
@@ -53,7 +55,8 @@ const ExportPanel: React.FC = () => {
         const fullAppData: IAppData = {
             ...appState,
             ...authState,
-            ...economyState
+            ...economyState,
+            ...questState
         };
 
         generateAssetPack(
@@ -66,8 +69,8 @@ const ExportPanel: React.FC = () => {
     };
 
     const assetTypes: { key: ShareableAssetType, label: keyof Terminology, data: any[] }[] = [
-        { key: 'quests', label: 'tasks', data: appState.quests },
-        { key: 'questGroups', label: 'link_manage_quest_groups', data: appState.questGroups },
+        { key: 'quests', label: 'tasks', data: questState.quests },
+        { key: 'questGroups', label: 'link_manage_quest_groups', data: questState.questGroups },
         { key: 'rewardTypes', label: 'points', data: economyState.rewardTypes.filter(rt => !rt.isCore) },
         { key: 'ranks', label: 'levels', data: appState.ranks },
         { key: 'trophies', label: 'awards', data: appState.trophies },

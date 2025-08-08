@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { useAppState, useAppDispatch } from '../../context/AppContext';
+import { useAppState } from '../../context/AppContext';
 import { Quest, QuestType, RewardItem, RewardCategory, QuestAvailability, BugReport, Role } from '../../types';
 import Button from '../ui/Button';
 import Input from '../ui/Input';
@@ -12,6 +12,7 @@ import DynamicIcon from '../ui/DynamicIcon';
 import { useAuthState } from '../../context/AuthContext';
 import { useEconomyState } from '../../context/EconomyContext';
 import { bugLogger } from '../../utils/bugLogger';
+import { useQuestState, useQuestDispatch } from '../../context/QuestContext';
 
 interface QuestDialogProps {
   questToEdit?: Quest;
@@ -30,10 +31,11 @@ const VENTURE_AVAILABILITIES = [QuestAvailability.Frequency, QuestAvailability.U
 
 
 const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialData, onClose, mode = (questToEdit ? 'edit' : 'create'), onTryAgain, isGenerating, onSave, initialDataFromBug }) => {
-  const { guilds, settings, allTags, questGroups } = useAppState();
+  const { guilds, settings } = useAppState();
+  const { allTags, questGroups } = useQuestState();
   const { users } = useAuthState();
   const { rewardTypes } = useEconomyState();
-  const { addQuest, updateQuest, addQuestGroup } = useAppDispatch();
+  const { addQuest, updateQuest, addQuestGroup } = useQuestDispatch();
   const hasLoggedOpen = useRef(false);
 
   const getInitialFormData = useCallback(() => {

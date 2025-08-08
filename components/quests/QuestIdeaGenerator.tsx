@@ -7,6 +7,7 @@ import { useAppState } from '../../context/AppContext';
 import { QuestType } from '../../types';
 import ToggleSwitch from '../ui/ToggleSwitch';
 import { useEconomyState } from '../../context/EconomyContext';
+import { useQuestState } from '../../context/QuestContext';
 
 interface QuestIdea {
   title: string;
@@ -27,7 +28,8 @@ interface QuestIdeaGeneratorProps {
 }
 
 const QuestIdeaGenerator: React.FC<QuestIdeaGeneratorProps> = ({ onUseIdea, onClose }) => {
-    const { settings, questGroups } = useAppState();
+    const { settings } = useAppState();
+    const { questGroups } = useQuestState();
     const { rewardTypes } = useEconomyState();
     const [prompt, setPrompt] = useState('');
     const [questType, setQuestType] = useState<QuestType>(QuestType.Venture);

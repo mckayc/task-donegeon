@@ -12,6 +12,7 @@ import DynamicIcon from '../ui/DynamicIcon';
 import { toYMD } from '../../utils/quests';
 import { useAuthState } from '../../context/AuthContext';
 import { useEconomyState } from '../../context/EconomyContext';
+import { useQuestState } from '../../context/QuestContext';
 
 const MarketItemView: React.FC<{ market: Market }> = ({ market }) => {
     const { settings, scheduledEvents } = useAppState();
@@ -220,6 +221,7 @@ const MarketplacePage: React.FC = () => {
     const appState = useAppState();
     const authState = useAuthState();
     const economyState = useEconomyState();
+    const questState = useQuestState();
     const { settings } = appState;
     const { markets } = economyState;
     const { currentUser } = authState;
@@ -230,13 +232,13 @@ const MarketplacePage: React.FC = () => {
     const visibleMarkets = React.useMemo(() => {
         if (!currentUser) return [];
         
-        const fullAppDataForCheck: IAppData = { ...appState, ...authState, ...economyState };
+        const fullAppDataForCheck: IAppData = { ...appState, ...authState, ...economyState, ...questState };
         const currentGuildId = appMode.mode === 'guild' ? appMode.guildId : undefined;
 
         return markets.filter(market => 
             market.guildId === currentGuildId && isMarketOpenForUser(market, currentUser, fullAppDataForCheck)
         );
-    }, [markets, appMode, currentUser, appState, authState, economyState]);
+    }, [markets, appMode, currentUser, appState, authState, economyState, questState]);
 
     const activeMarket = React.useMemo(() => {
         return markets.find(m => m.id === activeMarketId);

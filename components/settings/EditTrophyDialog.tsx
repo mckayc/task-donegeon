@@ -7,6 +7,7 @@ import ToggleSwitch from '../ui/ToggleSwitch';
 import EmojiPicker from '../ui/EmojiPicker';
 import ImageSelectionDialog from '../ui/ImageSelectionDialog';
 import DynamicIcon from '../ui/DynamicIcon';
+import { useQuestState } from '../../context/QuestContext';
 
 interface EditTrophyDialogProps {
   trophy: Trophy | null;
@@ -19,7 +20,8 @@ interface EditTrophyDialogProps {
 }
 
 const EditTrophyDialog: React.FC<EditTrophyDialogProps> = ({ trophy, initialData, onClose, mode = (trophy ? 'edit' : 'create'), onTryAgain, isGenerating, onSave }) => {
-  const { ranks, allTags } = useAppState();
+  const { ranks } = useAppState();
+  const { allTags } = useQuestState();
   const { addTrophy, updateTrophy } = useAppDispatch();
 
   const getInitialFormData = useCallback(() => {

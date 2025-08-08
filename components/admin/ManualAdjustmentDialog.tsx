@@ -4,6 +4,7 @@ import { useAuthState } from '../../context/AuthContext';
 import { User, RewardItem, RewardCategory, AdminAdjustmentType, Trophy } from '../../types';
 import Button from '../ui/Button';
 import RewardInputGroup from '../forms/RewardInputGroup';
+import { useEconomyDispatch } from '../../context/EconomyContext';
 
 interface ManualAdjustmentDialogProps {
   user: User;
@@ -12,8 +13,8 @@ interface ManualAdjustmentDialogProps {
 
 const ManualAdjustmentDialog: React.FC<ManualAdjustmentDialogProps> = ({ user, onClose }) => {
   const { guilds, trophies, userTrophies } = useAppState();
-  const { currentUser } = useAuthState();
   const { applyManualAdjustment } = useAppDispatch();
+  const { currentUser } = useAuthState();
   const [reason, setReason] = useState('');
   const [guildId, setGuildId] = useState('');
   const [actionType, setActionType] = useState<AdminAdjustmentType>(AdminAdjustmentType.Reward);
@@ -85,7 +86,7 @@ const ManualAdjustmentDialog: React.FC<ManualAdjustmentDialogProps> = ({ user, o
         <h2 className="text-3xl font-medieval text-emerald-400 mb-2">Manual Adjustment</h2>
         <p className="text-stone-300 mb-6">For <span className="font-bold text-emerald-300">{user.gameName}</span></p>
         
-        <form onSubmit={handleSubmit} className="flex-1 space-y-4 overflow-y-auto pr-2">
+        <form onSubmit={handleSubmit} className="flex-1 space-y-4 overflow-y-auto pr-2" id="manual-adjustment-form">
             <div>
                 <label className="block text-sm font-medium text-stone-300 mb-1">Scope</label>
                 <select value={guildId} onChange={e => setGuildId(e.target.value)} className="w-full px-4 py-2 bg-stone-700 border border-stone-600 rounded-md">

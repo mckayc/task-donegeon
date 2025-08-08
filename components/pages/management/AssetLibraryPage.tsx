@@ -9,12 +9,14 @@ import AssetPackInstallDialog from '../../sharing/AssetPackInstallDialog';
 import { useNotificationsDispatch } from '../../../context/NotificationsContext';
 import { useAuthState } from '../../../context/AuthContext';
 import { useEconomyState, useEconomyDispatch } from '../../../context/EconomyContext';
+import { useQuestState } from '../../../context/QuestContext';
 import { bugLogger } from '../../../utils/bugLogger';
 
 const AssetLibraryPage: React.FC = () => {
     const appState = useAppState();
     const authState = useAuthState();
     const economyState = useEconomyState();
+    const questState = useQuestState();
     const { importAssetPack } = useEconomyDispatch();
     const { addNotification } = useNotificationsDispatch();
     const [localPacks, setLocalPacks] = useState<AssetPackManifestInfo[]>([]);
@@ -47,7 +49,7 @@ const AssetLibraryPage: React.FC = () => {
         try {
             setIsLoading(true);
             const packData = await packFetcher();
-            const fullCurrentData: IAppData = { ...appState, ...authState, ...economyState };
+            const fullCurrentData: IAppData = { ...appState, ...authState, ...economyState, ...questState };
             const conflictResolutions = analyzeAssetPackForConflicts(packData, fullCurrentData);
             setResolutions(conflictResolutions);
             setPackToInstall(packData);
@@ -89,7 +91,7 @@ const AssetLibraryPage: React.FC = () => {
     };
 
     const handleConfirmImport = async (pack: AssetPack, res: ImportResolution[]) => {
-        const fullCurrentData: IAppData = { ...appState, ...authState, ...economyState };
+        const fullCurrentData: IAppData = { ...appState, ...authState, ...economyState, ...questState };
         await importAssetPack(pack, res, fullCurrentData);
         setPackToInstall(null);
         setResolutions([]);

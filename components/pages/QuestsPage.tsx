@@ -12,6 +12,7 @@ import DynamicIcon from '../ui/DynamicIcon';
 import ImagePreviewDialog from '../ui/ImagePreviewDialog';
 import { useAuthState } from '../../context/AuthContext';
 import { useEconomyState } from '../../context/EconomyContext';
+import { useQuestState, useQuestDispatch } from '../../context/QuestContext';
 
 const getAvailabilityText = (quest: Quest, completionsCount: number): string => {
     switch (quest.availabilityType) {
@@ -49,7 +50,8 @@ const formatTimeRemaining = (targetDate: Date, now: Date): string => {
 };
 
 const QuestItem: React.FC<{ quest: Quest; now: Date; onSelect: (quest: Quest) => void; onImagePreview: (url: string) => void; }> = ({ quest, now, onSelect, onImagePreview }) => {
-    const { settings, scheduledEvents, guilds, questGroups, questCompletions } = useAppState();
+    const { settings, scheduledEvents, guilds } = useAppState();
+    const { questGroups, questCompletions } = useQuestState();
     const { rewardTypes } = useEconomyState();
     const { currentUser } = useAuthState();
     const { appMode } = useUIState();
@@ -204,10 +206,11 @@ const FilterButton: React.FC<{ type: 'all' | QuestType, children: React.ReactNod
 );
 
 const QuestsPage: React.FC = () => {
-    const { settings, scheduledEvents, quests, questCompletions } = useAppState();
+    const { settings, scheduledEvents } = useAppState();
+    const { quests, questCompletions } = useQuestState();
     const { currentUser } = useAuthState();
     const { appMode } = useUIState();
-    const { markQuestAsTodo, unmarkQuestAsTodo } = useAppDispatch();
+    const { markQuestAsTodo, unmarkQuestAsTodo } = useQuestDispatch();
     const [filter, setFilter] = useState<'all' | QuestType>('all');
     const [selectedQuest, setSelectedQuest] = useState<Quest | null>(null);
     const [completingQuest, setCompletingQuest] = useState<Quest | null>(null);

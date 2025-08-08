@@ -14,6 +14,7 @@ import Button from '../ui/Button';
 import ScheduleEventDialog from '../admin/ScheduleEventDialog';
 import EventDetailDialog from '../calendar/EventDetailDialog';
 import { useAuthState } from '../../context/AuthContext';
+import { useQuestState } from '../../context/QuestContext';
 
 type CalendarView = 'month' | 'week' | 'day';
 type CalendarMode = 'quests' | 'chronicles';
@@ -28,7 +29,8 @@ const ViewButton: React.FC<{ type: CalendarView, currentView: CalendarView, setV
 );
 
 const CalendarPage: React.FC = () => {
-    const { scheduledEvents, quests, questCompletions } = useAppState();
+    const { scheduledEvents } = useAppState();
+    const { quests, questCompletions } = useQuestState();
     const { currentUser } = useAuthState();
     const { appMode } = useUIState();
     const { setActivePage } = useUIDispatch();

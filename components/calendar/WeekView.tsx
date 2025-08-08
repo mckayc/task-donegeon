@@ -1,13 +1,14 @@
 import React, { useMemo, useState } from 'react';
 import { Quest, QuestCompletion, QuestType, ScheduledEvent } from '../../types';
 import { isQuestScheduledForDay, questSorter, toYMD } from '../../utils/quests';
-import { useAppState, useAppDispatch } from '../../context/AppContext';
+import { useAppState } from '../../context/AppContext';
 import { useUIState } from '../../context/UIStateContext';
 import { useCalendarVentures } from '../../hooks/useCalendarVentures';
 import QuestList from './QuestList';
 import QuestDetailDialog from '../quests/QuestDetailDialog';
 import CompleteQuestDialog from '../quests/CompleteQuestDialog';
 import { useAuthState } from '../../context/AuthContext';
+import { useQuestDispatch } from '../../context/QuestContext';
 
 interface WeekViewProps {
     currentDate: Date;
@@ -26,7 +27,7 @@ const getTextColorForBg = (bgColorHsl: string) => {
 
 const WeekView: React.FC<WeekViewProps> = ({ currentDate, quests, questCompletions, scheduledEvents, onEventSelect }) => {
     const { currentUser } = useAuthState();
-    const { markQuestAsTodo, unmarkQuestAsTodo } = useAppDispatch();
+    const { markQuestAsTodo, unmarkQuestAsTodo } = useQuestDispatch();
     const [selectedQuest, setSelectedQuest] = useState<{quest: Quest, date: Date} | null>(null);
     const [completingQuest, setCompletingQuest] = useState<{quest: Quest, date: Date} | null>(null);
 

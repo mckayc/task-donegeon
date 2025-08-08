@@ -3,17 +3,16 @@ import { AppSettings, User, Quest, RewardItem, Guild, Rank, Trophy, UserTrophy, 
 import { INITIAL_SETTINGS, INITIAL_RANKS, INITIAL_TROPHIES, INITIAL_THEMES } from '../data/initialData';
 import { useNotificationsDispatch } from './NotificationsContext';
 import { useAuthState, useAuthDispatch } from './AuthContext';
-import { useEconomyDispatch, useEconomyState } from './EconomyContext';
+import { useEconomyDispatch } from './EconomyContext';
+import { useQuestDispatch } from './QuestContext';
 import { bugLogger } from '../utils/bugLogger';
 
 // The single, unified state for the non-auth/quest parts of the application
-interface AppState extends Omit<IAppData, 'users' | 'loginHistory' | 'questCompletions' | 'markets' | 'rewardTypes' | 'purchaseRequests' | 'gameAssets'> {
+interface AppState extends Omit<IAppData, 'users' | 'loginHistory' | 'quests' | 'questGroups' | 'questCompletions' | 'markets' | 'rewardTypes' | 'purchaseRequests' | 'gameAssets'> {
   isDataLoaded: boolean;
   isAiConfigured: boolean;
   syncStatus: 'idle' | 'syncing' | 'success' | 'error';
   syncError: string | null;
-  questCompletions: QuestCompletion[];
-  allTags: string[];
 }
 
 // The single, unified dispatch for the non-auth/quest parts of the application
@@ -53,30 +52,6 @@ interface AppDispatch {
   markMessagesAsRead: (params: { partnerId?: string; guildId?: string; }) => void;
   addSystemNotification: (notification: Omit<SystemNotification, 'id' | 'timestamp' | 'readByUserIds'>) => void;
   markSystemNotificationsAsRead: (notificationIds: string[]) => void;
-
-  // Quests Dispatch
-  setQuests: (quests: Quest[]) => void;
-  setQuestGroups: (groups: QuestGroup[]) => void;
-  setQuestCompletions: (completions: QuestCompletion[]) => void;
-  addQuest: (quest: Omit<Quest, 'id' | 'claimedByUserIds' | 'dismissals'>) => void;
-  updateQuest: (updatedQuest: Quest) => void;
-  deleteQuest: (questId: string) => void;
-  cloneQuest: (questId: string) => void;
-  dismissQuest: (questId: string, userId: string) => void;
-  claimQuest: (questId: string, userId: string) => void;
-  releaseQuest: (questId: string, userId: string) => void;
-  markQuestAsTodo: (questId: string, userId: string) => void;
-  unmarkQuestAsTodo: (questId: string, userId: string) => void;
-  completeQuest: (completionData: any) => Promise<void>;
-  approveQuestCompletion: (completionId: string, note?: string) => Promise<void>;
-  rejectQuestCompletion: (completionId: string, note?: string) => Promise<void>;
-  addQuestGroup: (group: Omit<QuestGroup, 'id'>) => QuestGroup;
-  updateQuestGroup: (group: QuestGroup) => void;
-  deleteQuestGroup: (groupId: string) => void;
-  assignQuestGroupToUsers: (groupId: string, userIds: string[]) => void;
-  deleteQuests: (questIds: string[]) => void;
-  updateQuestsStatus: (questIds: string[], isActive: boolean) => void;
-  bulkUpdateQuests: (questIds: string[], updates: BulkQuestUpdates) => void;
 }
 
 const AppStateContext = createContext<AppState | undefined>(undefined);
@@ -87,12 +62,9 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const { currentUser, users } = useAuthState();
   const authDispatch = useAuthDispatch();
   const economyDispatch = useEconomyDispatch();
-  const economyState = useEconomyState();
+  const questDispatch = useQuestDispatch();
 
   // === STATE MANAGEMENT ===
-  const [quests, setQuests] = useState<Quest[]>([]);
-  const [questGroups, setQuestGroups] = useState<QuestGroup[]>([]);
-  const [questCompletions, setQuestCompletions] = useState<QuestCompletion[]>([]);
   const [guilds, setGuilds] = useState<Guild[]>([]);
   const [ranks, setRanks] = useState<Rank[]>([]);
   const [trophies, setTrophies] = useState<Trophy[]>([]);
@@ -111,12 +83,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [syncStatus, setSyncStatus] = useState<'idle' | 'syncing' | 'success' | 'error'>('idle');
   const [syncError, setSyncError] = useState<string | null>(null);
   const [isAiConfigured, setIsAiConfigured] = useState(false);
-  
-  const inactivityTimer = useRef<number | null>(null);
-
-  const allTags = useMemo(() => 
-    Array.from(new Set(['Cleaning', 'Learning', 'Health', 'Yardwork', ...quests.flatMap(q => q.tags || [])])).sort(), 
-  [quests]);
   
   // === API HELPERS ===
   const apiRequest = useCallback(async (method: string, path: string, body?: any) => {
@@ -184,9 +150,9 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       authDispatch.setUsers(dataToSet.users || []);
       authDispatch.setLoginHistory(dataToSet.loginHistory || []);
       
-      setQuests(dataToSet.quests || []);
-      setQuestGroups(dataToSet.questGroups || []);
-      setQuestCompletions(dataToSet.questCompletions || []);
+      questDispatch.setQuests(dataToSet.quests || []);
+      questDispatch.setQuestGroups(dataToSet.questGroups || []);
+      questDispatch.setQuestCompletions(dataToSet.questCompletions || []);
       
       economyDispatch.setMarkets(dataToSet.markets || []);
       economyDispatch.setRewardTypes(dataToSet.rewardTypes || []);
@@ -268,7 +234,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     } catch (error) {
       console.error("Could not load data from server.", error);
     }
-  }, [apiRequest, authDispatch, economyDispatch, addNotification]);
+  }, [apiRequest, authDispatch, economyDispatch, questDispatch, addNotification]);
 
   useEffect(() => {
     const initializeApp = async () => {
@@ -466,13 +432,13 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     }, [apiRequest, addNotification]);
 
     const clearAllHistory = useCallback(() => {
-        setQuestCompletions([]);
+        questDispatch.setQuestCompletions([]);
         economyDispatch.setPurchaseRequests([]);
         setAdminAdjustments([]);
         setUserTrophies([]);
         setSystemLogs([]);
         addNotification({ type: 'info', message: 'All history logs cleared.' });
-    }, [economyDispatch, addNotification]);
+    }, [economyDispatch, questDispatch, addNotification]);
 
     const resetAllPlayerData = useCallback(() => {
         authDispatch.resetAllUsersData();
@@ -480,21 +446,21 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     }, [authDispatch, addNotification]);
 
     const deleteAllCustomContent = useCallback(() => {
-        setQuests([]);
-        setQuestGroups([]);
+        questDispatch.setQuests([]);
+        questDispatch.setQuestGroups([]);
         setTrophies(INITIAL_TROPHIES);
         setRanks(INITIAL_RANKS);
         economyDispatch.deleteAllCustomContent();
         addNotification({ type: 'info', message: 'All custom content has been deleted.' });
-    }, [economyDispatch, addNotification]);
+    }, [economyDispatch, questDispatch, addNotification]);
 
     const deleteSelectedAssets = useCallback((selection: Partial<Record<ShareableAssetType, string[]>>) => {
-        if (selection.quests) setQuests(p => p.filter(i => !selection.quests!.includes(i.id)));
-        if (selection.questGroups) setQuestGroups(p => p.filter(i => !selection.questGroups!.includes(i.id)));
+        if (selection.quests) questDispatch.deleteQuests(selection.quests);
+        if (selection.questGroups) questDispatch.deleteQuestGroups(selection.questGroups);
         if (selection.ranks) setRanks(p => p.filter(i => !selection.ranks!.includes(i.id)));
         if (selection.trophies) setTrophies(p => p.filter(i => !selection.trophies!.includes(i.id)));
         economyDispatch.deleteSelectedAssets(selection); // delegates to economy context
-    }, [economyDispatch]);
+    }, [economyDispatch, questDispatch]);
 
     const uploadFile = useCallback(async (file: File, category?: string) => {
         const formData = new FormData();
@@ -519,8 +485,9 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     }, [apiRequest, addNotification]);
 
     const updateSettings = useCallback(async (newSettings: Partial<AppSettings>) => {
-        setSettings(prev => ({...prev, ...newSettings}));
-        await apiRequest('PUT', '/api/settings', {...settings, ...newSettings});
+      const updatedSettings = { ...settings, ...newSettings };
+      setSettings(updatedSettings);
+      await apiRequest('PUT', '/api/settings', updatedSettings);
     }, [apiRequest, settings]);
 
     const resetSettings = useCallback(() => {
@@ -539,118 +506,22 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         await apiRequest('POST', '/api/chat/read', params);
     }, [apiRequest]);
 
-    const addQuest = useCallback(async (quest: Omit<Quest, 'id' | 'claimedByUserIds' | 'dismissals'>) => {
-        await apiRequest('POST', '/api/quests', quest);
-    }, [apiRequest]);
-
-    const updateQuest = useCallback(async (updatedQuest: Quest) => {
-        await apiRequest('PUT', `/api/quests/${updatedQuest.id}`, updatedQuest);
-    }, [apiRequest]);
-    
-    const deleteQuest = useCallback(async (questId: string) => {
-        await apiRequest('DELETE', `/api/quests`, { ids: [questId] });
-    }, [apiRequest]);
-
-    const cloneQuest = useCallback(async (questId: string) => {
-        await apiRequest('POST', `/api/quests/clone/${questId}`);
-    }, [apiRequest]);
-    
-    const dismissQuest = useCallback((questId: string, userId: string) => {
-        setQuests(prev => prev.map(q => q.id === questId ? { ...q, dismissals: [...q.dismissals, { userId, dismissedAt: new Date().toISOString() }] } : q));
-    }, []);
-
-    const claimQuest = useCallback((questId: string, userId: string) => {
-        setQuests(prev => prev.map(q => q.id === questId ? { ...q, claimedByUserIds: [...(q.claimedByUserIds || []), userId] } : q));
-    }, []);
-
-    const releaseQuest = useCallback((questId: string, userId: string) => {
-        setQuests(prev => prev.map(q => q.id === questId ? { ...q, claimedByUserIds: (q.claimedByUserIds || []).filter(id => id !== userId) } : q));
-    }, []);
-
-    const markQuestAsTodo = useCallback((questId: string, userId: string) => {
-        setQuests(prev => prev.map(q => q.id === questId ? { ...q, todoUserIds: [...(q.todoUserIds || []), userId] } : q));
-    }, []);
-
-    const unmarkQuestAsTodo = useCallback((questId: string, userId: string) => {
-        setQuests(prev => prev.map(q => q.id === questId ? { ...q, todoUserIds: (q.todoUserIds || []).filter(id => id !== userId) } : q));
-    }, []);
-
-    const completeQuest = useCallback(async (completionData: any) => {
-        await apiRequest('POST', '/api/actions/complete-quest', { completionData });
-    }, [apiRequest]);
-
-    const approveQuestCompletion = useCallback(async (completionId: string, note?: string) => {
-        await apiRequest('POST', `/api/actions/approve-quest/${completionId}`, { note });
-    }, [apiRequest]);
-
-    const rejectQuestCompletion = useCallback(async (completionId: string, note?: string) => {
-        await apiRequest('POST', `/api/actions/reject-quest/${completionId}`, { note });
-    }, [apiRequest]);
-
-    const addQuestGroup = useCallback((group: Omit<QuestGroup, 'id'>): QuestGroup => {
-        const newGroup = { ...group, id: `qg-${Date.now()}-${Math.random().toString(36).substring(2, 9)}` };
-        setQuestGroups(prev => [...prev, newGroup]);
-        return newGroup;
-    }, []);
-    
-    const updateQuestGroup = useCallback((group: QuestGroup) => setQuestGroups(prev => prev.map(g => g.id === group.id ? group : g)), []);
-    const deleteQuestGroup = useCallback((groupId: string) => setQuestGroups(prev => prev.filter(g => g.id !== groupId)), []);
-
-    const assignQuestGroupToUsers = useCallback((groupId: string, userIds: string[]) => {
-        setQuests(prev => prev.map(q => q.groupId === groupId ? { ...q, assignedUserIds: userIds } : q));
-    }, []);
-
-    const deleteQuests = useCallback(async (questIds: string[]) => {
-        await apiRequest('DELETE', '/api/quests', { ids: questIds });
-    }, [apiRequest]);
-
-    const updateQuestsStatus = useCallback(async (questIds: string[], isActive: boolean) => {
-        await apiRequest('PUT', '/api/quests/bulk-status', { ids: questIds, isActive });
-    }, [apiRequest]);
-
-    const bulkUpdateQuests = useCallback(async (questIds: string[], updates: BulkQuestUpdates) => {
-        await apiRequest('PUT', '/api/quests/bulk-update', { ids: questIds, updates });
-    }, [apiRequest]);
-
-    const state = useMemo(() => ({
+    const state = {
         isDataLoaded, isAiConfigured, syncStatus, syncError,
-        quests, questGroups, guilds, ranks, trophies, userTrophies,
+        guilds, ranks, trophies, userTrophies,
         adminAdjustments, systemLogs, settings, themes, chatMessages,
-        systemNotifications, scheduledEvents, bugReports, questCompletions, allTags
-    }), [
-        isDataLoaded, isAiConfigured, syncStatus, syncError,
-        quests, questGroups, guilds, ranks, trophies, userTrophies,
-        adminAdjustments, systemLogs, settings, themes, chatMessages,
-        systemNotifications, scheduledEvents, bugReports, questCompletions, allTags
-    ]);
+        systemNotifications, scheduledEvents, bugReports,
+    };
 
-    const dispatch = useMemo(() => ({
+    const dispatch = {
         addGuild, updateGuild, deleteGuild, setRanks, addTrophy, updateTrophy, deleteTrophy,
         awardTrophy, applyManualAdjustment, addTheme, updateTheme, deleteTheme,
         addScheduledEvent, updateScheduledEvent, deleteScheduledEvent, addBugReport,
         updateBugReport, deleteBugReports, importBugReports, restoreFromBackup, clearAllHistory,
         resetAllPlayerData, deleteAllCustomContent, deleteSelectedAssets, uploadFile,
         factoryReset, updateSettings, resetSettings, sendMessage, markMessagesAsRead,
-        addSystemNotification, markSystemNotificationsAsRead, setQuests, setQuestGroups,
-        setQuestCompletions, addQuest, updateQuest, deleteQuest, cloneQuest, dismissQuest,
-        claimQuest, releaseQuest, markQuestAsTodo, unmarkQuestAsTodo, completeQuest,
-        approveQuestCompletion, rejectQuestCompletion, addQuestGroup, updateQuestGroup,
-        deleteQuestGroup, assignQuestGroupToUsers, deleteQuests, updateQuestsStatus,
-        bulkUpdateQuests
-    }), [
-        addGuild, updateGuild, deleteGuild, setRanks, addTrophy, updateTrophy, deleteTrophy,
-        awardTrophy, applyManualAdjustment, addTheme, updateTheme, deleteTheme,
-        addScheduledEvent, updateScheduledEvent, deleteScheduledEvent, addBugReport,
-        updateBugReport, deleteBugReports, importBugReports, restoreFromBackup, clearAllHistory,
-        resetAllPlayerData, deleteAllCustomContent, deleteSelectedAssets, uploadFile,
-        factoryReset, updateSettings, resetSettings, sendMessage, markMessagesAsRead,
-        addSystemNotification, markSystemNotificationsAsRead, setQuests, setQuestGroups,
-        setQuestCompletions, addQuest, updateQuest, deleteQuest, cloneQuest, dismissQuest,
-        claimQuest, releaseQuest, markQuestAsTodo, unmarkQuestAsTodo, completeQuest,
-        approveQuestCompletion, rejectQuestCompletion, addQuestGroup, updateQuestGroup,
-        deleteQuestGroup, assignQuestGroupToUsers, deleteQuests, updateQuestsStatus,
-        bulkUpdateQuests
-    ]);
+        addSystemNotification, markSystemNotificationsAsRead
+    };
 
     return (
         <AppStateContext.Provider value={state}>

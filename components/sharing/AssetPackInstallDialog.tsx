@@ -165,7 +165,15 @@ const AssetPackInstallDialog: React.FC<AssetPackInstallDialogProps> = ({ assetPa
                                 <div className="space-y-3 max-h-60 overflow-y-auto pr-2">
                                     {groupResolutions.map(res => {
                                         const assetList = assetPack.assets[res.type];
-                                        const asset = Array.isArray(assetList) ? assetList.find(a => (res.type === 'users' ? (a as UserTemplate).username : a.id) === res.id) : undefined;
+                                        const asset = Array.isArray(assetList)
+                                            ? assetList.find(a => {
+                                                if (res.type === 'users') {
+                                                    return (a as UserTemplate).username === res.id;
+                                                }
+                                                // All other asset types have an 'id' property.
+                                                return (a as { id: string }).id === res.id;
+                                              })
+                                            : undefined;
                                         if (!asset) return null;
                                         return (
                                             <AssetCard

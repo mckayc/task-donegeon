@@ -147,24 +147,34 @@ const AssetLibraryPage: React.FC = () => {
     return (
         <div className="space-y-6">
             <Card title="Asset Pack Library">
-                 <div className="flex flex-wrap gap-4 mb-6">
+                 <div className="flex flex-wrap gap-2 mb-6 items-end p-2 bg-stone-900/40 rounded-lg">
                     <Input 
-                        placeholder="Search packs by keyword..."
+                        placeholder="Search packs..."
                         value={searchTerm}
                         onChange={e => setSearchTerm(e.target.value)}
-                        className="flex-grow"
+                        className="w-full sm:w-auto sm:flex-grow"
                     />
                     <Input 
                         as="select"
                         value={selectedCategory}
                         onChange={e => setSelectedCategory(e.target.value)}
-                        className="w-full md:w-auto"
+                        className="w-full sm:w-auto"
                         aria-label="Filter by category"
                     >
                         {categories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
                     </Input>
+                    <div className="border-l border-stone-600 h-10 mx-2 hidden sm:block"></div>
+                    <div className="flex gap-2 w-full sm:w-auto sm:flex-grow">
+                        <Input
+                            placeholder="Import from URL..."
+                            value={remoteUrl}
+                            onChange={e => setRemoteUrl(e.target.value)}
+                            className="flex-grow"
+                        />
+                        <Button onClick={handleInstallRemote} disabled={isLoading || !remoteUrl.trim()}>Import</Button>
+                    </div>
                 </div>
-                <p className="text-sm text-stone-400 mb-4">These packs were found in the <code>/asset_packs</code> folder on your server. Click one to review and install its contents.</p>
+                <p className="text-sm text-stone-400 mb-4 -mt-2">These packs were found in the <code>/asset_packs</code> folder on your server. Click one to review and install its contents.</p>
                 {isLoading ? (
                     <div className="text-center text-stone-400">Loading asset packs...</div>
                 ) : error ? (
@@ -213,19 +223,6 @@ const AssetLibraryPage: React.FC = () => {
                 ) : (
                     <p className="text-center text-stone-400 py-4">No local asset packs found.</p>
                 )}
-            </Card>
-
-            <Card title="Import from URL">
-                <p className="text-sm text-stone-400 mb-4">Paste the URL of an Asset Pack `.json` file to import content from the community.</p>
-                <div className="flex gap-2">
-                    <Input
-                        placeholder="https://example.com/my_cool_pack.json"
-                        value={remoteUrl}
-                        onChange={e => setRemoteUrl(e.target.value)}
-                        className="flex-grow"
-                    />
-                    <Button onClick={handleInstallRemote} disabled={isLoading}>Import</Button>
-                </div>
             </Card>
 
             {packToInstall && (

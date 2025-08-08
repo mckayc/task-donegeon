@@ -11,7 +11,7 @@ interface AssetPackInstallDialogProps {
   assetPack: AssetPack;
   initialResolutions: ImportResolution[];
   onClose: () => void;
-  onConfirm: (assetPack: AssetPack, resolutions: ImportResolution[]) => void;
+  onConfirm: (assetPack: AssetPack, resolutions: ImportResolution[]) => Promise<void>;
 }
 
 const terminologyMap: { [key in ShareableAssetType]: keyof Terminology } = {
@@ -31,8 +31,11 @@ const AssetCard: React.FC<{
     onToggle: () => void;
     onResolutionChange: (res: 'skip' | 'rename') => void;
     onRename: (newName: string) => void;
-}> = ({ resolution, asset, onToggle, onResolutionChange, onRename }) => {
+    onImportSingle: () => Promise<void>;
+    isImporting: boolean;
+}> = ({ resolution, asset, onToggle, onResolutionChange, onRename, onImportSingle, isImporting }) => {
     const isConflict = resolution.status === 'conflict';
+    const canImportSingle = !isConflict || resolution.resolution === 'rename';
 
     return (
         <div className={`p-3 rounded-lg border-2 ${
@@ -50,8 +53,17 @@ const AssetCard: React.FC<{
                     className="mt-1 h-5 w-5 rounded text-emerald-600 bg-stone-700 border-stone-500 focus:ring-emerald-500"
                 />
                 <div className="flex-grow">
-                    <p className="font-bold text-stone-100">{asset.icon || '▫️'} {resolution.name}</p>
-                    <p className="text-sm text-stone-400">{asset.description}</p>
+                    <div className="flex justify-between items-start">
+                        <div>
+                            <p className="font-bold text-stone-100">{asset.icon || '▫️'} {resolution.name}</p>
+                            <p className="text-sm text-stone-400">{asset.description}</p>
+                        </div>
+                        {canImportSingle && (
+                            <Button size="sm" variant="secondary" onClick={onImportSingle} disabled={isImporting}>
+                                {isImporting ? '...' : 'Import'}
+                            </Button>
+                        )}
+                    </div>
                     {isConflict && (
                         <div className="mt-2 pt-2 border-t border-amber-600/30">
                             <p className="text-xs text-amber-300 font-semibold mb-2">This item already exists.</p>
@@ -86,6 +98,8 @@ const AssetPackInstallDialog: React.FC<AssetPackInstallDialogProps> = ({ assetPa
     const { users } = useAuthState();
     const [resolutions, setResolutions] = useState(initialResolutions);
     const [assignedUserIds, setAssignedUserIds] = useState<string[]>(() => users.map(u => u.id));
+    const [importingItemId, setImportingItemId] = useState<string | null>(null);
+
 
     const handleResolutionChange = (id: string, type: ShareableAssetType, resolution: 'skip' | 'rename') => {
         setResolutions(prev => prev.map(r => r.id === id && r.type === type ? { ...r, resolution, selected: resolution !== 'skip' } : r));
@@ -114,6 +128,35 @@ const AssetPackInstallDialog: React.FC<AssetPackInstallDialogProps> = ({ assetPa
         
         onConfirm(packToInstall, resolutions);
     };
+
+    const handleSingleImport = async (resToImport: ImportResolution) => {
+        setImportingItemId(resToImport.id);
+
+        const singleItemResolutions = resolutions.map(r => 
+            (r.id === resToImport.id && r.type === resToImport.type) 
+                ? { ...r, selected: true } 
+                : { ...r, selected: false }
+        );
+        
+        const packToInstall = JSON.parse(JSON.stringify(assetPack));
+        if (packToInstall.assets.quests && packToInstall.assets.quests.length > 0) {
+            packToInstall.assets.quests = packToInstall.assets.quests.map((quest: Quest) => ({
+                ...quest,
+                assignedUserIds: [...assignedUserIds]
+            }));
+        }
+
+        await onConfirm(packToInstall, singleItemResolutions);
+
+        setResolutions(prev => prev.map(r => 
+            (r.id === resToImport.id && r.type === resToImport.type) 
+                ? { ...r, status: 'conflict', resolution: 'skip', selected: false } 
+                : r
+        ));
+
+        setImportingItemId(null);
+    };
+
 
     const hasQuestsToImport = useMemo(() => assetPack.assets.quests && assetPack.assets.quests.length > 0, [assetPack.assets.quests]);
 
@@ -155,7 +198,6 @@ const AssetPackInstallDialog: React.FC<AssetPackInstallDialogProps> = ({ assetPa
                                                 if (res.type === 'users') {
                                                     return (a as UserTemplate).username === res.id;
                                                 }
-                                                // All other asset types have an 'id' property.
                                                 return (a as { id: string }).id === res.id;
                                               })
                                             : undefined;
@@ -168,6 +210,8 @@ const AssetPackInstallDialog: React.FC<AssetPackInstallDialogProps> = ({ assetPa
                                                 onToggle={() => handleToggleSelection(res.id, res.type)}
                                                 onResolutionChange={(newRes) => handleResolutionChange(res.id, res.type, newRes)}
                                                 onRename={(newName) => handleRenameChange(res.id, res.type, newName)}
+                                                onImportSingle={() => handleSingleImport(res)}
+                                                isImporting={importingItemId === res.id}
                                             />
                                         );
                                     })}

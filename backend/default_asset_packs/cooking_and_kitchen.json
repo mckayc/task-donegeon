@@ -60,6 +60,16 @@
         "requiresApproval": false
       }
     ],
+    "markets": [
+       {
+        "id": "market-experiences",
+        "title": "The Experience Emporium",
+        "description": "Trade your hard-earned gems for real-world experiences and privileges.",
+        "iconType": "emoji",
+        "icon": "🎟️",
+        "status": { "type": "open" }
+      }
+    ],
     "gameAssets": [
       {
         "id": "kitchen-item-1",
@@ -71,7 +81,7 @@
         "avatarSlot": "hat",
         "isForSale": true,
         "costGroups": [[{ "rewardTypeId": "core-gems", "amount": 10 }]],
-        "marketIds": [],
+        "marketIds": ["market-experiences"],
         "creatorId": "system",
         "createdAt": "2025-01-01T00:00:00.000Z",
         "purchaseLimit": 1,

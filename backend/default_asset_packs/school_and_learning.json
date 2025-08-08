@@ -61,6 +61,16 @@
         "requiresApproval": false
       }
     ],
+    "markets": [
+       {
+        "id": "market-experiences",
+        "title": "The Scholar's Shop",
+        "description": "Trade your crystals for educational rewards and screen time.",
+        "iconType": "emoji",
+        "icon": "🏫",
+        "status": { "type": "open" }
+      }
+    ],
     "gameAssets": [
       {
         "id": "school-item-1",

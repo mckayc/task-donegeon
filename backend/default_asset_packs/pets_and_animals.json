@@ -60,6 +60,16 @@
         "requiresApproval": false
       }
     ],
+    "markets": [
+      {
+        "id": "market-pet-emporium",
+        "title": "Pet Emporium",
+        "description": "Wares for the discerning animal lover.",
+        "iconType": "emoji",
+        "icon": "🏪",
+        "status": { "type": "open" }
+      }
+    ],
     "gameAssets": [
       {
         "id": "pet-item-1",
@@ -71,7 +81,7 @@
         "avatarSlot": "hat",
         "isForSale": true,
         "costGroups": [[{ "rewardTypeId": "core-gold", "amount": 20 }]],
-        "marketIds": [],
+        "marketIds": ["market-pet-emporium"],
         "creatorId": "system",
         "createdAt": "2025-01-01T00:00:00.000Z",
         "purchaseLimit": 1,

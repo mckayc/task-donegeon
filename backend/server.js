@@ -139,12 +139,9 @@ const ensureDefaultAssetPacksExist = async () => {
         for (const packFilename of defaultPacks) {
             const sourcePath = path.join(DEFAULT_ASSET_PACKS_SOURCE_DIR, packFilename);
             const destPath = path.join(ASSET_PACKS_DIR, packFilename);
-            try {
-                await fs.access(destPath);
-            } catch (error) {
-                await fs.copyFile(sourcePath, destPath);
-                console.log(`Copied default asset pack: ${packFilename}`);
-            }
+            // Unconditionally copy the file to ensure the user's volume always has the latest version from the codebase.
+            await fs.copyFile(sourcePath, destPath);
+            console.log(`Synced default asset pack: ${packFilename}`);
         }
     } catch (error) {
         console.error('Could not ensure default asset packs exist:', error);

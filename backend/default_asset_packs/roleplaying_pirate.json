@@ -1,3 +1,4 @@
+
 {
   "manifest": {
     "id": "com.taskdonegeon.roleplaying.pirate.v1",
@@ -10,23 +11,282 @@
   },
   "assets": {
     "quests": [
-      { "id": "rpq1", "title": "Swab the Deck", "description": "Mop the kitchen or bathroom floor.", "type": "Venture", "icon": "💧", "rewards": [{ "rewardTypeId": "core-diligence", "amount": 25 }], "tags": ["pirate", "cleaning"], "isActive": true, "isOptional": false, "availabilityType": "Unlimited", "requiresApproval": true },
-      { "id": "rpq2", "title": "Bury the Treasure", "description": "Put away your toys or belongings in their proper chest.", "type": "Duty", "icon": "📦", "rewards": [{ "rewardTypeId": "core-diligence", "amount": 15 }], "tags": ["pirate", "organization"], "isActive": true, "isOptional": false, "availabilityType": "Daily", "requiresApproval": false },
-      { "id": "rpq3", "title": "Map the Seas", "description": "Draw a treasure map of your house or yard.", "type": "Venture", "icon": "🗺️", "rewards": [{ "rewardTypeId": "core-creative", "amount": 20 }], "tags": ["pirate", "creative"], "isActive": true, "isOptional": true, "availabilityType": "Unlimited", "requiresApproval": false },
-      { "id": "rpq4", "title": "Find the X", "description": "Complete a treasure hunt set up by the Quartermaster (a parent).", "type": "Venture", "icon": "❌", "rewards": [{ "rewardTypeId": "core-wisdom", "amount": 30 }], "tags": ["pirate", "puzzle"], "isActive": true, "isOptional": true, "availabilityType": "Unlimited", "requiresApproval": false },
-      { "id": "rpq5", "title": "Share the Booty", "description": "Share a snack or toy with a sibling or friend.", "type": "Duty", "icon": "🤝", "rewards": [{ "rewardTypeId": "core-gems", "amount": 15 }], "tags": ["pirate", "social"], "isActive": true, "isOptional": true, "availabilityType": "Daily", "requiresApproval": false },
-      { "id": "rpq6", "title": "Hoist the Colors", "description": "Help raise or lower a flag, or help with laundry.", "type": "Duty", "icon": "🚩", "rewards": [{ "rewardTypeId": "core-strength", "amount": 10 }], "tags": ["pirate", "household"], "isActive": true, "isOptional": false, "availabilityType": "Daily", "requiresApproval": false }
+      {
+        "id": "rpq1",
+        "title": "Swab the Deck",
+        "description": "Mop the kitchen or bathroom floor.",
+        "type": "Venture",
+        "iconType": "emoji",
+        "icon": "💧",
+        "rewards": [
+          {
+            "rewardTypeId": "core-diligence",
+            "amount": 25
+          }
+        ],
+        "tags": [
+          "pirate",
+          "cleaning"
+        ],
+        "isActive": true,
+        "isOptional": false,
+        "availabilityType": "Unlimited",
+        "requiresApproval": true,
+        "lateSetbacks": [],
+        "incompleteSetbacks": [],
+        "availabilityCount": null,
+        "weeklyRecurrenceDays": [],
+        "monthlyRecurrenceDays": [],
+        "assignedUserIds": [],
+        "guildId": null,
+        "groupId": "qg-creative",
+        "claimedByUserIds": [],
+        "dismissals": []
+      },
+      {
+        "id": "rpq2",
+        "title": "Bury the Treasure",
+        "description": "Put away your toys or belongings in their proper chest.",
+        "type": "Duty",
+        "iconType": "emoji",
+        "icon": "📦",
+        "rewards": [
+          {
+            "rewardTypeId": "core-diligence",
+            "amount": 15
+          }
+        ],
+        "tags": [
+          "pirate",
+          "organization"
+        ],
+        "isActive": true,
+        "isOptional": false,
+        "availabilityType": "Daily",
+        "requiresApproval": false,
+        "lateSetbacks": [],
+        "incompleteSetbacks": [],
+        "availabilityCount": null,
+        "weeklyRecurrenceDays": [],
+        "monthlyRecurrenceDays": [],
+        "assignedUserIds": [],
+        "guildId": null,
+        "groupId": "qg-creative",
+        "claimedByUserIds": [],
+        "dismissals": []
+      },
+      {
+        "id": "rpq3",
+        "title": "Map the Seas",
+        "description": "Draw a treasure map of your house or yard.",
+        "type": "Venture",
+        "iconType": "emoji",
+        "icon": "🗺️",
+        "rewards": [
+          {
+            "rewardTypeId": "core-creative",
+            "amount": 20
+          }
+        ],
+        "tags": [
+          "pirate",
+          "creative"
+        ],
+        "isActive": true,
+        "isOptional": true,
+        "availabilityType": "Unlimited",
+        "requiresApproval": false,
+        "lateSetbacks": [],
+        "incompleteSetbacks": [],
+        "availabilityCount": null,
+        "weeklyRecurrenceDays": [],
+        "monthlyRecurrenceDays": [],
+        "assignedUserIds": [],
+        "guildId": null,
+        "groupId": "qg-creative",
+        "claimedByUserIds": [],
+        "dismissals": []
+      },
+      {
+        "id": "rpq4",
+        "title": "Find the X",
+        "description": "Complete a treasure hunt set up by the Quartermaster (a parent).",
+        "type": "Venture",
+        "iconType": "emoji",
+        "icon": "❌",
+        "rewards": [
+          {
+            "rewardTypeId": "core-wisdom",
+            "amount": 30
+          }
+        ],
+        "tags": [
+          "pirate",
+          "puzzle"
+        ],
+        "isActive": true,
+        "isOptional": true,
+        "availabilityType": "Unlimited",
+        "requiresApproval": false,
+        "lateSetbacks": [],
+        "incompleteSetbacks": [],
+        "availabilityCount": null,
+        "weeklyRecurrenceDays": [],
+        "monthlyRecurrenceDays": [],
+        "assignedUserIds": [],
+        "guildId": null,
+        "groupId": "qg-creative",
+        "claimedByUserIds": [],
+        "dismissals": []
+      },
+      {
+        "id": "rpq5",
+        "title": "Share the Booty",
+        "description": "Share a snack or toy with a sibling or friend.",
+        "type": "Duty",
+        "iconType": "emoji",
+        "icon": "🤝",
+        "rewards": [
+          {
+            "rewardTypeId": "core-gems",
+            "amount": 15
+          }
+        ],
+        "tags": [
+          "pirate",
+          "social"
+        ],
+        "isActive": true,
+        "isOptional": true,
+        "availabilityType": "Daily",
+        "requiresApproval": false,
+        "lateSetbacks": [],
+        "incompleteSetbacks": [],
+        "availabilityCount": null,
+        "weeklyRecurrenceDays": [],
+        "monthlyRecurrenceDays": [],
+        "assignedUserIds": [],
+        "guildId": null,
+        "groupId": "qg-creative",
+        "claimedByUserIds": [],
+        "dismissals": []
+      },
+      {
+        "id": "rpq6",
+        "title": "Hoist the Colors",
+        "description": "Help raise or lower a flag, or help with laundry.",
+        "type": "Duty",
+        "iconType": "emoji",
+        "icon": "🚩",
+        "rewards": [
+          {
+            "rewardTypeId": "core-strength",
+            "amount": 10
+          }
+        ],
+        "tags": [
+          "pirate",
+          "household"
+        ],
+        "isActive": true,
+        "isOptional": false,
+        "availabilityType": "Daily",
+        "requiresApproval": false,
+        "lateSetbacks": [],
+        "incompleteSetbacks": [],
+        "availabilityCount": null,
+        "weeklyRecurrenceDays": [],
+        "monthlyRecurrenceDays": [],
+        "assignedUserIds": [],
+        "guildId": null,
+        "groupId": "qg-creative",
+        "claimedByUserIds": [],
+        "dismissals": []
+      }
     ],
     "markets": [
-      { "id": "rpm1", "title": "The Smuggler's Cove", "description": "A secret port for trading pirate treasures and gear.", "icon": "⚓", "iconType": "emoji", "status": { "type": "open" } }
+      {
+        "id": "rpm1",
+        "title": "The Smuggler's Cove",
+        "description": "A secret port for trading pirate treasures and gear.",
+        "icon": "⚓",
+        "iconType": "emoji",
+        "status": {
+          "type": "open"
+        }
+      }
     ],
     "gameAssets": [
-      { "id": "rpga1", "name": "Pirate Eyepatch", "description": "A classic eyepatch for a swashbuckling avatar.", "url": "/uploads/avatar-hats/eyepatch.png", "category": "Avatar", "avatarSlot": "hat", "isForSale": true, "costGroups": [[{ "rewardTypeId": "core-gold", "amount": 15 }]], "marketIds": ["rpm1"] },
-      { "id": "rpga2", "name": "Parrot Companion", "description": "A colorful parrot to sit on your avatar's shoulder.", "url": "/uploads/pets/parrot.png", "category": "Pet", "isForSale": true, "costGroups": [[{ "rewardTypeId": "core-gold", "amount": 75 }]], "marketIds": ["rpm1"] },
-      { "id": "rpga3", "name": "Piece of Eight", "description": "A golden coin that can be traded for a small treat.", "url": "/uploads/coins/piece-of-eight.png", "category": "Real-World Reward", "isForSale": true, "costGroups": [[{ "rewardTypeId": "core-gems", "amount": 30 }]], "marketIds": ["rpm1"], "requiresApproval": true }
+      {
+        "id": "rpga1",
+        "name": "Pirate Eyepatch",
+        "description": "A classic eyepatch for a swashbuckling avatar.",
+        "url": "/uploads/avatar-hats/eyepatch.png",
+        "category": "Avatar",
+        "avatarSlot": "hat",
+        "isForSale": true,
+        "costGroups": [
+          [
+            {
+              "rewardTypeId": "core-gold",
+              "amount": 15
+            }
+          ]
+        ],
+        "marketIds": [
+          "rpm1"
+        ]
+      },
+      {
+        "id": "rpga2",
+        "name": "Parrot Companion",
+        "description": "A colorful parrot to sit on your avatar's shoulder.",
+        "url": "/uploads/pets/parrot.png",
+        "category": "Pet",
+        "isForSale": true,
+        "costGroups": [
+          [
+            {
+              "rewardTypeId": "core-gold",
+              "amount": 75
+            }
+          ]
+        ],
+        "marketIds": [
+          "rpm1"
+        ]
+      },
+      {
+        "id": "rpga3",
+        "name": "Piece of Eight",
+        "description": "A golden coin that can be traded for a small treat.",
+        "url": "/uploads/coins/piece-of-eight.png",
+        "category": "Real-World Reward",
+        "isForSale": true,
+        "costGroups": [
+          [
+            {
+              "rewardTypeId": "core-gems",
+              "amount": 30
+            }
+          ]
+        ],
+        "marketIds": [
+          "rpm1"
+        ],
+        "requiresApproval": true
+      }
     ],
     "trophies": [
-      { "id": "rpt1", "name": "Captain of the High Seas", "description": "Amass a treasure of 200 gold.", "icon": "👑", "iconType": "emoji", "isManual": true, "requirements": [] }
+      {
+        "id": "rpt1",
+        "name": "Captain of the High Seas",
+        "description": "Amass a treasure of 200 gold.",
+        "icon": "👑",
+        "iconType": "emoji",
+        "isManual": true,
+        "requirements": []
+      }
     ]
   }
 }

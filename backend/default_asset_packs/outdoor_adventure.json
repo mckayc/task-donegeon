@@ -1,3 +1,4 @@
+
 {
   "manifest": {
     "id": "com.taskdonegeon.outdooradventure.v1",
@@ -17,15 +18,34 @@
         "type": "Venture",
         "iconType": "emoji",
         "icon": "🌿",
-        "tags": ["Yardwork", "Outdoors"],
-        "rewards": [{ "rewardTypeId": "core-diligence", "amount": 20 }, { "rewardTypeId": "core-gold", "amount": 5 }],
+        "tags": [
+          "Yardwork",
+          "Outdoors"
+        ],
+        "rewards": [
+          {
+            "rewardTypeId": "core-diligence",
+            "amount": 20
+          },
+          {
+            "rewardTypeId": "core-gold",
+            "amount": 5
+          }
+        ],
         "isActive": true,
         "isOptional": true,
         "availabilityType": "Frequency",
         "availabilityCount": 20,
+        "requiresApproval": true,
+        "lateSetbacks": [],
+        "incompleteSetbacks": [],
+        "weeklyRecurrenceDays": [],
+        "monthlyRecurrenceDays": [],
         "assignedUserIds": [],
+        "guildId": null,
         "groupId": "qg-outdoor",
-        "requiresApproval": true
+        "claimedByUserIds": [],
+        "dismissals": []
       },
       {
         "id": "outdoor-quest-2",
@@ -34,15 +54,30 @@
         "type": "Venture",
         "iconType": "emoji",
         "icon": "🧹",
-        "tags": ["Yardwork", "Cleaning"],
-        "rewards": [{ "rewardTypeId": "core-strength", "amount": 15 }],
+        "tags": [
+          "Yardwork",
+          "Cleaning"
+        ],
+        "rewards": [
+          {
+            "rewardTypeId": "core-strength",
+            "amount": 15
+          }
+        ],
         "isActive": true,
         "isOptional": true,
         "availabilityType": "Frequency",
         "availabilityCount": 20,
+        "requiresApproval": false,
+        "lateSetbacks": [],
+        "incompleteSetbacks": [],
+        "weeklyRecurrenceDays": [],
+        "monthlyRecurrenceDays": [],
         "assignedUserIds": [],
+        "guildId": null,
         "groupId": "qg-outdoor",
-        "requiresApproval": false
+        "claimedByUserIds": [],
+        "dismissals": []
       },
       {
         "id": "outdoor-quest-3",
@@ -51,14 +86,30 @@
         "type": "Venture",
         "iconType": "emoji",
         "icon": "🔍",
-        "tags": ["Outdoors", "Exploring"],
-        "rewards": [{ "rewardTypeId": "core-wisdom", "amount": 10 }],
+        "tags": [
+          "Outdoors",
+          "Exploring"
+        ],
+        "rewards": [
+          {
+            "rewardTypeId": "core-wisdom",
+            "amount": 10
+          }
+        ],
         "isActive": true,
         "isOptional": true,
         "availabilityType": "Unlimited",
+        "requiresApproval": true,
+        "lateSetbacks": [],
+        "incompleteSetbacks": [],
+        "availabilityCount": null,
+        "weeklyRecurrenceDays": [],
+        "monthlyRecurrenceDays": [],
         "assignedUserIds": [],
+        "guildId": null,
         "groupId": "qg-outdoor",
-        "requiresApproval": true
+        "claimedByUserIds": [],
+        "dismissals": []
       }
     ]
   }

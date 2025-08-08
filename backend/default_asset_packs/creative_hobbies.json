@@ -1,3 +1,4 @@
+
 {
   "manifest": {
     "id": "com.taskdonegeon.creativehobbies.v1",
@@ -17,14 +18,30 @@
         "type": "Duty",
         "iconType": "emoji",
         "icon": "✏️",
-        "tags": ["Creative", "Art"],
-        "rewards": [{ "rewardTypeId": "core-creative", "amount": 15 }],
+        "tags": [
+          "Creative",
+          "Art"
+        ],
+        "rewards": [
+          {
+            "rewardTypeId": "core-creative",
+            "amount": 15
+          }
+        ],
         "isActive": true,
         "isOptional": true,
         "availabilityType": "Daily",
+        "requiresApproval": false,
+        "lateSetbacks": [],
+        "incompleteSetbacks": [],
+        "availabilityCount": null,
+        "weeklyRecurrenceDays": [],
+        "monthlyRecurrenceDays": [],
         "assignedUserIds": [],
+        "guildId": null,
         "groupId": "qg-creative",
-        "requiresApproval": false
+        "claimedByUserIds": [],
+        "dismissals": []
       },
       {
         "id": "creative-quest-2",
@@ -33,14 +50,34 @@
         "type": "Duty",
         "iconType": "emoji",
         "icon": "🎵",
-        "tags": ["Creative", "Music"],
-        "rewards": [{ "rewardTypeId": "core-skill", "amount": 10 }, { "rewardTypeId": "core-creative", "amount": 10 }],
+        "tags": [
+          "Creative",
+          "Music"
+        ],
+        "rewards": [
+          {
+            "rewardTypeId": "core-skill",
+            "amount": 10
+          },
+          {
+            "rewardTypeId": "core-creative",
+            "amount": 10
+          }
+        ],
         "isActive": true,
         "isOptional": true,
         "availabilityType": "Daily",
+        "requiresApproval": false,
+        "lateSetbacks": [],
+        "incompleteSetbacks": [],
+        "availabilityCount": null,
+        "weeklyRecurrenceDays": [],
+        "monthlyRecurrenceDays": [],
         "assignedUserIds": [],
+        "guildId": null,
         "groupId": "qg-creative",
-        "requiresApproval": false
+        "claimedByUserIds": [],
+        "dismissals": []
       },
       {
         "id": "creative-quest-3",
@@ -49,14 +86,34 @@
         "type": "Venture",
         "iconType": "emoji",
         "icon": "📖",
-        "tags": ["Creative", "Writing"],
-        "rewards": [{ "rewardTypeId": "core-wisdom", "amount": 20 }, { "rewardTypeId": "core-creative", "amount": 15 }],
+        "tags": [
+          "Creative",
+          "Writing"
+        ],
+        "rewards": [
+          {
+            "rewardTypeId": "core-wisdom",
+            "amount": 20
+          },
+          {
+            "rewardTypeId": "core-creative",
+            "amount": 15
+          }
+        ],
         "isActive": true,
         "isOptional": true,
         "availabilityType": "Unlimited",
+        "requiresApproval": true,
+        "lateSetbacks": [],
+        "incompleteSetbacks": [],
+        "availabilityCount": null,
+        "weeklyRecurrenceDays": [],
+        "monthlyRecurrenceDays": [],
         "assignedUserIds": [],
+        "guildId": null,
         "groupId": "qg-creative",
-        "requiresApproval": true
+        "claimedByUserIds": [],
+        "dismissals": []
       },
       {
         "id": "creative-quest-4",
@@ -65,14 +122,30 @@
         "type": "Venture",
         "iconType": "emoji",
         "icon": "🧱",
-        "tags": ["Creative", "Building"],
-        "rewards": [{ "rewardTypeId": "core-creative", "amount": 25 }],
+        "tags": [
+          "Creative",
+          "Building"
+        ],
+        "rewards": [
+          {
+            "rewardTypeId": "core-creative",
+            "amount": 25
+          }
+        ],
         "isActive": true,
         "isOptional": true,
         "availabilityType": "Unlimited",
+        "requiresApproval": true,
+        "lateSetbacks": [],
+        "incompleteSetbacks": [],
+        "availabilityCount": null,
+        "weeklyRecurrenceDays": [],
+        "monthlyRecurrenceDays": [],
         "assignedUserIds": [],
+        "guildId": null,
         "groupId": "qg-creative",
-        "requiresApproval": true
+        "claimedByUserIds": [],
+        "dismissals": []
       }
     ]
   }

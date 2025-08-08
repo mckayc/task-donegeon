@@ -1,3 +1,4 @@
+
 {
   "manifest": {
     "id": "com.taskdonegeon.lifeskills.home.v1",
@@ -10,23 +11,284 @@
   },
   "assets": {
     "quests": [
-      { "id": "lhq1", "title": "Tool Time", "description": "Help organize the toolbox or a tool drawer.", "type": "Venture", "icon": "🔧", "rewards": [{ "rewardTypeId": "core-diligence", "amount": 20 }], "tags": ["home", "organization"], "isActive": true, "isOptional": true, "availabilityType": "Unlimited", "requiresApproval": false },
-      { "id": "lhq2", "title": "Master of the Batteries", "description": "Test and replace the batteries in all smoke detectors or remote controls.", "type": "Duty", "icon": "🔋", "rewards": [{ "rewardTypeId": "core-diligence", "amount": 15 }], "tags": ["home", "maintenance"], "isActive": true, "isOptional": false, "availabilityType": "Monthly", "monthlyRecurrenceDays": [1], "requiresApproval": false },
-      { "id": "lhq3", "title": "The Lightbringer", "description": "With supervision, help replace a burnt-out lightbulb.", "type": "Venture", "icon": "💡", "rewards": [{ "rewardTypeId": "core-skill", "amount": 10 }], "tags": ["home", "maintenance"], "isActive": true, "isOptional": true, "availabilityType": "Unlimited", "requiresApproval": false },
-      { "id": "lhq4", "title": "The Unclogger", "description": "Help clear a minor clog in a sink or drain.", "type": "Venture", "icon": "🚽", "rewards": [{ "rewardTypeId": "core-strength", "amount": 25 }], "tags": ["home", "maintenance"], "isActive": true, "isOptional": true, "availabilityType": "Unlimited", "requiresApproval": true },
-      { "id": "lhq5", "title": "Painting Apprentice", "description": "Help with a small painting project, like touching up a wall.", "type": "Venture", "icon": "🖌️", "rewards": [{ "rewardTypeId": "core-creative", "amount": 30 }], "tags": ["home", "maintenance"], "isActive": true, "isOptional": true, "availabilityType": "Unlimited", "requiresApproval": true },
-      { "id": "lhq6", "title": "Assembly Assistant", "description": "Help assemble a new piece of furniture.", "type": "Venture", "icon": "🔩", "rewards": [{ "rewardTypeId": "core-skill", "amount": 35 }], "tags": ["home", "building"], "isActive": true, "isOptional": true, "availabilityType": "Unlimited", "requiresApproval": false }
+      {
+        "id": "lhq1",
+        "title": "Tool Time",
+        "description": "Help organize the toolbox or a tool drawer.",
+        "type": "Venture",
+        "iconType": "emoji",
+        "icon": "🔧",
+        "rewards": [
+          {
+            "rewardTypeId": "core-diligence",
+            "amount": 20
+          }
+        ],
+        "tags": [
+          "home",
+          "organization"
+        ],
+        "isActive": true,
+        "isOptional": true,
+        "availabilityType": "Unlimited",
+        "requiresApproval": false,
+        "lateSetbacks": [],
+        "incompleteSetbacks": [],
+        "availabilityCount": null,
+        "weeklyRecurrenceDays": [],
+        "monthlyRecurrenceDays": [],
+        "assignedUserIds": [],
+        "guildId": null,
+        "groupId": "qg-household",
+        "claimedByUserIds": [],
+        "dismissals": []
+      },
+      {
+        "id": "lhq2",
+        "title": "Master of the Batteries",
+        "description": "Test and replace the batteries in all smoke detectors or remote controls.",
+        "type": "Duty",
+        "iconType": "emoji",
+        "icon": "🔋",
+        "rewards": [
+          {
+            "rewardTypeId": "core-diligence",
+            "amount": 15
+          }
+        ],
+        "tags": [
+          "home",
+          "maintenance"
+        ],
+        "isActive": true,
+        "isOptional": false,
+        "availabilityType": "Monthly",
+        "monthlyRecurrenceDays": [
+          1
+        ],
+        "requiresApproval": false,
+        "lateSetbacks": [],
+        "incompleteSetbacks": [],
+        "availabilityCount": null,
+        "weeklyRecurrenceDays": [],
+        "assignedUserIds": [],
+        "guildId": null,
+        "groupId": "qg-household",
+        "claimedByUserIds": [],
+        "dismissals": []
+      },
+      {
+        "id": "lhq3",
+        "title": "The Lightbringer",
+        "description": "With supervision, help replace a burnt-out lightbulb.",
+        "type": "Venture",
+        "iconType": "emoji",
+        "icon": "💡",
+        "rewards": [
+          {
+            "rewardTypeId": "core-skill",
+            "amount": 10
+          }
+        ],
+        "tags": [
+          "home",
+          "maintenance"
+        ],
+        "isActive": true,
+        "isOptional": true,
+        "availabilityType": "Unlimited",
+        "requiresApproval": false,
+        "lateSetbacks": [],
+        "incompleteSetbacks": [],
+        "availabilityCount": null,
+        "weeklyRecurrenceDays": [],
+        "monthlyRecurrenceDays": [],
+        "assignedUserIds": [],
+        "guildId": null,
+        "groupId": "qg-household",
+        "claimedByUserIds": [],
+        "dismissals": []
+      },
+      {
+        "id": "lhq4",
+        "title": "The Unclogger",
+        "description": "Help clear a minor clog in a sink or drain.",
+        "type": "Venture",
+        "iconType": "emoji",
+        "icon": "🚽",
+        "rewards": [
+          {
+            "rewardTypeId": "core-strength",
+            "amount": 25
+          }
+        ],
+        "tags": [
+          "home",
+          "maintenance"
+        ],
+        "isActive": true,
+        "isOptional": true,
+        "availabilityType": "Unlimited",
+        "requiresApproval": true,
+        "lateSetbacks": [],
+        "incompleteSetbacks": [],
+        "availabilityCount": null,
+        "weeklyRecurrenceDays": [],
+        "monthlyRecurrenceDays": [],
+        "assignedUserIds": [],
+        "guildId": null,
+        "groupId": "qg-household",
+        "claimedByUserIds": [],
+        "dismissals": []
+      },
+      {
+        "id": "lhq5",
+        "title": "Painting Apprentice",
+        "description": "Help with a small painting project, like touching up a wall.",
+        "type": "Venture",
+        "iconType": "emoji",
+        "icon": "🖌️",
+        "rewards": [
+          {
+            "rewardTypeId": "core-creative",
+            "amount": 30
+          }
+        ],
+        "tags": [
+          "home",
+          "maintenance"
+        ],
+        "isActive": true,
+        "isOptional": true,
+        "availabilityType": "Unlimited",
+        "requiresApproval": true,
+        "lateSetbacks": [],
+        "incompleteSetbacks": [],
+        "availabilityCount": null,
+        "weeklyRecurrenceDays": [],
+        "monthlyRecurrenceDays": [],
+        "assignedUserIds": [],
+        "guildId": null,
+        "groupId": "qg-household",
+        "claimedByUserIds": [],
+        "dismissals": []
+      },
+      {
+        "id": "lhq6",
+        "title": "Assembly Assistant",
+        "description": "Help assemble a new piece of furniture.",
+        "type": "Venture",
+        "iconType": "emoji",
+        "icon": "🔩",
+        "rewards": [
+          {
+            "rewardTypeId": "core-skill",
+            "amount": 35
+          }
+        ],
+        "tags": [
+          "home",
+          "building"
+        ],
+        "isActive": true,
+        "isOptional": true,
+        "availabilityType": "Unlimited",
+        "requiresApproval": false,
+        "lateSetbacks": [],
+        "incompleteSetbacks": [],
+        "availabilityCount": null,
+        "weeklyRecurrenceDays": [],
+        "monthlyRecurrenceDays": [],
+        "assignedUserIds": [],
+        "guildId": null,
+        "groupId": "qg-household",
+        "claimedByUserIds": [],
+        "dismissals": []
+      }
     ],
     "markets": [
-      { "id": "lhm1", "title": "The Hardware Hank's", "description": "Tools and equipment for the handy adventurer.", "icon": "🔨", "iconType": "emoji", "status": { "type": "open" } }
+      {
+        "id": "lhm1",
+        "title": "The Hardware Hank's",
+        "description": "Tools and equipment for the handy adventurer.",
+        "icon": "🔨",
+        "iconType": "emoji",
+        "status": {
+          "type": "open"
+        }
+      }
     ],
     "gameAssets": [
-      { "id": "lhga1", "name": "Hard Hat", "description": "A yellow hard hat for your avatar.", "url": "/uploads/avatar-hats/hard-hat.png", "category": "Avatar", "avatarSlot": "hat", "isForSale": true, "costGroups": [[{ "rewardTypeId": "core-gold", "amount": 25 }]], "marketIds": ["lhm1"] },
-      { "id": "lhga2", "name": "Toolbelt", "description": "A toolbelt for your avatar's collection.", "url": "/uploads/tools/toolbelt.png", "category": "Tool", "isForSale": true, "costGroups": [[{ "rewardTypeId": "core-gold", "amount": 35 }]], "marketIds": ["lhm1"] },
-      { "id": "lhga3", "name": "New Tool", "description": "A real-world reward: a new, age-appropriate tool for your collection.", "url": "/uploads/tools/hammer.png", "category": "Real-World Reward", "isForSale": true, "costGroups": [[{ "rewardTypeId": "core-gems", "amount": 120 }]], "marketIds": ["lhm1"], "requiresApproval": true }
+      {
+        "id": "lhga1",
+        "name": "Hard Hat",
+        "description": "A yellow hard hat for your avatar.",
+        "url": "/uploads/avatar-hats/hard-hat.png",
+        "category": "Avatar",
+        "avatarSlot": "hat",
+        "isForSale": true,
+        "costGroups": [
+          [
+            {
+              "rewardTypeId": "core-gold",
+              "amount": 25
+            }
+          ]
+        ],
+        "marketIds": [
+          "lhm1"
+        ]
+      },
+      {
+        "id": "lhga2",
+        "name": "Toolbelt",
+        "description": "A toolbelt for your avatar's collection.",
+        "url": "/uploads/tools/toolbelt.png",
+        "category": "Tool",
+        "isForSale": true,
+        "costGroups": [
+          [
+            {
+              "rewardTypeId": "core-gold",
+              "amount": 35
+            }
+          ]
+        ],
+        "marketIds": [
+          "lhm1"
+        ]
+      },
+      {
+        "id": "lhga3",
+        "name": "New Tool",
+        "description": "A real-world reward: a new, age-appropriate tool for your collection.",
+        "url": "/uploads/tools/hammer.png",
+        "category": "Real-World Reward",
+        "isForSale": true,
+        "costGroups": [
+          [
+            {
+              "rewardTypeId": "core-gems",
+              "amount": 120
+            }
+          ]
+        ],
+        "marketIds": [
+          "lhm1"
+        ],
+        "requiresApproval": true
+      }
     ],
     "trophies": [
-      { "id": "lht1", "name": "Handyman", "description": "Successfully complete 5 home maintenance quests.", "icon": "🛠️", "iconType": "emoji", "isManual": true, "requirements": [] }
+      {
+        "id": "lht1",
+        "name": "Handyman",
+        "description": "Successfully complete 5 home maintenance quests.",
+        "icon": "🛠️",
+        "iconType": "emoji",
+        "isManual": true,
+        "requirements": []
+      }
     ]
   }
 }

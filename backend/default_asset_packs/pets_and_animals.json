@@ -1,3 +1,4 @@
+
 {
   "manifest": {
     "id": "com.taskdonegeon.petsandanimals.v1",
@@ -17,14 +18,30 @@
         "type": "Duty",
         "iconType": "emoji",
         "icon": "🦴",
-        "tags": ["Pets", "Household"],
-        "rewards": [{ "rewardTypeId": "core-diligence", "amount": 5 }],
+        "tags": [
+          "Pets",
+          "Household"
+        ],
+        "rewards": [
+          {
+            "rewardTypeId": "core-diligence",
+            "amount": 5
+          }
+        ],
         "isActive": true,
         "isOptional": false,
         "availabilityType": "Daily",
+        "requiresApproval": false,
+        "lateSetbacks": [],
+        "incompleteSetbacks": [],
+        "availabilityCount": null,
+        "weeklyRecurrenceDays": [],
+        "monthlyRecurrenceDays": [],
         "assignedUserIds": [],
+        "guildId": null,
         "groupId": "qg-household",
-        "requiresApproval": false
+        "claimedByUserIds": [],
+        "dismissals": []
       },
       {
         "id": "pet-quest-2",
@@ -33,14 +50,30 @@
         "type": "Duty",
         "iconType": "emoji",
         "icon": "🐕",
-        "tags": ["Pets", "Exercise"],
-        "rewards": [{ "rewardTypeId": "core-strength", "amount": 10 }],
+        "tags": [
+          "Pets",
+          "Exercise"
+        ],
+        "rewards": [
+          {
+            "rewardTypeId": "core-strength",
+            "amount": 10
+          }
+        ],
         "isActive": true,
         "isOptional": false,
         "availabilityType": "Daily",
+        "requiresApproval": false,
+        "lateSetbacks": [],
+        "incompleteSetbacks": [],
+        "availabilityCount": null,
+        "weeklyRecurrenceDays": [],
+        "monthlyRecurrenceDays": [],
         "assignedUserIds": [],
+        "guildId": null,
         "groupId": "qg-outdoor",
-        "requiresApproval": false
+        "claimedByUserIds": [],
+        "dismissals": []
       },
       {
         "id": "pet-quest-3",
@@ -49,15 +82,34 @@
         "type": "Venture",
         "iconType": "emoji",
         "icon": "💩",
-        "tags": ["Pets", "Cleaning"],
-        "rewards": [{ "rewardTypeId": "core-diligence", "amount": 15 }, { "rewardTypeId": "core-gold", "amount": 2 }],
+        "tags": [
+          "Pets",
+          "Cleaning"
+        ],
+        "rewards": [
+          {
+            "rewardTypeId": "core-diligence",
+            "amount": 15
+          },
+          {
+            "rewardTypeId": "core-gold",
+            "amount": 2
+          }
+        ],
         "isActive": true,
         "isOptional": true,
         "availabilityType": "Frequency",
         "availabilityCount": 50,
+        "requiresApproval": false,
+        "lateSetbacks": [],
+        "incompleteSetbacks": [],
+        "weeklyRecurrenceDays": [],
+        "monthlyRecurrenceDays": [],
         "assignedUserIds": [],
+        "guildId": null,
         "groupId": "qg-household",
-        "requiresApproval": false
+        "claimedByUserIds": [],
+        "dismissals": []
       }
     ],
     "markets": [
@@ -67,7 +119,9 @@
         "description": "Wares for the discerning animal lover.",
         "iconType": "emoji",
         "icon": "🏪",
-        "status": { "type": "open" }
+        "status": {
+          "type": "open"
+        }
       }
     ],
     "gameAssets": [
@@ -80,8 +134,17 @@
         "category": "Avatar",
         "avatarSlot": "hat",
         "isForSale": true,
-        "costGroups": [[{ "rewardTypeId": "core-gold", "amount": 20 }]],
-        "marketIds": ["market-pet-emporium"],
+        "costGroups": [
+          [
+            {
+              "rewardTypeId": "core-gold",
+              "amount": 20
+            }
+          ]
+        ],
+        "marketIds": [
+          "market-pet-emporium"
+        ],
         "creatorId": "system",
         "createdAt": "2025-01-01T00:00:00.000Z",
         "purchaseLimit": 1,

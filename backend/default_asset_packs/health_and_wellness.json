@@ -1,3 +1,4 @@
+
 {
   "manifest": {
     "id": "com.taskdonegeon.healthandwellness.v1",
@@ -17,14 +18,30 @@
         "type": "Duty",
         "iconType": "emoji",
         "icon": "🦷",
-        "tags": ["Health", "Hygiene"],
-        "rewards": [{ "rewardTypeId": "core-diligence", "amount": 5 }],
+        "tags": [
+          "Health",
+          "Hygiene"
+        ],
+        "rewards": [
+          {
+            "rewardTypeId": "core-diligence",
+            "amount": 5
+          }
+        ],
         "isActive": true,
         "isOptional": false,
         "availabilityType": "Daily",
+        "requiresApproval": false,
+        "lateSetbacks": [],
+        "incompleteSetbacks": [],
+        "availabilityCount": null,
+        "weeklyRecurrenceDays": [],
+        "monthlyRecurrenceDays": [],
         "assignedUserIds": [],
+        "guildId": null,
         "groupId": "qg-health",
-        "requiresApproval": false
+        "claimedByUserIds": [],
+        "dismissals": []
       },
       {
         "id": "health-quest-2",
@@ -33,14 +50,30 @@
         "type": "Duty",
         "iconType": "emoji",
         "icon": "🌙",
-        "tags": ["Health", "Hygiene"],
-        "rewards": [{ "rewardTypeId": "core-diligence", "amount": 10 }],
+        "tags": [
+          "Health",
+          "Hygiene"
+        ],
+        "rewards": [
+          {
+            "rewardTypeId": "core-diligence",
+            "amount": 10
+          }
+        ],
         "isActive": true,
         "isOptional": false,
         "availabilityType": "Daily",
+        "requiresApproval": false,
+        "lateSetbacks": [],
+        "incompleteSetbacks": [],
+        "availabilityCount": null,
+        "weeklyRecurrenceDays": [],
+        "monthlyRecurrenceDays": [],
         "assignedUserIds": [],
+        "guildId": null,
         "groupId": "qg-health",
-        "requiresApproval": false
+        "claimedByUserIds": [],
+        "dismissals": []
       },
       {
         "id": "health-quest-3",
@@ -49,15 +82,34 @@
         "type": "Venture",
         "iconType": "emoji",
         "icon": "🏃",
-        "tags": ["Health", "Exercise"],
-        "rewards": [{ "rewardTypeId": "core-strength", "amount": 30 }, { "rewardTypeId": "core-skill", "amount": 10 }],
+        "tags": [
+          "Health",
+          "Exercise"
+        ],
+        "rewards": [
+          {
+            "rewardTypeId": "core-strength",
+            "amount": 30
+          },
+          {
+            "rewardTypeId": "core-skill",
+            "amount": 10
+          }
+        ],
         "isActive": true,
         "isOptional": true,
         "availabilityType": "Frequency",
         "availabilityCount": 100,
+        "requiresApproval": false,
+        "lateSetbacks": [],
+        "incompleteSetbacks": [],
+        "weeklyRecurrenceDays": [],
+        "monthlyRecurrenceDays": [],
         "assignedUserIds": [],
+        "guildId": null,
         "groupId": "qg-health",
-        "requiresApproval": false
+        "claimedByUserIds": [],
+        "dismissals": []
       },
       {
         "id": "health-quest-4",
@@ -66,14 +118,29 @@
         "type": "Duty",
         "iconType": "emoji",
         "icon": "💧",
-        "tags": ["Health"],
-        "rewards": [{ "rewardTypeId": "core-strength", "amount": 5 }],
+        "tags": [
+          "Health"
+        ],
+        "rewards": [
+          {
+            "rewardTypeId": "core-strength",
+            "amount": 5
+          }
+        ],
         "isActive": true,
         "isOptional": true,
         "availabilityType": "Daily",
+        "requiresApproval": false,
+        "lateSetbacks": [],
+        "incompleteSetbacks": [],
+        "availabilityCount": null,
+        "weeklyRecurrenceDays": [],
+        "monthlyRecurrenceDays": [],
         "assignedUserIds": [],
+        "guildId": null,
         "groupId": "qg-health",
-        "requiresApproval": false
+        "claimedByUserIds": [],
+        "dismissals": []
       }
     ]
   }

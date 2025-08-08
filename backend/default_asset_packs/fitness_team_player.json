@@ -1,3 +1,4 @@
+
 {
   "manifest": {
     "id": "com.taskdonegeon.fitness.sports.v1",
@@ -10,23 +11,286 @@
   },
   "assets": {
     "quests": [
-      { "id": "fsq1", "title": "Attend Practice", "description": "Attend your team's scheduled practice session.", "type": "Duty", "icon": "🗓️", "rewards": [{ "rewardTypeId": "core-diligence", "amount": 20 }], "tags": ["sports", "practice"], "isActive": true, "isOptional": false, "availabilityType": "Weekly", "weeklyRecurrenceDays": [2, 4], "requiresApproval": false },
-      { "id": "fsq2", "title": "Drill Master", "description": "Spend 20 minutes practicing a specific skill for your sport.", "type": "Duty", "icon": "🎯", "rewards": [{ "rewardTypeId": "core-skill", "amount": 25 }], "tags": ["sports", "practice"], "isActive": true, "isOptional": true, "availabilityType": "Daily", "requiresApproval": false },
-      { "id": "fsq3", "title": "Game Day Ready", "description": "Prepare your uniform and equipment for the upcoming game.", "type": "Venture", "icon": "👕", "rewards": [{ "rewardTypeId": "core-diligence", "amount": 15 }], "tags": ["sports", "organization"], "isActive": true, "isOptional": false, "availabilityType": "Unlimited", "requiresApproval": false },
-      { "id": "fsq4", "title": "Good Sport", "description": "Show good sportsmanship by congratulating the other team, win or lose.", "type": "Venture", "icon": "🤝", "rewards": [{ "rewardTypeId": "core-gems", "amount": 30 }], "tags": ["sports", "character"], "isActive": true, "isOptional": false, "availabilityType": "Unlimited", "requiresApproval": true },
-      { "id": "fsq5", "title": "Team Huddle", "description": "Listen attentively to the coach during a game or practice.", "type": "Venture", "icon": "🗣️", "rewards": [{ "rewardTypeId": "core-wisdom", "amount": 10 }], "tags": ["sports", "character"], "isActive": true, "isOptional": false, "availabilityType": "Unlimited", "requiresApproval": false },
-      { "id": "fsq6", "title": "Clean Your Gear", "description": "Clean your sports equipment after a game or practice.", "type": "Duty", "icon": "🧼", "rewards": [{ "rewardTypeId": "core-diligence", "amount": 15 }], "tags": ["sports", "cleaning"], "isActive": true, "isOptional": false, "availabilityType": "Daily", "requiresApproval": false }
+      {
+        "id": "fsq1",
+        "title": "Attend Practice",
+        "description": "Attend your team's scheduled practice session.",
+        "type": "Duty",
+        "iconType": "emoji",
+        "icon": "🗓️",
+        "rewards": [
+          {
+            "rewardTypeId": "core-diligence",
+            "amount": 20
+          }
+        ],
+        "tags": [
+          "sports",
+          "practice"
+        ],
+        "isActive": true,
+        "isOptional": false,
+        "availabilityType": "Weekly",
+        "weeklyRecurrenceDays": [
+          2,
+          4
+        ],
+        "requiresApproval": false,
+        "lateSetbacks": [],
+        "incompleteSetbacks": [],
+        "availabilityCount": null,
+        "monthlyRecurrenceDays": [],
+        "assignedUserIds": [],
+        "guildId": null,
+        "groupId": "qg-health",
+        "claimedByUserIds": [],
+        "dismissals": []
+      },
+      {
+        "id": "fsq2",
+        "title": "Drill Master",
+        "description": "Spend 20 minutes practicing a specific skill for your sport.",
+        "type": "Duty",
+        "iconType": "emoji",
+        "icon": "🎯",
+        "rewards": [
+          {
+            "rewardTypeId": "core-skill",
+            "amount": 25
+          }
+        ],
+        "tags": [
+          "sports",
+          "practice"
+        ],
+        "isActive": true,
+        "isOptional": true,
+        "availabilityType": "Daily",
+        "requiresApproval": false,
+        "lateSetbacks": [],
+        "incompleteSetbacks": [],
+        "availabilityCount": null,
+        "weeklyRecurrenceDays": [],
+        "monthlyRecurrenceDays": [],
+        "assignedUserIds": [],
+        "guildId": null,
+        "groupId": "qg-health",
+        "claimedByUserIds": [],
+        "dismissals": []
+      },
+      {
+        "id": "fsq3",
+        "title": "Game Day Ready",
+        "description": "Prepare your uniform and equipment for the upcoming game.",
+        "type": "Venture",
+        "iconType": "emoji",
+        "icon": "👕",
+        "rewards": [
+          {
+            "rewardTypeId": "core-diligence",
+            "amount": 15
+          }
+        ],
+        "tags": [
+          "sports",
+          "organization"
+        ],
+        "isActive": true,
+        "isOptional": false,
+        "availabilityType": "Unlimited",
+        "requiresApproval": false,
+        "lateSetbacks": [],
+        "incompleteSetbacks": [],
+        "availabilityCount": null,
+        "weeklyRecurrenceDays": [],
+        "monthlyRecurrenceDays": [],
+        "assignedUserIds": [],
+        "guildId": null,
+        "groupId": "qg-health",
+        "claimedByUserIds": [],
+        "dismissals": []
+      },
+      {
+        "id": "fsq4",
+        "title": "Good Sport",
+        "description": "Show good sportsmanship by congratulating the other team, win or lose.",
+        "type": "Venture",
+        "iconType": "emoji",
+        "icon": "🤝",
+        "rewards": [
+          {
+            "rewardTypeId": "core-gems",
+            "amount": 30
+          }
+        ],
+        "tags": [
+          "sports",
+          "character"
+        ],
+        "isActive": true,
+        "isOptional": false,
+        "availabilityType": "Unlimited",
+        "requiresApproval": true,
+        "lateSetbacks": [],
+        "incompleteSetbacks": [],
+        "availabilityCount": null,
+        "weeklyRecurrenceDays": [],
+        "monthlyRecurrenceDays": [],
+        "assignedUserIds": [],
+        "guildId": null,
+        "groupId": "qg-health",
+        "claimedByUserIds": [],
+        "dismissals": []
+      },
+      {
+        "id": "fsq5",
+        "title": "Team Huddle",
+        "description": "Listen attentively to the coach during a game or practice.",
+        "type": "Venture",
+        "iconType": "emoji",
+        "icon": "🗣️",
+        "rewards": [
+          {
+            "rewardTypeId": "core-wisdom",
+            "amount": 10
+          }
+        ],
+        "tags": [
+          "sports",
+          "character"
+        ],
+        "isActive": true,
+        "isOptional": false,
+        "availabilityType": "Unlimited",
+        "requiresApproval": false,
+        "lateSetbacks": [],
+        "incompleteSetbacks": [],
+        "availabilityCount": null,
+        "weeklyRecurrenceDays": [],
+        "monthlyRecurrenceDays": [],
+        "assignedUserIds": [],
+        "guildId": null,
+        "groupId": "qg-health",
+        "claimedByUserIds": [],
+        "dismissals": []
+      },
+      {
+        "id": "fsq6",
+        "title": "Clean Your Gear",
+        "description": "Clean your sports equipment after a game or practice.",
+        "type": "Duty",
+        "iconType": "emoji",
+        "icon": "🧼",
+        "rewards": [
+          {
+            "rewardTypeId": "core-diligence",
+            "amount": 15
+          }
+        ],
+        "tags": [
+          "sports",
+          "cleaning"
+        ],
+        "isActive": true,
+        "isOptional": false,
+        "availabilityType": "Daily",
+        "requiresApproval": false,
+        "lateSetbacks": [],
+        "incompleteSetbacks": [],
+        "availabilityCount": null,
+        "weeklyRecurrenceDays": [],
+        "monthlyRecurrenceDays": [],
+        "assignedUserIds": [],
+        "guildId": null,
+        "groupId": "qg-health",
+        "claimedByUserIds": [],
+        "dismissals": []
+      }
     ],
     "markets": [
-      { "id": "fsm1", "title": "The Locker Room", "description": "Sports equipment and fan gear for your avatar.", "icon": "🏅", "iconType": "emoji", "status": { "type": "open" } }
+      {
+        "id": "fsm1",
+        "title": "The Locker Room",
+        "description": "Sports equipment and fan gear for your avatar.",
+        "icon": "🏅",
+        "iconType": "emoji",
+        "status": {
+          "type": "open"
+        }
+      }
     ],
     "gameAssets": [
-      { "id": "fsga1", "name": "Team Jersey", "description": "A customizable team jersey for your avatar.", "url": "/uploads/avatar-shirts/jersey.png", "category": "Avatar", "avatarSlot": "shirt", "isForSale": true, "costGroups": [[{ "rewardTypeId": "core-gold", "amount": 40 }]], "marketIds": ["fsm1"] },
-      { "id": "fsga2", "name": "Soccer Ball", "description": "A classic soccer ball for your avatar to hold.", "url": "/uploads/tools/soccer-ball.png", "category": "Avatar", "avatarSlot": "tool", "isForSale": true, "costGroups": [[{ "rewardTypeId": "core-gold", "amount": 25 }]], "marketIds": ["fsm1"] },
-      { "id": "fsga3", "name": "Gatorade", "description": "A real-world reward: one sports drink.", "url": "/uploads/consumables/sports-drink.png", "category": "Real-World Reward", "isForSale": true, "costGroups": [[{ "rewardTypeId": "core-gems", "amount": 15 }]], "marketIds": ["fsm1"], "requiresApproval": true }
+      {
+        "id": "fsga1",
+        "name": "Team Jersey",
+        "description": "A customizable team jersey for your avatar.",
+        "url": "/uploads/avatar-shirts/jersey.png",
+        "category": "Avatar",
+        "avatarSlot": "shirt",
+        "isForSale": true,
+        "costGroups": [
+          [
+            {
+              "rewardTypeId": "core-gold",
+              "amount": 40
+            }
+          ]
+        ],
+        "marketIds": [
+          "fsm1"
+        ]
+      },
+      {
+        "id": "fsga2",
+        "name": "Soccer Ball",
+        "description": "A classic soccer ball for your avatar to hold.",
+        "url": "/uploads/tools/soccer-ball.png",
+        "category": "Avatar",
+        "avatarSlot": "tool",
+        "isForSale": true,
+        "costGroups": [
+          [
+            {
+              "rewardTypeId": "core-gold",
+              "amount": 25
+            }
+          ]
+        ],
+        "marketIds": [
+          "fsm1"
+        ]
+      },
+      {
+        "id": "fsga3",
+        "name": "Gatorade",
+        "description": "A real-world reward: one sports drink.",
+        "url": "/uploads/consumables/sports-drink.png",
+        "category": "Real-World Reward",
+        "isForSale": true,
+        "costGroups": [
+          [
+            {
+              "rewardTypeId": "core-gems",
+              "amount": 15
+            }
+          ]
+        ],
+        "marketIds": [
+          "fsm1"
+        ],
+        "requiresApproval": true
+      }
     ],
     "trophies": [
-      { "id": "fst1", "name": "Most Valuable Player", "description": "Awarded for outstanding performance in a game.", "icon": "MVP", "iconType": "emoji", "isManual": true, "requirements": [] }
+      {
+        "id": "fst1",
+        "name": "Most Valuable Player",
+        "description": "Awarded for outstanding performance in a game.",
+        "icon": "MVP",
+        "iconType": "emoji",
+        "isManual": true,
+        "requirements": []
+      }
     ]
   }
 }

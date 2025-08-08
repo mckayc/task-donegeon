@@ -1,3 +1,4 @@
+
 {
   "manifest": {
     "id": "com.taskdonegeon.cookingkitchen.v1",
@@ -17,15 +18,30 @@
         "type": "Venture",
         "iconType": "emoji",
         "icon": "🧑‍🍳",
-        "tags": ["Kitchen", "Helping"],
-        "rewards": [{ "rewardTypeId": "core-diligence", "amount": 15 }],
+        "tags": [
+          "Kitchen",
+          "Helping"
+        ],
+        "rewards": [
+          {
+            "rewardTypeId": "core-diligence",
+            "amount": 15
+          }
+        ],
         "isActive": true,
         "isOptional": true,
         "availabilityType": "Frequency",
         "availabilityCount": 100,
+        "requiresApproval": false,
+        "lateSetbacks": [],
+        "incompleteSetbacks": [],
+        "weeklyRecurrenceDays": [],
+        "monthlyRecurrenceDays": [],
         "assignedUserIds": [],
+        "guildId": null,
         "groupId": "qg-household",
-        "requiresApproval": false
+        "claimedByUserIds": [],
+        "dismissals": []
       },
       {
         "id": "kitchen-quest-2",
@@ -34,14 +50,30 @@
         "type": "Duty",
         "iconType": "emoji",
         "icon": "🧼",
-        "tags": ["Kitchen", "Cleaning"],
-        "rewards": [{ "rewardTypeId": "core-diligence", "amount": 10 }],
+        "tags": [
+          "Kitchen",
+          "Cleaning"
+        ],
+        "rewards": [
+          {
+            "rewardTypeId": "core-diligence",
+            "amount": 10
+          }
+        ],
         "isActive": true,
         "isOptional": false,
         "availabilityType": "Daily",
+        "requiresApproval": false,
+        "lateSetbacks": [],
+        "incompleteSetbacks": [],
+        "availabilityCount": null,
+        "weeklyRecurrenceDays": [],
+        "monthlyRecurrenceDays": [],
         "assignedUserIds": [],
+        "guildId": null,
         "groupId": "qg-household",
-        "requiresApproval": false
+        "claimedByUserIds": [],
+        "dismissals": []
       },
       {
         "id": "kitchen-quest-3",
@@ -50,24 +82,47 @@
         "type": "Venture",
         "iconType": "emoji",
         "icon": "🍪",
-        "tags": ["Kitchen", "Baking", "Creative"],
-        "rewards": [{ "rewardTypeId": "core-creative", "amount": 25 }, { "rewardTypeId": "core-wisdom", "amount": 10 }],
+        "tags": [
+          "Kitchen",
+          "Baking",
+          "Creative"
+        ],
+        "rewards": [
+          {
+            "rewardTypeId": "core-creative",
+            "amount": 25
+          },
+          {
+            "rewardTypeId": "core-wisdom",
+            "amount": 10
+          }
+        ],
         "isActive": true,
         "isOptional": true,
         "availabilityType": "Unlimited",
+        "requiresApproval": false,
+        "lateSetbacks": [],
+        "incompleteSetbacks": [],
+        "availabilityCount": null,
+        "weeklyRecurrenceDays": [],
+        "monthlyRecurrenceDays": [],
         "assignedUserIds": [],
+        "guildId": null,
         "groupId": "qg-creative",
-        "requiresApproval": false
+        "claimedByUserIds": [],
+        "dismissals": []
       }
     ],
     "markets": [
-       {
+      {
         "id": "market-experiences",
         "title": "The Experience Emporium",
         "description": "Trade your hard-earned gems for real-world experiences and privileges.",
         "iconType": "emoji",
         "icon": "🎟️",
-        "status": { "type": "open" }
+        "status": {
+          "type": "open"
+        }
       }
     ],
     "gameAssets": [
@@ -80,8 +135,17 @@
         "category": "Avatar",
         "avatarSlot": "hat",
         "isForSale": true,
-        "costGroups": [[{ "rewardTypeId": "core-gems", "amount": 10 }]],
-        "marketIds": ["market-experiences"],
+        "costGroups": [
+          [
+            {
+              "rewardTypeId": "core-gems",
+              "amount": 10
+            }
+          ]
+        ],
+        "marketIds": [
+          "market-experiences"
+        ],
         "creatorId": "system",
         "createdAt": "2025-01-01T00:00:00.000Z",
         "purchaseLimit": 1,

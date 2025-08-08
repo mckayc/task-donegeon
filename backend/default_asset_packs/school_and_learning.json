@@ -1,3 +1,4 @@
+
 {
   "manifest": {
     "id": "com.taskdonegeon.schoolandlearning.v1",
@@ -17,15 +18,36 @@
         "type": "Duty",
         "iconType": "emoji",
         "icon": "✍️",
-        "tags": ["School", "Homework"],
-        "rewards": [{ "rewardTypeId": "core-wisdom", "amount": 25 }],
+        "tags": [
+          "School",
+          "Homework"
+        ],
+        "rewards": [
+          {
+            "rewardTypeId": "core-wisdom",
+            "amount": 25
+          }
+        ],
         "isActive": true,
         "isOptional": false,
         "availabilityType": "Weekly",
-        "weeklyRecurrenceDays": [1, 2, 3, 4, 5],
+        "weeklyRecurrenceDays": [
+          1,
+          2,
+          3,
+          4,
+          5
+        ],
+        "requiresApproval": true,
+        "lateSetbacks": [],
+        "incompleteSetbacks": [],
+        "availabilityCount": null,
+        "monthlyRecurrenceDays": [],
         "assignedUserIds": [],
+        "guildId": null,
         "groupId": "qg-school",
-        "requiresApproval": true
+        "claimedByUserIds": [],
+        "dismissals": []
       },
       {
         "id": "school-quest-2",
@@ -34,14 +56,30 @@
         "type": "Duty",
         "iconType": "emoji",
         "icon": "📖",
-        "tags": ["School", "Reading"],
-        "rewards": [{ "rewardTypeId": "core-wisdom", "amount": 15 }],
+        "tags": [
+          "School",
+          "Reading"
+        ],
+        "rewards": [
+          {
+            "rewardTypeId": "core-wisdom",
+            "amount": 15
+          }
+        ],
         "isActive": true,
         "isOptional": true,
         "availabilityType": "Daily",
+        "requiresApproval": false,
+        "lateSetbacks": [],
+        "incompleteSetbacks": [],
+        "availabilityCount": null,
+        "weeklyRecurrenceDays": [],
+        "monthlyRecurrenceDays": [],
         "assignedUserIds": [],
+        "guildId": null,
         "groupId": "qg-school",
-        "requiresApproval": false
+        "claimedByUserIds": [],
+        "dismissals": []
       },
       {
         "id": "school-quest-3",
@@ -50,25 +88,48 @@
         "type": "Duty",
         "iconType": "emoji",
         "icon": "🎒",
-        "tags": ["School", "Organization"],
-        "rewards": [{ "rewardTypeId": "core-diligence", "amount": 10 }],
+        "tags": [
+          "School",
+          "Organization"
+        ],
+        "rewards": [
+          {
+            "rewardTypeId": "core-diligence",
+            "amount": 10
+          }
+        ],
         "isActive": true,
         "isOptional": false,
         "availabilityType": "Weekly",
-        "weeklyRecurrenceDays": [0, 1, 2, 3, 4],
+        "weeklyRecurrenceDays": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ],
+        "requiresApproval": false,
+        "lateSetbacks": [],
+        "incompleteSetbacks": [],
+        "availabilityCount": null,
+        "monthlyRecurrenceDays": [],
         "assignedUserIds": [],
+        "guildId": null,
         "groupId": "qg-school",
-        "requiresApproval": false
+        "claimedByUserIds": [],
+        "dismissals": []
       }
     ],
     "markets": [
-       {
+      {
         "id": "market-scholar-shop",
         "title": "The Scholar's Shop",
         "description": "Trade your crystals for educational rewards and screen time.",
         "iconType": "emoji",
         "icon": "🏫",
-        "status": { "type": "open" }
+        "status": {
+          "type": "open"
+        }
       }
     ],
     "gameAssets": [
@@ -80,8 +141,17 @@
         "icon": "📜",
         "category": "Real-World Reward",
         "isForSale": true,
-        "costGroups": [[{ "rewardTypeId": "core-crystal", "amount": 50 }]],
-        "marketIds": ["market-scholar-shop"],
+        "costGroups": [
+          [
+            {
+              "rewardTypeId": "core-crystal",
+              "amount": 50
+            }
+          ]
+        ],
+        "marketIds": [
+          "market-scholar-shop"
+        ],
         "creatorId": "system",
         "createdAt": "2025-01-01T00:00:00.000Z",
         "purchaseLimit": null,

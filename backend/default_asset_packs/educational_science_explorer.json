@@ -1,3 +1,4 @@
+
 {
   "manifest": {
     "id": "com.taskdonegeon.educational.science.v1",
@@ -10,23 +11,286 @@
   },
   "assets": {
     "quests": [
-      { "id": "esq1", "title": "Kitchen Chemistry", "description": "Perform a simple and safe science experiment using kitchen supplies (e.g., vinegar and baking soda volcano).", "type": "Venture", "icon": "⚗️", "rewards": [{ "rewardTypeId": "core-wisdom", "amount": 25 }], "tags": ["learning", "science"], "isActive": true, "isOptional": true, "availabilityType": "Unlimited", "requiresApproval": true },
-      { "id": "esq2", "title": "Stargazing", "description": "Identify three constellations in the night sky.", "type": "Venture", "icon": "🔭", "rewards": [{ "rewardTypeId": "core-wisdom", "amount": 20 }], "tags": ["learning", "science", "outdoors"], "isActive": true, "isOptional": true, "availabilityType": "Unlimited", "requiresApproval": false },
-      { "id": "esq3", "title": "The Botanist", "description": "Identify three different types of plants in your yard or a park.", "type": "Venture", "icon": "🌿", "rewards": [{ "rewardTypeId": "core-wisdom", "amount": 15 }], "tags": ["learning", "science", "outdoors"], "isActive": true, "isOptional": true, "availabilityType": "Unlimited", "requiresApproval": false },
-      { "id": "esq4", "title": "Build a Simple Machine", "description": "Create a simple lever, pulley, or inclined plane and demonstrate how it works.", "type": "Venture", "icon": "⚙️", "rewards": [{ "rewardTypeId": "core-skill", "amount": 30 }], "tags": ["learning", "science", "building"], "isActive": true, "isOptional": true, "availabilityType": "Unlimited", "requiresApproval": true },
-      { "id": "esq5", "title": "Weather Watcher", "description": "Keep a log of the weather (temperature, clouds, precipitation) for three days.", "type": "Duty", "icon": "☁️", "rewards": [{ "rewardTypeId": "core-diligence", "amount": 5 }], "tags": ["learning", "science"], "isActive": true, "isOptional": true, "availabilityType": "Daily", "requiresApproval": false },
-      { "id": "esq6", "title": "Animal Researcher", "description": "Learn and share five interesting facts about an animal of your choice.", "type": "Venture", "icon": "🐾", "rewards": [{ "rewardTypeId": "core-wisdom", "amount": 20 }], "tags": ["learning", "science"], "isActive": true, "isOptional": true, "availabilityType": "Unlimited", "requiresApproval": false }
+      {
+        "id": "esq1",
+        "title": "Kitchen Chemistry",
+        "description": "Perform a simple and safe science experiment using kitchen supplies (e.g., vinegar and baking soda volcano).",
+        "type": "Venture",
+        "iconType": "emoji",
+        "icon": "⚗️",
+        "rewards": [
+          {
+            "rewardTypeId": "core-wisdom",
+            "amount": 25
+          }
+        ],
+        "tags": [
+          "learning",
+          "science"
+        ],
+        "isActive": true,
+        "isOptional": true,
+        "availabilityType": "Unlimited",
+        "requiresApproval": true,
+        "lateSetbacks": [],
+        "incompleteSetbacks": [],
+        "availabilityCount": null,
+        "weeklyRecurrenceDays": [],
+        "monthlyRecurrenceDays": [],
+        "assignedUserIds": [],
+        "guildId": null,
+        "groupId": "qg-school",
+        "claimedByUserIds": [],
+        "dismissals": []
+      },
+      {
+        "id": "esq2",
+        "title": "Stargazing",
+        "description": "Identify three constellations in the night sky.",
+        "type": "Venture",
+        "iconType": "emoji",
+        "icon": "🔭",
+        "rewards": [
+          {
+            "rewardTypeId": "core-wisdom",
+            "amount": 20
+          }
+        ],
+        "tags": [
+          "learning",
+          "science",
+          "outdoors"
+        ],
+        "isActive": true,
+        "isOptional": true,
+        "availabilityType": "Unlimited",
+        "requiresApproval": false,
+        "lateSetbacks": [],
+        "incompleteSetbacks": [],
+        "availabilityCount": null,
+        "weeklyRecurrenceDays": [],
+        "monthlyRecurrenceDays": [],
+        "assignedUserIds": [],
+        "guildId": null,
+        "groupId": "qg-school",
+        "claimedByUserIds": [],
+        "dismissals": []
+      },
+      {
+        "id": "esq3",
+        "title": "The Botanist",
+        "description": "Identify three different types of plants in your yard or a park.",
+        "type": "Venture",
+        "iconType": "emoji",
+        "icon": "🌿",
+        "rewards": [
+          {
+            "rewardTypeId": "core-wisdom",
+            "amount": 15
+          }
+        ],
+        "tags": [
+          "learning",
+          "science",
+          "outdoors"
+        ],
+        "isActive": true,
+        "isOptional": true,
+        "availabilityType": "Unlimited",
+        "requiresApproval": false,
+        "lateSetbacks": [],
+        "incompleteSetbacks": [],
+        "availabilityCount": null,
+        "weeklyRecurrenceDays": [],
+        "monthlyRecurrenceDays": [],
+        "assignedUserIds": [],
+        "guildId": null,
+        "groupId": "qg-school",
+        "claimedByUserIds": [],
+        "dismissals": []
+      },
+      {
+        "id": "esq4",
+        "title": "Build a Simple Machine",
+        "description": "Create a simple lever, pulley, or inclined plane and demonstrate how it works.",
+        "type": "Venture",
+        "iconType": "emoji",
+        "icon": "⚙️",
+        "rewards": [
+          {
+            "rewardTypeId": "core-skill",
+            "amount": 30
+          }
+        ],
+        "tags": [
+          "learning",
+          "science",
+          "building"
+        ],
+        "isActive": true,
+        "isOptional": true,
+        "availabilityType": "Unlimited",
+        "requiresApproval": true,
+        "lateSetbacks": [],
+        "incompleteSetbacks": [],
+        "availabilityCount": null,
+        "weeklyRecurrenceDays": [],
+        "monthlyRecurrenceDays": [],
+        "assignedUserIds": [],
+        "guildId": null,
+        "groupId": "qg-school",
+        "claimedByUserIds": [],
+        "dismissals": []
+      },
+      {
+        "id": "esq5",
+        "title": "Weather Watcher",
+        "description": "Keep a log of the weather (temperature, clouds, precipitation) for three days.",
+        "type": "Duty",
+        "iconType": "emoji",
+        "icon": "☁️",
+        "rewards": [
+          {
+            "rewardTypeId": "core-diligence",
+            "amount": 5
+          }
+        ],
+        "tags": [
+          "learning",
+          "science"
+        ],
+        "isActive": true,
+        "isOptional": true,
+        "availabilityType": "Daily",
+        "requiresApproval": false,
+        "lateSetbacks": [],
+        "incompleteSetbacks": [],
+        "availabilityCount": null,
+        "weeklyRecurrenceDays": [],
+        "monthlyRecurrenceDays": [],
+        "assignedUserIds": [],
+        "guildId": null,
+        "groupId": "qg-school",
+        "claimedByUserIds": [],
+        "dismissals": []
+      },
+      {
+        "id": "esq6",
+        "title": "Animal Researcher",
+        "description": "Learn and share five interesting facts about an animal of your choice.",
+        "type": "Venture",
+        "iconType": "emoji",
+        "icon": "🐾",
+        "rewards": [
+          {
+            "rewardTypeId": "core-wisdom",
+            "amount": 20
+          }
+        ],
+        "tags": [
+          "learning",
+          "science"
+        ],
+        "isActive": true,
+        "isOptional": true,
+        "availabilityType": "Unlimited",
+        "requiresApproval": false,
+        "lateSetbacks": [],
+        "incompleteSetbacks": [],
+        "availabilityCount": null,
+        "weeklyRecurrenceDays": [],
+        "monthlyRecurrenceDays": [],
+        "assignedUserIds": [],
+        "guildId": null,
+        "groupId": "qg-school",
+        "claimedByUserIds": [],
+        "dismissals": []
+      }
     ],
     "markets": [
-      { "id": "esm1", "title": "The Inventor's Workshop", "description": "Tools and gear for the aspiring scientist.", "icon": "💡", "iconType": "emoji", "status": { "type": "open" } }
+      {
+        "id": "esm1",
+        "title": "The Inventor's Workshop",
+        "description": "Tools and gear for the aspiring scientist.",
+        "icon": "💡",
+        "iconType": "emoji",
+        "status": {
+          "type": "open"
+        }
+      }
     ],
     "gameAssets": [
-      { "id": "esga1", "name": "Lab Coat", "description": "A crisp, white lab coat for your avatar.", "url": "/uploads/avatar-shirts/lab-coat.png", "category": "Avatar", "avatarSlot": "shirt", "isForSale": true, "costGroups": [[{ "rewardTypeId": "core-gold", "amount": 40 }]], "marketIds": ["esm1"] },
-      { "id": "esga2", "name": "Safety Goggles", "description": "Protect your avatar's eyes during important experiments.", "url": "/uploads/avatar-hats/goggles.png", "category": "Avatar", "avatarSlot": "hat", "isForSale": true, "costGroups": [[{ "rewardTypeId": "core-gold", "amount": 20 }]], "marketIds": ["esm1"] },
-      { "id": "esga3", "name": "Science Kit", "description": "A real-world reward: a basic science experiment kit.", "url": "/uploads/kits/science-kit.png", "category": "Real-World Reward", "isForSale": true, "costGroups": [[{ "rewardTypeId": "core-gems", "amount": 100 }]], "marketIds": ["esm1"], "requiresApproval": true }
+      {
+        "id": "esga1",
+        "name": "Lab Coat",
+        "description": "A crisp, white lab coat for your avatar.",
+        "url": "/uploads/avatar-shirts/lab-coat.png",
+        "category": "Avatar",
+        "avatarSlot": "shirt",
+        "isForSale": true,
+        "costGroups": [
+          [
+            {
+              "rewardTypeId": "core-gold",
+              "amount": 40
+            }
+          ]
+        ],
+        "marketIds": [
+          "esm1"
+        ]
+      },
+      {
+        "id": "esga2",
+        "name": "Safety Goggles",
+        "description": "Protect your avatar's eyes during important experiments.",
+        "url": "/uploads/avatar-hats/goggles.png",
+        "category": "Avatar",
+        "avatarSlot": "hat",
+        "isForSale": true,
+        "costGroups": [
+          [
+            {
+              "rewardTypeId": "core-gold",
+              "amount": 20
+            }
+          ]
+        ],
+        "marketIds": [
+          "esm1"
+        ]
+      },
+      {
+        "id": "esga3",
+        "name": "Science Kit",
+        "description": "A real-world reward: a basic science experiment kit.",
+        "url": "/uploads/kits/science-kit.png",
+        "category": "Real-World Reward",
+        "isForSale": true,
+        "costGroups": [
+          [
+            {
+              "rewardTypeId": "core-gems",
+              "amount": 100
+            }
+          ]
+        ],
+        "marketIds": [
+          "esm1"
+        ],
+        "requiresApproval": true
+      }
     ],
     "trophies": [
-      { "id": "est1", "name": "Mad Scientist", "description": "Complete 5 science-themed quests.", "icon": "🧑‍🔬", "iconType": "emoji", "isManual": true, "requirements": [] }
+      {
+        "id": "est1",
+        "name": "Mad Scientist",
+        "description": "Complete 5 science-themed quests.",
+        "icon": "🧑‍🔬",
+        "iconType": "emoji",
+        "isManual": true,
+        "requirements": []
+      }
     ]
   }
 }

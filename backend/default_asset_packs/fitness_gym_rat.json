@@ -1,3 +1,4 @@
+
 {
   "manifest": {
     "id": "com.taskdonegeon.fitness.gym.v1",
@@ -10,23 +11,283 @@
   },
   "assets": {
     "quests": [
-      { "id": "fgq1", "title": "Morning Stretch", "description": "Do a 10-minute stretching routine after waking up.", "type": "Duty", "icon": "🧘", "rewards": [{ "rewardTypeId": "core-strength", "amount": 10 }], "tags": ["fitness", "health"], "isActive": true, "isOptional": true, "availabilityType": "Daily", "requiresApproval": false },
-      { "id": "fgq2", "title": "Cardio Conquest", "description": "Complete 20 minutes of cardiovascular exercise (running, cycling, etc.).", "type": "Duty", "icon": "🏃", "rewards": [{ "rewardTypeId": "core-strength", "amount": 25 }], "tags": ["fitness", "health"], "isActive": true, "isOptional": false, "availabilityType": "Daily", "requiresApproval": false },
-      { "id": "fgq3", "title": "Strength Training", "description": "Complete a full strength training workout session.", "type": "Venture", "icon": "🏋️", "rewards": [{ "rewardTypeId": "core-strength", "amount": 40 }], "tags": ["fitness", "health"], "isActive": true, "isOptional": true, "availabilityType": "Unlimited", "requiresApproval": false },
-      { "id": "fgq4", "title": "Hydration Station", "description": "Drink a full bottle of water during your workout.", "type": "Duty", "icon": "💧", "rewards": [{ "rewardTypeId": "core-diligence", "amount": 5 }], "tags": ["fitness", "health"], "isActive": true, "isOptional": false, "availabilityType": "Daily", "requiresApproval": false },
-      { "id": "fgq5", "title": "Try a New Exercise", "description": "Incorporate a new exercise or machine into your routine.", "type": "Venture", "icon": "💡", "rewards": [{ "rewardTypeId": "core-wisdom", "amount": 15 }], "tags": ["fitness", "learning"], "isActive": true, "isOptional": true, "availabilityType": "Unlimited", "requiresApproval": false },
-      { "id": "fgq6", "title": "Post-Workout Cooldown", "description": "Perform a 5-minute cooldown and stretching routine after your workout.", "type": "Duty", "icon": "🌬️", "rewards": [{ "rewardTypeId": "core-skill", "amount": 10 }], "tags": ["fitness", "health"], "isActive": true, "isOptional": false, "availabilityType": "Daily", "requiresApproval": false }
+      {
+        "id": "fgq1",
+        "title": "Morning Stretch",
+        "description": "Do a 10-minute stretching routine after waking up.",
+        "type": "Duty",
+        "iconType": "emoji",
+        "icon": "🧘",
+        "rewards": [
+          {
+            "rewardTypeId": "core-strength",
+            "amount": 10
+          }
+        ],
+        "tags": [
+          "fitness",
+          "health"
+        ],
+        "isActive": true,
+        "isOptional": true,
+        "availabilityType": "Daily",
+        "requiresApproval": false,
+        "lateSetbacks": [],
+        "incompleteSetbacks": [],
+        "availabilityCount": null,
+        "weeklyRecurrenceDays": [],
+        "monthlyRecurrenceDays": [],
+        "assignedUserIds": [],
+        "guildId": null,
+        "groupId": "qg-health",
+        "claimedByUserIds": [],
+        "dismissals": []
+      },
+      {
+        "id": "fgq2",
+        "title": "Cardio Conquest",
+        "description": "Complete 20 minutes of cardiovascular exercise (running, cycling, etc.).",
+        "type": "Duty",
+        "iconType": "emoji",
+        "icon": "🏃",
+        "rewards": [
+          {
+            "rewardTypeId": "core-strength",
+            "amount": 25
+          }
+        ],
+        "tags": [
+          "fitness",
+          "health"
+        ],
+        "isActive": true,
+        "isOptional": false,
+        "availabilityType": "Daily",
+        "requiresApproval": false,
+        "lateSetbacks": [],
+        "incompleteSetbacks": [],
+        "availabilityCount": null,
+        "weeklyRecurrenceDays": [],
+        "monthlyRecurrenceDays": [],
+        "assignedUserIds": [],
+        "guildId": null,
+        "groupId": "qg-health",
+        "claimedByUserIds": [],
+        "dismissals": []
+      },
+      {
+        "id": "fgq3",
+        "title": "Strength Training",
+        "description": "Complete a full strength training workout session.",
+        "type": "Venture",
+        "iconType": "emoji",
+        "icon": "🏋️",
+        "rewards": [
+          {
+            "rewardTypeId": "core-strength",
+            "amount": 40
+          }
+        ],
+        "tags": [
+          "fitness",
+          "health"
+        ],
+        "isActive": true,
+        "isOptional": true,
+        "availabilityType": "Unlimited",
+        "requiresApproval": false,
+        "lateSetbacks": [],
+        "incompleteSetbacks": [],
+        "availabilityCount": null,
+        "weeklyRecurrenceDays": [],
+        "monthlyRecurrenceDays": [],
+        "assignedUserIds": [],
+        "guildId": null,
+        "groupId": "qg-health",
+        "claimedByUserIds": [],
+        "dismissals": []
+      },
+      {
+        "id": "fgq4",
+        "title": "Hydration Station",
+        "description": "Drink a full bottle of water during your workout.",
+        "type": "Duty",
+        "iconType": "emoji",
+        "icon": "💧",
+        "rewards": [
+          {
+            "rewardTypeId": "core-diligence",
+            "amount": 5
+          }
+        ],
+        "tags": [
+          "fitness",
+          "health"
+        ],
+        "isActive": true,
+        "isOptional": false,
+        "availabilityType": "Daily",
+        "requiresApproval": false,
+        "lateSetbacks": [],
+        "incompleteSetbacks": [],
+        "availabilityCount": null,
+        "weeklyRecurrenceDays": [],
+        "monthlyRecurrenceDays": [],
+        "assignedUserIds": [],
+        "guildId": null,
+        "groupId": "qg-health",
+        "claimedByUserIds": [],
+        "dismissals": []
+      },
+      {
+        "id": "fgq5",
+        "title": "Try a New Exercise",
+        "description": "Incorporate a new exercise or machine into your routine.",
+        "type": "Venture",
+        "iconType": "emoji",
+        "icon": "💡",
+        "rewards": [
+          {
+            "rewardTypeId": "core-wisdom",
+            "amount": 15
+          }
+        ],
+        "tags": [
+          "fitness",
+          "learning"
+        ],
+        "isActive": true,
+        "isOptional": true,
+        "availabilityType": "Unlimited",
+        "requiresApproval": false,
+        "lateSetbacks": [],
+        "incompleteSetbacks": [],
+        "availabilityCount": null,
+        "weeklyRecurrenceDays": [],
+        "monthlyRecurrenceDays": [],
+        "assignedUserIds": [],
+        "guildId": null,
+        "groupId": "qg-health",
+        "claimedByUserIds": [],
+        "dismissals": []
+      },
+      {
+        "id": "fgq6",
+        "title": "Post-Workout Cooldown",
+        "description": "Perform a 5-minute cooldown and stretching routine after your workout.",
+        "type": "Duty",
+        "iconType": "emoji",
+        "icon": "🌬️",
+        "rewards": [
+          {
+            "rewardTypeId": "core-skill",
+            "amount": 10
+          }
+        ],
+        "tags": [
+          "fitness",
+          "health"
+        ],
+        "isActive": true,
+        "isOptional": false,
+        "availabilityType": "Daily",
+        "requiresApproval": false,
+        "lateSetbacks": [],
+        "incompleteSetbacks": [],
+        "availabilityCount": null,
+        "weeklyRecurrenceDays": [],
+        "monthlyRecurrenceDays": [],
+        "assignedUserIds": [],
+        "guildId": null,
+        "groupId": "qg-health",
+        "claimedByUserIds": [],
+        "dismissals": []
+      }
     ],
     "markets": [
-      { "id": "fgm1", "title": "The Protein Palace", "description": "Fuel your gains with workout gear and supplements.", "icon": "🥤", "iconType": "emoji", "status": { "type": "open" } }
+      {
+        "id": "fgm1",
+        "title": "The Protein Palace",
+        "description": "Fuel your gains with workout gear and supplements.",
+        "icon": "🥤",
+        "iconType": "emoji",
+        "status": {
+          "type": "open"
+        }
+      }
     ],
     "gameAssets": [
-      { "id": "fgga1", "name": "Workout Tank Top", "description": "A stylish tank top for your avatar.", "url": "/uploads/avatar-shirts/tank-top.png", "category": "Avatar", "avatarSlot": "shirt", "isForSale": true, "costGroups": [[{ "rewardTypeId": "core-gold", "amount": 20 }]], "marketIds": ["fgm1"] },
-      { "id": "fgga2", "name": "Dumbbell", "description": "A dumbbell for your avatar to show off their gains.", "url": "/uploads/tools/dumbbell.png", "category": "Avatar", "avatarSlot": "tool", "isForSale": true, "costGroups": [[{ "rewardTypeId": "core-gold", "amount": 30 }]], "marketIds": ["fgm1"] },
-      { "id": "fgga3", "name": "Protein Shake", "description": "A real-world reward: one post-workout protein shake.", "url": "/uploads/consumables/protein-shake.png", "category": "Real-World Reward", "isForSale": true, "costGroups": [[{ "rewardTypeId": "core-gems", "amount": 25 }]], "marketIds": ["fgm1"], "requiresApproval": true }
+      {
+        "id": "fgga1",
+        "name": "Workout Tank Top",
+        "description": "A stylish tank top for your avatar.",
+        "url": "/uploads/avatar-shirts/tank-top.png",
+        "category": "Avatar",
+        "avatarSlot": "shirt",
+        "isForSale": true,
+        "costGroups": [
+          [
+            {
+              "rewardTypeId": "core-gold",
+              "amount": 20
+            }
+          ]
+        ],
+        "marketIds": [
+          "fgm1"
+        ]
+      },
+      {
+        "id": "fgga2",
+        "name": "Dumbbell",
+        "description": "A dumbbell for your avatar to show off their gains.",
+        "url": "/uploads/tools/dumbbell.png",
+        "category": "Avatar",
+        "avatarSlot": "tool",
+        "isForSale": true,
+        "costGroups": [
+          [
+            {
+              "rewardTypeId": "core-gold",
+              "amount": 30
+            }
+          ]
+        ],
+        "marketIds": [
+          "fgm1"
+        ]
+      },
+      {
+        "id": "fgga3",
+        "name": "Protein Shake",
+        "description": "A real-world reward: one post-workout protein shake.",
+        "url": "/uploads/consumables/protein-shake.png",
+        "category": "Real-World Reward",
+        "isForSale": true,
+        "costGroups": [
+          [
+            {
+              "rewardTypeId": "core-gems",
+              "amount": 25
+            }
+          ]
+        ],
+        "marketIds": [
+          "fgm1"
+        ],
+        "requiresApproval": true
+      }
     ],
     "trophies": [
-      { "id": "fgt1", "name": "Fitness Fanatic", "description": "Complete 25 fitness-related quests.", "icon": "🏆", "iconType": "emoji", "isManual": true, "requirements": [] }
+      {
+        "id": "fgt1",
+        "name": "Fitness Fanatic",
+        "description": "Complete 25 fitness-related quests.",
+        "icon": "🏆",
+        "iconType": "emoji",
+        "isManual": true,
+        "requirements": []
+      }
     ]
   }
 }

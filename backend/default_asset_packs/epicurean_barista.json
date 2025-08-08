@@ -1,3 +1,4 @@
+
 {
   "manifest": {
     "id": "com.taskdonegeon.epicurean.barista.v1",
@@ -10,23 +11,282 @@
   },
   "assets": {
     "quests": [
-      { "id": "ebq1", "title": "Morning Coffee Ritual", "description": "Prepare coffee for the adults in the house.", "type": "Duty", "icon": "☕", "rewards": [{ "rewardTypeId": "core-diligence", "amount": 10 }], "tags": ["barista", "household"], "isActive": true, "isOptional": false, "availabilityType": "Daily", "requiresApproval": false },
-      { "id": "ebq2", "title": "Tea Time", "description": "Prepare a pot of tea for the family to share.", "type": "Venture", "icon": "🫖", "rewards": [{ "rewardTypeId": "core-gems", "amount": 15 }], "tags": ["barista", "social"], "isActive": true, "isOptional": true, "availabilityType": "Unlimited", "requiresApproval": false },
-      { "id": "ebq3", "title": "Latte Art Practice", "description": "Attempt to make a simple latte art design.", "type": "Venture", "icon": "🎨", "rewards": [{ "rewardTypeId": "core-creative", "amount": 20 }], "tags": ["barista", "creative"], "isActive": true, "isOptional": true, "availabilityType": "Unlimited", "requiresApproval": false },
-      { "id": "ebq4", "title": "Explore a New Blend", "description": "Try a new type of coffee bean or tea leaf.", "type": "Venture", "icon": "🧐", "rewards": [{ "rewardTypeId": "core-wisdom", "amount": 15 }], "tags": ["barista", "learning"], "isActive": true, "isOptional": true, "availabilityType": "Unlimited", "requiresApproval": false },
-      { "id": "ebq5", "title": "Clean the Coffee Maker", "description": "Thoroughly clean and descale the coffee machine.", "type": "Venture", "icon": "🧼", "rewards": [{ "rewardTypeId": "core-diligence", "amount": 25 }], "tags": ["barista", "cleaning"], "isActive": true, "isOptional": false, "availabilityType": "Unlimited", "requiresApproval": true },
-      { "id": "ebq6", "title": "Iced Beverage Creation", "description": "Make an iced coffee or iced tea.", "type": "Venture", "icon": "🧊", "rewards": [{ "rewardTypeId": "core-skill", "amount": 10 }], "tags": ["barista", "creative"], "isActive": true, "isOptional": true, "availabilityType": "Unlimited", "requiresApproval": false }
+      {
+        "id": "ebq1",
+        "title": "Morning Coffee Ritual",
+        "description": "Prepare coffee for the adults in the house.",
+        "type": "Duty",
+        "iconType": "emoji",
+        "icon": "☕",
+        "rewards": [
+          {
+            "rewardTypeId": "core-diligence",
+            "amount": 10
+          }
+        ],
+        "tags": [
+          "barista",
+          "household"
+        ],
+        "isActive": true,
+        "isOptional": false,
+        "availabilityType": "Daily",
+        "requiresApproval": false,
+        "lateSetbacks": [],
+        "incompleteSetbacks": [],
+        "availabilityCount": null,
+        "weeklyRecurrenceDays": [],
+        "monthlyRecurrenceDays": [],
+        "assignedUserIds": [],
+        "guildId": null,
+        "groupId": "qg-creative",
+        "claimedByUserIds": [],
+        "dismissals": []
+      },
+      {
+        "id": "ebq2",
+        "title": "Tea Time",
+        "description": "Prepare a pot of tea for the family to share.",
+        "type": "Venture",
+        "iconType": "emoji",
+        "icon": "🫖",
+        "rewards": [
+          {
+            "rewardTypeId": "core-gems",
+            "amount": 15
+          }
+        ],
+        "tags": [
+          "barista",
+          "social"
+        ],
+        "isActive": true,
+        "isOptional": true,
+        "availabilityType": "Unlimited",
+        "requiresApproval": false,
+        "lateSetbacks": [],
+        "incompleteSetbacks": [],
+        "availabilityCount": null,
+        "weeklyRecurrenceDays": [],
+        "monthlyRecurrenceDays": [],
+        "assignedUserIds": [],
+        "guildId": null,
+        "groupId": "qg-creative",
+        "claimedByUserIds": [],
+        "dismissals": []
+      },
+      {
+        "id": "ebq3",
+        "title": "Latte Art Practice",
+        "description": "Attempt to make a simple latte art design.",
+        "type": "Venture",
+        "iconType": "emoji",
+        "icon": "🎨",
+        "rewards": [
+          {
+            "rewardTypeId": "core-creative",
+            "amount": 20
+          }
+        ],
+        "tags": [
+          "barista",
+          "creative"
+        ],
+        "isActive": true,
+        "isOptional": true,
+        "availabilityType": "Unlimited",
+        "requiresApproval": false,
+        "lateSetbacks": [],
+        "incompleteSetbacks": [],
+        "availabilityCount": null,
+        "weeklyRecurrenceDays": [],
+        "monthlyRecurrenceDays": [],
+        "assignedUserIds": [],
+        "guildId": null,
+        "groupId": "qg-creative",
+        "claimedByUserIds": [],
+        "dismissals": []
+      },
+      {
+        "id": "ebq4",
+        "title": "Explore a New Blend",
+        "description": "Try a new type of coffee bean or tea leaf.",
+        "type": "Venture",
+        "iconType": "emoji",
+        "icon": "🧐",
+        "rewards": [
+          {
+            "rewardTypeId": "core-wisdom",
+            "amount": 15
+          }
+        ],
+        "tags": [
+          "barista",
+          "learning"
+        ],
+        "isActive": true,
+        "isOptional": true,
+        "availabilityType": "Unlimited",
+        "requiresApproval": false,
+        "lateSetbacks": [],
+        "incompleteSetbacks": [],
+        "availabilityCount": null,
+        "weeklyRecurrenceDays": [],
+        "monthlyRecurrenceDays": [],
+        "assignedUserIds": [],
+        "guildId": null,
+        "groupId": "qg-creative",
+        "claimedByUserIds": [],
+        "dismissals": []
+      },
+      {
+        "id": "ebq5",
+        "title": "Clean the Coffee Maker",
+        "description": "Thoroughly clean and descale the coffee machine.",
+        "type": "Venture",
+        "iconType": "emoji",
+        "icon": "🧼",
+        "rewards": [
+          {
+            "rewardTypeId": "core-diligence",
+            "amount": 25
+          }
+        ],
+        "tags": [
+          "barista",
+          "cleaning"
+        ],
+        "isActive": true,
+        "isOptional": false,
+        "availabilityType": "Unlimited",
+        "requiresApproval": true,
+        "lateSetbacks": [],
+        "incompleteSetbacks": [],
+        "availabilityCount": null,
+        "weeklyRecurrenceDays": [],
+        "monthlyRecurrenceDays": [],
+        "assignedUserIds": [],
+        "guildId": null,
+        "groupId": "qg-creative",
+        "claimedByUserIds": [],
+        "dismissals": []
+      },
+      {
+        "id": "ebq6",
+        "title": "Iced Beverage Creation",
+        "description": "Make an iced coffee or iced tea.",
+        "type": "Venture",
+        "iconType": "emoji",
+        "icon": "🧊",
+        "rewards": [
+          {
+            "rewardTypeId": "core-skill",
+            "amount": 10
+          }
+        ],
+        "tags": [
+          "barista",
+          "creative"
+        ],
+        "isActive": true,
+        "isOptional": true,
+        "availabilityType": "Unlimited",
+        "requiresApproval": false,
+        "lateSetbacks": [],
+        "incompleteSetbacks": [],
+        "availabilityCount": null,
+        "weeklyRecurrenceDays": [],
+        "monthlyRecurrenceDays": [],
+        "assignedUserIds": [],
+        "guildId": null,
+        "groupId": "qg-creative",
+        "claimedByUserIds": [],
+        "dismissals": []
+      }
     ],
     "markets": [
-      { "id": "ebm1", "title": "The Daily Grind Cafe", "description": "Premium beans, exotic teas, and barista accessories.", "icon": "🧋", "iconType": "emoji", "status": { "type": "open" } }
+      {
+        "id": "ebm1",
+        "title": "The Daily Grind Cafe",
+        "description": "Premium beans, exotic teas, and barista accessories.",
+        "icon": "🧋",
+        "iconType": "emoji",
+        "status": {
+          "type": "open"
+        }
+      }
     ],
     "gameAssets": [
-      { "id": "ebga1", "name": "Barista's Apron", "description": "A professional apron for your coffee-making avatar.", "url": "/uploads/avatar-shirts/apron.png", "category": "Avatar", "avatarSlot": "shirt", "isForSale": true, "costGroups": [[{ "rewardTypeId": "core-gold", "amount": 30 }]], "marketIds": ["ebm1"] },
-      { "id": "ebga2", "name": "Fancy Coffee Mug", "description": "A stylish mug for your avatar.", "url": "/uploads/tools/coffee-mug.png", "category": "Tool", "isForSale": true, "costGroups": [[{ "rewardTypeId": "core-gold", "amount": 15 }]], "marketIds": ["ebm1"] },
-      { "id": "ebga3", "name": "Cafe Trip", "description": "A real-world reward: a trip to a local coffee shop for a special drink.", "url": "/uploads/tickets/cafe-trip.png", "category": "Real-World Reward", "isForSale": true, "costGroups": [[{ "rewardTypeId": "core-gems", "amount": 50 }]], "marketIds": ["ebm1"], "requiresApproval": true }
+      {
+        "id": "ebga1",
+        "name": "Barista's Apron",
+        "description": "A professional apron for your coffee-making avatar.",
+        "url": "/uploads/avatar-shirts/apron.png",
+        "category": "Avatar",
+        "avatarSlot": "shirt",
+        "isForSale": true,
+        "costGroups": [
+          [
+            {
+              "rewardTypeId": "core-gold",
+              "amount": 30
+            }
+          ]
+        ],
+        "marketIds": [
+          "ebm1"
+        ]
+      },
+      {
+        "id": "ebga2",
+        "name": "Fancy Coffee Mug",
+        "description": "A stylish mug for your avatar.",
+        "url": "/uploads/tools/coffee-mug.png",
+        "category": "Tool",
+        "isForSale": true,
+        "costGroups": [
+          [
+            {
+              "rewardTypeId": "core-gold",
+              "amount": 15
+            }
+          ]
+        ],
+        "marketIds": [
+          "ebm1"
+        ]
+      },
+      {
+        "id": "ebga3",
+        "name": "Cafe Trip",
+        "description": "A real-world reward: a trip to a local coffee shop for a special drink.",
+        "url": "/uploads/tickets/cafe-trip.png",
+        "category": "Real-World Reward",
+        "isForSale": true,
+        "costGroups": [
+          [
+            {
+              "rewardTypeId": "core-gems",
+              "amount": 50
+            }
+          ]
+        ],
+        "marketIds": [
+          "ebm1"
+        ],
+        "requiresApproval": true
+      }
     ],
     "trophies": [
-      { "id": "ebt1", "name": "Master Barista", "description": "Successfully prepare 10 coffee or tea beverages.", "icon": "🥇", "iconType": "emoji", "isManual": true, "requirements": [] }
+      {
+        "id": "ebt1",
+        "name": "Master Barista",
+        "description": "Successfully prepare 10 coffee or tea beverages.",
+        "icon": "🥇",
+        "iconType": "emoji",
+        "isManual": true,
+        "requirements": []
+      }
     ]
   }
 }

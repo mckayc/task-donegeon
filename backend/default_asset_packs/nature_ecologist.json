@@ -1,3 +1,4 @@
+
 {
   "manifest": {
     "id": "com.taskdonegeon.nature.ecologist.v1",
@@ -10,23 +11,282 @@
   },
   "assets": {
     "quests": [
-      { "id": "neq1", "title": "Recycling Captain", "description": "Ensure all recyclables for the day are sorted and placed in the correct bin.", "type": "Duty", "icon": "♻️", "rewards": [{ "rewardTypeId": "core-diligence", "amount": 15 }], "tags": ["ecology", "household"], "isActive": true, "isOptional": false, "availabilityType": "Daily", "requiresApproval": false },
-      { "id": "neq2", "title": "Energy Saver", "description": "Be the last one to leave a room? Turn off the lights!", "type": "Duty", "icon": "💡", "rewards": [{ "rewardTypeId": "core-diligence", "amount": 5 }], "tags": ["ecology", "household"], "isActive": true, "isOptional": false, "availabilityType": "Daily", "requiresApproval": false },
-      { "id": "neq3", "title": "Water Conservationist", "description": "Turn off the water while brushing your teeth.", "type": "Duty", "icon": "💧", "rewards": [{ "rewardTypeId": "core-skill", "amount": 5 }], "tags": ["ecology", "health"], "isActive": true, "isOptional": false, "availabilityType": "Daily", "requiresApproval": false },
-      { "id": "neq4", "title": "Compost Contributor", "description": "Add appropriate food scraps to the compost bin.", "type": "Duty", "icon": "🥕", "rewards": [{ "rewardTypeId": "core-diligence", "amount": 10 }], "tags": ["ecology", "household"], "isActive": true, "isOptional": false, "availabilityType": "Daily", "requiresApproval": false },
-      { "id": "neq5", "title": "Litter Pickup", "description": "Spend 10 minutes picking up litter in your neighborhood or a local park.", "type": "Venture", "icon": "🚮", "rewards": [{ "rewardTypeId": "core-gems", "amount": 30 }], "tags": ["ecology", "service"], "isActive": true, "isOptional": true, "availabilityType": "Unlimited", "requiresApproval": true },
-      { "id": "neq6", "title": "Research an Endangered Animal", "description": "Learn about an endangered animal and share what you learned.", "type": "Venture", "icon": "🐼", "rewards": [{ "rewardTypeId": "core-wisdom", "amount": 20 }], "tags": ["ecology", "learning"], "isActive": true, "isOptional": true, "availabilityType": "Unlimited", "requiresApproval": false }
+      {
+        "id": "neq1",
+        "title": "Recycling Captain",
+        "description": "Ensure all recyclables for the day are sorted and placed in the correct bin.",
+        "type": "Duty",
+        "iconType": "emoji",
+        "icon": "♻️",
+        "rewards": [
+          {
+            "rewardTypeId": "core-diligence",
+            "amount": 15
+          }
+        ],
+        "tags": [
+          "ecology",
+          "household"
+        ],
+        "isActive": true,
+        "isOptional": false,
+        "availabilityType": "Daily",
+        "requiresApproval": false,
+        "lateSetbacks": [],
+        "incompleteSetbacks": [],
+        "availabilityCount": null,
+        "weeklyRecurrenceDays": [],
+        "monthlyRecurrenceDays": [],
+        "assignedUserIds": [],
+        "guildId": null,
+        "groupId": "qg-outdoor",
+        "claimedByUserIds": [],
+        "dismissals": []
+      },
+      {
+        "id": "neq2",
+        "title": "Energy Saver",
+        "description": "Be the last one to leave a room? Turn off the lights!",
+        "type": "Duty",
+        "iconType": "emoji",
+        "icon": "💡",
+        "rewards": [
+          {
+            "rewardTypeId": "core-diligence",
+            "amount": 5
+          }
+        ],
+        "tags": [
+          "ecology",
+          "household"
+        ],
+        "isActive": true,
+        "isOptional": false,
+        "availabilityType": "Daily",
+        "requiresApproval": false,
+        "lateSetbacks": [],
+        "incompleteSetbacks": [],
+        "availabilityCount": null,
+        "weeklyRecurrenceDays": [],
+        "monthlyRecurrenceDays": [],
+        "assignedUserIds": [],
+        "guildId": null,
+        "groupId": "qg-outdoor",
+        "claimedByUserIds": [],
+        "dismissals": []
+      },
+      {
+        "id": "neq3",
+        "title": "Water Conservationist",
+        "description": "Turn off the water while brushing your teeth.",
+        "type": "Duty",
+        "iconType": "emoji",
+        "icon": "💧",
+        "rewards": [
+          {
+            "rewardTypeId": "core-skill",
+            "amount": 5
+          }
+        ],
+        "tags": [
+          "ecology",
+          "health"
+        ],
+        "isActive": true,
+        "isOptional": false,
+        "availabilityType": "Daily",
+        "requiresApproval": false,
+        "lateSetbacks": [],
+        "incompleteSetbacks": [],
+        "availabilityCount": null,
+        "weeklyRecurrenceDays": [],
+        "monthlyRecurrenceDays": [],
+        "assignedUserIds": [],
+        "guildId": null,
+        "groupId": "qg-outdoor",
+        "claimedByUserIds": [],
+        "dismissals": []
+      },
+      {
+        "id": "neq4",
+        "title": "Compost Contributor",
+        "description": "Add appropriate food scraps to the compost bin.",
+        "type": "Duty",
+        "iconType": "emoji",
+        "icon": "🥕",
+        "rewards": [
+          {
+            "rewardTypeId": "core-diligence",
+            "amount": 10
+          }
+        ],
+        "tags": [
+          "ecology",
+          "household"
+        ],
+        "isActive": true,
+        "isOptional": false,
+        "availabilityType": "Daily",
+        "requiresApproval": false,
+        "lateSetbacks": [],
+        "incompleteSetbacks": [],
+        "availabilityCount": null,
+        "weeklyRecurrenceDays": [],
+        "monthlyRecurrenceDays": [],
+        "assignedUserIds": [],
+        "guildId": null,
+        "groupId": "qg-outdoor",
+        "claimedByUserIds": [],
+        "dismissals": []
+      },
+      {
+        "id": "neq5",
+        "title": "Litter Pickup",
+        "description": "Spend 10 minutes picking up litter in your neighborhood or a local park.",
+        "type": "Venture",
+        "iconType": "emoji",
+        "icon": "🚮",
+        "rewards": [
+          {
+            "rewardTypeId": "core-gems",
+            "amount": 30
+          }
+        ],
+        "tags": [
+          "ecology",
+          "service"
+        ],
+        "isActive": true,
+        "isOptional": true,
+        "availabilityType": "Unlimited",
+        "requiresApproval": true,
+        "lateSetbacks": [],
+        "incompleteSetbacks": [],
+        "availabilityCount": null,
+        "weeklyRecurrenceDays": [],
+        "monthlyRecurrenceDays": [],
+        "assignedUserIds": [],
+        "guildId": null,
+        "groupId": "qg-outdoor",
+        "claimedByUserIds": [],
+        "dismissals": []
+      },
+      {
+        "id": "neq6",
+        "title": "Research an Endangered Animal",
+        "description": "Learn about an endangered animal and share what you learned.",
+        "type": "Venture",
+        "iconType": "emoji",
+        "icon": "🐼",
+        "rewards": [
+          {
+            "rewardTypeId": "core-wisdom",
+            "amount": 20
+          }
+        ],
+        "tags": [
+          "ecology",
+          "learning"
+        ],
+        "isActive": true,
+        "isOptional": true,
+        "availabilityType": "Unlimited",
+        "requiresApproval": false,
+        "lateSetbacks": [],
+        "incompleteSetbacks": [],
+        "availabilityCount": null,
+        "weeklyRecurrenceDays": [],
+        "monthlyRecurrenceDays": [],
+        "assignedUserIds": [],
+        "guildId": null,
+        "groupId": "qg-outdoor",
+        "claimedByUserIds": [],
+        "dismissals": []
+      }
     ],
     "markets": [
-      { "id": "nem1", "title": "The Green Market", "description": "Sustainable goods and eco-friendly rewards.", "icon": "🌱", "iconType": "emoji", "status": { "type": "open" } }
+      {
+        "id": "nem1",
+        "title": "The Green Market",
+        "description": "Sustainable goods and eco-friendly rewards.",
+        "icon": "🌱",
+        "iconType": "emoji",
+        "status": {
+          "type": "open"
+        }
+      }
     ],
     "gameAssets": [
-      { "id": "nega1", "name": "Reusable Water Bottle", "description": "A durable water bottle for your avatar.", "url": "/uploads/tools/water-bottle.png", "category": "Tool", "isForSale": true, "costGroups": [[{ "rewardTypeId": "core-gold", "amount": 25 }]], "marketIds": ["nem1"] },
-      { "id": "nega2", "name": "Solar Powered Gadget", "description": "A small solar-powered toy or charger.", "url": "/uploads/tools/solar-panel.png", "category": "Real-World Reward", "isForSale": true, "costGroups": [[{ "rewardTypeId": "core-gems", "amount": 100 }]], "marketIds": ["nem1"], "requiresApproval": true },
-      { "id": "nega3", "name": "Tree Sapling", "description": "A real-world reward: donate to have a tree planted in your name.", "url": "/uploads/plants/sapling.png", "category": "Real-World Reward", "isForSale": true, "costGroups": [[{ "rewardTypeId": "core-gems", "amount": 50 }]], "marketIds": ["nem1"], "requiresApproval": true }
+      {
+        "id": "nega1",
+        "name": "Reusable Water Bottle",
+        "description": "A durable water bottle for your avatar.",
+        "url": "/uploads/tools/water-bottle.png",
+        "category": "Tool",
+        "isForSale": true,
+        "costGroups": [
+          [
+            {
+              "rewardTypeId": "core-gold",
+              "amount": 25
+            }
+          ]
+        ],
+        "marketIds": [
+          "nem1"
+        ]
+      },
+      {
+        "id": "nega2",
+        "name": "Solar Powered Gadget",
+        "description": "A small solar-powered toy or charger.",
+        "url": "/uploads/tools/solar-panel.png",
+        "category": "Real-World Reward",
+        "isForSale": true,
+        "costGroups": [
+          [
+            {
+              "rewardTypeId": "core-gems",
+              "amount": 100
+            }
+          ]
+        ],
+        "marketIds": [
+          "nem1"
+        ],
+        "requiresApproval": true
+      },
+      {
+        "id": "nega3",
+        "name": "Tree Sapling",
+        "description": "A real-world reward: donate to have a tree planted in your name.",
+        "url": "/uploads/plants/sapling.png",
+        "category": "Real-World Reward",
+        "isForSale": true,
+        "costGroups": [
+          [
+            {
+              "rewardTypeId": "core-gems",
+              "amount": 50
+            }
+          ]
+        ],
+        "marketIds": [
+          "nem1"
+        ],
+        "requiresApproval": true
+      }
     ],
     "trophies": [
-      { "id": "net1", "name": "Planet Protector", "description": "Complete 10 ecology-themed quests.", "icon": "🌏", "iconType": "emoji", "isManual": true, "requirements": [] }
+      {
+        "id": "net1",
+        "name": "Planet Protector",
+        "description": "Complete 10 ecology-themed quests.",
+        "icon": "🌏",
+        "iconType": "emoji",
+        "isManual": true,
+        "requirements": []
+      }
     ]
   }
 }

@@ -20,7 +20,7 @@ RUN npm run build
 # Stage 2: Create the final production image
 FROM node:20-alpine
 
-# Set the working directory
+# Set the working directory - Wwerd
 WORKDIR /app
 
 # Set the environment to production

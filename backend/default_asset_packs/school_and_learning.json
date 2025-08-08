@@ -5,7 +5,8 @@
     "author": "Donegeon Team",
     "version": "1.0.0",
     "description": "A set of quests and items to encourage learning, reading, and homework completion.",
-    "emoji": "📚"
+    "emoji": "📚",
+    "category": "Personal Development"
   },
   "assets": {
     "quests": [

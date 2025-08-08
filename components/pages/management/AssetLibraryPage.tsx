@@ -45,6 +45,17 @@ const AssetLibraryPage: React.FC = () => {
         discoverPacks();
     }, [addNotification]);
     
+    const categorizedPacks = useMemo(() => {
+        return localPacks.reduce((acc, pack) => {
+            const category = pack.manifest.category || 'Miscellaneous';
+            if (!acc[category]) {
+                acc[category] = [];
+            }
+            acc[category].push(pack);
+            return acc;
+        }, {} as Record<string, AssetPackManifestInfo[]>);
+    }, [localPacks]);
+
     const beginInstallProcess = async (packFetcher: () => Promise<AssetPack>) => {
         try {
             setIsLoading(true);
@@ -106,35 +117,42 @@ const AssetLibraryPage: React.FC = () => {
 
     return (
         <div className="space-y-6">
-            <Card title="Install Local Asset Packs">
+            <Card title="Asset Pack Library">
                 <p className="text-sm text-stone-400 mb-4">These packs were found in the <code>/asset_packs</code> folder on your server. Click one to review and install its contents.</p>
                 {isLoading ? (
                     <div className="text-center text-stone-400">Loading asset packs...</div>
                 ) : error ? (
                     <div className="text-center text-red-400">{error}</div>
                 ) : localPacks.length > 0 ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {localPacks.map(packInfo => (
-                            <button key={packInfo.filename} onClick={() => handleInstallLocal(packInfo.filename)} className="h-full w-full text-left">
-                                <Card className="h-full hover:border-accent transition-colors">
-                                    <h4 className="font-bold text-lg text-stone-100 flex items-center gap-2">
-                                        {packInfo.manifest.emoji || '📦'} {packInfo.manifest.name}
-                                    </h4>
-                                    <p className="text-xs text-stone-500">v{packInfo.manifest.version} by {packInfo.manifest.author}</p>
-                                    <p className="text-sm text-stone-400 mt-2 flex-grow">{packInfo.manifest.description}</p>
-                                    
-                                    <div className="mt-4 pt-4 border-t border-stone-700/60 grid grid-cols-2 gap-x-4 gap-y-2">
-                                        <ul className="space-y-1">
-                                          {packInfo.summary.quests.map(q => <SummaryItem key={q.title} icon={q.icon} name={q.title} />)}
-                                          {packInfo.summary.gameAssets.map(a => <SummaryItem key={a.name} icon={a.icon} name={a.name} />)}
-                                        </ul>
-                                        <ul className="space-y-1">
-                                          {packInfo.summary.trophies.map(t => <SummaryItem key={t.name} icon={t.icon} name={t.name} />)}
-                                          {packInfo.summary.users.map(u => <SummaryItem key={u.gameName} icon={'👤'} name={u.gameName} />)}
-                                        </ul>
-                                    </div>
-                                </Card>
-                            </button>
+                    <div className="space-y-6">
+                        {Object.entries(categorizedPacks).sort(([catA], [catB]) => catA.localeCompare(catB)).map(([category, packs]) => (
+                            <div key={category}>
+                                <h3 className="text-2xl font-medieval text-accent mb-3">{category}</h3>
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                    {packs.map(packInfo => (
+                                        <button key={packInfo.filename} onClick={() => handleInstallLocal(packInfo.filename)} className="h-full w-full text-left">
+                                            <Card className="h-full hover:border-accent transition-colors">
+                                                <h4 className="font-bold text-lg text-stone-100 flex items-center gap-2">
+                                                    {packInfo.manifest.emoji || '📦'} {packInfo.manifest.name}
+                                                </h4>
+                                                <p className="text-xs text-stone-500">v{packInfo.manifest.version} by {packInfo.manifest.author}</p>
+                                                <p className="text-sm text-stone-400 mt-2 flex-grow">{packInfo.manifest.description}</p>
+                                                
+                                                <div className="mt-4 pt-4 border-t border-stone-700/60 grid grid-cols-2 gap-x-4 gap-y-2">
+                                                    <ul className="space-y-1">
+                                                      {packInfo.summary.quests.map(q => <SummaryItem key={q.title} icon={q.icon} name={q.title} />)}
+                                                      {packInfo.summary.gameAssets.map(a => <SummaryItem key={a.name} icon={a.icon} name={a.name} />)}
+                                                    </ul>
+                                                    <ul className="space-y-1">
+                                                      {packInfo.summary.trophies.map(t => <SummaryItem key={t.name} icon={t.icon} name={t.name} />)}
+                                                      {packInfo.summary.users.map(u => <SummaryItem key={u.gameName} icon={'👤'} name={u.gameName} />)}
+                                                    </ul>
+                                                </div>
+                                            </Card>
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
                         ))}
                     </div>
                 ) : (

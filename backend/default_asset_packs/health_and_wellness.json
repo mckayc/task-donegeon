@@ -5,7 +5,8 @@
     "author": "Donegeon Team",
     "version": "1.0.0",
     "description": "Quests to promote healthy habits like hygiene, exercise, and mindfulness.",
-    "emoji": "❤️‍🩹"
+    "emoji": "❤️‍🩹",
+    "category": "Personal Development"
   },
   "assets": {
     "quests": [

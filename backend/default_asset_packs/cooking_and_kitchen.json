@@ -5,7 +5,8 @@
     "author": "Donegeon Team",
     "version": "1.0.0",
     "description": "A recipe book of quests for helping in the kitchen, from prep to cleanup.",
-    "emoji": "🍳"
+    "emoji": "🍳",
+    "category": "Home & Life"
   },
   "assets": {
     "quests": [

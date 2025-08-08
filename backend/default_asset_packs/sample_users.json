@@ -5,7 +5,8 @@
     "author": "Donegeon Team",
     "version": "1.0.0",
     "description": "Adds a few pre-configured users for testing. PINs: Knight (1234), Mage (5678), Rogue (1111).",
-    "emoji": "👥"
+    "emoji": "👥",
+    "category": "Utilities"
   },
   "assets": {
     "quests": [],

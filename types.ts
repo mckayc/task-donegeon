@@ -535,6 +535,7 @@ export interface AssetPackManifest {
   version: string;
   description: string;
   emoji?: string;
+  category?: string;
 }
 
 export interface AssetPack {

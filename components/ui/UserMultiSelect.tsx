@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { User } from '../../types';
 import Input from './Input';
 import Avatar from './Avatar';
@@ -13,6 +13,19 @@ interface UserMultiSelectProps {
 const UserMultiSelect: React.FC<UserMultiSelectProps> = ({ allUsers, selectedUserIds, onSelectionChange, label }) => {
     const [isOpen, setIsOpen] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
+    const wrapperRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (wrapperRef.current && !wrapperRef.current.contains(event.target as Node)) {
+                setIsOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, []);
 
     const filteredUsers = useMemo(() => {
         return allUsers.filter(user =>
@@ -30,12 +43,13 @@ const UserMultiSelect: React.FC<UserMultiSelectProps> = ({ allUsers, selectedUse
 
     const summaryText = useMemo(() => {
         if (selectedUserIds.length === 0) return 'Select users...';
+        if (selectedUserIds.length === allUsers.length) return 'All Users';
         if (selectedUserIds.length === 1) return allUsers.find(u => u.id === selectedUserIds[0])?.gameName || '1 user selected';
         return `${selectedUserIds.length} users selected`;
     }, [selectedUserIds, allUsers]);
 
     return (
-        <div className="relative">
+        <div className="relative" ref={wrapperRef}>
             <label className="block text-sm font-medium text-stone-300 mb-1">{label}</label>
             <button
                 type="button"

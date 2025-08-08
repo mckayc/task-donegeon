@@ -5,7 +5,8 @@
     "author": "Donegeon Team",
     "version": "1.0.0",
     "description": "Quests for taking care of pets and some fun animal-themed items.",
-    "emoji": "🐾"
+    "emoji": "🐾",
+    "category": "Home & Life"
   },
   "assets": {
     "quests": [

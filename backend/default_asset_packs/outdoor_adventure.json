@@ -5,7 +5,8 @@
     "author": "Donegeon Team",
     "version": "1.0.0",
     "description": "A collection of quests for yard work, playing outside, and exploring nature.",
-    "emoji": "🌳"
+    "emoji": "🌳",
+    "category": "Home & Life"
   },
   "assets": {
     "quests": [

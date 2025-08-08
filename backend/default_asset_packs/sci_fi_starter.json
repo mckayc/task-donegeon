@@ -5,7 +5,8 @@
     "author": "Donegeon Team",
     "version": "1.0.0",
     "description": "Futuristic items and a high-tech market for your sci-fi adventurers.",
-    "emoji": "🚀"
+    "emoji": "🚀",
+    "category": "Sci-Fi"
   },
   "assets": {
     "markets": [

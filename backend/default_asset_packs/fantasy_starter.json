@@ -5,7 +5,8 @@
     "author": "Donegeon Team",
     "version": "1.0.0",
     "description": "A few fantasy-themed items and a market to start your adventure.",
-    "emoji": "🐉"
+    "emoji": "🐉",
+    "category": "Fantasy"
   },
   "assets": {
     "quests": [],

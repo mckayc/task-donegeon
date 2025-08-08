@@ -5,7 +5,8 @@
     "author": "Donegeon Team",
     "version": "1.0.0",
     "description": "A collection of common household chores to get your donegeon started.",
-    "emoji": "🧼"
+    "emoji": "🧼",
+    "category": "Home & Life"
   },
   "assets": {
     "quests": [

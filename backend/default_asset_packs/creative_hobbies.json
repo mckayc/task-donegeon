@@ -5,7 +5,8 @@
     "author": "Donegeon Team",
     "version": "1.0.0",
     "description": "Quests designed to inspire creativity in art, music, writing, and more.",
-    "emoji": "🎨"
+    "emoji": "🎨",
+    "category": "Personal Development"
   },
   "assets": {
     "quests": [

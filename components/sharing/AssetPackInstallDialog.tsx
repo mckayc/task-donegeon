@@ -25,18 +25,78 @@ const terminologyMap: { [key in ShareableAssetType]: keyof Terminology } = {
     users: 'link_manage_users',
 };
 
+const AssetCard: React.FC<{
+    resolution: ImportResolution;
+    asset: any;
+    onToggle: () => void;
+    onResolutionChange: (res: 'skip' | 'rename') => void;
+    onRename: (newName: string) => void;
+}> = ({ resolution, asset, onToggle, onResolutionChange, onRename }) => {
+    const isConflict = resolution.status === 'conflict';
+
+    return (
+        <div className={`p-3 rounded-lg border-2 ${
+            isConflict 
+            ? 'border-amber-700/60 bg-amber-900/30' 
+            : resolution.selected 
+            ? 'border-emerald-700/60 bg-emerald-900/30'
+            : 'border-stone-700/60 bg-stone-900/50'
+        }`}>
+            <div className="flex items-start gap-3">
+                <input 
+                    type="checkbox" 
+                    checked={resolution.selected} 
+                    onChange={onToggle} 
+                    className="mt-1 h-5 w-5 rounded text-emerald-600 bg-stone-700 border-stone-500 focus:ring-emerald-500"
+                />
+                <div className="flex-grow">
+                    <p className="font-bold text-stone-100">{asset.icon || '▫️'} {resolution.name}</p>
+                    <p className="text-sm text-stone-400">{asset.description}</p>
+                    {isConflict && (
+                        <div className="mt-2 pt-2 border-t border-amber-600/30">
+                            <p className="text-xs text-amber-300 font-semibold mb-2">This item already exists.</p>
+                            <div className="flex items-center gap-4">
+                                <label className="flex items-center text-sm">
+                                    <input type="radio" name={`${resolution.type}-${resolution.id}-res`} checked={resolution.resolution === 'skip'} onChange={() => onResolutionChange('skip')} className="h-4 w-4" />
+                                    <span className="ml-2">Skip</span>
+                                </label>
+                                <label className="flex items-center text-sm">
+                                    <input type="radio" name={`${resolution.type}-${resolution.id}-res`} checked={resolution.resolution === 'rename'} onChange={() => onResolutionChange('rename')} className="h-4 w-4" />
+                                    <span className="ml-2">Rename</span>
+                                </label>
+                            </div>
+                            {resolution.resolution === 'rename' && (
+                                <Input
+                                    value={resolution.newName || `${resolution.name} (Imported)`}
+                                    onChange={e => onRename(e.target.value)}
+                                    className="mt-2 text-sm"
+                                />
+                            )}
+                        </div>
+                    )}
+                </div>
+            </div>
+        </div>
+    );
+};
+
+
 const AssetPackInstallDialog: React.FC<AssetPackInstallDialogProps> = ({ assetPack, initialResolutions, onClose, onConfirm }) => {
     const { settings } = useAppState();
     const { users } = useAuthState();
     const [resolutions, setResolutions] = useState(initialResolutions);
     const [assignedUserIds, setAssignedUserIds] = useState<string[]>(() => users.map(u => u.id));
 
-    const handleResolutionChange = (id: string, type: ShareableAssetType, resolution: 'skip' | 'rename' | 'keep') => {
+    const handleResolutionChange = (id: string, type: ShareableAssetType, resolution: 'skip' | 'rename') => {
         setResolutions(prev => prev.map(r => r.id === id && r.type === type ? { ...r, resolution, selected: resolution !== 'skip' } : r));
     };
     
     const handleRenameChange = (id: string, type: ShareableAssetType, newName: string) => {
         setResolutions(prev => prev.map(r => r.id === id && r.type === type ? { ...r, newName } : r));
+    };
+    
+    const handleToggleSelection = (id: string, type: ShareableAssetType) => {
+        setResolutions(prev => prev.map(r => r.id === id && r.type === type ? { ...r, selected: !r.selected } : r));
     };
 
     const handleConfirm = () => {
@@ -55,10 +115,18 @@ const AssetPackInstallDialog: React.FC<AssetPackInstallDialogProps> = ({ assetPa
         onConfirm(packToInstall, resolutions);
     };
 
-    const newItems = resolutions.filter(r => r.status === 'new');
-    const conflictingItems = resolutions.filter(r => r.status === 'conflict');
-    const hasUsersToImport = useMemo(() => assetPack.assets.users && assetPack.assets.users.length > 0, [assetPack.assets.users]);
     const hasQuestsToImport = useMemo(() => assetPack.assets.quests && assetPack.assets.quests.length > 0, [assetPack.assets.quests]);
+
+    const groupedResolutions = useMemo(() => {
+        return resolutions.reduce((acc, res) => {
+            const typeKey = settings.terminology[terminologyMap[res.type]] || res.type;
+            if (!acc[typeKey]) {
+                acc[typeKey] = [];
+            }
+            acc[typeKey].push(res);
+            return acc;
+        }, {} as Record<string, ImportResolution[]>);
+    }, [resolutions, settings.terminology]);
 
     return (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
@@ -70,66 +138,45 @@ const AssetPackInstallDialog: React.FC<AssetPackInstallDialogProps> = ({ assetPa
 
                 <div className="flex-1 space-y-4 p-8 overflow-y-auto scrollbar-hide">
                     <div className="p-4 bg-stone-900/50 rounded-lg">
-                        <h3 className="font-bold text-lg text-stone-100">{assetPack.manifest.name}</h3>
+                        <h3 className="font-bold text-lg text-stone-100">{assetPack.manifest.emoji} {assetPack.manifest.name}</h3>
                         <p className="text-sm text-stone-400">by {assetPack.manifest.author}</p>
                         <p className="text-stone-300 mt-2">{assetPack.manifest.description}</p>
                     </div>
                     
-                    { (newItems.length > 0 || conflictingItems.length > 0) ? (
+                    {resolutions.length > 0 ? (
                         <>
-                            {newItems.length > 0 && (
-                                <div className="p-4 bg-stone-900/50 rounded-lg">
-                                    <h4 className="font-semibold text-green-400 mb-2">New Items to be Added ({newItems.length})</h4>
-                                    <ul className="text-sm text-stone-300 list-disc list-inside max-h-32 overflow-y-auto">
-                                        {newItems.map(res => <li key={`${res.type}-${res.id}`}>{res.name} <span className="text-xs text-stone-500 capitalize">({settings.terminology[terminologyMap[res.type]] || res.type})</span></li>)}
-                                    </ul>
-                                </div>
-                            )}
-                            
-                            {conflictingItems.length > 0 && (
-                                <div className="p-4 bg-amber-900/30 border border-amber-700/60 rounded-lg">
-                                    <h4 className="font-semibold text-amber-400 mb-2">Name Conflicts ({conflictingItems.length})</h4>
-                                    <p className="text-sm text-amber-300/80 mb-4">Choose how to handle items that already exist in your game.</p>
+                            {Object.entries(groupedResolutions).map(([groupName, groupResolutions]) => (
+                                <div key={groupName} className="p-4 bg-stone-900/50 rounded-lg">
+                                    <h4 className="font-semibold text-stone-200 capitalize mb-3">{groupName} ({groupResolutions.length})</h4>
                                     <div className="space-y-3 max-h-60 overflow-y-auto pr-2">
-                                        {conflictingItems.map(res => (
-                                            <div key={`${res.type}-${res.id}`} className="bg-stone-800/50 p-3 rounded-md">
-                                                <p className="font-bold text-stone-200">{res.name} <span className="text-xs text-stone-500 capitalize">({settings.terminology[terminologyMap[res.type]] || res.type})</span></p>
-                                                <div className="flex items-center gap-4 mt-2">
-                                                    <label className="flex items-center">
-                                                        <input type="radio" name={`${res.type}-${res.id}`} checked={res.resolution === 'skip'} onChange={() => handleResolutionChange(res.id, res.type, 'skip')} className="h-4 w-4" />
-                                                        <span className="ml-2 text-sm">Skip Import</span>
-                                                    </label>
-                                                    <label className="flex items-center">
-                                                        <input type="radio" name={`${res.type}-${res.id}`} checked={res.resolution === 'rename'} onChange={() => handleResolutionChange(res.id, res.type, 'rename')} className="h-4 w-4" />
-                                                        <span className="ml-2 text-sm">Import and Rename</span>
-                                                    </label>
-                                                </div>
-                                                {res.resolution === 'rename' && (
-                                                    <Input
-                                                        value={res.newName || `${res.name} (Imported)`}
-                                                        onChange={e => handleRenameChange(res.id, res.type, e.target.value)}
-                                                        className="mt-2 text-sm"
-                                                    />
-                                                )}
-                                            </div>
-                                        ))}
+                                        {groupResolutions.map(res => {
+                                            const asset = (assetPack.assets[res.type] as any[])?.find(a => (a.id || a.username) === res.id);
+                                            if (!asset) return null;
+                                            return (
+                                                <AssetCard
+                                                    key={`${res.type}-${res.id}`}
+                                                    resolution={res}
+                                                    asset={asset}
+                                                    onToggle={() => handleToggleSelection(res.id, res.type)}
+                                                    onResolutionChange={(newRes) => handleResolutionChange(res.id, res.type, newRes)}
+                                                    onRename={(newName) => handleRenameChange(res.id, res.type, newName)}
+                                                />
+                                            );
+                                        })}
                                     </div>
                                 </div>
-                            )}
+                            ))}
 
-                             {(hasUsersToImport || hasQuestsToImport) && (
+                             {hasQuestsToImport && (
                                 <div className="p-4 bg-stone-900/50 rounded-lg">
-                                    <h4 className="font-semibold text-stone-200 mb-2">Assignment Options</h4>
-                                    {hasQuestsToImport && <p className="text-sm text-stone-400 mb-3">Assign all imported quests to the selected users.</p>}
-                                    {hasUsersToImport && !hasQuestsToImport && <p className="text-sm text-stone-400 mb-3">Imported users will be added to the default guild.</p>}
-                                    {hasQuestsToImport && (
-                                        <UserMultiSelect
-                                            label="Assign Quests To"
-                                            allUsers={users}
-                                            selectedUserIds={assignedUserIds}
-                                            onSelectionChange={setAssignedUserIds}
-                                        />
-                                    )}
+                                    <h4 className="font-semibold text-stone-200 mb-2">Quest Assignment</h4>
+                                    <p className="text-sm text-stone-400 mb-3">Assign all imported quests to the selected users.</p>
+                                    <UserMultiSelect
+                                        label="Assign Quests To"
+                                        allUsers={users}
+                                        selectedUserIds={assignedUserIds}
+                                        onSelectionChange={setAssignedUserIds}
+                                    />
                                 </div>
                             )}
                         </>

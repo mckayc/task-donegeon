@@ -1,0 +1,32 @@
+{
+  "manifest": {
+    "id": "com.taskdonegeon.artisan.woodworker.v1",
+    "name": "The Woodworker's Pack",
+    "author": "Donegeon Team",
+    "version": "1.0.0",
+    "description": "Quests for crafting, building, and finishing woodworking projects.",
+    "emoji": "🪵",
+    "category": "Artisan's Guild"
+  },
+  "assets": {
+    "quests": [
+      { "id": "awq1", "title": "Safety First", "description": "Review safety rules and clean the workshop area before starting.", "type": "Duty", "icon": "🥽", "rewards": [{ "rewardTypeId": "core-diligence", "amount": 15 }], "tags": ["woodworking", "safety"], "isActive": true, "isOptional": false, "availabilityType": "Daily", "requiresApproval": false },
+      { "id": "awq2", "title": "Measure Twice, Cut Once", "description": "Carefully measure and mark all pieces for a project.", "type": "Venture", "icon": "📏", "rewards": [{ "rewardTypeId": "core-wisdom", "amount": 20 }], "tags": ["woodworking", "planning"], "isActive": true, "isOptional": false, "availabilityType": "Unlimited", "requiresApproval": false },
+      { "id": "awq3", "title": "Sanding Session", "description": "Spend 20 minutes sanding a project to a smooth finish.", "type": "Venture", "icon": "⏳", "rewards": [{ "rewardTypeId": "core-diligence", "amount": 25 }], "tags": ["woodworking", "finishing"], "isActive": true, "isOptional": true, "availabilityType": "Unlimited", "requiresApproval": false },
+      { "id": "awq4", "title": "Joinery Practice", "description": "Practice making a specific type of wood joint.", "type": "Venture", "icon": "🔗", "rewards": [{ "rewardTypeId": "core-skill", "amount": 30 }], "tags": ["woodworking", "practice"], "isActive": true, "isOptional": true, "availabilityType": "Unlimited", "requiresApproval": true },
+      { "id": "awq5", "title": "The Finishing Touch", "description": "Apply a coat of stain, oil, or paint to a project.", "type": "Venture", "icon": "🖌️", "rewards": [{ "rewardTypeId": "core-creative", "amount": 20 }], "tags": ["woodworking", "finishing"], "isActive": true, "isOptional": true, "availabilityType": "Unlimited", "requiresApproval": true },
+      { "id": "awq6", "title": "Workshop Cleanup", "description": "Sweep the floor and put away all tools after working.", "type": "Duty", "icon": "🧹", "rewards": [{ "rewardTypeId": "core-diligence", "amount": 20 }], "tags": ["woodworking", "cleaning"], "isActive": true, "isOptional": false, "availabilityType": "Daily", "requiresApproval": false }
+    ],
+    "markets": [
+      { "id": "awm1", "title": "The Lumber Yard", "description": "Fine woods, tools, and plans for the master craftsman.", "icon": "🌲", "iconType": "emoji", "status": { "type": "open" } }
+    ],
+    "gameAssets": [
+      { "id": "awga1", "name": "Carpenter's Pencil", "description": "A trusty pencil to keep behind your avatar's ear.", "url": "/uploads/tools/pencil.png", "category": "Avatar", "avatarSlot": "hat", "isForSale": true, "costGroups": [[{ "rewardTypeId": "core-gold", "amount": 10 }]], "marketIds": ["awm1"] },
+      { "id": "awga2", "name": "Hand Plane", "description": "A classic hand plane for your avatar's tool collection.", "url": "/uploads/tools/hand-plane.png", "category": "Tool", "isForSale": true, "costGroups": [[{ "rewardTypeId": "core-gold", "amount": 40 }]], "marketIds": ["awm1"] },
+      { "id": "awga3", "name": "New Chisel Set", "description": "A real-world reward: a high-quality set of chisels.", "url": "/uploads/tools/chisel-set.png", "category": "Real-World Reward", "isForSale": true, "costGroups": [[{ "rewardTypeId": "core-gems", "amount": 150 }]], "marketIds": ["awm1"], "requiresApproval": true }
+    ],
+    "trophies": [
+      { "id": "awt1", "name": "Master Craftsman", "description": "Complete a woodworking project from start to finish.", "icon": "🏆", "iconType": "emoji", "isManual": true, "requirements": [] }
+    ]
+  }
+}

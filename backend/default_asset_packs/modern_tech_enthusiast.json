@@ -1,0 +1,32 @@
+{
+  "manifest": {
+    "id": "com.taskdonegeon.modern.tech.v1",
+    "name": "Tech Enthusiast Pack",
+    "author": "Donegeon Team",
+    "version": "1.0.0",
+    "description": "Quests for managing your digital life, learning new tech skills, and earning screen time.",
+    "emoji": "💻",
+    "category": "Modern Life"
+  },
+  "assets": {
+    "quests": [
+      { "id": "mtq1", "title": "Digital Declutter", "description": "Organize the files on your computer desktop or a specific folder.", "type": "Venture", "icon": "🗂️", "rewards": [{ "rewardTypeId": "core-diligence", "amount": 20 }], "tags": ["tech", "organization"], "isActive": true, "isOptional": true, "availabilityType": "Unlimited", "requiresApproval": false },
+      { "id": "mtq2", "title": "Inbox Zero", "description": "Clear your email inbox, responding to or archiving all messages.", "type": "Duty", "icon": "📧", "rewards": [{ "rewardTypeId": "core-diligence", "amount": 15 }], "tags": ["tech", "organization"], "isActive": true, "isOptional": false, "availabilityType": "Daily", "requiresApproval": false },
+      { "id": "mtq3", "title": "Learn to Code", "description": "Complete one lesson on a coding tutorial website or app.", "type": "Duty", "icon": "⌨️", "rewards": [{ "rewardTypeId": "core-wisdom", "amount": 30 }], "tags": ["tech", "learning"], "isActive": true, "isOptional": true, "availabilityType": "Daily", "requiresApproval": false },
+      { "id": "mtq4", "title": "Device Charging Station", "description": "Charge all family devices (tablets, phones) in the designated spot.", "type": "Duty", "icon": "🔌", "rewards": [{ "rewardTypeId": "core-diligence", "amount": 10 }], "tags": ["tech", "household"], "isActive": true, "isOptional": false, "availabilityType": "Daily", "requiresApproval": false },
+      { "id": "mtq5", "title": "Tech Support", "description": "Help a family member with a technology-related problem.", "type": "Venture", "icon": "💡", "rewards": [{ "rewardTypeId": "core-gems", "amount": 25 }], "tags": ["tech", "helping"], "isActive": true, "isOptional": true, "availabilityType": "Unlimited", "requiresApproval": false },
+      { "id": "mtq6", "title": "Screen-Free Hour", "description": "Spend one full hour without using any screens (TV, computer, phone).", "type": "Duty", "icon": "🌳", "rewards": [{ "rewardTypeId": "core-strength", "amount": 10 }], "tags": ["tech", "health"], "isActive": true, "isOptional": true, "availabilityType": "Daily", "requiresApproval": false }
+    ],
+    "markets": [
+      { "id": "mtm1", "title": "The Gizmo Garage", "description": "Trade crystals for screen time and digital goodies.", "icon": "🤖", "iconType": "emoji", "status": { "type": "open" } }
+    ],
+    "gameAssets": [
+      { "id": "mtga1", "name": "30 Mins Screen Time", "description": "Exchange crystals for 30 minutes of approved screen time.", "url": "/uploads/tickets/screen-time.png", "category": "Real-World Reward", "isForSale": true, "costGroups": [[{ "rewardTypeId": "core-crystal", "amount": 100 }]], "marketIds": ["mtm1"], "requiresApproval": true },
+      { "id": "mtga2", "name": "Gamer Headset", "description": "A cool headset for your avatar's profile.", "url": "/uploads/avatar-hats/headset.png", "category": "Avatar", "avatarSlot": "hat", "isForSale": true, "costGroups": [[{ "rewardTypeId": "core-gold", "amount": 40 }]], "marketIds": ["mtm1"] },
+      { "id": "mtga3", "name": "Cyberpunk Theme", "description": "Unlocks the futuristic 'Cyberpunk' theme.", "url": "/uploads/themes/cyberpunk-theme.png", "category": "Theme", "isForSale": true, "costGroups": [[{ "rewardTypeId": "core-gems", "amount": 50 }]], "marketIds": ["mtm1"], "linkedThemeId": "cyberpunk" }
+    ],
+    "trophies": [
+      { "id": "mtt1", "name": "Digital Native", "description": "Complete 10 tech-related quests.", "icon": "🧑‍💻", "iconType": "emoji", "isManual": true, "requirements": [] }
+    ]
+  }
+}

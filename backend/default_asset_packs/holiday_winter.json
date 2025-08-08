@@ -1,0 +1,32 @@
+{
+  "manifest": {
+    "id": "com.taskdonegeon.holiday.winter.v1",
+    "name": "Winter Festival Pack",
+    "author": "Donegeon Team",
+    "version": "1.0.0",
+    "description": "Celebrate the winter season with festive quests, items, and cheer!",
+    "emoji": "🎄",
+    "category": "Holidays"
+  },
+  "assets": {
+    "quests": [
+      { "id": "wq1", "title": "Decorate the Great Hall", "description": "Help hang decorations for the winter festival.", "type": "Venture", "icon": "✨", "rewards": [{ "rewardTypeId": "core-creative", "amount": 30 }], "tags": ["holiday", "decorating"], "isActive": true, "isOptional": true, "availabilityType": "Unlimited", "requiresApproval": false },
+      { "id": "wq2", "title": "Shovel the Path", "description": "Clear a walkway of snow for safe passage.", "type": "Duty", "icon": "❄️", "rewards": [{ "rewardTypeId": "core-strength", "amount": 20 }], "tags": ["holiday", "yardwork"], "isActive": true, "isOptional": false, "availabilityType": "Daily", "requiresApproval": false },
+      { "id": "wq3", "title": "Bake Festive Treats", "description": "Help bake cookies or other treats for the festival.", "type": "Venture", "icon": "🍪", "rewards": [{ "rewardTypeId": "core-creative", "amount": 25 }], "tags": ["holiday", "baking"], "isActive": true, "isOptional": true, "availabilityType": "Unlimited", "requiresApproval": false },
+      { "id": "wq4", "title": "Wrap a Gift", "description": "Carefully wrap a gift for someone.", "type": "Venture", "icon": "🎁", "rewards": [{ "rewardTypeId": "core-diligence", "amount": 15 }], "tags": ["holiday", "gifting"], "isActive": true, "isOptional": true, "availabilityType": "Unlimited", "requiresApproval": false },
+      { "id": "wq5", "title": "Caroling Practice", "description": "Sing a festive song for the family.", "type": "Duty", "icon": "🎶", "rewards": [{ "rewardTypeId": "core-skill", "amount": 10 }], "tags": ["holiday", "music"], "isActive": true, "isOptional": true, "availabilityType": "Daily", "requiresApproval": false },
+      { "id": "wq6", "title": "Write a Thank You Note", "description": "Write a note expressing gratitude for a gift or kind act.", "type": "Venture", "icon": "💌", "rewards": [{ "rewardTypeId": "core-wisdom", "amount": 20 }], "tags": ["holiday", "writing"], "isActive": true, "isOptional": true, "availabilityType": "Unlimited", "requiresApproval": true }
+    ],
+    "markets": [
+      { "id": "wm1", "title": "Kris Kringle's Workshop", "description": "Festive toys and apparel, straight from the North Pole.", "icon": "🎅", "iconType": "emoji", "status": { "type": "open" } }
+    ],
+    "gameAssets": [
+      { "id": "wga1", "name": "Santa Hat", "description": "A classic red and white hat for your avatar.", "url": "/uploads/avatar-hats/santa-hat.png", "category": "Avatar", "avatarSlot": "hat", "isForSale": true, "costGroups": [[{ "rewardTypeId": "core-gold", "amount": 25 }]], "marketIds": ["wm1"] },
+      { "id": "wga2", "name": "Candy Cane", "description": "A sweet, minty treat.", "url": "/uploads/consumables/candy-cane.png", "category": "Consumable", "isForSale": true, "costGroups": [[{ "rewardTypeId": "core-gold", "amount": 5 }]], "marketIds": ["wm1"] },
+      { "id": "wga3", "name": "Winter Theme", "description": "Unlocks the 'Winter' theme for your app.", "url": "/uploads/themes/winter-theme.png", "category": "Theme", "isForSale": true, "costGroups": [[{ "rewardTypeId": "core-gems", "amount": 50 }]], "marketIds": ["wm1"], "linkedThemeId": "winter" }
+    ],
+    "trophies": [
+      { "id": "wt1", "name": "Festival Helper", "description": "Complete 5 winter festival quests.", "icon": "🧝", "iconType": "emoji", "isManual": true, "requirements": [] }
+    ]
+  }
+}

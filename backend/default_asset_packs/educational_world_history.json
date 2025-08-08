@@ -1,0 +1,32 @@
+{
+  "manifest": {
+    "id": "com.taskdonegeon.educational.history.v1",
+    "name": "World History Explorer",
+    "author": "Donegeon Team",
+    "version": "1.0.0",
+    "description": "Travel through time with quests about different historical eras and civilizations.",
+    "emoji": "📜",
+    "category": "Educational"
+  },
+  "assets": {
+    "quests": [
+      { "id": "ehq1", "title": "Ancient Egypt Expedition", "description": "Read or watch a video about Ancient Egypt for 15 minutes.", "type": "Venture", "icon": "🏺", "rewards": [{ "rewardTypeId": "core-wisdom", "amount": 20 }], "tags": ["learning", "history"], "isActive": true, "isOptional": true, "availabilityType": "Unlimited", "requiresApproval": false },
+      { "id": "ehq2", "title": "Roman Architecture", "description": "Build a Roman-style structure using blocks or drawing.", "type": "Venture", "icon": "🏛️", "rewards": [{ "rewardTypeId": "core-creative", "amount": 25 }], "tags": ["learning", "history", "creative"], "isActive": true, "isOptional": true, "availabilityType": "Unlimited", "requiresApproval": true },
+      { "id": "ehq3", "title": "Viking Voyager", "description": "Draw a map of a Viking exploration route.", "type": "Venture", "icon": "🧭", "rewards": [{ "rewardTypeId": "core-skill", "amount": 15 }], "tags": ["learning", "history", "art"], "isActive": true, "isOptional": true, "availabilityType": "Unlimited", "requiresApproval": true },
+      { "id": "ehq4", "title": "Medieval Knight Training", "description": "Research and write down three facts about medieval knights.", "type": "Venture", "icon": "🛡️", "rewards": [{ "rewardTypeId": "core-wisdom", "amount": 20 }], "tags": ["learning", "history"], "isActive": true, "isOptional": true, "availabilityType": "Unlimited", "requiresApproval": false },
+      { "id": "ehq5", "title": "Renaissance Artist Study", "description": "Try to recreate a famous piece of Renaissance art.", "type": "Venture", "icon": "🎨", "rewards": [{ "rewardTypeId": "core-creative", "amount": 30 }], "tags": ["learning", "history", "art"], "isActive": true, "isOptional": true, "availabilityType": "Unlimited", "requiresApproval": true },
+      { "id": "ehq6", "title": "History Documentary", "description": "Watch a history documentary with the family.", "type": "Venture", "icon": "🎞️", "rewards": [{ "rewardTypeId": "core-wisdom", "amount": 25 }], "tags": ["learning", "history", "family time"], "isActive": true, "isOptional": true, "availabilityType": "Unlimited", "requiresApproval": false }
+    ],
+    "markets": [
+      { "id": "ehm1", "title": "The Time Traveler's Trunk", "description": "Artifacts and attire from across the ages.", "icon": "⏳", "iconType": "emoji", "status": { "type": "open" } }
+    ],
+    "gameAssets": [
+      { "id": "ehga1", "name": "Roman Helmet", "description": "A classic Roman legionary helmet for your avatar.", "url": "/uploads/avatar-hats/roman-helmet.png", "category": "Avatar", "avatarSlot": "hat", "isForSale": true, "costGroups": [[{ "rewardTypeId": "core-gold", "amount": 35 }]], "marketIds": ["ehm1"] },
+      { "id": "ehga2", "name": "Viking Axe (Toy)", "description": "A prop Viking axe for your collection.", "url": "/uploads/tools/viking-axe.png", "category": "Toy", "isForSale": true, "costGroups": [[{ "rewardTypeId": "core-gold", "amount": 30 }]], "marketIds": ["ehm1"] },
+      { "id": "ehga3", "name": "Parchment Theme", "description": "Unlocks the old-fashioned 'Parchment' theme.", "url": "/uploads/themes/parchment-theme.png", "category": "Theme", "isForSale": true, "costGroups": [[{ "rewardTypeId": "core-gems", "amount": 50 }]], "marketIds": ["ehm1"], "linkedThemeId": "parchment" }
+    ],
+    "trophies": [
+      { "id": "eht1", "name": "Historian", "description": "Complete 5 history-themed quests.", "icon": "🎓", "iconType": "emoji", "isManual": true, "requirements": [] }
+    ]
+  }
+}

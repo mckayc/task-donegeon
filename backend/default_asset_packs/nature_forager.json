@@ -1,0 +1,32 @@
+{
+  "manifest": {
+    "id": "com.taskdonegeon.nature.forager.v1",
+    "name": "The Forager's Pack",
+    "author": "Donegeon Team",
+    "version": "1.0.0",
+    "description": "Learn about the natural world with quests about plant identification and outdoor skills.",
+    "emoji": "🍄",
+    "category": "Nature & Survival"
+  },
+  "assets": {
+    "quests": [
+      { "id": "nfq1", "title": "Identify Three Trees", "description": "Learn to identify three different types of trees in your area.", "type": "Venture", "icon": "🌳", "rewards": [{ "rewardTypeId": "core-wisdom", "amount": 20 }], "tags": ["nature", "learning"], "isActive": true, "isOptional": true, "availabilityType": "Unlimited", "requiresApproval": true },
+      { "id": "nfq2", "title": "Cloud Gazing", "description": "Identify three types of clouds (cumulus, stratus, cirrus).", "type": "Venture", "icon": "☁️", "rewards": [{ "rewardTypeId": "core-wisdom", "amount": 15 }], "tags": ["nature", "learning"], "isActive": true, "isOptional": true, "availabilityType": "Unlimited", "requiresApproval": false },
+      { "id": "nfq3", "title": "Build a Simple Shelter", "description": "Construct a small, temporary shelter in the yard using branches and leaves.", "type": "Venture", "icon": "🏕️", "rewards": [{ "rewardTypeId": "core-skill", "amount": 35 }], "tags": ["nature", "survival"], "isActive": true, "isOptional": true, "availabilityType": "Unlimited", "requiresApproval": true },
+      { "id": "nfq4", "title": "Follow a Trail", "description": "Go for a hike on a marked trail in a local park or nature reserve.", "type": "Venture", "icon": "🥾", "rewards": [{ "rewardTypeId": "core-strength", "amount": 30 }], "tags": ["nature", "exercise"], "isActive": true, "isOptional": true, "availabilityType": "Unlimited", "requiresApproval": false },
+      { "id": "nfq5", "title": "Berry Picking", "description": "Help pick berries (if in season and with adult supervision).", "type": "Venture", "icon": "🍓", "rewards": [{ "rewardTypeId": "core-diligence", "amount": 25 }], "tags": ["nature", "foraging"], "isActive": true, "isOptional": true, "availabilityType": "Unlimited", "requiresApproval": false },
+      { "id": "nfq6", "title": "Leave No Trace", "description": "Pick up any litter you find on a walk or at a park.", "type": "Duty", "icon": "♻️", "rewards": [{ "rewardTypeId": "core-gems", "amount": 20 }], "tags": ["nature", "service"], "isActive": true, "isOptional": true, "availabilityType": "Daily", "requiresApproval": false }
+    ],
+    "markets": [
+      { "id": "nfm1", "title": "The Ranger's Outpost", "description": "Supplies for the avid explorer and naturalist.", "icon": "🌲", "iconType": "emoji", "status": { "type": "open" } }
+    ],
+    "gameAssets": [
+      { "id": "nfga1", "name": "Explorer's Hat", "description": "A wide-brimmed hat perfect for any expedition.", "url": "/uploads/avatar-hats/explorer-hat.png", "category": "Avatar", "avatarSlot": "hat", "isForSale": true, "costGroups": [[{ "rewardTypeId": "core-gold", "amount": 30 }]], "marketIds": ["nfm1"] },
+      { "id": "nfga2", "name": "Binoculars", "description": "A pair of binoculars for your avatar.", "url": "/uploads/tools/binoculars.png", "category": "Avatar", "avatarSlot": "tool", "isForSale": true, "costGroups": [[{ "rewardTypeId": "core-gold", "amount": 40 }]], "marketIds": ["nfm1"] },
+      { "id": "nfga3", "name": "Nature Guide Book", "description": "A real-world reward: a field guide to local plants or animals.", "url": "/uploads/books/nature-guide.png", "category": "Real-World Reward", "isForSale": true, "costGroups": [[{ "rewardTypeId": "core-gems", "amount": 80 }]], "marketIds": ["nfm1"], "requiresApproval": true }
+    ],
+    "trophies": [
+      { "id": "nft1", "name": "Trailblazer", "description": "Complete 5 nature-themed quests.", "icon": "🏞️", "iconType": "emoji", "isManual": true, "requirements": [] }
+    ]
+  }
+}

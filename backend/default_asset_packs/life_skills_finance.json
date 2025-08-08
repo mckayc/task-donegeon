@@ -1,0 +1,32 @@
+{
+  "manifest": {
+    "id": "com.taskdonegeon.lifeskills.finance.v1",
+    "name": "Financial Literacy Pack",
+    "author": "Donegeon Team",
+    "version": "1.0.0",
+    "description": "Learn the basics of money management with these finance-themed quests.",
+    "emoji": "💰",
+    "category": "Life Skills"
+  },
+  "assets": {
+    "quests": [
+      { "id": "lfq1", "title": "Open a Savings Account", "description": "Set up a jar or box to act as your personal savings account.", "type": "Venture", "icon": "🏦", "rewards": [{ "rewardTypeId": "core-wisdom", "amount": 25 }], "tags": ["finance", "planning"], "isActive": true, "isOptional": false, "availabilityType": "Unlimited", "requiresApproval": false },
+      { "id": "lfq2", "title": "Make a Deposit", "description": "Add a portion of your earnings to your savings account.", "type": "Duty", "icon": "📥", "rewards": [{ "rewardTypeId": "core-diligence", "amount": 10 }], "tags": ["finance", "saving"], "isActive": true, "isOptional": true, "availabilityType": "Weekly", "weeklyRecurrenceDays": [5], "requiresApproval": false },
+      { "id": "lfq3", "title": "Create a Budget", "description": "With help, write down a simple budget for your weekly spending and saving.", "type": "Venture", "icon": "📊", "rewards": [{ "rewardTypeId": "core-wisdom", "amount": 30 }], "tags": ["finance", "planning"], "isActive": true, "isOptional": true, "availabilityType": "Unlimited", "requiresApproval": true },
+      { "id": "lfq4", "title": "Track Your Spending", "description": "Keep a log of everything you spend money on for one week.", "type": "Venture", "icon": "📝", "rewards": [{ "rewardTypeId": "core-diligence", "amount": 25 }], "tags": ["finance", "tracking"], "isActive": true, "isOptional": true, "availabilityType": "Unlimited", "requiresApproval": false },
+      { "id": "lfq5", "title": "Research a Big Purchase", "description": "Research and compare prices for an item you want to buy.", "type": "Venture", "icon": "🔍", "rewards": [{ "rewardTypeId": "core-wisdom", "amount": 20 }], "tags": ["finance", "planning"], "isActive": true, "isOptional": true, "availabilityType": "Unlimited", "requiresApproval": false },
+      { "id": "lfq6", "title": "Chore for Hire", "description": "Offer to do an extra chore to earn some extra money.", "type": "Venture", "icon": "💪", "rewards": [{ "rewardTypeId": "core-strength", "amount": 5 }], "tags": ["finance", "earning"], "isActive": true, "isOptional": true, "availabilityType": "Unlimited", "requiresApproval": true }
+    ],
+    "markets": [
+      { "id": "lfm1", "title": "The Gilded Vault", "description": "Invest your earnings in valuable assets and rewards.", "icon": "🏦", "iconType": "emoji", "status": { "type": "open" } }
+    ],
+    "gameAssets": [
+      { "id": "lfga1", "name": "Monocle", "description": "A fancy monocle for a distinguished financier avatar.", "url": "/uploads/avatar-hats/monocle.png", "category": "Avatar", "avatarSlot": "hat", "isForSale": true, "costGroups": [[{ "rewardTypeId": "core-gold", "amount": 30 }]], "marketIds": ["lfm1"] },
+      { "id": "lfga2", "name": "Piggy Bank", "description": "A classic piggy bank for your collection.", "url": "/uploads/tools/piggy-bank.png", "category": "Tool", "isForSale": true, "costGroups": [[{ "rewardTypeId": "core-gold", "amount": 20 }]], "marketIds": ["lfm1"] },
+      { "id": "lfga3", "name": "Stock Certificate", "description": "A real-world reward: a small contribution to a savings or investment account.", "url": "/uploads/scrolls/stock.png", "category": "Real-World Reward", "isForSale": true, "costGroups": [[{ "rewardTypeId": "core-gems", "amount": 200 }]], "marketIds": ["lfm1"], "requiresApproval": true }
+    ],
+    "trophies": [
+      { "id": "lft1", "name": "Master of Coin", "description": "Successfully save up 100 gold.", "icon": "🤑", "iconType": "emoji", "isManual": true, "requirements": [] }
+    ]
+  }
+}

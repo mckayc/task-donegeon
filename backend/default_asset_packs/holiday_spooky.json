@@ -1,0 +1,32 @@
+{
+  "manifest": {
+    "id": "com.taskdonegeon.holiday.spooky.v1",
+    "name": "Spooky Season Pack",
+    "author": "Donegeon Team",
+    "version": "1.0.0",
+    "description": "A collection of ghoulishly fun quests and items for the Halloween season.",
+    "emoji": "🎃",
+    "category": "Holidays"
+  },
+  "assets": {
+    "quests": [
+      { "id": "sq1", "title": "Carve a Jack-o'-Lantern", "description": "Design and carve a pumpkin.", "type": "Venture", "icon": "🎃", "rewards": [{ "rewardTypeId": "core-creative", "amount": 40 }], "tags": ["holiday", "creative"], "isActive": true, "isOptional": true, "availabilityType": "Unlimited", "requiresApproval": true },
+      { "id": "sq2", "title": "Decorate the Lair", "description": "Put up spooky decorations inside or outside.", "type": "Venture", "icon": "蜘蛛️", "rewards": [{ "rewardTypeId": "core-creative", "amount": 30 }], "tags": ["holiday", "decorating"], "isActive": true, "isOptional": true, "availabilityType": "Unlimited", "requiresApproval": false },
+      { "id": "sq3", "title": "Costume Crafting", "description": "Help create or assemble a Halloween costume.", "type": "Venture", "icon": "👻", "rewards": [{ "rewardTypeId": "core-skill", "amount": 25 }], "tags": ["holiday", "creative"], "isActive": true, "isOptional": true, "availabilityType": "Unlimited", "requiresApproval": true },
+      { "id": "sq4", "title": "Monster Movie Night", "description": "Help pick out and set up for a spooky movie night.", "type": "Venture", "icon": "🎬", "rewards": [{ "rewardTypeId": "core-diligence", "amount": 10 }], "tags": ["holiday", "family time"], "isActive": true, "isOptional": true, "availabilityType": "Unlimited", "requiresApproval": false },
+      { "id": "sq5", "title": "Tell a Ghost Story", "description": "Tell a spooky (but not too scary!) story.", "type": "Duty", "icon": "📖", "rewards": [{ "rewardTypeId": "core-wisdom", "amount": 15 }], "tags": ["holiday", "creative"], "isActive": true, "isOptional": true, "availabilityType": "Daily", "requiresApproval": false },
+      { "id": "sq6", "title": "Candy Distribution Duty", "description": "Help hand out candy to trick-or-treaters.", "type": "Venture", "icon": "🍬", "rewards": [{ "rewardTypeId": "core-gems", "amount": 20 }], "tags": ["holiday", "helping"], "isActive": true, "isOptional": false, "availabilityType": "Unlimited", "requiresApproval": false }
+    ],
+    "markets": [
+      { "id": "sm1", "title": "The Ghoulish Bazaar", "description": "Frightfully good deals on spooky supplies and attire.", "icon": "🧛", "iconType": "emoji", "status": { "type": "open" } }
+    ],
+    "gameAssets": [
+      { "id": "sga1", "name": "Witch Hat", "description": "A pointy black hat for your avatar.", "url": "/uploads/avatar-hats/witch-hat.png", "category": "Avatar", "avatarSlot": "hat", "isForSale": true, "costGroups": [[{ "rewardTypeId": "core-gold", "amount": 25 }]], "marketIds": ["sm1"] },
+      { "id": "sga2", "name": "Bag of Holding (for Candy)", "description": "A magical bag that seems to hold endless amounts of candy.", "url": "/uploads/bags/candy-bag.png", "category": "Tool", "isForSale": true, "costGroups": [[{ "rewardTypeId": "core-gold", "amount": 15 }]], "marketIds": ["sm1"] },
+      { "id": "sga3", "name": "Eerie Theme", "description": "Unlocks the 'Eerie' theme for a spooky app experience.", "url": "/uploads/themes/eerie-theme.png", "category": "Theme", "isForSale": true, "costGroups": [[{ "rewardTypeId": "core-gems", "amount": 50 }]], "marketIds": ["sm1"], "linkedThemeId": "eerie" }
+    ],
+    "trophies": [
+      { "id": "st1", "name": "Spooktacular", "description": "Complete all Spooky Season quests.", "icon": "💀", "iconType": "emoji", "isManual": true, "requirements": [] }
+    ]
+  }
+}

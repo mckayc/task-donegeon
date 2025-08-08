@@ -1,0 +1,32 @@
+{
+  "manifest": {
+    "id": "com.taskdonegeon.roleplaying.detective.v1",
+    "name": "Detective Agency Pack",
+    "author": "Donegeon Team",
+    "version": "1.0.0",
+    "description": "Solve mysteries and uncover clues with this detective-themed quest pack.",
+    "emoji": "🕵️",
+    "category": "Roleplaying"
+  },
+  "assets": {
+    "quests": [
+      { "id": "rdq1", "title": "The Case of the Missing Sock", "description": "Find a matching pair for a lone sock in the laundry.", "type": "Venture", "icon": "🧦", "rewards": [{ "rewardTypeId": "core-diligence", "amount": 10 }], "tags": ["mystery", "household"], "isActive": true, "isOptional": true, "availabilityType": "Unlimited", "requiresApproval": false },
+      { "id": "rdq2", "title": "Gather Fingerprints", "description": "Help dust a room for fingerprints (as part of cleaning).", "type": "Venture", "icon": "🖐️", "rewards": [{ "rewardTypeId": "core-diligence", "amount": 20 }], "tags": ["mystery", "cleaning"], "isActive": true, "isOptional": true, "availabilityType": "Unlimited", "requiresApproval": true },
+      { "id": "rdq3", "title": "Interview a Witness", "description": "Ask a family member three questions about their day and listen carefully.", "type": "Duty", "icon": "🗣️", "rewards": [{ "rewardTypeId": "core-wisdom", "amount": 15 }], "tags": ["mystery", "social"], "isActive": true, "isOptional": true, "availabilityType": "Daily", "requiresApproval": false },
+      { "id": "rdq4", "title": "Follow the Clues", "description": "Solve a riddle or puzzle set by a family member.", "type": "Venture", "icon": "🧩", "rewards": [{ "rewardTypeId": "core-wisdom", "amount": 25 }], "tags": ["mystery", "puzzle"], "isActive": true, "isOptional": true, "availabilityType": "Unlimited", "requiresApproval": false },
+      { "id": "rdq5", "title": "Stakeout", "description": "Quietly read or draw for 15 minutes without interrupting anyone.", "type": "Duty", "icon": "🤫", "rewards": [{ "rewardTypeId": "core-skill", "amount": 10 }], "tags": ["mystery", "quiet time"], "isActive": true, "isOptional": true, "availabilityType": "Daily", "requiresApproval": false },
+      { "id": "rdq6", "title": "File the Case Report", "description": "Write a short summary of a book you read or a show you watched.", "type": "Venture", "icon": "📝", "rewards": [{ "rewardTypeId": "core-wisdom", "amount": 20 }], "tags": ["mystery", "writing"], "isActive": true, "isOptional": true, "availabilityType": "Unlimited", "requiresApproval": true }
+    ],
+    "markets": [
+      { "id": "rdm1", "title": "The Sleuth's Supplies", "description": "Gear and gadgets for the modern detective.", "icon": "💼", "iconType": "emoji", "status": { "type": "open" } }
+    ],
+    "gameAssets": [
+      { "id": "rdga1", "name": "Trench Coat", "description": "A classic detective's trench coat for your avatar.", "url": "/uploads/avatar-shirts/trench-coat.png", "category": "Avatar", "avatarSlot": "shirt", "isForSale": true, "costGroups": [[{ "rewardTypeId": "core-gold", "amount": 50 }]], "marketIds": ["rdm1"] },
+      { "id": "rdga2", "name": "Magnifying Glass", "description": "A tool of the trade for any great detective avatar.", "url": "/uploads/tools/magnifying-glass.png", "category": "Avatar", "avatarSlot": "tool", "isForSale": true, "costGroups": [[{ "rewardTypeId": "core-gold", "amount": 20 }]], "marketIds": ["rdm1"] },
+      { "id": "rdga3", "name": "Mystery Novel", "description": "A real-world reward: a new mystery book.", "url": "/uploads/books/mystery-book.png", "category": "Real-World Reward", "isForSale": true, "costGroups": [[{ "rewardTypeId": "core-gems", "amount": 75 }]], "marketIds": ["rdm1"], "requiresApproval": true }
+    ],
+    "trophies": [
+      { "id": "rdt1", "name": "Master Sleuth", "description": "Solve your first major case (or complete 5 detective quests).", "icon": "🔎", "iconType": "emoji", "isManual": true, "requirements": [] }
+    ]
+  }
+}

@@ -1,0 +1,32 @@
+{
+  "manifest": {
+    "id": "com.taskdonegeon.epicurean.chef.v1",
+    "name": "Gourmet Chef Pack",
+    "author": "Donegeon Team",
+    "version": "1.0.0",
+    "description": "Level up your cooking skills with advanced recipes and culinary challenges.",
+    "emoji": "🧑‍🍳",
+    "category": "Epicurean"
+  },
+  "assets": {
+    "quests": [
+      { "id": "egq1", "title": "Master a New Sauce", "description": "Learn to make a new type of sauce from scratch (e.g., marinara, béchamel).", "type": "Venture", "icon": "🍝", "rewards": [{ "rewardTypeId": "core-skill", "amount": 30 }], "tags": ["cooking", "learning"], "isActive": true, "isOptional": true, "availabilityType": "Unlimited", "requiresApproval": true },
+      { "id": "egq2", "title": "Bake Artisan Bread", "description": "Bake a loaf of bread from scratch.", "type": "Venture", "icon": "🍞", "rewards": [{ "rewardTypeId": "core-creative", "amount": 40 }], "tags": ["cooking", "baking"], "isActive": true, "isOptional": true, "availabilityType": "Unlimited", "requiresApproval": true },
+      { "id": "egq3", "title": "Cook a Three-Course Meal", "description": "Plan and cook an appetizer, main course, and dessert.", "type": "Venture", "icon": "🍽️", "rewards": [{ "rewardTypeId": "core-wisdom", "amount": 50 }], "tags": ["cooking", "planning"], "isActive": true, "isOptional": true, "availabilityType": "Unlimited", "requiresApproval": true },
+      { "id": "egq4", "title": "Explore a New Cuisine", "description": "Cook a dish from a cuisine you've never tried before.", "type": "Venture", "icon": "🌏", "rewards": [{ "rewardTypeId": "core-wisdom", "amount": 25 }], "tags": ["cooking", "learning"], "isActive": true, "isOptional": true, "availabilityType": "Unlimited", "requiresApproval": true },
+      { "id": "egq5", "title": "Perfect Your Knife Skills", "description": "Practice different vegetable cuts (julienne, dice, etc.) for 15 minutes.", "type": "Duty", "icon": "🔪", "rewards": [{ "rewardTypeId": "core-skill", "amount": 20 }], "tags": ["cooking", "practice"], "isActive": true, "isOptional": true, "availabilityType": "Daily", "requiresApproval": false },
+      { "id": "egq6", "title": "Meal Prep Sunday", "description": "Help prepare ingredients or full meals for the week ahead.", "type": "Duty", "icon": "🗓️", "rewards": [{ "rewardTypeId": "core-diligence", "amount": 35 }], "tags": ["cooking", "planning"], "isActive": true, "isOptional": false, "availabilityType": "Weekly", "weeklyRecurrenceDays": [0], "requiresApproval": true }
+    ],
+    "markets": [
+      { "id": "egm1", "title": "The Chef's Pantry", "description": "High-quality ingredients and professional kitchen tools.", "icon": "🌶️", "iconType": "emoji", "status": { "type": "open" } }
+    ],
+    "gameAssets": [
+      { "id": "egga1", "name": "Golden Spatula", "description": "A legendary golden spatula for your avatar.", "url": "/uploads/tools/golden-spatula.png", "category": "Avatar", "avatarSlot": "tool", "isForSale": true, "costGroups": [[{ "rewardTypeId": "core-gold", "amount": 60 }]], "marketIds": ["egm1"] },
+      { "id": "egga2", "name": "Michelin Star", "description": "A coveted Michelin star for your collection.", "url": "/uploads/awards/michelin-star.png", "category": "Trophy Display", "isForSale": true, "costGroups": [[{ "rewardTypeId": "core-gems", "amount": 200 }]], "marketIds": ["egm1"] },
+      { "id": "egga3", "name": "Fancy Cooking Class", "description": "A real-world reward: enrollment in a local cooking class.", "url": "/uploads/tickets/cooking-class.png", "category": "Real-World Reward", "isForSale": true, "costGroups": [[{ "rewardTypeId": "core-gems", "amount": 500 }]], "marketIds": ["egm1"], "requiresApproval": true }
+    ],
+    "trophies": [
+      { "id": "egt1", "name": "Culinary Master", "description": "Successfully cook 5 gourmet-level quests.", "icon": "🌟", "iconType": "emoji", "isManual": true, "requirements": [] }
+    ]
+  }
+}

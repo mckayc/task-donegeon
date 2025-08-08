@@ -1,0 +1,32 @@
+{
+  "manifest": {
+    "id": "com.taskdonegeon.roleplaying.kingdom.v1",
+    "name": "Kingdom Builder Pack",
+    "author": "Donegeon Team",
+    "version": "1.0.0",
+    "description": "Rule your domain with quests focused on management, diplomacy, and building a better realm (home).",
+    "emoji": "👑",
+    "category": "Roleplaying"
+  },
+  "assets": {
+    "quests": [
+      { "id": "rkq1", "title": "Royal Decree: Tidy Room", "description": "Issue a royal decree (and follow it) to tidy your personal chambers (bedroom).", "type": "Duty", "icon": "📜", "rewards": [{ "rewardTypeId": "core-diligence", "amount": 20 }], "tags": ["kingdom", "cleaning"], "isActive": true, "isOptional": false, "availabilityType": "Daily", "requiresApproval": false },
+      { "id": "rkq2", "title": "Manage the Royal Treasury", "description": "Help create a simple weekly budget or savings plan.", "type": "Venture", "icon": "💰", "rewards": [{ "rewardTypeId": "core-wisdom", "amount": 30 }], "tags": ["kingdom", "planning"], "isActive": true, "isOptional": true, "availabilityType": "Unlimited", "requiresApproval": true },
+      { "id": "rkq3", "title": "Diplomatic Mission", "description": "Perform a kind act for a member of a neighboring kingdom (a sibling or parent).", "type": "Duty", "icon": "🤝", "rewards": [{ "rewardTypeId": "core-gems", "amount": 15 }], "tags": ["kingdom", "social"], "isActive": true, "isOptional": true, "availabilityType": "Daily", "requiresApproval": false },
+      { "id": "rkq4", "title": "Fortify the Defenses", "description": "Help with a household repair or maintenance task.", "type": "Venture", "icon": "🛠️", "rewards": [{ "rewardTypeId": "core-skill", "amount": 25 }], "tags": ["kingdom", "household"], "isActive": true, "isOptional": true, "availabilityType": "Unlimited", "requiresApproval": true },
+      { "id": "rkq5", "title": "Survey the Lands", "description": "Help with yard work, like raking leaves or watering plants.", "type": "Duty", "icon": "🌳", "rewards": [{ "rewardTypeId": "core-strength", "amount": 20 }], "tags": ["kingdom", "yardwork"], "isActive": true, "isOptional": true, "availabilityType": "Weekly", "weeklyRecurrenceDays": [0, 6], "requiresApproval": false },
+      { "id": "rkq6", "title": "Train the Royal Guard", "description": "Do 15 minutes of physical exercise or practice a sport.", "type": "Duty", "icon": "⚔️", "rewards": [{ "rewardTypeId": "core-strength", "amount": 15 }], "tags": ["kingdom", "fitness"], "isActive": true, "isOptional": true, "availabilityType": "Daily", "requiresApproval": false }
+    ],
+    "markets": [
+      { "id": "rkm1", "title": "The Royal Armoury", "description": "Fine regalia and equipment befitting a ruler.", "icon": "⚜️", "iconType": "emoji", "status": { "type": "open" } }
+    ],
+    "gameAssets": [
+      { "id": "rkga1", "name": "Royal Crown", "description": "A magnificent crown for your avatar.", "url": "/uploads/avatar-hats/crown.png", "category": "Avatar", "avatarSlot": "hat", "isForSale": true, "costGroups": [[{ "rewardTypeId": "core-gold", "amount": 100 }]], "marketIds": ["rkm1"] },
+      { "id": "rkga2", "name": "Royal Scepter", "description": "A symbol of power for your avatar to hold.", "url": "/uploads/tools/scepter.png", "category": "Avatar", "avatarSlot": "tool", "isForSale": true, "costGroups": [[{ "rewardTypeId": "core-gold", "amount": 75 }]], "marketIds": ["rkm1"] },
+      { "id": "rkga3", "name": "Royal Feast", "description": "A real-world reward: gets to choose what's for dinner.", "url": "/uploads/food/feast.png", "category": "Real-World Reward", "isForSale": true, "costGroups": [[{ "rewardTypeId": "core-gems", "amount": 150 }]], "marketIds": ["rkm1"], "requiresApproval": true }
+    ],
+    "trophies": [
+      { "id": "rkt1", "name": "Benevolent Ruler", "description": "Successfully complete 10 kingdom-themed quests.", "icon": "🏰", "iconType": "emoji", "isManual": true, "requirements": [] }
+    ]
+  }
+}

@@ -1,0 +1,32 @@
+{
+  "manifest": {
+    "id": "com.taskdonegeon.modern.city.v1",
+    "name": "City Dweller Pack",
+    "author": "Donegeon Team",
+    "version": "1.0.0",
+    "description": "Quests and rewards related to navigating and living in a modern city.",
+    "emoji": "🏙️",
+    "category": "Modern Life"
+  },
+  "assets": {
+    "quests": [
+      { "id": "mcq1", "title": "Public Transit Navigator", "description": "Successfully take the bus or subway to a destination.", "type": "Venture", "icon": "🚌", "rewards": [{ "rewardTypeId": "core-wisdom", "amount": 20 }], "tags": ["city life", "errands"], "isActive": true, "isOptional": true, "availabilityType": "Unlimited", "requiresApproval": false },
+      { "id": "mcq2", "title": "Groceries Run", "description": "Help carry groceries home from the store.", "type": "Duty", "icon": "🛒", "rewards": [{ "rewardTypeId": "core-strength", "amount": 15 }], "tags": ["city life", "errands"], "isActive": true, "isOptional": false, "availabilityType": "Weekly", "weeklyRecurrenceDays": [6], "requiresApproval": false },
+      { "id": "mcq3", "title": "Recycling Sort", "description": "Take the recycling to the building's designated area.", "type": "Duty", "icon": "♻️", "rewards": [{ "rewardTypeId": "core-diligence", "amount": 10 }], "tags": ["city life", "household"], "isActive": true, "isOptional": false, "availabilityType": "Weekly", "weeklyRecurrenceDays": [3], "requiresApproval": false },
+      { "id": "mcq4", "title": "Explore a New Park", "description": "Visit and play at a local park you haven't been to before.", "type": "Venture", "icon": "🏞️", "rewards": [{ "rewardTypeId": "core-skill", "amount": 25 }], "tags": ["city life", "exploring"], "isActive": true, "isOptional": true, "availabilityType": "Unlimited", "requiresApproval": false },
+      { "id": "mcq5", "title": "Support Local", "description": "Help pick up an order from a local small business or restaurant.", "type": "Venture", "icon": "🛍️", "rewards": [{ "rewardTypeId": "core-gems", "amount": 10 }], "tags": ["city life", "errands"], "isActive": true, "isOptional": true, "availabilityType": "Unlimited", "requiresApproval": false },
+      { "id": "mcq6", "title": "Apartment Tidy-Up", "description": "Tidy your personal space and one common area in the apartment.", "type": "Duty", "icon": "🛋️", "rewards": [{ "rewardTypeId": "core-diligence", "amount": 20 }], "tags": ["city life", "household"], "isActive": true, "isOptional": false, "availabilityType": "Daily", "requiresApproval": false }
+    ],
+    "markets": [
+      { "id": "mcm1", "title": "The Corner Bodega", "description": "Urban essentials and trendy avatar gear.", "icon": "🏪", "iconType": "emoji", "status": { "type": "open" } }
+    ],
+    "gameAssets": [
+      { "id": "mcga1", "name": "Skateboard", "description": "A cool skateboard for your avatar.", "url": "/uploads/tools/skateboard.png", "category": "Avatar", "avatarSlot": "tool", "isForSale": true, "costGroups": [[{ "rewardTypeId": "core-gold", "amount": 50 }]], "marketIds": ["mcm1"] },
+      { "id": "mcga2", "name": "Bubble Tea", "description": "A refreshing bubble tea treat.", "url": "/uploads/consumables/bubble-tea.png", "category": "Consumable", "isForSale": true, "costGroups": [[{ "rewardTypeId": "core-gold", "amount": 10 }]], "marketIds": ["mcm1"] },
+      { "id": "mcga3", "name": "Bus Pass", "description": "A real-world reward: one bus fare.", "url": "/uploads/tickets/bus-pass.png", "category": "Real-World Reward", "isForSale": true, "costGroups": [[{ "rewardTypeId": "core-gems", "amount": 20 }]], "marketIds": ["mcm1"], "requiresApproval": true }
+    ],
+    "trophies": [
+      { "id": "mct1", "name": "Urban Explorer", "description": "Complete 10 city-life quests.", "icon": "🗺️", "iconType": "emoji", "isManual": true, "requirements": [] }
+    ]
+  }
+}

@@ -1101,7 +1101,7 @@ app.post('/api/media/upload', upload.single('file'), async (req, res, next) => {
     } catch (err) {
         next(err);
     }
-}));
+});
 
 // Local Image Gallery
 app.get('/api/media/local-gallery', async (req, res, next) => {

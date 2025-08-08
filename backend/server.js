@@ -5,8 +5,6 @@ const path = require('path');
 const multer = require('multer');
 const fs = require('fs').promises;
 const { GoogleGenAI } = require('@google/genai');
-const http = require('http');
-const WebSocket = require('ws');
 const { In, Brackets, Like } = require("typeorm");
 const { dataSource, ensureDatabaseDirectoryExists } = require('./data-source');
 const { INITIAL_SETTINGS, INITIAL_REWARD_TYPES, INITIAL_RANKS, INITIAL_TROPHIES, INITIAL_THEMES, INITIAL_QUEST_GROUPS } = require('./initialData');
@@ -20,23 +18,7 @@ const {
 
 const app = express();
 const port = process.env.PORT || 3000;
-const server = http.createServer(app);
-const wss = new WebSocket.Server({ server });
 const dbPath = process.env.DATABASE_PATH || '/app/data/database/database.sqlite';
-
-// === WebSocket Logic ===
-wss.on('connection', ws => {
-  console.log('Client connected to WebSocket');
-  ws.on('close', () => console.log('Client disconnected from WebSocket'));
-});
-
-const broadcast = (data) => {
-  wss.clients.forEach(client => {
-    if (client.readyState === WebSocket.OPEN) {
-      client.send(JSON.stringify(data));
-    }
-  });
-};
 
 const checkAndAwardTrophies = async (manager, userId, guildId) => {
     // Automatic trophies are personal-only for now, as per frontend logic
@@ -185,7 +167,7 @@ const initializeApp = async () => {
     console.log(`Backup directory is ready at: ${BACKUP_DIR}`);
     console.log(`Asset Pack directory is ready at: ${ASSET_PACKS_DIR}`);
 
-    server.listen(port, () => {
+    app.listen(port, () => {
         console.log(`Task Donegeon backend listening at http://localhost:${port}`);
     });
 };
@@ -356,7 +338,6 @@ app.post('/api/first-run', asyncMiddleware(async (req, res) => {
         
         res.status(201).json({ adminUser });
     });
-    broadcast({ type: 'DATA_UPDATED' });
 }));
 
 app.post('/api/data/import-assets', asyncMiddleware(async (req, res) => {
@@ -478,7 +459,6 @@ app.post('/api/data/import-assets', asyncMiddleware(async (req, res) => {
         }
     });
 
-    broadcast({ type: 'DATA_UPDATED' });
     res.status(200).json({ message: 'Assets imported successfully.' });
 }));
 
@@ -532,7 +512,6 @@ guildsRouter.post('/', asyncMiddleware(async (req, res) => {
     }
 
     await guildRepo.save(newGuild);
-    broadcast({ type: 'DATA_UPDATED' });
     res.status(201).json(newGuild);
 }));
 
@@ -548,13 +527,11 @@ guildsRouter.put('/:id', asyncMiddleware(async (req, res) => {
     }
 
     await guildRepo.save(guild);
-    broadcast({ type: 'DATA_UPDATED' });
     res.json(guild);
 }));
 
 guildsRouter.delete('/:id', asyncMiddleware(async (req, res) => {
     await guildRepo.delete(req.params.id);
-    broadcast({ type: 'DATA_UPDATED' });
     res.status(204).send();
 }));
 
@@ -612,7 +589,6 @@ usersRouter.post('/', asyncMiddleware(async (req, res) => {
         await guildRepo.save(defaultGuild);
     }
 
-    broadcast({ type: 'DATA_UPDATED' });
     res.status(201).json(newUser);
 }));
 
@@ -636,7 +612,6 @@ usersRouter.put('/:id', asyncMiddleware(async (req, res) => {
     }
 
     await userRepo.update(id, userData);
-    broadcast({ type: 'DATA_UPDATED' });
     res.json(await userRepo.findOneBy({ id }));
 }));
 
@@ -644,7 +619,6 @@ usersRouter.delete('/', asyncMiddleware(async (req, res) => {
     const { ids } = req.body;
     if (!ids || !Array.isArray(ids)) return res.status(400).send('Invalid request body, expected { ids: [...] }');
     await userRepo.delete(ids);
-    broadcast({ type: 'DATA_UPDATED' });
     res.status(204).send();
 }));
 
@@ -655,7 +629,6 @@ app.use('/api/guilds', guildsRouter);
 app.put('/api/settings', asyncMiddleware(async (req, res) => {
     const repo = dataSource.getRepository(SettingEntity);
     await repo.save({ id: 1, settings: req.body });
-    broadcast({ type: 'DATA_UPDATED' });
     res.json(req.body);
 }));
 
@@ -671,13 +644,11 @@ bugReportsRouter.get('/', asyncMiddleware(async (req, res) => {
 bugReportsRouter.post('/', asyncMiddleware(async (req, res) => {
     const newReport = bugReportRepo.create(req.body);
     await bugReportRepo.save(newReport);
-    broadcast({ type: 'DATA_UPDATED' });
     res.status(201).json(newReport);
 }));
 
 bugReportsRouter.put('/:id', asyncMiddleware(async (req, res) => {
     await bugReportRepo.update(req.params.id, req.body);
-    broadcast({ type: 'DATA_UPDATED' });
     res.json(await bugReportRepo.findOneBy({ id: req.params.id }));
 }));
 
@@ -687,7 +658,6 @@ bugReportsRouter.delete('/', asyncMiddleware(async (req, res) => {
         return res.status(400).json({ error: 'Report IDs must be provided in an array.' });
     }
     await bugReportRepo.delete(ids);
-    broadcast({ type: 'DATA_UPDATED' });
     res.status(204).send();
 }));
 
@@ -710,7 +680,6 @@ bugReportsRouter.post('/import', asyncMiddleware(async (req, res) => {
         await manager.save(reports);
     });
 
-    broadcast({ type: 'DATA_UPDATED' });
     res.status(200).json({ message: `${reportsToImport.length} bug reports imported successfully.` });
 }));
 
@@ -771,7 +740,6 @@ questsRouter.post('/', asyncMiddleware(async (req, res) => {
         newQuest.assignedUsers = await dataSource.getRepository(UserEntity).findBy({ id: In(assignedUserIds) });
     }
     await questRepo.save(newQuest);
-    broadcast({ type: 'DATA_UPDATED' });
     const savedQuest = await questRepo.findOne({ where: { id: newQuest.id }, relations: ['assignedUsers'] });
     res.status(201).json({ ...savedQuest, assignedUserIds: savedQuest.assignedUsers?.map(u => u.id) || [] });
 }));
@@ -787,7 +755,6 @@ questsRouter.put('/:id', asyncMiddleware(async (req, res) => {
         quest.assignedUsers = await dataSource.getRepository(UserEntity).findBy({ id: In(assignedUserIds) });
     }
     await questRepo.save(quest);
-    broadcast({ type: 'DATA_UPDATED' });
     const updatedQuest = await questRepo.findOne({ where: { id: req.params.id }, relations: ['assignedUsers'] });
     res.json({ ...updatedQuest, assignedUserIds: updatedQuest.assignedUsers?.map(u => u.id) || [] });
 }));
@@ -807,7 +774,6 @@ questsRouter.post('/clone/:id', asyncMiddleware(async (req, res) => {
         assignedUsers: questToClone.assignedUsers // keep assignments
     });
     await questRepo.save(newQuest);
-    broadcast({ type: 'DATA_UPDATED' });
     const savedQuest = await questRepo.findOne({ where: { id: newQuest.id }, relations: ['assignedUsers'] });
     res.status(201).json({ ...savedQuest, assignedUserIds: savedQuest.assignedUsers?.map(u => u.id) || [] });
 }));
@@ -817,7 +783,6 @@ questsRouter.delete('/', asyncMiddleware(async (req, res) => {
     const { ids } = req.body;
     if (!ids || !Array.isArray(ids)) return res.status(400).send('Invalid request body, expected { ids: [...] }');
     await questRepo.delete(ids);
-    broadcast({ type: 'DATA_UPDATED' });
     res.status(204).send();
 }));
 
@@ -825,7 +790,6 @@ questsRouter.delete('/', asyncMiddleware(async (req, res) => {
 questsRouter.put('/bulk-status', asyncMiddleware(async (req, res) => {
     const { ids, isActive } = req.body;
     await questRepo.update(ids, { isActive });
-    broadcast({ type: 'DATA_UPDATED' });
     res.status(204).send();
 }));
 
@@ -859,7 +823,6 @@ questsRouter.put('/bulk-update', asyncMiddleware(async (req, res) => {
         await manager.save(questsToUpdate);
     });
 
-    broadcast({ type: 'DATA_UPDATED' });
     res.status(204).send();
 }));
 
@@ -905,13 +868,11 @@ assetsRouter.post('/', asyncMiddleware(async (req, res) => {
     };
     const newAsset = assetRepo.create(newAssetData);
     await assetRepo.save(newAsset);
-    broadcast({ type: 'DATA_UPDATED' });
     res.status(201).json(newAsset);
 }));
 
 assetsRouter.put('/:id', asyncMiddleware(async (req, res) => {
     await assetRepo.update(req.params.id, req.body);
-    broadcast({ type: 'DATA_UPDATED' });
     res.json(await assetRepo.findOneBy({ id: req.params.id }));
 }));
 
@@ -927,7 +888,6 @@ assetsRouter.post('/clone/:id', asyncMiddleware(async (req, res) => {
         createdAt: new Date().toISOString(),
     });
     await assetRepo.save(newAsset);
-    broadcast({ type: 'DATA_UPDATED' });
     res.status(201).json(newAsset);
 }));
 
@@ -935,7 +895,6 @@ assetsRouter.delete('/', asyncMiddleware(async (req, res) => {
     const { ids } = req.body;
     if (!ids || !Array.isArray(ids)) return res.status(400).send('Invalid request body, expected { ids: [...] }');
     await assetRepo.delete(ids);
-    broadcast({ type: 'DATA_UPDATED' });
     res.status(204).send();
 }));
 
@@ -997,7 +956,6 @@ app.post('/api/actions/complete-quest', asyncMiddleware(async (req, res) => {
             }
         });
 
-        broadcast({ type: 'DATA_UPDATED' });
         res.status(200).json({ message: 'Quest completion recorded.' });
 
     } catch (error) {
@@ -1064,7 +1022,6 @@ app.post('/api/actions/approve-quest/:id', asyncMiddleware(async (req, res) => {
             await checkAndAwardTrophies(manager, user.id, quest.guildId);
         });
 
-        broadcast({ type: 'DATA_UPDATED' });
         res.status(200).json({ message: 'Quest approved.' });
     } catch (error) {
         if (error.statusCode) {
@@ -1086,7 +1043,6 @@ app.post('/api/actions/reject-quest/:id', asyncMiddleware(async (req, res) => {
     completion.status = 'Rejected';
     if(note) completion.note = note;
     await repo.save(completion);
-    broadcast({ type: 'DATA_UPDATED' });
     res.status(200).json({ message: 'Quest rejected.' });
 }));
 
@@ -1361,7 +1317,6 @@ chatRouter.post('/send', asyncMiddleware(async (req, res) => {
     });
 
     await chatRepo.save(newMessage);
-    broadcast({ type: 'DATA_UPDATED' });
     res.status(201).json(newMessage);
 }));
 
@@ -1397,7 +1352,6 @@ chatRouter.post('/read', asyncMiddleware(async (req, res) => {
 
     if (updated) {
         await chatRepo.save(messagesToUpdate);
-        broadcast({ type: 'DATA_UPDATED' });
     }
 
     res.status(204).send();

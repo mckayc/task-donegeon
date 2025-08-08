@@ -272,40 +272,15 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
   useEffect(() => {
     if (!isDataLoaded) return;
-    
-    let ws: WebSocket | null = null;
-    let reconnectTimeout: ReturnType<typeof setTimeout> | null = null;
 
-    const connect = () => {
-        const proto = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-        ws = new WebSocket(`${proto}//${window.location.host}`);
-        ws.onopen = () => console.log('WebSocket connected');
-        ws.onmessage = (event) => {
-            try {
-                const msg = JSON.parse(event.data);
-                if (msg.type === 'DATA_UPDATED') {
-                    console.log('Syncing data due to server update.');
-                    syncData();
-                }
-            } catch (e) { console.error('Error parsing WebSocket message', e); }
-        };
-        ws.onclose = () => {
-            console.log('WebSocket disconnected. Reconnecting in 5s...');
-            if (reconnectTimeout) clearTimeout(reconnectTimeout);
-            reconnectTimeout = setTimeout(connect, 5000);
-        };
-        ws.onerror = (err) => {
-            console.error('WebSocket error:', err);
-            ws?.close(); // Triggers reconnect
-        };
-    };
+    // Poll for updates every 10 seconds
+    const intervalId = setInterval(syncData, 10000);
 
-    connect();
+    // Also sync when the tab becomes visible again
     document.addEventListener('visibilitychange', syncData);
 
     return () => {
-        if (ws) { ws.onclose = null; ws.close(); }
-        if (reconnectTimeout) clearTimeout(reconnectTimeout);
+        clearInterval(intervalId);
         document.removeEventListener('visibilitychange', syncData);
     };
   }, [isDataLoaded, syncData]);
@@ -504,8 +479,26 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
     const markMessagesAsRead = useCallback(async (params: { partnerId?: string; guildId?: string; }) => {
         if (!currentUser) return;
+
+        // Optimistic update to prevent infinite loops in the chat panel
+        setChatMessages(prevMessages => 
+            prevMessages.map(msg => {
+                const isDmMatch = params.partnerId && msg.recipientId === currentUser.id && msg.senderId === params.partnerId;
+                const isGuildMatch = params.guildId && msg.guildId === params.guildId;
+
+                if ((isDmMatch || isGuildMatch) && !msg.readBy.includes(currentUser.id)) {
+                    return { ...msg, readBy: [...msg.readBy, currentUser.id] };
+                }
+                return msg;
+            })
+        );
+        
+        // Fire and forget API call
         const payload = { ...params, userId: currentUser.id };
-        await apiRequest('POST', '/api/chat/read', payload);
+        apiRequest('POST', '/api/chat/read', payload).catch(err => {
+            console.error("Failed to mark messages as read on server:", err);
+            // The UI will eventually be corrected by the next full sync if this fails.
+        });
     }, [currentUser, apiRequest]);
 
     const state = {

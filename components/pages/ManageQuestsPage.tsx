@@ -31,7 +31,7 @@ const ManageQuestsPage: React.FC = () => {
     const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
     const dropdownRef = useRef<HTMLDivElement | null>(null);
     
-    const [activeTab, setActiveTab] = useState('All');
+    const [activeTabId, setActiveTabId] = useState('All');
     const [searchTerm, setSearchTerm] = useState('');
     const [sortBy, setSortBy] = useState<'title-asc' | 'title-desc' | 'status-asc' | 'status-desc'>('title-asc');
     const debouncedSearchTerm = useDebounce(searchTerm, 300);
@@ -66,10 +66,7 @@ const ManageQuestsPage: React.FC = () => {
         setIsLoading(true);
         try {
             const params = new URLSearchParams();
-            const group = questGroups.find(g => g.name === activeTab);
-            const groupId = activeTab === 'All' ? 'All' : (group ? group.id : 'Uncategorized');
-            
-            params.append('groupId', groupId);
+            params.append('groupId', activeTabId);
             if (debouncedSearchTerm) params.append('searchTerm', debouncedSearchTerm);
             params.append('sortBy', sortBy);
 
@@ -80,7 +77,7 @@ const ManageQuestsPage: React.FC = () => {
         } finally {
             setIsLoading(false);
         }
-    }, [activeTab, debouncedSearchTerm, sortBy, questGroups, apiRequest]);
+    }, [activeTabId, debouncedSearchTerm, sortBy, apiRequest]);
 
     useEffect(() => {
         fetchQuests();
@@ -97,11 +94,15 @@ const ManageQuestsPage: React.FC = () => {
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
-    const tabs = useMemo(() => ['All', 'Uncategorized', ...questGroups.map(g => g.name)], [questGroups]);
+    const tabs = useMemo(() => [
+        { id: 'All', name: 'All' },
+        { id: 'Uncategorized', name: 'Uncategorized' },
+        ...questGroups.map(g => ({ id: g.id, name: g.name }))
+    ], [questGroups]);
     
     useEffect(() => {
         setSelectedQuests([]);
-    }, [activeTab, searchTerm, sortBy]);
+    }, [activeTabId, searchTerm, sortBy]);
 
     const handleEdit = (quest: Quest) => {
         setInitialCreateData(null);
@@ -227,15 +228,15 @@ const ManageQuestsPage: React.FC = () => {
                     <nav className="-mb-px flex space-x-4 overflow-x-auto">
                         {tabs.map(tab => (
                             <button
-                                key={tab}
-                                onClick={() => setActiveTab(tab)}
+                                key={tab.id}
+                                onClick={() => setActiveTabId(tab.id)}
                                 className={`capitalize whitespace-nowrap pb-4 px-1 border-b-2 font-medium text-sm transition-colors ${
-                                    activeTab === tab
+                                    activeTabId === tab.id
                                     ? 'border-emerald-500 text-emerald-400'
                                     : 'border-transparent text-stone-400 hover:text-stone-200 hover:border-stone-500'
                                 }`}
                             >
-                                {tab}
+                                {tab.name}
                             </button>
                         ))}
                     </nav>

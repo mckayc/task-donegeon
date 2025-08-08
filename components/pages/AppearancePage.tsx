@@ -25,25 +25,13 @@ const AppearancePage: React.FC = () => {
     const dragItem = useRef<number | null>(null);
     const dragOverItem = useRef<number | null>(null);
 
+    // When the global settings change (e.g., from a sync), update the local form state
+    // only if the user isn't currently interacting with it. For simplicity, we'll
+    // just update whenever the global settings object changes reference.
     useEffect(() => {
-        const applyThemeStyles = (themeId: string) => {
-            const theme = allThemes.find(t => t.id === themeId);
-            if (theme) {
-                Object.entries(theme.styles).forEach(([key, value]) => {
-                    document.documentElement.style.setProperty(key, value);
-                });
-                if(themeId) document.body.dataset.theme = themeId;
-            }
-        };
+        setFormState(JSON.parse(JSON.stringify(settings)));
+    }, [settings]);
 
-        // Apply the preview theme from the form state
-        applyThemeStyles(formState.theme);
-
-        // Cleanup function to restore the original theme from global state when the component unmounts
-        return () => {
-            applyThemeStyles(settings.theme);
-        };
-    }, [formState.theme, settings.theme, allThemes]);
 
     const handleSave = () => {
         updateSettings(formState);

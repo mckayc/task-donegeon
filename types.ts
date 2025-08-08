@@ -636,8 +636,9 @@ export enum BugReportType {
 
 export interface BugReportLogEntry {
   timestamp: string;
-  type: 'ACTION' | 'NOTE' | 'NAVIGATION' | 'STATE_CHANGE' | 'ELEMENT_PICK';
+  type: 'ACTION' | 'NOTE' | 'NAVIGATION' | 'STATE_CHANGE' | 'ELEMENT_PICK' | 'COMMENT';
   message: string;
+  author?: string; // For comments
   element?: {
     tag: string;
     id?: string;

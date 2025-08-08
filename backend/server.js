@@ -256,6 +256,37 @@ app.get('/api/system/status', (req, res) => {
     });
 });
 
+app.post('/api/ai/test', asyncMiddleware(async (req, res) => {
+    if (!ai) {
+        return res.status(400).json({ success: false, error: 'API_KEY is not configured on the server.' });
+    }
+    try {
+        // A simple, low-token prompt to verify connectivity and key validity.
+        await ai.models.generateContent({
+            model: 'gemini-2.5-flash',
+            contents: 'test',
+            config: {
+                maxOutputTokens: 1,
+                thinkingConfig: { thinkingBudget: 0 }
+            }
+        });
+        res.json({ success: true });
+    } catch (error) {
+        console.error("Gemini API key test failed:", error.message);
+        let errorMessage = 'The API key is invalid or has insufficient permissions.';
+        if (error.message && typeof error.message === 'string') {
+            if (error.message.includes('API_KEY_INVALID')) {
+                errorMessage = 'The provided API key is invalid.';
+            } else if (error.message.includes('permission')) {
+                errorMessage = 'The API key does not have permission to access the Gemini API.';
+            } else if (error.message.includes('fetch')) {
+                errorMessage = 'A network error occurred while trying to contact the Google AI service.';
+            }
+        }
+        res.status(400).json({ success: false, error: errorMessage });
+    }
+}));
+
 
 // BOOTSTRAP: Load all data
 app.get('/api/data/load', asyncMiddleware(async (req, res) => {
@@ -1070,7 +1101,7 @@ app.post('/api/media/upload', upload.single('file'), async (req, res, next) => {
     } catch (err) {
         next(err);
     }
-});
+}));
 
 // Local Image Gallery
 app.get('/api/media/local-gallery', async (req, res, next) => {
@@ -1102,7 +1133,7 @@ app.get('/api/media/local-gallery', async (req, res, next) => {
     } catch (err) {
         next(err);
     }
-});
+}));
 
 
 // === Asset Pack Endpoints ===

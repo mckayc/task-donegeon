@@ -120,33 +120,6 @@ export const SettingsPage: React.FC = () => {
     const [apiKeyStatus, setApiKeyStatus] = useState<'unknown' | 'testing' | 'valid' | 'invalid'>(isAiConfigured ? 'valid' : 'unknown');
     const [apiKeyError, setApiKeyError] = useState<string | null>(null);
 
-    useEffect(() => {
-        // Self-correct if AI is enabled in settings but the server key is bad/missing
-        if (formState.enableAiFeatures) {
-            const verifyKeyOnLoad = async () => {
-                try {
-                    const response = await fetch('/api/ai/test', { method: 'POST' });
-                    if (!response.ok) {
-                        const data = await response.json();
-                        throw new Error(data.error || 'Server-side API key is no longer valid.');
-                    }
-                    setApiKeyStatus('valid');
-                } catch(e) {
-                     const message = e instanceof Error ? e.message : 'Unknown error during verification.';
-                     setApiKeyStatus('invalid');
-                     setApiKeyError(message);
-                     // Correct the state
-                     const newState = { ...formState, enableAiFeatures: false };
-                     setFormState(newState);
-                     updateSettings(newState);
-                     addNotification({ type: 'error', message: 'AI features disabled due to invalid API key.' });
-                }
-            };
-            verifyKeyOnLoad();
-        }
-    }, [formState.enableAiFeatures]); // Only needs to re-run if this specific setting changes
-
-
     const triggerSavedAnimation = () => {
         setShowSaved(true);
         setTimeout(() => {
@@ -211,22 +184,10 @@ export const SettingsPage: React.FC = () => {
         setFormState(newState);
     };
     
-    const testAndSetAiFeatures = async (enable: boolean) => {
-        const label = "Enable AI-Powered Features";
+    const testApiKey = async () => {
         if (bugLogger.isRecording()) {
-            bugLogger.add({ type: 'ACTION', message: `Toggled "${label}" to ${enable ? 'ON' : 'OFF'} in "AI Features".` });
+            bugLogger.add({ type: 'ACTION', message: `Clicked "Test API Key" button.` });
         }
-
-        if (!enable) {
-            // Toggling off is simple
-            const newState = { ...formState, enableAiFeatures: false };
-            setFormState(newState);
-            setApiKeyStatus('unknown');
-            setApiKeyError(null);
-            return;
-        }
-    
-        // Toggling on requires a test
         setApiKeyStatus('testing');
         setApiKeyError(null);
         try {
@@ -234,21 +195,15 @@ export const SettingsPage: React.FC = () => {
             const data = await response.json();
             if (response.ok && data.success) {
                 setApiKeyStatus('valid');
-                const newState = { ...formState, enableAiFeatures: true };
-                setFormState(newState);
-                addNotification({ type: 'success', message: 'AI features enabled successfully! Click "Save Changes" to apply.' });
+                addNotification({ type: 'success', message: 'API Key is valid and connected!' });
             } else {
                 setApiKeyStatus('invalid');
                 setApiKeyError(data.error || 'An unknown error occurred during testing.');
-                const newState = { ...formState, enableAiFeatures: false };
-                setFormState(newState);
             }
         } catch(e) {
             setApiKeyStatus('invalid');
             const message = e instanceof Error ? e.message : 'Could not connect to the server to test the API key.';
             setApiKeyError(message);
-            const newState = { ...formState, enableAiFeatures: false };
-            setFormState(newState);
         }
     };
     
@@ -411,24 +366,23 @@ export const SettingsPage: React.FC = () => {
                         <div className="flex items-start">
                             <ToggleSwitch
                                 enabled={formState.enableAiFeatures}
-                                setEnabled={testAndSetAiFeatures}
+                                setEnabled={(val) => handleToggleChange('enableAiFeatures', val, 'AI Features', 'Enable AI-Powered Features')}
                                 label="Enable AI-Powered Features"
                             />
                             <div className="ml-6 flex-grow">
-                                 <p className="text-sm" style={{ color: 'hsl(var(--color-text-secondary))' }}>
-                                    Allow the use of Gemini AI to power features like the Suggestion Engine.
-                                    This requires a valid Gemini API key to be configured by the server administrator.
+                                <p className="text-sm" style={{ color: 'hsl(var(--color-text-secondary))' }}>
+                                    Allow the use of Gemini AI to power features like the Suggestion Engine. This requires a valid Gemini API key to be configured by the server administrator.
                                 </p>
-                                 {apiKeyStatus === 'testing' && <p className="text-sm text-yellow-400 mt-2">Testing API key...</p>}
-                                 {apiKeyStatus === 'invalid' && (
-                                    <div className="mt-4 p-4 bg-red-900/30 border border-red-700/60 rounded-lg">
-                                        <h4 className="font-bold text-red-300">AI Setup Failed</h4>
-                                        <p className="text-sm text-red-200/80 mt-1 mb-2">
-                                            {apiKeyError}
-                                        </p>
-                                        <p className="text-xs text-stone-400">
-                                            The server administrator must set the <code>API_KEY</code> environment variable in the <code>.env</code> file (for Docker) or in the Vercel project settings.
-                                        </p>
+                                <div className="flex items-center gap-4 mt-4">
+                                    <Button variant="secondary" onClick={testApiKey} disabled={apiKeyStatus === 'testing'}>
+                                        {apiKeyStatus === 'testing' ? 'Testing...' : 'Test API Key'}
+                                    </Button>
+                                    {apiKeyStatus === 'valid' && <span className="text-sm font-semibold text-green-400">✓ Valid Key</span>}
+                                    {apiKeyStatus === 'invalid' && <span className="text-sm font-semibold text-red-400">✗ Invalid Key</span>}
+                                </div>
+                                {apiKeyStatus === 'invalid' && apiKeyError && (
+                                    <div className="mt-2 p-3 bg-red-900/30 border border-red-700/60 rounded-lg">
+                                        <p className="text-sm text-red-300">{apiKeyError}</p>
                                     </div>
                                 )}
                             </div>

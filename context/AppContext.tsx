@@ -275,15 +275,15 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       await loadAllData();
       setIsDataLoaded(true);
 
-      // Fetch AI status after initial data load
+      // Fetch system status after initial data load to check AI configuration
       try {
-          const aiResponse = await window.fetch('/api/ai/status');
-          if (aiResponse.ok) {
-              const aiData = await aiResponse.json();
-              setIsAiConfigured(aiData.isConfigured);
+          const systemStatusResponse = await window.fetch('/api/system/status');
+          if (systemStatusResponse.ok) {
+              const statusData = await systemStatusResponse.json();
+              setIsAiConfigured(statusData.geminiConnected);
           }
-      } catch (aiError) {
-          console.error("Failed to fetch AI status:", aiError);
+      } catch (statusError) {
+          console.error("Failed to fetch system status:", statusError);
           setIsAiConfigured(false);
       }
     };

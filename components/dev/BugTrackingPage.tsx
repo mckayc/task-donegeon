@@ -15,12 +15,17 @@ const BugTrackingPage: React.FC = () => {
     const { updateBugReport, deleteBugReports } = useAppDispatch();
     const { addNotification } = useNotificationsDispatch();
     
-    const [detailedReport, setDetailedReport] = useState<BugReport | null>(null);
+    const [detailedReportId, setDetailedReportId] = useState<string | null>(null);
     const [selectedReports, setSelectedReports] = useState<string[]>([]);
     const [activeTab, setActiveTab] = useState<BugReportStatus>('In Progress');
     const [deletingIds, setDeletingIds] = useState<string[]>([]);
     const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
     const dropdownRef = useRef<HTMLDivElement>(null);
+
+    const detailedReport = useMemo(() => {
+        if (!detailedReportId) return null;
+        return bugReports.find(r => r.id === detailedReportId) || null;
+    }, [detailedReportId, bugReports]);
     
     const statuses: BugReportStatus[] = ['In Progress', 'Open', 'Resolved', 'Closed'];
 
@@ -136,7 +141,7 @@ const BugTrackingPage: React.FC = () => {
                                         <input type="checkbox" checked={selectedReports.includes(report.id)} onChange={() => handleSelectOne(report.id)} className="h-4 w-4 rounded text-emerald-600 bg-stone-700 border-stone-600 focus:ring-emerald-500" />
                                     </td>
                                     <td className="p-4 font-bold">
-                                        <button onClick={() => setDetailedReport(report)} className="hover:underline hover:text-accent transition-colors">{report.title}</button>
+                                        <button onClick={() => setDetailedReportId(report.id)} className="hover:underline hover:text-accent transition-colors">{report.title}</button>
                                     </td>
                                     <td className="p-4">
                                         <div className="flex flex-wrap gap-1">
@@ -152,7 +157,7 @@ const BugTrackingPage: React.FC = () => {
                                         </button>
                                         {openDropdownId === report.id && (
                                             <div ref={dropdownRef} className="absolute right-10 top-0 mt-2 w-36 bg-stone-900 border border-stone-700 rounded-lg shadow-xl z-20">
-                                                <button onClick={() => { setDetailedReport(report); setOpenDropdownId(null); }} className="w-full text-left block px-4 py-2 text-sm text-stone-300 hover:bg-stone-700/50">View Details</button>
+                                                <button onClick={() => { setDetailedReportId(report.id); setOpenDropdownId(null); }} className="w-full text-left block px-4 py-2 text-sm text-stone-300 hover:bg-stone-700/50">View Details</button>
                                                 <button onClick={() => { setDeletingIds([report.id]); setOpenDropdownId(null); }} className="w-full text-left block px-4 py-2 text-sm text-red-400 hover:bg-stone-700/50">Delete</button>
                                             </div>
                                         )}
@@ -168,7 +173,7 @@ const BugTrackingPage: React.FC = () => {
             </Card>
             
             {detailedReport && (
-                <BugDetailDialog report={detailedReport} onClose={() => setDetailedReport(null)} />
+                <BugDetailDialog report={detailedReport} onClose={() => setDetailedReportId(null)} />
             )}
 
             <ConfirmDialog

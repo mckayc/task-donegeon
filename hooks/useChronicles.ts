@@ -7,7 +7,7 @@ import {
 } from '../types';
 import { useAppState } from '../context/AppContext';
 import { useUIState } from '../context/UIStateContext';
-import { toYMD } from './quests';
+import { toYMD } from '../utils/quests';
 import { useAuthState } from '../context/AuthContext';
 import { useEconomyState } from '../context/EconomyContext';
 import { useQuestState } from '../context/QuestContext';

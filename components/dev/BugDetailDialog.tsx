@@ -54,14 +54,17 @@ const BugDetailDialog: React.FC<BugDetailDialogProps> = ({ report, onClose }) =>
     };
     
     const copyLogToClipboard = () => {
+        const titleLine = `Report Title: ${report.title}\n\n--- LOGS ---\n`;
         const logText = sortedLogs.map(log => {
             const authorText = log.type === 'COMMENT' && log.author ? `${log.author}: ` : '';
             return `[${new Date(log.timestamp).toLocaleString()}] [${log.type}] ${authorText}${log.message}` +
             (log.element ? `\n  Element: <${log.element.tag} id="${log.element.id || ''}" class="${log.element.classes || ''}">` : '')
         }).join('\n');
 
-        navigator.clipboard.writeText(logText).then(() => {
-            addNotification({ type: 'success', message: 'Log & Comments copied to clipboard!' });
+        const fullTextToCopy = titleLine + logText;
+
+        navigator.clipboard.writeText(fullTextToCopy).then(() => {
+            addNotification({ type: 'success', message: 'Title, Log & Comments copied to clipboard!' });
             if (report.status === 'Open') {
                 handleStatusChange('In Progress');
                 addNotification({ type: 'info', message: `Status automatically updated to "In Progress".` });

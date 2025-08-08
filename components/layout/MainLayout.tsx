@@ -13,7 +13,7 @@ import ManageQuestsPage from '../pages/ManageQuestsPage';
 import ApprovalsPage from '../pages/ApprovalsPage';
 import ManageMarketsPage from '../pages/ManageMarketsPage';
 import ManageGuildsPage from '../pages/ManageGuildsPage';
-import SettingsPage from '../pages/SettingsPage';
+import { SettingsPage } from '../pages/SettingsPage';
 import ProfilePage from '../pages/ProfilePage';
 import CalendarPage from '../pages/CalendarPage';
 import ProgressPage from '../pages/ProgressPage';

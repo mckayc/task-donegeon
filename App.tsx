@@ -12,11 +12,13 @@ import OnboardingWizard from './components/auth/OnboardingWizard';
 import SharedLayout from './components/layout/SharedLayout';
 import BugReporter from './components/dev/BugReporter';
 import { Role } from './types';
+import { useDeveloper } from './context/DeveloperContext';
 
 const App: React.FC = () => {
   const { isDataLoaded, settings, guilds, themes } = useAppState();
   const { currentUser, isAppUnlocked, isFirstRun, isSwitchingUser, isSharedViewActive } = useAuthState();
   const { appMode } = useUIState();
+  const { isRecording, addLogEntry } = useDeveloper();
 
   useEffect(() => {
     let activeThemeId: string | undefined = settings.theme; // Default to system theme
@@ -59,6 +61,41 @@ const App: React.FC = () => {
       link.href = `data:image/svg+xml,${encodeURIComponent(svg)}`;
     }
   }, [settings.favicon]);
+
+  useEffect(() => {
+    if (!isRecording) {
+      return;
+    }
+
+    const handleGlobalClick = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+
+      // Ignore clicks on the bug reporter UI itself
+      if (target.closest('[data-bug-reporter-ignore]')) {
+        return;
+      }
+      
+      const elementInfo = {
+        tag: target.tagName.toLowerCase(),
+        id: target.id || undefined,
+        classes: typeof target.className === 'string' ? target.className : undefined,
+        text: target.innerText?.substring(0, 50).replace(/\n/g, ' ') || undefined,
+      };
+
+      addLogEntry({
+        type: 'ACTION',
+        message: `Clicked element: <${elementInfo.tag}>`,
+        element: elementInfo,
+      });
+    };
+
+    // Use capture phase to get the click before other handlers might stop it
+    document.addEventListener('click', handleGlobalClick, true);
+
+    return () => {
+      document.removeEventListener('click', handleGlobalClick, true);
+    };
+  }, [isRecording, addLogEntry]);
 
 
   if (!isDataLoaded) {

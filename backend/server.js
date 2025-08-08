@@ -335,10 +335,9 @@ app.post('/api/data/import-assets', asyncMiddleware(async (req, res) => {
     await dataSource.transaction(async manager => {
         const idMap = new Map();
         const assetsToSave = {};
-
         const selectedResolutions = resolutions.filter(r => r.selected);
 
-        // Pass 1: Collect assets, generate new IDs, and build the ID map.
+        // Pass 1: Generate new IDs and build the ID map for all selected assets.
         for (const res of selectedResolutions) {
             const assetList = assetPack.assets[res.type];
             if (!assetList) continue;
@@ -354,12 +353,12 @@ app.post('/api/data/import-assets', asyncMiddleware(async (req, res) => {
                 else newAssetData.name = res.newName;
             }
 
-            const oldId = originalAsset.id;
-            const newId = res.type === 'users' 
-                ? `user-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`
-                : `${res.type.slice(0, -1)}-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+            const oldId = originalAsset.id; // This will now exist for users too
+            const newId = `${res.type.slice(0, -1)}-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
             
-            idMap.set(oldId, newId);
+            if (oldId) {
+                idMap.set(oldId, newId);
+            }
             newAssetData.id = newId;
 
             if (!assetsToSave[res.type]) assetsToSave[res.type] = [];
@@ -374,9 +373,10 @@ app.post('/api/data/import-assets', asyncMiddleware(async (req, res) => {
                 assetsToSave[type].forEach(processor);
             }
         };
-
+        
         processAssets('quests', quest => {
             if (quest.groupId) quest.groupId = remap(quest.groupId);
+            if (quest.assignedUserIds) quest.assignedUserIds = quest.assignedUserIds.map(remap);
             quest.rewards = quest.rewards.map(r => ({ ...r, rewardTypeId: remap(r.rewardTypeId) }));
             quest.lateSetbacks = quest.lateSetbacks.map(r => ({ ...r, rewardTypeId: remap(r.rewardTypeId) }));
             quest.incompleteSetbacks = quest.incompleteSetbacks.map(r => ({ ...r, rewardTypeId: remap(r.rewardTypeId) }));
@@ -391,7 +391,7 @@ app.post('/api/data/import-assets', asyncMiddleware(async (req, res) => {
 
         processAssets('trophies', trophy => {
             trophy.requirements = trophy.requirements.map(req => {
-                if (req.type === 'ACHIEVE_RANK') return { ...req, value: remap(req.value) };
+                if (req.type === 'ACHIEVE_RANK' || req.type === 'QUEST_COMPLETED') return { ...req, value: remap(req.value) };
                 return req;
             });
         });
@@ -406,32 +406,17 @@ app.post('/api/data/import-assets', asyncMiddleware(async (req, res) => {
             }
         });
 
-        // Pass 3: Save the remapped assets in a dependency-aware order.
-        const saveOrder = ['rewardTypes', 'ranks', 'questGroups', 'trophies', 'markets', 'gameAssets', 'quests', 'users'];
+        // Pass 3: Save remapped assets in a dependency-aware order.
+        const saveOrder = ['rewardTypes', 'ranks', 'questGroups', 'trophies', 'markets', 'users', 'gameAssets', 'quests'];
         for (const type of saveOrder) {
             if (assetsToSave[type]) {
-                 for (const asset of assetsToSave[type]) {
+                for (const asset of assetsToSave[type]) {
                     switch (type) {
-                        case 'quests':
-                            const originalQuestFromRequest = req.body.assetPack.assets.quests?.find(q => idMap.get(q.id) === asset.id);
-                            const userIdsToAssign = originalQuestFromRequest?.assignedUserIds || [];
-                            const { assignedUsers, ...questData } = asset;
-                            const questToSave = manager.create(QuestEntity, questData);
-                            if (userIdsToAssign.length > 0) {
-                                questToSave.assignedUsers = await manager.getRepository(UserEntity).findBy({ id: In(userIdsToAssign) });
-                            }
-                            await manager.save(questToSave);
-                            break;
-                        case 'questGroups': await manager.save(QuestGroupEntity, asset); break;
-                        case 'rewardTypes': await manager.save(RewardTypeDefinitionEntity, { ...asset, isCore: false }); break;
-                        case 'ranks': await manager.save(RankEntity, asset); break;
-                        case 'trophies': await manager.save(TrophyEntity, asset); break;
-                        case 'markets': await manager.save(MarketEntity, asset); break;
-                        case 'gameAssets': await manager.save(GameAssetEntity, asset); break;
                         case 'users':
+                            const { assignedUsers, guilds, questCompletions, purchaseRequests, ...userData } = asset;
                             const defaultGuild = await manager.findOneBy(GuildEntity, { isDefault: true });
                             const userToSave = manager.create(UserEntity, {
-                                ...asset,
+                                ...userData,
                                 avatar: {}, ownedAssetIds: [], personalPurse: {}, personalExperience: {}, guildBalances: {},
                                 ownedThemes: ['emerald', 'rose', 'sky'], hasBeenOnboarded: false,
                             });
@@ -442,6 +427,20 @@ app.post('/api/data/import-assets', asyncMiddleware(async (req, res) => {
                                 await manager.save(defaultGuild);
                             }
                             break;
+                        case 'quests':
+                            const { assignedUserIds: remappedUserIds, ...questData } = asset;
+                            const questToSave = manager.create(QuestEntity, questData);
+                            if (remappedUserIds && remappedUserIds.length > 0) {
+                                questToSave.assignedUsers = await manager.getRepository(UserEntity).findBy({ id: In(remappedUserIds) });
+                            }
+                            await manager.save(questToSave);
+                            break;
+                        case 'questGroups': await manager.save(QuestGroupEntity, asset); break;
+                        case 'rewardTypes': await manager.save(RewardTypeDefinitionEntity, { ...asset, isCore: false }); break;
+                        case 'ranks': await manager.save(RankEntity, asset); break;
+                        case 'trophies': await manager.save(TrophyEntity, asset); break;
+                        case 'markets': await manager.save(MarketEntity, asset); break;
+                        case 'gameAssets': await manager.save(GameAssetEntity, asset); break;
                     }
                 }
             }

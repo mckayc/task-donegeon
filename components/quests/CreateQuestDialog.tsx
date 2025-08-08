@@ -180,11 +180,14 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
   }, [dialogTitle, mode, questToEdit, initialDataFromBug]);
 
   useEffect(() => {
-    // This effect ensures the form updates when a new AI suggestion is passed in
+    // This effect ensures the form updates when a new AI suggestion or bug report is passed in.
+    // It should NOT re-run on background data syncs, which was causing user input to be wiped.
+    // We only care about the identity of the initial data props changing.
     setFormData(getInitialFormData());
     setIsCreatingNewGroup(initialData?.isNewGroup && !!initialData.groupName);
     setNewGroupName(initialData?.isNewGroup ? initialData.groupName || '' : '');
-  }, [initialData, getInitialFormData]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialData, initialDataFromBug, questToEdit]);
 
 
   useEffect(() => {

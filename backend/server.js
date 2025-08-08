@@ -367,7 +367,7 @@ app.post('/api/data/import-assets', asyncMiddleware(async (req, res) => {
                 else newAssetData.name = res.newName;
             }
 
-            const oldId = originalAsset.id; // This will now exist for users too
+            const oldId = res.type === 'users' ? originalAsset.username : originalAsset.id;
             const newId = `${res.type.slice(0, -1)}-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
             
             if (oldId) {
@@ -421,7 +421,7 @@ app.post('/api/data/import-assets', asyncMiddleware(async (req, res) => {
         });
 
         // Pass 3: Save remapped assets in a dependency-aware order.
-        const saveOrder = ['rewardTypes', 'ranks', 'questGroups', 'trophies', 'markets', 'users', 'gameAssets', 'quests'];
+        const saveOrder = ['markets', 'rewardTypes', 'ranks', 'questGroups', 'users', 'quests', 'trophies', 'gameAssets'];
         for (const type of saveOrder) {
             if (assetsToSave[type]) {
                 for (const asset of assetsToSave[type]) {

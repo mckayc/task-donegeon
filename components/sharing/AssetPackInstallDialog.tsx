@@ -157,46 +157,44 @@ const AssetPackInstallDialog: React.FC<AssetPackInstallDialogProps> = ({ assetPa
                             </div>
                         </details>
                     </div>
-                    
-                    {resolutions.length > 0 ? (
-                        <>
-                            {Object.entries(groupedResolutions).map(([groupName, groupResolutions]) => (
-                                <div key={groupName} className="p-4 bg-stone-900/50 rounded-lg">
-                                    <h4 className="font-semibold text-stone-200 capitalize mb-3">{groupName} ({groupResolutions.length})</h4>
-                                    <div className="space-y-3 max-h-60 overflow-y-auto pr-2">
-                                        {groupResolutions.map(res => {
-                                            const asset = (assetPack.assets[res.type] as any[])?.find(a => (a.id || a.username) === res.id);
-                                            if (!asset) return null;
-                                            return (
-                                                <AssetCard
-                                                    key={`${res.type}-${res.id}`}
-                                                    resolution={res}
-                                                    asset={asset}
-                                                    onToggle={() => handleToggleSelection(res.id, res.type)}
-                                                    onResolutionChange={(newRes) => handleResolutionChange(res.id, res.type, newRes)}
-                                                    onRename={(newName) => handleRenameChange(res.id, res.type, newName)}
-                                                />
-                                            );
-                                        })}
-                                    </div>
-                                </div>
-                            ))}
 
-                             {hasQuestsToImport && (
-                                <div className="p-4 bg-stone-900/50 rounded-lg">
-                                    <h4 className="font-semibold text-stone-200 mb-2">Quest Assignment</h4>
-                                    <p className="text-sm text-stone-400 mb-3">Assign all imported quests to the selected users.</p>
-                                    <UserMultiSelect
-                                        label="Assign Quests To"
-                                        allUsers={users}
-                                        selectedUserIds={assignedUserIds}
-                                        onSelectionChange={setAssignedUserIds}
-                                    />
+                    {resolutions.length > 0 ? (
+                        Object.entries(groupedResolutions).map(([groupName, groupResolutions]) => (
+                            <div key={groupName} className="p-4 bg-stone-900/50 rounded-lg">
+                                <h4 className="font-semibold text-stone-200 capitalize mb-3">{groupName} ({groupResolutions.length})</h4>
+                                <div className="space-y-3 max-h-60 overflow-y-auto pr-2">
+                                    {groupResolutions.map(res => {
+                                        const asset = (assetPack.assets[res.type] as any[])?.find(a => (a.id || a.username) === res.id);
+                                        if (!asset) return null;
+                                        return (
+                                            <AssetCard
+                                                key={`${res.type}-${res.id}`}
+                                                resolution={res}
+                                                asset={asset}
+                                                onToggle={() => handleToggleSelection(res.id, res.type)}
+                                                onResolutionChange={(newRes) => handleResolutionChange(res.id, res.type, newRes)}
+                                                onRename={(newName) => handleRenameChange(res.id, res.type, newName)}
+                                            />
+                                        );
+                                    })}
                                 </div>
-                            )}
-                        </>
+                            </div>
+                        ))
                     ) : (
                         <p className="text-stone-400 text-center">This asset pack is empty or contains no new items.</p>
+                    )}
+                    
+                    {hasQuestsToImport && (
+                        <div className="p-4 bg-stone-900/50 rounded-lg">
+                            <h4 className="font-semibold text-stone-200 mb-2">Quest Assignment</h4>
+                            <p className="text-sm text-stone-400 mb-3">Assign all imported quests to the selected users.</p>
+                            <UserMultiSelect
+                                label="Assign Quests To"
+                                allUsers={users}
+                                selectedUserIds={assignedUserIds}
+                                onSelectionChange={setAssignedUserIds}
+                            />
+                        </div>
                     )}
                 </div>
 

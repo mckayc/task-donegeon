@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
-import { useAppState } from '../../../context/AppContext';
+import { useAppState, useAppDispatch } from '../../../context/AppContext';
 import { GameAsset } from '../../../types';
 import Button from '../../ui/Button';
 import Card from '../../ui/Card';
@@ -14,7 +14,6 @@ import { useDebounce } from '../../../hooks/useDebounce';
 import { useNotificationsDispatch } from '../../../context/NotificationsContext';
 import { useEconomyState } from '../../../context/EconomyContext';
 import UploadWithCategoryDialog from '../../admin/UploadWithCategoryDialog';
-import { useAppDispatch } from '../../context/AppContext';
 
 const ManageItemsPage: React.FC = () => {
     const { settings, isAiConfigured } = useAppState();
@@ -262,7 +261,7 @@ const ManageItemsPage: React.FC = () => {
                 ) : pageAssets.length > 0 ? (
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
                         {pageAssets.map(asset => {
-                            const isOrphaned = asset.isForSale && asset.marketIds.length === 0;
+                            const isOrphaned = asset.isForSale && (!asset.marketIds || asset.marketIds.length === 0);
                             return (
                              <div key={asset.id} className="relative group">
                                 <label

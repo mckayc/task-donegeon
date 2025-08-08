@@ -63,7 +63,7 @@
     ],
     "markets": [
        {
-        "id": "market-experiences",
+        "id": "market-scholar-shop",
         "title": "The Scholar's Shop",
         "description": "Trade your crystals for educational rewards and screen time.",
         "iconType": "emoji",
@@ -81,7 +81,7 @@
         "category": "Real-World Reward",
         "isForSale": true,
         "costGroups": [[{ "rewardTypeId": "core-crystal", "amount": 50 }]],
-        "marketIds": ["market-experiences"],
+        "marketIds": ["market-scholar-shop"],
         "creatorId": "system",
         "createdAt": "2025-01-01T00:00:00.000Z",
         "purchaseLimit": null,

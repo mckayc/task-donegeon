@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { useAppState } from '../../context/AppContext';
 import { AssetPack, ImportResolution, ShareableAssetType, Terminology, Role, UserTemplate, Quest } from '../../types';
 import Button from '../ui/Button';
@@ -164,7 +164,8 @@ const AssetPackInstallDialog: React.FC<AssetPackInstallDialogProps> = ({ assetPa
                                 <h4 className="font-semibold text-stone-200 capitalize mb-3">{groupName} ({groupResolutions.length})</h4>
                                 <div className="space-y-3 max-h-60 overflow-y-auto pr-2">
                                     {groupResolutions.map(res => {
-                                        const asset = (assetPack.assets[res.type] as any[])?.find(a => (a.id || a.username) === res.id);
+                                        const assetList = assetPack.assets[res.type];
+                                        const asset = Array.isArray(assetList) ? assetList.find(a => (res.type === 'users' ? (a as UserTemplate).username : a.id) === res.id) : undefined;
                                         if (!asset) return null;
                                         return (
                                             <AssetCard

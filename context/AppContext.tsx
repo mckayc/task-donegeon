@@ -123,6 +123,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const processAndSetData = useCallback((dataToSet: IAppData, isDelta = false) => {
       const savedSettings: Partial<AppSettings> = dataToSet.settings || {};
       let settingsUpdated = false;
+      let loadedSettingsResult: AppSettings | undefined = undefined;
 
       if (!isDelta) {
           // --- Sidebar Migration Logic ---
@@ -152,6 +153,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             rewardValuation: { ...INITIAL_SETTINGS.rewardValuation, ...(savedSettings.rewardValuation || {}) },
           };
           setSettings(loadedSettings);
+          loadedSettingsResult = loadedSettings;
       } else if (dataToSet.settings) {
           // If it's a delta update and settings are present, just merge them
           setSettings(prev => ({ ...prev, ...dataToSet.settings }));
@@ -182,7 +184,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       if (dataToSet.scheduledEvents) setScheduledEvents(prev => isDelta ? mergeData(prev, dataToSet.scheduledEvents!) : dataToSet.scheduledEvents!);
       if (dataToSet.bugReports) setBugReports(prev => isDelta ? mergeData(prev, dataToSet.bugReports!) : dataToSet.bugReports!);
 
-      return { settingsUpdated, loadedSettings: isDelta ? undefined : settings };
+      return { settingsUpdated, loadedSettings: loadedSettingsResult };
   }, [authDispatch, questDispatch, economyDispatch]);
   
   const initialSync = useCallback(async () => {
@@ -193,7 +195,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       const { updates, newSyncTimestamp } = response;
       const { settingsUpdated, loadedSettings } = processAndSetData(updates, false);
 
-      if (settingsUpdated) {
+      if (settingsUpdated && loadedSettings) {
           await apiRequest('PUT', '/api/settings', loadedSettings);
           addNotification({ type: 'info', message: 'Application settings updated with new features.' });
       }
@@ -203,7 +205,10 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         const lastUser = updates.users.find((u:User) => u.id === lastUserId);
         if (lastUser) authDispatch.setCurrentUser(lastUser);
       }
-      authDispatch.setIsSharedViewActive(loadedSettings.sharedMode.enabled && !localStorage.getItem('lastUserId'));
+      
+      if (loadedSettings) {
+        authDispatch.setIsSharedViewActive(loadedSettings.sharedMode.enabled && !localStorage.getItem('lastUserId'));
+      }
 
       lastSyncTimestamp.current = newSyncTimestamp;
 

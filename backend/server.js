@@ -347,11 +347,14 @@ app.post('/api/data/import-assets', asyncMiddleware(async (req, res) => {
     if (!assetPack || !resolutions) return res.status(400).json({ error: 'Missing asset pack or resolutions.' });
 
     await dataSource.transaction(async manager => {
+        console.log(`[IMPORT] Starting import for asset pack: ${assetPack.manifest.name}`);
         const idMap = new Map();
         const assetsToSave = {};
         const selectedResolutions = resolutions.filter(r => r.selected);
+        console.log(`[IMPORT] Found ${selectedResolutions.length} selected assets to process.`);
 
         // Pass 1: Generate new IDs and build the ID map for all selected assets.
+        console.log('[IMPORT] Pass 1: Generating new IDs and creating ID map...');
         for (const res of selectedResolutions) {
             const assetList = assetPack.assets[res.type];
             if (!assetList) continue;
@@ -366,22 +369,33 @@ app.post('/api/data/import-assets', asyncMiddleware(async (req, res) => {
                 if ('title' in newAssetData) newAssetData.title = res.newName;
                 else newAssetData.name = res.newName;
             }
-
-            const oldId = res.type === 'users' ? originalAsset.username : originalAsset.id;
+            
+            // FIX: Use asset ID if available, otherwise fall back to username for users.
+            // This handles user templates that might not have a dedicated 'id' field.
+            const oldId = res.type === 'users' ? (originalAsset.id || originalAsset.username) : originalAsset.id;
             const newId = `${res.type.slice(0, -1)}-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
             
             if (oldId) {
                 idMap.set(oldId, newId);
+                console.log(`[IMPORT] Mapping ${res.type} [${oldId}] -> [${newId}]`);
             }
             newAssetData.id = newId;
 
             if (!assetsToSave[res.type]) assetsToSave[res.type] = [];
             assetsToSave[res.type].push(newAssetData);
         }
-
-        const remap = (id) => idMap.get(id) || id;
+        
+        const remap = (id) => {
+            const newId = idMap.get(id);
+            if (newId) {
+                console.log(`[IMPORT] Remapping dependency [${id}] -> [${newId}]`);
+                return newId;
+            }
+            return id;
+        };
 
         // Pass 2: Remap all internal references using the idMap.
+        console.log('[IMPORT] Pass 2: Remapping internal asset dependencies...');
         const processAssets = (type, processor) => {
             if (assetsToSave[type]) {
                 assetsToSave[type].forEach(processor);
@@ -421,9 +435,11 @@ app.post('/api/data/import-assets', asyncMiddleware(async (req, res) => {
         });
 
         // Pass 3: Save remapped assets in a dependency-aware order.
+        console.log('[IMPORT] Pass 3: Saving assets to database...');
         const saveOrder = ['markets', 'rewardTypes', 'ranks', 'questGroups', 'users', 'quests', 'trophies', 'gameAssets'];
         for (const type of saveOrder) {
             if (assetsToSave[type]) {
+                console.log(`[IMPORT] Saving ${assetsToSave[type].length} asset(s) of type: ${type}`);
                 for (const asset of assetsToSave[type]) {
                     switch (type) {
                         case 'users':
@@ -459,6 +475,7 @@ app.post('/api/data/import-assets', asyncMiddleware(async (req, res) => {
                 }
             }
         }
+        console.log(`[IMPORT] Successfully completed import for asset pack: ${assetPack.manifest.name}`);
     });
 
     res.status(200).json({ message: 'Assets imported successfully.' });

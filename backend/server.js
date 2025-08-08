@@ -18,7 +18,7 @@ const {
 } = require('./entities');
 
 const app = express();
-const port = process.env.PORT || 3001;
+const port = process.env.PORT || 3000;
 const dbPath = process.env.DATABASE_PATH || '/app/data/database/database.sqlite';
 
 const updateTimestamps = (entity, isNew = false) => {

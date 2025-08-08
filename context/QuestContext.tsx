@@ -12,9 +12,9 @@ interface QuestState {
 }
 
 interface QuestDispatch {
-  setQuests: (quests: Quest[]) => void;
-  setQuestGroups: (groups: QuestGroup[]) => void;
-  setQuestCompletions: (completions: QuestCompletion[]) => void;
+  setQuests: React.Dispatch<React.SetStateAction<Quest[]>>;
+  setQuestGroups: React.Dispatch<React.SetStateAction<QuestGroup[]>>;
+  setQuestCompletions: React.Dispatch<React.SetStateAction<QuestCompletion[]>>;
   addQuest: (quest: Omit<Quest, 'id' | 'claimedByUserIds' | 'dismissals'>) => void;
   updateQuest: (updatedQuest: Quest) => void;
   deleteQuest: (questId: string) => void;

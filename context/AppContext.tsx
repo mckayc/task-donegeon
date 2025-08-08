@@ -57,6 +57,12 @@ interface AppDispatch {
 const AppStateContext = createContext<AppState | undefined>(undefined);
 const AppDispatchContext = createContext<AppDispatch | undefined>(undefined);
 
+const mergeData = <T extends { id: string }>(existing: T[], incoming: T[]): T[] => {
+    const dataMap = new Map(existing.map(item => [item.id, item]));
+    incoming.forEach(item => dataMap.set(item.id, item));
+    return Array.from(dataMap.values());
+};
+
 export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const { addNotification } = useNotificationsDispatch();
   const { currentUser, users } = useAuthState();
@@ -84,6 +90,9 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [syncError, setSyncError] = useState<string | null>(null);
   const [isAiConfigured, setIsAiConfigured] = useState(false);
   
+  // Ref to hold the last sync timestamp without causing re-renders
+  const lastSyncTimestamp = useRef<string | null>(null);
+  
   // === API HELPERS ===
   const apiRequest = useCallback(async (method: string, path: string, body?: any) => {
     try {
@@ -110,135 +119,127 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   }, [addNotification]);
   
   // === DATA SYNC & LOADING ===
-  const loadAllData = useCallback(async () => {
-    try {
-      const dataToSet: IAppData = await apiRequest('GET', '/api/data/load');
-      if (!dataToSet) return;
-
+  
+  const processAndSetData = useCallback((dataToSet: IAppData, isDelta = false) => {
       const savedSettings: Partial<AppSettings> = dataToSet.settings || {};
       let settingsUpdated = false;
 
-      // --- Sidebar Migration Logic ---
-      const savedSidebarConfig = savedSettings.sidebars?.main || [];
-      const defaultSidebarConfig = INITIAL_SETTINGS.sidebars.main;
-      
-      const savedIds = new Set(savedSidebarConfig.map(item => item.id));
-      const missingItems = defaultSidebarConfig.filter(item => !savedIds.has(item.id));
-      
-      let finalSidebarConfig = savedSidebarConfig;
-      if (missingItems.length > 0) {
-          finalSidebarConfig = [...savedSidebarConfig, ...missingItems];
-          settingsUpdated = true;
-          console.log(`Migrating sidebar: Added ${missingItems.length} new items.`);
-      }
-      // --- End Sidebar Migration Logic ---
-
-      const loadedSettings: AppSettings = {
-        ...INITIAL_SETTINGS, ...savedSettings,
-        questDefaults: { ...INITIAL_SETTINGS.questDefaults, ...(savedSettings.questDefaults || {}) },
-        security: { ...INITIAL_SETTINGS.security, ...(savedSettings.security || {}) },
-        sharedMode: { ...INITIAL_SETTINGS.sharedMode, ...(savedSettings.sharedMode || {}) },
-        automatedBackups: { ...INITIAL_SETTINGS.automatedBackups, ...(savedSettings.automatedBackups || {}) },
-        loginNotifications: { ...INITIAL_SETTINGS.loginNotifications, ...(savedSettings.loginNotifications || {}) },
-        developerMode: { ...INITIAL_SETTINGS.developerMode, ...(savedSettings.developerMode || {}) },
-        chat: { ...INITIAL_SETTINGS.chat, ...(savedSettings.chat || {}) },
-        sidebars: { main: finalSidebarConfig },
-        terminology: { ...INITIAL_SETTINGS.terminology, ...(savedSettings.terminology || {}) },
-        rewardValuation: { ...INITIAL_SETTINGS.rewardValuation, ...(savedSettings.rewardValuation || {}) },
-      };
-
-      authDispatch.setUsers(dataToSet.users || []);
-      authDispatch.setLoginHistory(dataToSet.loginHistory || []);
-      
-      questDispatch.setQuests(dataToSet.quests || []);
-      questDispatch.setQuestGroups(dataToSet.questGroups || []);
-      questDispatch.setQuestCompletions(dataToSet.questCompletions || []);
-      
-      economyDispatch.setMarkets(dataToSet.markets || []);
-      economyDispatch.setRewardTypes(dataToSet.rewardTypes || []);
-      economyDispatch.setPurchaseRequests(dataToSet.purchaseRequests || []);
-      economyDispatch.setGameAssets(dataToSet.gameAssets || []);
-
-      setGuilds(dataToSet.guilds || []);
-      setRanks(dataToSet.ranks || []);
-      setTrophies(dataToSet.trophies || []);
-      setUserTrophies(dataToSet.userTrophies || []);
-      setAdminAdjustments(dataToSet.adminAdjustments || []);
-      setSystemLogs(dataToSet.systemLogs || []);
-      setSettings(loadedSettings);
-      setThemes(dataToSet.themes || INITIAL_THEMES);
-      setChatMessages(dataToSet.chatMessages || []);
-      setSystemNotifications(dataToSet.systemNotifications || []);
-      setScheduledEvents(dataToSet.scheduledEvents || []);
-      
-      // --- Bug Report Migration to expanded statuses and tags ---
-      const bugReportsToSet = dataToSet.bugReports || [];
-      const reportsToUpdateOnServer: Partial<BugReport>[] = [];
-
-      const migratedBugReports = bugReportsToSet.map(report => {
-          let hasChanged = false;
-          const newReport = { ...report };
-
-          // Check for old statuses and convert them to tags, setting a new status
-          if (report.status && !['Open', 'In Progress', 'Resolved', 'Closed'].includes(report.status)) {
-              hasChanged = true;
-              const oldStatus = report.status as any;
-              newReport.tags = newReport.tags || [];
-
-              switch (oldStatus) {
-                  case 'New': newReport.status = 'Open'; break;
-                  case 'Acknowledged': newReport.status = 'In Progress'; newReport.tags.push('Acknowledged'); break;
-                  case 'Converted to Quest': newReport.status = 'Resolved'; newReport.tags.push('Converted to Quest'); break;
-                  default: newReport.status = 'Open';
-              }
-          }
-          // Ensure tags array exists
-          if (!newReport.tags) {
-              hasChanged = true;
-              newReport.tags = [];
+      if (!isDelta) {
+          // --- Sidebar Migration Logic ---
+          const savedSidebarConfig = savedSettings.sidebars?.main || [];
+          const defaultSidebarConfig = INITIAL_SETTINGS.sidebars.main;
+          const savedIds = new Set(savedSidebarConfig.map(item => item.id));
+          const missingItems = defaultSidebarConfig.filter(item => !savedIds.has(item.id));
+          
+          let finalSidebarConfig = savedSidebarConfig;
+          if (missingItems.length > 0) {
+              finalSidebarConfig = [...savedSidebarConfig, ...missingItems];
+              settingsUpdated = true;
+              console.log(`Migrating sidebar: Added ${missingItems.length} new items.`);
           }
 
-          if (hasChanged) {
-              reportsToUpdateOnServer.push({ id: newReport.id, status: newReport.status, tags: newReport.tags });
-          }
-          return newReport as BugReport;
-      });
-      
-      setBugReports(migratedBugReports);
-
-      if (reportsToUpdateOnServer.length > 0) {
-          Promise.all(reportsToUpdateOnServer.map(report =>
-              apiRequest('PUT', `/api/bug-reports/${report.id}`, { status: report.status, tags: report.tags })
-          )).then(() => {
-              addNotification({ type: 'info', message: 'Bug reports migrated to new format.' });
-          }).catch(err => {
-              console.error("Failed to save migrated bug reports", err);
-              addNotification({ type: 'error', message: 'Failed to save bug report migration.' });
-          });
+          const loadedSettings: AppSettings = {
+            ...INITIAL_SETTINGS, ...savedSettings,
+            questDefaults: { ...INITIAL_SETTINGS.questDefaults, ...(savedSettings.questDefaults || {}) },
+            security: { ...INITIAL_SETTINGS.security, ...(savedSettings.security || {}) },
+            sharedMode: { ...INITIAL_SETTINGS.sharedMode, ...(savedSettings.sharedMode || {}) },
+            automatedBackups: { ...INITIAL_SETTINGS.automatedBackups, ...(savedSettings.automatedBackups || {}) },
+            loginNotifications: { ...INITIAL_SETTINGS.loginNotifications, ...(savedSettings.loginNotifications || {}) },
+            developerMode: { ...INITIAL_SETTINGS.developerMode, ...(savedSettings.developerMode || {}) },
+            chat: { ...INITIAL_SETTINGS.chat, ...(savedSettings.chat || {}) },
+            sidebars: { main: finalSidebarConfig },
+            terminology: { ...INITIAL_SETTINGS.terminology, ...(savedSettings.terminology || {}) },
+            rewardValuation: { ...INITIAL_SETTINGS.rewardValuation, ...(savedSettings.rewardValuation || {}) },
+          };
+          setSettings(loadedSettings);
+      } else if (dataToSet.settings) {
+          // If it's a delta update and settings are present, just merge them
+          setSettings(prev => ({ ...prev, ...dataToSet.settings }));
       }
 
+      // Update states, either by full replacement or by merging
+      if (dataToSet.users) authDispatch.setUsers(prev => isDelta ? mergeData(prev, dataToSet.users!) : dataToSet.users!);
+      if (dataToSet.loginHistory) authDispatch.setLoginHistory(dataToSet.loginHistory);
 
-      // If migration happened, save it back to the server
+      if (dataToSet.quests) questDispatch.setQuests(prev => isDelta ? mergeData(prev, dataToSet.quests!) : dataToSet.quests!);
+      if (dataToSet.questGroups) questDispatch.setQuestGroups(prev => isDelta ? mergeData(prev, dataToSet.questGroups!) : dataToSet.questGroups!);
+      if (dataToSet.questCompletions) questDispatch.setQuestCompletions(prev => isDelta ? mergeData(prev, dataToSet.questCompletions!) : dataToSet.questCompletions!);
+      
+      if (dataToSet.markets) economyDispatch.setMarkets(prev => isDelta ? mergeData(prev, dataToSet.markets!) : dataToSet.markets!);
+      if (dataToSet.rewardTypes) economyDispatch.setRewardTypes(prev => isDelta ? mergeData(prev, dataToSet.rewardTypes!) : dataToSet.rewardTypes!);
+      if (dataToSet.purchaseRequests) economyDispatch.setPurchaseRequests(prev => isDelta ? mergeData(prev, dataToSet.purchaseRequests!) : dataToSet.purchaseRequests!);
+      if (dataToSet.gameAssets) economyDispatch.setGameAssets(prev => isDelta ? mergeData(prev, dataToSet.gameAssets!) : dataToSet.gameAssets!);
+
+      if (dataToSet.guilds) setGuilds(prev => isDelta ? mergeData(prev, dataToSet.guilds!) : dataToSet.guilds!);
+      if (dataToSet.ranks) setRanks(prev => isDelta ? mergeData(prev, dataToSet.ranks!) : dataToSet.ranks!);
+      if (dataToSet.trophies) setTrophies(prev => isDelta ? mergeData(prev, dataToSet.trophies!) : dataToSet.trophies!);
+      if (dataToSet.userTrophies) setUserTrophies(prev => isDelta ? mergeData(prev, dataToSet.userTrophies!) : dataToSet.userTrophies!);
+      if (dataToSet.adminAdjustments) setAdminAdjustments(prev => isDelta ? mergeData(prev, dataToSet.adminAdjustments!) : dataToSet.adminAdjustments!);
+      if (dataToSet.systemLogs) setSystemLogs(prev => isDelta ? mergeData(prev, dataToSet.systemLogs!) : dataToSet.systemLogs!);
+      if (dataToSet.themes) setThemes(prev => isDelta ? mergeData(prev, dataToSet.themes!) : dataToSet.themes!);
+      if (dataToSet.chatMessages) setChatMessages(prev => isDelta ? mergeData(prev, dataToSet.chatMessages!) : dataToSet.chatMessages!);
+      if (dataToSet.systemNotifications) setSystemNotifications(prev => isDelta ? mergeData(prev, dataToSet.systemNotifications!) : dataToSet.systemNotifications!);
+      if (dataToSet.scheduledEvents) setScheduledEvents(prev => isDelta ? mergeData(prev, dataToSet.scheduledEvents!) : dataToSet.scheduledEvents!);
+      if (dataToSet.bugReports) setBugReports(prev => isDelta ? mergeData(prev, dataToSet.bugReports!) : dataToSet.bugReports!);
+
+      return { settingsUpdated, loadedSettings: isDelta ? undefined : settings };
+  }, [authDispatch, questDispatch, economyDispatch]);
+  
+  const initialSync = useCallback(async () => {
+    try {
+      const response = await apiRequest('GET', '/api/data/sync');
+      if (!response) return;
+
+      const { updates, newSyncTimestamp } = response;
+      const { settingsUpdated, loadedSettings } = processAndSetData(updates, false);
+
       if (settingsUpdated) {
           await apiRequest('PUT', '/api/settings', loadedSettings);
           addNotification({ type: 'info', message: 'Application settings updated with new features.' });
       }
 
       const lastUserId = localStorage.getItem('lastUserId');
-      if (lastUserId && dataToSet.users) {
-        const lastUser = dataToSet.users.find((u:User) => u.id === lastUserId);
+      if (lastUserId && updates.users) {
+        const lastUser = updates.users.find((u:User) => u.id === lastUserId);
         if (lastUser) authDispatch.setCurrentUser(lastUser);
       }
       authDispatch.setIsSharedViewActive(loadedSettings.sharedMode.enabled && !localStorage.getItem('lastUserId'));
 
+      lastSyncTimestamp.current = newSyncTimestamp;
+
     } catch (error) {
       console.error("Could not load data from server.", error);
     }
-  }, [apiRequest, authDispatch, economyDispatch, questDispatch, addNotification]);
+  }, [apiRequest, processAndSetData, addNotification, authDispatch]);
+
+  const performDeltaSync = useCallback(async () => {
+    if (document.hidden || !lastSyncTimestamp.current) return;
+    setSyncStatus('syncing');
+    setSyncError(null);
+    try {
+      const response = await apiRequest('GET', `/api/data/sync?lastSync=${lastSyncTimestamp.current}`);
+      if (!response) {
+          setSyncStatus('success'); // No updates
+          return;
+      }
+      
+      const { updates, newSyncTimestamp } = response;
+      if (Object.keys(updates).length > 0) {
+          processAndSetData(updates, true);
+      }
+      
+      lastSyncTimestamp.current = newSyncTimestamp;
+      setSyncStatus('success');
+    } catch (error) {
+      console.error("Data sync failed:", error);
+      setSyncStatus('error');
+      setSyncError(error instanceof Error ? error.message : 'An unknown error occurred during sync.');
+    }
+  }, [apiRequest, processAndSetData]);
 
   useEffect(() => {
     const initializeApp = async () => {
-      await loadAllData();
+      await initialSync();
       setIsDataLoaded(true);
 
       // Fetch system status after initial data load to check AI configuration
@@ -254,36 +255,19 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       }
     };
     initializeApp();
-  }, [loadAllData]);
-
-  const syncData = useCallback(async () => {
-    if (document.hidden) return;
-    setSyncStatus('syncing');
-    setSyncError(null);
-    try {
-      await loadAllData();
-      setSyncStatus('success');
-    } catch (error) {
-      console.error("Data sync failed:", error);
-      setSyncStatus('error');
-      setSyncError(error instanceof Error ? error.message : 'An unknown error occurred during sync.');
-    }
-  }, [loadAllData]);
+  }, [initialSync]);
 
   useEffect(() => {
     if (!isDataLoaded) return;
 
-    // Poll for updates every 10 seconds
-    const intervalId = setInterval(syncData, 10000);
-
-    // Also sync when the tab becomes visible again
-    document.addEventListener('visibilitychange', syncData);
+    const intervalId = setInterval(performDeltaSync, 30000); // Poll for updates every 30 seconds
+    document.addEventListener('visibilitychange', performDeltaSync);
 
     return () => {
         clearInterval(intervalId);
-        document.removeEventListener('visibilitychange', syncData);
+        document.removeEventListener('visibilitychange', performDeltaSync);
     };
-  }, [isDataLoaded, syncData]);
+  }, [isDataLoaded, performDeltaSync]);
 
   // === BUSINESS LOGIC / DISPATCH FUNCTIONS ===
 

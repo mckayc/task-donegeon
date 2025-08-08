@@ -6,7 +6,7 @@ const path = require('path');
 const multer = require('multer');
 const fs = require('fs').promises;
 const { GoogleGenAI } = require('@google/genai');
-const { In, Brackets, Like } = require("typeorm");
+const { In, Brackets, Like, MoreThan } = require("typeorm");
 const { dataSource, ensureDatabaseDirectoryExists } = require('./data-source');
 const { INITIAL_SETTINGS, INITIAL_REWARD_TYPES, INITIAL_RANKS, INITIAL_TROPHIES, INITIAL_THEMES, INITIAL_QUEST_GROUPS } = require('./initialData');
 const { 
@@ -18,8 +18,17 @@ const {
 } = require('./entities');
 
 const app = express();
-const port = process.env.PORT || 3000;
+const port = process.env.PORT || 3001;
 const dbPath = process.env.DATABASE_PATH || '/app/data/database/database.sqlite';
+
+const updateTimestamps = (entity, isNew = false) => {
+    const now = new Date().toISOString();
+    if (isNew) {
+        entity.createdAt = now;
+    }
+    entity.updatedAt = now;
+    return entity;
+};
 
 const checkAndAwardTrophies = async (manager, userId, guildId) => {
     // Automatic trophies are personal-only for now, as per frontend logic
@@ -70,7 +79,7 @@ const checkAndAwardTrophies = async (manager, userId, guildId) => {
                 awardedAt: new Date().toISOString(),
                 guildId: null, // Personal trophy
             });
-            await manager.save(newTrophy);
+            await manager.save(updateTimestamps(newTrophy, true));
 
             // Create notification
             const newNotification = manager.create(SystemNotificationEntity, {
@@ -86,7 +95,7 @@ const checkAndAwardTrophies = async (manager, userId, guildId) => {
                  imageUrl: trophy.imageUrl,
                  link: 'Trophies',
             });
-            await manager.save(newNotification);
+            await manager.save(updateTimestamps(newNotification, true));
         }
     }
 };
@@ -270,26 +279,79 @@ app.post('/api/ai/test', asyncMiddleware(async (req, res) => {
 }));
 
 
-// BOOTSTRAP: Load all data
-app.get('/api/data/load', asyncMiddleware(async (req, res) => {
-    const userRepo = dataSource.getRepository(UserEntity);
-    const userCount = await userRepo.count();
+// New Sync Endpoint
+app.get('/api/data/sync', asyncMiddleware(async (req, res) => {
+    const { lastSync } = req.query;
+    const newSyncTimestamp = new Date().toISOString();
+    const manager = dataSource.manager;
 
-    if (userCount === 0) {
-        console.log("No users found, triggering first run.");
-        return res.status(200).json({
-            users: [], quests: [], questGroups: [], markets: [], rewardTypes: [], questCompletions: [],
-            purchaseRequests: [], guilds: [], ranks: [], trophies: [], userTrophies: [],
-            adminAdjustments: [], gameAssets: [], systemLogs: [], themes: [], chatMessages: [],
-            systemNotifications: [], scheduledEvents: [], bugReports: [],
-            settings: { ...INITIAL_SETTINGS, contentVersion: 0 },
-            loginHistory: [],
-        });
+    if (!lastSync) {
+        // Full initial load
+        const userCount = await manager.count(UserEntity);
+        if (userCount === 0) {
+            console.log("No users found, triggering first run.");
+            return res.status(200).json({
+                updates: {
+                    users: [], quests: [], questGroups: [], markets: [], rewardTypes: [], questCompletions: [],
+                    purchaseRequests: [], guilds: [], ranks: [], trophies: [], userTrophies: [],
+                    adminAdjustments: [], gameAssets: [], systemLogs: [], themes: [], chatMessages: [],
+                    systemNotifications: [], scheduledEvents: [], bugReports: [],
+                    settings: { ...INITIAL_SETTINGS, contentVersion: 0 },
+                    loginHistory: [],
+                },
+                newSyncTimestamp
+            });
+        }
+        const appData = await getFullAppData(manager);
+        res.status(200).json({ updates: appData, newSyncTimestamp });
+    } else {
+        // Delta sync
+        const updates = {};
+        const entitiesToSync = [
+            UserEntity, QuestEntity, QuestGroupEntity, MarketEntity, RewardTypeDefinitionEntity,
+            QuestCompletionEntity, PurchaseRequestEntity, GuildEntity, RankEntity, TrophyEntity,
+            UserTrophyEntity, AdminAdjustmentEntity, GameAssetEntity, SystemLogEntity, ThemeDefinitionEntity,
+            ChatMessageEntity, SystemNotificationEntity, ScheduledEventEntity, SettingEntity, LoginHistoryEntity,
+            BugReportEntity
+        ];
+        
+        for (const entity of entitiesToSync) {
+            const repo = manager.getRepository(entity);
+            const pluralName = entity.options.name.toLowerCase() + 's';
+            
+            const changedRecords = await repo.find({
+                where: { updatedAt: MoreThan(lastSync) },
+                // Include necessary relations for correct frontend processing
+                ...(entity.options.name === 'Quest' && { relations: ['assignedUsers'] }),
+                ...(entity.options.name === 'Guild' && { relations: ['members'] }),
+                ...(entity.options.name === 'QuestCompletion' && { relations: ['user', 'quest'] }),
+            });
+            
+            if (changedRecords.length > 0) {
+                // Remap relational data to IDs for frontend
+                if (entity.options.name === 'Quest') {
+                    updates.quests = changedRecords.map(q => ({ ...q, assignedUserIds: q.assignedUsers?.map(u => u.id) || [] }));
+                } else if (entity.options.name === 'Guild') {
+                    updates.guilds = changedRecords.map(g => ({ ...g, memberIds: g.members?.map(m => m.id) || [] }));
+                } else if (entity.options.name === 'QuestCompletion') {
+                    updates.questCompletions = changedRecords.map(qc => ({ ...qc, userId: qc.user?.id, questId: qc.quest?.id }));
+                } else {
+                     updates[pluralName] = changedRecords;
+                }
+            }
+        }
+        
+        // Special handling for settings and login history as they are single rows
+        const settingRow = await manager.findOne(SettingEntity, { where: { id: 1, updatedAt: MoreThan(lastSync) } });
+        if (settingRow) updates.settings = settingRow.settings;
+
+        const historyRow = await manager.findOne(LoginHistoryEntity, { where: { id: 1, updatedAt: MoreThan(lastSync) } });
+        if (historyRow) updates.loginHistory = historyRow.history;
+        
+        res.status(200).json({ updates, newSyncTimestamp });
     }
-
-    const appData = await getFullAppData(dataSource.manager);
-    res.status(200).json(appData);
 }));
+
 
 // FIRST RUN
 app.post('/api/first-run', asyncMiddleware(async (req, res) => {
@@ -301,11 +363,11 @@ app.post('/api/first-run', asyncMiddleware(async (req, res) => {
             await manager.getRepository(entity.name).clear();
         }
         
-        await manager.save(RewardTypeDefinitionEntity, INITIAL_REWARD_TYPES);
-        await manager.save(RankEntity, INITIAL_RANKS);
-        await manager.save(TrophyEntity, INITIAL_TROPHIES);
-        await manager.save(ThemeDefinitionEntity, INITIAL_THEMES);
-        await manager.save(QuestGroupEntity, INITIAL_QUEST_GROUPS);
+        await manager.save(RewardTypeDefinitionEntity, INITIAL_REWARD_TYPES.map(e => updateTimestamps(e, true)));
+        await manager.save(RankEntity, INITIAL_RANKS.map(e => updateTimestamps(e, true)));
+        await manager.save(TrophyEntity, INITIAL_TROPHIES.map(e => updateTimestamps(e, true)));
+        await manager.save(ThemeDefinitionEntity, INITIAL_THEMES.map(e => updateTimestamps(e, true)));
+        await manager.save(QuestGroupEntity, INITIAL_QUEST_GROUPS.map(e => updateTimestamps(e, true)));
 
         const adminUser = manager.create(UserEntity, {
             ...adminUserData,
@@ -318,7 +380,7 @@ app.post('/api/first-run', asyncMiddleware(async (req, res) => {
             ownedThemes: ['emerald', 'rose', 'sky'],
             hasBeenOnboarded: false,
         });
-        await manager.save(adminUser);
+        await manager.save(updateTimestamps(adminUser, true));
 
         const defaultGuild = manager.create(GuildEntity, {
             id: 'guild-1',
@@ -327,14 +389,14 @@ app.post('/api/first-run', asyncMiddleware(async (req, res) => {
             isDefault: true,
             members: [adminUser]
         });
-        await manager.save(defaultGuild);
+        await manager.save(updateTimestamps(defaultGuild, true));
 
         const exchangeMarket = { id: 'market-bank', title: 'The Exchange Post', description: 'Exchange your various currencies and experience points.', iconType: 'emoji', icon: '⚖️', status: { type: 'open' } };
-        await manager.save(MarketEntity, exchangeMarket);
+        await manager.save(MarketEntity, updateTimestamps(exchangeMarket, true));
 
         const settings = { ...INITIAL_SETTINGS, contentVersion: 1 };
-        await manager.save(SettingEntity, { id: 1, settings });
-        await manager.save(LoginHistoryEntity, { id: 1, history: [adminUser.id] });
+        await manager.save(SettingEntity, updateTimestamps({ id: 1, settings }, true));
+        await manager.save(LoginHistoryEntity, updateTimestamps({ id: 1, history: [adminUser.id] }, true));
         
         res.status(201).json({ adminUser });
     });
@@ -456,9 +518,10 @@ app.post('/api/data/import-assets', asyncMiddleware(async (req, res) => {
             if (assetsToSave[type]) {
                 console.log(`[IMPORT] Saving ${assetsToSave[type].length} asset(s) of type: ${type}`);
                 for (const asset of assetsToSave[type]) {
+                    const assetWithTimestamps = updateTimestamps(asset, true);
                     switch (type) {
                         case 'users':
-                            const { assignedUsers, guilds, questCompletions, purchaseRequests, ...userData } = asset;
+                            const { assignedUsers, guilds, questCompletions, purchaseRequests, ...userData } = assetWithTimestamps;
                             const defaultGuild = await manager.findOneBy(GuildEntity, { isDefault: true });
                             const userToSave = manager.create(UserEntity, {
                                 ...userData,
@@ -469,23 +532,23 @@ app.post('/api/data/import-assets', asyncMiddleware(async (req, res) => {
                             if (defaultGuild) {
                                 if (!defaultGuild.members) defaultGuild.members = [];
                                 defaultGuild.members.push(userToSave);
-                                await manager.save(defaultGuild);
+                                await manager.save(updateTimestamps(defaultGuild));
                             }
                             break;
                         case 'quests':
-                            const { assignedUserIds: remappedUserIds, ...questData } = asset;
+                            const { assignedUserIds: remappedUserIds, ...questData } = assetWithTimestamps;
                             const questToSave = manager.create(QuestEntity, questData);
                             if (remappedUserIds && remappedUserIds.length > 0) {
                                 questToSave.assignedUsers = await manager.getRepository(UserEntity).findBy({ id: In(remappedUserIds) });
                             }
                             await manager.save(questToSave);
                             break;
-                        case 'questGroups': await manager.save(QuestGroupEntity, asset); break;
-                        case 'rewardTypes': await manager.save(RewardTypeDefinitionEntity, { ...asset, isCore: false }); break;
-                        case 'ranks': await manager.save(RankEntity, asset); break;
-                        case 'trophies': await manager.save(TrophyEntity, asset); break;
-                        case 'markets': await manager.save(MarketEntity, asset); break;
-                        case 'gameAssets': await manager.save(GameAssetEntity, asset); break;
+                        case 'questGroups': await manager.save(QuestGroupEntity, assetWithTimestamps); break;
+                        case 'rewardTypes': await manager.save(RewardTypeDefinitionEntity, { ...assetWithTimestamps, isCore: false }); break;
+                        case 'ranks': await manager.save(RankEntity, assetWithTimestamps); break;
+                        case 'trophies': await manager.save(TrophyEntity, assetWithTimestamps); break;
+                        case 'markets': await manager.save(MarketEntity, assetWithTimestamps); break;
+                        case 'gameAssets': await manager.save(GameAssetEntity, assetWithTimestamps); break;
                     }
                 }
             }
@@ -545,7 +608,7 @@ guildsRouter.post('/', asyncMiddleware(async (req, res) => {
         newGuild.members = await dataSource.getRepository(UserEntity).findBy({ id: In(memberIds) });
     }
 
-    await guildRepo.save(newGuild);
+    await guildRepo.save(updateTimestamps(newGuild, true));
     res.status(201).json(newGuild);
 }));
 
@@ -560,7 +623,7 @@ guildsRouter.put('/:id', asyncMiddleware(async (req, res) => {
         guild.members = await dataSource.getRepository(UserEntity).findBy({ id: In(memberIds) });
     }
 
-    await guildRepo.save(guild);
+    await guildRepo.save(updateTimestamps(guild));
     res.json(guild);
 }));
 
@@ -615,12 +678,12 @@ usersRouter.post('/', asyncMiddleware(async (req, res) => {
         avatar: {}, ownedAssetIds: [], personalPurse: {}, personalExperience: {},
         guildBalances: {}, ownedThemes: ['emerald', 'rose', 'sky'], hasBeenOnboarded: false,
     });
-    await userRepo.save(newUser);
+    await userRepo.save(updateTimestamps(newUser, true));
     
     const defaultGuild = await guildRepo.findOne({ where: { isDefault: true }, relations: ['members'] });
     if (defaultGuild) {
         defaultGuild.members.push(newUser);
-        await guildRepo.save(defaultGuild);
+        await guildRepo.save(updateTimestamps(defaultGuild));
     }
 
     res.status(201).json(newUser);
@@ -644,7 +707,8 @@ usersRouter.put('/:id', asyncMiddleware(async (req, res) => {
             return res.status(409).json({ error: 'Username or email is already in use by another user.' });
         }
     }
-
+    
+    userData.updatedAt = new Date().toISOString();
     await userRepo.update(id, userData);
     res.json(await userRepo.findOneBy({ id }));
 }));
@@ -662,7 +726,7 @@ app.use('/api/guilds', guildsRouter);
 // Specific endpoint for settings
 app.put('/api/settings', asyncMiddleware(async (req, res) => {
     const repo = dataSource.getRepository(SettingEntity);
-    await repo.save({ id: 1, settings: req.body });
+    await repo.save(updateTimestamps({ id: 1, settings: req.body }));
     res.json(req.body);
 }));
 
@@ -677,12 +741,13 @@ bugReportsRouter.get('/', asyncMiddleware(async (req, res) => {
 
 bugReportsRouter.post('/', asyncMiddleware(async (req, res) => {
     const newReport = bugReportRepo.create(req.body);
-    await bugReportRepo.save(newReport);
+    await bugReportRepo.save(updateTimestamps(newReport, true));
     res.status(201).json(newReport);
 }));
 
 bugReportsRouter.put('/:id', asyncMiddleware(async (req, res) => {
-    await bugReportRepo.update(req.params.id, req.body);
+    const data = updateTimestamps(req.body);
+    await bugReportRepo.update(req.params.id, data);
     res.json(await bugReportRepo.findOneBy({ id: req.params.id }));
 }));
 
@@ -710,7 +775,7 @@ bugReportsRouter.post('/import', asyncMiddleware(async (req, res) => {
 
     await dataSource.transaction(async manager => {
         await manager.clear(BugReportEntity);
-        const reports = reportsToImport.map(r => manager.create(BugReportEntity, r));
+        const reports = reportsToImport.map(r => manager.create(BugReportEntity, updateTimestamps(r, true)));
         await manager.save(reports);
     });
 
@@ -751,9 +816,9 @@ questsRouter.get('/', asyncMiddleware(async (req, res) => {
         case 'title-desc': qb.orderBy("quest.title", "DESC"); break;
         case 'status-asc': qb.orderBy("quest.isActive", "ASC"); break;
         case 'status-desc': qb.orderBy("quest.isActive", "DESC"); break;
-        case 'createdAt-asc': qb.orderBy("quest.id", "ASC"); break;
-        case 'createdAt-desc': qb.orderBy("quest.id", "DESC"); break;
-        case 'title-asc': default: qb.orderBy("quest.title", "ASC"); break;
+        case 'createdAt-asc': qb.orderBy("quest.createdAt", "ASC"); break;
+        case 'createdAt-desc': default: qb.orderBy("quest.createdAt", "DESC"); break;
+        case 'title-asc': qb.orderBy("quest.title", "ASC"); break;
     }
 
     const quests = await qb.getMany();
@@ -773,7 +838,7 @@ questsRouter.post('/', asyncMiddleware(async (req, res) => {
     if (assignedUserIds) {
         newQuest.assignedUsers = await dataSource.getRepository(UserEntity).findBy({ id: In(assignedUserIds) });
     }
-    await questRepo.save(newQuest);
+    await questRepo.save(updateTimestamps(newQuest, true));
     const savedQuest = await questRepo.findOne({ where: { id: newQuest.id }, relations: ['assignedUsers'] });
     res.status(201).json({ ...savedQuest, assignedUserIds: savedQuest.assignedUsers?.map(u => u.id) || [] });
 }));
@@ -788,7 +853,7 @@ questsRouter.put('/:id', asyncMiddleware(async (req, res) => {
     if (assignedUserIds) {
         quest.assignedUsers = await dataSource.getRepository(UserEntity).findBy({ id: In(assignedUserIds) });
     }
-    await questRepo.save(quest);
+    await questRepo.save(updateTimestamps(quest));
     const updatedQuest = await questRepo.findOne({ where: { id: req.params.id }, relations: ['assignedUsers'] });
     res.json({ ...updatedQuest, assignedUserIds: updatedQuest.assignedUsers?.map(u => u.id) || [] });
 }));
@@ -807,7 +872,7 @@ questsRouter.post('/clone/:id', asyncMiddleware(async (req, res) => {
         todoUserIds: [],
         assignedUsers: questToClone.assignedUsers // keep assignments
     });
-    await questRepo.save(newQuest);
+    await questRepo.save(updateTimestamps(newQuest, true));
     const savedQuest = await questRepo.findOne({ where: { id: newQuest.id }, relations: ['assignedUsers'] });
     res.status(201).json({ ...savedQuest, assignedUserIds: savedQuest.assignedUsers?.map(u => u.id) || [] });
 }));
@@ -823,7 +888,7 @@ questsRouter.delete('/', asyncMiddleware(async (req, res) => {
 // PUT /api/quests/bulk-status
 questsRouter.put('/bulk-status', asyncMiddleware(async (req, res) => {
     const { ids, isActive } = req.body;
-    await questRepo.update(ids, { isActive });
+    await questRepo.update(ids, updateTimestamps({ isActive }));
     res.status(204).send();
 }));
 
@@ -853,6 +918,7 @@ questsRouter.put('/bulk-update', asyncMiddleware(async (req, res) => {
             if (unassignUsers) {
                 quest.assignedUsers = quest.assignedUsers.filter(u => !unassignUsers.includes(u.id));
             }
+            updateTimestamps(quest);
         }
         await manager.save(questsToUpdate);
     });
@@ -897,16 +963,15 @@ assetsRouter.post('/', asyncMiddleware(async (req, res) => {
         ...req.body,
         id: `g-asset-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
         creatorId: currentUser.id,
-        createdAt: new Date().toISOString(),
         purchaseCount: 0,
     };
-    const newAsset = assetRepo.create(newAssetData);
+    const newAsset = assetRepo.create(updateTimestamps(newAssetData, true));
     await assetRepo.save(newAsset);
     res.status(201).json(newAsset);
 }));
 
 assetsRouter.put('/:id', asyncMiddleware(async (req, res) => {
-    await assetRepo.update(req.params.id, req.body);
+    await assetRepo.update(req.params.id, updateTimestamps(req.body));
     res.json(await assetRepo.findOneBy({ id: req.params.id }));
 }));
 
@@ -914,13 +979,12 @@ assetsRouter.post('/clone/:id', asyncMiddleware(async (req, res) => {
     const assetToClone = await assetRepo.findOneBy({ id: req.params.id });
     if (!assetToClone) return res.status(404).send('Asset not found');
 
-    const newAsset = assetRepo.create({
+    const newAsset = assetRepo.create(updateTimestamps({
         ...assetToClone,
         id: `g-asset-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
         name: `${assetToClone.name} (Copy)`,
         purchaseCount: 0,
-        createdAt: new Date().toISOString(),
-    });
+    }, true));
     await assetRepo.save(newAsset);
     res.status(201).json(newAsset);
 }));
@@ -945,7 +1009,7 @@ app.post('/api/actions/complete-quest', asyncMiddleware(async (req, res) => {
                 id: `qcomp-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
             };
 
-            const completion = manager.create(QuestCompletionEntity, completionWithId);
+            const completion = manager.create(QuestCompletionEntity, updateTimestamps(completionWithId, true));
             completion.user = await manager.findOneBy(UserEntity, { id: completionData.userId });
             completion.quest = await manager.findOneBy(QuestEntity, { id: completionData.questId });
 
@@ -984,7 +1048,7 @@ app.post('/api/actions/complete-quest', asyncMiddleware(async (req, res) => {
                         }
                     }
                 });
-                await manager.save(UserEntity, user);
+                await manager.save(UserEntity, updateTimestamps(user));
                 // After applying rewards, check for trophies
                 await checkAndAwardTrophies(manager, user.id, quest.guildId);
             }
@@ -1050,8 +1114,8 @@ app.post('/api/actions/approve-quest/:id', asyncMiddleware(async (req, res) => {
                 }
             });
             
-            await manager.save(UserEntity, user);
-            await manager.save(QuestCompletionEntity, completion);
+            await manager.save(UserEntity, updateTimestamps(user));
+            await manager.save(QuestCompletionEntity, updateTimestamps(completion));
             // After applying rewards, check for trophies
             await checkAndAwardTrophies(manager, user.id, quest.guildId);
         });
@@ -1076,7 +1140,7 @@ app.post('/api/actions/reject-quest/:id', asyncMiddleware(async (req, res) => {
     }
     completion.status = 'Rejected';
     if(note) completion.note = note;
-    await repo.save(completion);
+    await repo.save(updateTimestamps(completion));
     res.status(200).json({ message: 'Quest rejected.' });
 }));
 
@@ -1350,7 +1414,7 @@ chatRouter.post('/send', asyncMiddleware(async (req, res) => {
         readBy: [senderId], // Sender has implicitly read the message
     });
 
-    await chatRepo.save(newMessage);
+    await chatRepo.save(updateTimestamps(newMessage, true));
     res.status(201).json(newMessage);
 }));
 
@@ -1380,6 +1444,7 @@ chatRouter.post('/read', asyncMiddleware(async (req, res) => {
     for (const message of messagesToUpdate) {
         if (!message.readBy.includes(userId)) {
             message.readBy.push(userId);
+            updateTimestamps(message);
             updated = true;
         }
     }

@@ -17,8 +17,8 @@ interface AuthState {
 
 // Dispatch functions provided by this context
 interface AuthDispatch {
-  setUsers: (users: User[]) => void;
-  setLoginHistory: (history: string[]) => void;
+  setUsers: React.Dispatch<React.SetStateAction<User[]>>;
+  setLoginHistory: React.Dispatch<React.SetStateAction<string[]>>;
   addUser: (userData: Omit<User, 'id' | 'personalPurse' | 'personalExperience' | 'guildBalances' | 'avatar' | 'ownedAssetIds' | 'ownedThemes' | 'hasBeenOnboarded'>) => Promise<User | null>;
   updateUser: (userId: string, update: Partial<User> | ((user: User) => User)) => void;
   deleteUser: (userId: string) => void;

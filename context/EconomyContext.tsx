@@ -20,10 +20,10 @@ interface EconomyState {
 // Dispatch functions provided by this context
 interface EconomyDispatch {
   // Setup
-  setMarkets: (markets: Market[]) => void;
-  setRewardTypes: (rewardTypes: RewardTypeDefinition[]) => void;
-  setPurchaseRequests: (requests: PurchaseRequest[]) => void;
-  setGameAssets: (assets: GameAsset[]) => void;
+  setMarkets: React.Dispatch<React.SetStateAction<Market[]>>;
+  setRewardTypes: React.Dispatch<React.SetStateAction<RewardTypeDefinition[]>>;
+  setPurchaseRequests: React.Dispatch<React.SetStateAction<PurchaseRequest[]>>;
+  setGameAssets: React.Dispatch<React.SetStateAction<GameAsset[]>>;
   
   // Reward Types
   addRewardType: (rewardType: Omit<RewardTypeDefinition, 'id' | 'isCore'>) => void;

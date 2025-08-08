@@ -21,7 +21,7 @@ interface EditTrophyDialogProps {
 
 const EditTrophyDialog: React.FC<EditTrophyDialogProps> = ({ trophy, initialData, onClose, mode = (trophy ? 'edit' : 'create'), onTryAgain, isGenerating, onSave }) => {
   const { ranks } = useAppState();
-  const { allTags } = useQuestState();
+  const { quests, allTags } = useQuestState();
   const { addTrophy, updateTrophy } = useAppDispatch();
 
   const getInitialFormData = useCallback(() => {
@@ -138,6 +138,13 @@ const EditTrophyDialog: React.FC<EditTrophyDialogProps> = ({ trophy, initialData
                     required
                 />
             );
+        case TrophyRequirementType.QuestCompleted:
+             return (
+                <select value={req.value} onChange={e => handleRequirementChange(index, 'value', e.target.value)} className="w-full px-4 py-2 bg-stone-700 border border-stone-600 rounded-md">
+                     <option value="" disabled>Select a Quest</option>
+                    {quests.map(q => <option key={q.id} value={q.id}>{q.title}</option>)}
+                </select>
+            );
         default:
             return <Input type="text" placeholder="Value" value={req.value} onChange={e => handleRequirementChange(index, 'value', e.target.value)} required />;
     }
@@ -207,6 +214,7 @@ const EditTrophyDialog: React.FC<EditTrophyDialogProps> = ({ trophy, initialData
                                     <option value={TrophyRequirementType.CompleteQuestType}>Complete Quest Type</option>
                                     <option value={TrophyRequirementType.CompleteQuestTag}>Complete Quest w/ Tag</option>
                                     <option value={TrophyRequirementType.AchieveRank}>Achieve Rank</option>
+                                    <option value={TrophyRequirementType.QuestCompleted}>Complete Specific Quest</option>
                                 </select>
                                 {renderRequirementValueInput(req, index)}
                                 <Input type="number" value={req.count} min="1" onChange={e => handleRequirementChange(index, 'count', e.target.value)} />

@@ -6,7 +6,7 @@ import Card from '../ui/Card';
 import ConfirmDialog from '../ui/ConfirmDialog';
 import EditGameAssetDialog from '../admin/EditGameAssetDialog';
 import EmptyState from '../ui/EmptyState';
-import { ItemManagerIcon, EllipsisVerticalIcon } from '../ui/Icons';
+import { ItemManagerIcon } from '../ui/Icons';
 import ItemIdeaGenerator from '../quests/ItemIdeaGenerator';
 import Input from '../ui/Input';
 import ImagePreviewDialog from '../ui/ImagePreviewDialog';
@@ -30,7 +30,6 @@ const ManageItemsPage: React.FC = () => {
     const [confirmation, setConfirmation] = useState<{ action: 'delete', ids: string[] } | null>(null);
     const [initialCreateData, setInitialCreateData] = useState<any | null>(null);
     const [selectedAssets, setSelectedAssets] = useState<string[]>([]);
-    const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
     const dropdownRef = useRef<HTMLDivElement | null>(null);
     
     const [activeTab, setActiveTab] = useState('All');
@@ -165,14 +164,6 @@ const ManageItemsPage: React.FC = () => {
         } catch (e) { /* error handled by apiRequest */ }
     };
 
-    const handleClone = async (assetId: string) => {
-        try {
-            await apiRequest('POST', `/api/assets/clone/${assetId}`);
-            addNotification({ type: 'success', message: 'Asset cloned successfully!' });
-            fetchAssets();
-        } catch (e) { /* error handled */ }
-    };
-
     const handleConfirmAction = async () => {
         if (!confirmation || confirmation.action !== 'delete') return;
         try {
@@ -192,10 +183,6 @@ const ManageItemsPage: React.FC = () => {
         });
         setEditingAsset(null);
         setIsCreateDialogOpen(true);
-    };
-
-    const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
-        setSelectedAssets(e.target.checked ? pageAssets.map(a => a.id) : []);
     };
     
     const handleSelectOne = (id: string, isChecked: boolean) => {
@@ -261,7 +248,9 @@ const ManageItemsPage: React.FC = () => {
                     <div className="text-center py-10"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-400 mx-auto"></div></div>
                 ) : pageAssets.length > 0 ? (
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-                        {pageAssets.map(asset => (
+                        {pageAssets.map(asset => {
+                            const isOrphaned = asset.isForSale && (!asset.marketIds || asset.marketIds.length === 0);
+                            return (
                              <div key={asset.id} className="relative group">
                                 <label
                                     htmlFor={`select-asset-${asset.id}`}
@@ -292,15 +281,16 @@ const ManageItemsPage: React.FC = () => {
                                                 e.stopPropagation(); 
                                                 handleEdit(asset);
                                             }} 
-                                            className="w-full text-left"
+                                            className="w-full text-left flex items-center gap-1.5"
                                         >
+                                            {isOrphaned && <span title="This item is for sale but not in any market." className="text-yellow-400">⚠️</span>}
                                             <p className="font-bold text-stone-200 truncate hover:underline hover:text-accent transition-colors" title={asset.name}>{asset.name}</p>
                                         </button>
                                         <p className="text-xs text-stone-400">{asset.category}</p>
                                     </div>
                                 </label>
                             </div>
-                        ))}
+                        )})}
                     </div>
                 ) : (
                     <EmptyState

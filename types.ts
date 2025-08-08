@@ -245,6 +245,7 @@ export enum TrophyRequirementType {
     EarnTotalReward = 'EARN_TOTAL_REWARD',
     AchieveRank = 'ACHIEVE_RANK',
     CompleteQuestTag = 'COMPLETE_QUEST_TAG',
+    QuestCompleted = 'QUEST_COMPLETED',
 }
 
 export interface TrophyRequirement {
@@ -253,6 +254,7 @@ export interface TrophyRequirement {
     // For Reward, this is the rewardTypeId
     // For Rank, this is the rankId
     // For QuestTag, this is the tag string
+    // For QuestCompleted, this is the questId
     value: string; 
     count: number;
 }

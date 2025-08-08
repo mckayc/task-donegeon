@@ -53,6 +53,8 @@ const checkAndAwardTrophies = async (manager, userId, guildId) => {
                     return userCompletedQuests.filter(c => allQuests.find(q => q.id === c.quest?.id)?.tags?.includes(req.value)).length >= req.count;
                 case 'ACHIEVE_RANK':
                     return userRank?.id === req.value;
+                case 'QUEST_COMPLETED':
+                    return userCompletedQuests.filter(c => c.quest?.id === req.value).length >= req.count;
                 default:
                     return false;
             }

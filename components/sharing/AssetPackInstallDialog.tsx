@@ -6,6 +6,8 @@ import Input from '../ui/Input';
 import UserMultiSelect from '../ui/UserMultiSelect';
 import { useAuthState } from '../../context/AuthContext';
 import { bugLogger } from '../../utils/bugLogger';
+import DependencyGraph from './DependencyGraph';
+import { ChevronDownIcon } from '../ui/Icons';
 
 interface AssetPackInstallDialogProps {
   assetPack: AssetPack;
@@ -86,6 +88,7 @@ const AssetPackInstallDialog: React.FC<AssetPackInstallDialogProps> = ({ assetPa
     const { users } = useAuthState();
     const [resolutions, setResolutions] = useState(initialResolutions);
     const [assignedUserIds, setAssignedUserIds] = useState<string[]>(() => users.map(u => u.id));
+    const [isDependenciesOpen, setIsDependenciesOpen] = useState(false);
 
     const handleResolutionChange = (id: string, type: ShareableAssetType, resolution: 'skip' | 'rename') => {
         setResolutions(prev => prev.map(r => r.id === id && r.type === type ? { ...r, resolution, selected: resolution !== 'skip' } : r));
@@ -141,6 +144,18 @@ const AssetPackInstallDialog: React.FC<AssetPackInstallDialogProps> = ({ assetPa
                         <h3 className="font-bold text-lg text-stone-100">{assetPack.manifest.emoji} {assetPack.manifest.name}</h3>
                         <p className="text-sm text-stone-400">by {assetPack.manifest.author}</p>
                         <p className="text-stone-300 mt-2">{assetPack.manifest.description}</p>
+                    </div>
+
+                    <div className="p-4 bg-stone-900/50 rounded-lg">
+                        <details onToggle={(e) => setIsDependenciesOpen((e.target as HTMLDetailsElement).open)}>
+                            <summary className="flex justify-between items-center cursor-pointer font-semibold text-stone-200">
+                                View Visual Dependency Graph
+                                <ChevronDownIcon className={`w-5 h-5 transition-transform ${isDependenciesOpen ? 'rotate-180' : ''}`} />
+                            </summary>
+                            <div className="mt-4 pt-4 border-t border-stone-700/60">
+                                <DependencyGraph pack={assetPack} />
+                            </div>
+                        </details>
                     </div>
                     
                     {resolutions.length > 0 ? (

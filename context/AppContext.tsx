@@ -65,7 +65,7 @@ const mergeData = <T extends { id: string }>(existing: T[], incoming: T[]): T[] 
 
 export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const { addNotification } = useNotificationsDispatch();
-  const { currentUser, users } = useAuthState();
+  const { currentUser } = useAuthState();
   const authDispatch = useAuthDispatch();
   const economyDispatch = useEconomyDispatch();
   const questDispatch = useQuestDispatch();
@@ -231,6 +231,14 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       const { updates, newSyncTimestamp } = response;
       if (Object.keys(updates).length > 0) {
           processAndSetData(updates, true);
+          
+          // If the current user's data was in the update, refresh the currentUser state
+          if (updates.users && currentUser) {
+            const updatedCurrentUser = updates.users.find((u: User) => u.id === currentUser.id);
+            if (updatedCurrentUser) {
+                authDispatch.setCurrentUser(updatedCurrentUser);
+            }
+          }
       }
       
       lastSyncTimestamp.current = newSyncTimestamp;
@@ -240,7 +248,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       setSyncStatus('error');
       setSyncError(error instanceof Error ? error.message : 'An unknown error occurred during sync.');
     }
-  }, [apiRequest, processAndSetData]);
+  }, [apiRequest, processAndSetData, currentUser, authDispatch]);
 
   useEffect(() => {
     const initializeApp = async () => {

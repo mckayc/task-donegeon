@@ -8,13 +8,17 @@ import ToggleSwitch from '../ui/ToggleSwitch';
 import EmojiPicker from '../ui/EmojiPicker';
 import { GrabHandleIcon, ArrowLeftIcon, ArrowRightIcon } from '../ui/Icons';
 import { useNotificationsDispatch } from '../../context/NotificationsContext';
+import { useAuthState } from '../../context/AuthContext';
+import { useUIState } from '../../context/UIStateContext';
 
 type SidebarKey = keyof AppSettings['sidebars'];
 
 const AppearancePage: React.FC = () => {
-    const { settings, themes: allThemes } = useAppState();
+    const { settings, themes: allThemes, guilds } = useAppState();
     const { updateSettings } = useAppDispatch();
     const { addNotification } = useNotificationsDispatch();
+    const { currentUser } = useAuthState();
+    const { appMode } = useUIState();
     
     // Initialize state once from settings, preventing resets on re-render from sync
     const [formState, setFormState] = useState<AppSettings>(() => JSON.parse(JSON.stringify(settings)));
@@ -25,12 +29,51 @@ const AppearancePage: React.FC = () => {
     const dragItem = useRef<number | null>(null);
     const dragOverItem = useRef<number | null>(null);
 
-    // When the global settings change (e.g., from a sync), update the local form state
-    // only if the user isn't currently interacting with it. For simplicity, we'll
-    // just update whenever the global settings object changes reference.
+    // This effect was causing the bug. When a sync happened, it would reset local form changes.
+    // It is now removed, and a new live preview effect is added below.
+    // useEffect(() => {
+    //     setFormState(JSON.parse(JSON.stringify(settings)));
+    // }, [settings]);
+    
+    const applyThemeStyles = (themeId: string) => {
+        const theme = allThemes.find(t => t.id === themeId);
+        if (theme) {
+            Object.entries(theme.styles).forEach(([key, value]) => {
+                document.documentElement.style.setProperty(key, value as string);
+            });
+            document.body.dataset.theme = themeId;
+        }
+    };
+
+    // Effect for live previewing the theme
     useEffect(() => {
-        setFormState(JSON.parse(JSON.stringify(settings)));
-    }, [settings]);
+        if (formState.theme) {
+            applyThemeStyles(formState.theme);
+        }
+
+        // Cleanup function to revert to the actual saved theme on unmount
+        return () => {
+            let activeThemeId: string | undefined = settings.theme;
+            if (appMode.mode === 'guild') {
+                const guild = guilds.find(g => g.id === appMode.guildId);
+                if (guild?.themeId) {
+                    activeThemeId = guild.themeId;
+                } else if (currentUser?.theme) {
+                    activeThemeId = currentUser.theme;
+                }
+            } else {
+                if (currentUser?.theme) {
+                    activeThemeId = currentUser.theme;
+                }
+            }
+            if (activeThemeId) {
+                applyThemeStyles(activeThemeId);
+            } else {
+                // Revert to original settings default if no user/guild theme
+                applyThemeStyles(settings.theme);
+            }
+        };
+    }, [formState.theme, allThemes, settings.theme, currentUser?.theme, appMode, guilds]);
 
 
     const handleSave = () => {
@@ -161,6 +204,7 @@ const AppearancePage: React.FC = () => {
                                     onClick={() => setFormState(p => ({...p, theme: theme.id}))}
                                     className={`capitalize w-24 h-16 rounded-lg font-bold text-white flex items-center justify-center transition-all ${formState.theme === theme.id ? 'ring-2 ring-offset-2 ring-offset-stone-800 ring-white' : ''}`}
                                     style={themeStyle}
+                                    data-log-id={`appearance-theme-select-${theme.id}`}
                                 >
                                     {theme.name}
                                 </button>

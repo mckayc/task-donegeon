@@ -194,6 +194,10 @@ const ManageItemsPage: React.FC = () => {
         setEditingAsset(null);
         setIsCreateDialogOpen(true);
     };
+
+    const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setSelectedAssets(e.target.checked ? pageAssets.map(a => a.id) : []);
+    };
     
     return (
         <div className="space-y-6">
@@ -208,13 +212,13 @@ const ManageItemsPage: React.FC = () => {
                     <input id="file-upload" type="file" multiple onChange={handleFileSelect} className="hidden" disabled={isUploading} />
                     <p className="text-stone-400 mb-4">Drag & drop files here, or click to select.</p>
                     <div className="flex justify-center gap-4">
-                        <Button onClick={() => document.getElementById('file-upload')?.click()} disabled={isUploading}>
+                        <Button onClick={() => document.getElementById('file-upload')?.click()} disabled={isUploading} data-log-id="manage-items-upload-image">
                             {isUploading ? 'Processing...' : 'Upload Image'}
                         </Button>
                          {isAiAvailable && (
-                            <Button onClick={() => setIsGeneratorOpen(true)} variant="secondary">Create with AI</Button>
+                            <Button onClick={() => setIsGeneratorOpen(true)} variant="secondary" data-log-id="manage-items-create-with-ai">Create with AI</Button>
                         )}
-                        <Button onClick={handleCreate} variant="secondary">Create Manually</Button>
+                        <Button onClick={handleCreate} variant="secondary" data-log-id="manage-items-create-manually">Create Manually</Button>
                     </div>
                 </div>
             </Card>
@@ -223,6 +227,7 @@ const ManageItemsPage: React.FC = () => {
                     <nav className="-mb-px flex space-x-4 overflow-x-auto">
                         {categories.map(category => (
                             <button key={category} onClick={() => setActiveTab(category)}
+                                data-log-id={`manage-items-tab-${category.toLowerCase()}`}
                                 className={`capitalize whitespace-nowrap pb-4 px-1 border-b-2 font-medium text-sm transition-colors ${
                                     activeTab === category
                                     ? 'border-emerald-500 text-emerald-400'
@@ -245,7 +250,7 @@ const ManageItemsPage: React.FC = () => {
                     {selectedAssets.length > 0 && (
                         <div className="flex items-center gap-2 p-2 bg-stone-900/50 rounded-lg">
                             <span className="text-sm font-semibold text-stone-300 px-2">{selectedAssets.length} selected</span>
-                            <Button size="sm" variant="secondary" className="!bg-red-900/50 hover:!bg-red-800/60 text-red-300" onClick={() => setConfirmation({ action: 'delete', ids: selectedAssets })}>Delete</Button>
+                            <Button size="sm" variant="secondary" className="!bg-red-900/50 hover:!bg-red-800/60 text-red-300" onClick={() => setConfirmation({ action: 'delete', ids: selectedAssets })} data-log-id="manage-items-bulk-delete">Delete</Button>
                         </div>
                     )}
                 </div>
@@ -286,7 +291,8 @@ const ManageItemsPage: React.FC = () => {
                                                 e.preventDefault(); 
                                                 e.stopPropagation(); 
                                                 handleEdit(asset);
-                                            }} 
+                                            }}
+                                            data-log-id={`manage-items-edit-${asset.id}`}
                                             className="w-full text-left flex items-center gap-1.5"
                                         >
                                             {isOrphaned && <span title="This item is for sale but not in any market." className="text-yellow-400">⚠️</span>}
@@ -303,7 +309,7 @@ const ManageItemsPage: React.FC = () => {
                         Icon={ItemManagerIcon}
                         title="No Assets Found"
                         message={searchTerm ? "No assets match your search." : "Create your first asset to be used as a reward or marketplace item."}
-                        actionButton={<Button onClick={handleCreate}>Create Asset</Button>}
+                        actionButton={<Button onClick={handleCreate} data-log-id="manage-items-create-empty-state">Create Asset</Button>}
                     />
                 )}
             </Card>

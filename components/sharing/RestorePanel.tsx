@@ -1,4 +1,3 @@
-
 import React, { useRef } from 'react';
 import Button from '../ui/Button';
 
@@ -12,7 +11,7 @@ const RestorePanel: React.FC<RestorePanelProps> = ({ onFileSelect }) => {
     const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         if (event.target.files && event.target.files.length > 0) {
             onFileSelect(event.target.files[0]);
-            event.target.value = ''; 
+            event.target.value = ''; // Reset input so the same file can be selected again
         }
     };
 
@@ -25,11 +24,11 @@ const RestorePanel: React.FC<RestorePanelProps> = ({ onFileSelect }) => {
              <div>
                 <h4 className="font-bold text-lg text-stone-200">Restore from Backup</h4>
                 <p className="text-stone-400 text-sm mb-3">
-                    Restore your game state from a full backup file.
-                    <span className="font-bold text-amber-400"> WARNING:</span> This will overwrite all current data. This action is irreversible.
+                    Restore the entire application state from a backup file.
+                    <span className="font-bold text-red-400"> WARNING:</span> This will overwrite all current data. This action is irreversible.
                 </p>
             </div>
-            <div className="p-8 border-2 border-dashed border-amber-800/50 bg-amber-900/20 rounded-lg text-center">
+            <div className="p-8 border-2 border-dashed border-red-800/50 bg-red-900/20 rounded-lg text-center">
                 <input
                     type="file"
                     ref={fileInputRef}
@@ -37,8 +36,8 @@ const RestorePanel: React.FC<RestorePanelProps> = ({ onFileSelect }) => {
                     accept=".json,application/json"
                     className="hidden"
                 />
-                <Button onClick={handleButtonClick} className="!bg-amber-600 hover:!bg-amber-500">
-                    Select Backup File to Restore
+                <Button onClick={handleButtonClick} className="!bg-red-600 hover:!bg-red-500">
+                    Select Backup File
                 </Button>
             </div>
         </div>

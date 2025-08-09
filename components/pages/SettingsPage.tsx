@@ -1,7 +1,7 @@
 import React, { useState, ChangeEvent, ReactNode, useEffect } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { useAuthState, useAuthDispatch } from '../../context/AuthContext';
-import { Role, AppSettings, Terminology, RewardCategory, RewardTypeDefinition } from '../../types';
+import { Role, AppSettings, Terminology, RewardCategory, RewardTypeDefinition, User } from '../../types';
 import Button from '../ui/Button';
 import { ChevronDownIcon } from '../ui/Icons';
 import Input from '../ui/Input';
@@ -105,448 +105,152 @@ const terminologyLabels: { [key in keyof Terminology]: string } = {
 
 
 export const SettingsPage: React.FC = () => {
-    const { settings, isAiConfigured } = useAppState();
+    const { settings, guilds } = useAppState();
+    const { users } = useAuthState();
     const { rewardTypes } = useEconomyState();
-    const { currentUser, users } = useAuthState();
-    const { updateSettings, resetSettings, factoryReset } = useAppDispatch();
+    const { updateSettings, resetSettings, clearAllHistory, resetAllPlayerData, deleteAllCustomContent, factoryReset } = useAppDispatch();
     const { addNotification } = useNotificationsDispatch();
     
+    // Create a local copy of settings for form manipulation
     const [formState, setFormState] = useState<AppSettings>(() => JSON.parse(JSON.stringify(settings)));
-    const [showSaved, setShowSaved] = useState(false);
-    const [isResetConfirmOpen, setIsResetConfirmOpen] = useState(false);
-    const [isFactoryResetConfirmOpen, setIsFactoryResetConfirmOpen] = useState(false);
-    const [isFaviconPickerOpen, setIsFaviconPickerOpen] = useState(false);
-    
-    const [apiKeyStatus, setApiKeyStatus] = useState<'unknown' | 'testing' | 'valid' | 'invalid'>(isAiConfigured ? 'valid' : 'unknown');
-    const [apiKeyError, setApiKeyError] = useState<string | null>(null);
+    const [confirmation, setConfirmation] = useState<string | null>(null);
+    const [isEmojiPickerOpen, setIsEmojiPickerOpen] = useState(false);
 
-    const triggerSavedAnimation = () => {
-        setShowSaved(true);
-        setTimeout(() => {
-            setShowSaved(false);
-        }, 2000); // Animation lasts 2 seconds
-    };
-    
-    const handleSave = () => {
-        if (bugLogger.isRecording()) {
-            bugLogger.add({ type: 'ACTION', message: `Clicked "Save Changes" for settings.` });
-        }
-        updateSettings(formState);
-        triggerSavedAnimation();
-    };
-    
-    const handleFormChange = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-        const { name, value, type } = e.target;
-        const keys = name.split('.');
-        
+    useEffect(() => {
+        // This effect ensures that if the global settings are updated by a sync,
+        // the local form state reflects that change. This prevents stale data.
+        setFormState(JSON.parse(JSON.stringify(settings)));
+    }, [settings]);
+
+    const handleSettingChange = (section: keyof AppSettings, key: any, value: any) => {
         setFormState(prev => {
-            let newState = JSON.parse(JSON.stringify(prev));
-            let currentLevel: any = newState;
-            for (let i = 0; i < keys.length - 1; i++) {
-                currentLevel = currentLevel[keys[i]];
-            }
-            const finalValue = type === 'number' ? parseFloat(value) || 0 : value;
-            currentLevel[keys[keys.length - 1]] = finalValue;
+            const newState = { ...prev };
+            (newState[section] as any)[key] = value;
             return newState;
         });
     };
 
-     const handleExchangeRateChange = (rewardTypeId: string, value: string) => {
-        const numericValue = parseFloat(value) || 0;
-        setFormState(prev => {
-            const newRates = { ...prev.rewardValuation.exchangeRates, [rewardTypeId]: numericValue };
-            return {
-                ...prev,
-                rewardValuation: {
-                    ...prev.rewardValuation,
-                    exchangeRates: newRates
+    const handleSimpleChange = (key: keyof AppSettings, value: any) => {
+         setFormState(prev => ({ ...prev, [key]: value }));
+    };
+
+    const handleTerminologyChange = (e: ChangeEvent<HTMLInputElement>) => {
+        const { name, value } = e.target;
+        setFormState(p => ({ ...p, terminology: { ...p.terminology, [name as keyof Terminology]: value } }));
+    };
+    
+    const handleRewardValuationChange = (key: keyof AppSettings['rewardValuation'], value: any) => {
+        setFormState(p => ({ ...p, rewardValuation: { ...p.rewardValuation, [key]: value } }));
+    };
+
+    const handleRateChange = (rewardTypeId: string, rate: string) => {
+        const numericRate = parseFloat(rate) || 0;
+        setFormState(p => ({
+            ...p,
+            rewardValuation: {
+                ...p.rewardValuation,
+                exchangeRates: {
+                    ...p.rewardValuation.exchangeRates,
+                    [rewardTypeId]: numericRate,
                 }
-            };
-        });
-    };
-    
-    const handleToggleChange = (path: string, enabled: boolean, sectionTitle: string, label: string) => {
-        if (bugLogger.isRecording()) {
-            bugLogger.add({ type: 'ACTION', message: `Toggled "${label}" to ${enabled ? 'ON' : 'OFF'} in "${sectionTitle}".` });
-        }
-        const newState = JSON.parse(JSON.stringify(formState));
-        const keys = path.split('.');
-        let current = newState;
-        for (let i = 0; i < keys.length - 1; i++) {
-            current = current[keys[i]] = current[keys[i]] || {};
-        }
-        current[keys[keys.length - 1]] = enabled;
-
-        if (path === 'sharedMode.enabled' && enabled && newState.sharedMode.userIds.length === 0) {
-            newState.sharedMode.userIds = users.map(u => u.id);
-        }
-
-        setFormState(newState);
-    };
-    
-    const testApiKey = async () => {
-        if (bugLogger.isRecording()) {
-            bugLogger.add({ type: 'ACTION', message: `Clicked "Test API Key" button.` });
-        }
-        setApiKeyStatus('testing');
-        setApiKeyError(null);
-        try {
-            const response = await fetch('/api/ai/test', { method: 'POST' });
-            const data = await response.json();
-            if (response.ok && data.success) {
-                setApiKeyStatus('valid');
-                addNotification({ type: 'success', message: 'API Key is valid and connected!' });
-            } else {
-                setApiKeyStatus('invalid');
-                setApiKeyError(data.error || 'An unknown error occurred during testing.');
             }
-        } catch(e) {
-            setApiKeyStatus('invalid');
-            const message = e instanceof Error ? e.message : 'Could not connect to the server to test the API key.';
-            setApiKeyError(message);
+        }));
+    };
+
+    const handleSave = () => {
+        updateSettings(formState);
+        addNotification({ type: 'success', message: 'Settings saved successfully!' });
+    };
+
+    const handleConfirm = () => {
+        if (!confirmation) return;
+        switch(confirmation) {
+            case 'resetSettings': resetSettings(); break;
+            case 'clearHistory': clearAllHistory(); break;
+            case 'resetPlayers': resetAllPlayerData(); break;
+            case 'deleteContent': deleteAllCustomContent(); break;
+            case 'factoryReset': factoryReset(); break;
         }
+        setConfirmation(null);
     };
     
-    const handleSharedUserToggle = (userId: string) => {
-        const newIds = formState.sharedMode.userIds.includes(userId)
-            ? formState.sharedMode.userIds.filter(id => id !== userId)
-            : [...formState.sharedMode.userIds, userId];
-            
-        const newState = {
-            ...formState,
-            sharedMode: { ...formState.sharedMode, userIds: newIds }
-        };
-        setFormState(newState);
-    };
-
-    const handleResetConfirm = () => {
-        resetSettings();
-        setFormState(JSON.parse(JSON.stringify(INITIAL_SETTINGS)));
-        setIsResetConfirmOpen(false);
-    };
-
-    const handleFactoryResetConfirm = () => {
-        setIsFactoryResetConfirmOpen(false);
-        factoryReset();
-    };
-    
-    const currencyRewards = rewardTypes.filter(rt => rt.category === RewardCategory.Currency);
-    const otherRewards = rewardTypes.filter(rt => rt.id !== formState.rewardValuation.anchorRewardId);
-    const anchorReward = rewardTypes.find(rt => rt.id === formState.rewardValuation.anchorRewardId);
-    
-    if (currentUser?.role !== Role.DonegeonMaster) {
-        return <div className="p-6 rounded-lg" style={{ backgroundColor: 'hsl(var(--color-bg-secondary))' }}><p>You do not have permission to view this page.</p></div>;
-    }
-
-    const saveHeaderAction = (
-        <div className="flex items-center gap-4">
-            {showSaved && (
-                <span className="text-sm font-semibold text-green-400 saved-animation flex items-center gap-1">
-                    ✓ Saved!
-                </span>
-            )}
-            <Button onClick={handleSave} data-log-id="settings-save-changes">Save Changes</Button>
-        </div>
-    );
+    const currencyRewardTypes = rewardTypes.filter(rt => rt.category === RewardCategory.Currency);
+    const nonAnchorRewards = rewardTypes.filter(rt => rt.id !== formState.rewardValuation.anchorRewardId);
 
     return (
-        <div className="space-y-8">
-            <Card title="Application Settings" headerAction={saveHeaderAction}>
-                <CollapsibleSection title="General Settings" defaultOpen onToggle={(isOpen) => bugLogger.isRecording() && bugLogger.add({ type: 'ACTION', message: `${isOpen ? 'Expanded' : 'Collapsed'} "General Settings" section.` })}>
-                    <div className="space-y-6">
-                        <div className="flex items-start">
-                            <ToggleSwitch enabled={formState.chat.enabled} setEnabled={(val) => handleToggleChange('chat.enabled', val, 'General Settings', 'Enable Sitewide Chat')} label="Enable Sitewide Chat" data-log-id="settings-toggle-chat" />
-                            <p className="text-sm ml-6" style={{ color: 'hsl(var(--color-text-secondary))' }}>Allow users to send direct messages and participate in guild chats.</p>
-                        </div>
+        <div className="space-y-8 relative">
+             <div className="sticky top-0 z-10 -mx-8 -mt-8 px-8 pt-6 pb-4 mb-2" style={{ backgroundColor: 'hsl(var(--color-bg-tertiary))', borderBottom: '1px solid hsl(var(--color-border))' }}>
+                <div className="flex justify-end items-center">
+                    <Button onClick={handleSave}>Save All Settings</Button>
+                </div>
+            </div>
 
-                        <div className="pt-4 border-t flex items-start" style={{ borderColor: 'hsl(var(--color-border))' }}>
-                            <label className="text-sm font-medium text-stone-300 mr-3 pt-2">Favicon</label>
-                            <div className="relative">
-                                <button
-                                    type="button"
-                                    data-log-id="settings-favicon-picker-button"
-                                    onClick={() => {
-                                        if(bugLogger.isRecording()) { bugLogger.add({ type: 'ACTION', message: 'Opened favicon emoji picker.' }); }
-                                        setIsFaviconPickerOpen(prev => !prev)
-                                    }}
-                                    className="w-14 h-11 text-left px-4 py-2 bg-stone-700 border border-stone-600 rounded-md flex items-center justify-center text-2xl"
-                                >
+            <Card className="p-0 overflow-hidden">
+                <CollapsibleSection title="General">
+                    <div className="p-6 space-y-4">
+                        <Input label="Application Name" value={formState.terminology.appName} onChange={e => handleTerminologyChange(e)} name="appName" />
+                        <div className="flex items-end gap-4">
+                             <div className="relative">
+                                <label className="block text-sm font-medium text-stone-300 mb-1">Browser Favicon</label>
+                                <button type="button" onClick={() => setIsEmojiPickerOpen(prev => !prev)} className="w-20 h-14 text-4xl p-1 rounded-md bg-stone-700 hover:bg-stone-600 flex items-center justify-center">
                                     {formState.favicon}
                                 </button>
-                                {isFaviconPickerOpen && (
-                                    <EmojiPicker
-                                        onSelect={(emoji) => {
-                                            if(bugLogger.isRecording()) { bugLogger.add({ type: 'ACTION', message: `Selected new favicon: ${emoji}` }); }
-                                            setFormState(p => ({ ...p, favicon: emoji }));
-                                            setIsFaviconPickerOpen(false);
-                                        }}
-                                        onClose={() => setIsFaviconPickerOpen(false)}
-                                    />
-                                )}
-                            </div>
-                            <p className="text-sm ml-6 pt-2" style={{ color: 'hsl(var(--color-text-secondary))' }}>Choose an emoji to represent your app in the browser tab.</p>
-                        </div>
-
-                        <div className="pt-4 border-t flex items-start" style={{ borderColor: 'hsl(var(--color-border))' }}>
-                            <ToggleSwitch enabled={formState.forgivingSetbacks} setEnabled={(val) => handleToggleChange('forgivingSetbacks', val, 'General Settings', 'Forgiving Setbacks')} label="Forgiving Setbacks" data-log-id="settings-toggle-forgiving-setbacks" />
-                            <p className="text-sm ml-6" style={{ color: 'hsl(var(--color-text-secondary))' }}>If enabled, time-based setbacks are only applied if a quest remains uncompleted at the end of the day.</p>
+                                {isEmojiPickerOpen && <EmojiPicker onSelect={(emoji) => { handleSimpleChange('favicon', emoji); setIsEmojiPickerOpen(false); }} onClose={() => setIsEmojiPickerOpen(false)} />}
+                             </div>
+                             <Input label="Default Theme" as="select" value={formState.theme} onChange={e => handleSimpleChange('theme', e.target.value)}>
+                                 {/* Assuming themes are in AppState */}
+                                 {useAppState().themes.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+                            </Input>
                         </div>
                     </div>
                 </CollapsibleSection>
-
-                <CollapsibleSection title="Notifications" onToggle={(isOpen) => bugLogger.isRecording() && bugLogger.add({ type: 'ACTION', message: `${isOpen ? 'Expanded' : 'Collapsed'} "Notifications" section.` })}>
-                    <div className="space-y-6">
-                        <div className="flex items-start">
-                            <ToggleSwitch enabled={formState.loginNotifications.enabled} setEnabled={(val) => handleToggleChange('loginNotifications.enabled', val, 'Notifications', 'Enable popup notifications on login')} label="Enable popup notifications on login" data-log-id="settings-toggle-login-notifications" />
-                            <p className="text-sm ml-6" style={{ color: 'hsl(var(--color-text-secondary))' }}>
-                                When this is turned on, if there are any new notifications when a user enters their account it will show a large popup with all the notifications.
-                            </p>
-                        </div>
+                <CollapsibleSection title="Security">
+                    <div className="p-6 space-y-4">
+                         <ToggleSwitch enabled={formState.security.requirePinForUsers} setEnabled={val => handleSettingChange('security', 'requirePinForUsers', val)} label="Require PIN for user switching" />
+                         <ToggleSwitch enabled={formState.security.requirePasswordForAdmin} setEnabled={val => handleSettingChange('security', 'requirePasswordForAdmin', val)} label="Require Password for Donegeon Masters & Gatekeepers" />
+                         <ToggleSwitch enabled={formState.security.allowProfileEditing} setEnabled={val => handleSettingChange('security', 'allowProfileEditing', val)} label="Allow users to edit their own profiles" />
                     </div>
                 </CollapsibleSection>
-
-                <CollapsibleSection title="Shared Mode" onToggle={(isOpen) => bugLogger.isRecording() && bugLogger.add({ type: 'ACTION', message: `${isOpen ? 'Expanded' : 'Collapsed'} "Shared Mode" section.` })}>
-                    <div className="space-y-6">
-                        <div className="flex items-start">
-                            <ToggleSwitch enabled={formState.sharedMode.enabled} setEnabled={(val) => handleToggleChange('sharedMode.enabled', val, 'Shared Mode', 'Enable Shared Mode')} label="Enable Shared Mode" data-log-id="settings-toggle-shared-mode" />
-                            <p className="text-sm ml-6" style={{ color: 'hsl(var(--color-text-secondary))' }}>This mode is for a device in a shared location (like a family tablet) where multiple people can view and use the app like a kiosk.</p>
-                        </div>
-
-                        <div className={`space-y-6 pl-8 mt-4 border-l-2 border-stone-700 ${!formState.sharedMode.enabled ? 'opacity-50 pointer-events-none' : ''}`}>
-                             <div className="flex items-start">
-                                <ToggleSwitch enabled={formState.sharedMode.quickUserSwitchingEnabled} setEnabled={(val) => handleToggleChange('sharedMode.quickUserSwitchingEnabled', val, 'Shared Mode', 'Quick User Switching Bar')} label="Quick User Switching Bar" data-log-id="settings-toggle-quick-switch" />
-                                <p className="text-sm ml-6" style={{ color: 'hsl(var(--color-text-secondary))' }}>If enabled, a bar with user avatars will appear at the top for one-click switching.</p>
-                            </div>
-                             <div className="flex items-start">
-                                <ToggleSwitch enabled={formState.sharedMode.allowCompletion} setEnabled={(val) => handleToggleChange('sharedMode.allowCompletion', val, 'Shared Mode', 'Allow Completion in Shared View')} label="Allow Completion in Shared View" data-log-id="settings-toggle-allow-shared-completion" />
-                                <p className="text-sm ml-6" style={{ color: 'hsl(var(--color-text-secondary))' }}>If enabled, a "Complete" button will appear next to tasks in the shared calendar view. Recommended to keep off for security.</p>
-                            </div>
-                            <div className="flex items-start">
-                                 <ToggleSwitch enabled={formState.sharedMode.autoExit} setEnabled={(val) => handleToggleChange('sharedMode.autoExit', val, 'Shared Mode', 'Auto Exit to Shared View')} label="Auto Exit to Shared View" data-log-id="settings-toggle-auto-exit-shared" />
-                                 <div className="ml-6 flex-grow">
-                                    <p className="text-sm" style={{ color: 'hsl(var(--color-text-secondary))' }}>Automatically return to the shared calendar view after a period of inactivity.</p>
-                                    {formState.sharedMode.autoExit && (
-                                        <div className="mt-2">
-                                            <Input label="Inactivity Time (minutes)" type="number" name="sharedMode.autoExitMinutes" min="1" value={formState.sharedMode.autoExitMinutes} onChange={handleFormChange} />
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-
-                            <div>
-                                <h4 className="font-semibold text-stone-200 mb-2">Users in Shared Mode</h4>
-                                <p className="text-xs text-stone-400 mb-2">Select which users will be available to log into from the Shared Mode screen.</p>
-                                 <div className="space-y-2 max-h-40 overflow-y-auto border border-stone-700 p-2 rounded-md">
-                                    {users.map(user => (
-                                        <div key={user.id} className="flex items-center">
-                                            <input type="checkbox" id={`shared-user-${user.id}`} checked={formState.sharedMode.userIds.includes(user.id)} onChange={() => handleSharedUserToggle(user.id)} className="h-4 w-4 text-emerald-600 bg-stone-700 border-stone-500 rounded focus:ring-emerald-500" />
-                                            <label htmlFor={`shared-user-${user.id}`} className="ml-3 text-stone-300">{user.gameName} ({user.role})</label>
-                                        </div>
-                                    ))}
-                                </div>
+                 <CollapsibleSection title="Game Rules">
+                    <div className="p-6 space-y-4">
+                        <ToggleSwitch enabled={formState.forgivingSetbacks} setEnabled={val => handleSimpleChange('forgivingSetbacks', val)} label="Forgiving Setbacks" />
+                        <p className="text-xs text-stone-400 -mt-3 ml-12">If ON, setbacks are only applied if a quest is incomplete at the end of the day. If OFF, they are applied the moment a quest becomes late.</p>
+                        
+                        <div className="pt-4 border-t border-stone-700/60">
+                            <h4 className="font-semibold text-stone-200 mb-2">Quest Defaults</h4>
+                            <div className="flex flex-col sm:flex-row gap-4">
+                                <ToggleSwitch enabled={formState.questDefaults.isActive} setEnabled={val => handleSettingChange('questDefaults', 'isActive', val)} label="Active by default" />
+                                <ToggleSwitch enabled={formState.questDefaults.isOptional} setEnabled={val => handleSettingChange('questDefaults', 'isOptional', val)} label="Optional by default" />
+                                <ToggleSwitch enabled={formState.questDefaults.requiresApproval} setEnabled={val => handleSettingChange('questDefaults', 'requiresApproval', val)} label="Requires Approval by default" />
                             </div>
                         </div>
                     </div>
                 </CollapsibleSection>
-
-                <CollapsibleSection title="Security" onToggle={(isOpen) => bugLogger.isRecording() && bugLogger.add({ type: 'ACTION', message: `${isOpen ? 'Expanded' : 'Collapsed'} "Security" section.` })}>
-                     <div className="space-y-6">
-                         <div className="pt-4 border-t flex items-start" style={{ borderColor: 'hsl(var(--color-border))' }}>
-                            <ToggleSwitch enabled={formState.security.requirePinForUsers} setEnabled={(val) => handleToggleChange('security.requirePinForUsers', val, 'Security', 'Require PIN for Users')} label="Require PIN for Users" data-log-id="settings-toggle-require-pin" />
-                            <p className="text-sm ml-6" style={{ color: 'hsl(var(--color-text-secondary))' }}>If disabled, users will not be prompted for a PIN when switching profiles. This is less secure but faster for trusted environments.</p>
-                        </div>
-                         <div className="pt-4 border-t flex items-start" style={{ borderColor: 'hsl(var(--color-border))' }}>
-                            <ToggleSwitch enabled={formState.security.requirePasswordForAdmin} setEnabled={(val) => handleToggleChange('security.requirePasswordForAdmin', val, 'Security', 'Require Password for Admins')} label={`Require Password for ${formState.terminology.admin} & ${formState.terminology.moderator}`} data-log-id="settings-toggle-require-admin-password" />
-                            <p className="text-sm ml-6" style={{ color: 'hsl(var(--color-text-secondary))' }}>If enabled, these roles must use their password to log in. If disabled, they can use their PIN like regular users.</p>
-                        </div>
-                    </div>
-                </CollapsibleSection>
-                
-                <CollapsibleSection title="Google Calendar Integration" onToggle={(isOpen) => bugLogger.isRecording() && bugLogger.add({ type: 'ACTION', message: `${isOpen ? 'Expanded' : 'Collapsed'} "Google Calendar Integration" section.` })}>
-                    <div className="space-y-4">
-                        <div className="flex items-start">
-                            <ToggleSwitch 
-                                enabled={formState.googleCalendar.enabled} 
-                                setEnabled={(val) => handleToggleChange('googleCalendar.enabled', val, 'Google Calendar', 'Enable Google Calendar Sync')} 
-                                label="Enable Google Calendar Sync"
-                                data-log-id="settings-toggle-gcal-sync"
-                            />
-                            <p className="text-sm ml-6" style={{ color: 'hsl(var(--color-text-secondary))' }}>Display events from a Google Calendar on the main calendar page. This is useful for seeing holidays or family events alongside your quests.</p>
-                        </div>
-                        <div className={`space-y-4 pt-4 border-t border-stone-700/60 ${!formState.googleCalendar.enabled ? 'opacity-50 pointer-events-none' : ''}`}>
-                            <p className="text-sm text-stone-400">You need to provide a Google API Key and the ID of the public Google Calendar you want to display. <a href="https://developers.google.com/calendar/api/guides/create-credentials" target="_blank" rel="noopener noreferrer" className="text-accent hover:underline">Learn how to get an API Key.</a> The Calendar ID can be found in your Google Calendar's settings.</p>
-                            <Input 
-                                label="Google API Key"
-                                name="googleCalendar.apiKey"
-                                type="password"
-                                value={formState.googleCalendar.apiKey}
-                                onChange={handleFormChange}
-                                placeholder="Enter Google API Key"
-                            />
-                             <Input 
-                                label="Google Calendar ID"
-                                name="googleCalendar.calendarId"
-                                value={formState.googleCalendar.calendarId}
-                                onChange={handleFormChange}
-                                placeholder="e.g., yourname@gmail.com or a long ID string"
-                            />
-                        </div>
-                    </div>
-                </CollapsibleSection>
-
-                <CollapsibleSection title="AI Features" onToggle={(isOpen) => bugLogger.isRecording() && bugLogger.add({ type: 'ACTION', message: `${isOpen ? 'Expanded' : 'Collapsed'} "AI Features" section.` })}>
-                    <div className="space-y-4">
-                        <div className="flex items-start">
-                            <ToggleSwitch
-                                enabled={formState.enableAiFeatures}
-                                setEnabled={(val) => handleToggleChange('enableAiFeatures', val, 'AI Features', 'Enable AI-Powered Features')}
-                                label="Enable AI-Powered Features"
-                                data-log-id="settings-toggle-ai-features"
-                            />
-                            <div className="ml-6 flex-grow">
-                                <p className="text-sm" style={{ color: 'hsl(var(--color-text-secondary))' }}>
-                                    Allow the use of Gemini AI to power features like the Suggestion Engine. This requires a valid Gemini API key to be configured by the server administrator.
-                                </p>
-                                <div className="flex items-center gap-4 mt-4">
-                                    <Button variant="secondary" onClick={testApiKey} disabled={apiKeyStatus === 'testing'} data-log-id="settings-test-api-key">
-                                        {apiKeyStatus === 'testing' ? 'Testing...' : 'Test API Key'}
-                                    </Button>
-                                    {apiKeyStatus === 'valid' && <span className="text-sm font-semibold text-green-400">✓ Valid Key</span>}
-                                    {apiKeyStatus === 'invalid' && <span className="text-sm font-semibold text-red-400">✗ Invalid Key</span>}
-                                </div>
-                                {apiKeyStatus === 'invalid' && apiKeyError && (
-                                    <div className="mt-2 p-3 bg-red-900/30 border border-red-700/60 rounded-lg">
-                                        <p className="text-sm text-red-300">{apiKeyError}</p>
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-                    </div>
-                </CollapsibleSection>
-
-                 <CollapsibleSection title="Economy & Valuation" onToggle={(isOpen) => bugLogger.isRecording() && bugLogger.add({ type: 'ACTION', message: `${isOpen ? 'Expanded' : 'Collapsed'} "Economy & Valuation" section.` })}>
-                    <div className="space-y-4">
-                         <ToggleSwitch
-                            enabled={formState.rewardValuation.enabled}
-                            setEnabled={(val) => handleToggleChange('rewardValuation.enabled', val, 'Economy & Valuation', 'Enable Economy Valuation')}
-                            label="Enable Economy Valuation & Exchanges"
-                            data-log-id="settings-toggle-economy-valuation"
-                        />
-                        <div className={`grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 mt-4 border-t border-stone-700/60 ${!formState.rewardValuation.enabled ? 'opacity-50 pointer-events-none' : ''}`}>
-                            {/* Left Column: Anchor & Fees */}
-                            <div className="space-y-4">
-                                 <Input as="select" label="Anchor Currency" name="rewardValuation.anchorRewardId" value={formState.rewardValuation.anchorRewardId} onChange={handleFormChange}>
-                                    {currencyRewards.map(rt => <option key={rt.id} value={rt.id}>{rt.name}</option>)}
-                                </Input>
-                                <Input label="Currency Exchange Fee (%)" type="number" step="0.1" name="rewardValuation.currencyExchangeFeePercent" value={formState.rewardValuation.currencyExchangeFeePercent} onChange={handleFormChange} />
-                                <Input label="XP Exchange Fee (%)" type="number" step="0.1" name="rewardValuation.xpExchangeFeePercent" value={formState.rewardValuation.xpExchangeFeePercent} onChange={handleFormChange} />
-                            </div>
-                            {/* Right Column: Exchange Rates */}
-                            <div className="space-y-3">
-                                <h4 className="font-semibold text-stone-200">Exchange Rates</h4>
-                                <p className="text-sm text-stone-400 -mt-2">How many of each reward is equal to 1 <span className="font-bold">{anchorReward?.name || 'Anchor'}</span>?</p>
-                                <div className="space-y-2 max-h-48 overflow-y-auto pr-2">
-                                    {otherRewards.map(rt => (
-                                        <div key={rt.id} className="flex items-center gap-2 p-2 bg-stone-900/60 rounded-md">
-                                            <label htmlFor={`exchange-${rt.id}`} className="text-stone-300 flex-grow">{rt.name} ({rt.icon})</label>
-                                            <Input id={`exchange-${rt.id}`} type="number" step="any" value={formState.rewardValuation.exchangeRates[rt.id] || ''} onChange={(e) => handleExchangeRateChange(rt.id, e.target.value)} className="w-28" />
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </CollapsibleSection>
-
-                <CollapsibleSection title={`Default ${formState.terminology.task} Values`} onToggle={(isOpen) => bugLogger.isRecording() && bugLogger.add({ type: 'ACTION', message: `${isOpen ? 'Expanded' : 'Collapsed'} "Default Task Values" section.` })}>
-                     <div className="space-y-6">
-                        <div className="flex items-start">
-                            <ToggleSwitch enabled={formState.questDefaults.requiresApproval} setEnabled={(val) => handleToggleChange('questDefaults.requiresApproval', val, `Default ${formState.terminology.task} Values`, 'Requires Approval')} label="Requires Approval" data-log-id="settings-toggle-default-approval" />
-                            <p className="text-sm ml-6" style={{ color: 'hsl(var(--color-text-secondary))' }}>If enabled, new {formState.terminology.tasks.toLowerCase()} will default to requiring approval from a {formState.terminology.moderator} or {formState.terminology.admin}.</p>
-                        </div>
-                        <div className="flex items-start">
-                            <ToggleSwitch enabled={formState.questDefaults.isOptional} setEnabled={(val) => handleToggleChange('questDefaults.isOptional', val, `Default ${formState.terminology.task} Values`, 'Is Optional')} label="Is Optional" data-log-id="settings-toggle-default-optional" />
-                            <p className="text-sm ml-6" style={{ color: 'hsl(var(--color-text-secondary))' }}>If enabled, new {formState.terminology.tasks.toLowerCase()} will default to being optional, meaning they don't count against a user if not completed.</p>
-                        </div>
-                        <div className="flex items-start">
-                            <ToggleSwitch enabled={formState.questDefaults.isActive} setEnabled={(val) => handleToggleChange('questDefaults.isActive', val, `Default ${formState.terminology.task} Values`, 'Is Active')} label="Is Active" data-log-id="settings-toggle-default-active" />
-                            <p className="text-sm ml-6" style={{ color: 'hsl(var(--color-text-secondary))' }}>If enabled, new {formState.terminology.tasks.toLowerCase()} will be active and visible on the board immediately upon creation.</p>
-                        </div>
-                    </div>
-                </CollapsibleSection>
-
-                 <CollapsibleSection title="Terminology" onToggle={(isOpen) => bugLogger.isRecording() && bugLogger.add({ type: 'ACTION', message: `${isOpen ? 'Expanded' : 'Collapsed'} "Terminology" section.` })}>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-4">
-                        {Object.keys(formState.terminology).map(key => (
-                             <Input 
-                                key={key}
-                                label={terminologyLabels[key as keyof Terminology]}
-                                name={`terminology.${key}`}
-                                value={formState.terminology[key as keyof Terminology]}
-                                onChange={handleFormChange}
-                             />
+                <CollapsibleSection title="Terminology">
+                    <div className="p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {Object.entries(terminologyLabels).map(([key, label]) => (
+                            <Input key={key} label={label} name={key} value={formState.terminology[key as keyof Terminology]} onChange={handleTerminologyChange} />
                         ))}
                     </div>
                 </CollapsibleSection>
-
-                <CollapsibleSection title="Advanced" onToggle={(isOpen) => bugLogger.isRecording() && bugLogger.add({ type: 'ACTION', message: `${isOpen ? 'Expanded' : 'Collapsed'} "Advanced" section.` })}>
-                     <div className="space-y-6">
-                        <div className="flex items-start">
-                            <ToggleSwitch 
-                                enabled={formState.developerMode.enabled} 
-                                setEnabled={(val) => handleToggleChange('developerMode.enabled', val, 'Advanced', 'Enable Developer Mode')} 
-                                label="Enable Developer Mode" 
-                                data-log-id="settings-toggle-developer-mode"
-                            />
-                            <p className="text-sm ml-6" style={{ color: 'hsl(var(--color-text-secondary))' }}>
-                                Enables bug tracking tools for collaboration with the AI assistant. A "Bug Reporter" will appear at the bottom of the screen.
-                            </p>
-                        </div>
-                        <div className="mt-6 p-4 bg-yellow-900/30 border border-yellow-700/60 rounded-lg">
-                            <h4 className="font-bold text-yellow-300">Reset All Settings</h4>
-                            <p className="text-sm text-yellow-200/80 mt-1 mb-4">
-                                This will revert all options on this page to their default values.
-                                <strong className="block mt-2">This will NOT delete users, quests, items, or any other created content.</strong>
-                            </p>
-                            <Button
-                                onClick={() => setIsResetConfirmOpen(true)}
-                                className="!bg-yellow-600 hover:!bg-yellow-500"
-                                data-log-id="settings-reset-all-settings"
-                            >
-                                Reset All Settings to Default
-                            </Button>
-                        </div>
-                         <div className="mt-6 p-4 bg-red-900/30 border border-red-700/60 rounded-lg">
-                            <h4 className="font-bold text-red-300">Factory Reset</h4>
-                            <p className="text-sm text-red-200/80 mt-1 mb-4">
-                                This will permanently delete ALL data, including users, quests, items, and settings, and reset the application to its initial state. This action is irreversible.
-                            </p>
-                            <Button
-                                onClick={() => setIsFactoryResetConfirmOpen(true)}
-                                className="!bg-red-600 hover:!bg-red-500"
-                                data-log-id="settings-factory-reset"
-                            >
-                                Factory Reset Application
-                            </Button>
-                        </div>
+                <CollapsibleSection title="Danger Zone">
+                     <div className="p-6 space-y-4">
+                         <div className="p-4 border border-red-700/60 bg-red-900/30 rounded-lg space-y-4">
+                             <Button onClick={() => setConfirmation('resetSettings')} variant="destructive">Reset All Settings</Button>
+                             <Button onClick={() => setConfirmation('clearHistory')} variant="destructive">Clear All History</Button>
+                             <Button onClick={() => setConfirmation('resetPlayers')} variant="destructive">Reset All Player Data</Button>
+                             <Button onClick={() => setConfirmation('deleteContent')} variant="destructive">Delete All Custom Content</Button>
+                             <Button onClick={() => setConfirmation('factoryReset')} variant="destructive">Factory Reset Application</Button>
+                         </div>
                     </div>
                 </CollapsibleSection>
             </Card>
-
-            <ConfirmDialog
-                isOpen={isResetConfirmOpen}
-                onClose={() => setIsResetConfirmOpen(false)}
-                onConfirm={handleResetConfirm}
-                title="Confirm Settings Reset"
-                message="Are you sure you want to reset all application settings to their default values? This cannot be undone, but it will not affect your created content like users or quests."
-            />
-
-            <ConfirmDialog
-                isOpen={isFactoryResetConfirmOpen}
-                onClose={() => setIsFactoryResetConfirmOpen(false)}
-                onConfirm={handleFactoryResetConfirm}
-                title="Confirm Factory Reset"
-                message="Are you absolutely sure? This will delete ALL data and cannot be undone. The application will be reset to the initial setup wizard."
+            <ConfirmDialog 
+                isOpen={!!confirmation}
+                onClose={() => setConfirmation(null)}
+                onConfirm={handleConfirm}
+                title="Are you absolutely sure?"
+                message="This action is permanent and cannot be undone."
             />
         </div>
     );

@@ -26,7 +26,7 @@ const ManageMarketsPage: React.FC = () => {
     const dropdownRef = useRef<HTMLDivElement | null>(null);
 
     const isAiAvailable = settings.enableAiFeatures && isAiConfigured;
-
+    
     const marketIds = useMemo(() => markets.map(m => m.id), [markets]);
     const handleCheckboxClick = useShiftSelect(marketIds, selectedMarkets, setSelectedMarkets);
 

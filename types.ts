@@ -724,3 +724,9 @@ export interface SystemStatus {
   };
   jwtSecretSet: boolean;
 }
+
+export interface BackupInfo {
+    filename: string;
+    size: number;
+    createdAt: string;
+}

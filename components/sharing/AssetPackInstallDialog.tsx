@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useRef, useEffect } from 'react';
+import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react';
 import { useAppState } from '../../context/AppContext';
 import { AssetPack, ImportResolution, ShareableAssetType, Terminology, Role, UserTemplate, Quest } from '../../types';
 import Button from '../ui/Button';
@@ -28,7 +28,7 @@ const terminologyMap: { [key in ShareableAssetType]: keyof Terminology } = {
 const AssetCard: React.FC<{
     resolution: ImportResolution;
     asset: any;
-    onToggle: () => void;
+    onToggle: (event: React.ChangeEvent<HTMLInputElement>) => void;
     onResolutionChange: (res: 'skip' | 'rename') => void;
     onRename: (newName: string) => void;
     onImportSingle: () => Promise<void>;
@@ -99,7 +99,7 @@ const AssetPackInstallDialog: React.FC<AssetPackInstallDialogProps> = ({ assetPa
     const [resolutions, setResolutions] = useState(initialResolutions);
     const [assignedUserIds, setAssignedUserIds] = useState<string[]>(() => users.map(u => u.id));
     const [importingItemId, setImportingItemId] = useState<string | null>(null);
-
+    const lastCheckedId = useRef<string | null>(null);
 
     const handleResolutionChange = (id: string, type: ShareableAssetType, resolution: 'skip' | 'rename') => {
         setResolutions(prev => prev.map(r => r.id === id && r.type === type ? { ...r, resolution, selected: resolution !== 'skip' } : r));
@@ -108,11 +108,38 @@ const AssetPackInstallDialog: React.FC<AssetPackInstallDialogProps> = ({ assetPa
     const handleRenameChange = (id: string, type: ShareableAssetType, newName: string) => {
         setResolutions(prev => prev.map(r => r.id === id && r.type === type ? { ...r, newName } : r));
     };
-    
-    const handleToggleSelection = (id: string, type: ShareableAssetType) => {
-        setResolutions(prev => prev.map(r => r.id === id && r.type === type ? { ...r, selected: !r.selected } : r));
-    };
 
+    const handleToggleSelection = useCallback((event: React.ChangeEvent<HTMLInputElement>, clickedRes: ImportResolution) => {
+        const isShiftClick = event.nativeEvent instanceof MouseEvent && event.nativeEvent.shiftKey;
+        const isChecked = event.target.checked;
+
+        if (isShiftClick && lastCheckedId.current) {
+            const allIds = resolutions.map(r => `${r.type}-${r.id}`);
+            const lastFullId = lastCheckedId.current;
+            const currentFullId = `${clickedRes.type}-${clickedRes.id}`;
+            const lastIndex = allIds.indexOf(lastFullId);
+            const currentIndex = allIds.indexOf(currentFullId);
+
+            if (lastIndex !== -1 && currentIndex !== -1) {
+                const start = Math.min(lastIndex, currentIndex);
+                const end = Math.max(lastIndex, currentIndex);
+                const rangeResolutions = resolutions.slice(start, end + 1);
+                
+                setResolutions(prev => prev.map(res => {
+                    if (rangeResolutions.some(rangeRes => rangeRes.id === res.id && rangeRes.type === res.type)) {
+                        return { ...res, selected: isChecked };
+                    }
+                    return res;
+                }));
+            }
+        } else {
+             setResolutions(prev => prev.map(r => r.id === clickedRes.id && r.type === clickedRes.type ? { ...r, selected: !r.selected } : r));
+        }
+
+        lastCheckedId.current = `${clickedRes.type}-${clickedRes.id}`;
+
+    }, [resolutions]);
+    
     const handleConfirm = () => {
         if (bugLogger.isRecording()) {
             bugLogger.add({ type: 'ACTION', message: `Confirmed installation of asset pack: ${assetPack.manifest.name}` });
@@ -207,7 +234,7 @@ const AssetPackInstallDialog: React.FC<AssetPackInstallDialogProps> = ({ assetPa
                                                 key={`${res.type}-${res.id}`}
                                                 resolution={res}
                                                 asset={asset}
-                                                onToggle={() => handleToggleSelection(res.id, res.type)}
+                                                onToggle={(e) => handleToggleSelection(e, res)}
                                                 onResolutionChange={(newRes) => handleResolutionChange(res.id, res.type, newRes)}
                                                 onRename={(newName) => handleRenameChange(res.id, res.type, newName)}
                                                 onImportSingle={() => handleSingleImport(res)}

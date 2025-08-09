@@ -9,6 +9,7 @@ import ConfirmDialog from '../ui/ConfirmDialog';
 import BugDetailDialog from './BugDetailDialog';
 import { bugLogger } from '../../utils/bugLogger';
 import { EllipsisVerticalIcon } from '../ui/Icons';
+import { useShiftSelect } from '../../hooks/useShiftSelect';
 
 const BugTrackingPage: React.FC = () => {
     const { bugReports } = useAppState();
@@ -20,7 +21,7 @@ const BugTrackingPage: React.FC = () => {
     const [activeTab, setActiveTab] = useState<BugReportStatus>('In Progress');
     const [deletingIds, setDeletingIds] = useState<string[]>([]);
     const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
-    const dropdownRef = useRef<HTMLDivElement>(null);
+    const dropdownRef = useRef<HTMLDivElement | null>(null);
 
     const detailedReport = useMemo(() => {
         if (!detailedReportId) return null;
@@ -46,6 +47,9 @@ const BugTrackingPage: React.FC = () => {
     const filteredReports = useMemo(() => {
         return bugReports.filter(r => r.status === activeTab);
     }, [bugReports, activeTab]);
+
+    const reportIds = useMemo(() => filteredReports.map(r => r.id), [filteredReports]);
+    const handleCheckboxClick = useShiftSelect(reportIds, selectedReports, setSelectedReports);
     
     const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.checked) {
@@ -53,12 +57,6 @@ const BugTrackingPage: React.FC = () => {
         } else {
             setSelectedReports([]);
         }
-    };
-    
-    const handleSelectOne = (id: string) => {
-        setSelectedReports(prev => 
-            prev.includes(id) ? prev.filter(reportId => reportId !== id) : [...prev, id]
-        );
     };
 
     const handleBulkStatusChange = (newStatus: BugReportStatus) => {
@@ -138,7 +136,7 @@ const BugTrackingPage: React.FC = () => {
                             {filteredReports.map(report => (
                                 <tr key={report.id} className="border-b border-stone-700/40 last:border-b-0">
                                     <td className="p-4">
-                                        <input type="checkbox" checked={selectedReports.includes(report.id)} onChange={() => handleSelectOne(report.id)} className="h-4 w-4 rounded text-emerald-600 bg-stone-700 border-stone-600 focus:ring-emerald-500" />
+                                        <input type="checkbox" checked={selectedReports.includes(report.id)} onChange={e => handleCheckboxClick(e, report.id)} className="h-4 w-4 rounded text-emerald-600 bg-stone-700 border-stone-600 focus:ring-emerald-500" />
                                     </td>
                                     <td className="p-4 font-bold">
                                         <button onClick={() => setDetailedReportId(report.id)} className="hover:underline hover:text-accent transition-colors">{report.title}</button>

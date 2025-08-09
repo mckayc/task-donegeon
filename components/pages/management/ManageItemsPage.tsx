@@ -10,10 +10,11 @@ import { ItemManagerIcon, EllipsisVerticalIcon } from '../../ui/Icons';
 import ItemIdeaGenerator from '../../quests/ItemIdeaGenerator';
 import Input from '../../ui/Input';
 import ImagePreviewDialog from '../../ui/ImagePreviewDialog';
-import { useDebounce } from '../../../hooks/useDebounce';
-import { useNotificationsDispatch } from '../../../context/NotificationsContext';
-import { useEconomyState } from '../../../context/EconomyContext';
+import { useDebounce } from '../../hooks/useDebounce';
+import { useNotificationsDispatch } from '../../context/NotificationsContext';
+import { useEconomyState } from '../../context/EconomyContext';
 import UploadWithCategoryDialog from '../../admin/UploadWithCategoryDialog';
+import { useShiftSelect } from '../../hooks/useShiftSelect';
 
 const ManageItemsPage: React.FC = () => {
     const { settings, isAiConfigured } = useAppState();
@@ -29,8 +30,6 @@ const ManageItemsPage: React.FC = () => {
     const [confirmation, setConfirmation] = useState<{ action: 'delete', ids: string[] } | null>(null);
     const [initialCreateData, setInitialCreateData] = useState<any | null>(null);
     const [selectedAssets, setSelectedAssets] = useState<string[]>([]);
-    const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
-    const dropdownRef = useRef<HTMLDivElement | null>(null);
     
     const [activeTab, setActiveTab] = useState('All');
     const [searchTerm, setSearchTerm] = useState('');
@@ -45,6 +44,9 @@ const ManageItemsPage: React.FC = () => {
     const isAiAvailable = settings.enableAiFeatures && isAiConfigured;
 
     const categories = useMemo(() => ['All', ...Array.from(new Set(allGameAssets.map(a => a.category)))], [allGameAssets]);
+
+    const pageAssetIds = useMemo(() => pageAssets.map(a => a.id), [pageAssets]);
+    const handleCheckboxClick = useShiftSelect(pageAssetIds, selectedAssets, setSelectedAssets);
 
     const apiRequest = useCallback(async (method: string, path: string, body?: any) => {
         try {
@@ -192,15 +194,7 @@ const ManageItemsPage: React.FC = () => {
         setEditingAsset(null);
         setIsCreateDialogOpen(true);
     };
-
-    const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
-        setSelectedAssets(e.target.checked ? pageAssets.map(a => a.id) : []);
-    };
     
-    const handleSelectOne = (id: string, isChecked: boolean) => {
-        setSelectedAssets(prev => isChecked ? [...prev, id] : prev.filter(assetId => assetId !== id));
-    };
-
     return (
         <div className="space-y-6">
              <Card title="Quick Add Asset">
@@ -273,7 +267,7 @@ const ManageItemsPage: React.FC = () => {
                                             id={`select-asset-${asset.id}`}
                                             type="checkbox"
                                             checked={selectedAssets.includes(asset.id)}
-                                            onChange={e => handleSelectOne(asset.id, e.target.checked)}
+                                            onChange={e => handleCheckboxClick(e, asset.id)}
                                             className="h-5 w-5 rounded text-emerald-600 bg-stone-800 border-stone-600 focus:ring-emerald-500"
                                         />
                                     </div>

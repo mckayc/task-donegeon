@@ -203,15 +203,13 @@ const getQuestSortKey = (quest: Quest, user: User, date: Date, allCompletions: Q
         const isDueToday = quest.lateDateTime && toYMD(new Date(quest.lateDateTime)) === toYMD(date);
         const isTodo = quest.todoUserIds?.includes(user.id);
         
-        // 4-level priority system for Ventures:
-        // 0: Due Today & To-Do (Highest)
-        // 1: Due Today only
-        // 2: To-Do only (not due today)
-        // 3: Other (Lowest)
+        // Simplified priority: Due Today > To-Do > Other
         if (isDueToday) {
-            timePriority = isTodo ? 0 : 1;
+            timePriority = 0; // Highest priority
+        } else if (isTodo) {
+            timePriority = 1; // Second priority
         } else {
-            timePriority = isTodo ? 2 : 3;
+            timePriority = 2; // Lowest priority
         }
     }
 

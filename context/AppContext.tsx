@@ -146,6 +146,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             sharedMode: { ...INITIAL_SETTINGS.sharedMode, ...(savedSettings.sharedMode || {}) },
             automatedBackups: { ...INITIAL_SETTINGS.automatedBackups, ...(savedSettings.automatedBackups || {}) },
             loginNotifications: { ...INITIAL_SETTINGS.loginNotifications, ...(savedSettings.loginNotifications || {}) },
+            googleCalendar: { ...INITIAL_SETTINGS.googleCalendar, ...(savedSettings.googleCalendar || {}) },
             developerMode: { ...INITIAL_SETTINGS.developerMode, ...(savedSettings.developerMode || {}) },
             chat: { ...INITIAL_SETTINGS.chat, ...(savedSettings.chat || {}) },
             sidebars: { main: finalSidebarConfig },

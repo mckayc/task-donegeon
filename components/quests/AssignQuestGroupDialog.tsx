@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { QuestGroup } from '../../types';
 import Button from '../ui/Button';
 import { useQuestDispatch } from '../../context/QuestContext';
 import { useAuthState } from '../../context/AuthContext';
 import { useNotificationsDispatch } from '../../context/NotificationsContext';
+import { useShiftSelect } from '../../hooks/useShiftSelect';
 
 interface AssignQuestGroupDialogProps {
     group: QuestGroup;
@@ -15,14 +16,9 @@ const AssignQuestGroupDialog: React.FC<AssignQuestGroupDialogProps> = ({ group, 
     const { assignQuestGroupToUsers } = useQuestDispatch();
     const { addNotification } = useNotificationsDispatch();
     const [selectedUserIds, setSelectedUserIds] = useState<string[]>(() => users.map(u => u.id));
-
-    const handleToggleUser = (userId: string) => {
-        setSelectedUserIds(prev =>
-            prev.includes(userId)
-                ? prev.filter(id => id !== userId)
-                : [...prev, userId]
-        );
-    };
+    
+    const allUserIds = useMemo(() => users.map(u => u.id), [users]);
+    const handleCheckboxClick = useShiftSelect(allUserIds, selectedUserIds, setSelectedUserIds);
 
     const handleSelectAll = () => {
         if (selectedUserIds.length === users.length) {
@@ -64,7 +60,7 @@ const AssignQuestGroupDialog: React.FC<AssignQuestGroupDialogProps> = ({ group, 
                             <input
                                 type="checkbox"
                                 checked={selectedUserIds.includes(user.id)}
-                                onChange={() => handleToggleUser(user.id)}
+                                onChange={(e) => handleCheckboxClick(e, user.id)}
                                 className="h-5 w-5 rounded text-emerald-600 bg-stone-700 border-stone-500 focus:ring-emerald-500"
                             />
                             <div className="ml-3">

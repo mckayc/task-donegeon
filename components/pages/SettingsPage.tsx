@@ -361,6 +361,38 @@ export const SettingsPage: React.FC = () => {
                         </div>
                     </div>
                 </CollapsibleSection>
+                
+                <CollapsibleSection title="Google Calendar Integration" onToggle={(isOpen) => bugLogger.isRecording() && bugLogger.add({ type: 'ACTION', message: `${isOpen ? 'Expanded' : 'Collapsed'} "Google Calendar Integration" section.` })}>
+                    <div className="space-y-4">
+                        <div className="flex items-start">
+                            <ToggleSwitch 
+                                enabled={formState.googleCalendar.enabled} 
+                                setEnabled={(val) => handleToggleChange('googleCalendar.enabled', val, 'Google Calendar', 'Enable Google Calendar Sync')} 
+                                label="Enable Google Calendar Sync"
+                                data-log-id="settings-toggle-gcal-sync"
+                            />
+                            <p className="text-sm ml-6" style={{ color: 'hsl(var(--color-text-secondary))' }}>Display events from a Google Calendar on the main calendar page. This is useful for seeing holidays or family events alongside your quests.</p>
+                        </div>
+                        <div className={`space-y-4 pt-4 border-t border-stone-700/60 ${!formState.googleCalendar.enabled ? 'opacity-50 pointer-events-none' : ''}`}>
+                            <p className="text-sm text-stone-400">You need to provide a Google API Key and the ID of the public Google Calendar you want to display. <a href="https://developers.google.com/calendar/api/guides/create-credentials" target="_blank" rel="noopener noreferrer" className="text-accent hover:underline">Learn how to get an API Key.</a> The Calendar ID can be found in your Google Calendar's settings.</p>
+                            <Input 
+                                label="Google API Key"
+                                name="googleCalendar.apiKey"
+                                type="password"
+                                value={formState.googleCalendar.apiKey}
+                                onChange={handleFormChange}
+                                placeholder="Enter Google API Key"
+                            />
+                             <Input 
+                                label="Google Calendar ID"
+                                name="googleCalendar.calendarId"
+                                value={formState.googleCalendar.calendarId}
+                                onChange={handleFormChange}
+                                placeholder="e.g., yourname@gmail.com or a long ID string"
+                            />
+                        </div>
+                    </div>
+                </CollapsibleSection>
 
                 <CollapsibleSection title="AI Features" onToggle={(isOpen) => bugLogger.isRecording() && bugLogger.add({ type: 'ACTION', message: `${isOpen ? 'Expanded' : 'Collapsed'} "AI Features" section.` })}>
                     <div className="space-y-4">

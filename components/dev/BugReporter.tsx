@@ -14,7 +14,7 @@ const BugReporter: React.FC = () => {
     const [note, setNote] = useState('');
     const [reportType, setReportType] = useState<BugReportType>(BugReportType.Bug);
     const [isLogVisible, setIsLogVisible] = useState(false);
-    const [isMinimized, setIsMinimized] = useState(false);
+    const [isMinimized, setIsMinimized] = useState(true);
     const [activeTab, setActiveTab] = useState<'create' | 'continue'>('create');
     const logContainerRef = useRef<HTMLDivElement>(null);
 
@@ -160,7 +160,7 @@ const BugReporter: React.FC = () => {
 
     return (
         <div data-bug-reporter-ignore className="fixed bottom-0 left-0 right-0 bg-stone-900/80 border-t border-stone-700/60 shadow-2xl z-[99] backdrop-blur-sm flex flex-col">
-            <div className="px-4 pt-2">
+            <div className="px-4 pt-2 flex justify-between items-center">
                 <nav className="-mb-px flex space-x-4">
                     <button onClick={() => setActiveTab('create')} className={`whitespace-nowrap pb-2 px-1 border-b-2 font-medium text-sm ${activeTab === 'create' ? 'border-emerald-500 text-emerald-400' : 'border-transparent text-stone-400 hover:text-stone-200'}`}>
                         Create New Report
@@ -169,6 +169,9 @@ const BugReporter: React.FC = () => {
                         Continue Recording ({inProgressReports.length})
                     </button>
                 </nav>
+                 <Button variant="ghost" size="icon" onClick={() => setIsMinimized(true)} className="h-10 w-10 !rounded-full !bg-white/10 hover:!bg-white/20">
+                    <ChevronDownIcon className="w-6 h-6 text-white" />
+                </Button>
             </div>
             
             <div className="p-4">
@@ -177,11 +180,19 @@ const BugReporter: React.FC = () => {
                         <Input as="select" value={reportType} onChange={e => setReportType(e.target.value as BugReportType)} className="w-48 h-10">
                             {Object.values(BugReportType).map(type => <option key={type} value={type}>{type}</option>)}
                         </Input>
-                        <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Title of the new report..." className="flex-grow h-10" />
+                        <Input
+                            value={title}
+                            onChange={(e) => setTitle(e.target.value)}
+                            placeholder="Title of the new report..."
+                            className="flex-grow h-10"
+                            onKeyDown={(e) => {
+                                if (e.key === 'Enter' && title.trim()) {
+                                    e.preventDefault();
+                                    handleStart();
+                                }
+                            }}
+                        />
                         <Button onClick={handleStart} disabled={!title.trim()} className="h-10">Start Recording</Button>
-                        <Button variant="ghost" size="icon" onClick={() => setIsMinimized(true)} className="h-10 w-10 !rounded-full !bg-white/10 hover:!bg-white/20">
-                            <ChevronDownIcon className="w-6 h-6 text-white" />
-                        </Button>
                     </div>
                  )}
                  {activeTab === 'continue' && (

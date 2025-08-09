@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import Button from '../ui/Button';
 import { useNotificationsDispatch } from '../../context/NotificationsContext';
+import { useShiftSelect } from '../../hooks/useShiftSelect';
 
 interface AvailablePack {
     name: string;
@@ -28,7 +29,7 @@ const ImagePackImporterDialog: React.FC<ImagePackImporterDialogProps> = ({ onClo
     const [isLoadingDetails, setIsLoadingDetails] = useState(false);
     const [isImporting, setIsImporting] = useState(false);
     const [error, setError] = useState('');
-    const [selectedFiles, setSelectedFiles] = useState<PackFile[]>([]);
+    const [selectedFileUrls, setSelectedFileUrls] = useState<string[]>([]);
     
     const { addNotification } = useNotificationsDispatch();
 
@@ -62,7 +63,7 @@ const ImagePackImporterDialog: React.FC<ImagePackImporterDialogProps> = ({ onClo
                 if (!response.ok) throw new Error(`Failed to fetch details for pack: ${selectedPackName}`);
                 const data: PackFile[] = await response.json();
                 setPackDetails(data);
-                setSelectedFiles(data.filter(file => !file.exists));
+                setSelectedFileUrls(data.filter(file => !file.exists).map(f => f.url));
             } catch (err) {
                 const message = err instanceof Error ? err.message : 'An unknown error occurred.';
                 setError(message);
@@ -73,25 +74,20 @@ const ImagePackImporterDialog: React.FC<ImagePackImporterDialogProps> = ({ onClo
         fetchPackDetails();
     }, [selectedPackName]);
     
-    const handleToggleFile = (file: PackFile) => {
-        if (file.exists) return;
-        setSelectedFiles(prev => 
-            prev.some(f => f.url === file.url)
-                ? prev.filter(f => f.url !== file.url)
-                : [...prev, file]
-        );
-    };
+    const allFileUrls = useMemo(() => packDetails.map(f => f.url), [packDetails]);
+    const handleCheckboxClick = useShiftSelect(allFileUrls, selectedFileUrls, setSelectedFileUrls);
 
     const handleSelectAllNew = () => {
         const newFiles = packDetails.filter(f => !f.exists);
-        if (selectedFiles.length === newFiles.length) {
-            setSelectedFiles([]);
+        if (selectedFileUrls.length === newFiles.length) {
+            setSelectedFileUrls([]);
         } else {
-            setSelectedFiles(newFiles);
+            setSelectedFileUrls(newFiles.map(f => f.url));
         }
     };
 
     const handleImport = async () => {
+        const selectedFiles = packDetails.filter(f => selectedFileUrls.includes(f.url));
         if (selectedFiles.length === 0) return;
         setIsImporting(true);
         setError('');
@@ -124,6 +120,8 @@ const ImagePackImporterDialog: React.FC<ImagePackImporterDialogProps> = ({ onClo
             return acc;
         }, {} as Record<string, PackFile[]>);
     }, [packDetails]);
+    
+    const newFilesCount = useMemo(() => packDetails.filter(f => !f.exists).length, [packDetails]);
 
     const renderPackSelection = () => (
         <>
@@ -170,22 +168,22 @@ const ImagePackImporterDialog: React.FC<ImagePackImporterDialogProps> = ({ onClo
                 ) : packDetails.length > 0 ? (
                     <div className="space-y-4">
                         <div className="flex items-center gap-4">
-                            <Button onClick={handleSelectAllNew} size="sm" variant="secondary">{selectedFiles.length === packDetails.filter(f => !f.exists).length ? 'Deselect All' : 'Select All New'}</Button>
-                            <p className="text-sm text-stone-400">{selectedFiles.length} of {packDetails.filter(f => !f.exists).length} new files selected.</p>
+                            <Button onClick={handleSelectAllNew} size="sm" variant="secondary">{selectedFileUrls.length === newFilesCount ? 'Deselect All' : 'Select All New'}</Button>
+                            <p className="text-sm text-stone-400">{selectedFileUrls.length} of {newFilesCount} new files selected.</p>
                         </div>
                          {Object.entries(categorizedFiles).map(([category, files]) => (
                             <div key={category}>
                                 <h4 className="font-bold text-lg text-stone-200 mb-2">{category}</h4>
                                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
                                     {files.map(file => {
-                                        const isSelected = selectedFiles.some(f => f.url === file.url);
+                                        const isSelected = selectedFileUrls.includes(file.url);
                                         return (
                                         <label key={file.name} className={`relative p-2 rounded-lg text-left space-y-1 border-2 transition-all cursor-pointer ${
                                             file.exists ? 'border-red-700/60 bg-red-900/30 opacity-60' :
                                             isSelected ? 'border-emerald-500 bg-emerald-900/40' :
                                             'border-transparent bg-stone-900/50 hover:bg-stone-700/50'
                                         }`}>
-                                            <input type="checkbox" checked={isSelected} onChange={() => handleToggleFile(file)} disabled={file.exists} className="absolute top-2 right-2 h-4 w-4 rounded text-emerald-600 bg-stone-700 border-stone-500 focus:ring-emerald-500 disabled:opacity-50" />
+                                            <input type="checkbox" checked={isSelected} onChange={(e) => handleCheckboxClick(e, file.url)} disabled={file.exists} className="absolute top-2 right-2 h-4 w-4 rounded text-emerald-600 bg-stone-700 border-stone-500 focus:ring-emerald-500 disabled:opacity-50" />
                                             <div className="aspect-square w-full bg-black/20 rounded-md flex items-center justify-center overflow-hidden">
                                                 <img src={file.url} alt={file.name} className="w-full h-full object-contain" />
                                             </div>
@@ -202,8 +200,8 @@ const ImagePackImporterDialog: React.FC<ImagePackImporterDialogProps> = ({ onClo
             {error && !isImporting && <p className="text-red-400 text-center text-sm px-6 pb-2">{error}</p>}
             <div className="p-4 border-t border-stone-700/60 text-right flex-shrink-0">
                 <Button variant="secondary" onClick={onClose} disabled={isImporting}>Cancel</Button>
-                <Button onClick={handleImport} disabled={isImporting || selectedFiles.length === 0} className="ml-4">
-                    {isImporting ? `Importing...` : `Import ${selectedFiles.length} File(s)`}
+                <Button onClick={handleImport} disabled={isImporting || selectedFileUrls.length === 0} className="ml-4">
+                    {isImporting ? `Importing...` : `Import ${selectedFileUrls.length} File(s)`}
                 </Button>
             </div>
         </>

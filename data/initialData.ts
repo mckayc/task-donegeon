@@ -295,6 +295,11 @@ export const INITIAL_SETTINGS: AppSettings = {
     sidebars: {
         main: INITIAL_MAIN_SIDEBAR_CONFIG,
     },
+    googleCalendar: {
+      enabled: false,
+      apiKey: '',
+      calendarId: '',
+    },
     developerMode: {
       enabled: false,
     },

@@ -510,6 +510,11 @@ export interface AppSettings {
   sidebars: {
       main: SidebarConfigItem[];
   };
+  googleCalendar: {
+    enabled: boolean;
+    apiKey: string;
+    calendarId: string;
+  };
   developerMode: {
     enabled: boolean;
   };

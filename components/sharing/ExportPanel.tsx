@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useCallback, useMemo } from 'react';
 import { useAppState } from '../../context/AppContext';
 import { ShareableAssetType, Terminology, IAppData } from '../../types';
 import Button from '../ui/Button';
@@ -27,15 +27,55 @@ const ExportPanel: React.FC = () => {
     });
     const [blueprintName, setBlueprintName] = useState('');
     const [blueprintDesc, setBlueprintDesc] = useState('');
+    const lastCheckedIds = useRef<Partial<Record<ShareableAssetType, string>>>({});
 
-    const handleToggle = (type: ShareableAssetType, id: string) => {
-        setSelected(prev => ({
-            ...prev,
-            [type]: prev[type].includes(id)
-                ? prev[type].filter(i => i !== id)
-                : [...prev[type], id],
-        }));
-    };
+    const assetTypes: { key: ShareableAssetType, label: keyof Terminology, data: any[] }[] = useMemo(() => [
+        { key: 'quests', label: 'tasks', data: questState.quests },
+        { key: 'questGroups', label: 'link_manage_quest_groups', data: questState.questGroups },
+        { key: 'rewardTypes', label: 'points', data: economyState.rewardTypes.filter(rt => !rt.isCore) },
+        { key: 'ranks', label: 'levels', data: appState.ranks },
+        { key: 'trophies', label: 'awards', data: appState.trophies },
+        { key: 'markets', label: 'stores', data: economyState.markets },
+        { key: 'gameAssets', label: 'link_manage_items', data: economyState.gameAssets },
+        { key: 'users', label: 'link_manage_users', data: users },
+    ], [questState, economyState, appState, users]);
+
+    const handleCheckboxChange = useCallback((
+        event: React.ChangeEvent<HTMLInputElement>,
+        type: ShareableAssetType,
+        clickedId: string
+    ) => {
+        const isShiftClick = event.nativeEvent instanceof MouseEvent && event.nativeEvent.shiftKey;
+        const isChecked = event.target.checked;
+        const allItemsForType = assetTypes.find(at => at.key === type)?.data.map(d => d.id) || [];
+        const selectedForType = selected[type];
+        
+        if (isShiftClick && lastCheckedIds.current[type]) {
+            const lastId = lastCheckedIds.current[type];
+            const lastIndex = allItemsForType.indexOf(lastId!);
+            const currentIndex = allItemsForType.indexOf(clickedId);
+            
+            if (lastIndex !== -1 && currentIndex !== -1) {
+                const start = Math.min(lastIndex, currentIndex);
+                const end = Math.max(lastIndex, currentIndex);
+                const rangeIds = allItemsForType.slice(start, end + 1);
+
+                const newSelectedForType = new Set(selectedForType);
+                if (isChecked) {
+                    rangeIds.forEach(id => newSelectedForType.add(id));
+                } else {
+                    rangeIds.forEach(id => newSelectedForType.delete(id));
+                }
+                setSelected(prev => ({ ...prev, [type]: Array.from(newSelectedForType) }));
+            }
+        } else {
+            const newSelectedForType = new Set(selectedForType);
+            if(isChecked) newSelectedForType.add(clickedId);
+            else newSelectedForType.delete(clickedId);
+            setSelected(prev => ({ ...prev, [type]: Array.from(newSelectedForType) }));
+        }
+        lastCheckedIds.current[type] = clickedId;
+    }, [selected, assetTypes]);
     
     const handleToggleAll = (type: ShareableAssetType, assets: {id: string}[]) => {
         const allIds = assets.map(a => a.id);
@@ -68,17 +108,6 @@ const ExportPanel: React.FC = () => {
         );
     };
 
-    const assetTypes: { key: ShareableAssetType, label: keyof Terminology, data: any[] }[] = [
-        { key: 'quests', label: 'tasks', data: questState.quests },
-        { key: 'questGroups', label: 'link_manage_quest_groups', data: questState.questGroups },
-        { key: 'rewardTypes', label: 'points', data: economyState.rewardTypes.filter(rt => !rt.isCore) },
-        { key: 'ranks', label: 'levels', data: appState.ranks },
-        { key: 'trophies', label: 'awards', data: appState.trophies },
-        { key: 'markets', label: 'stores', data: economyState.markets },
-        { key: 'gameAssets', label: 'link_manage_items', data: economyState.gameAssets },
-        { key: 'users', label: 'link_manage_users', data: users },
-    ];
-
     return (
         <div className="space-y-6">
             <div>
@@ -103,7 +132,7 @@ const ExportPanel: React.FC = () => {
                                     <input
                                         type="checkbox"
                                         checked={selected[key].includes(item.id)}
-                                        onChange={() => handleToggle(key, item.id)}
+                                        onChange={(e) => handleCheckboxChange(e, key, item.id)}
                                         className="h-4 w-4 rounded text-emerald-600 bg-stone-700 border-stone-500 focus:ring-emerald-500"
                                     />
                                     <span className="ml-3 text-stone-300">{item.title || item.name || item.gameName}</span>

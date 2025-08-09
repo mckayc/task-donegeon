@@ -1,19 +1,30 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import Button from '../ui/Button';
 import Input from '../ui/Input';
 import { useDeveloper } from '../../context/DeveloperContext';
 import { ChevronDownIcon, ChevronUpIcon } from '../ui/Icons';
 import { BugReportType } from '../../types';
+import { useAppState } from '../../context/AppContext';
 
 const BugReporter: React.FC = () => {
-    const { isRecording, startRecording, stopRecording, addLogEntry, isPickingElement, startPickingElement, stopPickingElement, logs } = useDeveloper();
+    const { isRecording, startRecording, stopRecording, addLogEntry, isPickingElement, startPickingElement, stopPickingElement, logs, activeBugId } = useDeveloper();
+    const { bugReports } = useAppState();
+
     const [title, setTitle] = useState('');
     const [note, setNote] = useState('');
     const [reportType, setReportType] = useState<BugReportType>(BugReportType.Bug);
     const [isLogVisible, setIsLogVisible] = useState(false);
     const [isMinimized, setIsMinimized] = useState(false);
-    const [isInitialBarMinimized, setIsInitialBarMinimized] = useState(false);
+    const [activeTab, setActiveTab] = useState<'create' | 'continue'>('create');
     const logContainerRef = useRef<HTMLDivElement>(null);
+
+    const activeReportTitle = useMemo(() => {
+        if (!isRecording) return '';
+        if (activeBugId) {
+            return bugReports.find(b => b.id === activeBugId)?.title || 'Continuing Report...';
+        }
+        return title;
+    }, [isRecording, activeBugId, title, bugReports]);
 
     useEffect(() => {
         if (isLogVisible && logContainerRef.current) {
@@ -28,15 +39,17 @@ const BugReporter: React.FC = () => {
         }
     };
     
+    const handleContinue = (bugId: string) => {
+        startRecording(bugId);
+    };
+
     const handleStop = () => {
-        if (title.trim()) {
-            stopRecording(title, reportType);
-            setTitle('');
-            setNote('');
-            setReportType(BugReportType.Bug);
-            setIsLogVisible(false);
-            setIsMinimized(false);
-        }
+        stopRecording(title, reportType);
+        setTitle('');
+        setNote('');
+        setReportType(BugReportType.Bug);
+        setIsLogVisible(false);
+        setIsMinimized(false);
     };
 
     const handleAddNote = (e: React.FormEvent) => {
@@ -63,13 +76,15 @@ const BugReporter: React.FC = () => {
         }
         setIsMinimized(!isMinimized);
     };
+    
+    const inProgressReports = useMemo(() => bugReports.filter(b => b.status === 'In Progress'), [bugReports]);
 
     if (isRecording) {
         if (isMinimized) {
             return (
                 <div data-bug-reporter-ignore className="fixed bottom-4 right-4 bg-red-900/90 border-2 border-red-600 shadow-2xl z-[99] backdrop-blur-sm rounded-full flex items-center gap-3 p-2 transition-all duration-300">
                     <div className="w-4 h-4 bg-red-500 rounded-full animate-pulse ml-2"></div>
-                    <span className="font-bold text-white text-sm pr-2 truncate max-w-[200px]" title={`Recording: ${title}`}>Recording: {title}</span>
+                    <span className="font-bold text-white text-sm pr-2 truncate max-w-[200px]" title={`Recording: ${activeReportTitle}`}>Recording: {activeReportTitle}</span>
                     <Button variant="ghost" size="icon" onClick={handleMinimizeToggle} className="h-8 w-8 !rounded-full !bg-white/10 hover:!bg-white/20">
                         <ChevronUpIcon className="w-5 h-5 text-white" />
                     </Button>
@@ -97,7 +112,7 @@ const BugReporter: React.FC = () => {
                 <div className="p-4 flex items-center justify-between gap-4">
                     <div className="flex items-center gap-2">
                         <div className="w-4 h-4 bg-red-500 rounded-full animate-pulse"></div>
-                        <span className="font-bold text-white">Recording: {title}</span>
+                        <span className="font-bold text-white">Recording: {activeReportTitle}</span>
                          <Button variant="secondary" size="sm" className="!text-xs !py-1 !px-2 !h-auto" onClick={() => {
                             if (isRecording) {
                                 addLogEntry({ type: 'ACTION', message: isLogVisible ? 'Hid bug reporter log.' : 'Showed bug reporter log.' });
@@ -132,11 +147,11 @@ const BugReporter: React.FC = () => {
         );
     }
 
-    if (isInitialBarMinimized) {
-        return (
+    if (isMinimized) {
+         return (
              <div data-bug-reporter-ignore className="fixed bottom-4 right-4 bg-stone-900/90 border-2 border-stone-700 shadow-2xl z-[99] backdrop-blur-sm rounded-full flex items-center gap-3 p-2 transition-all duration-300">
                 <span className="font-bold text-white text-lg pl-2" title="Report a Bug">🐞</span>
-                <Button variant="ghost" size="icon" onClick={() => setIsInitialBarMinimized(false)} className="h-8 w-8 !rounded-full !bg-white/10 hover:!bg-white/20">
+                <Button variant="ghost" size="icon" onClick={() => setIsMinimized(false)} className="h-8 w-8 !rounded-full !bg-white/10 hover:!bg-white/20">
                     <ChevronUpIcon className="w-5 h-5 text-white" />
                 </Button>
             </div>
@@ -144,30 +159,45 @@ const BugReporter: React.FC = () => {
     }
 
     return (
-        <div data-bug-reporter-ignore className="fixed bottom-0 left-1/2 -translate-x-1/2 mb-4 bg-stone-900/80 border border-stone-700/60 shadow-2xl p-3 rounded-full flex items-center gap-2 z-[99] backdrop-blur-sm">
-            <span className="font-bold text-stone-300 ml-2">🐞 Report:</span>
-             <Input 
-                as="select"
-                value={reportType}
-                onChange={e => setReportType(e.target.value as BugReportType)}
-                className="w-48 h-10"
-            >
-                {Object.values(BugReportType).map(type => (
-                    <option key={type} value={type}>{type}</option>
-                ))}
-            </Input>
-            <Input 
-                value={title} 
-                onChange={(e) => setTitle(e.target.value)}
-                placeholder="Title of the report..."
-                className="w-80 h-10"
-            />
-            <Button onClick={handleStart} disabled={!title.trim()} className="h-10">
-                Start Recording
-            </Button>
-            <Button variant="ghost" size="icon" onClick={() => setIsInitialBarMinimized(true)} className="h-10 w-10 !rounded-full !bg-white/10 hover:!bg-white/20">
-                <ChevronDownIcon className="w-6 h-6 text-white" />
-            </Button>
+        <div data-bug-reporter-ignore className="fixed bottom-0 left-0 right-0 bg-stone-900/80 border-t border-stone-700/60 shadow-2xl z-[99] backdrop-blur-sm flex flex-col">
+            <div className="px-4 pt-2">
+                <nav className="-mb-px flex space-x-4">
+                    <button onClick={() => setActiveTab('create')} className={`whitespace-nowrap pb-2 px-1 border-b-2 font-medium text-sm ${activeTab === 'create' ? 'border-emerald-500 text-emerald-400' : 'border-transparent text-stone-400 hover:text-stone-200'}`}>
+                        Create New Report
+                    </button>
+                    <button onClick={() => setActiveTab('continue')} className={`whitespace-nowrap pb-2 px-1 border-b-2 font-medium text-sm ${activeTab === 'continue' ? 'border-emerald-500 text-emerald-400' : 'border-transparent text-stone-400 hover:text-stone-200'}`}>
+                        Continue Recording ({inProgressReports.length})
+                    </button>
+                </nav>
+            </div>
+            
+            <div className="p-4">
+                 {activeTab === 'create' && (
+                     <div className="flex items-center gap-2">
+                        <Input as="select" value={reportType} onChange={e => setReportType(e.target.value as BugReportType)} className="w-48 h-10">
+                            {Object.values(BugReportType).map(type => <option key={type} value={type}>{type}</option>)}
+                        </Input>
+                        <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Title of the new report..." className="flex-grow h-10" />
+                        <Button onClick={handleStart} disabled={!title.trim()} className="h-10">Start Recording</Button>
+                        <Button variant="ghost" size="icon" onClick={() => setIsMinimized(true)} className="h-10 w-10 !rounded-full !bg-white/10 hover:!bg-white/20">
+                            <ChevronDownIcon className="w-6 h-6 text-white" />
+                        </Button>
+                    </div>
+                 )}
+                 {activeTab === 'continue' && (
+                    <div className="max-h-48 overflow-y-auto pr-2 space-y-2">
+                         {inProgressReports.length > 0 ? inProgressReports.map(report => (
+                             <div key={report.id} className="p-2 bg-stone-800/50 rounded-md flex justify-between items-center">
+                                <div>
+                                    <p className="font-semibold text-stone-200">{report.title}</p>
+                                    <p className="text-xs text-stone-400">Created: {new Date(report.createdAt).toLocaleDateString()}</p>
+                                </div>
+                                <Button size="sm" onClick={() => handleContinue(report.id)}>Continue</Button>
+                             </div>
+                         )) : <p className="text-center text-stone-400 py-4">No reports are currently "In Progress".</p>}
+                    </div>
+                 )}
+            </div>
         </div>
     );
 };

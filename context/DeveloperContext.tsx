@@ -1,6 +1,6 @@
 import React, { createContext, useState, useContext, ReactNode, useCallback, useEffect } from 'react';
 import { BugReport, BugReportLogEntry, BugReportType } from '../types';
-import { useAppDispatch } from './AppContext';
+import { useAppDispatch, useAppState } from './AppContext';
 import { bugLogger } from '../utils/bugLogger';
 
 // State
@@ -8,11 +8,12 @@ interface DeveloperState {
   isRecording: boolean;
   isPickingElement: boolean;
   logs: BugReportLogEntry[];
+  activeBugId: string | null;
 }
 
 // Dispatch
 interface DeveloperDispatch {
-  startRecording: () => void;
+  startRecording: (bugId?: string) => void;
   stopRecording: (title: string, reportType: BugReportType) => void;
   addLogEntry: (entry: Omit<BugReportLogEntry, 'timestamp'>) => void;
   startPickingElement: (onPick: (elementInfo: any) => void) => void;
@@ -26,10 +27,13 @@ export const DeveloperProvider: React.FC<{ children: ReactNode }> = ({ children 
   const [isRecording, setIsRecording] = useState(false);
   const [isPickingElement, setIsPickingElement] = useState(false);
   const [logs, setLogs] = useState<BugReportLogEntry[]>([]);
+  const [activeBugId, setActiveBugId] = useState<string | null>(null);
+
   const [onPickCallback, setOnPickCallback] = useState<((info: any) => void) | null>(null);
   const [highlightedElement, setHighlightedElement] = useState<HTMLElement | null>(null);
 
-  const appDispatch = useAppDispatch();
+  const { addBugReport, updateBugReport } = useAppDispatch();
+  const { bugReports } = useAppState();
 
   useEffect(() => {
     const unsubscribe = bugLogger.subscribe(setLogs);
@@ -45,24 +49,42 @@ export const DeveloperProvider: React.FC<{ children: ReactNode }> = ({ children 
       setOnPickCallback(null);
   }, [highlightedElement]);
 
-  const startRecording = useCallback(() => {
-    bugLogger.start();
+  const startRecording = useCallback((bugId?: string) => {
+    let initialLogs: BugReportLogEntry[] = [];
+    if (bugId) {
+        const existingReport = bugReports.find(b => b.id === bugId);
+        if (existingReport) {
+            initialLogs = existingReport.logs;
+            setActiveBugId(bugId);
+        }
+    } else {
+        setActiveBugId(null);
+    }
+    bugLogger.start(initialLogs);
     setIsRecording(true);
-    bugLogger.add({ type: 'STATE_CHANGE', message: 'Recording started.' });
-  }, []);
+    bugLogger.add({ type: 'STATE_CHANGE', message: bugId ? `Continued recording for report ID ${bugId}.` : 'Recording started.' });
+  }, [bugReports]);
 
   const stopRecording = useCallback((title: string, reportType: BugReportType) => {
     const finalLogs = bugLogger.stop();
-    const newReport = {
-        title,
-        reportType,
-        createdAt: new Date().toISOString(),
-        logs: finalLogs,
-    };
-    appDispatch.addBugReport(newReport);
+    
+    if (activeBugId) {
+        updateBugReport(activeBugId, { logs: finalLogs });
+        addLogEntry({type: 'STATE_CHANGE', message: 'Recording stopped. Report updated.'});
+    } else {
+        const newReport = {
+            title,
+            reportType,
+            createdAt: new Date().toISOString(),
+            logs: finalLogs,
+        };
+        addBugReport(newReport);
+    }
+
     setIsRecording(false);
-    stopPickingElement(); // Ensure picking is stopped if recording is stopped.
-  }, [appDispatch, stopPickingElement]);
+    setActiveBugId(null);
+    stopPickingElement();
+  }, [addBugReport, updateBugReport, stopPickingElement, activeBugId]);
 
   const addLogEntry = useCallback((entry: Omit<BugReportLogEntry, 'timestamp'>) => {
     bugLogger.add(entry);
@@ -133,7 +155,7 @@ export const DeveloperProvider: React.FC<{ children: ReactNode }> = ({ children 
 
 
   return (
-    <DeveloperStateContext.Provider value={{ isRecording, isPickingElement, logs }}>
+    <DeveloperStateContext.Provider value={{ isRecording, isPickingElement, logs, activeBugId }}>
       <DeveloperDispatchContext.Provider value={{ startRecording, stopRecording, addLogEntry, startPickingElement, stopPickingElement }}>
         {children}
       </DeveloperDispatchContext.Provider>

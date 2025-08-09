@@ -122,8 +122,12 @@ const Header: React.FC = () => {
       </div>
 
       {/* Center Group */}
-      <div className="hidden lg:flex items-center justify-center flex-grow mx-4">
-        <RewardDisplay />
+      <div className="flex-grow flex items-center justify-center mx-2 md:mx-4 min-w-0">
+          <div className="border-l border-stone-600/80 h-6 flex-shrink-0 hidden md:block" />
+          <div className="overflow-x-auto scrollbar-hide mx-2 py-2">
+            <RewardDisplay />
+          </div>
+          <div className="border-r border-stone-600/80 h-6 flex-shrink-0 hidden md:block" />
       </div>
       
       {/* Right Group */}

@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useAppState } from '../../context/AppContext';
-import { Quest, QuestType, QuestAvailability, User, AppMode } from '../../types';
+import { Quest, QuestType, QuestAvailability, User, AppMode, QuestCompletionStatus } from '../../types';
 import { isQuestAvailableForUser, toYMD, isQuestScheduledForDay, questSorter } from '../../utils/quests';
 import Card from '../ui/Card';
 import Avatar from '../ui/Avatar';
@@ -94,7 +94,7 @@ const SharedCalendarPage: React.FC = () => {
           questId: quest.id,
           userId: user.id,
           completedAt: currentDate.toISOString(),
-          status: 'Approved',
+          status: QuestCompletionStatus.Approved,
           note: 'Quick completed from shared view.',
           guildId: quest.guildId
         };

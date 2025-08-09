@@ -1,8 +1,9 @@
 import React, { createContext, useState, useContext, ReactNode, useCallback, useMemo } from 'react';
-import { Quest, QuestGroup, QuestCompletion, BulkQuestUpdates } from '../types';
+import { Quest, QuestGroup, QuestCompletion, BulkQuestUpdates, QuestCompletionStatus } from '../types';
 import { useNotificationsDispatch } from './NotificationsContext';
 import { useAuthState } from './AuthContext';
 import { bugLogger } from '../utils/bugLogger';
+import { useEconomyDispatch } from './EconomyContext';
 
 interface QuestState {
   quests: Quest[];
@@ -43,6 +44,7 @@ const QuestDispatchContext = createContext<QuestDispatch | undefined>(undefined)
 export const QuestProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const { addNotification } = useNotificationsDispatch();
   const { currentUser } = useAuthState();
+  const economyDispatch = useEconomyDispatch();
 
   const [quests, setQuests] = useState<Quest[]>([]);
   const [questGroups, setQuestGroups] = useState<QuestGroup[]>([]);
@@ -113,14 +115,42 @@ export const QuestProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   }, []);
 
   const completeQuest = useCallback(async (completionData: any) => {
+      const { questId, userId, status, guildId } = completionData;
+
+      // Optimistic Update
+      if (status === QuestCompletionStatus.Approved) {
+          const quest = quests.find(q => q.id === questId);
+          if (quest) {
+              economyDispatch.applyRewards(userId, quest.rewards, guildId);
+          }
+      }
+      setQuestCompletions(prev => [...prev, { ...completionData, id: `temp-comp-${Date.now()}` }]);
+
       await apiRequest('POST', '/api/actions/complete-quest', { completionData });
-  }, [apiRequest]);
+  }, [apiRequest, economyDispatch, quests]);
 
   const approveQuestCompletion = useCallback(async (completionId: string, note?: string) => {
+      // Optimistic Update
+      const completion = questCompletions.find(c => c.id === completionId);
+      if (completion && completion.status === 'Pending') {
+          const quest = quests.find(q => q.id === completion.questId);
+          if (quest) {
+              economyDispatch.applyRewards(completion.userId, quest.rewards, completion.guildId);
+          }
+          setQuestCompletions(prev => prev.map(c => c.id === completionId ? { ...c, status: QuestCompletionStatus.Approved, note: note || c.note } : c));
+      }
+
       await apiRequest('POST', `/api/actions/approve-quest/${completionId}`, { note });
-  }, [apiRequest]);
+  }, [apiRequest, economyDispatch, quests, questCompletions]);
 
   const rejectQuestCompletion = useCallback(async (completionId: string, note?: string) => {
+      // Optimistic Update
+      setQuestCompletions(prev => prev.map(c => {
+          if (c.id === completionId && c.status === 'Pending') {
+              return { ...c, status: QuestCompletionStatus.Rejected, note: note || c.note };
+          }
+          return c;
+      }));
       await apiRequest('POST', `/api/actions/reject-quest/${completionId}`, { note });
   }, [apiRequest]);
 

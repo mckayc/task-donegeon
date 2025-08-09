@@ -1,6 +1,6 @@
 # Task Donegeon
 
-**Version:** 0.0.97
+**Version:** 0.0.51
 
 ---
 
@@ -15,13 +15,11 @@ Task Donegeon is a gamified task and chore management application designed for f
 
 ## ✨ Features
 
-### What's New in Version 0.0.97 (July 23, 2025)
--   **New "Vacation" Event Type:** Replaced the old global vacation mode setting with a more flexible "Vacation" event type.
--   **Calendar-Driven Vacations:** Admins can now schedule vacation periods directly on the calendar for either personal use or for an entire guild.
--   **Automatic Penalty Pausing:** While a "Vacation" event is active, the system automatically pauses all late/incomplete penalties for scheduled quests, allowing users to take a break without consequences.
--   **Streamlined Settings:** Removed the old vacation mode toggle from the Settings page to create a single, intuitive workflow through the calendar.
+### What's New in Version 0.0.51 (August 8, 2025)
+-   **Sidebar Notification Badge Fix:** Fixed a UI inconsistency where the notification count for pending approvals was not shown on the 'Approvals' link when its parent 'User Management' group was expanded. The badge now correctly moves to the specific link, improving user experience.
 
 ### Version History
+- **v0.0.97 (July 23, 2025):** New "Vacation" Event Type, Calendar-Driven Vacations, Automatic Penalty Pausing, Streamlined Settings.
 - **v0.0.96 (July 22, 2025):** Default Quest Groups, AI-powered group suggestions, streamlined quest creation.
 - **v0.0.95 (July 22, 2025):** Smarter Suggestion Engine, powerful bulk editing for quests, enhanced collapsed sidebar with fly-out menus, and default quest categories.
 - **v0.0.94 (July 26, 2025):** Added default quest categories and improved the collapsed sidebar with expandable menus.

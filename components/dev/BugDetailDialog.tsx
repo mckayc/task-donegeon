@@ -35,11 +35,14 @@ const BugDetailDialog: React.FC<BugDetailDialogProps> = ({ report, onClose }) =>
     const { addNotification } = useNotificationsDispatch();
     const [questFromBug, setQuestFromBug] = useState<BugReport | null>(null);
     const [comment, setComment] = useState('');
+    const [selectedLogs, setSelectedLogs] = useState<string[]>([]);
 
     const sortedLogs = useMemo(() => {
         if (!report.logs) return [];
         return [...report.logs].sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
     }, [report.logs]);
+    
+    const shortId = useMemo(() => `bug-${report.id.substring(4, 11)}`, [report.id]);
 
     const allTags = useMemo(() => Array.from(new Set(['Bug Report', 'Feature Request', 'UI/UX Feedback', 'Content Suggestion', 'In Progress', 'Acknowledged', 'Resolved', 'Converted to Quest'])), []);
     const statuses: BugReportStatus[] = ['Open', 'In Progress', 'Resolved', 'Closed'];
@@ -53,9 +56,9 @@ const BugDetailDialog: React.FC<BugDetailDialogProps> = ({ report, onClose }) =>
         addNotification({ type: 'info', message: `Report status updated to ${newStatus}.` });
     };
     
-    const copyLogToClipboard = () => {
-        const titleLine = `Report Title: ${report.title}\n\n--- LOGS ---\n`;
-        const logText = sortedLogs.map(log => {
+    const copyLogToClipboard = (logSubset: BugReportLogEntry[]) => {
+        const titleLine = `Report ID: #${shortId}\nTitle: ${report.title}\n\n--- LOGS ---\n`;
+        const logText = logSubset.map(log => {
             const authorText = log.type === 'COMMENT' && log.author ? `${log.author}: ` : '';
             return `[${new Date(log.timestamp).toLocaleString()}] [${log.type}] ${authorText}${log.message}` +
             (log.element ? `\n  Element: <${log.element.tag} id="${log.element.id || ''}" class="${log.element.classes || ''}">` : '')
@@ -64,7 +67,7 @@ const BugDetailDialog: React.FC<BugDetailDialogProps> = ({ report, onClose }) =>
         const fullTextToCopy = titleLine + logText;
 
         navigator.clipboard.writeText(fullTextToCopy).then(() => {
-            addNotification({ type: 'success', message: 'Title, Log & Comments copied to clipboard!' });
+            addNotification({ type: 'success', message: 'Log content copied to clipboard!' });
             if (report.status === 'Open') {
                 handleStatusChange('In Progress');
                 addNotification({ type: 'info', message: `Status automatically updated to "In Progress".` });
@@ -99,6 +102,18 @@ const BugDetailDialog: React.FC<BugDetailDialogProps> = ({ report, onClose }) =>
         }
         setQuestFromBug(null);
     };
+    
+    const handleToggleLogSelection = (timestamp: string) => {
+        setSelectedLogs(prev => prev.includes(timestamp) ? prev.filter(t => t !== timestamp) : [...prev, timestamp]);
+    };
+
+    const handleSelectAllLogs = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.checked) {
+            setSelectedLogs(sortedLogs.map(log => log.timestamp));
+        } else {
+            setSelectedLogs([]);
+        }
+    };
 
     return (
         <>
@@ -107,7 +122,7 @@ const BugDetailDialog: React.FC<BugDetailDialogProps> = ({ report, onClose }) =>
                     <div className="p-6 border-b border-stone-700/60 flex justify-between items-start">
                         <div>
                             <h2 className="text-3xl font-medieval text-accent">{report.title}</h2>
-                            <p className="text-sm text-stone-400">Reported on {new Date(report.createdAt).toLocaleString()}</p>
+                            <p className="text-sm font-mono text-stone-500 mt-1">ID: #{shortId}</p>
                         </div>
                         <Button variant="ghost" size="icon" onClick={onClose}>&times;</Button>
                     </div>
@@ -127,40 +142,58 @@ const BugDetailDialog: React.FC<BugDetailDialogProps> = ({ report, onClose }) =>
                             </div>
                         </div>
                         
-                        <div className="space-y-4">
-                            {sortedLogs.map((log, index) => {
-                                if (log.type === 'COMMENT') {
-                                    const authorUser = users.find(u => u.gameName === log.author);
+                         <div className="pt-4 border-t border-stone-700/60">
+                             <div className="flex items-center gap-4 mb-2">
+                                <label className="flex items-center gap-2">
+                                    <input type="checkbox" onChange={handleSelectAllLogs} checked={selectedLogs.length === sortedLogs.length} />
+                                    <span>Select All</span>
+                                </label>
+                                <Button size="sm" variant="secondary" onClick={() => copyLogToClipboard(sortedLogs.filter(log => selectedLogs.includes(log.timestamp)))} disabled={selectedLogs.length === 0}>Copy Selected ({selectedLogs.length})</Button>
+                                <Button size="sm" variant="secondary" onClick={() => copyLogToClipboard(sortedLogs)}>Copy Full Log</Button>
+                            </div>
+                            <div className="space-y-4">
+                                {sortedLogs.map((log, index) => {
+                                    const isSelected = selectedLogs.includes(log.timestamp);
+                                    const authorUser = log.type === 'COMMENT' ? users.find(u => u.gameName === log.author) : undefined;
                                     return (
-                                        <div key={index} className="flex items-start gap-3">
-                                            {authorUser ? <Avatar user={authorUser} className="w-8 h-8 rounded-full flex-shrink-0" /> : <div className="w-8 h-8 rounded-full bg-stone-600 flex-shrink-0" />}
-                                            <div className="flex-grow">
-                                                <p className="text-sm">
-                                                    <span className="font-bold text-stone-100">{log.author}</span>
-                                                    <span className="text-xs text-stone-500 ml-2">{new Date(log.timestamp).toLocaleString()}</span>
-                                                </p>
-                                                <div className="mt-1 bg-stone-700/50 p-2 rounded-lg text-stone-200 text-sm whitespace-pre-wrap">
-                                                    {log.message}
+                                        <div key={index} className={`flex items-start gap-3 text-stone-400 text-sm p-2 rounded-md transition-colors ${isSelected ? 'bg-emerald-900/40' : ''}`}>
+                                            <input type="checkbox" checked={isSelected} onChange={() => handleToggleLogSelection(log.timestamp)} className="mt-1 flex-shrink-0" />
+                                            {log.type === 'COMMENT' ? (
+                                                <div className="flex-grow">
+                                                    <div className="flex items-center gap-2">
+                                                        {authorUser ? (
+                                                            <Avatar user={authorUser} className="w-6 h-6 rounded-full flex-shrink-0" />
+                                                        ) : (
+                                                            <div className="w-6 h-6 rounded-full flex-shrink-0 bg-stone-700 flex items-center justify-center text-xs font-bold">
+                                                                {log.author ? log.author.charAt(0) : '?'}
+                                                            </div>
+                                                        )}
+                                                        <p className="text-sm">
+                                                            <span className="font-bold text-stone-100">{log.author}</span>
+                                                            <span className="text-xs text-stone-500 ml-2">{new Date(log.timestamp).toLocaleString()}</span>
+                                                        </p>
+                                                    </div>
+                                                    <div className="mt-1 bg-stone-700/50 p-2 rounded-lg text-stone-200 text-sm whitespace-pre-wrap">
+                                                        {log.message}
+                                                    </div>
                                                 </div>
-                                            </div>
+                                            ) : (
+                                                 <>
+                                                    <div className="w-8 flex justify-center flex-shrink-0 pt-0.5 text-stone-500"><LogIcon type={log.type} /></div>
+                                                    <div className="flex-grow">
+                                                        <p className="font-mono text-xs">
+                                                            <span className="font-semibold">{log.type}</span>
+                                                            <span className="text-stone-500 ml-2">{new Date(log.timestamp).toLocaleString()}</span>
+                                                        </p>
+                                                        <p className="text-stone-300">{log.message}</p>
+                                                        {log.element && <p className="text-xs text-sky-400 font-mono mt-1">Element: {`<${log.element.tag} id="${log.element.id || ''}" class="${log.element.classes || ''}">`}</p>}
+                                                    </div>
+                                                 </>
+                                            )}
                                         </div>
                                     );
-                                } else {
-                                    return (
-                                        <div key={index} className="flex items-start gap-3 text-stone-400 text-sm">
-                                            <div className="w-8 flex justify-center flex-shrink-0 pt-0.5 text-stone-500"><LogIcon type={log.type} /></div>
-                                            <div className="flex-grow">
-                                                <p className="font-mono text-xs">
-                                                    <span className="font-semibold">{log.type}</span>
-                                                    <span className="text-stone-500 ml-2">{new Date(log.timestamp).toLocaleString()}</span>
-                                                </p>
-                                                <p className="text-stone-300">{log.message}</p>
-                                                {log.element && <p className="text-xs text-sky-400 font-mono mt-1">Element: {`<${log.element.tag} id="${log.element.id || ''}" class="${log.element.classes || ''}">`}</p>}
-                                            </div>
-                                        </div>
-                                    );
-                                }
-                            })}
+                                })}
+                            </div>
                         </div>
                     </div>
                      <div className="p-4 border-t border-stone-700/60">
@@ -176,8 +209,7 @@ const BugDetailDialog: React.FC<BugDetailDialogProps> = ({ report, onClose }) =>
                             <Button onClick={handleAddComment} disabled={!comment.trim()}>Add Comment</Button>
                         </div>
                     </div>
-                    <div className="p-4 border-t border-stone-700/60 flex justify-between items-center">
-                        <Button variant="secondary" onClick={copyLogToClipboard}>Copy Log & Comments</Button>
+                    <div className="p-4 border-t border-stone-700/60 flex justify-end items-center">
                         <div className="flex gap-2">
                             <Button variant="secondary" onClick={onClose}>Close</Button>
                             <Button onClick={handleTurnToQuest}>Convert to Quest</Button>

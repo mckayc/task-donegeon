@@ -12,13 +12,14 @@ import OnboardingWizard from './components/auth/OnboardingWizard';
 import SharedLayout from './components/layout/SharedLayout';
 import BugReporter from './components/dev/BugReporter';
 import { Role } from './types';
-import { useDeveloper } from './context/DeveloperContext';
+import { useDeveloper, useDeveloperState } from './context/DeveloperContext';
 
 const App: React.FC = () => {
   const { isDataLoaded, settings, guilds, themes } = useAppState();
   const { currentUser, isAppUnlocked, isFirstRun, isSwitchingUser, isSharedViewActive } = useAuthState();
   const { appMode } = useUIState();
   const { isRecording, addLogEntry } = useDeveloper();
+  const { isPickingElement } = useDeveloperState();
 
   useEffect(() => {
     let activeThemeId: string | undefined = settings.theme; // Default to system theme
@@ -105,6 +106,10 @@ const App: React.FC = () => {
       document.removeEventListener('click', handleGlobalClick, true);
     };
   }, [isRecording, addLogEntry]);
+
+  useEffect(() => {
+    document.body.style.cursor = isPickingElement ? 'crosshair' : 'default';
+  }, [isPickingElement]);
 
 
   if (!isDataLoaded) {

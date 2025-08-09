@@ -22,9 +22,9 @@ class BugLogger {
         this.subscribers.forEach(sub => sub([...this.globalLogs]));
     }
 
-    start() {
+    start(initialLogs: BugReportLogEntry[] = []) {
         this.isRecordingGlobally = true;
-        this.globalLogs = [];
+        this.globalLogs = [...initialLogs];
         this.notify();
     }
 

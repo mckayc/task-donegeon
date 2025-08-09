@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Quest, User } from '../../types';
+import { Quest, User, QuestCompletionStatus } from '../../types';
 import { useQuestDispatch } from '../../context/QuestContext';
 import { useAuthState } from '../../context/AuthContext';
 import Button from '../ui/Button';
@@ -25,7 +25,7 @@ const CompleteQuestDialog: React.FC<CompleteQuestDialogProps> = ({ quest, onClos
       questId: quest.id,
       userId: userToComplete.id,
       completedAt: (completionDate || new Date()).toISOString(),
-      status: quest.requiresApproval ? 'Pending' : 'Approved',
+      status: quest.requiresApproval ? QuestCompletionStatus.Pending : QuestCompletionStatus.Approved,
       note: note || undefined,
       guildId: quest.guildId
     };

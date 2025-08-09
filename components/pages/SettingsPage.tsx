@@ -134,7 +134,7 @@ export const SettingsPage: React.FC = () => {
          setFormState(prev => ({ ...prev, [key]: value }));
     };
 
-    const handleTerminologyChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const handleTerminologyChange = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
         setFormState(p => ({ ...p, terminology: { ...p.terminology, [name as keyof Terminology]: value } }));
     };
@@ -188,7 +188,7 @@ export const SettingsPage: React.FC = () => {
             <Card className="p-0 overflow-hidden">
                 <CollapsibleSection title="General">
                     <div className="p-6 space-y-4">
-                        <Input label="Application Name" value={formState.terminology.appName} onChange={e => handleTerminologyChange(e)} name="appName" />
+                        <Input label="Application Name" value={formState.terminology.appName} onChange={handleTerminologyChange} name="appName" />
                         <div className="flex items-end gap-4">
                              <div className="relative">
                                 <label className="block text-sm font-medium text-stone-300 mb-1">Browser Favicon</label>

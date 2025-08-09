@@ -4,11 +4,11 @@ import Button from '../../ui/Button';
 import Card from '../../ui/Card';
 import EditTrophyDialog from '../../settings/EditTrophyDialog';
 import ConfirmDialog from '../../ui/ConfirmDialog';
-import { useAppState, useAppDispatch } from '../../context/AppContext';
+import { useAppState, useAppDispatch } from '../../../context/AppContext';
 import EmptyState from '../../ui/EmptyState';
 import TrophyIdeaGenerator from '../../quests/TrophyIdeaGenerator';
 import { TrophyIcon, EllipsisVerticalIcon } from '../../ui/Icons';
-import { useShiftSelect } from '../../hooks/useShiftSelect';
+import { useShiftSelect } from '../../../hooks/useShiftSelect';
 
 const ManageTrophiesPage: React.FC = () => {
     const { trophies, settings, isAiConfigured } = useAppState();

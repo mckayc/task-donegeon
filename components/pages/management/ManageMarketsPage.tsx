@@ -9,7 +9,7 @@ import { useEconomyState, useEconomyDispatch } from '../../../context/EconomyCon
 import EmptyState from '../../ui/EmptyState';
 import { MarketplaceIcon, EllipsisVerticalIcon } from '../../ui/Icons';
 import MarketIdeaGenerator from '../../quests/MarketIdeaGenerator';
-import { useShiftSelect } from '../../hooks/useShiftSelect';
+import { useShiftSelect } from '../../../hooks/useShiftSelect';
 
 const ManageMarketsPage: React.FC = () => {
     const { settings, isAiConfigured } = useAppState();

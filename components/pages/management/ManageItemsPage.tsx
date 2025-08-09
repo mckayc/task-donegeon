@@ -10,11 +10,11 @@ import { ItemManagerIcon, EllipsisVerticalIcon } from '../../ui/Icons';
 import ItemIdeaGenerator from '../../quests/ItemIdeaGenerator';
 import Input from '../../ui/Input';
 import ImagePreviewDialog from '../../ui/ImagePreviewDialog';
-import { useDebounce } from '../../hooks/useDebounce';
-import { useNotificationsDispatch } from '../../context/NotificationsContext';
-import { useEconomyState } from '../../context/EconomyContext';
+import { useDebounce } from '../../../hooks/useDebounce';
+import { useNotificationsDispatch } from '../../../context/NotificationsContext';
+import { useEconomyState } from '../../../context/EconomyContext';
 import UploadWithCategoryDialog from '../../admin/UploadWithCategoryDialog';
-import { useShiftSelect } from '../../hooks/useShiftSelect';
+import { useShiftSelect } from '../../../hooks/useShiftSelect';
 
 const ManageItemsPage: React.FC = () => {
     const { settings, isAiConfigured } = useAppState();
@@ -43,7 +43,7 @@ const ManageItemsPage: React.FC = () => {
 
     const isAiAvailable = settings.enableAiFeatures && isAiConfigured;
 
-    const categories = useMemo(() => ['All', ...Array.from(new Set(allGameAssets.map(a => a.category)))], [allGameAssets]);
+    const categories = useMemo(() => ['All', ...Array.from(new Set(allGameAssets.map((a: GameAsset) => a.category)))], [allGameAssets]);
 
     const pageAssetIds = useMemo(() => pageAssets.map(a => a.id), [pageAssets]);
     const handleCheckboxClick = useShiftSelect(pageAssetIds, selectedAssets, setSelectedAssets);

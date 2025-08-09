@@ -53,8 +53,8 @@ interface EconomyDispatch {
   rejectPurchaseRequest: (purchaseId: string) => void;
 
   // Core Economy Actions
-  applyRewards: (userId: string, rewardsToApply: RewardItem[], guildId?: string) => void;
-  deductRewards: (userId: string, cost: RewardItem[], guildId?: string) => Promise<boolean>;
+  applyRewards: (userId: string, rewardsToApply: RewardItem[], guildId?: string, persist?: boolean) => void;
+  deductRewards: (userId: string, cost: RewardItem[], guildId?: string, persist?: boolean) => Promise<boolean>;
   executeExchange: (userId: string, payItem: RewardItem, receiveItem: RewardItem, guildId?: string) => void;
   
   // Bulk/Admin Actions
@@ -101,7 +101,7 @@ export const EconomyProvider: React.FC<{ children: ReactNode }> = ({ children })
 
   // === CORE ECONOMY LOGIC ===
 
-  const applyRewards = useCallback((userId: string, rewardsToApply: RewardItem[], guildId?: string) => {
+  const applyRewards = useCallback((userId: string, rewardsToApply: RewardItem[], guildId?: string, persist = true) => {
     authDispatch.updateUser(userId, userToUpdate => {
         const newUser = JSON.parse(JSON.stringify(userToUpdate));
         rewardsToApply.forEach(reward => {
@@ -124,10 +124,10 @@ export const EconomyProvider: React.FC<{ children: ReactNode }> = ({ children })
             }
         });
         return newUser;
-    });
+    }, persist);
   }, [rewardTypes, authDispatch]);
 
-  const deductRewards = useCallback((userId: string, cost: RewardItem[], guildId?: string): Promise<boolean> => {
+  const deductRewards = useCallback((userId: string, cost: RewardItem[], guildId?: string, persist = true): Promise<boolean> => {
     return new Promise((resolve) => {
         let success = false;
         authDispatch.updateUser(userId, user => {
@@ -159,7 +159,7 @@ export const EconomyProvider: React.FC<{ children: ReactNode }> = ({ children })
             });
             success = true;
             return userCopy;
-        });
+        }, persist);
         resolve(success);
     });
   }, [rewardTypes, authDispatch]);

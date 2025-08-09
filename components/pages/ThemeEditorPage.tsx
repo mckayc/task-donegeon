@@ -168,6 +168,16 @@ const ThemeEditorPage: React.FC = () => {
         </button>
     );
 
+    const getPreviewStyle = (theme: ThemeDefinition) => ({
+        fontFamily: theme.styles['--font-display'],
+        backgroundColor: `hsl(${theme.styles['--color-bg-primary-hsl']})`,
+        color: `hsl(${theme.styles['--color-text-primary-hsl']})`,
+    });
+    
+    const getAccentStyle = (theme: ThemeDefinition, type: 'primary' | 'accent' | 'accent-light') => ({
+        backgroundColor: `hsl(${theme.styles[`--color-${type}-hue`]} ${theme.styles[`--color-${type}-saturation`]} ${theme.styles[`--color-${type}-lightness`]})`
+    });
+
     if (!formData) return <div>Loading theme data...</div>
 
     return (
@@ -196,10 +206,15 @@ const ThemeEditorPage: React.FC = () => {
                                 <button
                                     onClick={() => setSelectedThemeId(theme.id)}
                                     className={`w-full aspect-square rounded-lg transition-all duration-200 border-4 ${selectedThemeId === theme.id ? 'border-white shadow-lg' : 'border-transparent opacity-70 hover:opacity-100'}`}
-                                    style={{ fontFamily: theme.styles['--font-display'], backgroundColor: `hsl(${theme.styles['--color-bg-primary-hsl']})`, color: `hsl(${theme.styles['--color-text-primary-hsl']})` }}
+                                    style={getPreviewStyle(theme)}
                                 >
                                     <div className="p-1 flex flex-col justify-between h-full">
                                         <h3 className="text-sm font-bold capitalize truncate">{theme.name}</h3>
+                                        <div className="flex justify-end items-center gap-1">
+                                            <div className="w-4 h-4 rounded-full" style={getAccentStyle(theme, 'primary')}></div>
+                                            <div className="w-4 h-4 rounded-full" style={getAccentStyle(theme, 'accent')}></div>
+                                            <div className="w-4 h-4 rounded-full" style={getAccentStyle(theme, 'accent-light')}></div>
+                                        </div>
                                     </div>
                                 </button>
                                 {theme.isCustom && (

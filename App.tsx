@@ -17,11 +17,16 @@ import { useDeveloper, useDeveloperState } from './context/DeveloperContext';
 const App: React.FC = () => {
   const { isDataLoaded, settings, guilds, themes } = useAppState();
   const { currentUser, isAppUnlocked, isFirstRun, isSwitchingUser, isSharedViewActive } = useAuthState();
-  const { appMode } = useUIState();
+  const { appMode, activePage } = useUIState();
   const { isRecording, addLogEntry } = useDeveloper();
   const { isPickingElement } = useDeveloperState();
 
   useEffect(() => {
+    // If we are on a page that handles its own theme preview, don't apply the global theme.
+    if (activePage === 'Appearance' || activePage === 'Theme Editor') {
+        return;
+    }
+
     let activeThemeId: string | undefined = settings.theme; // Default to system theme
 
     if (appMode.mode === 'guild') {
@@ -48,7 +53,7 @@ const App: React.FC = () => {
     if (activeThemeId) {
         document.body.dataset.theme = activeThemeId;
     }
-  }, [settings.theme, currentUser, appMode, guilds, themes]);
+  }, [settings.theme, currentUser, appMode, guilds, themes, activePage]);
 
   useEffect(() => {
     if (settings.favicon) {

@@ -20,7 +20,7 @@ interface AuthDispatch {
   setUsers: React.Dispatch<React.SetStateAction<User[]>>;
   setLoginHistory: React.Dispatch<React.SetStateAction<string[]>>;
   addUser: (userData: Omit<User, 'id' | 'personalPurse' | 'personalExperience' | 'guildBalances' | 'avatar' | 'ownedAssetIds' | 'ownedThemes' | 'hasBeenOnboarded'>) => Promise<User | null>;
-  updateUser: (userId: string, update: Partial<User> | ((user: User) => User)) => void;
+  updateUser: (userId: string, update: Partial<User> | ((user: User) => User), persist?: boolean) => void;
   deleteUser: (userId: string) => void;
   setCurrentUser: (user: User | null) => void;
   markUserAsOnboarded: (userId: string) => void;
@@ -116,7 +116,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   }, [apiRequest]);
 
-  const updateUser = useCallback((userId: string, update: Partial<User> | ((user: User) => User)) => {
+  const updateUser = useCallback((userId: string, update: Partial<User> | ((user: User) => User), persist = true) => {
     if (bugLogger.isRecording()) {
         bugLogger.add({ type: 'ACTION', message: `Updating user ID: ${userId}` });
     }
@@ -131,12 +131,14 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         _setCurrentUser(finalUpdatePayload);
     }
     
-    // Persist to backend
-    const payloadForApi = typeof update === 'function' ? finalUpdatePayload : update;
-    apiRequest('PUT', `/api/users/${userId}`, payloadForApi).catch(error => {
-        console.error("Failed to update user on server, optimistic update may be stale.", error);
-        // Error notification is handled by apiRequest. Sync will correct the state.
-    });
+    // Persist to backend only if requested
+    if (persist) {
+      const payloadForApi = typeof update === 'function' ? finalUpdatePayload : update;
+      apiRequest('PUT', `/api/users/${userId}`, payloadForApi).catch(error => {
+          console.error("Failed to update user on server, optimistic update may be stale.", error);
+          // Error notification is handled by apiRequest. Sync will correct the state.
+      });
+    }
   }, [users, currentUser, apiRequest]);
   
   const deleteUser = useCallback((userId: string) => {

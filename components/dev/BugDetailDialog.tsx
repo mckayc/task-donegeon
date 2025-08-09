@@ -127,7 +127,7 @@ const BugDetailDialog: React.FC<BugDetailDialogProps> = ({ report, onClose }) =>
                         <Button variant="ghost" size="icon" onClick={onClose}>&times;</Button>
                     </div>
 
-                    <div className="p-6 flex-grow overflow-y-auto scrollbar-hide space-y-4">
+                    <div className="p-6 flex-grow flex flex-col overflow-hidden space-y-4">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                              <Input as="select" label="Status" value={report.status} onChange={e => handleStatusChange(e.target.value as BugReportStatus)}>
                                 {statuses.map(s => <option key={s} value={s}>{s}</option>)}
@@ -142,8 +142,8 @@ const BugDetailDialog: React.FC<BugDetailDialogProps> = ({ report, onClose }) =>
                             </div>
                         </div>
                         
-                         <div className="pt-4 border-t border-stone-700/60">
-                             <div className="flex items-center gap-4 mb-2">
+                         <div className="pt-4 border-t border-stone-700/60 flex-grow flex flex-col overflow-hidden">
+                             <div className="flex items-center gap-4 mb-2 flex-shrink-0">
                                 <label className="flex items-center gap-2">
                                     <input type="checkbox" onChange={handleSelectAllLogs} checked={selectedLogs.length === sortedLogs.length} />
                                     <span>Select All</span>
@@ -151,7 +151,7 @@ const BugDetailDialog: React.FC<BugDetailDialogProps> = ({ report, onClose }) =>
                                 <Button size="sm" variant="secondary" onClick={() => copyLogToClipboard(sortedLogs.filter(log => selectedLogs.includes(log.timestamp)))} disabled={selectedLogs.length === 0}>Copy Selected ({selectedLogs.length})</Button>
                                 <Button size="sm" variant="secondary" onClick={() => copyLogToClipboard(sortedLogs)}>Copy Full Log</Button>
                             </div>
-                            <div className="space-y-4">
+                            <div className="space-y-4 flex-grow overflow-y-auto scrollbar-hide pr-2">
                                 {sortedLogs.map((log, index) => {
                                     const isSelected = selectedLogs.includes(log.timestamp);
                                     const authorUser = log.type === 'COMMENT' ? users.find(u => u.gameName === log.author) : undefined;

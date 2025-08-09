@@ -203,12 +203,14 @@ const getQuestSortKey = (quest: Quest, user: User, date: Date, allCompletions: Q
         const isDueToday = quest.lateDateTime && toYMD(new Date(quest.lateDateTime)) === toYMD(date);
         const isTodo = quest.todoUserIds?.includes(user.id);
 
-        if (isDueToday) {
-            timePriority = 0;
-        } else if (isTodo) {
+        if (isDueToday && isTodo) {
+            timePriority = 0; // Highest priority
+        } else if (isDueToday && !isTodo) {
             timePriority = 1;
-        } else {
-            timePriority = 2; // Other ventures
+        } else if (!isDueToday && isTodo) {
+            timePriority = 2;
+        } else { // !isDueToday && !isTodo
+            timePriority = 3;
         }
     }
 

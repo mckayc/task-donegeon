@@ -147,11 +147,11 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
         guildId: '',
         groupId: suggestedGroupId,
         tags: initialData?.tags || [],
-        lateDateTime: '',
-        incompleteDateTime: '',
-        lateTime: '',
-        incompleteTime: '',
-        hasDeadlines: false,
+        lateDateTime: initialData?.lateDateTime || '',
+        incompleteDateTime: initialData?.incompleteDateTime || '',
+        lateTime: initialData?.lateTime || '',
+        incompleteTime: initialData?.incompleteTime || '',
+        hasDeadlines: initialData?.hasDeadlines || false,
       };
   }, [questToEdit, initialData, initialDataFromBug, mode, rewardTypes, questGroups, settings.questDefaults, users]);
 

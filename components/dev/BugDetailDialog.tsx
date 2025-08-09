@@ -10,6 +10,7 @@ import { bugLogger } from '../../utils/bugLogger';
 import { useAuthState } from '../../context/AuthContext';
 import Avatar from '../ui/Avatar';
 import { ZapIcon, PencilIcon, CompassIcon, ToggleLeftIcon, MousePointerClickIcon, MessageSquareIcon } from '../ui/Icons';
+import { useShiftSelect } from '../../hooks/useShiftSelect';
 
 interface BugDetailDialogProps {
   report: BugReport;
@@ -46,6 +47,9 @@ const BugDetailDialog: React.FC<BugDetailDialogProps> = ({ report, onClose }) =>
 
     const allTags = useMemo(() => Array.from(new Set(['Bug Report', 'Feature Request', 'UI/UX Feedback', 'Content Suggestion', 'In Progress', 'Acknowledged', 'Resolved', 'Converted to Quest'])), []);
     const statuses: BugReportStatus[] = ['Open', 'In Progress', 'Resolved', 'Closed'];
+
+    const logTimestamps = useMemo(() => sortedLogs.map(log => log.timestamp), [sortedLogs]);
+    const handleCheckboxClick = useShiftSelect(logTimestamps, selectedLogs, setSelectedLogs);
 
     const handleTagsChange = (newTags: string[]) => {
         updateBugReport(report.id, { tags: newTags });
@@ -102,10 +106,6 @@ const BugDetailDialog: React.FC<BugDetailDialogProps> = ({ report, onClose }) =>
         }
         setQuestFromBug(null);
     };
-    
-    const handleToggleLogSelection = (timestamp: string) => {
-        setSelectedLogs(prev => prev.includes(timestamp) ? prev.filter(t => t !== timestamp) : [...prev, timestamp]);
-    };
 
     const handleSelectAllLogs = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.checked) {
@@ -145,7 +145,7 @@ const BugDetailDialog: React.FC<BugDetailDialogProps> = ({ report, onClose }) =>
                          <div className="pt-4 border-t border-stone-700/60 flex-grow flex flex-col overflow-hidden">
                              <div className="flex items-center gap-4 mb-2 flex-shrink-0">
                                 <label className="flex items-center gap-2">
-                                    <input type="checkbox" onChange={handleSelectAllLogs} checked={selectedLogs.length === sortedLogs.length} />
+                                    <input type="checkbox" onChange={handleSelectAllLogs} checked={selectedLogs.length === sortedLogs.length && sortedLogs.length > 0} />
                                     <span>Select All</span>
                                 </label>
                                 <Button size="sm" variant="secondary" onClick={() => copyLogToClipboard(sortedLogs.filter(log => selectedLogs.includes(log.timestamp)))} disabled={selectedLogs.length === 0}>Copy Selected ({selectedLogs.length})</Button>
@@ -157,7 +157,7 @@ const BugDetailDialog: React.FC<BugDetailDialogProps> = ({ report, onClose }) =>
                                     const authorUser = log.type === 'COMMENT' ? users.find(u => u.gameName === log.author) : undefined;
                                     return (
                                         <div key={index} className={`flex items-start gap-3 text-stone-400 text-sm p-2 rounded-md transition-colors ${isSelected ? 'bg-emerald-900/40' : ''}`}>
-                                            <input type="checkbox" checked={isSelected} onChange={() => handleToggleLogSelection(log.timestamp)} className="mt-1 flex-shrink-0" />
+                                            <input type="checkbox" checked={isSelected} onChange={(e) => handleCheckboxClick(e, log.timestamp)} className="mt-1 flex-shrink-0" />
                                             {log.type === 'COMMENT' ? (
                                                 <div className="flex-grow">
                                                     <div className="flex items-center gap-2">

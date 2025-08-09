@@ -177,44 +177,58 @@ export const isQuestAvailableForUser = (
  * Lower numbers are higher priority.
  * Sorts by:
  * 1. Completion Status (Available > Completed/Pending)
- * 2. Type (Duty > Venture)
- * 3. Time-based priority (Due soon > To-Do > other)
- * 4. Title (alphabetical)
+ * 2. Urgency (Past Due / Due Today > Future Due > No Due Date / Duty)
+ * 3. To-Do Status (To-Do > Not To-Do)
+ * 4. Quest Type (Duty > Venture, within the same urgency/todo level)
+ * 5. Time/Date (Earlier is higher priority)
+ * 6. Title (alphabetical)
  */
-const getQuestSortKey = (quest: Quest, user: User, date: Date, allCompletions: QuestCompletion[], scheduledEvents: ScheduledEvent[]): [number, number, number, string] => {
+const getQuestSortKey = (quest: Quest, user: User, date: Date, allCompletions: QuestCompletion[], scheduledEvents: ScheduledEvent[]): [number, number, number, number, number, string] => {
     const questAppMode: AppMode = quest.guildId ? { mode: 'guild', guildId: quest.guildId } : { mode: 'personal' };
     const userCompletionsForQuest = allCompletions.filter(c => c.questId === quest.id && c.userId === user.id);
     const isAvailable = isQuestAvailableForUser(quest, userCompletionsForQuest, date, scheduledEvents, questAppMode);
+
+    // Key 1: Availability (0=available, 1=not)
     const completionPriority = isAvailable ? 0 : 1;
 
-    // Priority 1: Type (Duty = 0, Venture = 1)
-    const typePriority = quest.type === QuestType.Duty ? 0 : 1;
-
-    let timePriority = 9999; // Default low priority
-
-    if (quest.type === QuestType.Duty) {
-        if (quest.lateTime) {
-            const [hours, minutes] = quest.lateTime.split(':').map(Number);
-            timePriority = hours * 60 + minutes;
-        } else {
-            timePriority = 10000; // No due time, sort after ones with time
-        }
-    } else { // Venture
-        const isDueToday = quest.lateDateTime && toYMD(new Date(quest.lateDateTime)) === toYMD(date);
-        const isTodo = quest.todoUserIds?.includes(user.id);
+    // Key 2: Urgency (0=past due/due today, 1=due future, 2=no due date/duty)
+    let urgencyPriority = 2;
+    if (quest.type === QuestType.Venture && quest.lateDateTime) {
+        const dueDate = new Date(quest.lateDateTime);
+        const todayStart = new Date(date);
+        todayStart.setHours(0, 0, 0, 0);
         
-        // Simplified priority: Due Today > To-Do > Other
-        if (isDueToday) {
-            timePriority = 0; // Highest priority
-        } else if (isTodo) {
-            timePriority = 1; // Second priority
-        } else {
-            timePriority = 2; // Lowest priority
+        if (dueDate < todayStart) { // Past due
+            urgencyPriority = 0;
+        } else if (toYMD(dueDate) === toYMD(date)) { // Due today
+            urgencyPriority = 0;
+        } else { // Due in the future
+            urgencyPriority = 1;
         }
     }
+    
+    // Key 3: To-Do status (0=is to-do, 1=not)
+    const isTodo = quest.type === QuestType.Venture && quest.todoUserIds?.includes(user.id);
+    const isTodoPriority = isTodo ? 0 : 1;
+    
+    // Key 4: Quest Type (0=Duty, 1=Venture) - Duties are prioritized within non-urgent categories.
+    const typePriority = quest.type === QuestType.Duty ? 0 : 1;
+    
+    // Key 5: Time sorting (closer times/dates are smaller numbers)
+    let timePriority = Number.MAX_SAFE_INTEGER;
+    if (quest.type === QuestType.Venture && quest.lateDateTime) {
+        timePriority = new Date(quest.lateDateTime).getTime();
+    } else if (quest.type === QuestType.Duty && quest.lateTime) {
+        const [hours, minutes] = quest.lateTime.split(':').map(Number);
+        timePriority = hours * 60 + minutes;
+    }
 
-    return [completionPriority, typePriority, timePriority, quest.title.toLowerCase()];
+    // Key 6: Title for alphabetical tie-breaking
+    const title = quest.title.toLowerCase();
+
+    return [completionPriority, urgencyPriority, isTodoPriority, typePriority, timePriority, title];
 };
+
 
 /**
  * A comparator function for sorting quests based on a standardized priority order.

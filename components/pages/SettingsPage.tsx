@@ -1,3 +1,4 @@
+
 import React, { useState, ChangeEvent, ReactNode, useEffect } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { useAuthState, useAuthDispatch } from '../../context/AuthContext';
@@ -223,6 +224,16 @@ export const SettingsPage: React.FC = () => {
                                 <ToggleSwitch enabled={formState.questDefaults.isOptional} setEnabled={val => handleSettingChange('questDefaults', 'isOptional', val)} label="Optional by default" />
                                 <ToggleSwitch enabled={formState.questDefaults.requiresApproval} setEnabled={val => handleSettingChange('questDefaults', 'requiresApproval', val)} label="Requires Approval by default" />
                             </div>
+                        </div>
+                    </div>
+                </CollapsibleSection>
+                <CollapsibleSection title="Advanced">
+                    <div className="p-6 space-y-4">
+                        <h4 className="font-semibold text-stone-200 mb-2">Automated Backups</h4>
+                        <ToggleSwitch enabled={formState.automatedBackups.enabled} setEnabled={val => handleSettingChange('automatedBackups', 'enabled', val)} label="Enable Automated Server Backups" />
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <Input label="Backup Frequency (Hours)" type="number" min="1" value={formState.automatedBackups.frequencyHours} onChange={e => handleSettingChange('automatedBackups', 'frequencyHours', parseInt(e.target.value) || 24)} />
+                            <Input label="Max Backups to Keep" type="number" min="1" value={formState.automatedBackups.maxBackups} onChange={e => handleSettingChange('automatedBackups', 'maxBackups', parseInt(e.target.value) || 7)} />
                         </div>
                     </div>
                 </CollapsibleSection>

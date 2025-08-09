@@ -14,7 +14,7 @@ const {
     QuestCompletionEntity, PurchaseRequestEntity, GuildEntity, RankEntity, TrophyEntity,
     UserTrophyEntity, AdminAdjustmentEntity, GameAssetEntity, SystemLogEntity, ThemeDefinitionEntity,
     ChatMessageEntity, SystemNotificationEntity, ScheduledEventEntity, SettingEntity, LoginHistoryEntity,
-    BugReportEntity
+    BugReportEntity, allEntities
 } = require('./entities');
 
 const app = express();
@@ -171,6 +171,9 @@ const initializeApp = async () => {
     
     // Copy default asset packs if they don't exist in the user's volume
     await ensureDefaultAssetPacksExist();
+    
+    // Start automated backup scheduler
+    startAutomatedBackupScheduler();
 
     console.log(`Asset directory is ready at: ${UPLOADS_DIR}`);
     console.log(`Backup directory is ready at: ${BACKUP_DIR}`);
@@ -1461,6 +1464,180 @@ app.use('/api/chat', chatRouter);
 // Serve React App
 app.use(express.static(path.join(__dirname, '..', 'dist')));
 app.use('/uploads', express.static(UPLOADS_DIR));
+
+// === BACKUP ROUTES ===
+const backupsRouter = express.Router();
+
+backupsRouter.get('/', asyncMiddleware(async (req, res) => {
+    try {
+        const files = await fs.readdir(BACKUP_DIR);
+        const backupDetails = await Promise.all(
+            files
+                .filter(file => file.endsWith('.json'))
+                .map(async file => {
+                    const stats = await fs.stat(path.join(BACKUP_DIR, file));
+                    return {
+                        filename: file,
+                        size: stats.size,
+                        createdAt: stats.mtime.toISOString(),
+                    };
+                })
+        );
+        res.json(backupDetails.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
+    } catch (error) {
+        if (error.code === 'ENOENT') {
+            return res.json([]);
+        }
+        throw error;
+    }
+}));
+
+const createBackup = async (type = 'manual') => {
+    const manager = dataSource.manager;
+    const appData = await getFullAppData(manager);
+    const timestamp = new Date().toISOString().replace(/:/g, '-').slice(0, 19);
+    const filename = `backup-${type}-${timestamp}.json`;
+    const filePath = path.join(BACKUP_DIR, filename);
+    await fs.writeFile(filePath, JSON.stringify(appData, null, 2));
+    console.log(`[Backup] Created ${type} backup: ${filename}`);
+    return { success: true, filename };
+};
+
+backupsRouter.post('/create', asyncMiddleware(async (req, res) => {
+    const result = await createBackup('manual');
+    res.status(201).json(result);
+}));
+
+backupsRouter.get('/download/:filename', (req, res) => {
+    const filename = path.basename(req.params.filename);
+    const filePath = path.join(BACKUP_DIR, filename);
+    res.download(filePath, err => {
+        if (err) {
+            console.error("Download error:", err);
+            if (!res.headersSent) {
+                res.status(404).send('File not found.');
+            }
+        }
+    });
+});
+
+backupsRouter.delete('/:filename', asyncMiddleware(async (req, res) => {
+    const filename = path.basename(req.params.filename);
+    const filePath = path.join(BACKUP_DIR, filename);
+    try {
+        await fs.unlink(filePath);
+        res.status(204).send();
+    } catch (error) {
+        if (error.code === 'ENOENT') {
+            return res.status(404).send('File not found.');
+        }
+        throw error;
+    }
+}));
+
+backupsRouter.post('/restore/:filename', asyncMiddleware(async (req, res) => {
+    const filename = path.basename(req.params.filename);
+    const filePath = path.join(BACKUP_DIR, filename);
+
+    try {
+        const backupContent = await fs.readFile(filePath, 'utf-8');
+        const data = JSON.parse(backupContent);
+
+        // Basic validation
+        if (!data.users || !data.settings) {
+            return res.status(400).json({ error: 'Invalid backup file format.' });
+        }
+
+        await dataSource.transaction(async manager => {
+             // Clear all data in a safe order (dependencies first)
+            for (const entity of allEntities.reverse()) { // Reverse order might be safer
+                try {
+                    await manager.clear(entity);
+                } catch(e) {
+                    console.warn(`Could not clear ${entity.options.name}, may be empty or have FK issues. Continuing...`);
+                }
+            }
+
+            // Save data in a safe order
+            for (const entity of allEntities) {
+                 const pluralName = entity.options.name.toLowerCase() + 's';
+                 const dataToSave = data[pluralName];
+                 if (dataToSave && Array.isArray(dataToSave)) {
+                     await manager.save(entity, dataToSave);
+                 }
+            }
+            // Handle single-row tables
+            if(data.settings) await manager.save(SettingEntity, {id: 1, settings: data.settings});
+            if(data.loginHistory) await manager.save(LoginHistoryEntity, {id: 1, history: data.loginHistory});
+        });
+
+        res.status(200).json({ message: 'Restore from backup successful.' });
+    } catch (error) {
+        if (error.code === 'ENOENT') {
+            return res.status(404).json({ error: 'Backup file not found.' });
+        }
+        console.error("Restore error:", error);
+        res.status(500).json({ error: 'Failed to restore from backup.' });
+    }
+}));
+
+app.use('/api/backups', backupsRouter);
+
+// === Automated Backup Scheduler ===
+let lastAutomatedBackupTimestamp = 0;
+let backupInterval;
+
+async function runAutomatedBackup() {
+    try {
+        const settingRow = await dataSource.manager.findOneBy(SettingEntity, { id: 1 });
+        const settings = settingRow ? settingRow.settings : INITIAL_SETTINGS;
+
+        if (!settings.automatedBackups.enabled) {
+            return;
+        }
+        
+        // Check if enough time has passed
+        const frequencyMillis = (settings.automatedBackups.frequencyHours || 24) * 3600 * 1000;
+        if (Date.now() - lastAutomatedBackupTimestamp < frequencyMillis) {
+            return;
+        }
+
+        console.log('[Backup] Running automated backup...');
+        await createBackup('auto');
+        lastAutomatedBackupTimestamp = Date.now();
+
+        // Enforce retention policy
+        const files = await fs.readdir(BACKUP_DIR);
+        const autoBackups = (await Promise.all(
+            files
+                .filter(file => file.startsWith('backup-auto-') && file.endsWith('.json'))
+                .map(async file => ({
+                    name: file,
+                    time: (await fs.stat(path.join(BACKUP_DIR, file))).mtime.getTime(),
+                }))
+        )).sort((a, b) => a.time - b.time); // Sort oldest first
+
+        const maxBackups = settings.automatedBackups.maxBackups || 7;
+        if (autoBackups.length > maxBackups) {
+            const backupsToDelete = autoBackups.slice(0, autoBackups.length - maxBackups);
+            for (const backup of backupsToDelete) {
+                console.log(`[Backup] Deleting old backup due to retention policy: ${backup.name}`);
+                await fs.unlink(path.join(BACKUP_DIR, backup.name));
+            }
+        }
+    } catch (error) {
+        console.error('[Backup] Automated backup failed:', error);
+    }
+}
+
+function startAutomatedBackupScheduler() {
+    // Run every hour to check if a backup is due
+    if(backupInterval) clearInterval(backupInterval);
+    backupInterval = setInterval(runAutomatedBackup, 3600 * 1000); 
+    console.log('[Backup] Automated backup scheduler started.');
+    // Run once on startup as well
+    setTimeout(runAutomatedBackup, 5000); 
+}
 
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, '..', 'dist', 'index.html'));

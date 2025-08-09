@@ -1,10 +1,10 @@
-import React, { useState, useCallback, useRef } from 'react';
+
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import Card from '../../ui/Card';
-import BackupPanel from '../../sharing/BackupPanel';
-import RestorePanel from '../../sharing/RestorePanel';
 import ImportPanel from '../../sharing/ImportPanel';
+import ExportPanel from '../../sharing/ExportPanel';
 import { useAppDispatch } from '../../../context/AppContext';
-import { IAppData, AssetPack, ImportResolution, BugReport } from '../../../types';
+import { IAppData, AssetPack, ImportResolution, BugReport, BackupInfo } from '../../../types';
 import BlueprintPreviewDialog from '../../sharing/BlueprintPreviewDialog';
 import ConfirmDialog from '../../ui/ConfirmDialog';
 import { analyzeAssetPackForConflicts } from '../../../utils/sharing';
@@ -85,9 +85,131 @@ const BugRestorePanel: React.FC<{ onFileSelect: (file: File) => void }> = ({ onF
     );
 };
 
+const ServerBackupPanel: React.FC = () => {
+    const [backups, setBackups] = useState<BackupInfo[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [isCreating, setIsCreating] = useState(false);
+    const [confirmAction, setConfirmAction] = useState<{ type: 'restore' | 'delete', filename: string } | null>(null);
+    const { addNotification } = useNotificationsDispatch();
+
+    const apiRequest = useCallback(async (method: string, path: string, body?: any) => {
+        const options: RequestInit = {
+            method,
+            headers: { 'Content-Type': 'application/json' },
+        };
+        if (body) options.body = JSON.stringify(body);
+        const response = await fetch(path, options);
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({ error: 'Server error' }));
+            throw new Error(errorData.error || `Request failed with status ${response.status}`);
+        }
+        return response.status === 204 ? null : await response.json();
+    }, []);
+
+    const fetchBackups = useCallback(async () => {
+        setIsLoading(true);
+        try {
+            const data = await apiRequest('GET', '/api/backups');
+            setBackups(data);
+        } catch (e) {
+            addNotification({ type: 'error', message: e instanceof Error ? e.message : 'Failed to fetch backups.' });
+        } finally {
+            setIsLoading(false);
+        }
+    }, [apiRequest, addNotification]);
+
+    useEffect(() => {
+        fetchBackups();
+    }, [fetchBackups]);
+
+    const handleCreateBackup = async () => {
+        setIsCreating(true);
+        try {
+            await apiRequest('POST', '/api/backups/create');
+            addNotification({ type: 'success', message: 'Manual backup created successfully.' });
+            fetchBackups();
+        } catch (e) {
+            addNotification({ type: 'error', message: e instanceof Error ? e.message : 'Failed to create backup.' });
+        } finally {
+            setIsCreating(false);
+        }
+    };
+    
+    const handleConfirm = async () => {
+        if (!confirmAction) return;
+        
+        try {
+            if (confirmAction.type === 'restore') {
+                await apiRequest('POST', `/api/backups/restore/${confirmAction.filename}`);
+                addNotification({ type: 'success', message: 'Restore successful! App will reload.' });
+                setTimeout(() => window.location.reload(), 1500);
+            } else if (confirmAction.type === 'delete') {
+                await apiRequest('DELETE', `/api/backups/${confirmAction.filename}`);
+                addNotification({ type: 'info', message: 'Backup deleted.' });
+                fetchBackups();
+            }
+        } catch(e) {
+            addNotification({ type: 'error', message: e instanceof Error ? e.message : 'Action failed.' });
+        }
+        
+        setConfirmAction(null);
+    };
+
+    return (
+        <div className="space-y-6">
+            <div className="flex justify-between items-center">
+                <div>
+                    <h4 className="font-bold text-lg text-stone-200">Server Backups</h4>
+                    <p className="text-stone-400 text-sm">Manage backups stored directly on the server.</p>
+                </div>
+                <Button onClick={handleCreateBackup} disabled={isCreating}>
+                    {isCreating ? 'Creating...' : 'Create Manual Backup'}
+                </Button>
+            </div>
+            
+            {isLoading ? (
+                <p className="text-stone-400 text-center">Loading backups...</p>
+            ) : backups.length > 0 ? (
+                <div className="space-y-3 max-h-96 overflow-y-auto pr-2">
+                    {backups.map(backup => (
+                        <div key={backup.filename} className="bg-stone-900/50 p-3 rounded-lg flex justify-between items-center">
+                            <div>
+                                <p className="font-semibold text-stone-200">{backup.filename}</p>
+                                <p className="text-xs text-stone-400">
+                                    {new Date(backup.createdAt).toLocaleString()} - {(backup.size / 1024 / 1024).toFixed(2)} MB
+                                </p>
+                            </div>
+                            <div className="flex gap-2">
+                                <Button size="sm" variant="secondary" onClick={() => setConfirmAction({ type: 'restore', filename: backup.filename })}>Restore</Button>
+                                <a href={`/api/backups/download/${backup.filename}`} download>
+                                    <Button size="sm" variant="secondary">Download</Button>
+                                </a>
+                                <Button size="sm" variant="destructive" onClick={() => setConfirmAction({ type: 'delete', filename: backup.filename })}>Delete</Button>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            ) : (
+                 <p className="text-stone-400 text-center py-4">No server backups found.</p>
+            )}
+
+            <ConfirmDialog
+                isOpen={!!confirmAction}
+                onClose={() => setConfirmAction(null)}
+                onConfirm={handleConfirm}
+                title={`Confirm ${confirmAction?.type === 'restore' ? 'Restore' : 'Deletion'}`}
+                message={
+                    confirmAction?.type === 'restore'
+                    ? `Are you sure? This will overwrite ALL current data with the contents of "${confirmAction.filename}". This action is irreversible.`
+                    : `Are you sure you want to permanently delete "${confirmAction?.filename}"?`
+                }
+            />
+        </div>
+    );
+};
 
 const BackupAndImportPage: React.FC = () => {
-    const [activeTab, setActiveTab] = useState('backup');
+    const [activeTab, setActiveTab] = useState('server');
     const appState = useAppState();
     const authState = useAuthState();
     const economyState = useEconomyState();
@@ -102,28 +224,18 @@ const BackupAndImportPage: React.FC = () => {
     const [fileToRestore, setFileToRestore] = useState<IAppData | null>(null);
     const [bugReportsToRestore, setBugReportsToRestore] = useState<BugReport[] | null>(null);
 
-    const handleFileSelect = (file: File, type: 'restore' | 'import') => {
+    const handleFileSelect = (file: File) => {
         const reader = new FileReader();
         reader.onload = (e) => {
             try {
                 const json = JSON.parse(e.target?.result as string);
-                if (type === 'restore') {
-                    // Basic validation for a backup file
-                    if (json.users && json.settings) {
-                        setFileToRestore(json);
-                    } else {
-                        addNotification({ type: 'error', message: 'This does not appear to be a valid backup file.' });
-                    }
-                } else { // import
-                    // Basic validation for an asset pack
-                    if (json.manifest && json.assets) {
-                        const fullCurrentData: IAppData = { ...appState, ...authState, ...economyState, ...questState };
-                        const conflictResolutions = analyzeAssetPackForConflicts(json, fullCurrentData);
-                        setInitialResolutions(conflictResolutions);
-                        setAssetPackToPreview(json);
-                    } else {
-                        addNotification({ type: 'error', message: 'This does not appear to be a valid asset pack file.' });
-                    }
+                if (json.manifest && json.assets) {
+                    const fullCurrentData: IAppData = { ...appState, ...authState, ...economyState, ...questState };
+                    const conflictResolutions = analyzeAssetPackForConflicts(json, fullCurrentData);
+                    setInitialResolutions(conflictResolutions);
+                    setAssetPackToPreview(json);
+                } else {
+                    addNotification({ type: 'error', message: 'This does not appear to be a valid asset pack file.' });
                 }
             } catch (error) {
                 addNotification({ type: 'error', message: 'Failed to read or parse the file.' });
@@ -161,15 +273,15 @@ const BackupAndImportPage: React.FC = () => {
             <Card>
                 <div className="border-b border-stone-700 mb-6">
                     <nav className="-mb-px flex space-x-6">
-                        <button onClick={() => setActiveTab('backup')} className={`whitespace-nowrap pb-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'backup' ? 'border-emerald-500 text-emerald-400' : 'border-transparent text-stone-400 hover:text-stone-200'}`}>Backup</button>
-                        <button onClick={() => setActiveTab('restore')} className={`whitespace-nowrap pb-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'restore' ? 'border-emerald-500 text-emerald-400' : 'border-transparent text-stone-400 hover:text-stone-200'}`}>Restore</button>
+                        <button onClick={() => setActiveTab('server')} className={`whitespace-nowrap pb-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'server' ? 'border-emerald-500 text-emerald-400' : 'border-transparent text-stone-400 hover:text-stone-200'}`}>Server Backups</button>
+                        <button onClick={() => setActiveTab('export')} className={`whitespace-nowrap pb-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'export' ? 'border-emerald-500 text-emerald-400' : 'border-transparent text-stone-400 hover:text-stone-200'}`}>Export Blueprint</button>
                         <button onClick={() => setActiveTab('import')} className={`whitespace-nowrap pb-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'import' ? 'border-emerald-500 text-emerald-400' : 'border-transparent text-stone-400 hover:text-stone-200'}`}>Import Blueprint</button>
                     </nav>
                 </div>
 
-                {activeTab === 'backup' && <BackupPanel />}
-                {activeTab === 'restore' && <RestorePanel onFileSelect={(file) => handleFileSelect(file, 'restore')} />}
-                {activeTab === 'import' && <ImportPanel onFileSelect={(file) => handleFileSelect(file, 'import')} />}
+                {activeTab === 'server' && <ServerBackupPanel />}
+                {activeTab === 'export' && <ExportPanel />}
+                {activeTab === 'import' && <ImportPanel onFileSelect={handleFileSelect} />}
             </Card>
 
             <Card title="Bug Report Data" className="mt-8">
@@ -187,17 +299,6 @@ const BackupAndImportPage: React.FC = () => {
                     onConfirm={handleConfirmImport}
                 />
             )}
-
-            <ConfirmDialog
-                isOpen={!!fileToRestore}
-                onClose={() => setFileToRestore(null)}
-                onConfirm={() => {
-                    if (fileToRestore) restoreFromBackup(fileToRestore);
-                    setFileToRestore(null);
-                }}
-                title="Confirm Restore"
-                message="Are you sure you want to restore from this backup? All current data will be overwritten. This action cannot be undone."
-            />
             
             <ConfirmDialog
                 isOpen={!!bugReportsToRestore}

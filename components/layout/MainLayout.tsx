@@ -9,7 +9,7 @@ import GuildPage from '../pages/GuildPage';
 import UserManagementPage from '../pages/UserManagementPage';
 import { Page, Role } from '../../types';
 import RewardsPage from '../pages/RewardsPage';
-import ManageQuestsPage from '../pages/ManageQuestsPage';
+import ManageQuestsPage from '../pages/management/ManageQuestsPage';
 import ApprovalsPage from '../pages/ApprovalsPage';
 import ManageMarketsPage from '../pages/management/ManageMarketsPage';
 import ManageGuildsPage from '../pages/ManageGuildsPage';

@@ -1,14 +1,14 @@
 
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { Trophy } from '../../../types';
-import Button from '../../ui/Button';
-import Card from '../../ui/Card';
-import EditTrophyDialog from '../../settings/EditTrophyDialog';
-import ConfirmDialog from '../../ui/ConfirmDialog';
-import { useAppState, useAppDispatch } from '../../context/AppContext';
-import EmptyState from '../../ui/EmptyState';
+import Button from '../../../ui/Button';
+import Card from '../../../ui/Card';
+import EditTrophyDialog from '../../../settings/EditTrophyDialog';
+import ConfirmDialog from '../../../ui/ConfirmDialog';
+import { useAppState, useAppDispatch } from '../../../context/AppContext';
+import EmptyState from '../../../ui/EmptyState';
 import TrophyIdeaGenerator from '../../quests/TrophyIdeaGenerator';
-import { TrophyIcon, EllipsisVerticalIcon } from '../../ui/Icons';
+import { TrophyIcon, EllipsisVerticalIcon } from '../../../ui/Icons';
 import { useShiftSelect } from '../../../hooks/useShiftSelect';
 
 const ManageTrophiesPage: React.FC = () => {

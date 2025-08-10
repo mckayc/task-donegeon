@@ -308,6 +308,26 @@ export const SettingsPage: React.FC = () => {
                             <div className="p-4 bg-stone-900/40 rounded-lg space-y-4">
                                 <Input label="Google Calendar API Key" value={formState.googleCalendar.apiKey} onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleSettingChange('googleCalendar', 'apiKey', e.target.value)} />
                                 <Input label="Google Calendar ID" value={formState.googleCalendar.calendarId} onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleSettingChange('googleCalendar', 'calendarId', e.target.value)} />
+                                <div className="mt-4 pt-4 border-t border-stone-700/60 prose prose-invert prose-sm text-stone-400 max-w-none">
+                                    <h4 className="text-stone-300">How to set up Google Calendar integration:</h4>
+                                    <ol>
+                                        <li>
+                                            Go to the <a href="https://console.cloud.google.com/" target="_blank" rel="noopener noreferrer">Google Cloud Console</a>, create a new project, search for and enable the "Google Calendar API", then go to "Credentials" and create a new API Key.
+                                        </li>
+                                        <li>
+                                            Go to your <a href="https://calendar.google.com/" target="_blank" rel="noopener noreferrer">Google Calendar</a> and select the calendar you want to share. Open its settings.
+                                        </li>
+                                        <li>
+                                            Under "Access permissions for events", you <strong>must</strong> check the box for "Make available to public".
+                                        </li>
+                                        <li>
+                                            Under the "Integrate calendar" section, find and copy the <strong>Calendar ID</strong> (it often looks like an email address).
+                                        </li>
+                                        <li>
+                                            Paste the API Key and Calendar ID into the fields above and save your settings.
+                                        </li>
+                                    </ol>
+                                </div>
                             </div>
                           )}
                     </div>

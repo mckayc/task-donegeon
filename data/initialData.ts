@@ -202,8 +202,12 @@ export const INITIAL_SETTINGS: AppSettings = {
     },
     automatedBackups: {
         enabled: false,
-        frequencyHours: 24,
-        maxBackups: 7,
+        schedules: [{
+            id: 'default-daily',
+            frequency: 24,
+            unit: 'hours',
+            maxBackups: 7,
+        }],
     },
     loginNotifications: {
         enabled: true,

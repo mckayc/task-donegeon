@@ -32,7 +32,7 @@ const LogIcon: React.FC<{type: BugReportLogEntry['type']}> = ({ type }) => {
     }
 }
 
-const BugDetailDialog: React.FC<BugDetailDialogProps> = ({ report, onClose, allTags, getTagColor }) => {
+export const BugDetailDialog: React.FC<BugDetailDialogProps> = ({ report, onClose, allTags, getTagColor }) => {
     const { updateBugReport } = useAppDispatch();
     const { currentUser, users } = useAuthState();
     const { addNotification } = useNotificationsDispatch();
@@ -75,19 +75,29 @@ const BugDetailDialog: React.FC<BugDetailDialogProps> = ({ report, onClose, allT
             addNotification({ type: 'success', message: 'Log content copied to clipboard!' });
 
             const existingTags = report.tags || [];
-            const submissionTagPrefix = 'AI Submissions:';
+            const submissionTagPrefix = 'Copy #';
             let submissionTag = existingTags.find(t => t.startsWith(submissionTagPrefix));
             let count = 1;
 
             if (submissionTag) {
-                const match = submissionTag.match(/(\d+)/);
+                const match = submissionTag.match(/Copy #(\d+)/);
                 if (match) {
                     count = parseInt(match[1], 10) + 1;
                 }
             }
             
-            const newTimestamp = new Date().toLocaleString('en-US', { month: 'numeric', day: 'numeric', year: '2-digit', hour: 'numeric', minute: '2-digit' });
-            const newSubmissionTag = `${submissionTagPrefix} ${count} (${newTimestamp})`;
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const day = String(now.getDate()).padStart(2, '0');
+            let hours = now.getHours();
+            const ampm = hours >= 12 ? 'PM' : 'AM';
+            hours = hours % 12;
+            hours = hours ? hours : 12; // the hour '0' should be '12'
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            const newTimestamp = `${year}-${month}-${day} ${hours}:${minutes} ${ampm}`;
+
+            const newSubmissionTag = `${submissionTagPrefix}${count}: ${newTimestamp}`;
 
             const otherTags = existingTags.filter(t => !t.startsWith(submissionTagPrefix));
             const newTags = [...otherTags, newSubmissionTag];
@@ -150,11 +160,11 @@ const BugDetailDialog: React.FC<BugDetailDialogProps> = ({ report, onClose, allT
                     </div>
 
                     <div className="p-6 flex-grow flex flex-col overflow-hidden space-y-4">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                              <Input as="select" label="Status" value={report.status} onChange={e => handleStatusChange(e.target.value as BugReportStatus)}>
                                 {statuses.map(s => <option key={s} value={s}>{s}</option>)}
                             </Input>
-                            <div>
+                            <div className="md:col-span-2">
                                 <label className="block text-sm font-medium text-stone-300 mb-1">Tags</label>
                                 <div className="flex flex-wrap gap-1 mb-2">
                                     {(report.tags || []).map(tag => (
@@ -248,5 +258,3 @@ const BugDetailDialog: React.FC<BugDetailDialogProps> = ({ report, onClose, allT
         </>
     );
 };
-
-export default BugDetailDialog;

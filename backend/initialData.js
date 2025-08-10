@@ -70,8 +70,12 @@ const INITIAL_SETTINGS = {
     },
     automatedBackups: {
         enabled: false,
-        frequencyHours: 24,
-        maxBackups: 7,
+        schedules: [{
+            id: 'default-daily',
+            frequency: 24,
+            unit: 'hours',
+            maxBackups: 7,
+        }],
     },
     loginNotifications: {
         enabled: true,
@@ -307,11 +311,11 @@ const rawThemes = {
   eerie: { '--font-display': "'Metamorphous', serif", '--font-body': "'Roboto', sans-serif", '--font-label': "'IM Fell English SC', serif", '--font-span': "'Roboto', sans-serif", '--font-button': "'Roboto', sans-serif", '--font-size-h1': '2.25rem', '--font-size-h2': '1.75rem', '--font-size-h3': '1.5rem', '--font-size-body': '1rem', '--font-size-label': '0.875rem', '--font-size-span': '1rem', '--color-bg-primary-hsl': "120 10% 8%", '--color-bg-secondary-hsl': "120 8% 12%", '--color-bg-tertiary-hsl': "120 5% 18%", '--color-text-primary-hsl': "120 30% 88%", '--color-text-secondary-hsl': "120 15% 65%", '--color-border-hsl': "120 10% 30%", '--color-primary-hue': "120", '--color-primary-saturation': "40%", '--color-primary-lightness': "45%", '--color-accent-hue': "80", '--color-accent-saturation': "50%", '--color-accent-lightness': "55%", '--color-accent-light-hue': "30", '--color-accent-light-saturation': "40%", '--color-accent-light-lightness': "50%" },
 };
 
-const INITIAL_THEMES = Object.entries(rawThemes).map(([id, styles]) => ({
+const INITIAL_THEMES: ThemeDefinition[] = Object.entries(rawThemes).map(([id, styles]) => ({
   id,
   name: id.charAt(0).toUpperCase() + id.slice(1),
   isCustom: false,
-  styles
+  styles: styles as ThemeStyle,
 }));
 
 module.exports = {

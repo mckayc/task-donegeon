@@ -3,7 +3,7 @@
 import React, { useState, ChangeEvent, ReactNode, useEffect } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { useAuthState } from '../../context/AuthContext';
-import { AppSettings, Terminology, RewardCategory, RewardTypeDefinition } from '../../types';
+import { AppSettings, Terminology, RewardCategory, RewardTypeDefinition, BackupSchedule } from '../../types';
 import Button from '../user-interface/Button';
 import { ChevronDownIcon } from '../user-interface/Icons';
 import Input from '../user-interface/Input';
@@ -123,6 +123,36 @@ export const SettingsPage: React.FC = () => {
             const newState = { ...prev };
             (newState[section] as any)[key] = value;
             return newState;
+        });
+    };
+
+    const handleBackupScheduleChange = (key: 'frequency' | 'maxBackups', value: number) => {
+        setFormState(prev => {
+            const newSchedules: BackupSchedule[] = [...(prev.automatedBackups.schedules || [])];
+            if (newSchedules.length > 0) {
+                // Update the first schedule
+                newSchedules[0] = { ...newSchedules[0], [key]: value };
+                if (key === 'frequency') {
+                    newSchedules[0].unit = 'hours'; // The UI is for hours only
+                }
+            } else {
+                // If no schedules exist, create one
+                newSchedules.push({
+                    id: 'default-daily',
+                    frequency: 24,
+                    unit: 'hours',
+                    maxBackups: 7,
+                    ...{ [key]: value },
+                });
+            }
+    
+            return {
+                ...prev,
+                automatedBackups: {
+                    ...prev.automatedBackups,
+                    schedules: newSchedules,
+                }
+            };
         });
     };
 
@@ -303,8 +333,20 @@ export const SettingsPage: React.FC = () => {
                         <h4 className="font-semibold text-stone-200 mb-2">Automated Backups</h4>
                         <ToggleSwitch enabled={formState.automatedBackups.enabled} setEnabled={(val: boolean) => handleSettingChange('automatedBackups', 'enabled', val)} label="Enable Automated Server Backups" />
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <Input label="Backup Frequency (Hours)" type="number" min="1" value={formState.automatedBackups.frequencyHours} onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleSettingChange('automatedBackups', 'frequencyHours', parseInt(e.target.value) || 24)} />
-                            <Input label="Max Backups to Keep" type="number" min="1" value={formState.automatedBackups.maxBackups} onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleSettingChange('automatedBackups', 'maxBackups', parseInt(e.target.value) || 7)} />
+                             <Input 
+                                label="Backup Frequency (Hours)" 
+                                type="number" 
+                                min="1" 
+                                value={formState.automatedBackups.schedules?.[0]?.frequency || 24} 
+                                onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleBackupScheduleChange('frequency', parseInt(e.target.value) || 24)} 
+                            />
+                            <Input 
+                                label="Max Backups to Keep" 
+                                type="number" 
+                                min="1" 
+                                value={formState.automatedBackups.schedules?.[0]?.maxBackups || 7} 
+                                onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleBackupScheduleChange('maxBackups', parseInt(e.target.value) || 7)} 
+                            />
                         </div>
                     </div>
                 </CollapsibleSection>

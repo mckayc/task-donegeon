@@ -6,7 +6,7 @@ import Button from '../user-interface/Button';
 import { useNotificationsDispatch } from '../../context/NotificationsContext';
 import Input from '../user-interface/Input';
 import ConfirmDialog from '../user-interface/ConfirmDialog';
-import BugDetailDialog from './BugDetailDialog';
+import { BugDetailDialog } from './BugDetailDialog';
 import { bugLogger } from '../../utils/bugLogger';
 import { EllipsisVerticalIcon } from '../user-interface/Icons';
 import { useShiftSelect } from '../../hooks/useShiftSelect';

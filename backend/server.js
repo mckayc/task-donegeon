@@ -1590,11 +1590,12 @@ backupsRouter.get('/', asyncMiddleware(async (req, res) => {
     }
 }));
 
-const createBackup = async (type = 'manual') => {
+const createBackup = async (type = 'manual', scheduleId = null) => {
     const manager = dataSource.manager;
     const appData = await getFullAppData(manager);
     const timestamp = new Date().toISOString().replace(/:/g, '-').slice(0, 19);
-    const filename = `backup-${type}-${timestamp}.json`;
+    const schedulePart = scheduleId ? `-${scheduleId}` : '';
+    const filename = `backup-${type}${schedulePart}-${timestamp}.json`;
     const filePath = path.join(BACKUP_DIR, filename);
     await fs.writeFile(filePath, JSON.stringify(appData, null, 2));
     console.log(`[Backup] Created ${type} backup: ${filename}`);
@@ -1682,7 +1683,6 @@ backupsRouter.post('/restore/:filename', asyncMiddleware(async (req, res) => {
 app.use('/api/backups', backupsRouter);
 
 // === Automated Backup Scheduler ===
-let lastAutomatedBackupTimestamp = 0;
 let backupInterval;
 
 async function runAutomatedBackup() {
@@ -1690,37 +1690,44 @@ async function runAutomatedBackup() {
         const settingRow = await dataSource.manager.findOneBy(SettingEntity, { id: 1 });
         const settings = settingRow ? settingRow.settings : INITIAL_SETTINGS;
 
-        if (!settings.automatedBackups.enabled) {
-            return;
-        }
-        
-        // Check if enough time has passed
-        const frequencyMillis = (settings.automatedBackups.frequencyHours || 24) * 3600 * 1000;
-        if (Date.now() - lastAutomatedBackupTimestamp < frequencyMillis) {
+        if (!settings.automatedBackups.enabled || !settings.automatedBackups.schedules) {
             return;
         }
 
-        console.log('[Backup] Running automated backup...');
-        await createBackup('auto');
-        lastAutomatedBackupTimestamp = Date.now();
+        const allBackupFiles = await fs.readdir(BACKUP_DIR);
+        const now = Date.now();
 
-        // Enforce retention policy
-        const files = await fs.readdir(BACKUP_DIR);
-        const autoBackups = (await Promise.all(
-            files
-                .filter(file => file.startsWith('backup-auto-') && file.endsWith('.json'))
-                .map(async file => ({
-                    name: file,
-                    time: (await fs.stat(path.join(BACKUP_DIR, file))).mtime.getTime(),
-                }))
-        )).sort((a, b) => a.time - b.time); // Sort oldest first
+        for (const schedule of settings.automatedBackups.schedules) {
+            const scheduleFiles = allBackupFiles
+                .filter(file => file.startsWith(`backup-auto-${schedule.id}-`) && file.endsWith('.json'))
+                .map(file => ({ name: file, time: new Date(file.substring(file.lastIndexOf('-') + 1, file.lastIndexOf('.')).replace(/-/g, ':')).getTime() }))
+                .sort((a, b) => b.time - a.time); // Sort newest first
 
-        const maxBackups = settings.automatedBackups.maxBackups || 7;
-        if (autoBackups.length > maxBackups) {
-            const backupsToDelete = autoBackups.slice(0, autoBackups.length - maxBackups);
-            for (const backup of backupsToDelete) {
-                console.log(`[Backup] Deleting old backup due to retention policy: ${backup.name}`);
-                await fs.unlink(path.join(BACKUP_DIR, backup.name));
+            const lastBackupTime = scheduleFiles.length > 0 ? scheduleFiles[0].time : 0;
+            
+            let frequencyMillis = 0;
+            switch(schedule.unit) {
+                case 'hours': frequencyMillis = schedule.frequency * 3600 * 1000; break;
+                case 'days': frequencyMillis = schedule.frequency * 24 * 3600 * 1000; break;
+                case 'weeks': frequencyMillis = schedule.frequency * 7 * 24 * 3600 * 1000; break;
+            }
+
+            if (now - lastBackupTime >= frequencyMillis) {
+                console.log(`[Backup] Running automated backup for schedule: ${schedule.id}`);
+                await createBackup('auto', schedule.id);
+
+                // Re-fetch files to include the one we just created for retention logic
+                const updatedScheduleFiles = [...scheduleFiles, { name: 'new', time: now }].sort((a,b) => b.time - a.time);
+
+                // Enforce retention policy
+                if (updatedScheduleFiles.length > schedule.maxBackups) {
+                    const backupsToDelete = updatedScheduleFiles.slice(schedule.maxBackups);
+                    for (const backup of backupsToDelete) {
+                        if(backup.name === 'new') continue; // Don't delete the file we just created
+                        console.log(`[Backup] Deleting old backup for schedule ${schedule.id}: ${backup.name}`);
+                        await fs.unlink(path.join(BACKUP_DIR, backup.name));
+                    }
+                }
             }
         }
     } catch (error) {

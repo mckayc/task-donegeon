@@ -470,6 +470,12 @@ export interface RewardValuationSettings {
   xpExchangeFeePercent: number;
 }
 
+export interface BackupSchedule {
+  id: string;
+  frequency: number;
+  unit: 'hours' | 'days' | 'weeks';
+  maxBackups: number;
+}
 
 export interface AppSettings {
   contentVersion: number;
@@ -495,8 +501,7 @@ export interface AppSettings {
   };
   automatedBackups: {
     enabled: boolean;
-    frequencyHours: number; // e.g., 24 for daily
-    maxBackups: number; // e.g., 7 for a week's worth
+    schedules: BackupSchedule[];
   };
   loginNotifications: {
     enabled: boolean;

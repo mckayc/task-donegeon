@@ -41,6 +41,23 @@ const CollapsibleSection: React.FC<{ title: string; children: React.ReactNode; d
     );
 }
 
+const DangerZoneAction: React.FC<{
+    title: string;
+    description: string;
+    buttonText: string;
+    onAction: () => void;
+}> = ({ title, description, buttonText, onAction }) => (
+    <div className="p-4 border border-red-700/60 bg-red-900/30 rounded-lg flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+        <div>
+            <h4 className="font-bold text-red-300">{title}</h4>
+            <p className="text-sm text-stone-300 mt-1 max-w-xl">{description}</p>
+        </div>
+        <Button onClick={onAction} variant="destructive" className="flex-shrink-0">
+            {buttonText}
+        </Button>
+    </div>
+);
+
 const terminologyLabels: { [key in keyof Terminology]: string } = {
   appName: 'App Name',
   task: 'Task (Singular)',
@@ -359,13 +376,36 @@ export const SettingsPage: React.FC = () => {
                 </CollapsibleSection>
                 <CollapsibleSection title="Danger Zone">
                      <div className="p-6 space-y-4">
-                         <div className="p-4 border border-red-700/60 bg-red-900/30 rounded-lg space-y-4">
-                             <Button onClick={() => setConfirmation('resetSettings')} variant="destructive">Reset All Settings</Button>
-                             <Button onClick={() => setConfirmation('clearHistory')} variant="destructive">Clear All History</Button>
-                             <Button onClick={() => setConfirmation('resetPlayers')} variant="destructive">Reset All Player Data</Button>
-                             <Button onClick={() => setConfirmation('deleteContent')} variant="destructive">Delete All Custom Content</Button>
-                             <Button onClick={() => setConfirmation('factoryReset')} variant="destructive">Factory Reset Application</Button>
-                         </div>
+                         <DangerZoneAction
+                            title="Reset All Settings"
+                            description="Reverts all application settings to their defaults. User-created content (quests, items, users) will not be affected."
+                            buttonText="Reset Settings"
+                            onAction={() => setConfirmation('resetSettings')}
+                         />
+                         <DangerZoneAction
+                            title="Clear All History"
+                            description="Permanently deletes all historical records like quest completions and purchases. User accounts and created content are not affected."
+                            buttonText="Clear History"
+                            onAction={() => setConfirmation('clearHistory')}
+                         />
+                         <DangerZoneAction
+                            title="Reset All Player Data"
+                            description="Resets progress for all non-admin users. Their currency, XP, and owned items will be cleared. User accounts will not be deleted."
+                            buttonText="Reset Player Data"
+                            onAction={() => setConfirmation('resetPlayers')}
+                         />
+                         <DangerZoneAction
+                            title="Delete All Custom Content"
+                            description="Permanently deletes all content you created: quests, items, markets, rewards, ranks, and trophies. User accounts are not affected."
+                            buttonText="Delete Custom Content"
+                            onAction={() => setConfirmation('deleteContent')}
+                         />
+                          <DangerZoneAction
+                            title="Factory Reset Application"
+                            description="The ultimate reset. Wipes ALL data (users, quests, settings) and returns the app to its initial setup state. This cannot be undone."
+                            buttonText="Factory Reset"
+                            onAction={() => setConfirmation('factoryReset')}
+                         />
                     </div>
                 </CollapsibleSection>
             </Card>

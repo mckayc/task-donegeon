@@ -37,9 +37,11 @@ export const isVacationActiveOnDate = (date: Date, scheduledEvents: ScheduledEve
 
 /**
  * Checks if a quest is scheduled to appear on a specific day, based on its type and recurrence rules.
+ * This does not check for completion status, only if it's supposed to be on the calendar for that day.
  */
 export const isQuestScheduledForDay = (quest: Quest, day: Date): boolean => {
     if (quest.type === QuestType.Venture) {
+        // A Venture is "scheduled" for its due date.
         return !!quest.lateDateTime && toYMD(new Date(quest.lateDateTime)) === toYMD(day);
     }
     // It's a Duty
@@ -54,12 +56,31 @@ export const isQuestScheduledForDay = (quest: Quest, day: Date): boolean => {
 /**
  * Checks if a quest should be visible to a user in the current app mode.
  * Verifies active status, guild scope, and user assignment, strictly separating personal and guild contexts.
+ * Also checks for quest chain prerequisites.
  */
 export const isQuestVisibleToUserInMode = (
   quest: Quest,
   userId: string,
-  appMode: AppMode
+  appMode: AppMode,
+  allQuests: Quest[],
+  allCompletions: QuestCompletion[]
 ): boolean => {
+  // Find prerequisite quest
+  const prerequisiteQuest = allQuests.find(q => q.nextQuestId === quest.id);
+
+  if (prerequisiteQuest) {
+    // This quest is locked. Check if the user has completed the prerequisite.
+    const hasCompletedPrerequisite = allCompletions.some(c =>
+      c.questId === prerequisiteQuest.id &&
+      c.userId === userId &&
+      c.status === QuestCompletionStatus.Approved
+    );
+    if (!hasCompletedPrerequisite) {
+      return false; // Prerequisite not met, quest is not visible.
+    }
+  }
+  
+  // If prerequisite is met or doesn't exist, proceed with original visibility checks.
   if (!quest.isActive) return false;
 
   const currentGuildId = appMode.mode === 'guild' ? appMode.guildId : undefined;
@@ -125,10 +146,7 @@ export const isQuestAvailableForUser = (
   // Duty-specific logic
   if (quest.type === QuestType.Duty) {
     if (!onVacation && quest.incompleteTime) {
-      const isScheduledToday =
-          quest.availabilityType === QuestAvailability.Daily ||
-          (quest.availabilityType === QuestAvailability.Weekly && quest.weeklyRecurrenceDays.includes(today.getDay())) ||
-          (quest.availabilityType === QuestAvailability.Monthly && quest.monthlyRecurrenceDays.includes(today.getDate()));
+      const isScheduledToday = isQuestScheduledForDay(quest, today);
 
       if (isScheduledToday) {
           const [hours, minutes] = quest.incompleteTime.split(':').map(Number);
@@ -173,60 +191,71 @@ export const isQuestAvailableForUser = (
 };
 
 /**
- * Generates a sort key for a quest based on priority rules.
- * Lower numbers are higher priority.
- * Sorts by:
- * 1. Completion Status (Available > Completed/Pending)
- * 2. Urgency (Past Due / Due Today > Future Due > No Due Date / Duty)
- * 3. To-Do Status (To-Do > Not To-Do)
- * 4. Quest Type (Duty > Venture, within the same urgency/todo level)
- * 5. Time/Date (Earlier is higher priority)
- * 6. Title (alphabetical)
+ * Generates a multi-part sort key for a quest to determine its priority in a list.
+ * Lower numbers in each part of the key mean higher priority.
+ *
+ * The sorting priority is as follows:
+ * 1.  **Availability:** Available quests always come before unavailable (completed/pending) ones.
+ * 2.  **Urgency:** Quests that are past due or due today are most urgent. Quests due in the future are next.
+ *     Quests with no deadline (like most Duties) are least urgent.
+ * 3.  **To-Do Status:** Ventures marked as "To-Do" by the user are prioritized.
+ * 4.  **Quest Type:** Recurring Duties are prioritized over one-time Ventures when other factors are equal.
+ * 5.  **Time/Date:** Quests with earlier due dates/times are sorted first.
+ * 6.  **Title:** Alphabetical order is used as a final tie-breaker.
  */
-const getQuestSortKey = (quest: Quest, user: User, date: Date, allCompletions: QuestCompletion[], scheduledEvents: ScheduledEvent[]): [number, number, number, number, number, string] => {
+const getQuestSortKey = (quest: Quest, user: User, date: Date, allCompletions: QuestCompletion[], scheduledEvents: ScheduledEvent[]): (string | number)[] => {
     const questAppMode: AppMode = quest.guildId ? { mode: 'guild', guildId: quest.guildId } : { mode: 'personal' };
     const userCompletionsForQuest = allCompletions.filter(c => c.questId === quest.id && c.userId === user.id);
+    
+    // --- Key 1: Availability (0 = Available, 1 = Not Available) ---
     const isAvailable = isQuestAvailableForUser(quest, userCompletionsForQuest, date, scheduledEvents, questAppMode);
+    const availabilityPriority = isAvailable ? 0 : 1;
 
-    // Key 1: Availability (0=available, 1=not)
-    const completionPriority = isAvailable ? 0 : 1;
+    // --- Key 2: Urgency (0 = Urgent, 1 = Future, 2 = Not Time-Sensitive) ---
+    let urgencyPriority = 2; // Default: not urgent
+    const todayYMD = toYMD(date);
 
-    // Key 2: Urgency (0=past due/due today, 1=due future, 2=no due date/duty)
-    let urgencyPriority = 2;
     if (quest.type === QuestType.Venture && quest.lateDateTime) {
         const dueDate = new Date(quest.lateDateTime);
-        const todayStart = new Date(date);
-        todayStart.setHours(0, 0, 0, 0);
-        
-        if (dueDate < todayStart) { // Past due
-            urgencyPriority = 0;
-        } else if (toYMD(dueDate) === toYMD(date)) { // Due today
-            urgencyPriority = 0;
-        } else { // Due in the future
-            urgencyPriority = 1;
+        // Use a version of 'date' that is at the start of the day for date-only comparisons
+        const todayStart = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+        if (dueDate < todayStart || toYMD(dueDate) === todayYMD) {
+            urgencyPriority = 0; // Past due or due today
+        } else {
+            urgencyPriority = 1; // Due in the future
+        }
+    } else if (quest.type === QuestType.Duty && quest.lateTime && isQuestScheduledForDay(quest, date)) {
+        // Any duty with a deadline on a day it's scheduled is considered urgent for that day.
+        const [hours, minutes] = quest.lateTime.split(':').map(Number);
+        const deadlineToday = new Date(date.getFullYear(), date.getMonth(), date.getDate(), hours, minutes);
+        if (date > deadlineToday) {
+            urgencyPriority = 0; // Past due
+        } else {
+            urgencyPriority = 0; // Due today
         }
     }
     
-    // Key 3: To-Do status (0=is to-do, 1=not)
+    // --- Key 3: To-Do Status (0 = Is To-Do, 1 = Not To-Do) ---
     const isTodo = quest.type === QuestType.Venture && quest.todoUserIds?.includes(user.id);
     const isTodoPriority = isTodo ? 0 : 1;
     
-    // Key 4: Quest Type (0=Duty, 1=Venture) - Duties are prioritized within non-urgent categories.
+    // --- Key 4: Quest Type (0 = Duty, 1 = Venture) ---
+    // This prioritizes recurring tasks over one-time ones when all else is equal.
     const typePriority = quest.type === QuestType.Duty ? 0 : 1;
     
-    // Key 5: Time sorting (closer times/dates are smaller numbers)
+    // --- Key 5: Time Sorting (earlier times/dates get a smaller number) ---
     let timePriority = Number.MAX_SAFE_INTEGER;
     if (quest.type === QuestType.Venture && quest.lateDateTime) {
         timePriority = new Date(quest.lateDateTime).getTime();
     } else if (quest.type === QuestType.Duty && quest.lateTime) {
         const [hours, minutes] = quest.lateTime.split(':').map(Number);
-        timePriority = hours * 60 + minutes;
+        timePriority = hours * 60 + minutes; // Sort by minutes from midnight
     }
 
-    // Key 6: Title for alphabetical tie-breaking
+    // --- Key 6: Title (alphabetical tie-breaker) ---
     const title = quest.title.toLowerCase();
 
-    return [completionPriority, urgencyPriority, isTodoPriority, typePriority, timePriority, title];
+    return [availabilityPriority, urgencyPriority, isTodoPriority, typePriority, timePriority, title];
 };
 
 
@@ -237,13 +266,15 @@ const getQuestSortKey = (quest: Quest, user: User, date: Date, allCompletions: Q
  * @param date The date context for sorting (e.g., today's date).
  * @returns A comparator function for Array.prototype.sort().
  */
-export const questSorter = (user: User, allCompletions: QuestCompletion[], scheduledEvents: ScheduledEvent[], date: Date = new Date()) => (a: Quest, b: Quest) => {
+export const questSorter = (user: User, allCompletions: QuestCompletion[], scheduledEvents: ScheduledEvent[], date: Date = new Date()) => (a: Quest, b: Quest): number => {
     const keyA = getQuestSortKey(a, user, date, allCompletions, scheduledEvents);
     const keyB = getQuestSortKey(b, user, date, allCompletions, scheduledEvents);
 
     for (let i = 0; i < keyA.length; i++) {
-        if (keyA[i] < keyB[i]) return -1;
-        if (keyA[i] > keyB[i]) return 1;
+        const valA = keyA[i];
+        const valB = keyB[i];
+        if (valA < valB) return -1;
+        if (valA > valB) return 1;
     }
     return 0;
 };

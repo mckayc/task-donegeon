@@ -201,11 +201,7 @@ const EditGameAssetDialog: React.FC<EditGameAssetDialogProps> = ({ assetToEdit, 
     
     if (onSave) {
         onSave(finalPayload);
-        onClose();
-        return;
-    }
-
-    if (assetToEdit) {
+    } else if (assetToEdit) {
       updateGameAsset({ ...assetToEdit, ...finalPayload });
     } else {
       addGameAsset(finalPayload);
@@ -361,16 +357,18 @@ const EditGameAssetDialog: React.FC<EditGameAssetDialogProps> = ({ assetToEdit, 
                 <div className="flex justify-between items-center">
                     <Button type="button" variant="secondary" onClick={onClose}>Cancel</Button>
                     <div className="flex items-center gap-4">
-                        <Button type="button" variant="secondary" onClick={onTryAgain} disabled={isGenerating}>
-                            {isGenerating ? 'Generating...' : 'Try Again'}
-                        </Button>
+                        {onTryAgain && (
+                          <Button type="button" variant="secondary" onClick={onTryAgain} disabled={isGenerating}>
+                              {isGenerating ? 'Generating...' : 'Try Again'}
+                          </Button>
+                        )}
                         <Button type="submit" form="asset-dialog-form">Create Asset</Button>
                     </div>
                 </div>
               ) : (
                 <div className="flex justify-end space-x-4">
                     <Button type="button" variant="secondary" onClick={onClose}>Cancel</Button>
-                    <Button type="submit" form="asset-dialog-form">{onSave ? 'Save Changes' : (assetToEdit ? 'Save Changes' : 'Create Asset')}</Button>
+                    <Button type="submit" form="asset-dialog-form">{assetToEdit ? 'Save Changes' : 'Create Asset'}</Button>
                 </div>
               )}
           </div>

@@ -1001,6 +1001,104 @@ assetsRouter.delete('/', asyncMiddleware(async (req, res) => {
 
 app.use('/api/assets', assetsRouter);
 
+// Markets Router
+const marketsRouter = express.Router();
+const marketRepo = dataSource.getRepository(MarketEntity);
+marketsRouter.get('/', asyncMiddleware(async (req, res) => {
+    const { searchTerm, sortBy } = req.query;
+    const qb = marketRepo.createQueryBuilder("market");
+
+    if (searchTerm) {
+        qb.where("LOWER(market.title) LIKE LOWER(:searchTerm)", { searchTerm: `%${searchTerm}%` });
+    }
+
+    switch (sortBy) {
+        case 'title-desc': qb.orderBy("market.title", "DESC"); break;
+        case 'title-asc': default: qb.orderBy("market.title", "ASC"); break;
+    }
+
+    res.json(await qb.getMany());
+}));
+marketsRouter.delete('/', asyncMiddleware(async (req, res) => {
+    const { ids } = req.body;
+    if (!ids || !Array.isArray(ids)) return res.status(400).json({ error: 'Invalid request body' });
+    await marketRepo.delete(ids);
+    res.status(204).send();
+}));
+app.use('/api/markets', marketsRouter);
+
+// Ranks Router
+const ranksRouter = express.Router();
+const rankRepo = dataSource.getRepository(RankEntity);
+ranksRouter.get('/', asyncMiddleware(async (req, res) => {
+    const { searchTerm, sortBy } = req.query;
+    const qb = rankRepo.createQueryBuilder("rank");
+
+    if (searchTerm) {
+        qb.where("LOWER(rank.name) LIKE LOWER(:searchTerm)", { searchTerm: `%${searchTerm}%` });
+    }
+
+    switch (sortBy) {
+        case 'xp-desc': qb.orderBy("rank.xpThreshold", "DESC"); break;
+        case 'name-asc': qb.orderBy("rank.name", "ASC"); break;
+        case 'name-desc': qb.orderBy("rank.name", "DESC"); break;
+        case 'xp-asc': default: qb.orderBy("rank.xpThreshold", "ASC"); break;
+    }
+
+    res.json(await qb.getMany());
+}));
+ranksRouter.delete('/', asyncMiddleware(async (req, res) => {
+    const { ids } = req.body;
+    if (!ids || !Array.isArray(ids)) return res.status(400).json({ error: 'Invalid request body' });
+    await rankRepo.delete(ids);
+    res.status(204).send();
+}));
+app.use('/api/ranks', ranksRouter);
+
+// Trophies Router
+const trophiesRouter = express.Router();
+const trophyRepo = dataSource.getRepository(TrophyEntity);
+trophiesRouter.get('/', asyncMiddleware(async (req, res) => {
+    const { searchTerm, sortBy } = req.query;
+    const qb = trophyRepo.createQueryBuilder("trophy");
+
+    if (searchTerm) {
+        qb.where("LOWER(trophy.name) LIKE LOWER(:searchTerm)", { searchTerm: `%${searchTerm}%` });
+    }
+
+    switch (sortBy) {
+        case 'name-desc': qb.orderBy("trophy.name", "DESC"); break;
+        case 'name-asc': default: qb.orderBy("trophy.name", "ASC"); break;
+    }
+
+    res.json(await qb.getMany());
+}));
+trophiesRouter.delete('/', asyncMiddleware(async (req, res) => {
+    const { ids } = req.body;
+    if (!ids || !Array.isArray(ids)) return res.status(400).json({ error: 'Invalid request body' });
+    await trophyRepo.delete(ids);
+    res.status(204).send();
+}));
+app.use('/api/trophies', trophiesRouter);
+
+// Reward Types Router
+const rewardTypesRouter = express.Router();
+const rewardTypeRepo = dataSource.getRepository(RewardTypeDefinitionEntity);
+rewardTypesRouter.get('/', asyncMiddleware(async (req, res) => {
+    const { searchTerm } = req.query;
+    const qb = rewardTypeRepo.createQueryBuilder("reward");
+
+    if (searchTerm) {
+        qb.where("LOWER(reward.name) LIKE LOWER(:searchTerm)", { searchTerm: `%${searchTerm}%` });
+    }
+
+    qb.orderBy("reward.isCore", "DESC").addOrderBy("reward.category", "ASC").addOrderBy("reward.name", "ASC");
+    
+    res.json(await qb.getMany());
+}));
+app.use('/api/reward-types', rewardTypesRouter);
+
+
 // Business Logic Actions
 app.post('/api/actions/complete-quest', asyncMiddleware(async (req, res) => {
     const { completionData } = req.body;

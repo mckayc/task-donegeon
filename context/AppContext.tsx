@@ -24,7 +24,6 @@ interface AppDispatch {
   setRanks: (ranks: Rank[]) => void;
   addTrophy: (trophy: Omit<Trophy, 'id'>) => void;
   updateTrophy: (trophy: Trophy) => void;
-  deleteTrophy: (trophyId: string) => void;
   awardTrophy: (userId: string, trophyId: string, guildId?: string) => void;
   applyManualAdjustment: (adjustment: Omit<AdminAdjustment, 'id' | 'adjustedAt'>) => boolean;
   addTheme: (theme: Omit<ThemeDefinition, 'id'>) => void;
@@ -41,7 +40,7 @@ interface AppDispatch {
   clearAllHistory: () => void;
   resetAllPlayerData: () => void;
   deleteAllCustomContent: () => void;
-  deleteSelectedAssets: (selection: Partial<Record<ShareableAssetType, string[]>>) => void;
+  deleteSelectedAssets: (selection: Partial<Record<ShareableAssetType, string[]>>, onComplete: () => void) => void;
   uploadFile: (file: File, category?: string) => Promise<{ url: string } | null>;
   factoryReset: () => void;
 
@@ -52,6 +51,7 @@ interface AppDispatch {
   markMessagesAsRead: (params: { partnerId?: string; guildId?: string; }) => void;
   addSystemNotification: (notification: Omit<SystemNotification, 'id' | 'timestamp' | 'readByUserIds'>) => void;
   markSystemNotificationsAsRead: (notificationIds: string[]) => void;
+  triggerSync: () => void;
 }
 
 const AppStateContext = createContext<AppState | undefined>(undefined);
@@ -64,7 +64,7 @@ const mergeData = <T extends { id: string }>(existing: T[], incoming: T[]): T[] 
 };
 
 export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const { addNotification } = useNotificationsDispatch();
+  const { addNotification, updateNotification } = useNotificationsDispatch();
   const { currentUser } = useAuthState();
   const authDispatch = useAuthDispatch();
   const economyDispatch = useEconomyDispatch();
@@ -113,10 +113,11 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         }
         return await response.json();
     } catch (error) {
-        addNotification({ type: 'error', message: error instanceof Error ? error.message : 'An unknown network error occurred.' });
+        // Error notifications will be handled by the calling function using the new pattern
+        // addNotification({ type: 'error', message: error instanceof Error ? error.message : 'An unknown network error occurred.' });
         throw error;
     }
-  }, [addNotification]);
+  }, []);
   
   // === DATA SYNC & LOADING ===
   
@@ -277,11 +278,21 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     const intervalId = setInterval(performDeltaSync, 30000); // Poll for updates every 30 seconds
     document.addEventListener('visibilitychange', performDeltaSync);
 
+    // Global event listener for manual sync triggers
+    window.addEventListener('trigger-sync', performDeltaSync);
+
+
     return () => {
         clearInterval(intervalId);
         document.removeEventListener('visibilitychange', performDeltaSync);
+        window.removeEventListener('trigger-sync', performDeltaSync);
     };
   }, [isDataLoaded, performDeltaSync]);
+  
+  const triggerSync = useCallback(() => {
+    console.log('Manual sync triggered.');
+    performDeltaSync();
+  }, [performDeltaSync]);
 
   // === BUSINESS LOGIC / DISPATCH FUNCTIONS ===
 
@@ -343,7 +354,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
   const addTrophy = useCallback((trophy: Omit<Trophy, 'id'>) => setTrophies(prev => [...prev, { ...trophy, id: `trophy-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`}]), []);
   const updateTrophy = useCallback((trophy: Trophy) => setTrophies(prev => prev.map(t => t.id === trophy.id ? trophy : t)), []);
-  const deleteTrophy = useCallback((trophyId: string) => setTrophies(prev => prev.filter(t => t.id !== trophyId)), []);
 
   const applyManualAdjustment = useCallback((adj: Omit<AdminAdjustment, 'id' | 'adjustedAt'>): boolean => { 
     const newAdj: AdminAdjustment = { ...adj, id: `adj-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`, adjustedAt: new Date().toISOString() }; 
@@ -427,13 +437,26 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         addNotification({ type: 'info', message: 'All custom content has been deleted.' });
     }, [economyDispatch, questDispatch, addNotification]);
 
-    const deleteSelectedAssets = useCallback((selection: Partial<Record<ShareableAssetType, string[]>>) => {
-        if (selection.quests) questDispatch.deleteQuests(selection.quests);
-        if (selection.questGroups) questDispatch.deleteQuestGroups(selection.questGroups);
-        if (selection.ranks) setRanks(p => p.filter(i => !selection.ranks!.includes(i.id)));
-        if (selection.trophies) setTrophies(p => p.filter(i => !selection.trophies!.includes(i.id)));
-        economyDispatch.deleteSelectedAssets(selection); // delegates to economy context
-    }, [economyDispatch, questDispatch]);
+    const deleteSelectedAssets = useCallback(async (selection: Partial<Record<ShareableAssetType, string[]>>, onComplete: () => void) => {
+        try {
+            if (selection.quests) await apiRequest('DELETE', '/api/quests', { ids: selection.quests });
+            if (selection.ranks) {
+                await apiRequest('DELETE', '/api/ranks', { ids: selection.ranks });
+                setRanks(prev => prev.filter(r => !selection.ranks!.includes(r.id)));
+            }
+            if (selection.trophies) {
+                await apiRequest('DELETE', '/api/trophies', { ids: selection.trophies });
+                setTrophies(prev => prev.filter(t => !selection.trophies!.includes(t.id)));
+            }
+            
+            economyDispatch.deleteSelectedAssets(selection);
+            
+            onComplete();
+            addNotification({ type: 'success', message: 'Selected assets deleted.' });
+        } catch(e) {
+            // Error is already handled by the apiRequest helper
+        }
+    }, [apiRequest, economyDispatch, addNotification]);
 
     const uploadFile = useCallback(async (file: File, category?: string) => {
         const formData = new FormData();
@@ -471,9 +494,29 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
     const sendMessage = useCallback(async (message: Omit<ChatMessage, 'id' | 'timestamp' | 'readBy' | 'senderId'> & { isAnnouncement?: boolean }) => {
         if (!currentUser) return;
-        const payload = { ...message, senderId: currentUser.id };
-        await apiRequest('POST', '/api/chat/send', payload);
-    }, [currentUser, apiRequest]);
+
+        const notificationId = addNotification({
+            message: 'Sending message...',
+            type: 'info',
+            duration: 0, // Persistent
+        });
+
+        try {
+            const payload = { ...message, senderId: currentUser.id };
+            await apiRequest('POST', '/api/chat/send', payload);
+            updateNotification(notificationId, {
+                message: 'Message sent!',
+                type: 'success',
+                duration: 3000,
+            });
+        } catch (error) {
+            updateNotification(notificationId, {
+                message: 'Failed to send message.',
+                type: 'error',
+                duration: 5000,
+            });
+        }
+    }, [currentUser, apiRequest, addNotification, updateNotification]);
 
     const markMessagesAsRead = useCallback(async (params: { partnerId?: string; guildId?: string; }) => {
         if (!currentUser) return;
@@ -507,13 +550,14 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     };
 
     const dispatch = {
-        addGuild, updateGuild, deleteGuild, setRanks, addTrophy, updateTrophy, deleteTrophy,
+        addGuild, updateGuild, deleteGuild, setRanks, addTrophy, updateTrophy,
         awardTrophy, applyManualAdjustment, addTheme, updateTheme, deleteTheme,
         addScheduledEvent, updateScheduledEvent, deleteScheduledEvent, addBugReport,
         updateBugReport, deleteBugReports, importBugReports, restoreFromBackup, clearAllHistory,
         resetAllPlayerData, deleteAllCustomContent, deleteSelectedAssets, uploadFile,
         factoryReset, updateSettings, resetSettings, sendMessage, markMessagesAsRead,
-        addSystemNotification, markSystemNotificationsAsRead
+        addSystemNotification, markSystemNotificationsAsRead,
+        triggerSync,
     };
 
     return (

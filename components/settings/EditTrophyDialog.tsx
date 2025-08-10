@@ -97,11 +97,7 @@ const EditTrophyDialog: React.FC<EditTrophyDialogProps> = ({ trophy, initialData
     
     if (onSave) {
       onSave(payload);
-      onClose();
-      return;
-    }
-    
-    if (trophy && mode === 'edit') {
+    } else if (trophy && mode === 'edit') {
       updateTrophy({ ...trophy, ...payload });
     } else {
       addTrophy(payload);
@@ -234,16 +230,18 @@ const EditTrophyDialog: React.FC<EditTrophyDialogProps> = ({ trophy, initialData
                  <div className="w-full flex justify-between items-center">
                     <Button type="button" variant="secondary" onClick={onClose}>Cancel</Button>
                     <div className="flex items-center gap-4">
-                        <Button type="button" variant="secondary" onClick={onTryAgain} disabled={isGenerating}>
-                            {isGenerating ? 'Generating...' : 'Try Again'}
-                        </Button>
+                        {onTryAgain && (
+                          <Button type="button" variant="secondary" onClick={onTryAgain} disabled={isGenerating}>
+                              {isGenerating ? 'Generating...' : 'Try Again'}
+                          </Button>
+                        )}
                         <Button type="submit">Create Trophy</Button>
                     </div>
                 </div>
             ) : (
                  <>
                     <Button type="button" variant="secondary" onClick={onClose}>Cancel</Button>
-                    <Button type="submit">{onSave ? 'Save Changes' : (trophy ? 'Save Changes' : 'Create Trophy')}</Button>
+                    <Button type="submit">{trophy ? 'Save Changes' : 'Create Trophy'}</Button>
                  </>
             )}
           </div>

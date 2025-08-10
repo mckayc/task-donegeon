@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import { useAppState, useAppDispatch } from '../../../context/AppContext';
 import { GameAsset } from '../../../types';
@@ -30,6 +31,8 @@ const ManageItemsPage: React.FC = () => {
     const [confirmation, setConfirmation] = useState<{ action: 'delete', ids: string[] } | null>(null);
     const [initialCreateData, setInitialCreateData] = useState<any | null>(null);
     const [selectedAssets, setSelectedAssets] = useState<string[]>([]);
+    const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
+    const dropdownRef = useRef<HTMLDivElement | null>(null);
     
     const [activeTab, setActiveTab] = useState('All');
     const [searchTerm, setSearchTerm] = useState('');
@@ -43,10 +46,11 @@ const ManageItemsPage: React.FC = () => {
 
     const isAiAvailable = settings.enableAiFeatures && isAiConfigured;
 
-    const categories = useMemo(() => ['All', ...Array.from(new Set(allGameAssets.map((a: GameAsset) => a.category)))], [allGameAssets]);
+    const categories = useMemo(() => ['All', ...Array.from(new Set(allGameAssets.map(a => a.category)))], [allGameAssets]);
 
     const pageAssetIds = useMemo(() => pageAssets.map(a => a.id), [pageAssets]);
     const handleCheckboxClick = useShiftSelect(pageAssetIds, selectedAssets, setSelectedAssets);
+
 
     const apiRequest = useCallback(async (method: string, path: string, body?: any) => {
         try {
@@ -92,6 +96,16 @@ const ManageItemsPage: React.FC = () => {
         setSelectedAssets([]);
     }, [activeTab, searchTerm, sortBy]);
     
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+                setOpenDropdownId(null);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
     const handleFileProcess = useCallback((file: File) => {
         setFileToCategorize(file);
     }, []);
@@ -198,7 +212,7 @@ const ManageItemsPage: React.FC = () => {
     const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
         setSelectedAssets(e.target.checked ? pageAssets.map(a => a.id) : []);
     };
-    
+
     return (
         <div className="space-y-6">
              <Card title="Quick Add Asset">
@@ -258,51 +272,56 @@ const ManageItemsPage: React.FC = () => {
                 {isLoading ? (
                     <div className="text-center py-10"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-400 mx-auto"></div></div>
                 ) : pageAssets.length > 0 ? (
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-                        {pageAssets.map(asset => {
-                            const isOrphaned = asset.isForSale && (!asset.marketIds || asset.marketIds.length === 0);
-                            return (
-                             <div key={asset.id} className="relative group">
-                                <label
-                                    htmlFor={`select-asset-${asset.id}`}
-                                    className="w-full text-left bg-stone-900/40 rounded-lg border-2 flex flex-col hover:border-accent transition-all duration-200 cursor-pointer has-[:checked]:border-accent has-[:checked]:ring-2 has-[:checked]:ring-accent/50"
-                                >
-                                    <div className="absolute top-2 left-2 z-10">
-                                        <input
-                                            id={`select-asset-${asset.id}`}
-                                            type="checkbox"
-                                            checked={selectedAssets.includes(asset.id)}
-                                            onChange={e => handleCheckboxClick(e, asset.id)}
-                                            className="h-5 w-5 rounded text-emerald-600 bg-stone-800 border-stone-600 focus:ring-emerald-500"
-                                        />
-                                    </div>
-                                    <div className="aspect-square w-full bg-stone-700/50 rounded-t-md flex items-center justify-center overflow-hidden">
-                                        <button
-                                            onClick={() => setPreviewImageUrl(asset.url)}
-                                            className="w-full h-full group focus:outline-none focus:ring-2 focus:ring-emerald-500 ring-offset-2 ring-offset-stone-900/40"
-                                            aria-label={`View larger image of ${asset.name}`}
-                                        >
-                                            <img src={asset.url} alt={asset.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200" />
-                                        </button>
-                                    </div>
-                                    <div className="p-3">
-                                        <button 
-                                            onClick={(e) => {
-                                                e.preventDefault(); 
-                                                e.stopPropagation(); 
-                                                handleEdit(asset);
-                                            }}
-                                            data-log-id={`manage-items-edit-${asset.id}`}
-                                            className="w-full text-left flex items-center gap-1.5"
-                                        >
-                                            {isOrphaned && <span title="This item is for sale but not in any market." className="text-yellow-400">⚠️</span>}
-                                            <p className="font-bold text-stone-200 truncate hover:underline hover:text-accent transition-colors" title={asset.name}>{asset.name}</p>
-                                        </button>
-                                        <p className="text-xs text-stone-400">{asset.category}</p>
-                                    </div>
-                                </label>
-                            </div>
-                        )})}
+                     <div className="overflow-x-auto">
+                        <table className="w-full text-left">
+                            <thead className="border-b border-stone-700/60">
+                                <tr>
+                                    <th className="p-4 w-12"><input type="checkbox" onChange={handleSelectAll} checked={selectedAssets.length === pageAssets.length && pageAssets.length > 0} className="h-4 w-4 rounded text-emerald-600 bg-stone-700 border-stone-600 focus:ring-emerald-500" /></th>
+                                    <th className="p-4 font-semibold w-20">Image</th>
+                                    <th className="p-4 font-semibold">Name</th>
+                                    <th className="p-4 font-semibold">Category</th>
+                                    <th className="p-4 font-semibold">For Sale</th>
+                                    <th className="p-4 font-semibold">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {pageAssets.map(asset => {
+                                    const isOrphaned = asset.isForSale && (!asset.marketIds || asset.marketIds.length === 0);
+                                    return (
+                                        <tr key={asset.id} className="border-b border-stone-700/40 last:border-b-0">
+                                            <td className="p-4">
+                                                <input type="checkbox" checked={selectedAssets.includes(asset.id)} onChange={e => handleCheckboxClick(e, asset.id)} className="h-4 w-4 rounded text-emerald-600 bg-stone-700 border-stone-600 focus:ring-emerald-500" />
+                                            </td>
+                                            <td className="p-2">
+                                                <button onClick={() => setPreviewImageUrl(asset.url)} className="w-12 h-12 bg-stone-700 rounded-md overflow-hidden hover:ring-2 ring-accent">
+                                                    <img src={asset.url} alt={asset.name} className="w-full h-full object-cover" />
+                                                </button>
+                                            </td>
+                                            <td className="p-4 font-bold">
+                                                <button onClick={() => handleEdit(asset)} data-log-id={`manage-items-edit-title-${asset.id}`} className="hover:underline hover:text-accent transition-colors text-left flex items-center gap-1.5">
+                                                    {isOrphaned && <span title="This item is for sale but not in any market." className="text-yellow-400">⚠️</span>}
+                                                    {asset.name}
+                                                </button>
+                                            </td>
+                                            <td className="p-4 text-stone-400">{asset.category}</td>
+                                            <td className="p-4 text-stone-300">{asset.isForSale ? 'Yes' : 'No'}</td>
+                                            <td className="p-4 relative">
+                                                <button onClick={() => setOpenDropdownId(openDropdownId === asset.id ? null : asset.id)} className="p-2 rounded-full hover:bg-stone-700/50">
+                                                    <EllipsisVerticalIcon className="w-5 h-5 text-stone-300" />
+                                                </button>
+                                                {openDropdownId === asset.id && (
+                                                    <div ref={dropdownRef} className="absolute right-10 top-0 mt-2 w-36 bg-stone-900 border border-stone-700 rounded-lg shadow-xl z-20">
+                                                        <a href="#" onClick={(e) => { e.preventDefault(); handleEdit(asset); setOpenDropdownId(null); }} data-log-id={`manage-items-action-edit-${asset.id}`} className="block px-4 py-2 text-sm text-stone-300 hover:bg-stone-700/50">Edit</a>
+                                                        <button onClick={() => { handleClone(asset.id); setOpenDropdownId(null); }} data-log-id={`manage-items-action-clone-${asset.id}`} className="w-full text-left block px-4 py-2 text-sm text-stone-300 hover:bg-stone-700/50">Clone</button>
+                                                        <button onClick={() => { setConfirmation({ action: 'delete', ids: [asset.id] }); setOpenDropdownId(null); }} data-log-id={`manage-items-action-delete-${asset.id}`} className="w-full text-left block px-4 py-2 text-sm text-red-400 hover:bg-stone-700/50">Delete</button>
+                                                    </div>
+                                                )}
+                                            </td>
+                                        </tr>
+                                    );
+                                })}
+                            </tbody>
+                        </table>
                     </div>
                 ) : (
                     <EmptyState

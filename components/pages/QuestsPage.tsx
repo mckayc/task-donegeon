@@ -49,7 +49,7 @@ const formatTimeRemaining = (targetDate: Date, now: Date): string => {
     return `${minutes}m`;
 };
 
-const QuestItem: React.FC<{ quest: Quest; now: Date; onSelect: (quest: Quest) => void; onImagePreview: (url: string) => void; }> = ({ quest, now, onSelect, onImagePreview }) => {
+const QuestItem: React.FC<{ quest: Quest; now: Date; onSelect: (quest: Quest) => void; onImagePreview: (url: string) => void; allQuests: Quest[]; }> = ({ quest, now, onSelect, onImagePreview, allQuests }) => {
     const { settings, scheduledEvents, guilds } = useAppState();
     const { questGroups, questCompletions } = useQuestState();
     const { rewardTypes } = useEconomyState();
@@ -62,6 +62,10 @@ const QuestItem: React.FC<{ quest: Quest; now: Date; onSelect: (quest: Quest) =>
     const isTodo = quest.type === QuestType.Venture && quest.todoUserIds?.includes(currentUser.id);
     const questGroup = useMemo(() => quest.groupId ? questGroups.find(g => g.id === quest.groupId) : null, [quest.groupId, questGroups]);
     const scopeName = useMemo(() => quest.guildId ? guilds.find(g => g.id === quest.guildId)?.name || 'Guild Scope' : 'Personal', [quest.guildId, guilds]);
+    const nextQuest = useMemo(() => {
+        if (!quest.nextQuestId) return null;
+        return allQuests.find(q => q.id === quest.nextQuestId);
+    }, [quest.nextQuestId, allQuests]);
 
     const getRewardInfo = (id: string) => {
         const rewardDef = rewardTypes.find(rt => rt.id === id);
@@ -184,6 +188,12 @@ const QuestItem: React.FC<{ quest: Quest; now: Date; onSelect: (quest: Quest) =>
                     <span className="font-semibold text-blue-400 bg-blue-900/50 px-2 py-0.5 rounded-full text-xs" title={`This quest exists in the ${scopeName} scope.`}>{scopeName}</span>
                 </div>
                 <div className="text-right">
+                    {nextQuest && (
+                        <div className="text-xs text-indigo-400 font-semibold flex items-center justify-end gap-1" title={`Completing this unlocks "${nextQuest.title}"`}>
+                            <span>🔗</span>
+                            <span className="truncate">Unlocks: {nextQuest.title}</span>
+                        </div>
+                    )}
                     {timeStatusText && (
                         <p className={`text-xs font-semibold ${timeStatusColor}`}>{timeStatusText}</p>
                     )}
@@ -243,7 +253,7 @@ const QuestsPage: React.FC = () => {
 
     const sortedQuests = useMemo(() => {
         const today = now;
-        const visibleQuests = quests.filter(quest => isQuestVisibleToUserInMode(quest, currentUser.id, appMode));
+        const visibleQuests = quests.filter(quest => isQuestVisibleToUserInMode(quest, currentUser.id, appMode, quests, questCompletions));
         return visibleQuests.sort(questSorter(currentUser, questCompletions, scheduledEvents, today));
     }, [quests, currentUser, appMode, questCompletions, now, scheduledEvents]);
     
@@ -270,6 +280,7 @@ const QuestsPage: React.FC = () => {
                         now={now} 
                         onSelect={setSelectedQuest} 
                         onImagePreview={setPreviewImageUrl}
+                        allQuests={quests}
                     />
                 ))}
             </div>

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useAuthState } from '../../context/AuthContext';
+import { useAuthState, useAuthDispatch } from '../../context/AuthContext';
 import { Role, User } from '../../types';
 import Button from '../ui/Button';
 import Input from '../ui/Input';
@@ -14,6 +14,7 @@ interface EditUserDialogProps {
 
 const EditUserDialog: React.FC<EditUserDialogProps> = ({ user, onClose, onUserUpdated }) => {
   const { users: allUsers, currentUser } = useAuthState();
+  const { updateUser } = useAuthDispatch();
   const { addNotification } = useNotificationsDispatch();
   const [formData, setFormData] = useState({
     firstName: user.firstName,
@@ -25,7 +26,6 @@ const EditUserDialog: React.FC<EditUserDialogProps> = ({ user, onClose, onUserUp
     role: user.role,
     pin: user.pin || '',
   });
-  const [error, setError] = useState('');
   const [isSaving, setIsSaving] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -34,10 +34,9 @@ const EditUserDialog: React.FC<EditUserDialogProps> = ({ user, onClose, onUserUp
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
 
     if (formData.pin && (formData.pin.length < 4 || formData.pin.length > 10 || !/^\d+$/.test(formData.pin))) {
-        setError('PIN must be 4-10 numbers.');
+        addNotification({ type: 'error', message: 'PIN must be 4-10 numbers.'});
         return;
     }
 
@@ -56,25 +55,10 @@ const EditUserDialog: React.FC<EditUserDialogProps> = ({ user, onClose, onUserUp
     }
     
     setIsSaving(true);
-    try {
-        const response = await fetch(`/api/users/${user.id}`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-        });
-        if (!response.ok) {
-            const errData = await response.json();
-            throw new Error(errData.error || 'Failed to update user.');
-        }
-        addNotification({ type: 'success', message: 'User updated successfully!' });
-        onUserUpdated();
-        onClose();
-    } catch (err) {
-        const message = err instanceof Error ? err.message : 'An unknown error occurred.';
-        setError(message);
-    } finally {
-        setIsSaving(false);
-    }
+    await updateUser(user.id, payload);
+    setIsSaving(false);
+    onUserUpdated();
+    onClose();
   };
 
   const donegeonMasters = allUsers.filter(u => u.role === Role.DonegeonMaster);
@@ -107,7 +91,6 @@ const EditUserDialog: React.FC<EditUserDialogProps> = ({ user, onClose, onUserUp
             <Input label="PIN (4-10 digits, optional)" id="edit-pin" name="pin" type="password" value={formData.pin} onChange={handleChange} />
             <p className="text-xs text-stone-400 mt-1">A PIN is an easy way for kids to switch profiles securely.</p>
           </div>
-          {error && <p className="text-red-400 text-center">{error}</p>}
           <div className="flex justify-end space-x-4 pt-4">
             <Button type="button" variant="secondary" onClick={onClose} disabled={isSaving}>Cancel</Button>
             <Button type="submit" disabled={isSaving}>{isSaving ? 'Saving...' : 'Save Changes'}</Button>

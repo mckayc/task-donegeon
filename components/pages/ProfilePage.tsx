@@ -29,6 +29,7 @@ const ProfilePage: React.FC = () => {
         confirmPin: '',
     });
     const [error, setError] = useState('');
+    const [isSaving, setIsSaving] = useState(false);
 
     const canEditPassword = currentUser.role === Role.DonegeonMaster || currentUser.role === Role.Gatekeeper;
 
@@ -36,7 +37,7 @@ const ProfilePage: React.FC = () => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
     };
 
-    const handleSave = (e: React.FormEvent) => {
+    const handleSave = async (e: React.FormEvent) => {
         e.preventDefault();
         setError('');
 
@@ -95,8 +96,9 @@ const ProfilePage: React.FC = () => {
         }
         
         if (Object.keys(updatePayload).length > 0) {
-            updateUser(currentUser.id, updatePayload);
-            addNotification({type: 'success', message: 'Profile updated successfully!'});
+            setIsSaving(true);
+            await updateUser(currentUser.id, updatePayload);
+            setIsSaving(false);
             setFormData(p => ({...p, password: '', confirmPassword: '', confirmPin: ''}));
         } else {
             addNotification({type: 'info', message: 'No changes were made.'});
@@ -161,7 +163,7 @@ const ProfilePage: React.FC = () => {
 
                     {error && <p className="text-red-400 text-center">{error}</p>}
                     <div className="pt-4 text-right">
-                        <Button type="submit">Save Changes</Button>
+                        <Button type="submit" disabled={isSaving}>{isSaving ? 'Saving...' : 'Save Changes'}</Button>
                     </div>
                 </form>
             </Card>

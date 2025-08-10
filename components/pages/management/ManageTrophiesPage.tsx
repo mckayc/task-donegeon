@@ -1,10 +1,11 @@
+
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { Trophy } from '../../../types';
 import Button from '../../ui/Button';
 import Card from '../../ui/Card';
 import EditTrophyDialog from '../../settings/EditTrophyDialog';
 import ConfirmDialog from '../../ui/ConfirmDialog';
-import { useAppState, useAppDispatch } from '../../../context/AppContext';
+import { useAppState, useAppDispatch } from '../../context/AppContext';
 import EmptyState from '../../ui/EmptyState';
 import TrophyIdeaGenerator from '../../quests/TrophyIdeaGenerator';
 import { TrophyIcon, EllipsisVerticalIcon } from '../../ui/Icons';
@@ -12,7 +13,7 @@ import { useShiftSelect } from '../../../hooks/useShiftSelect';
 
 const ManageTrophiesPage: React.FC = () => {
     const { trophies, settings, isAiConfigured } = useAppState();
-    const { deleteTrophy } = useAppDispatch();
+    const { deleteSelectedAssets } = useAppDispatch();
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [editingTrophy, setEditingTrophy] = useState<Trophy | null>(null);
     const [deletingIds, setDeletingIds] = useState<string[]>([]);
@@ -55,10 +56,11 @@ const ManageTrophiesPage: React.FC = () => {
 
     const handleConfirmDelete = () => {
         if (deletingIds.length > 0) {
-            deletingIds.forEach(deleteTrophy);
-            setSelectedTrophies([]);
+            deleteSelectedAssets({ trophies: deletingIds }, () => {
+                setSelectedTrophies(prev => prev.filter(id => !deletingIds.includes(id)));
+                setDeletingIds([]);
+            });
         }
-        setDeletingIds([]);
     };
     
     const handleUseIdea = (idea: { name: string; description: string; icon: string; }) => {

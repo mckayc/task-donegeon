@@ -21,7 +21,7 @@ interface AuthDispatch {
   setLoginHistory: React.Dispatch<React.SetStateAction<string[]>>;
   addUser: (userData: Omit<User, 'id' | 'personalPurse' | 'personalExperience' | 'guildBalances' | 'avatar' | 'ownedAssetIds' | 'ownedThemes' | 'hasBeenOnboarded'>) => Promise<User | null>;
   updateUser: (userId: string, update: Partial<User> | ((user: User) => User), persist?: boolean) => void;
-  deleteUser: (userId: string) => void;
+  deleteUsers: (userIds: string[]) => void;
   setCurrentUser: (user: User | null) => void;
   markUserAsOnboarded: (userId: string) => void;
   setAppUnlocked: (isUnlocked: boolean) => void;
@@ -141,13 +141,14 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   }, [users, currentUser, apiRequest]);
   
-  const deleteUser = useCallback((userId: string) => {
+  const deleteUsers = useCallback((userIds: string[]) => {
+    if (userIds.length === 0) return;
     if (bugLogger.isRecording()) {
-        bugLogger.add({ type: 'ACTION', message: `Deleting user ID: ${userId}` });
+        bugLogger.add({ type: 'ACTION', message: `Deleting user IDs: ${userIds.join(', ')}` });
     }
-    setUsers(prev => prev.filter(u => u.id !== userId));
-    apiRequest('DELETE', `/api/users/${userId}`).catch(error => {
-       console.error("Failed to delete user on server.", error);
+    setUsers(prev => prev.filter(u => !userIds.includes(u.id)));
+    apiRequest('DELETE', '/api/users', { ids: userIds }).catch(error => {
+       console.error("Failed to delete users on server.", error);
     });
   }, [apiRequest]);
 
@@ -170,7 +171,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const dispatchValue: AuthDispatch = {
-    setUsers, setLoginHistory, addUser, updateUser, deleteUser, setCurrentUser, markUserAsOnboarded,
+    setUsers, setLoginHistory, addUser, updateUser, deleteUsers, setCurrentUser, markUserAsOnboarded,
     setAppUnlocked, setIsSwitchingUser, setTargetedUserForLogin,
     exitToSharedView, setIsSharedViewActive, resetAllUsersData,
     completeFirstRun,

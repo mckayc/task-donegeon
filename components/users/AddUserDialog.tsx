@@ -28,7 +28,6 @@ const AddUserDialog: React.FC<AddUserDialogProps> = ({ onClose, onUserAdded }) =
     pin: '',
     password: '',
   });
-  const [error, setError] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [showPasswordFields, setShowPasswordFields] = useState(false);
 
@@ -49,16 +48,15 @@ const AddUserDialog: React.FC<AddUserDialogProps> = ({ onClose, onUserAdded }) =
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
 
     if (formData.pin && (formData.pin.length < 4 || formData.pin.length > 10 || !/^\d+$/.test(formData.pin))) {
-        setError('PIN must be 4-10 numbers.');
+        addNotification({ type: 'error', message: 'PIN must be 4-10 numbers.' });
         return;
     }
 
     if (isPasswordRequired || formData.password) {
         if (formData.password.length < 6) {
-            setError("Password must be at least 6 characters.");
+            addNotification({ type: 'error', message: 'Password must be at least 6 characters.' });
             return;
         }
     }
@@ -70,19 +68,12 @@ const AddUserDialog: React.FC<AddUserDialogProps> = ({ onClose, onUserAdded }) =
     };
     
     setIsSaving(true);
-    try {
-        const createdUser = await addUser(newUserPayload);
-        if (!createdUser) {
-          throw new Error('Failed to create user. The username or email might already be taken.');
-        }
-        addNotification({ type: 'success', message: `User "${formData.gameName}" created!` });
+    const createdUser = await addUser(newUserPayload);
+    setIsSaving(false);
+
+    if (createdUser) {
         onUserAdded();
         onClose();
-    } catch (err) {
-        const message = err instanceof Error ? err.message : 'An unknown error occurred.';
-        setError(message);
-    } finally {
-        setIsSaving(false);
     }
   };
 
@@ -133,7 +124,6 @@ const AddUserDialog: React.FC<AddUserDialogProps> = ({ onClose, onUserAdded }) =
             />
             <p className="text-xs text-stone-400 mt-1">An easy way for users to switch profiles securely. Can be disabled in Settings.</p>
           </div>
-          {error && <p className="text-red-400 text-center">{error}</p>}
           <div className="flex justify-end space-x-4 pt-4">
             <Button type="button" variant="secondary" onClick={onClose} disabled={isSaving}>Cancel</Button>
             <Button type="submit" disabled={isSaving}>{isSaving ? 'Saving...' : 'Add Member'}</Button>

@@ -8,8 +8,9 @@ interface NotificationsState {
 
 // Dispatch functions provided by this context
 interface NotificationsDispatch {
-  addNotification: (notification: Omit<Notification, 'id'>) => void;
+  addNotification: (notification: Omit<Notification, 'id'>) => string;
   removeNotification: (notificationId: string) => void;
+  updateNotification: (notificationId: string, updates: Partial<Omit<Notification, 'id'>>) => void;
 }
 
 const NotificationsStateContext = createContext<NotificationsState | undefined>(undefined);
@@ -18,17 +19,23 @@ const NotificationsDispatchContext = createContext<NotificationsDispatch | undef
 export const NotificationsProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
 
-  const addNotification = useCallback((notification: Omit<Notification, 'id'>) => {
+  const addNotification = useCallback((notification: Omit<Notification, 'id'>): string => {
     const uniqueId = `notif-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
     setNotifications(prev => [...prev, { ...notification, id: uniqueId }]);
+    return uniqueId;
   }, []);
 
   const removeNotification = useCallback((notificationId: string) => {
     setNotifications(prev => prev.filter(n => n.id !== notificationId));
   }, []);
 
+  const updateNotification = useCallback((notificationId: string, updates: Partial<Omit<Notification, 'id'>>) => {
+    setNotifications(prev => prev.map(n => n.id === notificationId ? { ...n, ...updates } : n));
+  }, []);
+
+
   const stateValue: NotificationsState = { notifications };
-  const dispatchValue: NotificationsDispatch = { addNotification, removeNotification };
+  const dispatchValue: NotificationsDispatch = { addNotification, removeNotification, updateNotification };
 
   return (
     <NotificationsStateContext.Provider value={stateValue}>

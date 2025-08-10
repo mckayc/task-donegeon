@@ -10,9 +10,9 @@ import CreateQuestDialog from '../quests/CreateQuestDialog';
 import EditGameAssetDialog from '../admin/EditGameAssetDialog';
 import EditTrophyDialog from '../settings/EditTrophyDialog';
 import EditMarketDialog from '../markets/EditMarketDialog';
-import { useNotificationsDispatch } from '../../context/NotificationsContext';
-import { useEconomyState } from '../../context/EconomyContext';
-import { useQuestState } from '../../context/QuestContext';
+import { useNotificationsDispatch } from '../context/NotificationsContext';
+import { useEconomyState } from '../context/EconomyContext';
+import { useQuestState } from '../context/QuestContext';
 
 type AssetType = 'Duties' | 'Ventures' | 'Trophies' | 'Items' | 'Markets';
 
@@ -128,7 +128,15 @@ const SuggestionEnginePage: React.FC = () => {
         const assetTypeName = assetType === 'Duties' ? 'Duties (recurring tasks)' : assetType === 'Ventures' ? 'Ventures (one-time projects)' : assetType;
         const rewardNames = rewardTypes.map(rt => rt.name).join(', ');
         const groupNames = questGroups.map(g => g.name).join(', ');
-        const fullPrompt = `Context: ${context || 'A typical family with children.'}\nRequest: Generate a single JSON object for a ${assetTypeName} based on the theme: "${prompt}". If generating a quest, suggest 2-3 relevant tags, a suggested reward (using reward names from this list: ${rewardNames}), and the most appropriate quest group (from this list: ${groupNames}, or suggest a new one).`;
+        
+        let specificInstructions = '';
+        if (assetType === 'Duties' || assetType === 'Ventures') {
+            specificInstructions = `For each quest, also suggest 2-3 relevant tags (e.g., 'cleaning', 'outdoors', 'creative'), a suggested reward based on the task's likely effort (using reward names from this list: ${rewardNames}).
+            
+            Here is a list of existing Quest Groups: "${groupNames}". For each idea, suggest the most appropriate group from this list. If none of the existing groups seem appropriate, suggest a suitable new group name and indicate it's a new group by setting the isNewGroup flag to true.`;
+        }
+
+        const fullPrompt = `Generate a single JSON object for a ${assetTypeName} for a gamified task app called ${settings.terminology.appName}. The asset should be based on the theme: "${prompt}". ${specificInstructions}`;
 
         const requestBody = {
              model: 'gemini-2.5-flash',
@@ -159,7 +167,7 @@ const SuggestionEnginePage: React.FC = () => {
 
             if (assetData) {
                 setAiGeneratedData(assetData);
-                if (!dialogToShow) { // Only open the dialog on the first generation
+                if (!dialogToShow) {
                     setDialogToShow(assetType);
                 }
             } else {
@@ -169,7 +177,6 @@ const SuggestionEnginePage: React.FC = () => {
         } catch (err) {
             const message = err instanceof Error ? err.message : 'An unknown error occurred.';
             setError(`Failed to generate ideas. ${message}`);
-            // If the dialog was open, close it on error
             if (dialogToShow) {
                 setDialogToShow(null);
                 setAiGeneratedData(null);
@@ -182,13 +189,12 @@ const SuggestionEnginePage: React.FC = () => {
     const handleCloseDialog = () => {
         setDialogToShow(null);
         setAiGeneratedData(null);
-        setPrompt(''); // Clear prompt after finishing
+        setPrompt('');
     };
     
     return (
         <>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
-                {/* Left Column */}
                 <div className="space-y-6">
                     <Card title="Asset Generator">
                         <div className="space-y-4">
@@ -233,7 +239,6 @@ const SuggestionEnginePage: React.FC = () => {
                     </Card>
                 </div>
 
-                {/* Right Column */}
                 <div className="space-y-6">
                     <Card title="Generation Context">
                         <p className="text-sm text-stone-400 mb-2">Provide some general context about your group or goals. This will be included with every prompt to help the AI generate more relevant content.</p>
@@ -278,7 +283,7 @@ const SuggestionEnginePage: React.FC = () => {
                 <>
                     {(dialogToShow === 'Ventures' || dialogToShow === 'Duties') && (
                         <CreateQuestDialog
-                            key={JSON.stringify(aiGeneratedData)} // Re-mounts the component with new data
+                            key={JSON.stringify(aiGeneratedData)}
                             mode="ai-creation"
                             initialData={{ ...aiGeneratedData, type: dialogToShow === 'Duties' ? QuestType.Duty : QuestType.Venture }}
                             onClose={handleCloseDialog}

@@ -104,6 +104,7 @@ export interface Quest {
   claimedByUserIds: string[];
   dismissals: { userId: string; dismissedAt: string; }[];
   todoUserIds?: string[];
+  nextQuestId?: string; // ID of the quest unlocked by this one
 }
 
 export interface QuestGroup {
@@ -313,6 +314,7 @@ export interface Notification {
   iconType?: 'emoji' | 'image';
   icon?: string;
   imageUrl?: string;
+  duration?: number;
 }
 
 export enum SystemNotificationType {

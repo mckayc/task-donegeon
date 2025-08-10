@@ -35,14 +35,18 @@ const Notification: React.FC<NotificationProps> = ({ notification, onDismiss }) 
     }, []);
   
     useEffect(() => {
-      const timerId = setTimeout(() => {
-        handleDismiss();
-      }, 5000);
-  
-      return () => {
-        clearTimeout(timerId);
-      };
-    }, [notification.id, handleDismiss]);
+      const duration = notification.duration === 0 ? 0 : notification.duration || 5000;
+
+      if (duration > 0) {
+        const timerId = setTimeout(() => {
+          handleDismiss();
+        }, duration);
+    
+        return () => {
+          clearTimeout(timerId);
+        };
+      }
+    }, [notification.id, notification.duration, handleDismiss]);
   
     return (
       <motion.div

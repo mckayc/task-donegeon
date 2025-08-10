@@ -180,14 +180,10 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
   }, [dialogTitle, mode, questToEdit, initialDataFromBug]);
 
   useEffect(() => {
-    // This effect ensures the form updates when a new AI suggestion or bug report is passed in.
-    // It should NOT re-run on background data syncs, which was causing user input to be wiped.
-    // We only care about the identity of the initial data props changing.
     setFormData(getInitialFormData());
     setIsCreatingNewGroup(initialData?.isNewGroup && !!initialData.groupName);
     setNewGroupName(initialData?.isNewGroup ? initialData.groupName || '' : '');
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [initialData, initialDataFromBug, questToEdit]);
+  }, [initialData, initialDataFromBug, questToEdit, getInitialFormData]);
 
 
   useEffect(() => {
@@ -290,16 +286,11 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
         incompleteSetbacks: formData.incompleteSetbacks.filter(s => s.rewardTypeId && s.amount > 0),
     };
 
-    // Remove UI-only state before submitting
     const { hasDeadlines, ...questPayload } = finalQuestData;
 
     if (onSave) {
         onSave(questPayload);
-        onClose();
-        return;
-    }
-
-    if (mode === 'edit' && questToEdit) {
+    } else if (mode === 'edit' && questToEdit) {
         updateQuest({ ...questToEdit, ...questPayload });
     } else {
         addQuest(questPayload as Omit<Quest, 'id' | 'claimedByUserIds' | 'dismissals'>);
@@ -511,16 +502,18 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
                 <div className="flex justify-between items-center">
                     <Button type="button" variant="secondary" onClick={onClose}>Cancel</Button>
                     <div className="flex items-center gap-4">
-                        <Button type="button" variant="secondary" onClick={onTryAgain} disabled={isGenerating}>
-                            {isGenerating ? 'Generating...' : 'Try Again'}
-                        </Button>
+                        {onTryAgain && (
+                            <Button type="button" variant="secondary" onClick={onTryAgain} disabled={isGenerating}>
+                                {isGenerating ? 'Generating...' : 'Try Again'}
+                            </Button>
+                        )}
                         <Button type="submit" form="quest-form">Create Quest</Button>
                     </div>
                 </div>
             ) : (
                 <div className="flex justify-end space-x-4">
                     <Button type="button" variant="secondary" onClick={onClose}>Cancel</Button>
-                    <Button type="submit" form="quest-form">{onSave ? 'Save Changes' : (mode === 'edit' ? 'Save Changes' : `Create ${settings.terminology.task}`)}</Button>
+                    <Button type="submit" form="quest-form">{mode === 'edit' ? 'Save Changes' : `Create ${settings.terminology.task}`}</Button>
                 </div>
             )}
         </div>

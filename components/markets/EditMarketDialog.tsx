@@ -1,13 +1,13 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAppState } from '../../context/AppContext';
-import { Market, MarketStatus, MarketCondition, MarketConditionType } from '../../types';
+import { Market, MarketStatus, MarketCondition, MarketConditionType, Quest } from '../../types';
 import Button from '../user-interface/Button';
 import Input from '../user-interface/Input';
 import EmojiPicker from '../user-interface/EmojiPicker';
 import ImageSelectionDialog from '../user-interface/ImageSelectionDialog';
 import DynamicIcon from '../user-interface/DynamicIcon';
 import { useEconomyDispatch } from '../../context/EconomyContext';
-import { useQuestState } from '../../context/QuestState';
+import { useQuestState } from '../../context/QuestContext';
 
 interface EditMarketDialogProps {
   market: Market | null;
@@ -143,7 +143,7 @@ const EditMarketDialog: React.FC<EditMarketDialogProps> = ({ market, initialData
                 )}
                  {condition.type === MarketConditionType.QuestCompleted && (
                     <Input as="select" label="Quest" value={condition.questId} onChange={(e: React.ChangeEvent<HTMLSelectElement>) => updateCondition(index, { ...condition, questId: e.target.value })}>
-                        {quests.map(q => <option key={q.id} value={q.id}>{q.title}</option>)}
+                        {quests.map((q: Quest) => <option key={q.id} value={q.id}>{q.title}</option>)}
                     </Input>
                 )}
             </div>
@@ -227,11 +227,11 @@ const EditMarketDialog: React.FC<EditMarketDialogProps> = ({ market, initialData
                 <div className="mt-4 pt-4 border-t border-stone-700/60 space-y-4">
                     <div>
                         <label className="block text-sm font-medium text-stone-300 mb-2">Logic</label>
-                        <div className="flex space-x-4"><label className="flex items-center"><input type="radio" name="logic" value="all" checked={formData.status.logic === 'all'} onChange={() => {
+                        <div className="flex space-x-4"><label className="flex items-center"><input type="radio" name="logic" value="all" checked={formData.status.logic === 'all'} onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                             if (formData.status.type === 'conditional') {
                                 handleStatusChange({...formData.status, logic: 'all'});
                             }
-                        }} className="h-4 w-4 text-emerald-600" /> <span className="ml-2">Match ALL conditions</span></label><label className="flex items-center"><input type="radio" name="logic" value="any" checked={formData.status.logic === 'any'} onChange={() => {
+                        }} className="h-4 w-4 text-emerald-600" /> <span className="ml-2">Match ALL conditions</span></label><label className="flex items-center"><input type="radio" name="logic" value="any" checked={formData.status.logic === 'any'} onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                             if (formData.status.type === 'conditional') {
                                 handleStatusChange({...formData.status, logic: 'any'});
                             }

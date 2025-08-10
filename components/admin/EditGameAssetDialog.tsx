@@ -249,7 +249,7 @@ const EditGameAssetDialog: React.FC<EditGameAssetDialogProps> = ({ assetToEdit, 
                 <div className="flex-grow space-y-4">
                   <Input label="Asset Name" value={formData.name} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData(p => ({...p, name: e.target.value}))} required />
                   <Input label="Description" value={formData.description} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData(p => ({...p, description: e.target.value}))} />
-                  <input id="image-upload-input" type="file" accept="image/*" onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleManualUpload(e)} className="hidden" />
+                  <input id="image-upload-input" type="file" accept="image/*" onChange={handleManualUpload} className="hidden" />
                   <div className="flex gap-2">
                       <Button type="button" variant="secondary" onClick={() => document.getElementById('image-upload-input')?.click()} disabled={isUploading} className="flex-grow">
                           {isUploading ? 'Uploading...' : 'Upload New'}

@@ -1,14 +1,12 @@
-
-
 import React, { useState } from 'react';
 import { Guild } from '../../types';
-import Button from '../ui/Button';
-import Card from '../ui/Card';
+import Button from '../user-interface/Button';
+import Card from '../user-interface/Card';
 import EditGuildDialog from '../guilds/EditGuildDialog';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
-import ConfirmDialog from '../ui/ConfirmDialog';
-import EmptyState from '../ui/EmptyState';
-import { GuildIcon } from '../ui/Icons';
+import ConfirmDialog from '../user-interface/ConfirmDialog';
+import EmptyState from '../user-interface/EmptyState';
+import { GuildIcon } from '../user-interface/Icons';
 
 const ManageGuildsPage: React.FC = () => {
     const { guilds, settings } = useAppState();
@@ -52,7 +50,7 @@ const ManageGuildsPage: React.FC = () => {
                      <div className="space-y-4">
                         {guilds.map(guild => (
                             <div key={guild.id} className="bg-stone-900/40 rounded-lg overflow-hidden">
-                                <div className="px-6 py-4 border-b border-stone-700/60 flex justify-between items-start flex-wrap gap-4">
+                                <div className="px-6 py-4 border-b border-stone-700/60 flex flex-wrap gap-4 justify-between items-center">
                                     <div>
                                         <h3 className="text-xl font-bold text-stone-100">{guild.name}</h3>
                                         <p className="text-stone-400 text-sm">{guild.purpose}</p>

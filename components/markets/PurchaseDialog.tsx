@@ -96,7 +96,7 @@ const PurchaseDialog: React.FC<PurchaseDialogProps> = ({ asset, marketId, onClos
                                     const info = getRewardInfo(r.rewardTypeId);
                                     const originalCost = originalGroup[rIndex].amount;
                                     return (
-                                    <span key={r.rewardTypeId} className="text-amber-300 flex items-center gap-1.5" title={info.name}>
+                                    <span key={r.rewardTypeId} className={`text-amber-300 flex items-center gap-1.5`} title={info.name}>
                                         {hasDiscount && <span className="line-through text-amber-300/60 text-base">{originalCost}</span>}
                                         {r.amount} 
                                         <span className="text-xl">{info.icon}</span>

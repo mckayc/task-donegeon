@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import Card from '../ui/Card';
+import Card from '../user-interface/Card';
 import { useAppState } from '../../context/AppContext';
-import { ChevronDownIcon } from '../ui/Icons';
+import { ChevronDownIcon } from '../user-interface/Icons';
 
 const CollapsibleSection: React.FC<{ title: string; children: React.ReactNode; defaultOpen?: boolean; }> = ({ title, children, defaultOpen = false }) => {
     const [isOpen, setIsOpen] = useState(defaultOpen);

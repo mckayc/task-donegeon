@@ -107,12 +107,22 @@ export const QuestProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   }, []);
 
   const markQuestAsTodo = useCallback((questId: string, userId: string) => {
-      setQuests(prev => prev.map(q => q.id === questId ? { ...q, todoUserIds: [...(q.todoUserIds || []), userId] } : q));
-  }, []);
+      const quest = quests.find(q => q.id === questId);
+      if (!quest) return;
+      
+      const updatedQuest = { ...quest, todoUserIds: [...(quest.todoUserIds || []), userId] };
+      setQuests(prev => prev.map(q => q.id === questId ? updatedQuest : q));
+      updateQuest(updatedQuest);
+  }, [quests, updateQuest]);
 
   const unmarkQuestAsTodo = useCallback((questId: string, userId: string) => {
-      setQuests(prev => prev.map(q => q.id === questId ? { ...q, todoUserIds: (q.todoUserIds || []).filter(id => id !== userId) } : q));
-  }, []);
+      const quest = quests.find(q => q.id === questId);
+      if (!quest) return;
+      
+      const updatedQuest = { ...quest, todoUserIds: (quest.todoUserIds || []).filter(id => id !== userId) };
+      setQuests(prev => prev.map(q => q.id === questId ? updatedQuest : q));
+      updateQuest(updatedQuest);
+  }, [quests, updateQuest]);
 
   const completeQuest = useCallback(async (completionData: any) => {
       const { questId, userId, status, guildId } = completionData;

@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { Trophy, TrophyRequirement, TrophyRequirementType, QuestType } from '../../types';
-import Button from '../ui/Button';
-import Input from '../ui/Input';
-import ToggleSwitch from '../ui/ToggleSwitch';
-import EmojiPicker from '../ui/EmojiPicker';
-import ImageSelectionDialog from '../ui/ImageSelectionDialog';
-import DynamicIcon from '../ui/DynamicIcon';
+import Button from '../user-interface/Button';
+import Input from '../user-interface/Input';
+import ToggleSwitch from '../user-interface/ToggleSwitch';
+import EmojiPicker from '../user-interface/EmojiPicker';
+import ImageSelectionDialog from '../user-interface/ImageSelectionDialog';
+import DynamicIcon from '../user-interface/DynamicIcon';
 import { useQuestState } from '../../context/QuestContext';
 
 interface EditTrophyDialogProps {
@@ -111,14 +111,14 @@ const EditTrophyDialog: React.FC<EditTrophyDialogProps> = ({ trophy, initialData
     switch (req.type) {
         case TrophyRequirementType.CompleteQuestType:
             return (
-                <select value={req.value} onChange={e => handleRequirementChange(index, 'value', e.target.value)} className="w-full px-4 py-2 bg-stone-700 border border-stone-600 rounded-md">
+                <select value={req.value} onChange={(e: React.ChangeEvent<HTMLSelectElement>) => handleRequirementChange(index, 'value', e.target.value)} className="w-full px-4 py-2 bg-stone-700 border border-stone-600 rounded-md">
                     <option value={QuestType.Duty}>Duty</option>
                     <option value={QuestType.Venture}>Venture</option>
                 </select>
             );
         case TrophyRequirementType.AchieveRank:
              return (
-                <select value={req.value} onChange={e => handleRequirementChange(index, 'value', e.target.value)} className="w-full px-4 py-2 bg-stone-700 border border-stone-600 rounded-md">
+                <select value={req.value} onChange={(e: React.ChangeEvent<HTMLSelectElement>) => handleRequirementChange(index, 'value', e.target.value)} className="w-full px-4 py-2 bg-stone-700 border border-stone-600 rounded-md">
                      <option value="" disabled>Select a Rank</option>
                     {[...ranks].sort((a,b) => a.xpThreshold - b.xpThreshold).map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
                 </select>
@@ -130,19 +130,19 @@ const EditTrophyDialog: React.FC<EditTrophyDialogProps> = ({ trophy, initialData
                     list="tags-datalist"
                     placeholder="Enter tag"
                     value={req.value}
-                    onChange={e => handleRequirementChange(index, 'value', e.target.value)}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleRequirementChange(index, 'value', e.target.value)}
                     required
                 />
             );
         case TrophyRequirementType.QuestCompleted:
              return (
-                <select value={req.value} onChange={e => handleRequirementChange(index, 'value', e.target.value)} className="w-full px-4 py-2 bg-stone-700 border border-stone-600 rounded-md">
+                <select value={req.value} onChange={(e: React.ChangeEvent<HTMLSelectElement>) => handleRequirementChange(index, 'value', e.target.value)} className="w-full px-4 py-2 bg-stone-700 border border-stone-600 rounded-md">
                      <option value="" disabled>Select a Quest</option>
                     {quests.map(q => <option key={q.id} value={q.id}>{q.title}</option>)}
                 </select>
             );
         default:
-            return <Input type="text" placeholder="Value" value={req.value} onChange={e => handleRequirementChange(index, 'value', e.target.value)} required />;
+            return <Input type="text" placeholder="Value" value={req.value} onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleRequirementChange(index, 'value', e.target.value)} required />;
     }
   }
 
@@ -178,7 +178,7 @@ const EditTrophyDialog: React.FC<EditTrophyDialogProps> = ({ trophy, initialData
                 <button type="button" onClick={() => setIsEmojiPickerOpen(prev => !prev)} className="w-full text-left px-4 py-2 bg-stone-700 border border-stone-600 rounded-md flex items-center gap-2">
                   <span className="text-2xl">{formData.icon}</span><span className="text-stone-300">Click to change</span>
                 </button>
-                {isEmojiPickerOpen && <EmojiPicker onSelect={(emoji) => { setFormData(p => ({ ...p, icon: emoji })); setIsEmojiPickerOpen(false); }} onClose={() => setIsEmojiPickerOpen(false)} />}
+                {isEmojiPickerOpen && <EmojiPicker onSelect={(emoji: string) => { setFormData(p => ({ ...p, icon: emoji })); setIsEmojiPickerOpen(false); }} onClose={() => setIsEmojiPickerOpen(false)} />}
               </div>
             </div>
           ) : (
@@ -194,7 +194,7 @@ const EditTrophyDialog: React.FC<EditTrophyDialogProps> = ({ trophy, initialData
           )}
 
         <div className="p-4 bg-stone-900/50 rounded-lg">
-            <ToggleSwitch enabled={!formData.isManual} setEnabled={(val) => setFormData(p => ({ ...p, isManual: !val }))} label="Automatic Award" />
+            <ToggleSwitch enabled={!formData.isManual} setEnabled={(val: boolean) => setFormData(p => ({ ...p, isManual: !val }))} label="Automatic Award" />
             {!formData.isManual && (
                 <div className="mt-4 space-y-4">
                     <p className="text-sm text-stone-400">Define the requirements for this trophy to be awarded automatically.</p>
@@ -206,14 +206,14 @@ const EditTrophyDialog: React.FC<EditTrophyDialogProps> = ({ trophy, initialData
                                 </button>
                             </div>
                             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                                <select value={req.type} onChange={e => handleRequirementChange(index, 'type', e.target.value as TrophyRequirementType)} className="w-full px-4 py-2 bg-stone-700 border border-stone-600 rounded-md">
+                                <select value={req.type} onChange={(e: React.ChangeEvent<HTMLSelectElement>) => handleRequirementChange(index, 'type', e.target.value as TrophyRequirementType)} className="w-full px-4 py-2 bg-stone-700 border border-stone-600 rounded-md">
                                     <option value={TrophyRequirementType.CompleteQuestType}>Complete Quest Type</option>
                                     <option value={TrophyRequirementType.CompleteQuestTag}>Complete Quest w/ Tag</option>
                                     <option value={TrophyRequirementType.AchieveRank}>Achieve Rank</option>
                                     <option value={TrophyRequirementType.QuestCompleted}>Complete Specific Quest</option>
                                 </select>
                                 {renderRequirementValueInput(req, index)}
-                                <Input type="number" value={req.count} min="1" onChange={e => handleRequirementChange(index, 'count', e.target.value)} />
+                                <Input type="number" value={req.count} min="1" onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleRequirementChange(index, 'count', e.target.value)} />
                             </div>
                         </div>
                     ))}
@@ -250,7 +250,7 @@ const EditTrophyDialog: React.FC<EditTrophyDialogProps> = ({ trophy, initialData
     </div>
     {isGalleryOpen && (
       <ImageSelectionDialog 
-        onSelect={(url) => {
+        onSelect={(url: string) => {
           setFormData(p => ({...p, imageUrl: url}));
           setIsGalleryOpen(false);
         }}

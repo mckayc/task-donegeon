@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { RewardCategory, RewardTypeDefinition } from '../../types';
-import Button from '../ui/Button';
-import Input from '../ui/Input';
+import Button from '../user-interface/Button';
+import Input from '../user-interface/Input';
 import { useEconomyDispatch } from '../../context/EconomyContext';
-import EmojiPicker from '../ui/EmojiPicker';
-import ImageSelectionDialog from '../ui/ImageSelectionDialog';
-import DynamicIcon from '../ui/DynamicIcon';
+import EmojiPicker from '../user-interface/EmojiPicker';
+import ImageSelectionDialog from '../user-interface/ImageSelectionDialog';
+import DynamicIcon from '../user-interface/DynamicIcon';
 
 interface EditRewardTypeDialogProps {
   rewardType: RewardTypeDefinition | null;
@@ -105,7 +105,7 @@ const EditRewardTypeDialog: React.FC<EditRewardTypeDialogProps> = ({ rewardType,
                 </button>
                 {isEmojiPickerOpen && (
                   <EmojiPicker
-                    onSelect={(emoji) => {
+                    onSelect={(emoji: string) => {
                       setFormData(p => ({ ...p, icon: emoji }));
                       setIsEmojiPickerOpen(false);
                     }}
@@ -169,7 +169,7 @@ const EditRewardTypeDialog: React.FC<EditRewardTypeDialogProps> = ({ rewardType,
     </div>
     {isGalleryOpen && (
       <ImageSelectionDialog 
-        onSelect={(url) => {
+        onSelect={(url: string) => {
           setFormData(p => ({...p, imageUrl: url}));
           setIsGalleryOpen(false);
         }}

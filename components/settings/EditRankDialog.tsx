@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { Rank } from '../../types';
-import Button from '../ui/Button';
-import Input from '../ui/Input';
-import EmojiPicker from '../ui/EmojiPicker';
-import ImageSelectionDialog from '../ui/ImageSelectionDialog';
-import DynamicIcon from '../ui/DynamicIcon';
+import Button from '../user-interface/Button';
+import Input from '../user-interface/Input';
+import EmojiPicker from '../user-interface/EmojiPicker';
+import ImageSelectionDialog from '../user-interface/ImageSelectionDialog';
+import DynamicIcon from '../user-interface/DynamicIcon';
 
 interface EditRankDialogProps {
   rank: Rank | null;
@@ -61,7 +61,7 @@ const EditRankDialog: React.FC<EditRankDialogProps> = ({ rank, onClose }) => {
           <Input 
             label="Rank Name" 
             value={formData.name} 
-            onChange={(e) => setFormData(p => ({ ...p, name: e.target.value }))} 
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData(p => ({ ...p, name: e.target.value }))} 
             required 
           />
            <Input 
@@ -69,7 +69,7 @@ const EditRankDialog: React.FC<EditRankDialogProps> = ({ rank, onClose }) => {
             type="number"
             min="0"
             value={formData.xpThreshold} 
-            onChange={(e) => setFormData(p => ({ ...p, xpThreshold: parseInt(e.target.value) || 0 }))} 
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData(p => ({ ...p, xpThreshold: parseInt(e.target.value) || 0 }))} 
             required 
           />
           <div>
@@ -99,7 +99,7 @@ const EditRankDialog: React.FC<EditRankDialogProps> = ({ rank, onClose }) => {
                 </button>
                 {isEmojiPickerOpen && (
                   <EmojiPicker
-                    onSelect={(emoji) => {
+                    onSelect={(emoji: string) => {
                         setFormData(p => ({ ...p, icon: emoji }));
                         setIsEmojiPickerOpen(false);
                     }}
@@ -134,7 +134,7 @@ const EditRankDialog: React.FC<EditRankDialogProps> = ({ rank, onClose }) => {
     </div>
     {isGalleryOpen && (
       <ImageSelectionDialog 
-        onSelect={(url) => {
+        onSelect={(url: string) => {
           setFormData(p => ({...p, imageUrl: url}));
           setIsGalleryOpen(false);
         }}

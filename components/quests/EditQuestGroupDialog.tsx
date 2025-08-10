@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { QuestGroup } from '../../types';
-import Button from '../ui/Button';
-import Input from '../ui/Input';
+import Button from '../user-interface/Button';
+import Input from '../user-interface/Input';
 import { useQuestDispatch } from '../../context/QuestContext';
-import EmojiPicker from '../ui/EmojiPicker';
+import EmojiPicker from '../user-interface/EmojiPicker';
 
 interface EditQuestGroupDialogProps {
     groupToEdit: QuestGroup | null;
@@ -49,7 +49,7 @@ const EditQuestGroupDialog: React.FC<EditQuestGroupDialogProps> = ({ groupToEdit
                     <Input
                         label="Group Name"
                         value={formData.name}
-                        onChange={(e) => setFormData(p => ({ ...p, name: e.target.value }))}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData(p => ({ ...p, name: e.target.value }))}
                         required
                     />
                     <div>
@@ -74,7 +74,7 @@ const EditQuestGroupDialog: React.FC<EditQuestGroupDialogProps> = ({ groupToEdit
                             </button>
                             {isEmojiPickerOpen && (
                                 <EmojiPicker
-                                    onSelect={(emoji) => {
+                                    onSelect={(emoji: string) => {
                                         setFormData(p => ({ ...p, icon: emoji }));
                                         setIsEmojiPickerOpen(false);
                                     }}

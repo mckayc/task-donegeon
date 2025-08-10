@@ -1,12 +1,12 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useAppState } from '../../context/AppContext';
 import { QuestGroup } from '../../types';
-import Button from '../ui/Button';
-import Card from '../ui/Card';
-import { EllipsisVerticalIcon, QuestsIcon } from '../ui/Icons';
-import EmptyState from '../ui/EmptyState';
+import Button from '../user-interface/Button';
+import Card from '../user-interface/Card';
+import { EllipsisVerticalIcon, QuestsIcon } from '../user-interface/Icons';
+import EmptyState from '../user-interface/EmptyState';
 import EditQuestGroupDialog from '../quests/EditQuestGroupDialog';
-import ConfirmDialog from '../ui/ConfirmDialog';
+import ConfirmDialog from '../user-interface/ConfirmDialog';
 import AssignQuestGroupDialog from '../quests/AssignQuestGroupDialog';
 import { useQuestState, useQuestDispatch } from '../../context/QuestContext';
 

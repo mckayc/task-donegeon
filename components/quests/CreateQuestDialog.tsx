@@ -1,14 +1,14 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useAppState } from '../../context/AppContext';
 import { Quest, QuestType, RewardItem, RewardCategory, QuestAvailability, BugReport, Role } from '../../types';
-import Button from '../ui/Button';
-import Input from '../ui/Input';
-import ToggleSwitch from '../ui/ToggleSwitch';
+import Button from '../user-interface/Button';
+import Input from '../user-interface/Input';
+import ToggleSwitch from '../user-interface/ToggleSwitch';
 import RewardInputGroup from '../forms/RewardInputGroup';
-import EmojiPicker from '../ui/EmojiPicker';
-import TagInput from '../ui/TagInput';
-import ImageSelectionDialog from '../ui/ImageSelectionDialog';
-import DynamicIcon from '../ui/DynamicIcon';
+import EmojiPicker from '../user-interface/EmojiPicker';
+import TagInput from '../user-interface/TagInput';
+import ImageSelectionDialog from '../user-interface/ImageSelectionDialog';
+import DynamicIcon from '../user-interface/DynamicIcon';
 import { useAuthState } from '../../context/AuthContext';
 import { useEconomyState } from '../../context/EconomyContext';
 import { bugLogger } from '../../utils/bugLogger';
@@ -322,13 +322,13 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
         
         <form id="quest-form" onSubmit={handleSubmit} className="flex-1 space-y-4 p-8 overflow-y-auto scrollbar-hide">
           <div className="flex justify-between items-center gap-4 flex-wrap">
-             <ToggleSwitch enabled={formData.isActive} setEnabled={(val) => setFormData(p => ({...p, isActive: val}))} label="Status: Active" />
-             <ToggleSwitch enabled={formData.isOptional} setEnabled={(val) => setFormData(p => ({...p, isOptional: val}))} label={`${settings.terminology.task} is Optional`} />
+             <ToggleSwitch enabled={formData.isActive} setEnabled={(val: boolean) => setFormData(p => ({...p, isActive: val}))} label="Status: Active" />
+             <ToggleSwitch enabled={formData.isOptional} setEnabled={(val: boolean) => setFormData(p => ({...p, isOptional: val}))} label={`${settings.terminology.task} is Optional`} />
           </div>
 
           <div className="flex gap-4 items-end">
             <div className="flex-grow">
-              <Input label={`${settings.terminology.task} Title`} id="title" name="title" value={formData.title} onChange={(e) => setFormData(p => ({...p, title: e.target.value}))} required />
+              <Input label={`${settings.terminology.task} Title`} id="title" name="title" value={formData.title} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData(p => ({...p, title: e.target.value}))} required />
             </div>
           </div>
            <div>
@@ -351,7 +351,7 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
                 <button type="button" onClick={() => setIsEmojiPickerOpen(prev => !prev)} className="w-full text-left px-4 py-2 bg-stone-700 border border-stone-600 rounded-md flex items-center gap-2">
                   <span className="text-2xl">{formData.icon}</span> <span className="text-stone-300">Click to change</span>
                 </button>
-                {isEmojiPickerOpen && <EmojiPicker onSelect={(emoji) => { setFormData(p => ({ ...p, icon: emoji })); setIsEmojiPickerOpen(false); }} onClose={() => setIsEmojiPickerOpen(false)} />}
+                {isEmojiPickerOpen && <EmojiPicker onSelect={(emoji: string) => { setFormData(p => ({ ...p, icon: emoji })); setIsEmojiPickerOpen(false); }} onClose={() => setIsEmojiPickerOpen(false)} />}
               </div>
             </div>
           ) : (
@@ -367,13 +367,13 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
           )}
           <div>
             <label htmlFor="description" className="block text-sm font-medium text-stone-300 mb-1">Description</label>
-            <textarea id="description" name="description" rows={initialDataFromBug ? 8 : 3} value={formData.description} onChange={(e) => setFormData(p => ({...p, description: e.target.value}))} className="w-full px-4 py-2 bg-stone-700 border border-stone-600 rounded-md font-mono text-xs"/>
+            <textarea id="description" name="description" rows={initialDataFromBug ? 8 : 3} value={formData.description} onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setFormData(p => ({...p, description: e.target.value}))} className="w-full px-4 py-2 bg-stone-700 border border-stone-600 rounded-md font-mono text-xs"/>
           </div>
            <div>
             <label className="block text-sm font-medium text-stone-300 mb-1">Tags</label>
             <TagInput 
               selectedTags={formData.tags}
-              onTagsChange={(newTags) => setFormData(p => ({ ...p, tags: newTags}))}
+              onTagsChange={(newTags: string[]) => setFormData(p => ({ ...p, tags: newTags}))}
               allTags={allTags}
               placeholder="Add tags..."
             />
@@ -382,7 +382,7 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
           <div className="p-4 bg-stone-900/50 rounded-lg grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <h3 className="font-semibold text-stone-200 mb-2">Scope</h3>
-              <select name="guildId" value={formData.guildId} onChange={(e) => setFormData(p => ({...p, guildId: e.target.value}))} className="w-full px-4 py-2 bg-stone-700 border border-stone-600 rounded-md">
+              <select name="guildId" value={formData.guildId} onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setFormData(p => ({...p, guildId: e.target.value}))} className="w-full px-4 py-2 bg-stone-700 border border-stone-600 rounded-md">
                   <option value="">Personal (Available to individuals)</option>
                   {guilds.map(g => <option key={g.id} value={g.id}>{g.name}</option>)}
               </select>
@@ -398,7 +398,7 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
                     <Input
                         label="New Group Name"
                         value={newGroupName}
-                        onChange={(e) => setNewGroupName(e.target.value)}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewGroupName(e.target.value)}
                         className="mt-2"
                         autoFocus
                     />
@@ -408,7 +408,7 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
 
           <div>
             <label htmlFor="type" className="block text-sm font-medium text-stone-300 mb-1">{settings.terminology.task} Type</label>
-            <select id="type" name="type" value={formData.type} onChange={(e) => setFormData(p => ({...p, type: e.target.value as QuestType}))} className="w-full px-4 py-2 bg-stone-700 border border-stone-600 rounded-md" disabled={!!initialDataFromBug}>
+            <select id="type" name="type" value={formData.type} onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setFormData(p => ({...p, type: e.target.value as QuestType}))} className="w-full px-4 py-2 bg-stone-700 border border-stone-600 rounded-md" disabled={!!initialDataFromBug}>
               <option value={QuestType.Duty}>{settings.terminology.recurringTask} (Recurring Task)</option>
               <option value={QuestType.Venture}>{settings.terminology.singleTask} (One-time Chore)</option>
             </select>
@@ -416,7 +416,7 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
           
            <div className="flex justify-between items-center">
              <h3 className="font-semibold text-lg text-stone-200">Approval</h3>
-            <ToggleSwitch enabled={formData.requiresApproval} setEnabled={(val) => setFormData(p => ({...p, requiresApproval: val}))} label="Requires Approval" />
+            <ToggleSwitch enabled={formData.requiresApproval} setEnabled={(val: boolean) => setFormData(p => ({...p, requiresApproval: val}))} label="Requires Approval" />
           </div>
 
           <div className="p-4 bg-stone-900/50 rounded-lg">
@@ -424,7 +424,7 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
              <div className="flex space-x-4 flex-wrap gap-2">
                  {currentAvailabilityOptions.map(availType => (
                      <div key={availType} className="flex items-center">
-                         <input type="radio" id={availType} name="availabilityType" value={availType} checked={formData.availabilityType === availType} onChange={(e) => setFormData(p => ({...p, availabilityType: e.target.value as QuestAvailability}))} className="h-4 w-4 text-emerald-600 bg-stone-700 border-stone-500 focus:ring-emerald-500" />
+                         <input type="radio" id={availType} name="availabilityType" value={availType} checked={formData.availabilityType === availType} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData(p => ({...p, availabilityType: e.target.value as QuestAvailability}))} className="h-4 w-4 text-emerald-600 bg-stone-700 border-stone-500 focus:ring-emerald-500" />
                          <label htmlFor={availType} className="ml-2 capitalize">{availType}</label>
                      </div>
                  ))}
@@ -442,14 +442,14 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
                 </div>
              )}
              {formData.availabilityType === QuestAvailability.Frequency && formData.type === QuestType.Venture && (
-                <div className="mt-3"><Input label="Number of completions available" type="number" min="1" value={formData.availabilityCount || 1} onChange={(e) => setFormData(p => ({...p, availabilityCount: parseInt(e.target.value)}))} /></div>
+                <div className="mt-3"><Input label="Number of completions available" type="number" min="1" value={formData.availabilityCount || 1} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData(p => ({...p, availabilityCount: parseInt(e.target.value)}))} /></div>
              )}
           </div>
 
           <div className="p-4 bg-stone-900/50 rounded-lg space-y-4">
             <div className="flex justify-between items-center">
               <h3 className="font-semibold text-lg text-stone-200">Deadlines & Time-based {settings.terminology.negativePoints}</h3>
-              <ToggleSwitch enabled={formData.hasDeadlines} setEnabled={(val) => setFormData(p => ({...p, hasDeadlines: val}))} label="Enable" />
+              <ToggleSwitch enabled={formData.hasDeadlines} setEnabled={(val: boolean) => setFormData(p => ({...p, hasDeadlines: val}))} label="Enable" />
             </div>
             
             {formData.hasDeadlines && (
@@ -457,13 +457,13 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
                 <p className="text-sm text-stone-400 -mt-2">Set specific times for when a {settings.terminology.task.toLowerCase()} becomes late or incomplete, and assign {settings.terminology.negativePoints.toLowerCase()} for each.</p>
                  {formData.type === QuestType.Venture ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <Input label="Becomes LATE at" type="datetime-local" value={formData.lateDateTime} onChange={e => setFormData(p => ({...p, lateDateTime: e.target.value}))} />
-                        <Input label="Becomes INCOMPLETE at" type="datetime-local" value={formData.incompleteDateTime} onChange={e => setFormData(p => ({...p, incompleteDateTime: e.target.value}))} />
+                        <Input label="Becomes LATE at" type="datetime-local" value={formData.lateDateTime} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData(p => ({...p, lateDateTime: e.target.value}))} />
+                        <Input label="Becomes INCOMPLETE at" type="datetime-local" value={formData.incompleteDateTime} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData(p => ({...p, incompleteDateTime: e.target.value}))} />
                     </div>
                 ) : ( // Duty
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <Input label="Becomes LATE at (Daily Time)" type="time" value={formData.lateTime} onChange={e => setFormData(p => ({...p, lateTime: e.target.value}))} />
-                        <Input label="Becomes INCOMPLETE at (Daily Time)" type="time" value={formData.incompleteTime} onChange={e => setFormData(p => ({...p, incompleteTime: e.target.value}))} />
+                        <Input label="Becomes LATE at (Daily Time)" type="time" value={formData.lateTime} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData(p => ({...p, lateTime: e.target.value}))} />
+                        <Input label="Becomes INCOMPLETE at (Daily Time)" type="time" value={formData.incompleteTime} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData(p => ({...p, incompleteTime: e.target.value}))} />
                     </div>
                 )}
                 <RewardInputGroup category='lateSetbacks' items={formData.lateSetbacks} onChange={handleRewardChange('lateSetbacks')} onAdd={handleAddRewardForCategory('lateSetbacks')} onRemove={handleRemoveReward('lateSetbacks')} />
@@ -521,7 +521,7 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
     </div>
     {isGalleryOpen && (
       <ImageSelectionDialog 
-        onSelect={(url) => {
+        onSelect={(url: string) => {
           setFormData(p => ({...p, imageUrl: url}));
           setIsGalleryOpen(false);
         }}

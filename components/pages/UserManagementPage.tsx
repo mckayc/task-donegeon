@@ -1,17 +1,18 @@
 
+
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { useAppState } from '../../context/AppContext';
 import { useAuthState, useAuthDispatch } from '../../context/AuthContext';
-import Button from '../ui/Button';
+import Button from '../user-interface/Button';
 import AddUserDialog from '../users/AddUserDialog';
 import { Role, User } from '../../types';
 import EditUserDialog from '../users/EditUserDialog';
 import ManualAdjustmentDialog from '../admin/ManualAdjustmentDialog';
-import Card from '../ui/Card';
-import { EllipsisVerticalIcon } from '../ui/Icons';
-import ConfirmDialog from '../ui/ConfirmDialog';
+import Card from '../user-interface/Card';
+import { EllipsisVerticalIcon } from '../user-interface/Icons';
+import ConfirmDialog from '../user-interface/ConfirmDialog';
 import { useDebounce } from '../../hooks/useDebounce';
-import Input from '../ui/Input';
+import Input from '../user-interface/Input';
 import { useNotificationsDispatch } from '../../context/NotificationsContext';
 import { useShiftSelect } from '../../hooks/useShiftSelect';
 
@@ -119,8 +120,8 @@ const UserManagementPage: React.FC = () => {
                 }
             >
                 <div className="flex flex-wrap gap-4 mb-4">
-                    <Input placeholder="Search by name or username..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="max-w-xs" />
-                    <Input as="select" value={sortBy} onChange={e => setSortBy(e.target.value as any)}>
+                    <Input placeholder="Search by name or username..." value={searchTerm} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchTerm(e.target.value)} className="max-w-xs" />
+                    <Input as="select" value={sortBy} onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setSortBy(e.target.value as any)}>
                         <option value="gameName-asc">Name (A-Z)</option>
                         <option value="gameName-desc">Name (Z-A)</option>
                         <option value="username-asc">Username (A-Z)</option>
@@ -164,7 +165,7 @@ const UserManagementPage: React.FC = () => {
                                             <input
                                                 type="checkbox"
                                                 checked={selectedUsers.includes(user.id)}
-                                                onChange={e => handleCheckboxClick(e, user.id)}
+                                                onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleCheckboxClick(e, user.id)}
                                                 className="h-4 w-4 rounded text-emerald-600 bg-stone-700 border-stone-600 focus:ring-emerald-500"
                                             />
                                         </td>

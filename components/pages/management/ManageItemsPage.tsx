@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import { useAppState, useAppDispatch } from '../../../context/AppContext';
 import { GameAsset } from '../../../types';
@@ -50,6 +51,15 @@ const ManageItemsPage: React.FC = () => {
     const pageAssetIds = useMemo(() => pageAssets.map(a => a.id), [pageAssets]);
     const handleCheckboxClick = useShiftSelect(pageAssetIds, selectedAssets, setSelectedAssets);
 
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+                setOpenDropdownId(null);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
 
     const apiRequest = useCallback(async (method: string, path: string, body?: any) => {
         try {
@@ -95,16 +105,6 @@ const ManageItemsPage: React.FC = () => {
         setSelectedAssets([]);
     }, [activeTab, searchTerm, sortBy]);
     
-    useEffect(() => {
-        const handleClickOutside = (event: MouseEvent) => {
-            if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-                setOpenDropdownId(null);
-            }
-        };
-        document.addEventListener('mousedown', handleClickOutside);
-        return () => document.removeEventListener('mousedown', handleClickOutside);
-    }, []);
-
     const handleFileProcess = useCallback((file: File) => {
         setFileToCategorize(file);
     }, []);
@@ -211,7 +211,7 @@ const ManageItemsPage: React.FC = () => {
     const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
         setSelectedAssets(e.target.checked ? pageAssets.map(a => a.id) : []);
     };
-    
+
     return (
         <div className="space-y-6">
              <Card title="Quick Add Asset">
@@ -289,7 +289,7 @@ const ManageItemsPage: React.FC = () => {
                                     return (
                                         <tr key={asset.id} className="border-b border-stone-700/40 last:border-b-0">
                                             <td className="p-4">
-                                                <input type="checkbox" checked={selectedAssets.includes(asset.id)} onChange={e => handleCheckboxClick(e, asset.id)} className="h-4 w-4 rounded text-emerald-600 bg-stone-700 border-stone-600 focus:ring-emerald-500" />
+                                                <input type="checkbox" checked={selectedAssets.includes(asset.id)} onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleCheckboxClick(e, asset.id)} className="h-4 w-4 rounded text-emerald-600 bg-stone-700 border-stone-600 focus:ring-emerald-500" />
                                             </td>
                                             <td className="p-2">
                                                 <button onClick={() => setPreviewImageUrl(asset.url)} className="w-12 h-12 bg-stone-700 rounded-md overflow-hidden hover:ring-2 ring-accent">

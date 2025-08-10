@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
-import { Trophy } from '../../../types';
+import { Trophy } from '../../types';
 import Button from '../../user-interface/Button';
 import Card from '../../user-interface/Card';
 import EditTrophyDialog from '../../settings/EditTrophyDialog';

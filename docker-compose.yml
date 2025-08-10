@@ -9,7 +9,7 @@ services:
     restart: unless-stopped
     ports:
       # Maps your host machine's port to the container's port 3000,
-      # where the backend server is running..
+      # where the backend server is running.
       - "${APP_PORT:-3002}:3000"
     environment:
       # The JWT_SECRET is used by the backend to sign security tokens type in random letters and numbers for this code. 

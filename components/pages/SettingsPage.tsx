@@ -1,9 +1,8 @@
 
-
 import React, { useState, ChangeEvent, ReactNode, useEffect } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
-import { useAuthState, useAuthDispatch } from '../../context/AuthContext';
-import { Role, AppSettings, Terminology, RewardCategory, RewardTypeDefinition, User } from '../../types';
+import { useAuthState } from '../../context/AuthContext';
+import { AppSettings, Terminology, RewardCategory, RewardTypeDefinition } from '../../types';
 import Button from '../user-interface/Button';
 import { ChevronDownIcon } from '../user-interface/Icons';
 import Input from '../user-interface/Input';
@@ -13,8 +12,8 @@ import { INITIAL_SETTINGS } from '../../data/initialData';
 import EmojiPicker from '../user-interface/EmojiPicker';
 import { useNotificationsDispatch } from '../../context/NotificationsContext';
 import { useEconomyState } from '../../context/EconomyContext';
-import { bugLogger } from '../../utils/bugLogger';
 import Card from '../user-interface/Card';
+import UserMultiSelect from '../user-interface/UserMultiSelect';
 
 
 const CollapsibleSection: React.FC<{ title: string; children: React.ReactNode; defaultOpen?: boolean; onToggle?: (isOpen: boolean) => void; }> = ({ title, children, defaultOpen = false, onToggle }) => {
@@ -107,7 +106,7 @@ const terminologyLabels: { [key in keyof Terminology]: string } = {
 
 
 export const SettingsPage: React.FC = () => {
-    const { settings, guilds } = useAppState();
+    const { settings } = useAppState();
     const { users } = useAuthState();
     const { rewardTypes } = useEconomyState();
     const { updateSettings, resetSettings, clearAllHistory, resetAllPlayerData, deleteAllCustomContent, factoryReset } = useAppDispatch();
@@ -116,11 +115,9 @@ export const SettingsPage: React.FC = () => {
     // Create a local copy of settings for form manipulation
     const [formState, setFormState] = useState<AppSettings>(() => JSON.parse(JSON.stringify(settings)));
     const [confirmation, setConfirmation] = useState<string | null>(null);
-    const [isEmojiPickerOpen, setIsEmojiPickerOpen] = useState(false);
+    const [isEmojiPickerOpen, setIsEmojiPickerOpen] = useState<{ general: boolean, chat: boolean }>({ general: false, chat: false });
 
     useEffect(() => {
-        // This effect ensures that if the global settings are updated by a sync,
-        // the local form state reflects that change. This prevents stale data.
         setFormState(JSON.parse(JSON.stringify(settings)));
     }, [settings]);
 
@@ -194,47 +191,123 @@ export const SettingsPage: React.FC = () => {
                         <div className="flex items-end gap-4">
                              <div className="relative">
                                 <label className="block text-sm font-medium text-stone-300 mb-1">Browser Favicon</label>
-                                <button type="button" onClick={() => setIsEmojiPickerOpen(prev => !prev)} className="w-20 h-14 text-4xl p-1 rounded-md bg-stone-700 hover:bg-stone-600 flex items-center justify-center">
+                                <button type="button" onClick={() => setIsEmojiPickerOpen(p => ({...p, general: !p.general}))} className="w-20 h-14 text-4xl p-1 rounded-md bg-stone-700 hover:bg-stone-600 flex items-center justify-center">
                                     {formState.favicon}
                                 </button>
-                                {isEmojiPickerOpen && <EmojiPicker onSelect={(emoji: string) => { handleSimpleChange('favicon', emoji); setIsEmojiPickerOpen(false); }} onClose={() => setIsEmojiPickerOpen(false)} />}
+                                {isEmojiPickerOpen.general && <EmojiPicker onSelect={(emoji: string) => { handleSimpleChange('favicon', emoji); setIsEmojiPickerOpen(p => ({...p, general: false})); }} onClose={() => setIsEmojiPickerOpen(p => ({...p, general: false}))} />}
                              </div>
                              <Input label="Default Theme" as="select" value={formState.theme} onChange={(e: React.ChangeEvent<HTMLSelectElement>) => handleSimpleChange('theme', e.target.value)}>
-                                 {/* Assuming themes are in AppState */}
                                  {useAppState().themes.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
                             </Input>
                         </div>
+                         <div className="pt-4 border-t border-stone-700/60 grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <ToggleSwitch enabled={formState.enableAiFeatures} setEnabled={(val) => handleSimpleChange('enableAiFeatures', val)} label="Enable AI Features" />
+                            <ToggleSwitch enabled={formState.developerMode.enabled} setEnabled={(val) => handleSettingChange('developerMode', 'enabled', val)} label="Enable Developer Mode" />
+                            <ToggleSwitch enabled={formState.loginNotifications.enabled} setEnabled={(val) => handleSettingChange('loginNotifications', 'enabled', val)} label="Show Login Notifications" />
+                            <ToggleSwitch enabled={formState.chat.enabled} setEnabled={(val) => handleSettingChange('chat', 'enabled', val)} label="Enable Chat" />
+                        </div>
+                        {formState.chat.enabled && (
+                             <div className="relative w-max">
+                                <label className="block text-sm font-medium text-stone-300 mb-1">Chat Icon</label>
+                                <button type="button" onClick={() => setIsEmojiPickerOpen(p => ({...p, chat: !p.chat}))} className="w-20 h-14 text-4xl p-1 rounded-md bg-stone-700 hover:bg-stone-600 flex items-center justify-center">
+                                    {formState.chat.chatEmoji}
+                                </button>
+                                {isEmojiPickerOpen.chat && <EmojiPicker onSelect={(emoji) => { handleSettingChange('chat', 'chatEmoji', emoji); setIsEmojiPickerOpen(p => ({...p, chat: false})); }} onClose={() => setIsEmojiPickerOpen(p => ({...p, chat: false}))} />}
+                             </div>
+                        )}
                     </div>
                 </CollapsibleSection>
+
                 <CollapsibleSection title="Security">
                     <div className="p-6 space-y-4">
-                         <ToggleSwitch enabled={formState.security.requirePinForUsers} setEnabled={(val: boolean) => handleSettingChange('security', 'requirePinForUsers', val)} label="Require PIN for user switching" />
-                         <ToggleSwitch enabled={formState.security.requirePasswordForAdmin} setEnabled={(val: boolean) => handleSettingChange('security', 'requirePasswordForAdmin', val)} label="Require Password for Donegeon Masters & Gatekeepers" />
-                         <ToggleSwitch enabled={formState.security.allowProfileEditing} setEnabled={(val: boolean) => handleSettingChange('security', 'allowProfileEditing', val)} label="Allow users to edit their own profiles" />
+                         <ToggleSwitch enabled={formState.security.requirePinForUsers} setEnabled={(val) => handleSettingChange('security', 'requirePinForUsers', val)} label="Require PIN for user switching" />
+                         <ToggleSwitch enabled={formState.security.requirePasswordForAdmin} setEnabled={(val) => handleSettingChange('security', 'requirePasswordForAdmin', val)} label="Require Password for Donegeon Masters & Gatekeepers" />
+                         <ToggleSwitch enabled={formState.security.allowProfileEditing} setEnabled={(val) => handleSettingChange('security', 'allowProfileEditing', val)} label="Allow users to edit their own profiles" />
                     </div>
                 </CollapsibleSection>
+                
+                <CollapsibleSection title="Shared / Kiosk Mode">
+                    <div className="p-6 space-y-4">
+                        <ToggleSwitch enabled={formState.sharedMode.enabled} setEnabled={(val) => handleSettingChange('sharedMode', 'enabled', val)} label="Enable Shared Mode" />
+                        {formState.sharedMode.enabled && (
+                            <div className="p-4 bg-stone-900/40 rounded-lg space-y-4">
+                                <UserMultiSelect allUsers={users} selectedUserIds={formState.sharedMode.userIds} onSelectionChange={(val) => handleSettingChange('sharedMode', 'userIds', val)} label="Users in Shared View" />
+                                <ToggleSwitch enabled={formState.sharedMode.allowCompletion} setEnabled={(val) => handleSettingChange('sharedMode', 'allowCompletion', val)} label="Allow quest completion from shared view" />
+                                <ToggleSwitch enabled={formState.sharedMode.autoExit} setEnabled={(val) => handleSettingChange('sharedMode', 'autoExit', val)} label="Auto-exit user session after inactivity" />
+                                {formState.sharedMode.autoExit && (
+                                    <Input label="Auto-exit after (minutes)" type="number" min="1" value={formState.sharedMode.autoExitMinutes} onChange={(e) => handleSettingChange('sharedMode', 'autoExitMinutes', parseInt(e.target.value) || 2)} />
+                                )}
+                            </div>
+                        )}
+                    </div>
+                </CollapsibleSection>
+
                  <CollapsibleSection title="Game Rules">
                     <div className="p-6 space-y-4">
-                        <ToggleSwitch enabled={formState.forgivingSetbacks} setEnabled={(val: boolean) => handleSimpleChange('forgivingSetbacks', val)} label="Forgiving Setbacks" />
+                        <ToggleSwitch enabled={formState.forgivingSetbacks} setEnabled={(val) => handleSimpleChange('forgivingSetbacks', val)} label="Forgiving Setbacks" />
                         <p className="text-xs text-stone-400 -mt-3 ml-12">If ON, setbacks are only applied if a quest is incomplete at the end of the day. If OFF, they are applied the moment a quest becomes late.</p>
-                        
                         <div className="pt-4 border-t border-stone-700/60">
                             <h4 className="font-semibold text-stone-200 mb-2">Quest Defaults</h4>
                             <div className="flex flex-col sm:flex-row gap-4">
-                                <ToggleSwitch enabled={formState.questDefaults.isActive} setEnabled={(val: boolean) => handleSettingChange('questDefaults', 'isActive', val)} label="Active by default" />
-                                <ToggleSwitch enabled={formState.questDefaults.isOptional} setEnabled={(val: boolean) => handleSettingChange('questDefaults', 'isOptional', val)} label="Optional by default" />
-                                <ToggleSwitch enabled={formState.questDefaults.requiresApproval} setEnabled={(val: boolean) => handleSettingChange('questDefaults', 'requiresApproval', val)} label="Requires Approval by default" />
+                                <ToggleSwitch enabled={formState.questDefaults.isActive} setEnabled={(val) => handleSettingChange('questDefaults', 'isActive', val)} label="Active by default" />
+                                <ToggleSwitch enabled={formState.questDefaults.isOptional} setEnabled={(val) => handleSettingChange('questDefaults', 'isOptional', val)} label="Optional by default" />
+                                <ToggleSwitch enabled={formState.questDefaults.requiresApproval} setEnabled={(val) => handleSettingChange('questDefaults', 'requiresApproval', val)} label="Requires Approval by default" />
                             </div>
                         </div>
                     </div>
                 </CollapsibleSection>
+
+                 <CollapsibleSection title="Economy & Valuation">
+                    <div className="p-6 space-y-4">
+                        <ToggleSwitch enabled={formState.rewardValuation.enabled} setEnabled={(val) => handleRewardValuationChange('enabled', val)} label="Enable Reward Valuation & Exchange" />
+                        {formState.rewardValuation.enabled && (
+                             <div className="p-4 bg-stone-900/40 rounded-lg space-y-4">
+                                 <Input as="select" label="Anchor Currency (Value = 1)" value={formState.rewardValuation.anchorRewardId} onChange={(e) => handleRewardValuationChange('anchorRewardId', e.target.value)}>
+                                    {currencyRewardTypes.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                                 </Input>
+                                 <h4 className="font-semibold text-stone-200 pt-2 border-t border-stone-700/60">Exchange Rates</h4>
+                                 <p className="text-xs text-stone-400 -mt-2">How much of each reward type is 1 unit of your Anchor Currency worth?</p>
+                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    {nonAnchorRewards.map(reward => (
+                                        <Input
+                                            key={reward.id}
+                                            label={reward.name}
+                                            type="number"
+                                            step="0.01"
+                                            value={formState.rewardValuation.exchangeRates[reward.id] || ''}
+                                            onChange={(e) => handleRateChange(reward.id, e.target.value)}
+                                        />
+                                    ))}
+                                 </div>
+                                 <h4 className="font-semibold text-stone-200 pt-2 border-t border-stone-700/60">Transaction Fees</h4>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <Input label="Currency Exchange Fee (%)" type="number" min="0" value={formState.rewardValuation.currencyExchangeFeePercent} onChange={(e) => handleRewardValuationChange('currencyExchangeFeePercent', parseInt(e.target.value) || 0)} />
+                                    <Input label="XP Exchange Fee (%)" type="number" min="0" value={formState.rewardValuation.xpExchangeFeePercent} onChange={(e) => handleRewardValuationChange('xpExchangeFeePercent', parseInt(e.target.value) || 0)} />
+                                </div>
+                             </div>
+                        )}
+                    </div>
+                </CollapsibleSection>
+                
+                <CollapsibleSection title="Integrations">
+                     <div className="p-6 space-y-4">
+                         <ToggleSwitch enabled={formState.googleCalendar.enabled} setEnabled={(val) => handleSettingChange('googleCalendar', 'enabled', val)} label="Enable Google Calendar Integration" />
+                          {formState.googleCalendar.enabled && (
+                            <div className="p-4 bg-stone-900/40 rounded-lg space-y-4">
+                                <Input label="Google Calendar API Key" value={formState.googleCalendar.apiKey} onChange={(e) => handleSettingChange('googleCalendar', 'apiKey', e.target.value)} />
+                                <Input label="Google Calendar ID" value={formState.googleCalendar.calendarId} onChange={(e) => handleSettingChange('googleCalendar', 'calendarId', e.target.value)} />
+                            </div>
+                          )}
+                    </div>
+                </CollapsibleSection>
+
                 <CollapsibleSection title="Advanced">
                     <div className="p-6 space-y-4">
                         <h4 className="font-semibold text-stone-200 mb-2">Automated Backups</h4>
-                        <ToggleSwitch enabled={formState.automatedBackups.enabled} setEnabled={(val: boolean) => handleSettingChange('automatedBackups', 'enabled', val)} label="Enable Automated Server Backups" />
+                        <ToggleSwitch enabled={formState.automatedBackups.enabled} setEnabled={(val) => handleSettingChange('automatedBackups', 'enabled', val)} label="Enable Automated Server Backups" />
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <Input label="Backup Frequency (Hours)" type="number" min="1" value={formState.automatedBackups.frequencyHours} onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleSettingChange('automatedBackups', 'frequencyHours', parseInt(e.target.value) || 24)} />
-                            <Input label="Max Backups to Keep" type="number" min="1" value={formState.automatedBackups.maxBackups} onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleSettingChange('automatedBackups', 'maxBackups', parseInt(e.target.value) || 7)} />
+                            <Input label="Backup Frequency (Hours)" type="number" min="1" value={formState.automatedBackups.frequencyHours} onChange={(e) => handleSettingChange('automatedBackups', 'frequencyHours', parseInt(e.target.value) || 24)} />
+                            <Input label="Max Backups to Keep" type="number" min="1" value={formState.automatedBackups.maxBackups} onChange={(e) => handleSettingChange('automatedBackups', 'maxBackups', parseInt(e.target.value) || 7)} />
                         </div>
                     </div>
                 </CollapsibleSection>

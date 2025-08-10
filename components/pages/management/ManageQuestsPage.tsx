@@ -1,14 +1,14 @@
 import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import { useAppState } from '../../../context/AppContext';
 import { Quest, QuestType, QuestGroup } from '../../../types';
-import Button from '../../../ui/Button';
-import Card from '../../../ui/Card';
+import Button from '../../user-interface/Button';
+import Card from '../../user-interface/Card';
 import CreateQuestDialog from '../../quests/CreateQuestDialog';
-import ConfirmDialog from '../../../ui/ConfirmDialog';
+import ConfirmDialog from '../../user-interface/ConfirmDialog';
 import QuestIdeaGenerator from '../../quests/QuestIdeaGenerator';
-import { QuestsIcon, EllipsisVerticalIcon } from '../../../ui/Icons';
-import EmptyState from '../../../ui/EmptyState';
-import Input from '../../../ui/Input';
+import { QuestsIcon, EllipsisVerticalIcon } from '../../user-interface/Icons';
+import EmptyState from '../../user-interface/EmptyState';
+import Input from '../../user-interface/Input';
 import BulkEditQuestsDialog from '../../quests/BulkEditQuestsDialog';
 import { useDebounce } from '../../../hooks/useDebounce';
 import { useNotificationsDispatch } from '../../../context/NotificationsContext';
@@ -275,7 +275,7 @@ const ManageQuestsPage: React.FC = () => {
                             <tbody>
                                 {pageQuests.map(quest => (
                                     <tr key={quest.id} className="border-b border-stone-700/40 last:border-b-0">
-                                        <td className="p-4"><input type="checkbox" checked={selectedQuests.includes(quest.id)} onChange={e => handleCheckboxClick(e, quest.id)} className="h-4 w-4 rounded text-emerald-600 bg-stone-700 border-stone-600 focus:ring-emerald-500" /></td>
+                                        <td className="p-4"><input type="checkbox" checked={selectedQuests.includes(quest.id)} onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleCheckboxClick(e, quest.id)} className="h-4 w-4 rounded text-emerald-600 bg-stone-700 border-stone-600 focus:ring-emerald-500" /></td>
                                         <td className="p-4 font-bold">
                                             <button onClick={() => handleEdit(quest)} data-log-id={`manage-quests-edit-title-${quest.id}`} className="hover:underline hover:text-accent transition-colors text-left">
                                                 {quest.title}

@@ -1,19 +1,20 @@
 
+
 import React, { useState, ChangeEvent, ReactNode, useEffect } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { useAuthState, useAuthDispatch } from '../../context/AuthContext';
 import { Role, AppSettings, Terminology, RewardCategory, RewardTypeDefinition, User } from '../../types';
-import Button from '../ui/Button';
-import { ChevronDownIcon } from '../ui/Icons';
-import Input from '../ui/Input';
-import ToggleSwitch from '../ui/ToggleSwitch';
-import ConfirmDialog from '../ui/ConfirmDialog';
+import Button from '../user-interface/Button';
+import { ChevronDownIcon } from '../user-interface/Icons';
+import Input from '../user-interface/Input';
+import ToggleSwitch from '../user-interface/ToggleSwitch';
+import ConfirmDialog from '../user-interface/ConfirmDialog';
 import { INITIAL_SETTINGS } from '../../data/initialData';
-import EmojiPicker from '../ui/EmojiPicker';
+import EmojiPicker from '../user-interface/EmojiPicker';
 import { useNotificationsDispatch } from '../../context/NotificationsContext';
 import { useEconomyState } from '../../context/EconomyContext';
 import { bugLogger } from '../../utils/bugLogger';
-import Card from '../ui/Card';
+import Card from '../user-interface/Card';
 
 
 const CollapsibleSection: React.FC<{ title: string; children: React.ReactNode; defaultOpen?: boolean; onToggle?: (isOpen: boolean) => void; }> = ({ title, children, defaultOpen = false, onToggle }) => {
@@ -196,9 +197,9 @@ export const SettingsPage: React.FC = () => {
                                 <button type="button" onClick={() => setIsEmojiPickerOpen(prev => !prev)} className="w-20 h-14 text-4xl p-1 rounded-md bg-stone-700 hover:bg-stone-600 flex items-center justify-center">
                                     {formState.favicon}
                                 </button>
-                                {isEmojiPickerOpen && <EmojiPicker onSelect={(emoji) => { handleSimpleChange('favicon', emoji); setIsEmojiPickerOpen(false); }} onClose={() => setIsEmojiPickerOpen(false)} />}
+                                {isEmojiPickerOpen && <EmojiPicker onSelect={(emoji: string) => { handleSimpleChange('favicon', emoji); setIsEmojiPickerOpen(false); }} onClose={() => setIsEmojiPickerOpen(false)} />}
                              </div>
-                             <Input label="Default Theme" as="select" value={formState.theme} onChange={e => handleSimpleChange('theme', e.target.value)}>
+                             <Input label="Default Theme" as="select" value={formState.theme} onChange={(e: React.ChangeEvent<HTMLSelectElement>) => handleSimpleChange('theme', e.target.value)}>
                                  {/* Assuming themes are in AppState */}
                                  {useAppState().themes.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
                             </Input>
@@ -207,22 +208,22 @@ export const SettingsPage: React.FC = () => {
                 </CollapsibleSection>
                 <CollapsibleSection title="Security">
                     <div className="p-6 space-y-4">
-                         <ToggleSwitch enabled={formState.security.requirePinForUsers} setEnabled={val => handleSettingChange('security', 'requirePinForUsers', val)} label="Require PIN for user switching" />
-                         <ToggleSwitch enabled={formState.security.requirePasswordForAdmin} setEnabled={val => handleSettingChange('security', 'requirePasswordForAdmin', val)} label="Require Password for Donegeon Masters & Gatekeepers" />
-                         <ToggleSwitch enabled={formState.security.allowProfileEditing} setEnabled={val => handleSettingChange('security', 'allowProfileEditing', val)} label="Allow users to edit their own profiles" />
+                         <ToggleSwitch enabled={formState.security.requirePinForUsers} setEnabled={(val: boolean) => handleSettingChange('security', 'requirePinForUsers', val)} label="Require PIN for user switching" />
+                         <ToggleSwitch enabled={formState.security.requirePasswordForAdmin} setEnabled={(val: boolean) => handleSettingChange('security', 'requirePasswordForAdmin', val)} label="Require Password for Donegeon Masters & Gatekeepers" />
+                         <ToggleSwitch enabled={formState.security.allowProfileEditing} setEnabled={(val: boolean) => handleSettingChange('security', 'allowProfileEditing', val)} label="Allow users to edit their own profiles" />
                     </div>
                 </CollapsibleSection>
                  <CollapsibleSection title="Game Rules">
                     <div className="p-6 space-y-4">
-                        <ToggleSwitch enabled={formState.forgivingSetbacks} setEnabled={val => handleSimpleChange('forgivingSetbacks', val)} label="Forgiving Setbacks" />
+                        <ToggleSwitch enabled={formState.forgivingSetbacks} setEnabled={(val: boolean) => handleSimpleChange('forgivingSetbacks', val)} label="Forgiving Setbacks" />
                         <p className="text-xs text-stone-400 -mt-3 ml-12">If ON, setbacks are only applied if a quest is incomplete at the end of the day. If OFF, they are applied the moment a quest becomes late.</p>
                         
                         <div className="pt-4 border-t border-stone-700/60">
                             <h4 className="font-semibold text-stone-200 mb-2">Quest Defaults</h4>
                             <div className="flex flex-col sm:flex-row gap-4">
-                                <ToggleSwitch enabled={formState.questDefaults.isActive} setEnabled={val => handleSettingChange('questDefaults', 'isActive', val)} label="Active by default" />
-                                <ToggleSwitch enabled={formState.questDefaults.isOptional} setEnabled={val => handleSettingChange('questDefaults', 'isOptional', val)} label="Optional by default" />
-                                <ToggleSwitch enabled={formState.questDefaults.requiresApproval} setEnabled={val => handleSettingChange('questDefaults', 'requiresApproval', val)} label="Requires Approval by default" />
+                                <ToggleSwitch enabled={formState.questDefaults.isActive} setEnabled={(val: boolean) => handleSettingChange('questDefaults', 'isActive', val)} label="Active by default" />
+                                <ToggleSwitch enabled={formState.questDefaults.isOptional} setEnabled={(val: boolean) => handleSettingChange('questDefaults', 'isOptional', val)} label="Optional by default" />
+                                <ToggleSwitch enabled={formState.questDefaults.requiresApproval} setEnabled={(val: boolean) => handleSettingChange('questDefaults', 'requiresApproval', val)} label="Requires Approval by default" />
                             </div>
                         </div>
                     </div>
@@ -230,10 +231,10 @@ export const SettingsPage: React.FC = () => {
                 <CollapsibleSection title="Advanced">
                     <div className="p-6 space-y-4">
                         <h4 className="font-semibold text-stone-200 mb-2">Automated Backups</h4>
-                        <ToggleSwitch enabled={formState.automatedBackups.enabled} setEnabled={val => handleSettingChange('automatedBackups', 'enabled', val)} label="Enable Automated Server Backups" />
+                        <ToggleSwitch enabled={formState.automatedBackups.enabled} setEnabled={(val: boolean) => handleSettingChange('automatedBackups', 'enabled', val)} label="Enable Automated Server Backups" />
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <Input label="Backup Frequency (Hours)" type="number" min="1" value={formState.automatedBackups.frequencyHours} onChange={e => handleSettingChange('automatedBackups', 'frequencyHours', parseInt(e.target.value) || 24)} />
-                            <Input label="Max Backups to Keep" type="number" min="1" value={formState.automatedBackups.maxBackups} onChange={e => handleSettingChange('automatedBackups', 'maxBackups', parseInt(e.target.value) || 7)} />
+                            <Input label="Backup Frequency (Hours)" type="number" min="1" value={formState.automatedBackups.frequencyHours} onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleSettingChange('automatedBackups', 'frequencyHours', parseInt(e.target.value) || 24)} />
+                            <Input label="Max Backups to Keep" type="number" min="1" value={formState.automatedBackups.maxBackups} onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleSettingChange('automatedBackups', 'maxBackups', parseInt(e.target.value) || 7)} />
                         </div>
                     </div>
                 </CollapsibleSection>

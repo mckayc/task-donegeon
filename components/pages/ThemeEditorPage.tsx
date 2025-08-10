@@ -1,14 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { ThemeDefinition, ThemeStyle } from '../../types';
-import Button from '../ui/Button';
-import Card from '../ui/Card';
-import Input from '../ui/Input';
+import Button from '../user-interface/Button';
+import Card from '../user-interface/Card';
+import Input from '../user-interface/Input';
 import { getContrast, getWcagRating, hslValuesToCss, parseHslString, hexToHsl, rgbToHex, hslToRgb } from '../../utils/colors';
-import { TrophyIcon, RankIcon } from '../ui/Icons';
+import { TrophyIcon, RankIcon } from '../user-interface/Icons';
 import ThemeIdeaGenerator from '../quests/ThemeIdeaGenerator';
-import ConfirmDialog from '../ui/ConfirmDialog';
-import SimpleColorPicker from '../ui/SimpleColorPicker';
+import ConfirmDialog from '../user-interface/ConfirmDialog';
+import SimpleColorPicker from '../user-interface/SimpleColorPicker';
 import { useNotificationsDispatch } from '../../context/NotificationsContext';
 
 const FONT_OPTIONS = [
@@ -240,7 +240,7 @@ const ThemeEditorPage: React.FC = () => {
                         <div>
                             {activeTab === 'general' && (
                                 <div className="space-y-4">
-                                    <Input label="Theme Name" value={formData.name} onChange={e => setFormData(p => p ? ({...p, name: e.target.value}) : null)} required disabled={!formData.isCustom} />
+                                    <Input label="Theme Name" value={formData.name} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData(p => p ? ({...p, name: e.target.value}) : null)} required disabled={!formData.isCustom} />
                                     {isAiAvailable && (
                                         <Button onClick={() => setIsGeneratorOpen(true)} variant="secondary">
                                             Generate Theme with AI
@@ -250,72 +250,72 @@ const ThemeEditorPage: React.FC = () => {
                             )}
                             {activeTab === 'fonts' && (
                                 <div className="space-y-4">
-                                    <Input as="select" label="Display Font" value={formData.styles['--font-display']} onChange={e => handleStyleChange('--font-display', e.target.value)}>
+                                    <Input as="select" label="Display Font" value={formData.styles['--font-display']} onChange={(e: React.ChangeEvent<HTMLSelectElement>) => handleStyleChange('--font-display', e.target.value)}>
                                         {FONT_OPTIONS.map(f => <option key={f} value={f}>{f.split(',')[0].replace(/'/g, '')}</option>)}
                                     </Input>
-                                    <Input as="select" label="Body Font" value={formData.styles['--font-body']} onChange={e => handleStyleChange('--font-body', e.target.value)}>
+                                    <Input as="select" label="Body Font" value={formData.styles['--font-body']} onChange={(e: React.ChangeEvent<HTMLSelectElement>) => handleStyleChange('--font-body', e.target.value)}>
                                         {FONT_OPTIONS.map(f => <option key={f} value={f}>{f.split(',')[0].replace(/'/g, '')}</option>)}
                                     </Input>
-                                     <Input as="select" label="Label Font" value={formData.styles['--font-label']} onChange={e => handleStyleChange('--font-label', e.target.value)}>
+                                     <Input as="select" label="Label Font" value={formData.styles['--font-label']} onChange={(e: React.ChangeEvent<HTMLSelectElement>) => handleStyleChange('--font-label', e.target.value)}>
                                         {FONT_OPTIONS.map(f => <option key={f} value={f}>{f.split(',')[0].replace(/'/g, '')}</option>)}
                                     </Input>
-                                     <Input as="select" label="Span Font (Optional)" value={formData.styles['--font-span'] || ''} onChange={e => handleStyleChange('--font-span', e.target.value)}>
+                                     <Input as="select" label="Span Font (Optional)" value={formData.styles['--font-span'] || ''} onChange={(e: React.ChangeEvent<HTMLSelectElement>) => handleStyleChange('--font-span', e.target.value)}>
                                         <option value="">-- Inherit from Body --</option>
                                         {FONT_OPTIONS.map(f => <option key={f} value={f}>{f.split(',')[0].replace(/'/g, '')}</option>)}
                                     </Input>
                                     <div>
                                         <label className="flex justify-between text-sm font-medium mb-1">H1 Font Size <span>({formData.styles['--font-size-h1']})</span></label>
-                                        <input type="range" min="1.5" max="4" step="0.1" value={parseFloat(formData.styles['--font-size-h1'])} onChange={e => handleStyleChange('--font-size-h1', `${e.target.value}rem`)} className="w-full h-2 bg-stone-700 rounded-lg appearance-none cursor-pointer" />
+                                        <input type="range" min="1.5" max="4" step="0.1" value={parseFloat(formData.styles['--font-size-h1'])} onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleStyleChange('--font-size-h1', `${e.target.value}rem`)} className="w-full h-2 bg-stone-700 rounded-lg appearance-none cursor-pointer" />
                                     </div>
                                      <div>
                                         <label className="flex justify-between text-sm font-medium mb-1">H2 Font Size <span>({formData.styles['--font-size-h2']})</span></label>
-                                        <input type="range" min="1.25" max="3.5" step="0.1" value={parseFloat(formData.styles['--font-size-h2'])} onChange={e => handleStyleChange('--font-size-h2', `${e.target.value}rem`)} className="w-full h-2 bg-stone-700 rounded-lg appearance-none cursor-pointer" />
+                                        <input type="range" min="1.25" max="3.5" step="0.1" value={parseFloat(formData.styles['--font-size-h2'])} onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleStyleChange('--font-size-h2', `${e.target.value}rem`)} className="w-full h-2 bg-stone-700 rounded-lg appearance-none cursor-pointer" />
                                     </div>
                                     <div>
                                         <label className="flex justify-between text-sm font-medium mb-1">H3 Font Size <span>({formData.styles['--font-size-h3']})</span></label>
-                                        <input type="range" min="1" max="3" step="0.1" value={parseFloat(formData.styles['--font-size-h3'])} onChange={e => handleStyleChange('--font-size-h3', `${e.target.value}rem`)} className="w-full h-2 bg-stone-700 rounded-lg appearance-none cursor-pointer" />
+                                        <input type="range" min="1" max="3" step="0.1" value={parseFloat(formData.styles['--font-size-h3'])} onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleStyleChange('--font-size-h3', `${e.target.value}rem`)} className="w-full h-2 bg-stone-700 rounded-lg appearance-none cursor-pointer" />
                                     </div>
                                     <div>
                                         <label className="flex justify-between text-sm font-medium mb-1">Body Font Size <span>({formData.styles['--font-size-body']})</span></label>
-                                        <input type="range" min="0.8" max="1.2" step="0.05" value={parseFloat(formData.styles['--font-size-body'])} onChange={e => handleStyleChange('--font-size-body', `${e.target.value}rem`)} className="w-full h-2 bg-stone-700 rounded-lg appearance-none cursor-pointer" />
+                                        <input type="range" min="0.8" max="1.2" step="0.05" value={parseFloat(formData.styles['--font-size-body'])} onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleStyleChange('--font-size-body', `${e.target.value}rem`)} className="w-full h-2 bg-stone-700 rounded-lg appearance-none cursor-pointer" />
                                     </div>
                                     <div>
                                         <label className="flex justify-between text-sm font-medium mb-1">Label Font Size <span>({formData.styles['--font-size-label']})</span></label>
-                                        <input type="range" min="0.7" max="1.1" step="0.05" value={parseFloat(formData.styles['--font-size-label'])} onChange={e => handleStyleChange('--font-size-label', `${e.target.value}rem`)} className="w-full h-2 bg-stone-700 rounded-lg appearance-none cursor-pointer" />
+                                        <input type="range" min="0.7" max="1.1" step="0.05" value={parseFloat(formData.styles['--font-size-label'])} onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleStyleChange('--font-size-label', `${e.target.value}rem`)} className="w-full h-2 bg-stone-700 rounded-lg appearance-none cursor-pointer" />
                                     </div>
                                      <div>
                                         <label className="flex justify-between text-sm font-medium mb-1">Span Font Size <span>({formData.styles['--font-size-span'] || '1rem'})</span></label>
-                                        <input type="range" min="0.7" max="1.1" step="0.05" value={parseFloat(formData.styles['--font-size-span'] || '1')} onChange={e => handleStyleChange('--font-size-span', `${e.target.value}rem`)} className="w-full h-2 bg-stone-700 rounded-lg appearance-none cursor-pointer" />
+                                        <input type="range" min="0.7" max="1.1" step="0.05" value={parseFloat(formData.styles['--font-size-span'] || '1')} onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleStyleChange('--font-size-span', `${e.target.value}rem`)} className="w-full h-2 bg-stone-700 rounded-lg appearance-none cursor-pointer" />
                                     </div>
                                 </div>
                             )}
                              {activeTab === 'colors' && (
                                 <div className="space-y-4">
                                     <div className="grid grid-cols-2 gap-4">
-                                        <SimpleColorPicker label="Primary Background" hslValue={formData.styles['--color-bg-primary-hsl']} onChange={v => handleStyleChange('--color-bg-primary-hsl', v)} />
-                                        <SimpleColorPicker label="Secondary Background" hslValue={formData.styles['--color-bg-secondary-hsl']} onChange={v => handleStyleChange('--color-bg-secondary-hsl', v)} />
-                                        <SimpleColorPicker label="Tertiary Background" hslValue={formData.styles['--color-bg-tertiary-hsl']} onChange={v => handleStyleChange('--color-bg-tertiary-hsl', v)} />
-                                        <SimpleColorPicker label="Primary Text" hslValue={formData.styles['--color-text-primary-hsl']} onChange={v => handleStyleChange('--color-text-primary-hsl', v)} />
-                                        <SimpleColorPicker label="Secondary Text" hslValue={formData.styles['--color-text-secondary-hsl']} onChange={v => handleStyleChange('--color-text-secondary-hsl', v)} />
-                                        <SimpleColorPicker label="Border" hslValue={formData.styles['--color-border-hsl']} onChange={v => handleStyleChange('--color-border-hsl', v)} />
+                                        <SimpleColorPicker label="Primary Background" hslValue={formData.styles['--color-bg-primary-hsl']} onChange={(v: string) => handleStyleChange('--color-bg-primary-hsl', v)} />
+                                        <SimpleColorPicker label="Secondary Background" hslValue={formData.styles['--color-bg-secondary-hsl']} onChange={(v: string) => handleStyleChange('--color-bg-secondary-hsl', v)} />
+                                        <SimpleColorPicker label="Tertiary Background" hslValue={formData.styles['--color-bg-tertiary-hsl']} onChange={(v: string) => handleStyleChange('--color-bg-tertiary-hsl', v)} />
+                                        <SimpleColorPicker label="Primary Text" hslValue={formData.styles['--color-text-primary-hsl']} onChange={(v: string) => handleStyleChange('--color-text-primary-hsl', v)} />
+                                        <SimpleColorPicker label="Secondary Text" hslValue={formData.styles['--color-text-secondary-hsl']} onChange={(v: string) => handleStyleChange('--color-text-secondary-hsl', v)} />
+                                        <SimpleColorPicker label="Border" hslValue={formData.styles['--color-border-hsl']} onChange={(v: string) => handleStyleChange('--color-border-hsl', v)} />
                                     </div>
                                      <div className="pt-4 mt-4 border-t border-stone-700/60 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                                         <SimpleColorPicker label="Primary/Button" hslValue={`hsl(${formData.styles['--color-primary-hue']} ${formData.styles['--color-primary-saturation']} ${formData.styles['--color-primary-lightness']})`} 
-                                            onChange={v => {
+                                            onChange={(v: string) => {
                                                 const {h, s, l} = parseHslString(v);
                                                 handleHslPartChange('primary', 'hue', String(h));
                                                 handleHslPartChange('primary', 'saturation', `${s}%`);
                                                 handleHslPartChange('primary', 'lightness', `${l}%`);
                                             }} />
                                         <SimpleColorPicker label="Accent" hslValue={`hsl(${formData.styles['--color-accent-hue']} ${formData.styles['--color-accent-saturation']} ${formData.styles['--color-accent-lightness']})`} 
-                                            onChange={v => {
+                                            onChange={(v: string) => {
                                                 const {h, s, l} = parseHslString(v);
                                                 handleHslPartChange('accent', 'hue', String(h));
                                                 handleHslPartChange('accent', 'saturation', `${s}%`);
                                                 handleHslPartChange('accent', 'lightness', `${l}%`);
                                             }} />
                                         <SimpleColorPicker label="Accent Light" hslValue={`hsl(${formData.styles['--color-accent-light-hue']} ${formData.styles['--color-accent-light-saturation']} ${formData.styles['--color-accent-light-lightness']})`} 
-                                            onChange={v => {
+                                            onChange={(v: string) => {
                                                 const {h, s, l} = parseHslString(v);
                                                 handleHslPartChange('accent-light', 'hue', String(h));
                                                 handleHslPartChange('accent-light', 'saturation', `${s}%`);
@@ -325,12 +325,12 @@ const ThemeEditorPage: React.FC = () => {
                                     <div className="pt-4 mt-4 border-t border-stone-700/60">
                                         <h4 className="font-semibold text-stone-200 mb-2">Text Colors</h4>
                                         <div className="grid grid-cols-2 gap-4">
-                                            <SimpleColorPicker label="H1 Color" hslValue={formData.styles['--color-h1'] || formData.styles['--color-text-primary-hsl']} onChange={v => handleStyleChange('--color-h1', v)} />
-                                            <SimpleColorPicker label="H2 Color" hslValue={formData.styles['--color-h2'] || formData.styles['--color-text-primary-hsl']} onChange={v => handleStyleChange('--color-h2', v)} />
-                                            <SimpleColorPicker label="H3 Color" hslValue={formData.styles['--color-h3'] || formData.styles['--color-text-primary-hsl']} onChange={v => handleStyleChange('--color-h3', v)} />
-                                            <SimpleColorPicker label="Body Text Color" hslValue={formData.styles['--color-body'] || formData.styles['--color-text-primary-hsl']} onChange={v => handleStyleChange('--color-body', v)} />
-                                            <SimpleColorPicker label="Label Color" hslValue={formData.styles['--color-label'] || formData.styles['--color-text-secondary-hsl']} onChange={v => handleStyleChange('--color-label', v)} />
-                                            <SimpleColorPicker label="Span Color" hslValue={formData.styles['--color-span'] || formData.styles['--color-text-secondary-hsl']} onChange={v => handleStyleChange('--color-span', v)} />
+                                            <SimpleColorPicker label="H1 Color" hslValue={formData.styles['--color-h1'] || formData.styles['--color-text-primary-hsl']} onChange={(v: string) => handleStyleChange('--color-h1', v)} />
+                                            <SimpleColorPicker label="H2 Color" hslValue={formData.styles['--color-h2'] || formData.styles['--color-text-primary-hsl']} onChange={(v: string) => handleStyleChange('--color-h2', v)} />
+                                            <SimpleColorPicker label="H3 Color" hslValue={formData.styles['--color-h3'] || formData.styles['--color-text-primary-hsl']} onChange={(v: string) => handleStyleChange('--color-h3', v)} />
+                                            <SimpleColorPicker label="Body Text Color" hslValue={formData.styles['--color-body'] || formData.styles['--color-text-primary-hsl']} onChange={(v: string) => handleStyleChange('--color-body', v)} />
+                                            <SimpleColorPicker label="Label Color" hslValue={formData.styles['--color-label'] || formData.styles['--color-text-secondary-hsl']} onChange={(v: string) => handleStyleChange('--color-label', v)} />
+                                            <SimpleColorPicker label="Span Color" hslValue={formData.styles['--color-span'] || formData.styles['--color-text-secondary-hsl']} onChange={(v: string) => handleStyleChange('--color-span', v)} />
                                         </div>
                                     </div>
                                 </div>

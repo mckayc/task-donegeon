@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { useNotificationsDispatch } from '../../context/NotificationsContext';
-import Button from '../ui/Button';
-import Input from '../ui/Input';
+import Button from '../user-interface/Button';
+import Input from '../user-interface/Input';
 
 const AiImagePromptHelper: React.FC = () => {
     const { addNotification } = useNotificationsDispatch();

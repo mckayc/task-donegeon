@@ -6,7 +6,7 @@ import FirstRunWizard from './components/auth/FirstRunWizard';
 import MainLayout from './components/layout/MainLayout';
 import SwitchUser from './components/auth/SwitchUser';
 import AuthPage from './components/auth/AuthPage';
-import NotificationContainer from './components/ui/NotificationContainer';
+import NotificationContainer from './components/user-interface/NotificationContainer';
 import AppLockScreen from './components/auth/AppLockScreen';
 import OnboardingWizard from './components/auth/OnboardingWizard';
 import SharedLayout from './components/layout/SharedLayout';

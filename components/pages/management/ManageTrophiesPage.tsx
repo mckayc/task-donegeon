@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { Trophy } from '../../../types';
 import Button from '../../ui/Button';
@@ -60,6 +59,8 @@ const ManageTrophiesPage: React.FC = () => {
                 setSelectedTrophies(prev => prev.filter(id => !deletingIds.includes(id)));
                 setDeletingIds([]);
             });
+        } else {
+            setDeletingIds([]);
         }
     };
     

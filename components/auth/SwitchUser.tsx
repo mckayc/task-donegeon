@@ -2,10 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { useAuthState, useAuthDispatch } from '../../context/AuthContext';
 import { useAppState } from '../../context/AppContext';
 import { User, Role } from '../../types';
-import Button from '../ui/Button';
-import Keypad from '../ui/Keypad';
-import Avatar from '../ui/Avatar';
-import Input from '../ui/Input';
+import Button from '../user-interface/Button';
+import Keypad from '../user-interface/Keypad';
+import Avatar from '../user-interface/Avatar';
+import Input from '../user-interface/Input';
 
 const SwitchUser: React.FC = () => {
     const { users, currentUser: anyCurrentUser, targetedUserForLogin } = useAuthState();

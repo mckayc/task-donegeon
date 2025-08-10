@@ -1,12 +1,12 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { Page, Role, AppMode, User } from '../../types';
-import Avatar from '../ui/Avatar';
+import Avatar from '../user-interface/Avatar';
 import { useAppState } from '../../context/AppContext';
 import { useAuthState, useAuthDispatch } from '../../context/AuthContext';
 import { useUIState, useUIDispatch } from '../../context/UIStateContext';
-import FullscreenToggle from '../ui/FullscreenToggle';
-import { ChevronDownIcon } from '../ui/Icons';
-import RewardDisplay from '../ui/RewardDisplay';
+import FullscreenToggle from '../user-interface/FullscreenToggle';
+import { ChevronDownIcon } from '../user-interface/Icons';
+import RewardDisplay from '../user-interface/RewardDisplay';
 
 const Clock: React.FC = () => {
     const [time, setTime] = useState(new Date());

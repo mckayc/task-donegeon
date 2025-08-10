@@ -1,14 +1,14 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { BugReport, BugReportStatus } from '../../types';
-import Card from '../ui/Card';
-import Button from '../ui/Button';
+import Card from '../user-interface/Card';
+import Button from '../user-interface/Button';
 import { useNotificationsDispatch } from '../../context/NotificationsContext';
-import Input from '../ui/Input';
-import ConfirmDialog from '../ui/ConfirmDialog';
+import Input from '../user-interface/Input';
+import ConfirmDialog from '../user-interface/ConfirmDialog';
 import BugDetailDialog from './BugDetailDialog';
 import { bugLogger } from '../../utils/bugLogger';
-import { EllipsisVerticalIcon } from '../ui/Icons';
+import { EllipsisVerticalIcon } from '../user-interface/Icons';
 import { useShiftSelect } from '../../hooks/useShiftSelect';
 
 const BugTrackingPage: React.FC = () => {

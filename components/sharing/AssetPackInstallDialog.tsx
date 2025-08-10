@@ -1,9 +1,9 @@
 import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react';
 import { useAppState } from '../../context/AppContext';
 import { AssetPack, ImportResolution, ShareableAssetType, Terminology, Role, UserTemplate, Quest } from '../../types';
-import Button from '../ui/Button';
-import Input from '../ui/Input';
-import UserMultiSelect from '../ui/UserMultiSelect';
+import Button from '../user-interface/Button';
+import Input from '../user-interface/Input';
+import UserMultiSelect from '../user-interface/UserMultiSelect';
 import { useAuthState } from '../../context/AuthContext';
 import { bugLogger } from '../../utils/bugLogger';
 

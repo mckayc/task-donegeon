@@ -41,7 +41,7 @@ import { useAuthState } from '../../context/AuthContext';
 import { useNotificationsDispatch } from '../../context/NotificationsContext';
 import { useUIState, useUIDispatch } from '../../context/UIStateContext';
 import ChatPanel from '../chat/ChatPanel';
-import LoginNotificationPopup from '../ui/LoginNotificationPopup';
+import LoginNotificationPopup from '../user-interface/LoginNotificationPopup';
 import ManageEventsPage from '../pages/management/ManageEventsPage';
 import BugTrackingPage from '../dev/BugTrackingPage';
 

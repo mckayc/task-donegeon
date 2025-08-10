@@ -1,8 +1,8 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
-import Button from '../ui/Button';
-import Input from '../ui/Input';
+import Button from '../user-interface/Button';
+import Input from '../user-interface/Input';
 import { useDeveloper } from '../../context/DeveloperContext';
-import { ChevronDownIcon, ChevronUpIcon } from '../ui/Icons';
+import { ChevronDownIcon, ChevronUpIcon } from '../user-interface/Icons';
 import { BugReportType } from '../../types';
 import { useAppState } from '../../context/AppContext';
 

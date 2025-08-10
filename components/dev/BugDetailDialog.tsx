@@ -2,14 +2,14 @@ import React, { useState, useMemo, ReactNode } from 'react';
 import { BugReport, BugReportStatus, BugReportLogEntry } from '../../types';
 import { useAppDispatch } from '../../context/AppContext';
 import { useNotificationsDispatch } from '../../context/NotificationsContext';
-import Button from '../ui/Button';
-import Input from '../ui/Input';
-import TagInput from '../ui/TagInput';
+import Button from '../user-interface/Button';
+import Input from '../user-interface/Input';
+import TagInput from '../user-interface/TagInput';
 import CreateQuestDialog from '../quests/CreateQuestDialog';
 import { bugLogger } from '../../utils/bugLogger';
 import { useAuthState } from '../../context/AuthContext';
-import Avatar from '../ui/Avatar';
-import { ZapIcon, PencilIcon, CompassIcon, ToggleLeftIcon, MousePointerClickIcon, MessageSquareIcon } from '../ui/Icons';
+import Avatar from '../user-interface/Avatar';
+import { ZapIcon, PencilIcon, CompassIcon, ToggleLeftIcon, MousePointerClickIcon, MessageSquareIcon } from '../user-interface/Icons';
 import { useShiftSelect } from '../../hooks/useShiftSelect';
 
 interface BugDetailDialogProps {

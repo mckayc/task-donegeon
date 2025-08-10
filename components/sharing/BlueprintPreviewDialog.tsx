@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { useAppState } from '../../context/AppContext';
 import { AssetPack, ImportResolution, ShareableAssetType, Terminology } from '../../types';
-import Button from '../ui/Button';
-import Input from '../ui/Input';
+import Button from '../user-interface/Button';
+import Input from '../user-interface/Input';
 
 interface BlueprintPreviewDialogProps {
   blueprint: AssetPack;

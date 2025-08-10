@@ -1,7 +1,7 @@
 import React from 'react';
 import { RewardCategory, RewardItem } from '../../types';
-import Input from '../ui/Input';
-import Button from '../ui/Button';
+import Input from '../user-interface/Input';
+import Button from '../user-interface/Button';
 import { useEconomyState } from '../../context/EconomyContext';
 import { useAnchorEquivalent } from '../../hooks/useRewardValue';
 

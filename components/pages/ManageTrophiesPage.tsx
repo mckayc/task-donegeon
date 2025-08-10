@@ -1,13 +1,13 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
-import { Trophy } from '../../../types';
-import Button from '../../ui/Button';
-import Card from '../../ui/Card';
-import EditTrophyDialog from '../../settings/EditTrophyDialog';
-import ConfirmDialog from '../../ui/ConfirmDialog';
+import { Trophy } from '../../types';
+import Button from '../user-interface/Button';
+import Card from '../user-interface/Card';
+import EditTrophyDialog from '../settings/EditTrophyDialog';
+import ConfirmDialog from '../user-interface/ConfirmDialog';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
-import EmptyState from '../../ui/EmptyState';
+import EmptyState from '../user-interface/EmptyState';
 import TrophyIdeaGenerator from '../quests/TrophyIdeaGenerator';
-import { TrophyIcon, EllipsisVerticalIcon } from '../../ui/Icons';
+import { TrophyIcon, EllipsisVerticalIcon } from '../user-interface/Icons';
 import { useShiftSelect } from '../../hooks/useShiftSelect';
 
 const ManageTrophiesPage: React.FC = () => {
@@ -73,7 +73,7 @@ const ManageTrophiesPage: React.FC = () => {
     
     const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.checked) {
-            setSelectedTrophies(trophies.map(t => t.id));
+            setSelectedTrophies(trophies.map((t: Trophy) => t.id));
         } else {
             setSelectedTrophies([]);
         }
@@ -117,7 +117,7 @@ const ManageTrophiesPage: React.FC = () => {
                                 </tr>
                             </thead>
                             <tbody>
-                                {trophies.map(trophy => (
+                                {trophies.map((trophy: Trophy) => (
                                     <tr key={trophy.id} className="border-b border-stone-700/40 last:border-b-0">
                                         <td className="p-4"><input type="checkbox" checked={selectedTrophies.includes(trophy.id)} onChange={e => handleCheckboxClick(e, trophy.id)} className="h-4 w-4 rounded text-emerald-600 bg-stone-700 border-stone-600 focus:ring-emerald-500" /></td>
                                         <td className="p-4 text-2xl">{trophy.icon}</td>

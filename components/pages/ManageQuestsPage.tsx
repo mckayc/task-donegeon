@@ -1,14 +1,14 @@
 import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import { useAppState } from '../../context/AppContext';
 import { Quest, QuestType, QuestGroup } from '../../types';
-import Button from '../ui/Button';
-import Card from '../ui/Card';
+import Button from '../user-interface/Button';
+import Card from '../user-interface/Card';
 import CreateQuestDialog from '../quests/CreateQuestDialog';
-import ConfirmDialog from '../ui/ConfirmDialog';
+import ConfirmDialog from '../user-interface/ConfirmDialog';
 import QuestIdeaGenerator from '../quests/QuestIdeaGenerator';
-import { QuestsIcon, EllipsisVerticalIcon } from '../ui/Icons';
-import EmptyState from '../ui/EmptyState';
-import Input from '../ui/Input';
+import { QuestsIcon, EllipsisVerticalIcon } from '../user-interface/Icons';
+import EmptyState from '../user-interface/EmptyState';
+import Input from '../user-interface/Input';
 import BulkEditQuestsDialog from '../quests/BulkEditQuestsDialog';
 import { useDebounce } from '../../hooks/useDebounce';
 import { useNotificationsDispatch } from '../../context/NotificationsContext';
@@ -243,8 +243,8 @@ const ManageQuestsPage: React.FC = () => {
                 </div>
 
                  <div className="flex flex-wrap gap-4 mb-4">
-                    <Input placeholder="Search quests..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="max-w-xs" />
-                    <Input as="select" value={sortBy} onChange={e => setSortBy(e.target.value as any)}>
+                    <Input placeholder="Search quests..." value={searchTerm} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchTerm(e.target.value)} className="max-w-xs" />
+                    <Input as="select" value={sortBy} onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setSortBy(e.target.value as any)}>
                         <option value="title-asc">Title (A-Z)</option>
                         <option value="title-desc">Title (Z-A)</option>
                         <option value="status-asc">Status (Inactive first)</option>

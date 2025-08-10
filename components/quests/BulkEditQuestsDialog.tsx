@@ -2,10 +2,10 @@ import React, { useState } from 'react';
 import { useQuestState } from '../../context/QuestContext';
 import { useAuthState } from '../../context/AuthContext';
 import { BulkQuestUpdates } from '../../types';
-import Button from '../ui/Button';
-import Input from '../ui/Input';
-import TagInput from '../ui/TagInput';
-import UserMultiSelect from '../ui/UserMultiSelect';
+import Button from '../user-interface/Button';
+import Input from '../user-interface/Input';
+import TagInput from '../user-interface/TagInput';
+import UserMultiSelect from '../user-interface/UserMultiSelect';
 
 interface BulkEditQuestsDialogProps {
     questIds: string[];
@@ -59,22 +59,22 @@ const BulkEditQuestsDialog: React.FC<BulkEditQuestsDialogProps> = ({ questIds, o
                 </div>
                 <form id="quest-dialog-form" onSubmit={handleSubmit} className="flex-1 space-y-4 p-8 overflow-y-auto scrollbar-hide">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <Input as="select" label="Status" value={status} onChange={e => setStatus(e.target.value as TriState)}>
+                        <Input as="select" label="Status" value={status} onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setStatus(e.target.value as TriState)}>
                             <option value="no-change">No Change</option>
                             <option value="true">Active</option>
                             <option value="false">Inactive</option>
                         </Input>
-                        <Input as="select" label="Optional" value={isOptional} onChange={e => setIsOptional(e.target.value as TriState)}>
+                        <Input as="select" label="Optional" value={isOptional} onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setIsOptional(e.target.value as TriState)}>
                             <option value="no-change">No Change</option>
                             <option value="true">Yes</option>
                             <option value="false">No</option>
                         </Input>
-                        <Input as="select" label="Requires Approval" value={requiresApproval} onChange={e => setRequiresApproval(e.target.value as TriState)}>
+                        <Input as="select" label="Requires Approval" value={requiresApproval} onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setRequiresApproval(e.target.value as TriState)}>
                             <option value="no-change">No Change</option>
                             <option value="true">Yes</option>
                             <option value="false">No</option>
                         </Input>
-                        <Input as="select" label="Quest Group" value={groupId} onChange={e => setGroupId(e.target.value)}>
+                        <Input as="select" label="Quest Group" value={groupId} onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setGroupId(e.target.value)}>
                             <option value="no-change">No Change</option>
                             <option value="__uncategorized__">Uncategorized</option>
                             {questGroups.map(g => <option key={g.id} value={g.id}>{g.name}</option>)}

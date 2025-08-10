@@ -75,12 +75,12 @@ export const BugDetailDialog: React.FC<BugDetailDialogProps> = ({ report, onClos
             addNotification({ type: 'success', message: 'Log content copied to clipboard!' });
 
             const existingTags = report.tags || [];
-            const submissionTagPrefix = 'Copy #';
-            let submissionTag = existingTags.find(t => t.startsWith(submissionTagPrefix));
+            const copyTagPrefix = 'Copy #';
+            const lastCopyTag = existingTags.find(t => t.startsWith(copyTagPrefix));
             let count = 1;
 
-            if (submissionTag) {
-                const match = submissionTag.match(/Copy #(\d+)/);
+            if (lastCopyTag) {
+                const match = lastCopyTag.match(/Copy #(\d+)/);
                 if (match) {
                     count = parseInt(match[1], 10) + 1;
                 }
@@ -96,11 +96,11 @@ export const BugDetailDialog: React.FC<BugDetailDialogProps> = ({ report, onClos
             hours = hours ? hours : 12; // the hour '0' should be '12'
             const minutes = String(now.getMinutes()).padStart(2, '0');
             const newTimestamp = `${year}-${month}-${day} ${hours}:${minutes} ${ampm}`;
+            
+            const newCopyTag = `${copyTagPrefix}${count}: ${newTimestamp}`;
 
-            const newSubmissionTag = `${submissionTagPrefix}${count}: ${newTimestamp}`;
-
-            const otherTags = existingTags.filter(t => !t.startsWith(submissionTagPrefix));
-            const newTags = [...otherTags, newSubmissionTag];
+            const otherTags = existingTags.filter(t => !t.startsWith(copyTagPrefix));
+            const newTags = [...otherTags, newCopyTag];
             
             updateBugReport(report.id, { tags: newTags });
 

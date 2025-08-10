@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import { useAppState, useAppDispatch } from '../../../context/AppContext';
 import { GameAsset } from '../../../types';
@@ -45,7 +44,7 @@ const ManageItemsPage: React.FC = () => {
     const [isUploading, setIsUploading] = useState(false);
 
     const isAiAvailable = settings.enableAiFeatures && isAiConfigured;
-
+    
     const categories = useMemo(() => ['All', ...Array.from(new Set(allGameAssets.map(a => a.category)))], [allGameAssets]);
 
     const pageAssetIds = useMemo(() => pageAssets.map(a => a.id), [pageAssets]);
@@ -67,7 +66,9 @@ const ManageItemsPage: React.FC = () => {
                 method,
                 headers: { 'Content-Type': 'application/json' },
             };
-            if (body) options.body = JSON.stringify(body);
+            if (body) {
+                options.body = JSON.stringify(body);
+            }
             const response = await window.fetch(path, options);
             if (!response.ok) {
                 const errorData = await response.json().catch(() => ({ error: 'Server error' }));

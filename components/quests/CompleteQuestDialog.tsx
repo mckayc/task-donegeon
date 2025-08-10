@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Quest, User, QuestCompletionStatus } from '../../types';
 import { useQuestDispatch } from '../../context/QuestContext';
 import { useAuthState } from '../../context/AuthContext';
-import Button from '../ui/Button';
+import Button from '../user-interface/Button';
 
 interface CompleteQuestDialogProps {
   quest: Quest;

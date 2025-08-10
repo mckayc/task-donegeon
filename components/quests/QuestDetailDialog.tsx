@@ -1,8 +1,8 @@
 import React, { useEffect } from 'react';
 import { Quest, RewardCategory, RewardItem, QuestType } from '../../types';
 import { useAppState } from '../../context/AppContext';
-import Button from '../ui/Button';
-import ToggleSwitch from '../ui/ToggleSwitch';
+import Button from '../user-interface/Button';
+import ToggleSwitch from '../user-interface/ToggleSwitch';
 import { useEconomyState } from '../../context/EconomyContext';
 import { bugLogger } from '../../utils/bugLogger';
 

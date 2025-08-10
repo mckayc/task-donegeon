@@ -2,11 +2,11 @@ import React, { useMemo, useState } from 'react';
 import { useAppState } from '../../context/AppContext';
 import { useUIState } from '../../context/UIStateContext';
 import { Role, Trophy, UserTrophy, TrophyRequirementType, QuestType, QuestCompletionStatus, Quest, AppMode, User } from '../../types';
-import Card from '../ui/Card';
+import Card from '../user-interface/Card';
 import { fromYMD } from '../../utils/quests';
-import EmptyState from '../ui/EmptyState';
-import DynamicIcon from '../ui/DynamicIcon';
-import ImagePreviewDialog from '../ui/ImagePreviewDialog';
+import EmptyState from '../user-interface/EmptyState';
+import DynamicIcon from '../user-interface/DynamicIcon';
+import ImagePreviewDialog from '../user-interface/ImagePreviewDialog';
 import { useAuthState } from '../../context/AuthContext';
 import { useQuestState } from '../../context/QuestContext';
 

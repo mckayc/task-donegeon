@@ -2,9 +2,9 @@
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { useAppDispatch } from '../../../context/AppContext';
 import { GameAsset } from '../../../types';
-import Button from '../../ui/Button';
-import Card from '../../ui/Card';
-import ConfirmDialog from '../../ui/ConfirmDialog';
+import Button from '../../user-interface/Button';
+import Card from '../../user-interface/Card';
+import ConfirmDialog from '../../user-interface/ConfirmDialog';
 import EditGameAssetDialog from '../../admin/EditGameAssetDialog';
 import AiImagePromptHelper from '../../sharing/AiImagePromptHelper';
 import UploadWithCategoryDialog from '../../admin/UploadWithCategoryDialog';

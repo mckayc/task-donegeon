@@ -1,14 +1,14 @@
 import React, { useState, useMemo } from 'react';
-import Card from '../ui/Card';
+import Card from '../user-interface/Card';
 import { useAppState } from '../../context/AppContext';
 import { useUIState, useUIDispatch } from '../../context/UIStateContext';
-import Button from '../ui/Button';
+import Button from '../user-interface/Button';
 import { PurchaseRequestStatus, RewardCategory, Market, GameAsset, RewardItem, ScheduledEvent, IAppData } from '../../types';
 import PurchaseDialog from '../markets/PurchaseDialog';
 import ExchangeView from '../markets/ExchangeView';
 import { isMarketOpenForUser } from '../../utils/markets';
-import ImagePreviewDialog from '../ui/ImagePreviewDialog';
-import DynamicIcon from '../ui/DynamicIcon';
+import ImagePreviewDialog from '../user-interface/ImagePreviewDialog';
+import DynamicIcon from '../user-interface/DynamicIcon';
 import { toYMD } from '../../utils/quests';
 import { useAuthState } from '../../context/AuthContext';
 import { useEconomyState } from '../../context/EconomyContext';

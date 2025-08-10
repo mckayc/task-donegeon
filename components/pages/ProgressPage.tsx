@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { RewardCategory, QuestCompletionStatus, RewardItem } from '../../types';
-import Card from '../ui/Card';
-import LineChart from '../ui/LineChart';
+import Card from '../user-interface/Card';
+import LineChart from '../user-interface/LineChart';
 import { useAuthState } from '../../context/AuthContext';
 import { useEconomyState } from '../../context/EconomyContext';
 import { useQuestState } from '../../context/QuestContext';

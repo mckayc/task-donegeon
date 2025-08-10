@@ -1,5 +1,5 @@
 import React from 'react';
-import Card from '../../ui/Card';
+import Card from '../../user-interface/Card';
 import ExportPanel from '../../sharing/ExportPanel';
 
 const ObjectExporterPage: React.FC = () => {

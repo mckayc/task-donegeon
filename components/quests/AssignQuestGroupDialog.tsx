@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { QuestGroup } from '../../types';
-import Button from '../ui/Button';
+import Button from '../user-interface/Button';
 import { useQuestDispatch } from '../../context/QuestContext';
 import { useAuthState } from '../../context/AuthContext';
 import { useNotificationsDispatch } from '../../context/NotificationsContext';

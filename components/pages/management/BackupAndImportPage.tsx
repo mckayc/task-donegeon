@@ -1,19 +1,19 @@
 
 import React, { useState, useCallback, useRef, useEffect } from 'react';
-import Card from '../../ui/Card';
+import Card from '../../user-interface/Card';
 import ImportPanel from '../../sharing/ImportPanel';
 import ExportPanel from '../../sharing/ExportPanel';
 import { useAppDispatch } from '../../../context/AppContext';
 import { IAppData, AssetPack, ImportResolution, BugReport, BackupInfo } from '../../../types';
 import BlueprintPreviewDialog from '../../sharing/BlueprintPreviewDialog';
-import ConfirmDialog from '../../ui/ConfirmDialog';
+import ConfirmDialog from '../../user-interface/ConfirmDialog';
 import { analyzeAssetPackForConflicts } from '../../../utils/sharing';
 import { useAppState } from '../../../context/AppContext';
 import { useAuthState } from '../../../context/AuthContext';
 import { useEconomyState, useEconomyDispatch } from '../../../context/EconomyContext';
 import { useQuestState } from '../../../context/QuestContext';
 import { useNotificationsDispatch } from '../../../context/NotificationsContext';
-import Button from '../../ui/Button';
+import Button from '../../user-interface/Button';
 
 const BugBackupPanel: React.FC = () => {
     const { bugReports } = useAppState();

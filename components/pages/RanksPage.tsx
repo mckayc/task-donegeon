@@ -2,10 +2,10 @@ import React, { useMemo, useState } from 'react';
 import { useAppState } from '../../context/AppContext';
 import { useUIState } from '../../context/UIStateContext';
 import { Rank } from '../../types';
-import Card from '../ui/Card';
-import { RankIcon } from '../ui/Icons';
-import DynamicIcon from '../ui/DynamicIcon';
-import ImagePreviewDialog from '../ui/ImagePreviewDialog';
+import Card from '../user-interface/Card';
+import { RankIcon } from '../user-interface/Icons';
+import DynamicIcon from '../user-interface/DynamicIcon';
+import ImagePreviewDialog from '../user-interface/ImagePreviewDialog';
 import { useAuthState } from '../../context/AuthContext';
 
 const RanksPage: React.FC = () => {

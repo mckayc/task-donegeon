@@ -1,12 +1,13 @@
 
+
 import React, { useState, useMemo } from 'react';
 import { useAppState, useAppDispatch } from '../../../context/AppContext';
 import { ScheduledEvent } from '../../../types';
-import Button from '../../ui/Button';
-import Card from '../../ui/Card';
+import Button from '../../user-interface/Button';
+import Card from '../../user-interface/Card';
 import { toYMD } from '../../../utils/quests';
 import ScheduleEventDialog from '../../admin/ScheduleEventDialog';
-import ConfirmDialog from '../../ui/ConfirmDialog';
+import ConfirmDialog from '../../user-interface/ConfirmDialog';
 
 const ManageEventsPage: React.FC = () => {
     const { scheduledEvents, settings } = useAppState();

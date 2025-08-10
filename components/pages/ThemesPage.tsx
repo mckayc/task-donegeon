@@ -3,8 +3,8 @@ import { useAppState } from '../../context/AppContext';
 import { useAuthState, useAuthDispatch } from '../../context/AuthContext';
 import { useUIState, useUIDispatch } from '../../context/UIStateContext';
 import { ThemeDefinition, AppMode } from '../../types';
-import Button from '../ui/Button';
-import Card from '../ui/Card';
+import Button from '../user-interface/Button';
+import Card from '../user-interface/Card';
 import { useNotificationsDispatch } from '../../context/NotificationsContext';
 import { useEconomyState } from '../../context/EconomyContext';
 

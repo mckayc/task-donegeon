@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { useAuthState, useAuthDispatch } from '../../context/AuthContext';
-import Button from '../ui/Button';
-import Card from '../ui/Card';
-import Input from '../ui/Input';
+import Button from '../user-interface/Button';
+import Card from '../user-interface/Card';
+import Input from '../user-interface/Input';
 import { Role, User } from '../../types';
 import UserFormFields from '../users/UserFormFields';
 import { useNotificationsDispatch } from '../../context/NotificationsContext';

@@ -1,13 +1,12 @@
-
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { Rank } from '../../../types';
-import Button from '../../ui/Button';
-import Card from '../../ui/Card';
+import Button from '../../user-interface/Button';
+import Card from '../../user-interface/Card';
 import EditRankDialog from '../../settings/EditRankDialog';
-import ConfirmDialog from '../../ui/ConfirmDialog';
+import ConfirmDialog from '../../user-interface/ConfirmDialog';
 import { useAppState, useAppDispatch } from '../../../context/AppContext';
-import EmptyState from '../../ui/EmptyState';
-import { RankIcon, EllipsisVerticalIcon } from '../../ui/Icons';
+import EmptyState from '../../user-interface/EmptyState';
+import { RankIcon, EllipsisVerticalIcon } from '../../user-interface/Icons';
 import { useShiftSelect } from '../../../hooks/useShiftSelect';
 
 const ManageRanksPage: React.FC = () => {

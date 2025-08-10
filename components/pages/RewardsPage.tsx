@@ -1,12 +1,12 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useEconomyState, useEconomyDispatch } from '../../context/EconomyContext';
 import { RewardCategory, RewardTypeDefinition } from '../../types';
-import Button from '../ui/Button';
-import Card from '../ui/Card';
+import Button from '../user-interface/Button';
+import Card from '../user-interface/Card';
 import EditRewardTypeDialog from '../rewards/EditRewardTypeDialog';
-import ConfirmDialog from '../ui/ConfirmDialog';
+import ConfirmDialog from '../user-interface/ConfirmDialog';
 import { useRewardValuePerUnit } from '../../hooks/useRewardValue';
-import { EllipsisVerticalIcon } from '../ui/Icons';
+import { EllipsisVerticalIcon } from '../user-interface/Icons';
 
 const RewardItem: React.FC<{
     reward: RewardTypeDefinition;

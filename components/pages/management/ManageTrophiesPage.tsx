@@ -24,7 +24,7 @@ const ManageTrophiesPage: React.FC = () => {
 
     const isAiAvailable = settings.enableAiFeatures && isAiConfigured;
 
-    const trophyIds = useMemo(() => trophies.map((t: Trophy) => t.id), [trophies]);
+    const trophyIds = useMemo(() => trophies.map(t => t.id), [trophies]);
     const handleCheckboxClick = useShiftSelect(trophyIds, selectedTrophies, setSelectedTrophies);
 
     useEffect(() => {

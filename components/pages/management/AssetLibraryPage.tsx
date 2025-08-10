@@ -1,9 +1,9 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import Button from '../../ui/Button';
-import Card from '../../ui/Card';
+import Button from '../../user-interface/Button';
+import Card from '../../user-interface/Card';
 import { AssetPack, AssetPackManifestInfo, IAppData, ImportResolution } from '../../../types';
 import { useAppState } from '../../../context/AppContext';
-import Input from '../../ui/Input';
+import Input from '../../user-interface/Input';
 import { analyzeAssetPackForConflicts } from '../../../utils/sharing';
 import AssetPackInstallDialog from '../../sharing/AssetPackInstallDialog';
 import { useNotificationsDispatch } from '../../../context/NotificationsContext';
@@ -151,13 +151,13 @@ const AssetLibraryPage: React.FC = () => {
                     <Input 
                         placeholder="Search packs..."
                         value={searchTerm}
-                        onChange={e => setSearchTerm(e.target.value)}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchTerm(e.target.value)}
                         className="w-full sm:w-auto sm:flex-grow"
                     />
                     <Input 
                         as="select"
                         value={selectedCategory}
-                        onChange={e => setSelectedCategory(e.target.value)}
+                        onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setSelectedCategory(e.target.value)}
                         className="w-full sm:w-auto"
                         aria-label="Filter by category"
                     >
@@ -168,7 +168,7 @@ const AssetLibraryPage: React.FC = () => {
                         <Input
                             placeholder="Import from URL..."
                             value={remoteUrl}
-                            onChange={e => setRemoteUrl(e.target.value)}
+                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setRemoteUrl(e.target.value)}
                             className="flex-grow"
                         />
                         <Button onClick={handleInstallRemote} disabled={isLoading || !remoteUrl.trim()}>Import</Button>

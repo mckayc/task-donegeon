@@ -1,14 +1,13 @@
-
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { Market } from '../../../types';
-import Button from '../../ui/Button';
-import Card from '../../ui/Card';
+import Button from '../../user-interface/Button';
+import Card from '../../user-interface/Card';
 import EditMarketDialog from '../../markets/EditMarketDialog';
-import ConfirmDialog from '../../ui/ConfirmDialog';
+import ConfirmDialog from '../../user-interface/ConfirmDialog';
 import { useAppState } from '../../../context/AppContext';
 import { useEconomyState, useEconomyDispatch } from '../../../context/EconomyContext';
-import EmptyState from '../../ui/EmptyState';
-import { MarketplaceIcon, EllipsisVerticalIcon } from '../../ui/Icons';
+import EmptyState from '../../user-interface/EmptyState';
+import { MarketplaceIcon, EllipsisVerticalIcon } from '../../user-interface/Icons';
 import MarketIdeaGenerator from '../../quests/MarketIdeaGenerator';
 import { useShiftSelect } from '../../../hooks/useShiftSelect';
 

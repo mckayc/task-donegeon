@@ -1,4 +1,5 @@
 
+
 import React, { useState, ChangeEvent, ReactNode, useEffect } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { useAuthState } from '../../context/AuthContext';
@@ -117,10 +118,6 @@ export const SettingsPage: React.FC = () => {
     const [confirmation, setConfirmation] = useState<string | null>(null);
     const [isEmojiPickerOpen, setIsEmojiPickerOpen] = useState<{ general: boolean, chat: boolean }>({ general: false, chat: false });
 
-    useEffect(() => {
-        setFormState(JSON.parse(JSON.stringify(settings)));
-    }, [settings]);
-
     const handleSettingChange = (section: keyof AppSettings, key: any, value: any) => {
         setFormState(prev => {
             const newState = { ...prev };
@@ -201,10 +198,10 @@ export const SettingsPage: React.FC = () => {
                             </Input>
                         </div>
                          <div className="pt-4 border-t border-stone-700/60 grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <ToggleSwitch enabled={formState.enableAiFeatures} setEnabled={(val) => handleSimpleChange('enableAiFeatures', val)} label="Enable AI Features" />
-                            <ToggleSwitch enabled={formState.developerMode.enabled} setEnabled={(val) => handleSettingChange('developerMode', 'enabled', val)} label="Enable Developer Mode" />
-                            <ToggleSwitch enabled={formState.loginNotifications.enabled} setEnabled={(val) => handleSettingChange('loginNotifications', 'enabled', val)} label="Show Login Notifications" />
-                            <ToggleSwitch enabled={formState.chat.enabled} setEnabled={(val) => handleSettingChange('chat', 'enabled', val)} label="Enable Chat" />
+                            <ToggleSwitch enabled={formState.enableAiFeatures} setEnabled={(val: boolean) => handleSimpleChange('enableAiFeatures', val)} label="Enable AI Features" />
+                            <ToggleSwitch enabled={formState.developerMode.enabled} setEnabled={(val: boolean) => handleSettingChange('developerMode', 'enabled', val)} label="Enable Developer Mode" />
+                            <ToggleSwitch enabled={formState.loginNotifications.enabled} setEnabled={(val: boolean) => handleSettingChange('loginNotifications', 'enabled', val)} label="Show Login Notifications" />
+                            <ToggleSwitch enabled={formState.chat.enabled} setEnabled={(val: boolean) => handleSettingChange('chat', 'enabled', val)} label="Enable Chat" />
                         </div>
                         {formState.chat.enabled && (
                              <div className="relative w-max">
@@ -220,22 +217,22 @@ export const SettingsPage: React.FC = () => {
 
                 <CollapsibleSection title="Security">
                     <div className="p-6 space-y-4">
-                         <ToggleSwitch enabled={formState.security.requirePinForUsers} setEnabled={(val) => handleSettingChange('security', 'requirePinForUsers', val)} label="Require PIN for user switching" />
-                         <ToggleSwitch enabled={formState.security.requirePasswordForAdmin} setEnabled={(val) => handleSettingChange('security', 'requirePasswordForAdmin', val)} label="Require Password for Donegeon Masters & Gatekeepers" />
-                         <ToggleSwitch enabled={formState.security.allowProfileEditing} setEnabled={(val) => handleSettingChange('security', 'allowProfileEditing', val)} label="Allow users to edit their own profiles" />
+                         <ToggleSwitch enabled={formState.security.requirePinForUsers} setEnabled={(val: boolean) => handleSettingChange('security', 'requirePinForUsers', val)} label="Require PIN for user switching" />
+                         <ToggleSwitch enabled={formState.security.requirePasswordForAdmin} setEnabled={(val: boolean) => handleSettingChange('security', 'requirePasswordForAdmin', val)} label="Require Password for Donegeon Masters & Gatekeepers" />
+                         <ToggleSwitch enabled={formState.security.allowProfileEditing} setEnabled={(val: boolean) => handleSettingChange('security', 'allowProfileEditing', val)} label="Allow users to edit their own profiles" />
                     </div>
                 </CollapsibleSection>
                 
                 <CollapsibleSection title="Shared / Kiosk Mode">
                     <div className="p-6 space-y-4">
-                        <ToggleSwitch enabled={formState.sharedMode.enabled} setEnabled={(val) => handleSettingChange('sharedMode', 'enabled', val)} label="Enable Shared Mode" />
+                        <ToggleSwitch enabled={formState.sharedMode.enabled} setEnabled={(val: boolean) => handleSettingChange('sharedMode', 'enabled', val)} label="Enable Shared Mode" />
                         {formState.sharedMode.enabled && (
                             <div className="p-4 bg-stone-900/40 rounded-lg space-y-4">
                                 <UserMultiSelect allUsers={users} selectedUserIds={formState.sharedMode.userIds} onSelectionChange={(val) => handleSettingChange('sharedMode', 'userIds', val)} label="Users in Shared View" />
-                                <ToggleSwitch enabled={formState.sharedMode.allowCompletion} setEnabled={(val) => handleSettingChange('sharedMode', 'allowCompletion', val)} label="Allow quest completion from shared view" />
-                                <ToggleSwitch enabled={formState.sharedMode.autoExit} setEnabled={(val) => handleSettingChange('sharedMode', 'autoExit', val)} label="Auto-exit user session after inactivity" />
+                                <ToggleSwitch enabled={formState.sharedMode.allowCompletion} setEnabled={(val: boolean) => handleSettingChange('sharedMode', 'allowCompletion', val)} label="Allow quest completion from shared view" />
+                                <ToggleSwitch enabled={formState.sharedMode.autoExit} setEnabled={(val: boolean) => handleSettingChange('sharedMode', 'autoExit', val)} label="Auto-exit user session after inactivity" />
                                 {formState.sharedMode.autoExit && (
-                                    <Input label="Auto-exit after (minutes)" type="number" min="1" value={formState.sharedMode.autoExitMinutes} onChange={(e) => handleSettingChange('sharedMode', 'autoExitMinutes', parseInt(e.target.value) || 2)} />
+                                    <Input label="Auto-exit after (minutes)" type="number" min="1" value={formState.sharedMode.autoExitMinutes} onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleSettingChange('sharedMode', 'autoExitMinutes', parseInt(e.target.value) || 2)} />
                                 )}
                             </div>
                         )}
@@ -244,14 +241,14 @@ export const SettingsPage: React.FC = () => {
 
                  <CollapsibleSection title="Game Rules">
                     <div className="p-6 space-y-4">
-                        <ToggleSwitch enabled={formState.forgivingSetbacks} setEnabled={(val) => handleSimpleChange('forgivingSetbacks', val)} label="Forgiving Setbacks" />
+                        <ToggleSwitch enabled={formState.forgivingSetbacks} setEnabled={(val: boolean) => handleSimpleChange('forgivingSetbacks', val)} label="Forgiving Setbacks" />
                         <p className="text-xs text-stone-400 -mt-3 ml-12">If ON, setbacks are only applied if a quest is incomplete at the end of the day. If OFF, they are applied the moment a quest becomes late.</p>
                         <div className="pt-4 border-t border-stone-700/60">
                             <h4 className="font-semibold text-stone-200 mb-2">Quest Defaults</h4>
                             <div className="flex flex-col sm:flex-row gap-4">
-                                <ToggleSwitch enabled={formState.questDefaults.isActive} setEnabled={(val) => handleSettingChange('questDefaults', 'isActive', val)} label="Active by default" />
-                                <ToggleSwitch enabled={formState.questDefaults.isOptional} setEnabled={(val) => handleSettingChange('questDefaults', 'isOptional', val)} label="Optional by default" />
-                                <ToggleSwitch enabled={formState.questDefaults.requiresApproval} setEnabled={(val) => handleSettingChange('questDefaults', 'requiresApproval', val)} label="Requires Approval by default" />
+                                <ToggleSwitch enabled={formState.questDefaults.isActive} setEnabled={(val: boolean) => handleSettingChange('questDefaults', 'isActive', val)} label="Active by default" />
+                                <ToggleSwitch enabled={formState.questDefaults.isOptional} setEnabled={(val: boolean) => handleSettingChange('questDefaults', 'isOptional', val)} label="Optional by default" />
+                                <ToggleSwitch enabled={formState.questDefaults.requiresApproval} setEnabled={(val: boolean) => handleSettingChange('questDefaults', 'requiresApproval', val)} label="Requires Approval by default" />
                             </div>
                         </div>
                     </div>
@@ -259,10 +256,10 @@ export const SettingsPage: React.FC = () => {
 
                  <CollapsibleSection title="Economy & Valuation">
                     <div className="p-6 space-y-4">
-                        <ToggleSwitch enabled={formState.rewardValuation.enabled} setEnabled={(val) => handleRewardValuationChange('enabled', val)} label="Enable Reward Valuation & Exchange" />
+                        <ToggleSwitch enabled={formState.rewardValuation.enabled} setEnabled={(val: boolean) => handleRewardValuationChange('enabled', val)} label="Enable Reward Valuation & Exchange" />
                         {formState.rewardValuation.enabled && (
                              <div className="p-4 bg-stone-900/40 rounded-lg space-y-4">
-                                 <Input as="select" label="Anchor Currency (Value = 1)" value={formState.rewardValuation.anchorRewardId} onChange={(e) => handleRewardValuationChange('anchorRewardId', e.target.value)}>
+                                 <Input as="select" label="Anchor Currency (Value = 1)" value={formState.rewardValuation.anchorRewardId} onChange={(e: React.ChangeEvent<HTMLSelectElement>) => handleRewardValuationChange('anchorRewardId', e.target.value)}>
                                     {currencyRewardTypes.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                                  </Input>
                                  <h4 className="font-semibold text-stone-200 pt-2 border-t border-stone-700/60">Exchange Rates</h4>
@@ -281,8 +278,8 @@ export const SettingsPage: React.FC = () => {
                                  </div>
                                  <h4 className="font-semibold text-stone-200 pt-2 border-t border-stone-700/60">Transaction Fees</h4>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <Input label="Currency Exchange Fee (%)" type="number" min="0" value={formState.rewardValuation.currencyExchangeFeePercent} onChange={(e) => handleRewardValuationChange('currencyExchangeFeePercent', parseInt(e.target.value) || 0)} />
-                                    <Input label="XP Exchange Fee (%)" type="number" min="0" value={formState.rewardValuation.xpExchangeFeePercent} onChange={(e) => handleRewardValuationChange('xpExchangeFeePercent', parseInt(e.target.value) || 0)} />
+                                    <Input label="Currency Exchange Fee (%)" type="number" min="0" value={formState.rewardValuation.currencyExchangeFeePercent} onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleRewardValuationChange('currencyExchangeFeePercent', parseInt(e.target.value) || 0)} />
+                                    <Input label="XP Exchange Fee (%)" type="number" min="0" value={formState.rewardValuation.xpExchangeFeePercent} onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleRewardValuationChange('xpExchangeFeePercent', parseInt(e.target.value) || 0)} />
                                 </div>
                              </div>
                         )}
@@ -291,11 +288,11 @@ export const SettingsPage: React.FC = () => {
                 
                 <CollapsibleSection title="Integrations">
                      <div className="p-6 space-y-4">
-                         <ToggleSwitch enabled={formState.googleCalendar.enabled} setEnabled={(val) => handleSettingChange('googleCalendar', 'enabled', val)} label="Enable Google Calendar Integration" />
+                         <ToggleSwitch enabled={formState.googleCalendar.enabled} setEnabled={(val: boolean) => handleSettingChange('googleCalendar', 'enabled', val)} label="Enable Google Calendar Integration" />
                           {formState.googleCalendar.enabled && (
                             <div className="p-4 bg-stone-900/40 rounded-lg space-y-4">
-                                <Input label="Google Calendar API Key" value={formState.googleCalendar.apiKey} onChange={(e) => handleSettingChange('googleCalendar', 'apiKey', e.target.value)} />
-                                <Input label="Google Calendar ID" value={formState.googleCalendar.calendarId} onChange={(e) => handleSettingChange('googleCalendar', 'calendarId', e.target.value)} />
+                                <Input label="Google Calendar API Key" value={formState.googleCalendar.apiKey} onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleSettingChange('googleCalendar', 'apiKey', e.target.value)} />
+                                <Input label="Google Calendar ID" value={formState.googleCalendar.calendarId} onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleSettingChange('googleCalendar', 'calendarId', e.target.value)} />
                             </div>
                           )}
                     </div>
@@ -304,10 +301,10 @@ export const SettingsPage: React.FC = () => {
                 <CollapsibleSection title="Advanced">
                     <div className="p-6 space-y-4">
                         <h4 className="font-semibold text-stone-200 mb-2">Automated Backups</h4>
-                        <ToggleSwitch enabled={formState.automatedBackups.enabled} setEnabled={(val) => handleSettingChange('automatedBackups', 'enabled', val)} label="Enable Automated Server Backups" />
+                        <ToggleSwitch enabled={formState.automatedBackups.enabled} setEnabled={(val: boolean) => handleSettingChange('automatedBackups', 'enabled', val)} label="Enable Automated Server Backups" />
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <Input label="Backup Frequency (Hours)" type="number" min="1" value={formState.automatedBackups.frequencyHours} onChange={(e) => handleSettingChange('automatedBackups', 'frequencyHours', parseInt(e.target.value) || 24)} />
-                            <Input label="Max Backups to Keep" type="number" min="1" value={formState.automatedBackups.maxBackups} onChange={(e) => handleSettingChange('automatedBackups', 'maxBackups', parseInt(e.target.value) || 7)} />
+                            <Input label="Backup Frequency (Hours)" type="number" min="1" value={formState.automatedBackups.frequencyHours} onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleSettingChange('automatedBackups', 'frequencyHours', parseInt(e.target.value) || 24)} />
+                            <Input label="Max Backups to Keep" type="number" min="1" value={formState.automatedBackups.maxBackups} onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleSettingChange('automatedBackups', 'maxBackups', parseInt(e.target.value) || 7)} />
                         </div>
                     </div>
                 </CollapsibleSection>

@@ -15,6 +15,8 @@ import { useShiftSelect } from '../../hooks/useShiftSelect';
 interface BugDetailDialogProps {
   report: BugReport;
   onClose: () => void;
+  allTags: string[];
+  getTagColor: (tag: string) => string;
 }
 
 const LogIcon: React.FC<{type: BugReportLogEntry['type']}> = ({ type }) => {
@@ -30,7 +32,7 @@ const LogIcon: React.FC<{type: BugReportLogEntry['type']}> = ({ type }) => {
     }
 }
 
-const BugDetailDialog: React.FC<BugDetailDialogProps> = ({ report, onClose }) => {
+const BugDetailDialog: React.FC<BugDetailDialogProps> = ({ report, onClose, allTags, getTagColor }) => {
     const { updateBugReport } = useAppDispatch();
     const { currentUser, users } = useAuthState();
     const { addNotification } = useNotificationsDispatch();
@@ -45,7 +47,6 @@ const BugDetailDialog: React.FC<BugDetailDialogProps> = ({ report, onClose }) =>
     
     const shortId = useMemo(() => `bug-${report.id.substring(4, 11)}`, [report.id]);
 
-    const allTags = useMemo(() => Array.from(new Set(['Bug Report', 'Feature Request', 'UI/UX Feedback', 'Content Suggestion', 'In Progress', 'Acknowledged', 'Resolved', 'Converted to Quest'])), []);
     const statuses: BugReportStatus[] = ['Open', 'In Progress', 'Resolved', 'Closed'];
 
     const logTimestamps = useMemo(() => sortedLogs.map(log => log.timestamp), [sortedLogs]);
@@ -72,6 +73,27 @@ const BugDetailDialog: React.FC<BugDetailDialogProps> = ({ report, onClose }) =>
 
         navigator.clipboard.writeText(fullTextToCopy).then(() => {
             addNotification({ type: 'success', message: 'Log content copied to clipboard!' });
+
+            const existingTags = report.tags || [];
+            const submissionTagPrefix = 'AI Submissions:';
+            let submissionTag = existingTags.find(t => t.startsWith(submissionTagPrefix));
+            let count = 1;
+
+            if (submissionTag) {
+                const match = submissionTag.match(/(\d+)/);
+                if (match) {
+                    count = parseInt(match[1], 10) + 1;
+                }
+            }
+            
+            const newTimestamp = new Date().toLocaleString('en-US', { month: 'numeric', day: 'numeric', year: '2-digit', hour: 'numeric', minute: '2-digit' });
+            const newSubmissionTag = `${submissionTagPrefix} ${count} (${newTimestamp})`;
+
+            const otherTags = existingTags.filter(t => !t.startsWith(submissionTagPrefix));
+            const newTags = [...otherTags, newSubmissionTag];
+            
+            updateBugReport(report.id, { tags: newTags });
+
             if (report.status === 'Open') {
                 handleStatusChange('In Progress');
                 addNotification({ type: 'info', message: `Status automatically updated to "In Progress".` });
@@ -134,6 +156,11 @@ const BugDetailDialog: React.FC<BugDetailDialogProps> = ({ report, onClose }) =>
                             </Input>
                             <div>
                                 <label className="block text-sm font-medium text-stone-300 mb-1">Tags</label>
+                                <div className="flex flex-wrap gap-1 mb-2">
+                                    {(report.tags || []).map(tag => (
+                                        <span key={tag} className={`px-2 py-1 text-xs font-semibold rounded-full ${getTagColor(tag)}`}>{tag}</span>
+                                    ))}
+                                </div>
                                 <TagInput
                                     selectedTags={report.tags || []}
                                     onTagsChange={handleTagsChange}

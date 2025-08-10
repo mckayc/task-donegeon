@@ -76,7 +76,11 @@ const BugTrackingPage: React.FC = () => {
     };
     
     const getTagColor = (tag: string) => {
-        switch (tag.toLowerCase()) {
+        const lowerTag = tag.toLowerCase();
+        if (lowerTag.startsWith('ai submissions:')) {
+            return 'bg-cyan-500/20 text-cyan-300';
+        }
+        switch (lowerTag) {
             case 'in progress': return 'bg-yellow-500/20 text-yellow-300';
             case 'feature request': return 'bg-purple-500/20 text-purple-300';
             case 'ui/ux feedback': return 'bg-sky-500/20 text-sky-300';
@@ -87,6 +91,14 @@ const BugTrackingPage: React.FC = () => {
             default: return 'bg-stone-500/20 text-stone-300';
         }
     };
+
+    const allBugReportTags = useMemo(() => {
+        const defaultTags = ['Bug Report', 'Feature Request', 'UI/UX Feedback', 'Content Suggestion', 'In Progress', 'Acknowledged', 'Resolved', 'Converted to Quest'];
+        const allTagsFromReports = bugReports.flatMap(r => r.tags || []);
+        const submissionTagPrefix = 'ai submissions:';
+        const filteredTags = allTagsFromReports.filter(tag => !tag.toLowerCase().startsWith(submissionTagPrefix));
+        return Array.from(new Set([...defaultTags, ...filteredTags])).sort();
+    }, [bugReports]);
     
     return (
         <div className="space-y-6">
@@ -100,7 +112,7 @@ const BugTrackingPage: React.FC = () => {
                                 className={`whitespace-nowrap pb-4 px-1 border-b-2 font-medium text-sm transition-colors ${
                                     activeTab === status
                                     ? 'border-emerald-500 text-emerald-400'
-                                    : 'border-transparent text-stone-400 hover:text-stone-200'
+                                    : 'border-transparent text-stone-400 hover:text-stone-200 hover:border-stone-500'
                                 }`}
                             >
                                 {status} ({bugReports.filter(r => r.status === status).length})
@@ -171,7 +183,7 @@ const BugTrackingPage: React.FC = () => {
             </Card>
             
             {detailedReport && (
-                <BugDetailDialog report={detailedReport} onClose={() => setDetailedReportId(null)} />
+                <BugDetailDialog report={detailedReport} onClose={() => setDetailedReportId(null)} allTags={allBugReportTags} getTagColor={getTagColor} />
             )}
 
             <ConfirmDialog

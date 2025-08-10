@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import Card from '../ui/Card';
+import Card from '../user-interface/Card';
 import { useAppState } from '../../context/AppContext';
 import { useUIState } from '../../context/UIStateContext';
 import { Role, ChronicleEvent, QuestCompletionStatus, AdminAdjustmentType, PurchaseRequestStatus } from '../../types';
-import Button from '../ui/Button';
+import Button from '../user-interface/Button';
 import { useAuthState } from '../../context/AuthContext';
 
 const ChroniclesPage: React.FC = () => {

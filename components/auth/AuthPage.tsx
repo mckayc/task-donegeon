@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { Role, User } from '../../types';
-import Button from '../ui/Button';
-import Input from '../ui/Input';
+import Button from '../user-interface/Button';
+import Input from '../user-interface/Input';
 import UserFormFields from '../users/UserFormFields';
-import Avatar from '../ui/Avatar';
+import Avatar from '../user-interface/Avatar';
 import { useAuthState, useAuthDispatch } from '../../context/AuthContext';
 
 const LoginForm: React.FC<{ onSwitchMode: () => void; }> = ({ onSwitchMode }) => {
@@ -48,7 +48,7 @@ const LoginForm: React.FC<{ onSwitchMode: () => void; }> = ({ onSwitchMode }) =>
                     id="identifier"
                     name="identifier"
                     value={identifier}
-                    onChange={(e) => setIdentifier(e.target.value)}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setIdentifier(e.target.value)}
                     required
                 />
                 <Input
@@ -57,7 +57,7 @@ const LoginForm: React.FC<{ onSwitchMode: () => void; }> = ({ onSwitchMode }) =>
                     name="password"
                     type="password"
                     value={password}
-                    onChange={(e) => setPassword(e.target.value)}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPassword(e.target.value)}
                     required
                 />
                 {error && <p className="text-red-400 text-center">{error}</p>}

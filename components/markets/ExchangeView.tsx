@@ -3,10 +3,10 @@ import { useAppState } from '../../context/AppContext';
 import { useAuthState } from '../../context/AuthContext';
 import { useUIState, useUIDispatch } from '../../context/UIStateContext';
 import { RewardTypeDefinition, RewardCategory, Market, RewardItem } from '../../types';
-import Button from '../ui/Button';
-import Card from '../ui/Card';
-import Input from '../ui/Input';
-import { ArrowRightIcon } from '../ui/Icons';
+import Button from '../user-interface/Button';
+import Card from '../user-interface/Card';
+import Input from '../user-interface/Input';
+import { ArrowRightIcon } from '../user-interface/Icons';
 import { useNotificationsDispatch } from '../../context/NotificationsContext';
 import { useEconomyDispatch, useEconomyState } from '../../context/EconomyContext';
 
@@ -259,7 +259,7 @@ const ExchangeView: React.FC<ExchangeViewProps> = ({ market }) => {
                                         <label className="block text-sm font-semibold text-stone-400 mb-1">Amount</label>
                                         <div className="flex items-center">
                                             <Button onClick={() => handleAmountStep(-1)} size="sm" variant="secondary" className="!px-3 !py-2 rounded-r-none">-</Button>
-                                            <Input value={toAmountString} onChange={e => handleAmountChange(e.target.value)} type="text" className="text-center text-lg h-11 rounded-none" />
+                                            <Input value={toAmountString} onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleAmountChange(e.target.value)} type="text" className="text-center text-lg h-11 rounded-none" />
                                             <Button onClick={() => handleAmountStep(1)} size="sm" variant="secondary" className="!px-3 !py-2 rounded-l-none">+</Button>
                                         </div>
                                         <Button onClick={handleMax} variant="secondary" className="text-xs !py-1 mt-2">Max: {Math.floor(calculation.maxToAmount)}</Button>

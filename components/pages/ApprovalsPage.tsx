@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import Card from '../ui/Card';
-import Button from '../ui/Button';
+import Card from '../user-interface/Card';
+import Button from '../user-interface/Button';
 import { useAppState } from '../../context/AppContext';
 import { QuestCompletionStatus, Role, PurchaseRequestStatus } from '../../types';
-import Input from '../ui/Input';
+import Input from '../user-interface/Input';
 import { useAuthState } from '../../context/AuthContext';
 import { useEconomyState, useEconomyDispatch } from '../../context/EconomyContext';
 import { useQuestState, useQuestDispatch } from '../../context/QuestContext';
@@ -72,7 +72,7 @@ const ApprovalsPage: React.FC = () => {
                                     <Input
                                         placeholder="Add an optional note..."
                                         value={notes[completion.id] || ''}
-                                        onChange={(e) => handleNoteChange(completion.id, e.target.value)}
+                                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleNoteChange(completion.id, e.target.value)}
                                         className="flex-grow"
                                     />
                                     <div className="flex space-x-3 flex-shrink-0 justify-end mt-2 sm:mt-0">

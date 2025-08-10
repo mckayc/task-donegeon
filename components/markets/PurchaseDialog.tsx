@@ -3,7 +3,7 @@ import { useEconomyState, useEconomyDispatch } from '../../context/EconomyContex
 import { useAuthState } from '../../context/AuthContext';
 import { useUIState } from '../../context/UIStateContext';
 import { GameAsset, RewardItem, ScheduledEvent } from '../../types';
-import Button from '../ui/Button';
+import Button from '../user-interface/Button';
 import { toYMD } from '../../utils/quests';
 
 interface PurchaseDialogProps {
@@ -72,7 +72,7 @@ const PurchaseDialog: React.FC<PurchaseDialogProps> = ({ asset, marketId, onClos
 
     return (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4" onClick={onClose}>
-            <div className="bg-stone-800 border border-stone-700 rounded-xl shadow-2xl max-w-lg w-full" onClick={e => e.stopPropagation()}>
+            <div className="bg-stone-800 border border-stone-700 rounded-xl shadow-2xl max-w-lg w-full" onClick={(e: React.MouseEvent<HTMLDivElement>) => e.stopPropagation()}>
                 <div className="p-6 border-b border-stone-700/60">
                     <h2 className="text-2xl font-medieval text-accent">Purchase "{asset.name}"</h2>
                     <p className="text-stone-300 mt-1">Select your payment method.</p>

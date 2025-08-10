@@ -1,13 +1,13 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAppState } from '../../context/AppContext';
 import { Market, MarketStatus, MarketCondition, MarketConditionType } from '../../types';
-import Button from '../ui/Button';
-import Input from '../ui/Input';
-import EmojiPicker from '../ui/EmojiPicker';
-import ImageSelectionDialog from '../ui/ImageSelectionDialog';
-import DynamicIcon from '../ui/DynamicIcon';
+import Button from '../user-interface/Button';
+import Input from '../user-interface/Input';
+import EmojiPicker from '../user-interface/EmojiPicker';
+import ImageSelectionDialog from '../user-interface/ImageSelectionDialog';
+import DynamicIcon from '../user-interface/DynamicIcon';
 import { useEconomyDispatch } from '../../context/EconomyContext';
-import { useQuestState } from '../../context/QuestContext';
+import { useQuestState } from '../../context/QuestState';
 
 interface EditMarketDialogProps {
   market: Market | null;
@@ -118,7 +118,7 @@ const EditMarketDialog: React.FC<EditMarketDialogProps> = ({ market, initialData
                 <button type="button" onClick={() => removeCondition(index)} className="text-red-400 hover:text-red-300">&times;</button>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <Input as="select" label="Condition Type" value={condition.type} onChange={e => {
+                <Input as="select" label="Condition Type" value={condition.type} onChange={(e: React.ChangeEvent<HTMLSelectElement>) => {
                     const newType = e.target.value as MarketConditionType;
                     let newCondition: MarketCondition;
                     switch (newType) {
@@ -137,20 +137,20 @@ const EditMarketDialog: React.FC<EditMarketDialogProps> = ({ market, initialData
                 </Input>
                 
                 {condition.type === MarketConditionType.MinRank && (
-                    <Input as="select" label="Rank" value={condition.rankId} onChange={e => updateCondition(index, { ...condition, rankId: e.target.value })}>
+                    <Input as="select" label="Rank" value={condition.rankId} onChange={(e: React.ChangeEvent<HTMLSelectElement>) => updateCondition(index, { ...condition, rankId: e.target.value })}>
                         {ranks.sort((a,b) => a.xpThreshold - b.xpThreshold).map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
                     </Input>
                 )}
                  {condition.type === MarketConditionType.QuestCompleted && (
-                    <Input as="select" label="Quest" value={condition.questId} onChange={e => updateCondition(index, { ...condition, questId: e.target.value })}>
+                    <Input as="select" label="Quest" value={condition.questId} onChange={(e: React.ChangeEvent<HTMLSelectElement>) => updateCondition(index, { ...condition, questId: e.target.value })}>
                         {quests.map(q => <option key={q.id} value={q.id}>{q.title}</option>)}
                     </Input>
                 )}
             </div>
             {condition.type === MarketConditionType.DateRange && (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <Input type="date" label="Start Date" value={condition.start} onChange={e => updateCondition(index, { ...condition, start: e.target.value })} />
-                    <Input type="date" label="End Date" value={condition.end} onChange={e => updateCondition(index, { ...condition, end: e.target.value })} />
+                    <Input type="date" label="Start Date" value={condition.start} onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateCondition(index, { ...condition, start: e.target.value })} />
+                    <Input type="date" label="End Date" value={condition.end} onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateCondition(index, { ...condition, end: e.target.value })} />
                 </div>
             )}
              {condition.type === MarketConditionType.DayOfWeek && (
@@ -190,7 +190,7 @@ const EditMarketDialog: React.FC<EditMarketDialogProps> = ({ market, initialData
                 <button type="button" onClick={() => setIsEmojiPickerOpen(prev => !prev)} className="w-full text-left px-4 py-2 bg-stone-700 border border-stone-600 rounded-md flex items-center gap-2">
                     <span className="text-2xl">{formData.icon}</span><span className="text-stone-300">Click to change</span>
                 </button>
-                {isEmojiPickerOpen && <EmojiPicker onSelect={(emoji) => { setFormData(p => ({ ...p, icon: emoji })); setIsEmojiPickerOpen(false); }} onClose={() => setIsEmojiPickerOpen(false)} />}
+                {isEmojiPickerOpen && <EmojiPicker onSelect={(emoji: string) => { setFormData(p => ({ ...p, icon: emoji })); setIsEmojiPickerOpen(false); }} onClose={() => setIsEmojiPickerOpen(false)} />}
               </div>
             </div>
           ) : (
@@ -267,7 +267,7 @@ const EditMarketDialog: React.FC<EditMarketDialogProps> = ({ market, initialData
     </div>
      {isGalleryOpen && (
       <ImageSelectionDialog 
-        onSelect={(url) => {
+        onSelect={(url: string) => {
           setFormData(p => ({...p, imageUrl: url}));
           setIsGalleryOpen(false);
         }}

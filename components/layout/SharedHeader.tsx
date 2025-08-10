@@ -2,8 +2,8 @@ import React, { useMemo, useState, useEffect } from 'react';
 import { useAppState } from '../../context/AppContext';
 import { useAuthState, useAuthDispatch } from '../../context/AuthContext';
 import { User } from '../../types';
-import Avatar from '../ui/Avatar';
-import FullscreenToggle from '../ui/FullscreenToggle';
+import Avatar from '../user-interface/Avatar';
+import FullscreenToggle from '../user-interface/FullscreenToggle';
 
 const Clock: React.FC = () => {
     const [time, setTime] = useState(new Date());

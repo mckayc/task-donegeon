@@ -1,9 +1,9 @@
 import React, { useMemo, useState } from 'react';
 import { useEconomyState } from '../../context/EconomyContext';
 import { useAuthState } from '../../context/AuthContext';
-import Card from '../ui/Card';
-import { CollectionIcon } from '../ui/Icons';
-import ImagePreviewDialog from '../ui/ImagePreviewDialog';
+import Card from '../user-interface/Card';
+import { CollectionIcon } from '../user-interface/Icons';
+import ImagePreviewDialog from '../user-interface/ImagePreviewDialog';
 
 const CollectionPage: React.FC = () => {
     const { gameAssets } = useEconomyState();

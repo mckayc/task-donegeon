@@ -1,6 +1,6 @@
 import React from 'react';
 import { ChronicleEvent } from '../../types';
-import Button from '../ui/Button';
+import Button from '../user-interface/Button';
 
 interface ChroniclesDetailDialogProps {
   date: Date;

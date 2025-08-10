@@ -1,9 +1,9 @@
 import React, { useMemo } from 'react';
 import { Guild, Rank, User, Trophy } from '../../types';
 import { useAppState } from '../../context/AppContext';
-import Card from '../ui/Card';
-import Button from '../ui/Button';
-import Avatar from '../ui/Avatar';
+import Card from '../user-interface/Card';
+import Button from '../user-interface/Button';
+import Avatar from '../user-interface/Avatar';
 import { useEconomyState } from '../../context/EconomyContext';
 
 interface GuildMemberProfilePageProps {

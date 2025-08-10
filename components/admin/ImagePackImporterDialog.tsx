@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import Button from '../ui/Button';
+import Button from '../user-interface/Button';
 import { useNotificationsDispatch } from '../../context/NotificationsContext';
 import { useShiftSelect } from '../../hooks/useShiftSelect';
 
@@ -183,7 +183,7 @@ const ImagePackImporterDialog: React.FC<ImagePackImporterDialogProps> = ({ onClo
                                             isSelected ? 'border-emerald-500 bg-emerald-900/40' :
                                             'border-transparent bg-stone-900/50 hover:bg-stone-700/50'
                                         }`}>
-                                            <input type="checkbox" checked={isSelected} onChange={(e) => handleCheckboxClick(e, file.url)} disabled={file.exists} className="absolute top-2 right-2 h-4 w-4 rounded text-emerald-600 bg-stone-700 border-stone-500 focus:ring-emerald-500 disabled:opacity-50" />
+                                            <input type="checkbox" checked={isSelected} onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleCheckboxClick(e, file.url)} disabled={file.exists} className="absolute top-2 right-2 h-4 w-4 rounded text-emerald-600 bg-stone-700 border-stone-500 focus:ring-emerald-500 disabled:opacity-50" />
                                             <div className="aspect-square w-full bg-black/20 rounded-md flex items-center justify-center overflow-hidden">
                                                 <img src={file.url} alt={file.name} className="w-full h-full object-contain" />
                                             </div>
@@ -209,7 +209,7 @@ const ImagePackImporterDialog: React.FC<ImagePackImporterDialogProps> = ({ onClo
 
     return (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4" onClick={onClose}>
-            <div className="bg-stone-800 border border-stone-700 rounded-xl shadow-2xl max-w-4xl w-full h-[80vh] flex flex-col" onClick={e => e.stopPropagation()}>
+            <div className="bg-stone-800 border border-stone-700 rounded-xl shadow-2xl max-w-4xl w-full h-[80vh] flex flex-col" onClick={(e: React.MouseEvent<HTMLDivElement>) => e.stopPropagation()}>
                 {selectedPackName ? renderFileSelection() : renderPackSelection()}
             </div>
         </div>

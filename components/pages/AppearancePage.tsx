@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { AppSettings, ThemeDefinition, SidebarConfigItem, Page, SidebarLink } from '../../types';
-import Button from '../ui/Button';
-import Input from '../ui/Input';
-import Card from '../ui/Card';
-import ToggleSwitch from '../ui/ToggleSwitch';
-import EmojiPicker from '../ui/EmojiPicker';
-import { GrabHandleIcon, ArrowLeftIcon, ArrowRightIcon } from '../ui/Icons';
+import Button from '../user-interface/Button';
+import Input from '../user-interface/Input';
+import Card from '../user-interface/Card';
+import ToggleSwitch from '../user-interface/ToggleSwitch';
+import EmojiPicker from '../user-interface/EmojiPicker';
+import { GrabHandleIcon, ArrowLeftIcon, ArrowRightIcon } from '../user-interface/Icons';
 import { useNotificationsDispatch } from '../../context/NotificationsContext';
 import { useAuthState } from '../../context/AuthContext';
 import { useUIState } from '../../context/UIStateContext';
@@ -162,12 +162,12 @@ const AppearancePage: React.FC = () => {
                                     <button type="button" onClick={() => setPickerOpenFor(pickerOpenFor === index ? null : index)} className="w-12 h-10 text-xl p-1 rounded-md bg-stone-700 hover:bg-stone-600 flex items-center justify-center">
                                         {item.emoji}
                                     </button>
-                                    {pickerOpenFor === index && <EmojiPicker onSelect={(emoji) => handleSidebarItemChange(index, 'emoji', emoji)} onClose={() => setPickerOpenFor(null)} />}
+                                    {pickerOpenFor === index && <EmojiPicker onSelect={(emoji: string) => handleSidebarItemChange(index, 'emoji', emoji)} onClose={() => setPickerOpenFor(null)} />}
                                 </div>
                                 <span className="font-semibold text-stone-200 flex-grow">{item.termKey ? formState.terminology[item.termKey] : item.id}</span>
                                 <button type="button" onClick={() => handleOutdent(index)} disabled={item.level === 0} className="p-1 rounded-md hover:bg-stone-700 disabled:opacity-30 disabled:cursor-not-allowed"><ArrowLeftIcon className="w-5 h-5" /></button>
                                 <button type="button" onClick={() => handleIndent(index)} disabled={index === 0} className="p-1 rounded-md hover:bg-stone-700 disabled:opacity-30 disabled:cursor-not-allowed"><ArrowRightIcon className="w-5 h-5" /></button>
-                                <ToggleSwitch enabled={item.isVisible} setEnabled={(val) => handleSidebarItemChange(index, 'isVisible', val)} label="" />
+                                <ToggleSwitch enabled={item.isVisible} setEnabled={(val: boolean) => handleSidebarItemChange(index, 'isVisible', val)} label="" />
                             </>
                         ) : (
                             item.type === 'header' && <h4 className="font-bold text-accent flex-grow pl-2">{item.title}</h4>
@@ -188,7 +188,7 @@ const AppearancePage: React.FC = () => {
 
             <Card title="General Appearance">
                 <div className="space-y-6">
-                    <Input label="App Name" value={formState.terminology.appName} onChange={e => setFormState(p => ({...p, terminology: { ...p.terminology, appName: e.target.value}}))} />
+                    <Input label="App Name" value={formState.terminology.appName} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormState(p => ({...p, terminology: { ...p.terminology, appName: e.target.value}}))} />
                     <div>
                         <label className="block text-sm font-medium mb-2" style={{ color: 'hsl(var(--color-text-secondary))' }}>Default Theme</label>
                         <div className="flex flex-wrap gap-4">

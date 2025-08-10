@@ -1,6 +1,6 @@
 import React from 'react';
 import { ScheduledEvent } from '../../types';
-import Button from '../ui/Button';
+import Button from '../user-interface/Button';
 import { useAppState } from '../../context/AppContext';
 import { useEconomyState } from '../../context/EconomyContext';
 
@@ -37,7 +37,7 @@ const EventDetailDialog: React.FC<EventDetailDialogProps> = ({ event, onClose })
 
     return (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-[60]" onClick={onClose}>
-            <div className={`backdrop-blur-sm border rounded-xl shadow-2xl max-w-lg w-full border-stone-700/60`} style={{ backgroundColor: `hsl(${event.color})` }} onClick={e => e.stopPropagation()}>
+            <div className={`backdrop-blur-sm border rounded-xl shadow-2xl max-w-lg w-full border-stone-700/60`} style={{ backgroundColor: `hsl(${event.color})` }} onClick={(e: React.MouseEvent<HTMLDivElement>) => e.stopPropagation()}>
                 <div className="p-6">
                     <div className="flex items-start gap-4">
                         <div className="text-4xl mt-1">{event.icon || '🎉'}</div>

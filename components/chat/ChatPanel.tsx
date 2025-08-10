@@ -3,11 +3,11 @@ import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { useAuthState } from '../../context/AuthContext';
 import { useUIState, useUIDispatch } from '../../context/UIStateContext';
 import { Role, User } from '../../types';
-import Avatar from '../ui/Avatar';
-import Input from '../ui/Input';
-import { XCircleIcon } from '../ui/Icons';
-import Button from '../ui/Button';
-import ToggleSwitch from '../ui/ToggleSwitch';
+import Avatar from '../user-interface/Avatar';
+import Input from '../user-interface/Input';
+import { XCircleIcon } from '../user-interface/Icons';
+import Button from '../user-interface/Button';
+import ToggleSwitch from '../user-interface/ToggleSwitch';
 
 type ChatTarget = User | {
     id: string;
@@ -209,7 +209,7 @@ const ChatPanel: React.FC = () => {
                             <form onSubmit={handleSend} className="p-3 border-t border-stone-700 flex-shrink-0 flex items-center gap-2">
                                 <Input
                                     value={message}
-                                    onChange={(e) => setMessage(e.target.value)}
+                                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setMessage(e.target.value)}
                                     placeholder="Type a message..."
                                     autoComplete="off"
                                     className="flex-grow"

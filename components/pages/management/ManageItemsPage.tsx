@@ -254,8 +254,8 @@ const ManageItemsPage: React.FC = () => {
                 </div>
 
                 <div className="flex flex-wrap gap-4 mb-4">
-                    <Input placeholder="Search assets..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="max-w-xs" />
-                    <Input as="select" value={sortBy} onChange={e => setSortBy(e.target.value as typeof sortBy)}>
+                    <Input placeholder="Search assets..." value={searchTerm} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchTerm(e.target.value)} className="max-w-xs" />
+                    <Input as="select" value={sortBy} onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setSortBy(e.target.value as typeof sortBy)}>
                         <option value="createdAt-desc">Date (Newest)</option>
                         <option value="createdAt-asc">Date (Oldest)</option>
                         <option value="name-asc">Name (A-Z)</option>

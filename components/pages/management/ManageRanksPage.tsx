@@ -1,13 +1,13 @@
 
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { Rank } from '../../../types';
-import Button from '../../ui/Button';
-import Card from '../../ui/Card';
+import Button from '../../../ui/Button';
+import Card from '../../../ui/Card';
 import EditRankDialog from '../../settings/EditRankDialog';
-import ConfirmDialog from '../../ui/ConfirmDialog';
-import { useAppState, useAppDispatch } from '../../context/AppContext';
-import EmptyState from '../../ui/EmptyState';
-import { RankIcon, EllipsisVerticalIcon } from '../../ui/Icons';
+import ConfirmDialog from '../../../ui/ConfirmDialog';
+import { useAppState, useAppDispatch } from '../../../context/AppContext';
+import EmptyState from '../../../ui/EmptyState';
+import { RankIcon, EllipsisVerticalIcon } from '../../../ui/Icons';
 import { useShiftSelect } from '../../../hooks/useShiftSelect';
 
 const ManageRanksPage: React.FC = () => {
@@ -111,7 +111,7 @@ const ManageRanksPage: React.FC = () => {
                                 </tr>
                             </thead>
                             <tbody>
-                                {sortedRanks.map(rank => (
+                                {sortedRanks.map((rank: Rank) => (
                                     <tr key={rank.id} className="border-b border-stone-700/40 last:border-b-0">
                                         <td className="p-4">
                                             <input 

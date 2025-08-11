@@ -288,6 +288,12 @@ const CalendarPage: React.FC = () => {
         });
     };
 
+    const noEventsMessage = useMemo(() => (
+        mode === 'chronicles' 
+            ? 'No historical events in this date range.' 
+            : 'No events to display.'
+    ), [mode]);
+
     return (
         <div>
             <style>{`
@@ -345,7 +351,11 @@ const CalendarPage: React.FC = () => {
                         eventDrop={handleEventDrop}
                         dateClick={handleDateClick}
                         height="auto"
-                        noEventsContent={mode === 'chronicles' ? 'No historical events in this date range.' : 'No events to display.'}
+                        views={{
+                            dayGridMonth: { noEventsContent: noEventsMessage },
+                            timeGridWeek: { noEventsContent: noEventsMessage },
+                            dayGridDay: { noEventsContent: noEventsMessage }
+                        }}
                     />
                  </div>
             </Card>

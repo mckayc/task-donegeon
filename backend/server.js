@@ -23,7 +23,7 @@ const dbPath = process.env.DATABASE_PATH || '/app/data/database/database.sqlite'
 
 const updateTimestamps = (entity, isNew = false) => {
     const now = new Date().toISOString();
-    if (isNew) {
+    if (isNew && !entity.createdAt) {
         entity.createdAt = now;
     }
     entity.updatedAt = now;
@@ -255,19 +255,6 @@ const startAutomatedBackupScheduler = async () => {
     }
 };
 
-// === Helper to construct the full app data state from DB ===
-const getFullAppData = async (manager) => {
-    const data = {};
-    
-    const users = await manager.find(UserEntity);
-    const quests = await manager.find(QuestEntity, { relations: ['assignedUsers'] });
-    const questCompletions = await manager.find(QuestCompletionEntity,
-        { relations: ['user', 'quest'] }
-    );
-    // ... (rest of the function)
-    return data;
-}
-
 // === API Routes ===
 
 app.get('/api/system/status', (req, res) => {
@@ -288,6 +275,115 @@ app.get('/api/system/status', (req, res) => {
     }
 });
 
+// --- Core Data Sync ---
+app.get('/api/data/sync', async (req, res) => {
+    try {
+        const lastSync = req.query.lastSync;
+        const manager = dataSource.manager;
+        
+        if (lastSync) {
+            // This is a delta sync. Find all entities updated since lastSync.
+            const updates = {};
+            for (const entity of allEntities) {
+                const repo = manager.getRepository(entity);
+                const entityName = (typeof entity === 'function' ? entity.name : entity.target.name).replace(/Entity$/, '');
+                const key = entityKeyMap[entityName];
+                if (!key) continue;
+
+                if (key === 'settings' || key === 'loginHistory') {
+                     // Settings and history don't have individual timestamps, always send them
+                     const record = await repo.findOneBy({ id: 1 });
+                     if (record) {
+                         if (key === 'settings') updates[key] = record.settings;
+                         if (key === 'loginHistory') updates[key] = record.history;
+                     }
+                } else if (repo.metadata.hasColumn('updatedAt')) {
+                    const changedRecords = await repo.find({ where: { updatedAt: MoreThan(lastSync) } });
+                    if (changedRecords.length > 0) {
+                        updates[key] = changedRecords;
+                    }
+                }
+            }
+            if (Object.keys(updates).length > 0) {
+                return res.json({ updates, newSyncTimestamp: new Date().toISOString() });
+            } else {
+                return res.status(204).send(); // No updates
+            }
+        } else {
+            // This is an initial full sync.
+            const userCount = await manager.count(UserEntity);
+            if (userCount === 0) {
+                // First run scenario, no data to send. Frontend will show the wizard.
+                return res.json({ updates: {}, newSyncTimestamp: new Date().toISOString() });
+            }
+
+            const data = {};
+            for (const entity of allEntities) {
+                 const repo = manager.getRepository(entity);
+                 const entityName = (typeof entity === 'function' ? entity.name : entity.target.name).replace(/Entity$/, '');
+                 const key = entityKeyMap[entityName];
+                 if (!key) continue;
+
+                if (key === 'settings') {
+                    const settingsRecord = await repo.findOneBy({ id: 1 });
+                    data[key] = settingsRecord?.settings || INITIAL_SETTINGS;
+                } else if (key === 'loginHistory') {
+                    const historyRecord = await repo.findOneBy({ id: 1 });
+                    data[key] = historyRecord?.history || [];
+                } else {
+                     data[key] = await repo.find();
+                }
+            }
+            return res.json({ updates: data, newSyncTimestamp: new Date().toISOString() });
+        }
+    } catch (error) {
+        console.error('Sync error:', error);
+        res.status(500).json({ error: 'Failed to sync data.' });
+    }
+});
+
+
+// --- First Run Setup ---
+app.post('/api/first-run', async (req, res) => {
+    try {
+        const { adminUserData } = req.body;
+        
+        await dataSource.transaction(async manager => {
+            const userCount = await manager.count(UserEntity);
+            if (userCount > 0) {
+                throw new Error('An administrator account already exists. Setup cannot proceed.');
+            }
+
+            // Create the first user
+            const newAdmin = manager.create(UserEntity, {
+                ...adminUserData,
+                id: `user-${Date.now()}`,
+                avatar: {},
+                ownedAssetIds: [],
+                personalPurse: {},
+                personalExperience: {},
+                guildBalances: {},
+                ownedThemes: ['emerald', 'rose', 'sky'], // Default themes
+                hasBeenOnboarded: true,
+            });
+            await manager.save(UserEntity, updateTimestamps(newAdmin, true));
+
+            // Seed initial data
+            await manager.save(SettingEntity, { id: 1, settings: INITIAL_SETTINGS });
+            await manager.save(RewardTypeDefinitionEntity, INITIAL_REWARD_TYPES.map(r => updateTimestamps(r, true)));
+            await manager.save(RankEntity, INITIAL_RANKS.map(r => updateTimestamps(r, true)));
+            await manager.save(TrophyEntity, INITIAL_TROPHIES.map(t => updateTimestamps(t, true)));
+            await manager.save(ThemeDefinitionEntity, INITIAL_THEMES.map(t => updateTimestamps(t, true)));
+            await manager.save(QuestGroupEntity, INITIAL_QUEST_GROUPS.map(qg => updateTimestamps(qg, true)));
+            await manager.save(LoginHistoryEntity, { id: 1, history: [newAdmin.id] });
+        });
+
+        res.status(201).json({ success: true, message: 'First run setup complete.' });
+    } catch (error) {
+        console.error('First run setup failed:', error);
+        res.status(error.message.includes('already exists') ? 409 : 500).json({ error: error.message });
+    }
+});
 
 // Manual Admin Adjustments
 app.post('/api/adjustments', async (req, res) => {

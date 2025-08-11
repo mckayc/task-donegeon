@@ -268,6 +268,27 @@ const getFullAppData = async (manager) => {
     return data;
 }
 
+// === API Routes ===
+
+app.get('/api/system/status', (req, res) => {
+    try {
+        const status = {
+            geminiConnected: !!ai,
+            database: {
+                connected: dataSource.isInitialized,
+                // The wizard complains if the default path is used, so this flag indicates if a custom path is set.
+                isCustomPath: !!process.env.DATABASE_PATH,
+            },
+            jwtSecretSet: !!process.env.JWT_SECRET,
+        };
+        res.json(status);
+    } catch (error) {
+        console.error("Error fetching system status:", error);
+        res.status(500).json({ error: 'Failed to retrieve system status.' });
+    }
+});
+
+
 // Manual Admin Adjustments
 app.post('/api/adjustments', async (req, res) => {
     try {

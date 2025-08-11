@@ -196,33 +196,29 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   }, [authDispatch, questDispatch, economyDispatch]);
   
   const initialSync = useCallback(async () => {
-    try {
-      const response = await apiRequest('GET', '/api/data/sync');
-      if (!response) return;
+    // This function will now throw on error instead of catching it.
+    const response = await apiRequest('GET', '/api/data/sync');
+    if (!response) return;
 
-      const { updates, newSyncTimestamp } = response;
-      const { settingsUpdated, loadedSettings } = processAndSetData(updates, false);
+    const { updates, newSyncTimestamp } = response;
+    const { settingsUpdated, loadedSettings } = processAndSetData(updates, false);
 
-      if (settingsUpdated && loadedSettings) {
-          await apiRequest('PUT', '/api/settings', loadedSettings);
-          addNotification({ type: 'info', message: 'Application settings updated with new features.' });
-      }
-
-      const lastUserId = localStorage.getItem('lastUserId');
-      if (lastUserId && updates.users) {
-        const lastUser = updates.users.find((u:User) => u.id === lastUserId);
-        if (lastUser) authDispatch.setCurrentUser(lastUser);
-      }
-      
-      if (loadedSettings) {
-        authDispatch.setIsSharedViewActive(loadedSettings.sharedMode.enabled && !localStorage.getItem('lastUserId'));
-      }
-
-      lastSyncTimestamp.current = newSyncTimestamp;
-
-    } catch (error) {
-      console.error("Could not load data from server.", error);
+    if (settingsUpdated && loadedSettings) {
+        await apiRequest('PUT', '/api/settings', loadedSettings);
+        addNotification({ type: 'info', message: 'Application settings updated with new features.' });
     }
+
+    const lastUserId = localStorage.getItem('lastUserId');
+    if (lastUserId && updates.users) {
+      const lastUser = updates.users.find((u:User) => u.id === lastUserId);
+      if (lastUser) authDispatch.setCurrentUser(lastUser);
+    }
+    
+    if (loadedSettings) {
+      authDispatch.setIsSharedViewActive(loadedSettings.sharedMode.enabled && !localStorage.getItem('lastUserId'));
+    }
+
+    lastSyncTimestamp.current = newSyncTimestamp;
   }, [apiRequest, processAndSetData, addNotification, authDispatch]);
 
   const performDeltaSync = useCallback(async () => {
@@ -260,23 +256,32 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
   useEffect(() => {
     const initializeApp = async () => {
-      await initialSync();
-      setIsDataLoaded(true);
-
-      // Fetch system status after initial data load to check AI configuration
       try {
-          const systemStatusResponse = await window.fetch('/api/system/status');
-          if (systemStatusResponse.ok) {
-              const statusData = await systemStatusResponse.json();
-              setIsAiConfigured(statusData.geminiConnected);
-          }
-      } catch (statusError) {
-          console.error("Failed to fetch system status:", statusError);
-          setIsAiConfigured(false);
+        await initialSync();
+
+        // Fetch system status after initial data load to check AI configuration
+        try {
+            const systemStatusResponse = await window.fetch('/api/system/status');
+            if (systemStatusResponse.ok) {
+                const statusData = await systemStatusResponse.json();
+                setIsAiConfigured(statusData.geminiConnected);
+            }
+        } catch (statusError) {
+            console.error("Failed to fetch system status:", statusError);
+            setIsAiConfigured(false); // It's okay for this to fail silently
+        }
+        
+        // Only set loaded after a successful sync
+        setIsDataLoaded(true);
+      } catch (error) {
+        console.error("Critical error during application initialization:", error);
+        addNotification({type: 'error', message: 'Failed to load application data. Please check your server connection and refresh.'});
+        // Do NOT set isDataLoaded(true), which keeps the loading spinner visible
+        // and prevents the app from entering an invalid state (like showing the First Run wizard).
       }
     };
     initializeApp();
-  }, [initialSync]);
+  }, [initialSync, addNotification]);
 
   useEffect(() => {
     if (!isDataLoaded) return;

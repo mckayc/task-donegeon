@@ -396,8 +396,23 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     }, [apiRequest]);
 
     const updateBugReport = useCallback(async (reportId: string, updates: Partial<BugReport>) => {
-        await apiRequest('PUT', `/api/bug-reports/${reportId}`, updates);
-    }, [apiRequest]);
+        const originalReports = [...bugReports];
+        
+        // Optimistic update
+        setBugReports(prev =>
+            prev.map(report =>
+                report.id === reportId ? { ...report, ...updates, updatedAt: new Date().toISOString() } : report
+            )
+        );
+
+        try {
+            await apiRequest('PUT', `/api/bug-reports/${reportId}`, updates);
+        } catch (error) {
+            // Revert on failure
+            addNotification({ type: 'error', message: 'Update failed. Reverting changes.' });
+            setBugReports(originalReports);
+        }
+    }, [apiRequest, bugReports, addNotification]);
     
     const deleteBugReports = useCallback(async (reportIds: string[]) => {
         await apiRequest('DELETE', '/api/bug-reports', { ids: reportIds });

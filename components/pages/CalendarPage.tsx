@@ -94,25 +94,36 @@ const CalendarPage: React.FC = () => {
                             startRecur: quest.availabilityType === 'Daily' ? '1900-01-01' : undefined,
                         };
                     }
-                }).filter(e => e.start || e.daysOfWeek || e.startRecur);
+                }).filter(e => e.start || (e.daysOfWeek && e.daysOfWeek.length > 0) || e.startRecur);
             sources.push(questEventSource);
-
-            const birthdayEventSource = users.map(user => {
-                if (!user.birthday) return null;
-                const [year, month, day] = user.birthday.split('-');
-                return {
-                    id: `birthday-${user.id}`,
-                    title: `🎂 ${user.gameName}'s Birthday`,
-                    startRecur: `1900-${month}-${day}`,
-                    allDay: true,
-                    backgroundColor: 'hsl(50 90% 60%)',
-                    borderColor: 'hsl(50 90% 50%)',
-                    textColor: 'hsl(50 100% 10%)',
-                    extendedProps: { type: 'birthday', user },
-                    classNames: ['birthday-event']
-                };
-            }).filter((e): e is NonNullable<typeof e> => !!e);
-            sources.push(birthdayEventSource);
+            
+            const birthdayEvents = [];
+            if (viewRange) {
+                const startYear = viewRange.start.getFullYear();
+                const endYear = viewRange.end.getFullYear();
+                for (let year = startYear; year <= endYear; year++) {
+                    users.forEach(user => {
+                        if (user.birthday) {
+                            const [_, month, day] = user.birthday.split('-');
+                            const eventDate = new Date(`${year}-${month}-${day}T00:00:00`);
+                            if (eventDate >= viewRange.start && eventDate <= viewRange.end) {
+                                birthdayEvents.push({
+                                    id: `birthday-${user.id}-${year}`,
+                                    title: `🎂 ${user.gameName}'s Birthday`,
+                                    start: `${year}-${month}-${day}`,
+                                    allDay: true,
+                                    backgroundColor: 'hsl(50 90% 60%)',
+                                    borderColor: 'hsl(50 90% 50%)',
+                                    textColor: 'hsl(50 100% 10%)',
+                                    extendedProps: { type: 'birthday', user },
+                                    classNames: ['birthday-event']
+                                });
+                            }
+                        }
+                    });
+                }
+            }
+            sources.push(birthdayEvents);
 
         } else {
             const chronicleEvents: any[] = [];
@@ -140,7 +151,7 @@ const CalendarPage: React.FC = () => {
         }
         
         return sources;
-    }, [mode, appMode, scheduledEvents, quests, chronicles, settings.googleCalendar, users]);
+    }, [mode, appMode, scheduledEvents, quests, chronicles, settings.googleCalendar, users, viewRange]);
 
     const handleEventClick = (clickInfo: EventClickArg) => {
         const props = clickInfo.event.extendedProps;
@@ -275,7 +286,7 @@ const CalendarPage: React.FC = () => {
                         headerToolbar={{
                             left: 'prev,next today',
                             center: 'title',
-                            right: 'dayGridDay,timeGridWeek,dayGridMonth'
+                            right: 'dayGridMonth,timeGridWeek,dayGridDay'
                         }}
                         buttonText={{ day: 'Day', week: 'Week', month: 'Month' }}
                         initialView="dayGridMonth"

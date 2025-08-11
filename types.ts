@@ -666,6 +666,7 @@ export interface BugReport {
   id: string;
   title: string;
   createdAt: string;
+  updatedAt?: string;
   status: BugReportStatus;
   tags: string[];
   logs: BugReportLogEntry[];

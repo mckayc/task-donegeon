@@ -113,32 +113,33 @@ const CalendarPage: React.FC = () => {
                         });
                     }
                 } else if (quest.type === QuestType.Duty) {
-                    for (let day = new Date(start); day < end; day.setDate(day.getDate() + 1)) {
-                        let isScheduled = false;
-                        switch (quest.availabilityType) {
-                            case QuestAvailability.Daily:
-                                isScheduled = true;
-                                break;
-                            case QuestAvailability.Weekly:
-                                if (quest.weeklyRecurrenceDays.includes(day.getDay())) {
-                                    isScheduled = true;
-                                }
-                                break;
-                            case QuestAvailability.Monthly:
+                    const eventInput: EventInput = {
+                        ...baseEventProps,
+                        id: quest.id, // Use quest ID for recurrence
+                        allDay: true
+                    };
+                    
+                    switch (quest.availabilityType) {
+                        case QuestAvailability.Daily:
+                            eventInput.daysOfWeek = [0, 1, 2, 3, 4, 5, 6];
+                            questEvents.push(eventInput);
+                            break;
+                        case QuestAvailability.Weekly:
+                            eventInput.daysOfWeek = quest.weeklyRecurrenceDays;
+                            questEvents.push(eventInput);
+                            break;
+                        case QuestAvailability.Monthly:
+                             for (let day = new Date(start); day < end; day.setDate(day.getDate() + 1)) {
                                 if (quest.monthlyRecurrenceDays.includes(day.getDate())) {
-                                    isScheduled = true;
+                                    questEvents.push({
+                                        ...baseEventProps,
+                                        id: `${quest.id}-${toYMD(day)}`,
+                                        start: toYMD(day),
+                                        allDay: true
+                                    });
                                 }
-                                break;
-                        }
-
-                        if (isScheduled) {
-                            questEvents.push({
-                                ...baseEventProps,
-                                id: `${quest.id}-${toYMD(day)}`,
-                                start: toYMD(day),
-                                allDay: true
-                            });
-                        }
+                            }
+                            break;
                     }
                 }
             });
@@ -293,6 +294,24 @@ const CalendarPage: React.FC = () => {
             ? 'No historical events in this date range.' 
             : 'No events to display.'
     ), [mode]);
+    
+    const eventContent = (arg: any) => {
+        const { quest } = arg.event.extendedProps;
+        if (quest) {
+            return (
+                <div className="p-1 overflow-hidden h-full flex items-center w-full">
+                    <span className="text-lg mr-2 flex-shrink-0">{quest.icon}</span>
+                    <span className="font-semibold truncate">{arg.event.title}</span>
+                </div>
+            );
+        }
+        // Default rendering for other events like birthdays or Google Calendar
+        return (
+             <div className="p-1 overflow-hidden h-full flex items-center w-full">
+                 <span className="font-semibold truncate">{arg.event.title}</span>
+            </div>
+        );
+    };
 
     return (
         <div>
@@ -308,7 +327,7 @@ const CalendarPage: React.FC = () => {
                 .fc .fc-daygrid-day.fc-day-today { background-color: hsl(var(--accent) / 0.1); }
                 .fc .fc-daygrid-day-number { color: hsl(var(--foreground)); padding: 4px; }
                 .fc .fc-day-past .fc-daygrid-day-number { color: hsl(var(--muted-foreground)); }
-                .fc .fc-event { border: 1px solid hsl(var(--border)) !important; font-size: 0.75rem; padding: 2px 4px; }
+                .fc .fc-daygrid-event { min-height: 38px; align-items: center; display: flex; font-size: 0.75rem; padding: 2px 4px; border: 1px solid hsl(var(--border)) !important; }
                 .fc-event.gcal-event { background-color: hsl(217 91% 60%) !important; border-color: hsl(217 91% 70%) !important; }
                 .admin-calendar .fc-daygrid-day { cursor: pointer; }
                 .admin-calendar .fc-daygrid-day:hover .fc-daygrid-day-frame { background-color: hsl(var(--secondary) / 0.5) !important; }
@@ -351,6 +370,7 @@ const CalendarPage: React.FC = () => {
                         eventDrop={handleEventDrop}
                         dateClick={handleDateClick}
                         height="auto"
+                        eventContent={eventContent}
                         views={{
                             dayGridMonth: { noEventsContent: noEventsMessage },
                             timeGridWeek: { noEventsContent: noEventsMessage },

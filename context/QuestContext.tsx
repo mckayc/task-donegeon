@@ -210,9 +210,9 @@ export const QuestProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       window.dispatchEvent(new CustomEvent('trigger-sync'));
   }, [apiRequest]);
 
-  const state = {
+  const state = useMemo(() => ({
       quests, questGroups, questCompletions, allTags
-  };
+  }), [quests, questGroups, questCompletions, allTags]);
 
   const dispatch = {
       setQuests, setQuestGroups, setQuestCompletions,

@@ -337,20 +337,23 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const addGuild = useCallback(async (guild: Omit<Guild, 'id'>) => {
     try {
         await apiRequest('POST', '/api/guilds', guild);
+        triggerSync();
     } catch (error) {}
-  }, [apiRequest]);
+  }, [apiRequest, triggerSync]);
 
   const updateGuild = useCallback(async (guild: Guild) => {
       try {
           await apiRequest('PUT', `/api/guilds/${guild.id}`, guild);
+          triggerSync();
       } catch (error) {}
-  }, [apiRequest]);
+  }, [apiRequest, triggerSync]);
 
   const deleteGuild = useCallback(async (guildId: string) => {
       try {
           await apiRequest('DELETE', `/api/guilds/${guildId}`);
+          triggerSync();
       } catch (error) {}
-  }, [apiRequest]);
+  }, [apiRequest, triggerSync]);
 
   const addTrophy = useCallback((trophy: Omit<Trophy, 'id'>) => setTrophies(prev => [...prev, { ...trophy, id: `trophy-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`}]), []);
   const updateTrophy = useCallback((trophy: Trophy) => setTrophies(prev => prev.map(t => t.id === trophy.id ? trophy : t)), []);
@@ -374,15 +377,18 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
     const addScheduledEvent = useCallback(async (event: Omit<ScheduledEvent, 'id'>) => {
         await apiRequest('POST', '/api/events', event);
-    }, [apiRequest]);
+        triggerSync();
+    }, [apiRequest, triggerSync]);
 
     const updateScheduledEvent = useCallback(async (event: ScheduledEvent) => {
         await apiRequest('PUT', `/api/events/${event.id}`, event);
-    }, [apiRequest]);
+        triggerSync();
+    }, [apiRequest, triggerSync]);
 
     const deleteScheduledEvent = useCallback(async (eventId: string) => {
         await apiRequest('DELETE', `/api/events/${eventId}`);
-    }, [apiRequest]);
+        triggerSync();
+    }, [apiRequest, triggerSync]);
 
     const addBugReport = useCallback(async (report: Omit<BugReport, 'id' | 'status' | 'tags'> & { reportType: BugReportType }) => {
         const { reportType, ...rest } = report;
@@ -393,7 +399,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             tags: [reportType]
         };
         await apiRequest('POST', '/api/bug-reports', newReport);
-    }, [apiRequest]);
+        triggerSync();
+    }, [apiRequest, triggerSync]);
 
     const updateBugReport = useCallback(async (reportId: string, updates: Partial<BugReport>) => {
         const originalReports = [...bugReports];
@@ -407,21 +414,24 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
         try {
             await apiRequest('PUT', `/api/bug-reports/${reportId}`, updates);
+            triggerSync();
         } catch (error) {
             // Revert on failure
             addNotification({ type: 'error', message: 'Update failed. Reverting changes.' });
             setBugReports(originalReports);
         }
-    }, [apiRequest, bugReports, addNotification]);
+    }, [apiRequest, bugReports, addNotification, triggerSync]);
     
     const deleteBugReports = useCallback(async (reportIds: string[]) => {
         await apiRequest('DELETE', '/api/bug-reports', { ids: reportIds });
-    }, [apiRequest]);
+        triggerSync();
+    }, [apiRequest, triggerSync]);
 
     const importBugReports = useCallback(async (reports: BugReport[]) => {
         await apiRequest('POST', '/api/bug-reports/import', reports);
         addNotification({ type: 'success', message: 'Bug reports imported successfully.' });
-    }, [apiRequest, addNotification]);
+        triggerSync();
+    }, [apiRequest, addNotification, triggerSync]);
 
     const restoreFromBackup = useCallback(async (backupData: IAppData) => {
         await apiRequest('POST', '/api/data/restore', backupData);
@@ -468,10 +478,11 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             
             onComplete();
             addNotification({ type: 'success', message: 'Selected assets deleted.' });
+            triggerSync();
         } catch(e) {
             // Error is already handled by the apiRequest helper
         }
-    }, [apiRequest, economyDispatch, addNotification]);
+    }, [apiRequest, economyDispatch, addNotification, triggerSync]);
 
     const uploadFile = useCallback(async (file: File, category?: string) => {
         const formData = new FormData();
@@ -499,7 +510,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       const updatedSettings = { ...settings, ...newSettings };
       setSettings(updatedSettings);
       await apiRequest('PUT', '/api/settings', updatedSettings);
-    }, [apiRequest, settings]);
+      triggerSync();
+    }, [apiRequest, settings, triggerSync]);
 
     const resetSettings = useCallback(() => {
         setSettings(INITIAL_SETTINGS);
@@ -524,6 +536,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
                 type: 'success',
                 duration: 3000,
             });
+            triggerSync();
         } catch (error) {
             updateNotification(notificationId, {
                 message: 'Failed to send message.',
@@ -531,7 +544,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
                 duration: 5000,
             });
         }
-    }, [currentUser, apiRequest, addNotification, updateNotification]);
+    }, [currentUser, apiRequest, addNotification, updateNotification, triggerSync]);
 
     const markMessagesAsRead = useCallback(async (params: { partnerId?: string; guildId?: string; }) => {
         if (!currentUser) return;
@@ -549,13 +562,15 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             })
         );
         
-        // Fire and forget API call
         const payload = { ...params, userId: currentUser.id };
-        apiRequest('POST', '/api/chat/read', payload).catch(err => {
+        try {
+            await apiRequest('POST', '/api/chat/read', payload);
+            triggerSync();
+        } catch (err) {
             console.error("Failed to mark messages as read on server:", err);
             // The UI will eventually be corrected by the next full sync if this fails.
-        });
-    }, [currentUser, apiRequest]);
+        }
+    }, [currentUser, apiRequest, triggerSync]);
 
     const state = {
         isDataLoaded, isAiConfigured, syncStatus, syncError,

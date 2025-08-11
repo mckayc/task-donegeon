@@ -5,11 +5,12 @@ import { useDeveloper } from '../../context/DeveloperContext';
 import { ChevronDownIcon, ChevronUpIcon } from '../user-interface/Icons';
 import { BugReport, BugReportType } from '../../types';
 import { useAppState } from '../../context/AppContext';
-import { BugDetailDialog } from './BugDetailDialog';
+import { useUIDispatch } from '../../context/UIStateContext';
 
 const BugReporter: React.FC = () => {
     const { isRecording, startRecording, stopRecording, addLogEntry, isPickingElement, startPickingElement, stopPickingElement, logs, activeBugId } = useDeveloper();
     const { bugReports } = useAppState();
+    const { setActiveBugDetailId } = useUIDispatch();
 
     const [title, setTitle] = useState('');
     const [note, setNote] = useState('');
@@ -18,13 +19,6 @@ const BugReporter: React.FC = () => {
     const [isMinimized, setIsMinimized] = useState(true);
     const [activeTab, setActiveTab] = useState<'create' | 'continue'>('create');
     const logContainerRef = useRef<HTMLDivElement>(null);
-
-    const [detailedReportId, setDetailedReportId] = useState<string | null>(null);
-
-    const detailedReport = useMemo(() => {
-        if (!detailedReportId) return null;
-        return bugReports.find(r => r.id === detailedReportId) || null;
-    }, [detailedReportId, bugReports]);
 
     const activeReportTitle = useMemo(() => {
         if (!isRecording) return '';
@@ -87,34 +81,6 @@ const BugReporter: React.FC = () => {
     
     const inProgressReports = useMemo(() => bugReports.filter(b => b.status === 'In Progress'), [bugReports]);
     
-    const getTagColor = (tag: string) => {
-        const lowerTag = tag.toLowerCase();
-        if (lowerTag.startsWith('ai submissions:')) {
-            return 'bg-cyan-500/20 text-cyan-300';
-        }
-        if (lowerTag.startsWith('copy #')) {
-            return 'bg-indigo-500/20 text-indigo-300';
-        }
-        switch (lowerTag) {
-            case 'in progress': return 'bg-yellow-500/20 text-yellow-300';
-            case 'feature request': return 'bg-purple-500/20 text-purple-300';
-            case 'ui/ux feedback': return 'bg-sky-500/20 text-sky-300';
-            case 'bug report': return 'bg-red-500/20 text-red-300';
-            case 'resolved':
-            case 'converted to quest':
-                 return 'bg-green-500/20 text-green-300';
-            default: return 'bg-stone-500/20 text-stone-300';
-        }
-    };
-
-    const allBugReportTags = useMemo(() => {
-        const defaultTags = ['Bug Report', 'Feature Request', 'UI/UX Feedback', 'Content Suggestion', 'In Progress', 'Acknowledged', 'Resolved', 'Converted to Quest'];
-        const allTagsFromReports = bugReports.flatMap(r => r.tags || []);
-        const submissionTagPrefix = 'ai submissions:';
-        const filteredTags = allTagsFromReports.filter(tag => !tag.toLowerCase().startsWith(submissionTagPrefix));
-        return Array.from(new Set([...defaultTags, ...filteredTags])).sort();
-    }, [bugReports]);
-
     if (isRecording) {
         if (isMinimized) {
             return (
@@ -237,7 +203,7 @@ const BugReporter: React.FC = () => {
                              {inProgressReports.length > 0 ? inProgressReports.map(report => (
                                  <div key={report.id} className="p-2 bg-stone-800/50 rounded-md flex justify-between items-center">
                                     <div>
-                                        <button onClick={() => setDetailedReportId(report.id)} className="font-semibold text-stone-200 hover:underline hover:text-accent text-left">
+                                        <button onClick={() => setActiveBugDetailId(report.id)} className="font-semibold text-stone-200 hover:underline hover:text-accent text-left">
                                             {report.title}
                                         </button>
                                         <p className="text-xs text-stone-400">Created: {new Date(report.createdAt).toLocaleDateString()}</p>
@@ -249,9 +215,6 @@ const BugReporter: React.FC = () => {
                      )}
                 </div>
             </div>
-            {detailedReport && (
-                <BugDetailDialog report={detailedReport} onClose={() => setDetailedReportId(null)} allTags={allBugReportTags} getTagColor={getTagColor} />
-            )}
         </>
     );
 };

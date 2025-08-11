@@ -9,6 +9,7 @@ interface UIState {
   isChatOpen: boolean;
   appMode: AppMode;
   activeMarketId: string | null;
+  activeBugDetailId: string | null;
 }
 
 // Dispatch functions provided by this context
@@ -18,6 +19,7 @@ interface UIDispatch {
   toggleChat: () => void;
   setAppMode: (mode: AppMode) => void;
   setActiveMarketId: (marketId: string | null) => void;
+  setActiveBugDetailId: (id: string | null) => void;
 }
 
 const UIStateContext = createContext<UIState | undefined>(undefined);
@@ -29,6 +31,7 @@ export const UIStateProvider: React.FC<{ children: ReactNode }> = ({ children })
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [appMode, setAppMode] = useState<AppMode>({ mode: 'personal' });
   const [activeMarketId, setActiveMarketId] = useState<string | null>(null);
+  const [activeBugDetailId, setActiveBugDetailId] = useState<string | null>(null);
 
   const setActivePage = useCallback((page: Page) => {
       if (bugLogger.isRecording()) {
@@ -54,6 +57,7 @@ export const UIStateProvider: React.FC<{ children: ReactNode }> = ({ children })
     isChatOpen,
     appMode,
     activeMarketId,
+    activeBugDetailId,
   };
 
   const dispatchValue: UIDispatch = {
@@ -62,6 +66,7 @@ export const UIStateProvider: React.FC<{ children: ReactNode }> = ({ children })
     toggleChat,
     setAppMode,
     setActiveMarketId,
+    setActiveBugDetailId,
   };
 
   return (
@@ -81,6 +86,6 @@ export const useUIState = (): UIState => {
 
 export const useUIDispatch = (): UIDispatch => {
   const context = useContext(UIDispatchContext);
-  if (context === undefined) throw new Error('useUIDispatch must be used within a UIStateProvider');
+  if (context === undefined) throw new Error('useUIDispatch must be used within a UIDispatchProvider');
   return context;
 };

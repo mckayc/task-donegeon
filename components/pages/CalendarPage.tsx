@@ -69,7 +69,7 @@ const CalendarPage: React.FC = () => {
             sources.push(appEventSource);
 
             const questEventSource = quests
-                .filter(q => q.isActive && (!q.guildId || q.guildId === currentGuildId))
+                .filter(q => q.isActive && !q.isOptional && (!q.guildId || q.guildId === currentGuildId))
                 .map(quest => {
                     const eventDef = {
                         title: quest.title,
@@ -297,9 +297,6 @@ const CalendarPage: React.FC = () => {
                         editable={currentUser.role === Role.DonegeonMaster}
                         eventDrop={handleEventDrop}
                         dateClick={handleDateClick}
-                        height="auto"
-                        contentHeight="auto"
-                        aspectRatio={1.5}
                     />
                  </div>
             </Card>

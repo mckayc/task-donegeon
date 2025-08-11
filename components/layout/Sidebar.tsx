@@ -291,7 +291,7 @@ const Sidebar: React.FC = () => {
   }
 
   return (
-    <div className={`flex flex-col flex-shrink-0 transition-all duration-300 ${isSidebarCollapsed ? 'w-20' : 'w-72'}`} style={{ backgroundColor: 'hsl(var(--color-bg-primary))', borderRight: '1px solid hsl(var(--color-border))' }}>
+    <div className={`sticky top-0 h-screen flex flex-col flex-shrink-0 transition-all duration-300 ${isSidebarCollapsed ? 'w-20' : 'w-72'}`} style={{ backgroundColor: 'hsl(var(--color-bg-primary))', borderRight: '1px solid hsl(var(--color-border))' }}>
       <button 
         onClick={() => setActivePage('Dashboard')} 
         data-log-id="sidebar-header-logo"

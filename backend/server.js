@@ -104,6 +104,9 @@ const checkAndAwardTrophies = async (manager, userId, guildId) => {
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
 
+// Serve static files from the React app
+app.use(express.static(path.join(__dirname, '../dist')));
+
 // === Gemini AI Client ===
 let ai;
 if (process.env.API_KEY && process.env.API_KEY !== 'thiswontworkatall') {
@@ -251,37 +254,6 @@ const startAutomatedBackupScheduler = async () => {
         console.error("Could not set up automated backup schedules on startup:", error);
     }
 };
-
-// === Database Initialization and Server Start ===
-const initializeApp = async () => {
-    await ensureDatabaseDirectoryExists();
-    await dataSource.initialize();
-    console.log("Data Source has been initialized!");
-
-    // Ensure asset and backup directories exist
-    await fs.mkdir(UPLOADS_DIR, { recursive: true });
-    await fs.mkdir(BACKUP_DIR, { recursive: true });
-    await fs.mkdir(ASSET_PACKS_DIR, { recursive: true });
-    
-    // Copy default asset packs if they don't exist in the user's volume
-    await ensureDefaultAssetPacksExist();
-    
-    // Start automated backup scheduler
-    startAutomatedBackupScheduler();
-
-    console.log(`Asset directory is ready at: ${UPLOADS_DIR}`);
-    console.log(`Backup directory is ready at: ${BACKUP_DIR}`);
-    console.log(`Asset Pack directory is ready at: ${ASSET_PACKS_DIR}`);
-
-    app.listen(port, () => {
-        console.log(`Task Donegeon backend listening at http://localhost:${port}`);
-    });
-};
-
-initializeApp().catch(err => {
-    console.error("Critical error during application initialization:", err);
-    process.exit(1);
-});
 
 // === Helper to construct the full app data state from DB ===
 const getFullAppData = async (manager) => {
@@ -471,4 +443,42 @@ app.delete('/api/backups/:filename', async (req, res) => {
         console.error('Delete backup error:', error);
         res.status(500).json({ error: 'Failed to delete backup file.' });
     }
+});
+
+// The "catchall" handler: for any request that doesn't
+// match one of the API routes above, send back React's index.html file.
+// This must be placed after all other API routes.
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, '../dist', 'index.html'));
+});
+
+// === Database Initialization and Server Start ===
+const initializeApp = async () => {
+    await ensureDatabaseDirectoryExists();
+    await dataSource.initialize();
+    console.log("Data Source has been initialized!");
+
+    // Ensure asset and backup directories exist
+    await fs.mkdir(UPLOADS_DIR, { recursive: true });
+    await fs.mkdir(BACKUP_DIR, { recursive: true });
+    await fs.mkdir(ASSET_PACKS_DIR, { recursive: true });
+    
+    // Copy default asset packs if they don't exist in the user's volume
+    await ensureDefaultAssetPacksExist();
+    
+    // Start automated backup scheduler
+    startAutomatedBackupScheduler();
+
+    console.log(`Asset directory is ready at: ${UPLOADS_DIR}`);
+    console.log(`Backup directory is ready at: ${BACKUP_DIR}`);
+    console.log(`Asset Pack directory is ready at: ${ASSET_PACKS_DIR}`);
+
+    app.listen(port, () => {
+        console.log(`Task Donegeon backend listening at http://localhost:${port}`);
+    });
+};
+
+initializeApp().catch(err => {
+    console.error("Critical error during application initialization:", err);
+    process.exit(1);
 });

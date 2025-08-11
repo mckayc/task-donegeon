@@ -26,7 +26,7 @@ interface AppDispatch {
   updateTrophy: (trophy: Trophy) => void;
   awardTrophy: (userId: string, trophyId: string, guildId?: string) => void;
   applyManualAdjustment: (adjustment: Omit<AdminAdjustment, 'id' | 'adjustedAt'>) => boolean;
-  addTheme: (theme: Omit<ThemeDefinition, 'id'>) => void;
+  addTheme: (theme: Omit<ThemeDefinition, 'id'>) => ThemeDefinition;
   updateTheme: (theme: ThemeDefinition) => void;
   deleteTheme: (themeId: string) => void;
   addScheduledEvent: (event: Omit<ScheduledEvent, 'id'>) => void;
@@ -57,9 +57,15 @@ interface AppDispatch {
 const AppStateContext = createContext<AppState | undefined>(undefined);
 const AppDispatchContext = createContext<AppDispatch | undefined>(undefined);
 
-const mergeData = <T extends { id: string }>(existing: T[], incoming: T[]): T[] => {
+const mergeData = <T extends { id: string; updatedAt?: string }>(existing: T[], incoming: T[]): T[] => {
     const dataMap = new Map(existing.map(item => [item.id, item]));
-    incoming.forEach(item => dataMap.set(item.id, item));
+    incoming.forEach(item => {
+        const existingItem = dataMap.get(item.id);
+        // Only overwrite if the incoming data is newer, or if timestamps are not available for comparison.
+        if (!existingItem || !existingItem.updatedAt || !item.updatedAt || new Date(item.updatedAt) >= new Date(existingItem.updatedAt)) {
+            dataMap.set(item.id, item);
+        }
+    });
     return Array.from(dataMap.values());
 };
 
@@ -367,7 +373,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     return true;
   }, [awardTrophy, economyDispatch]);
 
-    const addTheme = useCallback((theme: Omit<ThemeDefinition, 'id'>) => {
+    const addTheme = useCallback((theme: Omit<ThemeDefinition, 'id'>): ThemeDefinition => {
         const newTheme = { ...theme, id: `theme-${Date.now()}-${Math.random().toString(36).substring(2, 9)}` };
         setThemes(p => [...p, newTheme]);
         return newTheme;

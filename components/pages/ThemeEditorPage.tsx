@@ -4,8 +4,7 @@ import { ThemeDefinition, ThemeStyle } from '../../types';
 import Button from '../user-interface/Button';
 import Card from '../user-interface/Card';
 import Input from '../user-interface/Input';
-import { getContrast, getWcagRating, hslValuesToCss, parseHslString, hexToHsl, rgbToHex, hslToRgb } from '../../utils/colors';
-import { TrophyIcon, RankIcon } from '../user-interface/Icons';
+import { getContrast, getWcagRating, parseHslString } from '../../utils/colors';
 import ThemeIdeaGenerator from '../quests/ThemeIdeaGenerator';
 import ConfirmDialog from '../user-interface/ConfirmDialog';
 import SimpleColorPicker from '../user-interface/SimpleColorPicker';
@@ -27,7 +26,7 @@ const ContrastChecker: React.FC<{ styles: ThemeStyle }> = ({ styles }) => {
         { label: "Text on Primary BG", fg: styles['--color-text-primary-hsl'], bg: styles['--color-bg-primary-hsl'] },
         { label: "Secondary Text on Primary BG", fg: styles['--color-text-secondary-hsl'], bg: styles['--color-bg-primary-hsl'] },
         { label: "Text on Secondary BG", fg: styles['--color-text-primary-hsl'], bg: styles['--color-bg-secondary-hsl'] },
-        { label: "Accent Text on Primary BG", fg: `hsl(${styles['--color-accent-hue']} ${styles['--color-accent-saturation']} ${styles['--color-accent-lightness']})`, bg: styles['--color-bg-primary-hsl']},
+        { label: "Accent Text on Primary BG", fg: `hsl(${styles['--color-accent-hue']} ${styles['--color-accent-saturation']} ${styles['--color-accent-lightness']})`, bg: `hsl(${styles['--color-bg-primary-hsl']})`},
         { label: "Button Text on Button BG", fg: '0 0% 100%', bg: `hsl(${styles['--color-primary-hue']} ${styles['--color-primary-saturation']} ${styles['--color-primary-lightness']})`}
     ];
 
@@ -105,7 +104,7 @@ const ThemeEditorPage: React.FC = () => {
                 styles: defaultStyles || {} as ThemeStyle
             });
         }
-    }, [selectedThemeId]);
+    }, [selectedThemeId, themes]);
 
     const handleStyleChange = (key: keyof ThemeStyle, value: string) => {
         if (!formData) return;
@@ -126,23 +125,19 @@ const ThemeEditorPage: React.FC = () => {
         
         if (formData.id === 'new') {
             const { id, ...newThemeData } = formData;
-            addTheme(newThemeData);
+            const createdTheme = addTheme(newThemeData);
+            if (createdTheme) {
+                setSelectedThemeId(createdTheme.id);
+                addNotification({type: 'success', message: `Theme "${formData.name}" created!`});
+            }
         } else {
             updateTheme(formData);
+            addNotification({type: 'success', message: `Theme "${formData.name}" saved!`});
         }
     };
 
      const handleCreateNew = () => {
-        const newName = prompt("Enter a name for the new theme:", "My Custom Theme");
-        if(newName && newName.trim()){
-            const defaultStyles = themes.find(t => t.id === 'emerald')?.styles;
-            const newThemeData = {
-                name: newName.trim(),
-                isCustom: true,
-                styles: defaultStyles || {} as ThemeStyle
-            };
-            addTheme(newThemeData);
-        }
+        setSelectedThemeId('new');
     };
     
     const handleUseIdea = (idea: { name: string; styles: any; }) => {
@@ -161,7 +156,7 @@ const ThemeEditorPage: React.FC = () => {
             className={`whitespace-nowrap pb-4 px-1 border-b-2 font-medium text-sm transition-colors ${
                 activeTab === tabName
                 ? 'border-emerald-500 text-emerald-400'
-                : 'border-transparent text-stone-400 hover:text-stone-200'
+                : 'border-transparent text-stone-400 hover:text-stone-200 hover:border-stone-500'
             }`}
         >
             {children}

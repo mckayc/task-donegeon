@@ -39,6 +39,7 @@ export interface User {
   theme?: string; // Theme ID
   ownedThemes: string[]; // Array of Theme IDs
   hasBeenOnboarded?: boolean;
+  updatedAt?: string;
 }
 
 export enum QuestType {
@@ -60,6 +61,7 @@ export interface RewardTypeDefinition {
   iconType: 'emoji' | 'image';
   icon: string;
   imageUrl?: string;
+  updatedAt?: string;
 }
 
 export interface RewardItem {
@@ -105,6 +107,7 @@ export interface Quest {
   dismissals: { userId: string; dismissedAt: string; }[];
   todoUserIds?: string[];
   nextQuestId?: string; // ID of the quest unlocked by this one
+  updatedAt?: string;
 }
 
 export interface QuestGroup {
@@ -112,6 +115,7 @@ export interface QuestGroup {
   name: string;
   description: string;
   icon: string;
+  updatedAt?: string;
 }
 
 export enum QuestCompletionStatus {
@@ -128,6 +132,7 @@ export interface QuestCompletion {
   status: QuestCompletionStatus;
   note?: string;
   guildId?: string;
+  updatedAt?: string;
 }
 
 export interface GameAsset {
@@ -144,6 +149,7 @@ export interface GameAsset {
   marketIds: string[];
   creatorId: string;
   createdAt: string;
+  updatedAt?: string;
   purchaseLimit: number | null; // null for infinite
   purchaseLimitType: 'Total' | 'PerUser';
   purchaseCount: number;
@@ -199,6 +205,7 @@ export interface Market {
   imageUrl?: string;
   guildId?: string;
   status: MarketStatus;
+  updatedAt?: string;
 }
 
 export enum PurchaseRequestStatus {
@@ -221,6 +228,7 @@ export interface PurchaseRequest {
       cost: RewardItem[];
   };
   guildId?: string;
+  updatedAt?: string;
 }
 
 export interface Guild {
@@ -230,6 +238,7 @@ export interface Guild {
   memberIds: string[];
   isDefault?: boolean;
   themeId?: string;
+  updatedAt?: string;
 }
 
 export interface Rank {
@@ -239,6 +248,7 @@ export interface Rank {
   iconType: 'emoji' | 'image';
   icon: string;
   imageUrl?: string;
+  updatedAt?: string;
 }
 
 export enum TrophyRequirementType {
@@ -269,6 +279,7 @@ export interface Trophy {
     imageUrl?: string;
     isManual: boolean;
     requirements: TrophyRequirement[];
+    updatedAt?: string;
 }
 
 export interface UserTrophy {
@@ -277,6 +288,7 @@ export interface UserTrophy {
     trophyId: string;
     awardedAt: string;
     guildId?: string;
+    updatedAt?: string;
 }
 
 export enum AdminAdjustmentType {
@@ -296,6 +308,7 @@ export interface AdminAdjustment {
     reason: string;
     adjustedAt: string;
     guildId?: string;
+    updatedAt?: string;
 }
 
 export interface SystemLog {
@@ -305,6 +318,7 @@ export interface SystemLog {
     questId: string;
     userIds: string[];
     setbacksApplied: RewardItem[];
+    updatedAt?: string;
 }
 
 export interface Notification {
@@ -337,6 +351,7 @@ export interface SystemNotification {
     iconType?: 'emoji' | 'image';
     icon?: string;
     imageUrl?: string;
+    updatedAt?: string;
 }
 
 export interface ScheduledEvent {
@@ -357,6 +372,7 @@ export interface ScheduledEvent {
         assetIds?: string[]; // Empty means all items in market
         discountPercent?: number;
     };
+    updatedAt?: string;
 }
 
 export interface Terminology {
@@ -625,6 +641,7 @@ export interface ThemeDefinition {
   name: string;
   isCustom: boolean;
   styles: ThemeStyle;
+  updatedAt?: string;
 }
 
 export type Theme = ThemeDefinition;
@@ -638,6 +655,7 @@ export interface ChatMessage {
   timestamp: string;
   readBy: string[]; // Array of user IDs who have read it
   isAnnouncement?: boolean;
+  updatedAt?: string;
 }
 
 export type BugReportStatus = 'Open' | 'In Progress' | 'Resolved' | 'Closed';

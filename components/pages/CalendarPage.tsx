@@ -1,5 +1,3 @@
-
-
 import React, { useState, useMemo, useCallback, useRef } from 'react';
 import { useAppState } from '../../context/AppContext';
 import { useUIState, useUIDispatch } from '../../context/UIStateContext';
@@ -14,7 +12,7 @@ import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
 import interactionPlugin, { DateClickArg } from '@fullcalendar/interaction';
 import googleCalendarPlugin from '@fullcalendar/google-calendar';
-import { EventClickArg, EventSourceInput, EventDropArg, EventInput } from '@fullcalendar/core';
+import { EventClickArg, EventSourceInput, EventDropArg, EventInput, EventSourceFuncArg } from '@fullcalendar/core';
 import { useQuestState, useQuestDispatch } from '../../context/QuestContext';
 import { useChronicles } from '../../hooks/useChronicles';
 import QuestDetailDialog from '../quests/QuestDetailDialog';
@@ -88,7 +86,7 @@ const CalendarPage: React.FC = () => {
         },
     }), [users]);
     
-    const questEventSource = useCallback((fetchInfo, successCallback, failureCallback) => {
+    const questEventSource = useCallback((fetchInfo: EventSourceFuncArg, successCallback: (events: EventInput[]) => void, failureCallback: (error: Error) => void) => {
         try {
             const { start, end } = fetchInfo;
             const currentGuildId = appMode.mode === 'guild' ? appMode.guildId : undefined;

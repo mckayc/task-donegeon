@@ -150,7 +150,7 @@ export const BugDetailDialog: React.FC<BugDetailDialogProps> = ({ report, onClos
     return (
         <>
             <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4" onClick={onClose}>
-                <div className="bg-stone-800 border border-stone-700 rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] flex flex-col" onClick={e => e.stopPropagation()}>
+                <div className="bg-stone-800 border border-stone-700 rounded-xl shadow-2xl max-w-5xl w-full max-h-[90vh] flex flex-col" onClick={e => e.stopPropagation()}>
                     <div className="p-6 border-b border-stone-700/60 flex justify-between items-start">
                         <div>
                             <h2 className="text-3xl font-medieval text-accent">{report.title}</h2>
@@ -159,42 +159,25 @@ export const BugDetailDialog: React.FC<BugDetailDialogProps> = ({ report, onClos
                         <Button variant="ghost" size="icon" onClick={onClose}>&times;</Button>
                     </div>
 
-                    <div className="p-6 flex-grow flex flex-col overflow-hidden space-y-4">
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                             <Input as="select" label="Status" value={report.status} onChange={e => handleStatusChange(e.target.value as BugReportStatus)}>
-                                {statuses.map(s => <option key={s} value={s}>{s}</option>)}
-                            </Input>
-                            <div className="md:col-span-2">
-                                <label className="block text-sm font-medium text-stone-300 mb-1">Tags</label>
-                                <div className="flex flex-wrap gap-1 mb-2">
-                                    {(report.tags || []).map(tag => (
-                                        <span key={tag} className={`px-2 py-1 text-xs font-semibold rounded-full ${getTagColor(tag)}`}>{tag}</span>
-                                    ))}
-                                </div>
-                                <TagInput
-                                    selectedTags={report.tags || []}
-                                    onTagsChange={handleTagsChange}
-                                    allTags={allTags}
-                                />
-                            </div>
-                        </div>
+                    <div className="flex-grow p-6 flex flex-col md:flex-row gap-6 overflow-hidden">
                         
-                         <div className="pt-4 border-t border-stone-700/60 flex-grow flex flex-col overflow-hidden">
-                             <div className="flex items-center gap-4 mb-2 flex-shrink-0">
-                                <label className="flex items-center gap-2">
-                                    <input type="checkbox" onChange={handleSelectAllLogs} checked={selectedLogs.length === sortedLogs.length && sortedLogs.length > 0} />
+                        <div className="w-full md:w-2/3 flex flex-col space-y-4 overflow-hidden">
+                             <div className="flex items-center gap-4 flex-shrink-0">
+                                <label className="flex items-center gap-2 text-sm text-stone-300">
+                                    <input type="checkbox" onChange={handleSelectAllLogs} checked={selectedLogs.length === sortedLogs.length && sortedLogs.length > 0} className="h-4 w-4 rounded text-emerald-600 bg-stone-700 border-stone-600 focus:ring-emerald-500" />
                                     <span>Select All</span>
                                 </label>
                                 <Button size="sm" variant="secondary" onClick={() => copyLogToClipboard(sortedLogs.filter(log => selectedLogs.includes(log.timestamp)))} disabled={selectedLogs.length === 0}>Copy Selected ({selectedLogs.length})</Button>
                                 <Button size="sm" variant="secondary" onClick={() => copyLogToClipboard(sortedLogs)}>Copy Full Log</Button>
                             </div>
-                            <div className="space-y-4 flex-grow overflow-y-auto scrollbar-hide pr-2">
+                            <div className="flex-grow overflow-y-auto scrollbar-hide pr-4 space-y-4">
                                 {sortedLogs.map((log, index) => {
                                     const isSelected = selectedLogs.includes(log.timestamp);
                                     const authorUser = log.type === 'COMMENT' ? users.find(u => u.gameName === log.author) : undefined;
                                     return (
                                         <div key={index} className={`flex items-start gap-3 text-stone-400 text-sm p-2 rounded-md transition-colors ${isSelected ? 'bg-emerald-900/40' : ''}`}>
-                                            <input type="checkbox" checked={isSelected} onChange={(e) => handleCheckboxClick(e, log.timestamp)} className="mt-1 flex-shrink-0" />
+                                            <input type="checkbox" checked={isSelected} onChange={(e) => handleCheckboxClick(e, log.timestamp)} className="mt-1 flex-shrink-0 h-4 w-4 rounded text-emerald-600 bg-stone-700 border-stone-600 focus:ring-emerald-500" />
+                                            
                                             {log.type === 'COMMENT' ? (
                                                 <div className="flex-grow">
                                                     <div className="flex items-center gap-2">
@@ -210,7 +193,7 @@ export const BugDetailDialog: React.FC<BugDetailDialogProps> = ({ report, onClos
                                                             <span className="text-xs text-stone-500 ml-2">{new Date(log.timestamp).toLocaleString()}</span>
                                                         </p>
                                                     </div>
-                                                    <div className="mt-1 bg-stone-700/50 p-2 rounded-lg text-stone-200 text-sm whitespace-pre-wrap">
+                                                    <div className="mt-1 bg-stone-700/50 p-2 rounded-lg text-stone-200 text-sm whitespace-pre-wrap ml-8">
                                                         {log.message}
                                                     </div>
                                                 </div>
@@ -232,25 +215,40 @@ export const BugDetailDialog: React.FC<BugDetailDialogProps> = ({ report, onClos
                                 })}
                             </div>
                         </div>
-                    </div>
-                     <div className="p-4 border-t border-stone-700/60">
-                        <h4 className="text-lg font-semibold text-stone-200 mb-2">Add Comment</h4>
-                        <textarea
-                            value={comment}
-                            onChange={e => setComment(e.target.value)}
-                            rows={3}
-                            placeholder="Type your comment here..."
-                            className="w-full px-4 py-2 bg-stone-700 border border-stone-600 rounded-md"
-                        />
-                        <div className="text-right mt-2">
-                            <Button onClick={handleAddComment} disabled={!comment.trim()}>Add Comment</Button>
+
+                        <div className="w-full md:w-1/3 flex-shrink-0 flex flex-col gap-6 overflow-y-auto scrollbar-hide pr-2 border-l border-stone-700/60 pl-6 -mr-2">
+                            <div>
+                                <Input as="select" label="Status" value={report.status} onChange={e => handleStatusChange(e.target.value as BugReportStatus)}>
+                                    {statuses.map(s => <option key={s} value={s}>{s}</option>)}
+                                </Input>
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-stone-300 mb-1">Tags</label>
+                                <TagInput
+                                    selectedTags={report.tags || []}
+                                    onTagsChange={handleTagsChange}
+                                    allTags={allTags}
+                                />
+                            </div>
+                            <div>
+                                <h4 className="text-lg font-semibold text-stone-200 mb-2">Add Comment</h4>
+                                <textarea
+                                    value={comment}
+                                    onChange={e => setComment(e.target.value)}
+                                    rows={4}
+                                    placeholder="Type your comment here..."
+                                    className="w-full px-4 py-2 bg-stone-700 border border-stone-600 rounded-md"
+                                />
+                                <div className="text-right mt-2">
+                                    <Button onClick={handleAddComment} disabled={!comment.trim()}>Add Comment</Button>
+                                </div>
+                            </div>
                         </div>
                     </div>
-                    <div className="p-4 border-t border-stone-700/60 flex justify-end items-center">
-                        <div className="flex gap-2">
-                            <Button variant="secondary" onClick={onClose}>Close</Button>
-                            <Button onClick={handleTurnToQuest}>Convert to Quest</Button>
-                        </div>
+
+                    <div className="p-4 border-t border-stone-700/60 flex justify-between items-center flex-shrink-0">
+                        <Button onClick={handleTurnToQuest}>Convert to Quest</Button>
+                        <Button variant="secondary" onClick={onClose}>Close</Button>
                     </div>
                 </div>
             </div>

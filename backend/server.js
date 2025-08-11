@@ -157,6 +157,100 @@ const ensureDefaultAssetPacksExist = async () => {
     }
 };
 
+const entityKeyMap = {
+    User: 'users', Quest: 'quests', QuestGroup: 'questGroups', Market: 'markets',
+    RewardTypeDefinition: 'rewardTypes', QuestCompletion: 'questCompletions',
+    PurchaseRequest: 'purchaseRequests', Guild: 'guilds', Rank: 'ranks', Trophy: 'trophies',
+    UserTrophy: 'userTrophies', AdminAdjustment: 'adminAdjustments', GameAsset: 'gameAssets',
+    SystemLog: 'systemLogs', ThemeDefinition: 'themes', ChatMessage: 'chatMessages',
+    SystemNotification: 'systemNotifications', ScheduledEvent: 'scheduledEvents',
+    BugReport: 'bugReports', Setting: 'settings', LoginHistory: 'loginHistory'
+};
+
+const createBackup = async (reason = 'manual', maxBackups) => {
+    try {
+        const manager = dataSource.manager;
+        const dataToBackup = {};
+        for (const entity of allEntities) {
+            const repo = manager.getRepository(entity);
+            const records = await repo.find();
+            const entityName = (typeof entity === 'function' ? entity.name : entity.target.name).replace(/Entity$/, '');
+            const key = entityKeyMap[entityName];
+            if (!key) continue;
+
+            if (key === 'settings') {
+                dataToBackup[key] = records[0]?.settings || {};
+            } else if (key === 'loginHistory') {
+                dataToBackup[key] = records[0]?.history || [];
+            } else {
+                 dataToBackup[key] = records;
+            }
+        }
+        
+        const timestamp = new Date().toISOString().replace(/:/g, '-').replace(/\..+/, '');
+        const filename = `backup-${reason}-${timestamp}.json`;
+        const filePath = path.join(BACKUP_DIR, filename);
+        await fs.writeFile(filePath, JSON.stringify(dataToBackup, null, 2));
+        console.log(`Backup created successfully: ${filename}`);
+
+        // Cleanup logic for automated backups
+        if (reason === 'automated' && maxBackups) {
+            const files = await fs.readdir(BACKUP_DIR);
+            const automatedBackups = files.filter(f => f.startsWith('backup-automated-'));
+            
+            if (automatedBackups.length > maxBackups) {
+                const filesWithStats = await Promise.all(
+                    automatedBackups.map(async f => ({ name: f, time: (await fs.stat(path.join(BACKUP_DIR, f))).mtime }))
+                );
+                filesWithStats.sort((a, b) => a.time.getTime() - b.time.getTime()); // oldest first
+                
+                const filesToDeleteCount = filesWithStats.length - maxBackups;
+                const filesToDelete = filesWithStats.slice(0, filesToDeleteCount);
+
+                for (const file of filesToDelete) {
+                    await fs.unlink(path.join(BACKUP_DIR, file.name));
+                    console.log(`Deleted old automated backup: ${file.name}`);
+                }
+            }
+        }
+        return true;
+    } catch (error) {
+        console.error('Failed to create backup:', error);
+        return false;
+    }
+};
+
+const startAutomatedBackupScheduler = async () => {
+    try {
+        const manager = dataSource.manager;
+        const settingsRepo = manager.getRepository(SettingEntity);
+        const currentSettingsEntity = await settingsRepo.findOneBy({ id: 1 });
+
+        if (currentSettingsEntity && currentSettingsEntity.settings.automatedBackups.enabled) {
+            console.log("Automated backups enabled. Setting up schedules...");
+            const { schedules } = currentSettingsEntity.settings.automatedBackups;
+            schedules.forEach(schedule => {
+                 const unitInMs = {
+                    hours: 60 * 60 * 1000,
+                    days: 24 * 60 * 60 * 1000,
+                    weeks: 7 * 24 * 60 * 60 * 1000,
+                };
+                const intervalMs = schedule.frequency * unitInMs[schedule.unit];
+                if (intervalMs > 0) {
+                    setInterval(() => {
+                        console.log(`Running automated backup for schedule: ${schedule.id}`);
+                        createBackup('automated', schedule.maxBackups);
+                    }, intervalMs);
+                    console.log(`Scheduled backup for every ${schedule.frequency} ${schedule.unit}.`);
+                }
+            });
+        } else {
+            console.log("Automated backups are disabled.");
+        }
+    } catch (error) {
+        console.error("Could not set up automated backup schedules on startup:", error);
+    }
+};
 
 // === Database Initialization and Server Start ===
 const initializeApp = async () => {
@@ -265,5 +359,116 @@ app.post('/api/adjustments', async (req, res) => {
     } catch (error) {
         console.error("Adjustment error:", error);
         res.status(500).json({ error: error.message });
+    }
+});
+
+// === Backup & Restore Endpoints ===
+app.get('/api/backups', async (req, res) => {
+    try {
+        const files = await fs.readdir(BACKUP_DIR);
+        const backupInfo = await Promise.all(
+            files
+                .filter(file => file.endsWith('.json'))
+                .map(async (file) => {
+                    const stats = await fs.stat(path.join(BACKUP_DIR, file));
+                    return {
+                        filename: file,
+                        size: stats.size,
+                        createdAt: stats.mtime.toISOString(),
+                    };
+                })
+        );
+        res.json(backupInfo.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
+    } catch (error) {
+        console.error('Failed to list backups:', error);
+        res.status(500).json({ error: 'Failed to list backups.' });
+    }
+});
+
+app.post('/api/backups/create', async (req, res) => {
+    const success = await createBackup('manual');
+    if (success) {
+        res.status(201).send({ message: 'Backup created.' });
+    } else {
+        res.status(500).send({ error: 'Failed to create backup.' });
+    }
+});
+
+app.get('/api/backups/download/:filename', (req, res) => {
+    const { filename } = req.params;
+    const sanitizedFilename = path.basename(filename);
+    const filePath = path.join(BACKUP_DIR, sanitizedFilename);
+
+    // Basic security check to prevent path traversal
+    if (path.dirname(filePath) !== BACKUP_DIR) {
+        return res.status(400).send({ error: 'Invalid filename.' });
+    }
+
+    res.download(filePath, (err) => {
+        if (err) {
+            console.error('Download error:', err);
+            res.status(404).send({ error: 'File not found.' });
+        }
+    });
+});
+
+app.post('/api/backups/restore/:filename', async (req, res) => {
+    const { filename } = req.params;
+    const sanitizedFilename = path.basename(filename);
+    const filePath = path.join(BACKUP_DIR, sanitizedFilename);
+    
+    if (path.dirname(filePath) !== BACKUP_DIR) {
+        return res.status(400).send({ error: 'Invalid filename.' });
+    }
+
+    try {
+        const backupDataString = await fs.readFile(filePath, 'utf-8');
+        const backupData = JSON.parse(backupDataString);
+
+        await dataSource.transaction(async manager => {
+            // Clear all tables in reverse order of dependencies if necessary
+            for (const entity of allEntities.slice().reverse()) {
+                await manager.clear(entity);
+            }
+            
+            // Restore data
+            for (const entity of allEntities) {
+                const entityName = (typeof entity === 'function' ? entity.name : entity.target.name).replace(/Entity$/, '');
+                const key = entityKeyMap[entityName];
+                if (key && backupData[key]) {
+                    const records = backupData[key];
+                    if (key === 'settings') {
+                        await manager.save(entity, { id: 1, settings: records });
+                    } else if (key === 'loginHistory') {
+                        await manager.save(entity, { id: 1, history: records });
+                    } else if (Array.isArray(records) && records.length > 0) {
+                         await manager.save(entity, records);
+                    }
+                }
+            }
+        });
+
+        res.status(200).json({ message: 'Restore successful.' });
+    } catch (error) {
+        console.error('Restore error:', error);
+        res.status(500).json({ error: 'Failed to restore from backup.' });
+    }
+});
+
+app.delete('/api/backups/:filename', async (req, res) => {
+    const { filename } = req.params;
+    const sanitizedFilename = path.basename(filename);
+    const filePath = path.join(BACKUP_DIR, sanitizedFilename);
+    
+    if (path.dirname(filePath) !== BACKUP_DIR) {
+        return res.status(400).send({ error: 'Invalid filename.' });
+    }
+
+    try {
+        await fs.unlink(filePath);
+        res.status(204).send();
+    } catch (error) {
+        console.error('Delete backup error:', error);
+        res.status(500).json({ error: 'Failed to delete backup file.' });
     }
 });

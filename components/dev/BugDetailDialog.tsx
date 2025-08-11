@@ -1,4 +1,4 @@
-import React, { useState, useMemo, ReactNode, useRef, useEffect } from 'react';
+import React, { useState, useMemo, ReactNode, useRef, useEffect, useCallback } from 'react';
 import { BugReport, BugReportStatus, BugReportLogEntry } from '../../types';
 import { useAppDispatch } from '../../context/AppContext';
 import { useNotificationsDispatch } from '../../context/NotificationsContext';
@@ -40,17 +40,32 @@ export const BugDetailDialog: React.FC<BugDetailDialogProps> = ({ report, onClos
     const [comment, setComment] = useState('');
     const [selectedLogs, setSelectedLogs] = useState<string[]>([]);
     const logContainerRef = useRef<HTMLDivElement>(null);
+    const [userScrolledUp, setUserScrolledUp] = useState(false);
 
     const sortedLogs = useMemo(() => {
         if (!report.logs) return [];
         return [...report.logs].sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
     }, [report.logs]);
     
-    useEffect(() => {
+    const scrollToBottom = useCallback(() => {
         if (logContainerRef.current) {
             logContainerRef.current.scrollTop = logContainerRef.current.scrollHeight;
         }
-    }, [sortedLogs]);
+    }, []);
+
+    const handleScroll = () => {
+        const container = logContainerRef.current;
+        if (container) {
+            const atBottom = container.scrollHeight - container.scrollTop <= container.clientHeight + 5; // Add a small buffer
+            setUserScrolledUp(!atBottom);
+        }
+    };
+
+    useEffect(() => {
+        if (!userScrolledUp) {
+            scrollToBottom();
+        }
+    }, [sortedLogs, userScrolledUp, scrollToBottom]);
     
     const shortId = useMemo(() => `bug-${report.id.substring(4, 11)}`, [report.id]);
 
@@ -177,7 +192,7 @@ export const BugDetailDialog: React.FC<BugDetailDialogProps> = ({ report, onClos
                                 <Button size="sm" variant="secondary" onClick={() => copyLogToClipboard(sortedLogs.filter(log => selectedLogs.includes(log.timestamp)))} disabled={selectedLogs.length === 0}>Copy Selected ({selectedLogs.length})</Button>
                                 <Button size="sm" variant="secondary" onClick={() => copyLogToClipboard(sortedLogs)}>Copy Full Log</Button>
                             </div>
-                            <div ref={logContainerRef} className="flex-grow overflow-y-auto pr-4 space-y-4">
+                            <div ref={logContainerRef} onScroll={handleScroll} className="flex-grow overflow-y-auto pr-4 space-y-4">
                                 {sortedLogs.map((log, index) => {
                                     const isSelected = selectedLogs.includes(log.timestamp);
                                     const authorUser = log.type === 'COMMENT' ? users.find(u => u.gameName === log.author) : undefined;

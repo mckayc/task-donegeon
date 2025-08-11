@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo, useCallback, useRef } from 'react';
 import { useAppState } from '../../context/AppContext';
 import { useUIState, useUIDispatch } from '../../context/UIStateContext';
@@ -50,6 +51,44 @@ const CalendarPage: React.FC = () => {
     
     if (!currentUser) return null;
 
+    const birthdayEventSource: EventSourceInput = useMemo(() => ({
+        id: 'birthdays',
+        events: (fetchInfo, successCallback, failureCallback) => {
+            try {
+                const birthdayEvents: EventInput[] = [];
+                const { start, end } = fetchInfo;
+
+                users.forEach(user => {
+                    if (!user.birthday) return;
+                    const [bYear, bMonth, bDay] = user.birthday.split('-').map(Number);
+                    
+                    // Iterate through years visible in the current view, plus one year on either side to catch edge cases with month views
+                    for (let year = start.getFullYear() - 1; year <= end.getFullYear() + 1; year++) {
+                        const eventDate = new Date(year, bMonth - 1, bDay);
+                        
+                        // Check if the birthday falls within the fetch range
+                        if (eventDate >= start && eventDate < end) {
+                            birthdayEvents.push({
+                                id: `birthday-${user.id}-${year}`,
+                                title: `🎂 ${user.gameName}'s Birthday`,
+                                start: toYMD(eventDate),
+                                allDay: true,
+                                backgroundColor: 'hsl(50 90% 60%)',
+                                borderColor: 'hsl(50 90% 50%)',
+                                textColor: 'hsl(50 100% 10%)',
+                                extendedProps: { type: 'birthday', user },
+                                classNames: ['birthday-event']
+                            });
+                        }
+                    }
+                });
+                successCallback(birthdayEvents);
+            } catch (error) {
+                failureCallback(error as Error);
+            }
+        },
+    }), [users]);
+
     const eventSources = useMemo((): EventSourceInput[] => {
         const sources: EventSourceInput[] = [];
         const currentGuildId = appMode.mode === 'guild' ? appMode.guildId : undefined;
@@ -71,7 +110,7 @@ const CalendarPage: React.FC = () => {
             const questEventSource = quests
                 .filter(q => q.isActive && !q.isOptional && (!q.guildId || q.guildId === currentGuildId))
                 .map(quest => {
-                    const eventDef = {
+                    const eventInput: EventInput = {
                         title: quest.title,
                         extendedProps: { quest, type: 'quest' },
                         allDay: quest.type === QuestType.Venture && !quest.lateDateTime?.includes('T'),
@@ -80,52 +119,20 @@ const CalendarPage: React.FC = () => {
                     };
 
                     if (quest.type === QuestType.Venture) {
-                        return {
-                            ...eventDef,
-                            start: quest.lateDateTime || undefined,
-                            daysOfWeek: undefined,
-                            startRecur: undefined,
-                        };
+                        eventInput.start = quest.lateDateTime || undefined;
                     } else { // Duty
-                        return {
-                            ...eventDef,
-                            start: undefined,
-                            daysOfWeek: quest.availabilityType === 'Weekly' ? quest.weeklyRecurrenceDays : undefined,
-                            startRecur: quest.availabilityType === 'Daily' ? '1900-01-01' : undefined,
-                        };
-                    }
-                }).filter(e => e.start || (e.daysOfWeek?.length || 0) > 0 || e.startRecur);
-            sources.push(questEventSource);
-            
-            const birthdayEvents: EventInput[] = [];
-            if (viewRange) {
-                const startYear = viewRange.start.getFullYear();
-                const endYear = viewRange.end.getFullYear();
-                for (let year = startYear; year <= endYear; year++) {
-                    users.forEach(user => {
-                        if (user.birthday) {
-                            const [_, month, day] = user.birthday.split('-');
-                            const eventDate = new Date(`${year}-${month}-${day}T00:00:00`);
-                            if (eventDate >= viewRange.start && eventDate <= viewRange.end) {
-                                birthdayEvents.push({
-                                    id: `birthday-${user.id}-${year}`,
-                                    title: `🎂 ${user.gameName}'s Birthday`,
-                                    start: `${year}-${month}-${day}`,
-                                    allDay: true,
-                                    backgroundColor: 'hsl(50 90% 60%)',
-                                    borderColor: 'hsl(50 90% 50%)',
-                                    textColor: 'hsl(50 100% 10%)',
-                                    extendedProps: { type: 'birthday', user },
-                                    classNames: ['birthday-event']
-                                });
-                            }
+                        if (quest.availabilityType === 'Weekly') {
+                            eventInput.daysOfWeek = quest.weeklyRecurrenceDays;
                         }
-                    });
-                }
-            }
-            sources.push(birthdayEvents);
-
-        } else {
+                        if (quest.availabilityType === 'Daily') {
+                            eventInput.startRecur = '1900-01-01';
+                        }
+                    }
+                    return eventInput;
+                }).filter(e => e.start || (e.daysOfWeek && e.daysOfWeek.length > 0) || e.startRecur);
+            sources.push(questEventSource);
+            sources.push(birthdayEventSource);
+        } else { // chronicles mode
             const chronicleEvents: any[] = [];
             chronicles.forEach((eventsOnDay) => {
                 eventsOnDay.forEach(event => {
@@ -151,7 +158,7 @@ const CalendarPage: React.FC = () => {
         }
         
         return sources;
-    }, [mode, appMode, scheduledEvents, quests, chronicles, settings.googleCalendar, users, viewRange]);
+    }, [mode, appMode, scheduledEvents, quests, chronicles, settings.googleCalendar, birthdayEventSource]);
 
     const handleEventClick = (clickInfo: EventClickArg) => {
         const props = clickInfo.event.extendedProps;
@@ -167,6 +174,7 @@ const CalendarPage: React.FC = () => {
     };
 
     const handleDatesSet = (dateInfo: { start: Date; end: Date }) => {
+        // This hook is used for the chronicles view, but could be removed if chronicles also become a function-source
         setViewRange({ start: dateInfo.start, end: dateInfo.end });
     };
 
@@ -297,6 +305,7 @@ const CalendarPage: React.FC = () => {
                         editable={currentUser.role === Role.DonegeonMaster}
                         eventDrop={handleEventDrop}
                         dateClick={handleDateClick}
+                        height="auto"
                     />
                  </div>
             </Card>

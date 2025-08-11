@@ -25,7 +25,7 @@ interface AppDispatch {
   addTrophy: (trophy: Omit<Trophy, 'id'>) => void;
   updateTrophy: (trophy: Trophy) => void;
   awardTrophy: (userId: string, trophyId: string, guildId?: string) => void;
-  applyManualAdjustment: (adjustment: Omit<AdminAdjustment, 'id' | 'adjustedAt'>) => boolean;
+  applyManualAdjustment: (adjustment: Omit<AdminAdjustment, 'id' | 'adjustedAt'>) => Promise<void>;
   addTheme: (theme: Omit<ThemeDefinition, 'id'>) => ThemeDefinition;
   updateTheme: (theme: ThemeDefinition) => void;
   deleteTheme: (themeId: string) => void;
@@ -364,14 +364,15 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const addTrophy = useCallback((trophy: Omit<Trophy, 'id'>) => setTrophies(prev => [...prev, { ...trophy, id: `trophy-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`}]), []);
   const updateTrophy = useCallback((trophy: Trophy) => setTrophies(prev => prev.map(t => t.id === trophy.id ? trophy : t)), []);
 
-  const applyManualAdjustment = useCallback((adj: Omit<AdminAdjustment, 'id' | 'adjustedAt'>): boolean => { 
-    const newAdj: AdminAdjustment = { ...adj, id: `adj-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`, adjustedAt: new Date().toISOString() }; 
-    setAdminAdjustments(p => [...p, newAdj]); 
-    if (newAdj.type === AdminAdjustmentType.Reward) economyDispatch.applyRewards(newAdj.userId, newAdj.rewards, newAdj.guildId); 
-    else if (newAdj.type === AdminAdjustmentType.Setback) economyDispatch.deductRewards(newAdj.userId, newAdj.setbacks, newAdj.guildId); 
-    else if (newAdj.type === AdminAdjustmentType.Trophy && newAdj.trophyId) awardTrophy(newAdj.userId, newAdj.trophyId, newAdj.guildId);
-    return true;
-  }, [awardTrophy, economyDispatch]);
+  const applyManualAdjustment = useCallback(async (adj: Omit<AdminAdjustment, 'id' | 'adjustedAt'>): Promise<void> => {
+    try {
+        await apiRequest('POST', '/api/adjustments', adj);
+        addNotification({ type: 'success', message: 'Adjustment applied successfully.' });
+        triggerSync();
+    } catch (error) {
+        // error is handled and notified by apiRequest helper
+    }
+  }, [apiRequest, addNotification, triggerSync]);
 
     const addTheme = useCallback((theme: Omit<ThemeDefinition, 'id'>): ThemeDefinition => {
         const newTheme = { ...theme, id: `theme-${Date.now()}-${Math.random().toString(36).substring(2, 9)}` };
@@ -578,14 +579,18 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         }
     }, [currentUser, apiRequest, triggerSync]);
 
-    const state = {
+    const state = useMemo(() => ({
         isDataLoaded, isAiConfigured, syncStatus, syncError,
         guilds, ranks, trophies, userTrophies,
         adminAdjustments, systemLogs, settings, themes, chatMessages,
         systemNotifications, scheduledEvents, bugReports,
-    };
+    }), [
+        isDataLoaded, isAiConfigured, syncStatus, syncError,
+        guilds, ranks, trophies, userTrophies, adminAdjustments, systemLogs,
+        settings, themes, chatMessages, systemNotifications, scheduledEvents, bugReports
+    ]);
 
-    const dispatch = {
+    const dispatch = useMemo(() => ({
         addGuild, updateGuild, deleteGuild, setRanks, addTrophy, updateTrophy,
         awardTrophy, applyManualAdjustment, addTheme, updateTheme, deleteTheme,
         addScheduledEvent, updateScheduledEvent, deleteScheduledEvent, addBugReport,
@@ -594,7 +599,16 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         factoryReset, updateSettings, resetSettings, sendMessage, markMessagesAsRead,
         addSystemNotification, markSystemNotificationsAsRead,
         triggerSync,
-    };
+    }), [
+        addGuild, updateGuild, deleteGuild, setRanks, addTrophy, updateTrophy,
+        awardTrophy, applyManualAdjustment, addTheme, updateTheme, deleteTheme,
+        addScheduledEvent, updateScheduledEvent, deleteScheduledEvent, addBugReport,
+        updateBugReport, deleteBugReports, importBugReports, restoreFromBackup, clearAllHistory,
+        resetAllPlayerData, deleteAllCustomContent, deleteSelectedAssets, uploadFile,
+        factoryReset, updateSettings, resetSettings, sendMessage, markMessagesAsRead,
+        addSystemNotification, markSystemNotificationsAsRead,
+        triggerSync,
+    ]);
 
     return (
         <AppStateContext.Provider value={state}>

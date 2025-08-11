@@ -4,20 +4,30 @@ import { useAuthState } from '../../context/AuthContext';
 import { useUIState, useUIDispatch } from '../../context/UIStateContext';
 
 const ChatController: React.FC = () => {
-    const { settings, chatMessages } = useAppState();
+    const { settings, chatMessages, guilds } = useAppState();
     const { currentUser } = useAuthState();
     const { isChatOpen } = useUIState();
     const { toggleChat } = useUIDispatch();
 
     const unreadMessagesCount = useMemo(() => {
         if (!currentUser) return 0;
-        const sendersWithUnread = new Set(
-            chatMessages
-                .filter(msg => msg.recipientId === currentUser.id && !msg.readBy.includes(currentUser.id))
-                .map(msg => msg.senderId)
+        
+        // 1. Unread DMs are always relevant
+        const unreadDms = chatMessages.filter(
+            msg => msg.recipientId === currentUser.id && !msg.readBy.includes(currentUser.id)
         );
-        return sendersWithUnread.size;
-    }, [chatMessages, currentUser]);
+        const uniqueSenders = new Set(unreadDms.map(msg => msg.senderId));
+        
+        // 2. Unread messages from any of the user's guilds
+        const userGuildIds = new Set(guilds.filter(g => g.memberIds.includes(currentUser.id)).map(g => g.id));
+        const unreadGuilds = new Set(
+            chatMessages
+                .filter(msg => msg.guildId && userGuildIds.has(msg.guildId) && !msg.readBy.includes(currentUser.id))
+                .map(msg => msg.guildId)
+        );
+        
+        return uniqueSenders.size + unreadGuilds.size;
+    }, [chatMessages, currentUser, guilds]);
 
     if (!settings.chat.enabled || !currentUser || isChatOpen) {
         return null;
@@ -29,6 +39,7 @@ const ChatController: React.FC = () => {
                 onClick={toggleChat}
                 className="relative w-16 h-16 bg-emerald-600 rounded-full shadow-lg text-white flex items-center justify-center text-3xl hover:bg-emerald-500 transition-transform transform hover:scale-110"
                 aria-label="Toggle Chat"
+                data-log-id="chat-controller-toggle"
             >
                 {settings.chat.chatEmoji}
                 {unreadMessagesCount > 0 && (

@@ -14,6 +14,7 @@ import BugReporter from './components/dev/BugReporter';
 import { Role } from './types';
 import { useDeveloper, useDeveloperState } from './context/DeveloperContext';
 import { BugDetailDialog } from './components/dev/BugDetailDialog';
+import ChatController from './components/chat/ChatController';
 
 const App: React.FC = () => {
   const { isDataLoaded, settings, guilds, themes, bugReports } = useAppState();
@@ -162,6 +163,8 @@ const App: React.FC = () => {
 
   const showOnboarding = currentUser && !currentUser.hasBeenOnboarded;
   const showBugReporter = settings.developerMode.enabled && currentUser?.role === Role.DonegeonMaster;
+  const showChatController = settings.chat.enabled && currentUser;
+
 
   return (
     <>
@@ -186,6 +189,7 @@ const App: React.FC = () => {
       })()}
 
       {showBugReporter && <BugReporter />}
+      {showChatController && <ChatController />}
       {detailedReport && (
           <BugDetailDialog 
               report={detailedReport} 

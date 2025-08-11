@@ -41,7 +41,7 @@ const ManualAdjustmentDialog: React.FC<ManualAdjustmentDialogProps> = ({ user, o
     setter(items.filter((_, i) => i !== indexToRemove));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     
@@ -71,11 +71,8 @@ const ManualAdjustmentDialog: React.FC<ManualAdjustmentDialogProps> = ({ user, o
         return;
     }
     
-    const success = applyManualAdjustment(adjustmentPayload);
-
-    if (success) {
-        onClose();
-    }
+    await applyManualAdjustment(adjustmentPayload);
+    onClose();
   };
   
   const userGuilds = guilds.filter(g => g.memberIds.includes(user.id));

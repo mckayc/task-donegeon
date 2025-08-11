@@ -99,7 +99,9 @@ const CalendarPage: React.FC = () => {
                     title: quest.title,
                     extendedProps: { quest, type: 'quest' },
                     backgroundColor: quest.type === QuestType.Duty ? 'hsl(204 85% 54%)' : 'hsl(36 90% 50%)',
-                    borderColor: quest.type === QuestType.Duty ? 'hsl(204 85% 44%)' : 'hsl(36 90% 40%)'
+                    borderColor: quest.type === QuestType.Duty ? 'hsl(204 85% 44%)' : 'hsl(36 90% 40%)',
+                    textColor: '#fff',
+                    classNames: [quest.type === QuestType.Venture ? 'event-venture' : 'event-duty']
                 };
 
                 if (quest.type === QuestType.Venture && quest.lateDateTime) {
@@ -327,7 +329,9 @@ const CalendarPage: React.FC = () => {
                 .fc .fc-daygrid-day.fc-day-today { background-color: hsl(var(--accent) / 0.1); }
                 .fc .fc-daygrid-day-number { color: hsl(var(--foreground)); padding: 4px; }
                 .fc .fc-day-past .fc-daygrid-day-number { color: hsl(var(--muted-foreground)); }
-                .fc .fc-daygrid-event { min-height: 38px; align-items: center; display: flex; font-size: 0.75rem; padding: 2px 4px; border: 1px solid hsl(var(--border)) !important; }
+                .fc .fc-daygrid-event { min-height: 38px; align-items: center; display: flex; font-size: 0.875rem; padding: 2px 4px; border-width: 2px !important; }
+                .event-venture { border-style: dashed !important; }
+                .event-duty { border-style: solid !important; }
                 .fc-event.gcal-event { background-color: hsl(217 91% 60%) !important; border-color: hsl(217 91% 70%) !important; }
                 .admin-calendar .fc-daygrid-day { cursor: pointer; }
                 .admin-calendar .fc-daygrid-day:hover .fc-daygrid-day-frame { background-color: hsl(var(--secondary) / 0.5) !important; }
@@ -358,10 +362,11 @@ const CalendarPage: React.FC = () => {
                         headerToolbar={{
                             left: 'prev,next today',
                             center: 'title',
-                            right: 'dayGridMonth,timeGridWeek,dayGridDay'
+                            right: 'dayGridDay,timeGridWeek,dayGridMonth'
                         }}
                         buttonText={{ day: 'Day', week: 'Week', month: 'Month' }}
-                        initialView="dayGridMonth"
+                        initialView="dayGridDay"
+                        dayMaxEvents={4}
                         googleCalendarApiKey={settings.googleCalendar.apiKey || undefined}
                         eventSources={eventSources}
                         eventClick={handleEventClick}

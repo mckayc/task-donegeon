@@ -12,7 +12,7 @@ import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
 import interactionPlugin, { DateClickArg } from '@fullcalendar/interaction';
 import googleCalendarPlugin from '@fullcalendar/google-calendar';
-import { EventClickArg, EventSourceInput, EventDropArg } from '@fullcalendar/core';
+import { EventClickArg, EventSourceInput, EventDropArg, EventInput } from '@fullcalendar/core';
 import { useQuestState, useQuestDispatch } from '../../context/QuestContext';
 import { useChronicles } from '../../hooks/useChronicles';
 import QuestDetailDialog from '../quests/QuestDetailDialog';
@@ -94,10 +94,10 @@ const CalendarPage: React.FC = () => {
                             startRecur: quest.availabilityType === 'Daily' ? '1900-01-01' : undefined,
                         };
                     }
-                }).filter(e => e.start || (e.daysOfWeek && e.daysOfWeek.length > 0) || e.startRecur);
+                }).filter(e => e.start || (e.daysOfWeek?.length || 0) > 0 || e.startRecur);
             sources.push(questEventSource);
             
-            const birthdayEvents = [];
+            const birthdayEvents: EventInput[] = [];
             if (viewRange) {
                 const startYear = viewRange.start.getFullYear();
                 const endYear = viewRange.end.getFullYear();

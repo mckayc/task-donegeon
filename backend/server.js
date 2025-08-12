@@ -173,11 +173,10 @@ const createBackup = async (reason = 'manual', maxBackups) => {
     try {
         const manager = dataSource.manager;
         const dataToBackup = {};
-        for (const entity of allEntities) {
-            const repo = manager.getRepository(entity);
+        for (const metadata of dataSource.entityMetadatas) {
+            const repo = manager.getRepository(metadata.name);
             const records = await repo.find();
-            const entityName = entity.options.name.replace(/Entity$/, '');
-            const key = entityKeyMap[entityName];
+            const key = entityKeyMap[metadata.name];
             if (!key) continue;
 
             if (key === 'settings') {
@@ -283,10 +282,9 @@ app.get('/api/data/sync', async (req, res) => {
         if (lastSync) {
             // This is a delta sync. Find all entities updated since lastSync.
             const updates = {};
-            for (const entity of allEntities) {
-                const repo = manager.getRepository(entity);
-                const entityName = entity.options.name.replace(/Entity$/, '');
-                const key = entityKeyMap[entityName];
+            for (const metadata of dataSource.entityMetadatas) {
+                const repo = manager.getRepository(metadata.name);
+                const key = entityKeyMap[metadata.name];
                 if (!key) continue;
 
                 if (key === 'settings' || key === 'loginHistory') {
@@ -317,10 +315,9 @@ app.get('/api/data/sync', async (req, res) => {
             }
 
             const data = {};
-            for (const entity of allEntities) {
-                 const repo = manager.getRepository(entity);
-                 const entityName = entity.options.name.replace(/Entity$/, '');
-                 const key = entityKeyMap[entityName];
+            for (const metadata of dataSource.entityMetadatas) {
+                 const repo = manager.getRepository(metadata.name);
+                 const key = entityKeyMap[metadata.name];
                  if (!key) continue;
 
                 if (key === 'settings') {
@@ -515,22 +512,21 @@ app.post('/api/backups/restore/:filename', async (req, res) => {
 
         await dataSource.transaction(async manager => {
             // Clear all tables in reverse order of dependencies if necessary
-            for (const entity of allEntities.slice().reverse()) {
-                await manager.clear(entity);
+            for (const metadata of dataSource.entityMetadatas.slice().reverse()) {
+                await manager.clear(metadata.name);
             }
             
             // Restore data
-            for (const entity of allEntities) {
-                const entityName = entity.options.name.replace(/Entity$/, '');
-                const key = entityKeyMap[entityName];
+            for (const metadata of dataSource.entityMetadatas) {
+                const key = entityKeyMap[metadata.name];
                 if (key && backupData[key]) {
                     const records = backupData[key];
                     if (key === 'settings') {
-                        await manager.save(entity, { id: 1, settings: records });
+                        await manager.save(metadata.name, { id: 1, settings: records });
                     } else if (key === 'loginHistory') {
-                        await manager.save(entity, { id: 1, history: records });
+                        await manager.save(metadata.name, { id: 1, history: records });
                     } else if (Array.isArray(records) && records.length > 0) {
-                         await manager.save(entity, records);
+                         await manager.save(metadata.name, records);
                     }
                 }
             }

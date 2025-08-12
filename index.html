@@ -146,6 +146,76 @@
          animation-timing-function: ease-in;
       }
 
+      /* FullCalendar Simplification Styles */
+      .fc-license-message { display: none !important; }
+      .fc { 
+        --fc-border-color: hsl(var(--border));
+        --fc-daygrid-event-dot-width: 8px;
+        --fc-list-event-dot-width: 10px;
+        --fc-list-event-hover-bg-color: hsl(var(--color-bg-tertiary-hsl));
+        --fc-event-text-color: hsl(var(--foreground));
+        --fc-today-bg-color: hsl(var(--accent) / 0.1);
+      }
+      .fc .fc-toolbar.fc-header-toolbar { margin-bottom: 1.5rem; }
+      .fc .fc-toolbar-title { font-family: var(--font-display); color: hsl(var(--accent-light)); }
+      .fc .fc-button-primary { 
+          background-color: hsl(var(--secondary));
+          border-color: hsl(var(--border)); 
+          color: hsl(var(--foreground));
+          font-weight: 500;
+          text-transform: capitalize;
+      }
+      .fc .fc-button-primary:hover { background-color: hsl(var(--accent) / 0.5); }
+      .fc .fc-button-primary:disabled { background-color: hsl(var(--muted)); }
+      .fc .fc-button-primary:not(:disabled).fc-button-active, 
+      .fc .fc-button-primary:not(:disabled):active { 
+          background-color: hsl(var(--primary)); 
+          color: hsl(var(--primary-foreground));
+          border-color: hsl(var(--ring));
+      }
+      .fc .fc-daygrid-day-number { color: hsl(var(--foreground)); padding: 4px; }
+      .fc .fc-day-past .fc-daygrid-day-number { color: hsl(var(--muted-foreground)); }
+
+      /* Event bubbles */
+      .fc-daygrid-event, .fc-timegrid-event, .fc-v-event {
+          border: 1px solid hsl(var(--primary) / 0.7) !important;
+          background-color: hsl(var(--primary) / 0.3) !important;
+          font-weight: 500;
+          font-size: 0.8rem;
+          padding: 2px 4px;
+      }
+      .fc-event.gcal-event { background-color: hsl(217 91% 60% / 0.7) !important; border-color: hsl(217 91% 70%) !important; }
+      .fc-event.birthday-event { font-weight: bold; }
+
+      /* List View */
+      .fc-list-day-cushion {
+          background-color: hsl(var(--color-bg-secondary-hsl)) !important;
+      }
+      .fc-list-day-text, .fc-list-day-side-text {
+          font-family: var(--font-display);
+          font-size: 1.25rem;
+          color: hsl(var(--color-text-primary-hsl));
+          text-decoration: none !important;
+      }
+      .fc-list-event {
+          background-color: transparent !important;
+          border: none !important;
+          padding: 0.5rem 0.25rem;
+      }
+      .fc-list-event-title {
+          font-weight: 500;
+          color: hsl(var(--color-text-secondary-hsl));
+      }
+      .fc-list-event:hover .fc-list-event-title {
+          color: hsl(var(--color-text-primary-hsl));
+      }
+      .fc-list-event-time {
+          font-weight: normal;
+          color: hsl(var(--muted-foreground));
+      }
+      .fc-list-event-dot {
+          border-color: hsl(var(--primary)) !important;
+      }
     </style>
   <script type="importmap">
 {
@@ -167,6 +237,7 @@
     "@fullcalendar/react": "https://esm.sh/@fullcalendar/react@6.1.14",
     "@fullcalendar/daygrid": "https://esm.sh/@fullcalendar/daygrid@6.1.14",
     "@fullcalendar/timegrid": "https://esm.sh/@fullcalendar/timegrid@6.1.14",
+    "@fullcalendar/list": "https://esm.sh/@fullcalendar/list@6.1.14",
     "@fullcalendar/interaction": "https://esm.sh/@fullcalendar/interaction@6.1.14",
     "@fullcalendar/google-calendar": "https://esm.sh/@fullcalendar/google-calendar@6.1.14"
   }

@@ -10,6 +10,7 @@ import { useAuthState } from '../../context/AuthContext';
 import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
+import listPlugin from '@fullcalendar/list';
 import interactionPlugin, { DateClickArg } from '@fullcalendar/interaction';
 import googleCalendarPlugin from '@fullcalendar/google-calendar';
 import { EventClickArg, EventSourceInput, EventDropArg, EventInput } from '@fullcalendar/core';
@@ -244,29 +245,6 @@ const CalendarPage: React.FC = () => {
 
     return (
         <div>
-            <style>{`
-                .fc-license-message { display: none !important; }
-                .fc { 
-                  --fc-bg-event-color: hsl(var(--primary));
-                  --fc-border-color: hsl(var(--border));
-                  --fc-daygrid-event-dot-width: 8px;
-                  --fc-list-event-dot-width: 10px;
-                  --fc-list-event-hover-bg-color: hsl(var(--secondary));
-                  --fc-event-text-color: hsl(var(--primary-foreground));
-                  --fc-today-bg-color: hsl(var(--accent) / 0.1);
-                }
-                .fc .fc-toolbar.fc-header-toolbar { margin-bottom: 1.5rem; }
-                .fc .fc-toolbar-title { font-family: var(--font-display); color: hsl(var(--accent-light)); }
-                .fc .fc-button-primary { background-color: hsl(var(--secondary)); border-color: hsl(var(--border)); color: hsl(var(--foreground)); font-weight: 500; }
-                .fc .fc-button-primary:hover { background-color: hsl(var(--accent) / 0.5); }
-                .fc .fc-button-primary:disabled { background-color: hsl(var(--muted)); }
-                .fc .fc-button-primary:not(:disabled).fc-button-active, .fc .fc-button-primary:not(:disabled):active { background-color: hsl(var(--primary)); color: hsl(var(--primary-foreground)); }
-                .fc .fc-daygrid-day-number { color: hsl(var(--foreground)); padding: 4px; }
-                .fc .fc-day-past .fc-daygrid-day-number { color: hsl(var(--muted-foreground)); }
-                .fc .fc-event { border: 1px solid hsl(var(--border)) !important; font-size: 0.75rem; padding: 2px 4px; }
-                .fc-event.gcal-event { background-color: hsl(217 91% 60%) !important; border-color: hsl(217 91% 70%) !important; }
-                .fc-event.birthday-event { font-weight: bold; }
-            `}</style>
             <Card>
                 <div className="flex items-center justify-between p-4 border-b border-stone-700/60 flex-wrap gap-4">
                     <div></div> {/* Spacer */}
@@ -283,25 +261,27 @@ const CalendarPage: React.FC = () => {
                  <div className="p-4">
                     <FullCalendar
                         ref={calendarRef}
-                        plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin, googleCalendarPlugin]}
+                        plugins={[dayGridPlugin, timeGridPlugin, listPlugin, interactionPlugin, googleCalendarPlugin]}
                         headerToolbar={{
                             left: 'prev,next today',
                             center: 'title',
-                            right: 'dayGridDay,timeGridWeek,dayGridMonth'
+                            right: 'dayGridMonth,timeGridWeek,listWeek'
                         }}
-                        buttonText={{ day: 'Day', week: 'Week', month: 'Month' }}
-                        initialView="dayGridMonth"
+                        buttonText={{ day: 'Day', week: 'Week', month: 'Month', list: 'List' }}
+                        initialView="listWeek"
                         googleCalendarApiKey={settings.googleCalendar.apiKey || undefined}
                         eventSources={eventSources}
                         eventClick={handleEventClick}
                         datesSet={handleDatesSet}
                         editable={currentUser.role === Role.DonegeonMaster}
+                        selectable={false}
+                        lazyFetching={true}
                         eventDrop={handleEventDrop}
                         dateClick={handleDateClick}
                         height="auto"
                         contentHeight="auto"
                         aspectRatio={1.8}
-                        dayMaxEvents={true}
+                        dayMaxEvents={3}
                     />
                  </div>
             </Card>

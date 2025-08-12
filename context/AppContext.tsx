@@ -1,5 +1,3 @@
-
-
 import React, { createContext, useState, useContext, ReactNode, useEffect, useCallback, useMemo, useRef } from 'react';
 import { AppSettings, User, Quest, RewardItem, Guild, Rank, Trophy, UserTrophy, AppMode, Page, IAppData, ShareableAssetType, GameAsset, Role, RewardCategory, AdminAdjustment, AdminAdjustmentType, SystemLog, QuestType, QuestAvailability, AssetPack, ImportResolution, TrophyRequirementType, ThemeDefinition, ChatMessage, SystemNotification, SystemNotificationType, MarketStatus, QuestGroup, BulkQuestUpdates, ScheduledEvent, BugReport, QuestCompletion, BugReportType, PurchaseRequest, PurchaseRequestStatus, Market, RewardTypeDefinition, QuestCompletionStatus } from '../types';
 import { INITIAL_SETTINGS, INITIAL_RANKS, INITIAL_TROPHIES, INITIAL_THEMES } from '../data/initialData';
@@ -33,7 +31,7 @@ interface AppDispatch {
   updateTrophy: (trophy: Trophy) => void;
   awardTrophy: (userId: string, trophyId: string, guildId?: string) => void;
   applyManualAdjustment: (adjustment: Omit<AdminAdjustment, 'id' | 'adjustedAt'>) => boolean;
-  addTheme: (theme: Omit<ThemeDefinition, 'id'>) => void;
+  addTheme: (theme: Omit<ThemeDefinition, 'id' | 'isCustom'>) => void;
   updateTheme: (theme: ThemeDefinition) => void;
   deleteTheme: (themeId: string) => void;
   addScheduledEvent: (event: Omit<ScheduledEvent, 'id'>) => void;
@@ -74,7 +72,7 @@ interface AppDispatch {
   exitToSharedView: () => void;
   setIsSharedViewActive: (isActive: boolean) => void;
   resetAllUsersData: () => void;
-  completeFirstRun: (adminUserData: any) => void;
+  completeFirstRun: (adminUserData: Omit<User, 'id' | 'personalPurse' | 'personalExperience' | 'guildBalances' | 'avatar' | 'ownedAssetIds' | 'ownedThemes' | 'hasBeenOnboarded' | 'pin'> & {pin?: string}) => void;
 
   // Economy
   setMarkets: React.Dispatch<React.SetStateAction<Market[]>>;
@@ -118,7 +116,7 @@ interface AppDispatch {
   releaseQuest: (questId: string, userId: string) => void;
   markQuestAsTodo: (questId: string, userId: string) => void;
   unmarkQuestAsTodo: (questId: string, userId: string) => void;
-  completeQuest: (completionData: any) => Promise<void>;
+  completeQuest: (completionData: Omit<QuestCompletion, 'id'>) => Promise<void>;
   approveQuestCompletion: (completionId: string, note?: string) => Promise<void>;
   rejectQuestCompletion: (completionId: string, note?: string) => Promise<void>;
   addQuestGroup: (group: Omit<QuestGroup, 'id'>) => QuestGroup;
@@ -464,7 +462,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     }, persist);
   }, [rewardTypes, updateUser]);
 
-  const completeQuest = useCallback(async (completionData: any) => {
+  const completeQuest = useCallback(async (completionData: Omit<QuestCompletion, 'id'>) => {
       const { questId, userId, status, guildId } = completionData;
       if (status === QuestCompletionStatus.Approved) {
           const quest = quests.find(q => q.id === questId);
@@ -479,10 +477,10 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     }, []);
 
     const claimQuest = useCallback((questId: string, userId: string) => {
-        const quest = quests.find(q => q.id === questId);
-        if(!quest) return;
+        const quest = quests.find(item => item.id === questId);
+        if (!quest) return;
         const updatedQuest = { ...quest, claimedByUserIds: [...(quest.claimedByUserIds || []), userId] };
-        setQuests(prev => prev.map(q => q.id === questId ? updatedQuest : q));
+        setQuests(prev => prev.map(item => item.id === questId ? updatedQuest : item));
     }, [quests]);
 
     const releaseQuest = useCallback((questId: string, userId: string) => {
@@ -679,8 +677,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         return true;
     }, [applyRewards, deductRewards, awardTrophy, addNotification]);
 
-    const addTheme = useCallback((theme: Omit<ThemeDefinition, 'id'>) => {
-        const newTheme: ThemeDefinition = { ...theme, id: `custom-theme-${Date.now()}`};
+    const addTheme = useCallback((theme: Omit<ThemeDefinition, 'id' | 'isCustom'>) => {
+        const newTheme: ThemeDefinition = { ...theme, id: `custom-theme-${Date.now()}`, isCustom: true };
         setThemes(p => [...p, newTheme]);
         addNotification({ type: 'success', message: `Theme "${theme.name}" created.` });
     }, [addNotification]);
@@ -850,9 +848,9 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const allDispatchFunctions: AppDispatch = {
       // Auth
       setUsers, setLoginHistory,
-      addUser: (userData: any) => apiRequest('POST', '/api/users', userData),
+      addUser: (userData: Omit<User, 'id' | 'personalPurse' | 'personalExperience' | 'guildBalances' | 'avatar' | 'ownedAssetIds' | 'ownedThemes' | 'hasBeenOnboarded'>) => apiRequest('POST', '/api/users', userData),
       updateUser,
-      deleteUsers,
+      deleteUsers: (userIds: string[]) => apiRequest('DELETE', '/api/users', { ids: userIds }),
       setCurrentUser,
       markUserAsOnboarded: (userId: string) => updateUser(userId, { hasBeenOnboarded: true }),
       setAppUnlocked: (isUnlocked: boolean) => { localStorage.setItem('isAppUnlocked', String(isUnlocked)); _setAppUnlocked(isUnlocked); },
@@ -861,63 +859,73 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       exitToSharedView: () => { _setCurrentUser(null); setIsSharedViewActive(true); localStorage.removeItem('lastUserId'); },
       setIsSharedViewActive,
       resetAllUsersData,
-      completeFirstRun: (adminUserData: any) => apiRequest('POST', '/api/first-run', { adminUserData }).then(() => setTimeout(() => window.location.reload(), 2000)),
+      completeFirstRun: (adminUserData: Omit<User, 'id' | 'personalPurse' | 'personalExperience' | 'guildBalances' | 'avatar' | 'ownedAssetIds' | 'ownedThemes' | 'hasBeenOnboarded' | 'pin'> & {pin?: string}) => apiRequest('POST', '/api/first-run', { adminUserData }).then(() => setTimeout(() => window.location.reload(), 2000)),
       
       // Quest
       setQuests, setQuestGroups, setQuestCompletions,
-      addQuest: (quest: any) => apiRequest('POST', '/api/quests', quest),
-      updateQuest: (quest: any) => apiRequest('PUT', `/api/quests/${quest.id}`, quest),
-      deleteQuest: (id: any) => apiRequest('DELETE', '/api/quests', { ids: [id] }),
-      cloneQuest: (id: any) => apiRequest('POST', `/api/quests/clone/${id}`),
+      addQuest: (quest: Omit<Quest, 'id' | 'claimedByUserIds' | 'dismissals'>) => apiRequest('POST', '/api/quests', quest),
+      updateQuest: (quest: Quest) => apiRequest('PUT', `/api/quests/${quest.id}`, quest),
+      deleteQuest: (id: string) => apiRequest('DELETE', '/api/quests', { ids: [id] }),
+      cloneQuest: (id: string) => apiRequest('POST', `/api/quests/clone/${id}`),
       dismissQuest, claimQuest, releaseQuest, markQuestAsTodo, unmarkQuestAsTodo,
-      completeQuest, approveQuestCompletion: (id: any, note: any) => apiRequest('POST', `/api/actions/approve-quest/${id}`, { note }),
-      rejectQuestCompletion: (id: any, note: any) => apiRequest('POST', `/api/actions/reject-quest/${id}`, { note }),
-      addQuestGroup: (group: any) => { const newGroup = { ...group, id: `qg-${Date.now()}` }; setQuestGroups(p => [...p, newGroup]); return newGroup; },
-      updateQuestGroup: (group: any) => setQuestGroups(p => p.map(g => g.id === group.id ? group : g)),
-      deleteQuestGroup: (id: any) => setQuestGroups(p => p.filter(g => g.id !== id)),
-      deleteQuestGroups: (ids: any) => { const idSet = new Set(ids); setQuestGroups(p => p.filter(g => !idSet.has(g.id))); },
-      assignQuestGroupToUsers: (groupId: any, userIds: any) => setQuests(prevQuests => prevQuests.map(quest => quest.groupId === groupId ? { ...quest, assignedUserIds: userIds } : quest)),
-      deleteQuests: (ids: any) => apiRequest('DELETE', '/api/quests', { ids }),
-      updateQuestsStatus: (ids: any, isActive: any) => apiRequest('PUT', '/api/quests/bulk-status', { ids, isActive }),
-      bulkUpdateQuests: (ids: any, updates: any) => apiRequest('PUT', '/api/quests/bulk-update', { ids, updates }),
+      completeQuest, approveQuestCompletion: (id: string, note?: string) => apiRequest('POST', `/api/actions/approve-quest/${id}`, { note }),
+      rejectQuestCompletion: (id: string, note?: string) => apiRequest('POST', `/api/actions/reject-quest/${id}`, { note }),
+      addQuestGroup: (group: Omit<QuestGroup, 'id'>) => { const newGroup = { ...group, id: `qg-${Date.now()}` }; setQuestGroups(p => [...p, newGroup]); return newGroup; },
+      updateQuestGroup: (group: QuestGroup) => setQuestGroups(p => p.map(g => g.id === group.id ? group : g)),
+      deleteQuestGroup: (id: string) => setQuestGroups(p => p.filter(g => g.id !== id)),
+      deleteQuestGroups: (ids: string[]) => { const idSet = new Set(ids); setQuestGroups(p => p.filter(g => !idSet.has(g.id))); },
+      assignQuestGroupToUsers: (groupId: string, userIds: string[]) => setQuests(prevQuests => prevQuests.map(quest => quest.groupId === groupId ? { ...quest, assignedUserIds: userIds } : quest)),
+      deleteQuests: (ids: string[]) => apiRequest('DELETE', '/api/quests', { ids }),
+      updateQuestsStatus: (ids: string[], isActive: boolean) => apiRequest('PUT', '/api/quests/bulk-status', { ids, isActive }),
+      bulkUpdateQuests: (ids: string[], updates: BulkQuestUpdates) => apiRequest('PUT', '/api/quests/bulk-update', { ids, updates }),
       
       // Economy
       setMarkets, setRewardTypes, setPurchaseRequests, setGameAssets,
-      addRewardType: (rt: any) => setRewardTypes(p => [...p, {...rt, id: `custom-${Date.now()}`, isCore: false}]),
-      updateRewardType: (rt: any) => setRewardTypes(p => p.map(r => r.id === rt.id ? rt : r)),
-      deleteRewardType: (id: any) => setRewardTypes(p => p.filter(r => r.id !== id)),
+      addRewardType: (rt: Omit<RewardTypeDefinition, 'id' | 'isCore'>) => setRewardTypes(p => [...p, {...rt, id: `custom-${Date.now()}`, isCore: false}]),
+      updateRewardType: (rt: RewardTypeDefinition) => setRewardTypes(p => p.map(r => r.id === rt.id ? rt : r)),
+      deleteRewardType: (id: string) => setRewardTypes(p => p.filter(r => r.id !== id)),
       cloneRewardType,
-      addMarket: (m: any) => setMarkets(p => [...p, {...m, id: `market-${Date.now()}`}]),
-      updateMarket: (m: any) => setMarkets(p => p.map(market => market.id === m.id ? m : market)),
-      deleteMarket: (id: any) => setMarkets(p => p.filter(m => m.id !== id)),
+      addMarket: (m: Omit<Market, 'id'>) => setMarkets(p => [...p, {...m, id: `market-${Date.now()}`}]),
+      updateMarket: (m: Market) => setMarkets(p => p.map(market => market.id === m.id ? m : market)),
+      deleteMarket: (id: string) => setMarkets(p => p.filter(m => m.id !== id)),
       cloneMarket,
       deleteMarkets,
       updateMarketsStatus,
-      addGameAsset: (asset: any) => apiRequest('POST', '/api/assets', asset),
-      updateGameAsset: (asset: any) => apiRequest('PUT', `/api/assets/${asset.id}`, asset),
-      deleteGameAsset: (id: any) => apiRequest('DELETE', '/api/assets', { ids: [id] }),
-      cloneGameAsset: (id: any) => apiRequest('POST', `/api/assets/clone/${id}`),
-      deleteGameAssets: (ids: any) => apiRequest('DELETE', '/api/assets', { ids }),
+      addGameAsset: (asset: Omit<GameAsset, 'id' | 'creatorId' | 'createdAt' | 'purchaseCount'>) => apiRequest('POST', '/api/assets', asset),
+      updateGameAsset: (asset: GameAsset) => apiRequest('PUT', `/api/assets/${asset.id}`, asset),
+      deleteGameAsset: (id: string) => apiRequest('DELETE', '/api/assets', { ids: [id] }),
+      cloneGameAsset: (id: string) => apiRequest('POST', `/api/assets/clone/${id}`),
+      deleteGameAssets: (ids: string[]) => apiRequest('DELETE', '/api/assets', { ids }),
       purchaseMarketItem, cancelPurchaseRequest, approvePurchaseRequest, rejectPurchaseRequest,
       applyRewards, deductRewards, executeExchange,
-      importAssetPack: (pack: any, resolutions: any, allData: any) => apiRequest('POST', '/api/data/import-assets', { assetPack: pack, resolutions }),
+      importAssetPack: (pack: AssetPack, resolutions: ImportResolution[], allData: IAppData) => apiRequest('POST', '/api/data/import-assets', { assetPack: pack, resolutions }),
       
       // App
-      addGuild: (g: any) => apiRequest('POST', '/api/guilds', g),
-      updateGuild: (g: any) => apiRequest('PUT', `/api/guilds/${g.id}`, g),
-      deleteGuild: (id: any) => apiRequest('DELETE', `/api/guilds/${id}`),
-      setRanks, addTrophy, updateTrophy, awardTrophy, applyManualAdjustment,
-      addTheme, updateTheme, deleteTheme, addScheduledEvent: (e: any) => apiRequest('POST', '/api/events', e),
-      updateScheduledEvent: (e: any) => apiRequest('PUT', `/api/events/${e.id}`, e),
-      deleteScheduledEvent: (id: any) => apiRequest('DELETE', `/api/events/${id}`),
-      addBugReport: (r: any) => apiRequest('POST', '/api/bug-reports', r),
-      updateBugReport: (id: any, u: any) => apiRequest('PUT', `/api/bug-reports/${id}`, u),
-      deleteBugReports: (ids: any) => apiRequest('DELETE', '/api/bug-reports', { ids }),
-      importBugReports: (r: any) => apiRequest('POST', '/api/bug-reports/import', r),
-      restoreFromBackup: (d: any) => apiRequest('POST', '/api/data/restore', d).then(() => setTimeout(() => window.location.reload(), 1500)),
-      clearAllHistory, resetAllPlayerData, deleteAllCustomContent, deleteSelectedAssets, uploadFile, factoryReset,
-      updateSettings: (s: any) => { const newSettings = {...settings, ...s}; setSettings(newSettings); apiRequest('PUT', '/api/settings', newSettings); },
-      resetSettings, sendMessage, markMessagesAsRead, addSystemNotification, markSystemNotificationsAsRead,
+      addGuild: (g: Omit<Guild, 'id'>) => apiRequest('POST', '/api/guilds', g),
+      updateGuild: (g: Guild) => apiRequest('PUT', `/api/guilds/${g.id}`, g),
+      deleteGuild: (id: string) => apiRequest('DELETE', `/api/guilds/${id}`),
+      setRanks,
+      addTrophy: (trophy: Omit<Trophy, 'id'>) => apiRequest('POST', '/api/trophies', trophy),
+      updateTrophy: (trophy: Trophy) => apiRequest('PUT', `/api/trophies/${trophy.id}`, trophy),
+      awardTrophy, applyManualAdjustment,
+      addTheme, updateTheme, deleteTheme,
+      addScheduledEvent: (e: Omit<ScheduledEvent, 'id'>) => apiRequest('POST', '/api/events', e),
+      updateScheduledEvent: (e: ScheduledEvent) => apiRequest('PUT', `/api/events/${e.id}`, e),
+      deleteScheduledEvent: (id: string) => apiRequest('DELETE', `/api/events/${id}`),
+      addBugReport: (r: Omit<BugReport, 'id' | 'status' | 'tags'> & { reportType: BugReportType }) => apiRequest('POST', '/api/bug-reports', r),
+      updateBugReport: (id: string, u: Partial<BugReport>) => apiRequest('PUT', `/api/bug-reports/${id}`, u),
+      deleteBugReports: (ids: string[]) => apiRequest('DELETE', '/api/bug-reports', { ids }),
+      importBugReports: (r: BugReport[]) => apiRequest('POST', '/api/bug-reports/import', r),
+      restoreFromBackup: (d: IAppData) => apiRequest('POST', '/api/data/restore', d).then(() => setTimeout(() => window.location.reload(), 1500)),
+      clearAllHistory, resetAllPlayerData, deleteAllCustomContent,
+      deleteSelectedAssets: (selection: Partial<Record<ShareableAssetType, string[]>>, onComplete: () => void) => deleteSelectedAssets(selection, onComplete),
+      uploadFile, factoryReset,
+      updateSettings: (s: Partial<AppSettings>) => { const newSettings = {...settings, ...s}; setSettings(newSettings); apiRequest('PUT', '/api/settings', newSettings); },
+      resetSettings,
+      sendMessage,
+      markMessagesAsRead,
+      addSystemNotification,
+      markSystemNotificationsAsRead,
       triggerSync
   };
 

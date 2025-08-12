@@ -177,7 +177,7 @@ const createBackup = async (reason = 'manual', maxBackups) => {
         for (const entity of allEntities) {
             const repo = manager.getRepository(entity);
             const records = await repo.find();
-            const entityName = (typeof entity === 'function' ? entity.name : entity.target.name).replace(/Entity$/, '');
+            const entityName = entity.name.replace(/Entity$/, '');
             const key = entityKeyMap[entityName];
             if (!key) continue;
 
@@ -286,7 +286,7 @@ app.get('/api/data/sync', async (req, res) => {
             const updates = {};
             for (const entity of allEntities) {
                 const repo = manager.getRepository(entity);
-                const entityName = (typeof entity === 'function' ? entity.name : entity.target.name).replace(/Entity$/, '');
+                const entityName = entity.name.replace(/Entity$/, '');
                 const key = entityKeyMap[entityName];
                 if (!key) continue;
 
@@ -320,7 +320,7 @@ app.get('/api/data/sync', async (req, res) => {
             const data = {};
             for (const entity of allEntities) {
                  const repo = manager.getRepository(entity);
-                 const entityName = (typeof entity === 'function' ? entity.name : entity.target.name).replace(/Entity$/, '');
+                 const entityName = entity.name.replace(/Entity$/, '');
                  const key = entityKeyMap[entityName];
                  if (!key) continue;
 

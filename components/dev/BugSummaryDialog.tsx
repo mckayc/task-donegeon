@@ -60,12 +60,13 @@ const BugSummaryDialog: React.FC<BugSummaryDialogProps> = ({ isOpen, onClose }) 
             title: r.title,
             status: r.status,
             tags: r.tags,
-            logs: r.logs.map(l => `[${l.type}] ${l.message}`).slice(-10) // Only include last 10 log messages for brevity
+            logs: r.logs.map(l => {
+                const authorPrefix = l.type === 'COMMENT' && l.author ? `${l.author}: ` : '';
+                return `[${l.type}] ${authorPrefix}${l.message}`;
+            })
         }));
 
-        const prompt = `You are a helpful project manager assistant. Based on the following bug reports, provide a concise summary in Markdown format. The summary should have two main sections: '✅ Completed Work' for 'Resolved' items, and '⏳ Pending Work' for 'Open' and 'In Progress' items. Under each section, use bullet points for the items, mentioning the title and key tags. Provide a brief, one-sentence high-level overview at the very top. Here is the data: ${JSON.stringify(simplifiedReports)}`;
-
-         try {
+        try {
             const response = await fetch('/api/ai/summarize-bugs', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -160,7 +161,7 @@ const BugSummaryDialog: React.FC<BugSummaryDialogProps> = ({ isOpen, onClose }) 
                             </nav>
                         </div>
                         <div className="flex-grow overflow-y-auto scrollbar-hide">
-                            {activeTab === 'human' && <pre className="whitespace-pre-wrap font-sans text-stone-200">{summary.text}</pre>}
+                            {activeTab === 'human' && <div className="prose prose-invert max-w-none" dangerouslySetInnerHTML={{__html: summary.text.replace(/\n/g, '<br />')}}></div>}
                             {activeTab === 'json' && <pre className="whitespace-pre-wrap font-mono text-xs text-stone-300 bg-stone-900/50 p-2 rounded">{summary.jsonData}</pre>}
                         </div>
                     </>

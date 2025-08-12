@@ -290,7 +290,25 @@ app.post('/api/ai/summarize-bugs', asyncMiddleware(async (req, res) => {
         return res.status(400).json({ error: 'Missing bugReports array in request body.' });
     }
 
-    const prompt = `You are a helpful project manager assistant for an app called Task Donegeon. Based on the following list of bug reports and feature requests, provide a concise summary in Markdown format. The summary should have two main sections: '✅ Completed Work' for 'Resolved' items, and '⏳ Pending Work' for 'Open' and 'In Progress' items. Under each section, use bullet points for the items, mentioning the title and key tags. Provide a brief, one-sentence high-level overview at the very top. Here is the data: ${JSON.stringify(bugReports)}`;
+    const prompt = `
+You are a meticulous project manager assistant for the app Task Donegeon.
+Analyze the following JSON data of bug reports and feature requests.
+Generate a comprehensive summary in Markdown format.
+
+The summary should have two main sections:
+1. '✅ Resolved Work': For reports with a 'Resolved' or 'Closed' status.
+2. '⏳ Pending Work': For reports with 'Open' or 'In Progress' status.
+
+Under each main section, create a sub-section for each report. For each report, provide:
+- A clear title using the report's title.
+- A bullet point list summarizing the key activities and findings from the 'logs'. Focus on user actions, notes, and comments.
+- Synthesize the comments into a brief narrative of the discussion.
+- Explicitly mention if any comments indicate the issue has been 'verified', 'fixed', or is 'working'.
+- List any important tags associated with the report.
+
+Here is the data:
+${JSON.stringify(bugReports)}
+`;
 
     try {
         const result = await ai.models.generateContent({

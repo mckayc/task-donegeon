@@ -1,4 +1,5 @@
 
+
 require("reflect-metadata");
 const express = require('express');
 const cors = require('cors');
@@ -1149,7 +1150,7 @@ app.post('/api/actions/complete-quest', asyncMiddleware(async (req, res) => {
                         }
                     }
                 });
-                await manager.save(UserEntity, updateTimestamps(user));
+                await manager.save(updateTimestamps(user));
                 // After applying rewards, check for trophies
                 await checkAndAwardTrophies(manager, user.id, quest.guildId);
             }
@@ -1215,8 +1216,8 @@ app.post('/api/actions/approve-quest/:id', asyncMiddleware(async (req, res) => {
                 }
             });
             
-            await manager.save(UserEntity, updateTimestamps(user));
-            await manager.save(QuestCompletionEntity, updateTimestamps(completion));
+            await manager.save(updateTimestamps(user));
+            await manager.save(updateTimestamps(completion));
             // After applying rewards, check for trophies
             await checkAndAwardTrophies(manager, user.id, quest.guildId);
         });

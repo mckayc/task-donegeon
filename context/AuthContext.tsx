@@ -1,4 +1,4 @@
-import React, { createContext, useState, useContext, ReactNode, useCallback } from 'react';
+import React, { createContext, useState, useContext, ReactNode, useCallback, useMemo } from 'react';
 import { User, Role } from '../types';
 import { useNotificationsDispatch } from './NotificationsContext';
 import { bugLogger } from '../utils/bugLogger';
@@ -20,7 +20,7 @@ interface AuthDispatch {
   setUsers: React.Dispatch<React.SetStateAction<User[]>>;
   setLoginHistory: React.Dispatch<React.SetStateAction<string[]>>;
   addUser: (userData: Omit<User, 'id' | 'personalPurse' | 'personalExperience' | 'guildBalances' | 'avatar' | 'ownedAssetIds' | 'ownedThemes' | 'hasBeenOnboarded'>) => Promise<User | null>;
-  updateUser: (userId: string, update: Partial<User> | ((user: User) => User), persist?: boolean) => void;
+  updateUser: (userId: string, update: Partial<User> | ((user: User) => Partial<User>)) => void;
   deleteUsers: (userIds: string[]) => void;
   setCurrentUser: (user: User | null) => void;
   markUserAsOnboarded: (userId: string) => void;
@@ -79,21 +79,23 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   }, [apiRequest, addNotification]);
 
   const setCurrentUser = useCallback((user: User | null) => {
-    // Prevent redundant state sets and log entries
-    if (currentUser?.id === user?.id) return;
-
-    if (bugLogger.isRecording()) {
-        bugLogger.add({ type: 'STATE_CHANGE', message: `Setting current user to: ${user?.gameName || 'null'}` });
-    }
-    _setCurrentUser(user);
-    setIsSharedViewActive(false);
-    if (user) {
-        localStorage.setItem('lastUserId', user.id);
-        setLoginHistory(prev => [user.id, ...prev.filter(id => id !== user.id).slice(0, 9)]);
-    } else {
-        localStorage.removeItem('lastUserId');
-    }
-  }, [currentUser]);
+    _setCurrentUser(prevUser => {
+        // Basic check to prevent re-renders if the same user object is set
+        if (prevUser === user) return prevUser;
+        
+        if (bugLogger.isRecording()) {
+            bugLogger.add({ type: 'STATE_CHANGE', message: `Setting current user to: ${user?.gameName || 'null'}` });
+        }
+        setIsSharedViewActive(false);
+        if (user) {
+            localStorage.setItem('lastUserId', user.id);
+            setLoginHistory(prev => [user.id, ...prev.filter(id => id !== user.id).slice(0, 9)]);
+        } else {
+            localStorage.removeItem('lastUserId');
+        }
+        return user;
+    });
+  }, []);
 
   const exitToSharedView = useCallback(() => {
     _setCurrentUser(null);
@@ -116,30 +118,41 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   }, [apiRequest]);
 
-  const updateUser = useCallback((userId: string, update: Partial<User> | ((user: User) => User), persist = true) => {
+  const updateUser = useCallback((userId: string, update: Partial<User> | ((user: User) => Partial<User>)) => {
     if (bugLogger.isRecording()) {
-        bugLogger.add({ type: 'ACTION', message: `Updating user ID: ${userId}` });
+      bugLogger.add({ type: 'ACTION', message: `Updating user ID: ${userId}` });
     }
-    // Optimistic UI update
-    const userToUpdate = users.find(u => u.id === userId);
-    if (!userToUpdate) return;
-    const finalUpdatePayload = typeof update === 'function' ? update({ ...userToUpdate }) : { ...userToUpdate, ...update };
-    
-    setUsers(prevUsers => prevUsers.map(u => u.id === userId ? finalUpdatePayload : u));
-    
-    if (currentUser?.id === userId) {
-        _setCurrentUser(finalUpdatePayload);
-    }
-    
-    // Persist to backend only if requested
-    if (persist) {
-      const payloadForApi = typeof update === 'function' ? finalUpdatePayload : update;
-      apiRequest('PUT', `/api/users/${userId}`, payloadForApi).catch(error => {
-          console.error("Failed to update user on server, optimistic update may be stale.", error);
-          // Error notification is handled by apiRequest. Sync will correct the state.
+
+    setUsers(prevUsers => {
+      let finalUpdatePayload: User | null = null;
+      let payloadForApi: Partial<User> | null = null;
+      
+      const newUsers = prevUsers.map(u => {
+        if (u.id === userId) {
+          const updateData = typeof update === 'function' ? update(u) : update;
+          payloadForApi = updateData;
+          finalUpdatePayload = { ...u, ...updateData };
+          return finalUpdatePayload;
+        }
+        return u;
       });
-    }
-  }, [users, currentUser, apiRequest]);
+
+      _setCurrentUser(prevCurrentUser => {
+        if (prevCurrentUser?.id === userId && finalUpdatePayload) {
+          return finalUpdatePayload;
+        }
+        return prevCurrentUser;
+      });
+
+      if (payloadForApi && Object.keys(payloadForApi).length > 0) {
+        apiRequest('PUT', `/api/users/${userId}`, payloadForApi).catch(error => {
+          console.error("Failed to update user on server, optimistic update may be stale.", error);
+        });
+      }
+      
+      return newUsers;
+    });
+  }, [apiRequest]);
   
   const deleteUsers = useCallback((userIds: string[]) => {
     if (userIds.length === 0) return;
@@ -170,12 +183,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     isSharedViewActive, targetedUserForLogin, loginHistory
   };
 
-  const dispatchValue: AuthDispatch = {
+  const dispatchValue: AuthDispatch = useMemo(() => ({
     setUsers, setLoginHistory, addUser, updateUser, deleteUsers, setCurrentUser, markUserAsOnboarded,
     setAppUnlocked, setIsSwitchingUser, setTargetedUserForLogin,
     exitToSharedView, setIsSharedViewActive, resetAllUsersData,
     completeFirstRun,
-  };
+  }), [addUser, updateUser, deleteUsers, setCurrentUser, markUserAsOnboarded, setAppUnlocked, setIsSwitchingUser, setTargetedUserForLogin, exitToSharedView, setIsSharedViewActive, resetAllUsersData, completeFirstRun]);
 
   return (
     <AuthStateContext.Provider value={stateValue}>

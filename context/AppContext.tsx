@@ -98,6 +98,14 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   
   // Ref to hold the last sync timestamp without causing re-renders
   const lastSyncTimestamp = useRef<string | null>(null);
+
+  // Refs for state dependencies to stabilize dispatch functions
+  const settingsRef = useRef(settings);
+  useEffect(() => { settingsRef.current = settings; }, [settings]);
+  const trophiesRef = useRef(trophies);
+  useEffect(() => { trophiesRef.current = trophies; }, [trophies]);
+  const bugReportsRef = useRef(bugReports);
+  useEffect(() => { bugReportsRef.current = bugReports; }, [bugReports]);
   
   // === API HELPERS ===
   const apiRequest = useCallback(async (method: string, path: string, body?: any) => {
@@ -340,18 +348,18 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   }, []);
 
   const markSystemNotificationsAsRead = useCallback((notificationIds: string[]) => {
-    if (!currentUser) return;
+    if (!currentUserRef.current) return;
     const idsToMark = new Set(notificationIds);
     setSystemNotifications(prev => prev.map(n => {
-        if (idsToMark.has(n.id) && !n.readByUserIds.includes(currentUser.id)) {
-            return { ...n, readByUserIds: [...n.readByUserIds, currentUser.id] };
+        if (idsToMark.has(n.id) && !n.readByUserIds.includes(currentUserRef.current!.id)) {
+            return { ...n, readByUserIds: [...n.readByUserIds, currentUserRef.current!.id] };
         }
         return n;
     }));
-  }, [currentUser]);
+  }, []);
 
   const awardTrophy = useCallback((userId: string, trophyId: string, guildId?: string) => {
-    const t = trophies.find(t => t.id === trophyId);
+    const t = trophiesRef.current.find(t => t.id === trophyId);
     if (t) {
       setUserTrophies(p => [...p, { id: `award-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`, userId, trophyId, awardedAt: new Date().toISOString(), guildId }]);
       addNotification({ type: 'trophy', message: `Trophy Unlocked: ${t.name}!`, icon: t.icon });
@@ -364,7 +372,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         link: 'Trophies',
       });
     }
-  }, [trophies, addNotification, addSystemNotification]);
+  }, [addNotification, addSystemNotification]);
   
   const addGuild = useCallback(async (guild: Omit<Guild, 'id'>) => {
     try {
@@ -428,7 +436,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     }, [apiRequest]);
 
     const updateBugReport = useCallback(async (reportId: string, updates: Partial<BugReport>) => {
-        const originalReports = [...bugReports];
+        const originalReports = [...bugReportsRef.current];
         
         // Optimistic update
         setBugReports(prev =>
@@ -444,7 +452,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             addNotification({ type: 'error', message: 'Update failed. Reverting changes.' });
             setBugReports(originalReports);
         }
-    }, [apiRequest, bugReports, addNotification]);
+    }, [apiRequest, addNotification]);
     
     const deleteBugReports = useCallback(async (reportIds: string[]) => {
         await apiRequest('DELETE', '/api/bug-reports', { ids: reportIds });
@@ -528,10 +536,10 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     }, [apiRequest, addNotification]);
 
     const updateSettings = useCallback(async (newSettings: Partial<AppSettings>) => {
-      const updatedSettings = { ...settings, ...newSettings };
+      const updatedSettings = { ...settingsRef.current, ...newSettings };
       setSettings(updatedSettings);
       await apiRequest('PUT', '/api/settings', updatedSettings);
-    }, [apiRequest, settings]);
+    }, [apiRequest]);
 
     const resetSettings = useCallback(() => {
         setSettings(INITIAL_SETTINGS);
@@ -540,7 +548,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     }, [updateSettings, addNotification]);
 
     const sendMessage = useCallback(async (message: Omit<ChatMessage, 'id' | 'timestamp' | 'readBy' | 'senderId'> & { isAnnouncement?: boolean }) => {
-        if (!currentUser) return;
+        if (!currentUserRef.current) return;
 
         const notificationId = addNotification({
             message: 'Sending message...',
@@ -549,7 +557,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         });
 
         try {
-            const payload = { ...message, senderId: currentUser.id };
+            const payload = { ...message, senderId: currentUserRef.current.id };
             await apiRequest('POST', '/api/chat/send', payload);
             updateNotification(notificationId, {
                 message: 'Message sent!',
@@ -563,31 +571,31 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
                 duration: 5000,
             });
         }
-    }, [currentUser, apiRequest, addNotification, updateNotification]);
+    }, [apiRequest, addNotification, updateNotification]);
 
     const markMessagesAsRead = useCallback(async (params: { partnerId?: string; guildId?: string; }) => {
-        if (!currentUser) return;
+        if (!currentUserRef.current) return;
 
         // Optimistic update to prevent infinite loops in the chat panel
         setChatMessages(prevMessages => 
             prevMessages.map(msg => {
-                const isDmMatch = params.partnerId && msg.recipientId === currentUser.id && msg.senderId === params.partnerId;
+                const isDmMatch = params.partnerId && msg.recipientId === currentUserRef.current!.id && msg.senderId === params.partnerId;
                 const isGuildMatch = params.guildId && msg.guildId === params.guildId;
 
-                if ((isDmMatch || isGuildMatch) && !msg.readBy.includes(currentUser.id)) {
-                    return { ...msg, readBy: [...msg.readBy, currentUser.id] };
+                if ((isDmMatch || isGuildMatch) && !msg.readBy.includes(currentUserRef.current!.id)) {
+                    return { ...msg, readBy: [...msg.readBy, currentUserRef.current!.id] };
                 }
                 return msg;
             })
         );
         
         // Fire and forget API call
-        const payload = { ...params, userId: currentUser.id };
+        const payload = { ...params, userId: currentUserRef.current.id };
         apiRequest('POST', '/api/chat/read', payload).catch(err => {
             console.error("Failed to mark messages as read on server:", err);
             // The UI will eventually be corrected by the next full sync if this fails.
         });
-    }, [currentUser, apiRequest]);
+    }, [apiRequest]);
 
     const state = {
         isDataLoaded, isAiConfigured, syncStatus, syncError,
@@ -596,7 +604,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         systemNotifications, scheduledEvents, bugReports,
     };
 
-    const dispatch = {
+    const dispatch = useMemo(() => ({
         addGuild, updateGuild, deleteGuild, setRanks, addTrophy, updateTrophy,
         awardTrophy, applyManualAdjustment, addTheme, updateTheme, deleteTheme,
         addScheduledEvent, updateScheduledEvent, deleteScheduledEvent, addBugReport,
@@ -605,7 +613,15 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         factoryReset, updateSettings, resetSettings, sendMessage, markMessagesAsRead,
         addSystemNotification, markSystemNotificationsAsRead,
         triggerSync,
-    };
+    }), [
+        addGuild, updateGuild, deleteGuild, addTrophy, updateTrophy, awardTrophy,
+        applyManualAdjustment, addTheme, updateTheme, deleteTheme, addScheduledEvent,
+        updateScheduledEvent, deleteScheduledEvent, addBugReport, updateBugReport,
+        deleteBugReports, importBugReports, restoreFromBackup, clearAllHistory,
+        resetAllPlayerData, deleteAllCustomContent, deleteSelectedAssets, uploadFile,
+        factoryReset, updateSettings, resetSettings, sendMessage, markMessagesAsRead,
+        addSystemNotification, markSystemNotificationsAsRead, triggerSync, setRanks
+    ]);
 
     return (
         <AppStateContext.Provider value={state}>

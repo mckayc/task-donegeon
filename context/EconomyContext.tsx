@@ -5,7 +5,7 @@ import {
     AssetPack, ImportResolution, MarketStatus, User, ScheduledEvent 
 } from '../types';
 import { useNotificationsDispatch } from './NotificationsContext';
-import { useAuthDispatch } from './AuthContext';
+import { useAuthDispatch, useAuthState } from './AuthContext';
 import { toYMD } from '../utils/quests';
 import { bugLogger } from '../utils/bugLogger';
 
@@ -53,8 +53,8 @@ interface EconomyDispatch {
   rejectPurchaseRequest: (purchaseId: string) => void;
 
   // Core Economy Actions
-  applyRewards: (userId: string, rewardsToApply: RewardItem[], guildId?: string, persist?: boolean) => void;
-  deductRewards: (userId: string, cost: RewardItem[], guildId?: string, persist?: boolean) => Promise<boolean>;
+  applyRewards: (userId: string, rewardsToApply: RewardItem[], guildId?: string) => void;
+  deductRewards: (userId: string, cost: RewardItem[], guildId?: string) => Promise<boolean>;
   executeExchange: (userId: string, payItem: RewardItem, receiveItem: RewardItem, guildId?: string) => void;
   
   // Bulk/Admin Actions
@@ -69,6 +69,7 @@ const EconomyDispatchContext = createContext<EconomyDispatch | undefined>(undefi
 export const EconomyProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const { addNotification } = useNotificationsDispatch();
   const authDispatch = useAuthDispatch();
+  const { users } = useAuthState();
 
   const [markets, setMarkets] = useState<Market[]>([]);
   const [rewardTypes, setRewardTypes] = useState<RewardTypeDefinition[]>([]);
@@ -101,7 +102,7 @@ export const EconomyProvider: React.FC<{ children: ReactNode }> = ({ children })
 
   // === CORE ECONOMY LOGIC ===
 
-  const applyRewards = useCallback((userId: string, rewardsToApply: RewardItem[], guildId?: string, persist = true) => {
+  const applyRewards = useCallback((userId: string, rewardsToApply: RewardItem[], guildId?: string) => {
     authDispatch.updateUser(userId, userToUpdate => {
         const newUser = JSON.parse(JSON.stringify(userToUpdate));
         rewardsToApply.forEach(reward => {
@@ -124,46 +125,66 @@ export const EconomyProvider: React.FC<{ children: ReactNode }> = ({ children })
             }
         });
         return newUser;
-    }, persist);
-  }, [rewardTypes, authDispatch]);
-
-  const deductRewards = useCallback((userId: string, cost: RewardItem[], guildId?: string, persist = true): Promise<boolean> => {
-    return new Promise((resolve) => {
-        let success = false;
-        authDispatch.updateUser(userId, user => {
-            const userCopy = JSON.parse(JSON.stringify(user));
-            const canAfford = cost.every(item => {
-                const rd = rewardTypes.find(rt => rt.id === item.rewardTypeId);
-                if (!rd) return false;
-                const bal = guildId 
-                    ? (rd.category === 'Currency' ? userCopy.guildBalances[guildId]?.purse[item.rewardTypeId] : userCopy.guildBalances[guildId]?.experience[item.rewardTypeId])
-                    : (rd.category === 'Currency' ? userCopy.personalPurse[item.rewardTypeId] : userCopy.personalExperience[item.rewardTypeId]);
-                return (bal || 0) >= item.amount;
-            });
-
-            if (!canAfford) {
-                success = false;
-                return user; // Return original user if cannot afford
-            }
-
-            cost.forEach(c => {
-                const rd = rewardTypes.find(rt => rt.id === c.rewardTypeId);
-                if (!rd) return;
-                if (guildId) {
-                    if (rd.category === 'Currency') userCopy.guildBalances[guildId].purse[c.rewardTypeId] -= c.amount;
-                    else userCopy.guildBalances[guildId].experience[c.rewardTypeId] -= c.amount;
-                } else {
-                    if (rd.category === 'Currency') userCopy.personalPurse[c.rewardTypeId] -= c.amount;
-                    else userCopy.personalExperience[c.rewardTypeId] -= c.amount;
-                }
-            });
-            success = true;
-            return userCopy;
-        }, persist);
-        resolve(success);
     });
   }, [rewardTypes, authDispatch]);
 
+  const deductRewards = useCallback(async (userId: string, cost: RewardItem[], guildId?: string): Promise<boolean> => {
+    const user = users.find(u => u.id === userId);
+    if (!user) return false;
+
+    const canAfford = cost.every(item => {
+        const rewardDef = rewardTypes.find(rt => rt.id === item.rewardTypeId);
+        if (!rewardDef) return false;
+        
+        const balanceSource = guildId 
+            ? user.guildBalances?.[guildId]
+            : { purse: user.personalPurse, experience: user.personalExperience };
+        
+        if (!balanceSource) return false;
+
+        const balance = rewardDef.category === RewardCategory.Currency 
+            ? balanceSource.purse?.[item.rewardTypeId] || 0
+            : balanceSource.experience?.[item.rewardTypeId] || 0;
+            
+        return balance >= item.amount;
+    });
+
+    if (!canAfford) {
+        return false;
+    }
+
+    const userCopy = JSON.parse(JSON.stringify(user));
+    
+    cost.forEach(c => {
+        const rewardDef = rewardTypes.find(rt => rt.id === c.rewardTypeId);
+        if (!rewardDef) return;
+
+        if (guildId) {
+            if (!userCopy.guildBalances[guildId]) userCopy.guildBalances[guildId] = { purse: {}, experience: {} };
+            const balanceSheet = userCopy.guildBalances[guildId];
+            if (rewardDef.category === RewardCategory.Currency) {
+                balanceSheet.purse[c.rewardTypeId] = (balanceSheet.purse[c.rewardTypeId] || 0) - c.amount;
+            } else {
+                balanceSheet.experience[c.rewardTypeId] = (balanceSheet.experience[c.rewardTypeId] || 0) - c.amount;
+            }
+        } else {
+            if (rewardDef.category === RewardCategory.Currency) {
+                userCopy.personalPurse[c.rewardTypeId] = (userCopy.personalPurse[c.rewardTypeId] || 0) - c.amount;
+            } else {
+                userCopy.personalExperience[c.rewardTypeId] = (userCopy.personalExperience[c.rewardTypeId] || 0) - c.amount;
+            }
+        }
+    });
+
+    authDispatch.updateUser(userId, { 
+        personalPurse: userCopy.personalPurse, 
+        personalExperience: userCopy.personalExperience,
+        guildBalances: userCopy.guildBalances 
+    });
+
+    return true;
+  }, [users, rewardTypes, authDispatch]);
+  
   const purchaseMarketItem = useCallback(async (assetId: string, marketId: string, user: User, costGroupIndex: number, scheduledEvents: ScheduledEvent[]) => {
     if (bugLogger.isRecording()) {
       bugLogger.add({ type: 'ACTION', message: `User ${user.gameName} attempting to purchase asset ${assetId}` });

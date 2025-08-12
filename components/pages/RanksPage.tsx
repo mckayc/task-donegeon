@@ -3,14 +3,11 @@ import { useAppState } from '../../context/AppContext';
 import { useUIState } from '../../context/UIStateContext';
 import { Rank } from '../../types';
 import Card from '../user-interface/Card';
-import { RankIcon } from '../user-interface/Icons';
 import DynamicIcon from '../user-interface/DynamicIcon';
 import ImagePreviewDialog from '../user-interface/ImagePreviewDialog';
-import { useAuthState } from '../../context/AuthContext';
 
 const RanksPage: React.FC = () => {
-    const { ranks } = useAppState();
-    const { currentUser } = useAuthState();
+    const { ranks, currentUser } = useAppState();
     const { appMode } = useUIState();
     const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null);
 

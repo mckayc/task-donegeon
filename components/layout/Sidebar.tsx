@@ -2,10 +2,7 @@ import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { Role, Page, QuestCompletionStatus, PurchaseRequestStatus, Terminology, SidebarConfigItem, SidebarLink, SidebarHeader } from '../../types';
 import { ChevronDownIcon, ArrowLeftIcon, ArrowRightIcon } from '../user-interface/Icons';
 import { useAppState } from '../../context/AppContext';
-import { useAuthState } from '../../context/AuthContext';
 import { useUIState, useUIDispatch } from '../../context/UIStateContext';
-import { useEconomyState } from '../../context/EconomyContext';
-import { useQuestState } from '../../context/QuestContext';
 
 const FlyoutPanel: React.FC<{ title: string; items?: SidebarLink[]; isVisible: boolean }> = ({ title, items, isVisible }) => {
     const { settings } = useAppState();
@@ -166,12 +163,9 @@ const CollapsibleNavGroup: React.FC<CollapsibleNavGroupProps> = ({ header, child
 
 
 const Sidebar: React.FC = () => {
-  const { settings, isAiConfigured, chatMessages, guilds } = useAppState();
-  const { purchaseRequests } = useEconomyState();
-  const { questCompletions } = useQuestState();
-  const { currentUser } = useAuthState();
+  const { settings, isAiConfigured, chatMessages, guilds, purchaseRequests, questCompletions, currentUser } = useAppState();
   const { activePage, isSidebarCollapsed, isChatOpen } = useUIState();
-  const { setActivePage, toggleSidebar, toggleChat } = useUIDispatch();
+  const { setActivePage, toggleChat, toggleSidebar } = useUIDispatch();
   const isAiAvailable = settings.enableAiFeatures && isAiConfigured;
   
   if (!currentUser) return null;

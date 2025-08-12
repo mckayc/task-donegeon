@@ -1,25 +1,13 @@
 import React, { useState } from 'react';
 import Card from '../user-interface/Card';
 import Button from '../user-interface/Button';
-import { useAppState } from '../../context/AppContext';
+import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { QuestCompletionStatus, Role, PurchaseRequestStatus } from '../../types';
 import Input from '../user-interface/Input';
-import { useAuthState } from '../../context/AuthContext';
-import { useEconomyState, useEconomyDispatch } from '../../context/EconomyContext';
-import { useQuestState, useQuestDispatch } from '../../context/QuestContext';
 
 const ApprovalsPage: React.FC = () => {
-    const { guilds } = useAppState();
-    const { quests, questCompletions } = useQuestState();
-    const { purchaseRequests, gameAssets } = useEconomyState();
-    const { currentUser, users } = useAuthState();
-
-    const {
-        approveQuestCompletion, rejectQuestCompletion
-    } = useQuestDispatch();
-    const {
-        approvePurchaseRequest, rejectPurchaseRequest
-    } = useEconomyDispatch();
+    const { guilds, quests, questCompletions, purchaseRequests, gameAssets, currentUser, users } = useAppState();
+    const { approveQuestCompletion, rejectQuestCompletion, approvePurchaseRequest, rejectPurchaseRequest } = useAppDispatch();
     
     const [notes, setNotes] = useState<{ [key: string]: string }>({});
 

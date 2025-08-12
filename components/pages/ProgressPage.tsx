@@ -2,15 +2,11 @@ import React, { useState, useMemo } from 'react';
 import { RewardCategory, QuestCompletionStatus, RewardItem } from '../../types';
 import Card from '../user-interface/Card';
 import LineChart from '../user-interface/LineChart';
-import { useAuthState } from '../../context/AuthContext';
-import { useEconomyState } from '../../context/EconomyContext';
-import { useQuestState } from '../../context/QuestContext';
+import { useAppState } from '../../context/AppContext';
 import { useUIState } from '../../context/UIStateContext';
 
 const ProgressPage: React.FC = () => {
-    const { quests, questCompletions } = useQuestState();
-    const { rewardTypes } = useEconomyState();
-    const { currentUser } = useAuthState();
+    const { quests, questCompletions, rewardTypes, currentUser } = useAppState();
     const { appMode } = useUIState();
     
     const xpTypes = useMemo(() => {

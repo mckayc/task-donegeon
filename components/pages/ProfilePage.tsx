@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useAuthState, useAuthDispatch } from '../../context/AuthContext';
+import { useAppState, useAppDispatch } from '../../context/AppContext';
 import Button from '../user-interface/Button';
 import Card from '../user-interface/Card';
 import Input from '../user-interface/Input';
@@ -8,8 +8,8 @@ import UserFormFields from '../users/UserFormFields';
 import { useNotificationsDispatch } from '../../context/NotificationsContext';
 
 const ProfilePage: React.FC = () => {
-    const { currentUser, users } = useAuthState();
-    const { updateUser } = useAuthDispatch();
+    const { currentUser, users } = useAppState();
+    const { updateUser } = useAppDispatch();
     const { addNotification } = useNotificationsDispatch();
     
     if (!currentUser) {

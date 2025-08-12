@@ -1,8 +1,7 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { Page, Role, AppMode, User } from '../../types';
 import Avatar from '../user-interface/Avatar';
-import { useAppState } from '../../context/AppContext';
-import { useAuthState, useAuthDispatch } from '../../context/AuthContext';
+import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { useUIState, useUIDispatch } from '../../context/UIStateContext';
 import FullscreenToggle from '../user-interface/FullscreenToggle';
 import { ChevronDownIcon } from '../user-interface/Icons';
@@ -37,9 +36,8 @@ const Clock: React.FC = () => {
 };
 
 const Header: React.FC = () => {
-  const { guilds, settings } = useAppState();
-  const { currentUser } = useAuthState();
-  const { setCurrentUser, setIsSwitchingUser, setAppUnlocked, exitToSharedView } = useAuthDispatch();
+  const { guilds, settings, currentUser } = useAppState();
+  const { setCurrentUser, setIsSwitchingUser, setAppUnlocked, exitToSharedView } = useAppDispatch();
   const { appMode } = useUIState();
   const { setAppMode, setActivePage } = useUIDispatch();
 

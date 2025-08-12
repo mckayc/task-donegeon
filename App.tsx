@@ -45,7 +45,7 @@ const App: React.FC = () => {
     const theme = themes.find(t => t.id === activeThemeId);
     if (theme) {
         Object.entries(theme.styles).forEach(([key, value]) => {
-            document.documentElement.style.setProperty(key, value);
+            document.documentElement.style.setProperty(key, value as string);
         });
     }
 

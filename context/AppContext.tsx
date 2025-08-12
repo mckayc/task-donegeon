@@ -1,4 +1,5 @@
 
+
 import React, { createContext, useState, useContext, ReactNode, useEffect, useCallback, useMemo, useRef } from 'react';
 import { AppSettings, User, Quest, RewardItem, Guild, Rank, Trophy, UserTrophy, AppMode, Page, IAppData, ShareableAssetType, GameAsset, Role, RewardCategory, AdminAdjustment, AdminAdjustmentType, SystemLog, QuestType, QuestAvailability, AssetPack, ImportResolution, TrophyRequirementType, ThemeDefinition, ChatMessage, SystemNotification, SystemNotificationType, MarketStatus, QuestGroup, BulkQuestUpdates, ScheduledEvent, BugReport, QuestCompletion, BugReportType, PurchaseRequest, PurchaseRequestStatus, Market, RewardTypeDefinition, QuestCompletionStatus } from '../types';
 import { INITIAL_SETTINGS, INITIAL_RANKS, INITIAL_TROPHIES, INITIAL_THEMES } from '../data/initialData';
@@ -705,6 +706,11 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         setUsers(p => p.map(u => u.role !== Role.DonegeonMaster ? { ...u, personalPurse: {}, personalExperience: {}, guildBalances: {}, ownedAssetIds: [], ownedThemes: [], avatar: {} } : u));
     }, []);
 
+    const resetAllUsersData = useCallback(() => {
+        setUsers(p => p.map(u => ({ ...u, personalPurse: {}, personalExperience: {}, guildBalances: {}, ownedAssetIds: [], ownedThemes: [], avatar: {} })));
+        addNotification({type: 'success', message: 'All user data has been reset.'})
+    }, [addNotification]);
+
     const deleteAllCustomContent = useCallback(() => {
         setQuests([]);
         setQuestGroups([]);
@@ -786,6 +792,60 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         setSystemNotifications(prev => prev.map(n => notificationIds.includes(n.id) && !n.readByUserIds.includes(currentUser.id) ? { ...n, readByUserIds: [...n.readByUserIds, currentUser.id] } : n));
     }, [currentUser]);
 
+    const cloneRewardType = useCallback((rewardTypeId: string) => {
+        const rewardToClone = rewardTypes.find(rt => rt.id === rewardTypeId);
+        if (rewardToClone && !rewardToClone.isCore) {
+            const newReward = {
+                ...rewardToClone,
+                id: `custom-${Date.now()}`,
+                name: `${rewardToClone.name} (Copy)`,
+            };
+            setRewardTypes(p => [...p, newReward]);
+            addNotification({ type: 'success', message: 'Reward type cloned.' });
+        } else {
+            addNotification({ type: 'error', message: 'Core rewards cannot be cloned.' });
+        }
+    }, [rewardTypes, addNotification]);
+
+    const cloneMarket = useCallback((marketId: string) => {
+        if (marketId === 'market-bank') {
+            addNotification({ type: 'error', message: 'The Exchange Post cannot be cloned.' });
+            return;
+        }
+        const marketToClone = markets.find(m => m.id === marketId);
+        if (marketToClone) {
+            const newMarket = {
+                ...marketToClone,
+                id: `market-${Date.now()}`,
+                title: `${marketToClone.title} (Copy)`,
+            };
+            setMarkets(p => [...p, newMarket]);
+            addNotification({ type: 'success', message: 'Market cloned.' });
+        }
+    }, [markets, addNotification]);
+
+    const deleteMarkets = useCallback((marketIds: string[]) => {
+        const idsToDelete = marketIds.filter(id => id !== 'market-bank');
+        if (marketIds.includes('market-bank')) {
+            addNotification({ type: 'error', message: 'The Exchange Post cannot be deleted.' });
+        }
+        if (idsToDelete.length > 0) {
+            setMarkets(p => p.filter(m => !idsToDelete.includes(m.id)));
+            addNotification({ type: 'info', message: `${idsToDelete.length} market(s) deleted.` });
+        }
+    }, [addNotification]);
+
+    const updateMarketsStatus = useCallback((marketIds: string[], statusType: 'open' | 'closed') => {
+        const newStatus: MarketStatus = { type: statusType };
+        setMarkets(p => p.map(m => {
+            if (marketIds.includes(m.id) && m.status.type !== 'conditional') {
+                return { ...m, status: newStatus };
+            }
+            return m;
+        }));
+        addNotification({ type: 'success', message: `${marketIds.length} market(s) updated.` });
+    }, [addNotification]);
+
   const allDispatchFunctions = {
       // Auth
       setUsers, setLoginHistory,
@@ -815,7 +875,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       updateQuestGroup: useCallback((group) => setQuestGroups(p => p.map(g => g.id === group.id ? group : g)), []),
       deleteQuestGroup: useCallback((id) => setQuestGroups(p => p.filter(g => g.id !== id)), []),
       deleteQuestGroups: useCallback((ids) => { const idSet = new Set(ids); setQuestGroups(p => p.filter(g => !idSet.has(g.id))); }, []),
-      assignQuestGroupToUsers: useCallback((groupId, userIds) => { setQuests(p => p.map(q => q.groupId === groupId ? {...q, assignedUserIds: userIds} : q)); }, []),
+      assignQuestGroupToUsers: useCallback((groupId, userIds) => { setQuests(prevQuests => prevQuests.map(quest => quest.groupId === groupId ? { ...quest, assignedUserIds: userIds } : quest)); }, []),
       deleteQuests: useCallback(async (ids) => { await apiRequest('DELETE', '/api/quests', { ids }); }, [apiRequest]),
       updateQuestsStatus: useCallback(async (ids, isActive) => { await apiRequest('PUT', '/api/quests/bulk-status', { ids, isActive }); }, [apiRequest]),
       bulkUpdateQuests: useCallback(async (ids, updates) => { await apiRequest('PUT', '/api/quests/bulk-update', { ids, updates }); }, [apiRequest]),

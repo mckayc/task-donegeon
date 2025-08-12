@@ -15,10 +15,12 @@ import { Role } from './types';
 import { useDeveloper, useDeveloperState } from './context/DeveloperContext';
 import { BugDetailDialog } from './components/dev/BugDetailDialog';
 import ChatController from './components/chat/ChatController';
+import { useLoadingState } from './context/LoadingContext';
 
 const App: React.FC = () => {
   console.log('[App.tsx] App component rendering...');
-  const { isDataLoaded, settings, guilds, themes, bugReports } = useAppState();
+  const { isDataLoaded } = useLoadingState();
+  const { settings, guilds, themes, bugReports } = useAppState();
   const { currentUser, isAppUnlocked, isFirstRun, isSwitchingUser, isSharedViewActive } = useAuthState();
   const { appMode, activePage, activeBugDetailId } = useUIState();
   const { setActiveBugDetailId } = useUIDispatch();
@@ -97,7 +99,10 @@ const App: React.FC = () => {
     const theme = themes.find(t => t.id === activeThemeId);
     if (theme) {
         Object.entries(theme.styles).forEach(([key, value]) => {
-            document.documentElement.style.setProperty(key, value);
+            // Defensive check to prevent crash from undefined values
+            if (value) {
+                document.documentElement.style.setProperty(key, value);
+            }
         });
     }
 

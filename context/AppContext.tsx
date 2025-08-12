@@ -6,10 +6,10 @@ import { useAuthState, useAuthDispatch } from './AuthContext';
 import { useEconomyDispatch } from './EconomyContext';
 import { useQuestDispatch } from './QuestContext';
 import { bugLogger } from '../utils/bugLogger';
+import { useLoadingDispatch } from './LoadingContext';
 
 // The single, unified state for the non-auth/quest parts of the application
 interface AppState extends Omit<IAppData, 'users' | 'loginHistory' | 'quests' | 'questGroups' | 'questCompletions' | 'markets' | 'rewardTypes' | 'purchaseRequests' | 'gameAssets'> {
-  isDataLoaded: boolean;
   isAiConfigured: boolean;
   syncStatus: 'idle' | 'syncing' | 'success' | 'error';
   syncError: string | null;
@@ -75,6 +75,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const authDispatch = useAuthDispatch();
   const economyDispatch = useEconomyDispatch();
   const questDispatch = useQuestDispatch();
+  const { setDataLoaded } = useLoadingDispatch();
 
   // === STATE MANAGEMENT ===
   const [guilds, setGuilds] = useState<Guild[]>([]);
@@ -91,7 +92,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [bugReports, setBugReports] = useState<BugReport[]>([]);
 
   // UI State that remains global due to cross-cutting concerns
-  const [isDataLoaded, setIsDataLoaded] = useState(false);
   const [syncStatus, setSyncStatus] = useState<'idle' | 'syncing' | 'success' | 'error'>('idle');
   const [syncError, setSyncError] = useState<string | null>(null);
   const [isAiConfigured, setIsAiConfigured] = useState(false);
@@ -278,17 +278,18 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         }
         
         console.log('[AppContext] initializeApp: All initialization steps complete. Setting data as loaded.');
-        setIsDataLoaded(true);
+        setDataLoaded(true);
       } catch (error) {
         console.error("[AppContext] initializeApp: CRITICAL ERROR during initialization.", error);
         addNotification({type: 'error', message: 'Failed to load application data. Please check your server connection and refresh.'});
       }
     };
     initializeApp();
-  }, [initialSync, addNotification]);
+  }, [initialSync, addNotification, setDataLoaded]);
 
   useEffect(() => {
-    if (!isDataLoaded) return;
+    const isLoaded = !!lastSyncTimestamp.current;
+    if (!isLoaded) return;
 
     const intervalId = setInterval(performDeltaSync, 30000); // Poll for updates every 30 seconds
     document.addEventListener('visibilitychange', performDeltaSync);
@@ -302,7 +303,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         document.removeEventListener('visibilitychange', performDeltaSync);
         window.removeEventListener('trigger-sync', performDeltaSync);
     };
-  }, [isDataLoaded, performDeltaSync]);
+  }, [performDeltaSync]);
   
   const triggerSync = useCallback(() => {
     console.log('Manual sync triggered.');
@@ -589,12 +590,12 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     }, [currentUser, apiRequest, triggerSync]);
 
     const state = useMemo(() => ({
-        isDataLoaded, isAiConfigured, syncStatus, syncError,
+        isAiConfigured, syncStatus, syncError,
         guilds, ranks, trophies, userTrophies,
         adminAdjustments, systemLogs, settings, themes, chatMessages,
         systemNotifications, scheduledEvents, bugReports,
     }), [
-        isDataLoaded, isAiConfigured, syncStatus, syncError,
+        isAiConfigured, syncStatus, syncError,
         guilds, ranks, trophies, userTrophies, adminAdjustments, systemLogs,
         settings, themes, chatMessages, systemNotifications, scheduledEvents, bugReports
     ]);

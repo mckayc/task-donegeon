@@ -15,15 +15,10 @@ Task Donegeon is a gamified task and chore management application designed for f
 
 ## ✨ Features
 
-### What's New in Version 0.0.54 (August 11, 2025)
--   **Global Stability Overhaul:** Fixed the root cause of UI "flickering" and instability across the app by optimizing the central state management. This prevents unnecessary re-renders, making the app faster and more reliable, and should resolve reported memory leaks.
--   **Calendar UX Revamp:**
-    -   Improved readability with bolder, clearer text on all events.
-    -   Visually distinguished recurring **Duties** (solid border) from one-time **Ventures** (dashed border).
-    -   The calendar now defaults to the **Day** view for a more immediate look at the schedule.
-    -   Month view is now cleaner, showing a maximum of 4 events per day with a clickable link to see more.
-    -   Fixed a critical bug that caused the month view to scroll to the top unintentionally.
--   **Theme Editor Fix:** The global stability overhaul also fixes issues in the Theme Editor where the component would behave erratically or lose state.
+### What's New in Version 0.0.54 (August 12, 2025)
+-   **Critical Startup Fix:** Resolved a fundamental issue that caused the application to show a blank screen on load. This was traced to a fatal error in the theme-rendering logic combined with an inefficient startup sequence that created render-cascades.
+-   **Architectural Stability:** Implemented a new, dedicated `LoadingContext` to isolate the initial data loading state from the main application state. This prevents massive component re-renders on startup, making the app faster, more resilient, and eliminating the root cause of the blank screen bug.
+-   **Hardened Theme Engine:** The theme application logic is now more robust and will no longer crash the application if it encounters invalid or missing style properties, which was a key contributor to the startup failure.
 
 ### Version History
 - **v0.0.51 (August 8, 2025):** Sidebar Notification Badge Fix, fixed various calendar bugs including performance, scrolling, and interaction issues.

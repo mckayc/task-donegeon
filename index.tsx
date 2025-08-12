@@ -8,6 +8,7 @@ import { AuthProvider } from './context/AuthContext';
 import { EconomyProvider } from './context/EconomyContext';
 import { DeveloperProvider } from './context/DeveloperContext';
 import { QuestProvider } from './context/QuestContext';
+import { LoadingProvider } from './context/LoadingContext';
 
 console.log('[TaskDonegeon] index.tsx script loaded and executing.');
 
@@ -33,13 +34,15 @@ root.render(
       <AuthProvider>
         <EconomyProvider>
           <QuestProvider>
-            <AppProvider>
-              <UIStateProvider>
-                <DeveloperProvider>
-                  <App />
-                </DeveloperProvider>
-              </UIStateProvider>
-            </AppProvider>
+            <LoadingProvider>
+              <AppProvider>
+                <UIStateProvider>
+                  <DeveloperProvider>
+                    <App />
+                  </DeveloperProvider>
+                </UIStateProvider>
+              </AppProvider>
+            </LoadingProvider>
           </QuestProvider>
         </EconomyProvider>
       </AuthProvider>

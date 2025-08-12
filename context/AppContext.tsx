@@ -275,17 +275,43 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   useEffect(() => {
     if (!isDataLoaded) return;
 
-    const intervalId = setInterval(performDeltaSync, 30000); // Poll for updates every 30 seconds
-    document.addEventListener('visibilitychange', performDeltaSync);
+    let timeoutId: number;
 
-    // Global event listener for manual sync triggers
-    window.addEventListener('trigger-sync', performDeltaSync);
+    const smartSync = () => {
+        // Clear previous timeout to prevent duplicates if triggered manually
+        clearTimeout(timeoutId);
+
+        // Perform the sync, then schedule the next one
+        performDeltaSync().finally(() => {
+            // Schedule the next sync only if the document is not hidden
+            if (!document.hidden) {
+                timeoutId = window.setTimeout(smartSync, 30000);
+            }
+        });
+    };
+
+    const handleVisibilityChange = () => {
+        // If the document becomes visible, trigger an immediate sync.
+        // The smartSync function will then schedule the next one.
+        if (!document.hidden) {
+            smartSync();
+        } else {
+            // If the document becomes hidden, clear any scheduled syncs.
+            clearTimeout(timeoutId);
+        }
+    };
+
+    // Initial sync call
+    smartSync();
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('trigger-sync', smartSync);
 
 
     return () => {
-        clearInterval(intervalId);
-        document.removeEventListener('visibilitychange', performDeltaSync);
-        window.removeEventListener('trigger-sync', performDeltaSync);
+        clearTimeout(timeoutId);
+        document.removeEventListener('visibilitychange', handleVisibilityChange);
+        window.removeEventListener('trigger-sync', smartSync);
     };
   }, [isDataLoaded, performDeltaSync]);
   

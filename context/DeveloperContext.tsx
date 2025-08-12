@@ -1,4 +1,4 @@
-import React, { createContext, useState, useContext, ReactNode, useCallback, useEffect } from 'react';
+import React, { createContext, useState, useContext, ReactNode, useCallback, useEffect, useMemo } from 'react';
 import { BugReport, BugReportLogEntry, BugReportType } from '../types';
 import { useAppDispatch, useAppState } from './AppContext';
 import { bugLogger } from '../utils/bugLogger';
@@ -156,10 +156,12 @@ export const DeveloperProvider: React.FC<{ children: ReactNode }> = ({ children 
     };
   }, [isPickingElement, onPickCallback, stopPickingElement, highlightedElement]);
 
+  const stateValue = useMemo(() => ({ isRecording, isPickingElement, logs, activeBugId, detailedBugReportId }), [isRecording, isPickingElement, logs, activeBugId, detailedBugReportId]);
+  const dispatchValue = useMemo(() => ({ startRecording, stopRecording, addLogEntry, startPickingElement, stopPickingElement, setDetailedBugReportId }), [startRecording, stopRecording, addLogEntry, startPickingElement, stopPickingElement]);
 
   return (
-    <DeveloperStateContext.Provider value={{ isRecording, isPickingElement, logs, activeBugId, detailedBugReportId }}>
-      <DeveloperDispatchContext.Provider value={{ startRecording, stopRecording, addLogEntry, startPickingElement, stopPickingElement, setDetailedBugReportId }}>
+    <DeveloperStateContext.Provider value={stateValue}>
+      <DeveloperDispatchContext.Provider value={dispatchValue}>
         {children}
       </DeveloperDispatchContext.Provider>
     </DeveloperStateContext.Provider>

@@ -1,4 +1,4 @@
-import React, { createContext, useState, useContext, ReactNode, useCallback } from 'react';
+import React, { createContext, useState, useContext, ReactNode, useCallback, useMemo } from 'react';
 import { User, Role } from '../types';
 import { useNotificationsDispatch } from './NotificationsContext';
 import { bugLogger } from '../utils/bugLogger';
@@ -165,17 +165,17 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       // For simplicity in this refactor, we are keeping it client-side optimistic.
   }, []);
 
-  const stateValue: AuthState = {
+  const stateValue = useMemo(() => ({
     users, currentUser, isAppUnlocked, isFirstRun, isSwitchingUser,
     isSharedViewActive, targetedUserForLogin, loginHistory
-  };
+  }), [users, currentUser, isAppUnlocked, isFirstRun, isSwitchingUser, isSharedViewActive, targetedUserForLogin, loginHistory]);
 
-  const dispatchValue: AuthDispatch = {
+  const dispatchValue = useMemo(() => ({
     setUsers, setLoginHistory, addUser, updateUser, deleteUsers, setCurrentUser, markUserAsOnboarded,
     setAppUnlocked, setIsSwitchingUser, setTargetedUserForLogin,
     exitToSharedView, setIsSharedViewActive, resetAllUsersData,
     completeFirstRun,
-  };
+  }), [addUser, updateUser, deleteUsers, setCurrentUser, markUserAsOnboarded, setAppUnlocked, setIsSwitchingUser, setTargetedUserForLogin, exitToSharedView, setIsSharedViewActive, resetAllUsersData, completeFirstRun]);
 
   return (
     <AuthStateContext.Provider value={stateValue}>

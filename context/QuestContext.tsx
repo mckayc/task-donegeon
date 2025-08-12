@@ -200,18 +200,24 @@ export const QuestProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       await apiRequest('PUT', '/api/quests/bulk-update', { ids: questIds, updates });
   }, [apiRequest]);
 
-  const state = {
+  const state = useMemo(() => ({
       quests, questGroups, questCompletions, allTags
-  };
+  }), [quests, questGroups, questCompletions, allTags]);
 
-  const dispatch = {
+  const dispatch = useMemo(() => ({
       setQuests, setQuestGroups, setQuestCompletions,
       addQuest, updateQuest, deleteQuest, cloneQuest, dismissQuest,
       claimQuest, releaseQuest, markQuestAsTodo, unmarkQuestAsTodo, completeQuest,
       approveQuestCompletion, rejectQuestCompletion, addQuestGroup, updateQuestGroup,
       deleteQuestGroup, assignQuestGroupToUsers, deleteQuests, updateQuestsStatus,
       bulkUpdateQuests, deleteQuestGroups
-  };
+  }), [
+      addQuest, updateQuest, deleteQuest, cloneQuest, dismissQuest,
+      claimQuest, releaseQuest, markQuestAsTodo, unmarkQuestAsTodo, completeQuest,
+      approveQuestCompletion, rejectQuestCompletion, addQuestGroup, updateQuestGroup,
+      deleteQuestGroup, assignQuestGroupToUsers, deleteQuests, updateQuestsStatus,
+      bulkUpdateQuests, deleteQuestGroups
+  ]);
 
   return (
     <QuestStateContext.Provider value={state}>

@@ -17,12 +17,15 @@ import { BugDetailDialog } from './components/dev/BugDetailDialog';
 import ChatController from './components/chat/ChatController';
 
 const App: React.FC = () => {
+  console.log('[App.tsx] App component rendering...');
   const { isDataLoaded, settings, guilds, themes, bugReports } = useAppState();
   const { currentUser, isAppUnlocked, isFirstRun, isSwitchingUser, isSharedViewActive } = useAuthState();
   const { appMode, activePage, activeBugDetailId } = useUIState();
   const { setActiveBugDetailId } = useUIDispatch();
   const { isRecording, addLogEntry } = useDeveloper();
   const { isPickingElement } = useDeveloperState();
+
+  console.log(`[App.tsx] isDataLoaded state is: ${isDataLoaded}`);
 
   const detailedReport = useMemo(() => {
     if (!activeBugDetailId) return null;
@@ -154,12 +157,15 @@ const App: React.FC = () => {
 
 
   if (!isDataLoaded) {
+    console.log('[App.tsx] isDataLoaded is false, rendering loading spinner.');
     return (
       <div className="min-h-screen flex items-center justify-center bg-stone-900">
         <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-emerald-400"></div>
       </div>
     );
   }
+
+  console.log('[App.tsx] isDataLoaded is true, proceeding to render main application layout.');
 
   const showOnboarding = currentUser && !currentUser.hasBeenOnboarded;
   const showBugReporter = settings.developerMode.enabled && currentUser?.role === Role.DonegeonMaster;

@@ -9,6 +9,8 @@ import { EconomyProvider } from './context/EconomyContext';
 import { DeveloperProvider } from './context/DeveloperContext';
 import { QuestProvider } from './context/QuestContext';
 
+console.log('[TaskDonegeon] index.tsx script loaded and executing.');
+
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('/sw.js').then(registration => {

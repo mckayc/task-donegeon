@@ -198,8 +198,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const initialSync = useCallback(async () => {
     const response = await apiRequest('GET', '/api/data/sync');
 
-    // FIX: Add robust check for the response and its structure to prevent TypeError.
-    if (!response || typeof response.updates !== 'object' || typeof response.newSyncTimestamp !== 'string') {
+    if (!response || typeof response.updates !== 'object' || response.updates === null || typeof response.newSyncTimestamp !== 'string') {
         throw new Error("Application data could not be loaded due to an invalid server response.");
     }
 
@@ -217,7 +216,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       if (lastUser) authDispatch.setCurrentUser(lastUser);
     }
     
-    // Use the settings object that was just processed, not a potentially undefined one.
     const finalSettings = loadedSettings || (updates as IAppData).settings;
     if (finalSettings) {
       authDispatch.setIsSharedViewActive(finalSettings.sharedMode.enabled && !localStorage.getItem('lastUserId'));
@@ -261,8 +259,11 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
   useEffect(() => {
     const initializeApp = async () => {
+      console.log('[AppContext] initializeApp: Starting application initialization...');
       try {
+        console.log('[AppContext] initializeApp: Starting initial data sync...');
         await initialSync();
+        console.log('[AppContext] initializeApp: Initial data sync completed successfully.');
 
         // Fetch system status after initial data load to check AI configuration
         try {
@@ -276,13 +277,11 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             setIsAiConfigured(false); // It's okay for this to fail silently
         }
         
-        // Only set loaded after a successful sync
+        console.log('[AppContext] initializeApp: All initialization steps complete. Setting data as loaded.');
         setIsDataLoaded(true);
       } catch (error) {
-        console.error("Critical error during application initialization:", error);
+        console.error("[AppContext] initializeApp: CRITICAL ERROR during initialization.", error);
         addNotification({type: 'error', message: 'Failed to load application data. Please check your server connection and refresh.'});
-        // Do NOT set isDataLoaded(true), which keeps the loading spinner visible
-        // and prevents the app from entering an invalid state (like showing the First Run wizard).
       }
     };
     initializeApp();

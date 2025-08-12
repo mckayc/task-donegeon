@@ -131,7 +131,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         // addNotification({ type: 'error', message: error instanceof Error ? error.message : 'An unknown network error occurred.' });
         throw error;
     }
-  }, [addNotification]);
+  }, []);
   
   // === DATA SYNC & LOADING ===
   
@@ -508,7 +508,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     return {
       addGuild, updateGuild, deleteGuild, setRanks: setRanksStable, addTrophy, updateTrophy,
       awardTrophy,
-      applyManualAdjustment: (adj) => {
+      applyManualAdjustment: (adj: Omit<AdminAdjustment, 'id' | 'adjustedAt'>) => {
           const newAdj: AdminAdjustment = { ...adj, id: `adj-${Date.now()}`, adjustedAt: new Date().toISOString() };
           setAdminAdjustments(p => [...p, newAdj]);
           if (newAdj.type === 'Reward') economyDispatch.applyRewards(newAdj.userId, newAdj.rewards, newAdj.guildId);

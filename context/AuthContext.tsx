@@ -117,7 +117,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         setUsers,
         setLoginHistory,
         setCurrentUser,
-        addUser: async (userData) => {
+        addUser: async (userData: Omit<User, 'id' | 'personalPurse' | 'personalExperience' | 'guildBalances' | 'avatar' | 'ownedAssetIds' | 'ownedThemes' | 'hasBeenOnboarded'>) => {
             if (bugLogger.isRecording()) {
                 bugLogger.add({ type: 'ACTION', message: `Attempting to add user: ${userData.gameName}` });
             }
@@ -155,7 +155,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         resetAllUsersData: () => {
             setUsers(prev => prev.map(u => u.role !== Role.DonegeonMaster ? { ...u, personalPurse: {}, personalExperience: {}, guildBalances: {}, ownedAssetIds: [], avatar: {} } : u));
         },
-        completeFirstRun: async (adminUserData) => {
+        completeFirstRun: async (adminUserData: any) => {
             try {
                 await apiRequest('POST', '/api/first-run', { adminUserData });
                 addNotification({ type: 'success', message: 'Setup complete! The app will now reload.' });

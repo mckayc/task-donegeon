@@ -131,7 +131,7 @@ export const QuestProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       if (status === QuestCompletionStatus.Approved) {
           const quest = quests.find(q => q.id === questId);
           if (quest) {
-              economyDispatch.applyRewards(userId, quest.rewards, guildId, false);
+              economyDispatch.applyRewards(userId, quest.rewards, guildId);
           }
       }
       setQuestCompletions(prev => [...prev, { ...completionData, id: `temp-comp-${Date.now()}` }]);
@@ -145,7 +145,7 @@ export const QuestProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       if (completion && completion.status === 'Pending') {
           const quest = quests.find(q => q.id === completion.questId);
           if (quest) {
-              economyDispatch.applyRewards(completion.userId, quest.rewards, completion.guildId, false);
+              economyDispatch.applyRewards(completion.userId, quest.rewards, completion.guildId);
           }
           setQuestCompletions(prev => prev.map(c => c.id === completionId ? { ...c, status: QuestCompletionStatus.Approved, note: note || c.note } : c));
       }

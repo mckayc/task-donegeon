@@ -131,7 +131,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         // addNotification({ type: 'error', message: error instanceof Error ? error.message : 'An unknown network error occurred.' });
         throw error;
     }
-  }, []);
+  }, [addNotification]);
   
   // === DATA SYNC & LOADING ===
   
@@ -329,12 +329,12 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     };
   }, [isDataLoaded, performDeltaSync]);
   
+  // === BUSINESS LOGIC / DISPATCH FUNCTIONS ===
+
   const triggerSync = useCallback(() => {
     console.log('Manual sync triggered.');
     performDeltaSync();
   }, [performDeltaSync]);
-
-  // === BUSINESS LOGIC / DISPATCH FUNCTIONS ===
 
   const addSystemNotification = useCallback((notification: Omit<SystemNotification, 'id' | 'timestamp' | 'readByUserIds'>) => {
     if (!notification.recipientUserIds || notification.recipientUserIds.length === 0) return;
@@ -374,151 +374,89 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     }
   }, [addNotification, addSystemNotification]);
   
-  const addGuild = useCallback(async (guild: Omit<Guild, 'id'>) => {
-    try {
-        await apiRequest('POST', '/api/guilds', guild);
-    } catch (error) {}
-  }, [apiRequest]);
+  const state = {
+      isDataLoaded, isAiConfigured, syncStatus, syncError,
+      guilds, ranks, trophies, userTrophies,
+      adminAdjustments, systemLogs, settings, themes, chatMessages,
+      systemNotifications, scheduledEvents, bugReports,
+  };
 
-  const updateGuild = useCallback(async (guild: Guild) => {
-      try {
-          await apiRequest('PUT', `/api/guilds/${guild.id}`, guild);
-      } catch (error) {}
-  }, [apiRequest]);
+  const dispatch = useMemo(() => {
+    const setRanksStable = (ranks: Rank[]) => setRanks(ranks);
 
-  const deleteGuild = useCallback(async (guildId: string) => {
-      try {
-          await apiRequest('DELETE', `/api/guilds/${guildId}`);
-      } catch (error) {}
-  }, [apiRequest]);
-
-  const addTrophy = useCallback((trophy: Omit<Trophy, 'id'>) => setTrophies(prev => [...prev, { ...trophy, id: `trophy-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`}]), []);
-  const updateTrophy = useCallback((trophy: Trophy) => setTrophies(prev => prev.map(t => t.id === trophy.id ? trophy : t)), []);
-
-  const applyManualAdjustment = useCallback((adj: Omit<AdminAdjustment, 'id' | 'adjustedAt'>): boolean => { 
-    const newAdj: AdminAdjustment = { ...adj, id: `adj-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`, adjustedAt: new Date().toISOString() }; 
-    setAdminAdjustments(p => [...p, newAdj]); 
-    if (newAdj.type === AdminAdjustmentType.Reward) economyDispatch.applyRewards(newAdj.userId, newAdj.rewards, newAdj.guildId); 
-    else if (newAdj.type === AdminAdjustmentType.Setback) economyDispatch.deductRewards(newAdj.userId, newAdj.setbacks, newAdj.guildId); 
-    else if (newAdj.type === AdminAdjustmentType.Trophy && newAdj.trophyId) awardTrophy(newAdj.userId, newAdj.trophyId, newAdj.guildId);
-    return true;
-  }, [awardTrophy, economyDispatch]);
-
-    const addTheme = useCallback((theme: Omit<ThemeDefinition, 'id'>) => {
-        const newTheme = { ...theme, id: `theme-${Date.now()}-${Math.random().toString(36).substring(2, 9)}` };
+    const addGuild = (guild: Omit<Guild, 'id'>) => { apiRequest('POST', '/api/guilds', guild).catch(() => {}); };
+    const updateGuild = (guild: Guild) => { apiRequest('PUT', `/api/guilds/${guild.id}`, guild).catch(() => {}); };
+    const deleteGuild = (guildId: string) => { apiRequest('DELETE', `/api/guilds/${guildId}`).catch(() => {}); };
+    const addTrophy = (trophy: Omit<Trophy, 'id'>) => setTrophies(prev => [...prev, { ...trophy, id: `trophy-${Date.now()}` }]);
+    const updateTrophy = (trophy: Trophy) => setTrophies(prev => prev.map(t => t.id === trophy.id ? trophy : t));
+    const addTheme = (theme: Omit<ThemeDefinition, 'id'>) => {
+        const newTheme = { ...theme, id: `theme-${Date.now()}` };
         setThemes(p => [...p, newTheme]);
         return newTheme;
-    }, []);
-    const updateTheme = useCallback((theme: ThemeDefinition) => setThemes(p => p.map(t => t.id === theme.id ? theme : t)), []);
-    const deleteTheme = useCallback((themeId: string) => setThemes(p => p.filter(t => t.id !== themeId)), []);
-
-    const addScheduledEvent = useCallback(async (event: Omit<ScheduledEvent, 'id'>) => {
-        await apiRequest('POST', '/api/events', event);
-    }, [apiRequest]);
-
-    const updateScheduledEvent = useCallback(async (event: ScheduledEvent) => {
-        await apiRequest('PUT', `/api/events/${event.id}`, event);
-    }, [apiRequest]);
-
-    const deleteScheduledEvent = useCallback(async (eventId: string) => {
-        await apiRequest('DELETE', `/api/events/${eventId}`);
-    }, [apiRequest]);
-
-    const addBugReport = useCallback(async (report: Omit<BugReport, 'id' | 'status' | 'tags'> & { reportType: BugReportType }) => {
+    };
+    const updateTheme = (theme: ThemeDefinition) => setThemes(p => p.map(t => t.id === theme.id ? theme : t));
+    const deleteTheme = (themeId: string) => setThemes(p => p.filter(t => t.id !== themeId));
+    const addScheduledEvent = (event: Omit<ScheduledEvent, 'id'>) => { apiRequest('POST', '/api/events', event).catch(() => {}); };
+    const updateScheduledEvent = (event: ScheduledEvent) => { apiRequest('PUT', `/api/events/${event.id}`, event).catch(() => {}); };
+    const deleteScheduledEvent = (eventId: string) => { apiRequest('DELETE', `/api/events/${eventId}`).catch(() => {}); };
+    const addBugReport = (report: Omit<BugReport, 'id' | 'status' | 'tags'> & { reportType: BugReportType }) => {
         const { reportType, ...rest } = report;
-        const newReport = {
-            ...rest,
-            id: `bug-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
-            status: 'Open' as const,
-            tags: [reportType]
-        };
-        await apiRequest('POST', '/api/bug-reports', newReport);
-    }, [apiRequest]);
-
-    const updateBugReport = useCallback(async (reportId: string, updates: Partial<BugReport>) => {
+        const newReport = { ...rest, id: `bug-${Date.now()}`, status: 'Open' as const, tags: [reportType] };
+        apiRequest('POST', '/api/bug-reports', newReport).catch(() => {});
+    };
+    const updateBugReport = (reportId: string, updates: Partial<BugReport>) => {
         const originalReports = [...bugReportsRef.current];
-        
-        // Optimistic update
-        setBugReports(prev =>
-            prev.map(report =>
-                report.id === reportId ? { ...report, ...updates, updatedAt: new Date().toISOString() } : report
-            )
-        );
-
-        try {
-            await apiRequest('PUT', `/api/bug-reports/${reportId}`, updates);
-        } catch (error) {
-            // Revert on failure
-            addNotification({ type: 'error', message: 'Update failed. Reverting changes.' });
+        setBugReports(prev => prev.map(r => r.id === reportId ? { ...r, ...updates, updatedAt: new Date().toISOString() } : r));
+        apiRequest('PUT', `/api/bug-reports/${reportId}`, updates).catch(() => {
+            addNotification({ type: 'error', message: 'Update failed. Reverting.' });
             setBugReports(originalReports);
-        }
-    }, [apiRequest, addNotification]);
-    
-    const deleteBugReports = useCallback(async (reportIds: string[]) => {
-        await apiRequest('DELETE', '/api/bug-reports', { ids: reportIds });
-    }, [apiRequest]);
-
-    const importBugReports = useCallback(async (reports: BugReport[]) => {
-        await apiRequest('POST', '/api/bug-reports/import', reports);
-        addNotification({ type: 'success', message: 'Bug reports imported successfully.' });
-    }, [apiRequest, addNotification]);
-
-    const restoreFromBackup = useCallback(async (backupData: IAppData) => {
-        await apiRequest('POST', '/api/data/restore', backupData);
-        addNotification({ type: 'success', message: 'Restore from backup successful! App will reload.' });
-        setTimeout(() => window.location.reload(), 1500);
-    }, [apiRequest, addNotification]);
-
-    const clearAllHistory = useCallback(() => {
+        });
+    };
+    const deleteBugReports = (reportIds: string[]) => { apiRequest('DELETE', '/api/bug-reports', { ids: reportIds }).catch(() => {}); };
+    const importBugReports = (reports: BugReport[]) => {
+        apiRequest('POST', '/api/bug-reports/import', reports).then(() => addNotification({ type: 'success', message: 'Reports imported.' })).catch(() => {});
+    };
+    const restoreFromBackup = (backupData: IAppData) => {
+        apiRequest('POST', '/api/data/restore', backupData).then(() => {
+            addNotification({ type: 'success', message: 'Restore successful! App will reload.' });
+            setTimeout(() => window.location.reload(), 1500);
+        }).catch(() => {});
+    };
+    const clearAllHistory = () => {
         questDispatch.setQuestCompletions([]);
         economyDispatch.setPurchaseRequests([]);
         setAdminAdjustments([]);
         setUserTrophies([]);
         setSystemLogs([]);
         addNotification({ type: 'info', message: 'All history logs cleared.' });
-    }, [economyDispatch, questDispatch, addNotification]);
-
-    const resetAllPlayerData = useCallback(() => {
+    };
+    const resetAllPlayerData = () => {
         authDispatch.resetAllUsersData();
         addNotification({ type: 'info', message: 'All player data has been reset.' });
-    }, [authDispatch, addNotification]);
-
-    const deleteAllCustomContent = useCallback(() => {
+    };
+    const deleteAllCustomContent = () => {
         questDispatch.setQuests([]);
         questDispatch.setQuestGroups([]);
         setTrophies(INITIAL_TROPHIES);
         setRanks(INITIAL_RANKS);
         economyDispatch.deleteAllCustomContent();
         addNotification({ type: 'info', message: 'All custom content has been deleted.' });
-    }, [economyDispatch, questDispatch, addNotification]);
-
-    const deleteSelectedAssets = useCallback(async (selection: Partial<Record<ShareableAssetType, string[]>>, onComplete: () => void) => {
-        try {
-            if (selection.quests) await apiRequest('DELETE', '/api/quests', { ids: selection.quests });
-            if (selection.ranks) {
-                await apiRequest('DELETE', '/api/ranks', { ids: selection.ranks });
-                setRanks(prev => prev.filter(r => !selection.ranks!.includes(r.id)));
-            }
-            if (selection.trophies) {
-                await apiRequest('DELETE', '/api/trophies', { ids: selection.trophies });
-                setTrophies(prev => prev.filter(t => !selection.trophies!.includes(t.id)));
-            }
-            
+    };
+    const deleteSelectedAssets = (selection: Partial<Record<ShareableAssetType, string[]>>, onComplete: () => void) => {
+        Promise.all([
+            selection.quests ? apiRequest('DELETE', '/api/quests', { ids: selection.quests }) : Promise.resolve(),
+            selection.ranks ? apiRequest('DELETE', '/api/ranks', { ids: selection.ranks }).then(() => setRanks(prev => prev.filter(r => !selection.ranks!.includes(r.id)))) : Promise.resolve(),
+            selection.trophies ? apiRequest('DELETE', '/api/trophies', { ids: selection.trophies }).then(() => setTrophies(prev => prev.filter(t => !selection.trophies!.includes(t.id)))) : Promise.resolve(),
+        ]).then(() => {
             economyDispatch.deleteSelectedAssets(selection);
-            
             onComplete();
             addNotification({ type: 'success', message: 'Selected assets deleted.' });
-        } catch(e) {
-            // Error is already handled by the apiRequest helper
-        }
-    }, [apiRequest, economyDispatch, addNotification]);
-
-    const uploadFile = useCallback(async (file: File, category?: string) => {
+        }).catch(() => {});
+    };
+    const uploadFile = async (file: File, category?: string) => {
         const formData = new FormData();
         formData.append('file', file);
-        if (category) {
-            formData.append('category', category);
-        }
+        if (category) formData.append('category', category);
         try {
             const response = await fetch('/api/media/upload', { method: 'POST', body: formData });
             if (!response.ok) throw new Error('Upload failed');
@@ -527,109 +465,72 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             addNotification({ type: 'error', message: 'File upload failed.' });
             return null;
         }
-    }, [addNotification]);
-    
-    const factoryReset = useCallback(async () => {
-        await apiRequest('POST', '/api/data/factory-reset');
-        addNotification({ type: 'success', message: 'Factory reset initiated. The app will restart.' });
-        setTimeout(() => window.location.reload(), 2000);
-    }, [apiRequest, addNotification]);
-
-    const updateSettings = useCallback(async (newSettings: Partial<AppSettings>) => {
-      const updatedSettings = { ...settingsRef.current, ...newSettings };
-      setSettings(updatedSettings);
-      await apiRequest('PUT', '/api/settings', updatedSettings);
-    }, [apiRequest]);
-
-    const resetSettings = useCallback(() => {
+    };
+    const factoryReset = () => {
+        apiRequest('POST', '/api/data/factory-reset').then(() => {
+            addNotification({ type: 'success', message: 'Factory reset initiated. The app will restart.' });
+            setTimeout(() => window.location.reload(), 2000);
+        }).catch(() => {});
+    };
+    const updateSettings = (newSettings: Partial<AppSettings>) => {
+        const updatedSettings = { ...settingsRef.current, ...newSettings };
+        setSettings(updatedSettings);
+        apiRequest('PUT', '/api/settings', updatedSettings).catch(() => {});
+    };
+    const resetSettings = () => {
         setSettings(INITIAL_SETTINGS);
         updateSettings(INITIAL_SETTINGS);
-        addNotification({ type: 'info', message: 'Settings have been reset to default.' });
-    }, [updateSettings, addNotification]);
-
-    const sendMessage = useCallback(async (message: Omit<ChatMessage, 'id' | 'timestamp' | 'readBy' | 'senderId'> & { isAnnouncement?: boolean }) => {
+        addNotification({ type: 'info', message: 'Settings reset to default.' });
+    };
+    const sendMessage = (message: Omit<ChatMessage, 'id' | 'timestamp' | 'readBy' | 'senderId'> & { isAnnouncement?: boolean }) => {
         if (!currentUserRef.current) return;
-
-        const notificationId = addNotification({
-            message: 'Sending message...',
-            type: 'info',
-            duration: 0, // Persistent
+        const notificationId = addNotification({ message: 'Sending...', type: 'info', duration: 0 });
+        const payload = { ...message, senderId: currentUserRef.current.id };
+        apiRequest('POST', '/api/chat/send', payload).then(() => {
+            updateNotification(notificationId, { message: 'Message sent!', type: 'success', duration: 3000 });
+        }).catch(() => {
+            updateNotification(notificationId, { message: 'Failed to send.', type: 'error', duration: 5000 });
         });
-
-        try {
-            const payload = { ...message, senderId: currentUserRef.current.id };
-            await apiRequest('POST', '/api/chat/send', payload);
-            updateNotification(notificationId, {
-                message: 'Message sent!',
-                type: 'success',
-                duration: 3000,
-            });
-        } catch (error) {
-            updateNotification(notificationId, {
-                message: 'Failed to send message.',
-                type: 'error',
-                duration: 5000,
-            });
-        }
-    }, [apiRequest, addNotification, updateNotification]);
-
-    const markMessagesAsRead = useCallback(async (params: { partnerId?: string; guildId?: string; }) => {
+    };
+    const markMessagesAsRead = (params: { partnerId?: string; guildId?: string; }) => {
         if (!currentUserRef.current) return;
-
-        // Optimistic update to prevent infinite loops in the chat panel
-        setChatMessages(prevMessages => 
-            prevMessages.map(msg => {
-                const isDmMatch = params.partnerId && msg.recipientId === currentUserRef.current!.id && msg.senderId === params.partnerId;
-                const isGuildMatch = params.guildId && msg.guildId === params.guildId;
-
-                if ((isDmMatch || isGuildMatch) && !msg.readBy.includes(currentUserRef.current!.id)) {
-                    return { ...msg, readBy: [...msg.readBy, currentUserRef.current!.id] };
-                }
-                return msg;
-            })
-        );
-        
-        // Fire and forget API call
-        const payload = { ...params, userId: currentUserRef.current.id };
-        apiRequest('POST', '/api/chat/read', payload).catch(err => {
-            console.error("Failed to mark messages as read on server:", err);
-            // The UI will eventually be corrected by the next full sync if this fails.
-        });
-    }, [apiRequest]);
-
-    const state = {
-        isDataLoaded, isAiConfigured, syncStatus, syncError,
-        guilds, ranks, trophies, userTrophies,
-        adminAdjustments, systemLogs, settings, themes, chatMessages,
-        systemNotifications, scheduledEvents, bugReports,
+        setChatMessages(prev => prev.map(msg => {
+            const isDm = params.partnerId && msg.recipientId === currentUserRef.current!.id && msg.senderId === params.partnerId;
+            const isGuild = params.guildId && msg.guildId === params.guildId;
+            if ((isDm || isGuild) && !msg.readBy.includes(currentUserRef.current!.id)) {
+                return { ...msg, readBy: [...msg.readBy, currentUserRef.current!.id] };
+            }
+            return msg;
+        }));
+        apiRequest('POST', '/api/chat/read', { ...params, userId: currentUserRef.current.id }).catch(() => {});
     };
 
-    const dispatch = useMemo(() => ({
-        addGuild, updateGuild, deleteGuild, setRanks, addTrophy, updateTrophy,
-        awardTrophy, applyManualAdjustment, addTheme, updateTheme, deleteTheme,
-        addScheduledEvent, updateScheduledEvent, deleteScheduledEvent, addBugReport,
-        updateBugReport, deleteBugReports, importBugReports, restoreFromBackup, clearAllHistory,
-        resetAllPlayerData, deleteAllCustomContent, deleteSelectedAssets, uploadFile,
-        factoryReset, updateSettings, resetSettings, sendMessage, markMessagesAsRead,
-        addSystemNotification, markSystemNotificationsAsRead,
-        triggerSync,
-    }), [
-        addGuild, updateGuild, deleteGuild, addTrophy, updateTrophy, awardTrophy,
-        applyManualAdjustment, addTheme, updateTheme, deleteTheme, addScheduledEvent,
-        updateScheduledEvent, deleteScheduledEvent, addBugReport, updateBugReport,
-        deleteBugReports, importBugReports, restoreFromBackup, clearAllHistory,
-        resetAllPlayerData, deleteAllCustomContent, deleteSelectedAssets, uploadFile,
-        factoryReset, updateSettings, resetSettings, sendMessage, markMessagesAsRead,
-        addSystemNotification, markSystemNotificationsAsRead, triggerSync, setRanks
-    ]);
+    return {
+      addGuild, updateGuild, deleteGuild, setRanks: setRanksStable, addTrophy, updateTrophy,
+      awardTrophy,
+      applyManualAdjustment: (adj) => {
+          const newAdj: AdminAdjustment = { ...adj, id: `adj-${Date.now()}`, adjustedAt: new Date().toISOString() };
+          setAdminAdjustments(p => [...p, newAdj]);
+          if (newAdj.type === 'Reward') economyDispatch.applyRewards(newAdj.userId, newAdj.rewards, newAdj.guildId);
+          else if (newAdj.type === 'Setback') economyDispatch.deductRewards(newAdj.userId, newAdj.setbacks, newAdj.guildId);
+          else if (newAdj.type === 'Trophy' && newAdj.trophyId) awardTrophy(newAdj.userId, newAdj.trophyId, newAdj.guildId);
+          return true;
+      },
+      addTheme, updateTheme, deleteTheme, addScheduledEvent, updateScheduledEvent, deleteScheduledEvent, addBugReport,
+      updateBugReport, deleteBugReports, importBugReports, restoreFromBackup, clearAllHistory,
+      resetAllPlayerData, deleteAllCustomContent, deleteSelectedAssets, uploadFile,
+      factoryReset, updateSettings, resetSettings, sendMessage, markMessagesAsRead,
+      addSystemNotification, markSystemNotificationsAsRead, triggerSync,
+    };
+  }, [apiRequest, addNotification, updateNotification, economyDispatch, questDispatch, authDispatch, addSystemNotification, awardTrophy, triggerSync]);
 
-    return (
-        <AppStateContext.Provider value={state}>
-            <AppDispatchContext.Provider value={dispatch}>
-                {children}
-            </AppDispatchContext.Provider>
-        </AppStateContext.Provider>
-    );
+  return (
+      <AppStateContext.Provider value={state}>
+          <AppDispatchContext.Provider value={dispatch}>
+              {children}
+          </AppDispatchContext.Provider>
+      </AppStateContext.Provider>
+  );
 };
 
 export const useAppState = (): AppState => {

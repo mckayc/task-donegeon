@@ -1,12 +1,10 @@
 import React from 'react';
-import { useAppState } from '../../context/AppContext';
-import { useAuthState, useAuthDispatch } from '../../context/AuthContext';
+import { useAppState, useAppDispatch } from '../../context/AppContext';
 import Button from '../user-interface/Button';
 
 const OnboardingWizard: React.FC = () => {
-    const { settings } = useAppState();
-    const { currentUser } = useAuthState();
-    const { markUserAsOnboarded } = useAuthDispatch();
+    const { settings, currentUser } = useAppState();
+    const { markUserAsOnboarded } = useAppDispatch();
 
     if (!currentUser) return null;
 

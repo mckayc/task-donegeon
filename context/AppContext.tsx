@@ -479,15 +479,17 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     }, []);
 
     const claimQuest = useCallback((questId: string, userId: string) => {
-        setQuests(prev => prev.map(q => q.id === questId ? { ...q, claimedByUserIds: [...(q.claimedByUserIds || []), userId] } : q));
-    }, []);
+        const quest = quests.find(q => q.id === questId);
+        if(!quest) return;
+        const updatedQuest = { ...quest, claimedByUserIds: [...(quest.claimedByUserIds || []), userId] };
+        setQuests(prev => prev.map(q => q.id === questId ? updatedQuest : q));
+    }, [quests]);
 
     const releaseQuest = useCallback((questId: string, userId: string) => {
         setQuests(prev => prev.map(q => q.id === questId ? { ...q, claimedByUserIds: (q.claimedByUserIds || []).filter(id => id !== userId) } : q));
     }, []);
 
     const markQuestAsTodo = useCallback((questId: string, userId: string) => {
-        setQuests(prev => prev.map(q => q.id === questId ? { ...q, todoUserIds: [...(q.todoUserIds || []), userId] } : q));
         const quest = quests.find(q => q.id === questId);
         if (quest) {
             const updatedQuest = { ...quest, todoUserIds: [...(quest.todoUserIds || []), userId] };
@@ -496,10 +498,9 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     }, [quests, apiRequest]);
 
     const unmarkQuestAsTodo = useCallback((questId: string, userId: string) => {
-        setQuests(prev => prev.map(q => q.id === questId ? { ...q, todoUserIds: (q.todoUserIds || []).filter(id => id !== userId) } : q));
         const quest = quests.find(q => q.id === questId);
         if (quest) {
-            const updatedQuest = { ...quest, todoUserIds: (q.todoUserIds || []).filter(id => id !== userId) };
+            const updatedQuest = { ...quest, todoUserIds: (quest.todoUserIds || []).filter(id => id !== userId) };
             apiRequest('PUT', `/api/quests/${questId}`, updatedQuest);
         }
     }, [quests, apiRequest]);
@@ -846,76 +847,76 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         addNotification({ type: 'success', message: `${marketIds.length} market(s) updated.` });
     }, [addNotification]);
 
-  const allDispatchFunctions = {
+  const allDispatchFunctions: AppDispatch = {
       // Auth
       setUsers, setLoginHistory,
-      addUser: useCallback(async (userData) => { return await apiRequest('POST', '/api/users', userData); }, [apiRequest]),
+      addUser: (userData: any) => apiRequest('POST', '/api/users', userData),
       updateUser,
       deleteUsers,
       setCurrentUser,
-      markUserAsOnboarded: useCallback((userId) => updateUser(userId, { hasBeenOnboarded: true }), [updateUser]),
-      setAppUnlocked: useCallback((isUnlocked) => { localStorage.setItem('isAppUnlocked', String(isUnlocked)); _setAppUnlocked(isUnlocked); }, []),
+      markUserAsOnboarded: (userId: string) => updateUser(userId, { hasBeenOnboarded: true }),
+      setAppUnlocked: (isUnlocked: boolean) => { localStorage.setItem('isAppUnlocked', String(isUnlocked)); _setAppUnlocked(isUnlocked); },
       setIsSwitchingUser,
       setTargetedUserForLogin,
-      exitToSharedView: useCallback(() => { _setCurrentUser(null); setIsSharedViewActive(true); localStorage.removeItem('lastUserId'); }, []),
+      exitToSharedView: () => { _setCurrentUser(null); setIsSharedViewActive(true); localStorage.removeItem('lastUserId'); },
       setIsSharedViewActive,
       resetAllUsersData,
-      completeFirstRun: useCallback(async (adminUserData) => { await apiRequest('POST', '/api/first-run', { adminUserData }); setTimeout(() => window.location.reload(), 2000); }, [apiRequest]),
+      completeFirstRun: (adminUserData: any) => apiRequest('POST', '/api/first-run', { adminUserData }).then(() => setTimeout(() => window.location.reload(), 2000)),
       
       // Quest
       setQuests, setQuestGroups, setQuestCompletions,
-      addQuest: useCallback(async (quest) => { await apiRequest('POST', '/api/quests', quest); }, [apiRequest]),
-      updateQuest: useCallback(async (quest) => { await apiRequest('PUT', `/api/quests/${quest.id}`, quest); }, [apiRequest]),
-      deleteQuest: useCallback(async (id) => { await apiRequest('DELETE', '/api/quests', { ids: [id] }); }, [apiRequest]),
-      cloneQuest: useCallback(async (id) => { await apiRequest('POST', `/api/quests/clone/${id}`); }, [apiRequest]),
+      addQuest: (quest: any) => apiRequest('POST', '/api/quests', quest),
+      updateQuest: (quest: any) => apiRequest('PUT', `/api/quests/${quest.id}`, quest),
+      deleteQuest: (id: any) => apiRequest('DELETE', '/api/quests', { ids: [id] }),
+      cloneQuest: (id: any) => apiRequest('POST', `/api/quests/clone/${id}`),
       dismissQuest, claimQuest, releaseQuest, markQuestAsTodo, unmarkQuestAsTodo,
-      completeQuest, approveQuestCompletion: useCallback(async (id, note) => { await apiRequest('POST', `/api/actions/approve-quest/${id}`, { note }); }, [apiRequest]),
-      rejectQuestCompletion: useCallback(async (id, note) => { await apiRequest('POST', `/api/actions/reject-quest/${id}`, { note }); }, [apiRequest]),
-      addQuestGroup: useCallback((group) => { const newGroup = { ...group, id: `qg-${Date.now()}` }; setQuestGroups(p => [...p, newGroup]); return newGroup; }, []),
-      updateQuestGroup: useCallback((group) => setQuestGroups(p => p.map(g => g.id === group.id ? group : g)), []),
-      deleteQuestGroup: useCallback((id) => setQuestGroups(p => p.filter(g => g.id !== id)), []),
-      deleteQuestGroups: useCallback((ids) => { const idSet = new Set(ids); setQuestGroups(p => p.filter(g => !idSet.has(g.id))); }, []),
-      assignQuestGroupToUsers: useCallback((groupId, userIds) => { setQuests(prevQuests => prevQuests.map(quest => quest.groupId === groupId ? { ...quest, assignedUserIds: userIds } : quest)); }, []),
-      deleteQuests: useCallback(async (ids) => { await apiRequest('DELETE', '/api/quests', { ids }); }, [apiRequest]),
-      updateQuestsStatus: useCallback(async (ids, isActive) => { await apiRequest('PUT', '/api/quests/bulk-status', { ids, isActive }); }, [apiRequest]),
-      bulkUpdateQuests: useCallback(async (ids, updates) => { await apiRequest('PUT', '/api/quests/bulk-update', { ids, updates }); }, [apiRequest]),
+      completeQuest, approveQuestCompletion: (id: any, note: any) => apiRequest('POST', `/api/actions/approve-quest/${id}`, { note }),
+      rejectQuestCompletion: (id: any, note: any) => apiRequest('POST', `/api/actions/reject-quest/${id}`, { note }),
+      addQuestGroup: (group: any) => { const newGroup = { ...group, id: `qg-${Date.now()}` }; setQuestGroups(p => [...p, newGroup]); return newGroup; },
+      updateQuestGroup: (group: any) => setQuestGroups(p => p.map(g => g.id === group.id ? group : g)),
+      deleteQuestGroup: (id: any) => setQuestGroups(p => p.filter(g => g.id !== id)),
+      deleteQuestGroups: (ids: any) => { const idSet = new Set(ids); setQuestGroups(p => p.filter(g => !idSet.has(g.id))); },
+      assignQuestGroupToUsers: (groupId: any, userIds: any) => setQuests(prevQuests => prevQuests.map(quest => quest.groupId === groupId ? { ...quest, assignedUserIds: userIds } : quest)),
+      deleteQuests: (ids: any) => apiRequest('DELETE', '/api/quests', { ids }),
+      updateQuestsStatus: (ids: any, isActive: any) => apiRequest('PUT', '/api/quests/bulk-status', { ids, isActive }),
+      bulkUpdateQuests: (ids: any, updates: any) => apiRequest('PUT', '/api/quests/bulk-update', { ids, updates }),
       
       // Economy
       setMarkets, setRewardTypes, setPurchaseRequests, setGameAssets,
-      addRewardType: useCallback((rt) => setRewardTypes(p => [...p, {...rt, id: `custom-${Date.now()}`, isCore: false}]), []),
-      updateRewardType: useCallback((rt) => setRewardTypes(p => p.map(r => r.id === rt.id ? rt : r)), []),
-      deleteRewardType: useCallback((id) => setRewardTypes(p => p.filter(r => r.id !== id)), []),
+      addRewardType: (rt: any) => setRewardTypes(p => [...p, {...rt, id: `custom-${Date.now()}`, isCore: false}]),
+      updateRewardType: (rt: any) => setRewardTypes(p => p.map(r => r.id === rt.id ? rt : r)),
+      deleteRewardType: (id: any) => setRewardTypes(p => p.filter(r => r.id !== id)),
       cloneRewardType,
-      addMarket: useCallback((m) => setMarkets(p => [...p, {...m, id: `market-${Date.now()}`}]), []),
-      updateMarket: useCallback((m) => setMarkets(p => p.map(market => market.id === m.id ? m : market)), []),
-      deleteMarket: useCallback((id) => setMarkets(p => p.filter(m => m.id !== id)), []),
+      addMarket: (m: any) => setMarkets(p => [...p, {...m, id: `market-${Date.now()}`}]),
+      updateMarket: (m: any) => setMarkets(p => p.map(market => market.id === m.id ? m : market)),
+      deleteMarket: (id: any) => setMarkets(p => p.filter(m => m.id !== id)),
       cloneMarket,
       deleteMarkets,
       updateMarketsStatus,
-      addGameAsset: useCallback(async (asset) => { await apiRequest('POST', '/api/assets', asset); }, [apiRequest]),
-      updateGameAsset: useCallback(async (asset) => { await apiRequest('PUT', `/api/assets/${asset.id}`, asset); }, [apiRequest]),
-      deleteGameAsset: useCallback(async (id) => { await apiRequest('DELETE', '/api/assets', { ids: [id] }); }, [apiRequest]),
-      cloneGameAsset: useCallback(async (id) => { await apiRequest('POST', `/api/assets/clone/${id}`); }, [apiRequest]),
-      deleteGameAssets: useCallback(async (ids) => { await apiRequest('DELETE', '/api/assets', { ids }); }, [apiRequest]),
+      addGameAsset: (asset: any) => apiRequest('POST', '/api/assets', asset),
+      updateGameAsset: (asset: any) => apiRequest('PUT', `/api/assets/${asset.id}`, asset),
+      deleteGameAsset: (id: any) => apiRequest('DELETE', '/api/assets', { ids: [id] }),
+      cloneGameAsset: (id: any) => apiRequest('POST', `/api/assets/clone/${id}`),
+      deleteGameAssets: (ids: any) => apiRequest('DELETE', '/api/assets', { ids }),
       purchaseMarketItem, cancelPurchaseRequest, approvePurchaseRequest, rejectPurchaseRequest,
       applyRewards, deductRewards, executeExchange,
-      importAssetPack: useCallback(async (pack, resolutions, allData) => { await apiRequest('POST', '/api/data/import-assets', { assetPack: pack, resolutions }); }, [apiRequest]),
+      importAssetPack: (pack: any, resolutions: any, allData: any) => apiRequest('POST', '/api/data/import-assets', { assetPack: pack, resolutions }),
       
       // App
-      addGuild: useCallback(async(g) => { await apiRequest('POST', '/api/guilds', g); }, [apiRequest]),
-      updateGuild: useCallback(async(g) => { await apiRequest('PUT', `/api/guilds/${g.id}`, g); }, [apiRequest]),
-      deleteGuild: useCallback(async(id) => { await apiRequest('DELETE', `/api/guilds/${id}`); }, [apiRequest]),
+      addGuild: (g: any) => apiRequest('POST', '/api/guilds', g),
+      updateGuild: (g: any) => apiRequest('PUT', `/api/guilds/${g.id}`, g),
+      deleteGuild: (id: any) => apiRequest('DELETE', `/api/guilds/${id}`),
       setRanks, addTrophy, updateTrophy, awardTrophy, applyManualAdjustment,
-      addTheme, updateTheme, deleteTheme, addScheduledEvent: useCallback(async(e) => { await apiRequest('POST', '/api/events', e); }, [apiRequest]),
-      updateScheduledEvent: useCallback(async(e) => { await apiRequest('PUT', `/api/events/${e.id}`, e); }, [apiRequest]),
-      deleteScheduledEvent: useCallback(async(id) => { await apiRequest('DELETE', `/api/events/${id}`); }, [apiRequest]),
-      addBugReport: useCallback(async(r) => { await apiRequest('POST', '/api/bug-reports', r); }, [apiRequest]),
-      updateBugReport: useCallback(async(id, u) => { await apiRequest('PUT', `/api/bug-reports/${id}`, u); }, [apiRequest]),
-      deleteBugReports: useCallback(async(ids) => { await apiRequest('DELETE', '/api/bug-reports', { ids }); }, [apiRequest]),
-      importBugReports: useCallback(async(r) => { await apiRequest('POST', '/api/bug-reports/import', r); }, [apiRequest]),
-      restoreFromBackup: useCallback(async(d) => { await apiRequest('POST', '/api/data/restore', d); setTimeout(() => window.location.reload(), 1500); }, [apiRequest]),
+      addTheme, updateTheme, deleteTheme, addScheduledEvent: (e: any) => apiRequest('POST', '/api/events', e),
+      updateScheduledEvent: (e: any) => apiRequest('PUT', `/api/events/${e.id}`, e),
+      deleteScheduledEvent: (id: any) => apiRequest('DELETE', `/api/events/${id}`),
+      addBugReport: (r: any) => apiRequest('POST', '/api/bug-reports', r),
+      updateBugReport: (id: any, u: any) => apiRequest('PUT', `/api/bug-reports/${id}`, u),
+      deleteBugReports: (ids: any) => apiRequest('DELETE', '/api/bug-reports', { ids }),
+      importBugReports: (r: any) => apiRequest('POST', '/api/bug-reports/import', r),
+      restoreFromBackup: (d: any) => apiRequest('POST', '/api/data/restore', d).then(() => setTimeout(() => window.location.reload(), 1500)),
       clearAllHistory, resetAllPlayerData, deleteAllCustomContent, deleteSelectedAssets, uploadFile, factoryReset,
-      updateSettings: useCallback(async (s) => { const newSettings = {...settings, ...s}; setSettings(newSettings); await apiRequest('PUT', '/api/settings', newSettings); }, [settings, apiRequest]),
+      updateSettings: (s: any) => { const newSettings = {...settings, ...s}; setSettings(newSettings); apiRequest('PUT', '/api/settings', newSettings); },
       resetSettings, sendMessage, markMessagesAsRead, addSystemNotification, markSystemNotificationsAsRead,
       triggerSync
   };

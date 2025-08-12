@@ -10,9 +10,6 @@ import CompleteQuestDialog from '../quests/CompleteQuestDialog';
 import QuestDetailDialog from '../quests/QuestDetailDialog';
 import DynamicIcon from '../user-interface/DynamicIcon';
 import ImagePreviewDialog from '../user-interface/ImagePreviewDialog';
-import { useAuthState } from '../../context/AuthContext';
-import { useEconomyState } from '../../context/EconomyContext';
-import { useQuestState, useQuestDispatch } from '../../context/QuestContext';
 
 const getAvailabilityText = (quest: Quest, completionsCount: number): string => {
     switch (quest.availabilityType) {
@@ -50,10 +47,7 @@ const formatTimeRemaining = (targetDate: Date, now: Date): string => {
 };
 
 const QuestItem: React.FC<{ quest: Quest; now: Date; onSelect: (quest: Quest) => void; onImagePreview: (url: string) => void; allQuests: Quest[]; }> = ({ quest, now, onSelect, onImagePreview, allQuests }) => {
-    const { settings, scheduledEvents, guilds } = useAppState();
-    const { questGroups, questCompletions } = useQuestState();
-    const { rewardTypes } = useEconomyState();
-    const { currentUser } = useAuthState();
+    const { settings, scheduledEvents, guilds, questGroups, questCompletions, rewardTypes, currentUser } = useAppState();
     const { appMode } = useUIState();
     
     if (!currentUser) return null;
@@ -217,11 +211,9 @@ const FilterButton: React.FC<{ type: 'all' | QuestType, children: React.ReactNod
 );
 
 const QuestsPage: React.FC = () => {
-    const { settings, scheduledEvents } = useAppState();
-    const { quests, questCompletions } = useQuestState();
-    const { currentUser } = useAuthState();
+    const { settings, scheduledEvents, quests, questCompletions, currentUser } = useAppState();
+    const { markQuestAsTodo, unmarkQuestAsTodo } = useAppDispatch();
     const { appMode } = useUIState();
-    const { markQuestAsTodo, unmarkQuestAsTodo } = useQuestDispatch();
     const [filter, setFilter] = useState<'all' | QuestType>('all');
     const [selectedQuest, setSelectedQuest] = useState<Quest | null>(null);
     const [completingQuest, setCompletingQuest] = useState<Quest | null>(null);

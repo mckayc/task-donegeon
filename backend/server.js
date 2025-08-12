@@ -1,5 +1,3 @@
-
-
 require("reflect-metadata");
 const express = require('express');
 const cors = require('cors');
@@ -178,7 +176,7 @@ const createBackup = async (reason = 'manual', maxBackups) => {
         for (const entity of allEntities) {
             const repo = manager.getRepository(entity);
             const records = await repo.find();
-            const entityName = entity.name.replace(/Entity$/, '');
+            const entityName = entity.options.name.replace(/Entity$/, '');
             const key = entityKeyMap[entityName];
             if (!key) continue;
 
@@ -287,7 +285,7 @@ app.get('/api/data/sync', async (req, res) => {
             const updates = {};
             for (const entity of allEntities) {
                 const repo = manager.getRepository(entity);
-                const entityName = entity.name.replace(/Entity$/, '');
+                const entityName = entity.options.name.replace(/Entity$/, '');
                 const key = entityKeyMap[entityName];
                 if (!key) continue;
 
@@ -321,7 +319,7 @@ app.get('/api/data/sync', async (req, res) => {
             const data = {};
             for (const entity of allEntities) {
                  const repo = manager.getRepository(entity);
-                 const entityName = entity.name.replace(/Entity$/, '');
+                 const entityName = entity.options.name.replace(/Entity$/, '');
                  const key = entityKeyMap[entityName];
                  if (!key) continue;
 
@@ -523,7 +521,7 @@ app.post('/api/backups/restore/:filename', async (req, res) => {
             
             // Restore data
             for (const entity of allEntities) {
-                const entityName = entity.name.replace(/Entity$/, '');
+                const entityName = entity.options.name.replace(/Entity$/, '');
                 const key = entityKeyMap[entityName];
                 if (key && backupData[key]) {
                     const records = backupData[key];

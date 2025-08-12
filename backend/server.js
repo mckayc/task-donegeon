@@ -411,6 +411,112 @@ app.get('/api/data/sync', asyncMiddleware(async (req, res) => {
     }
 }));
 
+app.get('/api/calendar-events', asyncMiddleware(async (req, res) => {
+    const { start, end, guildId } = req.query;
+    if (!start || !end) {
+        return res.status(400).json({ error: 'start and end query parameters are required.' });
+    }
+
+    const startDate = new Date(start);
+    const endDate = new Date(end);
+    const manager = dataSource.manager;
+
+    const [quests, scheduledEvents, users] = await Promise.all([
+        manager.find(QuestEntity),
+        manager.find(ScheduledEventEntity),
+        manager.find(UserEntity)
+    ]);
+
+    const events = [];
+
+    // 1. System Scheduled Events
+    scheduledEvents.forEach(event => {
+        const eventScopeMatch = !event.guildId || event.guildId === guildId;
+        if (eventScopeMatch && new Date(event.startDate) <= endDate && new Date(event.endDate) >= startDate) {
+            events.push({
+                id: `scheduled-${event.id}`,
+                title: event.title,
+                start: event.startDate,
+                end: new Date(new Date(event.endDate).getTime() + 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+                allDay: event.isAllDay,
+                backgroundColor: event.color ? `hsl(${event.color})` : '#8b5cf6',
+                borderColor: event.color ? `hsl(${event.color})` : '#7c3aed',
+                extendedProps: { type: 'scheduled', appEvent: event }
+            });
+        }
+    });
+
+    // 2. Ventures
+    quests.filter(q => q.type === 'Venture' && q.lateDateTime).forEach(quest => {
+        const questScopeMatch = !quest.guildId || quest.guildId === guildId;
+        const dueDate = new Date(quest.lateDateTime);
+        if (questScopeMatch && dueDate >= startDate && dueDate <= endDate) {
+            events.push({
+                id: `quest-${quest.id}`,
+                title: quest.title,
+                start: quest.lateDateTime,
+                allDay: !quest.lateDateTime.includes('T'),
+                backgroundColor: 'hsl(36 90% 50% / 0.7)',
+                borderColor: 'hsl(36 90% 40%)',
+                editable: true,
+                extendedProps: { type: 'quest', quest }
+            });
+        }
+    });
+
+    // 3. Duties and Birthdays (loop through range)
+    for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
+        const currentDate = new Date(d);
+        const currentDateYMD = currentDate.toISOString().split('T')[0];
+        const dayOfWeek = currentDate.getDay();
+        const dayOfMonth = currentDate.getDate();
+        const monthDay = (currentDate.getMonth() + 1).toString().padStart(2, '0') + '-' + currentDate.getDate().toString().padStart(2, '0');
+
+        // Duties
+        quests.filter(q => q.type === 'Duty').forEach(duty => {
+            const dutyScopeMatch = !duty.guildId || duty.guildId === guildId;
+            if (!dutyScopeMatch) return;
+
+            let isScheduledToday = false;
+            if (duty.availabilityType === 'Daily') isScheduledToday = true;
+            else if (duty.availabilityType === 'Weekly' && duty.weeklyRecurrenceDays.includes(dayOfWeek)) isScheduledToday = true;
+            else if (duty.availabilityType === 'Monthly' && duty.monthlyRecurrenceDays.includes(dayOfMonth)) isScheduledToday = true;
+
+            if (isScheduledToday) {
+                events.push({
+                    id: `quest-${duty.id}-${currentDateYMD}`,
+                    title: duty.title,
+                    start: currentDateYMD + (duty.lateTime ? `T${duty.lateTime}` : ''),
+                    allDay: !duty.lateTime,
+                    backgroundColor: 'hsl(204 85% 54% / 0.7)',
+                    borderColor: 'hsl(204 85% 44%)',
+                    editable: false,
+                    extendedProps: { type: 'quest', quest: duty }
+                });
+            }
+        });
+
+        // Birthdays
+        users.forEach(user => {
+            if (user.birthday && user.birthday.substring(5) === monthDay) {
+                events.push({
+                    id: `birthday-${user.id}-${currentDateYMD}`,
+                    title: `🎂 ${user.gameName}'s Birthday`,
+                    start: currentDateYMD,
+                    allDay: true,
+                    backgroundColor: 'hsl(50 90% 60%)',
+                    borderColor: 'hsl(50 90% 50%)',
+                    textColor: 'hsl(50 100% 10%)',
+                    editable: false,
+                    extendedProps: { type: 'birthday', user }
+                });
+            }
+        });
+    }
+
+    res.json(events);
+}));
+
 
 // FIRST RUN
 app.post('/api/first-run', asyncMiddleware(async (req, res) => {
@@ -1674,7 +1780,7 @@ backupsRouter.get('/download/:filename', (req, res) => {
             }
         }
     });
-});
+}));
 
 backupsRouter.delete('/:filename', asyncMiddleware(async (req, res) => {
     const filename = path.basename(req.params.filename);

@@ -70,6 +70,12 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const economyDispatch = useEconomyDispatch();
   const questDispatch = useQuestDispatch();
 
+  // Ref to hold the current user to break dependency cycle in performDeltaSync
+  const currentUserRef = useRef(currentUser);
+  useEffect(() => {
+    currentUserRef.current = currentUser;
+  }, [currentUser]);
+
   // === STATE MANAGEMENT ===
   const [guilds, setGuilds] = useState<Guild[]>([]);
   const [ranks, setRanks] = useState<Rank[]>([]);
@@ -235,8 +241,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
           processAndSetData(updates, true);
           
           // If the current user's data was in the update, refresh the currentUser state
-          if (updates.users && currentUser) {
-            const updatedCurrentUser = updates.users.find((u: User) => u.id === currentUser.id);
+          if (updates.users && currentUserRef.current) {
+            const updatedCurrentUser = updates.users.find((u: User) => u.id === currentUserRef.current!.id);
             if (updatedCurrentUser) {
                 authDispatch.setCurrentUser(updatedCurrentUser);
             }
@@ -250,7 +256,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       setSyncStatus('error');
       setSyncError(error instanceof Error ? error.message : 'An unknown error occurred during sync.');
     }
-  }, [apiRequest, processAndSetData, currentUser, authDispatch]);
+  }, [apiRequest, processAndSetData, authDispatch]);
 
   useEffect(() => {
     const initializeApp = async () => {

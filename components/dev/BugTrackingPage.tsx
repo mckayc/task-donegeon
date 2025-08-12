@@ -10,7 +10,6 @@ import { BugDetailDialog } from './BugDetailDialog';
 import { bugLogger } from '../../utils/bugLogger';
 import { EllipsisVerticalIcon } from '../user-interface/Icons';
 import { useShiftSelect } from '../../hooks/useShiftSelect';
-import { useDebounce } from '../../hooks/useDebounce';
 
 const BugTrackingPage: React.FC = () => {
     const { bugReports } = useAppState();
@@ -23,8 +22,6 @@ const BugTrackingPage: React.FC = () => {
     const [deletingIds, setDeletingIds] = useState<string[]>([]);
     const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
     const dropdownRef = useRef<HTMLDivElement | null>(null);
-    const [searchTerm, setSearchTerm] = useState('');
-    const debouncedSearchTerm = useDebounce(searchTerm, 300);
 
     const detailedReport = useMemo(() => {
         if (!detailedReportId) return null;
@@ -45,19 +42,11 @@ const BugTrackingPage: React.FC = () => {
 
     useEffect(() => {
         setSelectedReports([]);
-    }, [activeTab, debouncedSearchTerm]);
+    }, [activeTab]);
 
     const filteredReports = useMemo(() => {
-        const lowercasedTerm = debouncedSearchTerm.toLowerCase();
-        return bugReports.filter(r => 
-            r.status === activeTab &&
-            (
-                !lowercasedTerm ||
-                r.title.toLowerCase().includes(lowercasedTerm) ||
-                r.id.toLowerCase().includes(lowercasedTerm)
-            )
-        );
-    }, [bugReports, activeTab, debouncedSearchTerm]);
+        return bugReports.filter(r => r.status === activeTab);
+    }, [bugReports, activeTab]);
 
     const reportIds = useMemo(() => filteredReports.map(r => r.id), [filteredReports]);
     const handleCheckboxClick = useShiftSelect(reportIds, selectedReports, setSelectedReports);
@@ -134,27 +123,17 @@ const BugTrackingPage: React.FC = () => {
                         ))}
                     </nav>
                 </div>
-                
-                <div className="flex flex-wrap gap-4 mb-4 justify-between items-start">
-                    {selectedReports.length > 0 ? (
-                        <div className="p-3 bg-stone-900/50 rounded-lg flex items-center gap-4 flex-wrap">
-                            <span className="font-semibold text-stone-300">{selectedReports.length} selected</span>
-                            <Input as="select" label="" value="" onChange={e => handleBulkStatusChange(e.target.value as BugReportStatus)} className="h-9 text-sm">
-                                <option value="" disabled>Change status to...</option>
-                                {statuses.map(s => <option key={s} value={s}>{s}</option>)}
-                            </Input>
-                            <Button size="sm" variant="destructive" onClick={() => setDeletingIds(selectedReports)}>Delete</Button>
-                        </div>
-                    ) : <div />}
-                    
-                    <Input 
-                        placeholder="Search by title or ID..."
-                        value={searchTerm}
-                        onChange={e => setSearchTerm(e.target.value)}
-                        className="max-w-xs"
-                    />
-                </div>
 
+                 {selectedReports.length > 0 && (
+                    <div className="p-3 bg-stone-900/50 rounded-lg flex items-center gap-4 mb-4">
+                        <span className="font-semibold text-stone-300">{selectedReports.length} selected</span>
+                        <Input as="select" label="" value="" onChange={e => handleBulkStatusChange(e.target.value as BugReportStatus)} className="h-9 text-sm">
+                            <option value="" disabled>Change status to...</option>
+                             {statuses.map(s => <option key={s} value={s}>{s}</option>)}
+                        </Input>
+                         <Button size="sm" variant="destructive" onClick={() => setDeletingIds(selectedReports)}>Delete</Button>
+                    </div>
+                )}
                 <div className="overflow-x-auto">
                     <table className="w-full text-left">
                         <thead className="border-b border-stone-700/60">
@@ -209,7 +188,7 @@ const BugTrackingPage: React.FC = () => {
                         </tbody>
                     </table>
                     {filteredReports.length === 0 && (
-                        <p className="text-center text-stone-400 py-8">No reports found with status "{activeTab}".</p>
+                        <p className="text-center text-stone-400 py-8">No reports with status "{activeTab}".</p>
                     )}
                 </div>
             </Card>

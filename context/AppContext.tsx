@@ -6,10 +6,10 @@ import { useAuthState, useAuthDispatch } from './AuthContext';
 import { useEconomyDispatch } from './EconomyContext';
 import { useQuestDispatch } from './QuestContext';
 import { bugLogger } from '../utils/bugLogger';
-import { useLoadingDispatch } from './LoadingContext';
 
 // The single, unified state for the non-auth/quest parts of the application
 interface AppState extends Omit<IAppData, 'users' | 'loginHistory' | 'quests' | 'questGroups' | 'questCompletions' | 'markets' | 'rewardTypes' | 'purchaseRequests' | 'gameAssets'> {
+  isDataLoaded: boolean;
   isAiConfigured: boolean;
   syncStatus: 'idle' | 'syncing' | 'success' | 'error';
   syncError: string | null;
@@ -25,8 +25,8 @@ interface AppDispatch {
   addTrophy: (trophy: Omit<Trophy, 'id'>) => void;
   updateTrophy: (trophy: Trophy) => void;
   awardTrophy: (userId: string, trophyId: string, guildId?: string) => void;
-  applyManualAdjustment: (adjustment: Omit<AdminAdjustment, 'id' | 'adjustedAt'>) => Promise<void>;
-  addTheme: (theme: Omit<ThemeDefinition, 'id'>) => ThemeDefinition;
+  applyManualAdjustment: (adjustment: Omit<AdminAdjustment, 'id' | 'adjustedAt'>) => boolean;
+  addTheme: (theme: Omit<ThemeDefinition, 'id'>) => void;
   updateTheme: (theme: ThemeDefinition) => void;
   deleteTheme: (themeId: string) => void;
   addScheduledEvent: (event: Omit<ScheduledEvent, 'id'>) => void;
@@ -57,15 +57,9 @@ interface AppDispatch {
 const AppStateContext = createContext<AppState | undefined>(undefined);
 const AppDispatchContext = createContext<AppDispatch | undefined>(undefined);
 
-const mergeData = <T extends { id: string; updatedAt?: string }>(existing: T[], incoming: T[]): T[] => {
+const mergeData = <T extends { id: string }>(existing: T[], incoming: T[]): T[] => {
     const dataMap = new Map(existing.map(item => [item.id, item]));
-    incoming.forEach(item => {
-        const existingItem = dataMap.get(item.id);
-        // Only overwrite if the incoming data is newer, or if timestamps are not available for comparison.
-        if (!existingItem || !existingItem.updatedAt || !item.updatedAt || new Date(item.updatedAt) >= new Date(existingItem.updatedAt)) {
-            dataMap.set(item.id, item);
-        }
-    });
+    incoming.forEach(item => dataMap.set(item.id, item));
     return Array.from(dataMap.values());
 };
 
@@ -75,7 +69,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const authDispatch = useAuthDispatch();
   const economyDispatch = useEconomyDispatch();
   const questDispatch = useQuestDispatch();
-  const { setDataLoaded, setLoadingError } = useLoadingDispatch();
 
   // === STATE MANAGEMENT ===
   const [guilds, setGuilds] = useState<Guild[]>([]);
@@ -92,6 +85,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [bugReports, setBugReports] = useState<BugReport[]>([]);
 
   // UI State that remains global due to cross-cutting concerns
+  const [isDataLoaded, setIsDataLoaded] = useState(false);
   const [syncStatus, setSyncStatus] = useState<'idle' | 'syncing' | 'success' | 'error'>('idle');
   const [syncError, setSyncError] = useState<string | null>(null);
   const [isAiConfigured, setIsAiConfigured] = useState(false);
@@ -111,15 +105,13 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         }
         const response = await window.fetch(path, options);
         if (!response.ok) {
-            const errorData = await response.json().catch(() => ({ error: 'Server error with no details.' }));
+            const errorData = await response.json().catch(() => ({ error: 'Server error' }));
             throw new Error(errorData.error || `Request failed with status ${response.status}`);
         }
         if (response.status === 204) {
              return null;
         }
-        // Handle potentially empty response bodies to prevent JSON parsing errors
-        const text = await response.text();
-        return text ? JSON.parse(text) : null;
+        return await response.json();
     } catch (error) {
         // Error notifications will be handled by the calling function using the new pattern
         // addNotification({ type: 'error', message: error instanceof Error ? error.message : 'An unknown network error occurred.' });
@@ -138,7 +130,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
           // --- Sidebar Migration Logic ---
           const savedSidebarConfig = savedSettings.sidebars?.main || [];
           const defaultSidebarConfig = INITIAL_SETTINGS.sidebars.main;
-          const savedIds = new Set(savedSidebarConfig.map(item => item?.id).filter(Boolean));
+          const savedIds = new Set(savedSidebarConfig.map(item => item.id));
           const missingItems = defaultSidebarConfig.filter(item => !savedIds.has(item.id));
           
           let finalSidebarConfig = savedSidebarConfig;
@@ -198,32 +190,33 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   }, [authDispatch, questDispatch, economyDispatch]);
   
   const initialSync = useCallback(async () => {
-    const response = await apiRequest('GET', '/api/data/sync');
+    try {
+      const response = await apiRequest('GET', '/api/data/sync');
+      if (!response) return;
 
-    if (!response || typeof response.updates !== 'object' || response.updates === null || typeof response.newSyncTimestamp !== 'string') {
-        throw new Error("Application data could not be loaded due to an invalid server response.");
+      const { updates, newSyncTimestamp } = response;
+      const { settingsUpdated, loadedSettings } = processAndSetData(updates, false);
+
+      if (settingsUpdated && loadedSettings) {
+          await apiRequest('PUT', '/api/settings', loadedSettings);
+          addNotification({ type: 'info', message: 'Application settings updated with new features.' });
+      }
+
+      const lastUserId = localStorage.getItem('lastUserId');
+      if (lastUserId && updates.users) {
+        const lastUser = updates.users.find((u:User) => u.id === lastUserId);
+        if (lastUser) authDispatch.setCurrentUser(lastUser);
+      }
+      
+      if (loadedSettings) {
+        authDispatch.setIsSharedViewActive(loadedSettings.sharedMode.enabled && !localStorage.getItem('lastUserId'));
+      }
+
+      lastSyncTimestamp.current = newSyncTimestamp;
+
+    } catch (error) {
+      console.error("Could not load data from server.", error);
     }
-
-    const { updates, newSyncTimestamp } = response;
-    const { settingsUpdated, loadedSettings } = processAndSetData(updates, false);
-
-    if (settingsUpdated && loadedSettings) {
-        await apiRequest('PUT', '/api/settings', loadedSettings);
-        addNotification({ type: 'info', message: 'Application settings updated with new features.' });
-    }
-
-    const lastUserId = localStorage.getItem('lastUserId');
-    if (lastUserId && updates.users) {
-      const lastUser = updates.users.find((u:User) => u.id === lastUserId);
-      if (lastUser) authDispatch.setCurrentUser(lastUser);
-    }
-    
-    const finalSettings = loadedSettings || (updates as IAppData).settings;
-    if (finalSettings) {
-      authDispatch.setIsSharedViewActive(finalSettings.sharedMode.enabled && !localStorage.getItem('lastUserId'));
-    }
-
-    lastSyncTimestamp.current = newSyncTimestamp;
   }, [apiRequest, processAndSetData, addNotification, authDispatch]);
 
   const performDeltaSync = useCallback(async () => {
@@ -261,40 +254,26 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
   useEffect(() => {
     const initializeApp = async () => {
-      console.log('[AppContext] initializeApp: Starting application initialization...');
-      try {
-        setLoadingError(null);
-        console.log('[AppContext] initializeApp: Starting initial data sync...');
-        await initialSync();
-        console.log('[AppContext] initializeApp: Initial data sync completed successfully.');
+      await initialSync();
+      setIsDataLoaded(true);
 
-        // Fetch system status after initial data load to check AI configuration
-        try {
-            const systemStatusResponse = await window.fetch('/api/system/status');
-            if (systemStatusResponse.ok) {
-                const statusData = await systemStatusResponse.json();
-                setIsAiConfigured(statusData.geminiConnected);
-            }
-        } catch (statusError) {
-            console.error("Failed to fetch system status:", statusError);
-            setIsAiConfigured(false); // It's okay for this to fail silently
-        }
-        
-        console.log('[AppContext] initializeApp: All initialization steps complete. Setting data as loaded.');
-        setDataLoaded(true);
-      } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred. Please check your server connection and refresh.';
-        console.error("[AppContext] initializeApp: CRITICAL ERROR during initialization.", error);
-        addNotification({type: 'error', message: errorMessage});
-        setLoadingError(errorMessage);
+      // Fetch system status after initial data load to check AI configuration
+      try {
+          const systemStatusResponse = await window.fetch('/api/system/status');
+          if (systemStatusResponse.ok) {
+              const statusData = await systemStatusResponse.json();
+              setIsAiConfigured(statusData.geminiConnected);
+          }
+      } catch (statusError) {
+          console.error("Failed to fetch system status:", statusError);
+          setIsAiConfigured(false);
       }
     };
     initializeApp();
-  }, [initialSync, addNotification, setDataLoaded, setLoadingError]);
+  }, [initialSync]);
 
   useEffect(() => {
-    const isLoaded = !!lastSyncTimestamp.current;
-    if (!isLoaded) return;
+    if (!isDataLoaded) return;
 
     const intervalId = setInterval(performDeltaSync, 30000); // Poll for updates every 30 seconds
     document.addEventListener('visibilitychange', performDeltaSync);
@@ -308,7 +287,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         document.removeEventListener('visibilitychange', performDeltaSync);
         window.removeEventListener('trigger-sync', performDeltaSync);
     };
-  }, [performDeltaSync]);
+  }, [isDataLoaded, performDeltaSync]);
   
   const triggerSync = useCallback(() => {
     console.log('Manual sync triggered.');
@@ -358,38 +337,34 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const addGuild = useCallback(async (guild: Omit<Guild, 'id'>) => {
     try {
         await apiRequest('POST', '/api/guilds', guild);
-        triggerSync();
     } catch (error) {}
-  }, [apiRequest, triggerSync]);
+  }, [apiRequest]);
 
   const updateGuild = useCallback(async (guild: Guild) => {
       try {
           await apiRequest('PUT', `/api/guilds/${guild.id}`, guild);
-          triggerSync();
       } catch (error) {}
-  }, [apiRequest, triggerSync]);
+  }, [apiRequest]);
 
   const deleteGuild = useCallback(async (guildId: string) => {
       try {
           await apiRequest('DELETE', `/api/guilds/${guildId}`);
-          triggerSync();
       } catch (error) {}
-  }, [apiRequest, triggerSync]);
+  }, [apiRequest]);
 
   const addTrophy = useCallback((trophy: Omit<Trophy, 'id'>) => setTrophies(prev => [...prev, { ...trophy, id: `trophy-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`}]), []);
   const updateTrophy = useCallback((trophy: Trophy) => setTrophies(prev => prev.map(t => t.id === trophy.id ? trophy : t)), []);
 
-  const applyManualAdjustment = useCallback(async (adj: Omit<AdminAdjustment, 'id' | 'adjustedAt'>): Promise<void> => {
-    try {
-        await apiRequest('POST', '/api/adjustments', adj);
-        addNotification({ type: 'success', message: 'Adjustment applied successfully.' });
-        triggerSync();
-    } catch (error) {
-        // error is handled and notified by apiRequest helper
-    }
-  }, [apiRequest, addNotification, triggerSync]);
+  const applyManualAdjustment = useCallback((adj: Omit<AdminAdjustment, 'id' | 'adjustedAt'>): boolean => { 
+    const newAdj: AdminAdjustment = { ...adj, id: `adj-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`, adjustedAt: new Date().toISOString() }; 
+    setAdminAdjustments(p => [...p, newAdj]); 
+    if (newAdj.type === AdminAdjustmentType.Reward) economyDispatch.applyRewards(newAdj.userId, newAdj.rewards, newAdj.guildId); 
+    else if (newAdj.type === AdminAdjustmentType.Setback) economyDispatch.deductRewards(newAdj.userId, newAdj.setbacks, newAdj.guildId); 
+    else if (newAdj.type === AdminAdjustmentType.Trophy && newAdj.trophyId) awardTrophy(newAdj.userId, newAdj.trophyId, newAdj.guildId);
+    return true;
+  }, [awardTrophy, economyDispatch]);
 
-    const addTheme = useCallback((theme: Omit<ThemeDefinition, 'id'>): ThemeDefinition => {
+    const addTheme = useCallback((theme: Omit<ThemeDefinition, 'id'>) => {
         const newTheme = { ...theme, id: `theme-${Date.now()}-${Math.random().toString(36).substring(2, 9)}` };
         setThemes(p => [...p, newTheme]);
         return newTheme;
@@ -399,18 +374,15 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
     const addScheduledEvent = useCallback(async (event: Omit<ScheduledEvent, 'id'>) => {
         await apiRequest('POST', '/api/events', event);
-        triggerSync();
-    }, [apiRequest, triggerSync]);
+    }, [apiRequest]);
 
     const updateScheduledEvent = useCallback(async (event: ScheduledEvent) => {
         await apiRequest('PUT', `/api/events/${event.id}`, event);
-        triggerSync();
-    }, [apiRequest, triggerSync]);
+    }, [apiRequest]);
 
     const deleteScheduledEvent = useCallback(async (eventId: string) => {
         await apiRequest('DELETE', `/api/events/${eventId}`);
-        triggerSync();
-    }, [apiRequest, triggerSync]);
+    }, [apiRequest]);
 
     const addBugReport = useCallback(async (report: Omit<BugReport, 'id' | 'status' | 'tags'> & { reportType: BugReportType }) => {
         const { reportType, ...rest } = report;
@@ -421,8 +393,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             tags: [reportType]
         };
         await apiRequest('POST', '/api/bug-reports', newReport);
-        triggerSync();
-    }, [apiRequest, triggerSync]);
+    }, [apiRequest]);
 
     const updateBugReport = useCallback(async (reportId: string, updates: Partial<BugReport>) => {
         const originalReports = [...bugReports];
@@ -436,24 +407,21 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
         try {
             await apiRequest('PUT', `/api/bug-reports/${reportId}`, updates);
-            triggerSync();
         } catch (error) {
             // Revert on failure
             addNotification({ type: 'error', message: 'Update failed. Reverting changes.' });
             setBugReports(originalReports);
         }
-    }, [apiRequest, bugReports, addNotification, triggerSync]);
+    }, [apiRequest, bugReports, addNotification]);
     
     const deleteBugReports = useCallback(async (reportIds: string[]) => {
         await apiRequest('DELETE', '/api/bug-reports', { ids: reportIds });
-        triggerSync();
-    }, [apiRequest, triggerSync]);
+    }, [apiRequest]);
 
     const importBugReports = useCallback(async (reports: BugReport[]) => {
         await apiRequest('POST', '/api/bug-reports/import', reports);
         addNotification({ type: 'success', message: 'Bug reports imported successfully.' });
-        triggerSync();
-    }, [apiRequest, addNotification, triggerSync]);
+    }, [apiRequest, addNotification]);
 
     const restoreFromBackup = useCallback(async (backupData: IAppData) => {
         await apiRequest('POST', '/api/data/restore', backupData);
@@ -500,11 +468,10 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             
             onComplete();
             addNotification({ type: 'success', message: 'Selected assets deleted.' });
-            triggerSync();
         } catch(e) {
             // Error is already handled by the apiRequest helper
         }
-    }, [apiRequest, economyDispatch, addNotification, triggerSync]);
+    }, [apiRequest, economyDispatch, addNotification]);
 
     const uploadFile = useCallback(async (file: File, category?: string) => {
         const formData = new FormData();
@@ -532,8 +499,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       const updatedSettings = { ...settings, ...newSettings };
       setSettings(updatedSettings);
       await apiRequest('PUT', '/api/settings', updatedSettings);
-      triggerSync();
-    }, [apiRequest, settings, triggerSync]);
+    }, [apiRequest, settings]);
 
     const resetSettings = useCallback(() => {
         setSettings(INITIAL_SETTINGS);
@@ -558,7 +524,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
                 type: 'success',
                 duration: 3000,
             });
-            triggerSync();
         } catch (error) {
             updateNotification(notificationId, {
                 message: 'Failed to send message.',
@@ -566,7 +531,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
                 duration: 5000,
             });
         }
-    }, [currentUser, apiRequest, addNotification, updateNotification, triggerSync]);
+    }, [currentUser, apiRequest, addNotification, updateNotification]);
 
     const markMessagesAsRead = useCallback(async (params: { partnerId?: string; guildId?: string; }) => {
         if (!currentUser) return;
@@ -584,28 +549,22 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             })
         );
         
+        // Fire and forget API call
         const payload = { ...params, userId: currentUser.id };
-        try {
-            await apiRequest('POST', '/api/chat/read', payload);
-            triggerSync();
-        } catch (err) {
+        apiRequest('POST', '/api/chat/read', payload).catch(err => {
             console.error("Failed to mark messages as read on server:", err);
             // The UI will eventually be corrected by the next full sync if this fails.
-        }
-    }, [currentUser, apiRequest, triggerSync]);
+        });
+    }, [currentUser, apiRequest]);
 
-    const state = useMemo(() => ({
-        isAiConfigured, syncStatus, syncError,
+    const state = {
+        isDataLoaded, isAiConfigured, syncStatus, syncError,
         guilds, ranks, trophies, userTrophies,
         adminAdjustments, systemLogs, settings, themes, chatMessages,
         systemNotifications, scheduledEvents, bugReports,
-    }), [
-        isAiConfigured, syncStatus, syncError,
-        guilds, ranks, trophies, userTrophies, adminAdjustments, systemLogs,
-        settings, themes, chatMessages, systemNotifications, scheduledEvents, bugReports
-    ]);
+    };
 
-    const dispatch = useMemo(() => ({
+    const dispatch = {
         addGuild, updateGuild, deleteGuild, setRanks, addTrophy, updateTrophy,
         awardTrophy, applyManualAdjustment, addTheme, updateTheme, deleteTheme,
         addScheduledEvent, updateScheduledEvent, deleteScheduledEvent, addBugReport,
@@ -614,16 +573,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         factoryReset, updateSettings, resetSettings, sendMessage, markMessagesAsRead,
         addSystemNotification, markSystemNotificationsAsRead,
         triggerSync,
-    }), [
-        addGuild, updateGuild, deleteGuild, setRanks, addTrophy, updateTrophy,
-        awardTrophy, applyManualAdjustment, addTheme, updateTheme, deleteTheme,
-        addScheduledEvent, updateScheduledEvent, deleteScheduledEvent, addBugReport,
-        updateBugReport, deleteBugReports, importBugReports, restoreFromBackup, clearAllHistory,
-        resetAllPlayerData, deleteAllCustomContent, deleteSelectedAssets, uploadFile,
-        factoryReset, updateSettings, resetSettings, sendMessage, markMessagesAsRead,
-        addSystemNotification, markSystemNotificationsAsRead,
-        triggerSync,
-    ]);
+    };
 
     return (
         <AppStateContext.Provider value={state}>

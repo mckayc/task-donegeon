@@ -198,52 +198,64 @@ export const isQuestAvailableForUser = (
  * 1.  **Availability:** Available quests always come before unavailable (completed/pending) ones.
  * 2.  **Urgency:** Quests that are past due or due today are most urgent. Quests due in the future are next.
  *     Quests with no deadline (like most Duties) are least urgent.
- * 3.  **Optional Status**: Required quests are prioritized over optional ones.
+ * 3.  **To-Do Status:** Ventures marked as "To-Do" by the user are prioritized.
  * 4.  **Quest Type:** Recurring Duties are prioritized over one-time Ventures when other factors are equal.
- * 5.  **To-Do Status:** Ventures marked as "To-Do" by the user are prioritized within their group.
- * 6.  **Time/Date:** Quests with earlier due dates/times are sorted first.
- * 7.  **Title:** Alphabetical order is used as a final tie-breaker.
+ * 5.  **Time/Date:** Quests with earlier due dates/times are sorted first.
+ * 6.  **Title:** Alphabetical order is used as a final tie-breaker.
  */
 const getQuestSortKey = (quest: Quest, user: User, date: Date, allCompletions: QuestCompletion[], scheduledEvents: ScheduledEvent[]): (string | number)[] => {
     const questAppMode: AppMode = quest.guildId ? { mode: 'guild', guildId: quest.guildId } : { mode: 'personal' };
     const userCompletionsForQuest = allCompletions.filter(c => c.questId === quest.id && c.userId === user.id);
     
+    // --- Key 1: Availability (0 = Available, 1 = Not Available) ---
     const isAvailable = isQuestAvailableForUser(quest, userCompletionsForQuest, date, scheduledEvents, questAppMode);
     const availabilityPriority = isAvailable ? 0 : 1;
 
-    let urgencyPriority = 2;
+    // --- Key 2: Urgency (0 = Urgent, 1 = Future, 2 = Not Time-Sensitive) ---
+    let urgencyPriority = 2; // Default: not urgent
     const todayYMD = toYMD(date);
-    if ((quest.type === QuestType.Venture && quest.lateDateTime) || (quest.type === QuestType.Duty && quest.lateTime && isQuestScheduledForDay(quest, date))) {
-        const lateDateTime = quest.type === QuestType.Venture ? quest.lateDateTime : `${todayYMD}T${quest.lateTime}`;
-        if(lateDateTime) {
-            const dueDate = new Date(lateDateTime);
-            const todayStart = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-            if (dueDate < todayStart || toYMD(dueDate) === todayYMD) {
-                urgencyPriority = 0; // Past due or due today
-            } else {
-                urgencyPriority = 1; // Due in the future
-            }
+
+    if (quest.type === QuestType.Venture && quest.lateDateTime) {
+        const dueDate = new Date(quest.lateDateTime);
+        // Use a version of 'date' that is at the start of the day for date-only comparisons
+        const todayStart = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+        if (dueDate < todayStart || toYMD(dueDate) === todayYMD) {
+            urgencyPriority = 0; // Past due or due today
+        } else {
+            urgencyPriority = 1; // Due in the future
+        }
+    } else if (quest.type === QuestType.Duty && quest.lateTime && isQuestScheduledForDay(quest, date)) {
+        // Any duty with a deadline on a day it's scheduled is considered urgent for that day.
+        const [hours, minutes] = quest.lateTime.split(':').map(Number);
+        const deadlineToday = new Date(date.getFullYear(), date.getMonth(), date.getDate(), hours, minutes);
+        if (date > deadlineToday) {
+            urgencyPriority = 0; // Past due
+        } else {
+            urgencyPriority = 0; // Due today
         }
     }
     
-    const isOptionalPriority = quest.isOptional ? 1 : 0;
-    
-    const typePriority = quest.type === QuestType.Duty ? 0 : 1;
-    
+    // --- Key 3: To-Do Status (0 = Is To-Do, 1 = Not To-Do) ---
     const isTodo = quest.type === QuestType.Venture && quest.todoUserIds?.includes(user.id);
     const isTodoPriority = isTodo ? 0 : 1;
     
+    // --- Key 4: Quest Type (0 = Duty, 1 = Venture) ---
+    // This prioritizes recurring tasks over one-time ones when all else is equal.
+    const typePriority = quest.type === QuestType.Duty ? 0 : 1;
+    
+    // --- Key 5: Time Sorting (earlier times/dates get a smaller number) ---
     let timePriority = Number.MAX_SAFE_INTEGER;
     if (quest.type === QuestType.Venture && quest.lateDateTime) {
         timePriority = new Date(quest.lateDateTime).getTime();
     } else if (quest.type === QuestType.Duty && quest.lateTime) {
         const [hours, minutes] = quest.lateTime.split(':').map(Number);
-        timePriority = hours * 60 + minutes;
+        timePriority = hours * 60 + minutes; // Sort by minutes from midnight
     }
 
+    // --- Key 6: Title (alphabetical tie-breaker) ---
     const title = quest.title.toLowerCase();
 
-    return [availabilityPriority, urgencyPriority, isOptionalPriority, typePriority, isTodoPriority, timePriority, title];
+    return [availabilityPriority, urgencyPriority, isTodoPriority, typePriority, timePriority, title];
 };
 
 

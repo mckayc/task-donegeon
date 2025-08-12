@@ -1,4 +1,3 @@
-
 import { BugReportLogEntry } from '../types';
 
 type Subscriber = (logs: BugReportLogEntry[]) => void;
@@ -32,8 +31,6 @@ class BugLogger {
     stop(): BugReportLogEntry[] {
         this.isRecordingGlobally = false;
         const finalLogs = [...this.globalLogs];
-        this.globalLogs = []; // Clear the logs after stopping to prevent memory leak.
-        this.notify(); // Notify subscribers of the cleared logs.
         return finalLogs;
     }
 

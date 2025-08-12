@@ -1,4 +1,4 @@
-import React, { useState, useMemo, ReactNode, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useMemo, ReactNode } from 'react';
 import { BugReport, BugReportStatus, BugReportLogEntry } from '../../types';
 import { useAppDispatch } from '../../context/AppContext';
 import { useNotificationsDispatch } from '../../context/NotificationsContext';
@@ -39,33 +39,11 @@ export const BugDetailDialog: React.FC<BugDetailDialogProps> = ({ report, onClos
     const [questFromBug, setQuestFromBug] = useState<BugReport | null>(null);
     const [comment, setComment] = useState('');
     const [selectedLogs, setSelectedLogs] = useState<string[]>([]);
-    const logContainerRef = useRef<HTMLDivElement>(null);
-    const [userScrolledUp, setUserScrolledUp] = useState(false);
 
     const sortedLogs = useMemo(() => {
         if (!report.logs) return [];
         return [...report.logs].sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
     }, [report.logs]);
-    
-    const scrollToBottom = useCallback(() => {
-        if (logContainerRef.current) {
-            logContainerRef.current.scrollTop = logContainerRef.current.scrollHeight;
-        }
-    }, []);
-
-    const handleScroll = () => {
-        const container = logContainerRef.current;
-        if (container) {
-            const atBottom = container.scrollHeight - container.scrollTop <= container.clientHeight + 5; // Add a small buffer
-            setUserScrolledUp(!atBottom);
-        }
-    };
-
-    useEffect(() => {
-        if (!userScrolledUp) {
-            scrollToBottom();
-        }
-    }, [sortedLogs, userScrolledUp, scrollToBottom]);
     
     const shortId = useMemo(() => `bug-${report.id.substring(4, 11)}`, [report.id]);
 
@@ -192,7 +170,7 @@ export const BugDetailDialog: React.FC<BugDetailDialogProps> = ({ report, onClos
                                 <Button size="sm" variant="secondary" onClick={() => copyLogToClipboard(sortedLogs.filter(log => selectedLogs.includes(log.timestamp)))} disabled={selectedLogs.length === 0}>Copy Selected ({selectedLogs.length})</Button>
                                 <Button size="sm" variant="secondary" onClick={() => copyLogToClipboard(sortedLogs)}>Copy Full Log</Button>
                             </div>
-                            <div ref={logContainerRef} onScroll={handleScroll} className="flex-grow overflow-y-auto pr-4 space-y-4">
+                            <div className="flex-grow overflow-y-auto scrollbar-hide pr-4 space-y-4">
                                 {sortedLogs.map((log, index) => {
                                     const isSelected = selectedLogs.includes(log.timestamp);
                                     const authorUser = log.type === 'COMMENT' ? users.find(u => u.gameName === log.author) : undefined;
@@ -238,7 +216,7 @@ export const BugDetailDialog: React.FC<BugDetailDialogProps> = ({ report, onClos
                             </div>
                         </div>
 
-                        <div className="w-full md:w-1/3 flex-shrink-0 flex flex-col gap-6 overflow-y-auto pr-2 border-l border-stone-700/60 pl-6 -mr-2">
+                        <div className="w-full md:w-1/3 flex-shrink-0 flex flex-col gap-6 overflow-y-auto scrollbar-hide pr-2 border-l border-stone-700/60 pl-6 -mr-2">
                             <div>
                                 <Input as="select" label="Status" value={report.status} onChange={e => handleStatusChange(e.target.value as BugReportStatus)}>
                                     {statuses.map(s => <option key={s} value={s}>{s}</option>)}

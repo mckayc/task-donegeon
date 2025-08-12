@@ -159,11 +159,11 @@ const MainLayout: React.FC = () => {
             onClose={() => setShowLoginNotifications(false)} 
         />
       )}
-      <div className="flex" style={{ backgroundColor: 'hsl(var(--color-bg-secondary))', color: 'hsl(var(--color-text-primary))' }}>
+      <div className="flex h-screen" style={{ backgroundColor: 'hsl(var(--color-bg-secondary))', color: 'hsl(var(--color-text-primary))' }}>
         <Sidebar />
-        <div className="flex-1 flex flex-col transition-all duration-300 min-h-screen overflow-y-auto">
+        <div className="flex-1 flex flex-col overflow-hidden transition-all duration-300">
           <Header />
-          <main className="flex-grow p-4 md:p-8" style={{ backgroundColor: 'hsl(var(--color-bg-tertiary))' }}>
+          <main className="flex-1 overflow-x-hidden overflow-y-auto p-4 md:p-8" style={{ backgroundColor: 'hsl(var(--color-bg-tertiary))' }}>
             <VacationModeBanner />
             {renderPage()}
           </main>

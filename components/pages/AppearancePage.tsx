@@ -29,6 +29,12 @@ const AppearancePage: React.FC = () => {
     const dragItem = useRef<number | null>(null);
     const dragOverItem = useRef<number | null>(null);
 
+    // This effect was causing the bug. When a sync happened, it would reset local form changes.
+    // It is now removed, and a new live preview effect is added below.
+    // useEffect(() => {
+    //     setFormState(JSON.parse(JSON.stringify(settings)));
+    // }, [settings]);
+    
     const applyThemeStyles = (themeId: string) => {
         const theme = allThemes.find(t => t.id === themeId);
         if (theme) {

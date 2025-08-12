@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useCallback, useRef } from 'react';
 import { useAppState } from '../../context/AppContext';
 import { useUIState, useUIDispatch } from '../../context/UIStateContext';
-import { Role, ScheduledEvent, Quest, QuestType, ChronicleEvent, User, QuestAvailability } from '../../types';
+import { Role, ScheduledEvent, Quest, QuestType, ChronicleEvent, User } from '../../types';
 import Card from '../user-interface/Card';
 import Button from '../user-interface/Button';
 import ScheduleEventDialog from '../admin/ScheduleEventDialog';
@@ -12,7 +12,7 @@ import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
 import interactionPlugin, { DateClickArg } from '@fullcalendar/interaction';
 import googleCalendarPlugin from '@fullcalendar/google-calendar';
-import { EventClickArg, EventSourceInput, EventDropArg, EventInput, EventSourceFuncArg } from '@fullcalendar/core';
+import { EventClickArg, EventSourceInput, EventDropArg } from '@fullcalendar/core';
 import { useQuestState, useQuestDispatch } from '../../context/QuestContext';
 import { useChronicles } from '../../hooks/useChronicles';
 import QuestDetailDialog from '../quests/QuestDetailDialog';
@@ -50,111 +50,6 @@ const CalendarPage: React.FC = () => {
     
     if (!currentUser) return null;
 
-    const birthdayEventSource: EventSourceInput = useMemo(() => ({
-        id: 'birthdays',
-        events: (fetchInfo, successCallback, failureCallback) => {
-            try {
-                const birthdayEvents: EventInput[] = [];
-                const { start, end } = fetchInfo;
-
-                users.forEach(user => {
-                    if (!user.birthday) return;
-                    const [bYear, bMonth, bDay] = user.birthday.split('-').map(Number);
-                    
-                    for (let year = start.getFullYear() - 1; year <= end.getFullYear() + 1; year++) {
-                        const eventDate = new Date(year, bMonth - 1, bDay);
-                        
-                        if (eventDate >= start && eventDate < end) {
-                            birthdayEvents.push({
-                                id: `birthday-${user.id}-${year}`,
-                                title: `🎂 ${user.gameName}'s Birthday`,
-                                start: toYMD(eventDate),
-                                allDay: true,
-                                backgroundColor: 'hsl(50 90% 60%)',
-                                borderColor: 'hsl(50 90% 50%)',
-                                textColor: 'hsl(50 100% 10%)',
-                                extendedProps: { type: 'birthday', user },
-                                classNames: ['font-bold']
-                            });
-                        }
-                    }
-                });
-                successCallback(birthdayEvents);
-            } catch (error) {
-                if(failureCallback) failureCallback(error as Error);
-            }
-        },
-    }), [users]);
-    
-    const questEventSource = useCallback((fetchInfo: EventSourceFuncArg, successCallback: (events: EventInput[]) => void, failureCallback: (error: Error) => void) => {
-        try {
-            const { start, end } = fetchInfo;
-            const currentGuildId = appMode.mode === 'guild' ? appMode.guildId : undefined;
-            const questEvents: EventInput[] = [];
-
-            const relevantQuests = quests.filter(q => q.isActive && !q.isOptional && (!q.guildId || q.guildId === currentGuildId));
-
-            relevantQuests.forEach(quest => {
-                const baseEventProps = {
-                    title: quest.title,
-                    extendedProps: { quest, type: 'quest' },
-                    backgroundColor: quest.type === QuestType.Duty ? 'hsl(204 85% 54%)' : 'hsl(36 90% 50%)',
-                    borderColor: quest.type === QuestType.Duty ? 'hsl(204 85% 44%)' : 'hsl(36 90% 40%)',
-                    textColor: '#fff',
-                    classNames: [quest.type === QuestType.Venture ? 'event-venture' : 'event-duty']
-                };
-
-                if (quest.type === QuestType.Venture && quest.lateDateTime) {
-                    const startDate = new Date(quest.lateDateTime);
-                    if (startDate >= start && startDate < end) {
-                        questEvents.push({
-                            ...baseEventProps,
-                            id: quest.id,
-                            start: quest.lateDateTime,
-                            allDay: !quest.lateDateTime?.includes('T'),
-                        });
-                    }
-                } else if (quest.type === QuestType.Duty) {
-                    const eventInput: EventInput = {
-                        ...baseEventProps,
-                        id: quest.id, // Use quest ID for recurrence
-                        allDay: true
-                    };
-                    
-                    switch (quest.availabilityType) {
-                        case QuestAvailability.Daily:
-                            eventInput.daysOfWeek = [0, 1, 2, 3, 4, 5, 6];
-                            questEvents.push(eventInput);
-                            break;
-                        case QuestAvailability.Weekly:
-                            eventInput.daysOfWeek = quest.weeklyRecurrenceDays;
-                            questEvents.push(eventInput);
-                            break;
-                        case QuestAvailability.Monthly:
-                             for (let day = new Date(start); day < end; day.setDate(day.getDate() + 1)) {
-                                if (quest.monthlyRecurrenceDays.includes(day.getDate())) {
-                                    questEvents.push({
-                                        ...baseEventProps,
-                                        id: `${quest.id}-${toYMD(day)}`,
-                                        start: toYMD(day),
-                                        allDay: true
-                                    });
-                                }
-                            }
-                            break;
-                    }
-                }
-            });
-            
-            successCallback(questEvents);
-        } catch (error) {
-            console.error("Error fetching quest events:", error);
-            if (failureCallback) {
-                failureCallback(error as Error);
-            }
-        }
-    }, [quests, appMode]);
-
     const eventSources = useMemo((): EventSourceInput[] => {
         const sources: EventSourceInput[] = [];
         const currentGuildId = appMode.mode === 'guild' ? appMode.guildId : undefined;
@@ -172,9 +67,65 @@ const CalendarPage: React.FC = () => {
                     extendedProps: { appEvent: event, type: 'scheduled' }
                 }));
             sources.push(appEventSource);
+
+            const questEventSource = quests
+                .filter(q => q.isActive && (!q.guildId || q.guildId === currentGuildId))
+                .map(quest => {
+                    const eventDef = {
+                        title: quest.title,
+                        extendedProps: { quest, type: 'quest' },
+                        allDay: quest.type === QuestType.Venture && !quest.lateDateTime?.includes('T'),
+                        backgroundColor: quest.type === QuestType.Duty ? 'hsl(204 85% 54%)' : 'hsl(36 90% 50%)',
+                        borderColor: quest.type === QuestType.Duty ? 'hsl(204 85% 44%)' : 'hsl(36 90% 40%)'
+                    };
+
+                    if (quest.type === QuestType.Venture) {
+                        return {
+                            ...eventDef,
+                            start: quest.lateDateTime || undefined,
+                            daysOfWeek: undefined,
+                            startRecur: undefined,
+                        };
+                    } else { // Duty
+                        return {
+                            ...eventDef,
+                            start: undefined,
+                            daysOfWeek: quest.availabilityType === 'Weekly' ? quest.weeklyRecurrenceDays : undefined,
+                            startRecur: quest.availabilityType === 'Daily' ? '1900-01-01' : undefined,
+                        };
+                    }
+                }).filter(e => e.start || (e.daysOfWeek && e.daysOfWeek.length > 0) || e.startRecur);
             sources.push(questEventSource);
-            sources.push(birthdayEventSource);
-        } else { // chronicles mode
+            
+            const birthdayEvents = [];
+            if (viewRange) {
+                const startYear = viewRange.start.getFullYear();
+                const endYear = viewRange.end.getFullYear();
+                for (let year = startYear; year <= endYear; year++) {
+                    users.forEach(user => {
+                        if (user.birthday) {
+                            const [_, month, day] = user.birthday.split('-');
+                            const eventDate = new Date(`${year}-${month}-${day}T00:00:00`);
+                            if (eventDate >= viewRange.start && eventDate <= viewRange.end) {
+                                birthdayEvents.push({
+                                    id: `birthday-${user.id}-${year}`,
+                                    title: `🎂 ${user.gameName}'s Birthday`,
+                                    start: `${year}-${month}-${day}`,
+                                    allDay: true,
+                                    backgroundColor: 'hsl(50 90% 60%)',
+                                    borderColor: 'hsl(50 90% 50%)',
+                                    textColor: 'hsl(50 100% 10%)',
+                                    extendedProps: { type: 'birthday', user },
+                                    classNames: ['birthday-event']
+                                });
+                            }
+                        }
+                    });
+                }
+            }
+            sources.push(birthdayEvents);
+
+        } else {
             const chronicleEvents: any[] = [];
             chronicles.forEach((eventsOnDay) => {
                 eventsOnDay.forEach(event => {
@@ -200,7 +151,7 @@ const CalendarPage: React.FC = () => {
         }
         
         return sources;
-    }, [mode, appMode, scheduledEvents, settings.googleCalendar, birthdayEventSource, questEventSource, chronicles]);
+    }, [mode, appMode, scheduledEvents, quests, chronicles, settings.googleCalendar, users, viewRange]);
 
     const handleEventClick = (clickInfo: EventClickArg) => {
         const props = clickInfo.event.extendedProps;
@@ -291,35 +242,17 @@ const CalendarPage: React.FC = () => {
         });
     };
 
-    const noEventsMessage = useMemo(() => (
-        mode === 'chronicles' 
-            ? 'No historical events in this date range.' 
-            : 'No events to display.'
-    ), [mode]);
-    
-    const eventContent = (arg: any) => {
-        const { quest } = arg.event.extendedProps;
-        if (quest) {
-            return (
-                <div className="p-1 overflow-hidden h-full flex items-center w-full">
-                    <span className="text-lg mr-2 flex-shrink-0">{quest.icon}</span>
-                    <span className="font-semibold truncate">{arg.event.title}</span>
-                </div>
-            );
-        }
-        // Default rendering for other events like birthdays or Google Calendar
-        return (
-             <div className="p-1 overflow-hidden h-full flex items-center w-full">
-                 <span className="font-semibold truncate">{arg.event.title}</span>
-            </div>
-        );
-    };
-
     return (
         <div>
             <style>{`
                 .fc-license-message { display: none !important; }
-                .fc { --fc-bg-event-color: hsl(var(--primary)); --fc-border-color: hsl(var(--border)); --fc-daygrid-event-dot-width: 8px; --fc-list-event-dot-width: 10px; --fc-list-event-hover-bg-color: hsl(var(--secondary)); }
+                .fc { 
+                  --fc-bg-event-color: hsl(var(--primary));
+                  --fc-border-color: hsl(var(--border));
+                  --fc-daygrid-event-dot-width: 8px;
+                  --fc-list-event-dot-width: 10px;
+                  --fc-list-event-hover-bg-color: hsl(var(--secondary));
+                }
                 .fc .fc-toolbar.fc-header-toolbar { margin-bottom: 1.5rem; }
                 .fc .fc-toolbar-title { font-family: var(--font-display); color: hsl(var(--accent-light)); }
                 .fc .fc-button-primary { background-color: hsl(var(--secondary)); border-color: hsl(var(--border)); color: hsl(var(--foreground)); font-weight: 500; }
@@ -329,22 +262,13 @@ const CalendarPage: React.FC = () => {
                 .fc .fc-daygrid-day.fc-day-today { background-color: hsl(var(--accent) / 0.1); }
                 .fc .fc-daygrid-day-number { color: hsl(var(--foreground)); padding: 4px; }
                 .fc .fc-day-past .fc-daygrid-day-number { color: hsl(var(--muted-foreground)); }
-                .fc .fc-daygrid-event { min-height: 38px; align-items: center; display: flex; font-size: 0.875rem; padding: 2px 4px; border-width: 2px !important; }
-                .event-venture { border-style: dashed !important; }
-                .event-duty { border-style: solid !important; }
+                .fc .fc-event { border: 1px solid hsl(var(--border)) !important; font-size: 0.75rem; padding: 2px 4px; }
                 .fc-event.gcal-event { background-color: hsl(217 91% 60%) !important; border-color: hsl(217 91% 70%) !important; }
-                .admin-calendar .fc-daygrid-day { cursor: pointer; }
-                .admin-calendar .fc-daygrid-day:hover .fc-daygrid-day-frame { background-color: hsl(var(--secondary) / 0.5) !important; }
+                .fc-event.birthday-event { font-weight: bold; }
             `}</style>
-            <Card title={mode === 'events' ? 'Events Calendar' : 'Chronicles Calendar'}>
+            <Card>
                 <div className="flex items-center justify-between p-4 border-b border-stone-700/60 flex-wrap gap-4">
-                    <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-stone-300">
-                        <div className="flex items-center gap-2"><span className="w-4 h-4 rounded-full" style={{ backgroundColor: 'hsl(204 85% 54%)' }}></span> Duty</div>
-                        <div className="flex items-center gap-2"><span className="w-4 h-4 rounded-full" style={{ backgroundColor: 'hsl(36 90% 50%)' }}></span> Venture</div>
-                        <div className="flex items-center gap-2"><span className="w-4 h-4 rounded-full" style={{ backgroundColor: 'hsl(50 90% 60%)' }}></span> Birthday</div>
-                        <div className="flex items-center gap-2"><span className="w-4 h-4 rounded-full" style={{ backgroundColor: 'hsl(262 83% 67%)' }}></span> Event</div>
-                        {settings.googleCalendar.enabled && <div className="flex items-center gap-2"><span className="w-4 h-4 rounded-full" style={{ backgroundColor: 'hsl(217 91% 60%)' }}></span> Google</div>}
-                    </div>
+                    <div></div> {/* Spacer */}
                     <div className="flex items-center gap-4 ml-auto">
                         {currentUser.role === Role.DonegeonMaster && (
                             <Button size="sm" onClick={() => setActivePage('Manage Events')}>Manage Events</Button>
@@ -355,18 +279,17 @@ const CalendarPage: React.FC = () => {
                         </div>
                     </div>
                 </div>
-                 <div className={`p-4 ${currentUser.role === Role.DonegeonMaster ? 'admin-calendar' : ''}`}>
+                 <div className="p-4">
                     <FullCalendar
                         ref={calendarRef}
                         plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin, googleCalendarPlugin]}
                         headerToolbar={{
                             left: 'prev,next today',
                             center: 'title',
-                            right: 'dayGridDay,timeGridWeek,dayGridMonth'
+                            right: 'dayGridMonth,timeGridWeek,dayGridDay'
                         }}
                         buttonText={{ day: 'Day', week: 'Week', month: 'Month' }}
-                        initialView="dayGridDay"
-                        dayMaxEvents={4}
+                        initialView="dayGridMonth"
                         googleCalendarApiKey={settings.googleCalendar.apiKey || undefined}
                         eventSources={eventSources}
                         eventClick={handleEventClick}
@@ -375,12 +298,8 @@ const CalendarPage: React.FC = () => {
                         eventDrop={handleEventDrop}
                         dateClick={handleDateClick}
                         height="auto"
-                        eventContent={eventContent}
-                        views={{
-                            dayGridMonth: { noEventsContent: noEventsMessage },
-                            timeGridWeek: { noEventsContent: noEventsMessage },
-                            dayGridDay: { noEventsContent: noEventsMessage }
-                        }}
+                        contentHeight="auto"
+                        aspectRatio={1.5}
                     />
                  </div>
             </Card>

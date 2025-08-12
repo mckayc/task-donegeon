@@ -8,9 +8,6 @@ import { AuthProvider } from './context/AuthContext';
 import { EconomyProvider } from './context/EconomyContext';
 import { DeveloperProvider } from './context/DeveloperContext';
 import { QuestProvider } from './context/QuestContext';
-import { LoadingProvider } from './context/LoadingContext';
-
-console.log('[TaskDonegeon] index.tsx script loaded and executing.');
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
@@ -34,15 +31,13 @@ root.render(
       <AuthProvider>
         <EconomyProvider>
           <QuestProvider>
-            <LoadingProvider>
-              <AppProvider>
-                <UIStateProvider>
-                  <DeveloperProvider>
-                    <App />
-                  </DeveloperProvider>
-                </UIStateProvider>
-              </AppProvider>
-            </LoadingProvider>
+            <AppProvider>
+              <UIStateProvider>
+                <DeveloperProvider>
+                  <App />
+                </DeveloperProvider>
+              </UIStateProvider>
+            </AppProvider>
           </QuestProvider>
         </EconomyProvider>
       </AuthProvider>

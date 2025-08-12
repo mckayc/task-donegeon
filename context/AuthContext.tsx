@@ -107,7 +107,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
     try {
         const newUser = await apiRequest('POST', '/api/users', userData);
-        window.dispatchEvent(new CustomEvent('trigger-sync'));
+        // The backend will broadcast a data update, so a manual state update here is not needed.
+        // The sync will handle it.
         return newUser;
     } catch (error) {
         console.error("Failed to add user on server.", error);
@@ -133,9 +134,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     // Persist to backend only if requested
     if (persist) {
       const payloadForApi = typeof update === 'function' ? finalUpdatePayload : update;
-      apiRequest('PUT', `/api/users/${userId}`, payloadForApi)
-        .then(() => window.dispatchEvent(new CustomEvent('trigger-sync')))
-        .catch(error => {
+      apiRequest('PUT', `/api/users/${userId}`, payloadForApi).catch(error => {
           console.error("Failed to update user on server, optimistic update may be stale.", error);
           // Error notification is handled by apiRequest. Sync will correct the state.
       });
@@ -148,11 +147,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         bugLogger.add({ type: 'ACTION', message: `Deleting user IDs: ${userIds.join(', ')}` });
     }
     setUsers(prev => prev.filter(u => !userIds.includes(u.id)));
-    apiRequest('DELETE', '/api/users', { ids: userIds })
-        .then(() => window.dispatchEvent(new CustomEvent('trigger-sync')))
-        .catch(error => {
-            console.error("Failed to delete users on server.", error);
-        });
+    apiRequest('DELETE', '/api/users', { ids: userIds }).catch(error => {
+       console.error("Failed to delete users on server.", error);
+    });
   }, [apiRequest]);
 
   const markUserAsOnboarded = useCallback((userId: string) => updateUser(userId, { hasBeenOnboarded: true }), [updateUser]);

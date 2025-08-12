@@ -1,6 +1,6 @@
-import React, { useEffect, useMemo } from 'react';
+import React, { useEffect } from 'react';
 import { useAppState } from './context/AppContext';
-import { useUIState, useUIDispatch } from './context/UIStateContext';
+import { useUIState } from './context/UIStateContext';
 import { useAuthState } from './context/AuthContext';
 import FirstRunWizard from './components/auth/FirstRunWizard';
 import MainLayout from './components/layout/MainLayout';
@@ -13,55 +13,13 @@ import SharedLayout from './components/layout/SharedLayout';
 import BugReporter from './components/dev/BugReporter';
 import { Role } from './types';
 import { useDeveloper, useDeveloperState } from './context/DeveloperContext';
-import { BugDetailDialog } from './components/dev/BugDetailDialog';
-import ChatController from './components/chat/ChatController';
-import { useLoadingState } from './context/LoadingContext';
-import Button from './components/user-interface/Button';
 
 const App: React.FC = () => {
-  console.log('[App.tsx] App component rendering...');
-  const { isDataLoaded, loadingError } = useLoadingState();
-  const { settings, guilds, themes, bugReports } = useAppState();
+  const { isDataLoaded, settings, guilds, themes } = useAppState();
   const { currentUser, isAppUnlocked, isFirstRun, isSwitchingUser, isSharedViewActive } = useAuthState();
-  const { appMode, activePage, activeBugDetailId } = useUIState();
-  const { setActiveBugDetailId } = useUIDispatch();
+  const { appMode, activePage } = useUIState();
   const { isRecording, addLogEntry } = useDeveloper();
   const { isPickingElement } = useDeveloperState();
-
-  console.log(`[App.tsx] isDataLoaded state is: ${isDataLoaded}`);
-
-  const detailedReport = useMemo(() => {
-    if (!activeBugDetailId) return null;
-    return bugReports.find(r => r.id === activeBugDetailId);
-  }, [activeBugDetailId, bugReports]);
-
-  const getTagColor = (tag: string) => {
-    const lowerTag = tag.toLowerCase();
-    if (lowerTag.startsWith('ai submissions:')) {
-        return 'bg-cyan-500/20 text-cyan-300';
-    }
-    if (lowerTag.startsWith('copy #')) {
-        return 'bg-indigo-500/20 text-indigo-300';
-    }
-    switch (lowerTag) {
-        case 'in progress': return 'bg-yellow-500/20 text-yellow-300';
-        case 'feature request': return 'bg-purple-500/20 text-purple-300';
-        case 'ui/ux feedback': return 'bg-sky-500/20 text-sky-300';
-        case 'bug report': return 'bg-red-500/20 text-red-300';
-        case 'resolved':
-        case 'converted to quest':
-             return 'bg-green-500/20 text-green-300';
-        default: return 'bg-stone-500/20 text-stone-300';
-    }
-  };
-
-  const allBugReportTags = useMemo(() => {
-      const defaultTags = ['Bug Report', 'Feature Request', 'UI/UX Feedback', 'Content Suggestion', 'In Progress', 'Acknowledged', 'Resolved', 'Converted to Quest'];
-      const allTagsFromReports = bugReports.flatMap(r => r.tags || []);
-      const submissionTagPrefix = 'ai submissions:';
-      const filteredTags = allTagsFromReports.filter(tag => !tag.toLowerCase().startsWith(submissionTagPrefix));
-      return Array.from(new Set([...defaultTags, ...filteredTags])).sort();
-  }, [bugReports]);
 
   useEffect(() => {
     // If we are on a page that handles its own theme preview, don't apply the global theme.
@@ -88,10 +46,7 @@ const App: React.FC = () => {
     const theme = themes.find(t => t.id === activeThemeId);
     if (theme) {
         Object.entries(theme.styles).forEach(([key, value]) => {
-            // Defensive check to prevent crash from undefined values
-            if (value) {
-                document.documentElement.style.setProperty(key, value);
-            }
+            document.documentElement.style.setProperty(key, value);
         });
     }
 
@@ -162,19 +117,7 @@ const App: React.FC = () => {
   }, [isPickingElement]);
 
 
-  if (loadingError) {
-    return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-stone-950 text-center p-4">
-        <div className="text-5xl mb-4" role="img" aria-label="Error icon">☠️</div>
-        <h1 className="text-3xl font-medieval text-red-500 mb-4">Failed to Load Application</h1>
-        <p className="text-stone-300 max-w-md mb-6">{loadingError}</p>
-        <Button onClick={() => window.location.reload()}>Retry Connection</Button>
-      </div>
-    );
-  }
-
   if (!isDataLoaded) {
-    console.log('[App.tsx] isDataLoaded is false, rendering loading spinner.');
     return (
       <div className="min-h-screen flex items-center justify-center bg-stone-900">
         <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-emerald-400"></div>
@@ -182,12 +125,8 @@ const App: React.FC = () => {
     );
   }
 
-  console.log('[App.tsx] isDataLoaded is true, proceeding to render main application layout.');
-
   const showOnboarding = currentUser && !currentUser.hasBeenOnboarded;
   const showBugReporter = settings.developerMode.enabled && currentUser?.role === Role.DonegeonMaster;
-  const showChatController = settings.chat.enabled && currentUser;
-
 
   return (
     <>
@@ -212,15 +151,6 @@ const App: React.FC = () => {
       })()}
 
       {showBugReporter && <BugReporter />}
-      {showChatController && <ChatController />}
-      {detailedReport && (
-          <BugDetailDialog 
-              report={detailedReport} 
-              onClose={() => setActiveBugDetailId(null)} 
-              allTags={allBugReportTags} 
-              getTagColor={getTagColor}
-          />
-      )}
     </>
   );
 };

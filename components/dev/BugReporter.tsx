@@ -3,14 +3,12 @@ import Button from '../user-interface/Button';
 import Input from '../user-interface/Input';
 import { useDeveloper } from '../../context/DeveloperContext';
 import { ChevronDownIcon, ChevronUpIcon } from '../user-interface/Icons';
-import { BugReport, BugReportType } from '../../types';
+import { BugReportType } from '../../types';
 import { useAppState } from '../../context/AppContext';
-import { useUIDispatch } from '../../context/UIStateContext';
 
 const BugReporter: React.FC = () => {
     const { isRecording, startRecording, stopRecording, addLogEntry, isPickingElement, startPickingElement, stopPickingElement, logs, activeBugId } = useDeveloper();
     const { bugReports } = useAppState();
-    const { setActiveBugDetailId } = useUIDispatch();
 
     const [title, setTitle] = useState('');
     const [note, setNote] = useState('');
@@ -80,7 +78,7 @@ const BugReporter: React.FC = () => {
     };
     
     const inProgressReports = useMemo(() => bugReports.filter(b => b.status === 'In Progress'), [bugReports]);
-    
+
     if (isRecording) {
         if (isMinimized) {
             return (
@@ -161,61 +159,57 @@ const BugReporter: React.FC = () => {
     }
 
     return (
-        <>
-            <div data-bug-reporter-ignore className="fixed bottom-0 left-0 right-0 bg-stone-900/80 border-t border-stone-700/60 shadow-2xl z-[99] backdrop-blur-sm flex flex-col">
-                <div className="px-4 pt-2 flex justify-between items-center">
-                    <nav className="-mb-px flex space-x-4">
-                        <button onClick={() => setActiveTab('create')} className={`whitespace-nowrap pb-2 px-1 border-b-2 font-medium text-sm ${activeTab === 'create' ? 'border-emerald-500 text-emerald-400' : 'border-transparent text-stone-400 hover:text-stone-200'}`}>
-                            Create New Report
-                        </button>
-                        <button onClick={() => setActiveTab('continue')} className={`whitespace-nowrap pb-2 px-1 border-b-2 font-medium text-sm ${activeTab === 'continue' ? 'border-emerald-500 text-emerald-400' : 'border-transparent text-stone-400 hover:text-stone-200'}`}>
-                            Continue Recording ({inProgressReports.length})
-                        </button>
-                    </nav>
-                     <Button variant="ghost" size="icon" onClick={() => setIsMinimized(true)} className="h-10 w-10 !rounded-full !bg-white/10 hover:!bg-white/20">
-                        <ChevronDownIcon className="w-6 h-6 text-white" />
-                    </Button>
-                </div>
-                
-                <div className="p-4">
-                     {activeTab === 'create' && (
-                         <div className="flex items-center gap-2">
-                            <Input as="select" value={reportType} onChange={e => setReportType(e.target.value as BugReportType)} className="w-48 h-10">
-                                {Object.values(BugReportType).map(type => <option key={type} value={type}>{type}</option>)}
-                            </Input>
-                            <Input
-                                value={title}
-                                onChange={(e) => setTitle(e.target.value)}
-                                placeholder="Title of the new report..."
-                                className="flex-grow h-10"
-                                onKeyDown={(e) => {
-                                    if (e.key === 'Enter' && title.trim()) {
-                                        e.preventDefault();
-                                        handleStart();
-                                    }
-                                }}
-                            />
-                            <Button onClick={handleStart} disabled={!title.trim()} className="h-10">Start Recording</Button>
-                        </div>
-                     )}
-                     {activeTab === 'continue' && (
-                        <div className="max-h-48 overflow-y-auto pr-2 space-y-2">
-                             {inProgressReports.length > 0 ? inProgressReports.map(report => (
-                                 <div key={report.id} className="p-2 bg-stone-800/50 rounded-md flex justify-between items-center">
-                                    <div>
-                                        <button onClick={() => setActiveBugDetailId(report.id)} className="font-semibold text-stone-200 hover:underline hover:text-accent text-left">
-                                            {report.title}
-                                        </button>
-                                        <p className="text-xs text-stone-400">Created: {new Date(report.createdAt).toLocaleDateString()}</p>
-                                    </div>
-                                    <Button size="sm" onClick={() => handleContinue(report.id)}>Continue</Button>
-                                 </div>
-                             )) : <p className="text-center text-stone-400 py-4">No reports are currently "In Progress".</p>}
-                        </div>
-                     )}
-                </div>
+        <div data-bug-reporter-ignore className="fixed bottom-0 left-0 right-0 bg-stone-900/80 border-t border-stone-700/60 shadow-2xl z-[99] backdrop-blur-sm flex flex-col">
+            <div className="px-4 pt-2 flex justify-between items-center">
+                <nav className="-mb-px flex space-x-4">
+                    <button onClick={() => setActiveTab('create')} className={`whitespace-nowrap pb-2 px-1 border-b-2 font-medium text-sm ${activeTab === 'create' ? 'border-emerald-500 text-emerald-400' : 'border-transparent text-stone-400 hover:text-stone-200'}`}>
+                        Create New Report
+                    </button>
+                    <button onClick={() => setActiveTab('continue')} className={`whitespace-nowrap pb-2 px-1 border-b-2 font-medium text-sm ${activeTab === 'continue' ? 'border-emerald-500 text-emerald-400' : 'border-transparent text-stone-400 hover:text-stone-200'}`}>
+                        Continue Recording ({inProgressReports.length})
+                    </button>
+                </nav>
+                 <Button variant="ghost" size="icon" onClick={() => setIsMinimized(true)} className="h-10 w-10 !rounded-full !bg-white/10 hover:!bg-white/20">
+                    <ChevronDownIcon className="w-6 h-6 text-white" />
+                </Button>
             </div>
-        </>
+            
+            <div className="p-4">
+                 {activeTab === 'create' && (
+                     <div className="flex items-center gap-2">
+                        <Input as="select" value={reportType} onChange={e => setReportType(e.target.value as BugReportType)} className="w-48 h-10">
+                            {Object.values(BugReportType).map(type => <option key={type} value={type}>{type}</option>)}
+                        </Input>
+                        <Input
+                            value={title}
+                            onChange={(e) => setTitle(e.target.value)}
+                            placeholder="Title of the new report..."
+                            className="flex-grow h-10"
+                            onKeyDown={(e) => {
+                                if (e.key === 'Enter' && title.trim()) {
+                                    e.preventDefault();
+                                    handleStart();
+                                }
+                            }}
+                        />
+                        <Button onClick={handleStart} disabled={!title.trim()} className="h-10">Start Recording</Button>
+                    </div>
+                 )}
+                 {activeTab === 'continue' && (
+                    <div className="max-h-48 overflow-y-auto pr-2 space-y-2">
+                         {inProgressReports.length > 0 ? inProgressReports.map(report => (
+                             <div key={report.id} className="p-2 bg-stone-800/50 rounded-md flex justify-between items-center">
+                                <div>
+                                    <p className="font-semibold text-stone-200">{report.title}</p>
+                                    <p className="text-xs text-stone-400">Created: {new Date(report.createdAt).toLocaleDateString()}</p>
+                                </div>
+                                <Button size="sm" onClick={() => handleContinue(report.id)}>Continue</Button>
+                             </div>
+                         )) : <p className="text-center text-stone-400 py-4">No reports are currently "In Progress".</p>}
+                    </div>
+                 )}
+            </div>
+        </div>
     );
 };
 

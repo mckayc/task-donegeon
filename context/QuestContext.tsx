@@ -80,22 +80,18 @@ export const QuestProvider: React.FC<{ children: ReactNode }> = ({ children }) =
 
   const addQuest = useCallback(async (quest: Omit<Quest, 'id' | 'claimedByUserIds' | 'dismissals'>) => {
       await apiRequest('POST', '/api/quests', quest);
-      window.dispatchEvent(new CustomEvent('trigger-sync'));
   }, [apiRequest]);
 
   const updateQuest = useCallback(async (updatedQuest: Quest) => {
       await apiRequest('PUT', `/api/quests/${updatedQuest.id}`, updatedQuest);
-      window.dispatchEvent(new CustomEvent('trigger-sync'));
   }, [apiRequest]);
   
   const deleteQuest = useCallback(async (questId: string) => {
       await apiRequest('DELETE', `/api/quests`, { ids: [questId] });
-      window.dispatchEvent(new CustomEvent('trigger-sync'));
   }, [apiRequest]);
 
   const cloneQuest = useCallback(async (questId: string) => {
       await apiRequest('POST', `/api/quests/clone/${questId}`);
-      window.dispatchEvent(new CustomEvent('trigger-sync'));
   }, [apiRequest]);
   
   const dismissQuest = useCallback((questId: string, userId: string) => {
@@ -141,7 +137,6 @@ export const QuestProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       setQuestCompletions(prev => [...prev, { ...completionData, id: `temp-comp-${Date.now()}` }]);
 
       await apiRequest('POST', '/api/actions/complete-quest', { completionData });
-      window.dispatchEvent(new CustomEvent('trigger-sync'));
   }, [apiRequest, economyDispatch, quests]);
 
   const approveQuestCompletion = useCallback(async (completionId: string, note?: string) => {
@@ -156,7 +151,6 @@ export const QuestProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       }
 
       await apiRequest('POST', `/api/actions/approve-quest/${completionId}`, { note });
-      window.dispatchEvent(new CustomEvent('trigger-sync'));
   }, [apiRequest, economyDispatch, quests, questCompletions]);
 
   const rejectQuestCompletion = useCallback(async (completionId: string, note?: string) => {
@@ -168,7 +162,6 @@ export const QuestProvider: React.FC<{ children: ReactNode }> = ({ children }) =
           return c;
       }));
       await apiRequest('POST', `/api/actions/reject-quest/${completionId}`, { note });
-      window.dispatchEvent(new CustomEvent('trigger-sync'));
   }, [apiRequest]);
 
   const addQuestGroup = useCallback((group: Omit<QuestGroup, 'id'>): QuestGroup => {
@@ -197,22 +190,19 @@ export const QuestProvider: React.FC<{ children: ReactNode }> = ({ children }) =
 
   const deleteQuests = useCallback(async (questIds: string[]) => {
       await apiRequest('DELETE', '/api/quests', { ids: questIds });
-      window.dispatchEvent(new CustomEvent('trigger-sync'));
   }, [apiRequest]);
 
   const updateQuestsStatus = useCallback(async (questIds: string[], isActive: boolean) => {
       await apiRequest('PUT', '/api/quests/bulk-status', { ids: questIds, isActive });
-      window.dispatchEvent(new CustomEvent('trigger-sync'));
   }, [apiRequest]);
 
   const bulkUpdateQuests = useCallback(async (questIds: string[], updates: BulkQuestUpdates) => {
       await apiRequest('PUT', '/api/quests/bulk-update', { ids: questIds, updates });
-      window.dispatchEvent(new CustomEvent('trigger-sync'));
   }, [apiRequest]);
 
-  const state = useMemo(() => ({
+  const state = {
       quests, questGroups, questCompletions, allTags
-  }), [quests, questGroups, questCompletions, allTags]);
+  };
 
   const dispatch = {
       setQuests, setQuestGroups, setQuestCompletions,

@@ -1,6 +1,6 @@
 # Task Donegeon
 
-**Version:** 0.0.54
+**Version:** 0.0.55
 
 ---
 
@@ -15,12 +15,13 @@ Task Donegeon is a gamified task and chore management application designed for f
 
 ## ✨ Features
 
-### What's New in Version 0.0.54 (August 12, 2025)
--   **Critical Startup Fix:** Resolved a fundamental issue that caused the application to show a blank screen on load. This was traced to a fatal error in the theme-rendering logic combined with an inefficient startup sequence that created render-cascades.
--   **Architectural Stability:** Implemented a new, dedicated `LoadingContext` to isolate the initial data loading state from the main application state. This prevents massive component re-renders on startup, making the app faster, more resilient, and eliminating the root cause of the blank screen bug.
--   **Hardened Theme Engine:** The theme application logic is now more robust and will no longer crash the application if it encounters invalid or missing style properties, which was a key contributor to the startup failure.
+### What's New in Version 0.0.55 (August 13, 2025)
+-   **Critical Startup & Docker Fix (Dependency Bundling):** The application's core architecture has been re-engineered for stability and reliability. We have **removed the dependency on external CDNs (`importmap`)** and now bundle all necessary libraries (React, etc.) directly into the application. This resolves the root cause of the persistent "blank screen" issue, which was caused by network failures when fetching dependencies, a common problem in containerized environments like Docker.
+-   **New Pre-React Loading Indicator:** A static loading message has been added to the initial HTML page. This provides immediate visual feedback that the application is starting, even before the main JavaScript bundle has fully loaded and executed.
+-   **Improved Startup Performance:** Re-implemented the `LoadingContext` to isolate the app's initial data load from its main state. This prevents a "render cascade" where all components try to update at once, resulting in a smoother and more resilient startup sequence.
 
 ### Version History
+- **v0.0.54 (August 12, 2025):** Attempted architectural stability fixes that did not resolve the root cause of the blank screen issue.
 - **v0.0.51 (August 8, 2025):** Sidebar Notification Badge Fix, fixed various calendar bugs including performance, scrolling, and interaction issues.
 - **v0.0.97 (July 23, 2025):** New "Vacation" Event Type, Calendar-Driven Vacations, Automatic Penalty Pausing, Streamlined Settings.
 - **v0.0.96 (July 22, 2025):** Default Quest Groups, AI-powered group suggestions, streamlined quest creation.

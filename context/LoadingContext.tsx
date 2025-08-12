@@ -2,10 +2,12 @@ import React, { createContext, useState, useContext, ReactNode } from 'react';
 
 interface LoadingState {
   isDataLoaded: boolean;
+  loadingError: string | null;
 }
 
 interface LoadingDispatch {
   setDataLoaded: (isLoaded: boolean) => void;
+  setLoadingError: (error: string | null) => void;
 }
 
 const LoadingStateContext = createContext<LoadingState | undefined>(undefined);
@@ -13,9 +15,10 @@ const LoadingDispatchContext = createContext<LoadingDispatch | undefined>(undefi
 
 export const LoadingProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [isDataLoaded, setDataLoaded] = useState(false);
+  const [loadingError, setLoadingError] = useState<string | null>(null);
 
-  const stateValue: LoadingState = { isDataLoaded };
-  const dispatchValue: LoadingDispatch = { setDataLoaded };
+  const stateValue: LoadingState = { isDataLoaded, loadingError };
+  const dispatchValue: LoadingDispatch = { setDataLoaded, setLoadingError };
 
   return (
     <LoadingStateContext.Provider value={stateValue}>

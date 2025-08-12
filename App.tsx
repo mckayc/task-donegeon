@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { useAppState } from './context/AppContext';
 import { useUIState, useUIDispatch } from './context/UIStateContext';
 import { useAuthState } from './context/AuthContext';
@@ -16,30 +16,19 @@ import { useDeveloper, useDeveloperState } from './context/DeveloperContext';
 import { BugDetailDialog } from './components/dev/BugDetailDialog';
 import ChatController from './components/chat/ChatController';
 import { useLoadingState } from './context/LoadingContext';
+import Button from './components/user-interface/Button';
 
 const App: React.FC = () => {
   console.log('[App.tsx] App component rendering...');
-  const { isDataLoaded } = useLoadingState();
+  const { isDataLoaded, loadingError } = useLoadingState();
   const { settings, guilds, themes, bugReports } = useAppState();
   const { currentUser, isAppUnlocked, isFirstRun, isSwitchingUser, isSharedViewActive } = useAuthState();
   const { appMode, activePage, activeBugDetailId } = useUIState();
   const { setActiveBugDetailId } = useUIDispatch();
   const { isRecording, addLogEntry } = useDeveloper();
   const { isPickingElement } = useDeveloperState();
-  const [loadingTimedOut, setLoadingTimedOut] = useState(false);
 
   console.log(`[App.tsx] isDataLoaded state is: ${isDataLoaded}`);
-
-  useEffect(() => {
-    if (!isDataLoaded) {
-        const timer = setTimeout(() => {
-            console.error('[App.tsx] Loading timed out after 10 seconds. isDataLoaded is still false. Displaying error screen.');
-            setLoadingTimedOut(true);
-        }, 10000); // 10 second timeout
-
-        return () => clearTimeout(timer);
-    }
-  }, [isDataLoaded]);
 
   const detailedReport = useMemo(() => {
     if (!activeBugDetailId) return null;
@@ -173,29 +162,18 @@ const App: React.FC = () => {
   }, [isPickingElement]);
 
 
-  if (!isDataLoaded) {
-    if (loadingTimedOut) {
-        return (
-            <div className="min-h-screen flex items-center justify-center bg-stone-900 text-center text-stone-300 p-4">
-                <div className="max-w-lg">
-                    <h1 className="text-3xl font-medieval text-red-500 mb-4">Application Failed to Load</h1>
-                    <p className="mb-6">
-                        There was a critical error during startup that prevented the application from loading. Please check the browser's developer console for specific error messages.
-                    </p>
-                    <p className="mb-6 bg-stone-800 p-3 rounded-md">
-                        <strong>How to open the console:</strong> Press <kbd className="px-2 py-1.5 text-xs font-semibold text-gray-800 bg-gray-100 border border-gray-200 rounded-lg">F12</kbd> or <kbd className="px-2 py-1.5 text-xs font-semibold text-gray-800 bg-gray-100 border border-gray-200 rounded-lg">Ctrl</kbd> + <kbd className="px-2 py-1.5 text-xs font-semibold text-gray-800 bg-gray-100 border border-gray-200 rounded-lg">Shift</kbd> + <kbd className="px-2 py-1.5 text-xs font-semibold text-gray-800 bg-gray-100 border border-gray-200 rounded-lg">I</kbd>.
-                    </p>
-                    <button
-                        onClick={() => window.location.reload()}
-                        className="px-6 py-2 bg-emerald-600 text-white font-semibold rounded-lg hover:bg-emerald-500 transition-colors"
-                    >
-                        Retry
-                    </button>
-                </div>
-            </div>
-        );
-    }
+  if (loadingError) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-stone-950 text-center p-4">
+        <div className="text-5xl mb-4" role="img" aria-label="Error icon">☠️</div>
+        <h1 className="text-3xl font-medieval text-red-500 mb-4">Failed to Load Application</h1>
+        <p className="text-stone-300 max-w-md mb-6">{loadingError}</p>
+        <Button onClick={() => window.location.reload()}>Retry Connection</Button>
+      </div>
+    );
+  }
 
+  if (!isDataLoaded) {
     console.log('[App.tsx] isDataLoaded is false, rendering loading spinner.');
     return (
       <div className="min-h-screen flex items-center justify-center bg-stone-900">

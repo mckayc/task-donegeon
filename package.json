@@ -1,7 +1,7 @@
 {
   "name": "task-donegeon",
   "private": true,
-  "version": "0.0.54",
+  "version": "0.0.55",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -15,10 +15,11 @@
     "@fullcalendar/interaction": "^6.1.14",
     "@fullcalendar/react": "^6.1.14",
     "@fullcalendar/timegrid": "^6.1.14",
+    "@google/genai": "^1.9.0",
     "@radix-ui/react-slot": "^1.0.2",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.1",
-    "emoji-picker-react": "^4.5.2",
+    "emoji-picker-react": "^4.13.1",
     "framer-motion": "^11.2.10",
     "lucide-react": "^0.395.0",
     "react": "^18.2.0",
@@ -27,7 +28,6 @@
     "tailwindcss-animate": "^1.0.7"
   },
   "devDependencies": {
-    "@google/genai": "^1.9.0",
     "@types/node": "^20.11.20",
     "@types/react": "^18.2.15",
     "@types/react-dom": "^18.2.7",

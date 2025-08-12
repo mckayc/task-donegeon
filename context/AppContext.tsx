@@ -75,7 +75,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const authDispatch = useAuthDispatch();
   const economyDispatch = useEconomyDispatch();
   const questDispatch = useQuestDispatch();
-  const { setDataLoaded } = useLoadingDispatch();
+  const { setDataLoaded, setLoadingError } = useLoadingDispatch();
 
   // === STATE MANAGEMENT ===
   const [guilds, setGuilds] = useState<Guild[]>([]);
@@ -111,13 +111,15 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         }
         const response = await window.fetch(path, options);
         if (!response.ok) {
-            const errorData = await response.json().catch(() => ({ error: 'Server error' }));
+            const errorData = await response.json().catch(() => ({ error: 'Server error with no details.' }));
             throw new Error(errorData.error || `Request failed with status ${response.status}`);
         }
         if (response.status === 204) {
              return null;
         }
-        return await response.json();
+        // Handle potentially empty response bodies to prevent JSON parsing errors
+        const text = await response.text();
+        return text ? JSON.parse(text) : null;
     } catch (error) {
         // Error notifications will be handled by the calling function using the new pattern
         // addNotification({ type: 'error', message: error instanceof Error ? error.message : 'An unknown network error occurred.' });
@@ -136,7 +138,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
           // --- Sidebar Migration Logic ---
           const savedSidebarConfig = savedSettings.sidebars?.main || [];
           const defaultSidebarConfig = INITIAL_SETTINGS.sidebars.main;
-          const savedIds = new Set(savedSidebarConfig.map(item => item.id));
+          const savedIds = new Set(savedSidebarConfig.map(item => item?.id).filter(Boolean));
           const missingItems = defaultSidebarConfig.filter(item => !savedIds.has(item.id));
           
           let finalSidebarConfig = savedSidebarConfig;
@@ -261,6 +263,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     const initializeApp = async () => {
       console.log('[AppContext] initializeApp: Starting application initialization...');
       try {
+        setLoadingError(null);
         console.log('[AppContext] initializeApp: Starting initial data sync...');
         await initialSync();
         console.log('[AppContext] initializeApp: Initial data sync completed successfully.');
@@ -280,12 +283,14 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         console.log('[AppContext] initializeApp: All initialization steps complete. Setting data as loaded.');
         setDataLoaded(true);
       } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred. Please check your server connection and refresh.';
         console.error("[AppContext] initializeApp: CRITICAL ERROR during initialization.", error);
-        addNotification({type: 'error', message: 'Failed to load application data. Please check your server connection and refresh.'});
+        addNotification({type: 'error', message: errorMessage});
+        setLoadingError(errorMessage);
       }
     };
     initializeApp();
-  }, [initialSync, addNotification, setDataLoaded]);
+  }, [initialSync, addNotification, setDataLoaded, setLoadingError]);
 
   useEffect(() => {
     const isLoaded = !!lastSyncTimestamp.current;

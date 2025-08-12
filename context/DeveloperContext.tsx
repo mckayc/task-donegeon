@@ -1,4 +1,4 @@
-import React, { createContext, useState, useContext, ReactNode, useCallback, useEffect } from 'react';
+import React, { createContext, useState, useContext, ReactNode, useCallback, useEffect, useMemo } from 'react';
 import { BugReport, BugReportLogEntry, BugReportType } from '../types';
 import { useAppDispatch, useAppState } from './AppContext';
 import { bugLogger } from '../utils/bugLogger';
@@ -66,11 +66,11 @@ export const DeveloperProvider: React.FC<{ children: ReactNode }> = ({ children 
   }, [bugReports]);
 
   const stopRecording = useCallback((title: string, reportType: BugReportType) => {
+    bugLogger.add({type: 'STATE_CHANGE', message: 'Recording stopped. Report updated.'});
     const finalLogs = bugLogger.stop();
     
     if (activeBugId) {
         updateBugReport(activeBugId, { logs: finalLogs });
-        addLogEntry({type: 'STATE_CHANGE', message: 'Recording stopped. Report updated.'});
     } else {
         const newReport = {
             title,
@@ -153,10 +153,19 @@ export const DeveloperProvider: React.FC<{ children: ReactNode }> = ({ children 
     };
   }, [isPickingElement, onPickCallback, stopPickingElement, highlightedElement]);
 
+  const state = { isRecording, isPickingElement, logs, activeBugId };
+
+  const dispatch = useMemo(() => ({
+    startRecording,
+    stopRecording,
+    addLogEntry,
+    startPickingElement,
+    stopPickingElement
+  }), [startRecording, stopRecording, addLogEntry, startPickingElement, stopPickingElement]);
 
   return (
-    <DeveloperStateContext.Provider value={{ isRecording, isPickingElement, logs, activeBugId }}>
-      <DeveloperDispatchContext.Provider value={{ startRecording, stopRecording, addLogEntry, startPickingElement, stopPickingElement }}>
+    <DeveloperStateContext.Provider value={state}>
+      <DeveloperDispatchContext.Provider value={dispatch}>
         {children}
       </DeveloperDispatchContext.Provider>
     </DeveloperStateContext.Provider>

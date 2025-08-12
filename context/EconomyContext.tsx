@@ -377,11 +377,11 @@ export const EconomyProvider: React.FC<{ children: ReactNode }> = ({ children })
 
 
   // === CONTEXT PROVIDER VALUE ===
-  const state = useMemo(() => ({
+  const state = {
     markets, rewardTypes, purchaseRequests, gameAssets,
-  }), [markets, rewardTypes, purchaseRequests, gameAssets]);
+  };
 
-  const dispatch = useMemo(() => ({
+  const dispatch = {
     setMarkets, setRewardTypes, setPurchaseRequests, setGameAssets,
     addRewardType, updateRewardType, deleteRewardType, cloneRewardType,
     addMarket, updateMarket, deleteMarket, cloneMarket, deleteMarkets, updateMarketsStatus,
@@ -389,13 +389,7 @@ export const EconomyProvider: React.FC<{ children: ReactNode }> = ({ children })
     purchaseMarketItem, cancelPurchaseRequest, approvePurchaseRequest, rejectPurchaseRequest,
     applyRewards, deductRewards, executeExchange,
     importAssetPack, deleteAllCustomContent, deleteSelectedAssets,
-  }), [
-    addRewardType, updateRewardType, deleteRewardType, cloneRewardType, addMarket, updateMarket,
-    deleteMarket, cloneMarket, deleteMarkets, updateMarketsStatus, addGameAsset, updateGameAsset,
-    deleteGameAsset, cloneGameAsset, deleteGameAssets, purchaseMarketItem, cancelPurchaseRequest,
-    approvePurchaseRequest, rejectPurchaseRequest, applyRewards, deductRewards, executeExchange,
-    importAssetPack, deleteAllCustomContent, deleteSelectedAssets
-  ]);
+  };
 
   return (
     <EconomyStateContext.Provider value={state}>

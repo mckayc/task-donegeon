@@ -7,9 +7,13 @@ import { fromYMD } from '../../utils/quests';
 import EmptyState from '../user-interface/EmptyState';
 import DynamicIcon from '../user-interface/DynamicIcon';
 import ImagePreviewDialog from '../user-interface/ImagePreviewDialog';
+import { useAuthState } from '../../context/AuthContext';
+import { useQuestState } from '../../context/QuestContext';
 
 const TrophiesPage: React.FC = () => {
-    const { trophies, userTrophies, settings, ranks, currentUser, quests, questCompletions } = useAppState();
+    const { trophies, userTrophies, settings, ranks } = useAppState();
+    const { quests, questCompletions } = useQuestState();
+    const { currentUser } = useAuthState();
     const { appMode } = useUIState();
     const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null);
 

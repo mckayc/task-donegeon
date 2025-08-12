@@ -4,10 +4,17 @@ import { ShareableAssetType, Terminology, IAppData } from '../../types';
 import Button from '../user-interface/Button';
 import Input from '../user-interface/Input';
 import { generateAssetPack } from '../../utils/sharing';
+import { useAuthState } from '../../context/AuthContext';
+import { useEconomyState } from '../../context/EconomyContext';
+import { useQuestState } from '../../context/QuestContext';
 
 const ExportPanel: React.FC = () => {
     const appState = useAppState();
-    const { settings, quests, questGroups, rewardTypes, ranks, trophies, markets, gameAssets, users } = appState;
+    const authState = useAuthState();
+    const economyState = useEconomyState();
+    const questState = useQuestState();
+    const { settings } = appState;
+    const { users } = authState;
     const [selected, setSelected] = useState<{ [key in ShareableAssetType]: string[] }>({
         quests: [],
         questGroups: [],
@@ -23,15 +30,15 @@ const ExportPanel: React.FC = () => {
     const lastCheckedIds = useRef<Partial<Record<ShareableAssetType, string>>>({});
 
     const assetTypes: { key: ShareableAssetType, label: keyof Terminology, data: any[] }[] = useMemo(() => [
-        { key: 'quests', label: 'tasks', data: quests },
-        { key: 'questGroups', label: 'link_manage_quest_groups', data: questGroups },
-        { key: 'rewardTypes', label: 'points', data: rewardTypes.filter(rt => !rt.isCore) },
-        { key: 'ranks', label: 'levels', data: ranks },
-        { key: 'trophies', label: 'awards', data: trophies },
-        { key: 'markets', label: 'stores', data: markets },
-        { key: 'gameAssets', label: 'link_manage_items', data: gameAssets },
+        { key: 'quests', label: 'tasks', data: questState.quests },
+        { key: 'questGroups', label: 'link_manage_quest_groups', data: questState.questGroups },
+        { key: 'rewardTypes', label: 'points', data: economyState.rewardTypes.filter(rt => !rt.isCore) },
+        { key: 'ranks', label: 'levels', data: appState.ranks },
+        { key: 'trophies', label: 'awards', data: appState.trophies },
+        { key: 'markets', label: 'stores', data: economyState.markets },
+        { key: 'gameAssets', label: 'link_manage_items', data: economyState.gameAssets },
         { key: 'users', label: 'link_manage_users', data: users },
-    ], [quests, questGroups, rewardTypes, ranks, trophies, markets, gameAssets, users]);
+    ], [questState, economyState, appState, users]);
 
     const handleCheckboxChange = useCallback((
         event: React.ChangeEvent<HTMLInputElement>,
@@ -85,7 +92,12 @@ const ExportPanel: React.FC = () => {
             return;
         }
 
-        const fullAppData: IAppData = { ...appState };
+        const fullAppData: IAppData = {
+            ...appState,
+            ...authState,
+            ...economyState,
+            ...questState
+        };
 
         generateAssetPack(
             blueprintName,

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { RewardCategory, RewardTypeDefinition } from '../../types';
 import Button from '../user-interface/Button';
 import Input from '../user-interface/Input';
-import { useAppDispatch } from '../../context/AppContext';
+import { useEconomyDispatch } from '../../context/EconomyContext';
 import EmojiPicker from '../user-interface/EmojiPicker';
 import ImageSelectionDialog from '../user-interface/ImageSelectionDialog';
 import DynamicIcon from '../user-interface/DynamicIcon';
@@ -13,7 +13,7 @@ interface EditRewardTypeDialogProps {
 }
 
 const EditRewardTypeDialog: React.FC<EditRewardTypeDialogProps> = ({ rewardType, onClose }) => {
-  const { addRewardType, updateRewardType } = useAppDispatch();
+  const { addRewardType, updateRewardType } = useEconomyDispatch();
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -115,7 +115,7 @@ const EditRewardTypeDialog: React.FC<EditRewardTypeDialogProps> = ({ rewardType,
               </div>
             </div>
           ) : (
-            <div>
+             <div>
               <label className="block text-sm font-medium text-stone-300 mb-1">Image Icon</label>
               <div className="flex items-center gap-4">
                 <div className="w-16 h-16 bg-stone-700 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden">

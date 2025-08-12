@@ -4,8 +4,8 @@ import { AssetPack, ImportResolution, ShareableAssetType, Terminology, Role, Use
 import Button from '../user-interface/Button';
 import Input from '../user-interface/Input';
 import UserMultiSelect from '../user-interface/UserMultiSelect';
+import { useAuthState } from '../../context/AuthContext';
 import { bugLogger } from '../../utils/bugLogger';
-import { useShiftSelect } from '../../hooks/useShiftSelect';
 
 interface AssetPackInstallDialogProps {
   assetPack: AssetPack;
@@ -94,7 +94,8 @@ const AssetCard: React.FC<{
 
 
 const AssetPackInstallDialog: React.FC<AssetPackInstallDialogProps> = ({ assetPack, initialResolutions, onClose, onConfirm }) => {
-    const { settings, users } = useAppState();
+    const { settings } = useAppState();
+    const { users } = useAuthState();
     const [resolutions, setResolutions] = useState(initialResolutions);
     const [assignedUserIds, setAssignedUserIds] = useState<string[]>(() => users.map(u => u.id));
     const [importingItemId, setImportingItemId] = useState<string | null>(null);

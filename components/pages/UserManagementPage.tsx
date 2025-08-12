@@ -1,5 +1,8 @@
+
+
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
-import { useAppState, useAppDispatch } from '../../context/AppContext';
+import { useAppState } from '../../context/AppContext';
+import { useAuthState, useAuthDispatch } from '../../context/AuthContext';
 import Button from '../user-interface/Button';
 import AddUserDialog from '../users/AddUserDialog';
 import { Role, User } from '../../types';
@@ -14,8 +17,9 @@ import { useNotificationsDispatch } from '../../context/NotificationsContext';
 import { useShiftSelect } from '../../hooks/useShiftSelect';
 
 const UserManagementPage: React.FC = () => {
-    const { settings, currentUser } = useAppState();
-    const { deleteUsers } = useAppDispatch();
+    const { settings } = useAppState();
+    const { currentUser } = useAuthState();
+    const { deleteUsers } = useAuthDispatch();
     const { addNotification } = useNotificationsDispatch();
     
     const [pageUsers, setPageUsers] = useState<User[]>([]);

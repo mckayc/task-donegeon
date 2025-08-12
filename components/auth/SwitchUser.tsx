@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { useAppState, useAppDispatch } from '../../context/AppContext';
+import { useAuthState, useAuthDispatch } from '../../context/AuthContext';
+import { useAppState } from '../../context/AppContext';
 import { User, Role } from '../../types';
 import Button from '../user-interface/Button';
 import Keypad from '../user-interface/Keypad';
@@ -7,8 +8,8 @@ import Avatar from '../user-interface/Avatar';
 import Input from '../user-interface/Input';
 
 const SwitchUser: React.FC = () => {
-    const { users, currentUser: anyCurrentUser, targetedUserForLogin } = useAppState();
-    const { setCurrentUser, setIsSwitchingUser, setTargetedUserForLogin } = useAppDispatch();
+    const { users, currentUser: anyCurrentUser, targetedUserForLogin } = useAuthState();
+    const { setCurrentUser, setIsSwitchingUser, setTargetedUserForLogin } = useAuthDispatch();
     const { settings } = useAppState();
     const [selectedUser, setSelectedUser] = useState<User | null>(null);
     const [pin, setPin] = useState('');
@@ -132,7 +133,7 @@ const SwitchUser: React.FC = () => {
                             
                             <div className="w-full max-w-xs mb-4">
                                 <Input
-                                    id="pin-input-dialog"
+                                    id="pin-input"
                                     name="pin"
                                     type="password"
                                     aria-label="PIN Input"
@@ -159,7 +160,7 @@ const SwitchUser: React.FC = () => {
                             {error && <p className="text-red-400 text-center mb-4">{error}</p>}
                             
                             <Keypad
-                                onKeyPress={(key: string) => {
+                                onKeyPress={(key) => {
                                     if (pin.length < 10) setPin(p => p + key)
                                 }}
                                 onBackspace={() => setPin(p => p.slice(0, -1))}

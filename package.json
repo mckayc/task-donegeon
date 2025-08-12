@@ -13,7 +13,6 @@
     "@fullcalendar/daygrid": "^6.1.14",
     "@fullcalendar/google-calendar": "^6.1.14",
     "@fullcalendar/interaction": "^6.1.14",
-    "@fullcalendar/list": "^6.1.14",
     "@fullcalendar/react": "^6.1.14",
     "@fullcalendar/timegrid": "^6.1.14",
     "@radix-ui/react-slot": "^1.0.2",

@@ -1,4 +1,4 @@
-import React, { useState, useMemo, ReactNode, useRef, useEffect } from 'react';
+import React, { useState, useMemo, ReactNode } from 'react';
 import { BugReport, BugReportStatus, BugReportLogEntry } from '../../types';
 import { useAppDispatch } from '../../context/AppContext';
 import { useNotificationsDispatch } from '../../context/NotificationsContext';
@@ -39,13 +39,6 @@ export const BugDetailDialog: React.FC<BugDetailDialogProps> = ({ report, onClos
     const [questFromBug, setQuestFromBug] = useState<BugReport | null>(null);
     const [comment, setComment] = useState('');
     const [selectedLogs, setSelectedLogs] = useState<string[]>([]);
-    const logContainerRef = useRef<HTMLDivElement>(null);
-
-    useEffect(() => {
-        if (logContainerRef.current) {
-            logContainerRef.current.scrollTop = logContainerRef.current.scrollHeight;
-        }
-    }, [report.logs.length]);
 
     const sortedLogs = useMemo(() => {
         if (!report.logs) return [];
@@ -177,7 +170,7 @@ export const BugDetailDialog: React.FC<BugDetailDialogProps> = ({ report, onClos
                                 <Button size="sm" variant="secondary" onClick={() => copyLogToClipboard(sortedLogs.filter(log => selectedLogs.includes(log.timestamp)))} disabled={selectedLogs.length === 0}>Copy Selected ({selectedLogs.length})</Button>
                                 <Button size="sm" variant="secondary" onClick={() => copyLogToClipboard(sortedLogs)}>Copy Full Log</Button>
                             </div>
-                            <div ref={logContainerRef} className="flex-grow overflow-y-auto scrollbar-hide pr-4 space-y-4">
+                            <div className="flex-grow overflow-y-auto scrollbar-hide pr-4 space-y-4">
                                 {sortedLogs.map((log, index) => {
                                     const isSelected = selectedLogs.includes(log.timestamp);
                                     const authorUser = log.type === 'COMMENT' ? users.find(u => u.gameName === log.author) : undefined;

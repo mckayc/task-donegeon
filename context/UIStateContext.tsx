@@ -1,4 +1,4 @@
-import React, { createContext, useState, useContext, ReactNode, useCallback, useMemo } from 'react';
+import React, { createContext, useState, useContext, ReactNode, useCallback } from 'react';
 import { Page, AppMode } from '../types';
 import { bugLogger } from '../utils/bugLogger';
 
@@ -48,21 +48,21 @@ export const UIStateProvider: React.FC<{ children: ReactNode }> = ({ children })
 
   const toggleChat = useCallback(() => setIsChatOpen(prev => !prev), []);
 
-  const stateValue = useMemo(() => ({
+  const stateValue: UIState = {
     activePage,
     isSidebarCollapsed,
     isChatOpen,
     appMode,
     activeMarketId,
-  }), [activePage, isSidebarCollapsed, isChatOpen, appMode, activeMarketId]);
+  };
 
-  const dispatchValue = useMemo(() => ({
+  const dispatchValue: UIDispatch = {
     setActivePage,
     toggleSidebar,
     toggleChat,
     setAppMode,
     setActiveMarketId,
-  }), [setActivePage, toggleSidebar, toggleChat]);
+  };
 
   return (
     <UIStateContext.Provider value={stateValue}>

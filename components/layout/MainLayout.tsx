@@ -37,15 +37,17 @@ import AssetLibraryPage from '../pages/management/AssetLibraryPage';
 import ThemeEditorPage from '../pages/ThemeEditorPage';
 import ManageQuestGroupsPage from '../pages/ManageQuestGroupsPage';
 import { useAppState } from '../../context/AppContext';
+import { useAuthState } from '../../context/AuthContext';
+import { useNotificationsDispatch } from '../../context/NotificationsContext';
 import { useUIState, useUIDispatch } from '../../context/UIStateContext';
 import ChatPanel from '../chat/ChatPanel';
 import LoginNotificationPopup from '../user-interface/LoginNotificationPopup';
 import ManageEventsPage from '../pages/management/ManageEventsPage';
 import BugTrackingPage from '../dev/BugTrackingPage';
-import { useNotificationsDispatch } from '../../context/NotificationsContext';
 
 const MainLayout: React.FC = () => {
-  const { settings, systemNotifications, currentUser } = useAppState();
+  const { settings, systemNotifications } = useAppState();
+  const { currentUser } = useAuthState();
   const { addNotification } = useNotificationsDispatch();
   const { activePage } = useUIState();
   const { setActivePage } = useUIDispatch();

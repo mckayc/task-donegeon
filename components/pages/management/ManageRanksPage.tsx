@@ -110,7 +110,7 @@ const ManageRanksPage: React.FC = () => {
                                 </tr>
                             </thead>
                             <tbody>
-                                {sortedRanks.map(rank => (
+                                {sortedRanks.map((rank: Rank) => (
                                     <tr key={rank.id} className="border-b border-stone-700/40 last:border-b-0">
                                         <td className="p-4">
                                             <input 

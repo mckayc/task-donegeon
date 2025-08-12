@@ -1,5 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
+import { useAuthState } from '../../context/AuthContext';
+import { useUIState, useUIDispatch } from '../../context/UIStateContext';
 import { Quest, QuestAvailability, QuestCompletionStatus, RewardCategory, Role, User, QuestType, PurchaseRequest, UserTrophy } from '../../types';
 import Card from '../user-interface/Card';
 import Button from '../user-interface/Button';
@@ -7,12 +9,16 @@ import { isQuestAvailableForUser, isQuestVisibleToUserInMode, fromYMD, getQuestU
 import QuestDetailDialog from '../quests/QuestDetailDialog';
 import CompleteQuestDialog from '../quests/CompleteQuestDialog';
 import { useRewardValue } from '../../hooks/useRewardValue';
-import { useUIState, useUIDispatch } from '../../context/UIStateContext';
+import { useEconomyState } from '../../context/EconomyContext';
+import { useQuestState, useQuestDispatch } from '../../context/QuestContext';
 
 const Dashboard: React.FC = () => {
-    const { ranks, userTrophies, trophies, settings, scheduledEvents, quests, questCompletions, rewardTypes, purchaseRequests, currentUser, users } = useAppState();
-    const { markQuestAsTodo, unmarkQuestAsTodo } = useAppDispatch();
+    const { ranks, userTrophies, trophies, settings, scheduledEvents } = useAppState();
+    const { quests, questCompletions } = useQuestState();
+    const { rewardTypes, purchaseRequests } = useEconomyState();
+    const { currentUser, users } = useAuthState();
     const { appMode } = useUIState();
+    const { markQuestAsTodo, unmarkQuestAsTodo } = useQuestDispatch();
     const { setActivePage } = useUIDispatch();
     
     const [selectedQuest, setSelectedQuest] = useState<Quest | null>(null);

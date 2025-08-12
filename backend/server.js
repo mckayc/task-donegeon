@@ -281,62 +281,6 @@ app.post('/api/ai/test', asyncMiddleware(async (req, res) => {
     }
 }));
 
-app.post('/api/ai/summarize-bugs', asyncMiddleware(async (req, res) => {
-    if (!ai) {
-        return res.status(503).json({ error: 'AI features are not configured on the server.' });
-    }
-    const { bugReports } = req.body;
-    if (!bugReports || !Array.isArray(bugReports)) {
-        return res.status(400).json({ error: 'Missing bugReports array in request body.' });
-    }
-
-    const prompt = `
-You are a meticulous project manager assistant for the app Task Donegeon.
-Analyze the following JSON data of bug reports and feature requests.
-Generate a comprehensive summary in Markdown format.
-
-The summary should have two main sections:
-1. '✅ Resolved Work': For reports with a 'Resolved' or 'Closed' status.
-2. '⏳ Pending Work': For reports with 'Open' or 'In Progress' status.
-
-Under each main section, create a sub-section for each report. For each report, provide:
-- A clear title using the report's title.
-- A bullet point list summarizing the key activities and findings from the 'logs'. Focus on user actions, notes, and comments.
-- Synthesize the comments into a brief narrative of the discussion.
-- Explicitly mention if any comments indicate the issue has been 'verified', 'fixed', or is 'working'.
-- List any important tags associated with the report.
-
-Here is the data:
-${JSON.stringify(bugReports)}
-`;
-
-    try {
-        const result = await ai.models.generateContent({
-            model: 'gemini-2.5-flash',
-            contents: prompt,
-            config: {
-                responseMimeType: "application/json",
-                responseSchema: {
-                    type: "OBJECT",
-                    properties: {
-                        summary: {
-                            type: "STRING",
-                            description: 'The markdown summary of the bug reports.'
-                        }
-                    }
-                }
-            }
-        });
-
-        const responseText = result.text;
-        res.json(JSON.parse(responseText));
-
-    } catch (error) {
-        console.error("Error calling Gemini API for bug summary:", error);
-        res.status(500).json({ error: 'An error occurred while generating the summary.' });
-    }
-}));
-
 
 // New Sync Endpoint
 app.get('/api/data/sync', asyncMiddleware(async (req, res) => {

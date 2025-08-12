@@ -4,9 +4,11 @@ import { useAppState } from '../../context/AppContext';
 import { useUIState } from '../../context/UIStateContext';
 import { Role, ChronicleEvent, QuestCompletionStatus, AdminAdjustmentType, PurchaseRequestStatus } from '../../types';
 import Button from '../user-interface/Button';
+import { useAuthState } from '../../context/AuthContext';
 
 const ChroniclesPage: React.FC = () => {
-    const { settings, currentUser } = useAppState();
+    const { settings } = useAppState();
+    const { currentUser } = useAuthState();
     const { appMode } = useUIState();
     const [viewMode, setViewMode] = useState<'all' | 'personal'>('all');
     const [itemsPerPage, setItemsPerPage] = useState(50);

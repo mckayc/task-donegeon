@@ -2,7 +2,10 @@ import React, { useState } from 'react';
 import Card from '../../user-interface/Card';
 import ExportPanel from '../../sharing/ExportPanel';
 import ImportPanel from '../../sharing/ImportPanel';
-import { useAppState, useAppDispatch } from '../../../context/AppContext';
+import { useAppDispatch, useAppState } from '../../../context/AppContext';
+import { useAuthState } from '../../../context/AuthContext';
+import { useEconomyDispatch, useEconomyState } from '../../../context/EconomyContext';
+import { useQuestState } from '../../../context/QuestContext';
 import { IAppData, AssetPack, ImportResolution } from '../../../types';
 import { analyzeAssetPackForConflicts } from '../../../utils/sharing';
 import { useNotificationsDispatch } from '../../../context/NotificationsContext';
@@ -12,7 +15,10 @@ const ObjectExporterPage: React.FC = () => {
     const [activeTab, setActiveTab] = useState('export');
     
     const appState = useAppState();
-    const { importAssetPack } = useAppDispatch();
+    const authState = useAuthState();
+    const economyState = useEconomyState();
+    const questState = useQuestState();
+    const { importAssetPack } = useEconomyDispatch();
     const { addNotification } = useNotificationsDispatch();
 
     const [assetPackToPreview, setAssetPackToPreview] = useState<AssetPack | null>(null);
@@ -24,7 +30,7 @@ const ObjectExporterPage: React.FC = () => {
             try {
                 const json = JSON.parse(e.target?.result as string);
                 if (json.manifest && json.assets) {
-                    const fullCurrentData: IAppData = { ...appState };
+                    const fullCurrentData: IAppData = { ...appState, ...authState, ...economyState, ...questState };
                     const conflictResolutions = analyzeAssetPackForConflicts(json, fullCurrentData);
                     setInitialResolutions(conflictResolutions);
                     setAssetPackToPreview(json);
@@ -39,7 +45,7 @@ const ObjectExporterPage: React.FC = () => {
     };
     
     const handleConfirmImport = (pack: AssetPack, resolutions: ImportResolution[]) => {
-        const fullCurrentData: IAppData = { ...appState };
+        const fullCurrentData: IAppData = { ...appState, ...authState, ...economyState, ...questState };
         importAssetPack(pack, resolutions, fullCurrentData);
         setAssetPackToPreview(null);
         setInitialResolutions([]);

@@ -1,7 +1,8 @@
-import React, { useState, useMemo, useEffect, useRef } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Page, Role, AppMode, User } from '../../types';
 import Avatar from '../user-interface/Avatar';
-import { useAppState, useAppDispatch } from '../../context/AppContext';
+import { useAppState } from '../../context/AppContext';
+import { useAuthState, useAuthDispatch } from '../../context/AuthContext';
 import { useUIState, useUIDispatch } from '../../context/UIStateContext';
 import FullscreenToggle from '../user-interface/FullscreenToggle';
 import { ChevronDownIcon } from '../user-interface/Icons';
@@ -36,30 +37,14 @@ const Clock: React.FC = () => {
 };
 
 const Header: React.FC = () => {
-  const { guilds, settings, currentUser } = useAppState();
-  const { setCurrentUser, setIsSwitchingUser, setAppUnlocked, exitToSharedView } = useAppDispatch();
+  const { guilds, settings } = useAppState();
+  const { currentUser } = useAuthState();
+  const { setCurrentUser, setIsSwitchingUser, setAppUnlocked, exitToSharedView } = useAuthDispatch();
   const { appMode } = useUIState();
   const { setAppMode, setActivePage } = useUIDispatch();
 
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
   const [guildDropdownOpen, setGuildDropdownOpen] = useState(false);
-  const profileDropdownRef = useRef<HTMLDivElement>(null);
-  const guildDropdownRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (profileDropdownRef.current && !profileDropdownRef.current.contains(event.target as Node)) {
-        setProfileDropdownOpen(false);
-      }
-      if (guildDropdownRef.current && !guildDropdownRef.current.contains(event.target as Node)) {
-        setGuildDropdownOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, []);
 
   const handleLogout = () => {
     localStorage.removeItem('lastUserId');
@@ -108,7 +93,7 @@ const Header: React.FC = () => {
             <button data-log-id="header-mode-personal" onClick={() => handleModeChange({ mode: 'personal' })} className={`px-4 py-1.5 text-sm font-semibold rounded-full transition-colors ${appMode.mode === 'personal' ? 'bg-emerald-600 text-white' : 'text-stone-300 hover:bg-stone-700'}`}>
                 Personal
             </button>
-            <div className="relative" ref={guildDropdownRef}>
+            <div className="relative">
                 <button
                     data-log-id="header-mode-guild-dropdown"
                     onClick={() => {
@@ -158,7 +143,7 @@ const Header: React.FC = () => {
                 Exit User
             </button>
         )}
-        <div className="relative" ref={profileDropdownRef}>
+        <div className="relative">
           <button data-log-id="header-profile-dropdown-button" onClick={() => setProfileDropdownOpen(!profileDropdownOpen)} className="flex items-center space-x-3">
             <span className="hidden sm:inline text-stone-200 font-medium">{currentUser.gameName}</span>
             <Avatar user={currentUser} className="w-12 h-12 bg-emerald-800 rounded-full border-2 border-accent overflow-hidden" />

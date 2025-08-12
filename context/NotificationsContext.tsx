@@ -1,4 +1,4 @@
-import React, { createContext, useState, useContext, ReactNode, useCallback, useMemo } from 'react';
+import React, { createContext, useState, useContext, ReactNode, useCallback } from 'react';
 import { Notification } from '../types';
 
 // State managed by this context
@@ -34,8 +34,8 @@ export const NotificationsProvider: React.FC<{ children: ReactNode }> = ({ child
   }, []);
 
 
-  const stateValue = useMemo(() => ({ notifications }), [notifications]);
-  const dispatchValue = useMemo(() => ({ addNotification, removeNotification, updateNotification }), [addNotification, removeNotification, updateNotification]);
+  const stateValue: NotificationsState = { notifications };
+  const dispatchValue: NotificationsDispatch = { addNotification, removeNotification, updateNotification };
 
   return (
     <NotificationsStateContext.Provider value={stateValue}>

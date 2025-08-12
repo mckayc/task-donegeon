@@ -10,9 +10,14 @@ import { isMarketOpenForUser } from '../../utils/markets';
 import ImagePreviewDialog from '../user-interface/ImagePreviewDialog';
 import DynamicIcon from '../user-interface/DynamicIcon';
 import { toYMD } from '../../utils/quests';
+import { useAuthState } from '../../context/AuthContext';
+import { useEconomyState } from '../../context/EconomyContext';
+import { useQuestState } from '../../context/QuestContext';
 
 const MarketItemView: React.FC<{ market: Market }> = ({ market }) => {
-    const { settings, scheduledEvents, rewardTypes, gameAssets, currentUser, ranks, quests, questCompletions, users, guilds } = useAppState();
+    const { settings, scheduledEvents } = useAppState();
+    const { rewardTypes, gameAssets } = useEconomyState();
+    const { currentUser } = useAuthState();
     const { appMode } = useUIState();
     const [sortBy, setSortBy] = useState<'default' | 'title-asc' | 'title-desc'>('default');
     const [itemToPurchase, setItemToPurchase] = useState<GameAsset | null>(null);
@@ -214,7 +219,12 @@ const MarketItemView: React.FC<{ market: Market }> = ({ market }) => {
 
 const MarketplacePage: React.FC = () => {
     const appState = useAppState();
-    const { settings, markets, currentUser } = appState;
+    const authState = useAuthState();
+    const economyState = useEconomyState();
+    const questState = useQuestState();
+    const { settings } = appState;
+    const { markets } = economyState;
+    const { currentUser } = authState;
     const { appMode, activeMarketId } = useUIState();
     const { setActiveMarketId } = useUIDispatch();
     const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null);
@@ -222,13 +232,13 @@ const MarketplacePage: React.FC = () => {
     const visibleMarkets = React.useMemo(() => {
         if (!currentUser) return [];
         
-        const fullAppDataForCheck: IAppData = appState;
+        const fullAppDataForCheck: IAppData = { ...appState, ...authState, ...economyState, ...questState };
         const currentGuildId = appMode.mode === 'guild' ? appMode.guildId : undefined;
 
         return markets.filter(market => 
             market.guildId === currentGuildId && isMarketOpenForUser(market, currentUser, fullAppDataForCheck)
         );
-    }, [markets, appMode, currentUser, appState]);
+    }, [markets, appMode, currentUser, appState, authState, economyState, questState]);
 
     const activeMarket = React.useMemo(() => {
         return markets.find(m => m.id === activeMarketId);

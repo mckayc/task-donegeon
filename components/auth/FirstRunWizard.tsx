@@ -1,7 +1,7 @@
 
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { useAppDispatch } from '../../context/AppContext';
+import { useAuthDispatch } from '../../context/AuthContext';
 import { Role, SystemStatus } from '../../types';
 import Button from '../user-interface/Button';
 import Input from '../user-interface/Input';
@@ -45,7 +45,7 @@ const StatusCheck: React.FC<{
 };
 
 const FirstRunWizard: React.FC = () => {
-  const { completeFirstRun } = useAppDispatch();
+  const { completeFirstRun } = useAuthDispatch();
   const [status, setStatus] = useState<SystemStatus | null>(null);
   const [loading, setLoading] = useState(true);
   

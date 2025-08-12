@@ -1,6 +1,7 @@
-import React, { useEffect, useMemo } from 'react';
-import { useAppState, useAppDispatch } from './context/AppContext';
+import React, { useEffect } from 'react';
+import { useAppState } from './context/AppContext';
 import { useUIState } from './context/UIStateContext';
+import { useAuthState } from './context/AuthContext';
 import FirstRunWizard from './components/auth/FirstRunWizard';
 import MainLayout from './components/layout/MainLayout';
 import SwitchUser from './components/auth/SwitchUser';
@@ -10,15 +11,15 @@ import AppLockScreen from './components/auth/AppLockScreen';
 import OnboardingWizard from './components/auth/OnboardingWizard';
 import SharedLayout from './components/layout/SharedLayout';
 import BugReporter from './components/dev/BugReporter';
-import { BugReportStatus, Role } from './types';
+import { Role } from './types';
 import { useDeveloper, useDeveloperState } from './context/DeveloperContext';
-import { BugDetailDialog } from './components/dev/BugDetailDialog';
 
 const App: React.FC = () => {
-  const { isDataLoaded, settings, guilds, themes, bugReports, currentUser, isAppUnlocked, isFirstRun, isSwitchingUser, isSharedViewActive } = useAppState();
+  const { isDataLoaded, settings, guilds, themes } = useAppState();
+  const { currentUser, isAppUnlocked, isFirstRun, isSwitchingUser, isSharedViewActive } = useAuthState();
   const { appMode, activePage } = useUIState();
-  const { isRecording, addLogEntry, setDetailedBugReportId } = useDeveloper();
-  const { isPickingElement, detailedBugReportId } = useDeveloperState();
+  const { isRecording, addLogEntry } = useDeveloper();
+  const { isPickingElement } = useDeveloperState();
 
   useEffect(() => {
     // If we are on a page that handles its own theme preview, don't apply the global theme.
@@ -45,7 +46,7 @@ const App: React.FC = () => {
     const theme = themes.find(t => t.id === activeThemeId);
     if (theme) {
         Object.entries(theme.styles).forEach(([key, value]) => {
-            document.documentElement.style.setProperty(key, value as string);
+            document.documentElement.style.setProperty(key, value);
         });
     }
 
@@ -115,39 +116,6 @@ const App: React.FC = () => {
     document.body.style.cursor = isPickingElement ? 'crosshair' : 'default';
   }, [isPickingElement]);
 
-  const detailedReport = useMemo(() => {
-    if (!detailedBugReportId) return null;
-    return bugReports.find(r => r.id === detailedBugReportId) || null;
-  }, [detailedBugReportId, bugReports]);
-
-  const allBugReportTags = useMemo(() => {
-    const defaultTags = ['Bug Report', 'Feature Request', 'UI/UX Feedback', 'Content Suggestion', 'In Progress', 'Acknowledged', 'Resolved', 'Converted to Quest'];
-    const allTagsFromReports = bugReports.flatMap(r => r.tags || []);
-    const submissionTagPrefix = 'ai submissions:';
-    const filteredTags = allTagsFromReports.filter(tag => !tag.toLowerCase().startsWith(submissionTagPrefix));
-    return Array.from(new Set([...defaultTags, ...filteredTags])).sort();
-  }, [bugReports]);
-
-  const getTagColor = (tag: string) => {
-    const lowerTag = tag.toLowerCase();
-    if (lowerTag.startsWith('ai submissions:')) {
-        return 'bg-cyan-500/20 text-cyan-300';
-    }
-    if (lowerTag.startsWith('copy #')) {
-        return 'bg-indigo-500/20 text-indigo-300';
-    }
-    switch (lowerTag) {
-        case 'in progress': return 'bg-yellow-500/20 text-yellow-300';
-        case 'feature request': return 'bg-purple-500/20 text-purple-300';
-        case 'ui/ux feedback': return 'bg-sky-500/20 text-sky-300';
-        case 'bug report': return 'bg-red-500/20 text-red-300';
-        case 'resolved':
-        case 'converted to quest':
-             return 'bg-green-500/20 text-green-300';
-        default: return 'bg-stone-500/20 text-stone-300';
-    }
-  };
-
 
   if (!isDataLoaded) {
     return (
@@ -183,14 +151,6 @@ const App: React.FC = () => {
       })()}
 
       {showBugReporter && <BugReporter />}
-      {detailedReport && (
-          <BugDetailDialog
-              report={detailedReport}
-              onClose={() => setDetailedBugReportId(null)}
-              allTags={allBugReportTags}
-              getTagColor={getTagColor}
-          />
-      )}
     </>
   );
 };

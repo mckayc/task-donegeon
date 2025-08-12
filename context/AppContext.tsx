@@ -196,9 +196,12 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   }, [authDispatch, questDispatch, economyDispatch]);
   
   const initialSync = useCallback(async () => {
-    // This function will now throw on error instead of catching it.
     const response = await apiRequest('GET', '/api/data/sync');
-    if (!response) return;
+
+    // FIX: Add robust check for the response and its structure to prevent TypeError.
+    if (!response || typeof response.updates !== 'object' || typeof response.newSyncTimestamp !== 'string') {
+        throw new Error("Application data could not be loaded due to an invalid server response.");
+    }
 
     const { updates, newSyncTimestamp } = response;
     const { settingsUpdated, loadedSettings } = processAndSetData(updates, false);
@@ -214,8 +217,10 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       if (lastUser) authDispatch.setCurrentUser(lastUser);
     }
     
-    if (loadedSettings) {
-      authDispatch.setIsSharedViewActive(loadedSettings.sharedMode.enabled && !localStorage.getItem('lastUserId'));
+    // Use the settings object that was just processed, not a potentially undefined one.
+    const finalSettings = loadedSettings || (updates as IAppData).settings;
+    if (finalSettings) {
+      authDispatch.setIsSharedViewActive(finalSettings.sharedMode.enabled && !localStorage.getItem('lastUserId'));
     }
 
     lastSyncTimestamp.current = newSyncTimestamp;

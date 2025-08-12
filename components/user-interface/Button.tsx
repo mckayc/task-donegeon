@@ -33,10 +33,11 @@ const buttonVariants = cva(
   }
 )
 
-export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement>, VariantProps<typeof buttonVariants> {
-  asChild?: boolean
-  'data-log-id'?: string;
-}
+export type ButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement> &
+  VariantProps<typeof buttonVariants> & {
+    asChild?: boolean;
+    "data-log-id"?: string;
+  };
 
 
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(

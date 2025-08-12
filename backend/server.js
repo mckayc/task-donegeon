@@ -281,6 +281,44 @@ app.post('/api/ai/test', asyncMiddleware(async (req, res) => {
     }
 }));
 
+app.post('/api/ai/summarize-bugs', asyncMiddleware(async (req, res) => {
+    if (!ai) {
+        return res.status(503).json({ error: 'AI features are not configured on the server.' });
+    }
+    const { bugReports } = req.body;
+    if (!bugReports || !Array.isArray(bugReports)) {
+        return res.status(400).json({ error: 'Missing bugReports array in request body.' });
+    }
+
+    const prompt = `You are a helpful project manager assistant for an app called Task Donegeon. Based on the following list of bug reports and feature requests, provide a concise summary in Markdown format. The summary should have two main sections: '✅ Completed Work' for 'Resolved' items, and '⏳ Pending Work' for 'Open' and 'In Progress' items. Under each section, use bullet points for the items, mentioning the title and key tags. Provide a brief, one-sentence high-level overview at the very top. Here is the data: ${JSON.stringify(bugReports)}`;
+
+    try {
+        const result = await ai.models.generateContent({
+            model: 'gemini-2.5-flash',
+            contents: prompt,
+            config: {
+                responseMimeType: "application/json",
+                responseSchema: {
+                    type: "OBJECT",
+                    properties: {
+                        summary: {
+                            type: "STRING",
+                            description: 'The markdown summary of the bug reports.'
+                        }
+                    }
+                }
+            }
+        });
+
+        const responseText = result.text;
+        res.json(JSON.parse(responseText));
+
+    } catch (error) {
+        console.error("Error calling Gemini API for bug summary:", error);
+        res.status(500).json({ error: 'An error occurred while generating the summary.' });
+    }
+}));
+
 
 // New Sync Endpoint
 app.get('/api/data/sync', asyncMiddleware(async (req, res) => {

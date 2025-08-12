@@ -6,29 +6,30 @@ import Button from '../user-interface/Button';
 import { useNotificationsDispatch } from '../../context/NotificationsContext';
 import Input from '../user-interface/Input';
 import ConfirmDialog from '../user-interface/ConfirmDialog';
-import { BugDetailDialog } from './BugDetailDialog';
-import { bugLogger } from '../../utils/bugLogger';
-import { EllipsisVerticalIcon } from '../user-interface/Icons';
+import { EllipsisVerticalIcon, SparklesIcon } from '../user-interface/Icons';
 import { useShiftSelect } from '../../hooks/useShiftSelect';
+import { useDeveloper } from '../../context/DeveloperContext';
+import BugSummaryDialog from './BugSummaryDialog';
+import { GenerateContentResponse, Type } from "@google/genai";
 
 const BugTrackingPage: React.FC = () => {
-    const { bugReports } = useAppState();
+    const { bugReports, settings, isAiConfigured } = useAppState();
     const { updateBugReport, deleteBugReports } = useAppDispatch();
     const { addNotification } = useNotificationsDispatch();
+    const { setDetailedBugReportId } = useDeveloper();
     
-    const [detailedReportId, setDetailedReportId] = useState<string | null>(null);
     const [selectedReports, setSelectedReports] = useState<string[]>([]);
     const [activeTab, setActiveTab] = useState<BugReportStatus>('In Progress');
     const [deletingIds, setDeletingIds] = useState<string[]>([]);
     const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
     const dropdownRef = useRef<HTMLDivElement | null>(null);
-
-    const detailedReport = useMemo(() => {
-        if (!detailedReportId) return null;
-        return bugReports.find(r => r.id === detailedReportId) || null;
-    }, [detailedReportId, bugReports]);
     
+    const [isSummaryOpen, setIsSummaryOpen] = useState(false);
+    const [summaryContent, setSummaryContent] = useState('');
+    const [isGeneratingSummary, setIsGeneratingSummary] = useState(false);
+
     const statuses: BugReportStatus[] = ['In Progress', 'Open', 'Resolved', 'Closed'];
+    const isAiAvailable = settings.enableAiFeatures && isAiConfigured;
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
@@ -95,17 +96,56 @@ const BugTrackingPage: React.FC = () => {
         }
     };
 
-    const allBugReportTags = useMemo(() => {
-        const defaultTags = ['Bug Report', 'Feature Request', 'UI/UX Feedback', 'Content Suggestion', 'In Progress', 'Acknowledged', 'Resolved', 'Converted to Quest'];
-        const allTagsFromReports = bugReports.flatMap(r => r.tags || []);
-        const submissionTagPrefix = 'ai submissions:';
-        const filteredTags = allTagsFromReports.filter(tag => !tag.toLowerCase().startsWith(submissionTagPrefix));
-        return Array.from(new Set([...defaultTags, ...filteredTags])).sort();
-    }, [bugReports]);
+    const handleGenerateSummary = async () => {
+        setIsSummaryOpen(true);
+        setIsGeneratingSummary(true);
+        setSummaryContent('');
+
+        const simplifiedReports = bugReports.map(r => ({
+            title: r.title,
+            status: r.status,
+            tags: r.tags,
+        }));
+
+        const prompt = `You are a helpful project manager assistant for an app called Task Donegeon. Based on the following list of bug reports and feature requests, provide a concise summary in Markdown format. The summary should have two main sections: '✅ Completed Work' for 'Resolved' items, and '⏳ Pending Work' for 'Open' and 'In Progress' items. Under each section, use bullet points for the items, mentioning the title and key tags. Provide a brief, one-sentence high-level overview at the very top. Here is the data: ${JSON.stringify(simplifiedReports)}`;
+
+        try {
+            const response = await fetch('/api/ai/summarize-bugs', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ bugReports: simplifiedReports })
+            });
+
+            if (!response.ok) {
+                const err = await response.json();
+                throw new Error(err.error || 'Failed to generate summary.');
+            }
+
+            const jsonResponse: { summary: string } = await response.json();
+            setSummaryContent(jsonResponse.summary || 'Could not parse the summary from the AI response.');
+
+        } catch (err) {
+            const message = err instanceof Error ? err.message : String(err);
+            setSummaryContent(`Error: ${message}`);
+            addNotification({ type: 'error', message });
+        } finally {
+            setIsGeneratingSummary(false);
+        }
+    };
     
     return (
         <div className="space-y-6">
-            <Card title="Bug Tracker">
+            <Card 
+                title="Bug Tracker"
+                headerAction={
+                    isAiAvailable && (
+                        <Button onClick={handleGenerateSummary} disabled={isGeneratingSummary} size="sm" variant="secondary">
+                            <SparklesIcon className="w-4 h-4 mr-2" />
+                            {isGeneratingSummary ? 'Summarizing...' : 'Get AI Summary'}
+                        </Button>
+                    )
+                }
+            >
                  <div className="border-b border-stone-700 mb-6">
                     <nav className="-mb-px flex space-x-6">
                         {statuses.map(status => (
@@ -158,7 +198,7 @@ const BugTrackingPage: React.FC = () => {
                                             <input type="checkbox" checked={selectedReports.includes(report.id)} onChange={e => handleCheckboxClick(e, report.id)} className="h-4 w-4 rounded text-emerald-600 bg-stone-700 border-stone-600 focus:ring-emerald-500" />
                                         </td>
                                         <td className="p-4 font-bold">
-                                            <button onClick={() => setDetailedReportId(report.id)} className="hover:underline hover:text-accent transition-colors">{report.title}</button>
+                                            <button onClick={() => setDetailedBugReportId(report.id)} className="hover:underline hover:text-accent transition-colors">{report.title}</button>
                                         </td>
                                         <td className="p-4">
                                             <div className="flex flex-wrap gap-1">
@@ -177,7 +217,7 @@ const BugTrackingPage: React.FC = () => {
                                             </button>
                                             {openDropdownId === report.id && (
                                                 <div ref={dropdownRef} className="absolute right-10 top-0 mt-2 w-36 bg-stone-900 border border-stone-700 rounded-lg shadow-xl z-20">
-                                                    <button onClick={() => { setDetailedReportId(report.id); setOpenDropdownId(null); }} className="w-full text-left block px-4 py-2 text-sm text-stone-300 hover:bg-stone-700/50">View Details</button>
+                                                    <button onClick={() => { setDetailedBugReportId(report.id); setOpenDropdownId(null); }} className="w-full text-left block px-4 py-2 text-sm text-stone-300 hover:bg-stone-700/50">View Details</button>
                                                     <button onClick={() => { setDeletingIds([report.id]); setOpenDropdownId(null); }} className="w-full text-left block px-4 py-2 text-sm text-red-400 hover:bg-stone-700/50">Delete</button>
                                                 </div>
                                             )}
@@ -192,10 +232,6 @@ const BugTrackingPage: React.FC = () => {
                     )}
                 </div>
             </Card>
-            
-            {detailedReport && (
-                <BugDetailDialog report={detailedReport} onClose={() => setDetailedReportId(null)} allTags={allBugReportTags} getTagColor={getTagColor} />
-            )}
 
             <ConfirmDialog
                 isOpen={deletingIds.length > 0}
@@ -204,6 +240,15 @@ const BugTrackingPage: React.FC = () => {
                 title={`Delete ${deletingIds.length > 1 ? 'Reports' : 'Report'}`}
                 message={`Are you sure you want to permanently delete ${deletingIds.length} report(s)?`}
             />
+
+            {isSummaryOpen && (
+                <BugSummaryDialog
+                    isOpen={isSummaryOpen}
+                    onClose={() => setIsSummaryOpen(false)}
+                    isLoading={isGeneratingSummary}
+                    content={summaryContent}
+                />
+            )}
         </div>
     );
 };

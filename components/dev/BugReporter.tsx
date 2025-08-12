@@ -7,7 +7,7 @@ import { BugReportType } from '../../types';
 import { useAppState } from '../../context/AppContext';
 
 const BugReporter: React.FC = () => {
-    const { isRecording, startRecording, stopRecording, addLogEntry, isPickingElement, startPickingElement, stopPickingElement, logs, activeBugId } = useDeveloper();
+    const { isRecording, startRecording, stopRecording, addLogEntry, isPickingElement, startPickingElement, stopPickingElement, logs, activeBugId, setDetailedBugReportId } = useDeveloper();
     const { bugReports } = useAppState();
 
     const [title, setTitle] = useState('');
@@ -200,7 +200,9 @@ const BugReporter: React.FC = () => {
                          {inProgressReports.length > 0 ? inProgressReports.map(report => (
                              <div key={report.id} className="p-2 bg-stone-800/50 rounded-md flex justify-between items-center">
                                 <div>
-                                    <p className="font-semibold text-stone-200">{report.title}</p>
+                                    <button onClick={() => setDetailedBugReportId(report.id)} className="font-semibold text-stone-200 hover:underline hover:text-accent transition-colors text-left">
+                                        {report.title}
+                                    </button>
                                     <p className="text-xs text-stone-400">Created: {new Date(report.createdAt).toLocaleDateString()}</p>
                                 </div>
                                 <Button size="sm" onClick={() => handleContinue(report.id)}>Continue</Button>

@@ -9,6 +9,7 @@ interface DeveloperState {
   isPickingElement: boolean;
   logs: BugReportLogEntry[];
   activeBugId: string | null;
+  detailedBugReportId: string | null;
 }
 
 // Dispatch
@@ -18,6 +19,7 @@ interface DeveloperDispatch {
   addLogEntry: (entry: Omit<BugReportLogEntry, 'timestamp'>) => void;
   startPickingElement: (onPick: (elementInfo: any) => void) => void;
   stopPickingElement: () => void;
+  setDetailedBugReportId: (bugId: string | null) => void;
 }
 
 const DeveloperStateContext = createContext<DeveloperState | undefined>(undefined);
@@ -28,6 +30,7 @@ export const DeveloperProvider: React.FC<{ children: ReactNode }> = ({ children 
   const [isPickingElement, setIsPickingElement] = useState(false);
   const [logs, setLogs] = useState<BugReportLogEntry[]>([]);
   const [activeBugId, setActiveBugId] = useState<string | null>(null);
+  const [detailedBugReportId, setDetailedBugReportId] = useState<string | null>(null);
 
   const [onPickCallback, setOnPickCallback] = useState<((info: any) => void) | null>(null);
   const [highlightedElement, setHighlightedElement] = useState<HTMLElement | null>(null);
@@ -38,6 +41,10 @@ export const DeveloperProvider: React.FC<{ children: ReactNode }> = ({ children 
   useEffect(() => {
     const unsubscribe = bugLogger.subscribe(setLogs);
     return () => unsubscribe();
+  }, []);
+
+  const addLogEntry = useCallback((entry: Omit<BugReportLogEntry, 'timestamp'>) => {
+    bugLogger.add(entry);
   }, []);
 
   const stopPickingElement = useCallback(() => {
@@ -84,11 +91,7 @@ export const DeveloperProvider: React.FC<{ children: ReactNode }> = ({ children 
     setIsRecording(false);
     setActiveBugId(null);
     stopPickingElement();
-  }, [addBugReport, updateBugReport, stopPickingElement, activeBugId]);
-
-  const addLogEntry = useCallback((entry: Omit<BugReportLogEntry, 'timestamp'>) => {
-    bugLogger.add(entry);
-  }, []);
+  }, [addBugReport, updateBugReport, stopPickingElement, activeBugId, addLogEntry]);
 
   const startPickingElement = useCallback((onPick: (elementInfo: any) => void) => {
     setIsPickingElement(true);
@@ -155,8 +158,8 @@ export const DeveloperProvider: React.FC<{ children: ReactNode }> = ({ children 
 
 
   return (
-    <DeveloperStateContext.Provider value={{ isRecording, isPickingElement, logs, activeBugId }}>
-      <DeveloperDispatchContext.Provider value={{ startRecording, stopRecording, addLogEntry, startPickingElement, stopPickingElement }}>
+    <DeveloperStateContext.Provider value={{ isRecording, isPickingElement, logs, activeBugId, detailedBugReportId }}>
+      <DeveloperDispatchContext.Provider value={{ startRecording, stopRecording, addLogEntry, startPickingElement, stopPickingElement, setDetailedBugReportId }}>
         {children}
       </DeveloperDispatchContext.Provider>
     </DeveloperStateContext.Provider>

@@ -1,7 +1,7 @@
 
 import React, { useState, useMemo, useCallback, useRef } from 'react';
 import { useAppState } from '../../context/AppContext';
-import { useUIState, useUIDispatch } from '../../context/UIStateContext';
+import { useUIState } from '../../context/UIStateContext';
 import { Role, ScheduledEvent, Quest, QuestType, User, QuestCompletionStatus } from '../../types';
 import Card from '../user-interface/Card';
 import { useAuthState } from '../../context/AuthContext';
@@ -21,7 +21,7 @@ import EventDetailDialog from '../calendar/EventDetailDialog';
 
 const CalendarPage: React.FC = () => {
     const { settings } = useAppState();
-    const { quests, questCompletions } = useQuestState();
+    const { questCompletions } = useQuestState();
     const { currentUser, users } = useAuthState();
     const { appMode } = useUIState();
     const { markQuestAsTodo, unmarkQuestAsTodo, updateQuest } = useQuestDispatch();
@@ -76,8 +76,7 @@ const CalendarPage: React.FC = () => {
             );
             
             if (isCompleted) {
-                // FullCalendar manages classes, so we add it to the event object itself
-                event.setProp('classNames', [...(event.classNames || []), 'event-completed']);
+                event.setProp('classNames', ['event-completed']);
             }
 
             return (
@@ -90,7 +89,8 @@ const CalendarPage: React.FC = () => {
                 </div>
             );
         }
-        return null; // Use default rendering for other event types
+        // Return null for default rendering of other event types (birthdays, GCal, etc.)
+        return null; 
     };
 
     const handleEventClick = (clickInfo: EventClickArg) => {
@@ -101,7 +101,8 @@ const CalendarPage: React.FC = () => {
             setViewingQuest({ quest: props.quest, date: clickInfo.event.start || new Date() });
         } else if (props.type === 'birthday' && props.user) {
             addNotification({type: 'info', message: `It's ${props.user.gameName}'s birthday today!`});
-        } else if (clickInfo.event.url) {
+        } else if (clickInfo.event.url) { // For GCal events
+            clickInfo.jsEvent.preventDefault(); // Prevent browser navigation
             window.open(clickInfo.event.url, '_blank');
         }
     };
@@ -164,7 +165,7 @@ const CalendarPage: React.FC = () => {
     };
 
     const handleToggleTodo = () => {
-        if (!viewingQuest) return;
+        if (!viewingQuest || !currentUser) return;
         const { quest } = viewingQuest;
         const isCurrentlyTodo = quest.todoUserIds?.includes(currentUser.id);
 
@@ -183,6 +184,12 @@ const CalendarPage: React.FC = () => {
         });
     };
 
+    const handleCreateDialogClose = () => {
+        setIsCreateDialogOpen(false);
+        // Refresh events after creating a new one might have been saved
+        calendarRef.current?.getApi().refetchEvents();
+    };
+
     return (
         <div>
             <style>{`
@@ -193,7 +200,7 @@ const CalendarPage: React.FC = () => {
                   --fc-daygrid-event-dot-width: 8px;
                   --fc-list-event-dot-width: 10px;
                   --fc-list-event-hover-bg-color: hsl(var(--secondary));
-                  --fc-event-text-color: hsl(var(--primary-foreground));
+                  --fc-event-text-color: hsl(var(--foreground));
                   --fc-today-bg-color: hsl(var(--accent) / 0.1);
                 }
                 .fc .fc-toolbar.fc-header-toolbar { margin-bottom: 1.5rem; }
@@ -273,7 +280,7 @@ const CalendarPage: React.FC = () => {
             {isCreateDialogOpen && (
                 <CreateQuestDialog
                     initialData={createInitialData}
-                    onClose={() => setIsCreateDialogOpen(false)}
+                    onClose={handleCreateDialogClose}
                 />
             )}
         </div>

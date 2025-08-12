@@ -412,7 +412,7 @@ app.get('/api/data/sync', asyncMiddleware(async (req, res) => {
 }));
 
 app.get('/api/calendar-events', asyncMiddleware(async (req, res) => {
-    const { start, end, guildId } = req.query;
+    const { start, end, guildId } = req.query; // guildId from frontend can be 'personal' or a real ID
     if (!start || !end) {
         return res.status(400).json({ error: 'start and end query parameters are required.' });
     }
@@ -428,11 +428,16 @@ app.get('/api/calendar-events', asyncMiddleware(async (req, res) => {
     ]);
 
     const events = [];
+    
+    // Normalize guildId: 'personal' becomes null, others are as-is.
+    const effectiveGuildId = guildId === 'personal' ? null : guildId;
 
     // 1. System Scheduled Events
     scheduledEvents.forEach(event => {
-        const eventScopeMatch = !event.guildId || event.guildId === guildId;
-        if (eventScopeMatch && new Date(event.startDate) <= endDate && new Date(event.endDate) >= startDate) {
+        const eventGuildId = event.guildId || null;
+        if (eventGuildId !== effectiveGuildId) return; // Strict scope matching
+
+        if (new Date(event.startDate) <= endDate && new Date(event.endDate) >= startDate) {
             events.push({
                 id: `scheduled-${event.id}`,
                 title: event.title,
@@ -445,18 +450,20 @@ app.get('/api/calendar-events', asyncMiddleware(async (req, res) => {
             });
         }
     });
-
-    // 2. Ventures
+    
+    // 2. Ventures (do these before the loop for efficiency)
     quests.filter(q => q.type === 'Venture' && q.lateDateTime).forEach(quest => {
-        const questScopeMatch = !quest.guildId || quest.guildId === guildId;
+        const questGuildId = quest.guildId || null;
+        if (questGuildId !== effectiveGuildId) return;
+
         const dueDate = new Date(quest.lateDateTime);
-        if (questScopeMatch && dueDate >= startDate && dueDate <= endDate) {
+        if (dueDate >= startDate && dueDate <= endDate) {
             events.push({
                 id: `quest-${quest.id}`,
                 title: quest.title,
                 start: quest.lateDateTime,
                 allDay: !quest.lateDateTime.includes('T'),
-                backgroundColor: 'hsl(36 90% 50% / 0.7)',
+                backgroundColor: 'hsl(36 90% 50% / 0.7)', // Amber
                 borderColor: 'hsl(36 90% 40%)',
                 editable: true,
                 extendedProps: { type: 'quest', quest }
@@ -464,7 +471,7 @@ app.get('/api/calendar-events', asyncMiddleware(async (req, res) => {
         }
     });
 
-    // 3. Duties and Birthdays (loop through range)
+    // 3. Loop through the date range for recurring duties and birthdays
     for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
         const currentDate = new Date(d);
         const currentDateYMD = currentDate.toISOString().split('T')[0];
@@ -474,8 +481,8 @@ app.get('/api/calendar-events', asyncMiddleware(async (req, res) => {
 
         // Duties
         quests.filter(q => q.type === 'Duty').forEach(duty => {
-            const dutyScopeMatch = !duty.guildId || duty.guildId === guildId;
-            if (!dutyScopeMatch) return;
+            const dutyGuildId = duty.guildId || null;
+            if (dutyGuildId !== effectiveGuildId) return;
 
             let isScheduledToday = false;
             if (duty.availabilityType === 'Daily') isScheduledToday = true;
@@ -488,7 +495,7 @@ app.get('/api/calendar-events', asyncMiddleware(async (req, res) => {
                     title: duty.title,
                     start: currentDateYMD + (duty.lateTime ? `T${duty.lateTime}` : ''),
                     allDay: !duty.lateTime,
-                    backgroundColor: 'hsl(204 85% 54% / 0.7)',
+                    backgroundColor: 'hsl(204 85% 54% / 0.7)', // Blue
                     borderColor: 'hsl(204 85% 44%)',
                     editable: false,
                     extendedProps: { type: 'quest', quest: duty }
@@ -504,7 +511,7 @@ app.get('/api/calendar-events', asyncMiddleware(async (req, res) => {
                     title: `🎂 ${user.gameName}'s Birthday`,
                     start: currentDateYMD,
                     allDay: true,
-                    backgroundColor: 'hsl(50 90% 60%)',
+                    backgroundColor: 'hsl(50 90% 60%)', // Gold
                     borderColor: 'hsl(50 90% 50%)',
                     textColor: 'hsl(50 100% 10%)',
                     editable: false,
@@ -1450,7 +1457,7 @@ app.get('/api/media/local-gallery', async (req, res, next) => {
     } catch (err) {
         next(err);
     }
-});
+}));
 
 
 // === Asset Pack Endpoints ===

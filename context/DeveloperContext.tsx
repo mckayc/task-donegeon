@@ -1,4 +1,4 @@
-import React, { createContext, useState, useContext, ReactNode, useCallback, useEffect, useMemo } from 'react';
+import React, { createContext, useState, useContext, ReactNode, useCallback, useEffect, useMemo, useRef } from 'react';
 import { BugReport, BugReportLogEntry, BugReportType } from '../types';
 import { useAppDispatch, useAppState } from './AppContext';
 import { bugLogger } from '../utils/bugLogger';
@@ -29,11 +29,20 @@ export const DeveloperProvider: React.FC<{ children: ReactNode }> = ({ children 
   const [logs, setLogs] = useState<BugReportLogEntry[]>([]);
   const [activeBugId, setActiveBugId] = useState<string | null>(null);
 
-  const [onPickCallback, setOnPickCallback] = useState<((info: any) => void) | null>(null);
-  const [highlightedElement, setHighlightedElement] = useState<HTMLElement | null>(null);
+  const onPickCallbackRef = useRef<((info: any) => void) | null>(null);
+  const highlightedElementRef = useRef<HTMLElement | null>(null);
 
-  const { addBugReport, updateBugReport } = useAppDispatch();
+  const appDispatch = useAppDispatch();
   const { bugReports } = useAppState();
+  
+  const appDispatchRef = useRef(appDispatch);
+  useEffect(() => { appDispatchRef.current = appDispatch; }, [appDispatch]);
+
+  const bugReportsRef = useRef(bugReports);
+  useEffect(() => { bugReportsRef.current = bugReports; }, [bugReports]);
+
+  const activeBugIdRef = useRef(activeBugId);
+  useEffect(() => { activeBugIdRef.current = activeBugId; }, [activeBugId]);
 
   useEffect(() => {
     const unsubscribe = bugLogger.subscribe(setLogs);
@@ -41,18 +50,18 @@ export const DeveloperProvider: React.FC<{ children: ReactNode }> = ({ children 
   }, []);
 
   const stopPickingElement = useCallback(() => {
-      if (highlightedElement) {
-          highlightedElement.style.outline = '';
-          setHighlightedElement(null);
+      if (highlightedElementRef.current) {
+          highlightedElementRef.current.style.outline = '';
+          highlightedElementRef.current = null;
       }
       setIsPickingElement(false);
-      setOnPickCallback(null);
-  }, [highlightedElement]);
+      onPickCallbackRef.current = null;
+  }, []);
 
   const startRecording = useCallback((bugId?: string) => {
     let initialLogs: BugReportLogEntry[] = [];
     if (bugId) {
-        const existingReport = bugReports.find(b => b.id === bugId);
+        const existingReport = bugReportsRef.current.find(b => b.id === bugId);
         if (existingReport) {
             initialLogs = existingReport.logs;
             setActiveBugId(bugId);
@@ -63,14 +72,14 @@ export const DeveloperProvider: React.FC<{ children: ReactNode }> = ({ children 
     bugLogger.start(initialLogs);
     setIsRecording(true);
     bugLogger.add({ type: 'STATE_CHANGE', message: bugId ? `Continued recording for report ID ${bugId}.` : 'Recording started.' });
-  }, [bugReports]);
+  }, []);
 
   const stopRecording = useCallback((title: string, reportType: BugReportType) => {
     bugLogger.add({type: 'STATE_CHANGE', message: 'Recording stopped. Report updated.'});
     const finalLogs = bugLogger.stop();
     
-    if (activeBugId) {
-        updateBugReport(activeBugId, { logs: finalLogs });
+    if (activeBugIdRef.current) {
+        appDispatchRef.current.updateBugReport(activeBugIdRef.current, { logs: finalLogs });
     } else {
         const newReport = {
             title,
@@ -78,13 +87,13 @@ export const DeveloperProvider: React.FC<{ children: ReactNode }> = ({ children 
             createdAt: new Date().toISOString(),
             logs: finalLogs,
         };
-        addBugReport(newReport);
+        appDispatchRef.current.addBugReport(newReport);
     }
 
     setIsRecording(false);
     setActiveBugId(null);
     stopPickingElement();
-  }, [addBugReport, updateBugReport, stopPickingElement, activeBugId]);
+  }, [stopPickingElement]);
 
   const addLogEntry = useCallback((entry: Omit<BugReportLogEntry, 'timestamp'>) => {
     bugLogger.add(entry);
@@ -92,31 +101,31 @@ export const DeveloperProvider: React.FC<{ children: ReactNode }> = ({ children 
 
   const startPickingElement = useCallback((onPick: (elementInfo: any) => void) => {
     setIsPickingElement(true);
-    setOnPickCallback(() => onPick);
+    onPickCallbackRef.current = onPick;
   }, []);
 
   useEffect(() => {
-    if (!isPickingElement || !onPickCallback) return;
+    if (!isPickingElement) return;
 
     const handleMouseOver = (e: MouseEvent) => {
         const target = e.target as HTMLElement;
 
         if (target?.closest('[data-bug-reporter-ignore]')) {
-             if (highlightedElement) {
-                highlightedElement.style.outline = '';
-                setHighlightedElement(null);
+             if (highlightedElementRef.current) {
+                highlightedElementRef.current.style.outline = '';
+                highlightedElementRef.current = null;
             }
             return;
         }
 
-        if (highlightedElement && highlightedElement !== target) {
-            highlightedElement.style.outline = '';
+        if (highlightedElementRef.current && highlightedElementRef.current !== target) {
+            highlightedElementRef.current.style.outline = '';
         }
 
         if (target) {
             target.style.outline = '3px dashed red';
             target.style.outlineOffset = '2px';
-            setHighlightedElement(target);
+            highlightedElementRef.current = target;
         }
     };
 
@@ -137,7 +146,9 @@ export const DeveloperProvider: React.FC<{ children: ReactNode }> = ({ children 
             text: target.innerText?.substring(0, 50) || undefined,
         };
 
-        onPickCallback(elementInfo);
+        if (onPickCallbackRef.current) {
+            onPickCallbackRef.current(elementInfo);
+        }
         stopPickingElement();
     };
 
@@ -147,13 +158,13 @@ export const DeveloperProvider: React.FC<{ children: ReactNode }> = ({ children 
     return () => {
         document.removeEventListener('mouseover', handleMouseOver);
         document.removeEventListener('click', handleClick, { capture: true });
-        if (highlightedElement) {
-            highlightedElement.style.outline = '';
+        if (highlightedElementRef.current) {
+            highlightedElementRef.current.style.outline = '';
         }
     };
-  }, [isPickingElement, onPickCallback, stopPickingElement, highlightedElement]);
+  }, [isPickingElement, stopPickingElement]);
 
-  const state = { isRecording, isPickingElement, logs, activeBugId };
+  const state = useMemo(() => ({ isRecording, isPickingElement, logs, activeBugId }), [isRecording, isPickingElement, logs, activeBugId]);
 
   const dispatch = useMemo(() => ({
     startRecording,

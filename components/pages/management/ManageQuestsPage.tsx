@@ -38,9 +38,10 @@ const ManageQuestsPage: React.FC = () => {
     const debouncedSearchTerm = useDebounce(searchTerm, 300);
 
     const isAiAvailable = settings.enableAiFeatures && isAiConfigured;
-
+    
     const pageQuestIds = useMemo(() => pageQuests.map(q => q.id), [pageQuests]);
     const handleCheckboxClick = useShiftSelect(pageQuestIds, selectedQuests, setSelectedQuests);
+
 
     const apiRequest = useCallback(async (method: string, path: string, body?: any) => {
         try {

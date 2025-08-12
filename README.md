@@ -1,6 +1,6 @@
 # Task Donegeon
 
-**Version:** 0.0.51
+**Version:** 0.0.98
 
 ---
 
@@ -15,10 +15,15 @@ Task Donegeon is a gamified task and chore management application designed for f
 
 ## ✨ Features
 
-### What's New in Version 0.0.51 (August 8, 2025)
+### What's New in Version 0.0.98 (August 12, 2025)
+-   **Critical Stability Fix:** Overhauled the data synchronization logic to eliminate UI flickering, state inconsistencies, and infinite re-rendering loops that occurred after performing actions. The application is now significantly more stable and performant.
+-   **Calendar Overhaul:** The calendar page has been improved with better styling to match the app theme, a more intuitive button layout (`Day, Week, Month`), and a `dayMaxEvents` setting to prevent visual clutter in the month view.
+-   **Bug Tracker UI/UX Fixes:** The bug detail dialog's log view now only auto-scrolls when new comments are added, allowing for free scrolling.
 -   **Sidebar Notification Badge Fix:** Fixed a UI inconsistency where the notification count for pending approvals was not shown on the 'Approvals' link when its parent 'User Management' group was expanded. The badge now correctly moves to the specific link, improving user experience.
+-   **Shift-Selection Implemented:** Users can now hold the Shift key to select a range of items in tables across management pages (Manage Quests, Ranks, Trophies, etc.), improving bulk editing workflow.
 
 ### Version History
+- **v0.0.51 (August 8, 2025):** Rolled back to an older, stable version to address build issues.
 - **v0.0.97 (July 23, 2025):** New "Vacation" Event Type, Calendar-Driven Vacations, Automatic Penalty Pausing, Streamlined Settings.
 - **v0.0.96 (July 22, 2025):** Default Quest Groups, AI-powered group suggestions, streamlined quest creation.
 - **v0.0.95 (July 22, 2025):** Smarter Suggestion Engine, powerful bulk editing for quests, enhanced collapsed sidebar with fly-out menus, and default quest categories.

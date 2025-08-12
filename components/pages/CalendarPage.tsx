@@ -75,7 +75,7 @@ const CalendarPage: React.FC = () => {
                         title: quest.title,
                         extendedProps: { quest, type: 'quest' },
                         allDay: quest.type === QuestType.Venture && !quest.lateDateTime?.includes('T'),
-                        backgroundColor: quest.type === QuestType.Duty ? 'hsl(204 85% 54%)' : 'hsl(36 90% 50%)',
+                        backgroundColor: quest.type === QuestType.Duty ? 'hsl(204 85% 54% / 0.7)' : 'hsl(36 90% 50% / 0.7)',
                         borderColor: quest.type === QuestType.Duty ? 'hsl(204 85% 44%)' : 'hsl(36 90% 40%)'
                     };
 
@@ -252,6 +252,8 @@ const CalendarPage: React.FC = () => {
                   --fc-daygrid-event-dot-width: 8px;
                   --fc-list-event-dot-width: 10px;
                   --fc-list-event-hover-bg-color: hsl(var(--secondary));
+                  --fc-event-text-color: hsl(var(--primary-foreground));
+                  --fc-today-bg-color: hsl(var(--accent) / 0.1);
                 }
                 .fc .fc-toolbar.fc-header-toolbar { margin-bottom: 1.5rem; }
                 .fc .fc-toolbar-title { font-family: var(--font-display); color: hsl(var(--accent-light)); }
@@ -259,7 +261,6 @@ const CalendarPage: React.FC = () => {
                 .fc .fc-button-primary:hover { background-color: hsl(var(--accent) / 0.5); }
                 .fc .fc-button-primary:disabled { background-color: hsl(var(--muted)); }
                 .fc .fc-button-primary:not(:disabled).fc-button-active, .fc .fc-button-primary:not(:disabled):active { background-color: hsl(var(--primary)); color: hsl(var(--primary-foreground)); }
-                .fc .fc-daygrid-day.fc-day-today { background-color: hsl(var(--accent) / 0.1); }
                 .fc .fc-daygrid-day-number { color: hsl(var(--foreground)); padding: 4px; }
                 .fc .fc-day-past .fc-daygrid-day-number { color: hsl(var(--muted-foreground)); }
                 .fc .fc-event { border: 1px solid hsl(var(--border)) !important; font-size: 0.75rem; padding: 2px 4px; }
@@ -286,7 +287,7 @@ const CalendarPage: React.FC = () => {
                         headerToolbar={{
                             left: 'prev,next today',
                             center: 'title',
-                            right: 'dayGridMonth,timeGridWeek,dayGridDay'
+                            right: 'dayGridDay,timeGridWeek,dayGridMonth'
                         }}
                         buttonText={{ day: 'Day', week: 'Week', month: 'Month' }}
                         initialView="dayGridMonth"
@@ -299,7 +300,8 @@ const CalendarPage: React.FC = () => {
                         dateClick={handleDateClick}
                         height="auto"
                         contentHeight="auto"
-                        aspectRatio={1.5}
+                        aspectRatio={1.8}
+                        dayMaxEvents={true}
                     />
                  </div>
             </Card>

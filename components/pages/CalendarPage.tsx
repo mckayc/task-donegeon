@@ -277,7 +277,7 @@ const CalendarPage: React.FC = () => {
                         selectable={false}
                         lazyFetching={true}
                         eventDrop={handleEventDrop}
-                        dateClick={handleDateClick}
+                        dateClick={currentUser?.role === Role.DonegeonMaster ? handleDateClick : undefined}
                         height="auto"
                         contentHeight="auto"
                         aspectRatio={1.8}

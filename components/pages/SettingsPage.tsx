@@ -122,7 +122,7 @@ const terminologyLabels: { [key in keyof Terminology]: string } = {
 
 
 export const SettingsPage: React.FC = () => {
-    const { settings } = useAppState();
+    const { settings, isAiConfigured } = useAppState();
     const { users } = useAuthState();
     const { rewardTypes } = useEconomyState();
     const { updateSettings, resetSettings, clearAllHistory, resetAllPlayerData, deleteAllCustomContent, factoryReset } = useAppDispatch();
@@ -212,8 +212,20 @@ export const SettingsPage: React.FC = () => {
                                  {useAppState().themes.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
                             </Input>
                         </div>
+                         <div className="pt-4 border-t border-stone-700/60">
+                            <div className="flex justify-between items-center">
+                                <ToggleSwitch enabled={formState.enableAiFeatures} setEnabled={(val: boolean) => handleSimpleChange('enableAiFeatures', val)} label="Enable AI Features" />
+                                {isAiConfigured ? (
+                                    <span className="text-xs font-bold text-green-400 bg-green-900/50 px-3 py-1 rounded-full">API Key Connected</span>
+                                ) : (
+                                    <span className="text-xs font-bold text-red-400 bg-red-900/50 px-3 py-1 rounded-full">API Key Missing</span>
+                                )}
+                            </div>
+                            <p className="text-xs text-stone-400 mt-1 ml-12">
+                                Enables features like the Suggestion Engine and AI Summaries, powered by Google Gemini. Requires a valid API key to be set on the server.
+                            </p>
+                        </div>
                          <div className="pt-4 border-t border-stone-700/60 grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <ToggleSwitch enabled={formState.enableAiFeatures} setEnabled={(val: boolean) => handleSimpleChange('enableAiFeatures', val)} label="Enable AI Features" />
                             <ToggleSwitch enabled={formState.developerMode.enabled} setEnabled={(val: boolean) => handleSettingChange('developerMode', 'enabled', val)} label="Enable Developer Mode" />
                             <ToggleSwitch enabled={formState.loginNotifications.enabled} setEnabled={(val: boolean) => handleSettingChange('loginNotifications', 'enabled', val)} label="Show Login Notifications" />
                             <ToggleSwitch enabled={formState.chat.enabled} setEnabled={(val: boolean) => handleSettingChange('chat', 'enabled', val)} label="Enable Chat" />

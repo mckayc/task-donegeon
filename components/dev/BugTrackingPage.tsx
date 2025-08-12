@@ -24,9 +24,7 @@ const BugTrackingPage: React.FC = () => {
     const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
     const dropdownRef = useRef<HTMLDivElement | null>(null);
     
-    const [isSummaryOpen, setIsSummaryOpen] = useState(false);
-    const [summaryContent, setSummaryContent] = useState('');
-    const [isGeneratingSummary, setIsGeneratingSummary] = useState(false);
+    const [isSummaryGeneratorOpen, setIsSummaryGeneratorOpen] = useState(false);
 
     const statuses: BugReportStatus[] = ['In Progress', 'Open', 'Resolved', 'Closed'];
     const isAiAvailable = settings.enableAiFeatures && isAiConfigured;
@@ -95,43 +93,6 @@ const BugTrackingPage: React.FC = () => {
             default: return 'bg-stone-500/20 text-stone-300';
         }
     };
-
-    const handleGenerateSummary = async () => {
-        setIsSummaryOpen(true);
-        setIsGeneratingSummary(true);
-        setSummaryContent('');
-
-        const simplifiedReports = bugReports.map(r => ({
-            title: r.title,
-            status: r.status,
-            tags: r.tags,
-        }));
-
-        const prompt = `You are a helpful project manager assistant for an app called Task Donegeon. Based on the following list of bug reports and feature requests, provide a concise summary in Markdown format. The summary should have two main sections: '✅ Completed Work' for 'Resolved' items, and '⏳ Pending Work' for 'Open' and 'In Progress' items. Under each section, use bullet points for the items, mentioning the title and key tags. Provide a brief, one-sentence high-level overview at the very top. Here is the data: ${JSON.stringify(simplifiedReports)}`;
-
-        try {
-            const response = await fetch('/api/ai/summarize-bugs', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ bugReports: simplifiedReports })
-            });
-
-            if (!response.ok) {
-                const err = await response.json();
-                throw new Error(err.error || 'Failed to generate summary.');
-            }
-
-            const jsonResponse: { summary: string } = await response.json();
-            setSummaryContent(jsonResponse.summary || 'Could not parse the summary from the AI response.');
-
-        } catch (err) {
-            const message = err instanceof Error ? err.message : String(err);
-            setSummaryContent(`Error: ${message}`);
-            addNotification({ type: 'error', message });
-        } finally {
-            setIsGeneratingSummary(false);
-        }
-    };
     
     return (
         <div className="space-y-6">
@@ -139,9 +100,9 @@ const BugTrackingPage: React.FC = () => {
                 title="Bug Tracker"
                 headerAction={
                     isAiAvailable && (
-                        <Button onClick={handleGenerateSummary} disabled={isGeneratingSummary} size="sm" variant="secondary">
+                        <Button onClick={() => setIsSummaryGeneratorOpen(true)} size="sm" variant="secondary">
                             <SparklesIcon className="w-4 h-4 mr-2" />
-                            {isGeneratingSummary ? 'Summarizing...' : 'Get AI Summary'}
+                            Get AI Summary
                         </Button>
                     )
                 }
@@ -241,12 +202,10 @@ const BugTrackingPage: React.FC = () => {
                 message={`Are you sure you want to permanently delete ${deletingIds.length} report(s)?`}
             />
 
-            {isSummaryOpen && (
+            {isSummaryGeneratorOpen && (
                 <BugSummaryDialog
-                    isOpen={isSummaryOpen}
-                    onClose={() => setIsSummaryOpen(false)}
-                    isLoading={isGeneratingSummary}
-                    content={summaryContent}
+                    isOpen={isSummaryGeneratorOpen}
+                    onClose={() => setIsSummaryGeneratorOpen(false)}
                 />
             )}
         </div>

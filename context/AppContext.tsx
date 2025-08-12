@@ -1,23 +1,29 @@
+
 import React, { createContext, useState, useContext, ReactNode, useEffect, useCallback, useMemo, useRef } from 'react';
-import { AppSettings, User, Quest, RewardItem, Guild, Rank, Trophy, UserTrophy, AppMode, Page, IAppData, ShareableAssetType, GameAsset, Role, RewardCategory, AdminAdjustment, AdminAdjustmentType, SystemLog, QuestType, QuestAvailability, AssetPack, ImportResolution, TrophyRequirementType, ThemeDefinition, ChatMessage, SystemNotification, SystemNotificationType, MarketStatus, QuestGroup, BulkQuestUpdates, ScheduledEvent, BugReport, QuestCompletion, BugReportType } from '../types';
+import { AppSettings, User, Quest, RewardItem, Guild, Rank, Trophy, UserTrophy, AppMode, Page, IAppData, ShareableAssetType, GameAsset, Role, RewardCategory, AdminAdjustment, AdminAdjustmentType, SystemLog, QuestType, QuestAvailability, AssetPack, ImportResolution, TrophyRequirementType, ThemeDefinition, ChatMessage, SystemNotification, SystemNotificationType, MarketStatus, QuestGroup, BulkQuestUpdates, ScheduledEvent, BugReport, QuestCompletion, BugReportType, PurchaseRequest, PurchaseRequestStatus, Market, RewardTypeDefinition, QuestCompletionStatus } from '../types';
 import { INITIAL_SETTINGS, INITIAL_RANKS, INITIAL_TROPHIES, INITIAL_THEMES } from '../data/initialData';
 import { useNotificationsDispatch } from './NotificationsContext';
-import { useAuthState, useAuthDispatch } from './AuthContext';
-import { useEconomyDispatch } from './EconomyContext';
-import { useQuestDispatch } from './QuestContext';
 import { bugLogger } from '../utils/bugLogger';
+import { toYMD } from '../utils/quests';
 
-// The single, unified state for the non-auth/quest parts of the application
-interface AppState extends Omit<IAppData, 'users' | 'loginHistory' | 'quests' | 'questGroups' | 'questCompletions' | 'markets' | 'rewardTypes' | 'purchaseRequests' | 'gameAssets'> {
+// Combine all state interfaces
+interface AppState extends IAppData {
   isDataLoaded: boolean;
   isAiConfigured: boolean;
   syncStatus: 'idle' | 'syncing' | 'success' | 'error';
   syncError: string | null;
+  currentUser: User | null;
+  isAppUnlocked: boolean;
+  isFirstRun: boolean;
+  isSwitchingUser: boolean;
+  isSharedViewActive: boolean;
+  targetedUserForLogin: User | null;
+  allTags: string[];
 }
 
-// The single, unified dispatch for the non-auth/quest parts of the application
+// Combine all dispatch interfaces
 interface AppDispatch {
-  // Game Data
+  // Game Data & Admin
   addGuild: (guild: Omit<Guild, 'id'>) => void;
   updateGuild: (guild: Guild) => void;
   deleteGuild: (guildId: string) => void;
@@ -44,7 +50,7 @@ interface AppDispatch {
   uploadFile: (file: File, category?: string) => Promise<{ url: string } | null>;
   factoryReset: () => void;
 
-  // Settings & UI
+  // Settings & System
   updateSettings: (settings: Partial<AppSettings>) => void;
   resetSettings: () => void;
   sendMessage: (message: Omit<ChatMessage, 'id' | 'timestamp' | 'readBy' | 'senderId'> & { isAnnouncement?: boolean }) => void;
@@ -52,6 +58,76 @@ interface AppDispatch {
   addSystemNotification: (notification: Omit<SystemNotification, 'id' | 'timestamp' | 'readByUserIds'>) => void;
   markSystemNotificationsAsRead: (notificationIds: string[]) => void;
   triggerSync: () => void;
+  
+  // Auth
+  setUsers: React.Dispatch<React.SetStateAction<User[]>>;
+  setLoginHistory: React.Dispatch<React.SetStateAction<string[]>>;
+  addUser: (userData: Omit<User, 'id' | 'personalPurse' | 'personalExperience' | 'guildBalances' | 'avatar' | 'ownedAssetIds' | 'ownedThemes' | 'hasBeenOnboarded'>) => Promise<User | null>;
+  updateUser: (userId: string, update: Partial<User> | ((user: User) => User), persist?: boolean) => void;
+  deleteUsers: (userIds: string[]) => void;
+  setCurrentUser: (user: User | null) => void;
+  markUserAsOnboarded: (userId: string) => void;
+  setAppUnlocked: (isUnlocked: boolean) => void;
+  setIsSwitchingUser: (isSwitching: boolean) => void;
+  setTargetedUserForLogin: (user: User | null) => void;
+  exitToSharedView: () => void;
+  setIsSharedViewActive: (isActive: boolean) => void;
+  resetAllUsersData: () => void;
+  completeFirstRun: (adminUserData: any) => void;
+
+  // Economy
+  setMarkets: React.Dispatch<React.SetStateAction<Market[]>>;
+  setRewardTypes: React.Dispatch<React.SetStateAction<RewardTypeDefinition[]>>;
+  setPurchaseRequests: React.Dispatch<React.SetStateAction<PurchaseRequest[]>>;
+  setGameAssets: React.Dispatch<React.SetStateAction<GameAsset[]>>;
+  addRewardType: (rewardType: Omit<RewardTypeDefinition, 'id' | 'isCore'>) => void;
+  updateRewardType: (rewardType: RewardTypeDefinition) => void;
+  deleteRewardType: (rewardTypeId: string) => void;
+  cloneRewardType: (rewardTypeId: string) => void;
+  addMarket: (market: Omit<Market, 'id'>) => void;
+  updateMarket: (market: Market) => void;
+  deleteMarket: (marketId: string) => void;
+  cloneMarket: (marketId: string) => void;
+  deleteMarkets: (marketIds: string[]) => void;
+  updateMarketsStatus: (marketIds: string[], statusType: 'open' | 'closed') => void;
+  addGameAsset: (asset: Omit<GameAsset, 'id' | 'creatorId' | 'createdAt' | 'purchaseCount'>) => void;
+  updateGameAsset: (asset: GameAsset) => void;
+  deleteGameAsset: (assetId: string) => void;
+  cloneGameAsset: (assetId: string) => void;
+  deleteGameAssets: (assetIds: string[]) => void;
+  purchaseMarketItem: (assetId: string, marketId: string, user: User, costGroupIndex: number, scheduledEvents: ScheduledEvent[]) => void;
+  cancelPurchaseRequest: (purchaseId: string) => void;
+  approvePurchaseRequest: (purchaseId: string) => void;
+  rejectPurchaseRequest: (purchaseId: string) => void;
+  applyRewards: (userId: string, rewardsToApply: RewardItem[], guildId?: string, persist?: boolean) => void;
+  deductRewards: (userId: string, cost: RewardItem[], guildId?: string, persist?: boolean) => Promise<boolean>;
+  executeExchange: (userId: string, payItem: RewardItem, receiveItem: RewardItem, guildId?: string) => void;
+  importAssetPack: (assetPack: AssetPack, resolutions: ImportResolution[], allData: IAppData) => Promise<void>;
+
+  // Quests
+  setQuests: React.Dispatch<React.SetStateAction<Quest[]>>;
+  setQuestGroups: React.Dispatch<React.SetStateAction<QuestGroup[]>>;
+  setQuestCompletions: React.Dispatch<React.SetStateAction<QuestCompletion[]>>;
+  addQuest: (quest: Omit<Quest, 'id' | 'claimedByUserIds' | 'dismissals'>) => void;
+  updateQuest: (updatedQuest: Quest) => void;
+  deleteQuest: (questId: string) => void;
+  cloneQuest: (questId: string) => void;
+  dismissQuest: (questId: string, userId: string) => void;
+  claimQuest: (questId: string, userId: string) => void;
+  releaseQuest: (questId: string, userId: string) => void;
+  markQuestAsTodo: (questId: string, userId: string) => void;
+  unmarkQuestAsTodo: (questId: string, userId: string) => void;
+  completeQuest: (completionData: any) => Promise<void>;
+  approveQuestCompletion: (completionId: string, note?: string) => Promise<void>;
+  rejectQuestCompletion: (completionId: string, note?: string) => Promise<void>;
+  addQuestGroup: (group: Omit<QuestGroup, 'id'>) => QuestGroup;
+  updateQuestGroup: (group: QuestGroup) => void;
+  deleteQuestGroup: (groupId: string) => void;
+  deleteQuestGroups: (groupIds: string[]) => void;
+  assignQuestGroupToUsers: (groupId: string, userIds: string[]) => void;
+  deleteQuests: (questIds: string[]) => void;
+  updateQuestsStatus: (questIds: string[], isActive: boolean) => void;
+  bulkUpdateQuests: (questIds: string[], updates: BulkQuestUpdates) => void;
 }
 
 const AppStateContext = createContext<AppState | undefined>(undefined);
@@ -65,12 +141,29 @@ const mergeData = <T extends { id: string }>(existing: T[], incoming: T[]): T[] 
 
 export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const { addNotification, updateNotification } = useNotificationsDispatch();
-  const { currentUser } = useAuthState();
-  const authDispatch = useAuthDispatch();
-  const economyDispatch = useEconomyDispatch();
-  const questDispatch = useQuestDispatch();
 
-  // === STATE MANAGEMENT ===
+  // === ALL APP STATE ===
+  // Auth
+  const [users, setUsers] = useState<User[]>([]);
+  const [currentUser, _setCurrentUser] = useState<User | null>(null);
+  const [isAppUnlocked, _setAppUnlocked] = useState<boolean>(() => localStorage.getItem('isAppUnlocked') === 'true');
+  const [isSwitchingUser, setIsSwitchingUser] = useState<boolean>(false);
+  const [isSharedViewActive, setIsSharedViewActive] = useState(false);
+  const [targetedUserForLogin, setTargetedUserForLogin] = useState<User | null>(null);
+  const [loginHistory, setLoginHistory] = useState<string[]>([]);
+  
+  // Economy
+  const [markets, setMarkets] = useState<Market[]>([]);
+  const [rewardTypes, setRewardTypes] = useState<RewardTypeDefinition[]>([]);
+  const [purchaseRequests, setPurchaseRequests] = useState<PurchaseRequest[]>([]);
+  const [gameAssets, setGameAssets] = useState<GameAsset[]>([]);
+  
+  // Quests
+  const [quests, setQuests] = useState<Quest[]>([]);
+  const [questGroups, setQuestGroups] = useState<QuestGroup[]>([]);
+  const [questCompletions, setQuestCompletions] = useState<QuestCompletion[]>([]);
+
+  // App/System
   const [guilds, setGuilds] = useState<Guild[]>([]);
   const [ranks, setRanks] = useState<Rank[]>([]);
   const [trophies, setTrophies] = useState<Trophy[]>([]);
@@ -84,16 +177,20 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [scheduledEvents, setScheduledEvents] = useState<ScheduledEvent[]>([]);
   const [bugReports, setBugReports] = useState<BugReport[]>([]);
 
-  // UI State that remains global due to cross-cutting concerns
+  // UI State
   const [isDataLoaded, setIsDataLoaded] = useState(false);
   const [syncStatus, setSyncStatus] = useState<'idle' | 'syncing' | 'success' | 'error'>('idle');
   const [syncError, setSyncError] = useState<string | null>(null);
   const [isAiConfigured, setIsAiConfigured] = useState(false);
   
-  // Ref to hold the last sync timestamp without causing re-renders
+  // Derived State
+  const isFirstRun = users.length === 0 && isDataLoaded;
+  const allTags = useMemo(() => 
+    Array.from(new Set(['Cleaning', 'Learning', 'Health', 'Yardwork', ...quests.flatMap(q => q.tags || [])])).sort(), 
+  [quests]);
+
   const lastSyncTimestamp = useRef<string | null>(null);
   
-  // === API HELPERS ===
   const apiRequest = useCallback(async (method: string, path: string, body?: any) => {
     try {
         const options: RequestInit = {
@@ -113,21 +210,32 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         }
         return await response.json();
     } catch (error) {
-        // Error notifications will be handled by the calling function using the new pattern
-        // addNotification({ type: 'error', message: error instanceof Error ? error.message : 'An unknown network error occurred.' });
+        addNotification({ type: 'error', message: error instanceof Error ? error.message : 'An unknown network error occurred.' });
         throw error;
     }
-  }, []);
-  
-  // === DATA SYNC & LOADING ===
-  
+  }, [addNotification]);
+
+  const setCurrentUser = useCallback((user: User | null) => {
+    if (currentUser?.id === user?.id) return;
+    if (bugLogger.isRecording()) {
+        bugLogger.add({ type: 'STATE_CHANGE', message: `Setting current user to: ${user?.gameName || 'null'}` });
+    }
+    _setCurrentUser(user);
+    setIsSharedViewActive(false);
+    if (user) {
+        localStorage.setItem('lastUserId', user.id);
+        setLoginHistory(prev => [user.id, ...prev.filter(id => id !== user.id).slice(0, 9)]);
+    } else {
+        localStorage.removeItem('lastUserId');
+    }
+  }, [currentUser]);
+
   const processAndSetData = useCallback((dataToSet: IAppData, isDelta = false) => {
       const savedSettings: Partial<AppSettings> = dataToSet.settings || {};
       let settingsUpdated = false;
       let loadedSettingsResult: AppSettings | undefined = undefined;
 
       if (!isDelta) {
-          // --- Sidebar Migration Logic ---
           const savedSidebarConfig = savedSettings.sidebars?.main || [];
           const defaultSidebarConfig = INITIAL_SETTINGS.sidebars.main;
           const savedIds = new Set(savedSidebarConfig.map(item => item.id));
@@ -137,7 +245,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
           if (missingItems.length > 0) {
               finalSidebarConfig = [...savedSidebarConfig, ...missingItems];
               settingsUpdated = true;
-              console.log(`Migrating sidebar: Added ${missingItems.length} new items.`);
           }
 
           const loadedSettings: AppSettings = {
@@ -157,23 +264,18 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
           setSettings(loadedSettings);
           loadedSettingsResult = loadedSettings;
       } else if (dataToSet.settings) {
-          // If it's a delta update and settings are present, just merge them
           setSettings(prev => ({ ...prev, ...dataToSet.settings }));
       }
 
-      // Update states, either by full replacement or by merging
-      if (dataToSet.users) authDispatch.setUsers(prev => isDelta ? mergeData(prev, dataToSet.users!) : dataToSet.users!);
-      if (dataToSet.loginHistory) authDispatch.setLoginHistory(dataToSet.loginHistory);
-
-      if (dataToSet.quests) questDispatch.setQuests(prev => isDelta ? mergeData(prev, dataToSet.quests!) : dataToSet.quests!);
-      if (dataToSet.questGroups) questDispatch.setQuestGroups(prev => isDelta ? mergeData(prev, dataToSet.questGroups!) : dataToSet.questGroups!);
-      if (dataToSet.questCompletions) questDispatch.setQuestCompletions(prev => isDelta ? mergeData(prev, dataToSet.questCompletions!) : dataToSet.questCompletions!);
-      
-      if (dataToSet.markets) economyDispatch.setMarkets(prev => isDelta ? mergeData(prev, dataToSet.markets!) : dataToSet.markets!);
-      if (dataToSet.rewardTypes) economyDispatch.setRewardTypes(prev => isDelta ? mergeData(prev, dataToSet.rewardTypes!) : dataToSet.rewardTypes!);
-      if (dataToSet.purchaseRequests) economyDispatch.setPurchaseRequests(prev => isDelta ? mergeData(prev, dataToSet.purchaseRequests!) : dataToSet.purchaseRequests!);
-      if (dataToSet.gameAssets) economyDispatch.setGameAssets(prev => isDelta ? mergeData(prev, dataToSet.gameAssets!) : dataToSet.gameAssets!);
-
+      if (dataToSet.users) setUsers(prev => isDelta ? mergeData(prev, dataToSet.users!) : dataToSet.users!);
+      if (dataToSet.loginHistory) setLoginHistory(dataToSet.loginHistory);
+      if (dataToSet.quests) setQuests(prev => isDelta ? mergeData(prev, dataToSet.quests!) : dataToSet.quests!);
+      if (dataToSet.questGroups) setQuestGroups(prev => isDelta ? mergeData(prev, dataToSet.questGroups!) : dataToSet.questGroups!);
+      if (dataToSet.questCompletions) setQuestCompletions(prev => isDelta ? mergeData(prev, dataToSet.questCompletions!) : dataToSet.questCompletions!);
+      if (dataToSet.markets) setMarkets(prev => isDelta ? mergeData(prev, dataToSet.markets!) : dataToSet.markets!);
+      if (dataToSet.rewardTypes) setRewardTypes(prev => isDelta ? mergeData(prev, dataToSet.rewardTypes!) : dataToSet.rewardTypes!);
+      if (dataToSet.purchaseRequests) setPurchaseRequests(prev => isDelta ? mergeData(prev, dataToSet.purchaseRequests!) : dataToSet.purchaseRequests!);
+      if (dataToSet.gameAssets) setGameAssets(prev => isDelta ? mergeData(prev, dataToSet.gameAssets!) : dataToSet.gameAssets!);
       if (dataToSet.guilds) setGuilds(prev => isDelta ? mergeData(prev, dataToSet.guilds!) : dataToSet.guilds!);
       if (dataToSet.ranks) setRanks(prev => isDelta ? mergeData(prev, dataToSet.ranks!) : dataToSet.ranks!);
       if (dataToSet.trophies) setTrophies(prev => isDelta ? mergeData(prev, dataToSet.trophies!) : dataToSet.trophies!);
@@ -187,7 +289,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       if (dataToSet.bugReports) setBugReports(prev => isDelta ? mergeData(prev, dataToSet.bugReports!) : dataToSet.bugReports!);
 
       return { settingsUpdated, loadedSettings: loadedSettingsResult };
-  }, [authDispatch, questDispatch, economyDispatch]);
+  }, [addNotification, setCurrentUser]);
   
   const initialSync = useCallback(async () => {
     try {
@@ -205,11 +307,11 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       const lastUserId = localStorage.getItem('lastUserId');
       if (lastUserId && updates.users) {
         const lastUser = updates.users.find((u:User) => u.id === lastUserId);
-        if (lastUser) authDispatch.setCurrentUser(lastUser);
+        if (lastUser) _setCurrentUser(lastUser);
       }
       
       if (loadedSettings) {
-        authDispatch.setIsSharedViewActive(loadedSettings.sharedMode.enabled && !localStorage.getItem('lastUserId'));
+        setIsSharedViewActive(loadedSettings.sharedMode.enabled && !localStorage.getItem('lastUserId'));
       }
 
       lastSyncTimestamp.current = newSyncTimestamp;
@@ -217,7 +319,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     } catch (error) {
       console.error("Could not load data from server.", error);
     }
-  }, [apiRequest, processAndSetData, addNotification, authDispatch]);
+  }, [apiRequest, processAndSetData, addNotification]);
 
   const performDeltaSync = useCallback(async () => {
     if (document.hidden || !lastSyncTimestamp.current) return;
@@ -234,11 +336,10 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       if (Object.keys(updates).length > 0) {
           processAndSetData(updates, true);
           
-          // If the current user's data was in the update, refresh the currentUser state
           if (updates.users && currentUser) {
             const updatedCurrentUser = updates.users.find((u: User) => u.id === currentUser.id);
             if (updatedCurrentUser) {
-                authDispatch.setCurrentUser(updatedCurrentUser);
+                _setCurrentUser(updatedCurrentUser);
             }
           }
       }
@@ -250,14 +351,12 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       setSyncStatus('error');
       setSyncError(error instanceof Error ? error.message : 'An unknown error occurred during sync.');
     }
-  }, [apiRequest, processAndSetData, currentUser, authDispatch]);
+  }, [apiRequest, processAndSetData, currentUser]);
 
   useEffect(() => {
     const initializeApp = async () => {
       await initialSync();
       setIsDataLoaded(true);
-
-      // Fetch system status after initial data load to check AI configuration
       try {
           const systemStatusResponse = await window.fetch('/api/system/status');
           if (systemStatusResponse.ok) {
@@ -274,14 +373,9 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
   useEffect(() => {
     if (!isDataLoaded) return;
-
-    const intervalId = setInterval(performDeltaSync, 30000); // Poll for updates every 30 seconds
+    const intervalId = setInterval(performDeltaSync, 30000);
     document.addEventListener('visibilitychange', performDeltaSync);
-
-    // Global event listener for manual sync triggers
     window.addEventListener('trigger-sync', performDeltaSync);
-
-
     return () => {
         clearInterval(intervalId);
         document.removeEventListener('visibilitychange', performDeltaSync);
@@ -290,11 +384,31 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   }, [isDataLoaded, performDeltaSync]);
   
   const triggerSync = useCallback(() => {
-    console.log('Manual sync triggered.');
     performDeltaSync();
   }, [performDeltaSync]);
 
-  // === BUSINESS LOGIC / DISPATCH FUNCTIONS ===
+  // ALL DISPATCH LOGIC MERGED HERE
+  const updateUser = useCallback((userId: string, update: Partial<User> | ((user: User) => User), persist = true) => {
+    if (bugLogger.isRecording()) {
+        bugLogger.add({ type: 'ACTION', message: `Updating user ID: ${userId}` });
+    }
+    const userToUpdate = users.find(u => u.id === userId);
+    if (!userToUpdate) return;
+    const finalUpdatePayload = typeof update === 'function' ? update({ ...userToUpdate }) : { ...userToUpdate, ...update };
+    
+    setUsers(prevUsers => prevUsers.map(u => u.id === userId ? finalUpdatePayload : u));
+    
+    if (currentUser?.id === userId) {
+        _setCurrentUser(finalUpdatePayload);
+    }
+    
+    if (persist) {
+      const payloadForApi = typeof update === 'function' ? finalUpdatePayload : update;
+      apiRequest('PUT', `/api/users/${userId}`, payloadForApi).catch(error => {
+          console.error("Failed to update user on server, optimistic update may be stale.", error);
+      });
+    }
+  }, [users, currentUser, apiRequest]);
 
   const addSystemNotification = useCallback((notification: Omit<SystemNotification, 'id' | 'timestamp' | 'readByUserIds'>) => {
     if (!notification.recipientUserIds || notification.recipientUserIds.length === 0) return;
@@ -307,21 +421,10 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     setSystemNotifications(prev => [...prev, newNotification]);
   }, []);
 
-  const markSystemNotificationsAsRead = useCallback((notificationIds: string[]) => {
-    if (!currentUser) return;
-    const idsToMark = new Set(notificationIds);
-    setSystemNotifications(prev => prev.map(n => {
-        if (idsToMark.has(n.id) && !n.readByUserIds.includes(currentUser.id)) {
-            return { ...n, readByUserIds: [...n.readByUserIds, currentUser.id] };
-        }
-        return n;
-    }));
-  }, [currentUser]);
-
   const awardTrophy = useCallback((userId: string, trophyId: string, guildId?: string) => {
     const t = trophies.find(t => t.id === trophyId);
     if (t) {
-      setUserTrophies(p => [...p, { id: `award-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`, userId, trophyId, awardedAt: new Date().toISOString(), guildId }]);
+      setUserTrophies(p => [...p, { id: `award-${Date.now()}`, userId, trophyId, awardedAt: new Date().toISOString(), guildId }]);
       addNotification({ type: 'trophy', message: `Trophy Unlocked: ${t.name}!`, icon: t.icon });
       addSystemNotification({
         type: SystemNotificationType.TrophyAwarded,
@@ -333,255 +436,457 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       });
     }
   }, [trophies, addNotification, addSystemNotification]);
+
+  const applyRewards = useCallback((userId: string, rewardsToApply: RewardItem[], guildId?: string, persist = true) => {
+    updateUser(userId, userToUpdate => {
+        const newUser = JSON.parse(JSON.stringify(userToUpdate));
+        rewardsToApply.forEach(reward => {
+            const rewardDef = rewardTypes.find(rd => rd.id === reward.rewardTypeId);
+            if (!rewardDef) return;
+            if (guildId) {
+                if (!newUser.guildBalances[guildId]) newUser.guildBalances[guildId] = { purse: {}, experience: {} };
+                const balanceSheet = newUser.guildBalances[guildId];
+                if (rewardDef.category === RewardCategory.Currency) {
+                    balanceSheet.purse[reward.rewardTypeId] = (balanceSheet.purse[reward.rewardTypeId] || 0) + reward.amount;
+                } else {
+                    balanceSheet.experience[reward.rewardTypeId] = (balanceSheet.experience[reward.rewardTypeId] || 0) + reward.amount;
+                }
+            } else {
+                if (rewardDef.category === RewardCategory.Currency) {
+                    newUser.personalPurse[reward.rewardTypeId] = (newUser.personalPurse[reward.rewardTypeId] || 0) + reward.amount;
+                } else {
+                    newUser.personalExperience[reward.rewardTypeId] = (newUser.personalExperience[reward.rewardTypeId] || 0) + reward.amount;
+                }
+            }
+        });
+        return newUser;
+    }, persist);
+  }, [rewardTypes, updateUser]);
+
+  const completeQuest = useCallback(async (completionData: any) => {
+      const { questId, userId, status, guildId } = completionData;
+      if (status === QuestCompletionStatus.Approved) {
+          const quest = quests.find(q => q.id === questId);
+          if (quest) applyRewards(userId, quest.rewards, guildId, false);
+      }
+      setQuestCompletions(prev => [...prev, { ...completionData, id: `temp-comp-${Date.now()}` }]);
+      await apiRequest('POST', '/api/actions/complete-quest', { completionData });
+  }, [apiRequest, quests, applyRewards]);
   
-  const addGuild = useCallback(async (guild: Omit<Guild, 'id'>) => {
-    try {
-        await apiRequest('POST', '/api/guilds', guild);
-    } catch (error) {}
-  }, [apiRequest]);
+    const dismissQuest = useCallback((questId: string, userId: string) => {
+        setQuests(prev => prev.map(q => q.id === questId ? { ...q, dismissals: [...q.dismissals, { userId, dismissedAt: new Date().toISOString() }] } : q));
+    }, []);
 
-  const updateGuild = useCallback(async (guild: Guild) => {
-      try {
-          await apiRequest('PUT', `/api/guilds/${guild.id}`, guild);
-      } catch (error) {}
-  }, [apiRequest]);
+    const claimQuest = useCallback((questId: string, userId: string) => {
+        setQuests(prev => prev.map(q => q.id === questId ? { ...q, claimedByUserIds: [...(q.claimedByUserIds || []), userId] } : q));
+    }, []);
 
-  const deleteGuild = useCallback(async (guildId: string) => {
-      try {
-          await apiRequest('DELETE', `/api/guilds/${guildId}`);
-      } catch (error) {}
-  }, [apiRequest]);
+    const releaseQuest = useCallback((questId: string, userId: string) => {
+        setQuests(prev => prev.map(q => q.id === questId ? { ...q, claimedByUserIds: (q.claimedByUserIds || []).filter(id => id !== userId) } : q));
+    }, []);
 
-  const addTrophy = useCallback((trophy: Omit<Trophy, 'id'>) => setTrophies(prev => [...prev, { ...trophy, id: `trophy-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`}]), []);
-  const updateTrophy = useCallback((trophy: Trophy) => setTrophies(prev => prev.map(t => t.id === trophy.id ? trophy : t)), []);
+    const markQuestAsTodo = useCallback((questId: string, userId: string) => {
+        setQuests(prev => prev.map(q => q.id === questId ? { ...q, todoUserIds: [...(q.todoUserIds || []), userId] } : q));
+        const quest = quests.find(q => q.id === questId);
+        if (quest) {
+            const updatedQuest = { ...quest, todoUserIds: [...(quest.todoUserIds || []), userId] };
+            apiRequest('PUT', `/api/quests/${questId}`, updatedQuest);
+        }
+    }, [quests, apiRequest]);
 
-  const applyManualAdjustment = useCallback((adj: Omit<AdminAdjustment, 'id' | 'adjustedAt'>): boolean => { 
-    const newAdj: AdminAdjustment = { ...adj, id: `adj-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`, adjustedAt: new Date().toISOString() }; 
-    setAdminAdjustments(p => [...p, newAdj]); 
-    if (newAdj.type === AdminAdjustmentType.Reward) economyDispatch.applyRewards(newAdj.userId, newAdj.rewards, newAdj.guildId); 
-    else if (newAdj.type === AdminAdjustmentType.Setback) economyDispatch.deductRewards(newAdj.userId, newAdj.setbacks, newAdj.guildId); 
-    else if (newAdj.type === AdminAdjustmentType.Trophy && newAdj.trophyId) awardTrophy(newAdj.userId, newAdj.trophyId, newAdj.guildId);
-    return true;
-  }, [awardTrophy, economyDispatch]);
+    const unmarkQuestAsTodo = useCallback((questId: string, userId: string) => {
+        setQuests(prev => prev.map(q => q.id === questId ? { ...q, todoUserIds: (q.todoUserIds || []).filter(id => id !== userId) } : q));
+        const quest = quests.find(q => q.id === questId);
+        if (quest) {
+            const updatedQuest = { ...quest, todoUserIds: (q.todoUserIds || []).filter(id => id !== userId) };
+            apiRequest('PUT', `/api/quests/${questId}`, updatedQuest);
+        }
+    }, [quests, apiRequest]);
+
+    const deductRewards = useCallback((userId: string, cost: RewardItem[], guildId?: string, persist = true): Promise<boolean> => {
+        return new Promise((resolve) => {
+            let success = false;
+            updateUser(userId, user => {
+                const userCopy = JSON.parse(JSON.stringify(user));
+                const canAfford = cost.every(item => {
+                    const rd = rewardTypes.find(rt => rt.id === item.rewardTypeId);
+                    if (!rd) return false;
+                    const bal = guildId 
+                        ? (rd.category === 'Currency' ? userCopy.guildBalances[guildId]?.purse[item.rewardTypeId] : userCopy.guildBalances[guildId]?.experience[item.rewardTypeId])
+                        : (rd.category === 'Currency' ? userCopy.personalPurse[item.rewardTypeId] : userCopy.personalExperience[item.rewardTypeId]);
+                    return (bal || 0) >= item.amount;
+                });
+
+                if (!canAfford) {
+                    success = false;
+                    return user;
+                }
+
+                cost.forEach(c => {
+                    const rd = rewardTypes.find(rt => rt.id === c.rewardTypeId);
+                    if (!rd) return;
+                    if (guildId) {
+                        if (rd.category === 'Currency') userCopy.guildBalances[guildId].purse[c.rewardTypeId] -= c.amount;
+                        else userCopy.guildBalances[guildId].experience[c.rewardTypeId] -= c.amount;
+                    } else {
+                        if (rd.category === 'Currency') userCopy.personalPurse[c.rewardTypeId] -= c.amount;
+                        else userCopy.personalExperience[c.rewardTypeId] -= c.amount;
+                    }
+                });
+                success = true;
+                return userCopy;
+            }, persist);
+            resolve(success);
+        });
+    }, [rewardTypes, updateUser]);
+
+    const purchaseMarketItem = useCallback(async (assetId: string, marketId: string, user: User, costGroupIndex: number, scheduledEvents: ScheduledEvent[]) => {
+        if (bugLogger.isRecording()) {
+          bugLogger.add({ type: 'ACTION', message: `User ${user.gameName} attempting to purchase asset ${assetId}` });
+        }
+        const market = markets.find(m => m.id === marketId);
+        const asset = gameAssets.find(ga => ga.id === assetId);
+        if (!market || !asset) return;
+        
+        const cost = asset.costGroups[costGroupIndex];
+        if (!cost) {
+            addNotification({ type: 'error', message: 'Invalid cost option selected.' });
+            return;
+        }
+    
+        const todayYMD = toYMD(new Date());
+        const activeSaleEvent = scheduledEvents.find(event => 
+            event.eventType === 'MarketSale' && event.modifiers.marketId === marketId &&
+            todayYMD >= event.startDate && todayYMD <= event.endDate && event.guildId === market.guildId &&
+            (!event.modifiers.assetIds || event.modifiers.assetIds.length === 0 || event.modifiers.assetIds.includes(assetId))
+        );
+    
+        let finalCost = cost;
+        if (activeSaleEvent && activeSaleEvent.modifiers.discountPercent) {
+            const discount = activeSaleEvent.modifiers.discountPercent / 100;
+            finalCost = cost.map(c => ({ ...c, amount: Math.max(0, Math.ceil(c.amount * (1 - discount))) }));
+            addNotification({type: 'info', message: `${activeSaleEvent.title}: ${activeSaleEvent.modifiers.discountPercent}% discount applied!`})
+        }
+        
+        const canAfford = await deductRewards(user.id, finalCost, market.guildId);
+    
+        if (canAfford) {
+            if (asset.requiresApproval) {
+                const newRequest: PurchaseRequest = {
+                    id: `purchase-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+                    userId: user.id, assetId, requestedAt: new Date().toISOString(), status: PurchaseRequestStatus.Pending,
+                    assetDetails: { name: asset.name, description: asset.description, cost: finalCost }, guildId: market.guildId,
+                };
+                setPurchaseRequests(p => [...p, newRequest]);
+                addNotification({ type: 'info', message: 'Purchase requested. Funds have been held.' });
+            } else {
+                updateUser(user.id, updatedUser => {
+                    const userCopy = JSON.parse(JSON.stringify(updatedUser));
+                    if (asset.payouts && asset.payouts.length > 0) applyRewards(user.id, asset.payouts, market.guildId);
+                    if (asset.linkedThemeId && !userCopy.ownedThemes.includes(asset.linkedThemeId)) userCopy.ownedThemes.push(asset.linkedThemeId);
+                    if (!asset.payouts || asset.payouts.length === 0) userCopy.ownedAssetIds.push(asset.id);
+                    return userCopy;
+                });
+                addNotification({ type: 'success', message: `Purchased "${asset.name}"!` });
+                setPurchaseRequests(p => [...p, { id: `purchase-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`, userId: user.id, assetId, requestedAt: new Date().toISOString(), status: PurchaseRequestStatus.Completed, assetDetails: { name: asset.name, description: asset.description, cost: finalCost }, guildId: market.guildId }]);
+            }
+        } else {
+            addNotification({ type: 'error', message: 'You cannot afford this item.' });
+        }
+      }, [markets, gameAssets, deductRewards, addNotification, applyRewards, updateUser]);
+
+    const cancelPurchaseRequest = useCallback((purchaseId: string) => {
+        const r = purchaseRequests.find(p => p.id === purchaseId);
+        if (r && r.status === PurchaseRequestStatus.Pending) {
+            applyRewards(r.userId, r.assetDetails.cost, r.guildId);
+            addNotification({ type: 'info', message: 'Purchase cancelled. Funds returned.' });
+        }
+        setPurchaseRequests(prev => prev.map(p => p.id === purchaseId ? { ...p, status: PurchaseRequestStatus.Cancelled, actedAt: new Date().toISOString() } : p));
+    }, [purchaseRequests, applyRewards, addNotification]);
+
+    const approvePurchaseRequest = useCallback((purchaseId: string) => {
+        const r = purchaseRequests.find(p => p.id === purchaseId);
+        if (!r) return;
+        const asset = gameAssets.find(a => a.id === r.assetId);
+        if (!asset) return;
+        
+        updateUser(r.userId, updatedUser => {
+            const userCopy = JSON.parse(JSON.stringify(updatedUser));
+            if (asset.linkedThemeId && !userCopy.ownedThemes.includes(asset.linkedThemeId)) userCopy.ownedThemes.push(asset.linkedThemeId);
+            if (!asset.payouts || asset.payouts.length === 0) userCopy.ownedAssetIds.push(r.assetId);
+            return userCopy;
+        });
+
+        if (asset.payouts && asset.payouts.length > 0) {
+          applyRewards(r.userId, asset.payouts, r.guildId);
+        }
+
+        setPurchaseRequests(p => p.map(pr => pr.id === purchaseId ? { ...pr, status: PurchaseRequestStatus.Completed, actedAt: new Date().toISOString() } : pr));
+        addNotification({type: 'success', message: 'Purchase approved.'});
+    }, [purchaseRequests, gameAssets, addNotification, applyRewards, updateUser]);
+    
+    const rejectPurchaseRequest = useCallback((purchaseId: string) => {
+        const r = purchaseRequests.find(p => p.id === purchaseId);
+        if (r && r.status === PurchaseRequestStatus.Pending) {
+            applyRewards(r.userId, r.assetDetails.cost, r.guildId);
+            addNotification({ type: 'info', message: 'Purchase rejected. Funds returned.' });
+        }
+        setPurchaseRequests(prev => prev.map(p => p.id === purchaseId ? { ...p, status: PurchaseRequestStatus.Rejected, actedAt: new Date().toISOString() } : p));
+    }, [purchaseRequests, applyRewards, addNotification]);
+
+    const executeExchange = useCallback((userId: string, payItem: RewardItem, receiveItem: RewardItem, guildId?: string) => {
+        deductRewards(userId, [payItem], guildId).then(canAfford => {
+          if (canAfford) {
+              applyRewards(userId, [receiveItem], guildId);
+          } else {
+              addNotification({ type: 'error', message: 'Exchange failed due to insufficient funds.' });
+          }
+        });
+    }, [deductRewards, applyRewards, addNotification]);
+
+    const addTrophy = useCallback(async (trophy: Omit<Trophy, 'id'>) => {
+        await apiRequest('POST', '/api/trophies', trophy);
+    }, [apiRequest]);
+
+    const updateTrophy = useCallback(async (trophy: Trophy) => {
+        await apiRequest('PUT', `/api/trophies/${trophy.id}`, trophy);
+    }, [apiRequest]);
+    
+    const applyManualAdjustment = useCallback((adjustment: Omit<AdminAdjustment, 'id' | 'adjustedAt'>): boolean => {
+        if (bugLogger.isRecording()) {
+            bugLogger.add({ type: 'ACTION', message: `Applying manual adjustment for user: ${adjustment.userId}` });
+        }
+        const newAdjustment: AdminAdjustment = {
+            ...adjustment,
+            id: `adj-${Date.now()}`,
+            adjustedAt: new Date().toISOString(),
+        };
+        setAdminAdjustments(p => [...p, newAdjustment]);
+
+        if (adjustment.type === AdminAdjustmentType.Reward) {
+            applyRewards(adjustment.userId, adjustment.rewards, adjustment.guildId);
+        }
+        if (adjustment.type === AdminAdjustmentType.Setback) {
+            deductRewards(adjustment.userId, adjustment.setbacks, adjustment.guildId);
+        }
+        if (adjustment.type === AdminAdjustmentType.Trophy && adjustment.trophyId) {
+            awardTrophy(adjustment.userId, adjustment.trophyId, adjustment.guildId);
+        }
+        
+        addNotification({ type: 'success', message: 'Adjustment applied successfully.' });
+        return true;
+    }, [applyRewards, deductRewards, awardTrophy, addNotification]);
 
     const addTheme = useCallback((theme: Omit<ThemeDefinition, 'id'>) => {
-        const newTheme = { ...theme, id: `theme-${Date.now()}-${Math.random().toString(36).substring(2, 9)}` };
+        const newTheme: ThemeDefinition = { ...theme, id: `custom-theme-${Date.now()}`};
         setThemes(p => [...p, newTheme]);
-        return newTheme;
-    }, []);
-    const updateTheme = useCallback((theme: ThemeDefinition) => setThemes(p => p.map(t => t.id === theme.id ? theme : t)), []);
-    const deleteTheme = useCallback((themeId: string) => setThemes(p => p.filter(t => t.id !== themeId)), []);
-
-    const addScheduledEvent = useCallback(async (event: Omit<ScheduledEvent, 'id'>) => {
-        await apiRequest('POST', '/api/events', event);
-    }, [apiRequest]);
-
-    const updateScheduledEvent = useCallback(async (event: ScheduledEvent) => {
-        await apiRequest('PUT', `/api/events/${event.id}`, event);
-    }, [apiRequest]);
-
-    const deleteScheduledEvent = useCallback(async (eventId: string) => {
-        await apiRequest('DELETE', `/api/events/${eventId}`);
-    }, [apiRequest]);
-
-    const addBugReport = useCallback(async (report: Omit<BugReport, 'id' | 'status' | 'tags'> & { reportType: BugReportType }) => {
-        const { reportType, ...rest } = report;
-        const newReport = {
-            ...rest,
-            id: `bug-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
-            status: 'Open' as const,
-            tags: [reportType]
-        };
-        await apiRequest('POST', '/api/bug-reports', newReport);
-    }, [apiRequest]);
-
-    const updateBugReport = useCallback(async (reportId: string, updates: Partial<BugReport>) => {
-        const originalReports = [...bugReports];
-        
-        // Optimistic update
-        setBugReports(prev =>
-            prev.map(report =>
-                report.id === reportId ? { ...report, ...updates, updatedAt: new Date().toISOString() } : report
-            )
-        );
-
-        try {
-            await apiRequest('PUT', `/api/bug-reports/${reportId}`, updates);
-        } catch (error) {
-            // Revert on failure
-            addNotification({ type: 'error', message: 'Update failed. Reverting changes.' });
-            setBugReports(originalReports);
-        }
-    }, [apiRequest, bugReports, addNotification]);
+        addNotification({ type: 'success', message: `Theme "${theme.name}" created.` });
+    }, [addNotification]);
     
-    const deleteBugReports = useCallback(async (reportIds: string[]) => {
-        await apiRequest('DELETE', '/api/bug-reports', { ids: reportIds });
-    }, [apiRequest]);
-
-    const importBugReports = useCallback(async (reports: BugReport[]) => {
-        await apiRequest('POST', '/api/bug-reports/import', reports);
-        addNotification({ type: 'success', message: 'Bug reports imported successfully.' });
-    }, [apiRequest, addNotification]);
-
-    const restoreFromBackup = useCallback(async (backupData: IAppData) => {
-        await apiRequest('POST', '/api/data/restore', backupData);
-        addNotification({ type: 'success', message: 'Restore from backup successful! App will reload.' });
-        setTimeout(() => window.location.reload(), 1500);
-    }, [apiRequest, addNotification]);
+    const updateTheme = useCallback((theme: ThemeDefinition) => {
+        setThemes(p => p.map(t => t.id === theme.id ? theme : t));
+        addNotification({ type: 'success', message: `Theme "${theme.name}" updated.` });
+    }, [addNotification]);
+  
+    const deleteTheme = useCallback((themeId: string) => {
+        setThemes(p => p.filter(t => t.id !== themeId));
+        addNotification({ type: 'info', message: `Theme deleted.` });
+    }, [addNotification]);
 
     const clearAllHistory = useCallback(() => {
-        questDispatch.setQuestCompletions([]);
-        economyDispatch.setPurchaseRequests([]);
-        setAdminAdjustments([]);
+        setQuestCompletions([]);
+        setPurchaseRequests([]);
         setUserTrophies([]);
+        setAdminAdjustments([]);
         setSystemLogs([]);
-        addNotification({ type: 'info', message: 'All history logs cleared.' });
-    }, [economyDispatch, questDispatch, addNotification]);
+    }, []);
 
     const resetAllPlayerData = useCallback(() => {
-        authDispatch.resetAllUsersData();
-        addNotification({ type: 'info', message: 'All player data has been reset.' });
-    }, [authDispatch, addNotification]);
+        setUsers(p => p.map(u => u.role !== Role.DonegeonMaster ? { ...u, personalPurse: {}, personalExperience: {}, guildBalances: {}, ownedAssetIds: [], ownedThemes: [], avatar: {} } : u));
+    }, []);
 
     const deleteAllCustomContent = useCallback(() => {
-        questDispatch.setQuests([]);
-        questDispatch.setQuestGroups([]);
-        setTrophies(INITIAL_TROPHIES);
+        setQuests([]);
+        setQuestGroups([]);
+        setMarkets(p => p.filter(m => m.id === 'market-bank'));
+        setGameAssets([]);
+        setRewardTypes(p => p.filter(rt => rt.isCore));
         setRanks(INITIAL_RANKS);
-        economyDispatch.deleteAllCustomContent();
-        addNotification({ type: 'info', message: 'All custom content has been deleted.' });
-    }, [economyDispatch, questDispatch, addNotification]);
+        setTrophies(INITIAL_TROPHIES);
+        setThemes(INITIAL_THEMES);
+    }, []);
+    
+    const deleteUsers = useCallback(async (userIds: string[]) => {
+        setUsers(prev => prev.filter(u => !userIds.includes(u.id)));
+        await apiRequest('DELETE', '/api/users', { ids: userIds }); 
+    }, [apiRequest]);
 
-    const deleteSelectedAssets = useCallback(async (selection: Partial<Record<ShareableAssetType, string[]>>, onComplete: () => void) => {
-        try {
-            if (selection.quests) await apiRequest('DELETE', '/api/quests', { ids: selection.quests });
-            if (selection.ranks) {
-                await apiRequest('DELETE', '/api/ranks', { ids: selection.ranks });
-                setRanks(prev => prev.filter(r => !selection.ranks!.includes(r.id)));
-            }
-            if (selection.trophies) {
-                await apiRequest('DELETE', '/api/trophies', { ids: selection.trophies });
-                setTrophies(prev => prev.filter(t => !selection.trophies!.includes(t.id)));
-            }
-            
-            economyDispatch.deleteSelectedAssets(selection);
-            
-            onComplete();
-            addNotification({ type: 'success', message: 'Selected assets deleted.' });
-        } catch(e) {
-            // Error is already handled by the apiRequest helper
-        }
-    }, [apiRequest, economyDispatch, addNotification]);
-
-    const uploadFile = useCallback(async (file: File, category?: string) => {
+    const deleteSelectedAssets = useCallback((selection: Partial<Record<ShareableAssetType, string[]>>, onComplete: () => void) => {
+        let count = 0;
+        if (selection.quests) { setQuests(p => p.filter(i => !selection.quests!.includes(i.id))); count += selection.quests.length; }
+        if (selection.questGroups) { setQuestGroups(p => p.filter(i => !selection.questGroups!.includes(i.id))); count += selection.questGroups.length; }
+        if (selection.rewardTypes) { setRewardTypes(p => p.filter(i => !selection.rewardTypes!.includes(i.id))); count += selection.rewardTypes.length; }
+        if (selection.ranks) { setRanks(p => p.filter(i => !selection.ranks!.includes(i.id))); count += selection.ranks.length; }
+        if (selection.trophies) { setTrophies(p => p.filter(i => !selection.trophies!.includes(i.id))); count += selection.trophies.length; }
+        if (selection.markets) { setMarkets(p => p.filter(i => !selection.markets!.includes(i.id))); count += selection.markets.length; }
+        if (selection.gameAssets) { setGameAssets(p => p.filter(i => !selection.gameAssets!.includes(i.id))); count += selection.gameAssets.length; }
+        if (selection.users) { deleteUsers(selection.users); count += selection.users.length; }
+        addNotification({ type: 'success', message: `${count} item(s) have been deleted.` });
+        onComplete();
+    }, [deleteUsers, addNotification]);
+    
+    const uploadFile = useCallback(async (file: File, category?: string): Promise<{ url: string } | null> => {
         const formData = new FormData();
         formData.append('file', file);
         if (category) {
             formData.append('category', category);
         }
+
         try {
-            const response = await fetch('/api/media/upload', { method: 'POST', body: formData });
-            if (!response.ok) throw new Error('Upload failed');
+            const response = await window.fetch('/api/media/upload', {
+                method: 'POST',
+                body: formData,
+            });
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({ error: 'Server error' }));
+                throw new Error(errorData.error || `Upload failed with status ${response.status}`);
+            }
             return await response.json();
         } catch (error) {
-            addNotification({ type: 'error', message: 'File upload failed.' });
+            addNotification({ type: 'error', message: error instanceof Error ? error.message : 'File upload failed.' });
             return null;
         }
     }, [addNotification]);
-    
+
     const factoryReset = useCallback(async () => {
         await apiRequest('POST', '/api/data/factory-reset');
-        addNotification({ type: 'success', message: 'Factory reset initiated. The app will restart.' });
+        addNotification({ type: 'info', message: 'Factory reset initiated. The app will restart.' });
         setTimeout(() => window.location.reload(), 2000);
     }, [apiRequest, addNotification]);
 
-    const updateSettings = useCallback(async (newSettings: Partial<AppSettings>) => {
-      const updatedSettings = { ...settings, ...newSettings };
-      setSettings(updatedSettings);
-      await apiRequest('PUT', '/api/settings', updatedSettings);
-    }, [apiRequest, settings]);
-
     const resetSettings = useCallback(() => {
         setSettings(INITIAL_SETTINGS);
-        updateSettings(INITIAL_SETTINGS);
-        addNotification({ type: 'info', message: 'Settings have been reset to default.' });
-    }, [updateSettings, addNotification]);
+        addNotification({ type: 'success', message: 'Settings have been reset to default.' });
+    }, [addNotification]);
 
     const sendMessage = useCallback(async (message: Omit<ChatMessage, 'id' | 'timestamp' | 'readBy' | 'senderId'> & { isAnnouncement?: boolean }) => {
         if (!currentUser) return;
-
-        const notificationId = addNotification({
-            message: 'Sending message...',
-            type: 'info',
-            duration: 0, // Persistent
-        });
-
-        try {
-            const payload = { ...message, senderId: currentUser.id };
-            await apiRequest('POST', '/api/chat/send', payload);
-            updateNotification(notificationId, {
-                message: 'Message sent!',
-                type: 'success',
-                duration: 3000,
-            });
-        } catch (error) {
-            updateNotification(notificationId, {
-                message: 'Failed to send message.',
-                type: 'error',
-                duration: 5000,
-            });
-        }
-    }, [currentUser, apiRequest, addNotification, updateNotification]);
+        const { isAnnouncement, ...messageData } = message;
+        const payload = { ...messageData, senderId: currentUser.id, isAnnouncement };
+        await apiRequest('POST', '/api/chat/send', payload);
+    }, [apiRequest, currentUser]);
 
     const markMessagesAsRead = useCallback(async (params: { partnerId?: string; guildId?: string; }) => {
         if (!currentUser) return;
+        await apiRequest('POST', '/api/chat/read', { userId: currentUser.id, ...params });
+    }, [apiRequest, currentUser]);
 
-        // Optimistic update to prevent infinite loops in the chat panel
-        setChatMessages(prevMessages => 
-            prevMessages.map(msg => {
-                const isDmMatch = params.partnerId && msg.recipientId === currentUser.id && msg.senderId === params.partnerId;
-                const isGuildMatch = params.guildId && msg.guildId === params.guildId;
+    const markSystemNotificationsAsRead = useCallback((notificationIds: string[]) => {
+        if (!currentUser) return;
+        setSystemNotifications(prev => prev.map(n => notificationIds.includes(n.id) && !n.readByUserIds.includes(currentUser.id) ? { ...n, readByUserIds: [...n.readByUserIds, currentUser.id] } : n));
+    }, [currentUser]);
 
-                if ((isDmMatch || isGuildMatch) && !msg.readBy.includes(currentUser.id)) {
-                    return { ...msg, readBy: [...msg.readBy, currentUser.id] };
-                }
-                return msg;
-            })
-        );
-        
-        // Fire and forget API call
-        const payload = { ...params, userId: currentUser.id };
-        apiRequest('POST', '/api/chat/read', payload).catch(err => {
-            console.error("Failed to mark messages as read on server:", err);
-            // The UI will eventually be corrected by the next full sync if this fails.
-        });
-    }, [currentUser, apiRequest]);
+  const allDispatchFunctions = {
+      // Auth
+      setUsers, setLoginHistory,
+      addUser: useCallback(async (userData) => { return await apiRequest('POST', '/api/users', userData); }, [apiRequest]),
+      updateUser,
+      deleteUsers,
+      setCurrentUser,
+      markUserAsOnboarded: useCallback((userId) => updateUser(userId, { hasBeenOnboarded: true }), [updateUser]),
+      setAppUnlocked: useCallback((isUnlocked) => { localStorage.setItem('isAppUnlocked', String(isUnlocked)); _setAppUnlocked(isUnlocked); }, []),
+      setIsSwitchingUser,
+      setTargetedUserForLogin,
+      exitToSharedView: useCallback(() => { _setCurrentUser(null); setIsSharedViewActive(true); localStorage.removeItem('lastUserId'); }, []),
+      setIsSharedViewActive,
+      resetAllUsersData,
+      completeFirstRun: useCallback(async (adminUserData) => { await apiRequest('POST', '/api/first-run', { adminUserData }); setTimeout(() => window.location.reload(), 2000); }, [apiRequest]),
+      
+      // Quest
+      setQuests, setQuestGroups, setQuestCompletions,
+      addQuest: useCallback(async (quest) => { await apiRequest('POST', '/api/quests', quest); }, [apiRequest]),
+      updateQuest: useCallback(async (quest) => { await apiRequest('PUT', `/api/quests/${quest.id}`, quest); }, [apiRequest]),
+      deleteQuest: useCallback(async (id) => { await apiRequest('DELETE', '/api/quests', { ids: [id] }); }, [apiRequest]),
+      cloneQuest: useCallback(async (id) => { await apiRequest('POST', `/api/quests/clone/${id}`); }, [apiRequest]),
+      dismissQuest, claimQuest, releaseQuest, markQuestAsTodo, unmarkQuestAsTodo,
+      completeQuest, approveQuestCompletion: useCallback(async (id, note) => { await apiRequest('POST', `/api/actions/approve-quest/${id}`, { note }); }, [apiRequest]),
+      rejectQuestCompletion: useCallback(async (id, note) => { await apiRequest('POST', `/api/actions/reject-quest/${id}`, { note }); }, [apiRequest]),
+      addQuestGroup: useCallback((group) => { const newGroup = { ...group, id: `qg-${Date.now()}` }; setQuestGroups(p => [...p, newGroup]); return newGroup; }, []),
+      updateQuestGroup: useCallback((group) => setQuestGroups(p => p.map(g => g.id === group.id ? group : g)), []),
+      deleteQuestGroup: useCallback((id) => setQuestGroups(p => p.filter(g => g.id !== id)), []),
+      deleteQuestGroups: useCallback((ids) => { const idSet = new Set(ids); setQuestGroups(p => p.filter(g => !idSet.has(g.id))); }, []),
+      assignQuestGroupToUsers: useCallback((groupId, userIds) => { setQuests(p => p.map(q => q.groupId === groupId ? {...q, assignedUserIds: userIds} : q)); }, []),
+      deleteQuests: useCallback(async (ids) => { await apiRequest('DELETE', '/api/quests', { ids }); }, [apiRequest]),
+      updateQuestsStatus: useCallback(async (ids, isActive) => { await apiRequest('PUT', '/api/quests/bulk-status', { ids, isActive }); }, [apiRequest]),
+      bulkUpdateQuests: useCallback(async (ids, updates) => { await apiRequest('PUT', '/api/quests/bulk-update', { ids, updates }); }, [apiRequest]),
+      
+      // Economy
+      setMarkets, setRewardTypes, setPurchaseRequests, setGameAssets,
+      addRewardType: useCallback((rt) => setRewardTypes(p => [...p, {...rt, id: `custom-${Date.now()}`, isCore: false}]), []),
+      updateRewardType: useCallback((rt) => setRewardTypes(p => p.map(r => r.id === rt.id ? rt : r)), []),
+      deleteRewardType: useCallback((id) => setRewardTypes(p => p.filter(r => r.id !== id)), []),
+      cloneRewardType,
+      addMarket: useCallback((m) => setMarkets(p => [...p, {...m, id: `market-${Date.now()}`}]), []),
+      updateMarket: useCallback((m) => setMarkets(p => p.map(market => market.id === m.id ? m : market)), []),
+      deleteMarket: useCallback((id) => setMarkets(p => p.filter(m => m.id !== id)), []),
+      cloneMarket,
+      deleteMarkets,
+      updateMarketsStatus,
+      addGameAsset: useCallback(async (asset) => { await apiRequest('POST', '/api/assets', asset); }, [apiRequest]),
+      updateGameAsset: useCallback(async (asset) => { await apiRequest('PUT', `/api/assets/${asset.id}`, asset); }, [apiRequest]),
+      deleteGameAsset: useCallback(async (id) => { await apiRequest('DELETE', '/api/assets', { ids: [id] }); }, [apiRequest]),
+      cloneGameAsset: useCallback(async (id) => { await apiRequest('POST', `/api/assets/clone/${id}`); }, [apiRequest]),
+      deleteGameAssets: useCallback(async (ids) => { await apiRequest('DELETE', '/api/assets', { ids }); }, [apiRequest]),
+      purchaseMarketItem, cancelPurchaseRequest, approvePurchaseRequest, rejectPurchaseRequest,
+      applyRewards, deductRewards, executeExchange,
+      importAssetPack: useCallback(async (pack, resolutions, allData) => { await apiRequest('POST', '/api/data/import-assets', { assetPack: pack, resolutions }); }, [apiRequest]),
+      
+      // App
+      addGuild: useCallback(async(g) => { await apiRequest('POST', '/api/guilds', g); }, [apiRequest]),
+      updateGuild: useCallback(async(g) => { await apiRequest('PUT', `/api/guilds/${g.id}`, g); }, [apiRequest]),
+      deleteGuild: useCallback(async(id) => { await apiRequest('DELETE', `/api/guilds/${id}`); }, [apiRequest]),
+      setRanks, addTrophy, updateTrophy, awardTrophy, applyManualAdjustment,
+      addTheme, updateTheme, deleteTheme, addScheduledEvent: useCallback(async(e) => { await apiRequest('POST', '/api/events', e); }, [apiRequest]),
+      updateScheduledEvent: useCallback(async(e) => { await apiRequest('PUT', `/api/events/${e.id}`, e); }, [apiRequest]),
+      deleteScheduledEvent: useCallback(async(id) => { await apiRequest('DELETE', `/api/events/${id}`); }, [apiRequest]),
+      addBugReport: useCallback(async(r) => { await apiRequest('POST', '/api/bug-reports', r); }, [apiRequest]),
+      updateBugReport: useCallback(async(id, u) => { await apiRequest('PUT', `/api/bug-reports/${id}`, u); }, [apiRequest]),
+      deleteBugReports: useCallback(async(ids) => { await apiRequest('DELETE', '/api/bug-reports', { ids }); }, [apiRequest]),
+      importBugReports: useCallback(async(r) => { await apiRequest('POST', '/api/bug-reports/import', r); }, [apiRequest]),
+      restoreFromBackup: useCallback(async(d) => { await apiRequest('POST', '/api/data/restore', d); setTimeout(() => window.location.reload(), 1500); }, [apiRequest]),
+      clearAllHistory, resetAllPlayerData, deleteAllCustomContent, deleteSelectedAssets, uploadFile, factoryReset,
+      updateSettings: useCallback(async (s) => { const newSettings = {...settings, ...s}; setSettings(newSettings); await apiRequest('PUT', '/api/settings', newSettings); }, [settings, apiRequest]),
+      resetSettings, sendMessage, markMessagesAsRead, addSystemNotification, markSystemNotificationsAsRead,
+      triggerSync
+  };
 
-    const state = {
-        isDataLoaded, isAiConfigured, syncStatus, syncError,
-        guilds, ranks, trophies, userTrophies,
-        adminAdjustments, systemLogs, settings, themes, chatMessages,
-        systemNotifications, scheduledEvents, bugReports,
-    };
+  const dispatch = useMemo(() => allDispatchFunctions, [allDispatchFunctions]);
 
-    const dispatch = {
-        addGuild, updateGuild, deleteGuild, setRanks, addTrophy, updateTrophy,
-        awardTrophy, applyManualAdjustment, addTheme, updateTheme, deleteTheme,
-        addScheduledEvent, updateScheduledEvent, deleteScheduledEvent, addBugReport,
-        updateBugReport, deleteBugReports, importBugReports, restoreFromBackup, clearAllHistory,
-        resetAllPlayerData, deleteAllCustomContent, deleteSelectedAssets, uploadFile,
-        factoryReset, updateSettings, resetSettings, sendMessage, markMessagesAsRead,
-        addSystemNotification, markSystemNotificationsAsRead,
-        triggerSync,
-    };
+  const state = useMemo(() => ({
+    users, currentUser, isAppUnlocked, isFirstRun, isSwitchingUser,
+    isSharedViewActive, targetedUserForLogin, loginHistory,
+    markets, rewardTypes, purchaseRequests, gameAssets,
+    quests, questGroups, questCompletions, allTags,
+    isDataLoaded, isAiConfigured, syncStatus, syncError,
+    guilds, ranks, trophies, userTrophies, adminAdjustments, systemLogs,
+    settings, themes, chatMessages, systemNotifications, scheduledEvents, bugReports
+  }), [
+    users, currentUser, isAppUnlocked, isFirstRun, isSwitchingUser,
+    isSharedViewActive, targetedUserForLogin, loginHistory,
+    markets, rewardTypes, purchaseRequests, gameAssets,
+    quests, questGroups, questCompletions, allTags,
+    isDataLoaded, isAiConfigured, syncStatus, syncError,
+    guilds, ranks, trophies, userTrophies, adminAdjustments, systemLogs,
+    settings, themes, chatMessages, systemNotifications, scheduledEvents, bugReports
+  ]);
 
-    return (
-        <AppStateContext.Provider value={state}>
-            <AppDispatchContext.Provider value={dispatch}>
-                {children}
-            </AppDispatchContext.Provider>
-        </AppStateContext.Provider>
-    );
+  return (
+    <AppStateContext.Provider value={state}>
+      <AppDispatchContext.Provider value={dispatch as any}>
+        {children}
+      </AppDispatchContext.Provider>
+    </AppStateContext.Provider>
+  );
 };
 
 export const useAppState = (): AppState => {

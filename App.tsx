@@ -1,7 +1,6 @@
 import React, { useEffect, useMemo } from 'react';
-import { useAppState } from './context/AppContext';
+import { useAppState, useAppDispatch } from './context/AppContext';
 import { useUIState } from './context/UIStateContext';
-import { useAuthState } from './context/AuthContext';
 import FirstRunWizard from './components/auth/FirstRunWizard';
 import MainLayout from './components/layout/MainLayout';
 import SwitchUser from './components/auth/SwitchUser';
@@ -16,8 +15,7 @@ import { useDeveloper, useDeveloperState } from './context/DeveloperContext';
 import { BugDetailDialog } from './components/dev/BugDetailDialog';
 
 const App: React.FC = () => {
-  const { isDataLoaded, settings, guilds, themes, bugReports } = useAppState();
-  const { currentUser, isAppUnlocked, isFirstRun, isSwitchingUser, isSharedViewActive } = useAuthState();
+  const { isDataLoaded, settings, guilds, themes, bugReports, currentUser, isAppUnlocked, isFirstRun, isSwitchingUser, isSharedViewActive } = useAppState();
   const { appMode, activePage } = useUIState();
   const { isRecording, addLogEntry, setDetailedBugReportId } = useDeveloper();
   const { isPickingElement, detailedBugReportId } = useDeveloperState();

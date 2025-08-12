@@ -4,10 +4,7 @@ import App from './App';
 import { AppProvider } from './context/AppContext';
 import { UIStateProvider } from './context/UIStateContext';
 import { NotificationsProvider } from './context/NotificationsContext';
-import { AuthProvider } from './context/AuthContext';
-import { EconomyProvider } from './context/EconomyContext';
 import { DeveloperProvider } from './context/DeveloperContext';
-import { QuestProvider } from './context/QuestContext';
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
@@ -28,19 +25,13 @@ const root = ReactDOM.createRoot(rootElement);
 root.render(
   <React.StrictMode>
     <NotificationsProvider>
-      <AuthProvider>
-        <EconomyProvider>
-          <QuestProvider>
-            <AppProvider>
-              <UIStateProvider>
-                <DeveloperProvider>
-                  <App />
-                </DeveloperProvider>
-              </UIStateProvider>
-            </AppProvider>
-          </QuestProvider>
-        </EconomyProvider>
-      </AuthProvider>
+      <AppProvider>
+        <UIStateProvider>
+          <DeveloperProvider>
+            <App />
+          </DeveloperProvider>
+        </UIStateProvider>
+      </AppProvider>
     </NotificationsProvider>
   </React.StrictMode>
 );

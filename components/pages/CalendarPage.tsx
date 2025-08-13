@@ -340,7 +340,7 @@ const CalendarPage: React.FC = () => {
                             right: 'listWeek,timeGridDay,timeGridWeek,dayGridMonth'
                         }}
                         buttonText={{ day: 'Day', week: 'Week', month: 'Month', list: 'Agenda' }}
-                        initialView="listWeek"
+                        initialView="dayGridMonth"
                         googleCalendarApiKey={settings.googleCalendar.apiKey || undefined}
                         eventSources={eventSources}
                         eventClick={handleEventClick}
@@ -353,6 +353,7 @@ const CalendarPage: React.FC = () => {
                         height="auto"
                         contentHeight="auto"
                         aspectRatio={1.5}
+                        slotDuration="00:15:00"
                     />
                  </div>
             </Card>

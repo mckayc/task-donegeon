@@ -178,11 +178,11 @@ const Dashboard: React.FC = () => {
     }, [quests, currentUser, questCompletions, appMode, scheduledEvents]);
 
     const getDueDateString = (quest: Quest): string | null => {
-        if (quest.type === QuestType.Venture && quest.lateDateTime) {
-            return `Due: ${new Date(quest.lateDateTime).toLocaleDateString()}`;
+        if (quest.type === QuestType.Venture && quest.startDateTime) {
+            return `Due: ${new Date(quest.startDateTime).toLocaleDateString()}`;
         }
-        if (quest.type === QuestType.Duty && quest.lateTime) {
-            return `Due Today at: ${quest.lateTime}`;
+        if (quest.type === QuestType.Duty && quest.startTime) {
+            return `Due Today at: ${quest.startTime}`;
         }
         return null;
     };

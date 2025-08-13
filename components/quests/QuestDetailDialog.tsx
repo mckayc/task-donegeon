@@ -94,21 +94,21 @@ const QuestDetailDialog: React.FC<QuestDetailDialogProps> = ({ quest, onClose, o
                 <div className="p-6 space-y-4 max-h-[50vh] overflow-y-auto scrollbar-hide">
                     <p className="text-stone-300 whitespace-pre-wrap">{quest.description || 'No description provided.'}</p>
                     
-                     { (quest.lateDateTime || quest.lateTime || quest.incompleteDateTime || quest.incompleteTime) && (
+                     { (quest.startDateTime || quest.startTime || quest.endDateTime || quest.endTime) && (
                         <div className="space-y-2 pt-4 border-t border-white/10">
                             <p className="text-xs font-semibold text-stone-400 uppercase tracking-wider">Deadlines</p>
                             <div className="text-sm space-y-1 text-stone-200">
-                                {quest.lateDateTime && (
-                                    <p><span className="font-semibold text-yellow-400">Becomes Late:</span> {new Date(quest.lateDateTime).toLocaleString()}</p>
+                                {quest.startDateTime && (
+                                    <p><span className="font-semibold text-green-400">Starts:</span> {new Date(quest.startDateTime).toLocaleString()}</p>
                                 )}
-                                {quest.lateTime && (
-                                    <p><span className="font-semibold text-yellow-400">Becomes Late:</span> Daily at {new Date(`1970-01-01T${quest.lateTime}`).toLocaleTimeString([], { hour: '2-digit', minute:'2-digit' })}</p>
+                                {quest.startTime && (
+                                    <p><span className="font-semibold text-green-400">Starts:</span> Daily at {new Date(`1970-01-01T${quest.startTime}`).toLocaleTimeString([], { hour: '2-digit', minute:'2-digit' })}</p>
                                 )}
-                                {quest.incompleteDateTime && (
-                                    <p><span className="font-semibold text-red-400">Becomes Incomplete:</span> {new Date(quest.incompleteDateTime).toLocaleString()}</p>
+                                {quest.endDateTime && (
+                                    <p><span className="font-semibold text-red-400">Due:</span> {new Date(quest.endDateTime).toLocaleString()}</p>
                                 )}
-                                {quest.incompleteTime && (
-                                    <p><span className="font-semibold text-red-400">Becomes Incomplete:</span> Daily at {new Date(`1970-01-01T${quest.incompleteTime}`).toLocaleTimeString([], { hour: '2-digit', minute:'2-digit' })}</p>
+                                {quest.endTime && (
+                                    <p><span className="font-semibold text-red-400">Due:</span> Daily at {new Date(`1970-01-01T${quest.endTime}`).toLocaleTimeString([], { hour: '2-digit', minute:'2-digit' })}</p>
                                 )}
                             </div>
                         </div>

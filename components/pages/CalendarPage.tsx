@@ -13,6 +13,7 @@ import timeGridPlugin from '@fullcalendar/timegrid';
 import interactionPlugin, { DateClickArg } from '@fullcalendar/interaction';
 import googleCalendarPlugin from '@fullcalendar/google-calendar';
 import listPlugin from '@fullcalendar/list';
+import rrulePlugin from '@fullcalendar/rrule';
 import { EventClickArg, EventSourceInput, EventDropArg, MoreLinkArg, EventInput } from '@fullcalendar/core';
 import { useQuestState, useQuestDispatch } from '../../context/QuestContext';
 import { useChronicles } from '../../hooks/useChronicles';
@@ -83,24 +84,25 @@ const CalendarPage: React.FC = () => {
             visibleQuests.forEach(quest => {
                     const commonProps = {
                         title: quest.title,
-                        allDay: !quest.lateTime,
+                        allDay: quest.allDay || (!quest.startTime && !quest.endTime),
                         backgroundColor: quest.type === QuestType.Duty ? 'hsl(var(--primary))' : 'hsl(var(--accent))',
                         borderColor: quest.type === QuestType.Duty ? 'hsl(var(--primary))' : 'hsl(var(--accent))',
                         extendedProps: { quest, type: 'quest' }
                     };
 
                     if (quest.type === QuestType.Venture) {
-                        if (quest.lateDateTime) {
+                        if (quest.startDateTime) {
                             questEvents.push({
                                 ...commonProps,
-                                start: quest.lateDateTime,
+                                start: quest.startDateTime,
+                                end: quest.endDateTime || undefined
                             });
                         } else {
-                            // Show available dateless ventures on the current day, highlighting To-Dos.
+                            // Show available dateless ventures on the current day if marked as To-Do.
                             const questAppMode: AppMode = quest.guildId ? { mode: 'guild', guildId: quest.guildId } : { mode: 'personal' };
                             if (isQuestAvailableForUser(quest, userCompletions, new Date(), scheduledEvents, questAppMode)) {
                                 const isTodo = quest.todoUserIds?.includes(currentUser.id);
-                                if (isTodo) { // Only show on the calendar if it's explicitly marked as a To-Do
+                                if (isTodo) {
                                      questEvents.push({
                                         ...commonProps,
                                         title: `📌 ${quest.title}`,
@@ -113,28 +115,14 @@ const CalendarPage: React.FC = () => {
                             }
                         }
                     } else { // Duty
-                        const recurrenceProps: any = {
-                            startTime: quest.lateTime || undefined,
-                        };
-                        
-                        if (quest.availabilityType === 'Daily') {
-                            recurrenceProps.daysOfWeek = [0, 1, 2, 3, 4, 5, 6];
-                            questEvents.push({ ...commonProps, ...recurrenceProps });
-                        } else if (quest.availabilityType === 'Weekly') {
-                            recurrenceProps.daysOfWeek = quest.weeklyRecurrenceDays;
-                            questEvents.push({ ...commonProps, ...recurrenceProps });
-                        } else if (quest.availabilityType === 'Monthly' && viewRange) {
-                            const start = new Date(viewRange.start);
-                            const end = new Date(viewRange.end);
-                            
-                            for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
-                                if (quest.monthlyRecurrenceDays.includes(d.getDate())) {
-                                    questEvents.push({
-                                        ...commonProps,
-                                        start: toYMD(d) + (quest.lateTime ? `T${quest.lateTime}`: ''),
-                                    });
-                                }
-                            }
+                        if(quest.rrule) {
+                             questEvents.push({
+                                ...commonProps,
+                                startTime: quest.startTime || undefined,
+                                endTime: quest.endTime || undefined,
+                                rrule: quest.rrule,
+                                duration: quest.startTime && quest.endTime ? undefined : '01:00' // FC needs duration for timed rrule events
+                            });
                         }
                     }
                 });
@@ -211,7 +199,8 @@ const CalendarPage: React.FC = () => {
         if (currentUser?.role !== Role.DonegeonMaster) return;
         setCreateInitialData({
             type: QuestType.Venture,
-            lateDateTime: `${arg.dateStr}T12:00`,
+            startDateTime: `${arg.dateStr}T12:00`,
+            endDateTime: `${arg.dateStr}T13:00`,
             hasDeadlines: true,
         });
         setIsCreateDialogOpen(true);
@@ -239,17 +228,14 @@ const CalendarPage: React.FC = () => {
             return;
         }
 
-        const originalDate = quest.lateDateTime ? new Date(quest.lateDateTime) : new Date();
-        const newDate = event.start;
-        const newDateTime = new Date(
-            newDate.getFullYear(),
-            newDate.getMonth(),
-            newDate.getDate(),
-            originalDate.getHours(),
-            originalDate.getMinutes()
-        );
+        const originalStartDate = quest.startDateTime ? new Date(quest.startDateTime) : new Date();
+        const newStartDate = event.start;
+
+        const duration = quest.endDateTime ? new Date(quest.endDateTime).getTime() - originalStartDate.getTime() : 0;
         
-        updateQuest({ ...quest, lateDateTime: newDateTime.toISOString() });
+        const newEndDate = new Date(newStartDate.getTime() + duration);
+
+        updateQuest({ ...quest, startDateTime: newStartDate.toISOString(), endDateTime: newEndDate.toISOString() });
         addNotification({ type: 'success', message: `Rescheduled "${quest.title}" successfully.` });
     }, [currentUser, updateQuest, addNotification]);
     
@@ -333,7 +319,7 @@ const CalendarPage: React.FC = () => {
                  <div className="p-4">
                     <FullCalendar
                         ref={calendarRef}
-                        plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin, googleCalendarPlugin, listPlugin]}
+                        plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin, googleCalendarPlugin, listPlugin, rrulePlugin]}
                         headerToolbar={{
                             left: 'prev,next today',
                             center: 'title',

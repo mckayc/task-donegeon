@@ -1,3 +1,4 @@
+
 require("reflect-metadata");
 const express = require('express');
 const cors = require('cors');
@@ -1176,7 +1177,7 @@ app.post('/api/actions/complete-quest', asyncMiddleware(async (req, res) => {
             }
         });
 
-        res.status(200).json({ message: 'Quest completion recorded.' });
+        res.status(204).send();
 
     } catch (error) {
         if (error.statusCode) {
@@ -1242,7 +1243,7 @@ app.post('/api/actions/approve-quest/:id', asyncMiddleware(async (req, res) => {
             await checkAndAwardTrophies(manager, user.id, quest.guildId);
         });
 
-        res.status(200).json({ message: 'Quest approved.' });
+        res.status(204).send();
     } catch (error) {
         if (error.statusCode) {
             res.status(error.statusCode).json({ error: error.message });
@@ -1263,7 +1264,7 @@ app.post('/api/actions/reject-quest/:id', asyncMiddleware(async (req, res) => {
     completion.status = 'Rejected';
     if(note) completion.note = note;
     await repo.save(updateTimestamps(completion));
-    res.status(200).json({ message: 'Quest rejected.' });
+    res.status(204).send();
 }));
 
 

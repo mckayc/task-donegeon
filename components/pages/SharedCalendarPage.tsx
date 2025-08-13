@@ -13,11 +13,11 @@ import { useQuestDispatch, useQuestState } from '../../context/QuestContext';
 import { useNotificationsDispatch } from '../../context/NotificationsContext';
 
 const getDueDateString = (quest: Quest): string | null => {
-    if (quest.type === QuestType.Venture && quest.lateDateTime) {
-        return `Due: ${new Date(quest.lateDateTime).toLocaleDateString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}`;
+    if (quest.type === QuestType.Venture && quest.startDateTime) {
+        return `Due: ${new Date(quest.startDateTime).toLocaleDateString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}`;
     }
-    if (quest.type === QuestType.Duty && quest.lateTime) {
-        const [hours, minutes] = quest.lateTime.split(':').map(Number);
+    if (quest.type === QuestType.Duty && quest.startTime) {
+        const [hours, minutes] = quest.startTime.split(':').map(Number);
         const date = new Date();
         date.setHours(hours, minutes);
         return `Due at: ${date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
@@ -64,8 +64,8 @@ const SharedCalendarPage: React.FC = () => {
                  }
                  if (!isAssigned) return;
                  
-                 const isDutyToday = quest.type === QuestType.Duty && isQuestScheduledForDay(quest, currentDate);
-                 const isVentureDueToday = quest.type === QuestType.Venture && quest.lateDateTime && toYMD(new Date(quest.lateDateTime)) === dateKey;
+                 const isDutyToday = quest.rrule && isQuestScheduledForDay(quest, currentDate);
+                 const isVentureDueToday = !quest.rrule && quest.startDateTime && toYMD(new Date(quest.startDateTime)) === dateKey;
                  const isTodoForUser = quest.type === QuestType.Venture && quest.todoUserIds?.includes(user.id);
                  
                  const isRelevantToday = isDutyToday || isVentureDueToday || isTodoForUser;

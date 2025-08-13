@@ -53,19 +53,18 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
           isActive: questToEdit.isActive,
           isOptional: questToEdit.isOptional || false,
           requiresApproval: questToEdit.requiresApproval,
-          availabilityType: questToEdit.availabilityType,
           availabilityCount: questToEdit.availabilityCount || 1,
-          weeklyRecurrenceDays: questToEdit.weeklyRecurrenceDays || [],
-          monthlyRecurrenceDays: questToEdit.monthlyRecurrenceDays || [],
           assignedUserIds: [...(questToEdit.assignedUserIds || [])],
           guildId: questToEdit.guildId || '',
           groupId: questToEdit.groupId || '',
           tags: questToEdit.tags || [],
-          lateDateTime: questToEdit.lateDateTime ? questToEdit.lateDateTime.slice(0, 16) : '',
-          incompleteDateTime: questToEdit.incompleteDateTime ? questToEdit.incompleteDateTime.slice(0, 16) : '',
-          lateTime: questToEdit.lateTime || '',
-          incompleteTime: questToEdit.incompleteTime || '',
-          hasDeadlines: !!(questToEdit.lateDateTime || questToEdit.incompleteDateTime || questToEdit.lateTime || questToEdit.incompleteTime),
+          startDateTime: questToEdit.startDateTime ? questToEdit.startDateTime.slice(0, 16) : '',
+          endDateTime: questToEdit.endDateTime ? questToEdit.endDateTime.slice(0, 16) : '',
+          startTime: questToEdit.startTime || '',
+          endTime: questToEdit.endTime || '',
+          allDay: questToEdit.allDay,
+          rrule: questToEdit.rrule,
+          hasDeadlines: !!(questToEdit.endDateTime || questToEdit.endTime),
         };
       }
       
@@ -92,18 +91,17 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
           isActive: true,
           requiresApproval: true,
           isOptional: false,
-          availabilityType: QuestAvailability.Unlimited,
           availabilityCount: 1,
-          weeklyRecurrenceDays: [] as number[],
-          monthlyRecurrenceDays: [] as number[],
           assignedUserIds: admins.map(a => a.id), // Assign to all admins by default
           guildId: '',
           groupId: '',
           tags: ['bugfix', 'development'],
-          lateDateTime: '',
-          incompleteDateTime: '',
-          lateTime: '',
-          incompleteTime: '',
+          startDateTime: new Date().toISOString().slice(0, 16),
+          endDateTime: '',
+          startTime: '',
+          endTime: '',
+          allDay: true,
+          rrule: null,
           hasDeadlines: false,
         };
       }
@@ -139,23 +137,22 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
         isActive: settings.questDefaults.isActive,
         requiresApproval: settings.questDefaults.requiresApproval,
         isOptional: settings.questDefaults.isOptional,
-        availabilityType: (initialData?.type === QuestType.Venture) ? QuestAvailability.Unlimited : QuestAvailability.Daily,
         availabilityCount: 1,
-        weeklyRecurrenceDays: [] as number[],
-        monthlyRecurrenceDays: [] as number[],
         assignedUserIds: users.map(u => u.id),
         guildId: '',
         groupId: suggestedGroupId,
         tags: initialData?.tags || [],
-        lateDateTime: initialData?.lateDateTime || '',
-        incompleteDateTime: initialData?.incompleteDateTime || '',
-        lateTime: initialData?.lateTime || '',
-        incompleteTime: initialData?.incompleteTime || '',
+        startDateTime: new Date().toISOString().slice(0,16),
+        endDateTime: '',
+        startTime: '',
+        endTime: '',
+        allDay: true,
+        rrule: 'FREQ=DAILY',
         hasDeadlines: initialData?.hasDeadlines || false,
       };
   }, [questToEdit, initialData, initialDataFromBug, mode, rewardTypes, questGroups, settings.questDefaults, users]);
 
-  const [formData, setFormData] = useState(getInitialFormData);
+  const [formData, setFormData] = useState(getInitialFormData());
   const [error, setError] = useState('');
   const [isEmojiPickerOpen, setIsEmojiPickerOpen] = useState(false);
   const [isGalleryOpen, setIsGalleryOpen] = useState(false);
@@ -190,10 +187,8 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
     if (!formData.hasDeadlines) {
       setFormData(p => ({
         ...p,
-        lateDateTime: '',
-        incompleteDateTime: '',
-        lateTime: '',
-        incompleteTime: '',
+        endDateTime: '',
+        endTime: '',
         lateSetbacks: [],
         incompleteSetbacks: [],
       }));
@@ -202,16 +197,7 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
 
   useEffect(() => {
     const newType = formData.type;
-    const currentAvail = formData.availabilityType;
-
     if (!questToEdit && newType === QuestType.Venture) setFormData(p => ({...p, requiresApproval: true}));
-
-    if (newType === QuestType.Duty && !DUTY_AVAILABILITIES.includes(currentAvail)) {
-        setFormData(p => ({...p, availabilityType: QuestAvailability.Daily}));
-    } else if (newType === QuestType.Venture && !VENTURE_AVAILABILITIES.includes(currentAvail)) {
-        setFormData(p => ({...p, availabilityType: QuestAvailability.Unlimited}));
-    }
-
   }, [formData.type, questToEdit]);
   
   const handleUserAssignmentChange = (userId: string) => {
@@ -243,14 +229,6 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
     setFormData(prev => ({ ...prev, [category]: prev[category].filter((_, i) => i !== indexToRemove) }));
   };
 
-  const handleWeeklyDayToggle = (dayIndex: number) => {
-    setFormData(prev => ({ ...prev, weeklyRecurrenceDays: prev.weeklyRecurrenceDays.includes(dayIndex) ? prev.weeklyRecurrenceDays.filter((d: number) => d !== dayIndex) : [...prev.weeklyRecurrenceDays, dayIndex].sort((a, b) => a - b) }));
-  };
-
-  const handleMonthlyDayToggle = (day: number) => {
-    setFormData(prev => ({ ...prev, monthlyRecurrenceDays: prev.monthlyRecurrenceDays.includes(day) ? prev.monthlyRecurrenceDays.filter((d: number) => d !== day) : [...prev.monthlyRecurrenceDays, day].sort((a: number, b: number)=>a-b) }));
-  };
-
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.title.trim()) {
@@ -269,31 +247,38 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
         finalGroupId = newGroup.id;
     }
 
-    const finalQuestData = {
-        ...formData,
-        groupId: finalGroupId || undefined,
-        lateDateTime: formData.hasDeadlines && formData.type === QuestType.Venture && formData.lateDateTime ? new Date(formData.lateDateTime).toISOString() : undefined,
-        incompleteDateTime: formData.hasDeadlines && formData.type === QuestType.Venture && formData.incompleteDateTime ? new Date(formData.incompleteDateTime).toISOString() : undefined,
-        lateTime: formData.hasDeadlines && formData.type === QuestType.Duty && formData.lateTime ? formData.lateTime : undefined,
-        incompleteTime: formData.hasDeadlines && formData.type === QuestType.Duty && formData.incompleteTime ? formData.incompleteTime : undefined,
-        
-        guildId: formData.guildId || undefined,
-        availabilityCount: formData.availabilityType === QuestAvailability.Frequency ? formData.availabilityCount : null,
-        weeklyRecurrenceDays: formData.availabilityType === QuestAvailability.Weekly ? formData.weeklyRecurrenceDays : [],
-        monthlyRecurrenceDays: formData.availabilityType === QuestAvailability.Monthly ? formData.monthlyRecurrenceDays : [],
+    const questPayload: Omit<Quest, 'id' | 'claimedByUserIds' | 'dismissals'> = {
+        title: formData.title,
+        description: formData.description,
+        type: formData.type,
+        iconType: formData.iconType,
+        icon: formData.icon,
+        imageUrl: formData.imageUrl || undefined,
+        tags: formData.tags,
+        startDateTime: formData.type === QuestType.Venture && formData.startDateTime ? new Date(formData.startDateTime).toISOString() : null,
+        endDateTime: formData.type === QuestType.Venture && formData.hasDeadlines && formData.endDateTime ? new Date(formData.endDateTime).toISOString() : null,
+        allDay: formData.allDay,
+        rrule: formData.type === QuestType.Duty ? formData.rrule : null,
+        startTime: formData.type === QuestType.Duty ? formData.startTime : null,
+        endTime: formData.type === QuestType.Duty && formData.hasDeadlines ? formData.endTime : null,
+        availabilityCount: formData.type === QuestType.Venture ? formData.availabilityCount : null,
         rewards: formData.rewards.filter(r => r.rewardTypeId && r.amount > 0),
         lateSetbacks: formData.lateSetbacks.filter(s => s.rewardTypeId && s.amount > 0),
         incompleteSetbacks: formData.incompleteSetbacks.filter(s => s.rewardTypeId && s.amount > 0),
+        isActive: formData.isActive,
+        isOptional: formData.isOptional,
+        assignedUserIds: formData.assignedUserIds,
+        guildId: formData.guildId || undefined,
+        groupId: finalGroupId || undefined,
+        requiresApproval: formData.requiresApproval,
     };
-
-    const { hasDeadlines, ...questPayload } = finalQuestData;
 
     if (onSave) {
         onSave(questPayload);
     } else if (mode === 'edit' && questToEdit) {
         updateQuest({ ...questToEdit, ...questPayload });
     } else {
-        addQuest(questPayload as Omit<Quest, 'id' | 'claimedByUserIds' | 'dismissals'>);
+        addQuest(questPayload);
     }
     onClose();
   };
@@ -308,8 +293,6 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
           setFormData(p => ({...p, groupId: value}));
       }
   };
-
-  const currentAvailabilityOptions = formData.type === QuestType.Duty ? DUTY_AVAILABILITIES : VENTURE_AVAILABILITIES;
 
   return (
     <>
@@ -419,33 +402,6 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
             <ToggleSwitch enabled={formData.requiresApproval} setEnabled={(val: boolean) => setFormData(p => ({...p, requiresApproval: val}))} label="Requires Approval" />
           </div>
 
-          <div className="p-4 bg-stone-900/50 rounded-lg">
-             <h3 className="font-semibold text-stone-200 mb-3">Availability</h3>
-             <div className="flex space-x-4 flex-wrap gap-2">
-                 {currentAvailabilityOptions.map(availType => (
-                     <div key={availType} className="flex items-center">
-                         <input type="radio" id={availType} name="availabilityType" value={availType} checked={formData.availabilityType === availType} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData(p => ({...p, availabilityType: e.target.value as QuestAvailability}))} className="h-4 w-4 text-emerald-600 bg-stone-700 border-stone-500 focus:ring-emerald-500" />
-                         <label htmlFor={availType} className="ml-2 capitalize">{availType}</label>
-                     </div>
-                 ))}
-             </div>
-             {formData.availabilityType === QuestAvailability.Weekly && formData.type === QuestType.Duty && (
-                <div className="mt-3">
-                    <p className="text-sm text-stone-300 mb-2">Repeat on these days:</p>
-                    <div className="flex flex-wrap gap-2">{WEEKDAYS.map((day, index) => (<button type="button" key={day} onClick={() => handleWeeklyDayToggle(index)} className={`px-3 py-1.5 rounded-md text-sm font-semibold transition-colors ${formData.weeklyRecurrenceDays.includes(index) ? 'btn-primary' : 'bg-stone-700 hover:bg-stone-600'}`}>{day}</button>))}</div>
-                </div>
-             )}
-              {formData.availabilityType === QuestAvailability.Monthly && formData.type === QuestType.Duty && (
-                <div className="mt-3">
-                    <p className="text-sm text-stone-300 mb-2">Repeat on these dates:</p>
-                    <div className="grid grid-cols-7 gap-1">{Array.from({length: 31}, (_, i) => i + 1).map(day => (<button type="button" key={day} onClick={() => handleMonthlyDayToggle(day)} className={`h-9 w-9 flex items-center justify-center rounded-md text-sm font-semibold transition-colors ${formData.monthlyRecurrenceDays.includes(day) ? 'btn-primary' : 'bg-stone-700 hover:bg-stone-600'}`}>{day}</button>))}</div>
-                </div>
-             )}
-             {formData.availabilityType === QuestAvailability.Frequency && formData.type === QuestType.Venture && (
-                <div className="mt-3"><Input label="Number of completions available" type="number" min="1" value={formData.availabilityCount || 1} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData(p => ({...p, availabilityCount: parseInt(e.target.value)}))} /></div>
-             )}
-          </div>
-
           <div className="p-4 bg-stone-900/50 rounded-lg space-y-4">
             <div className="flex justify-between items-center">
               <h3 className="font-semibold text-lg text-stone-200">Deadlines & Time-based {settings.terminology.negativePoints}</h3>
@@ -457,13 +413,13 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
                 <p className="text-sm text-stone-400 -mt-2">Set specific times for when a {settings.terminology.task.toLowerCase()} becomes late or incomplete, and assign {settings.terminology.negativePoints.toLowerCase()} for each.</p>
                  {formData.type === QuestType.Venture ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <Input label="Becomes LATE at" type="datetime-local" value={formData.lateDateTime} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData(p => ({...p, lateDateTime: e.target.value}))} />
-                        <Input label="Becomes INCOMPLETE at" type="datetime-local" value={formData.incompleteDateTime} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData(p => ({...p, incompleteDateTime: e.target.value}))} />
+                        <Input label="Start Date/Time" type="datetime-local" value={formData.startDateTime} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData(p => ({...p, startDateTime: e.target.value}))} />
+                        <Input label="End Date/Time" type="datetime-local" value={formData.endDateTime} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData(p => ({...p, endDateTime: e.target.value}))} />
                     </div>
                 ) : ( // Duty
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <Input label="Becomes LATE at (Daily Time)" type="time" value={formData.lateTime} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData(p => ({...p, lateTime: e.target.value}))} />
-                        <Input label="Becomes INCOMPLETE at (Daily Time)" type="time" value={formData.incompleteTime} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData(p => ({...p, incompleteTime: e.target.value}))} />
+                        <Input label="Start Time (Daily)" type="time" value={formData.startTime} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData(p => ({...p, startTime: e.target.value}))} />
+                        <Input label="End Time (Daily)" type="time" value={formData.endTime} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData(p => ({...p, endTime: e.target.value}))} />
                     </div>
                 )}
                 <RewardInputGroup category='lateSetbacks' items={formData.lateSetbacks} onChange={handleRewardChange('lateSetbacks')} onAdd={handleAddRewardForCategory('lateSetbacks')} onRemove={handleRemoveReward('lateSetbacks')} />

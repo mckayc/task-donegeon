@@ -28,13 +28,13 @@ export const useAvailableVentures = () => {
         );
 
         availableVentures.sort((a, b) => {
-            const aHasDate = !!a.lateDateTime;
-            const bHasDate = !!b.lateDateTime;
+            const aHasDate = !!a.startDateTime;
+            const bHasDate = !!b.startDateTime;
             if (aHasDate && !bHasDate) return -1;
             if (!aHasDate && bHasDate) return 1;
             if (aHasDate && bHasDate) {
-                const dateA = new Date(a.lateDateTime!).getTime();
-                const dateB = new Date(b.lateDateTime!).getTime();
+                const dateA = new Date(a.startDateTime!).getTime();
+                const dateB = new Date(b.startDateTime!).getTime();
                 if (dateA !== dateB) return dateA - dateB;
             }
             // Fallback to ID sort (proxy for creation date)

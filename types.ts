@@ -84,19 +84,22 @@ export interface Quest {
   icon: string;
   imageUrl?: string;
   tags: string[];
-  lateDateTime?: string; // For Ventures with deadlines
-  incompleteDateTime?: string; // For Ventures with deadlines
-  lateTime?: string; // HH:mm format for recurring Duties
-  incompleteTime?: string; // HH:mm format for recurring Duties
+  
+  // New Unified Scheduling Model
+  startDateTime: string | null; // Full ISO string for one-time events (Ventures).
+  endDateTime: string | null;   // Full ISO string for one-time events (Ventures).
+  allDay: boolean;              // Indicates if the event is for the whole day.
+  rrule: string | null;         // iCalendar RRULE string for recurring events (Duties).
+  startTime: string | null;     // 'HH:mm' for recurring events (Duties).
+  endTime: string | null;       // 'HH:mm' for recurring events (Duties).
+  
+  availabilityCount: number | null; // For Ventures that can be completed multiple times.
+
   rewards: RewardItem[];
   lateSetbacks: RewardItem[];
   incompleteSetbacks: RewardItem[];
   isActive: boolean;
   isOptional: boolean;
-  availabilityType: QuestAvailability;
-  availabilityCount: number | null; // For Frequency type
-  weeklyRecurrenceDays: number[]; // For Weekly type
-  monthlyRecurrenceDays: number[]; // For Monthly type
   assignedUserIds: string[];
   guildId?: string;
   groupId?: string;

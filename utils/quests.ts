@@ -1,4 +1,4 @@
-import { Quest, QuestCompletion, QuestAvailability, QuestCompletionStatus, AppMode, User, QuestType, ScheduledEvent } from '../types';
+import { Quest, QuestCompletion, QuestCompletionStatus, AppMode, User, QuestType, ScheduledEvent } from '../types';
 
 /**
  * Consistently formats a Date object into a 'YYYY-MM-DD' string, ignoring timezone.
@@ -41,14 +41,33 @@ export const isVacationActiveOnDate = (date: Date, scheduledEvents: ScheduledEve
  */
 export const isQuestScheduledForDay = (quest: Quest, day: Date): boolean => {
     if (quest.type === QuestType.Venture) {
-        // A Venture is "scheduled" for its due date.
-        return !!quest.lateDateTime && toYMD(new Date(quest.lateDateTime)) === toYMD(day);
+        // A Venture is "scheduled" for its due date range.
+        if (!quest.startDateTime) return false;
+        const startDate = toYMD(new Date(quest.startDateTime));
+        const endDate = quest.endDateTime ? toYMD(new Date(quest.endDateTime)) : startDate;
+        const checkDate = toYMD(day);
+        return checkDate >= startDate && checkDate <= endDate;
     }
     // It's a Duty
-    switch (quest.availabilityType) {
-        case QuestAvailability.Daily: return true;
-        case QuestAvailability.Weekly: return quest.weeklyRecurrenceDays.includes(day.getDay());
-        case QuestAvailability.Monthly: return quest.monthlyRecurrenceDays.includes(day.getDate());
+    if (!quest.rrule) return false;
+
+    const rruleParts = quest.rrule.split(';');
+    const freq = rruleParts.find(p => p.startsWith('FREQ='))?.split('=')[1];
+
+    switch (freq) {
+        case 'DAILY': return true;
+        case 'WEEKLY': {
+            const byday = rruleParts.find(p => p.startsWith('BYDAY='))?.split('=')[1];
+            if (!byday) return true; 
+            const weekdays = byday.split(',').map(d => ['SU', 'MO', 'TU', 'WE', 'TH', 'FR', 'SA'].indexOf(d));
+            return weekdays.includes(day.getDay());
+        }
+        case 'MONTHLY': {
+            const bymonthday = rruleParts.find(p => p.startsWith('BYMONTHDAY='))?.split('=')[1];
+            if (!bymonthday) return false;
+            const daysOfMonth = bymonthday.split(',').map(Number);
+            return daysOfMonth.includes(day.getDate());
+        }
         default: return false;
     }
 }
@@ -130,28 +149,23 @@ export const isQuestAvailableForUser = (
 
   // Venture-specific logic for early completion and deadlines
   if (quest.type === QuestType.Venture) {
-    if (!onVacation && quest.incompleteDateTime && today > new Date(quest.incompleteDateTime)) {
+    if (!onVacation && quest.endDateTime && today > new Date(quest.endDateTime)) {
       return false; // Past the final deadline, and not on vacation
     }
-    if (quest.availabilityType === QuestAvailability.Unlimited) {
-      return questUserCompletions.length === 0;
+    if (quest.availabilityCount) { // Frequency
+      return questUserCompletions.length < quest.availabilityCount;
     }
-    if (quest.availabilityType === QuestAvailability.Frequency) {
-      return questUserCompletions.length < (quest.availabilityCount || 1);
-    }
-    // If a venture has no specific availability, it's treated as unlimited.
+    // Unlimited (completable once)
     return questUserCompletions.length === 0;
   }
   
   // Duty-specific logic
   if (quest.type === QuestType.Duty) {
-    if (!onVacation && quest.incompleteTime) {
-      const isScheduledToday = isQuestScheduledForDay(quest, today);
-
-      if (isScheduledToday) {
-          const [hours, minutes] = quest.incompleteTime.split(':').map(Number);
-          const incompleteDeadlineToday = new Date(today.getFullYear(), today.getMonth(), today.getDate(), hours, minutes);
-          if (today > incompleteDeadlineToday) {
+    if (!onVacation && quest.endTime) {
+      if (isQuestScheduledForDay(quest, today)) {
+          const [hours, minutes] = quest.endTime.split(':').map(Number);
+          const deadlineToday = new Date(today.getFullYear(), today.getMonth(), today.getDate(), hours, minutes);
+          if (today > deadlineToday) {
               return false;
           }
       }
@@ -159,32 +173,12 @@ export const isQuestAvailableForUser = (
     
     const todayYMD = toYMD(today);
 
-    switch (quest.availabilityType) {
-      case QuestAvailability.Daily:
-        // Available if not completed today.
+    // For all recurring duties, we check if it was completed today.
+    if (isQuestScheduledForDay(quest, today)) {
         return !questUserCompletions.some((c) => toYMD(new Date(c.completedAt)) === todayYMD);
-
-      case QuestAvailability.Weekly: {
-        // Not available if it's not the right day of the week.
-        if (!quest.weeklyRecurrenceDays.includes(today.getDay())) {
-          return false;
-        }
-        // Available if not completed today.
-        return !questUserCompletions.some((c) => toYMD(new Date(c.completedAt)) === todayYMD);
-      }
-        
-      case QuestAvailability.Monthly: {
-        // Not available if it's not the right day of the month.
-        if (!quest.monthlyRecurrenceDays.includes(today.getDate())) {
-          return false;
-        }
-        // Available if not completed today.
-        return !questUserCompletions.some((c) => toYMD(new Date(c.completedAt)) === todayYMD);
-      }
-        
-      default:
-        return true;
     }
+    
+    return false; // Not scheduled for today
   }
 
   return true; // Should not be reached
@@ -215,8 +209,8 @@ const getQuestSortKey = (quest: Quest, user: User, date: Date, allCompletions: Q
     let urgencyPriority = 2; // Default: not urgent
     const todayYMD = toYMD(date);
 
-    if (quest.type === QuestType.Venture && quest.lateDateTime) {
-        const dueDate = new Date(quest.lateDateTime);
+    if (quest.type === QuestType.Venture && quest.endDateTime) {
+        const dueDate = new Date(quest.endDateTime);
         // Use a version of 'date' that is at the start of the day for date-only comparisons
         const todayStart = new Date(date.getFullYear(), date.getMonth(), date.getDate());
         if (dueDate < todayStart || toYMD(dueDate) === todayYMD) {
@@ -224,9 +218,9 @@ const getQuestSortKey = (quest: Quest, user: User, date: Date, allCompletions: Q
         } else {
             urgencyPriority = 1; // Due in the future
         }
-    } else if (quest.type === QuestType.Duty && quest.lateTime && isQuestScheduledForDay(quest, date)) {
+    } else if (quest.type === QuestType.Duty && quest.endTime && isQuestScheduledForDay(quest, date)) {
         // Any duty with a deadline on a day it's scheduled is considered urgent for that day.
-        const [hours, minutes] = quest.lateTime.split(':').map(Number);
+        const [hours, minutes] = quest.endTime.split(':').map(Number);
         const deadlineToday = new Date(date.getFullYear(), date.getMonth(), date.getDate(), hours, minutes);
         if (date > deadlineToday) {
             urgencyPriority = 0; // Past due
@@ -245,10 +239,10 @@ const getQuestSortKey = (quest: Quest, user: User, date: Date, allCompletions: Q
     
     // --- Key 5: Time Sorting (earlier times/dates get a smaller number) ---
     let timePriority = Number.MAX_SAFE_INTEGER;
-    if (quest.type === QuestType.Venture && quest.lateDateTime) {
-        timePriority = new Date(quest.lateDateTime).getTime();
-    } else if (quest.type === QuestType.Duty && quest.lateTime) {
-        const [hours, minutes] = quest.lateTime.split(':').map(Number);
+    if (quest.type === QuestType.Venture && quest.endDateTime) {
+        timePriority = new Date(quest.endDateTime).getTime();
+    } else if (quest.type === QuestType.Duty && quest.endTime) {
+        const [hours, minutes] = quest.endTime.split(':').map(Number);
         timePriority = hours * 60 + minutes; // Sort by minutes from midnight
     }
 
@@ -317,15 +311,15 @@ export const getQuestUserStatus = (
   
   // Handle general completion for non-daily quests
   const approvedCompletions = userCompletionsForQuest.filter(c => c.status === QuestCompletionStatus.Approved);
-  if (quest.availabilityType === QuestAvailability.Unlimited && approvedCompletions.length > 0) {
+  if (quest.availabilityCount === null && approvedCompletions.length > 0) { // Unlimited
       return { status: 'COMPLETED', buttonText: 'Completed', isActionDisabled: true };
   }
-  if (quest.availabilityType === QuestAvailability.Frequency && approvedCompletions.length >= (quest.availabilityCount || 1)) {
+  if (quest.availabilityCount && approvedCompletions.length >= quest.availabilityCount) { // Frequency
      return { status: 'COMPLETED', buttonText: 'Completed', isActionDisabled: true };
   }
 
 
-  const isClaimableVenture = quest.type === QuestType.Venture && quest.availabilityType === QuestAvailability.Frequency;
+  const isClaimableVenture = quest.type === QuestType.Venture && !!quest.availabilityCount;
   if (isClaimableVenture) {
     const isClaimedByCurrentUser = (quest.claimedByUserIds || []).includes(user.id);
     const isFullyClaimed = (quest.claimedByUserIds || []).length >= (quest.availabilityCount || 1);

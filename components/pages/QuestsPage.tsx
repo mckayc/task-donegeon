@@ -15,22 +15,24 @@ import { useEconomyState } from '../../context/EconomyContext';
 import { useQuestState, useQuestDispatch } from '../../context/QuestContext';
 
 const getAvailabilityText = (quest: Quest, completionsCount: number): string => {
-    switch (quest.availabilityType) {
-        case QuestAvailability.Daily:
-            return 'Resets Daily';
-        case QuestAvailability.Weekly:
-            const days = quest.weeklyRecurrenceDays.map(d => ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][d]).join(', ');
+    if (quest.rrule) {
+        if (quest.rrule.includes('FREQ=DAILY')) return 'Resets Daily';
+        if (quest.rrule.includes('FREQ=WEEKLY')) {
+            const byday = quest.rrule.split(';').find(p => p.startsWith('BYDAY='))?.split('=')[1] || '';
+            const days = byday.split(',').map(d => ({'SU':'Sun','MO':'Mon','TU':'Tue','WE':'Wed','TH':'Thu','FR':'Fri','SA':'Sat'}[d])).join(', ');
             return `Resets on ${days}`;
-        case QuestAvailability.Monthly:
-            return `Resets on date(s) ${quest.monthlyRecurrenceDays.join(', ')}`;
-        case QuestAvailability.Frequency: {
-            return `${completionsCount} / ${quest.availabilityCount} completed`;
         }
-        case QuestAvailability.Unlimited:
-            return 'One-time Venture';
-        default:
-            return '';
+        if (quest.rrule.includes('FREQ=MONTHLY')) {
+            const bymonthday = quest.rrule.split(';').find(p => p.startsWith('BYMONTHDAY='))?.split('=')[1] || '';
+            return `Resets on date(s) ${bymonthday}`;
+        }
     }
+
+    if (quest.availabilityCount) {
+        return `${completionsCount} / ${quest.availabilityCount} completed`;
+    }
+    
+    return 'One-time Venture';
 };
 
 const formatTimeRemaining = (targetDate: Date, now: Date): string => {
@@ -76,56 +78,39 @@ const QuestItem: React.FC<{ quest: Quest; now: Date; onSelect: (quest: Quest) =>
         return questCompletions.filter(c => c.questId === quest.id).length;
     }, [questCompletions, quest.id]);
     
-    let lateDeadline: Date | null = null;
-    let incompleteDeadline: Date | null = null;
+    let deadline: Date | null = null;
     let borderClass = 'border-stone-700';
     let timeStatusText = '';
     let timeStatusColor = 'text-green-400';
 
-    if (quest.type === QuestType.Venture) {
-        lateDeadline = quest.lateDateTime ? new Date(quest.lateDateTime) : null;
-        incompleteDeadline = quest.incompleteDateTime ? new Date(quest.incompleteDateTime) : null;
-    } else if (quest.type === QuestType.Duty) {
-        if (quest.lateTime) {
-            const [hours, minutes] = quest.lateTime.split(':').map(Number);
-            lateDeadline = new Date(now.getFullYear(), now.getMonth(), now.getDate(), hours, minutes);
-        }
-        if (quest.incompleteTime) {
-            const [hours, minutes] = quest.incompleteTime.split(':').map(Number);
-            incompleteDeadline = new Date(now.getFullYear(), now.getMonth(), now.getDate(), hours, minutes);
-        }
+    if (quest.type === QuestType.Venture && quest.endDateTime) {
+        deadline = new Date(quest.endDateTime);
+    } else if (quest.type === QuestType.Duty && quest.endTime) {
+        const [hours, minutes] = quest.endTime.split(':').map(Number);
+        deadline = new Date(now.getFullYear(), now.getMonth(), now.getDate(), hours, minutes);
     }
 
-    const isLate = lateDeadline ? now > lateDeadline : false;
-    const isIncomplete = incompleteDeadline ? now > incompleteDeadline : false;
+    const isOverdue = deadline ? now > deadline : false;
     
     if (isTodo) {
         borderClass = 'border-purple-500 ring-2 ring-purple-500/50';
-    } else if (lateDeadline || incompleteDeadline) {
-      borderClass = isIncomplete ? 'border-red-600' : isLate ? 'border-yellow-600' : 'border-green-600';
+    } else if (deadline) {
+      borderClass = isOverdue ? 'border-red-600' : 'border-green-600';
     }
     
-    if (isIncomplete) {
-        timeStatusText = 'Incomplete';
+    if (isOverdue) {
+        timeStatusText = 'Overdue';
         timeStatusColor = 'text-red-400';
-    } else if (isLate) {
-        if (incompleteDeadline && incompleteDeadline > now) {
-            timeStatusText = `Incomplete in: ${formatTimeRemaining(incompleteDeadline, now)}`;
-            timeStatusColor = 'text-yellow-400';
-        } else {
-            timeStatusText = 'Late';
-            timeStatusColor = 'text-yellow-400';
-        }
-    } else if (lateDeadline && lateDeadline > now) {
-        timeStatusText = `Late in: ${formatTimeRemaining(lateDeadline, now)}`;
+    } else if (deadline && deadline > now) {
+        timeStatusText = `Due in: ${formatTimeRemaining(deadline, now)}`;
     }
 
     const absoluteDueDateString = useMemo(() => {
-        if (quest.type === QuestType.Venture && quest.lateDateTime) {
-            return `Due: ${new Date(quest.lateDateTime).toLocaleString([], { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}`;
+        if (quest.type === QuestType.Venture && quest.endDateTime) {
+            return `Due: ${new Date(quest.endDateTime).toLocaleString([], { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}`;
         }
-        if (quest.type === QuestType.Duty && quest.lateTime) {
-            return `Due daily at ${new Date(`1970-01-01T${quest.lateTime}`).toLocaleTimeString([], { hour: '2-digit', minute:'2-digit' })}`;
+        if (quest.type === QuestType.Duty && quest.endTime) {
+            return `Due daily at ${new Date(`1970-01-01T${quest.endTime}`).toLocaleTimeString([], { hour: '2-digit', minute:'2-digit' })}`;
         }
         return null;
     }, [quest]);

@@ -54,7 +54,8 @@ const checkAndAwardTrophies = async (manager, userId, guildId) => {
         if (userTrophies.some(ut => ut.trophyId === trophy.id)) continue;
         
         // Check requirements
-        const meetsAllRequirements = trophy.requirements.every(req => {
+        const requirements = Array.isArray(trophy.requirements) ? trophy.requirements : [];
+        const meetsAllRequirements = requirements.every(req => {
             switch (req.type) {
                 case 'COMPLETE_QUEST_TYPE':
                     return userCompletedQuests.filter(c => c.quest?.type === req.value).length >= req.count;

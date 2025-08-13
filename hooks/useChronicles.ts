@@ -4,6 +4,7 @@ import {
   Quest,
   QuestType,
   Trophy,
+  AdminAdjustmentType,
 } from '../types';
 import { useAppState } from '../context/AppContext';
 import { useUIState } from '../context/UIStateContext';
@@ -44,7 +45,8 @@ export const useChronicles = ({ startDate, endDate }: UseChroniclesProps): Map<s
           id: c.id, date: c.completedAt, type: 'Quest',
           title: `Completed "${quest?.title || 'Unknown Quest'}"`,
           status: c.status, note: c.note, icon: quest?.icon || '📜',
-          color: quest?.type === QuestType.Duty ? '#38bdf8' : '#f59e0b', userId: c.userId,
+          color: quest?.type === QuestType.Duty ? 'hsl(var(--primary))' : 'hsl(var(--accent))',
+          userId: c.userId,
           questType: quest?.type, guildId: c.guildId
         });
     });
@@ -54,7 +56,7 @@ export const useChronicles = ({ startDate, endDate }: UseChroniclesProps): Map<s
         allEvents.push({
             id: p.id, date: p.requestedAt, type: 'Purchase', userId: p.userId,
             title: `Purchased "${p.assetDetails.name}"`,
-            status: p.status, icon: '💰', color: '#22c55e', guildId: p.guildId
+            status: p.status, icon: '💰', color: 'hsl(var(--primary))', guildId: p.guildId
         });
     });
 
@@ -65,7 +67,7 @@ export const useChronicles = ({ startDate, endDate }: UseChroniclesProps): Map<s
             id: ut.id, date: ut.awardedAt, type: 'Trophy', userId: ut.userId,
             title: `Earned "${trophy?.name || 'Unknown Trophy'}"`,
             status: "Awarded", note: trophy?.description, icon: trophy?.icon || '🏆',
-            color: '#f59e0b', guildId: ut.guildId
+            color: 'hsl(var(--accent))', guildId: ut.guildId
         });
     });
     
@@ -74,7 +76,9 @@ export const useChronicles = ({ startDate, endDate }: UseChroniclesProps): Map<s
         allEvents.push({
             id: adj.id, date: adj.adjustedAt, type: 'Adjustment', userId: adj.userId,
             title: `Adjustment by ${userMap.get(adj.adjusterId) || 'Admin'}`,
-            status: adj.type, note: adj.reason, icon: '🛠️', color: '#64748b', guildId: adj.guildId
+            status: adj.type, note: adj.reason, icon: '🛠️',
+            color: adj.type === AdminAdjustmentType.Reward ? 'hsl(var(--primary))' : 'hsl(var(--destructive))',
+            guildId: adj.guildId
         });
     });
     
@@ -84,7 +88,7 @@ export const useChronicles = ({ startDate, endDate }: UseChroniclesProps): Map<s
              allEvents.push({
                 id: n.id, date: n.timestamp, type: 'Announcement',
                 title: `Announcement from ${userMap.get(n.senderId || '') || 'System'}`,
-                status: 'Announcement', note: n.message, icon: '📢', color: '#10b981',
+                status: 'Announcement', note: n.message, icon: '📢', color: 'hsl(var(--accent-light))',
                 guildId: n.guildId, recipientUserIds: n.recipientUserIds
             });
         }

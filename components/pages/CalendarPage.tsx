@@ -168,7 +168,7 @@ const CalendarPage: React.FC = () => {
                         id: event.id,
                         title: event.title,
                         start: event.date,
-                        allDay: false,
+                        allDay: true,
                         backgroundColor: event.color,
                         borderColor: event.color,
                         extendedProps: { chronicleEvent: event, type: 'chronicle' }
@@ -332,7 +332,7 @@ const CalendarPage: React.FC = () => {
                             right: 'timeGridDay,timeGridWeek,dayGridMonth,listWeek'
                         }}
                         buttonText={{ day: 'Day', week: 'Week', month: 'Month', list: 'Agenda' }}
-                        initialView="timeGridDay"
+                        initialView="dayGridMonth"
                         googleCalendarApiKey={settings.googleCalendar.apiKey || undefined}
                         eventSources={eventSources}
                         eventClick={handleEventClick}

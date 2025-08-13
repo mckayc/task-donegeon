@@ -37,9 +37,9 @@ const ChroniclesPage: React.FC = () => {
         }).join(' ');
 
         const events: ChronicleEvent[] = [];
-        const currentGuildId = appMode.mode === 'guild' ? appMode.guildId : undefined;
+        const currentGuildId = appMode.mode === 'guild' ? appMode.guildId : null;
 
-        const shouldInclude = (item: { userId?: string, userIds?: string[], recipientUserIds?: string[], guildId?: string }) => {
+        const shouldInclude = (item: { userId?: string, userIds?: string[], recipientUserIds?: string[], guildId?: string | null }) => {
             if (item.guildId !== currentGuildId) return false;
             if (viewMode === 'personal') {
                 const userIdsToCheck = [item.userId, ...(item.userIds || []), ...(item.recipientUserIds || [])].filter(Boolean);

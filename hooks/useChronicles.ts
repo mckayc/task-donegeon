@@ -36,7 +36,7 @@ export const useChronicles = ({ startDate, endDate }: UseChroniclesProps): Map<s
     const chroniclesByDate = new Map<string, ChronicleEvent[]>();
     if (!currentUser) return chroniclesByDate;
 
-    const currentGuildId = appMode.mode === 'guild' ? appMode.guildId : undefined;
+    const currentGuildId = appMode.mode === 'guild' ? appMode.guildId : null;
     const allEvents: ChronicleEvent[] = [];
 
     const userMap = new Map(users.map(u => [u.id, u.gameName]));

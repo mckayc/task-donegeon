@@ -14,7 +14,7 @@ import interactionPlugin, { DateClickArg } from '@fullcalendar/interaction';
 import googleCalendarPlugin from '@fullcalendar/google-calendar';
 import resourceTimeGridPlugin from '@fullcalendar/resource-timegrid';
 import listPlugin from '@fullcalendar/list';
-import { EventClickArg, EventSourceInput, EventDropArg, EventInput } from '@fullcalendar/core';
+import { EventClickArg, EventSourceInput, EventDropArg, EventInput, MoreLinkArg } from '@fullcalendar/core';
 import { useQuestState, useQuestDispatch } from '../../context/QuestContext';
 import { useChronicles } from '../../hooks/useChronicles';
 import QuestDetailDialog from '../quests/QuestDetailDialog';
@@ -197,14 +197,13 @@ const CalendarPage: React.FC = () => {
         addNotification({ type: 'success', message: `Rescheduled "${quest.title}" successfully.` });
     }, [currentUser, updateQuest, addNotification]);
     
-    const handleMoreLinkClick = (info: { date: Date, allDay: boolean, allSegs: any[], hiddenSegs: any[] }) => {
+    const handleMoreLinkClick = (info: MoreLinkArg) => {
         if (mode === 'chronicles') {
+            info.jsEvent.preventDefault(); // Prevent default popover
             const dateKey = toYMD(info.date);
             const events = chronicles.get(dateKey) || [];
             setChronicleDetail({ date: info.date, events });
-            return false; // Prevent default popover
         }
-        return true; // Allow default popover for events mode
     };
 
     const handleStartCompletion = () => {

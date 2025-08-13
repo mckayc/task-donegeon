@@ -59,6 +59,8 @@ const CalendarPage: React.FC = () => {
         const currentGuildId = appMode.mode === 'guild' ? appMode.guildId : undefined;
 
         if (mode === 'events') {
+            const todayYMD = toYMD(new Date());
+
             // Scheduled Events
             sources.push(scheduledEvents
                 .filter(event => event.guildId === currentGuildId)
@@ -91,6 +93,15 @@ const CalendarPage: React.FC = () => {
                             questEvents.push({
                                 ...commonProps,
                                 start: quest.lateDateTime,
+                            });
+                        } else if (quest.todoUserIds?.includes(currentUser.id)) {
+                             questEvents.push({
+                                ...commonProps,
+                                title: `📌 ${quest.title}`,
+                                start: todayYMD,
+                                allDay: true,
+                                backgroundColor: 'hsl(275 60% 50%)',
+                                borderColor: 'hsl(275 60% 40%)',
                             });
                         }
                     } else { // Duty
@@ -169,7 +180,7 @@ const CalendarPage: React.FC = () => {
         }
         
         return sources;
-    }, [mode, appMode, scheduledEvents, quests, chronicles, settings.googleCalendar, users, viewRange]);
+    }, [mode, appMode, scheduledEvents, quests, chronicles, settings.googleCalendar, users, viewRange, currentUser]);
 
     const handleEventClick = (clickInfo: EventClickArg) => {
         const props = clickInfo.event.extendedProps;
@@ -312,10 +323,10 @@ const CalendarPage: React.FC = () => {
                         headerToolbar={{
                             left: 'prev,next today',
                             center: 'title',
-                            right: 'dayGridMonth,timeGridWeek,resourceTimeGridDay,listWeek'
+                            right: 'resourceTimeGridDay,timeGridWeek,dayGridMonth,listWeek'
                         }}
                         buttonText={{ day: 'Day', week: 'Week', month: 'Month', list: 'Agenda' }}
-                        initialView="dayGridMonth"
+                        initialView="resourceTimeGridDay"
                         googleCalendarApiKey={settings.googleCalendar.apiKey || undefined}
                         eventSources={eventSources}
                         eventClick={handleEventClick}

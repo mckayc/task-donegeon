@@ -429,11 +429,26 @@ app.post('/api/data/import-assets', asyncMiddleware(async (req, res) => {
             if (!originalAsset) continue;
 
             const newAssetData = JSON.parse(JSON.stringify(originalAsset));
-
-            // FIX: Default missing iconType for quests to prevent DB constraint errors.
-            if (res.type === 'quests' && !newAssetData.iconType) {
-                console.log(`[IMPORT] Fallback: Setting missing iconType to 'emoji' for quest [${originalAsset.id || originalAsset.title}]`);
-                newAssetData.iconType = 'emoji';
+            
+            if (res.type === 'quests') {
+                // FIX: Default missing properties to ensure data integrity during import.
+                newAssetData.iconType = newAssetData.iconType || 'emoji';
+                newAssetData.lateSetbacks = newAssetData.lateSetbacks || [];
+                newAssetData.incompleteSetbacks = newAssetData.incompleteSetbacks || [];
+                newAssetData.weeklyRecurrenceDays = newAssetData.weeklyRecurrenceDays || [];
+                newAssetData.monthlyRecurrenceDays = newAssetData.monthlyRecurrenceDays || [];
+                newAssetData.assignedUserIds = newAssetData.assignedUserIds || [];
+                newAssetData.claimedByUserIds = newAssetData.claimedByUserIds || [];
+                newAssetData.dismissals = newAssetData.dismissals || [];
+                newAssetData.todoUserIds = newAssetData.todoUserIds || [];
+                if (newAssetData.guildId === undefined) {
+                    newAssetData.guildId = null;
+                }
+                 if (newAssetData.availabilityType === 'Frequency' && newAssetData.availabilityCount == null) {
+                    newAssetData.availabilityCount = 1; // Default to 1 if frequency is set but count isn't
+                } else if (newAssetData.availabilityType !== 'Frequency') {
+                    newAssetData.availabilityCount = null; // Ensure it's null for other types
+                }
             }
 
             if (res.resolution === 'rename' && res.newName) {

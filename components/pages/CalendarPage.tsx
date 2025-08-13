@@ -12,6 +12,8 @@ import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
 import interactionPlugin, { DateClickArg } from '@fullcalendar/interaction';
 import googleCalendarPlugin from '@fullcalendar/google-calendar';
+import resourceTimeGridPlugin from '@fullcalendar/resource-timegrid';
+import listPlugin from '@fullcalendar/list';
 import { EventClickArg, EventSourceInput, EventDropArg, EventInput } from '@fullcalendar/core';
 import { useQuestState, useQuestDispatch } from '../../context/QuestContext';
 import { useChronicles } from '../../hooks/useChronicles';
@@ -20,6 +22,7 @@ import CompleteQuestDialog from '../quests/CompleteQuestDialog';
 import { toYMD } from '../../utils/quests';
 import CreateQuestDialog from '../quests/CreateQuestDialog';
 import { useNotificationsDispatch } from '../../context/NotificationsContext';
+import ChroniclesDetailDialog from '../calendar/ChroniclesDetailDialog';
 
 type CalendarMode = 'events' | 'chronicles';
 
@@ -40,6 +43,7 @@ const CalendarPage: React.FC = () => {
     const [completingQuest, setCompletingQuest] = useState<{ quest: Quest; date: Date } | null>(null);
     const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
     const [createInitialData, setCreateInitialData] = useState<Partial<Quest> & { hasDeadlines?: boolean } | null>(null);
+    const [chronicleDetail, setChronicleDetail] = useState<{ date: Date; events: ChronicleEvent[] } | null>(null);
     
     const calendarRef = useRef<FullCalendar>(null);
 
@@ -55,47 +59,31 @@ const CalendarPage: React.FC = () => {
         const currentGuildId = appMode.mode === 'guild' ? appMode.guildId : undefined;
 
         if (mode === 'events') {
-            const appEventSource = scheduledEvents
-                .filter(event => !event.guildId || event.guildId === currentGuildId)
+            sources.push(scheduledEvents
+                .filter(event => event.guildId === currentGuildId)
                 .map(event => ({
                     title: event.title,
                     start: event.startDate,
                     end: new Date(new Date(event.endDate).getTime() + 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-                    backgroundColor: `hsl(${event.color})`,
-                    borderColor: `hsl(${event.color})`,
+                    backgroundColor: event.color,
+                    borderColor: event.color,
                     allDay: event.isAllDay,
                     extendedProps: { appEvent: event, type: 'scheduled' }
-                }));
-            sources.push(appEventSource);
+                })));
 
-            const questEventSource = quests
-                .filter(q => q.isActive && (!q.guildId || q.guildId === currentGuildId))
-                .map(quest => {
-                    const eventDef = {
-                        title: quest.title,
-                        extendedProps: { quest, type: 'quest' },
-                        allDay: quest.type === QuestType.Venture && !quest.lateDateTime?.includes('T'),
-                        backgroundColor: quest.type === QuestType.Duty ? 'hsl(204 85% 54%)' : 'hsl(36 90% 50%)',
-                        borderColor: quest.type === QuestType.Duty ? 'hsl(204 85% 44%)' : 'hsl(36 90% 40%)'
-                    };
-
-                    if (quest.type === QuestType.Venture) {
-                        return {
-                            ...eventDef,
-                            start: quest.lateDateTime || undefined,
-                            daysOfWeek: undefined,
-                            startRecur: undefined,
-                        };
-                    } else { // Duty
-                        return {
-                            ...eventDef,
-                            start: undefined,
-                            daysOfWeek: quest.availabilityType === 'Weekly' ? quest.weeklyRecurrenceDays : undefined,
-                            startRecur: quest.availabilityType === 'Daily' ? '1900-01-01' : undefined,
-                        };
-                    }
-                }).filter(e => e.start || (e.daysOfWeek && e.daysOfWeek.length > 0) || e.startRecur);
-            sources.push(questEventSource);
+            sources.push(quests
+                .filter(q => q.isActive && q.guildId === currentGuildId)
+                .map(quest => ({
+                    title: quest.title,
+                    start: quest.lateDateTime,
+                    startTime: quest.lateTime,
+                    daysOfWeek: quest.availabilityType === 'Weekly' ? quest.weeklyRecurrenceDays : undefined,
+                    allDay: !quest.lateTime,
+                    resourceId: quest.type === QuestType.Duty ? 'duty' : 'venture',
+                    backgroundColor: quest.type === QuestType.Duty ? 'hsl(204 85% 54%)' : 'hsl(36 90% 50%)',
+                    borderColor: quest.type === QuestType.Duty ? 'hsl(204 85% 44%)' : 'hsl(36 90% 40%)',
+                    extendedProps: { quest, type: 'quest' }
+                })));
             
             const birthdayEvents: EventInput[] = [];
             if (viewRange) {
@@ -105,35 +93,28 @@ const CalendarPage: React.FC = () => {
                     users.forEach(user => {
                         if (user.birthday) {
                             const [_, month, day] = user.birthday.split('-');
-                            const eventDate = new Date(`${year}-${month}-${day}T00:00:00`);
-                            if (eventDate >= viewRange.start && eventDate <= viewRange.end) {
-                                birthdayEvents.push({
-                                    id: `birthday-${user.id}-${year}`,
-                                    title: `🎂 ${user.gameName}'s Birthday`,
-                                    start: `${year}-${month}-${day}`,
-                                    allDay: true,
-                                    backgroundColor: 'hsl(50 90% 60%)',
-                                    borderColor: 'hsl(50 90% 50%)',
-                                    textColor: 'hsl(50 100% 10%)',
-                                    extendedProps: { type: 'birthday', user },
-                                    classNames: ['birthday-event']
-                                });
-                            }
+                            birthdayEvents.push({
+                                id: `birthday-${user.id}-${year}`,
+                                title: `🎂 ${user.gameName}'s Birthday`,
+                                start: `${year}-${month}-${day}`,
+                                allDay: true,
+                                classNames: ['birthday-event']
+                            });
                         }
                     });
                 }
             }
             sources.push(birthdayEvents);
 
-        } else {
-            const chronicleEvents: any[] = [];
+        } else { // Chronicles mode
+            const chronicleEvents: EventInput[] = [];
             chronicles.forEach((eventsOnDay) => {
                 eventsOnDay.forEach(event => {
                     chronicleEvents.push({
                         id: event.id,
                         title: event.title,
                         start: event.date,
-                        allDay: true,
+                        allDay: false,
                         backgroundColor: event.color,
                         borderColor: event.color,
                         extendedProps: { chronicleEvent: event, type: 'chronicle' }
@@ -212,9 +193,19 @@ const CalendarPage: React.FC = () => {
             originalDate.getMinutes()
         );
         
-        await updateQuest({ ...quest, lateDateTime: newDateTime.toISOString() });
+        updateQuest({ ...quest, lateDateTime: newDateTime.toISOString() });
         addNotification({ type: 'success', message: `Rescheduled "${quest.title}" successfully.` });
     }, [currentUser, updateQuest, addNotification]);
+    
+    const handleMoreLinkClick = (info: { date: Date, allDay: boolean, allSegs: any[], hiddenSegs: any[] }) => {
+        if (mode === 'chronicles') {
+            const dateKey = toYMD(info.date);
+            const events = chronicles.get(dateKey) || [];
+            setChronicleDetail({ date: info.date, events });
+            return false; // Prevent default popover
+        }
+        return true; // Allow default popover for events mode
+    };
 
     const handleStartCompletion = () => {
         if (!viewingQuest) return;
@@ -264,11 +255,11 @@ const CalendarPage: React.FC = () => {
                 .fc .fc-day-past .fc-daygrid-day-number { color: hsl(var(--muted-foreground)); }
                 .fc .fc-event { border: 1px solid hsl(var(--border)) !important; font-size: 0.75rem; padding: 2px 4px; }
                 .fc-event.gcal-event { background-color: hsl(217 91% 60%) !important; border-color: hsl(217 91% 70%) !important; }
-                .fc-event.birthday-event { font-weight: bold; }
+                .fc-event.birthday-event { background-color: hsl(50 90% 60%) !important; border-color: hsl(50 90% 50%) !important; color: hsl(50 100% 10%) !important; font-weight: bold; }
             `}</style>
             <Card>
                 <div className="flex items-center justify-between p-4 border-b border-stone-700/60 flex-wrap gap-4">
-                    <div></div> {/* Spacer */}
+                    <div/>
                     <div className="flex items-center gap-4 ml-auto">
                         {currentUser.role === Role.DonegeonMaster && (
                             <Button size="sm" onClick={() => setActivePage('Manage Events')}>Manage Events</Button>
@@ -282,21 +273,27 @@ const CalendarPage: React.FC = () => {
                  <div className="p-4">
                     <FullCalendar
                         ref={calendarRef}
-                        plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin, googleCalendarPlugin]}
+                        plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin, googleCalendarPlugin, resourceTimeGridPlugin, listPlugin]}
                         headerToolbar={{
                             left: 'prev,next today',
                             center: 'title',
-                            right: 'dayGridMonth,timeGridWeek,dayGridDay'
+                            right: 'resourceTimeGridDay,timeGridWeek,dayGridMonth,listWeek'
                         }}
-                        buttonText={{ day: 'Day', week: 'Week', month: 'Month' }}
-                        initialView="dayGridMonth"
+                        buttonText={{ day: 'Day', week: 'Week', month: 'Month', list: 'Agenda' }}
+                        initialView="resourceTimeGridDay"
                         googleCalendarApiKey={settings.googleCalendar.apiKey || undefined}
                         eventSources={eventSources}
                         eventClick={handleEventClick}
+                        dayMaxEvents={5}
+                        moreLinkClick={handleMoreLinkClick}
                         datesSet={handleDatesSet}
                         editable={currentUser.role === Role.DonegeonMaster}
                         eventDrop={handleEventDrop}
                         dateClick={handleDateClick}
+                        resources={mode === 'events' ? [
+                            { id: 'duty', title: 'Duties' },
+                            { id: 'venture', title: 'Ventures' }
+                        ] : undefined}
                         height="auto"
                         contentHeight="auto"
                         aspectRatio={1.5}
@@ -330,6 +327,13 @@ const CalendarPage: React.FC = () => {
                 <CreateQuestDialog
                     initialData={createInitialData}
                     onClose={() => setIsCreateDialogOpen(false)}
+                />
+            )}
+            {chronicleDetail && (
+                <ChroniclesDetailDialog
+                    date={chronicleDetail.date}
+                    events={chronicleDetail.events}
+                    onClose={() => setChronicleDetail(null)}
                 />
             )}
         </div>

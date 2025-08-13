@@ -14,7 +14,7 @@ import interactionPlugin, { DateClickArg } from '@fullcalendar/interaction';
 import googleCalendarPlugin from '@fullcalendar/google-calendar';
 import resourceTimeGridPlugin from '@fullcalendar/resource-timegrid';
 import listPlugin from '@fullcalendar/list';
-import { EventClickArg, EventSourceInput, EventDropArg, EventInput, MoreLinkArg } from '@fullcalendar/core';
+import { EventClickArg, EventSourceInput, EventDropArg, MoreLinkArg, EventInput } from '@fullcalendar/core';
 import { useQuestState, useQuestDispatch } from '../../context/QuestContext';
 import { useChronicles } from '../../hooks/useChronicles';
 import QuestDetailDialog from '../quests/QuestDetailDialog';
@@ -59,32 +59,69 @@ const CalendarPage: React.FC = () => {
         const currentGuildId = appMode.mode === 'guild' ? appMode.guildId : undefined;
 
         if (mode === 'events') {
+            // Scheduled Events
             sources.push(scheduledEvents
                 .filter(event => event.guildId === currentGuildId)
                 .map(event => ({
                     title: event.title,
                     start: event.startDate,
                     end: new Date(new Date(event.endDate).getTime() + 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-                    backgroundColor: event.color,
-                    borderColor: event.color,
+                    backgroundColor: event.color ? `hsl(${event.color})` : 'hsl(var(--primary))',
+                    borderColor: event.color ? `hsl(${event.color})` : 'hsl(var(--primary))',
                     allDay: event.isAllDay,
                     extendedProps: { appEvent: event, type: 'scheduled' }
                 })));
-
-            sources.push(quests
-                .filter(q => q.isActive && q.guildId === currentGuildId)
-                .map(quest => ({
-                    title: quest.title,
-                    start: quest.lateDateTime,
-                    startTime: quest.lateTime,
-                    daysOfWeek: quest.availabilityType === 'Weekly' ? quest.weeklyRecurrenceDays : undefined,
-                    allDay: !quest.lateTime,
-                    resourceId: quest.type === QuestType.Duty ? 'duty' : 'venture',
-                    backgroundColor: quest.type === QuestType.Duty ? 'hsl(204 85% 54%)' : 'hsl(36 90% 50%)',
-                    borderColor: quest.type === QuestType.Duty ? 'hsl(204 85% 44%)' : 'hsl(36 90% 40%)',
-                    extendedProps: { quest, type: 'quest' }
-                })));
             
+            // Quests
+            const questEvents: EventInput[] = [];
+            quests
+                .filter(q => q.isActive && q.guildId === currentGuildId)
+                .forEach(quest => {
+                    const commonProps = {
+                        title: quest.title,
+                        allDay: !quest.lateTime,
+                        resourceId: quest.type === QuestType.Duty ? 'duty' : 'venture',
+                        backgroundColor: quest.type === QuestType.Duty ? 'hsl(var(--primary))' : 'hsl(var(--accent))',
+                        borderColor: quest.type === QuestType.Duty ? 'hsl(var(--primary))' : 'hsl(var(--accent))',
+                        extendedProps: { quest, type: 'quest' }
+                    };
+
+                    if (quest.type === QuestType.Venture) {
+                        if (quest.lateDateTime) {
+                            questEvents.push({
+                                ...commonProps,
+                                start: quest.lateDateTime,
+                            });
+                        }
+                    } else { // Duty
+                        const recurrenceProps: any = {
+                            startTime: quest.lateTime || undefined,
+                        };
+                        
+                        if (quest.availabilityType === 'Daily') {
+                            recurrenceProps.daysOfWeek = [0, 1, 2, 3, 4, 5, 6];
+                            questEvents.push({ ...commonProps, ...recurrenceProps });
+                        } else if (quest.availabilityType === 'Weekly') {
+                            recurrenceProps.daysOfWeek = quest.weeklyRecurrenceDays;
+                            questEvents.push({ ...commonProps, ...recurrenceProps });
+                        } else if (quest.availabilityType === 'Monthly' && viewRange) {
+                            const start = new Date(viewRange.start);
+                            const end = new Date(viewRange.end);
+                            
+                            for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+                                if (quest.monthlyRecurrenceDays.includes(d.getDate())) {
+                                    questEvents.push({
+                                        ...commonProps,
+                                        start: toYMD(d) + (quest.lateTime ? `T${quest.lateTime}`: ''),
+                                    });
+                                }
+                            }
+                        }
+                    }
+                });
+            sources.push(questEvents);
+            
+            // Birthdays
             const birthdayEvents: EventInput[] = [];
             if (viewRange) {
                 const startYear = viewRange.start.getFullYear();
@@ -237,7 +274,6 @@ const CalendarPage: React.FC = () => {
             <style>{`
                 .fc-license-message { display: none !important; }
                 .fc { 
-                  --fc-bg-event-color: hsl(var(--primary));
                   --fc-border-color: hsl(var(--border));
                   --fc-daygrid-event-dot-width: 8px;
                   --fc-list-event-dot-width: 10px;
@@ -246,13 +282,13 @@ const CalendarPage: React.FC = () => {
                 .fc .fc-toolbar.fc-header-toolbar { margin-bottom: 1.5rem; }
                 .fc .fc-toolbar-title { font-family: var(--font-display); color: hsl(var(--accent-light)); }
                 .fc .fc-button-primary { background-color: hsl(var(--secondary)); border-color: hsl(var(--border)); color: hsl(var(--foreground)); font-weight: 500; }
-                .fc .fc-button-primary:hover { background-color: hsl(var(--accent) / 0.5); }
+                .fc .fc-button-primary:hover { background-color: hsl(var(--accent) / 0.8); }
                 .fc .fc-button-primary:disabled { background-color: hsl(var(--muted)); }
                 .fc .fc-button-primary:not(:disabled).fc-button-active, .fc .fc-button-primary:not(:disabled):active { background-color: hsl(var(--primary)); color: hsl(var(--primary-foreground)); }
-                .fc .fc-daygrid-day.fc-day-today { background-color: hsl(var(--accent) / 0.1); }
+                .fc .fc-daygrid-day.fc-day-today { background-color: hsl(var(--accent) / 0.15); }
                 .fc .fc-daygrid-day-number { color: hsl(var(--foreground)); padding: 4px; }
                 .fc .fc-day-past .fc-daygrid-day-number { color: hsl(var(--muted-foreground)); }
-                .fc .fc-event { border: 1px solid hsl(var(--border)) !important; font-size: 0.75rem; padding: 2px 4px; }
+                .fc .fc-event { border: 1px solid hsl(var(--border)) !important; font-size: 0.75rem; padding: 2px 4px; color: hsl(var(--primary-foreground)); }
                 .fc-event.gcal-event { background-color: hsl(217 91% 60%) !important; border-color: hsl(217 91% 70%) !important; }
                 .fc-event.birthday-event { background-color: hsl(50 90% 60%) !important; border-color: hsl(50 90% 50%) !important; color: hsl(50 100% 10%) !important; font-weight: bold; }
             `}</style>
@@ -264,8 +300,8 @@ const CalendarPage: React.FC = () => {
                             <Button size="sm" onClick={() => setActivePage('Manage Events')}>Manage Events</Button>
                         )}
                         <div className="flex space-x-2 p-1 bg-stone-900/50 rounded-lg">
-                            <button onClick={() => setMode('events')} className={`px-3 py-1 rounded-md font-semibold text-sm transition-colors ${mode === 'events' ? 'bg-primary text-primary-foreground' : 'text-stone-300 hover:bg-stone-700'}`}>Events</button>
-                            <button onClick={() => setMode('chronicles')} className={`px-3 py-1 rounded-md font-semibold text-sm transition-colors ${mode === 'chronicles' ? 'bg-primary text-primary-foreground' : 'text-stone-300 hover:bg-stone-700'}`}>Chronicles</button>
+                            <button onClick={() => setMode('events')} className={`px-3 py-1 rounded-md font-semibold text-sm transition-colors ${mode === 'events' ? 'bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))]' : 'text-stone-300 hover:bg-stone-700'}`}>Events</button>
+                            <button onClick={() => setMode('chronicles')} className={`px-3 py-1 rounded-md font-semibold text-sm transition-colors ${mode === 'chronicles' ? 'bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))]' : 'text-stone-300 hover:bg-stone-700'}`}>Chronicles</button>
                         </div>
                     </div>
                 </div>
@@ -276,10 +312,10 @@ const CalendarPage: React.FC = () => {
                         headerToolbar={{
                             left: 'prev,next today',
                             center: 'title',
-                            right: 'resourceTimeGridDay,timeGridWeek,dayGridMonth,listWeek'
+                            right: 'dayGridMonth,timeGridWeek,resourceTimeGridDay,listWeek'
                         }}
                         buttonText={{ day: 'Day', week: 'Week', month: 'Month', list: 'Agenda' }}
-                        initialView="resourceTimeGridDay"
+                        initialView="dayGridMonth"
                         googleCalendarApiKey={settings.googleCalendar.apiKey || undefined}
                         eventSources={eventSources}
                         eventClick={handleEventClick}

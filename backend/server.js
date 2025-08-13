@@ -1,4 +1,5 @@
 
+
 require("reflect-metadata");
 const express = require('express');
 const cors = require('cors');
@@ -809,6 +810,36 @@ bugReportsRouter.post('/import', asyncMiddleware(async (req, res) => {
 
 
 app.use('/api/bug-reports', bugReportsRouter);
+
+// Events Router
+const eventsRouter = express.Router();
+const eventRepo = dataSource.getRepository(ScheduledEventEntity);
+
+eventsRouter.get('/', asyncMiddleware(async (req, res) => {
+    const events = await eventRepo.find();
+    res.json(events);
+}));
+
+eventsRouter.post('/', asyncMiddleware(async (req, res) => {
+    const newEvent = eventRepo.create({
+        ...req.body,
+        id: `event-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+    });
+    await eventRepo.save(updateTimestamps(newEvent, true));
+    res.status(201).json(newEvent);
+}));
+
+eventsRouter.put('/:id', asyncMiddleware(async (req, res) => {
+    await eventRepo.update(req.params.id, updateTimestamps(req.body));
+    res.json(await eventRepo.findOneBy({ id: req.params.id }));
+}));
+
+eventsRouter.delete('/:id', asyncMiddleware(async (req, res) => {
+    await eventRepo.delete(req.params.id);
+    res.status(204).send();
+}));
+
+app.use('/api/events', eventsRouter);
 
 
 // Specific endpoint for quests (due to relations)

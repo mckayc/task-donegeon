@@ -252,7 +252,10 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
           if (updates.users && currentUserRef.current) {
             const updatedCurrentUser = updates.users.find((u: User) => u.id === currentUserRef.current!.id);
             if (updatedCurrentUser) {
-                authDispatch.setCurrentUser(updatedCurrentUser);
+                // Only update if the user object has actually changed to prevent re-renders
+                if (JSON.stringify(updatedCurrentUser) !== JSON.stringify(currentUserRef.current)) {
+                    authDispatch.setCurrentUser(updatedCurrentUser);
+                }
             }
           }
       }

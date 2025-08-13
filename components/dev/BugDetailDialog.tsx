@@ -161,7 +161,7 @@ export const BugDetailDialog: React.FC<BugDetailDialogProps> = ({ report, onClos
 
                     <div className="flex-grow p-6 flex flex-col md:flex-row gap-6 overflow-hidden">
                         
-                        <div className="w-full md:w-2/3 flex flex-col space-y-4 overflow-hidden">
+                        <div className="w-full md:w-2/3 flex flex-col space-y-4 overflow-hidden min-h-0">
                              <div className="flex items-center gap-4 flex-shrink-0">
                                 <label className="flex items-center gap-2 text-sm text-stone-300">
                                     <input type="checkbox" onChange={handleSelectAllLogs} checked={selectedLogs.length === sortedLogs.length && sortedLogs.length > 0} className="h-4 w-4 rounded text-emerald-600 bg-stone-700 border-stone-600 focus:ring-emerald-500" />

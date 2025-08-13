@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback, useRef } from 'react';
+import React, { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import { useAppState } from '../../context/AppContext';
 import { useUIState, useUIDispatch } from '../../context/UIStateContext';
 import { Role, ScheduledEvent, Quest, QuestType, ChronicleEvent, User, AppMode } from '../../types';
@@ -18,7 +18,7 @@ import { useQuestState, useQuestDispatch } from '../../context/QuestContext';
 import { useChronicles } from '../../hooks/useChronicles';
 import QuestDetailDialog from '../quests/QuestDetailDialog';
 import CompleteQuestDialog from '../quests/CompleteQuestDialog';
-import { toYMD, isQuestAvailableForUser } from '../../utils/quests';
+import { toYMD, isQuestAvailableForUser, isQuestVisibleToUserInMode } from '../../utils/quests';
 import CreateQuestDialog from '../quests/CreateQuestDialog';
 import { useNotificationsDispatch } from '../../context/NotificationsContext';
 import ChroniclesDetailDialog from '../calendar/ChroniclesDetailDialog';
@@ -53,6 +53,10 @@ const CalendarPage: React.FC = () => {
     
     if (!currentUser) return null;
 
+    const visibleQuests = useMemo(() => 
+        quests.filter(q => isQuestVisibleToUserInMode(q, currentUser.id, appMode, quests, questCompletions)),
+    [quests, currentUser.id, appMode, questCompletions]);
+
     const eventSources = useMemo((): EventSourceInput[] => {
         const sources: EventSourceInput[] = [];
         const currentGuildId = appMode.mode === 'guild' ? appMode.guildId : undefined;
@@ -76,9 +80,7 @@ const CalendarPage: React.FC = () => {
             
             // Quests
             const questEvents: EventInput[] = [];
-            quests
-                .filter(q => q.isActive && q.guildId === currentGuildId)
-                .forEach(quest => {
+            visibleQuests.forEach(quest => {
                     const commonProps = {
                         title: quest.title,
                         allDay: !quest.lateTime,
@@ -186,7 +188,7 @@ const CalendarPage: React.FC = () => {
         }
         
         return sources;
-    }, [mode, appMode, scheduledEvents, quests, chronicles, settings.googleCalendar, users, viewRange, currentUser, questCompletions]);
+    }, [mode, appMode, scheduledEvents, visibleQuests, chronicles, settings.googleCalendar, users, viewRange, currentUser, questCompletions]);
 
     const handleEventClick = (clickInfo: EventClickArg) => {
         const props = clickInfo.event.extendedProps;
@@ -294,7 +296,7 @@ const CalendarPage: React.FC = () => {
                   --fc-border-color: hsl(var(--border));
                   --fc-daygrid-event-dot-width: 8px;
                   --fc-list-event-dot-width: 10px;
-                  --fc-list-event-hover-bg-color: hsl(var(--secondary));
+                  --fc-list-event-hover-bg-color: hsl(var(--color-bg-primary-hsl));
                 }
                 .fc .fc-toolbar.fc-header-toolbar { margin-bottom: 1.5rem; }
                 .fc .fc-toolbar-title { font-family: var(--font-display); color: hsl(var(--accent-light)); }
@@ -302,12 +304,18 @@ const CalendarPage: React.FC = () => {
                 .fc .fc-button-primary:hover { background-color: hsl(var(--accent) / 0.8); }
                 .fc .fc-button-primary:disabled { background-color: hsl(var(--muted)); }
                 .fc .fc-button-primary:not(:disabled).fc-button-active, .fc .fc-button-primary:not(:disabled):active { background-color: hsl(var(--primary)); color: hsl(var(--primary-foreground)); }
-                .fc .fc-daygrid-day.fc-day-today { background-color: hsl(var(--accent) / 0.15); }
+                .fc .fc-daygrid-day.fc-day-today { background-color: hsl(var(--color-bg-secondary-hsl)); }
                 .fc .fc-daygrid-day-number { color: hsl(var(--foreground)); padding: 4px; }
                 .fc .fc-day-past .fc-daygrid-day-number { color: hsl(var(--muted-foreground)); }
                 .fc .fc-event { border: 1px solid hsl(var(--border)) !important; font-size: 0.75rem; padding: 2px 4px; color: hsl(var(--primary-foreground)); }
                 .fc-event.gcal-event { background-color: hsl(217 91% 60%) !important; border-color: hsl(217 91% 70%) !important; }
                 .fc-event.birthday-event { background-color: hsl(50 90% 60%) !important; border-color: hsl(50 90% 50%) !important; color: hsl(50 100% 10%) !important; font-weight: bold; }
+                .fc-theme-standard .fc-list-day-cushion, .fc-theme-standard .fc-list-table th {
+                    background-color: hsl(var(--color-bg-secondary-hsl));
+                }
+                .fc-list-event:hover td {
+                    background-color: hsl(var(--color-bg-primary-hsl));
+                }
             `}</style>
             <Card>
                 <div className="flex items-center justify-between p-4 border-b border-stone-700/60 flex-wrap gap-4">
@@ -329,10 +337,10 @@ const CalendarPage: React.FC = () => {
                         headerToolbar={{
                             left: 'prev,next today',
                             center: 'title',
-                            right: 'timeGridDay,timeGridWeek,dayGridMonth,listWeek'
+                            right: 'listWeek,timeGridDay,timeGridWeek,dayGridMonth'
                         }}
                         buttonText={{ day: 'Day', week: 'Week', month: 'Month', list: 'Agenda' }}
-                        initialView="dayGridMonth"
+                        initialView="listWeek"
                         googleCalendarApiKey={settings.googleCalendar.apiKey || undefined}
                         eventSources={eventSources}
                         eventClick={handleEventClick}

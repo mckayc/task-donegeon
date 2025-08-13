@@ -116,21 +116,26 @@ const CalendarPage: React.FC = () => {
                         }
                     } else { // Duty
                         if (quest.rrule) {
+                            // For recurring events, we let the rrule plugin handle all-day vs timed based on the presence of startTime/endTime.
+                            // Explicitly setting `allDay` can cause conflicts with the rrule parser.
                             const dutyEvent: EventInput = {
-                                ...commonProps,
+                                title: quest.title,
+                                backgroundColor: commonProps.backgroundColor,
+                                borderColor: commonProps.borderColor,
+                                extendedProps: commonProps.extendedProps,
                                 rrule: quest.rrule,
                             };
                     
-                            if (!commonProps.allDay) {
-                                // It's a timed event
+                            const isAllDay = quest.allDay || (!quest.startTime && !quest.endTime);
+                            
+                            if (!isAllDay) {
+                                // For timed events, add startTime and endTime. FullCalendar infers allDay: false.
                                 dutyEvent.startTime = quest.startTime || undefined;
                                 dutyEvent.endTime = quest.endTime || undefined;
-                                // Add duration only if it's a timed event missing an end time, otherwise FC might not render it
-                                if (dutyEvent.startTime && !dutyEvent.endTime) {
-                                    dutyEvent.duration = '01:00';
-                                }
                             }
-                            // For all-day events, we don't add any time properties.
+                            // For all-day events, we add NO time properties and NO allDay property. 
+                            // FullCalendar's rrule plugin will correctly interpret this as an all-day event.
+                            
                             questEvents.push(dutyEvent);
                         }
                     }
@@ -193,8 +198,6 @@ const CalendarPage: React.FC = () => {
             setViewingEvent(props.appEvent);
         } else if (props.type === 'quest' && props.quest) {
             setViewingQuest({ quest: props.quest, date: clickInfo.event.start || new Date() });
-        } else if (props.type === 'birthday' && props.user) {
-            addNotification({type: 'info', message: `It's ${props.user.gameName}'s birthday!`});
         } else if (clickInfo.event.url) {
             window.open(clickInfo.event.url, '_blank');
         }

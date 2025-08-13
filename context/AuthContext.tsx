@@ -48,122 +48,140 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   
   const isFirstRun = users.length === 0;
 
-  const dispatch = useMemo(() => {
-    const apiRequest = async (method: string, path: string, body?: any) => {
-        try {
-            const options: RequestInit = { method, headers: { 'Content-Type': 'application/json' } };
-            if (body) options.body = JSON.stringify(body);
-            const response = await window.fetch(path, options);
-            if (!response.ok) {
-                const errorData = await response.json().catch(() => ({ error: 'Server error' }));
-                throw new Error(errorData.error || `Request failed with status ${response.status}`);
-            }
-            return response.status === 204 ? null : await response.json();
-        } catch (error) {
-            addNotification({ type: 'error', message: error instanceof Error ? error.message : 'An unknown network error occurred.' });
-            throw error;
-        }
-    };
-
-    const setCurrentUser = (user: User | null) => {
-        _setCurrentUser(prevUser => {
-            if (bugLogger.isRecording()) {
-                bugLogger.add({ type: 'STATE_CHANGE', message: `Setting current user to: ${user?.gameName || 'null'}` });
-            }
-            setIsSharedViewActive(false);
-            if (user) {
-                localStorage.setItem('lastUserId', user.id);
-                setLoginHistory(prev => [user.id, ...prev.filter(id => id !== user.id).slice(0, 9)]);
-            } else {
-                localStorage.removeItem('lastUserId');
-            }
-            return user;
-        });
-    };
-
-    const updateUser = (userId: string, update: Partial<User> | ((user: User) => Partial<User>)) => {
-        if (bugLogger.isRecording()) {
-            bugLogger.add({ type: 'ACTION', message: `Updating user ID: ${userId}` });
-        }
-    
-        let payloadForApi: Partial<User> | null = null;
-    
-        setUsers(prevUsers => {
-            return prevUsers.map(u => {
-                if (u.id === userId) {
-                    const updateData = typeof update === 'function' ? update(u) : update;
-                    payloadForApi = updateData;
-                    return { ...u, ...updateData };
-                }
-                return u;
-            });
-        });
-    
-        _setCurrentUser(prevCurrentUser => {
-            if (prevCurrentUser?.id === userId && payloadForApi) {
-                return { ...prevCurrentUser, ...payloadForApi };
-            }
-            return prevCurrentUser;
-        });
-    
-        if (payloadForApi && Object.keys(payloadForApi).length > 0) {
-            apiRequest('PUT', `/api/users/${userId}`, payloadForApi).catch(error => {
-                console.error("Failed to update user on server, optimistic update may be stale.", error);
-            });
-        }
-    };
-
-    return {
-        setUsers,
-        setLoginHistory,
-        setCurrentUser,
-        addUser: async (userData: Omit<User, 'id' | 'personalPurse' | 'personalExperience' | 'guildBalances' | 'avatar' | 'ownedAssetIds' | 'ownedThemes' | 'hasBeenOnboarded'>) => {
-            if (bugLogger.isRecording()) {
-                bugLogger.add({ type: 'ACTION', message: `Attempting to add user: ${userData.gameName}` });
-            }
-            try {
-                return await apiRequest('POST', '/api/users', userData);
-            } catch (error) {
-                console.error("Failed to add user on server.", error);
-                return null;
-            }
-        },
-        updateUser,
-        deleteUsers: (userIds: string[]) => {
-            if (userIds.length === 0) return;
-            if (bugLogger.isRecording()) {
-                bugLogger.add({ type: 'ACTION', message: `Deleting user IDs: ${userIds.join(', ')}` });
-            }
-            setUsers(prev => prev.filter(u => !userIds.includes(u.id)));
-            apiRequest('DELETE', '/api/users', { ids: userIds }).catch(error => {
-               console.error("Failed to delete users on server.", error);
-            });
-        },
-        markUserAsOnboarded: (userId: string) => updateUser(userId, { hasBeenOnboarded: true }),
-        setAppUnlocked: (isUnlocked: boolean) => {
-            localStorage.setItem('isAppUnlocked', String(isUnlocked));
-            _setAppUnlocked(isUnlocked);
-        },
-        setIsSwitchingUser,
-        setTargetedUserForLogin,
-        exitToSharedView: () => {
-            _setCurrentUser(null);
-            setIsSharedViewActive(true);
-            localStorage.removeItem('lastUserId');
-        },
-        setIsSharedViewActive,
-        resetAllUsersData: () => {
-            setUsers(prev => prev.map(u => u.role !== Role.DonegeonMaster ? { ...u, personalPurse: {}, personalExperience: {}, guildBalances: {}, ownedAssetIds: [], avatar: {} } : u));
-        },
-        completeFirstRun: async (adminUserData: any) => {
-            try {
-                await apiRequest('POST', '/api/first-run', { adminUserData });
-                addNotification({ type: 'success', message: 'Setup complete! The app will now reload.' });
-                setTimeout(() => window.location.reload(), 2000);
-            } catch (error) {}
-        }
-    };
+  const apiRequest = useCallback(async (method: string, path: string, body?: any) => {
+      try {
+          const options: RequestInit = { method, headers: { 'Content-Type': 'application/json' } };
+          if (body) options.body = JSON.stringify(body);
+          const response = await window.fetch(path, options);
+          if (!response.ok) {
+              const errorData = await response.json().catch(() => ({ error: 'Server error' }));
+              throw new Error(errorData.error || `Request failed with status ${response.status}`);
+          }
+          return response.status === 204 ? null : await response.json();
+      } catch (error) {
+          addNotification({ type: 'error', message: error instanceof Error ? error.message : 'An unknown network error occurred.' });
+          throw error;
+      }
   }, [addNotification]);
+
+  const setCurrentUser = useCallback((user: User | null) => {
+      _setCurrentUser(prevUser => {
+          // Idempotency check: only update if the user is actually different.
+          // This prevents re-renders when sync provides an identical user object.
+          if (JSON.stringify(prevUser) === JSON.stringify(user)) {
+              return prevUser;
+          }
+
+          if (bugLogger.isRecording()) {
+              bugLogger.add({ type: 'STATE_CHANGE', message: `Setting current user to: ${user?.gameName || 'null'}` });
+          }
+          setIsSharedViewActive(false);
+          if (user) {
+              localStorage.setItem('lastUserId', user.id);
+              setLoginHistory(prev => [user.id, ...prev.filter(id => id !== user.id).slice(0, 9)]);
+          } else {
+              localStorage.removeItem('lastUserId');
+          }
+          return user;
+      });
+  }, []);
+
+  const updateUser = useCallback((userId: string, update: Partial<User> | ((user: User) => Partial<User>)) => {
+      if (bugLogger.isRecording()) {
+          bugLogger.add({ type: 'ACTION', message: `Updating user ID: ${userId}` });
+      }
+  
+      let payloadForApi: Partial<User> | null = null;
+  
+      setUsers(prevUsers => {
+          return prevUsers.map(u => {
+              if (u.id === userId) {
+                  const updateData = typeof update === 'function' ? update(u) : update;
+                  payloadForApi = updateData;
+                  return { ...u, ...updateData };
+              }
+              return u;
+          });
+      });
+  
+      _setCurrentUser(prevCurrentUser => {
+          if (prevCurrentUser?.id === userId && payloadForApi) {
+              return { ...prevCurrentUser, ...payloadForApi };
+          }
+          return prevCurrentUser;
+      });
+  
+      if (payloadForApi && Object.keys(payloadForApi).length > 0) {
+          apiRequest('PUT', `/api/users/${userId}`, payloadForApi).catch(error => {
+              console.error("Failed to update user on server, optimistic update may be stale.", error);
+          });
+      }
+  }, [apiRequest]);
+  
+  const markUserAsOnboarded = useCallback((userId: string) => updateUser(userId, { hasBeenOnboarded: true }), [updateUser]);
+
+  const setAppUnlocked = useCallback((isUnlocked: boolean) => {
+      localStorage.setItem('isAppUnlocked', String(isUnlocked));
+      _setAppUnlocked(isUnlocked);
+  }, []);
+
+  const exitToSharedView = useCallback(() => {
+      _setCurrentUser(null);
+      setIsSharedViewActive(true);
+      localStorage.removeItem('lastUserId');
+  }, []);
+
+  const resetAllUsersData = useCallback(() => {
+      setUsers(prev => prev.map(u => u.role !== Role.DonegeonMaster ? { ...u, personalPurse: {}, personalExperience: {}, guildBalances: {}, ownedAssetIds: [], avatar: {} } : u));
+  }, []);
+
+  const addUser = useCallback(async (userData: Omit<User, 'id' | 'personalPurse' | 'personalExperience' | 'guildBalances' | 'avatar' | 'ownedAssetIds' | 'ownedThemes' | 'hasBeenOnboarded'>) => {
+      if (bugLogger.isRecording()) {
+          bugLogger.add({ type: 'ACTION', message: `Attempting to add user: ${userData.gameName}` });
+      }
+      try {
+          return await apiRequest('POST', '/api/users', userData);
+      } catch (error) {
+          console.error("Failed to add user on server.", error);
+          return null;
+      }
+  }, [apiRequest]);
+
+  const deleteUsers = useCallback((userIds: string[]) => {
+      if (userIds.length === 0) return;
+      if (bugLogger.isRecording()) {
+          bugLogger.add({ type: 'ACTION', message: `Deleting user IDs: ${userIds.join(', ')}` });
+      }
+      setUsers(prev => prev.filter(u => !userIds.includes(u.id)));
+      apiRequest('DELETE', '/api/users', { ids: userIds }).catch(error => {
+         console.error("Failed to delete users on server.", error);
+      });
+  }, [apiRequest]);
+  
+  const completeFirstRun = useCallback(async (adminUserData: any) => {
+      try {
+          await apiRequest('POST', '/api/first-run', { adminUserData });
+          addNotification({ type: 'success', message: 'Setup complete! The app will now reload.' });
+          setTimeout(() => window.location.reload(), 2000);
+      } catch (error) {}
+  }, [apiRequest, addNotification]);
+  
+  const dispatch = useMemo(() => ({
+      setUsers,
+      setLoginHistory,
+      addUser,
+      updateUser,
+      deleteUsers,
+      setCurrentUser,
+      markUserAsOnboarded,
+      setAppUnlocked,
+      setIsSwitchingUser,
+      setTargetedUserForLogin,
+      exitToSharedView,
+      setIsSharedViewActive,
+      resetAllUsersData,
+      completeFirstRun,
+  }), [addUser, updateUser, deleteUsers, setCurrentUser, markUserAsOnboarded, setAppUnlocked, exitToSharedView, resetAllUsersData, completeFirstRun]);
 
   const stateValue: AuthState = {
     users, currentUser, isAppUnlocked, isFirstRun, isSwitchingUser,

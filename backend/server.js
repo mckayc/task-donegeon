@@ -1,5 +1,3 @@
-
-
 require("reflect-metadata");
 const express = require('express');
 const cors = require('cors');
@@ -103,7 +101,9 @@ const checkAndAwardTrophies = async (manager, userId, guildId) => {
 
 // === Middleware ===
 app.use(cors());
-app.use(express.json({ limit: '10mb' }));
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
+
 
 // === Gemini AI Client ===
 let ai;
@@ -1566,13 +1566,18 @@ app.use('/uploads', express.static(UPLOADS_DIR));
 
 // === BACKUP ROUTES ===
 const backupsRouter = express.Router();
+const restoreStorage = multer.diskStorage({
+    destination: (req, file, cb) => cb(null, BACKUP_DIR), // temp storage
+    filename: (req, file, cb) => cb(null, `restore-upload-${Date.now()}-${file.originalname}`)
+});
+const restoreUpload = multer({ storage: restoreStorage, limits: { fileSize: 50 * 1024 * 1024 }}); // 50MB limit
 
 backupsRouter.get('/', asyncMiddleware(async (req, res) => {
     try {
         const files = await fs.readdir(BACKUP_DIR);
         const backupDetails = await Promise.all(
             files
-                .filter(file => file.endsWith('.json'))
+                .filter(file => file.endsWith('.json') || file.endsWith('.sqlite'))
                 .map(async file => {
                     const stats = await fs.stat(path.join(BACKUP_DIR, file));
                     return {
@@ -1591,21 +1596,24 @@ backupsRouter.get('/', asyncMiddleware(async (req, res) => {
     }
 }));
 
-const createBackup = async (type = 'manual', scheduleId = null) => {
+backupsRouter.post('/create-json', asyncMiddleware(async (req, res) => {
     const manager = dataSource.manager;
     const appData = await getFullAppData(manager);
     const timestamp = new Date().toISOString().replace(/:/g, '-').slice(0, 19);
-    const schedulePart = scheduleId ? `-${scheduleId}` : '';
-    const filename = `backup-${type}${schedulePart}-${timestamp}.json`;
+    const filename = `backup-manual-${timestamp}.json`;
     const filePath = path.join(BACKUP_DIR, filename);
     await fs.writeFile(filePath, JSON.stringify(appData, null, 2));
-    console.log(`[Backup] Created ${type} backup: ${filename}`);
-    return { success: true, filename };
-};
+    console.log(`[Backup] Created JSON backup: ${filename}`);
+    res.status(201).json({ success: true, filename });
+}));
 
-backupsRouter.post('/create', asyncMiddleware(async (req, res) => {
-    const result = await createBackup('manual');
-    res.status(201).json(result);
+backupsRouter.post('/create-sqlite', asyncMiddleware(async (req, res) => {
+    const timestamp = new Date().toISOString().replace(/:/g, '-').slice(0, 19);
+    const filename = `backup-manual-${timestamp}.sqlite`;
+    const destPath = path.join(BACKUP_DIR, filename);
+    await fs.copyFile(dbPath, destPath);
+    console.log(`[Backup] Created SQLite backup: ${filename}`);
+    res.status(201).json({ success: true, filename });
 }));
 
 backupsRouter.get('/download/:filename', (req, res) => {
@@ -1635,49 +1643,51 @@ backupsRouter.delete('/:filename', asyncMiddleware(async (req, res) => {
     }
 }));
 
-backupsRouter.post('/restore/:filename', asyncMiddleware(async (req, res) => {
-    const filename = path.basename(req.params.filename);
-    const filePath = path.join(BACKUP_DIR, filename);
+backupsRouter.post('/restore-upload', restoreUpload.single('backupFile'), asyncMiddleware(async (req, res) => {
+    if (!req.file) {
+        return res.status(400).json({ error: 'No backup file uploaded.' });
+    }
+    const uploadedFilePath = req.file.path;
+    const isSqlite = req.file.originalname.endsWith('.sqlite');
 
     try {
-        const backupContent = await fs.readFile(filePath, 'utf-8');
-        const data = JSON.parse(backupContent);
-
-        // Basic validation
-        if (!data.users || !data.settings) {
-            return res.status(400).json({ error: 'Invalid backup file format.' });
-        }
-
-        await dataSource.transaction(async manager => {
-             // Clear all data in a safe order (dependencies first)
-            for (const entity of allEntities.reverse()) { // Reverse order might be safer
-                try {
-                    await manager.clear(entity);
-                } catch(e) {
-                    console.warn(`Could not clear ${entity.options.name}, may be empty or have FK issues. Continuing...`);
-                }
+        if (isSqlite) {
+            console.log("Starting SQLite restore...");
+            if (dataSource.isInitialized) {
+                await dataSource.destroy();
+                console.log("Data Source connection closed for restore.");
             }
+            await fs.copyFile(uploadedFilePath, dbPath);
+            console.log("Database file replaced.");
+            res.status(200).json({ message: 'SQLite restore successful. Server is restarting.' });
+            console.log("Initiating server restart for restore...");
+            setTimeout(() => process.exit(0), 1000); // Trigger restart
+        } else { // Assume JSON
+             console.log("Starting JSON restore...");
+             const backupContent = await fs.readFile(uploadedFilePath, 'utf-8');
+             const data = JSON.parse(backupContent);
+             if (!data.users || !data.settings) {
+                 throw new Error('Invalid backup file format.');
+             }
 
-            // Save data in a safe order
-            for (const entity of allEntities) {
-                 const pluralName = entity.options.name.toLowerCase() + 's';
-                 const dataToSave = data[pluralName];
-                 if (dataToSave && Array.isArray(dataToSave)) {
-                     await manager.save(entity, dataToSave);
+             await dataSource.transaction(async manager => {
+                 await Promise.all(allEntities.slice().reverse().map(entity => manager.clear(entity.options.name)));
+                 for (const entity of allEntities) {
+                     const pluralName = entity.options.name.toLowerCase() + 's';
+                     const dataToSave = data[pluralName];
+                     if (dataToSave && Array.isArray(dataToSave) && dataToSave.length > 0) {
+                         await manager.save(entity, dataToSave.map(e => updateTimestamps(e, true)));
+                     }
                  }
-            }
-            // Handle single-row tables
-            if(data.settings) await manager.save(SettingEntity, {id: 1, settings: data.settings});
-            if(data.loginHistory) await manager.save(LoginHistoryEntity, {id: 1, history: data.loginHistory});
-        });
+                 if(data.settings) await manager.save(SettingEntity, updateTimestamps({id: 1, settings: data.settings}, true));
+                 if(data.loginHistory) await manager.save(LoginHistoryEntity, updateTimestamps({id: 1, history: data.loginHistory}, true));
+             });
 
-        res.status(200).json({ message: 'Restore from backup successful.' });
-    } catch (error) {
-        if (error.code === 'ENOENT') {
-            return res.status(404).json({ error: 'Backup file not found.' });
+            res.status(200).json({ message: 'JSON restore successful! App will reload.' });
         }
-        console.error("Restore error:", error);
-        res.status(500).json({ error: 'Failed to restore from backup.' });
+    } finally {
+        // Clean up the uploaded temporary file
+        await fs.unlink(uploadedFilePath).catch(err => console.error("Error cleaning up restore file:", err));
     }
 }));
 

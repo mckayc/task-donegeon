@@ -18,30 +18,10 @@
         "type": "Venture",
         "iconType": "emoji",
         "icon": "🍝",
-        "rewards": [
-          {
-            "rewardTypeId": "core-skill",
-            "amount": 30
-          }
-        ],
-        "tags": [
-          "cooking",
-          "learning"
-        ],
-        "isActive": true,
-        "isOptional": true,
-        "availabilityType": "Unlimited",
-        "requiresApproval": true,
-        "lateSetbacks": [],
-        "incompleteSetbacks": [],
-        "availabilityCount": null,
-        "weeklyRecurrenceDays": [],
-        "monthlyRecurrenceDays": [],
-        "assignedUserIds": [],
-        "guildId": null,
-        "groupId": "qg-creative",
-        "claimedByUserIds": [],
-        "dismissals": []
+        "rewards": [{ "rewardTypeId": "core-skill", "amount": 30 }],
+        "tags": ["cooking", "learning"],
+        "isActive": true, "isOptional": true, "requiresApproval": true, "groupId": "qg-creative",
+        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": null, "availabilityCount": null
       },
       {
         "id": "egq2",
@@ -50,30 +30,10 @@
         "type": "Venture",
         "iconType": "emoji",
         "icon": "🍞",
-        "rewards": [
-          {
-            "rewardTypeId": "core-creative",
-            "amount": 40
-          }
-        ],
-        "tags": [
-          "cooking",
-          "baking"
-        ],
-        "isActive": true,
-        "isOptional": true,
-        "availabilityType": "Unlimited",
-        "requiresApproval": true,
-        "lateSetbacks": [],
-        "incompleteSetbacks": [],
-        "availabilityCount": null,
-        "weeklyRecurrenceDays": [],
-        "monthlyRecurrenceDays": [],
-        "assignedUserIds": [],
-        "guildId": null,
-        "groupId": "qg-creative",
-        "claimedByUserIds": [],
-        "dismissals": []
+        "rewards": [{ "rewardTypeId": "core-creative", "amount": 40 }],
+        "tags": ["cooking", "baking"],
+        "isActive": true, "isOptional": true, "requiresApproval": true, "groupId": "qg-creative",
+        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": null, "availabilityCount": null
       },
       {
         "id": "egq3",
@@ -82,30 +42,10 @@
         "type": "Venture",
         "iconType": "emoji",
         "icon": "🍽️",
-        "rewards": [
-          {
-            "rewardTypeId": "core-wisdom",
-            "amount": 50
-          }
-        ],
-        "tags": [
-          "cooking",
-          "planning"
-        ],
-        "isActive": true,
-        "isOptional": true,
-        "availabilityType": "Unlimited",
-        "requiresApproval": true,
-        "lateSetbacks": [],
-        "incompleteSetbacks": [],
-        "availabilityCount": null,
-        "weeklyRecurrenceDays": [],
-        "monthlyRecurrenceDays": [],
-        "assignedUserIds": [],
-        "guildId": null,
-        "groupId": "qg-creative",
-        "claimedByUserIds": [],
-        "dismissals": []
+        "rewards": [{ "rewardTypeId": "core-wisdom", "amount": 50 }],
+        "tags": ["cooking", "planning"],
+        "isActive": true, "isOptional": true, "requiresApproval": true, "groupId": "qg-creative",
+        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": null, "availabilityCount": null
       },
       {
         "id": "egq4",
@@ -114,30 +54,10 @@
         "type": "Venture",
         "iconType": "emoji",
         "icon": "🌏",
-        "rewards": [
-          {
-            "rewardTypeId": "core-wisdom",
-            "amount": 25
-          }
-        ],
-        "tags": [
-          "cooking",
-          "learning"
-        ],
-        "isActive": true,
-        "isOptional": true,
-        "availabilityType": "Unlimited",
-        "requiresApproval": true,
-        "lateSetbacks": [],
-        "incompleteSetbacks": [],
-        "availabilityCount": null,
-        "weeklyRecurrenceDays": [],
-        "monthlyRecurrenceDays": [],
-        "assignedUserIds": [],
-        "guildId": null,
-        "groupId": "qg-creative",
-        "claimedByUserIds": [],
-        "dismissals": []
+        "rewards": [{ "rewardTypeId": "core-wisdom", "amount": 25 }],
+        "tags": ["cooking", "learning"],
+        "isActive": true, "isOptional": true, "requiresApproval": true, "groupId": "qg-creative",
+        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": null, "availabilityCount": null
       },
       {
         "id": "egq5",
@@ -146,30 +66,10 @@
         "type": "Duty",
         "iconType": "emoji",
         "icon": "🔪",
-        "rewards": [
-          {
-            "rewardTypeId": "core-skill",
-            "amount": 20
-          }
-        ],
-        "tags": [
-          "cooking",
-          "practice"
-        ],
-        "isActive": true,
-        "isOptional": true,
-        "availabilityType": "Daily",
-        "requiresApproval": false,
-        "lateSetbacks": [],
-        "incompleteSetbacks": [],
-        "availabilityCount": null,
-        "weeklyRecurrenceDays": [],
-        "monthlyRecurrenceDays": [],
-        "assignedUserIds": [],
-        "guildId": null,
-        "groupId": "qg-creative",
-        "claimedByUserIds": [],
-        "dismissals": []
+        "rewards": [{ "rewardTypeId": "core-skill", "amount": 20 }],
+        "tags": ["cooking", "practice"],
+        "isActive": true, "isOptional": true, "requiresApproval": false, "groupId": "qg-creative",
+        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": "FREQ=DAILY", "availabilityCount": null
       },
       {
         "id": "egq6",
@@ -178,32 +78,10 @@
         "type": "Duty",
         "iconType": "emoji",
         "icon": "🗓️",
-        "rewards": [
-          {
-            "rewardTypeId": "core-diligence",
-            "amount": 35
-          }
-        ],
-        "tags": [
-          "cooking",
-          "planning"
-        ],
-        "isActive": true,
-        "isOptional": false,
-        "availabilityType": "Weekly",
-        "weeklyRecurrenceDays": [
-          0
-        ],
-        "requiresApproval": true,
-        "lateSetbacks": [],
-        "incompleteSetbacks": [],
-        "availabilityCount": null,
-        "monthlyRecurrenceDays": [],
-        "assignedUserIds": [],
-        "guildId": null,
-        "groupId": "qg-creative",
-        "claimedByUserIds": [],
-        "dismissals": []
+        "rewards": [{ "rewardTypeId": "core-diligence", "amount": 35 }],
+        "tags": ["cooking", "planning"],
+        "isActive": true, "isOptional": false, "requiresApproval": true, "groupId": "qg-creative",
+        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": "FREQ=WEEKLY;BYDAY=SU", "availabilityCount": null
       }
     ]
   }

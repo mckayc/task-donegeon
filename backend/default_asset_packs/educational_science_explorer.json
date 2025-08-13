@@ -30,18 +30,9 @@
         ],
         "isActive": true,
         "isOptional": true,
-        "availabilityType": "Unlimited",
         "requiresApproval": true,
-        "lateSetbacks": [],
-        "incompleteSetbacks": [],
-        "availabilityCount": null,
-        "weeklyRecurrenceDays": [],
-        "monthlyRecurrenceDays": [],
-        "assignedUserIds": [],
-        "guildId": null,
         "groupId": "qg-school",
-        "claimedByUserIds": [],
-        "dismissals": []
+        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": null, "availabilityCount": null
       },
       {
         "id": "esq2",
@@ -63,18 +54,9 @@
         ],
         "isActive": true,
         "isOptional": true,
-        "availabilityType": "Unlimited",
         "requiresApproval": false,
-        "lateSetbacks": [],
-        "incompleteSetbacks": [],
-        "availabilityCount": null,
-        "weeklyRecurrenceDays": [],
-        "monthlyRecurrenceDays": [],
-        "assignedUserIds": [],
-        "guildId": null,
         "groupId": "qg-school",
-        "claimedByUserIds": [],
-        "dismissals": []
+        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": null, "availabilityCount": null
       },
       {
         "id": "esq3",
@@ -96,18 +78,9 @@
         ],
         "isActive": true,
         "isOptional": true,
-        "availabilityType": "Unlimited",
         "requiresApproval": false,
-        "lateSetbacks": [],
-        "incompleteSetbacks": [],
-        "availabilityCount": null,
-        "weeklyRecurrenceDays": [],
-        "monthlyRecurrenceDays": [],
-        "assignedUserIds": [],
-        "guildId": null,
         "groupId": "qg-school",
-        "claimedByUserIds": [],
-        "dismissals": []
+        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": null, "availabilityCount": null
       },
       {
         "id": "esq4",
@@ -129,18 +102,9 @@
         ],
         "isActive": true,
         "isOptional": true,
-        "availabilityType": "Unlimited",
         "requiresApproval": true,
-        "lateSetbacks": [],
-        "incompleteSetbacks": [],
-        "availabilityCount": null,
-        "weeklyRecurrenceDays": [],
-        "monthlyRecurrenceDays": [],
-        "assignedUserIds": [],
-        "guildId": null,
         "groupId": "qg-school",
-        "claimedByUserIds": [],
-        "dismissals": []
+        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": null, "availabilityCount": null
       },
       {
         "id": "esq5",
@@ -161,18 +125,9 @@
         ],
         "isActive": true,
         "isOptional": true,
-        "availabilityType": "Daily",
         "requiresApproval": false,
-        "lateSetbacks": [],
-        "incompleteSetbacks": [],
-        "availabilityCount": null,
-        "weeklyRecurrenceDays": [],
-        "monthlyRecurrenceDays": [],
-        "assignedUserIds": [],
-        "guildId": null,
         "groupId": "qg-school",
-        "claimedByUserIds": [],
-        "dismissals": []
+        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": "FREQ=DAILY", "availabilityCount": null
       },
       {
         "id": "esq6",
@@ -193,18 +148,9 @@
         ],
         "isActive": true,
         "isOptional": true,
-        "availabilityType": "Unlimited",
         "requiresApproval": false,
-        "lateSetbacks": [],
-        "incompleteSetbacks": [],
-        "availabilityCount": null,
-        "weeklyRecurrenceDays": [],
-        "monthlyRecurrenceDays": [],
-        "assignedUserIds": [],
-        "guildId": null,
         "groupId": "qg-school",
-        "claimedByUserIds": [],
-        "dismissals": []
+        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": null, "availabilityCount": null
       }
     ]
   }

@@ -30,24 +30,21 @@
         ],
         "isActive": true,
         "isOptional": false,
-        "availabilityType": "Weekly",
-        "weeklyRecurrenceDays": [
-          1,
-          2,
-          3,
-          4,
-          5
-        ],
         "requiresApproval": true,
         "lateSetbacks": [],
         "incompleteSetbacks": [],
         "availabilityCount": null,
-        "monthlyRecurrenceDays": [],
         "assignedUserIds": [],
         "guildId": null,
         "groupId": "qg-school",
         "claimedByUserIds": [],
-        "dismissals": []
+        "dismissals": [],
+        "startDateTime": null,
+        "endDateTime": null,
+        "allDay": true,
+        "rrule": "FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR",
+        "startTime": null,
+        "endTime": null
       },
       {
         "id": "school-quest-2",
@@ -68,18 +65,21 @@
         ],
         "isActive": true,
         "isOptional": true,
-        "availabilityType": "Daily",
         "requiresApproval": false,
         "lateSetbacks": [],
         "incompleteSetbacks": [],
         "availabilityCount": null,
-        "weeklyRecurrenceDays": [],
-        "monthlyRecurrenceDays": [],
         "assignedUserIds": [],
         "guildId": null,
         "groupId": "qg-school",
         "claimedByUserIds": [],
-        "dismissals": []
+        "dismissals": [],
+        "startDateTime": null,
+        "endDateTime": null,
+        "allDay": true,
+        "rrule": "FREQ=DAILY",
+        "startTime": null,
+        "endTime": null
       },
       {
         "id": "school-quest-3",
@@ -100,24 +100,21 @@
         ],
         "isActive": true,
         "isOptional": false,
-        "availabilityType": "Weekly",
-        "weeklyRecurrenceDays": [
-          0,
-          1,
-          2,
-          3,
-          4
-        ],
         "requiresApproval": false,
         "lateSetbacks": [],
         "incompleteSetbacks": [],
         "availabilityCount": null,
-        "monthlyRecurrenceDays": [],
         "assignedUserIds": [],
         "guildId": null,
         "groupId": "qg-school",
         "claimedByUserIds": [],
-        "dismissals": []
+        "dismissals": [],
+        "startDateTime": null,
+        "endDateTime": null,
+        "allDay": true,
+        "rrule": "FREQ=WEEKLY;BYDAY=SU,MO,TU,WE,TH",
+        "startTime": null,
+        "endTime": null
       }
     ]
   }

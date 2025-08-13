@@ -18,30 +18,10 @@
         "type": "Duty",
         "iconType": "emoji",
         "icon": "🧘",
-        "rewards": [
-          {
-            "rewardTypeId": "core-strength",
-            "amount": 10
-          }
-        ],
-        "tags": [
-          "fitness",
-          "health"
-        ],
-        "isActive": true,
-        "isOptional": true,
-        "availabilityType": "Daily",
-        "requiresApproval": false,
-        "lateSetbacks": [],
-        "incompleteSetbacks": [],
-        "availabilityCount": null,
-        "weeklyRecurrenceDays": [],
-        "monthlyRecurrenceDays": [],
-        "assignedUserIds": [],
-        "guildId": null,
-        "groupId": "qg-health",
-        "claimedByUserIds": [],
-        "dismissals": []
+        "rewards": [{ "rewardTypeId": "core-strength", "amount": 10 }],
+        "tags": ["fitness", "health"],
+        "isActive": true, "isOptional": true, "requiresApproval": false, "groupId": "qg-health",
+        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": "FREQ=DAILY", "availabilityCount": null
       },
       {
         "id": "fgq2",
@@ -50,30 +30,10 @@
         "type": "Duty",
         "iconType": "emoji",
         "icon": "🏃",
-        "rewards": [
-          {
-            "rewardTypeId": "core-strength",
-            "amount": 25
-          }
-        ],
-        "tags": [
-          "fitness",
-          "health"
-        ],
-        "isActive": true,
-        "isOptional": false,
-        "availabilityType": "Daily",
-        "requiresApproval": false,
-        "lateSetbacks": [],
-        "incompleteSetbacks": [],
-        "availabilityCount": null,
-        "weeklyRecurrenceDays": [],
-        "monthlyRecurrenceDays": [],
-        "assignedUserIds": [],
-        "guildId": null,
-        "groupId": "qg-health",
-        "claimedByUserIds": [],
-        "dismissals": []
+        "rewards": [{ "rewardTypeId": "core-strength", "amount": 25 }],
+        "tags": ["fitness", "health"],
+        "isActive": true, "isOptional": false, "requiresApproval": false, "groupId": "qg-health",
+        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": "FREQ=DAILY", "availabilityCount": null
       },
       {
         "id": "fgq3",
@@ -82,30 +42,10 @@
         "type": "Venture",
         "iconType": "emoji",
         "icon": "🏋️",
-        "rewards": [
-          {
-            "rewardTypeId": "core-strength",
-            "amount": 40
-          }
-        ],
-        "tags": [
-          "fitness",
-          "health"
-        ],
-        "isActive": true,
-        "isOptional": true,
-        "availabilityType": "Unlimited",
-        "requiresApproval": false,
-        "lateSetbacks": [],
-        "incompleteSetbacks": [],
-        "availabilityCount": null,
-        "weeklyRecurrenceDays": [],
-        "monthlyRecurrenceDays": [],
-        "assignedUserIds": [],
-        "guildId": null,
-        "groupId": "qg-health",
-        "claimedByUserIds": [],
-        "dismissals": []
+        "rewards": [{ "rewardTypeId": "core-strength", "amount": 40 }],
+        "tags": ["fitness", "health"],
+        "isActive": true, "isOptional": true, "requiresApproval": false, "groupId": "qg-health",
+        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": null, "availabilityCount": null
       },
       {
         "id": "fgq4",
@@ -114,30 +54,10 @@
         "type": "Duty",
         "iconType": "emoji",
         "icon": "💧",
-        "rewards": [
-          {
-            "rewardTypeId": "core-diligence",
-            "amount": 5
-          }
-        ],
-        "tags": [
-          "fitness",
-          "health"
-        ],
-        "isActive": true,
-        "isOptional": false,
-        "availabilityType": "Daily",
-        "requiresApproval": false,
-        "lateSetbacks": [],
-        "incompleteSetbacks": [],
-        "availabilityCount": null,
-        "weeklyRecurrenceDays": [],
-        "monthlyRecurrenceDays": [],
-        "assignedUserIds": [],
-        "guildId": null,
-        "groupId": "qg-health",
-        "claimedByUserIds": [],
-        "dismissals": []
+        "rewards": [{ "rewardTypeId": "core-diligence", "amount": 5 }],
+        "tags": ["fitness", "health"],
+        "isActive": true, "isOptional": false, "requiresApproval": false, "groupId": "qg-health",
+        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": "FREQ=DAILY", "availabilityCount": null
       },
       {
         "id": "fgq5",
@@ -146,30 +66,10 @@
         "type": "Venture",
         "iconType": "emoji",
         "icon": "💡",
-        "rewards": [
-          {
-            "rewardTypeId": "core-wisdom",
-            "amount": 15
-          }
-        ],
-        "tags": [
-          "fitness",
-          "learning"
-        ],
-        "isActive": true,
-        "isOptional": true,
-        "availabilityType": "Unlimited",
-        "requiresApproval": false,
-        "lateSetbacks": [],
-        "incompleteSetbacks": [],
-        "availabilityCount": null,
-        "weeklyRecurrenceDays": [],
-        "monthlyRecurrenceDays": [],
-        "assignedUserIds": [],
-        "guildId": null,
-        "groupId": "qg-health",
-        "claimedByUserIds": [],
-        "dismissals": []
+        "rewards": [{ "rewardTypeId": "core-wisdom", "amount": 15 }],
+        "tags": ["fitness", "learning"],
+        "isActive": true, "isOptional": true, "requiresApproval": false, "groupId": "qg-health",
+        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": null, "availabilityCount": null
       },
       {
         "id": "fgq6",
@@ -178,30 +78,10 @@
         "type": "Duty",
         "iconType": "emoji",
         "icon": "🌬️",
-        "rewards": [
-          {
-            "rewardTypeId": "core-skill",
-            "amount": 10
-          }
-        ],
-        "tags": [
-          "fitness",
-          "health"
-        ],
-        "isActive": true,
-        "isOptional": false,
-        "availabilityType": "Daily",
-        "requiresApproval": false,
-        "lateSetbacks": [],
-        "incompleteSetbacks": [],
-        "availabilityCount": null,
-        "weeklyRecurrenceDays": [],
-        "monthlyRecurrenceDays": [],
-        "assignedUserIds": [],
-        "guildId": null,
-        "groupId": "qg-health",
-        "claimedByUserIds": [],
-        "dismissals": []
+        "rewards": [{ "rewardTypeId": "core-skill", "amount": 10 }],
+        "tags": ["fitness", "health"],
+        "isActive": true, "isOptional": false, "requiresApproval": false, "groupId": "qg-health",
+        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": "FREQ=DAILY", "availabilityCount": null
       }
     ]
   }

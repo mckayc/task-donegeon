@@ -18,30 +18,10 @@
         "type": "Venture",
         "iconType": "emoji",
         "icon": "🚌",
-        "rewards": [
-          {
-            "rewardTypeId": "core-wisdom",
-            "amount": 20
-          }
-        ],
-        "tags": [
-          "city life",
-          "errands"
-        ],
-        "isActive": true,
-        "isOptional": true,
-        "availabilityType": "Unlimited",
-        "requiresApproval": false,
-        "lateSetbacks": [],
-        "incompleteSetbacks": [],
-        "availabilityCount": null,
-        "weeklyRecurrenceDays": [],
-        "monthlyRecurrenceDays": [],
-        "assignedUserIds": [],
-        "guildId": null,
-        "groupId": "qg-personal",
-        "claimedByUserIds": [],
-        "dismissals": []
+        "rewards": [{ "rewardTypeId": "core-wisdom", "amount": 20 }],
+        "tags": ["city life", "errands"],
+        "isActive": true, "isOptional": true, "requiresApproval": false, "groupId": "qg-personal",
+        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": null, "availabilityCount": null
       },
       {
         "id": "mcq2",
@@ -50,32 +30,10 @@
         "type": "Duty",
         "iconType": "emoji",
         "icon": "🛒",
-        "rewards": [
-          {
-            "rewardTypeId": "core-strength",
-            "amount": 15
-          }
-        ],
-        "tags": [
-          "city life",
-          "errands"
-        ],
-        "isActive": true,
-        "isOptional": false,
-        "availabilityType": "Weekly",
-        "weeklyRecurrenceDays": [
-          6
-        ],
-        "requiresApproval": false,
-        "lateSetbacks": [],
-        "incompleteSetbacks": [],
-        "availabilityCount": null,
-        "monthlyRecurrenceDays": [],
-        "assignedUserIds": [],
-        "guildId": null,
-        "groupId": "qg-personal",
-        "claimedByUserIds": [],
-        "dismissals": []
+        "rewards": [{ "rewardTypeId": "core-strength", "amount": 15 }],
+        "tags": ["city life", "errands"],
+        "isActive": true, "isOptional": false, "requiresApproval": false, "groupId": "qg-personal",
+        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": "FREQ=WEEKLY;BYDAY=SA", "availabilityCount": null
       },
       {
         "id": "mcq3",
@@ -84,32 +42,10 @@
         "type": "Duty",
         "iconType": "emoji",
         "icon": "♻️",
-        "rewards": [
-          {
-            "rewardTypeId": "core-diligence",
-            "amount": 10
-          }
-        ],
-        "tags": [
-          "city life",
-          "household"
-        ],
-        "isActive": true,
-        "isOptional": false,
-        "availabilityType": "Weekly",
-        "weeklyRecurrenceDays": [
-          3
-        ],
-        "requiresApproval": false,
-        "lateSetbacks": [],
-        "incompleteSetbacks": [],
-        "availabilityCount": null,
-        "monthlyRecurrenceDays": [],
-        "assignedUserIds": [],
-        "guildId": null,
-        "groupId": "qg-personal",
-        "claimedByUserIds": [],
-        "dismissals": []
+        "rewards": [{ "rewardTypeId": "core-diligence", "amount": 10 }],
+        "tags": ["city life", "household"],
+        "isActive": true, "isOptional": false, "requiresApproval": false, "groupId": "qg-personal",
+        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": "FREQ=WEEKLY;BYDAY=WE", "availabilityCount": null
       },
       {
         "id": "mcq4",
@@ -118,30 +54,10 @@
         "type": "Venture",
         "iconType": "emoji",
         "icon": "🏞️",
-        "rewards": [
-          {
-            "rewardTypeId": "core-skill",
-            "amount": 25
-          }
-        ],
-        "tags": [
-          "city life",
-          "exploring"
-        ],
-        "isActive": true,
-        "isOptional": true,
-        "availabilityType": "Unlimited",
-        "requiresApproval": false,
-        "lateSetbacks": [],
-        "incompleteSetbacks": [],
-        "availabilityCount": null,
-        "weeklyRecurrenceDays": [],
-        "monthlyRecurrenceDays": [],
-        "assignedUserIds": [],
-        "guildId": null,
-        "groupId": "qg-personal",
-        "claimedByUserIds": [],
-        "dismissals": []
+        "rewards": [{ "rewardTypeId": "core-skill", "amount": 25 }],
+        "tags": ["city life", "exploring"],
+        "isActive": true, "isOptional": true, "requiresApproval": false, "groupId": "qg-personal",
+        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": null, "availabilityCount": null
       },
       {
         "id": "mcq5",
@@ -150,30 +66,10 @@
         "type": "Venture",
         "iconType": "emoji",
         "icon": "🛍️",
-        "rewards": [
-          {
-            "rewardTypeId": "core-gems",
-            "amount": 10
-          }
-        ],
-        "tags": [
-          "city life",
-          "errands"
-        ],
-        "isActive": true,
-        "isOptional": true,
-        "availabilityType": "Unlimited",
-        "requiresApproval": false,
-        "lateSetbacks": [],
-        "incompleteSetbacks": [],
-        "availabilityCount": null,
-        "weeklyRecurrenceDays": [],
-        "monthlyRecurrenceDays": [],
-        "assignedUserIds": [],
-        "guildId": null,
-        "groupId": "qg-personal",
-        "claimedByUserIds": [],
-        "dismissals": []
+        "rewards": [{ "rewardTypeId": "core-gems", "amount": 10 }],
+        "tags": ["city life", "errands"],
+        "isActive": true, "isOptional": true, "requiresApproval": false, "groupId": "qg-personal",
+        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": null, "availabilityCount": null
       },
       {
         "id": "mcq6",
@@ -182,30 +78,10 @@
         "type": "Duty",
         "iconType": "emoji",
         "icon": "🛋️",
-        "rewards": [
-          {
-            "rewardTypeId": "core-diligence",
-            "amount": 20
-          }
-        ],
-        "tags": [
-          "city life",
-          "household"
-        ],
-        "isActive": true,
-        "isOptional": false,
-        "availabilityType": "Daily",
-        "requiresApproval": false,
-        "lateSetbacks": [],
-        "incompleteSetbacks": [],
-        "availabilityCount": null,
-        "weeklyRecurrenceDays": [],
-        "monthlyRecurrenceDays": [],
-        "assignedUserIds": [],
-        "guildId": null,
-        "groupId": "qg-personal",
-        "claimedByUserIds": [],
-        "dismissals": []
+        "rewards": [{ "rewardTypeId": "core-diligence", "amount": 20 }],
+        "tags": ["city life", "household"],
+        "isActive": true, "isOptional": false, "requiresApproval": false, "groupId": "qg-personal",
+        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": "FREQ=DAILY", "availabilityCount": null
       }
     ]
   }

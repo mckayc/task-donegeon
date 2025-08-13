@@ -18,30 +18,10 @@
         "type": "Venture",
         "iconType": "emoji",
         "icon": "🌳",
-        "rewards": [
-          {
-            "rewardTypeId": "core-wisdom",
-            "amount": 20
-          }
-        ],
-        "tags": [
-          "nature",
-          "learning"
-        ],
-        "isActive": true,
-        "isOptional": true,
-        "availabilityType": "Unlimited",
-        "requiresApproval": true,
-        "lateSetbacks": [],
-        "incompleteSetbacks": [],
-        "availabilityCount": null,
-        "weeklyRecurrenceDays": [],
-        "monthlyRecurrenceDays": [],
-        "assignedUserIds": [],
-        "guildId": null,
-        "groupId": "qg-outdoor",
-        "claimedByUserIds": [],
-        "dismissals": []
+        "rewards": [{ "rewardTypeId": "core-wisdom", "amount": 20 }],
+        "tags": ["nature", "learning"],
+        "isActive": true, "isOptional": true, "requiresApproval": true, "groupId": "qg-outdoor",
+        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": null, "availabilityCount": null
       },
       {
         "id": "nfq2",
@@ -50,30 +30,10 @@
         "type": "Venture",
         "iconType": "emoji",
         "icon": "☁️",
-        "rewards": [
-          {
-            "rewardTypeId": "core-wisdom",
-            "amount": 15
-          }
-        ],
-        "tags": [
-          "nature",
-          "learning"
-        ],
-        "isActive": true,
-        "isOptional": true,
-        "availabilityType": "Unlimited",
-        "requiresApproval": false,
-        "lateSetbacks": [],
-        "incompleteSetbacks": [],
-        "availabilityCount": null,
-        "weeklyRecurrenceDays": [],
-        "monthlyRecurrenceDays": [],
-        "assignedUserIds": [],
-        "guildId": null,
-        "groupId": "qg-outdoor",
-        "claimedByUserIds": [],
-        "dismissals": []
+        "rewards": [{ "rewardTypeId": "core-wisdom", "amount": 15 }],
+        "tags": ["nature", "learning"],
+        "isActive": true, "isOptional": true, "requiresApproval": false, "groupId": "qg-outdoor",
+        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": null, "availabilityCount": null
       },
       {
         "id": "nfq3",
@@ -82,30 +42,10 @@
         "type": "Venture",
         "iconType": "emoji",
         "icon": "🏕️",
-        "rewards": [
-          {
-            "rewardTypeId": "core-skill",
-            "amount": 35
-          }
-        ],
-        "tags": [
-          "nature",
-          "survival"
-        ],
-        "isActive": true,
-        "isOptional": true,
-        "availabilityType": "Unlimited",
-        "requiresApproval": true,
-        "lateSetbacks": [],
-        "incompleteSetbacks": [],
-        "availabilityCount": null,
-        "weeklyRecurrenceDays": [],
-        "monthlyRecurrenceDays": [],
-        "assignedUserIds": [],
-        "guildId": null,
-        "groupId": "qg-outdoor",
-        "claimedByUserIds": [],
-        "dismissals": []
+        "rewards": [{ "rewardTypeId": "core-skill", "amount": 35 }],
+        "tags": ["nature", "survival"],
+        "isActive": true, "isOptional": true, "requiresApproval": true, "groupId": "qg-outdoor",
+        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": null, "availabilityCount": null
       },
       {
         "id": "nfq4",
@@ -114,30 +54,10 @@
         "type": "Venture",
         "iconType": "emoji",
         "icon": "🥾",
-        "rewards": [
-          {
-            "rewardTypeId": "core-strength",
-            "amount": 30
-          }
-        ],
-        "tags": [
-          "nature",
-          "exercise"
-        ],
-        "isActive": true,
-        "isOptional": true,
-        "availabilityType": "Unlimited",
-        "requiresApproval": false,
-        "lateSetbacks": [],
-        "incompleteSetbacks": [],
-        "availabilityCount": null,
-        "weeklyRecurrenceDays": [],
-        "monthlyRecurrenceDays": [],
-        "assignedUserIds": [],
-        "guildId": null,
-        "groupId": "qg-outdoor",
-        "claimedByUserIds": [],
-        "dismissals": []
+        "rewards": [{ "rewardTypeId": "core-strength", "amount": 30 }],
+        "tags": ["nature", "exercise"],
+        "isActive": true, "isOptional": true, "requiresApproval": false, "groupId": "qg-outdoor",
+        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": null, "availabilityCount": null
       },
       {
         "id": "nfq5",
@@ -146,30 +66,10 @@
         "type": "Venture",
         "iconType": "emoji",
         "icon": "🍓",
-        "rewards": [
-          {
-            "rewardTypeId": "core-diligence",
-            "amount": 25
-          }
-        ],
-        "tags": [
-          "nature",
-          "foraging"
-        ],
-        "isActive": true,
-        "isOptional": true,
-        "availabilityType": "Unlimited",
-        "requiresApproval": false,
-        "lateSetbacks": [],
-        "incompleteSetbacks": [],
-        "availabilityCount": null,
-        "weeklyRecurrenceDays": [],
-        "monthlyRecurrenceDays": [],
-        "assignedUserIds": [],
-        "guildId": null,
-        "groupId": "qg-outdoor",
-        "claimedByUserIds": [],
-        "dismissals": []
+        "rewards": [{ "rewardTypeId": "core-diligence", "amount": 25 }],
+        "tags": ["nature", "foraging"],
+        "isActive": true, "isOptional": true, "requiresApproval": false, "groupId": "qg-outdoor",
+        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": null, "availabilityCount": null
       },
       {
         "id": "nfq6",
@@ -178,30 +78,10 @@
         "type": "Duty",
         "iconType": "emoji",
         "icon": "♻️",
-        "rewards": [
-          {
-            "rewardTypeId": "core-gems",
-            "amount": 20
-          }
-        ],
-        "tags": [
-          "nature",
-          "service"
-        ],
-        "isActive": true,
-        "isOptional": true,
-        "availabilityType": "Daily",
-        "requiresApproval": false,
-        "lateSetbacks": [],
-        "incompleteSetbacks": [],
-        "availabilityCount": null,
-        "weeklyRecurrenceDays": [],
-        "monthlyRecurrenceDays": [],
-        "assignedUserIds": [],
-        "guildId": null,
-        "groupId": "qg-outdoor",
-        "claimedByUserIds": [],
-        "dismissals": []
+        "rewards": [{ "rewardTypeId": "core-gems", "amount": 20 }],
+        "tags": ["nature", "service"],
+        "isActive": true, "isOptional": true, "requiresApproval": false, "groupId": "qg-outdoor",
+        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": "FREQ=DAILY", "availabilityCount": null
       }
     ]
   }

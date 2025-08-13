@@ -18,30 +18,10 @@
         "type": "Venture",
         "iconType": "emoji",
         "icon": "🏦",
-        "rewards": [
-          {
-            "rewardTypeId": "core-wisdom",
-            "amount": 25
-          }
-        ],
-        "tags": [
-          "finance",
-          "planning"
-        ],
-        "isActive": true,
-        "isOptional": false,
-        "availabilityType": "Unlimited",
-        "requiresApproval": false,
-        "lateSetbacks": [],
-        "incompleteSetbacks": [],
-        "availabilityCount": null,
-        "weeklyRecurrenceDays": [],
-        "monthlyRecurrenceDays": [],
-        "assignedUserIds": [],
-        "guildId": null,
-        "groupId": "qg-personal",
-        "claimedByUserIds": [],
-        "dismissals": []
+        "rewards": [{ "rewardTypeId": "core-wisdom", "amount": 25 }],
+        "tags": ["finance", "planning"],
+        "isActive": true, "isOptional": false, "requiresApproval": false, "groupId": "qg-personal",
+        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": null, "availabilityCount": null
       },
       {
         "id": "lfq2",
@@ -50,32 +30,10 @@
         "type": "Duty",
         "iconType": "emoji",
         "icon": "📥",
-        "rewards": [
-          {
-            "rewardTypeId": "core-diligence",
-            "amount": 10
-          }
-        ],
-        "tags": [
-          "finance",
-          "saving"
-        ],
-        "isActive": true,
-        "isOptional": true,
-        "availabilityType": "Weekly",
-        "weeklyRecurrenceDays": [
-          5
-        ],
-        "requiresApproval": false,
-        "lateSetbacks": [],
-        "incompleteSetbacks": [],
-        "availabilityCount": null,
-        "monthlyRecurrenceDays": [],
-        "assignedUserIds": [],
-        "guildId": null,
-        "groupId": "qg-personal",
-        "claimedByUserIds": [],
-        "dismissals": []
+        "rewards": [{ "rewardTypeId": "core-diligence", "amount": 10 }],
+        "tags": ["finance", "saving"],
+        "isActive": true, "isOptional": true, "requiresApproval": false, "groupId": "qg-personal",
+        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": "FREQ=WEEKLY;BYDAY=FR", "availabilityCount": null
       },
       {
         "id": "lfq3",
@@ -84,30 +42,10 @@
         "type": "Venture",
         "iconType": "emoji",
         "icon": "📊",
-        "rewards": [
-          {
-            "rewardTypeId": "core-wisdom",
-            "amount": 30
-          }
-        ],
-        "tags": [
-          "finance",
-          "planning"
-        ],
-        "isActive": true,
-        "isOptional": true,
-        "availabilityType": "Unlimited",
-        "requiresApproval": true,
-        "lateSetbacks": [],
-        "incompleteSetbacks": [],
-        "availabilityCount": null,
-        "weeklyRecurrenceDays": [],
-        "monthlyRecurrenceDays": [],
-        "assignedUserIds": [],
-        "guildId": null,
-        "groupId": "qg-personal",
-        "claimedByUserIds": [],
-        "dismissals": []
+        "rewards": [{ "rewardTypeId": "core-wisdom", "amount": 30 }],
+        "tags": ["finance", "planning"],
+        "isActive": true, "isOptional": true, "requiresApproval": true, "groupId": "qg-personal",
+        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": null, "availabilityCount": null
       },
       {
         "id": "lfq4",
@@ -116,30 +54,10 @@
         "type": "Venture",
         "iconType": "emoji",
         "icon": "📝",
-        "rewards": [
-          {
-            "rewardTypeId": "core-diligence",
-            "amount": 25
-          }
-        ],
-        "tags": [
-          "finance",
-          "tracking"
-        ],
-        "isActive": true,
-        "isOptional": true,
-        "availabilityType": "Unlimited",
-        "requiresApproval": false,
-        "lateSetbacks": [],
-        "incompleteSetbacks": [],
-        "availabilityCount": null,
-        "weeklyRecurrenceDays": [],
-        "monthlyRecurrenceDays": [],
-        "assignedUserIds": [],
-        "guildId": null,
-        "groupId": "qg-personal",
-        "claimedByUserIds": [],
-        "dismissals": []
+        "rewards": [{ "rewardTypeId": "core-diligence", "amount": 25 }],
+        "tags": ["finance", "tracking"],
+        "isActive": true, "isOptional": true, "requiresApproval": false, "groupId": "qg-personal",
+        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": null, "availabilityCount": null
       },
       {
         "id": "lfq5",
@@ -148,30 +66,10 @@
         "type": "Venture",
         "iconType": "emoji",
         "icon": "🔍",
-        "rewards": [
-          {
-            "rewardTypeId": "core-wisdom",
-            "amount": 20
-          }
-        ],
-        "tags": [
-          "finance",
-          "planning"
-        ],
-        "isActive": true,
-        "isOptional": true,
-        "availabilityType": "Unlimited",
-        "requiresApproval": false,
-        "lateSetbacks": [],
-        "incompleteSetbacks": [],
-        "availabilityCount": null,
-        "weeklyRecurrenceDays": [],
-        "monthlyRecurrenceDays": [],
-        "assignedUserIds": [],
-        "guildId": null,
-        "groupId": "qg-personal",
-        "claimedByUserIds": [],
-        "dismissals": []
+        "rewards": [{ "rewardTypeId": "core-wisdom", "amount": 20 }],
+        "tags": ["finance", "planning"],
+        "isActive": true, "isOptional": true, "requiresApproval": false, "groupId": "qg-personal",
+        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": null, "availabilityCount": null
       },
       {
         "id": "lfq6",
@@ -180,30 +78,10 @@
         "type": "Venture",
         "iconType": "emoji",
         "icon": "💪",
-        "rewards": [
-          {
-            "rewardTypeId": "core-strength",
-            "amount": 5
-          }
-        ],
-        "tags": [
-          "finance",
-          "earning"
-        ],
-        "isActive": true,
-        "isOptional": true,
-        "availabilityType": "Unlimited",
-        "requiresApproval": true,
-        "lateSetbacks": [],
-        "incompleteSetbacks": [],
-        "availabilityCount": null,
-        "weeklyRecurrenceDays": [],
-        "monthlyRecurrenceDays": [],
-        "assignedUserIds": [],
-        "guildId": null,
-        "groupId": "qg-personal",
-        "claimedByUserIds": [],
-        "dismissals": []
+        "rewards": [{ "rewardTypeId": "core-strength", "amount": 5 }],
+        "tags": ["finance", "earning"],
+        "isActive": true, "isOptional": true, "requiresApproval": true, "groupId": "qg-personal",
+        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": null, "availabilityCount": null
       }
     ]
   }

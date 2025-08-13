@@ -18,33 +18,10 @@
         "type": "Duty",
         "iconType": "emoji",
         "icon": "🗓️",
-        "rewards": [
-          {
-            "rewardTypeId": "core-diligence",
-            "amount": 20
-          }
-        ],
-        "tags": [
-          "sports",
-          "practice"
-        ],
-        "isActive": true,
-        "isOptional": false,
-        "availabilityType": "Weekly",
-        "weeklyRecurrenceDays": [
-          2,
-          4
-        ],
-        "requiresApproval": false,
-        "lateSetbacks": [],
-        "incompleteSetbacks": [],
-        "availabilityCount": null,
-        "monthlyRecurrenceDays": [],
-        "assignedUserIds": [],
-        "guildId": null,
-        "groupId": "qg-health",
-        "claimedByUserIds": [],
-        "dismissals": []
+        "rewards": [{ "rewardTypeId": "core-diligence", "amount": 20 }],
+        "tags": ["sports", "practice"],
+        "isActive": true, "isOptional": false, "requiresApproval": false, "groupId": "qg-health",
+        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": "FREQ=WEEKLY;BYDAY=TU,TH", "availabilityCount": null
       },
       {
         "id": "fsq2",
@@ -53,30 +30,10 @@
         "type": "Duty",
         "iconType": "emoji",
         "icon": "🎯",
-        "rewards": [
-          {
-            "rewardTypeId": "core-skill",
-            "amount": 25
-          }
-        ],
-        "tags": [
-          "sports",
-          "practice"
-        ],
-        "isActive": true,
-        "isOptional": true,
-        "availabilityType": "Daily",
-        "requiresApproval": false,
-        "lateSetbacks": [],
-        "incompleteSetbacks": [],
-        "availabilityCount": null,
-        "weeklyRecurrenceDays": [],
-        "monthlyRecurrenceDays": [],
-        "assignedUserIds": [],
-        "guildId": null,
-        "groupId": "qg-health",
-        "claimedByUserIds": [],
-        "dismissals": []
+        "rewards": [{ "rewardTypeId": "core-skill", "amount": 25 }],
+        "tags": ["sports", "practice"],
+        "isActive": true, "isOptional": true, "requiresApproval": false, "groupId": "qg-health",
+        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": "FREQ=DAILY", "availabilityCount": null
       },
       {
         "id": "fsq3",
@@ -85,30 +42,10 @@
         "type": "Venture",
         "iconType": "emoji",
         "icon": "👕",
-        "rewards": [
-          {
-            "rewardTypeId": "core-diligence",
-            "amount": 15
-          }
-        ],
-        "tags": [
-          "sports",
-          "organization"
-        ],
-        "isActive": true,
-        "isOptional": false,
-        "availabilityType": "Unlimited",
-        "requiresApproval": false,
-        "lateSetbacks": [],
-        "incompleteSetbacks": [],
-        "availabilityCount": null,
-        "weeklyRecurrenceDays": [],
-        "monthlyRecurrenceDays": [],
-        "assignedUserIds": [],
-        "guildId": null,
-        "groupId": "qg-health",
-        "claimedByUserIds": [],
-        "dismissals": []
+        "rewards": [{ "rewardTypeId": "core-diligence", "amount": 15 }],
+        "tags": ["sports", "organization"],
+        "isActive": true, "isOptional": false, "requiresApproval": false, "groupId": "qg-health",
+        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": null, "availabilityCount": null
       },
       {
         "id": "fsq4",
@@ -117,30 +54,10 @@
         "type": "Venture",
         "iconType": "emoji",
         "icon": "🤝",
-        "rewards": [
-          {
-            "rewardTypeId": "core-gems",
-            "amount": 30
-          }
-        ],
-        "tags": [
-          "sports",
-          "character"
-        ],
-        "isActive": true,
-        "isOptional": false,
-        "availabilityType": "Unlimited",
-        "requiresApproval": true,
-        "lateSetbacks": [],
-        "incompleteSetbacks": [],
-        "availabilityCount": null,
-        "weeklyRecurrenceDays": [],
-        "monthlyRecurrenceDays": [],
-        "assignedUserIds": [],
-        "guildId": null,
-        "groupId": "qg-health",
-        "claimedByUserIds": [],
-        "dismissals": []
+        "rewards": [{ "rewardTypeId": "core-gems", "amount": 30 }],
+        "tags": ["sports", "character"],
+        "isActive": true, "isOptional": false, "requiresApproval": true, "groupId": "qg-health",
+        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": null, "availabilityCount": null
       },
       {
         "id": "fsq5",
@@ -149,30 +66,10 @@
         "type": "Venture",
         "iconType": "emoji",
         "icon": "🗣️",
-        "rewards": [
-          {
-            "rewardTypeId": "core-wisdom",
-            "amount": 10
-          }
-        ],
-        "tags": [
-          "sports",
-          "character"
-        ],
-        "isActive": true,
-        "isOptional": false,
-        "availabilityType": "Unlimited",
-        "requiresApproval": false,
-        "lateSetbacks": [],
-        "incompleteSetbacks": [],
-        "availabilityCount": null,
-        "weeklyRecurrenceDays": [],
-        "monthlyRecurrenceDays": [],
-        "assignedUserIds": [],
-        "guildId": null,
-        "groupId": "qg-health",
-        "claimedByUserIds": [],
-        "dismissals": []
+        "rewards": [{ "rewardTypeId": "core-wisdom", "amount": 10 }],
+        "tags": ["sports", "character"],
+        "isActive": true, "isOptional": false, "requiresApproval": false, "groupId": "qg-health",
+        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": null, "availabilityCount": null
       },
       {
         "id": "fsq6",
@@ -181,30 +78,10 @@
         "type": "Duty",
         "iconType": "emoji",
         "icon": "🧼",
-        "rewards": [
-          {
-            "rewardTypeId": "core-diligence",
-            "amount": 15
-          }
-        ],
-        "tags": [
-          "sports",
-          "cleaning"
-        ],
-        "isActive": true,
-        "isOptional": false,
-        "availabilityType": "Daily",
-        "requiresApproval": false,
-        "lateSetbacks": [],
-        "incompleteSetbacks": [],
-        "availabilityCount": null,
-        "weeklyRecurrenceDays": [],
-        "monthlyRecurrenceDays": [],
-        "assignedUserIds": [],
-        "guildId": null,
-        "groupId": "qg-health",
-        "claimedByUserIds": [],
-        "dismissals": []
+        "rewards": [{ "rewardTypeId": "core-diligence", "amount": 15 }],
+        "tags": ["sports", "cleaning"],
+        "isActive": true, "isOptional": false, "requiresApproval": false, "groupId": "qg-health",
+        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": "FREQ=DAILY", "availabilityCount": null
       }
     ]
   }

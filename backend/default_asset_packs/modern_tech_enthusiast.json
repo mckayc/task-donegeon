@@ -18,30 +18,10 @@
         "type": "Venture",
         "iconType": "emoji",
         "icon": "🗂️",
-        "rewards": [
-          {
-            "rewardTypeId": "core-diligence",
-            "amount": 20
-          }
-        ],
-        "tags": [
-          "tech",
-          "organization"
-        ],
-        "isActive": true,
-        "isOptional": true,
-        "availabilityType": "Unlimited",
-        "requiresApproval": false,
-        "lateSetbacks": [],
-        "incompleteSetbacks": [],
-        "availabilityCount": null,
-        "weeklyRecurrenceDays": [],
-        "monthlyRecurrenceDays": [],
-        "assignedUserIds": [],
-        "guildId": null,
-        "groupId": "qg-personal",
-        "claimedByUserIds": [],
-        "dismissals": []
+        "rewards": [{ "rewardTypeId": "core-diligence", "amount": 20 }],
+        "tags": ["tech", "organization"],
+        "isActive": true, "isOptional": true, "requiresApproval": false, "groupId": "qg-personal",
+        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": null, "availabilityCount": null
       },
       {
         "id": "mtq2",
@@ -50,30 +30,10 @@
         "type": "Duty",
         "iconType": "emoji",
         "icon": "📧",
-        "rewards": [
-          {
-            "rewardTypeId": "core-diligence",
-            "amount": 15
-          }
-        ],
-        "tags": [
-          "tech",
-          "organization"
-        ],
-        "isActive": true,
-        "isOptional": false,
-        "availabilityType": "Daily",
-        "requiresApproval": false,
-        "lateSetbacks": [],
-        "incompleteSetbacks": [],
-        "availabilityCount": null,
-        "weeklyRecurrenceDays": [],
-        "monthlyRecurrenceDays": [],
-        "assignedUserIds": [],
-        "guildId": null,
-        "groupId": "qg-personal",
-        "claimedByUserIds": [],
-        "dismissals": []
+        "rewards": [{ "rewardTypeId": "core-diligence", "amount": 15 }],
+        "tags": ["tech", "organization"],
+        "isActive": true, "isOptional": false, "requiresApproval": false, "groupId": "qg-personal",
+        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": "FREQ=DAILY", "availabilityCount": null
       },
       {
         "id": "mtq3",
@@ -82,30 +42,10 @@
         "type": "Duty",
         "iconType": "emoji",
         "icon": "⌨️",
-        "rewards": [
-          {
-            "rewardTypeId": "core-wisdom",
-            "amount": 30
-          }
-        ],
-        "tags": [
-          "tech",
-          "learning"
-        ],
-        "isActive": true,
-        "isOptional": true,
-        "availabilityType": "Daily",
-        "requiresApproval": false,
-        "lateSetbacks": [],
-        "incompleteSetbacks": [],
-        "availabilityCount": null,
-        "weeklyRecurrenceDays": [],
-        "monthlyRecurrenceDays": [],
-        "assignedUserIds": [],
-        "guildId": null,
-        "groupId": "qg-personal",
-        "claimedByUserIds": [],
-        "dismissals": []
+        "rewards": [{ "rewardTypeId": "core-wisdom", "amount": 30 }],
+        "tags": ["tech", "learning"],
+        "isActive": true, "isOptional": true, "requiresApproval": false, "groupId": "qg-personal",
+        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": "FREQ=DAILY", "availabilityCount": null
       },
       {
         "id": "mtq4",
@@ -114,30 +54,10 @@
         "type": "Duty",
         "iconType": "emoji",
         "icon": "🔌",
-        "rewards": [
-          {
-            "rewardTypeId": "core-diligence",
-            "amount": 10
-          }
-        ],
-        "tags": [
-          "tech",
-          "household"
-        ],
-        "isActive": true,
-        "isOptional": false,
-        "availabilityType": "Daily",
-        "requiresApproval": false,
-        "lateSetbacks": [],
-        "incompleteSetbacks": [],
-        "availabilityCount": null,
-        "weeklyRecurrenceDays": [],
-        "monthlyRecurrenceDays": [],
-        "assignedUserIds": [],
-        "guildId": null,
-        "groupId": "qg-personal",
-        "claimedByUserIds": [],
-        "dismissals": []
+        "rewards": [{ "rewardTypeId": "core-diligence", "amount": 10 }],
+        "tags": ["tech", "household"],
+        "isActive": true, "isOptional": false, "requiresApproval": false, "groupId": "qg-personal",
+        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": "FREQ=DAILY", "availabilityCount": null
       },
       {
         "id": "mtq5",
@@ -146,30 +66,10 @@
         "type": "Venture",
         "iconType": "emoji",
         "icon": "💡",
-        "rewards": [
-          {
-            "rewardTypeId": "core-gems",
-            "amount": 25
-          }
-        ],
-        "tags": [
-          "tech",
-          "helping"
-        ],
-        "isActive": true,
-        "isOptional": true,
-        "availabilityType": "Unlimited",
-        "requiresApproval": false,
-        "lateSetbacks": [],
-        "incompleteSetbacks": [],
-        "availabilityCount": null,
-        "weeklyRecurrenceDays": [],
-        "monthlyRecurrenceDays": [],
-        "assignedUserIds": [],
-        "guildId": null,
-        "groupId": "qg-personal",
-        "claimedByUserIds": [],
-        "dismissals": []
+        "rewards": [{ "rewardTypeId": "core-gems", "amount": 25 }],
+        "tags": ["tech", "helping"],
+        "isActive": true, "isOptional": true, "requiresApproval": false, "groupId": "qg-personal",
+        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": null, "availabilityCount": null
       },
       {
         "id": "mtq6",
@@ -178,30 +78,10 @@
         "type": "Duty",
         "iconType": "emoji",
         "icon": "🌳",
-        "rewards": [
-          {
-            "rewardTypeId": "core-strength",
-            "amount": 10
-          }
-        ],
-        "tags": [
-          "tech",
-          "health"
-        ],
-        "isActive": true,
-        "isOptional": true,
-        "availabilityType": "Daily",
-        "requiresApproval": false,
-        "lateSetbacks": [],
-        "incompleteSetbacks": [],
-        "availabilityCount": null,
-        "weeklyRecurrenceDays": [],
-        "monthlyRecurrenceDays": [],
-        "assignedUserIds": [],
-        "guildId": null,
-        "groupId": "qg-personal",
-        "claimedByUserIds": [],
-        "dismissals": []
+        "rewards": [{ "rewardTypeId": "core-strength", "amount": 10 }],
+        "tags": ["tech", "health"],
+        "isActive": true, "isOptional": true, "requiresApproval": false, "groupId": "qg-personal",
+        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": "FREQ=DAILY", "availabilityCount": null
       }
     ]
   }

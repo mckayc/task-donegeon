@@ -18,30 +18,10 @@
         "type": "Duty",
         "iconType": "emoji",
         "icon": "☕",
-        "rewards": [
-          {
-            "rewardTypeId": "core-diligence",
-            "amount": 10
-          }
-        ],
-        "tags": [
-          "barista",
-          "household"
-        ],
-        "isActive": true,
-        "isOptional": false,
-        "availabilityType": "Daily",
-        "requiresApproval": false,
-        "lateSetbacks": [],
-        "incompleteSetbacks": [],
-        "availabilityCount": null,
-        "weeklyRecurrenceDays": [],
-        "monthlyRecurrenceDays": [],
-        "assignedUserIds": [],
-        "guildId": null,
-        "groupId": "qg-creative",
-        "claimedByUserIds": [],
-        "dismissals": []
+        "rewards": [{ "rewardTypeId": "core-diligence", "amount": 10 }],
+        "tags": ["barista", "household"],
+        "isActive": true, "isOptional": false, "requiresApproval": false, "groupId": "qg-creative",
+        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": "FREQ=DAILY", "availabilityCount": null
       },
       {
         "id": "ebq2",
@@ -50,30 +30,10 @@
         "type": "Venture",
         "iconType": "emoji",
         "icon": "🫖",
-        "rewards": [
-          {
-            "rewardTypeId": "core-gems",
-            "amount": 15
-          }
-        ],
-        "tags": [
-          "barista",
-          "social"
-        ],
-        "isActive": true,
-        "isOptional": true,
-        "availabilityType": "Unlimited",
-        "requiresApproval": false,
-        "lateSetbacks": [],
-        "incompleteSetbacks": [],
-        "availabilityCount": null,
-        "weeklyRecurrenceDays": [],
-        "monthlyRecurrenceDays": [],
-        "assignedUserIds": [],
-        "guildId": null,
-        "groupId": "qg-creative",
-        "claimedByUserIds": [],
-        "dismissals": []
+        "rewards": [{ "rewardTypeId": "core-gems", "amount": 15 }],
+        "tags": ["barista", "social"],
+        "isActive": true, "isOptional": true, "requiresApproval": false, "groupId": "qg-creative",
+        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": null, "availabilityCount": null
       },
       {
         "id": "ebq3",
@@ -82,30 +42,10 @@
         "type": "Venture",
         "iconType": "emoji",
         "icon": "🎨",
-        "rewards": [
-          {
-            "rewardTypeId": "core-creative",
-            "amount": 20
-          }
-        ],
-        "tags": [
-          "barista",
-          "creative"
-        ],
-        "isActive": true,
-        "isOptional": true,
-        "availabilityType": "Unlimited",
-        "requiresApproval": false,
-        "lateSetbacks": [],
-        "incompleteSetbacks": [],
-        "availabilityCount": null,
-        "weeklyRecurrenceDays": [],
-        "monthlyRecurrenceDays": [],
-        "assignedUserIds": [],
-        "guildId": null,
-        "groupId": "qg-creative",
-        "claimedByUserIds": [],
-        "dismissals": []
+        "rewards": [{ "rewardTypeId": "core-creative", "amount": 20 }],
+        "tags": ["barista", "creative"],
+        "isActive": true, "isOptional": true, "requiresApproval": false, "groupId": "qg-creative",
+        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": null, "availabilityCount": null
       },
       {
         "id": "ebq4",
@@ -114,30 +54,10 @@
         "type": "Venture",
         "iconType": "emoji",
         "icon": "🧐",
-        "rewards": [
-          {
-            "rewardTypeId": "core-wisdom",
-            "amount": 15
-          }
-        ],
-        "tags": [
-          "barista",
-          "learning"
-        ],
-        "isActive": true,
-        "isOptional": true,
-        "availabilityType": "Unlimited",
-        "requiresApproval": false,
-        "lateSetbacks": [],
-        "incompleteSetbacks": [],
-        "availabilityCount": null,
-        "weeklyRecurrenceDays": [],
-        "monthlyRecurrenceDays": [],
-        "assignedUserIds": [],
-        "guildId": null,
-        "groupId": "qg-creative",
-        "claimedByUserIds": [],
-        "dismissals": []
+        "rewards": [{ "rewardTypeId": "core-wisdom", "amount": 15 }],
+        "tags": ["barista", "learning"],
+        "isActive": true, "isOptional": true, "requiresApproval": false, "groupId": "qg-creative",
+        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": null, "availabilityCount": null
       },
       {
         "id": "ebq5",
@@ -146,30 +66,10 @@
         "type": "Venture",
         "iconType": "emoji",
         "icon": "🧼",
-        "rewards": [
-          {
-            "rewardTypeId": "core-diligence",
-            "amount": 25
-          }
-        ],
-        "tags": [
-          "barista",
-          "cleaning"
-        ],
-        "isActive": true,
-        "isOptional": false,
-        "availabilityType": "Unlimited",
-        "requiresApproval": true,
-        "lateSetbacks": [],
-        "incompleteSetbacks": [],
-        "availabilityCount": null,
-        "weeklyRecurrenceDays": [],
-        "monthlyRecurrenceDays": [],
-        "assignedUserIds": [],
-        "guildId": null,
-        "groupId": "qg-creative",
-        "claimedByUserIds": [],
-        "dismissals": []
+        "rewards": [{ "rewardTypeId": "core-diligence", "amount": 25 }],
+        "tags": ["barista", "cleaning"],
+        "isActive": true, "isOptional": false, "requiresApproval": true, "groupId": "qg-creative",
+        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": null, "availabilityCount": null
       },
       {
         "id": "ebq6",
@@ -178,30 +78,10 @@
         "type": "Venture",
         "iconType": "emoji",
         "icon": "🧊",
-        "rewards": [
-          {
-            "rewardTypeId": "core-skill",
-            "amount": 10
-          }
-        ],
-        "tags": [
-          "barista",
-          "creative"
-        ],
-        "isActive": true,
-        "isOptional": true,
-        "availabilityType": "Unlimited",
-        "requiresApproval": false,
-        "lateSetbacks": [],
-        "incompleteSetbacks": [],
-        "availabilityCount": null,
-        "weeklyRecurrenceDays": [],
-        "monthlyRecurrenceDays": [],
-        "assignedUserIds": [],
-        "guildId": null,
-        "groupId": "qg-creative",
-        "claimedByUserIds": [],
-        "dismissals": []
+        "rewards": [{ "rewardTypeId": "core-skill", "amount": 10 }],
+        "tags": ["barista", "creative"],
+        "isActive": true, "isOptional": true, "requiresApproval": false, "groupId": "qg-creative",
+        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": null, "availabilityCount": null
       }
     ]
   }

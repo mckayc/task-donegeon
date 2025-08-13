@@ -18,30 +18,10 @@
         "type": "Duty",
         "iconType": "emoji",
         "icon": "♻️",
-        "rewards": [
-          {
-            "rewardTypeId": "core-diligence",
-            "amount": 15
-          }
-        ],
-        "tags": [
-          "ecology",
-          "household"
-        ],
-        "isActive": true,
-        "isOptional": false,
-        "availabilityType": "Daily",
-        "requiresApproval": false,
-        "lateSetbacks": [],
-        "incompleteSetbacks": [],
-        "availabilityCount": null,
-        "weeklyRecurrenceDays": [],
-        "monthlyRecurrenceDays": [],
-        "assignedUserIds": [],
-        "guildId": null,
-        "groupId": "qg-outdoor",
-        "claimedByUserIds": [],
-        "dismissals": []
+        "rewards": [{ "rewardTypeId": "core-diligence", "amount": 15 }],
+        "tags": ["ecology", "household"],
+        "isActive": true, "isOptional": false, "requiresApproval": false, "groupId": "qg-outdoor",
+        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": "FREQ=DAILY", "availabilityCount": null
       },
       {
         "id": "neq2",
@@ -50,30 +30,10 @@
         "type": "Duty",
         "iconType": "emoji",
         "icon": "💡",
-        "rewards": [
-          {
-            "rewardTypeId": "core-diligence",
-            "amount": 5
-          }
-        ],
-        "tags": [
-          "ecology",
-          "household"
-        ],
-        "isActive": true,
-        "isOptional": false,
-        "availabilityType": "Daily",
-        "requiresApproval": false,
-        "lateSetbacks": [],
-        "incompleteSetbacks": [],
-        "availabilityCount": null,
-        "weeklyRecurrenceDays": [],
-        "monthlyRecurrenceDays": [],
-        "assignedUserIds": [],
-        "guildId": null,
-        "groupId": "qg-outdoor",
-        "claimedByUserIds": [],
-        "dismissals": []
+        "rewards": [{ "rewardTypeId": "core-diligence", "amount": 5 }],
+        "tags": ["ecology", "household"],
+        "isActive": true, "isOptional": false, "requiresApproval": false, "groupId": "qg-outdoor",
+        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": "FREQ=DAILY", "availabilityCount": null
       },
       {
         "id": "neq3",
@@ -82,30 +42,10 @@
         "type": "Duty",
         "iconType": "emoji",
         "icon": "💧",
-        "rewards": [
-          {
-            "rewardTypeId": "core-skill",
-            "amount": 5
-          }
-        ],
-        "tags": [
-          "ecology",
-          "health"
-        ],
-        "isActive": true,
-        "isOptional": false,
-        "availabilityType": "Daily",
-        "requiresApproval": false,
-        "lateSetbacks": [],
-        "incompleteSetbacks": [],
-        "availabilityCount": null,
-        "weeklyRecurrenceDays": [],
-        "monthlyRecurrenceDays": [],
-        "assignedUserIds": [],
-        "guildId": null,
-        "groupId": "qg-outdoor",
-        "claimedByUserIds": [],
-        "dismissals": []
+        "rewards": [{ "rewardTypeId": "core-skill", "amount": 5 }],
+        "tags": ["ecology", "health"],
+        "isActive": true, "isOptional": false, "requiresApproval": false, "groupId": "qg-outdoor",
+        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": "FREQ=DAILY", "availabilityCount": null
       },
       {
         "id": "neq4",
@@ -114,30 +54,10 @@
         "type": "Duty",
         "iconType": "emoji",
         "icon": "🥕",
-        "rewards": [
-          {
-            "rewardTypeId": "core-diligence",
-            "amount": 10
-          }
-        ],
-        "tags": [
-          "ecology",
-          "household"
-        ],
-        "isActive": true,
-        "isOptional": false,
-        "availabilityType": "Daily",
-        "requiresApproval": false,
-        "lateSetbacks": [],
-        "incompleteSetbacks": [],
-        "availabilityCount": null,
-        "weeklyRecurrenceDays": [],
-        "monthlyRecurrenceDays": [],
-        "assignedUserIds": [],
-        "guildId": null,
-        "groupId": "qg-outdoor",
-        "claimedByUserIds": [],
-        "dismissals": []
+        "rewards": [{ "rewardTypeId": "core-diligence", "amount": 10 }],
+        "tags": ["ecology", "household"],
+        "isActive": true, "isOptional": false, "requiresApproval": false, "groupId": "qg-outdoor",
+        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": "FREQ=DAILY", "availabilityCount": null
       },
       {
         "id": "neq5",
@@ -146,30 +66,10 @@
         "type": "Venture",
         "iconType": "emoji",
         "icon": "🚮",
-        "rewards": [
-          {
-            "rewardTypeId": "core-gems",
-            "amount": 30
-          }
-        ],
-        "tags": [
-          "ecology",
-          "service"
-        ],
-        "isActive": true,
-        "isOptional": true,
-        "availabilityType": "Unlimited",
-        "requiresApproval": true,
-        "lateSetbacks": [],
-        "incompleteSetbacks": [],
-        "availabilityCount": null,
-        "weeklyRecurrenceDays": [],
-        "monthlyRecurrenceDays": [],
-        "assignedUserIds": [],
-        "guildId": null,
-        "groupId": "qg-outdoor",
-        "claimedByUserIds": [],
-        "dismissals": []
+        "rewards": [{ "rewardTypeId": "core-gems", "amount": 30 }],
+        "tags": ["ecology", "service"],
+        "isActive": true, "isOptional": true, "requiresApproval": true, "groupId": "qg-outdoor",
+        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": null, "availabilityCount": null
       },
       {
         "id": "neq6",
@@ -178,30 +78,10 @@
         "type": "Venture",
         "iconType": "emoji",
         "icon": "🐼",
-        "rewards": [
-          {
-            "rewardTypeId": "core-wisdom",
-            "amount": 20
-          }
-        ],
-        "tags": [
-          "ecology",
-          "learning"
-        ],
-        "isActive": true,
-        "isOptional": true,
-        "availabilityType": "Unlimited",
-        "requiresApproval": false,
-        "lateSetbacks": [],
-        "incompleteSetbacks": [],
-        "availabilityCount": null,
-        "weeklyRecurrenceDays": [],
-        "monthlyRecurrenceDays": [],
-        "assignedUserIds": [],
-        "guildId": null,
-        "groupId": "qg-outdoor",
-        "claimedByUserIds": [],
-        "dismissals": []
+        "rewards": [{ "rewardTypeId": "core-wisdom", "amount": 20 }],
+        "tags": ["ecology", "learning"],
+        "isActive": true, "isOptional": true, "requiresApproval": false, "groupId": "qg-outdoor",
+        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": null, "availabilityCount": null
       }
     ]
   }

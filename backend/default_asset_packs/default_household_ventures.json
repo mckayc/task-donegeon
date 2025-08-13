@@ -1,4 +1,3 @@
-
 {
   "manifest": {
     "id": "com.taskdonegeon.default.ventures.household.v1",
@@ -22,9 +21,9 @@
         "rewards": [{ "rewardTypeId": "core-diligence", "amount": 30 }, { "rewardTypeId": "core-gold", "amount": 10 }],
         "isActive": true,
         "isOptional": false,
-        "availabilityType": "Unlimited",
         "groupId": "qg-household",
-        "requiresApproval": true
+        "requiresApproval": true,
+        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": null, "availabilityCount": null
       },
       {
         "id": "default-venture-2",
@@ -37,9 +36,9 @@
         "rewards": [{ "rewardTypeId": "core-skill", "amount": 15 }, { "rewardTypeId": "core-gems", "amount": 5 }],
         "isActive": true,
         "isOptional": true,
-        "availabilityType": "Unlimited",
         "groupId": "qg-household",
-        "requiresApproval": false
+        "requiresApproval": false,
+        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": null, "availabilityCount": null
       },
       {
         "id": "default-venture-3",
@@ -52,9 +51,9 @@
         "rewards": [{ "rewardTypeId": "core-diligence", "amount": 25 }, { "rewardTypeId": "core-gold", "amount": 5 }],
         "isActive": true,
         "isOptional": false,
-        "availabilityType": "Unlimited",
         "groupId": "qg-household",
-        "requiresApproval": true
+        "requiresApproval": true,
+        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": null, "availabilityCount": null
       },
       {
         "id": "default-venture-4",
@@ -67,9 +66,9 @@
         "rewards": [{ "rewardTypeId": "core-strength", "amount": 15 }],
         "isActive": true,
         "isOptional": true,
-        "availabilityType": "Unlimited",
         "groupId": "qg-household",
-        "requiresApproval": true
+        "requiresApproval": true,
+        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": null, "availabilityCount": null
       },
       {
         "id": "default-venture-5",
@@ -82,9 +81,9 @@
         "rewards": [{ "rewardTypeId": "core-strength", "amount": 10 }],
         "isActive": true,
         "isOptional": false,
-        "availabilityType": "Unlimited",
         "groupId": "qg-household",
-        "requiresApproval": false
+        "requiresApproval": false,
+        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": null, "availabilityCount": null
       },
       {
         "id": "default-venture-6",
@@ -97,9 +96,9 @@
         "rewards": [{ "rewardTypeId": "core-diligence", "amount": 15 }],
         "isActive": true,
         "isOptional": true,
-        "availabilityType": "Unlimited",
         "groupId": "qg-household",
-        "requiresApproval": true
+        "requiresApproval": true,
+        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": null, "availabilityCount": null
       },
       {
         "id": "default-venture-7",
@@ -112,9 +111,9 @@
         "rewards": [{ "rewardTypeId": "core-diligence", "amount": 10 }],
         "isActive": true,
         "isOptional": true,
-        "availabilityType": "Unlimited",
         "groupId": "qg-household",
-        "requiresApproval": false
+        "requiresApproval": false,
+        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": null, "availabilityCount": null
       },
       {
         "id": "default-venture-8",
@@ -127,9 +126,9 @@
         "rewards": [{ "rewardTypeId": "core-strength", "amount": 10 }],
         "isActive": true,
         "isOptional": true,
-        "availabilityType": "Unlimited",
         "groupId": "qg-household",
-        "requiresApproval": false
+        "requiresApproval": false,
+        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": null, "availabilityCount": null
       },
       {
         "id": "default-venture-9",
@@ -142,9 +141,9 @@
         "rewards": [{ "rewardTypeId": "core-wisdom", "amount": 15 }, { "rewardTypeId": "core-gems", "amount": 5 }],
         "isActive": true,
         "isOptional": true,
-        "availabilityType": "Unlimited",
         "groupId": "qg-kindness",
-        "requiresApproval": true
+        "requiresApproval": true,
+        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": null, "availabilityCount": null
       },
       {
         "id": "default-venture-10",
@@ -157,9 +156,9 @@
         "rewards": [{ "rewardTypeId": "core-diligence", "amount": 20 }],
         "isActive": true,
         "isOptional": true,
-        "availabilityType": "Unlimited",
         "groupId": "qg-household",
-        "requiresApproval": true
+        "requiresApproval": true,
+        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": null, "availabilityCount": null
       }
     ]
   }

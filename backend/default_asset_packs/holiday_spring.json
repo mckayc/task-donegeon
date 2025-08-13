@@ -1,4 +1,3 @@
-
 {
   "manifest": {
     "id": "com.taskdonegeon.holiday.spring.v1",
@@ -18,29 +17,10 @@
         "type": "Venture",
         "iconType": "emoji",
         "icon": "🌱",
-        "rewards": [
-          {
-            "rewardTypeId": "core-strength",
-            "amount": 30
-          }
-        ],
-        "tags": [
-          "holiday",
-          "yardwork"
-        ],
-        "isActive": true,
-        "isOptional": true,
-        "availabilityType": "Unlimited",
-        "requiresApproval": true,
-        "lateSetbacks": [],
-        "incompleteSetbacks": [],
-        "availabilityCount": null,
-        "weeklyRecurrenceDays": [],
-        "monthlyRecurrenceDays": [],
-        "assignedUserIds": [],
-        "guildId": null,
-        "claimedByUserIds": [],
-        "dismissals": []
+        "rewards": [{ "rewardTypeId": "core-strength", "amount": 30 }],
+        "tags": ["holiday", "yardwork"],
+        "isActive": true, "isOptional": true, "requiresApproval": true,
+        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": null, "availabilityCount": null
       },
       {
         "id": "spq2",
@@ -49,29 +29,10 @@
         "type": "Venture",
         "iconType": "emoji",
         "icon": "🎨",
-        "rewards": [
-          {
-            "rewardTypeId": "core-creative",
-            "amount": 25
-          }
-        ],
-        "tags": [
-          "holiday",
-          "creative"
-        ],
-        "isActive": true,
-        "isOptional": true,
-        "availabilityType": "Unlimited",
-        "requiresApproval": false,
-        "lateSetbacks": [],
-        "incompleteSetbacks": [],
-        "availabilityCount": null,
-        "weeklyRecurrenceDays": [],
-        "monthlyRecurrenceDays": [],
-        "assignedUserIds": [],
-        "guildId": null,
-        "claimedByUserIds": [],
-        "dismissals": []
+        "rewards": [{ "rewardTypeId": "core-creative", "amount": 25 }],
+        "tags": ["holiday", "creative"],
+        "isActive": true, "isOptional": true, "requiresApproval": false,
+        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": null, "availabilityCount": null
       },
       {
         "id": "spq3",
@@ -80,29 +41,10 @@
         "type": "Venture",
         "iconType": "emoji",
         "icon": "🧹",
-        "rewards": [
-          {
-            "rewardTypeId": "core-diligence",
-            "amount": 40
-          }
-        ],
-        "tags": [
-          "holiday",
-          "cleaning"
-        ],
-        "isActive": true,
-        "isOptional": true,
-        "availabilityType": "Unlimited",
-        "requiresApproval": true,
-        "lateSetbacks": [],
-        "incompleteSetbacks": [],
-        "availabilityCount": null,
-        "weeklyRecurrenceDays": [],
-        "monthlyRecurrenceDays": [],
-        "assignedUserIds": [],
-        "guildId": null,
-        "claimedByUserIds": [],
-        "dismissals": []
+        "rewards": [{ "rewardTypeId": "core-diligence", "amount": 40 }],
+        "tags": ["holiday", "cleaning"],
+        "isActive": true, "isOptional": true, "requiresApproval": true,
+        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": null, "availabilityCount": null
       },
       {
         "id": "spq4",
@@ -111,29 +53,10 @@
         "type": "Venture",
         "iconType": "emoji",
         "icon": "🧑‍🍳",
-        "rewards": [
-          {
-            "rewardTypeId": "core-skill",
-            "amount": 20
-          }
-        ],
-        "tags": [
-          "holiday",
-          "cooking"
-        ],
-        "isActive": true,
-        "isOptional": false,
-        "availabilityType": "Unlimited",
-        "requiresApproval": false,
-        "lateSetbacks": [],
-        "incompleteSetbacks": [],
-        "availabilityCount": null,
-        "weeklyRecurrenceDays": [],
-        "monthlyRecurrenceDays": [],
-        "assignedUserIds": [],
-        "guildId": null,
-        "claimedByUserIds": [],
-        "dismissals": []
+        "rewards": [{ "rewardTypeId": "core-skill", "amount": 20 }],
+        "tags": ["holiday", "cooking"],
+        "isActive": true, "isOptional": false, "requiresApproval": false,
+        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": null, "availabilityCount": null
       },
       {
         "id": "spq5",
@@ -142,29 +65,10 @@
         "type": "Venture",
         "iconType": "emoji",
         "icon": "🌿",
-        "rewards": [
-          {
-            "rewardTypeId": "core-wisdom",
-            "amount": 15
-          }
-        ],
-        "tags": [
-          "holiday",
-          "yardwork"
-        ],
-        "isActive": true,
-        "isOptional": true,
-        "availabilityType": "Unlimited",
-        "requiresApproval": false,
-        "lateSetbacks": [],
-        "incompleteSetbacks": [],
-        "availabilityCount": null,
-        "weeklyRecurrenceDays": [],
-        "monthlyRecurrenceDays": [],
-        "assignedUserIds": [],
-        "guildId": null,
-        "claimedByUserIds": [],
-        "dismissals": []
+        "rewards": [{ "rewardTypeId": "core-wisdom", "amount": 15 }],
+        "tags": ["holiday", "yardwork"],
+        "isActive": true, "isOptional": true, "requiresApproval": false,
+        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": null, "availabilityCount": null
       },
       {
         "id": "spq6",
@@ -173,29 +77,10 @@
         "type": "Venture",
         "iconType": "emoji",
         "icon": "🥚",
-        "rewards": [
-          {
-            "rewardTypeId": "core-diligence",
-            "amount": 10
-          }
-        ],
-        "tags": [
-          "holiday",
-          "helping"
-        ],
-        "isActive": true,
-        "isOptional": false,
-        "availabilityType": "Unlimited",
-        "requiresApproval": false,
-        "lateSetbacks": [],
-        "incompleteSetbacks": [],
-        "availabilityCount": null,
-        "weeklyRecurrenceDays": [],
-        "monthlyRecurrenceDays": [],
-        "assignedUserIds": [],
-        "guildId": null,
-        "claimedByUserIds": [],
-        "dismissals": []
+        "rewards": [{ "rewardTypeId": "core-diligence", "amount": 10 }],
+        "tags": ["holiday", "helping"],
+        "isActive": true, "isOptional": false, "requiresApproval": false,
+        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": null, "availabilityCount": null
       }
     ]
   }

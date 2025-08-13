@@ -18,30 +18,10 @@
         "type": "Venture",
         "iconType": "emoji",
         "icon": "🔧",
-        "rewards": [
-          {
-            "rewardTypeId": "core-diligence",
-            "amount": 20
-          }
-        ],
-        "tags": [
-          "home",
-          "organization"
-        ],
-        "isActive": true,
-        "isOptional": true,
-        "availabilityType": "Unlimited",
-        "requiresApproval": false,
-        "lateSetbacks": [],
-        "incompleteSetbacks": [],
-        "availabilityCount": null,
-        "weeklyRecurrenceDays": [],
-        "monthlyRecurrenceDays": [],
-        "assignedUserIds": [],
-        "guildId": null,
-        "groupId": "qg-household",
-        "claimedByUserIds": [],
-        "dismissals": []
+        "rewards": [{ "rewardTypeId": "core-diligence", "amount": 20 }],
+        "tags": ["home", "organization"],
+        "isActive": true, "isOptional": true, "requiresApproval": false, "groupId": "qg-household",
+        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": null, "availabilityCount": null
       },
       {
         "id": "lhq2",
@@ -50,32 +30,10 @@
         "type": "Duty",
         "iconType": "emoji",
         "icon": "🔋",
-        "rewards": [
-          {
-            "rewardTypeId": "core-diligence",
-            "amount": 15
-          }
-        ],
-        "tags": [
-          "home",
-          "maintenance"
-        ],
-        "isActive": true,
-        "isOptional": false,
-        "availabilityType": "Monthly",
-        "monthlyRecurrenceDays": [
-          1
-        ],
-        "requiresApproval": false,
-        "lateSetbacks": [],
-        "incompleteSetbacks": [],
-        "availabilityCount": null,
-        "weeklyRecurrenceDays": [],
-        "assignedUserIds": [],
-        "guildId": null,
-        "groupId": "qg-household",
-        "claimedByUserIds": [],
-        "dismissals": []
+        "rewards": [{ "rewardTypeId": "core-diligence", "amount": 15 }],
+        "tags": ["home", "maintenance"],
+        "isActive": true, "isOptional": false, "requiresApproval": false, "groupId": "qg-household",
+        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": "FREQ=MONTHLY;BYMONTHDAY=1", "availabilityCount": null
       },
       {
         "id": "lhq3",
@@ -84,30 +42,10 @@
         "type": "Venture",
         "iconType": "emoji",
         "icon": "💡",
-        "rewards": [
-          {
-            "rewardTypeId": "core-skill",
-            "amount": 10
-          }
-        ],
-        "tags": [
-          "home",
-          "maintenance"
-        ],
-        "isActive": true,
-        "isOptional": true,
-        "availabilityType": "Unlimited",
-        "requiresApproval": false,
-        "lateSetbacks": [],
-        "incompleteSetbacks": [],
-        "availabilityCount": null,
-        "weeklyRecurrenceDays": [],
-        "monthlyRecurrenceDays": [],
-        "assignedUserIds": [],
-        "guildId": null,
-        "groupId": "qg-household",
-        "claimedByUserIds": [],
-        "dismissals": []
+        "rewards": [{ "rewardTypeId": "core-skill", "amount": 10 }],
+        "tags": ["home", "maintenance"],
+        "isActive": true, "isOptional": true, "requiresApproval": false, "groupId": "qg-household",
+        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": null, "availabilityCount": null
       },
       {
         "id": "lhq4",
@@ -116,30 +54,10 @@
         "type": "Venture",
         "iconType": "emoji",
         "icon": "🚽",
-        "rewards": [
-          {
-            "rewardTypeId": "core-strength",
-            "amount": 25
-          }
-        ],
-        "tags": [
-          "home",
-          "maintenance"
-        ],
-        "isActive": true,
-        "isOptional": true,
-        "availabilityType": "Unlimited",
-        "requiresApproval": true,
-        "lateSetbacks": [],
-        "incompleteSetbacks": [],
-        "availabilityCount": null,
-        "weeklyRecurrenceDays": [],
-        "monthlyRecurrenceDays": [],
-        "assignedUserIds": [],
-        "guildId": null,
-        "groupId": "qg-household",
-        "claimedByUserIds": [],
-        "dismissals": []
+        "rewards": [{ "rewardTypeId": "core-strength", "amount": 25 }],
+        "tags": ["home", "maintenance"],
+        "isActive": true, "isOptional": true, "requiresApproval": true, "groupId": "qg-household",
+        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": null, "availabilityCount": null
       },
       {
         "id": "lhq5",
@@ -148,30 +66,10 @@
         "type": "Venture",
         "iconType": "emoji",
         "icon": "🖌️",
-        "rewards": [
-          {
-            "rewardTypeId": "core-creative",
-            "amount": 30
-          }
-        ],
-        "tags": [
-          "home",
-          "maintenance"
-        ],
-        "isActive": true,
-        "isOptional": true,
-        "availabilityType": "Unlimited",
-        "requiresApproval": true,
-        "lateSetbacks": [],
-        "incompleteSetbacks": [],
-        "availabilityCount": null,
-        "weeklyRecurrenceDays": [],
-        "monthlyRecurrenceDays": [],
-        "assignedUserIds": [],
-        "guildId": null,
-        "groupId": "qg-household",
-        "claimedByUserIds": [],
-        "dismissals": []
+        "rewards": [{ "rewardTypeId": "core-creative", "amount": 30 }],
+        "tags": ["home", "maintenance"],
+        "isActive": true, "isOptional": true, "requiresApproval": true, "groupId": "qg-household",
+        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": null, "availabilityCount": null
       },
       {
         "id": "lhq6",
@@ -180,30 +78,10 @@
         "type": "Venture",
         "iconType": "emoji",
         "icon": "🔩",
-        "rewards": [
-          {
-            "rewardTypeId": "core-skill",
-            "amount": 35
-          }
-        ],
-        "tags": [
-          "home",
-          "building"
-        ],
-        "isActive": true,
-        "isOptional": true,
-        "availabilityType": "Unlimited",
-        "requiresApproval": false,
-        "lateSetbacks": [],
-        "incompleteSetbacks": [],
-        "availabilityCount": null,
-        "weeklyRecurrenceDays": [],
-        "monthlyRecurrenceDays": [],
-        "assignedUserIds": [],
-        "guildId": null,
-        "groupId": "qg-household",
-        "claimedByUserIds": [],
-        "dismissals": []
+        "rewards": [{ "rewardTypeId": "core-skill", "amount": 35 }],
+        "tags": ["home", "building"],
+        "isActive": true, "isOptional": true, "requiresApproval": false, "groupId": "qg-household",
+        "startDateTime": null, "endDateTime": null, "allDay": true, "rrule": null, "availabilityCount": null
       }
     ]
   }

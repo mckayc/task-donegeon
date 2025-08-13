@@ -22,11 +22,12 @@
         "rewards": [{ "rewardTypeId": "core-diligence", "amount": 5 }],
         "isActive": true,
         "isOptional": false,
-        "availabilityType": "Daily",
         "requiresApproval": false,
-        "lateTime": "07:30",
-        "incompleteTime": "12:00",
-        "groupId": "qg-household"
+        "groupId": "qg-household",
+        "rrule": "FREQ=DAILY",
+        "startTime": "07:30",
+        "endTime": "12:00",
+        "allDay": false
       },
       {
         "id": "default-duty-1",
@@ -39,11 +40,12 @@
         "rewards": [{ "rewardTypeId": "core-diligence", "amount": 5 }],
         "isActive": true,
         "isOptional": false,
-        "availabilityType": "Daily",
         "requiresApproval": false,
-        "lateTime": "08:00",
-        "incompleteTime": "12:00",
-        "groupId": "qg-health"
+        "groupId": "qg-health",
+        "rrule": "FREQ=DAILY",
+        "startTime": "08:00",
+        "endTime": "12:00",
+        "allDay": false
       },
       {
         "id": "default-duty-2",
@@ -56,11 +58,12 @@
         "rewards": [{ "rewardTypeId": "core-diligence", "amount": 5 }],
         "isActive": true,
         "isOptional": false,
-        "availabilityType": "Daily",
         "requiresApproval": false,
-        "lateTime": "08:15",
-        "incompleteTime": "12:00",
-        "groupId": "qg-personal"
+        "groupId": "qg-personal",
+        "rrule": "FREQ=DAILY",
+        "startTime": "08:15",
+        "endTime": "12:00",
+        "allDay": false
       },
       {
         "id": "default-duty-3",
@@ -73,11 +76,12 @@
         "rewards": [{ "rewardTypeId": "core-diligence", "amount": 10 }],
         "isActive": true,
         "isOptional": false,
-        "availabilityType": "Daily",
         "requiresApproval": false,
-        "lateTime": "08:30",
-        "incompleteTime": "12:00",
-        "groupId": "qg-household"
+        "groupId": "qg-household",
+        "rrule": "FREQ=DAILY",
+        "startTime": "08:30",
+        "endTime": "12:00",
+        "allDay": false
       },
       {
         "id": "default-duty-7",
@@ -90,11 +94,12 @@
         "rewards": [{ "rewardTypeId": "core-diligence", "amount": 5 }],
         "isActive": true,
         "isOptional": false,
-        "availabilityType": "Daily",
         "requiresApproval": false,
-        "lateTime": "08:45",
-        "incompleteTime": "12:00",
-        "groupId": "qg-household"
+        "groupId": "qg-household",
+        "rrule": "FREQ=DAILY",
+        "startTime": "08:45",
+        "endTime": "12:00",
+        "allDay": false
       },
       {
         "id": "default-duty-4",
@@ -107,11 +112,12 @@
         "rewards": [{ "rewardTypeId": "core-wisdom", "amount": 10 }],
         "isActive": true,
         "isOptional": false,
-        "availabilityType": "Daily",
         "requiresApproval": false,
-        "lateTime": "09:00",
-        "incompleteTime": "12:00",
-        "groupId": "qg-school"
+        "groupId": "qg-school",
+        "rrule": "FREQ=DAILY",
+        "startTime": "09:00",
+        "endTime": "12:00",
+        "allDay": false
       },
       {
         "id": "default-duty-8",
@@ -124,11 +130,12 @@
         "rewards": [{ "rewardTypeId": "core-diligence", "amount": 10 }],
         "isActive": true,
         "isOptional": true,
-        "availabilityType": "Daily",
         "requiresApproval": false,
-        "lateTime": "18:00",
-        "incompleteTime": "20:00",
-        "groupId": "qg-household"
+        "groupId": "qg-household",
+        "rrule": "FREQ=DAILY",
+        "startTime": "18:00",
+        "endTime": "20:00",
+        "allDay": false
       },
       {
         "id": "default-duty-9",
@@ -141,11 +148,12 @@
         "rewards": [{ "rewardTypeId": "core-skill", "amount": 5 }],
         "isActive": true,
         "isOptional": true,
-        "availabilityType": "Daily",
         "requiresApproval": false,
-        "lateTime": "18:30",
-        "incompleteTime": "20:00",
-        "groupId": "qg-family"
+        "groupId": "qg-family",
+        "rrule": "FREQ=DAILY",
+        "startTime": "18:30",
+        "endTime": "20:00",
+        "allDay": false
       },
       {
         "id": "default-duty-10",
@@ -158,11 +166,12 @@
         "rewards": [{ "rewardTypeId": "core-diligence", "amount": 5 }],
         "isActive": true,
         "isOptional": false,
-        "availabilityType": "Daily",
         "requiresApproval": false,
-        "lateTime": "20:00",
-        "incompleteTime": "22:00",
-        "groupId": "qg-household"
+        "groupId": "qg-household",
+        "rrule": "FREQ=DAILY",
+        "startTime": "20:00",
+        "endTime": "22:00",
+        "allDay": false
       },
       {
         "id": "default-duty-5",
@@ -175,11 +184,12 @@
         "rewards": [{ "rewardTypeId": "core-diligence", "amount": 5 }],
         "isActive": true,
         "isOptional": false,
-        "availabilityType": "Daily",
         "requiresApproval": false,
-        "lateTime": "21:00",
-        "incompleteTime": "23:59",
-        "groupId": "qg-health"
+        "groupId": "qg-health",
+        "rrule": "FREQ=DAILY",
+        "startTime": "21:00",
+        "endTime": "23:59",
+        "allDay": false
       }
     ]
   }

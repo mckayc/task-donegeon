@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import { useAppState } from '../../context/AppContext';
 import { useUIState, useUIDispatch } from '../../context/UIStateContext';
@@ -82,64 +83,56 @@ const CalendarPage: React.FC = () => {
             // Quests
             const questEvents: EventInput[] = [];
             visibleQuests.forEach(quest => {
-                    const commonProps = {
-                        title: quest.title,
-                        allDay: quest.allDay || (!quest.startTime && !quest.endTime),
-                        backgroundColor: quest.type === QuestType.Duty ? 'hsl(var(--primary))' : 'hsl(var(--accent))',
-                        borderColor: quest.type === QuestType.Duty ? 'hsl(var(--primary))' : 'hsl(var(--accent))',
-                        extendedProps: { quest, type: 'quest' }
-                    };
+                const baseProps = {
+                    title: quest.title,
+                    backgroundColor: quest.type === QuestType.Duty ? 'hsl(var(--primary))' : 'hsl(var(--accent))',
+                    borderColor: quest.type === QuestType.Duty ? 'hsl(var(--primary))' : 'hsl(var(--accent))',
+                    extendedProps: { quest, type: 'quest' }
+                };
 
-                    if (quest.type === QuestType.Venture) {
-                        if (quest.startDateTime) {
-                            questEvents.push({
-                                ...commonProps,
-                                start: quest.startDateTime,
-                                end: quest.endDateTime || undefined
-                            });
-                        } else {
-                            // Show available dateless ventures on the current day if marked as To-Do.
-                            const questAppMode: AppMode = quest.guildId ? { mode: 'guild', guildId: quest.guildId } : { mode: 'personal' };
-                            if (isQuestAvailableForUser(quest, userCompletions, new Date(), scheduledEvents, questAppMode)) {
-                                const isTodo = quest.todoUserIds?.includes(currentUser.id);
-                                if (isTodo) {
-                                     questEvents.push({
-                                        ...commonProps,
-                                        title: `📌 ${quest.title}`,
-                                        start: todayYMD,
-                                        allDay: true,
-                                        backgroundColor: 'hsl(275 60% 50%)',
-                                        borderColor: 'hsl(275 60% 40%)',
-                                    });
-                                }
+                if (quest.type === QuestType.Venture) {
+                    if (quest.startDateTime) {
+                        questEvents.push({
+                            ...baseProps,
+                            start: quest.startDateTime,
+                            end: quest.endDateTime || undefined,
+                            allDay: quest.allDay
+                        });
+                    } else {
+                        // Show available dateless ventures on the current day if marked as To-Do.
+                        const questAppMode: AppMode = quest.guildId ? { mode: 'guild', guildId: quest.guildId } : { mode: 'personal' };
+                        if (isQuestAvailableForUser(quest, userCompletions, new Date(), scheduledEvents, questAppMode)) {
+                            const isTodo = quest.todoUserIds?.includes(currentUser.id);
+                            if (isTodo) {
+                                 questEvents.push({
+                                    ...baseProps,
+                                    title: `📌 ${quest.title}`,
+                                    start: todayYMD,
+                                    allDay: true,
+                                    backgroundColor: 'hsl(275 60% 50%)',
+                                    borderColor: 'hsl(275 60% 40%)',
+                                });
                             }
-                        }
-                    } else { // Duty
-                        if (quest.rrule) {
-                            // For recurring events, we let the rrule plugin handle all-day vs timed based on the presence of startTime/endTime.
-                            // Explicitly setting `allDay` can cause conflicts with the rrule parser.
-                            const dutyEvent: EventInput = {
-                                title: quest.title,
-                                backgroundColor: commonProps.backgroundColor,
-                                borderColor: commonProps.borderColor,
-                                extendedProps: commonProps.extendedProps,
-                                rrule: quest.rrule,
-                            };
-                    
-                            const isAllDay = quest.allDay || (!quest.startTime && !quest.endTime);
-                            
-                            if (!isAllDay) {
-                                // For timed events, add startTime and endTime. FullCalendar infers allDay: false.
-                                dutyEvent.startTime = quest.startTime || undefined;
-                                dutyEvent.endTime = quest.endTime || undefined;
-                            }
-                            // For all-day events, we add NO time properties and NO allDay property. 
-                            // FullCalendar's rrule plugin will correctly interpret this as an all-day event.
-                            
-                            questEvents.push(dutyEvent);
                         }
                     }
-                });
+                } else { // Duty
+                    if (quest.rrule) {
+                        const dutyEvent: EventInput = {
+                            ...baseProps,
+                            rrule: quest.rrule,
+                        };
+                
+                        // For recurring events, we infer allDay from the presence of startTime.
+                        // We do NOT explicitly set allDay: true, as the rrule plugin handles it.
+                        if (!quest.allDay && quest.startTime) {
+                            dutyEvent.startTime = quest.startTime;
+                            dutyEvent.endTime = quest.endTime || undefined;
+                        }
+                        
+                        questEvents.push(dutyEvent);
+                    }
+                }
+            });
             sources.push(questEvents);
             
             // Birthdays
@@ -214,6 +207,7 @@ const CalendarPage: React.FC = () => {
             startDateTime: `${arg.dateStr}T12:00`,
             endDateTime: `${arg.dateStr}T13:00`,
             hasDeadlines: true,
+            allDay: false,
         });
         setIsCreateDialogOpen(true);
     }, [currentUser]);
@@ -313,6 +307,13 @@ const CalendarPage: React.FC = () => {
                 }
                 .fc-list-event:hover td {
                     background-color: hsl(var(--color-bg-primary-hsl));
+                }
+                .fc-list-event-title > a {
+                    color: hsl(var(--text-primary-hsl));
+                    text-decoration: none;
+                }
+                .fc-list-event-title > a:hover {
+                    text-decoration: underline;
                 }
             `}</style>
             <Card>

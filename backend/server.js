@@ -16,6 +16,7 @@ const {
     BugReportEntity, allEntities
 } = require('./entities');
 
+const { version } = require('../../package.json');
 const app = express();
 const port = process.env.PORT || 3000;
 const dbPath = process.env.DATABASE_PATH || '/app/data/database/database.sqlite';
@@ -1289,7 +1290,7 @@ app.get('/api/media/local-gallery', async (req, res, next) => {
     } catch (err) {
         next(err);
     }
-});
+}));
 
 
 // === Asset Pack Endpoints ===
@@ -1572,18 +1573,41 @@ const restoreStorage = multer.diskStorage({
 });
 const restoreUpload = multer({ storage: restoreStorage, limits: { fileSize: 50 * 1024 * 1024 }}); // 50MB limit
 
+const generateBackupFilename = (type, format) => {
+    const now = new Date();
+    const timestamp = now.toISOString().slice(0, 19).replace('T', '_').replace(/:/g, '-');
+    return `backup_${timestamp}_v${version}_${type}.${format}`;
+};
+
 backupsRouter.get('/', asyncMiddleware(async (req, res) => {
     try {
         const files = await fs.readdir(BACKUP_DIR);
         const backupDetails = await Promise.all(
             files
-                .filter(file => file.endsWith('.json') || file.endsWith('.sqlite'))
+                .filter(file => file.startsWith('backup_') && (file.endsWith('.json') || file.endsWith('.sqlite')))
                 .map(async file => {
                     const stats = await fs.stat(path.join(BACKUP_DIR, file));
+                    
+                    const regex = /backup_(\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2})_v([^_]+)_(.+)\.(json|sqlite)/;
+                    const match = file.match(regex);
+                    
+                    let parsed = null;
+                    if (match) {
+                        const [datePart, timePart] = match[1].split('_');
+                        const isoDate = `${datePart}T${timePart.replace(/-/g, ':')}`;
+                        parsed = {
+                            date: new Date(isoDate).toISOString(),
+                            version: match[2],
+                            type: match[3],
+                            format: match[4]
+                        };
+                    }
+
                     return {
                         filename: file,
                         size: stats.size,
                         createdAt: stats.mtime.toISOString(),
+                        parsed,
                     };
                 })
         );
@@ -1599,8 +1623,7 @@ backupsRouter.get('/', asyncMiddleware(async (req, res) => {
 backupsRouter.post('/create-json', asyncMiddleware(async (req, res) => {
     const manager = dataSource.manager;
     const appData = await getFullAppData(manager);
-    const timestamp = new Date().toISOString().replace(/:/g, '-').slice(0, 19);
-    const filename = `backup-manual-${timestamp}.json`;
+    const filename = generateBackupFilename('manual', 'json');
     const filePath = path.join(BACKUP_DIR, filename);
     await fs.writeFile(filePath, JSON.stringify(appData, null, 2));
     console.log(`[Backup] Created JSON backup: ${filename}`);
@@ -1608,8 +1631,7 @@ backupsRouter.post('/create-json', asyncMiddleware(async (req, res) => {
 }));
 
 backupsRouter.post('/create-sqlite', asyncMiddleware(async (req, res) => {
-    const timestamp = new Date().toISOString().replace(/:/g, '-').slice(0, 19);
-    const filename = `backup-manual-${timestamp}.sqlite`;
+    const filename = generateBackupFilename('manual', 'sqlite');
     const destPath = path.join(BACKUP_DIR, filename);
     await fs.copyFile(dbPath, destPath);
     console.log(`[Backup] Created SQLite backup: ${filename}`);
@@ -1696,6 +1718,14 @@ app.use('/api/backups', backupsRouter);
 // === Automated Backup Scheduler ===
 let backupInterval;
 
+async function createBackup(type, id) {
+    const filename = generateBackupFilename(`auto-${id}`, 'json');
+    const filePath = path.join(BACKUP_DIR, filename);
+    const appData = await getFullAppData(dataSource.manager);
+    await fs.writeFile(filePath, JSON.stringify(appData));
+    return filename;
+}
+
 async function runAutomatedBackup() {
     try {
         const settingRow = await dataSource.manager.findOneBy(SettingEntity, { id: 1 });
@@ -1710,11 +1740,10 @@ async function runAutomatedBackup() {
 
         for (const schedule of settings.automatedBackups.schedules) {
             const scheduleFiles = allBackupFiles
-                .filter(file => file.startsWith(`backup-auto-${schedule.id}-`) && file.endsWith('.json'))
-                .map(file => ({ name: file, time: new Date(file.substring(file.lastIndexOf('-') + 1, file.lastIndexOf('.')).replace(/-/g, ':')).getTime() }))
-                .sort((a, b) => b.time - a.time); // Sort newest first
+                .filter(file => file.includes(`_auto-${schedule.id}.json`))
+                .sort((a, b) => b.localeCompare(a)); // Newest first due to filename format
 
-            const lastBackupTime = scheduleFiles.length > 0 ? scheduleFiles[0].time : 0;
+            const lastBackupTime = scheduleFiles.length > 0 ? new Date(scheduleFiles[0].split('_')[1].replace(/_/g, 'T').replace(/-/g, ':')).getTime() : 0;
             
             let frequencyMillis = 0;
             switch(schedule.unit) {
@@ -1728,15 +1757,17 @@ async function runAutomatedBackup() {
                 await createBackup('auto', schedule.id);
 
                 // Re-fetch files to include the one we just created for retention logic
-                const updatedScheduleFiles = [...scheduleFiles, { name: 'new', time: now }].sort((a,b) => b.time - a.time);
+                const updatedBackupFiles = await fs.readdir(BACKUP_DIR);
+                 const updatedScheduleFiles = updatedBackupFiles
+                    .filter(file => file.includes(`_auto-${schedule.id}.json`))
+                    .sort((a, b) => b.localeCompare(a));
 
                 // Enforce retention policy
                 if (updatedScheduleFiles.length > schedule.maxBackups) {
                     const backupsToDelete = updatedScheduleFiles.slice(schedule.maxBackups);
-                    for (const backup of backupsToDelete) {
-                        if(backup.name === 'new') continue; // Don't delete the file we just created
-                        console.log(`[Backup] Deleting old backup for schedule ${schedule.id}: ${backup.name}`);
-                        await fs.unlink(path.join(BACKUP_DIR, backup.name));
+                    for (const backupFile of backupsToDelete) {
+                        console.log(`[Backup] Deleting old backup for schedule ${schedule.id}: ${backupFile}`);
+                        await fs.unlink(path.join(BACKUP_DIR, backupFile));
                     }
                 }
             }

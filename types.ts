@@ -736,5 +736,11 @@ export interface SystemStatus {
 export interface BackupInfo {
     filename: string;
     size: number;
-    createdAt: string;
+    createdAt: string; // file mod time
+    parsed: {
+        date: string; // ISO string from filename
+        version: string;
+        type: string; // 'manual' or 'auto-[schedule_id]'
+        format: 'json' | 'sqlite';
+    } | null;
 }

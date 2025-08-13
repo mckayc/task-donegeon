@@ -125,9 +125,9 @@ const BugTrackingPage: React.FC = () => {
                 </div>
 
                  {selectedReports.length > 0 && (
-                    <div className="p-3 bg-stone-900/50 rounded-lg flex items-center gap-4 mb-4">
+                    <div className="p-3 bg-stone-900/50 rounded-lg flex justify-start items-center gap-4 mb-4">
                         <span className="font-semibold text-stone-300">{selectedReports.length} selected</span>
-                        <Input as="select" label="" value="" onChange={e => handleBulkStatusChange(e.target.value as BugReportStatus)} className="h-9 text-sm">
+                        <Input as="select" label="" value="" onChange={e => handleBulkStatusChange(e.target.value as BugReportStatus)} className="h-9 text-sm w-48">
                             <option value="" disabled>Change status to...</option>
                              {statuses.map(s => <option key={s} value={s}>{s}</option>)}
                         </Input>

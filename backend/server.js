@@ -56,6 +56,10 @@ const checkAndAwardTrophies = async (manager, userId, guildId) => {
         // Check requirements
         const requirements = Array.isArray(trophy.requirements) ? trophy.requirements : [];
         const meetsAllRequirements = requirements.every(req => {
+            if (!req || typeof req.type === 'undefined') {
+                console.warn('[Trophy Check] Skipping malformed requirement:', req);
+                return false;
+            }
             switch (req.type) {
                 case 'COMPLETE_QUEST_TYPE':
                     return userCompletedQuests.filter(c => c.quest?.type === req.value).length >= req.count;
@@ -1588,10 +1592,10 @@ const restoreStorage = multer.diskStorage({
 });
 const restoreUpload = multer({ storage: restoreStorage, limits: { fileSize: 50 * 1024 * 1024 }}); // 50MB limit
 
-const generateBackupFilename = (type, format) => {
-    const now = new Date();
-    const timestamp = now.toISOString().slice(0, 19).replace('T', '_').replace(/:/g, '-');
-    return `backup_${timestamp}_v${version}_${type}.${format}`;
+const generateBackupFilename = (type, format, timestamp) => {
+    const now = timestamp || new Date();
+    const tsString = now.toISOString().slice(0, 19).replace('T', '_').replace(/:/g, '-');
+    return `backup_${tsString}_v${version}_${type}.${format}`;
 };
 
 backupsRouter.get('/', asyncMiddleware(async (req, res) => {
@@ -1733,8 +1737,8 @@ app.use('/api/backups', backupsRouter);
 // === Automated Backup Scheduler ===
 let backupInterval;
 
-async function createAutomatedBackup(scheduleId, format) {
-    const filename = generateBackupFilename(`auto-${scheduleId}`, format);
+async function createAutomatedBackup(scheduleId, format, timestamp) {
+    const filename = generateBackupFilename(`auto-${scheduleId}`, format, timestamp);
     const filePath = path.join(BACKUP_DIR, filename);
     if (format === 'json') {
         const appData = await getFullAppData(dataSource.manager);
@@ -1758,7 +1762,7 @@ async function runAutomatedBackup() {
         const now = Date.now();
         
         for (const schedule of settings.automatedBackups.schedules) {
-            const allBackupFiles = await fs.readdir(BACKUP_DIR);
+            const allBackupFiles = await fs.readdir(BACKUP_DIR).catch(() => []);
             const scheduleFiles = allBackupFiles
                 .filter(file => file.includes(`_auto-${schedule.id}.`))
                 .sort((a, b) => b.localeCompare(a));
@@ -1777,12 +1781,13 @@ async function runAutomatedBackup() {
             if (now - lastBackupTime >= frequencyMillis) {
                 console.log(`[Backup] Running automated backup for schedule: ${schedule.id}`);
                 const format = settings.automatedBackups.format || 'json';
+                const backupTimestamp = new Date();
 
                 if (format === 'json' || format === 'both') {
-                    await createAutomatedBackup(schedule.id, 'json');
+                    await createAutomatedBackup(schedule.id, 'json', backupTimestamp);
                 }
                 if (format === 'sqlite' || format === 'both') {
-                    await createAutomatedBackup(schedule.id, 'sqlite');
+                    await createAutomatedBackup(schedule.id, 'sqlite', backupTimestamp);
                 }
 
                 // Re-fetch files for retention logic
@@ -1790,9 +1795,12 @@ async function runAutomatedBackup() {
                 const updatedScheduleFiles = updatedBackupFiles
                     .filter(file => file.includes(`_auto-${schedule.id}.`))
                     .sort((a, b) => b.localeCompare(a));
+                
+                const fileMultiplier = settings.automatedBackups.format === 'both' ? 2 : 1;
+                const maxFilesToKeep = schedule.maxBackups * fileMultiplier;
 
-                if (updatedScheduleFiles.length > schedule.maxBackups) {
-                    const backupsToDelete = updatedScheduleFiles.slice(schedule.maxBackups);
+                if (updatedScheduleFiles.length > maxFilesToKeep) {
+                    const backupsToDelete = updatedScheduleFiles.slice(maxFilesToKeep);
                     for (const backupFile of backupsToDelete) {
                         console.log(`[Backup] Deleting old backup for schedule ${schedule.id}: ${backupFile}`);
                         await fs.unlink(path.join(BACKUP_DIR, backupFile));

@@ -170,7 +170,7 @@ export const BugDetailDialog: React.FC<BugDetailDialogProps> = ({ report, onClos
                                 <Button size="sm" variant="secondary" onClick={() => copyLogToClipboard(sortedLogs.filter(log => selectedLogs.includes(log.timestamp)))} disabled={selectedLogs.length === 0}>Copy Selected ({selectedLogs.length})</Button>
                                 <Button size="sm" variant="secondary" onClick={() => copyLogToClipboard(sortedLogs)}>Copy Full Log</Button>
                             </div>
-                            <div className="flex-grow overflow-y-auto scrollbar-hide pr-4 space-y-4">
+                            <div className="flex-grow overflow-y-auto pr-4 space-y-4">
                                 {sortedLogs.map((log, index) => {
                                     const isSelected = selectedLogs.includes(log.timestamp);
                                     const authorUser = log.type === 'COMMENT' ? users.find(u => u.gameName === log.author) : undefined;
@@ -216,7 +216,7 @@ export const BugDetailDialog: React.FC<BugDetailDialogProps> = ({ report, onClos
                             </div>
                         </div>
 
-                        <div className="w-full md:w-1/3 flex-shrink-0 flex flex-col gap-6 overflow-y-auto scrollbar-hide pr-2 border-l border-stone-700/60 pl-6 -mr-2">
+                        <div className="w-full md:w-1/3 flex-shrink-0 flex flex-col gap-6 overflow-y-auto pr-2 border-l border-stone-700/60 pl-6 -mr-2">
                             <div>
                                 <Input as="select" label="Status" value={report.status} onChange={e => handleStatusChange(e.target.value as BugReportStatus)}>
                                     {statuses.map(s => <option key={s} value={s}>{s}</option>)}

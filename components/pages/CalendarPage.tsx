@@ -115,14 +115,23 @@ const CalendarPage: React.FC = () => {
                             }
                         }
                     } else { // Duty
-                        if(quest.rrule) {
-                             questEvents.push({
+                        if (quest.rrule) {
+                            const dutyEvent: EventInput = {
                                 ...commonProps,
-                                startTime: quest.startTime || undefined,
-                                endTime: quest.endTime || undefined,
                                 rrule: quest.rrule,
-                                duration: quest.startTime && quest.endTime ? undefined : '01:00' // FC needs duration for timed rrule events
-                            });
+                            };
+                    
+                            if (!commonProps.allDay) {
+                                // It's a timed event
+                                dutyEvent.startTime = quest.startTime || undefined;
+                                dutyEvent.endTime = quest.endTime || undefined;
+                                // Add duration only if it's a timed event missing an end time, otherwise FC might not render it
+                                if (dutyEvent.startTime && !dutyEvent.endTime) {
+                                    dutyEvent.duration = '01:00';
+                                }
+                            }
+                            // For all-day events, we don't add any time properties.
+                            questEvents.push(dutyEvent);
                         }
                     }
                 });

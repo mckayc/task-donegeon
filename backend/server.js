@@ -45,7 +45,6 @@ const checkAndAwardTrophies = async (manager, userId, guildId) => {
     const userTrophies = await manager.find(UserTrophyEntity, { where: { userId, guildId: null } });
     const ranks = await manager.find(RankEntity);
     const automaticTrophies = await manager.find(TrophyEntity, { where: { isManual: false } });
-    const allQuests = await manager.find(QuestEntity);
 
     const totalXp = Object.values(user.personalExperience || {}).reduce((sum, amount) => sum + amount, 0);
     const userRank = ranks.slice().sort((a, b) => b.xpThreshold - a.xpThreshold).find(r => totalXp >= r.xpThreshold);
@@ -58,9 +57,9 @@ const checkAndAwardTrophies = async (manager, userId, guildId) => {
         const meetsAllRequirements = trophy.requirements.every(req => {
             switch (req.type) {
                 case 'COMPLETE_QUEST_TYPE':
-                    return userCompletedQuests.filter(c => allQuests.find(q => q.id === c.quest?.id)?.type === req.value).length >= req.count;
+                    return userCompletedQuests.filter(c => c.quest?.type === req.value).length >= req.count;
                 case 'COMPLETE_QUEST_TAG':
-                    return userCompletedQuests.filter(c => allQuests.find(q => q.id === c.quest?.id)?.tags?.includes(req.value)).length >= req.count;
+                    return userCompletedQuests.filter(c => c.quest?.tags?.includes(req.value)).length >= req.count;
                 case 'ACHIEVE_RANK':
                     return userRank?.id === req.value;
                 case 'QUEST_COMPLETED':
@@ -1305,7 +1304,7 @@ app.get('/api/media/local-gallery', async (req, res, next) => {
     } catch (err) {
         next(err);
     }
-});
+}));
 
 
 // === Asset Pack Endpoints ===

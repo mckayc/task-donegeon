@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useCallback, useRef } from 'react';
 import { useAppState } from '../../context/AppContext';
 import { useUIState, useUIDispatch } from '../../context/UIStateContext';
-import { Role, ScheduledEvent, Quest, QuestType, ChronicleEvent, User } from '../../types';
+import { Role, ScheduledEvent, Quest, QuestType, ChronicleEvent, User, AppMode } from '../../types';
 import Card from '../user-interface/Card';
 import Button from '../user-interface/Button';
 import ScheduleEventDialog from '../admin/ScheduleEventDialog';
@@ -12,14 +12,13 @@ import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
 import interactionPlugin, { DateClickArg } from '@fullcalendar/interaction';
 import googleCalendarPlugin from '@fullcalendar/google-calendar';
-import resourceTimeGridPlugin from '@fullcalendar/resource-timegrid';
 import listPlugin from '@fullcalendar/list';
 import { EventClickArg, EventSourceInput, EventDropArg, MoreLinkArg, EventInput } from '@fullcalendar/core';
 import { useQuestState, useQuestDispatch } from '../../context/QuestContext';
 import { useChronicles } from '../../hooks/useChronicles';
 import QuestDetailDialog from '../quests/QuestDetailDialog';
 import CompleteQuestDialog from '../quests/CompleteQuestDialog';
-import { toYMD } from '../../utils/quests';
+import { toYMD, isQuestAvailableForUser } from '../../utils/quests';
 import CreateQuestDialog from '../quests/CreateQuestDialog';
 import { useNotificationsDispatch } from '../../context/NotificationsContext';
 import ChroniclesDetailDialog from '../calendar/ChroniclesDetailDialog';
@@ -28,7 +27,7 @@ type CalendarMode = 'events' | 'chronicles';
 
 const CalendarPage: React.FC = () => {
     const { settings, scheduledEvents } = useAppState();
-    const { quests } = useQuestState();
+    const { quests, questCompletions } = useQuestState();
     const { currentUser, users } = useAuthState();
     const { appMode } = useUIState();
     const { setActivePage } = useUIDispatch();
@@ -60,6 +59,7 @@ const CalendarPage: React.FC = () => {
 
         if (mode === 'events') {
             const todayYMD = toYMD(new Date());
+            const userCompletions = questCompletions.filter(c => c.userId === currentUser.id);
 
             // Scheduled Events
             sources.push(scheduledEvents
@@ -82,7 +82,6 @@ const CalendarPage: React.FC = () => {
                     const commonProps = {
                         title: quest.title,
                         allDay: !quest.lateTime,
-                        resourceId: quest.type === QuestType.Duty ? 'duty' : 'venture',
                         backgroundColor: quest.type === QuestType.Duty ? 'hsl(var(--primary))' : 'hsl(var(--accent))',
                         borderColor: quest.type === QuestType.Duty ? 'hsl(var(--primary))' : 'hsl(var(--accent))',
                         extendedProps: { quest, type: 'quest' }
@@ -94,15 +93,22 @@ const CalendarPage: React.FC = () => {
                                 ...commonProps,
                                 start: quest.lateDateTime,
                             });
-                        } else if (quest.todoUserIds?.includes(currentUser.id)) {
-                             questEvents.push({
-                                ...commonProps,
-                                title: `📌 ${quest.title}`,
-                                start: todayYMD,
-                                allDay: true,
-                                backgroundColor: 'hsl(275 60% 50%)',
-                                borderColor: 'hsl(275 60% 40%)',
-                            });
+                        } else {
+                            // Show available dateless ventures on the current day, highlighting To-Dos.
+                            const questAppMode: AppMode = quest.guildId ? { mode: 'guild', guildId: quest.guildId } : { mode: 'personal' };
+                            if (isQuestAvailableForUser(quest, userCompletions, new Date(), scheduledEvents, questAppMode)) {
+                                const isTodo = quest.todoUserIds?.includes(currentUser.id);
+                                if (isTodo) { // Only show on the calendar if it's explicitly marked as a To-Do
+                                     questEvents.push({
+                                        ...commonProps,
+                                        title: `📌 ${quest.title}`,
+                                        start: todayYMD,
+                                        allDay: true,
+                                        backgroundColor: 'hsl(275 60% 50%)',
+                                        borderColor: 'hsl(275 60% 40%)',
+                                    });
+                                }
+                            }
                         }
                     } else { // Duty
                         const recurrenceProps: any = {
@@ -180,7 +186,7 @@ const CalendarPage: React.FC = () => {
         }
         
         return sources;
-    }, [mode, appMode, scheduledEvents, quests, chronicles, settings.googleCalendar, users, viewRange, currentUser]);
+    }, [mode, appMode, scheduledEvents, quests, chronicles, settings.googleCalendar, users, viewRange, currentUser, questCompletions]);
 
     const handleEventClick = (clickInfo: EventClickArg) => {
         const props = clickInfo.event.extendedProps;
@@ -319,14 +325,14 @@ const CalendarPage: React.FC = () => {
                  <div className="p-4">
                     <FullCalendar
                         ref={calendarRef}
-                        plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin, googleCalendarPlugin, resourceTimeGridPlugin, listPlugin]}
+                        plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin, googleCalendarPlugin, listPlugin]}
                         headerToolbar={{
                             left: 'prev,next today',
                             center: 'title',
-                            right: 'resourceTimeGridDay,timeGridWeek,dayGridMonth,listWeek'
+                            right: 'timeGridDay,timeGridWeek,dayGridMonth,listWeek'
                         }}
                         buttonText={{ day: 'Day', week: 'Week', month: 'Month', list: 'Agenda' }}
-                        initialView="resourceTimeGridDay"
+                        initialView="timeGridDay"
                         googleCalendarApiKey={settings.googleCalendar.apiKey || undefined}
                         eventSources={eventSources}
                         eventClick={handleEventClick}
@@ -336,10 +342,6 @@ const CalendarPage: React.FC = () => {
                         editable={currentUser.role === Role.DonegeonMaster}
                         eventDrop={handleEventDrop}
                         dateClick={handleDateClick}
-                        resources={mode === 'events' ? [
-                            { id: 'duty', title: 'Duties' },
-                            { id: 'venture', title: 'Ventures' }
-                        ] : undefined}
                         height="auto"
                         contentHeight="auto"
                         aspectRatio={1.5}

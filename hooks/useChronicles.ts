@@ -106,12 +106,7 @@ export const useChronicles = ({ startDate, endDate }: UseChroniclesProps): Map<s
 
     const filteredEvents = allChronicleEvents.filter(event => {
         if (event.guildId !== currentGuildId) return false;
-        if (!event.recipientUserIds || event.recipientUserIds.length === 0) {
-            if (event.userId !== currentUser.id) return false; // Default to personal if no recipients
-        } else {
-            if (!event.recipientUserIds.includes(currentUser.id)) return false;
-        }
-
+        
         const dateKey = toYMD(new Date(event.date));
         return dateKey >= startYMD && dateKey <= endYMD;
     });

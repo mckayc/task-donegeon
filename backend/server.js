@@ -1649,7 +1649,7 @@ backupsRouter.get('/download/:filename', (req, res) => {
             }
         }
     });
-}));
+});
 
 backupsRouter.delete('/:filename', asyncMiddleware(async (req, res) => {
     const filename = path.basename(req.params.filename);
@@ -1801,7 +1801,7 @@ function startAutomatedBackupScheduler() {
 
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, '..', 'dist', 'index.html'));
-}));
+});
 
 // Error handling middleware
 app.use((err, req, res, next) => {

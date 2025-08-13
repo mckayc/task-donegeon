@@ -208,6 +208,7 @@ export const INITIAL_SETTINGS: AppSettings = {
             unit: 'hours',
             maxBackups: 7,
         }],
+        format: 'json',
     },
     loginNotifications: {
         enabled: true,

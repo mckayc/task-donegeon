@@ -77,20 +77,9 @@ const BackupAndImportPage: React.FC = () => {
     const [isScheduleDialogOpen, setIsScheduleDialogOpen] = useState(false);
     const [editingSchedule, setEditingSchedule] = useState<BackupSchedule | null>(null);
     const [deletingSchedule, setDeletingSchedule] = useState<BackupSchedule | null>(null);
-    const [isBackupMenuOpen, setIsBackupMenuOpen] = useState(false);
+    const [manualBackupType, setManualBackupType] = useState<'json' | 'sqlite' | 'both'>('json');
     const [activeTab, setActiveTab] = useState<'manual' | 'automated'>('manual');
-    const backupMenuRef = useRef<HTMLDivElement>(null);
     
-    useEffect(() => {
-        const handleClickOutside = (event: MouseEvent) => {
-            if (backupMenuRef.current && !backupMenuRef.current.contains(event.target as Node)) {
-                setIsBackupMenuOpen(false);
-            }
-        };
-        document.addEventListener('mousedown', handleClickOutside);
-        return () => document.removeEventListener('mousedown', handleClickOutside);
-    }, []);
-
     const apiRequest = useCallback(async (method: string, path: string, body?: any) => {
         const options: RequestInit = {
             method,
@@ -123,7 +112,6 @@ const BackupAndImportPage: React.FC = () => {
 
     const handleCreateBackup = async (type: 'json' | 'sqlite' | 'both') => {
         setIsCreating(true);
-        setIsBackupMenuOpen(false);
         try {
             if (type === 'json' || type === 'both') await apiRequest('POST', `/api/backups/create-json`);
             if (type === 'sqlite' || type === 'both') await apiRequest('POST', `/api/backups/create-sqlite`);
@@ -216,27 +204,21 @@ const BackupAndImportPage: React.FC = () => {
                     <div className="space-y-6">
                         <div className="p-4 bg-stone-900/40 rounded-lg">
                             <h4 className="font-semibold text-stone-200 mb-2">Manual Backup</h4>
-                             <div ref={backupMenuRef} className="relative inline-block text-left">
-                                <div>
-                                    <Button onClick={() => setIsBackupMenuOpen(!isBackupMenuOpen)} disabled={isCreating}>
-                                        {isCreating ? 'Creating...' : 'Create Backup'}
-                                    </Button>
-                                </div>
-                                {isBackupMenuOpen && (
-                                    <div className="origin-top-right absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-stone-700 ring-1 ring-black ring-opacity-5 z-10">
-                                        <div className="py-1" role="menu" aria-orientation="vertical">
-                                            <a href="#" onClick={() => handleCreateBackup('json')} className="block px-4 py-2 text-sm text-stone-200 hover:bg-stone-600" role="menuitem">
-                                                JSON Backup <span className="block text-xs text-stone-400">Portable & human-readable</span>
-                                            </a>
-                                            <a href="#" onClick={() => handleCreateBackup('sqlite')} className="block px-4 py-2 text-sm text-stone-200 hover:bg-stone-600" role="menuitem">
-                                                SQLite Backup <span className="block text-xs text-stone-400">Direct database copy</span>
-                                            </a>
-                                             <a href="#" onClick={() => handleCreateBackup('both')} className="block px-4 py-2 text-sm text-stone-200 hover:bg-stone-600" role="menuitem">
-                                                Create Both
-                                            </a>
-                                        </div>
-                                    </div>
-                                )}
+                            <div className="flex items-end gap-2">
+                                <Input
+                                    as="select"
+                                    label="Backup Format"
+                                    value={manualBackupType}
+                                    onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setManualBackupType(e.target.value as any)}
+                                    className="flex-grow"
+                                >
+                                    <option value="json">JSON</option>
+                                    <option value="sqlite">SQLite</option>
+                                    <option value="both">Both</option>
+                                </Input>
+                                <Button onClick={() => handleCreateBackup(manualBackupType)} disabled={isCreating}>
+                                    {isCreating ? 'Creating...' : 'Create Now'}
+                                </Button>
                             </div>
                         </div>
                          <div className="p-4 bg-red-900/20 border border-red-700/60 rounded-lg">
@@ -259,7 +241,22 @@ const BackupAndImportPage: React.FC = () => {
                         />
                          {settings.automatedBackups.enabled && (
                             <div className="mt-4 pt-4 border-t border-stone-700/60 space-y-3">
-                                <div className="flex justify-between items-center">
+                                <Input
+                                    as="select"
+                                    label="Automated Backup Format"
+                                    value={settings.automatedBackups.format || 'json'}
+                                    onChange={(e: React.ChangeEvent<HTMLSelectElement>) => updateSettings({
+                                        automatedBackups: {
+                                            ...settings.automatedBackups,
+                                            format: e.target.value as any,
+                                        }
+                                    })}
+                                >
+                                    <option value="json">JSON</option>
+                                    <option value="sqlite">SQLite</option>
+                                    <option value="both">Both</option>
+                                </Input>
+                                <div className="flex justify-between items-center pt-2 mt-2 border-t border-stone-700/60">
                                     <h4 className="font-semibold text-stone-200">Schedules</h4>
                                     <Button size="sm" onClick={() => { setEditingSchedule(null); setIsScheduleDialogOpen(true); }}>Add Schedule</Button>
                                 </div>

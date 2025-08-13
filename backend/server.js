@@ -1290,7 +1290,7 @@ app.get('/api/media/local-gallery', async (req, res, next) => {
     } catch (err) {
         next(err);
     }
-});
+}));
 
 
 // === Asset Pack Endpoints ===
@@ -1649,7 +1649,7 @@ backupsRouter.get('/download/:filename', (req, res) => {
             }
         }
     });
-});
+}));
 
 backupsRouter.delete('/:filename', asyncMiddleware(async (req, res) => {
     const filename = path.basename(req.params.filename);
@@ -1718,11 +1718,16 @@ app.use('/api/backups', backupsRouter);
 // === Automated Backup Scheduler ===
 let backupInterval;
 
-async function createBackup(type, id) {
-    const filename = generateBackupFilename(`auto-${id}`, 'json');
+async function createAutomatedBackup(scheduleId, format) {
+    const filename = generateBackupFilename(`auto-${scheduleId}`, format);
     const filePath = path.join(BACKUP_DIR, filename);
-    const appData = await getFullAppData(dataSource.manager);
-    await fs.writeFile(filePath, JSON.stringify(appData));
+    if (format === 'json') {
+        const appData = await getFullAppData(dataSource.manager);
+        await fs.writeFile(filePath, JSON.stringify(appData));
+    } else { // sqlite
+        await fs.copyFile(dbPath, filePath);
+    }
+    console.log(`[Backup] Created automated ${format.toUpperCase()} backup: ${filename}`);
     return filename;
 }
 
@@ -1735,15 +1740,17 @@ async function runAutomatedBackup() {
             return;
         }
 
-        const allBackupFiles = await fs.readdir(BACKUP_DIR);
         const now = Date.now();
-
+        
         for (const schedule of settings.automatedBackups.schedules) {
+            const allBackupFiles = await fs.readdir(BACKUP_DIR);
             const scheduleFiles = allBackupFiles
-                .filter(file => file.includes(`_auto-${schedule.id}.json`))
-                .sort((a, b) => b.localeCompare(a)); // Newest first due to filename format
+                .filter(file => file.includes(`_auto-${schedule.id}.`))
+                .sort((a, b) => b.localeCompare(a));
 
-            const lastBackupTime = scheduleFiles.length > 0 ? new Date(scheduleFiles[0].split('_')[1].replace(/_/g, 'T').replace(/-/g, ':')).getTime() : 0;
+            const lastBackupTime = scheduleFiles.length > 0
+                ? new Date(scheduleFiles[0].match(/(\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2})/)[0].replace('_', 'T')).getTime()
+                : 0;
             
             let frequencyMillis = 0;
             switch(schedule.unit) {
@@ -1754,15 +1761,21 @@ async function runAutomatedBackup() {
 
             if (now - lastBackupTime >= frequencyMillis) {
                 console.log(`[Backup] Running automated backup for schedule: ${schedule.id}`);
-                await createBackup('auto', schedule.id);
+                const format = settings.automatedBackups.format || 'json';
 
-                // Re-fetch files to include the one we just created for retention logic
+                if (format === 'json' || format === 'both') {
+                    await createAutomatedBackup(schedule.id, 'json');
+                }
+                if (format === 'sqlite' || format === 'both') {
+                    await createAutomatedBackup(schedule.id, 'sqlite');
+                }
+
+                // Re-fetch files for retention logic
                 const updatedBackupFiles = await fs.readdir(BACKUP_DIR);
-                 const updatedScheduleFiles = updatedBackupFiles
-                    .filter(file => file.includes(`_auto-${schedule.id}.json`))
+                const updatedScheduleFiles = updatedBackupFiles
+                    .filter(file => file.includes(`_auto-${schedule.id}.`))
                     .sort((a, b) => b.localeCompare(a));
 
-                // Enforce retention policy
                 if (updatedScheduleFiles.length > schedule.maxBackups) {
                     const backupsToDelete = updatedScheduleFiles.slice(schedule.maxBackups);
                     for (const backupFile of backupsToDelete) {
@@ -1788,7 +1801,7 @@ function startAutomatedBackupScheduler() {
 
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, '..', 'dist', 'index.html'));
-});
+}));
 
 // Error handling middleware
 app.use((err, req, res, next) => {

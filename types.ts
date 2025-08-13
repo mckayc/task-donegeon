@@ -502,6 +502,7 @@ export interface AppSettings {
   automatedBackups: {
     enabled: boolean;
     schedules: BackupSchedule[];
+    format: 'json' | 'sqlite' | 'both';
   };
   loginNotifications: {
     enabled: boolean;

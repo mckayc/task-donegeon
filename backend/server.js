@@ -16,7 +16,7 @@ const {
     BugReportEntity, allEntities
 } = require('./entities');
 
-const { version } = require('../../package.json');
+const { version } = require('./package.json');
 const app = express();
 const port = process.env.PORT || 3000;
 const dbPath = process.env.DATABASE_PATH || '/app/data/database/database.sqlite';

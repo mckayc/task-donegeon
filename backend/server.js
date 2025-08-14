@@ -1,4 +1,5 @@
 
+
 require("reflect-metadata");
 const express = require('express');
 const cors = require('cors');
@@ -226,16 +227,17 @@ const getFullAppData = async (manager) => {
     const quests = await manager.find(QuestEntity, { relations: ['assignedUsers'] });
     const questCompletions = await manager.find(QuestCompletionEntity, { relations: ['user', 'quest'] });
     const guilds = await manager.find(GuildEntity, { relations: ['members'] });
+    const purchaseRequests = await manager.find(PurchaseRequestEntity, { relations: ['user'] });
 
     data.users = users.map(u => ({ ...u, guildIds: u.guilds?.map(g => g.id) || [] }));
     data.quests = quests.map(q => ({ ...q, assignedUserIds: q.assignedUsers?.map(u => u.id) || [] }));
     data.questCompletions = questCompletions.map(qc => ({ ...qc, userId: qc.user?.id, questId: qc.quest?.id }));
     data.guilds = guilds.map(g => ({ ...g, memberIds: g.members?.map(m => m.id) || [] }));
+    data.purchaseRequests = purchaseRequests.map(pr => ({ ...pr, userId: pr.user?.id }));
 
     data.questGroups = await manager.find(QuestGroupEntity);
     data.markets = await manager.find(MarketEntity);
     data.rewardTypes = await manager.find(RewardTypeDefinitionEntity);
-    data.purchaseRequests = await manager.find(PurchaseRequestEntity);
     data.ranks = await manager.find(RankEntity);
     data.trophies = await manager.find(TrophyEntity);
     data.userTrophies = await manager.find(UserTrophyEntity);
@@ -386,6 +388,7 @@ app.get('/api/data/sync', asyncMiddleware(async (req, res) => {
                 ...(entity.options.name === 'Quest' && { relations: ['assignedUsers'] }),
                 ...(entity.options.name === 'Guild' && { relations: ['members'] }),
                 ...(entity.options.name === 'QuestCompletion' && { relations: ['user', 'quest'] }),
+                ...(entity.options.name === 'PurchaseRequest' && { relations: ['user'] }),
             });
             
             if (changedRecords.length > 0) {
@@ -396,6 +399,8 @@ app.get('/api/data/sync', asyncMiddleware(async (req, res) => {
                     updates.guilds = changedRecords.map(g => ({ ...g, memberIds: g.members?.map(m => m.id) || [] }));
                 } else if (entity.options.name === 'QuestCompletion') {
                     updates.questCompletions = changedRecords.map(qc => ({ ...qc, userId: qc.user?.id, questId: qc.quest?.id }));
+                } else if (entity.options.name === 'PurchaseRequest') {
+                    updates.purchaseRequests = changedRecords.map(pr => ({ ...pr, userId: pr.user?.id }));
                 } else {
                      updates[pluralName] = changedRecords;
                 }

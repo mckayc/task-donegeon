@@ -1,5 +1,4 @@
 
-
 import React, { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import { useAppState } from '../../context/AppContext';
 import { useUIState, useUIDispatch } from '../../context/UIStateContext';
@@ -18,6 +17,7 @@ import listPlugin from '@fullcalendar/list';
 import rrulePlugin from '@fullcalendar/rrule';
 import { EventClickArg, EventSourceInput, EventDropArg, MoreLinkArg, EventInput, EventContentArg } from '@fullcalendar/core';
 import { useQuestState, useQuestDispatch } from '../../context/QuestContext';
+import { useChronicles } from '../../hooks/useChronicles';
 import QuestDetailDialog from '../quests/QuestDetailDialog';
 import CompleteQuestDialog from '../quests/CompleteQuestDialog';
 import { toYMD, isQuestAvailableForUser, isQuestVisibleToUserInMode } from '../../utils/quests';
@@ -78,6 +78,7 @@ const CalendarPage: React.FC = () => {
     const { rewardTypes } = useEconomyState();
     
     const [mode, setMode] = useState<CalendarMode>('events');
+    const [viewRange, setViewRange] = useState<{ start: Date; end: Date } | null>(null);
     const [editingEvent, setEditingEvent] = useState<ScheduledEvent | null>(null);
     const [viewingEvent, setViewingEvent] = useState<ScheduledEvent | null>(null);
     const [viewingQuest, setViewingQuest] = useState<{ quest: Quest; date: Date } | null>(null);
@@ -87,153 +88,142 @@ const CalendarPage: React.FC = () => {
     const [chronicleDetail, setChronicleDetail] = useState<{ date: Date; events: ChronicleEvent[] } | null>(null);
     
     const calendarRef = useRef<FullCalendar>(null);
+
+    const chronicles = useChronicles({
+        startDate: viewRange?.start || new Date(),
+        endDate: viewRange?.end || new Date(),
+    });
     
     if (!currentUser) return null;
 
-    const calendarEventsFunc = useCallback(async (fetchInfo, successCallback, failureCallback) => {
-        try {
-            if (!currentUser) {
-                successCallback([]);
-                return;
-            }
-            
-            const currentGuildId = appMode.mode === 'guild' ? appMode.guildId : undefined;
-    
-            if (mode === 'chronicles') {
-                const start = toYMD(fetchInfo.start);
-                const end = toYMD(fetchInfo.end);
-                const guildIdParam = appMode.mode === 'guild' ? appMode.guildId : 'null';
-                
-                const response = await fetch(`/api/chronicles?startDate=${start}&endDate=${end}&userId=${currentUser.id}&guildId=${guildIdParam}&viewMode=all`);
-                if (!response.ok) throw new Error('Failed to fetch chronicles data');
+    const visibleQuests = useMemo(() => 
+        quests.filter(q => isQuestVisibleToUserInMode(q, currentUser.id, appMode, quests, questCompletions)),
+    [quests, currentUser.id, appMode, questCompletions]);
 
-                const data: { events: ChronicleEvent[] } = await response.json();
-                
-                const chronicleEvents: EventInput[] = data.events.map(event => ({
-                    id: event.id,
+    const eventSources = useMemo((): EventSourceInput[] => {
+        const sources: EventSourceInput[] = [];
+        const currentGuildId = appMode.mode === 'guild' ? appMode.guildId : undefined;
+
+        if (mode === 'events') {
+            const todayYMD = toYMD(new Date());
+            const userCompletions = questCompletions.filter(c => c.userId === currentUser.id);
+
+            // Scheduled Events
+            sources.push(scheduledEvents
+                .filter(event => event.guildId === currentGuildId)
+                .map(event => ({
                     title: event.title,
-                    start: event.date,
-                    allDay: true,
-                    backgroundColor: event.color,
-                    borderColor: event.color,
-                    extendedProps: { chronicleEvent: event, type: 'chronicle' }
-                }));
+                    start: event.startDate,
+                    end: new Date(new Date(event.endDate).getTime() + 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+                    backgroundColor: event.color ? `hsl(${event.color})` : 'hsl(var(--primary))',
+                    borderColor: event.color ? `hsl(${event.color})` : 'hsl(var(--primary))',
+                    allDay: event.isAllDay,
+                    extendedProps: { appEvent: event, type: 'scheduled' }
+                })));
+            
+            // Quests
+            const questEvents: EventInput[] = [];
+            visibleQuests.forEach(quest => {
+                const baseProps = {
+                    title: quest.title,
+                    backgroundColor: quest.type === QuestType.Duty ? 'hsl(var(--primary))' : 'hsl(var(--accent))',
+                    borderColor: quest.type === QuestType.Duty ? 'hsl(var(--primary))' : 'hsl(var(--accent))',
+                    extendedProps: { quest, type: 'quest' }
+                };
 
-                successCallback(chronicleEvents);
-
-            } else { // 'events' mode
-                let allEvents: EventInput[] = [];
-                const todayYMD = toYMD(new Date());
-                const userCompletions = questCompletions.filter(c => c.userId === currentUser.id);
-                const visibleQuests = quests.filter(q => isQuestVisibleToUserInMode(q, currentUser.id, appMode, quests, questCompletions));
-    
-                // Scheduled Events
-                const scheduledEventInputs = scheduledEvents
-                    .filter(event => event.guildId === currentGuildId)
-                    .map(event => ({
-                        title: event.title,
-                        start: event.startDate,
-                        end: new Date(new Date(event.endDate).getTime() + 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-                        backgroundColor: event.color ? `hsl(${event.color})` : 'hsl(var(--primary))',
-                        borderColor: event.color ? `hsl(${event.color})` : 'hsl(var(--primary))',
-                        allDay: event.isAllDay,
-                        extendedProps: { appEvent: event, type: 'scheduled' }
-                    }));
-                allEvents.push(...scheduledEventInputs);
-                
-                // Quests
-                const questEvents: EventInput[] = [];
-                visibleQuests.forEach(quest => {
-                    const baseProps = {
-                        title: quest.title,
-                        backgroundColor: quest.type === QuestType.Duty ? 'hsl(var(--primary))' : 'hsl(var(--accent))',
-                        borderColor: quest.type === QuestType.Duty ? 'hsl(var(--primary))' : 'hsl(var(--accent))',
-                        extendedProps: { quest, type: 'quest' }
-                    };
-    
-                    if (quest.type === QuestType.Venture) {
-                        if (quest.startDateTime) {
-                            questEvents.push({
-                                ...baseProps,
-                                start: quest.startDateTime,
-                                end: quest.endDateTime || undefined,
-                                allDay: quest.allDay
-                            });
-                        } else {
-                            const questAppMode: AppMode = quest.guildId ? { mode: 'guild', guildId: quest.guildId } : { mode: 'personal' };
-                            if (isQuestAvailableForUser(quest, userCompletions, new Date(), scheduledEvents, questAppMode)) {
-                                const isTodo = quest.todoUserIds?.includes(currentUser.id);
-                                if (isTodo) {
-                                     questEvents.push({
-                                        ...baseProps,
-                                        title: `📌 ${quest.title}`,
-                                        start: todayYMD,
-                                        allDay: true,
-                                        backgroundColor: 'hsl(275 60% 50%)',
-                                        borderColor: 'hsl(275 60% 40%)',
-                                    });
-                                }
-                            }
-                        }
-                    } else { // Duty
-                        if (quest.rrule) {
-                            const dutyEvent: EventInput = {
-                                ...baseProps,
-                                rrule: quest.rrule,
-                                allDay: quest.allDay,
-                            };
-                    
-                            if (!quest.allDay && quest.startTime) {
-                                dutyEvent.startTime = quest.startTime;
-                                dutyEvent.endTime = quest.endTime || undefined;
-                            }
-                            
-                            questEvents.push(dutyEvent);
-                        }
-                    }
-                });
-                allEvents.push(...questEvents);
-                
-                // Birthdays
-                const birthdayEvents: EventInput[] = [];
-                const start = fetchInfo.start;
-                const end = fetchInfo.end;
-                
-                for (let year = start.getFullYear(); year <= end.getFullYear(); year++) {
-                    users.forEach(user => {
-                        if (user.birthday) {
-                            const [bYear, month, day] = user.birthday.split('-');
-                            const birthdayDate = new Date(year, parseInt(month) - 1, parseInt(day));
-                            if (birthdayDate >= start && birthdayDate < end) {
-                                birthdayEvents.push({
-                                    id: `birthday-${user.id}-${year}`,
-                                    title: `🎂 ${user.gameName}'s Birthday`,
-                                    start: `${year}-${month}-${day}`,
+                if (quest.type === QuestType.Venture) {
+                    if (quest.startDateTime) {
+                        questEvents.push({
+                            ...baseProps,
+                            start: quest.startDateTime,
+                            end: quest.endDateTime || undefined,
+                            allDay: quest.allDay
+                        });
+                    } else {
+                        // Show available dateless ventures on the current day if marked as To-Do.
+                        const questAppMode: AppMode = quest.guildId ? { mode: 'guild', guildId: quest.guildId } : { mode: 'personal' };
+                        if (isQuestAvailableForUser(quest, userCompletions, new Date(), scheduledEvents, questAppMode)) {
+                            const isTodo = quest.todoUserIds?.includes(currentUser.id);
+                            if (isTodo) {
+                                 questEvents.push({
+                                    ...baseProps,
+                                    title: `📌 ${quest.title}`,
+                                    start: todayYMD,
                                     allDay: true,
-                                    classNames: ['birthday-event']
+                                    backgroundColor: 'hsl(275 60% 50%)',
+                                    borderColor: 'hsl(275 60% 40%)',
                                 });
                             }
                         }
+                    }
+                } else { // Duty
+                    if (quest.rrule) {
+                        const dutyEvent: EventInput = {
+                            ...baseProps,
+                            rrule: quest.rrule,
+                            allDay: quest.allDay,
+                        };
+                
+                        if (!quest.allDay && quest.startTime) {
+                            dutyEvent.startTime = quest.startTime;
+                            dutyEvent.endTime = quest.endTime || undefined;
+                        }
+                        
+                        questEvents.push(dutyEvent);
+                    }
+                }
+            });
+            sources.push(questEvents);
+            
+            // Birthdays
+            const birthdayEvents: EventInput[] = [];
+            if (viewRange) {
+                const startYear = viewRange.start.getFullYear();
+                const endYear = viewRange.end.getFullYear();
+                for (let year = startYear; year <= endYear; year++) {
+                    users.forEach(user => {
+                        if (user.birthday) {
+                            const [_, month, day] = user.birthday.split('-');
+                            birthdayEvents.push({
+                                id: `birthday-${user.id}-${year}`,
+                                title: `🎂 ${user.gameName}'s Birthday`,
+                                start: `${year}-${month}-${day}`,
+                                allDay: true,
+                                classNames: ['birthday-event']
+                            });
+                        }
                     });
                 }
-                allEvents.push(...birthdayEvents);
-
-                const eventSources: EventSourceInput[] = [{ events: allEvents }];
-                if (settings.googleCalendar.enabled && settings.googleCalendar.apiKey && settings.googleCalendar.calendarId) {
-                    eventSources.push({
-                        googleCalendarId: settings.googleCalendar.calendarId,
-                        className: 'gcal-event'
-                    });
-                }
-                successCallback(allEvents);
             }
-        } catch (e) {
-            console.error("Error fetching calendar events:", e);
-            failureCallback(e instanceof Error ? e : new Error('Failed to load events'));
+            sources.push(birthdayEvents);
+
+        } else { // Chronicles mode
+            const chronicleEvents: EventInput[] = [];
+            chronicles.forEach((eventsOnDay) => {
+                eventsOnDay.forEach(event => {
+                    chronicleEvents.push({
+                        id: event.id,
+                        title: event.title,
+                        start: event.date,
+                        allDay: true,
+                        backgroundColor: event.color,
+                        borderColor: event.color,
+                        extendedProps: { chronicleEvent: event, type: 'chronicle' }
+                    });
+                });
+            });
+            sources.push(chronicleEvents);
         }
-    }, [
-        currentUser, appMode, mode, questCompletions, scheduledEvents, quests, users, settings.googleCalendar
-    ]);
+
+        if (settings.googleCalendar.enabled && settings.googleCalendar.apiKey && settings.googleCalendar.calendarId) {
+            sources.push({
+                googleCalendarId: settings.googleCalendar.calendarId,
+                className: 'gcal-event'
+            });
+        }
+        
+        return sources;
+    }, [mode, appMode, scheduledEvents, visibleQuests, chronicles, settings.googleCalendar, users, viewRange, currentUser, questCompletions]);
 
     const handleEventClick = (clickInfo: EventClickArg) => {
         const props = clickInfo.event.extendedProps;
@@ -244,6 +234,10 @@ const CalendarPage: React.FC = () => {
         } else if (clickInfo.event.url) {
             window.open(clickInfo.event.url, '_blank');
         }
+    };
+
+    const handleDatesSet = (dateInfo: { start: Date; end: Date }) => {
+        setViewRange({ start: dateInfo.start, end: dateInfo.end });
     };
 
     const handleDateClick = useCallback((arg: DateClickArg) => {
@@ -291,35 +285,14 @@ const CalendarPage: React.FC = () => {
         addNotification({ type: 'success', message: `Rescheduled "${quest.title}" successfully.` });
     }, [currentUser, updateQuest, addNotification]);
     
-    const handleMoreLinkClick = useCallback((info: MoreLinkArg) => {
+    const handleMoreLinkClick = (info: MoreLinkArg) => {
         if (mode === 'chronicles') {
             info.jsEvent.preventDefault(); // Prevent default popover
-
-            const fetchDetails = async () => {
-                if (!currentUser) return;
-                try {
-                    const start = toYMD(info.date);
-                    const end = toYMD(new Date(info.date.getTime() + 86400000));
-                    const guildIdParam = appMode.mode === 'guild' ? appMode.guildId : 'null';
-                    
-                    const response = await fetch(`/api/chronicles?startDate=${start}&endDate=${end}&userId=${currentUser.id}&guildId=${guildIdParam}&viewMode=all`);
-                    if (!response.ok) {
-                        const errorData = await response.json().catch(() => ({}));
-                        throw new Error(errorData.error || 'Failed to fetch details for this day.');
-                    }
-                    const data = await response.json();
-                    
-                    setChronicleDetail({ date: info.date, events: data.events });
-                } catch (e) {
-                    const message = e instanceof Error ? e.message : 'Could not load details for this day.';
-                    addNotification({ type: 'error', message });
-                    console.error('Error fetching chronicle details for day view:', e);
-                }
-            };
-            
-            fetchDetails();
+            const dateKey = toYMD(info.date);
+            const events = chronicles.get(dateKey) || [];
+            setChronicleDetail({ date: info.date, events });
         }
-    }, [mode, appMode, currentUser, addNotification]);
+    };
 
     const handleStartCompletion = () => {
         if (!viewingQuest) return;
@@ -366,7 +339,7 @@ const CalendarPage: React.FC = () => {
                 .fc .fc-daygrid-day.fc-day-today { background-color: hsl(var(--primary) / 0.15); }
                 .fc .fc-daygrid-day-number { color: hsl(var(--foreground)); padding: 4px; }
                 .fc .fc-day-past .fc-daygrid-day-number { color: hsl(var(--muted-foreground)); }
-                .fc .fc-event { border: 1px solid hsl(var(--border)) !important; font-size: 0.875rem; padding: 3px 5px; color: hsl(var(--primary-foreground)); font-weight: 500; }
+                .fc .fc-event { border: 1px solid hsl(var(--border)) !important; font-size: 0.75rem; padding: 2px 4px; color: hsl(var(--primary-foreground)); }
                 .fc-event.gcal-event { background-color: hsl(217 91% 60%) !important; border-color: hsl(217 91% 70%) !important; }
                 .fc-event.birthday-event { background-color: hsl(50 90% 60%) !important; border-color: hsl(50 90% 50%) !important; color: hsl(50 100% 10%) !important; font-weight: bold; }
                 .fc-theme-standard .fc-list-day-cushion, .fc-theme-standard .fc-list-table th {
@@ -376,12 +349,11 @@ const CalendarPage: React.FC = () => {
                     background-color: hsl(var(--color-bg-primary-hsl));
                 }
                 .fc-list-event-title > a {
-                    color: hsl(var(--accent-light));
+                    color: hsl(var(--text-primary-hsl));
                     text-decoration: none;
                 }
                 .fc-list-event-title > a:hover {
                     text-decoration: underline;
-                    color: hsl(var(--accent));
                 }
             `}</style>
             <Card>
@@ -399,7 +371,6 @@ const CalendarPage: React.FC = () => {
                 </div>
                  <div className="p-4">
                     <FullCalendar
-                        key={mode} 
                         ref={calendarRef}
                         plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin, googleCalendarPlugin, listPlugin, rrulePlugin]}
                         headerToolbar={{
@@ -410,10 +381,11 @@ const CalendarPage: React.FC = () => {
                         buttonText={{ day: 'Day', week: 'Week', month: 'Month', list: 'Agenda' }}
                         initialView="listWeek"
                         googleCalendarApiKey={settings.googleCalendar.apiKey || undefined}
-                        events={calendarEventsFunc}
+                        eventSources={eventSources}
                         eventClick={handleEventClick}
                         dayMaxEvents={5}
                         moreLinkClick={handleMoreLinkClick}
+                        datesSet={handleDatesSet}
                         editable={currentUser.role === Role.DonegeonMaster}
                         eventDrop={handleEventDrop}
                         dateClick={handleDateClick}

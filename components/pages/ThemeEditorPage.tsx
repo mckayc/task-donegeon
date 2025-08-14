@@ -9,7 +9,6 @@ import ThemeIdeaGenerator from '../quests/ThemeIdeaGenerator';
 import ConfirmDialog from '../user-interface/ConfirmDialog';
 import SimpleColorPicker from '../user-interface/SimpleColorPicker';
 import { useNotificationsDispatch } from '../../context/NotificationsContext';
-import { ChevronDownIcon } from '../user-interface/Icons';
 
 const FONT_OPTIONS = [
     "'MedievalSharp', cursive", "'Uncial Antiqua', cursive", "'Press Start 2P', cursive", "'IM Fell English SC', serif", 
@@ -78,23 +77,6 @@ const ThemePreview: React.FC<{ themeData: ThemeStyle }> = ({ themeData }) => {
     );
 };
 
-const CollapsibleSection: React.FC<{ title: string; children: React.ReactNode; defaultOpen?: boolean; }> = ({ title, children, defaultOpen = false }) => {
-    const [isOpen, setIsOpen] = useState(defaultOpen);
-    return (
-        <div className="border-b border-stone-700/60 last:border-b-0">
-            <button
-                className="w-full flex justify-between items-center text-left py-4"
-                onClick={() => setIsOpen(!isOpen)}
-                aria-expanded={isOpen}
-            >
-                <h3 className="text-xl font-semibold text-stone-200">{title}</h3>
-                <ChevronDownIcon className={`w-6 h-6 text-stone-400 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
-            </button>
-            {isOpen && <div className="pb-6 space-y-4">{children}</div>}
-        </div>
-    );
-};
-
 
 const ThemeEditorPage: React.FC = () => {
     const { themes, isAiConfigured } = useAppState();
@@ -105,6 +87,7 @@ const ThemeEditorPage: React.FC = () => {
     const [formData, setFormData] = useState<ThemeDefinition | null>(null);
     const [deletingTheme, setDeletingTheme] = useState<ThemeDefinition | null>(null);
     const [isGeneratorOpen, setIsGeneratorOpen] = useState(false);
+    const [activeTab, setActiveTab] = useState<'general' | 'fonts' | 'colors' | 'accessibility'>('general');
     const isAiAvailable = useAppState().settings.enableAiFeatures && isAiConfigured;
 
     useEffect(() => {
@@ -121,7 +104,7 @@ const ThemeEditorPage: React.FC = () => {
                 styles: defaultStyles || {} as ThemeStyle
             });
         }
-    }, [selectedThemeId, themes]);
+    }, [selectedThemeId]);
 
     // Apply styles for live preview whenever formData changes
     useEffect(() => {
@@ -166,6 +149,29 @@ const ThemeEditorPage: React.FC = () => {
         setSelectedThemeId('new');
         setIsGeneratorOpen(false);
     };
+    
+    const TabButton: React.FC<{tabName: typeof activeTab; children: React.ReactNode}> = ({tabName, children}) => (
+        <button
+            onClick={() => setActiveTab(tabName)}
+            className={`whitespace-nowrap pb-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+                activeTab === tabName
+                ? 'border-emerald-500 text-emerald-400'
+                : 'border-transparent text-stone-400 hover:text-stone-200'
+            }`}
+        >
+            {children}
+        </button>
+    );
+
+    const getPreviewStyle = (theme: ThemeDefinition) => ({
+        fontFamily: theme.styles['--font-display'],
+        backgroundColor: `hsl(${theme.styles['--color-bg-primary-hsl']})`,
+        color: `hsl(${theme.styles['--color-text-primary-hsl']})`,
+    });
+    
+    const getAccentStyle = (theme: ThemeDefinition, type: 'primary' | 'accent' | 'accent-light') => ({
+        backgroundColor: `hsl(${theme.styles[`--color-${type}-hue`]} ${theme.styles[`--color-${type}-saturation`]} ${theme.styles[`--color-${type}-lightness`]})`
+    });
 
     if (!formData) return <div>Loading theme data...</div>
 
@@ -173,7 +179,7 @@ const ThemeEditorPage: React.FC = () => {
         <div className="space-y-8 relative">
             <div className="sticky top-0 z-10 -mx-8 -mt-8 px-8 pt-6 pb-4 mb-2" style={{ backgroundColor: 'hsl(var(--color-bg-tertiary))', borderBottom: '1px solid hsl(var(--color-border))' }}>
                 <div className="flex justify-between items-center">
-                     <h1 className="font-medieval text-stone-100" style={{ fontFamily: formData.styles['--font-display'] }}>Theme Editor</h1>
+                     <h1 className="font-medieval text-stone-100" style={{ fontFamily: formData.styles['--font-display'] }}>Editing: {formData.name}</h1>
                     <Button onClick={handleSave}>{(formData.id === 'new') ? 'Create & Save Theme' : 'Save Changes'}</Button>
                 </div>
             </div>
@@ -184,59 +190,114 @@ const ThemeEditorPage: React.FC = () => {
                 </div>
                 
                 <div className="space-y-6">
-                    <Card title="Select & Manage Theme">
-                        <div className="space-y-4">
-                             <Input as="select" label="Theme to Edit" value={selectedThemeId} onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setSelectedThemeId(e.target.value)}>
-                                <option value="new">-- Create New Theme --</option>
-                                {themes.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
-                            </Input>
-                             <Input label="Theme Name" value={formData.name} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData(p => p ? ({...p, name: e.target.value}) : null)} required disabled={!formData.isCustom} />
-                             <div className="flex flex-wrap gap-2 justify-end">
-                                {isAiAvailable && <Button onClick={() => setIsGeneratorOpen(true)} variant="secondary">Create with AI</Button>}
-                                {formData.isCustom && <Button variant="destructive" onClick={() => setDeletingTheme(formData)}>Delete</Button>}
-                                <Button onClick={handleSave}>{(formData.id === 'new') ? 'Create & Save' : 'Save Changes'}</Button>
-                            </div>
+                    <Card title="Select Theme">
+                        <div className="grid grid-cols-3 md:grid-cols-4 gap-2 max-h-48 overflow-y-auto pr-2">
+                             <button onClick={handleCreateNew} className="w-full aspect-square rounded-lg transition-all duration-200 border-2 border-dashed border-stone-600 hover:border-emerald-500 hover:text-emerald-400 flex flex-col items-center justify-center">
+                                <span className="text-3xl">+</span>
+                                <span className="text-xs font-semibold">New Theme</span>
+                             </button>
+                            {themes.map(theme => (
+                                <div key={theme.id} className="relative group">
+                                <button
+                                    onClick={() => setSelectedThemeId(theme.id)}
+                                    className={`w-full aspect-square rounded-lg transition-all duration-200 border-4 ${selectedThemeId === theme.id ? 'border-white shadow-lg' : 'border-transparent opacity-70 hover:opacity-100'}`}
+                                    style={getPreviewStyle(theme)}
+                                >
+                                    <div className="p-1 flex flex-col justify-between h-full">
+                                        <h3 className="text-sm font-bold capitalize truncate">{theme.name}</h3>
+                                        <div className="flex justify-end items-center gap-1">
+                                            <div className="w-4 h-4 rounded-full" style={getAccentStyle(theme, 'primary')}></div>
+                                            <div className="w-4 h-4 rounded-full" style={getAccentStyle(theme, 'accent')}></div>
+                                            <div className="w-4 h-4 rounded-full" style={getAccentStyle(theme, 'accent-light')}></div>
+                                        </div>
+                                    </div>
+                                </button>
+                                {theme.isCustom && (
+                                    <button onClick={() => setDeletingTheme(theme)} className="absolute top-1 right-1 w-5 h-5 bg-red-600 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                        &times;
+                                    </button>
+                                )}
+                                </div>
+                            ))}
                         </div>
                     </Card>
-                    
-                    <Card title="Edit Theme Elements">
-                        <CollapsibleSection title="Typography & Fonts" defaultOpen>
-                            <Input as="select" label="Display Font" value={formData.styles['--font-display']} onChange={(e: React.ChangeEvent<HTMLSelectElement>) => handleStyleChange('--font-display', e.target.value)}>
-                                {FONT_OPTIONS.map(f => <option key={f} value={f}>{f.split(',')[0].replace(/'/g, '')}</option>)}
-                            </Input>
-                            <Input as="select" label="Body Font" value={formData.styles['--font-body']} onChange={(e: React.ChangeEvent<HTMLSelectElement>) => handleStyleChange('--font-body', e.target.value)}>
-                                {FONT_OPTIONS.map(f => <option key={f} value={f}>{f.split(',')[0].replace(/'/g, '')}</option>)}
-                            </Input>
-                            <div>
-                                <label className="flex justify-between text-sm font-medium mb-1">H1 Font Size <span>({formData.styles['--font-size-h1']})</span></label>
-                                <input type="range" min="1.5" max="4" step="0.1" value={parseFloat(formData.styles['--font-size-h1'])} onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleStyleChange('--font-size-h1', `${e.target.value}rem`)} className="w-full h-2 bg-stone-700 rounded-lg appearance-none cursor-pointer" />
-                            </div>
-                             <div>
-                                <label className="flex justify-between text-sm font-medium mb-1">Body Font Size <span>({formData.styles['--font-size-body']})</span></label>
-                                <input type="range" min="0.8" max="1.2" step="0.05" value={parseFloat(formData.styles['--font-size-body'])} onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleStyleChange('--font-size-body', `${e.target.value}rem`)} className="w-full h-2 bg-stone-700 rounded-lg appearance-none cursor-pointer" />
-                            </div>
-                        </CollapsibleSection>
-                        <CollapsibleSection title="Color Palette">
-                            <div className="grid grid-cols-2 gap-4">
-                                <SimpleColorPicker label="Primary BG" hslValue={formData.styles['--color-bg-primary-hsl']} onChange={(v: string) => handleStyleChange('--color-bg-primary-hsl', v)} />
-                                <SimpleColorPicker label="Secondary BG" hslValue={formData.styles['--color-bg-secondary-hsl']} onChange={(v: string) => handleStyleChange('--color-bg-secondary-hsl', v)} />
-                                <SimpleColorPicker label="Primary Text" hslValue={formData.styles['--color-text-primary-hsl']} onChange={(v: string) => handleStyleChange('--color-text-primary-hsl', v)} />
-                                <SimpleColorPicker label="Secondary Text" hslValue={formData.styles['--color-text-secondary-hsl']} onChange={(v: string) => handleStyleChange('--color-text-secondary-hsl', v)} />
-                                <SimpleColorPicker label="Border" hslValue={formData.styles['--color-border-hsl']} onChange={(v: string) => handleStyleChange('--color-border-hsl', v)} />
-                                <SimpleColorPicker label="Primary Accent" hslValue={`hsl(${formData.styles['--color-primary-hue']} ${formData.styles['--color-primary-saturation']} ${formData.styles['--color-primary-lightness']})`} onChange={(v: string) => {
-                                    const match = v.match(/(\d+)\s*(\d+)%\s*(\d+)%/);
-                                    if (match) {
-                                        const [_, h, s, l] = match;
-                                        handleStyleChange('--color-primary-hue', h);
-                                        handleStyleChange('--color-primary-saturation', `${s}%`);
-                                        handleStyleChange('--color-primary-lightness', `${l}%`);
-                                    }
-                                }} />
-                            </div>
-                        </CollapsibleSection>
-                         <CollapsibleSection title="Accessibility">
-                            <ContrastChecker styles={formData.styles} />
-                        </CollapsibleSection>
+
+                    <Card>
+                        <div className="border-b border-stone-700 mb-6">
+                            <nav className="-mb-px flex space-x-6">
+                                <TabButton tabName="general">General</TabButton>
+                                <TabButton tabName="fonts">Fonts</TabButton>
+                                <TabButton tabName="colors">Colors</TabButton>
+                                <TabButton tabName="accessibility">Accessibility</TabButton>
+                            </nav>
+                        </div>
+                        
+                        <div>
+                            {activeTab === 'general' && (
+                                <div className="space-y-4">
+                                    <Input label="Theme Name" value={formData.name} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData(p => p ? ({...p, name: e.target.value}) : null)} required disabled={!formData.isCustom} />
+                                    {isAiAvailable && (
+                                        <Button onClick={() => setIsGeneratorOpen(true)} variant="secondary">
+                                            Generate Theme with AI
+                                        </Button>
+                                    )}
+                                </div>
+                            )}
+                            {activeTab === 'fonts' && (
+                                <div className="space-y-4">
+                                    <Input as="select" label="Display Font" value={formData.styles['--font-display']} onChange={(e: React.ChangeEvent<HTMLSelectElement>) => handleStyleChange('--font-display', e.target.value)}>
+                                        {FONT_OPTIONS.map(f => <option key={f} value={f}>{f.split(',')[0].replace(/'/g, '')}</option>)}
+                                    </Input>
+                                    <Input as="select" label="Body Font" value={formData.styles['--font-body']} onChange={(e: React.ChangeEvent<HTMLSelectElement>) => handleStyleChange('--font-body', e.target.value)}>
+                                        {FONT_OPTIONS.map(f => <option key={f} value={f}>{f.split(',')[0].replace(/'/g, '')}</option>)}
+                                    </Input>
+                                     <Input as="select" label="Label Font" value={formData.styles['--font-label']} onChange={(e: React.ChangeEvent<HTMLSelectElement>) => handleStyleChange('--font-label', e.target.value)}>
+                                        {FONT_OPTIONS.map(f => <option key={f} value={f}>{f.split(',')[0].replace(/'/g, '')}</option>)}
+                                    </Input>
+                                     <Input as="select" label="Span Font (Optional)" value={formData.styles['--font-span'] || ''} onChange={(e: React.ChangeEvent<HTMLSelectElement>) => handleStyleChange('--font-span', e.target.value)}>
+                                        <option value="">-- Inherit from Body --</option>
+                                        {FONT_OPTIONS.map(f => <option key={f} value={f}>{f.split(',')[0].replace(/'/g, '')}</option>)}
+                                    </Input>
+                                    <div>
+                                        <label className="flex justify-between text-sm font-medium mb-1">H1 Font Size <span>({formData.styles['--font-size-h1']})</span></label>
+                                        <input type="range" min="1.5" max="4" step="0.1" value={parseFloat(formData.styles['--font-size-h1'])} onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleStyleChange('--font-size-h1', `${e.target.value}rem`)} className="w-full h-2 bg-stone-700 rounded-lg appearance-none cursor-pointer" />
+                                    </div>
+                                     <div>
+                                        <label className="flex justify-between text-sm font-medium mb-1">H2 Font Size <span>({formData.styles['--font-size-h2']})</span></label>
+                                        <input type="range" min="1.25" max="3.5" step="0.1" value={parseFloat(formData.styles['--font-size-h2'])} onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleStyleChange('--font-size-h2', `${e.target.value}rem`)} className="w-full h-2 bg-stone-700 rounded-lg appearance-none cursor-pointer" />
+                                    </div>
+                                    <div>
+                                        <label className="flex justify-between text-sm font-medium mb-1">H3 Font Size <span>({formData.styles['--font-size-h3']})</span></label>
+                                        <input type="range" min="1" max="3" step="0.1" value={parseFloat(formData.styles['--font-size-h3'])} onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleStyleChange('--font-size-h3', `${e.target.value}rem`)} className="w-full h-2 bg-stone-700 rounded-lg appearance-none cursor-pointer" />
+                                    </div>
+                                    <div>
+                                        <label className="flex justify-between text-sm font-medium mb-1">Body Font Size <span>({formData.styles['--font-size-body']})</span></label>
+                                        <input type="range" min="0.8" max="1.2" step="0.05" value={parseFloat(formData.styles['--font-size-body'])} onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleStyleChange('--font-size-body', `${e.target.value}rem`)} className="w-full h-2 bg-stone-700 rounded-lg appearance-none cursor-pointer" />
+                                    </div>
+                                    <div>
+                                        <label className="flex justify-between text-sm font-medium mb-1">Label Font Size <span>({formData.styles['--font-size-label']})</span></label>
+                                        <input type="range" min="0.7" max="1.1" step="0.05" value={parseFloat(formData.styles['--font-size-label'])} onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleStyleChange('--font-size-label', `${e.target.value}rem`)} className="w-full h-2 bg-stone-700 rounded-lg appearance-none cursor-pointer" />
+                                    </div>
+                                     <div>
+                                        <label className="flex justify-between text-sm font-medium mb-1">Span Font Size <span>({formData.styles['--font-size-span'] || '1rem'})</span></label>
+                                        <input type="range" min="0.7" max="1.1" step="0.05" value={parseFloat(formData.styles['--font-size-span'] || '1')} onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleStyleChange('--font-size-span', `${e.target.value}rem`)} className="w-full h-2 bg-stone-700 rounded-lg appearance-none cursor-pointer" />
+                                    </div>
+                                </div>
+                            )}
+                             {activeTab === 'colors' && (
+                                <div className="space-y-4">
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <SimpleColorPicker label="Primary Background" hslValue={formData.styles['--color-bg-primary-hsl']} onChange={(v: string) => handleStyleChange('--color-bg-primary-hsl', v)} />
+                                        <SimpleColorPicker label="Secondary Background" hslValue={formData.styles['--color-bg-secondary-hsl']} onChange={(v: string) => handleStyleChange('--color-bg-secondary-hsl', v)} />
+                                        <SimpleColorPicker label="Tertiary Background" hslValue={formData.styles['--color-bg-tertiary-hsl']} onChange={(v: string) => handleStyleChange('--color-bg-tertiary-hsl', v)} />
+                                        <SimpleColorPicker label="Primary Text" hslValue={formData.styles['--color-text-primary-hsl']} onChange={(v: string) => handleStyleChange('--color-text-primary-hsl', v)} />
+                                        <SimpleColorPicker label="Secondary Text" hslValue={formData.styles['--color-text-secondary-hsl']} onChange={(v: string) => handleStyleChange('--color-text-secondary-hsl', v)} />
+                                        <SimpleColorPicker label="Border" hslValue={formData.styles['--color-border-hsl']} onChange={(v: string) => handleStyleChange('--color-border-hsl', v)} />
+                                    </div>
+                                </div>
+                            )}
+                            {activeTab === 'accessibility' && <ContrastChecker styles={formData.styles} />}
+                        </div>
                     </Card>
                 </div>
             </div>

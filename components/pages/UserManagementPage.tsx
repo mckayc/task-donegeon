@@ -15,7 +15,6 @@ import { useDebounce } from '../../hooks/useDebounce';
 import Input from '../user-interface/Input';
 import { useNotificationsDispatch } from '../../context/NotificationsContext';
 import { useShiftSelect } from '../../hooks/useShiftSelect';
-import { syncLocker } from '../../utils/syncLocker';
 
 const UserManagementPage: React.FC = () => {
     const { settings } = useAppState();
@@ -40,31 +39,6 @@ const UserManagementPage: React.FC = () => {
     const pageUserIds = useMemo(() => pageUsers.map(u => u.id), [pageUsers]);
     const handleCheckboxClick = useShiftSelect(pageUserIds, selectedUsers, setSelectedUsers);
 
-    const apiRequest = useCallback(async (method: string, path: string, body?: any) => {
-        const isMutation = method !== 'GET';
-        if (isMutation) syncLocker.increment();
-        try {
-            const options: RequestInit = {
-                method,
-                headers: { 'Content-Type': 'application/json' },
-            };
-            if (body) {
-                options.body = JSON.stringify(body);
-            }
-            const response = await fetch(path, options);
-            if (!response.ok) {
-                const errorData = await response.json().catch(() => ({ error: 'Server error' }));
-                throw new Error(errorData.error || `Request failed with status ${response.status}`);
-            }
-            return response.status === 204 ? null : await response.json();
-        } catch (error) {
-            addNotification({ type: 'error', message: error instanceof Error ? error.message : 'An unknown network error occurred.' });
-            throw error;
-        } finally {
-            if (isMutation) syncLocker.decrement();
-        }
-    }, [addNotification]);
-
     const fetchUsers = useCallback(async () => {
         setIsLoading(true);
         try {
@@ -72,14 +46,17 @@ const UserManagementPage: React.FC = () => {
             if (debouncedSearchTerm) params.append('searchTerm', debouncedSearchTerm);
             params.append('sortBy', sortBy);
 
-            const data = await apiRequest('GET', `/api/users?${params.toString()}`);
+            const response = await fetch(`/api/users?${params.toString()}`);
+            if (!response.ok) throw new Error('Failed to fetch users.');
+            const data = await response.json();
             setPageUsers(data);
         } catch (error) {
             console.error(error);
+            addNotification({ type: 'error', message: error instanceof Error ? error.message : 'Unknown error' });
         } finally {
             setIsLoading(false);
         }
-    }, [debouncedSearchTerm, sortBy, apiRequest]);
+    }, [debouncedSearchTerm, sortBy, addNotification]);
 
     useEffect(() => {
         fetchUsers();
@@ -112,7 +89,6 @@ const UserManagementPage: React.FC = () => {
         await deleteUsers(deletingIds);
         setDeletingIds([]);
         setSelectedUsers([]);
-        fetchUsers(); // Refresh the list after deletion
     };
 
     const handleAdjust = (user: User) => {

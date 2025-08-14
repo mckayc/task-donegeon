@@ -1,5 +1,3 @@
-
-
 import React, { createContext, useState, useContext, ReactNode, useEffect, useCallback, useMemo, useRef } from 'react';
 import { AppSettings, User, Quest, RewardItem, Guild, Rank, Trophy, UserTrophy, AppMode, Page, IAppData, ShareableAssetType, GameAsset, Role, RewardCategory, AdminAdjustment, AdminAdjustmentType, SystemLog, QuestType, QuestAvailability, AssetPack, ImportResolution, TrophyRequirementType, ThemeDefinition, ChatMessage, SystemNotification, SystemNotificationType, MarketStatus, QuestGroup, BulkQuestUpdates, ScheduledEvent, BugReport, QuestCompletion, BugReportType } from '../types';
 import { INITIAL_SETTINGS, INITIAL_RANKS, INITIAL_TROPHIES, INITIAL_THEMES } from '../data/initialData';
@@ -8,7 +6,6 @@ import { useAuthState, useAuthDispatch } from './AuthContext';
 import { useEconomyDispatch } from './EconomyContext';
 import { useQuestDispatch } from './QuestContext';
 import { bugLogger } from '../utils/bugLogger';
-import { syncLocker } from '../utils/syncLocker';
 
 // The single, unified state for the non-auth/quest parts of the application
 interface AppState extends Omit<IAppData, 'users' | 'loginHistory' | 'quests' | 'questGroups' | 'questCompletions' | 'markets' | 'rewardTypes' | 'purchaseRequests' | 'gameAssets'> {
@@ -55,11 +52,16 @@ interface AppDispatch {
   addSystemNotification: (notification: Omit<SystemNotification, 'id' | 'timestamp' | 'readByUserIds'>) => void;
   markSystemNotificationsAsRead: (notificationIds: string[]) => void;
   triggerSync: () => void;
-  registerOptimisticUpdate: (entityType: string, entityId: string) => string;
 }
 
 const AppStateContext = createContext<AppState | undefined>(undefined);
 const AppDispatchContext = createContext<AppDispatch | undefined>(undefined);
+
+const mergeData = <T extends { id: string }>(existing: T[], incoming: T[]): T[] => {
+    const dataMap = new Map(existing.map(item => [item.id, item]));
+    incoming.forEach(item => dataMap.set(item.id, item));
+    return Array.from(dataMap.values());
+};
 
 export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const { addNotification, updateNotification } = useNotificationsDispatch();
@@ -93,6 +95,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [syncStatus, setSyncStatus] = useState<'idle' | 'syncing' | 'success' | 'error'>('idle');
   const [syncError, setSyncError] = useState<string | null>(null);
   const [isAiConfigured, setIsAiConfigured] = useState(false);
+  const mutationsInFlight = useRef(0);
   const recentOptimisticUpdates = useRef<Map<string, string>>(new Map());
   
   // Ref to hold the last sync timestamp without causing re-renders
@@ -114,7 +117,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const apiRequest = useCallback(async (method: string, path: string, body?: any) => {
     const isMutation = method !== 'GET';
     if (isMutation) {
-        syncLocker.increment();
+        mutationsInFlight.current += 1;
     }
     try {
         const options: RequestInit = {
@@ -138,32 +141,12 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         throw error;
     } finally {
         if (isMutation) {
-            syncLocker.decrement();
+            mutationsInFlight.current -= 1;
         }
     }
   }, [addNotification]);
   
   // === DATA SYNC & LOADING ===
-
-  const mergeDataWithOptimisticCheck = useCallback(<T extends { id: string; updatedAt?: string }>(
-    existing: T[],
-    incoming: T[],
-    entityType: string
-  ): T[] => {
-      const dataMap = new Map(existing.map(item => [item.id, item]));
-      incoming.forEach(item => {
-          const key = `${entityType}-${item.id}`;
-          const optimisticTimestamp = recentOptimisticUpdates.current.get(key);
-          const serverTimestamp = item.updatedAt;
-
-          if (optimisticTimestamp && serverTimestamp && new Date(serverTimestamp) < new Date(optimisticTimestamp)) {
-              console.log(`[OptimisticUpdate] Stale ${entityType} data for ID ${item.id} blocked from sync.`);
-              return; 
-          }
-          dataMap.set(item.id, item);
-      });
-      return Array.from(dataMap.values());
-  }, []);
   
   const processAndSetData = useCallback((dataToSet: IAppData, isDelta = false) => {
       const savedSettings: Partial<AppSettings> = dataToSet.settings || {};
@@ -206,32 +189,52 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       }
 
       // Update states, either by full replacement or by merging
-      if (dataToSet.users) authDispatch.setUsers(prev => isDelta ? mergeDataWithOptimisticCheck(prev, dataToSet.users!, 'users') : dataToSet.users!);
+      if (dataToSet.users) authDispatch.setUsers(prev => isDelta ? mergeData(prev, dataToSet.users!) : dataToSet.users!);
       if (dataToSet.loginHistory) authDispatch.setLoginHistory(dataToSet.loginHistory);
 
-      if (dataToSet.quests) questDispatch.setQuests(prev => isDelta ? mergeDataWithOptimisticCheck(prev, dataToSet.quests!, 'quests') : dataToSet.quests!);
-      if (dataToSet.questGroups) questDispatch.setQuestGroups(prev => isDelta ? mergeDataWithOptimisticCheck(prev, dataToSet.questGroups!, 'questGroups') : dataToSet.questGroups!);
-      if (dataToSet.questCompletions) questDispatch.setQuestCompletions(prev => isDelta ? mergeDataWithOptimisticCheck(prev, dataToSet.questCompletions!, 'questCompletions') : dataToSet.questCompletions!);
+      if (dataToSet.quests) questDispatch.setQuests(prev => isDelta ? mergeData(prev, dataToSet.quests!) : dataToSet.quests!);
+      if (dataToSet.questGroups) questDispatch.setQuestGroups(prev => isDelta ? mergeData(prev, dataToSet.questGroups!) : dataToSet.questGroups!);
+      if (dataToSet.questCompletions) questDispatch.setQuestCompletions(prev => isDelta ? mergeData(prev, dataToSet.questCompletions!) : dataToSet.questCompletions!);
       
-      if (dataToSet.markets) economyDispatch.setMarkets(prev => isDelta ? mergeDataWithOptimisticCheck(prev, dataToSet.markets!, 'markets') : dataToSet.markets!);
-      if (dataToSet.rewardTypes) economyDispatch.setRewardTypes(prev => isDelta ? mergeDataWithOptimisticCheck(prev, dataToSet.rewardTypes!, 'rewardTypes') : dataToSet.rewardTypes!);
-      if (dataToSet.purchaseRequests) economyDispatch.setPurchaseRequests(prev => isDelta ? mergeDataWithOptimisticCheck(prev, dataToSet.purchaseRequests!, 'purchaseRequests') : dataToSet.purchaseRequests!);
-      if (dataToSet.gameAssets) economyDispatch.setGameAssets(prev => isDelta ? mergeDataWithOptimisticCheck(prev, dataToSet.gameAssets!, 'gameAssets') : dataToSet.gameAssets!);
+      if (dataToSet.markets) economyDispatch.setMarkets(prev => isDelta ? mergeData(prev, dataToSet.markets!) : dataToSet.markets!);
+      if (dataToSet.rewardTypes) economyDispatch.setRewardTypes(prev => isDelta ? mergeData(prev, dataToSet.rewardTypes!) : dataToSet.rewardTypes!);
+      if (dataToSet.purchaseRequests) economyDispatch.setPurchaseRequests(prev => isDelta ? mergeData(prev, dataToSet.purchaseRequests!) : dataToSet.purchaseRequests!);
+      if (dataToSet.gameAssets) economyDispatch.setGameAssets(prev => isDelta ? mergeData(prev, dataToSet.gameAssets!) : dataToSet.gameAssets!);
 
-      if (dataToSet.guilds) setGuilds(prev => isDelta ? mergeDataWithOptimisticCheck(prev, dataToSet.guilds!, 'guilds') : dataToSet.guilds!);
-      if (dataToSet.ranks) setRanks(prev => isDelta ? mergeDataWithOptimisticCheck(prev, dataToSet.ranks!, 'ranks') : dataToSet.ranks!);
-      if (dataToSet.trophies) setTrophies(prev => isDelta ? mergeDataWithOptimisticCheck(prev, dataToSet.trophies!, 'trophies') : dataToSet.trophies!);
-      if (dataToSet.userTrophies) setUserTrophies(prev => isDelta ? mergeDataWithOptimisticCheck(prev, dataToSet.userTrophies!, 'userTrophies') : dataToSet.userTrophies!);
-      if (dataToSet.adminAdjustments) setAdminAdjustments(prev => isDelta ? mergeDataWithOptimisticCheck(prev, dataToSet.adminAdjustments!, 'adminAdjustments') : dataToSet.adminAdjustments!);
-      if (dataToSet.systemLogs) setSystemLogs(prev => isDelta ? mergeDataWithOptimisticCheck(prev, dataToSet.systemLogs!, 'systemLogs') : dataToSet.systemLogs!);
-      if (dataToSet.themes) setThemes(prev => isDelta ? mergeDataWithOptimisticCheck(prev, dataToSet.themes!, 'themes') : dataToSet.themes!);
-      if (dataToSet.chatMessages) setChatMessages(prev => isDelta ? mergeDataWithOptimisticCheck(prev, dataToSet.chatMessages!, 'chatMessages') : dataToSet.chatMessages!);
-      if (dataToSet.systemNotifications) setSystemNotifications(prev => isDelta ? mergeDataWithOptimisticCheck(prev, dataToSet.systemNotifications!, 'systemNotifications') : dataToSet.systemNotifications!);
-      if (dataToSet.scheduledEvents) setScheduledEvents(prev => isDelta ? mergeDataWithOptimisticCheck(prev, dataToSet.scheduledEvents!, 'scheduledEvents') : dataToSet.scheduledEvents!);
-      if (dataToSet.bugReports) setBugReports(prev => isDelta ? mergeDataWithOptimisticCheck(prev, dataToSet.bugReports!, 'bugReports') : dataToSet.bugReports!);
+      if (dataToSet.guilds) setGuilds(prev => isDelta ? mergeData(prev, dataToSet.guilds!) : dataToSet.guilds!);
+      if (dataToSet.ranks) setRanks(prev => isDelta ? mergeData(prev, dataToSet.ranks!) : dataToSet.ranks!);
+      if (dataToSet.trophies) setTrophies(prev => isDelta ? mergeData(prev, dataToSet.trophies!) : dataToSet.trophies!);
+      if (dataToSet.userTrophies) setUserTrophies(prev => isDelta ? mergeData(prev, dataToSet.userTrophies!) : dataToSet.userTrophies!);
+      if (dataToSet.adminAdjustments) setAdminAdjustments(prev => isDelta ? mergeData(prev, dataToSet.adminAdjustments!) : dataToSet.adminAdjustments!);
+      if (dataToSet.systemLogs) setSystemLogs(prev => isDelta ? mergeData(prev, dataToSet.systemLogs!) : dataToSet.systemLogs!);
+      if (dataToSet.themes) setThemes(prev => isDelta ? mergeData(prev, dataToSet.themes!) : dataToSet.themes!);
+      if (dataToSet.chatMessages) setChatMessages(prev => isDelta ? mergeData(prev, dataToSet.chatMessages!) : dataToSet.chatMessages!);
+      if (dataToSet.systemNotifications) setSystemNotifications(prev => isDelta ? mergeData(prev, dataToSet.systemNotifications!) : dataToSet.systemNotifications!);
+      if (dataToSet.scheduledEvents) setScheduledEvents(prev => isDelta ? mergeData(prev, dataToSet.scheduledEvents!) : dataToSet.scheduledEvents!);
+      
+      if (dataToSet.bugReports) {
+        setBugReports(prev => {
+            if (!isDelta) return dataToSet.bugReports!;
+            
+            const dataMap = new Map(prev.map(item => [item.id, item]));
+            
+            dataToSet.bugReports!.forEach(incomingReport => {
+                const optimisticTimestamp = recentOptimisticUpdates.current.get(incomingReport.id);
+                const serverTimestamp = incomingReport.updatedAt;
+
+                if (optimisticTimestamp && serverTimestamp && new Date(serverTimestamp) < new Date(optimisticTimestamp)) {
+                    return; 
+                }
+                
+                dataMap.set(incomingReport.id, incomingReport);
+            });
+            
+            return Array.from(dataMap.values());
+        });
+    }
 
       return { settingsUpdated, loadedSettings: loadedSettingsResult };
-  }, [authDispatch, questDispatch, economyDispatch, mergeDataWithOptimisticCheck]);
+  }, [authDispatch, questDispatch, economyDispatch]);
   
   const initialSync = useCallback(async () => {
     try {
@@ -264,11 +267,11 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   }, [apiRequest, processAndSetData, addNotification, authDispatch]);
 
   const performDeltaSync = useCallback(async () => {
-    if (syncLocker.isLocked() || !lastSyncTimestamp.current) return;
+    if (mutationsInFlight.current > 0 || !lastSyncTimestamp.current) return;
     setSyncStatus('syncing');
     setSyncError(null);
     try {
-      const response = await apiRequest('GET', `/api/data/sync?lastSync=${encodeURIComponent(lastSyncTimestamp.current)}`);
+      const response = await apiRequest('GET', `/api/data/sync?lastSync=${lastSyncTimestamp.current}`);
       if (!response) {
           setSyncStatus('success'); // No updates
           return;
@@ -357,21 +360,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   
   // === BUSINESS LOGIC / DISPATCH FUNCTIONS ===
 
-  const registerOptimisticUpdate = useCallback((entityType: string, entityId: string): string => {
-    const key = `${entityType}-${entityId}`;
-    const timestamp = new Date().toISOString();
-    recentOptimisticUpdates.current.set(key, timestamp);
-
-    // Safety net to clear the timestamp after a while to prevent stale entries
-    setTimeout(() => {
-        if (recentOptimisticUpdates.current.get(key) === timestamp) {
-            recentOptimisticUpdates.current.delete(key);
-        }
-    }, 10000); // 10 seconds
-
-    return timestamp;
-  }, []);
-
   const triggerSync = useCallback(() => {
     performDeltaSync();
   }, [performDeltaSync]);
@@ -426,8 +414,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
     const addGuild = async (guild: Omit<Guild, 'id'>) => {
         const tempId = `temp-guild-${Date.now()}`;
-        const optimisticTimestamp = registerOptimisticUpdate('guilds', tempId);
-        const optimisticGuild = { ...guild, id: tempId, memberIds: guild.memberIds || [], updatedAt: optimisticTimestamp };
+        const optimisticGuild = { ...guild, id: tempId, memberIds: guild.memberIds || [] };
         setGuilds(prev => [...prev, optimisticGuild]);
         try {
             const savedGuild = await apiRequest('POST', '/api/guilds', guild);
@@ -438,8 +425,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     };
     const updateGuild = async (guild: Guild) => {
         const originalGuilds = [...guildsRef.current];
-        const optimisticTimestamp = registerOptimisticUpdate('guilds', guild.id);
-        setGuilds(prev => prev.map(g => g.id === guild.id ? { ...guild, updatedAt: optimisticTimestamp } : g));
+        setGuilds(prev => prev.map(g => g.id === guild.id ? guild : g));
         try {
             await apiRequest('PUT', `/api/guilds/${guild.id}`, guild);
         } catch(e) {
@@ -459,16 +445,12 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     const addTrophy = (trophy: Omit<Trophy, 'id'>) => setTrophies(prev => [...prev, { ...trophy, id: `trophy-${Date.now()}` }]);
     const updateTrophy = (trophy: Trophy) => setTrophies(prev => prev.map(t => t.id === trophy.id ? trophy : t));
     const addTheme = (theme: Omit<ThemeDefinition, 'id'>) => setThemes(p => [...p, { ...theme, id: `theme-${Date.now()}` }]);
-    const updateTheme = (theme: ThemeDefinition) => {
-        const optimisticTimestamp = registerOptimisticUpdate('themes', theme.id);
-        setThemes(p => p.map(t => t.id === theme.id ? { ...theme, updatedAt: optimisticTimestamp } : t))
-    };
+    const updateTheme = (theme: ThemeDefinition) => setThemes(p => p.map(t => t.id === theme.id ? theme : t));
     const deleteTheme = (themeId: string) => setThemes(p => p.filter(t => t.id !== themeId));
     
     const addScheduledEvent = async (event: Omit<ScheduledEvent, 'id'>) => {
         const tempId = `temp-event-${Date.now()}`;
-        const optimisticTimestamp = registerOptimisticUpdate('scheduledEvents', tempId);
-        setScheduledEvents(prev => [...prev, { ...event, id: tempId, updatedAt: optimisticTimestamp }]);
+        setScheduledEvents(prev => [...prev, { ...event, id: tempId }]);
         try {
             const savedEvent = await apiRequest('POST', '/api/events', event);
             setScheduledEvents(prev => prev.map(e => e.id === tempId ? savedEvent : e));
@@ -478,8 +460,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     };
     const updateScheduledEvent = async (event: ScheduledEvent) => {
         const originalEvents = [...scheduledEventsRef.current];
-        const optimisticTimestamp = registerOptimisticUpdate('scheduledEvents', event.id);
-        setScheduledEvents(prev => prev.map(e => e.id === event.id ? { ...event, updatedAt: optimisticTimestamp } : e));
+        setScheduledEvents(prev => prev.map(e => e.id === event.id ? event : e));
         try {
             await apiRequest('PUT', `/api/events/${event.id}`, event);
         } catch(e) {
@@ -498,9 +479,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
     const addBugReport = async (report: Omit<BugReport, 'id' | 'status' | 'tags'> & { reportType: BugReportType }) => {
         const { reportType, ...rest } = report;
-        const tempId = `temp-bug-${Date.now()}`;
-        const optimisticTimestamp = registerOptimisticUpdate('bugReports', tempId);
-        const newReportOptimistic = { ...rest, id: tempId, status: 'Open' as const, tags: [reportType], logs: rest.logs || [], updatedAt: optimisticTimestamp };
+        const newReportOptimistic = { ...rest, id: `temp-bug-${Date.now()}`, status: 'Open' as const, tags: [reportType], logs: rest.logs || [] };
         setBugReports(prev => [newReportOptimistic, ...prev]);
         try {
             const savedReport = await apiRequest('POST', '/api/bug-reports', { ...rest, status: 'Open', tags: [reportType] });
@@ -511,12 +490,19 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     };
     const updateBugReport = async (reportId: string, updates: Partial<BugReport>) => {
         const originalReports = [...bugReportsRef.current];
-        const optimisticTimestamp = registerOptimisticUpdate('bugReports', reportId);
+        const optimisticTimestamp = new Date().toISOString();
+        
+        recentOptimisticUpdates.current.set(reportId, optimisticTimestamp);
+        setTimeout(() => {
+            recentOptimisticUpdates.current.delete(reportId);
+        }, 10000); // 10 second safety net to prevent stale lock
+
         setBugReports(prev => prev.map(r => r.id === reportId ? { ...r, ...updates, updatedAt: optimisticTimestamp } : r));
         try {
             await apiRequest('PUT', `/api/bug-reports/${reportId}`, updates);
         } catch (error) {
             setBugReports(originalReports);
+            recentOptimisticUpdates.current.delete(reportId);
         }
     };
     const deleteBugReports = async (reportIds: string[]) => {
@@ -567,8 +553,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     };
     const updateSettings = async (newSettings: Partial<AppSettings>) => {
         const originalSettings = { ...settingsRef.current };
-        const optimisticTimestamp = registerOptimisticUpdate('settings', '1');
-        const updatedSettings = { ...originalSettings, ...newSettings, updatedAt: optimisticTimestamp };
+        const updatedSettings = { ...originalSettings, ...newSettings };
         setSettings(updatedSettings);
         try {
             await apiRequest('PUT', '/api/settings', updatedSettings);
@@ -615,9 +600,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       resetAllPlayerData, deleteAllCustomContent, deleteSelectedAssets, uploadFile,
       factoryReset, updateSettings, resetSettings, sendMessage, markMessagesAsRead,
       addSystemNotification, markSystemNotificationsAsRead, triggerSync,
-      registerOptimisticUpdate,
     };
-  }, [apiRequest, addNotification, updateNotification, economyDispatch, questDispatch, authDispatch, addSystemNotification, awardTrophy, triggerSync, guildsRef, scheduledEventsRef, bugReportsRef, settingsRef, ranks, trophies, registerOptimisticUpdate]);
+  }, [apiRequest, addNotification, updateNotification, economyDispatch, questDispatch, authDispatch, addSystemNotification, awardTrophy, triggerSync, guildsRef, scheduledEventsRef, bugReportsRef, settingsRef, ranks, trophies]);
 
   return (
       <AppStateContext.Provider value={state}>

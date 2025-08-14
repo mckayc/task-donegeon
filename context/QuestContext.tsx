@@ -4,6 +4,7 @@ import { useNotificationsDispatch } from './NotificationsContext';
 import { useAuthDispatch, useAuthState } from './AuthContext';
 import { bugLogger } from '../utils/bugLogger';
 import { useEconomyDispatch } from './EconomyContext';
+import { useAppDispatch } from './AppContext';
 
 interface QuestState {
   quests: Quest[];
@@ -43,6 +44,7 @@ const QuestDispatchContext = createContext<QuestDispatch | undefined>(undefined)
 
 export const QuestProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const { addNotification } = useNotificationsDispatch();
+  const { registerOptimisticUpdate } = useAppDispatch();
   const economyDispatch = useEconomyDispatch();
   const authDispatch = useAuthDispatch();
 
@@ -91,29 +93,57 @@ export const QuestProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   const addQuest = useCallback((quest: Omit<Quest, 'id' | 'claimedByUserIds' | 'dismissals'>) => { apiRequest('POST', '/api/quests', quest).catch(() => {}); }, [apiRequest]);
   const deleteQuest = useCallback((questId: string) => { apiRequest('DELETE', `/api/quests`, { ids: [questId] }).catch(() => {}); }, [apiRequest]);
   const cloneQuest = useCallback((questId: string) => { apiRequest('POST', `/api/quests/clone/${questId}`).catch(() => {}); }, [apiRequest]);
-  const dismissQuest = useCallback((questId: string, userId: string) => setQuests(prev => prev.map(q => q.id === questId ? { ...q, dismissals: [...q.dismissals, { userId, dismissedAt: new Date().toISOString() }] } : q)), []);
-  const claimQuest = useCallback((questId: string, userId: string) => setQuests(prev => prev.map(q => q.id === questId ? { ...q, claimedByUserIds: [...(q.claimedByUserIds || []), userId] } : q)), []);
-  const releaseQuest = useCallback((questId: string, userId: string) => setQuests(prev => prev.map(q => q.id === questId ? { ...q, claimedByUserIds: (q.claimedByUserIds || []).filter(id => id !== userId) } : q)), []);
+  
+  const dismissQuest = useCallback((questId: string, userId: string) => {
+    const optimisticTimestamp = registerOptimisticUpdate('quests', questId);
+    setQuests(prev => prev.map(q => q.id === questId ? { ...q, dismissals: [...q.dismissals, { userId, dismissedAt: new Date().toISOString() }], updatedAt: optimisticTimestamp } : q));
+  }, [registerOptimisticUpdate]);
+
+  const claimQuest = useCallback((questId: string, userId: string) => {
+    const optimisticTimestamp = registerOptimisticUpdate('quests', questId);
+    setQuests(prev => prev.map(q => q.id === questId ? { ...q, claimedByUserIds: [...(q.claimedByUserIds || []), userId], updatedAt: optimisticTimestamp } : q));
+  }, [registerOptimisticUpdate]);
+  
+  const releaseQuest = useCallback((questId: string, userId: string) => {
+    const optimisticTimestamp = registerOptimisticUpdate('quests', questId);
+    setQuests(prev => prev.map(q => q.id === questId ? { ...q, claimedByUserIds: (q.claimedByUserIds || []).filter(id => id !== userId), updatedAt: optimisticTimestamp } : q));
+  }, [registerOptimisticUpdate]);
   
   const markQuestAsTodo = useCallback((questId: string, userId: string) => {
-      setQuests(prev => {
-          const quest = prev.find(q => q.id === questId);
-          if (!quest) return prev;
-          const updatedQuest = { ...quest, todoUserIds: [...(quest.todoUserIds || []), userId] };
-          updateQuest(updatedQuest);
-          return prev.map(q => q.id === questId ? updatedQuest : q);
-      });
-  }, [updateQuest]);
+      const optimisticTimestamp = registerOptimisticUpdate('quests', questId);
+      const originalQuests = questsRef.current;
+      let questToUpdate: Quest | undefined;
+
+      setQuests(prev => prev.map(q => {
+          if (q.id === questId) {
+              questToUpdate = { ...q, todoUserIds: [...(q.todoUserIds || []), userId], updatedAt: optimisticTimestamp };
+              return questToUpdate;
+          }
+          return q;
+      }));
+      
+      if (questToUpdate) {
+          apiRequest('PUT', `/api/quests/${questId}`, questToUpdate).catch(() => setQuests(originalQuests));
+      }
+  }, [registerOptimisticUpdate, apiRequest]);
   
   const unmarkQuestAsTodo = useCallback((questId: string, userId: string) => {
-      setQuests(prev => {
-          const quest = prev.find(q => q.id === questId);
-          if (!quest) return prev;
-          const updatedQuest = { ...quest, todoUserIds: (quest.todoUserIds || []).filter(id => id !== userId) };
-          updateQuest(updatedQuest);
-          return prev.map(q => q.id === questId ? updatedQuest : q);
-      });
-  }, [updateQuest]);
+      const optimisticTimestamp = registerOptimisticUpdate('quests', questId);
+      const originalQuests = questsRef.current;
+      let questToUpdate: Quest | undefined;
+      
+      setQuests(prev => prev.map(q => {
+          if (q.id === questId) {
+              questToUpdate = { ...q, todoUserIds: (q.todoUserIds || []).filter(id => id !== userId), updatedAt: optimisticTimestamp };
+              return questToUpdate;
+          }
+          return q;
+      }));
+
+      if (questToUpdate) {
+          apiRequest('PUT', `/api/quests/${questId}`, questToUpdate).catch(() => setQuests(originalQuests));
+      }
+  }, [registerOptimisticUpdate, apiRequest]);
 
   const completeQuest = useCallback(async (completionData: any) => {
     try {
@@ -153,7 +183,11 @@ export const QuestProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       return newGroup;
   }, []);
 
-  const updateQuestGroup = useCallback((group: QuestGroup) => setQuestGroups(prev => prev.map(g => g.id === group.id ? group : g)), []);
+  const updateQuestGroup = useCallback((group: QuestGroup) => {
+      const optimisticTimestamp = registerOptimisticUpdate('questGroups', group.id);
+      setQuestGroups(prev => prev.map(g => g.id === group.id ? { ...group, updatedAt: optimisticTimestamp } : g))
+  }, [registerOptimisticUpdate]);
+
   const deleteQuestGroup = useCallback((groupId: string) => {
       setQuestGroups(prev => prev.filter(g => g.id !== groupId));
       setQuests(prev => prev.map(q => q.groupId === groupId ? { ...q, groupId: undefined } : q));

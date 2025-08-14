@@ -9,6 +9,7 @@ import { useAuthDispatch, useAuthState } from './AuthContext';
 import { toYMD } from '../utils/quests';
 import { bugLogger } from '../utils/bugLogger';
 import { syncLocker } from '../utils/syncLocker';
+import { useAppDispatch } from './AppContext';
 
 // State managed by this context
 interface EconomyState {
@@ -69,6 +70,7 @@ const EconomyDispatchContext = createContext<EconomyDispatch | undefined>(undefi
 
 export const EconomyProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const { addNotification } = useNotificationsDispatch();
+  const { registerOptimisticUpdate } = useAppDispatch();
   const authDispatch = useAuthDispatch();
   const { users } = useAuthState();
 
@@ -251,8 +253,9 @@ export const EconomyProvider: React.FC<{ children: ReactNode }> = ({ children })
         applyRewards(r.userId, r.assetDetails.cost, r.guildId);
         addNotification({ type: 'info', message: 'Purchase cancelled. Funds returned.' });
     }
-    setPurchaseRequests(prev => prev.map(p => p.id === purchaseId ? { ...p, status: PurchaseRequestStatus.Cancelled, actedAt: new Date().toISOString() } : p));
-  }, [purchaseRequests, applyRewards, addNotification]);
+    const optimisticTimestamp = registerOptimisticUpdate('purchaseRequests', purchaseId);
+    setPurchaseRequests(prev => prev.map(p => p.id === purchaseId ? { ...p, status: PurchaseRequestStatus.Cancelled, actedAt: new Date().toISOString(), updatedAt: optimisticTimestamp } : p));
+  }, [purchaseRequests, applyRewards, addNotification, registerOptimisticUpdate]);
   
   const approvePurchaseRequest = useCallback((purchaseId: string) => {
     const r = purchaseRequests.find(p => p.id === purchaseId);
@@ -271,9 +274,10 @@ export const EconomyProvider: React.FC<{ children: ReactNode }> = ({ children })
       applyRewards(r.userId, asset.payouts, r.guildId);
     }
 
-    setPurchaseRequests(p => p.map(pr => pr.id === purchaseId ? { ...pr, status: PurchaseRequestStatus.Completed, actedAt: new Date().toISOString() } : pr));
+    const optimisticTimestamp = registerOptimisticUpdate('purchaseRequests', purchaseId);
+    setPurchaseRequests(p => p.map(pr => pr.id === purchaseId ? { ...pr, status: PurchaseRequestStatus.Completed, actedAt: new Date().toISOString(), updatedAt: optimisticTimestamp } : pr));
     addNotification({type: 'success', message: 'Purchase approved.'});
-  }, [purchaseRequests, gameAssets, addNotification, applyRewards, authDispatch]);
+  }, [purchaseRequests, gameAssets, addNotification, applyRewards, authDispatch, registerOptimisticUpdate]);
   
   const rejectPurchaseRequest = useCallback((purchaseId: string) => {
     const r = purchaseRequests.find(p => p.id === purchaseId);
@@ -281,8 +285,9 @@ export const EconomyProvider: React.FC<{ children: ReactNode }> = ({ children })
         applyRewards(r.userId, r.assetDetails.cost, r.guildId);
         addNotification({ type: 'info', message: 'Purchase rejected. Funds returned.' });
     }
-    setPurchaseRequests(prev => prev.map(p => p.id === purchaseId ? { ...p, status: PurchaseRequestStatus.Rejected, actedAt: new Date().toISOString() } : p));
-  }, [purchaseRequests, applyRewards, addNotification]);
+    const optimisticTimestamp = registerOptimisticUpdate('purchaseRequests', purchaseId);
+    setPurchaseRequests(prev => prev.map(p => p.id === purchaseId ? { ...p, status: PurchaseRequestStatus.Rejected, actedAt: new Date().toISOString(), updatedAt: optimisticTimestamp } : p));
+  }, [purchaseRequests, applyRewards, addNotification, registerOptimisticUpdate]);
   
   const executeExchange = useCallback((userId: string, payItem: RewardItem, receiveItem: RewardItem, guildId?: string) => {
       deductRewards(userId, [payItem], guildId).then(canAfford => {
@@ -297,7 +302,10 @@ export const EconomyProvider: React.FC<{ children: ReactNode }> = ({ children })
   // === DISPATCH FUNCTIONS ===
 
   const addRewardType = useCallback((rewardType: Omit<RewardTypeDefinition, 'id' | 'isCore'>) => setRewardTypes(prev => [...prev, { ...rewardType, id: `custom-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`, isCore: false }]), []);
-  const updateRewardType = useCallback((rewardType: RewardTypeDefinition) => setRewardTypes(prev => prev.map(rt => rt.id === rewardType.id ? rewardType : rt)), []);
+  const updateRewardType = useCallback((rewardType: RewardTypeDefinition) => {
+      const optimisticTimestamp = registerOptimisticUpdate('rewardTypes', rewardType.id);
+      setRewardTypes(prev => prev.map(rt => rt.id === rewardType.id ? { ...rewardType, updatedAt: optimisticTimestamp } : rt))
+  }, [registerOptimisticUpdate]);
   const deleteRewardType = useCallback((rewardTypeId: string) => setRewardTypes(prev => prev.filter(rt => rt.id !== rewardTypeId)), []);
   const cloneRewardType = useCallback((rewardTypeId: string) => {
     const rewardToClone = rewardTypes.find(rt => rt.id === rewardTypeId);
@@ -315,7 +323,10 @@ export const EconomyProvider: React.FC<{ children: ReactNode }> = ({ children })
     addNotification({ type: 'success', message: `Cloned reward: ${newReward.name}` });
   }, [rewardTypes, addNotification]);
   const addMarket = useCallback((market: Omit<Market, 'id'>) => setMarkets(prev => [...prev, { ...market, id: `market-${Date.now()}-${Math.random().toString(36).substring(2, 9)}` }]), []);
-  const updateMarket = useCallback((market: Market) => setMarkets(prev => prev.map(m => m.id === market.id ? market : m)), []);
+  const updateMarket = useCallback((market: Market) => {
+      const optimisticTimestamp = registerOptimisticUpdate('markets', market.id);
+      setMarkets(prev => prev.map(m => m.id === market.id ? { ...market, updatedAt: optimisticTimestamp } : m))
+  }, [registerOptimisticUpdate]);
   const deleteMarket = useCallback((marketId: string) => setMarkets(prev => prev.filter(m => m.id !== marketId)), []);
   const cloneMarket = useCallback((marketId: string) => {
     if (marketId === 'market-bank') {
@@ -347,12 +358,13 @@ export const EconomyProvider: React.FC<{ children: ReactNode }> = ({ children })
       const newStatus: MarketStatus = { type: statusType };
       setMarkets(prev => prev.map(m => {
           if (idsToUpdate.has(m.id) && m.status.type !== 'conditional') {
-              return { ...m, status: newStatus };
+              const optimisticTimestamp = registerOptimisticUpdate('markets', m.id);
+              return { ...m, status: newStatus, updatedAt: optimisticTimestamp };
           }
           return m;
       }));
       addNotification({ type: 'success', message: `${marketIds.length} market(s) updated.` });
-  }, [addNotification]);
+  }, [addNotification, registerOptimisticUpdate]);
   const addGameAsset = useCallback(async (asset: Omit<GameAsset, 'id'|'creatorId'|'createdAt'|'purchaseCount'>) => {
     try {
         await apiRequest('POST', '/api/assets', asset);
@@ -361,9 +373,11 @@ export const EconomyProvider: React.FC<{ children: ReactNode }> = ({ children })
   }, [apiRequest, addNotification]);
   const updateGameAsset = useCallback(async (asset: GameAsset) => {
     try {
+        const optimisticTimestamp = registerOptimisticUpdate('gameAssets', asset.id);
+        setGameAssets(prev => prev.map(a => a.id === asset.id ? { ...asset, updatedAt: optimisticTimestamp } : a));
         await apiRequest('PUT', `/api/assets/${asset.id}`, asset);
     } catch (e) {}
-  }, [apiRequest]);
+  }, [apiRequest, registerOptimisticUpdate]);
   const deleteGameAsset = useCallback((assetId: string) => { setGameAssets(prev => prev.filter(ga => ga.id !== assetId)); addNotification({ type: 'info', message: 'Asset deleted.' }); }, [addNotification]);
   const cloneGameAsset = useCallback(async (assetId: string) => {
     try {

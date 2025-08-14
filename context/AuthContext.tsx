@@ -3,6 +3,7 @@ import { User, Role } from '../types';
 import { useNotificationsDispatch } from './NotificationsContext';
 import { bugLogger } from '../utils/bugLogger';
 import { syncLocker } from '../utils/syncLocker';
+import { useAppDispatch } from './AppContext';
 
 // State managed by this context
 interface AuthState {
@@ -39,6 +40,7 @@ const AuthDispatchContext = createContext<AuthDispatch | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const { addNotification } = useNotificationsDispatch();
+  const { registerOptimisticUpdate } = useAppDispatch();
   const [users, setUsers] = useState<User[]>([]);
   const [currentUser, _setCurrentUser] = useState<User | null>(null);
   const [isAppUnlocked, _setAppUnlocked] = useState<boolean>(() => localStorage.getItem('isAppUnlocked') === 'true');
@@ -96,6 +98,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           bugLogger.add({ type: 'ACTION', message: `Updating user ID: ${userId}` });
       }
   
+      const optimisticTimestamp = registerOptimisticUpdate('users', userId);
       let payloadForApi: Partial<User> | null = null;
       let isFullObject = false;
   
@@ -107,7 +110,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                       isFullObject = true;
                   }
                   payloadForApi = updateData;
-                  return { ...u, ...updateData };
+                  return { ...u, ...updateData, updatedAt: optimisticTimestamp };
               }
               return u;
           });
@@ -115,7 +118,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   
       _setCurrentUser(prevCurrentUser => {
           if (prevCurrentUser?.id === userId && payloadForApi) {
-              return { ...prevCurrentUser, ...payloadForApi };
+              return { ...prevCurrentUser, ...payloadForApi, updatedAt: optimisticTimestamp };
           }
           return prevCurrentUser;
       });
@@ -125,7 +128,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
               console.error("Failed to update user on server, optimistic update may be stale.", error);
           });
       }
-  }, [apiRequest]);
+  }, [apiRequest, registerOptimisticUpdate]);
   
   const markUserAsOnboarded = useCallback((userId: string) => updateUser(userId, { hasBeenOnboarded: true }), [updateUser]);
 

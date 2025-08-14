@@ -270,7 +270,7 @@ const MarketplacePage: React.FC = () => {
                         <button key={market.id} onClick={() => setActiveMarketId(market.id)} className="text-left group">
                             <Card className="aspect-square flex flex-col justify-center items-center group-hover:bg-stone-700/50 group-hover:border-accent transition-colors duration-200">
                                 <div className="flex flex-col items-center text-center">
-                                    <div className="w-24 h-24 mb-4 rounded-full overflow-hidden">
+                                    <div className="w-40 h-40 mb-4 rounded-full overflow-hidden flex items-center justify-center">
                                         <button
                                             onClick={(e) => {
                                                 e.stopPropagation();
@@ -279,13 +279,13 @@ const MarketplacePage: React.FC = () => {
                                                 }
                                             }}
                                             disabled={market.iconType !== 'image' || !market.imageUrl}
-                                            className="w-full h-full disabled:cursor-default"
+                                            className="w-full h-full disabled:cursor-default flex items-center justify-center"
                                         >
                                             <DynamicIcon 
                                                 iconType={market.iconType} 
                                                 icon={market.icon} 
                                                 imageUrl={market.imageUrl} 
-                                                className="w-full h-full text-6xl group-hover:scale-110 transition-transform duration-200"
+                                                className="w-full h-full text-[80%] leading-none group-hover:scale-110 transition-transform duration-200"
                                                 altText={`${market.title} icon`}
                                             />
                                         </button>

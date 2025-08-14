@@ -11,7 +11,7 @@ interface DynamicIconProps {
 const DynamicIcon: React.FC<DynamicIconProps> = ({ iconType, icon, imageUrl, className, altText }) => {
     if (iconType === 'image' && imageUrl) {
         // For images, we assume className provides sizing like w-8 h-8
-        return <img src={imageUrl} alt={altText || 'icon'} className={`${className} object-cover`} />;
+        return <img src={imageUrl} alt={altText || 'icon'} className={`${className} object-contain`} />;
     }
 
     // For emojis, we assume className provides font-size like text-2xl

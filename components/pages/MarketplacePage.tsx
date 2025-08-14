@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo } from 'react';
 import Card from '../user-interface/Card';
 import { useAppState } from '../../context/AppContext';
@@ -269,9 +270,9 @@ const MarketplacePage: React.FC = () => {
                     {visibleMarkets.map(market => (
                         <button key={market.id} onClick={() => setActiveMarketId(market.id)} className="text-left group">
                             <div className="bg-stone-800/50 border border-stone-700/60 rounded-xl shadow-lg backdrop-blur-sm aspect-square flex flex-col justify-center items-center group-hover:bg-stone-700/50 group-hover:border-accent transition-colors duration-200">
-                                <div className="p-6">
+                                <div className="p-4">
                                     <div className="flex flex-col items-center text-center">
-                                        <div className="size-40 mb-4 rounded-full overflow-hidden flex items-center justify-center">
+                                        <div className="size-36 mb-4 rounded-full overflow-hidden flex items-center justify-center">
                                             <button
                                                 onClick={(e) => {
                                                     e.stopPropagation();
@@ -286,7 +287,7 @@ const MarketplacePage: React.FC = () => {
                                                     iconType={market.iconType} 
                                                     icon={market.icon} 
                                                     imageUrl={market.imageUrl} 
-                                                    className="text-[10rem] !leading-none group-hover:scale-110 transition-transform duration-200"
+                                                    className="text-[10rem] !leading-none !text-[10rem] group-hover:scale-110 transition-transform duration-200"
                                                     altText={`${market.title} icon`}
                                                 />
                                             </button>

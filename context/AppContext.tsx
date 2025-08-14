@@ -110,6 +110,14 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const scheduledEventsRef = useRef(scheduledEvents);
   useEffect(() => { scheduledEventsRef.current = scheduledEvents; }, [scheduledEvents]);
   
+  // Refs for parent context dispatches to break circular dependency loops
+  const authDispatchRef = useRef(authDispatch);
+  useEffect(() => { authDispatchRef.current = authDispatch; }, [authDispatch]);
+  const economyDispatchRef = useRef(economyDispatch);
+  useEffect(() => { economyDispatchRef.current = economyDispatch; }, [economyDispatch]);
+  const questDispatchRef = useRef(questDispatch);
+  useEffect(() => { questDispatchRef.current = questDispatch; }, [questDispatch]);
+  
   // === API HELPERS ===
   const apiRequest = useCallback(async (method: string, path: string, body?: any) => {
     const isMutation = method !== 'GET';
@@ -206,17 +214,17 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       }
 
       // Update states, either by full replacement or by merging
-      if (dataToSet.users) authDispatch.setUsers(prev => isDelta ? mergeDataWithOptimisticCheck(prev, dataToSet.users!, 'users') : dataToSet.users!);
-      if (dataToSet.loginHistory) authDispatch.setLoginHistory(dataToSet.loginHistory);
+      if (dataToSet.users) authDispatchRef.current.setUsers(prev => isDelta ? mergeDataWithOptimisticCheck(prev, dataToSet.users!, 'users') : dataToSet.users!);
+      if (dataToSet.loginHistory) authDispatchRef.current.setLoginHistory(dataToSet.loginHistory);
 
-      if (dataToSet.quests) questDispatch.setQuests(prev => isDelta ? mergeDataWithOptimisticCheck(prev, dataToSet.quests!, 'quests') : dataToSet.quests!);
-      if (dataToSet.questGroups) questDispatch.setQuestGroups(prev => isDelta ? mergeDataWithOptimisticCheck(prev, dataToSet.questGroups!, 'questGroups') : dataToSet.questGroups!);
-      if (dataToSet.questCompletions) questDispatch.setQuestCompletions(prev => isDelta ? mergeDataWithOptimisticCheck(prev, dataToSet.questCompletions!, 'questCompletions') : dataToSet.questCompletions!);
+      if (dataToSet.quests) questDispatchRef.current.setQuests(prev => isDelta ? mergeDataWithOptimisticCheck(prev, dataToSet.quests!, 'quests') : dataToSet.quests!);
+      if (dataToSet.questGroups) questDispatchRef.current.setQuestGroups(prev => isDelta ? mergeDataWithOptimisticCheck(prev, dataToSet.questGroups!, 'questGroups') : dataToSet.questGroups!);
+      if (dataToSet.questCompletions) questDispatchRef.current.setQuestCompletions(prev => isDelta ? mergeDataWithOptimisticCheck(prev, dataToSet.questCompletions!, 'questCompletions') : dataToSet.questCompletions!);
       
-      if (dataToSet.markets) economyDispatch.setMarkets(prev => isDelta ? mergeDataWithOptimisticCheck(prev, dataToSet.markets!, 'markets') : dataToSet.markets!);
-      if (dataToSet.rewardTypes) economyDispatch.setRewardTypes(prev => isDelta ? mergeDataWithOptimisticCheck(prev, dataToSet.rewardTypes!, 'rewardTypes') : dataToSet.rewardTypes!);
-      if (dataToSet.purchaseRequests) economyDispatch.setPurchaseRequests(prev => isDelta ? mergeDataWithOptimisticCheck(prev, dataToSet.purchaseRequests!, 'purchaseRequests') : dataToSet.purchaseRequests!);
-      if (dataToSet.gameAssets) economyDispatch.setGameAssets(prev => isDelta ? mergeDataWithOptimisticCheck(prev, dataToSet.gameAssets!, 'gameAssets') : dataToSet.gameAssets!);
+      if (dataToSet.markets) economyDispatchRef.current.setMarkets(prev => isDelta ? mergeDataWithOptimisticCheck(prev, dataToSet.markets!, 'markets') : dataToSet.markets!);
+      if (dataToSet.rewardTypes) economyDispatchRef.current.setRewardTypes(prev => isDelta ? mergeDataWithOptimisticCheck(prev, dataToSet.rewardTypes!, 'rewardTypes') : dataToSet.rewardTypes!);
+      if (dataToSet.purchaseRequests) economyDispatchRef.current.setPurchaseRequests(prev => isDelta ? mergeDataWithOptimisticCheck(prev, dataToSet.purchaseRequests!, 'purchaseRequests') : dataToSet.purchaseRequests!);
+      if (dataToSet.gameAssets) economyDispatchRef.current.setGameAssets(prev => isDelta ? mergeDataWithOptimisticCheck(prev, dataToSet.gameAssets!, 'gameAssets') : dataToSet.gameAssets!);
 
       if (dataToSet.guilds) setGuilds(prev => isDelta ? mergeDataWithOptimisticCheck(prev, dataToSet.guilds!, 'guilds') : dataToSet.guilds!);
       if (dataToSet.ranks) setRanks(prev => isDelta ? mergeDataWithOptimisticCheck(prev, dataToSet.ranks!, 'ranks') : dataToSet.ranks!);
@@ -231,7 +239,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       if (dataToSet.bugReports) setBugReports(prev => isDelta ? mergeDataWithOptimisticCheck(prev, dataToSet.bugReports!, 'bugReports') : dataToSet.bugReports!);
 
       return { settingsUpdated, loadedSettings: loadedSettingsResult };
-  }, [authDispatch, questDispatch, economyDispatch, mergeDataWithOptimisticCheck]);
+  }, [mergeDataWithOptimisticCheck]);
   
   const initialSync = useCallback(async () => {
     try {
@@ -249,11 +257,11 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       const lastUserId = localStorage.getItem('lastUserId');
       if (lastUserId && updates.users) {
         const lastUser = updates.users.find((u:User) => u.id === lastUserId);
-        if (lastUser) authDispatch.setCurrentUser(lastUser);
+        if (lastUser) authDispatchRef.current.setCurrentUser(lastUser);
       }
       
       if (loadedSettings) {
-        authDispatch.setIsSharedViewActive(loadedSettings.sharedMode.enabled && !localStorage.getItem('lastUserId'));
+        authDispatchRef.current.setIsSharedViewActive(loadedSettings.sharedMode.enabled && !localStorage.getItem('lastUserId'));
       }
 
       lastSyncTimestamp.current = newSyncTimestamp;
@@ -261,7 +269,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     } catch (error) {
       console.error("Could not load data from server.", error);
     }
-  }, [apiRequest, processAndSetData, addNotification, authDispatch]);
+  }, [apiRequest, processAndSetData, addNotification]);
 
   const performDeltaSync = useCallback(async () => {
     if (syncLocker.isLocked() || !lastSyncTimestamp.current) return;
@@ -284,7 +292,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             if (updatedCurrentUser) {
                 // The check for whether an update is needed is now handled inside setCurrentUser.
                 // This is more robust against property-order changes in JSON.
-                authDispatch.setCurrentUser(updatedCurrentUser);
+                authDispatchRef.current.setCurrentUser(updatedCurrentUser);
             }
           }
       }
@@ -296,7 +304,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       setSyncStatus('error');
       setSyncError(error instanceof Error ? error.message : 'An unknown error occurred during sync.');
     }
-  }, [apiRequest, processAndSetData, authDispatch]);
+  }, [apiRequest, processAndSetData]);
 
   useEffect(() => {
     const initializeApp = async () => {
@@ -552,7 +560,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             selection.ranks ? apiRequest('DELETE', '/api/ranks', { ids: selection.ranks }).then(() => setRanks(prev => prev.filter(r => !selection.ranks!.includes(r.id)))) : Promise.resolve(),
             selection.trophies ? apiRequest('DELETE', '/api/trophies', { ids: selection.trophies }).then(() => setTrophies(prev => prev.filter(t => !selection.trophies!.includes(t.id)))) : Promise.resolve(),
         ]).then(() => {
-            economyDispatch.deleteSelectedAssets(selection);
+            economyDispatchRef.current.deleteSelectedAssets(selection);
             onComplete();
             addNotification({ type: 'success', message: 'Selected assets deleted.' });
         }).catch(() => {});
@@ -617,7 +625,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       addSystemNotification, markSystemNotificationsAsRead, triggerSync,
       registerOptimisticUpdate,
     };
-  }, [apiRequest, addNotification, updateNotification, economyDispatch, questDispatch, authDispatch, addSystemNotification, awardTrophy, triggerSync, guildsRef, scheduledEventsRef, bugReportsRef, settingsRef, registerOptimisticUpdate]);
+  }, [apiRequest, addNotification, updateNotification, addSystemNotification, awardTrophy, triggerSync, guildsRef, scheduledEventsRef, bugReportsRef, settingsRef, registerOptimisticUpdate]);
 
   return (
       <AppStateContext.Provider value={state}>

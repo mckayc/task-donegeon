@@ -149,8 +149,6 @@ const BugTrackingPage: React.FC = () => {
                         </thead>
                         <tbody>
                             {filteredReports.map(report => {
-                                const copyTags = (report.tags || []).filter(tag => tag.startsWith('Copy #'));
-                                const otherTags = (report.tags || []).filter(tag => !tag.startsWith('Copy #'));
                                 const allLogsCopied = report.logs?.length > 0 && report.logs.every(log => log.lastCopiedAt);
 
                                 return (
@@ -167,10 +165,7 @@ const BugTrackingPage: React.FC = () => {
                                         </td>
                                         <td className="p-4">
                                             <div className="flex flex-wrap gap-1">
-                                                {copyTags.map(tag => (
-                                                    <span key={tag} className={`px-2 py-1 text-xs font-semibold rounded-full ${getTagColor(tag)}`}>{tag}</span>
-                                                ))}
-                                                {otherTags.map(tag => (
+                                                {(report.tags || []).map(tag => (
                                                     <span key={tag} className={`px-2 py-1 text-xs font-semibold rounded-full ${getTagColor(tag)}`}>{tag}</span>
                                                 ))}
                                             </div>

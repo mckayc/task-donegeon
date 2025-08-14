@@ -84,21 +84,8 @@ export const BugDetailDialog: React.FC<BugDetailDialogProps> = ({ report, onClos
                 ? { ...log, lastCopiedAt: new Date().toISOString() }
                 : log
             );
-
-            const existingTags = report.tags || [];
-            const copyTagPrefix = 'Copy #';
-            const lastCopyTag = existingTags.slice().reverse().find(t => t.startsWith(copyTagPrefix));
-            let count = 1;
-            if (lastCopyTag) {
-                const match = lastCopyTag.match(/Copy #(\d+)/);
-                if (match) {
-                    count = parseInt(match[1], 10) + 1;
-                }
-            }
-            const newCopyTag = `${copyTagPrefix}${count}`;
-            const newTags = [...existingTags, newCopyTag];
             
-            const updates: Partial<BugReport> = { logs: newLogs, tags: newTags };
+            const updates: Partial<BugReport> = { logs: newLogs };
 
             if (report.status === 'Open') {
                 updates.status = 'In Progress';

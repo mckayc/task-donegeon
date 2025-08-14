@@ -1855,12 +1855,12 @@ async function runAutomatedBackup() {
 }
 
 function startAutomatedBackupScheduler() {
-    // Run every hour to check if a backup is due
+    // Run every minute to check if any backup schedules are due.
     if(backupInterval) clearInterval(backupInterval);
-    backupInterval = setInterval(runAutomatedBackup, 3600 * 1000); 
-    console.log('[Backup] Automated backup scheduler started.');
-    // Run once on startup as well
-    setTimeout(runAutomatedBackup, 5000); 
+    backupInterval = setInterval(runAutomatedBackup, 60 * 1000); // Check every minute
+    console.log('[Backup] Automated backup scheduler started (checking every minute).');
+    // Run once shortly after startup
+    setTimeout(runAutomatedBackup, 10 * 1000); // Run after 10 seconds
 }
 
 app.get('*', (req, res) => {

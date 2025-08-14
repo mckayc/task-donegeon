@@ -95,7 +95,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [syncStatus, setSyncStatus] = useState<'idle' | 'syncing' | 'success' | 'error'>('idle');
   const [syncError, setSyncError] = useState<string | null>(null);
   const [isAiConfigured, setIsAiConfigured] = useState(false);
-  const [mutationsInFlight, setMutationsInFlight] = useState(0);
+  const mutationsInFlight = useRef(0);
   
   // Ref to hold the last sync timestamp without causing re-renders
   const lastSyncTimestamp = useRef<string | null>(null);
@@ -116,7 +116,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const apiRequest = useCallback(async (method: string, path: string, body?: any) => {
     const isMutation = method !== 'GET';
     if (isMutation) {
-        setMutationsInFlight(p => p + 1);
+        mutationsInFlight.current += 1;
     }
     try {
         const options: RequestInit = {
@@ -140,7 +140,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         throw error;
     } finally {
         if (isMutation) {
-            setMutationsInFlight(p => p - 1);
+            mutationsInFlight.current -= 1;
         }
     }
   }, [addNotification]);
@@ -246,7 +246,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   }, [apiRequest, processAndSetData, addNotification, authDispatch]);
 
   const performDeltaSync = useCallback(async () => {
-    if (mutationsInFlight > 0 || document.hidden || !lastSyncTimestamp.current) return;
+    if (mutationsInFlight.current > 0 || document.hidden || !lastSyncTimestamp.current) return;
     setSyncStatus('syncing');
     setSyncError(null);
     try {
@@ -278,7 +278,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       setSyncStatus('error');
       setSyncError(error instanceof Error ? error.message : 'An unknown error occurred during sync.');
     }
-  }, [apiRequest, processAndSetData, authDispatch, mutationsInFlight]);
+  }, [apiRequest, processAndSetData, authDispatch]);
 
   useEffect(() => {
     const initializeApp = async () => {

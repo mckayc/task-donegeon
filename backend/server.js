@@ -766,7 +766,11 @@ bugReportsRouter.get('/', asyncMiddleware(async (req, res) => {
 }));
 
 bugReportsRouter.post('/', asyncMiddleware(async (req, res) => {
-    const newReport = bugReportRepo.create(req.body);
+    const reportData = {
+        ...req.body,
+        id: `bug-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+    };
+    const newReport = bugReportRepo.create(reportData);
     const saved = await bugReportRepo.save(updateTimestamps(newReport, true));
     res.status(201).json(saved);
 }));

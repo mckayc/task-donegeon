@@ -1,3 +1,5 @@
+
+
 import React, { createContext, useState, useContext, ReactNode, useCallback, useMemo } from 'react';
 import { 
     RewardTypeDefinition, Market, PurchaseRequest, GameAsset, RewardItem, 
@@ -26,25 +28,24 @@ interface EconomyDispatch {
   setGameAssets: React.Dispatch<React.SetStateAction<GameAsset[]>>;
   
   // Reward Types
-  addRewardType: (rewardType: Omit<RewardTypeDefinition, 'id' | 'isCore'>) => void;
-  updateRewardType: (rewardType: RewardTypeDefinition) => void;
-  deleteRewardType: (rewardTypeId: string) => void;
-  cloneRewardType: (rewardTypeId: string) => void;
+  addRewardType: (rewardType: Omit<RewardTypeDefinition, 'id' | 'isCore'>) => Promise<void>;
+  updateRewardType: (rewardType: RewardTypeDefinition) => Promise<void>;
+  deleteRewardType: (rewardTypeId: string) => Promise<void>;
+  cloneRewardType: (rewardTypeId: string) => Promise<void>;
 
   // Markets
-  addMarket: (market: Omit<Market, 'id'>) => void;
-  updateMarket: (market: Market) => void;
-  deleteMarket: (marketId: string) => void;
-  cloneMarket: (marketId: string) => void;
-  deleteMarkets: (marketIds: string[]) => void;
-  updateMarketsStatus: (marketIds: string[], statusType: 'open' | 'closed') => void;
+  addMarket: (market: Omit<Market, 'id'>) => Promise<void>;
+  updateMarket: (market: Market) => Promise<void>;
+  deleteMarket: (marketId: string) => Promise<void>;
+  cloneMarket: (marketId: string) => Promise<void>;
+  deleteMarkets: (marketIds: string[]) => Promise<void>;
+  updateMarketsStatus: (marketIds: string[], statusType: 'open' | 'closed') => Promise<void>;
 
   // Game Assets
-  addGameAsset: (asset: Omit<GameAsset, 'id' | 'creatorId' | 'createdAt' | 'purchaseCount'>) => void;
-  updateGameAsset: (asset: GameAsset) => void;
-  deleteGameAsset: (assetId: string) => void;
-  cloneGameAsset: (assetId: string) => void;
-  deleteGameAssets: (assetIds: string[]) => void;
+  addGameAsset: (asset: Omit<GameAsset, 'id' | 'creatorId' | 'createdAt' | 'purchaseCount'>) => Promise<void>;
+  updateGameAsset: (asset: GameAsset) => Promise<void>;
+  cloneGameAsset: (assetId: string) => Promise<void>;
+  deleteGameAssets: (assetIds: string[]) => Promise<void>;
 
   // Purchases
   purchaseMarketItem: (assetId: string, marketId: string, user: User, costGroupIndex: number, scheduledEvents: ScheduledEvent[]) => void;
@@ -54,8 +55,8 @@ interface EconomyDispatch {
 
   // Core Economy Actions
   applyRewards: (userId: string, rewardsToApply: RewardItem[], guildId?: string) => void;
-  deductRewards: (userId: string, cost: RewardItem[], guildId?: string) => Promise<boolean>;
-  executeExchange: (userId: string, payItem: RewardItem, receiveItem: RewardItem, guildId?: string) => void;
+  deductRewards: (userId: string, cost: RewardItem[], guildId?: string) => boolean;
+  executeExchange: (userId: string, payItem: RewardItem, receiveItem: RewardItem, guildId?: string) => Promise<void>;
   
   // Bulk/Admin Actions
   importAssetPack: (assetPack: AssetPack, resolutions: ImportResolution[], allData: IAppData) => Promise<void>;
@@ -103,33 +104,33 @@ export const EconomyProvider: React.FC<{ children: ReactNode }> = ({ children })
   // === CORE ECONOMY LOGIC ===
 
   const applyRewards = useCallback((userId: string, rewardsToApply: RewardItem[], guildId?: string) => {
-    authDispatch.updateUser(userId, userToUpdate => {
-        const newUser = JSON.parse(JSON.stringify(userToUpdate));
-        rewardsToApply.forEach(reward => {
-            const rewardDef = rewardTypes.find(rd => rd.id === reward.rewardTypeId);
-            if (!rewardDef) return;
-            const amount = parseFloat(String(reward.amount)) || 0;
-            if (guildId) {
-                if (!newUser.guildBalances[guildId]) newUser.guildBalances[guildId] = { purse: {}, experience: {} };
-                const balanceSheet = newUser.guildBalances[guildId];
-                if (rewardDef.category === RewardCategory.Currency) {
-                    balanceSheet.purse[reward.rewardTypeId] = (balanceSheet.purse[reward.rewardTypeId] || 0) + amount;
-                } else {
-                    balanceSheet.experience[reward.rewardTypeId] = (balanceSheet.experience[reward.rewardTypeId] || 0) + amount;
-                }
-            } else {
-                if (rewardDef.category === RewardCategory.Currency) {
-                    newUser.personalPurse[reward.rewardTypeId] = (newUser.personalPurse[reward.rewardTypeId] || 0) + amount;
-                } else {
-                    newUser.personalExperience[reward.rewardTypeId] = (newUser.personalExperience[reward.rewardTypeId] || 0) + amount;
-                }
-            }
-        });
-        return newUser;
+    authDispatch.updateUser(userId, (userToUpdate) => {
+      const newUser = JSON.parse(JSON.stringify(userToUpdate));
+      rewardsToApply.forEach(reward => {
+        const rewardDef = rewardTypes.find(rd => rd.id === reward.rewardTypeId);
+        if (!rewardDef) return;
+        const amount = parseFloat(String(reward.amount)) || 0;
+        if (guildId) {
+          if (!newUser.guildBalances[guildId]) newUser.guildBalances[guildId] = { purse: {}, experience: {} };
+          const balanceSheet = newUser.guildBalances[guildId];
+          if (rewardDef.category === RewardCategory.Currency) {
+            balanceSheet.purse[reward.rewardTypeId] = (balanceSheet.purse[reward.rewardTypeId] || 0) + amount;
+          } else {
+            balanceSheet.experience[reward.rewardTypeId] = (balanceSheet.experience[reward.rewardTypeId] || 0) + amount;
+          }
+        } else {
+          if (rewardDef.category === RewardCategory.Currency) {
+            newUser.personalPurse[reward.rewardTypeId] = (newUser.personalPurse[reward.rewardTypeId] || 0) + amount;
+          } else {
+            newUser.personalExperience[reward.rewardTypeId] = (newUser.personalExperience[reward.rewardTypeId] || 0) + amount;
+          }
+        }
+      });
+      return newUser; // Return only the changed part
     });
   }, [rewardTypes, authDispatch]);
 
-  const deductRewards = useCallback(async (userId: string, cost: RewardItem[], guildId?: string): Promise<boolean> => {
+  const deductRewards = useCallback((userId: string, cost: RewardItem[], guildId?: string): boolean => {
     const user = users.find(u => u.id === userId);
     if (!user) return false;
 
@@ -183,7 +184,7 @@ export const EconomyProvider: React.FC<{ children: ReactNode }> = ({ children })
     return true;
   }, [users, rewardTypes, authDispatch]);
   
-  const purchaseMarketItem = useCallback(async (assetId: string, marketId: string, user: User, costGroupIndex: number, scheduledEvents: ScheduledEvent[]) => {
+  const purchaseMarketItem = useCallback((assetId: string, marketId: string, user: User, costGroupIndex: number, scheduledEvents: ScheduledEvent[]) => {
     if (bugLogger.isRecording()) {
       bugLogger.add({ type: 'ACTION', message: `User ${user.gameName} attempting to purchase asset ${assetId}` });
     }
@@ -211,7 +212,7 @@ export const EconomyProvider: React.FC<{ children: ReactNode }> = ({ children })
         addNotification({type: 'info', message: `${activeSaleEvent.title}: ${activeSaleEvent.modifiers.discountPercent}% discount applied!`})
     }
     
-    const canAfford = await deductRewards(user.id, finalCost, market.guildId);
+    const canAfford = deductRewards(user.id, finalCost, market.guildId);
 
     if (canAfford) {
         if (asset.requiresApproval) {
@@ -277,99 +278,75 @@ export const EconomyProvider: React.FC<{ children: ReactNode }> = ({ children })
     setPurchaseRequests(prev => prev.map(p => p.id === purchaseId ? { ...p, status: PurchaseRequestStatus.Rejected, actedAt: new Date().toISOString() } : p));
   }, [purchaseRequests, applyRewards, addNotification]);
   
-  const executeExchange = useCallback((userId: string, payItem: RewardItem, receiveItem: RewardItem, guildId?: string) => {
-      deductRewards(userId, [payItem], guildId).then(canAfford => {
-        if (canAfford) {
-            applyRewards(userId, [receiveItem], guildId);
-        } else {
-            addNotification({ type: 'error', message: 'Exchange failed due to insufficient funds.' });
-        }
-      });
-  }, [deductRewards, applyRewards, addNotification]);
+  const executeExchange = useCallback(async (userId: string, payItem: RewardItem, receiveItem: RewardItem, guildId?: string) => {
+    const notifId = addNotification({ type: 'info', message: 'Processing exchange...', duration: 0 });
+    try {
+        await apiRequest('POST', '/api/actions/execute-exchange', { userId, payItem, receiveItem, guildId });
+        addNotification({ type: 'success', message: `Exchange successful!` });
+    } catch (error) {
+        // Error is handled by apiRequest
+    } finally {
+        addNotification({ type: 'info', message: '', duration: 1 }); // self-closing
+    }
+  }, [apiRequest, addNotification]);
   
   // === DISPATCH FUNCTIONS ===
 
-  const addRewardType = useCallback((rewardType: Omit<RewardTypeDefinition, 'id' | 'isCore'>) => setRewardTypes(prev => [...prev, { ...rewardType, id: `custom-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`, isCore: false }]), []);
-  const updateRewardType = useCallback((rewardType: RewardTypeDefinition) => setRewardTypes(prev => prev.map(rt => rt.id === rewardType.id ? rewardType : rt)), []);
-  const deleteRewardType = useCallback((rewardTypeId: string) => setRewardTypes(prev => prev.filter(rt => rt.id !== rewardTypeId)), []);
-  const cloneRewardType = useCallback((rewardTypeId: string) => {
-    const rewardToClone = rewardTypes.find(rt => rt.id === rewardTypeId);
-    if (!rewardToClone || rewardToClone.isCore) {
-        addNotification({ type: 'error', message: 'Core rewards cannot be cloned.' });
-        return;
-    }
-    const newReward: RewardTypeDefinition = {
-        ...JSON.parse(JSON.stringify(rewardToClone)),
-        id: `custom-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
-        name: `${rewardToClone.name} (Copy)`,
-        isCore: false,
-    };
-    setRewardTypes(prev => [...prev, newReward]);
-    addNotification({ type: 'success', message: `Cloned reward: ${newReward.name}` });
-  }, [rewardTypes, addNotification]);
-  const addMarket = useCallback((market: Omit<Market, 'id'>) => setMarkets(prev => [...prev, { ...market, id: `market-${Date.now()}-${Math.random().toString(36).substring(2, 9)}` }]), []);
-  const updateMarket = useCallback((market: Market) => setMarkets(prev => prev.map(m => m.id === market.id ? market : m)), []);
-  const deleteMarket = useCallback((marketId: string) => setMarkets(prev => prev.filter(m => m.id !== marketId)), []);
-  const cloneMarket = useCallback((marketId: string) => {
-    if (marketId === 'market-bank') {
-        addNotification({ type: 'error', message: 'The Exchange Post cannot be cloned.' });
-        return;
-    }
-    const marketToClone = markets.find(m => m.id === marketId);
-    if (!marketToClone) return;
-    const newMarket: Market = {
-        ...JSON.parse(JSON.stringify(marketToClone)),
-        id: `market-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
-        title: `${marketToClone.title} (Copy)`,
-    };
-    setMarkets(prev => [...prev, newMarket]);
-    addNotification({ type: 'success', message: `Cloned market: ${newMarket.title}` });
-  }, [markets, addNotification]);
-  const deleteMarkets = useCallback((marketIds: string[]) => {
-      const idsToDelete = new Set(marketIds.filter(id => id !== 'market-bank'));
-      if (marketIds.includes('market-bank')) {
-          addNotification({ type: 'error', message: 'The Exchange Post cannot be deleted.' });
-      }
-      setMarkets(prev => prev.filter(m => !idsToDelete.has(m.id)));
-      if (idsToDelete.size > 0) {
-        addNotification({ type: 'info', message: `${idsToDelete.size} market(s) deleted.` });
-      }
-  }, [addNotification]);
-  const updateMarketsStatus = useCallback((marketIds: string[], statusType: 'open' | 'closed') => {
-      const idsToUpdate = new Set(marketIds);
-      const newStatus: MarketStatus = { type: statusType };
-      setMarkets(prev => prev.map(m => {
-          if (idsToUpdate.has(m.id) && m.status.type !== 'conditional') {
-              return { ...m, status: newStatus };
-          }
-          return m;
-      }));
-      addNotification({ type: 'success', message: `${marketIds.length} market(s) updated.` });
-  }, [addNotification]);
-  const addGameAsset = useCallback(async (asset: Omit<GameAsset, 'id'|'creatorId'|'createdAt'|'purchaseCount'>) => {
-    try {
-        await apiRequest('POST', '/api/assets', asset);
-        addNotification({ type: 'success', message: `Asset "${asset.name}" created.` });
-    } catch(e){}
-  }, [apiRequest, addNotification]);
-  const updateGameAsset = useCallback(async (asset: GameAsset) => {
-    try {
-        await apiRequest('PUT', `/api/assets/${asset.id}`, asset);
-    } catch (e) {}
+  const addRewardType = useCallback(async (rewardType: Omit<RewardTypeDefinition, 'id' | 'isCore'>) => {
+    await apiRequest('POST', '/api/reward-types', rewardType);
   }, [apiRequest]);
-  const deleteGameAsset = useCallback((assetId: string) => { setGameAssets(prev => prev.filter(ga => ga.id !== assetId)); addNotification({ type: 'info', message: 'Asset deleted.' }); }, [addNotification]);
+
+  const updateRewardType = useCallback(async (rewardType: RewardTypeDefinition) => {
+    await apiRequest('PUT', `/api/reward-types/${rewardType.id}`, rewardType);
+  }, [apiRequest]);
+
+  const deleteRewardType = useCallback(async (rewardTypeId: string) => {
+    await apiRequest('DELETE', `/api/reward-types`, { ids: [rewardTypeId] });
+  }, [apiRequest]);
+
+  const cloneRewardType = useCallback(async (rewardTypeId: string) => {
+    await apiRequest('POST', `/api/reward-types/clone/${rewardTypeId}`);
+  }, [apiRequest]);
+  
+  const addMarket = useCallback(async (market: Omit<Market, 'id'>) => {
+    await apiRequest('POST', '/api/markets', market);
+  }, [apiRequest]);
+
+  const updateMarket = useCallback(async (market: Market) => {
+    await apiRequest('PUT', `/api/markets/${market.id}`, market);
+  }, [apiRequest]);
+
+  const deleteMarket = useCallback(async (marketId: string) => {
+    await apiRequest('DELETE', `/api/markets`, { ids: [marketId] });
+  }, [apiRequest]);
+
+  const cloneMarket = useCallback(async (marketId: string) => {
+    await apiRequest('POST', `/api/markets/clone/${marketId}`);
+  }, [apiRequest]);
+  
+  const deleteMarkets = useCallback(async (marketIds: string[]) => {
+    await apiRequest('DELETE', `/api/markets`, { ids: marketIds });
+  }, [apiRequest]);
+
+  const updateMarketsStatus = useCallback(async (marketIds: string[], statusType: 'open' | 'closed') => {
+    await apiRequest('PUT', '/api/markets/bulk-status', { ids: marketIds, statusType });
+  }, [apiRequest]);
+
+  const addGameAsset = useCallback(async (asset: Omit<GameAsset, 'id'|'creatorId'|'createdAt'|'purchaseCount'>) => {
+    await apiRequest('POST', '/api/assets', asset);
+  }, [apiRequest]);
+
+  const updateGameAsset = useCallback(async (asset: GameAsset) => {
+    await apiRequest('PUT', `/api/assets/${asset.id}`, asset);
+  }, [apiRequest]);
+  
   const cloneGameAsset = useCallback(async (assetId: string) => {
-    try {
-        await apiRequest('POST', `/api/assets/clone/${assetId}`);
-        addNotification({ type: 'success', message: 'Asset cloned successfully!' });
-    } catch (e) {}
-  }, [apiRequest, addNotification]);
+    await apiRequest('POST', `/api/assets/clone/${assetId}`);
+  }, [apiRequest]);
+  
   const deleteGameAssets = useCallback(async (assetIds: string[]) => {
-    try {
-        await apiRequest('DELETE', '/api/assets', { ids: assetIds });
-        addNotification({ type: 'info', message: `${assetIds.length} asset(s) deleted.` });
-    } catch (e) {}
-  }, [apiRequest, addNotification]);
+    await apiRequest('DELETE', `/api/assets`, { ids: assetIds });
+  }, [apiRequest]);
   
   const importAssetPack = useCallback(async (assetPack: AssetPack, resolutions: ImportResolution[], allData: IAppData): Promise<void> => {
       try {
@@ -388,11 +365,10 @@ export const EconomyProvider: React.FC<{ children: ReactNode }> = ({ children })
   }, []);
 
   const deleteSelectedAssets = useCallback((selection: Partial<Record<ShareableAssetType, string[]>>) => {
-    if (selection.markets) setMarkets(p => p.filter(i => !selection.markets!.includes(i.id)));
-    if (selection.rewardTypes) setRewardTypes(p => p.filter(i => !selection.rewardTypes!.includes(i.id)));
-    if (selection.gameAssets) setGameAssets(p => p.filter(i => !selection.gameAssets!.includes(i.id)));
-    addNotification({ type: 'success', message: 'Selected assets have been deleted.' });
-  }, [addNotification]);
+    if (selection.markets) deleteMarkets(selection.markets);
+    if (selection.rewardTypes) apiRequest('DELETE', '/api/reward-types', { ids: selection.rewardTypes });
+    if (selection.gameAssets) deleteGameAssets(selection.gameAssets);
+  }, [deleteMarkets, deleteGameAssets, apiRequest]);
 
 
   // === CONTEXT PROVIDER VALUE ===
@@ -404,7 +380,7 @@ export const EconomyProvider: React.FC<{ children: ReactNode }> = ({ children })
     setMarkets, setRewardTypes, setPurchaseRequests, setGameAssets,
     addRewardType, updateRewardType, deleteRewardType, cloneRewardType,
     addMarket, updateMarket, deleteMarket, cloneMarket, deleteMarkets, updateMarketsStatus,
-    addGameAsset, updateGameAsset, deleteGameAsset, cloneGameAsset, deleteGameAssets,
+    addGameAsset, updateGameAsset, cloneGameAsset, deleteGameAssets,
     purchaseMarketItem, cancelPurchaseRequest, approvePurchaseRequest, rejectPurchaseRequest,
     applyRewards, deductRewards, executeExchange,
     importAssetPack, deleteAllCustomContent, deleteSelectedAssets,

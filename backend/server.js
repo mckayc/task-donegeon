@@ -1151,10 +1151,45 @@ marketsRouter.get('/', asyncMiddleware(async (req, res) => {
 
     res.json(await qb.getMany());
 }));
+marketsRouter.post('/', asyncMiddleware(async (req, res) => {
+    const newMarket = marketRepo.create({
+        ...req.body,
+        id: `market-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+    });
+    const saved = await marketRepo.save(updateTimestamps(newMarket, true));
+    updateEmitter.emit('update');
+    res.status(201).json(saved);
+}));
+marketsRouter.put('/:id', asyncMiddleware(async (req, res) => {
+    await marketRepo.update(req.params.id, updateTimestamps(req.body));
+    updateEmitter.emit('update');
+    res.json(await marketRepo.findOneBy({ id: req.params.id }));
+}));
 marketsRouter.delete('/', asyncMiddleware(async (req, res) => {
     const { ids } = req.body;
     if (!ids || !Array.isArray(ids)) return res.status(400).json({ error: 'Invalid request body' });
     await marketRepo.delete(ids);
+    updateEmitter.emit('update');
+    res.status(204).send();
+}));
+marketsRouter.post('/clone/:id', asyncMiddleware(async (req, res) => {
+    const toClone = await marketRepo.findOneBy({ id: req.params.id });
+    if (!toClone) return res.status(404).json({ error: 'Market not found' });
+    const newMarket = marketRepo.create({
+        ...toClone,
+        id: `market-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+        title: `${toClone.title} (Copy)`,
+    });
+    const saved = await marketRepo.save(updateTimestamps(newMarket, true));
+    updateEmitter.emit('update');
+    res.status(201).json(saved);
+}));
+marketsRouter.put('/bulk-status', asyncMiddleware(async (req, res) => {
+    const { ids, statusType } = req.body;
+    if (!ids || !Array.isArray(ids) || !['open', 'closed'].includes(statusType)) {
+        return res.status(400).json({ error: 'Invalid request' });
+    }
+    await marketRepo.update(ids, updateTimestamps({ status: { type: statusType } }));
     updateEmitter.emit('update');
     res.status(204).send();
 }));
@@ -1222,14 +1257,45 @@ const rewardTypeRepo = dataSource.getRepository(RewardTypeDefinitionEntity);
 rewardTypesRouter.get('/', asyncMiddleware(async (req, res) => {
     const { searchTerm } = req.query;
     const qb = rewardTypeRepo.createQueryBuilder("reward");
-
     if (searchTerm) {
         qb.where("LOWER(reward.name) LIKE LOWER(:searchTerm)", { searchTerm: `%${searchTerm}%` });
     }
-
     qb.orderBy("reward.isCore", "DESC").addOrderBy("reward.category", "ASC").addOrderBy("reward.name", "ASC");
-    
     res.json(await qb.getMany());
+}));
+rewardTypesRouter.post('/', asyncMiddleware(async (req, res) => {
+    const newReward = rewardTypeRepo.create({
+        ...req.body,
+        id: `custom-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+        isCore: false
+    });
+    const saved = await rewardTypeRepo.save(updateTimestamps(newReward, true));
+    updateEmitter.emit('update');
+    res.status(201).json(saved);
+}));
+rewardTypesRouter.put('/:id', asyncMiddleware(async (req, res) => {
+    await rewardTypeRepo.update(req.params.id, updateTimestamps(req.body));
+    updateEmitter.emit('update');
+    res.json(await rewardTypeRepo.findOneBy({ id: req.params.id }));
+}));
+rewardTypesRouter.delete('/', asyncMiddleware(async (req, res) => {
+    const { ids } = req.body;
+    await rewardTypeRepo.delete(ids);
+    updateEmitter.emit('update');
+    res.status(204).send();
+}));
+rewardTypesRouter.post('/clone/:id', asyncMiddleware(async (req, res) => {
+    const toClone = await rewardTypeRepo.findOneBy({ id: req.params.id });
+    if (!toClone) return res.status(404).json({ error: 'Reward type not found' });
+    if (toClone.isCore) return res.status(400).json({ error: 'Core rewards cannot be cloned.' });
+    const newReward = rewardTypeRepo.create({
+        ...toClone,
+        id: `custom-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+        name: `${toClone.name} (Copy)`,
+    });
+    const saved = await rewardTypeRepo.save(updateTimestamps(newReward, true));
+    updateEmitter.emit('update');
+    res.status(201).json(saved);
 }));
 app.use('/api/reward-types', rewardTypesRouter);
 

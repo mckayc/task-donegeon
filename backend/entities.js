@@ -231,6 +231,7 @@ const GuildEntity = new EntitySchema({
             target: "User",
             joinTable: true,
             cascade: true,
+            inverseSide: "guilds",
         },
     },
 });

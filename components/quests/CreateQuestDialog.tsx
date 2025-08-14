@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useAppState } from '../../context/AppContext';
 import { Quest, QuestType, RewardItem, RewardCategory, QuestAvailability, BugReport, Role } from '../../types';

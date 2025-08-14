@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { RewardCategory, RewardItem } from '../../types';
 import Input from '../user-interface/Input';

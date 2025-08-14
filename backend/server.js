@@ -1,5 +1,4 @@
 
-
 require("reflect-metadata");
 const express = require('express');
 const cors = require('cors');
@@ -1387,6 +1386,70 @@ app.post('/api/actions/reject-quest/:id', asyncMiddleware(async (req, res) => {
     await repo.save(updateTimestamps(completion));
     updateEmitter.emit('update');
     res.status(204).send();
+}));
+
+app.post('/api/actions/execute-exchange', asyncMiddleware(async (req, res) => {
+    const { userId, payItem, receiveItem, guildId } = req.body;
+
+    await dataSource.transaction(async manager => {
+        const userRepo = manager.getRepository(UserEntity);
+        const user = await userRepo.findOneBy({ id: userId });
+        if (!user) {
+            return res.status(404).json({ error: 'User not found.' });
+        }
+        
+        const settingRow = await manager.findOneBy(SettingEntity, { id: 1 });
+        const settings = settingRow ? settingRow.settings : INITIAL_SETTINGS;
+        const rewardTypes = await manager.find(RewardTypeDefinitionEntity);
+
+        const fromReward = rewardTypes.find(rt => rt.id === payItem.rewardTypeId);
+        const toReward = rewardTypes.find(rt => rt.id === receiveItem.rewardTypeId);
+
+        if (!fromReward || !toReward || fromReward.baseValue <= 0 || toReward.baseValue <= 0) {
+            return res.status(400).json({ error: 'Invalid reward types for exchange.' });
+        }
+        
+        const totalCost = payItem.amount; // Frontend pre-calculates the cost including fee.
+        
+        const modifyBalances = (balanceSheet) => {
+            const currentBalance = fromReward.category === 'Currency' ? (balanceSheet.purse[fromReward.id] || 0) : (balanceSheet.experience[fromReward.id] || 0);
+            
+            if (currentBalance < totalCost) {
+                // This is a server-side check in case the client state is stale
+                throw new Error('Insufficient funds for this exchange.');
+            }
+             // Deduct
+            if (fromReward.category === 'Currency') balanceSheet.purse[fromReward.id] -= totalCost;
+            else balanceSheet.experience[fromReward.id] -= totalCost;
+            
+            // Apply
+            if (toReward.category === 'Currency') balanceSheet.purse[toReward.id] = (balanceSheet.purse[toReward.id] || 0) + receiveItem.amount;
+            else balanceSheet.experience[toReward.id] = (balanceSheet.experience[toReward.id] || 0) + receiveItem.amount;
+
+            return balanceSheet;
+        }
+        
+        if (guildId) {
+            user.guildBalances = user.guildBalances || {};
+            if (!user.guildBalances[guildId]) user.guildBalances[guildId] = { purse: {}, experience: {} };
+            user.guildBalances[guildId] = modifyBalances(user.guildBalances[guildId]);
+        } else {
+            const personalBalances = modifyBalances({ purse: user.personalPurse, experience: user.personalExperience });
+            user.personalPurse = personalBalances.purse;
+            user.personalExperience = personalBalances.experience;
+        }
+
+        await userRepo.save(updateTimestamps(user));
+        
+        updateEmitter.emit('update');
+        // We don't need to send the user back because the websocket will trigger a sync
+        res.status(204).send();
+    }).catch(err => {
+        console.error("Exchange transaction failed:", err.message);
+        if (!res.headersSent) {
+            res.status(400).json({ error: err.message });
+        }
+    });
 }));
 
 

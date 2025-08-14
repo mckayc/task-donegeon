@@ -173,12 +173,14 @@ const QuestCompletionEntity = new EntitySchema({
         user: {
             type: "many-to-one",
             target: "User",
+            joinColumn: { name: "userId", referencedColumnName: "id" },
             inverseSide: "questCompletions",
             onDelete: "CASCADE",
         },
         quest: {
             type: "many-to-one",
             target: "Quest",
+            joinColumn: { name: "questId", referencedColumnName: "id" },
             inverseSide: "questCompletions",
             onDelete: "CASCADE",
         },

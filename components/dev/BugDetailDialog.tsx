@@ -173,7 +173,13 @@ export const BugDetailDialog: React.FC<BugDetailDialogProps> = ({ report, onClos
                                     const isSelected = selectedLogs.includes(log.timestamp);
                                     const authorUser = log.type === 'COMMENT' ? users.find(u => u.gameName === log.author) : undefined;
                                     return (
-                                        <div key={index} className={`flex items-start gap-3 text-stone-400 text-sm p-2 rounded-md transition-colors ${isSelected ? 'bg-emerald-900/40' : ''} ${log.lastCopiedAt ? 'opacity-60' : ''}`}>
+                                        <div key={index} className={`relative flex items-start gap-3 text-stone-400 text-sm p-2 pl-4 rounded-md transition-colors ${isSelected ? 'bg-emerald-900/40' : ''} ${log.lastCopiedAt ? 'opacity-50' : ''}`}>
+                                            {log.lastCopiedAt && (
+                                                <div 
+                                                    className="absolute left-0 top-0 bottom-0 w-1.5 bg-green-500 rounded-l-md" 
+                                                    title={`Copied on: ${new Date(log.lastCopiedAt).toLocaleString()}`}
+                                                ></div>
+                                            )}
                                             <input type="checkbox" checked={isSelected} onChange={(e) => handleCheckboxClick(e, log.timestamp)} className="mt-1 flex-shrink-0 h-4 w-4 rounded text-emerald-600 bg-stone-700 border-stone-600 focus:ring-emerald-500" />
                                             
                                             {log.type === 'COMMENT' ? (

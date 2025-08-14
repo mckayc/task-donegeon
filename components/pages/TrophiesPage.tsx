@@ -24,7 +24,7 @@ const TrophiesPage: React.FC = () => {
             return <p className="mt-2 text-xs italic text-stone-500">Progress for automatic trophies is tracked in your Personal scope.</p>;
         }
 
-        const userCompletedQuests = questCompletions.filter(c => c.userId === currentUser.id && !c.guildId && c.status === QuestCompletionStatus.Approved);
+        const userCompletedQuests = questCompletions.filter(c => c.userId === currentUser.id && c.guildId == null && c.status === QuestCompletionStatus.Approved);
         const totalXp = Object.values(currentUser.personalExperience).reduce((sum: number, amount: number) => sum + amount, 0);
         const userRank = ranks.slice().sort((a, b) => b.xpThreshold - a.xpThreshold).find(r => totalXp >= r.xpThreshold);
 
@@ -91,7 +91,7 @@ const TrophiesPage: React.FC = () => {
 
         const currentGuildId = appMode.mode === 'guild' ? appMode.guildId : undefined;
 
-        const earnedAwards = userTrophies.filter(ut => ut.userId === currentUser.id && ut.guildId === currentGuildId);
+        const earnedAwards = userTrophies.filter(ut => ut.userId === currentUser.id && ut.guildId == currentGuildId);
         const earnedIds = new Set(earnedAwards.map(ut => ut.trophyId));
         const available = trophies.filter(t => !earnedIds.has(t.id));
         

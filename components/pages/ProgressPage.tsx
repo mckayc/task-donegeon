@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { RewardCategory, QuestCompletionStatus, RewardItem } from '../../types';
 import Card from '../user-interface/Card';
 import LineChart from '../user-interface/LineChart';
@@ -22,6 +22,23 @@ const ProgressPage: React.FC = () => {
     }, [rewardTypes]);
 
     const [selectedXpType, setSelectedXpType] = useState<string>(xpTypes.length > 0 ? xpTypes[0].id : '');
+    const [chartColor, setChartColor] = useState<string>('hsl(158 84% 39%)'); // Default to primary green
+
+    useEffect(() => {
+        // We need to wait a tick for styles to apply after a theme change
+        const timer = setTimeout(() => {
+            if (typeof window !== 'undefined') {
+                const style = getComputedStyle(document.documentElement);
+                const h = style.getPropertyValue('--color-primary-hue').trim();
+                const s = style.getPropertyValue('--color-primary-saturation').trim();
+                const l = style.getPropertyValue('--color-primary-lightness').trim();
+                if (h && s && l) {
+                    setChartColor(`hsl(${h} ${s} ${l})`);
+                }
+            }
+        }, 0);
+        return () => clearTimeout(timer);
+    }, [appMode, currentUser]); // These trigger theme changes
 
     const chartData = useMemo(() => {
         if (!currentUser) return [];
@@ -99,7 +116,7 @@ const ProgressPage: React.FC = () => {
                 </div>
                 <div className="p-6">
                     {chartData.length > 0 && chartData.some(d => d.value > 0) ? (
-                        <LineChart data={chartData} color="#10b981" />
+                        <LineChart data={chartData} color={chartColor} />
                     ) : (
                         <p className="text-stone-400 text-center">No XP of this type has been earned recently in this mode. Go complete some quests!</p>
                     )}

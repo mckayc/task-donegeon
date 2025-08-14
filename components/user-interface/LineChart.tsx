@@ -75,7 +75,7 @@ const LineChart: React.FC<LineChartProps> = ({ data, color = '#10b981' }) => {
   if (!data.length) return null;
 
   return (
-    <svg ref={svgRef} width="100%" height={height} className="text-stone-400">
+    <svg ref={svgRef} width="100%" height={height} className="text-[hsl(var(--muted-foreground))]">
       {/* Y Axis Grid Lines & Labels */}
       {yAxisLabels.map(({ y, label }) => (
         <g key={`y-axis-${label}`} className="text-xs">

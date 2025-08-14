@@ -62,6 +62,8 @@ const UserEntity = new EntitySchema({
         theme: { type: "varchar", nullable: true },
         ownedThemes: { type: "simple-array" },
         hasBeenOnboarded: { type: "boolean", nullable: true, default: false },
+        aboutMe: { type: "text", nullable: true },
+        adminNotes: { type: "text", nullable: true },
         createdAt: { type: "varchar", nullable: true },
         updatedAt: { type: "varchar", nullable: true },
     },

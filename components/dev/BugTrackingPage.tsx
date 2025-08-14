@@ -151,9 +151,14 @@ const BugTrackingPage: React.FC = () => {
                             {filteredReports.map(report => {
                                 const copyTags = (report.tags || []).filter(tag => tag.startsWith('Copy #'));
                                 const otherTags = (report.tags || []).filter(tag => !tag.startsWith('Copy #'));
+                                const allLogsCopied = report.logs?.length > 0 && report.logs.every(log => log.lastCopiedAt);
 
                                 return (
-                                    <tr key={report.id} className="border-b border-stone-700/40 last:border-b-0">
+                                    <tr 
+                                        key={report.id} 
+                                        className={`border-b border-stone-700/40 last:border-b-0 transition-opacity ${allLogsCopied ? 'opacity-50 border-l-4 border-green-500' : ''}`}
+                                        title={allLogsCopied ? "All log entries for this report have been processed." : ""}
+                                    >
                                         <td className="p-4">
                                             <input type="checkbox" checked={selectedReports.includes(report.id)} onChange={e => handleCheckboxClick(e, report.id)} className="h-4 w-4 rounded text-emerald-600 bg-stone-700 border-stone-600 focus:ring-emerald-500" />
                                         </td>

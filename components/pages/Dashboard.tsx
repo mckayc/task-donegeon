@@ -113,7 +113,7 @@ const Dashboard: React.FC = () => {
 
         const allActivities: Activity[] = [
             ...questCompletions
-                .filter(c => c.userId === currentUser.id && c.guildId === currentGuildId)
+                .filter(c => c.userId === currentUser.id && c.guildId == currentGuildId)
                 .map(c => ({
                     id: c.id,
                     type: 'Quest' as const,
@@ -123,7 +123,7 @@ const Dashboard: React.FC = () => {
                     status: c.status,
                 })),
             ...purchaseRequests
-                .filter(p => p.userId === currentUser.id && p.guildId === currentGuildId)
+                .filter(p => p.userId === currentUser.id && p.guildId == currentGuildId)
                 .map(p => ({
                     id: p.id,
                     type: 'Purchase' as const,
@@ -133,7 +133,7 @@ const Dashboard: React.FC = () => {
                     status: p.status,
                 })),
             ...userTrophies
-                .filter(ut => ut.userId === currentUser.id && ut.guildId === currentGuildId)
+                .filter(ut => ut.userId === currentUser.id && ut.guildId == currentGuildId)
                 .map(ut => ({
                     id: ut.id,
                     type: 'Trophy' as const,
@@ -165,7 +165,7 @@ const Dashboard: React.FC = () => {
         
     const mostRecentTrophy = useMemo(() => {
         const currentGuildId = appMode.mode === 'guild' ? appMode.guildId : undefined;
-        const myTrophies = userTrophies.filter(ut => ut.userId === currentUser.id && ut.guildId === currentGuildId).sort((a, b) => new Date(b.awardedAt).getTime() - new Date(a.awardedAt).getTime());
+        const myTrophies = userTrophies.filter(ut => ut.userId === currentUser.id && ut.guildId == currentGuildId).sort((a, b) => new Date(b.awardedAt).getTime() - new Date(a.awardedAt).getTime());
         const mostRecentTrophyAward = myTrophies.length > 0 ? myTrophies[0] : null;
         return mostRecentTrophyAward ? trophies.find(t => t.id === mostRecentTrophyAward.trophyId) : null;
     }, [userTrophies, trophies, currentUser.id, appMode]);

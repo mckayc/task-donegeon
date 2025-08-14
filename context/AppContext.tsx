@@ -617,7 +617,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       addSystemNotification, markSystemNotificationsAsRead, triggerSync,
       registerOptimisticUpdate,
     };
-  }, [apiRequest, addNotification, updateNotification, economyDispatch, questDispatch, authDispatch, addSystemNotification, awardTrophy, triggerSync, guildsRef, scheduledEventsRef, bugReportsRef, settingsRef, ranks, trophies, registerOptimisticUpdate]);
+  }, [apiRequest, addNotification, updateNotification, economyDispatch, questDispatch, authDispatch, addSystemNotification, awardTrophy, triggerSync, guildsRef, scheduledEventsRef, bugReportsRef, settingsRef, registerOptimisticUpdate]);
 
   return (
       <AppStateContext.Provider value={state}>

@@ -1,5 +1,6 @@
 
 
+
 import React, { createContext, useState, useContext, ReactNode, useEffect, useCallback, useMemo, useRef } from 'react';
 import { AppSettings, User, Quest, RewardItem, Guild, Rank, Trophy, UserTrophy, AppMode, Page, IAppData, ShareableAssetType, GameAsset, Role, RewardCategory, AdminAdjustment, AdminAdjustmentType, SystemLog, QuestType, QuestAvailability, AssetPack, ImportResolution, TrophyRequirementType, ThemeDefinition, ChatMessage, SystemNotification, SystemNotificationType, MarketStatus, QuestGroup, BulkQuestUpdates, ScheduledEvent, BugReport, QuestCompletion, BugReportType } from '../types';
 import { INITIAL_SETTINGS, INITIAL_RANKS, INITIAL_TROPHIES, INITIAL_THEMES } from '../data/initialData';
@@ -422,12 +423,17 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     }
   }, [addNotification, addSystemNotification]);
   
-  const state = {
-      isDataLoaded, isAiConfigured, syncStatus, syncError,
-      guilds, ranks, trophies, userTrophies,
-      adminAdjustments, systemLogs, settings, themes, chatMessages,
-      systemNotifications, scheduledEvents, bugReports,
-  };
+  const state = useMemo(() => ({
+    isDataLoaded, isAiConfigured, syncStatus, syncError,
+    guilds, ranks, trophies, userTrophies,
+    adminAdjustments, systemLogs, settings, themes, chatMessages,
+    systemNotifications, scheduledEvents, bugReports,
+  }), [
+    isDataLoaded, isAiConfigured, syncStatus, syncError,
+    guilds, ranks, trophies, userTrophies,
+    adminAdjustments, systemLogs, settings, themes, chatMessages,
+    systemNotifications, scheduledEvents, bugReports,
+  ]);
 
   const dispatch = useMemo(() => {
     const setRanksStable = (ranks: Rank[]) => setRanks(ranks);
@@ -625,7 +631,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       addSystemNotification, markSystemNotificationsAsRead, triggerSync,
       registerOptimisticUpdate,
     };
-  }, [apiRequest, addNotification, updateNotification, addSystemNotification, awardTrophy, triggerSync, guildsRef, scheduledEventsRef, bugReportsRef, settingsRef, registerOptimisticUpdate]);
+  }, [apiRequest, updateNotification, registerOptimisticUpdate, addSystemNotification, awardTrophy, triggerSync, addNotification]);
 
   return (
       <AppStateContext.Provider value={state}>

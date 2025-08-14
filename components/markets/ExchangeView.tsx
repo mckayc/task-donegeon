@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react';
 import { useAppState } from '../../context/AppContext';
 import { useAuthState } from '../../context/AuthContext';
@@ -179,8 +180,8 @@ const ExchangeView: React.FC<ExchangeViewProps> = ({ market }) => {
     };
     
     // --- Stepper Logic ---
-    const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-    const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const intervalRef = useRef<number | null>(null);
+    const timeoutRef = useRef<number | null>(null);
 
     const handleAmountStep = useCallback((step: number) => {
         setToAmountString(currentValStr => {
@@ -191,20 +192,28 @@ const ExchangeView: React.FC<ExchangeViewProps> = ({ market }) => {
     }, [calculation.maxToAmount]);
     
     const startStepping = useCallback((step: number) => {
-        handleAmountStep(step);
-        timeoutRef.current = setTimeout(() => {
-            intervalRef.current = setInterval(() => {
+        handleAmountStep(step); // Fire once immediately on mousedown
+        // Then, after a delay, start the rapid stepping
+        timeoutRef.current = window.setTimeout(() => {
+            intervalRef.current = window.setInterval(() => {
                 handleAmountStep(step);
-            }, 80);
-        }, 400);
+            }, 80); // Speed of repetition
+        }, 400); // Initial delay before repetition starts
     }, [handleAmountStep]);
 
     const stopStepping = useCallback(() => {
-        if (timeoutRef.current) clearTimeout(timeoutRef.current);
-        if (intervalRef.current) clearInterval(intervalRef.current);
+        if (timeoutRef.current) {
+            clearTimeout(timeoutRef.current);
+            timeoutRef.current = null;
+        }
+        if (intervalRef.current) {
+            clearInterval(intervalRef.current);
+            intervalRef.current = null;
+        }
     }, []);
 
     useEffect(() => {
+        // Cleanup on unmount
         return () => stopStepping();
     }, [stopStepping]);
 
@@ -247,7 +256,6 @@ const ExchangeView: React.FC<ExchangeViewProps> = ({ market }) => {
                                             type="button"
                                             variant="secondary"
                                             className="w-10 h-11 rounded-r-none"
-                                            onClick={() => handleAmountStep(-1)}
                                             onMouseDown={() => startStepping(-1)}
                                             onMouseUp={stopStepping} onMouseLeave={stopStepping}
                                             aria-label="Decrease amount"
@@ -265,7 +273,6 @@ const ExchangeView: React.FC<ExchangeViewProps> = ({ market }) => {
                                             type="button"
                                             variant="secondary"
                                             className="w-10 h-11 rounded-l-none"
-                                            onClick={() => handleAmountStep(1)}
                                             onMouseDown={() => startStepping(1)}
                                             onMouseUp={stopStepping} onMouseLeave={stopStepping}
                                             aria-label="Increase amount"

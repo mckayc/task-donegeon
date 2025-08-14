@@ -267,10 +267,10 @@ const MarketplacePage: React.FC = () => {
             {visibleMarkets.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {visibleMarkets.map(market => (
-                        <button key={market.id} onClick={() => setActiveMarketId(market.id)} className="text-left">
-                            <Card className="h-full hover:bg-stone-700/50 hover:border-accent transition-colors duration-200">
+                        <button key={market.id} onClick={() => setActiveMarketId(market.id)} className="text-left group">
+                            <Card className="aspect-square flex flex-col justify-center items-center group-hover:bg-stone-700/50 group-hover:border-accent transition-colors duration-200">
                                 <div className="flex flex-col items-center text-center">
-                                    <div className="w-16 h-16 mb-4 rounded-full overflow-hidden">
+                                    <div className="w-24 h-24 mb-4 rounded-full overflow-hidden">
                                         <button
                                             onClick={(e) => {
                                                 e.stopPropagation();
@@ -285,13 +285,13 @@ const MarketplacePage: React.FC = () => {
                                                 iconType={market.iconType} 
                                                 icon={market.icon} 
                                                 imageUrl={market.imageUrl} 
-                                                className="w-full h-full text-5xl"
+                                                className="w-full h-full text-6xl group-hover:scale-110 transition-transform duration-200"
                                                 altText={`${market.title} icon`}
                                             />
                                         </button>
                                     </div>
-                                    <h3 className="text-xl font-bold text-accent-light">{market.title}</h3>
-                                    <p className="text-stone-400 mt-2 flex-grow">{market.description}</p>
+                                    <h3 className="text-2xl font-bold text-accent-light">{market.title}</h3>
+                                    <p className="text-stone-400 mt-2">{market.description}</p>
                                 </div>
                             </Card>
                         </button>

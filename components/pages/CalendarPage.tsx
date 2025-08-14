@@ -1,5 +1,3 @@
-
-
 import React, { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import { useAppState } from '../../context/AppContext';
 import { useUIState, useUIDispatch } from '../../context/UIStateContext';
@@ -16,7 +14,7 @@ import interactionPlugin, { DateClickArg } from '@fullcalendar/interaction';
 import googleCalendarPlugin from '@fullcalendar/google-calendar';
 import listPlugin from '@fullcalendar/list';
 import rrulePlugin from '@fullcalendar/rrule';
-import { EventClickArg, EventSourceInput, EventDropArg, MoreLinkArg, EventInput, EventContentArg } from '@fullcalendar/core';
+import { EventClickArg, EventSourceInput, EventDropArg, MoreLinkArg, EventInput, EventContentArg, EventSourceFuncArg } from '@fullcalendar/core';
 import { useQuestState, useQuestDispatch } from '../../context/QuestContext';
 import QuestDetailDialog from '../quests/QuestDetailDialog';
 import CompleteQuestDialog from '../quests/CompleteQuestDialog';
@@ -90,7 +88,7 @@ const CalendarPage: React.FC = () => {
     
     if (!currentUser) return null;
 
-    const calendarEventsFunc = useCallback(async (fetchInfo, successCallback, failureCallback) => {
+    const calendarEventsFunc = useCallback(async (fetchInfo: EventSourceFuncArg, successCallback: (events: EventInput[]) => void, failureCallback: (error: Error) => void) => {
         try {
             if (!currentUser) {
                 successCallback([]);
@@ -376,12 +374,12 @@ const CalendarPage: React.FC = () => {
                     background-color: hsl(var(--color-bg-primary-hsl));
                 }
                 .fc-list-event-title > a {
-                    color: hsl(var(--accent-light));
-                    text-decoration: none;
+                    color: hsl(var(--accent-light)) !important;
+                    text-decoration: none !important;
                 }
                 .fc-list-event-title > a:hover {
-                    text-decoration: underline;
-                    color: hsl(var(--accent));
+                    text-decoration: underline !important;
+                    color: hsl(var(--accent)) !important;
                 }
             `}</style>
             <Card>

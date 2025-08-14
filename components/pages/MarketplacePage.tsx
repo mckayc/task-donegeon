@@ -236,7 +236,7 @@ const MarketplacePage: React.FC = () => {
         const currentGuildId = appMode.mode === 'guild' ? appMode.guildId : undefined;
 
         return markets.filter(market => 
-            market.guildId === currentGuildId && isMarketOpenForUser(market, currentUser, fullAppDataForCheck)
+            (market.id === 'market-bank' || market.guildId === currentGuildId) && isMarketOpenForUser(market, currentUser, fullAppDataForCheck)
         );
     }, [markets, appMode, currentUser, appState, authState, economyState, questState]);
 

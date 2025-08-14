@@ -1,6 +1,6 @@
 # Task Donegeon
 
-**Version:** 0.0.51
+**Version:** 0.0.52
 
 ---
 
@@ -15,10 +15,13 @@ Task Donegeon is a gamified task and chore management application designed for f
 
 ## ✨ Features
 
-### What's New in Version 0.0.51 (August 8, 2025)
--   **Sidebar Notification Badge Fix:** Fixed a UI inconsistency where the notification count for pending approvals was not shown on the 'Approvals' link when its parent 'User Management' group was expanded. The badge now correctly moves to the specific link, improving user experience.
+### What's New in Version 0.0.52 (August 14, 2025)
+-   **New Built-in Exchange Market:** A default "Exchange Post" market is now automatically available in all new and existing games, allowing users to trade between different reward types based on their configured economic values.
+-   **New Exchange UI:** A dedicated, user-friendly interface for the Exchange Post has been created to facilitate easy trades.
+-   **Market-Enabled Asset Packs:** Several new and existing asset packs have been updated to include their own themed marketplaces and items, providing more complete and ready-to-use content bundles (e.g., "Fantasy Starter," "Tech Enthusiast," "Cooking & Kitchen").
 
 ### Version History
+- **v0.0.51 (August 8, 2025):** Fixed a UI inconsistency where the notification count for pending approvals was not shown on the 'Approvals' link when its parent 'User Management' group was expanded. The badge now correctly moves to the specific link, improving user experience.
 - **v0.0.97 (July 23, 2025):** New "Vacation" Event Type, Calendar-Driven Vacations, Automatic Penalty Pausing, Streamlined Settings.
 - **v0.0.96 (July 22, 2025):** Default Quest Groups, AI-powered group suggestions, streamlined quest creation.
 - **v0.0.95 (July 22, 2025):** Smarter Suggestion Engine, powerful bulk editing for quests, enhanced collapsed sidebar with fly-out menus, and default quest categories.
@@ -30,7 +33,7 @@ Task Donegeon is a gamified task and chore management application designed for f
 - **v0.0.89 (July 21, 2025):** **Enhanced Chronicles:** The activity feed now displays the currency and amount spent for each item purchase, providing a clearer transaction history.
 - **v0.0.88 (July 20, 2025):** **Critical Docker Stability Fix:** Resolved a race condition that caused chat messages to not save and the app to become unresponsive in Docker environments. The data saving mechanism is now more robust, preventing server syncs from overwriting unsaved local changes and eliminating the frequent "Failed to fetch" errors.
 - **v0.0.87 (July 20, 2025):** **Calendar Day View Enhancement:** Added due date/time information for quests on the main 'Day' view of the calendar, improving at-a-glance scheduling clarity.
-- **v0.0.86 (July 19, 2025):** **Enhanced Reward Valuation Helper:** The helper text in the quest editor now shows both the anchor reward equivalent and the final "real-world" value (e.g., `(equals 5 💎 or $5.00)`), providing admins with clearer context for balancing the game's economy. The layout of the reward input has also been improved for better readability.
+- **v0.0.86 (July 19, 2025):** **Enhanced Reward Valuation Helper:** The helper text in the quest editor now shows both the anchor reward equivalent and the final "real-world" value (e.g., `(equals 5 💎 or $5.00)`), providing admins with clearer context for balancing the game's economy.
 - **v0.0.85 (July 19, 2025):** **Image Pack Importer:** A new feature has been added to the `Asset Manager` page, allowing administrators to dynamically import curated image packs directly from the project's GitHub repository. This keeps the main application lean while providing easy access to a library of high-quality images.
 - **v0.0.84 (July 19, 2025):** **Categorized Frontend Uploads:** The asset management workflow has been significantly improved. Admins can now specify a category when uploading an image from the `Asset Manager`, and the backend will automatically organize the file into a corresponding sub-folder.
 - **v0.0.83 (July 19, 2025):** **Durable Server-Side Backups:** The entire backup system has been overhauled for production-grade reliability. Backups are now saved directly on the server's file system, and automated backups run as a reliable server-side process.
@@ -77,4 +80,4 @@ This phase focuses on high-impact improvements for admins and players that enhan
 This phase introduces major new creative outlets and systems for deeper engagement.
 
 -   **User-Created Content:** A system allowing Explorers to design their own quests and items, then submit them to admins for approval. This fosters creativity and allows the game world to be co-created by its members.
--   **Reward R
+-   **Reward R---

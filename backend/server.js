@@ -176,6 +176,24 @@ const initializeApp = async () => {
     await dataSource.initialize();
     console.log("Data Source has been initialized!");
 
+    // MIGRATION: Ensure the default exchange market exists for existing users
+    const manager = dataSource.manager;
+    const bankMarket = await manager.findOneBy(MarketEntity, { id: 'market-bank' });
+    if (!bankMarket) {
+        console.log("Exchange Post market not found, creating it for existing instance...");
+        const newBankMarket = manager.create(MarketEntity, {
+            id: 'market-bank',
+            title: 'The Exchange Post',
+            description: 'Exchange your various currencies and experience points.',
+            iconType: 'emoji',
+            icon: '⚖️',
+            status: { type: 'open' }
+        });
+        await manager.save(updateTimestamps(newBankMarket, true));
+        console.log("Exchange Post market created.");
+    }
+
+
     // Ensure asset and backup directories exist
     await fs.mkdir(UPLOADS_DIR, { recursive: true });
     await fs.mkdir(BACKUP_DIR, { recursive: true });

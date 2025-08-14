@@ -23,13 +23,15 @@ const AddUserDialog: React.FC<AddUserDialogProps> = ({ onClose, onUserAdded }) =
     email: '',
     birthday: '',
     role: Role.Explorer,
+    aboutMe: '',
+    adminNotes: '',
     password: '',
     confirmPassword: '',
     pin: '',
   });
   const [isSaving, setIsSaving] = useState(false);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
@@ -80,6 +82,7 @@ const AddUserDialog: React.FC<AddUserDialogProps> = ({ onClose, onUserAdded }) =
         <h2 className="text-3xl font-medieval text-emerald-400 mb-6">Add New Member</h2>
         <form id="add-user-form" onSubmit={handleSubmit} className="space-y-4 overflow-y-auto pr-2">
           <UserFormFields formData={formData} handleChange={handleChange} />
+          <Input as="textarea" label="Admin Notes (Private)" name="adminNotes" value={formData.adminNotes} onChange={handleChange} placeholder="Notes for AI personalization..." />
           <Input as="select" label="Role" name="role" value={formData.role} onChange={handleChange}>
               <option value={Role.Explorer}>Explorer</option>
               <option value={Role.Gatekeeper}>Gatekeeper</option>

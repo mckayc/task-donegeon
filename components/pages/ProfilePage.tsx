@@ -23,6 +23,8 @@ const ProfilePage: React.FC = () => {
         email: currentUser.email || '',
         birthday: currentUser.birthday || '',
         gameName: currentUser.gameName || '',
+        aboutMe: currentUser.aboutMe || '',
+        adminNotes: currentUser.adminNotes || '',
         password: '',
         confirmPassword: '',
         pin: currentUser.pin || '',
@@ -33,7 +35,7 @@ const ProfilePage: React.FC = () => {
 
     const canEditPassword = currentUser.role === Role.DonegeonMaster || currentUser.role === Role.Gatekeeper;
 
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
     };
 
@@ -44,10 +46,14 @@ const ProfilePage: React.FC = () => {
         const updatePayload: Partial<User> = {};
 
         // Check for basic info changes
-        if (formData.firstName.trim() && formData.firstName !== currentUser.firstName) updatePayload.firstName = formData.firstName;
-        if (formData.lastName.trim() && formData.lastName !== currentUser.lastName) updatePayload.lastName = formData.lastName;
-        if (formData.birthday.trim() && formData.birthday !== currentUser.birthday) updatePayload.birthday = formData.birthday;
-        if (formData.gameName.trim() && formData.gameName !== currentUser.gameName) updatePayload.gameName = formData.gameName;
+        if (formData.firstName.trim() !== currentUser.firstName) updatePayload.firstName = formData.firstName;
+        if (formData.lastName.trim() !== currentUser.lastName) updatePayload.lastName = formData.lastName;
+        if (formData.birthday.trim() !== currentUser.birthday) updatePayload.birthday = formData.birthday;
+        if (formData.gameName.trim() !== currentUser.gameName) updatePayload.gameName = formData.gameName;
+        if (formData.aboutMe.trim() !== (currentUser.aboutMe || '')) updatePayload.aboutMe = formData.aboutMe.trim();
+        if (currentUser.role === Role.DonegeonMaster && formData.adminNotes.trim() !== (currentUser.adminNotes || '')) {
+            updatePayload.adminNotes = formData.adminNotes.trim();
+        }
 
         // Validation for username and email
         if (formData.username.trim() && formData.username !== currentUser.username) {
@@ -113,6 +119,9 @@ const ProfilePage: React.FC = () => {
                         <h3 className="text-xl font-bold text-stone-200 mb-4">Account Details</h3>
                         <div className="space-y-4">
                             <UserFormFields formData={formData} handleChange={handleChange} isEditMode={true} />
+                             {currentUser.role === Role.DonegeonMaster && (
+                                <Input as="textarea" label="Admin Notes (Private)" id="adminNotes" name="adminNotes" value={formData.adminNotes} onChange={handleChange} placeholder="Private notes about this user's goals or areas for improvement. Used by the AI."/>
+                            )}
                         </div>
                     </div>
                     

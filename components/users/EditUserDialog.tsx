@@ -24,11 +24,13 @@ const EditUserDialog: React.FC<EditUserDialogProps> = ({ user, onClose, onUserUp
     gameName: user.gameName,
     birthday: user.birthday,
     role: user.role,
+    aboutMe: user.aboutMe || '',
+    adminNotes: user.adminNotes || '',
     pin: user.pin || '',
   });
   const [isSaving, setIsSaving] = useState(false);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
@@ -67,10 +69,11 @@ const EditUserDialog: React.FC<EditUserDialogProps> = ({ user, onClose, onUserUp
 
   return (
     <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
-      <div className="bg-stone-800 border border-stone-700 rounded-xl shadow-2xl p-8 max-w-lg w-full">
+      <div className="bg-stone-800 border border-stone-700 rounded-xl shadow-2xl p-8 max-w-lg w-full max-h-[90vh] flex flex-col">
         <h2 className="text-3xl font-medieval text-emerald-400 mb-6">Edit {user.gameName}</h2>
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4 overflow-y-auto pr-2">
           <UserFormFields formData={formData} handleChange={handleChange} isEditMode={true} />
+          <Input as="textarea" label="Admin Notes (Private)" name="adminNotes" value={formData.adminNotes} onChange={handleChange} />
           <div>
             <label htmlFor="role" className="block text-sm font-medium text-stone-300 mb-1">Role</label>
             <select 

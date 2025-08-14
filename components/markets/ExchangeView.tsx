@@ -54,19 +54,17 @@ const ExchangeView: React.FC<ExchangeViewProps> = ({ market }) => {
     const [toRewardId, setToRewardId] = useState<string>('');
     const [toAmountString, setToAmountString] = useState<string>('');
 
-    const exchangeableRewardIds = useMemo(() => {
-        const { anchorRewardId, exchangeRates } = settings.rewardValuation;
-        return new Set([anchorRewardId, ...Object.keys(exchangeRates)]);
-    }, [settings.rewardValuation]);
+    const exchangeableRewardTypes = useMemo(() => {
+        return rewardTypes.filter(rt => rt.baseValue > 0);
+    }, [rewardTypes]);
 
     const { currencies, experience, receiveCurrencies } = useMemo(() => {
-        const receiveIds = new Set(['core-gems', 'core-gold', 'core-crystal']);
         return {
-            currencies: rewardTypes.filter(rt => rt.category === RewardCategory.Currency && exchangeableRewardIds.has(rt.id)),
-            experience: rewardTypes.filter(rt => rt.category === RewardCategory.XP && exchangeableRewardIds.has(rt.id)),
-            receiveCurrencies: rewardTypes.filter(rt => receiveIds.has(rt.id)),
+            currencies: exchangeableRewardTypes.filter(rt => rt.category === RewardCategory.Currency),
+            experience: exchangeableRewardTypes.filter(rt => rt.category === RewardCategory.XP),
+            receiveCurrencies: exchangeableRewardTypes.filter(rt => rt.category === RewardCategory.Currency),
         }
-    }, [rewardTypes, exchangeableRewardIds]);
+    }, [exchangeableRewardTypes]);
     
     const balances = useMemo(() => {
         if (!currentUser) return new Map<string, number>();
@@ -85,29 +83,25 @@ const ExchangeView: React.FC<ExchangeViewProps> = ({ market }) => {
 
     const calculation = useMemo(() => {
         const toAmountNum = parseInt(toAmountString) || 0;
-        if (!fromReward || !toReward) {
+        if (!fromReward || !toReward || fromReward.baseValue <= 0 || toReward.baseValue <= 0) {
             return { fromAmountBase: 0, fee: 0, totalCost: 0, maxToAmount: 0 };
         }
 
-        const { anchorRewardId, exchangeRates, currencyExchangeFeePercent, xpExchangeFeePercent } = settings.rewardValuation;
-        
-        const fromAnchorRate = fromReward.id === anchorRewardId ? 1 : (exchangeRates[fromReward.id] || 0);
-        const toAnchorRate = toReward.id === anchorRewardId ? 1 : (exchangeRates[toReward.id] || 0);
-
-        if (fromAnchorRate === 0 || toAnchorRate === 0) return { fromAmountBase: 0, fee: 0, totalCost: 0, maxToAmount: 0 };
+        const { currencyExchangeFeePercent, xpExchangeFeePercent } = settings.rewardValuation;
         
         // Calculate max amount purchasable
         const fromBalance = balances.get(fromReward.id) || 0;
         const feePercent = fromReward.category === 'Currency' ? currencyExchangeFeePercent : xpExchangeFeePercent;
         const feeMultiplier = 1 + (Number(feePercent) / 100);
-        const maxFromBase = fromBalance / feeMultiplier;
-        const maxFromInAnchor = maxFromBase / fromAnchorRate;
-        const maxToAmount = maxFromInAnchor * toAnchorRate;
+        
+        const fromBalanceAfterFee = fromBalance / feeMultiplier;
+        const fromValueInReal = fromBalanceAfterFee / fromReward.baseValue;
+        const maxToAmount = fromValueInReal * toReward.baseValue;
 
         // Calculate cost based on current input
         const cappedToAmount = Math.min(toAmountNum, maxToAmount);
-        const toValueInAnchor = cappedToAmount / toAnchorRate;
-        const fromAmountBase = toValueInAnchor * fromAnchorRate;
+        const toValueInReal = cappedToAmount / toReward.baseValue;
+        const fromAmountBase = toValueInReal * fromReward.baseValue;
         const fee = fromAmountBase * (Number(feePercent) / 100);
         const totalCost = fromAmountBase + fee;
 
@@ -153,65 +147,19 @@ const ExchangeView: React.FC<ExchangeViewProps> = ({ market }) => {
     };
 
     const ExchangeRateChart: React.FC = () => {
-        const { rewardValuation } = settings;
-        const { anchorRewardId, exchangeRates, currencyExchangeFeePercent, xpExchangeFeePercent } = rewardValuation;
-        const anchorReward = rewardTypes.find(rt => rt.id === anchorRewardId);
-
-        if (!anchorReward) return null;
+        const { realWorldCurrency } = settings.rewardValuation;
         
-        const rates = Object.entries(exchangeRates)
-            .map(([rewardId, rate]) => {
-                const reward = rewardTypes.find(rt => rt.id === rewardId);
-                if (!reward || rate === 0) return null;
-                
-                // This logic needs to match what is paid.
-                // If I pay 1 anchor, what do I get?
-                // The fee is on what I pay.
-                // If I want to BUY strength with gold (anchor), I pay gold. Fee is on gold.
-                // The rate should show: how many X do I get for 1 anchor.
-                // If rate is 10, 1 anchor gets 10 strength.
-                // But if I want to BUY gold (anchor) with strength, I pay strength.
-                // 10 strength has a base value of 1 gold. I pay a 10% fee on strength, so I pay 11 strength to get 1 gold.
-                // The rate shown should reflect what the user receives.
-                // If buying X with anchor: rate is how many X you get for 1 anchor.
-                // If buying anchor with X: rate is how many X it costs for 1 anchor.
-                
-                const feePercent = reward.category === RewardCategory.Currency ? currencyExchangeFeePercent : xpExchangeFeePercent;
-                const costMultiplier = 1 + (Number(feePercent) / 100);
-                
-                // How many of this reward equals 1 anchor?
-                const amountForOneAnchor = Math.floor(rate * (1 - (Number(currencyExchangeFeePercent) / 100)));
-                
-                // How much of this reward does it cost to buy 1 anchor?
-                const costForOneAnchor = Math.ceil(rate * costMultiplier);
-
-
-                return {
-                    reward,
-                    amountForOneAnchor,
-                    costForOneAnchor,
-                };
-            })
-            .filter((item): item is { reward: RewardTypeDefinition, amountForOneAnchor: number, costForOneAnchor: number } => !!item);
-
         return (
             <div className="mt-8 pt-6 border-t border-stone-700/60">
-                <h3 className="font-bold text-lg text-stone-200 mb-3 text-center">Exchange Rates</h3>
-                <p className="text-sm text-stone-400 text-center mb-4">Rates include transaction fees and are rounded.</p>
+                <h3 className="font-bold text-lg text-stone-200 mb-3 text-center">Base Values</h3>
+                <p className="text-sm text-stone-400 text-center mb-4">Values do not include transaction fees.</p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2 max-w-lg mx-auto">
-                    {rates.map(({ reward, amountForOneAnchor, costForOneAnchor }) => (
-                        <React.Fragment key={reward.id}>
-                             <div className="flex items-center justify-center text-lg">
-                                <span className="font-semibold text-stone-200">1 {anchorReward.icon}</span>
-                                <span className="mx-2 text-stone-400">=</span>
-                                <span className="font-bold text-accent-light">{amountForOneAnchor} {reward.icon}</span>
-                            </div>
-                             <div className="flex items-center justify-center text-lg">
-                                <span className="font-bold text-accent-light">{costForOneAnchor} {reward.icon}</span>
-                                <span className="mx-2 text-stone-400">=</span>
-                                <span className="font-semibold text-stone-200">1 {anchorReward.icon}</span>
-                            </div>
-                        </React.Fragment>
+                    {exchangeableRewardTypes.map(reward => (
+                        <div key={reward.id} className="flex items-center justify-center text-lg">
+                            <span className="font-bold text-accent-light">{reward.baseValue} {reward.icon}</span>
+                            <span className="mx-2 text-stone-400">=</span>
+                            <span className="font-semibold text-stone-200">1 {realWorldCurrency}</span>
+                        </div>
                     ))}
                 </div>
             </div>

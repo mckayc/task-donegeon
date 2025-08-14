@@ -8,6 +8,7 @@ import { QuestType } from '../../types';
 import ToggleSwitch from '../user-interface/ToggleSwitch';
 import { useEconomyState } from '../../context/EconomyContext';
 import { useQuestState } from '../../context/QuestContext';
+import { useAuthState } from '../../context/AuthContext';
 
 interface QuestIdea {
   title: string;
@@ -29,10 +30,12 @@ interface QuestIdeaGeneratorProps {
 
 const QuestIdeaGenerator: React.FC<QuestIdeaGeneratorProps> = ({ onUseIdea, onClose }) => {
     const { settings } = useAppState();
+    const { users } = useAuthState();
     const { questGroups } = useQuestState();
     const { rewardTypes } = useEconomyState();
     const [prompt, setPrompt] = useState('');
     const [questType, setQuestType] = useState<QuestType>(QuestType.Venture);
+    const [selectedUserId, setSelectedUserId] = useState<string>('');
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
     const [generatedQuests, setGeneratedQuests] = useState<QuestIdea[]>([]);
@@ -48,7 +51,16 @@ const QuestIdeaGenerator: React.FC<QuestIdeaGeneratorProps> = ({ onUseIdea, onCl
 
         const rewardNames = rewardTypes.map(rt => rt.name).join(', ');
         const groupNames = questGroups.map(g => g.name).join(', ');
-        const fullPrompt = `Generate 5 quest ideas for a gamified task app called ${settings.terminology.appName}. The quests should be of type "${questType}". Duties are recurring tasks and Ventures are one-time projects. The quests should be practical, actionable, and based on the theme: "${prompt}". For each quest, also suggest 2-3 relevant tags (e.g., 'cleaning', 'outdoors', 'creative'), a suggested reward based on the task's likely effort (using reward names from this list: ${rewardNames}).
+        
+        let userContext = '';
+        if (selectedUserId) {
+            const selectedUser = users.find(u => u.id === selectedUserId);
+            if (selectedUser) {
+                userContext = ` Generate these specifically for a user with this context: User's Name: ${selectedUser.gameName} (real name ${selectedUser.firstName} ${selectedUser.lastName}). Birthday: ${selectedUser.birthday}. About Me: "${selectedUser.aboutMe || 'Not provided.'}". Private Admin Notes: "${selectedUser.adminNotes || 'Not provided.'}". Tailor the ideas to these details, referring to the user by name and considering their age based on their birthday.`;
+            }
+        }
+
+        const fullPrompt = `Generate 5 quest ideas for a gamified task app called ${settings.terminology.appName}.${userContext} The quests should be of type "${questType}". Duties are recurring tasks and Ventures are one-time projects. The quests should be practical, actionable, and based on the theme: "${prompt}". For each quest, also suggest 2-3 relevant tags (e.g., 'cleaning', 'outdoors', 'creative'), a suggested reward based on the task's likely effort (using reward names from this list: ${rewardNames}).
         
         Here is a list of existing Quest Groups: "${groupNames}". For each idea, suggest the most appropriate group from this list. If none of the existing groups seem appropriate, suggest a suitable new group name and indicate it's a new group by setting the isNewGroup flag to true.`;
 
@@ -136,6 +148,18 @@ const QuestIdeaGenerator: React.FC<QuestIdeaGeneratorProps> = ({ onUseIdea, onCl
 
                 <div className="flex-1 space-y-4 p-8 overflow-y-auto scrollbar-hide">
                     <div className="flex flex-col gap-4">
+                         <Input
+                            as="select"
+                            label="Generate for User (Optional)"
+                            value={selectedUserId}
+                            onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setSelectedUserId(e.target.value)}
+                            disabled={isLoading}
+                        >
+                            <option value="">General / For All Users</option>
+                            {users.map(user => (
+                                <option key={user.id} value={user.id}>{user.gameName}</option>
+                            ))}
+                        </Input>
                         <Input
                             label="Quest Theme"
                             placeholder="e.g., 'Weekly kitchen chores for kids'"

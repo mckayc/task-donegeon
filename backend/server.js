@@ -7,7 +7,7 @@ const path = require('path');
 const multer = require('multer');
 const fs = require('fs').promises;
 const { GoogleGenAI } = require('@google/genai');
-const { In, Brackets, Like, MoreThan } = require("typeorm");
+const { In, Brackets, Like, MoreThan, Between } = require("typeorm");
 const { dataSource, ensureDatabaseDirectoryExists } = require('./data-source');
 const { INITIAL_SETTINGS, INITIAL_REWARD_TYPES, INITIAL_RANKS, INITIAL_TROPHIES, INITIAL_THEMES, INITIAL_QUEST_GROUPS } = require('./initialData');
 const { 
@@ -634,8 +634,8 @@ guildsRouter.post('/', asyncMiddleware(async (req, res) => {
         newGuild.members = await dataSource.getRepository(UserEntity).findBy({ id: In(memberIds) });
     }
 
-    await guildRepo.save(updateTimestamps(newGuild, true));
-    res.status(201).json(newGuild);
+    const saved = await guildRepo.save(updateTimestamps(newGuild, true));
+    res.status(201).json(saved);
 }));
 
 guildsRouter.put('/:id', asyncMiddleware(async (req, res) => {
@@ -649,8 +649,8 @@ guildsRouter.put('/:id', asyncMiddleware(async (req, res) => {
         guild.members = await dataSource.getRepository(UserEntity).findBy({ id: In(memberIds) });
     }
 
-    await guildRepo.save(updateTimestamps(guild));
-    res.json(guild);
+    const saved = await guildRepo.save(updateTimestamps(guild));
+    res.json(saved);
 }));
 
 guildsRouter.delete('/:id', asyncMiddleware(async (req, res) => {
@@ -767,8 +767,8 @@ bugReportsRouter.get('/', asyncMiddleware(async (req, res) => {
 
 bugReportsRouter.post('/', asyncMiddleware(async (req, res) => {
     const newReport = bugReportRepo.create(req.body);
-    await bugReportRepo.save(updateTimestamps(newReport, true));
-    res.status(201).json(newReport);
+    const saved = await bugReportRepo.save(updateTimestamps(newReport, true));
+    res.status(201).json(saved);
 }));
 
 bugReportsRouter.put('/:id', asyncMiddleware(async (req, res) => {
@@ -825,8 +825,8 @@ eventsRouter.post('/', asyncMiddleware(async (req, res) => {
         ...req.body,
         id: `event-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
     });
-    await eventRepo.save(updateTimestamps(newEvent, true));
-    res.status(201).json(newEvent);
+    const saved = await eventRepo.save(updateTimestamps(newEvent, true));
+    res.status(201).json(saved);
 }));
 
 eventsRouter.put('/:id', asyncMiddleware(async (req, res) => {
@@ -1022,8 +1022,8 @@ assetsRouter.post('/', asyncMiddleware(async (req, res) => {
         purchaseCount: 0,
     };
     const newAsset = assetRepo.create(updateTimestamps(newAssetData, true));
-    await assetRepo.save(newAsset);
-    res.status(201).json(newAsset);
+    const saved = await assetRepo.save(newAsset);
+    res.status(201).json(saved);
 }));
 
 assetsRouter.put('/:id', asyncMiddleware(async (req, res) => {
@@ -1341,7 +1341,7 @@ app.get('/api/media/local-gallery', async (req, res, next) => {
     } catch (err) {
         next(err);
     }
-});
+}));
 
 
 // === Asset Pack Endpoints ===
@@ -1436,7 +1436,7 @@ app.get('/api/asset-packs/get/:filename', asyncMiddleware(async (req, res) => {
 }));
 
 app.get('/api/chronicles', asyncMiddleware(async (req, res) => {
-    const { page = 1, limit = 50, userId, guildId, viewMode } = req.query;
+    const { page = 1, limit = 50, userId, guildId, viewMode, startDate, endDate } = req.query;
     const manager = dataSource.manager;
 
     const skip = (parseInt(page) - 1) * parseInt(limit);
@@ -1465,9 +1465,11 @@ app.get('/api/chronicles', asyncMiddleware(async (req, res) => {
     if (viewMode === 'personal' && userId) {
         baseUserConditions.userId = userId;
     }
+    
+    const dateCondition = (dateField) => (startDate && endDate) ? { [dateField]: Between(new Date(startDate), new Date(new Date(endDate).getTime() + 86400000)) } : {};
 
     // 1. Quest Completions
-    const questCompletions = await manager.find(QuestCompletionEntity, { where: { ...baseUserConditions } });
+    const questCompletions = await manager.find(QuestCompletionEntity, { where: { ...baseUserConditions, ...dateCondition('completedAt') } });
     questCompletions.forEach(c => {
         const quest = questMap.get(c.questId);
         let finalNote = c.note || '';
@@ -1484,7 +1486,7 @@ app.get('/api/chronicles', asyncMiddleware(async (req, res) => {
     });
 
     // 2. Purchase Requests
-    const purchaseRequests = await manager.find(PurchaseRequestEntity, { where: { ...baseUserConditions } });
+    const purchaseRequests = await manager.find(PurchaseRequestEntity, { where: { ...baseUserConditions, ...dateCondition('requestedAt') } });
     purchaseRequests.forEach(p => {
         const costText = getRewardDisplay(p.assetDetails.cost).replace(/(\d+)/g, '-$1');
         allEvents.push({
@@ -1496,7 +1498,7 @@ app.get('/api/chronicles', asyncMiddleware(async (req, res) => {
     });
 
     // 3. User Trophies
-    const userTrophies = await manager.find(UserTrophyEntity, { where: { ...baseUserConditions } });
+    const userTrophies = await manager.find(UserTrophyEntity, { where: { ...baseUserConditions, ...dateCondition('awardedAt') } });
     userTrophies.forEach(ut => {
         const trophy = trophyMap.get(ut.trophyId);
         allEvents.push({
@@ -1508,7 +1510,7 @@ app.get('/api/chronicles', asyncMiddleware(async (req, res) => {
     });
     
     // 4. Admin Adjustments
-    const adjustments = await manager.find(AdminAdjustmentEntity, { where: { ...baseUserConditions } });
+    const adjustments = await manager.find(AdminAdjustmentEntity, { where: { ...baseUserConditions, ...dateCondition('adjustedAt') } });
     adjustments.forEach(adj => {
         const rewardsText = getRewardDisplay(adj.rewards).replace(/(\d+)/g, '+$1');
         const setbacksText = getRewardDisplay(adj.setbacks).replace(/(\d+)/g, '-$1');
@@ -1525,7 +1527,7 @@ app.get('/api/chronicles', asyncMiddleware(async (req, res) => {
 
      // 5. System Logs
      if (viewMode !== 'personal') {
-        const systemLogs = await manager.find(SystemLogEntity);
+        const systemLogs = await manager.find(SystemLogEntity, { where: { ...dateCondition('timestamp') } });
         systemLogs.forEach(log => {
              const quest = questMap.get(log.questId);
              const userNames = log.userIds.map(id => userMap.get(id) || 'Unknown').join(', ');
@@ -1543,8 +1545,10 @@ app.get('/api/chronicles', asyncMiddleware(async (req, res) => {
 
     const total = allEvents.length;
     const paginatedEvents = allEvents.slice(skip, skip + take);
+    
+    const eventsToReturn = (startDate && endDate) ? allEvents : paginatedEvents;
 
-    res.json({ events: paginatedEvents, total });
+    res.json({ events: eventsToReturn, total });
 }));
 
 // Chat Router

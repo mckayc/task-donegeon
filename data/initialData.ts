@@ -45,14 +45,14 @@ export const createMockUsers = (): User[] => {
 };
 
 export const INITIAL_REWARD_TYPES: RewardTypeDefinition[] = [
-    { id: 'core-gold', name: 'Gold Coins', category: RewardCategory.Currency, description: 'Can be exchanged for real money or items.', isCore: true, iconType: 'emoji', icon: '💰' },
-    { id: 'core-gems', name: 'Gems', category: RewardCategory.Currency, description: 'Earned from service or helping. Used for experiences.', isCore: true, iconType: 'emoji', icon: '💎' },
-    { id: 'core-crystal', name: 'Crystals', category: RewardCategory.Currency, description: 'Earned from small tasks. Used for screen time.', isCore: true, iconType: 'emoji', icon: '🔮' },
-    { id: 'core-strength', name: 'Strength', category: RewardCategory.XP, description: 'Earned from physical tasks.', isCore: true, iconType: 'emoji', icon: '💪' },
-    { id: 'core-diligence', name: 'Diligence', category: RewardCategory.XP, description: 'Earned from careful, persistent work like cleaning and organizing.', isCore: true, iconType: 'emoji', icon: '🧹' },
-    { id: 'core-wisdom', name: 'Wisdom', category: RewardCategory.XP, description: 'Earned from learning activities.', isCore: true, iconType: 'emoji', icon: '🧠' },
-    { id: 'core-skill', name: 'Skill', category: RewardCategory.XP, description: 'Earned from practice and sports.', isCore: true, iconType: 'emoji', icon: '🎯' },
-    { id: 'core-creative', name: 'Creativity', category: RewardCategory.XP, description: 'Earned from artistic and creative endeavors.', isCore: true, iconType: 'emoji', icon: '🎨' },
+    { id: 'core-gold', name: 'Gold Coins', category: RewardCategory.Currency, description: 'Can be exchanged for real money or items.', isCore: true, iconType: 'emoji', icon: '💰', baseValue: 5 }, // 5 gold = $1
+    { id: 'core-gems', name: 'Gems', category: RewardCategory.Currency, description: 'Earned from service or helping. Used for experiences.', isCore: true, iconType: 'emoji', icon: '💎', baseValue: 0.5 }, // 0.5 gems = $1 (1 gem = $2)
+    { id: 'core-crystal', name: 'Crystals', category: RewardCategory.Currency, description: 'Earned from small tasks. Used for screen time.', isCore: true, iconType: 'emoji', icon: '🔮', baseValue: 100 }, // 100 crystals = $1
+    { id: 'core-strength', name: 'Strength', category: RewardCategory.XP, description: 'Earned from physical tasks.', isCore: true, iconType: 'emoji', icon: '💪', baseValue: 50 }, // 50 XP = $1
+    { id: 'core-diligence', name: 'Diligence', category: RewardCategory.XP, description: 'Earned from careful, persistent work like cleaning and organizing.', isCore: true, iconType: 'emoji', icon: '🧹', baseValue: 50 }, // 50 XP = $1
+    { id: 'core-wisdom', name: 'Wisdom', category: RewardCategory.XP, description: 'Earned from learning activities.', isCore: true, iconType: 'emoji', icon: '🧠', baseValue: 25 }, // 25 XP = $1
+    { id: 'core-skill', name: 'Skill', category: RewardCategory.XP, description: 'Earned from practice and sports.', isCore: true, iconType: 'emoji', icon: '🎯', baseValue: 25 }, // 25 XP = $1
+    { id: 'core-creative', name: 'Creativity', category: RewardCategory.XP, description: 'Earned from artistic and creative endeavors.', isCore: true, iconType: 'emoji', icon: '🎨', baseValue: 25 }, // 25 XP = $1
 ];
 
 export const INITIAL_TAGS: string[] = [
@@ -280,16 +280,7 @@ export const INITIAL_SETTINGS: AppSettings = {
     enableAiFeatures: false,
     rewardValuation: {
       enabled: true,
-      anchorRewardId: 'core-gold',
-      exchangeRates: {
-        'core-gems': 0.1,
-        'core-crystal': 20,
-        'core-strength': 10,
-        'core-diligence': 10,
-        'core-wisdom': 5,
-        'core-skill': 5,
-        'core-creative': 5,
-      },
+      realWorldCurrency: 'USD',
       currencyExchangeFeePercent: 5,
       xpExchangeFeePercent: 10,
     },

@@ -39,6 +39,8 @@ export interface User {
   theme?: string; // Theme ID
   ownedThemes: string[]; // Array of Theme IDs
   hasBeenOnboarded?: boolean;
+  aboutMe?: string;
+  adminNotes?: string;
 }
 
 export enum QuestType {
@@ -60,6 +62,7 @@ export interface RewardTypeDefinition {
   iconType: 'emoji' | 'image';
   icon: string;
   imageUrl?: string;
+  baseValue: number; // How many units of this reward equals 1 unit of the real-world currency.
 }
 
 export interface RewardItem {
@@ -467,8 +470,7 @@ export type SidebarConfigItem = SidebarLink | SidebarHeader | SidebarSeparator;
 
 export interface RewardValuationSettings {
   enabled: boolean;
-  anchorRewardId: string; // Must be a currency ID
-  exchangeRates: { [rewardTypeId: string]: number }; // Rates for ALL other rewards against the anchor
+  realWorldCurrency: string; // e.g., 'USD', 'EUR'
   currencyExchangeFeePercent: number;
   xpExchangeFeePercent: number;
 }

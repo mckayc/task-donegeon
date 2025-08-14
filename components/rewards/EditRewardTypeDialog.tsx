@@ -6,6 +6,7 @@ import { useEconomyDispatch } from '../../context/EconomyContext';
 import EmojiPicker from '../user-interface/EmojiPicker';
 import ImageSelectionDialog from '../user-interface/ImageSelectionDialog';
 import DynamicIcon from '../user-interface/DynamicIcon';
+import { useAppState } from '../../context/AppContext';
 
 interface EditRewardTypeDialogProps {
   rewardType: RewardTypeDefinition | null;
@@ -13,6 +14,7 @@ interface EditRewardTypeDialogProps {
 }
 
 const EditRewardTypeDialog: React.FC<EditRewardTypeDialogProps> = ({ rewardType, onClose }) => {
+  const { settings } = useAppState();
   const { addRewardType, updateRewardType } = useEconomyDispatch();
   const [formData, setFormData] = useState({
     name: '',
@@ -21,6 +23,7 @@ const EditRewardTypeDialog: React.FC<EditRewardTypeDialogProps> = ({ rewardType,
     iconType: 'emoji' as 'emoji' | 'image',
     icon: '💰',
     imageUrl: '',
+    baseValue: 1,
   });
   const [isEmojiPickerOpen, setIsEmojiPickerOpen] = useState(false);
   const [isGalleryOpen, setIsGalleryOpen] = useState(false);
@@ -34,12 +37,18 @@ const EditRewardTypeDialog: React.FC<EditRewardTypeDialogProps> = ({ rewardType,
         iconType: rewardType.iconType || 'emoji',
         icon: rewardType.icon || '💰',
         imageUrl: rewardType.imageUrl || '',
+        baseValue: rewardType.baseValue || 1,
       });
     }
   }, [rewardType]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    if (name === 'baseValue') {
+        setFormData({ ...formData, baseValue: parseFloat(value) || 0 });
+    } else {
+        setFormData({ ...formData, [name]: value });
+    }
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -51,6 +60,7 @@ const EditRewardTypeDialog: React.FC<EditRewardTypeDialogProps> = ({ rewardType,
       iconType: formData.iconType,
       icon: formData.icon,
       imageUrl: formData.imageUrl,
+      baseValue: formData.baseValue
     };
 
     if (rewardType) {
@@ -145,6 +155,16 @@ const EditRewardTypeDialog: React.FC<EditRewardTypeDialogProps> = ({ rewardType,
               placeholder="What is this reward for?"
             />
           </div>
+           <Input
+                label={`Units of this reward equal to 1 ${settings.rewardValuation.realWorldCurrency}`}
+                id="baseValue"
+                name="baseValue"
+                type="number"
+                step="0.01"
+                value={formData.baseValue}
+                onChange={handleChange}
+                required
+            />
           <div>
             <label htmlFor="category" className="block text-sm font-medium text-stone-300 mb-1">Category</label>
             <select 

@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { Role, User } from '../../types';
@@ -87,10 +88,11 @@ const RegisterForm: React.FC<{ onSwitchMode: () => void }> = ({ onSwitchMode }) 
         birthday: '',
         password: '',
         confirmPassword: '',
+        aboutMe: '',
     });
     const [error, setError] = useState('');
 
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
     };
 

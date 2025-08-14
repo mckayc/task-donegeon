@@ -41,6 +41,14 @@ const UserMultiSelect: React.FC<UserMultiSelectProps> = ({ allUsers, selectedUse
         onSelectionChange(newSelection);
     };
 
+    const handleToggleAll = () => {
+        if (selectedUserIds.length === allUsers.length) {
+            onSelectionChange([]);
+        } else {
+            onSelectionChange(allUsers.map(u => u.id));
+        }
+    };
+
     const summaryText = useMemo(() => {
         if (selectedUserIds.length === 0) return 'Select users...';
         if (selectedUserIds.length === allUsers.length) return 'All Users';
@@ -64,9 +72,20 @@ const UserMultiSelect: React.FC<UserMultiSelectProps> = ({ allUsers, selectedUse
                         <Input
                             placeholder="Search users..."
                             value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
+                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchTerm(e.target.value)}
                             autoFocus
                         />
+                    </div>
+                    <div className="p-2 border-y border-stone-700">
+                        <label className="flex items-center gap-3 p-2 rounded-md hover:bg-stone-700 cursor-pointer">
+                            <input
+                                type="checkbox"
+                                checked={selectedUserIds.length === allUsers.length && allUsers.length > 0}
+                                onChange={handleToggleAll}
+                                className="h-4 w-4 rounded text-emerald-600 bg-stone-700 border-stone-500 focus:ring-emerald-500"
+                            />
+                            <span className="font-semibold text-stone-200">Select All Users</span>
+                        </label>
                     </div>
                     <ul className="max-h-48 overflow-y-auto p-2">
                         {filteredUsers.map(user => (

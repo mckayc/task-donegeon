@@ -58,6 +58,7 @@ const FirstRunWizard: React.FC = () => {
   const [formData, setFormData] = useState({
     firstName: '', lastName: '', username: '', gameName: '', email: '',
     birthday: '', password: '', confirmPassword: '', pin: '', confirmPin: '',
+    aboutMe: '',
   });
   const [error, setError] = useState('');
 
@@ -81,7 +82,7 @@ const FirstRunWizard: React.FC = () => {
     setSkip(prev => ({ ...prev, [key]: !prev[key] }));
   };
   
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 

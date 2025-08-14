@@ -120,6 +120,8 @@ const terminologyLabels: { [key in keyof Terminology]: string } = {
   link_bug_tracker: 'Sidebar: Bug Tracker',
 };
 
+const REAL_WORLD_CURRENCIES = ['USD', 'EUR', 'GBP', 'JPY', 'CAD', 'AUD', 'CNY'];
+
 
 export const SettingsPage: React.FC = () => {
     const { settings } = useAppState();
@@ -154,20 +156,6 @@ export const SettingsPage: React.FC = () => {
         setFormState(p => ({ ...p, rewardValuation: { ...p.rewardValuation, [key]: value } }));
     };
 
-    const handleRateChange = (rewardTypeId: string, rate: string) => {
-        const numericRate = parseFloat(rate) || 0;
-        setFormState(p => ({
-            ...p,
-            rewardValuation: {
-                ...p.rewardValuation,
-                exchangeRates: {
-                    ...p.rewardValuation.exchangeRates,
-                    [rewardTypeId]: numericRate,
-                }
-            }
-        }));
-    };
-
     const handleSave = () => {
         updateSettings(formState);
         addNotification({ type: 'success', message: 'Settings saved successfully!' });
@@ -184,9 +172,6 @@ export const SettingsPage: React.FC = () => {
         }
         setConfirmation(null);
     };
-    
-    const currencyRewardTypes = rewardTypes.filter(rt => rt.category === RewardCategory.Currency);
-    const nonAnchorRewards = rewardTypes.filter(rt => rt.id !== formState.rewardValuation.anchorRewardId);
 
     return (
         <div className="space-y-8 relative">
@@ -274,23 +259,10 @@ export const SettingsPage: React.FC = () => {
                         <ToggleSwitch enabled={formState.rewardValuation.enabled} setEnabled={(val: boolean) => handleRewardValuationChange('enabled', val)} label="Enable Reward Valuation & Exchange" />
                         {formState.rewardValuation.enabled && (
                              <div className="p-4 bg-stone-900/40 rounded-lg space-y-4">
-                                 <Input as="select" label="Anchor Currency (Value = 1)" value={formState.rewardValuation.anchorRewardId} onChange={(e: React.ChangeEvent<HTMLSelectElement>) => handleRewardValuationChange('anchorRewardId', e.target.value)}>
-                                    {currencyRewardTypes.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                                <p className="text-sm text-stone-300">This system allows you to assign real-world monetary value to your virtual rewards. Each reward type can be configured with a value that represents how many units are equal to one unit of your selected currency (e.g., 5 Gold = 1 USD).</p>
+                                 <Input as="select" label="Real-World Currency" value={formState.rewardValuation.realWorldCurrency} onChange={(e: React.ChangeEvent<HTMLSelectElement>) => handleRewardValuationChange('realWorldCurrency', e.target.value)}>
+                                    {REAL_WORLD_CURRENCIES.map(c => <option key={c} value={c}>{c}</option>)}
                                  </Input>
-                                 <h4 className="font-semibold text-stone-200 pt-2 border-t border-stone-700/60">Exchange Rates</h4>
-                                 <p className="text-xs text-stone-400 -mt-2">How much of each reward type is 1 unit of your Anchor Currency worth?</p>
-                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    {nonAnchorRewards.map(reward => (
-                                        <Input
-                                            key={reward.id}
-                                            label={reward.name}
-                                            type="number"
-                                            step="0.01"
-                                            value={formState.rewardValuation.exchangeRates[reward.id] || ''}
-                                            onChange={(e) => handleRateChange(reward.id, e.target.value)}
-                                        />
-                                    ))}
-                                 </div>
                                  <h4 className="font-semibold text-stone-200 pt-2 border-t border-stone-700/60">Transaction Fees</h4>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <Input label="Currency Exchange Fee (%)" type="number" min="0" value={formState.rewardValuation.currencyExchangeFeePercent} onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleRewardValuationChange('currencyExchangeFeePercent', parseInt(e.target.value) || 0)} />

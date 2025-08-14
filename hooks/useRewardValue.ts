@@ -1,10 +1,26 @@
 import { useAppState } from '../context/AppContext';
 import { useEconomyState } from '../context/EconomyContext';
-import { RewardCategory, RewardTypeDefinition } from '../types';
 
 /**
- * Calculates the value of a given amount of a reward type in terms of the anchor currency.
- * @returns A string like "10 💰" or null if valuation is disabled or not applicable.
+ * Formats a number into a currency string based on a currency code.
+ */
+const formatCurrency = (amount: number, currencyCode: string): string => {
+    try {
+        return new Intl.NumberFormat(undefined, {
+            style: 'currency',
+            currency: currencyCode,
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
+        }).format(amount);
+    } catch (e) {
+        // Fallback for invalid currency codes
+        return `${amount.toFixed(2)} ${currencyCode}`;
+    }
+};
+
+/**
+ * Calculates the value of a given amount of a reward type in terms of the selected real-world currency.
+ * @returns A formatted currency string like "$5.00" or null if valuation is disabled or not applicable.
  */
 export const useRewardValue = (amount: number, rewardTypeId: string): string | null => {
     const { settings } = useAppState();
@@ -14,39 +30,25 @@ export const useRewardValue = (amount: number, rewardTypeId: string): string | n
     if (!rewardValuation.enabled) return null;
 
     const reward = rewardTypes.find(rt => rt.id === rewardTypeId);
-    if (!reward) return null;
+    if (!reward || !reward.baseValue || reward.baseValue <= 0) return null;
 
-    const { anchorRewardId, exchangeRates } = rewardValuation;
-    const anchorReward = rewardTypes.find(rt => rt.id === anchorRewardId);
-    if (!anchorReward) return null;
-
-    let valueInAnchor: number;
-    if (rewardTypeId === anchorRewardId) {
-        valueInAnchor = amount;
-    } else {
-        const rate = exchangeRates[rewardTypeId];
-        if (!rate || rate === 0) return null; // Avoid division by zero and handle unconfigured rates
-        // The rate is how many of this currency 1 anchor buys. So we divide to get back to the anchor value.
-        valueInAnchor = amount / rate;
-    }
+    const realWorldValue = amount / reward.baseValue;
     
-    const formattedValue = valueInAnchor % 1 === 0 ? valueInAnchor : valueInAnchor.toFixed(2);
-    
-    return `${formattedValue} ${anchorReward.icon || ''}`;
+    return formatCurrency(realWorldValue, rewardValuation.realWorldCurrency);
 };
 
 
 /**
- * Calculates the value of a single unit of a reward type in terms of the anchor currency.
- * @returns A string like "10 💰" or null.
+ * Calculates the value of a single unit of a reward type in terms of the selected real-world currency.
+ * @returns A formatted currency string like "$0.20" or null.
  */
 export const useRewardValuePerUnit = (rewardTypeId: string): string | null => {
     return useRewardValue(1, rewardTypeId);
 };
 
 /**
- * Creates a helper string showing the anchor currency equivalent for a reward amount.
- * @returns A string like "(equals 10 💰)" or null.
+ * Creates a helper string showing the real-world currency equivalent for a reward amount.
+ * @returns A string like "(equals $5.00)" or null.
  */
 export const useAnchorEquivalent = (amount: number, rewardTypeId: string): string | null => {
     const valueString = useRewardValue(amount, rewardTypeId);

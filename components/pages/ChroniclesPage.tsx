@@ -37,12 +37,15 @@ const ChroniclesPage: React.FC = () => {
         }).join(' ');
 
         const events: ChronicleEvent[] = [];
-        const currentGuildId = appMode.mode === 'guild' ? appMode.guildId : null;
+        const currentGuildId = appMode.mode === 'guild' ? appMode.guildId : undefined;
 
         const shouldInclude = (item: { userId?: string, userIds?: string[], recipientUserIds?: string[], guildId?: string | null }) => {
-            if (item.guildId !== currentGuildId) return false;
+            // The loose equality operator `!=` correctly handles comparing `null` from the database
+            // with `undefined` from the application state for personal-scope items.
+            if (item.guildId != currentGuildId) return false;
+
             if (viewMode === 'personal') {
-                const userIdsToCheck = [item.userId, ...(item.userIds || []), ...(item.recipientUserIds || [])].filter(Boolean);
+                const userIdsToCheck = [item.userId, ...(item.userIds || []), ...(item.recipientUserIds || [])].filter(Boolean) as string[];
                 return userIdsToCheck.includes(currentUser.id);
             }
             return true;

@@ -4,6 +4,7 @@ import Button from '../user-interface/Button';
 import Input from '../user-interface/Input';
 import { SparklesIcon } from '../user-interface/Icons';
 import { useAppState } from '../../context/AppContext';
+import { useAuthState } from '../../context/AuthContext';
 
 interface MarketIdea {
   title: string;
@@ -18,7 +19,9 @@ interface MarketIdeaGeneratorProps {
 
 const MarketIdeaGenerator: React.FC<MarketIdeaGeneratorProps> = ({ onUseIdea, onClose }) => {
     const { settings } = useAppState();
+    const { users } = useAuthState();
     const [prompt, setPrompt] = useState('');
+    const [selectedUserId, setSelectedUserId] = useState<string>('');
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
     const [generatedMarkets, setGeneratedMarkets] = useState<MarketIdea[]>([]);
@@ -32,7 +35,15 @@ const MarketIdeaGenerator: React.FC<MarketIdeaGeneratorProps> = ({ onUseIdea, on
         setError('');
         setGeneratedMarkets([]);
 
-        const fullPrompt = `Generate 5 market ideas for a gamified task app called ${settings.terminology.appName}. The markets should be based on the theme: "${prompt}". For each market, provide a single, relevant Unicode emoji for its icon.`;
+        let userContext = '';
+        if (selectedUserId) {
+            const selectedUser = users.find(u => u.id === selectedUserId);
+            if (selectedUser) {
+                userContext = ` Generate these specifically for a user with this context: User's Name: ${selectedUser.gameName} (real name ${selectedUser.firstName} ${selectedUser.lastName}). Birthday: ${selectedUser.birthday}. About Me: "${selectedUser.aboutMe || 'Not provided.'}". Private Admin Notes: "${selectedUser.adminNotes || 'Not provided.'}". Tailor the ideas to these details, referring to the user by name and considering their age based on their birthday.`;
+            }
+        }
+
+        const fullPrompt = `Generate 5 market ideas for a gamified task app called ${settings.terminology.appName}.${userContext} The markets should be based on the theme: "${prompt}". For each market, provide a single, relevant Unicode emoji for its icon.`;
 
         try {
             const response = await fetch('/api/ai/generate', {
@@ -95,6 +106,18 @@ const MarketIdeaGenerator: React.FC<MarketIdeaGeneratorProps> = ({ onUseIdea, on
                     <h2 className="text-3xl font-medieval text-accent flex items-center gap-3"><SparklesIcon className="w-8 h-8" /> Generate {settings.terminology.store} Ideas</h2>
                 </div>
                 <div className="flex-1 space-y-4 p-8 overflow-y-auto scrollbar-hide">
+                    <Input
+                        as="select"
+                        label="Generate for User (Optional)"
+                        value={selectedUserId}
+                        onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setSelectedUserId(e.target.value)}
+                        disabled={isLoading}
+                    >
+                        <option value="">General / For All Users</option>
+                        {users.map(user => (
+                            <option key={user.id} value={user.id}>{user.gameName}</option>
+                        ))}
+                    </Input>
                     <div className="flex gap-4">
                         <Input
                             label="Market Theme"

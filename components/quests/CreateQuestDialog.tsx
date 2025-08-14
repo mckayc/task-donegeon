@@ -198,7 +198,14 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
   useEffect(() => {
     const newType = formData.type;
     if (!questToEdit && newType === QuestType.Venture) setFormData(p => ({...p, requiresApproval: true}));
-  }, [formData.type, questToEdit]);
+    
+    // Auto-set allDay to false for timed duties
+    if (newType === QuestType.Duty && (formData.startTime || formData.endTime)) {
+        if (formData.allDay) {
+            setFormData(p => ({...p, allDay: false}));
+        }
+    }
+  }, [formData.type, questToEdit, formData.startTime, formData.endTime, formData.allDay]);
   
   const handleUserAssignmentChange = (userId: string) => {
     setFormData(prev => ({...prev, assignedUserIds: prev.assignedUserIds.includes(userId) ? prev.assignedUserIds.filter(id => id !== userId) : [...prev.assignedUserIds, userId]}));

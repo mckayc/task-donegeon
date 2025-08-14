@@ -29,7 +29,7 @@ const ProgressPage: React.FC = () => {
         const currentGuildId = appMode.mode === 'guild' ? appMode.guildId : undefined;
 
         const userCompletions = questCompletions.filter(
-            c => c.userId === currentUser.id && c.status === QuestCompletionStatus.Approved && c.guildId === currentGuildId
+            c => c.userId === currentUser.id && c.status === QuestCompletionStatus.Approved && c.guildId == currentGuildId
         );
 
         const dataByDay: { [date: string]: number } = {};

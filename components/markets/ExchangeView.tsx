@@ -1,4 +1,5 @@
 
+
 import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react';
 import { useAppState } from '../../context/AppContext';
 import { useAuthState } from '../../context/AuthContext';
@@ -32,11 +33,11 @@ const RewardButton: React.FC<{
                 ? 'bg-stone-800 opacity-40 cursor-not-allowed'
                 : 'bg-stone-900/50 border-2 border-transparent hover:border-emerald-600'
         }`}
-        title={balance !== undefined ? `${reward.name}: ${balance.toFixed(0)}` : reward.name}
+        title={balance !== undefined ? `${reward.name}: ${Math.floor(balance)}` : reward.name}
     >
         <div className="text-3xl">{reward.icon}</div>
         {balance !== undefined && (
-             <p className="text-xs text-stone-300 font-semibold">{balance.toFixed(0)}</p>
+             <p className="text-xs text-stone-300 font-semibold">{Math.floor(balance)}</p>
         )}
     </button>
 );
@@ -297,11 +298,11 @@ const ExchangeView: React.FC<ExchangeViewProps> = ({ market }) => {
                                             <p className="text-stone-400 font-bold border-t border-stone-600/50 mt-1 pt-1">Total Cost:</p>
                                         </div>
                                         <div className="text-left font-semibold">
-                                            <p className="text-stone-200">{(balances.get(fromRewardId) || 0).toFixed(0)} &rarr; <span className="text-red-400">{((balances.get(fromRewardId) || 0) - calculation.totalCost).toFixed(0)}</span></p>
-                                            <p className="text-stone-200">{(balances.get(toRewardId) || 0).toFixed(0)} &rarr; <span className="text-green-400">{((balances.get(toRewardId) || 0) + (parseInt(toAmountString) || 0)).toFixed(0)}</span></p>
+                                            <p className="text-stone-200">{Math.floor(balances.get(fromRewardId) || 0)} &rarr; <span className="text-red-400">{Math.floor((balances.get(fromRewardId) || 0) - calculation.totalCost)}</span></p>
+                                            <p className="text-stone-200">{Math.floor(balances.get(toRewardId) || 0)} &rarr; <span className="text-green-400">{Math.floor((balances.get(toRewardId) || 0) + (parseInt(toAmountString) || 0))}</span></p>
                                             <p className="text-stone-300">{calculation.fee.toFixed(2)} {fromReward.icon}</p>
                                             <p className="text-stone-300">{calculation.roundingFee.toFixed(2)} {fromReward.icon}</p>
-                                            <p className="text-stone-100 font-bold border-t border-stone-600/50 mt-1 pt-1">{calculation.totalCost.toFixed(0)} {fromReward.icon}</p>
+                                            <p className="text-stone-100 font-bold border-t border-stone-600/50 mt-1 pt-1">{calculation.totalCost} {fromReward.icon}</p>
                                         </div>
                                     </div>
                                     <Button onClick={handleExchange} disabled={calculation.totalCost <= 0 || calculation.totalCost > (balances.get(fromRewardId) || 0)}>

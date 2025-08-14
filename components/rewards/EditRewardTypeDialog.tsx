@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect } from 'react';
 import { RewardCategory, RewardTypeDefinition } from '../../types';
 import Button from '../user-interface/Button';
@@ -26,6 +27,7 @@ const EditRewardTypeDialog: React.FC<EditRewardTypeDialogProps> = ({ rewardType,
     imageUrl: '',
     baseValue: 1,
   });
+  const [baseValueString, setBaseValueString] = useState('1');
   const [isEmojiPickerOpen, setIsEmojiPickerOpen] = useState(false);
   const [isGalleryOpen, setIsGalleryOpen] = useState(false);
 
@@ -40,20 +42,31 @@ const EditRewardTypeDialog: React.FC<EditRewardTypeDialogProps> = ({ rewardType,
         imageUrl: rewardType.imageUrl || '',
         baseValue: rewardType.baseValue || 1,
       });
+      setBaseValueString(String(rewardType.baseValue || 1));
     }
   }, [rewardType]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    if (name === 'baseValue') {
-        setFormData({ ...formData, baseValue: parseFloat(value) || 0 });
-    } else {
-        setFormData({ ...formData, [name]: value });
+    setFormData({ ...formData, [name]: value });
+  };
+
+  const handleBaseValueChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    if (/^\d*\.?\d{0,2}$/.test(val)) {
+        setBaseValueString(val);
     }
   };
 
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    const finalBaseValue = parseFloat(baseValueString);
+    if (isNaN(finalBaseValue) || finalBaseValue <= 0) {
+        // This case should be prevented by the input regex, but as a fallback.
+        return;
+    }
+
     const finalData = {
       name: formData.name,
       description: formData.description,
@@ -61,7 +74,7 @@ const EditRewardTypeDialog: React.FC<EditRewardTypeDialogProps> = ({ rewardType,
       iconType: formData.iconType,
       icon: formData.icon,
       imageUrl: formData.imageUrl,
-      baseValue: formData.baseValue
+      baseValue: finalBaseValue
     };
 
     if (rewardType) {
@@ -160,10 +173,10 @@ const EditRewardTypeDialog: React.FC<EditRewardTypeDialogProps> = ({ rewardType,
                 label={`1 unit of this reward equals [X] ${settings.rewardValuation.realWorldCurrency}`}
                 id="baseValue"
                 name="baseValue"
-                type="number"
-                step="0.01"
-                value={formData.baseValue}
-                onChange={handleChange}
+                type="text"
+                inputMode="decimal"
+                value={baseValueString}
+                onChange={handleBaseValueChange}
                 required
             />
           <div>

@@ -81,7 +81,7 @@ const ExchangeView: React.FC<ExchangeViewProps> = ({ market }) => {
     const toReward = useMemo(() => rewardTypes.find(rt => rt.id === toRewardId), [toRewardId, rewardTypes]);
 
     const calculation = useMemo(() => {
-        const toAmountNum = parseFloat(toAmountString) || 0;
+        const toAmountNum = parseInt(toAmountString, 10) || 0;
         if (!fromReward || !toReward || fromReward.baseValue <= 0 || toReward.baseValue <= 0) {
             return { fromAmountBase: 0, fee: 0, totalCost: 0, maxToAmount: 0 };
         }
@@ -93,7 +93,7 @@ const ExchangeView: React.FC<ExchangeViewProps> = ({ market }) => {
         const feeMultiplier = 1 + (Number(feePercent) / 100);
         
         const fromValueAfterFee = (fromBalance / feeMultiplier) * fromReward.baseValue;
-        const maxToAmount = fromValueAfterFee / toReward.baseValue;
+        const maxToAmount = Math.floor(fromValueAfterFee / toReward.baseValue);
 
         const cappedToAmount = Math.min(toAmountNum, maxToAmount);
         const toValueInReal = cappedToAmount * toReward.baseValue;
@@ -109,20 +109,33 @@ const ExchangeView: React.FC<ExchangeViewProps> = ({ market }) => {
     const handleToSelect = (id: string) => { setToRewardId(id); setToAmountString(''); };
 
     const handleAmountChange = (value: string) => {
-        if (/^\d*\.?\d{0,2}$/.test(value)) {
-            const num = parseFloat(value) || 0;
+        if (/^\d*$/.test(value)) { // integers only
+            const num = parseInt(value, 10) || 0;
             const cappedValue = Math.min(num, calculation.maxToAmount);
             setToAmountString(value === '' ? '' : String(cappedValue));
         }
     };
     
     const handleMax = () => {
-        setToAmountString(String(calculation.maxToAmount.toFixed(2)));
+        setToAmountString(String(calculation.maxToAmount));
     };
+    
+    const recommendedAmounts = useMemo(() => {
+        if (calculation.maxToAmount <= 0) return [];
+        const amounts = [1, 5, 10, 25];
+        const suggestions = amounts.filter(a => a < calculation.maxToAmount);
+        if (calculation.maxToAmount > 0) {
+            const isMaxCloseToExisting = suggestions.some(s => Math.abs(s - calculation.maxToAmount) <= 2);
+            if (!isMaxCloseToExisting) {
+                suggestions.push(calculation.maxToAmount);
+            }
+        }
+        return [...new Set(suggestions)].sort((a,b) => a-b).slice(0, 4);
+    }, [calculation.maxToAmount]);
 
     const handleExchange = () => {
         if (!currentUser || !fromReward || !toReward) return;
-        const toAmount = parseFloat(toAmountString) || 0;
+        const toAmount = parseInt(toAmountString, 10) || 0;
         if (toAmount <= 0) {
             addNotification({ type: 'error', message: 'Please enter a valid amount.' });
             return;
@@ -135,7 +148,6 @@ const ExchangeView: React.FC<ExchangeViewProps> = ({ market }) => {
         const guildId = appMode.mode === 'guild' ? appMode.guildId : undefined;
 
         executeExchange(currentUser.id, payItem, receiveItem, guildId);
-        addNotification({type: 'success', message: `Exchanged successfully!`});
         setToAmountString('');
     };
 
@@ -170,17 +182,18 @@ const ExchangeView: React.FC<ExchangeViewProps> = ({ market }) => {
                                     <ArrowRightIcon className="w-10 h-10 text-stone-500"/>
                                     <div className="text-6xl">{toReward.icon}</div>
                                 </div>
-                                <div className="grid grid-cols-2 gap-4 items-end">
-                                    <div>
-                                        <p className="text-sm font-semibold text-stone-400">Total Cost</p>
-                                        <p className="font-bold text-2xl text-amber-400">{calculation.totalCost.toFixed(2)}</p>
+                                <div>
+                                    <label className="block text-sm font-semibold text-stone-400 mb-1">Receive Amount</label>
+                                    <div className="flex items-center justify-center">
+                                        <Input value={toAmountString} onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleAmountChange(e.target.value)} type="number" step="1" className="text-center text-lg h-11 w-48" />
                                     </div>
-                                    <div>
-                                        <label className="block text-sm font-semibold text-stone-400 mb-1">Receive Amount</label>
-                                        <div className="flex items-center">
-                                            <Input value={toAmountString} onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleAmountChange(e.target.value)} type="number" step="0.01" className="text-center text-lg h-11" />
-                                        </div>
-                                        <Button onClick={handleMax} variant="secondary" className="text-xs !py-1 mt-2">Max: {calculation.maxToAmount.toFixed(2)}</Button>
+                                    <div className="flex justify-center gap-2 mt-2">
+                                        {recommendedAmounts.map(amount => (
+                                            <Button key={amount} onClick={() => setToAmountString(String(amount))} variant="secondary" className="text-xs !py-1">
+                                                {amount}
+                                            </Button>
+                                        ))}
+                                        <Button onClick={handleMax} variant="secondary" className="text-xs !py-1">Max</Button>
                                     </div>
                                 </div>
                                 <div className="pt-6 border-t border-stone-700/60 space-y-3">
@@ -193,7 +206,7 @@ const ExchangeView: React.FC<ExchangeViewProps> = ({ market }) => {
                                         </div>
                                         <div className="text-left font-semibold">
                                             <p className="text-stone-200">{(balances.get(fromRewardId) || 0).toFixed(2)} &rarr; <span className="text-red-400">{((balances.get(fromRewardId) || 0) - calculation.totalCost).toFixed(2)}</span></p>
-                                            <p className="text-stone-200">{(balances.get(toRewardId) || 0).toFixed(2)} &rarr; <span className="text-green-400">{((balances.get(toRewardId) || 0) + (parseFloat(toAmountString) || 0)).toFixed(2)}</span></p>
+                                            <p className="text-stone-200">{(balances.get(toRewardId) || 0).toFixed(2)} &rarr; <span className="text-green-400">{((balances.get(toRewardId) || 0) + (parseInt(toAmountString) || 0)).toFixed(2)}</span></p>
                                             <p className="text-stone-300">{calculation.fee.toFixed(2)} {fromReward.icon}</p>
                                         </div>
                                     </div>

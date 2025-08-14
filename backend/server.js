@@ -222,7 +222,7 @@ initializeApp().catch(err => {
 const getFullAppData = async (manager) => {
     const data = {};
     
-    const users = await manager.find(UserEntity);
+    const users = await manager.find(UserEntity, { relations: ['guilds'] });
     const quests = await manager.find(QuestEntity, { relations: ['assignedUsers'] });
     const questCompletions = await manager.find(QuestCompletionEntity, { relations: ['user', 'quest'] });
     const guilds = await manager.find(GuildEntity, { relations: ['members'] });

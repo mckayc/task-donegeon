@@ -199,6 +199,15 @@ const PurchaseRequestEntity = new EntitySchema({
         guildId: { type: "varchar", nullable: true },
         createdAt: { type: "varchar", nullable: true },
         updatedAt: { type: "varchar", nullable: true },
+    },
+    relations: {
+        user: {
+            type: "many-to-one",
+            target: "User",
+            joinColumn: { name: "userId", referencedColumnName: "id" },
+            inverseSide: "purchaseRequests",
+            onDelete: "CASCADE",
+        }
     }
 });
 

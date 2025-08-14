@@ -15,6 +15,7 @@ import { useNotificationsDispatch } from '../../../context/NotificationsContext'
 import { useEconomyState } from '../../../context/EconomyContext';
 import UploadWithCategoryDialog from '../../admin/UploadWithCategoryDialog';
 import { useShiftSelect } from '../../../hooks/useShiftSelect';
+import { syncLocker } from '../../../utils/syncLocker';
 
 const ManageItemsPage: React.FC = () => {
     const { settings, isAiConfigured } = useAppState();
@@ -61,6 +62,8 @@ const ManageItemsPage: React.FC = () => {
     }, []);
 
     const apiRequest = useCallback(async (method: string, path: string, body?: any) => {
+        const isMutation = method !== 'GET';
+        if (isMutation) syncLocker.increment();
         try {
             const options: RequestInit = {
                 method,
@@ -78,6 +81,8 @@ const ManageItemsPage: React.FC = () => {
         } catch (error) {
             addNotification({ type: 'error', message: error instanceof Error ? error.message : 'An unknown network error occurred.' });
             throw error;
+        } finally {
+            if (isMutation) syncLocker.decrement();
         }
     }, [addNotification]);
 

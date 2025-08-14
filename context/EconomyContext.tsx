@@ -8,6 +8,7 @@ import { useNotificationsDispatch } from './NotificationsContext';
 import { useAuthDispatch, useAuthState } from './AuthContext';
 import { toYMD } from '../utils/quests';
 import { bugLogger } from '../utils/bugLogger';
+import { syncLocker } from '../utils/syncLocker';
 
 // State managed by this context
 interface EconomyState {
@@ -77,6 +78,8 @@ export const EconomyProvider: React.FC<{ children: ReactNode }> = ({ children })
   const [gameAssets, setGameAssets] = useState<GameAsset[]>([]);
 
   const apiRequest = useCallback(async (method: string, path: string, body?: any) => {
+    const isMutation = method !== 'GET';
+    if (isMutation) syncLocker.increment();
     try {
         const options: RequestInit = {
             method,
@@ -97,6 +100,8 @@ export const EconomyProvider: React.FC<{ children: ReactNode }> = ({ children })
     } catch (error) {
         addNotification({ type: 'error', message: error instanceof Error ? error.message : 'An unknown network error occurred.' });
         throw error;
+    } finally {
+        if (isMutation) syncLocker.decrement();
     }
   }, [addNotification]);
 

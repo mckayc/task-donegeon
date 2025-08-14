@@ -2,6 +2,7 @@ import React, { createContext, useState, useContext, ReactNode, useCallback, use
 import { User, Role } from '../types';
 import { useNotificationsDispatch } from './NotificationsContext';
 import { bugLogger } from '../utils/bugLogger';
+import { syncLocker } from '../utils/syncLocker';
 
 // State managed by this context
 interface AuthState {
@@ -49,6 +50,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const isFirstRun = users.length === 0;
 
   const apiRequest = useCallback(async (method: string, path: string, body?: any) => {
+      const isMutation = method !== 'GET';
+      if (isMutation) syncLocker.increment();
       try {
           const options: RequestInit = { method, headers: { 'Content-Type': 'application/json' } };
           if (body) options.body = JSON.stringify(body);
@@ -61,6 +64,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       } catch (error) {
           addNotification({ type: 'error', message: error instanceof Error ? error.message : 'An unknown network error occurred.' });
           throw error;
+      } finally {
+          if (isMutation) syncLocker.decrement();
       }
   }, [addNotification]);
 

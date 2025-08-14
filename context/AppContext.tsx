@@ -1,3 +1,5 @@
+
+
 import React, { createContext, useState, useContext, ReactNode, useEffect, useCallback, useMemo, useRef } from 'react';
 import { AppSettings, User, Quest, RewardItem, Guild, Rank, Trophy, UserTrophy, AppMode, Page, IAppData, ShareableAssetType, GameAsset, Role, RewardCategory, AdminAdjustment, AdminAdjustmentType, SystemLog, QuestType, QuestAvailability, AssetPack, ImportResolution, TrophyRequirementType, ThemeDefinition, ChatMessage, SystemNotification, SystemNotificationType, MarketStatus, QuestGroup, BulkQuestUpdates, ScheduledEvent, BugReport, QuestCompletion, BugReportType } from '../types';
 import { INITIAL_SETTINGS, INITIAL_RANKS, INITIAL_TROPHIES, INITIAL_THEMES } from '../data/initialData';
@@ -6,6 +8,7 @@ import { useAuthState, useAuthDispatch } from './AuthContext';
 import { useEconomyDispatch } from './EconomyContext';
 import { useQuestDispatch } from './QuestContext';
 import { bugLogger } from '../utils/bugLogger';
+import { syncLocker } from '../utils/syncLocker';
 
 // The single, unified state for the non-auth/quest parts of the application
 interface AppState extends Omit<IAppData, 'users' | 'loginHistory' | 'quests' | 'questGroups' | 'questCompletions' | 'markets' | 'rewardTypes' | 'purchaseRequests' | 'gameAssets'> {
@@ -95,7 +98,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [syncStatus, setSyncStatus] = useState<'idle' | 'syncing' | 'success' | 'error'>('idle');
   const [syncError, setSyncError] = useState<string | null>(null);
   const [isAiConfigured, setIsAiConfigured] = useState(false);
-  const mutationsInFlight = useRef(0);
   const recentOptimisticUpdates = useRef<Map<string, string>>(new Map());
   
   // Ref to hold the last sync timestamp without causing re-renders
@@ -117,7 +119,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const apiRequest = useCallback(async (method: string, path: string, body?: any) => {
     const isMutation = method !== 'GET';
     if (isMutation) {
-        mutationsInFlight.current += 1;
+        syncLocker.increment();
     }
     try {
         const options: RequestInit = {
@@ -141,7 +143,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         throw error;
     } finally {
         if (isMutation) {
-            mutationsInFlight.current -= 1;
+            syncLocker.decrement();
         }
     }
   }, [addNotification]);
@@ -267,11 +269,11 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   }, [apiRequest, processAndSetData, addNotification, authDispatch]);
 
   const performDeltaSync = useCallback(async () => {
-    if (mutationsInFlight.current > 0 || !lastSyncTimestamp.current) return;
+    if (syncLocker.isLocked() || !lastSyncTimestamp.current) return;
     setSyncStatus('syncing');
     setSyncError(null);
     try {
-      const response = await apiRequest('GET', `/api/data/sync?lastSync=${lastSyncTimestamp.current}`);
+      const response = await apiRequest('GET', `/api/data/sync?lastSync=${encodeURIComponent(lastSyncTimestamp.current)}`);
       if (!response) {
           setSyncStatus('success'); // No updates
           return;

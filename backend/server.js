@@ -176,6 +176,24 @@ const initializeApp = async () => {
     await dataSource.initialize();
     console.log("Data Source has been initialized!");
 
+    // --- MIGRATION LOGIC START ---
+    const manager = dataSource.manager;
+    const marketRepo = manager.getRepository(MarketEntity);
+    const exchangeMarket = await marketRepo.findOneBy({ id: 'market-bank' });
+    if (!exchangeMarket) {
+        console.log("Migrating: Creating default Exchange Post market.");
+        const newExchangeMarket = marketRepo.create({
+            id: 'market-bank',
+            title: 'The Exchange Post',
+            description: 'Exchange your various currencies and experience points.',
+            iconType: 'emoji',
+            icon: '⚖️',
+            status: { type: 'open' }
+        });
+        await marketRepo.save(updateTimestamps(newExchangeMarket, true));
+    }
+    // --- MIGRATION LOGIC END ---
+
     // Ensure asset and backup directories exist
     await fs.mkdir(UPLOADS_DIR, { recursive: true });
     await fs.mkdir(BACKUP_DIR, { recursive: true });

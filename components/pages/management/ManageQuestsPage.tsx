@@ -12,18 +12,16 @@ import Input from '../../user-interface/Input';
 import BulkEditQuestsDialog from '../../quests/BulkEditQuestsDialog';
 import { useDebounce } from '../../../hooks/useDebounce';
 import { useNotificationsDispatch } from '../../../context/NotificationsContext';
-import { useQuestState, useQuestDispatch } from '../../../context/QuestContext';
-import { useShiftSelect } from '../../../hooks/useShiftSelect';
+import { useQuestState } from '../../../context/QuestContext';
+import { syncLocker } from '../../../utils/syncLocker';
 
 const ManageQuestsPage: React.FC = () => {
     const { settings, isAiConfigured } = useAppState();
-    const { quests, questGroups } = useQuestState();
+    const { questGroups } = useQuestState();
     const { addNotification } = useNotificationsDispatch();
-    const { 
-        addQuest, updateQuest, cloneQuest, deleteQuests,
-        updateQuestsStatus, bulkUpdateQuests 
-    } = useQuestDispatch();
     
+    const [pageQuests, setPageQuests] = useState<Quest[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
     const [editingQuest, setEditingQuest] = useState<Quest | null>(null);
     const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
     const [isGeneratorOpen, setIsGeneratorOpen] = useState(false);
@@ -41,6 +39,59 @@ const ManageQuestsPage: React.FC = () => {
 
     const isAiAvailable = settings.enableAiFeatures && isAiConfigured;
 
+    const apiRequest = useCallback(async (method: string, path: string, body?: any) => {
+        const isMutation = method !== 'GET';
+        if (isMutation) syncLocker.increment();
+        try {
+            const options: RequestInit = {
+                method,
+                headers: { 'Content-Type': 'application/json' },
+            };
+            if (body) {
+                options.body = JSON.stringify(body);
+            }
+            const response = await window.fetch(path, options);
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({ error: 'Server error' }));
+                throw new Error(errorData.error || `Request failed with status ${response.status}`);
+            }
+            if (response.status === 204) {
+                 return null;
+            }
+            return await response.json();
+        } catch (error) {
+            addNotification({ type: 'error', message: error instanceof Error ? error.message : 'An unknown network error occurred.' });
+            throw error;
+        } finally {
+            if (isMutation) syncLocker.decrement();
+        }
+    }, [addNotification]);
+
+    const fetchQuests = useCallback(async () => {
+        setIsLoading(true);
+        try {
+            const params = new URLSearchParams();
+            const group = questGroups.find(g => g.name === activeTab);
+            const groupId = activeTab === 'All' ? 'All' : (group ? group.id : 'Uncategorized');
+            
+            params.append('groupId', groupId);
+            if (debouncedSearchTerm) params.append('searchTerm', debouncedSearchTerm);
+            params.append('sortBy', sortBy);
+
+            const data = await apiRequest('GET', `/api/quests?${params.toString()}`);
+            setPageQuests(data as Quest[]);
+        } catch (error) {
+            console.error("Failed to fetch quests:", error);
+        } finally {
+            setIsLoading(false);
+        }
+    }, [activeTab, debouncedSearchTerm, sortBy, questGroups, apiRequest]);
+
+    useEffect(() => {
+        fetchQuests();
+    }, [fetchQuests]);
+
+
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
             if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
@@ -51,48 +102,11 @@ const ManageQuestsPage: React.FC = () => {
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
-    const tabs = useMemo(() => ['All', 'Uncategorized', ...questGroups.map((g: QuestGroup) => g.name)], [questGroups]);
+    const tabs = useMemo(() => ['All', 'Uncategorized', ...questGroups.map(g => g.name)], [questGroups]);
     
     useEffect(() => {
         setSelectedQuests([]);
     }, [activeTab, searchTerm, sortBy]);
-    
-    const filteredAndSortedQuests = useMemo(() => {
-        let filtered = quests;
-
-        // Filter by group (activeTab)
-        if (activeTab !== 'All') {
-            const group = questGroups.find(g => g.name === activeTab);
-            if (group) {
-                filtered = filtered.filter(q => q.groupId === group.id);
-            } else { // Uncategorized
-                filtered = filtered.filter(q => !q.groupId);
-            }
-        }
-
-        // Filter by search term
-        if (debouncedSearchTerm) {
-            const lowercasedTerm = debouncedSearchTerm.toLowerCase();
-            filtered = filtered.filter(q => 
-                q.title.toLowerCase().includes(lowercasedTerm) ||
-                q.description.toLowerCase().includes(lowercasedTerm)
-            );
-        }
-
-        // Sort
-        return filtered.sort((a, b) => {
-            switch (sortBy) {
-                case 'title-asc': return a.title.localeCompare(b.title);
-                case 'title-desc': return b.title.localeCompare(a.title);
-                case 'status-asc': return (a.isActive ? 1 : 0) - (b.isActive ? 1 : 0);
-                case 'status-desc': return (b.isActive ? 1 : 0) - (a.isActive ? 1 : 0);
-                default: return 0;
-            }
-        });
-    }, [quests, activeTab, questGroups, debouncedSearchTerm, sortBy]);
-
-    const pageQuestIds = useMemo(() => filteredAndSortedQuests.map(q => q.id), [filteredAndSortedQuests]);
-    const handleCheckboxClick = useShiftSelect(pageQuestIds, selectedQuests, setSelectedQuests);
 
     const handleEdit = (quest: Quest) => {
         setInitialCreateData(null);
@@ -106,36 +120,44 @@ const ManageQuestsPage: React.FC = () => {
         setIsCreateDialogOpen(true);
     };
     
-    const handleSaveQuest = (questData: any) => {
+    const handleSaveQuest = async (questData: any) => {
         const isEditing = !!editingQuest;
-        if (isEditing) {
-            updateQuest({ ...editingQuest, ...questData });
-        } else {
-            addQuest(questData);
-        }
-        addNotification({ type: 'success', message: `Quest ${isEditing ? 'updated' : 'created'} successfully!` });
+        const method = isEditing ? 'PUT' : 'POST';
+        const url = isEditing ? `/api/quests/${editingQuest!.id}` : '/api/quests';
+        try {
+            await apiRequest(method, url, questData);
+            addNotification({ type: 'success', message: `Quest ${isEditing ? 'updated' : 'created'} successfully!` });
+            fetchQuests();
+        } catch (e) { /* error handled by apiRequest helper */ }
     };
 
-    const handleClone = (questId: string) => {
-        cloneQuest(questId);
-        addNotification({ type: 'success', message: 'Quest cloned successfully!' });
+    const handleClone = async (questId: string) => {
+        try {
+            await apiRequest('POST', `/api/quests/clone/${questId}`);
+            addNotification({ type: 'success', message: 'Quest cloned successfully!' });
+            fetchQuests();
+        } catch (e) { /* error handled */ }
     };
 
-    const handleConfirmAction = () => {
+    const handleConfirmAction = async () => {
         if (!confirmation) return;
         
-        switch(confirmation.action) {
-            case 'delete':
-                deleteQuests(confirmation.ids);
-                addNotification({ type: 'info', message: `${confirmation.ids.length} quest(s) deleted.` });
-                break;
-            case 'activate':
-            case 'deactivate':
-                updateQuestsStatus(confirmation.ids, confirmation.action === 'activate');
-                addNotification({ type: 'success', message: `${confirmation.ids.length} quest(s) updated.` });
-                break;
-        }
-        setSelectedQuests([]);
+        try {
+            switch(confirmation.action) {
+                case 'delete':
+                    await apiRequest('DELETE', '/api/quests', { ids: confirmation.ids });
+                    addNotification({ type: 'info', message: `${confirmation.ids.length} quest(s) deleted.` });
+                    break;
+                case 'activate':
+                case 'deactivate':
+                    await apiRequest('PUT', '/api/quests/bulk-status', { ids: confirmation.ids, isActive: confirmation.action === 'activate' });
+                    addNotification({ type: 'success', message: `${confirmation.ids.length} quest(s) updated.` });
+                    break;
+            }
+            setSelectedQuests([]);
+            fetchQuests();
+        } catch (e) { /* error handled */ }
+        
         setConfirmation(null);
     };
     
@@ -153,13 +175,28 @@ const ManageQuestsPage: React.FC = () => {
     };
 
     const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
-        setSelectedQuests(e.target.checked ? pageQuestIds : []);
+        if (e.target.checked) {
+            setSelectedQuests(pageQuests.map(q => q.id));
+        } else {
+            setSelectedQuests([]);
+        }
+    };
+
+    const handleSelectOne = (id: string, isChecked: boolean) => {
+        if (isChecked) {
+            setSelectedQuests(prev => [...prev, id]);
+        } else {
+            setSelectedQuests(prev => prev.filter(questId => questId !== id));
+        }
     };
     
     const handleBulkSave = async (updates: any) => {
-        bulkUpdateQuests(selectedQuests, updates);
-        addNotification({ type: 'success', message: `Bulk updated ${selectedQuests.length} quest(s).` });
-        setSelectedQuests([]);
+        try {
+            await apiRequest('PUT', '/api/quests/bulk-update', { ids: selectedQuests, updates });
+            addNotification({ type: 'success', message: `Bulk updated ${selectedQuests.length} quest(s).` });
+            setSelectedQuests([]);
+            fetchQuests();
+        } catch(e) { /* error handled */ }
     };
 
     const getConfirmationMessage = () => {
@@ -229,12 +266,14 @@ const ManageQuestsPage: React.FC = () => {
                     )}
                 </div>
 
-                {filteredAndSortedQuests.length > 0 ? (
+                {isLoading ? (
+                    <div className="text-center py-10"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-400 mx-auto"></div></div>
+                ) : pageQuests.length > 0 ? (
                     <div className="overflow-x-auto">
                         <table className="w-full text-left">
                             <thead className="border-b border-stone-700/60">
                                 <tr>
-                                    <th className="p-4 w-12"><input type="checkbox" onChange={handleSelectAll} checked={selectedQuests.length === pageQuestIds.length && pageQuestIds.length > 0} className="h-4 w-4 rounded text-emerald-600 bg-stone-700 border-stone-600 focus:ring-emerald-500" /></th>
+                                    <th className="p-4 w-12"><input type="checkbox" onChange={handleSelectAll} checked={selectedQuests.length === pageQuests.length && pageQuests.length > 0} className="h-4 w-4 rounded text-emerald-600 bg-stone-700 border-stone-600 focus:ring-emerald-500" /></th>
                                     <th className="p-4 font-semibold">Title</th>
                                     <th className="p-4 font-semibold">Type</th>
                                     <th className="p-4 font-semibold">Status</th>
@@ -243,9 +282,9 @@ const ManageQuestsPage: React.FC = () => {
                                 </tr>
                             </thead>
                             <tbody>
-                                {filteredAndSortedQuests.map(quest => (
+                                {pageQuests.map(quest => (
                                     <tr key={quest.id} className="border-b border-stone-700/40 last:border-b-0">
-                                        <td className="p-4"><input type="checkbox" checked={selectedQuests.includes(quest.id)} onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleCheckboxClick(e, quest.id)} className="h-4 w-4 rounded text-emerald-600 bg-stone-700 border-stone-600 focus:ring-emerald-500" /></td>
+                                        <td className="p-4"><input type="checkbox" checked={selectedQuests.includes(quest.id)} onChange={e => handleSelectOne(quest.id, e.target.checked)} className="h-4 w-4 rounded text-emerald-600 bg-stone-700 border-stone-600 focus:ring-emerald-500" /></td>
                                         <td className="p-4 font-bold">
                                             <button onClick={() => handleEdit(quest)} data-log-id={`manage-quests-edit-title-${quest.id}`} className="hover:underline hover:text-accent transition-colors text-left">
                                                 {quest.title}
@@ -259,7 +298,7 @@ const ManageQuestsPage: React.FC = () => {
                                         </td>
                                         <td className="p-4">
                                             <div className="flex flex-wrap gap-1">
-                                                {quest.tags?.map((tag: string) => (
+                                                {quest.tags?.map(tag => (
                                                     <span key={tag} className="bg-blue-500/20 text-blue-300 text-xs font-medium px-2 py-1 rounded-full">
                                                         {tag}
                                                     </span>

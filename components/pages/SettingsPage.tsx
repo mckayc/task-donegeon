@@ -115,7 +115,7 @@ const terminologyLabels: { [key in keyof Terminology]: string } = {
   link_asset_library: 'Sidebar: Asset Library',
   link_settings: 'Sidebar: Settings',
   link_about: 'About',
-  link_help_guide: 'Sidebar: Help Guide',
+  link_help_guide: 'Help Guide',
   link_chat: 'Sidebar: Chat',
   link_bug_tracker: 'Sidebar: Bug Tracker',
 };
@@ -134,6 +134,7 @@ export const SettingsPage: React.FC = () => {
     const [formState, setFormState] = useState<AppSettings>(() => JSON.parse(JSON.stringify(settings)));
     const [confirmation, setConfirmation] = useState<string | null>(null);
     const [isEmojiPickerOpen, setIsEmojiPickerOpen] = useState<{ general: boolean, chat: boolean }>({ general: false, chat: false });
+    const [editingSchedule, setEditingSchedule] = useState<BackupSchedule | null>(null);
 
     const handleSettingChange = (section: keyof AppSettings, key: any, value: any) => {
         setFormState(prev => {
@@ -171,6 +172,22 @@ export const SettingsPage: React.FC = () => {
             case 'factoryReset': factoryReset(); break;
         }
         setConfirmation(null);
+    };
+
+    const handleSaveSchedule = (scheduleData: Omit<BackupSchedule, 'id'>) => {
+        const updatedSchedules = [...settings.automatedBackups.schedules];
+        if (editingSchedule) {
+            const index = updatedSchedules.findIndex(s => s.id === editingSchedule.id);
+            if (index !== -1) {
+                // IMPORTANT FIX: Merge with the existing schedule object from settings
+                // to preserve the `lastBackupTimestamp` which is not present in `scheduleData`.
+                updatedSchedules[index] = { ...updatedSchedules[index], ...scheduleData };
+            }
+        } else {
+            updatedSchedules.push({ ...scheduleData, id: `schedule-${Date.now()}` });
+        }
+        updateSettings({ automatedBackups: { ...settings.automatedBackups, schedules: updatedSchedules } });
+        setEditingSchedule(null);
     };
 
     return (
@@ -259,15 +276,13 @@ export const SettingsPage: React.FC = () => {
                         <ToggleSwitch enabled={formState.rewardValuation.enabled} setEnabled={(val: boolean) => handleRewardValuationChange('enabled', val)} label="Enable Reward Valuation & Exchange" />
                         {formState.rewardValuation.enabled && (
                              <div className="p-4 bg-stone-900/40 rounded-lg space-y-4">
-                                <p className="text-sm text-stone-300">This system allows you to assign real-world monetary value to your virtual rewards. Each reward type can be configured with a value that represents how many units are equal to one unit of your selected currency (e.g., 5 Gold = 1 USD).</p>
-                                 <Input as="select" label="Real-World Currency" value={formState.rewardValuation.realWorldCurrency} onChange={(e: React.ChangeEvent<HTMLSelectElement>) => handleRewardValuationChange('realWorldCurrency', e.target.value)}>
-                                    {REAL_WORLD_CURRENCIES.map(c => <option key={c} value={c}>{c}</option>)}
-                                 </Input>
-                                 <h4 className="font-semibold text-stone-200 pt-2 border-t border-stone-700/60">Transaction Fees</h4>
-                                <p className="text-xs text-stone-400 -mt-3 mb-2">Fees are applied when exchanging rewards. E.g., a 5% fee means paying 105 Gold to receive the equivalent value of 100 Gold in another currency.</p>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <Input label="Currency Exchange Fee (%)" type="number" min="0" value={formState.rewardValuation.currencyExchangeFeePercent} onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleRewardValuationChange('currencyExchangeFeePercent', parseInt(e.target.value) || 0)} />
-                                    <Input label="XP Exchange Fee (%)" type="number" min="0" value={formState.rewardValuation.xpExchangeFeePercent} onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleRewardValuationChange('xpExchangeFeePercent', parseInt(e.target.value) || 0)} />
+                                <p className="text-sm text-stone-300">Assign real-world monetary value to your virtual rewards and set transaction fees for exchanges.</p>
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4 border-t border-stone-700/60">
+                                    <Input as="select" label="Real-World Currency" value={formState.rewardValuation.realWorldCurrency} onChange={(e: React.ChangeEvent<HTMLSelectElement>) => handleRewardValuationChange('realWorldCurrency', e.target.value)}>
+                                        {REAL_WORLD_CURRENCIES.map(c => <option key={c} value={c}>{c}</option>)}
+                                    </Input>
+                                    <Input label="Currency Fee (%)" type="number" min="0" value={formState.rewardValuation.currencyExchangeFeePercent} onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleRewardValuationChange('currencyExchangeFeePercent', parseInt(e.target.value) || 0)} />
+                                    <Input label="XP Fee (%)" type="number" min="0" value={formState.rewardValuation.xpExchangeFeePercent} onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleRewardValuationChange('xpExchangeFeePercent', parseInt(e.target.value) || 0)} />
                                 </div>
                              </div>
                         )}

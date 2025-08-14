@@ -2,7 +2,7 @@
 import React, { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import { useAppState } from '../../context/AppContext';
 import { useUIState, useUIDispatch } from '../../context/UIStateContext';
-import { Role, ScheduledEvent, Quest, QuestType, ChronicleEvent, User, AppMode } from '../../types';
+import { Role, ScheduledEvent, Quest, QuestType, ChronicleEvent, User, AppMode, RewardTypeDefinition, RewardItem } from '../../types';
 import Card from '../user-interface/Card';
 import Button from '../user-interface/Button';
 import ScheduleEventDialog from '../admin/ScheduleEventDialog';
@@ -15,7 +15,7 @@ import interactionPlugin, { DateClickArg } from '@fullcalendar/interaction';
 import googleCalendarPlugin from '@fullcalendar/google-calendar';
 import listPlugin from '@fullcalendar/list';
 import rrulePlugin from '@fullcalendar/rrule';
-import { EventClickArg, EventSourceInput, EventDropArg, MoreLinkArg, EventInput } from '@fullcalendar/core';
+import { EventClickArg, EventSourceInput, EventDropArg, MoreLinkArg, EventInput, EventContentArg } from '@fullcalendar/core';
 import { useQuestState, useQuestDispatch } from '../../context/QuestContext';
 import { useChronicles } from '../../hooks/useChronicles';
 import QuestDetailDialog from '../quests/QuestDetailDialog';
@@ -24,8 +24,48 @@ import { toYMD, isQuestAvailableForUser, isQuestVisibleToUserInMode } from '../.
 import CreateQuestDialog from '../quests/CreateQuestDialog';
 import { useNotificationsDispatch } from '../../context/NotificationsContext';
 import ChroniclesDetailDialog from '../calendar/ChroniclesDetailDialog';
+import { useEconomyState } from '../../context/EconomyContext';
 
 type CalendarMode = 'events' | 'chronicles';
+
+const renderEventContent = (eventInfo: EventContentArg, rewardTypes: RewardTypeDefinition[]) => {
+    const { event } = eventInfo;
+    const { extendedProps } = event;
+
+    const getRewardInfo = (id: string) => {
+        return rewardTypes.find(rt => rt.id === id) || { name: 'Unknown', icon: '❓' };
+    };
+
+    let icon = '';
+    let rewards: RewardItem[] = [];
+    
+    if (extendedProps.type === 'quest' && extendedProps.quest) {
+        icon = extendedProps.quest.icon;
+        rewards = extendedProps.quest.rewards || [];
+    } else if (extendedProps.type === 'scheduled' && extendedProps.appEvent) {
+        icon = extendedProps.appEvent.icon || '🎉';
+    } else if (extendedProps.type === 'chronicle' && extendedProps.chronicleEvent) {
+        icon = extendedProps.chronicleEvent.icon;
+    }
+
+    // In list view, FullCalendar adds its own dot, so we don't need another one.
+    const isListView = eventInfo.view.type.startsWith('list');
+    
+    return (
+        <div className="flex items-center gap-2 overflow-hidden w-full">
+            {!isListView && <span className="text-lg">{icon}</span>}
+            <span className="truncate flex-grow">{event.title}</span>
+            {rewards.length > 0 && (
+                <div className="hidden sm:flex items-center gap-x-2 ml-auto flex-shrink-0">
+                    {rewards.map(r => {
+                        const { icon: rewardIcon } = getRewardInfo(r.rewardTypeId);
+                        return <span key={r.rewardTypeId} className="text-xs font-semibold flex items-center gap-1" title={`${r.amount} ${getRewardInfo(r.rewardTypeId).name}`}>{r.amount}{rewardIcon}</span>
+                    })}
+                </div>
+            )}
+        </div>
+    );
+};
 
 const CalendarPage: React.FC = () => {
     const { settings, scheduledEvents } = useAppState();
@@ -35,6 +75,7 @@ const CalendarPage: React.FC = () => {
     const { setActivePage } = useUIDispatch();
     const { markQuestAsTodo, unmarkQuestAsTodo, updateQuest } = useQuestDispatch();
     const { addNotification } = useNotificationsDispatch();
+    const { rewardTypes } = useEconomyState();
     
     const [mode, setMode] = useState<CalendarMode>('events');
     const [viewRange, setViewRange] = useState<{ start: Date; end: Date } | null>(null);
@@ -120,10 +161,9 @@ const CalendarPage: React.FC = () => {
                         const dutyEvent: EventInput = {
                             ...baseProps,
                             rrule: quest.rrule,
+                            allDay: quest.allDay,
                         };
                 
-                        // For recurring events, we infer allDay from the presence of startTime.
-                        // We do NOT explicitly set allDay: true, as the rrule plugin handles it.
                         if (!quest.allDay && quest.startTime) {
                             dutyEvent.startTime = quest.startTime;
                             dutyEvent.endTime = quest.endTime || undefined;
@@ -296,7 +336,7 @@ const CalendarPage: React.FC = () => {
                 .fc .fc-button-primary:hover { background-color: hsl(var(--accent) / 0.8); }
                 .fc .fc-button-primary:disabled { background-color: hsl(var(--muted)); }
                 .fc .fc-button-primary:not(:disabled).fc-button-active, .fc .fc-button-primary:not(:disabled):active { background-color: hsl(var(--primary)); color: hsl(var(--primary-foreground)); }
-                .fc .fc-daygrid-day.fc-day-today { background-color: hsl(var(--color-bg-secondary-hsl)); }
+                .fc .fc-daygrid-day.fc-day-today { background-color: hsl(var(--primary) / 0.15); }
                 .fc .fc-daygrid-day-number { color: hsl(var(--foreground)); padding: 4px; }
                 .fc .fc-day-past .fc-daygrid-day-number { color: hsl(var(--muted-foreground)); }
                 .fc .fc-event { border: 1px solid hsl(var(--border)) !important; font-size: 0.75rem; padding: 2px 4px; color: hsl(var(--primary-foreground)); }
@@ -339,7 +379,7 @@ const CalendarPage: React.FC = () => {
                             right: 'listWeek,timeGridDay,timeGridWeek,dayGridMonth'
                         }}
                         buttonText={{ day: 'Day', week: 'Week', month: 'Month', list: 'Agenda' }}
-                        initialView="dayGridMonth"
+                        initialView="listWeek"
                         googleCalendarApiKey={settings.googleCalendar.apiKey || undefined}
                         eventSources={eventSources}
                         eventClick={handleEventClick}
@@ -349,7 +389,7 @@ const CalendarPage: React.FC = () => {
                         editable={currentUser.role === Role.DonegeonMaster}
                         eventDrop={handleEventDrop}
                         dateClick={handleDateClick}
-                        height="auto"
+                        eventContent={(arg) => renderEventContent(arg, rewardTypes)}
                         contentHeight="auto"
                         aspectRatio={1.5}
                         slotDuration="00:15:00"

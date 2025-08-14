@@ -95,13 +95,13 @@ const ExchangeView: React.FC<ExchangeViewProps> = ({ market }) => {
         const feeMultiplier = 1 + (Number(feePercent) / 100);
         
         const fromBalanceAfterFee = fromBalance / feeMultiplier;
-        const fromValueInReal = fromBalanceAfterFee / fromReward.baseValue;
-        const maxToAmount = fromValueInReal * toReward.baseValue;
+        const fromValueInReal = fromBalanceAfterFee * fromReward.baseValue;
+        const maxToAmount = fromValueInReal / toReward.baseValue;
 
         // Calculate cost based on current input
         const cappedToAmount = Math.min(toAmountNum, maxToAmount);
-        const toValueInReal = cappedToAmount / toReward.baseValue;
-        const fromAmountBase = toValueInReal * fromReward.baseValue;
+        const toValueInReal = cappedToAmount * toReward.baseValue;
+        const fromAmountBase = toValueInReal / fromReward.baseValue;
         const fee = fromAmountBase * (Number(feePercent) / 100);
         const totalCost = fromAmountBase + fee;
 
@@ -156,7 +156,7 @@ const ExchangeView: React.FC<ExchangeViewProps> = ({ market }) => {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2 max-w-lg mx-auto">
                     {exchangeableRewardTypes.map(reward => (
                         <div key={reward.id} className="flex items-center justify-center text-lg">
-                            <span className="font-bold text-accent-light">{reward.baseValue} {reward.icon}</span>
+                            <span className="font-bold text-accent-light">{1 / reward.baseValue} {reward.icon}</span>
                             <span className="mx-2 text-stone-400">=</span>
                             <span className="font-semibold text-stone-200">1 {realWorldCurrency}</span>
                         </div>

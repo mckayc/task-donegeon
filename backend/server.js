@@ -17,11 +17,15 @@ const {
     ChatMessageEntity, SystemNotificationEntity, ScheduledEventEntity, SettingEntity, LoginHistoryEntity,
     BugReportEntity, allEntities
 } = require('./entities');
+const { EventEmitter } = require('events');
 
 const { version } = require('./package.json');
 const app = express();
 const port = process.env.PORT || 3000;
 const dbPath = process.env.DATABASE_PATH || '/app/data/database/database.sqlite';
+
+const updateEmitter = new EventEmitter();
+let clients = [];
 
 const updateTimestamps = (entity, isNew = false) => {
     const now = new Date().toISOString();
@@ -241,6 +245,35 @@ const asyncMiddleware = fn => (req, res, next) => {
 };
 
 // === API ROUTES ===
+
+// Server-Sent Events endpoint
+app.get('/api/data/events', (req, res) => {
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+    res.flushHeaders();
+
+    const clientId = Date.now();
+    const newClient = { id: clientId, res };
+    clients.push(newClient);
+    console.log(`[SSE] Client connected: ${clientId}`);
+
+    // Send a welcome message to confirm connection
+    res.write('data: connected\n\n');
+
+    req.on('close', () => {
+        console.log(`[SSE] Client disconnected: ${clientId}`);
+        clients = clients.filter(client => client.id !== clientId);
+    });
+});
+
+const sendUpdateToClients = () => {
+    console.log('[SSE] Broadcasting sync event to all clients.');
+    clients.forEach(client => client.res.write('data: sync\n\n'));
+};
+
+updateEmitter.on('update', sendUpdateToClients);
+
 
 // System Status Check
 app.get('/api/system/status', (req, res) => {
@@ -581,7 +614,8 @@ app.post('/api/data/import-assets', asyncMiddleware(async (req, res) => {
         }
         console.log(`[IMPORT] Successfully completed import for asset pack: ${assetPack.manifest.name}`);
     });
-
+    
+    updateEmitter.emit('update');
     res.status(200).json({ message: 'Assets imported successfully.' });
 }));
 
@@ -635,6 +669,7 @@ guildsRouter.post('/', asyncMiddleware(async (req, res) => {
     }
 
     const saved = await guildRepo.save(updateTimestamps(newGuild, true));
+    updateEmitter.emit('update');
     res.status(201).json(saved);
 }));
 
@@ -650,11 +685,13 @@ guildsRouter.put('/:id', asyncMiddleware(async (req, res) => {
     }
 
     const saved = await guildRepo.save(updateTimestamps(guild));
+    updateEmitter.emit('update');
     res.json(saved);
 }));
 
 guildsRouter.delete('/:id', asyncMiddleware(async (req, res) => {
     await guildRepo.delete(req.params.id);
+    updateEmitter.emit('update');
     res.status(204).send();
 }));
 
@@ -712,6 +749,7 @@ usersRouter.post('/', asyncMiddleware(async (req, res) => {
         await guildRepo.save(updateTimestamps(defaultGuild));
     }
 
+    updateEmitter.emit('update');
     res.status(201).json(newUser);
 }));
 
@@ -736,6 +774,7 @@ usersRouter.put('/:id', asyncMiddleware(async (req, res) => {
     
     userData.updatedAt = new Date().toISOString();
     await userRepo.update(id, userData);
+    updateEmitter.emit('update');
     res.json(await userRepo.findOneBy({ id }));
 }));
 
@@ -743,6 +782,7 @@ usersRouter.delete('/', asyncMiddleware(async (req, res) => {
     const { ids } = req.body;
     if (!ids || !Array.isArray(ids)) return res.status(400).send('Invalid request body, expected { ids: [...] }');
     await userRepo.delete(ids);
+    updateEmitter.emit('update');
     res.status(204).send();
 }));
 
@@ -753,6 +793,7 @@ app.use('/api/guilds', guildsRouter);
 app.put('/api/settings', asyncMiddleware(async (req, res) => {
     const repo = dataSource.getRepository(SettingEntity);
     await repo.save(updateTimestamps({ id: 1, settings: req.body }));
+    updateEmitter.emit('update');
     res.json(req.body);
 }));
 
@@ -772,12 +813,14 @@ bugReportsRouter.post('/', asyncMiddleware(async (req, res) => {
     };
     const newReport = bugReportRepo.create(reportData);
     const saved = await bugReportRepo.save(updateTimestamps(newReport, true));
+    updateEmitter.emit('update');
     res.status(201).json(saved);
 }));
 
 bugReportsRouter.put('/:id', asyncMiddleware(async (req, res) => {
     const data = updateTimestamps(req.body);
     await bugReportRepo.update(req.params.id, data);
+    updateEmitter.emit('update');
     res.json(await bugReportRepo.findOneBy({ id: req.params.id }));
 }));
 
@@ -787,6 +830,7 @@ bugReportsRouter.delete('/', asyncMiddleware(async (req, res) => {
         return res.status(400).json({ error: 'Report IDs must be provided in an array.' });
     }
     await bugReportRepo.delete(ids);
+    updateEmitter.emit('update');
     res.status(204).send();
 }));
 
@@ -809,6 +853,7 @@ bugReportsRouter.post('/import', asyncMiddleware(async (req, res) => {
         await manager.save(reports);
     });
 
+    updateEmitter.emit('update');
     res.status(200).json({ message: `${reportsToImport.length} bug reports imported successfully.` });
 }));
 
@@ -830,16 +875,19 @@ eventsRouter.post('/', asyncMiddleware(async (req, res) => {
         id: `event-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
     });
     const saved = await eventRepo.save(updateTimestamps(newEvent, true));
+    updateEmitter.emit('update');
     res.status(201).json(saved);
 }));
 
 eventsRouter.put('/:id', asyncMiddleware(async (req, res) => {
     await eventRepo.update(req.params.id, updateTimestamps(req.body));
+    updateEmitter.emit('update');
     res.json(await eventRepo.findOneBy({ id: req.params.id }));
 }));
 
 eventsRouter.delete('/:id', asyncMiddleware(async (req, res) => {
     await eventRepo.delete(req.params.id);
+    updateEmitter.emit('update');
     res.status(204).send();
 }));
 
@@ -900,6 +948,7 @@ questsRouter.post('/', asyncMiddleware(async (req, res) => {
     }
     await questRepo.save(updateTimestamps(newQuest, true));
     const savedQuest = await questRepo.findOne({ where: { id: newQuest.id }, relations: ['assignedUsers'] });
+    updateEmitter.emit('update');
     res.status(201).json({ ...savedQuest, assignedUserIds: savedQuest.assignedUsers?.map(u => u.id) || [] });
 }));
 
@@ -915,6 +964,7 @@ questsRouter.put('/:id', asyncMiddleware(async (req, res) => {
     }
     await questRepo.save(updateTimestamps(quest));
     const updatedQuest = await questRepo.findOne({ where: { id: req.params.id }, relations: ['assignedUsers'] });
+    updateEmitter.emit('update');
     res.json({ ...updatedQuest, assignedUserIds: updatedQuest.assignedUsers?.map(u => u.id) || [] });
 }));
 
@@ -934,6 +984,7 @@ questsRouter.post('/clone/:id', asyncMiddleware(async (req, res) => {
     });
     await questRepo.save(updateTimestamps(newQuest, true));
     const savedQuest = await questRepo.findOne({ where: { id: newQuest.id }, relations: ['assignedUsers'] });
+    updateEmitter.emit('update');
     res.status(201).json({ ...savedQuest, assignedUserIds: savedQuest.assignedUsers?.map(u => u.id) || [] });
 }));
 
@@ -942,6 +993,7 @@ questsRouter.delete('/', asyncMiddleware(async (req, res) => {
     const { ids } = req.body;
     if (!ids || !Array.isArray(ids)) return res.status(400).send('Invalid request body, expected { ids: [...] }');
     await questRepo.delete(ids);
+    updateEmitter.emit('update');
     res.status(204).send();
 }));
 
@@ -949,6 +1001,7 @@ questsRouter.delete('/', asyncMiddleware(async (req, res) => {
 questsRouter.put('/bulk-status', asyncMiddleware(async (req, res) => {
     const { ids, isActive } = req.body;
     await questRepo.update(ids, updateTimestamps({ isActive }));
+    updateEmitter.emit('update');
     res.status(204).send();
 }));
 
@@ -983,6 +1036,7 @@ questsRouter.put('/bulk-update', asyncMiddleware(async (req, res) => {
         await manager.save(questsToUpdate);
     });
 
+    updateEmitter.emit('update');
     res.status(204).send();
 }));
 
@@ -1027,11 +1081,13 @@ assetsRouter.post('/', asyncMiddleware(async (req, res) => {
     };
     const newAsset = assetRepo.create(updateTimestamps(newAssetData, true));
     const saved = await assetRepo.save(newAsset);
+    updateEmitter.emit('update');
     res.status(201).json(saved);
 }));
 
 assetsRouter.put('/:id', asyncMiddleware(async (req, res) => {
     await assetRepo.update(req.params.id, updateTimestamps(req.body));
+    updateEmitter.emit('update');
     res.json(await assetRepo.findOneBy({ id: req.params.id }));
 }));
 
@@ -1046,6 +1102,7 @@ assetsRouter.post('/clone/:id', asyncMiddleware(async (req, res) => {
         purchaseCount: 0,
     }, true));
     await assetRepo.save(newAsset);
+    updateEmitter.emit('update');
     res.status(201).json(newAsset);
 }));
 
@@ -1053,6 +1110,7 @@ assetsRouter.delete('/', asyncMiddleware(async (req, res) => {
     const { ids } = req.body;
     if (!ids || !Array.isArray(ids)) return res.status(400).send('Invalid request body, expected { ids: [...] }');
     await assetRepo.delete(ids);
+    updateEmitter.emit('update');
     res.status(204).send();
 }));
 
@@ -1080,6 +1138,7 @@ marketsRouter.delete('/', asyncMiddleware(async (req, res) => {
     const { ids } = req.body;
     if (!ids || !Array.isArray(ids)) return res.status(400).json({ error: 'Invalid request body' });
     await marketRepo.delete(ids);
+    updateEmitter.emit('update');
     res.status(204).send();
 }));
 app.use('/api/markets', marketsRouter);
@@ -1108,6 +1167,7 @@ ranksRouter.delete('/', asyncMiddleware(async (req, res) => {
     const { ids } = req.body;
     if (!ids || !Array.isArray(ids)) return res.status(400).json({ error: 'Invalid request body' });
     await rankRepo.delete(ids);
+    updateEmitter.emit('update');
     res.status(204).send();
 }));
 app.use('/api/ranks', ranksRouter);
@@ -1134,6 +1194,7 @@ trophiesRouter.delete('/', asyncMiddleware(async (req, res) => {
     const { ids } = req.body;
     if (!ids || !Array.isArray(ids)) return res.status(400).json({ error: 'Invalid request body' });
     await trophyRepo.delete(ids);
+    updateEmitter.emit('update');
     res.status(204).send();
 }));
 app.use('/api/trophies', trophiesRouter);
@@ -1213,7 +1274,8 @@ app.post('/api/actions/complete-quest', asyncMiddleware(async (req, res) => {
             updatedUserResult = await manager.findOneBy(UserEntity, { id: completionData.userId });
             newCompletionResult = await manager.findOneBy(QuestCompletionEntity, { id: completion.id });
         });
-
+        
+        updateEmitter.emit('update');
         res.status(200).json({ 
             updatedUser: updatedUserResult, 
             newCompletion: newCompletionResult 
@@ -1283,6 +1345,7 @@ app.post('/api/actions/approve-quest/:id', asyncMiddleware(async (req, res) => {
             await checkAndAwardTrophies(manager, user.id, quest.guildId);
         });
 
+        updateEmitter.emit('update');
         res.status(204).send();
     } catch (error) {
         if (error.statusCode) {
@@ -1304,6 +1367,7 @@ app.post('/api/actions/reject-quest/:id', asyncMiddleware(async (req, res) => {
     completion.status = 'Rejected';
     if(note) completion.note = note;
     await repo.save(updateTimestamps(completion));
+    updateEmitter.emit('update');
     res.status(204).send();
 }));
 
@@ -1582,6 +1646,7 @@ chatRouter.post('/send', asyncMiddleware(async (req, res) => {
     });
 
     await chatRepo.save(updateTimestamps(newMessage, true));
+    updateEmitter.emit('update');
     res.status(201).json(newMessage);
 }));
 
@@ -1620,6 +1685,7 @@ chatRouter.post('/read', asyncMiddleware(async (req, res) => {
         await chatRepo.save(messagesToUpdate);
     }
 
+    updateEmitter.emit('update');
     res.status(204).send();
 }));
 
@@ -1805,16 +1871,10 @@ async function runAutomatedBackup() {
         }
 
         const now = Date.now();
+        let settingsModified = false;
         
         for (const schedule of settings.automatedBackups.schedules) {
-            const allBackupFiles = await fs.readdir(BACKUP_DIR).catch(() => []);
-            const scheduleFiles = allBackupFiles
-                .filter(file => file.includes(`_auto-${schedule.id}.`))
-                .sort((a, b) => b.localeCompare(a));
-
-            const lastBackupTime = scheduleFiles.length > 0
-                ? new Date(scheduleFiles[0].match(/(\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2})/)[0].replace('_', 'T')).getTime()
-                : 0;
+            const lastBackupTime = schedule.lastBackupTimestamp || 0;
             
             let frequencyMillis = 0;
             switch(schedule.unit) {
@@ -1826,7 +1886,7 @@ async function runAutomatedBackup() {
             if (now - lastBackupTime >= frequencyMillis) {
                 console.log(`[Backup] Running automated backup for schedule: ${schedule.id}`);
                 const format = settings.automatedBackups.format || 'json';
-                const backupTimestamp = new Date();
+                const backupTimestamp = new Date(now);
 
                 if (format === 'json' || format === 'both') {
                     await createAutomatedBackup(schedule.id, 'json', backupTimestamp);
@@ -1834,6 +1894,9 @@ async function runAutomatedBackup() {
                 if (format === 'sqlite' || format === 'both') {
                     await createAutomatedBackup(schedule.id, 'sqlite', backupTimestamp);
                 }
+
+                schedule.lastBackupTimestamp = now;
+                settingsModified = true;
 
                 // Re-fetch files for retention logic
                 const updatedBackupFiles = await fs.readdir(BACKUP_DIR);
@@ -1853,6 +1916,12 @@ async function runAutomatedBackup() {
                 }
             }
         }
+
+        if (settingsModified) {
+            console.log('[Backup] Saving updated backup timestamps to settings.');
+            await dataSource.manager.save(SettingEntity, updateTimestamps({ id: 1, settings }));
+        }
+
     } catch (error) {
         console.error('[Backup] Automated backup failed:', error);
     }

@@ -96,6 +96,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [syncError, setSyncError] = useState<string | null>(null);
   const [isAiConfigured, setIsAiConfigured] = useState(false);
   const mutationsInFlight = useRef(0);
+  const recentOptimisticUpdates = useRef<Map<string, string>>(new Map());
   
   // Ref to hold the last sync timestamp without causing re-renders
   const lastSyncTimestamp = useRef<string | null>(null);
@@ -210,7 +211,27 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       if (dataToSet.chatMessages) setChatMessages(prev => isDelta ? mergeData(prev, dataToSet.chatMessages!) : dataToSet.chatMessages!);
       if (dataToSet.systemNotifications) setSystemNotifications(prev => isDelta ? mergeData(prev, dataToSet.systemNotifications!) : dataToSet.systemNotifications!);
       if (dataToSet.scheduledEvents) setScheduledEvents(prev => isDelta ? mergeData(prev, dataToSet.scheduledEvents!) : dataToSet.scheduledEvents!);
-      if (dataToSet.bugReports) setBugReports(prev => isDelta ? mergeData(prev, dataToSet.bugReports!) : dataToSet.bugReports!);
+      
+      if (dataToSet.bugReports) {
+        setBugReports(prev => {
+            if (!isDelta) return dataToSet.bugReports!;
+            
+            const dataMap = new Map(prev.map(item => [item.id, item]));
+            
+            dataToSet.bugReports!.forEach(incomingReport => {
+                const optimisticTimestamp = recentOptimisticUpdates.current.get(incomingReport.id);
+                const serverTimestamp = incomingReport.updatedAt;
+
+                if (optimisticTimestamp && serverTimestamp && new Date(serverTimestamp) < new Date(optimisticTimestamp)) {
+                    return; 
+                }
+                
+                dataMap.set(incomingReport.id, incomingReport);
+            });
+            
+            return Array.from(dataMap.values());
+        });
+    }
 
       return { settingsUpdated, loadedSettings: loadedSettingsResult };
   }, [authDispatch, questDispatch, economyDispatch]);
@@ -246,7 +267,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   }, [apiRequest, processAndSetData, addNotification, authDispatch]);
 
   const performDeltaSync = useCallback(async () => {
-    if (mutationsInFlight.current > 0 || document.hidden || !lastSyncTimestamp.current) return;
+    if (mutationsInFlight.current > 0 || !lastSyncTimestamp.current) return;
     setSyncStatus('syncing');
     setSyncError(null);
     try {
@@ -303,33 +324,37 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   useEffect(() => {
     if (!isDataLoaded) return;
 
-    let timeoutId: number;
+    const eventSource = new EventSource('/api/data/events');
 
-    const smartSync = () => {
-        clearTimeout(timeoutId);
-        performDeltaSync().finally(() => {
-            if (!document.hidden) {
-                timeoutId = window.setTimeout(smartSync, 30000);
-            }
-        });
-    };
-
-    const handleVisibilityChange = () => {
-        if (!document.hidden) {
-            smartSync();
-        } else {
-            clearTimeout(timeoutId);
+    eventSource.onmessage = (event) => {
+        if (event.data === 'sync') {
+            console.log('Received sync event from server, fetching updates...');
+            performDeltaSync();
+        } else if (event.data === 'connected') {
+            console.log('SSE connection established with server.');
+            setSyncStatus('success');
+            setSyncError(null);
         }
     };
 
-    smartSync();
+    eventSource.onerror = (err) => {
+        console.error('EventSource failed:', err);
+        // The browser will automatically attempt to reconnect.
+        setSyncStatus('error');
+        setSyncError('Lost connection to server. Reconnecting...');
+    };
+
+    // Also trigger sync on visibility change to catch up if connection was lost while tab was hidden
+    const handleVisibilityChange = () => {
+        if (!document.hidden) {
+            performDeltaSync();
+        }
+    };
     document.addEventListener('visibilitychange', handleVisibilityChange);
-    window.addEventListener('trigger-sync', smartSync);
 
     return () => {
-        clearTimeout(timeoutId);
+        eventSource.close();
         document.removeEventListener('visibilitychange', handleVisibilityChange);
-        window.removeEventListener('trigger-sync', smartSync);
     };
   }, [isDataLoaded, performDeltaSync]);
   
@@ -465,11 +490,19 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     };
     const updateBugReport = async (reportId: string, updates: Partial<BugReport>) => {
         const originalReports = [...bugReportsRef.current];
-        setBugReports(prev => prev.map(r => r.id === reportId ? { ...r, ...updates, updatedAt: new Date().toISOString() } : r));
+        const optimisticTimestamp = new Date().toISOString();
+        
+        recentOptimisticUpdates.current.set(reportId, optimisticTimestamp);
+        setTimeout(() => {
+            recentOptimisticUpdates.current.delete(reportId);
+        }, 10000); // 10 second safety net to prevent stale lock
+
+        setBugReports(prev => prev.map(r => r.id === reportId ? { ...r, ...updates, updatedAt: optimisticTimestamp } : r));
         try {
             await apiRequest('PUT', `/api/bug-reports/${reportId}`, updates);
         } catch (error) {
             setBugReports(originalReports);
+            recentOptimisticUpdates.current.delete(reportId);
         }
     };
     const deleteBugReports = async (reportIds: string[]) => {

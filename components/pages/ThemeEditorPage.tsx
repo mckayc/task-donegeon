@@ -4,8 +4,7 @@ import { ThemeDefinition, ThemeStyle } from '../../types';
 import Button from '../user-interface/Button';
 import Card from '../user-interface/Card';
 import Input from '../user-interface/Input';
-import { getContrast, getWcagRating, hslValuesToCss, parseHslString, hexToHsl, rgbToHex, hslToRgb } from '../../utils/colors';
-import { TrophyIcon, RankIcon } from '../user-interface/Icons';
+import { getContrast, getWcagRating } from '../../utils/colors';
 import ThemeIdeaGenerator from '../quests/ThemeIdeaGenerator';
 import ConfirmDialog from '../user-interface/ConfirmDialog';
 import SimpleColorPicker from '../user-interface/SimpleColorPicker';
@@ -105,17 +104,21 @@ const ThemeEditorPage: React.FC = () => {
                 styles: defaultStyles || {} as ThemeStyle
             });
         }
-    }, [selectedThemeId, themes]);
+    }, [selectedThemeId]);
+
+    // Apply styles for live preview whenever formData changes
+    useEffect(() => {
+      if (formData) {
+        Object.entries(formData.styles).forEach(([key, value]) => {
+            document.documentElement.style.setProperty(key, value as string);
+        });
+        document.body.dataset.theme = formData.id;
+      }
+    }, [formData]);
 
     const handleStyleChange = (key: keyof ThemeStyle, value: string) => {
         if (!formData) return;
         setFormData(p => p ? ({ ...p, styles: { ...p.styles, [key]: value } }) : null);
-    };
-
-    const handleHslPartChange = (keyPrefix: string, part: 'hue' | 'saturation' | 'lightness', value: string) => {
-         if (!formData) return;
-        const fullKey = `--color-${keyPrefix}-${part}`;
-        handleStyleChange(fullKey as keyof ThemeStyle, value);
     };
     
     const handleSave = () => {
@@ -130,19 +133,11 @@ const ThemeEditorPage: React.FC = () => {
         } else {
             updateTheme(formData);
         }
+        addNotification({ type: 'success', message: `Theme "${formData.name}" saved!` });
     };
 
      const handleCreateNew = () => {
-        const newName = prompt("Enter a name for the new theme:", "My Custom Theme");
-        if(newName && newName.trim()){
-            const defaultStyles = themes.find(t => t.id === 'emerald')?.styles;
-            const newThemeData = {
-                name: newName.trim(),
-                isCustom: true,
-                styles: defaultStyles || {} as ThemeStyle
-            };
-            addTheme(newThemeData);
-        }
+        setSelectedThemeId('new');
     };
     
     const handleUseIdea = (idea: { name: string; styles: any; }) => {
@@ -298,40 +293,6 @@ const ThemeEditorPage: React.FC = () => {
                                         <SimpleColorPicker label="Primary Text" hslValue={formData.styles['--color-text-primary-hsl']} onChange={(v: string) => handleStyleChange('--color-text-primary-hsl', v)} />
                                         <SimpleColorPicker label="Secondary Text" hslValue={formData.styles['--color-text-secondary-hsl']} onChange={(v: string) => handleStyleChange('--color-text-secondary-hsl', v)} />
                                         <SimpleColorPicker label="Border" hslValue={formData.styles['--color-border-hsl']} onChange={(v: string) => handleStyleChange('--color-border-hsl', v)} />
-                                    </div>
-                                     <div className="pt-4 mt-4 border-t border-stone-700/60 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                                        <SimpleColorPicker label="Primary/Button" hslValue={`hsl(${formData.styles['--color-primary-hue']} ${formData.styles['--color-primary-saturation']} ${formData.styles['--color-primary-lightness']})`} 
-                                            onChange={(v: string) => {
-                                                const {h, s, l} = parseHslString(v);
-                                                handleHslPartChange('primary', 'hue', String(h));
-                                                handleHslPartChange('primary', 'saturation', `${s}%`);
-                                                handleHslPartChange('primary', 'lightness', `${l}%`);
-                                            }} />
-                                        <SimpleColorPicker label="Accent" hslValue={`hsl(${formData.styles['--color-accent-hue']} ${formData.styles['--color-accent-saturation']} ${formData.styles['--color-accent-lightness']})`} 
-                                            onChange={(v: string) => {
-                                                const {h, s, l} = parseHslString(v);
-                                                handleHslPartChange('accent', 'hue', String(h));
-                                                handleHslPartChange('accent', 'saturation', `${s}%`);
-                                                handleHslPartChange('accent', 'lightness', `${l}%`);
-                                            }} />
-                                        <SimpleColorPicker label="Accent Light" hslValue={`hsl(${formData.styles['--color-accent-light-hue']} ${formData.styles['--color-accent-light-saturation']} ${formData.styles['--color-accent-light-lightness']})`} 
-                                            onChange={(v: string) => {
-                                                const {h, s, l} = parseHslString(v);
-                                                handleHslPartChange('accent-light', 'hue', String(h));
-                                                handleHslPartChange('accent-light', 'saturation', `${s}%`);
-                                                handleHslPartChange('accent-light', 'lightness', `${l}%`);
-                                            }} />
-                                    </div>
-                                    <div className="pt-4 mt-4 border-t border-stone-700/60">
-                                        <h4 className="font-semibold text-stone-200 mb-2">Text Colors</h4>
-                                        <div className="grid grid-cols-2 gap-4">
-                                            <SimpleColorPicker label="H1 Color" hslValue={formData.styles['--color-h1'] || formData.styles['--color-text-primary-hsl']} onChange={(v: string) => handleStyleChange('--color-h1', v)} />
-                                            <SimpleColorPicker label="H2 Color" hslValue={formData.styles['--color-h2'] || formData.styles['--color-text-primary-hsl']} onChange={(v: string) => handleStyleChange('--color-h2', v)} />
-                                            <SimpleColorPicker label="H3 Color" hslValue={formData.styles['--color-h3'] || formData.styles['--color-text-primary-hsl']} onChange={(v: string) => handleStyleChange('--color-h3', v)} />
-                                            <SimpleColorPicker label="Body Text Color" hslValue={formData.styles['--color-body'] || formData.styles['--color-text-primary-hsl']} onChange={(v: string) => handleStyleChange('--color-body', v)} />
-                                            <SimpleColorPicker label="Label Color" hslValue={formData.styles['--color-label'] || formData.styles['--color-text-secondary-hsl']} onChange={(v: string) => handleStyleChange('--color-label', v)} />
-                                            <SimpleColorPicker label="Span Color" hslValue={formData.styles['--color-span'] || formData.styles['--color-text-secondary-hsl']} onChange={(v: string) => handleStyleChange('--color-span', v)} />
-                                        </div>
                                     </div>
                                 </div>
                             )}

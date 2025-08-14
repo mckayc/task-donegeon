@@ -481,6 +481,7 @@ export interface BackupSchedule {
   frequency: number;
   unit: 'hours' | 'days' | 'weeks';
   maxBackups: number;
+  lastBackupTimestamp?: number;
 }
 
 export interface AppSettings {

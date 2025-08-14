@@ -1,5 +1,3 @@
-
-
 import React, { useState, useEffect } from 'react';
 import { RewardCategory, RewardTypeDefinition } from '../../types';
 import Button from '../user-interface/Button';
@@ -53,7 +51,8 @@ const EditRewardTypeDialog: React.FC<EditRewardTypeDialogProps> = ({ rewardType,
 
   const handleBaseValueChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
-    if (/^\d*\.?\d{0,2}$/.test(val)) {
+    // Allow numbers, an optional single decimal point, and up to 4 decimal places
+    if (/^\d*\.?\d{0,4}$/.test(val)) {
         setBaseValueString(val);
     }
   };
@@ -62,7 +61,7 @@ const EditRewardTypeDialog: React.FC<EditRewardTypeDialogProps> = ({ rewardType,
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const finalBaseValue = parseFloat(baseValueString);
-    if (isNaN(finalBaseValue) || finalBaseValue <= 0) {
+    if (isNaN(finalBaseValue) || finalBaseValue < 0) {
         // This case should be prevented by the input regex, but as a fallback.
         return;
     }

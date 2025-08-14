@@ -82,26 +82,34 @@ const ExchangeView: React.FC<ExchangeViewProps> = ({ market }) => {
 
     const calculation = useMemo(() => {
         const toAmountNum = parseInt(toAmountString, 10) || 0;
+        const defaultCalc = { fromAmountBase: 0, fee: 0, roundingFee: 0, totalCost: 0, maxToAmount: 0 };
         if (!fromReward || !toReward || fromReward.baseValue <= 0 || toReward.baseValue <= 0) {
-            return { fromAmountBase: 0, fee: 0, totalCost: 0, maxToAmount: 0 };
+            return defaultCalc;
         }
 
         const { currencyExchangeFeePercent, xpExchangeFeePercent } = settings.rewardValuation;
-        
         const fromBalance = balances.get(fromReward.id) || 0;
         const feePercent = fromReward.category === 'Currency' ? currencyExchangeFeePercent : xpExchangeFeePercent;
         const feeMultiplier = 1 + (Number(feePercent) / 100);
-        
+
+        // Calculate maximum possible receive amount based on balance
         const fromValueAfterFee = (fromBalance / feeMultiplier) * fromReward.baseValue;
         const maxToAmount = Math.floor(fromValueAfterFee / toReward.baseValue);
 
+        if (toAmountNum === 0) {
+            return { ...defaultCalc, maxToAmount };
+        }
+
         const cappedToAmount = Math.min(toAmountNum, maxToAmount);
+        
         const toValueInReal = cappedToAmount * toReward.baseValue;
         const fromAmountBase = toValueInReal / fromReward.baseValue;
         const fee = fromAmountBase * (Number(feePercent) / 100);
-        const totalCost = fromAmountBase + fee;
+        const provisionalTotalCost = fromAmountBase + fee;
+        const totalCost = Math.ceil(provisionalTotalCost);
+        const roundingFee = totalCost - provisionalTotalCost;
 
-        return { fromAmountBase, fee, totalCost, maxToAmount };
+        return { fromAmountBase, fee, roundingFee, totalCost, maxToAmount };
 
     }, [toAmountString, fromReward, toReward, settings.rewardValuation, balances]);
 
@@ -124,11 +132,9 @@ const ExchangeView: React.FC<ExchangeViewProps> = ({ market }) => {
         if (calculation.maxToAmount <= 0) return [];
         const amounts = [1, 5, 10, 25];
         const suggestions = amounts.filter(a => a < calculation.maxToAmount);
-        if (calculation.maxToAmount > 0) {
-            const isMaxCloseToExisting = suggestions.some(s => Math.abs(s - calculation.maxToAmount) <= 2);
-            if (!isMaxCloseToExisting) {
-                suggestions.push(calculation.maxToAmount);
-            }
+        // Only add max if it's not already on the list or very close to an existing number
+        if (calculation.maxToAmount > 0 && !suggestions.some(s => Math.abs(s - calculation.maxToAmount) <= 2)) {
+            suggestions.push(calculation.maxToAmount);
         }
         return [...new Set(suggestions)].sort((a,b) => a-b).slice(0, 4);
     }, [calculation.maxToAmount]);
@@ -185,29 +191,35 @@ const ExchangeView: React.FC<ExchangeViewProps> = ({ market }) => {
                                 <div>
                                     <label className="block text-sm font-semibold text-stone-400 mb-1">Receive Amount</label>
                                     <div className="flex items-center justify-center">
-                                        <Input value={toAmountString} onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleAmountChange(e.target.value)} type="number" step="1" className="text-center text-lg h-11 w-48" />
+                                        <Input value={toAmountString} onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleAmountChange(e.target.value)} type="text" inputMode="numeric" pattern="\d*" className="text-center text-lg h-11 w-48" />
                                     </div>
                                     <div className="flex justify-center gap-2 mt-2">
                                         {recommendedAmounts.map(amount => (
-                                            <Button key={amount} onClick={() => setToAmountString(String(amount))} variant="secondary" className="text-xs !py-1">
+                                            <Button key={amount} onClick={() => handleAmountChange(String(amount))} variant="secondary" className="text-xs !py-1">
                                                 {amount}
                                             </Button>
                                         ))}
-                                        <Button onClick={handleMax} variant="secondary" className="text-xs !py-1">Max</Button>
+                                        {calculation.maxToAmount > 0 && !recommendedAmounts.includes(calculation.maxToAmount) && (
+                                             <Button onClick={handleMax} variant="secondary" className="text-xs !py-1">Max</Button>
+                                        )}
                                     </div>
                                 </div>
                                 <div className="pt-6 border-t border-stone-700/60 space-y-3">
                                     <h4 className="font-bold text-stone-200">Summary</h4>
-                                    <div className="grid grid-cols-2 gap-4 text-sm">
+                                    <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm max-w-sm mx-auto">
                                         <div className="text-right">
                                             <p className="text-stone-400">Your {fromReward.name}:</p>
                                             <p className="text-stone-400">Your {toReward.name}:</p>
-                                            <p className="text-stone-400">Fee:</p>
+                                            <p className="text-stone-400">Exchange Fee:</p>
+                                            <p className="text-stone-400">Rounding Loss:</p>
+                                            <p className="text-stone-400 font-bold border-t border-stone-600/50 mt-1 pt-1">Total Cost:</p>
                                         </div>
                                         <div className="text-left font-semibold">
                                             <p className="text-stone-200">{(balances.get(fromRewardId) || 0).toFixed(2)} &rarr; <span className="text-red-400">{((balances.get(fromRewardId) || 0) - calculation.totalCost).toFixed(2)}</span></p>
-                                            <p className="text-stone-200">{(balances.get(toRewardId) || 0).toFixed(2)} &rarr; <span className="text-green-400">{((balances.get(toRewardId) || 0) + (parseInt(toAmountString) || 0)).toFixed(2)}</span></p>
+                                            <p className="text-stone-200">{(balances.get(toRewardId) || 0).toFixed(0)} &rarr; <span className="text-green-400">{((balances.get(toRewardId) || 0) + (parseInt(toAmountString) || 0)).toFixed(0)}</span></p>
                                             <p className="text-stone-300">{calculation.fee.toFixed(2)} {fromReward.icon}</p>
+                                            <p className="text-stone-300">{calculation.roundingFee.toFixed(2)} {fromReward.icon}</p>
+                                            <p className="text-stone-100 font-bold border-t border-stone-600/50 mt-1 pt-1">{calculation.totalCost.toFixed(2)} {fromReward.icon}</p>
                                         </div>
                                     </div>
                                     <Button onClick={handleExchange} disabled={calculation.totalCost <= 0 || calculation.totalCost > (balances.get(fromRewardId) || 0)}>

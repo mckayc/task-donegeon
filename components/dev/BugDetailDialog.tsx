@@ -61,51 +61,44 @@ export const BugDetailDialog: React.FC<BugDetailDialogProps> = ({ report, onClos
         addNotification({ type: 'info', message: `Report status updated to ${newStatus}.` });
     };
     
-    const copyLogToClipboard = (logSubset: BugReportLogEntry[]) => {
+    const handleCopy = (logTimestampsToCopy: string[]) => {
+        if (logTimestampsToCopy.length === 0) return;
+
+        const logsToCopy = sortedLogs.filter(log => logTimestampsToCopy.includes(log.timestamp));
+
         const titleLine = `Report ID: #${shortId}\nTitle: ${report.title}\n\n--- LOGS ---\n`;
-        const logText = logSubset.map(log => {
+        const logText = logsToCopy.map(log => {
             const authorText = log.type === 'COMMENT' && log.author ? `${log.author}: ` : '';
             return `[${new Date(log.timestamp).toLocaleString()}] [${log.type}] ${authorText}${log.message}` +
             (log.element ? `\n  Element: <${log.element.tag} id="${log.element.id || ''}" class="${log.element.classes || ''}">` : '')
         }).join('\n');
-
+        
         const fullTextToCopy = titleLine + logText;
 
         navigator.clipboard.writeText(fullTextToCopy).then(() => {
             addNotification({ type: 'success', message: 'Log content copied to clipboard!' });
 
+            const timestampsToUpdate = new Set(logTimestampsToCopy);
+            const newLogs = report.logs.map(log => 
+                timestampsToUpdate.has(log.timestamp)
+                ? { ...log, lastCopiedAt: new Date().toISOString() }
+                : log
+            );
+
             const existingTags = report.tags || [];
             const copyTagPrefix = 'Copy #';
-            const lastCopyTag = existingTags.find(t => t.startsWith(copyTagPrefix));
+            const lastCopyTag = existingTags.slice().reverse().find(t => t.startsWith(copyTagPrefix));
             let count = 1;
-
             if (lastCopyTag) {
                 const match = lastCopyTag.match(/Copy #(\d+)/);
                 if (match) {
                     count = parseInt(match[1], 10) + 1;
                 }
             }
+            const newCopyTag = `${copyTagPrefix}${count}`;
+            const newTags = [...existingTags, newCopyTag];
             
-            const now = new Date();
-            const year = now.getFullYear();
-            const month = String(now.getMonth() + 1).padStart(2, '0');
-            const day = String(now.getDate()).padStart(2, '0');
-            let hours = now.getHours();
-            const ampm = hours >= 12 ? 'PM' : 'AM';
-            hours = hours % 12;
-            hours = hours ? hours : 12; // the hour '0' should be '12'
-            const minutes = String(now.getMinutes()).padStart(2, '0');
-            const newTimestamp = `${year}-${month}-${day} ${hours}:${minutes} ${ampm}`;
-            
-            const newCopyTag = `${copyTagPrefix}${count}: ${newTimestamp}`;
-
-            const otherTags = existingTags.filter(t => !t.startsWith(copyTagPrefix));
-            const newTags = [...otherTags, newCopyTag];
-            
-            const updates: Partial<BugReport> = {
-                tags: newTags,
-                lastCopiedAt: new Date().toISOString()
-            };
+            const updates: Partial<BugReport> = { logs: newLogs, tags: newTags };
 
             if (report.status === 'Open') {
                 updates.status = 'In Progress';
@@ -172,15 +165,15 @@ export const BugDetailDialog: React.FC<BugDetailDialogProps> = ({ report, onClos
                                     <input type="checkbox" onChange={handleSelectAllLogs} checked={selectedLogs.length === sortedLogs.length && sortedLogs.length > 0} className="h-4 w-4 rounded text-emerald-600 bg-stone-700 border-stone-600 focus:ring-emerald-500" />
                                     <span>Select All</span>
                                 </label>
-                                <Button size="sm" variant="secondary" onClick={() => copyLogToClipboard(sortedLogs.filter(log => selectedLogs.includes(log.timestamp)))} disabled={selectedLogs.length === 0}>Copy Selected ({selectedLogs.length})</Button>
-                                <Button size="sm" variant="secondary" onClick={() => copyLogToClipboard(sortedLogs)}>Copy Full Log</Button>
+                                <Button size="sm" variant="secondary" onClick={() => handleCopy(selectedLogs)} disabled={selectedLogs.length === 0}>Copy Selected ({selectedLogs.length})</Button>
+                                <Button size="sm" variant="secondary" onClick={() => handleCopy(sortedLogs.map(l => l.timestamp))}>Copy Full Log</Button>
                             </div>
                             <div className="flex-grow overflow-y-auto pr-4 space-y-4">
                                 {sortedLogs.map((log, index) => {
                                     const isSelected = selectedLogs.includes(log.timestamp);
                                     const authorUser = log.type === 'COMMENT' ? users.find(u => u.gameName === log.author) : undefined;
                                     return (
-                                        <div key={index} className={`flex items-start gap-3 text-stone-400 text-sm p-2 rounded-md transition-colors ${isSelected ? 'bg-emerald-900/40' : ''}`}>
+                                        <div key={index} className={`flex items-start gap-3 text-stone-400 text-sm p-2 rounded-md transition-colors ${isSelected ? 'bg-emerald-900/40' : ''} ${log.lastCopiedAt ? 'opacity-60' : ''}`}>
                                             <input type="checkbox" checked={isSelected} onChange={(e) => handleCheckboxClick(e, log.timestamp)} className="mt-1 flex-shrink-0 h-4 w-4 rounded text-emerald-600 bg-stone-700 border-stone-600 focus:ring-emerald-500" />
                                             
                                             {log.type === 'COMMENT' ? (

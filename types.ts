@@ -667,6 +667,7 @@ export interface BugReportLogEntry {
     classes?: string;
     text?: string;
   };
+  lastCopiedAt?: string;
 }
 
 export interface BugReport {
@@ -677,7 +678,6 @@ export interface BugReport {
   status: BugReportStatus;
   tags: string[];
   logs: BugReportLogEntry[];
-  lastCopiedAt?: string;
 }
 
 export interface IAppData {

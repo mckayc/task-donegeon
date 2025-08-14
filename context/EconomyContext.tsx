@@ -108,19 +108,20 @@ export const EconomyProvider: React.FC<{ children: ReactNode }> = ({ children })
         rewardsToApply.forEach(reward => {
             const rewardDef = rewardTypes.find(rd => rd.id === reward.rewardTypeId);
             if (!rewardDef) return;
+            const amount = parseFloat(String(reward.amount)) || 0;
             if (guildId) {
                 if (!newUser.guildBalances[guildId]) newUser.guildBalances[guildId] = { purse: {}, experience: {} };
                 const balanceSheet = newUser.guildBalances[guildId];
                 if (rewardDef.category === RewardCategory.Currency) {
-                    balanceSheet.purse[reward.rewardTypeId] = (balanceSheet.purse[reward.rewardTypeId] || 0) + reward.amount;
+                    balanceSheet.purse[reward.rewardTypeId] = (balanceSheet.purse[reward.rewardTypeId] || 0) + amount;
                 } else {
-                    balanceSheet.experience[reward.rewardTypeId] = (balanceSheet.experience[reward.rewardTypeId] || 0) + reward.amount;
+                    balanceSheet.experience[reward.rewardTypeId] = (balanceSheet.experience[reward.rewardTypeId] || 0) + amount;
                 }
             } else {
                 if (rewardDef.category === RewardCategory.Currency) {
-                    newUser.personalPurse[reward.rewardTypeId] = (newUser.personalPurse[reward.rewardTypeId] || 0) + reward.amount;
+                    newUser.personalPurse[reward.rewardTypeId] = (newUser.personalPurse[reward.rewardTypeId] || 0) + amount;
                 } else {
-                    newUser.personalExperience[reward.rewardTypeId] = (newUser.personalExperience[reward.rewardTypeId] || 0) + reward.amount;
+                    newUser.personalExperience[reward.rewardTypeId] = (newUser.personalExperience[reward.rewardTypeId] || 0) + amount;
                 }
             }
         });
@@ -141,7 +142,7 @@ export const EconomyProvider: React.FC<{ children: ReactNode }> = ({ children })
             : { purse: user.personalPurse, experience: user.personalExperience };
         
         if (!balanceSource) return false;
-
+        
         const balance = rewardDef.category === RewardCategory.Currency 
             ? balanceSource.purse?.[item.rewardTypeId] || 0
             : balanceSource.experience?.[item.rewardTypeId] || 0;
@@ -153,35 +154,32 @@ export const EconomyProvider: React.FC<{ children: ReactNode }> = ({ children })
         return false;
     }
 
-    const userCopy = JSON.parse(JSON.stringify(user));
+    authDispatch.updateUser(userId, userToUpdate => {
+      const userCopy = JSON.parse(JSON.stringify(userToUpdate));
+      cost.forEach(c => {
+          const rewardDef = rewardTypes.find(rt => rt.id === c.rewardTypeId);
+          if (!rewardDef) return;
+          const amount = parseFloat(String(c.amount)) || 0;
+
+          if (guildId) {
+              if (!userCopy.guildBalances[guildId]) userCopy.guildBalances[guildId] = { purse: {}, experience: {} };
+              const balanceSheet = userCopy.guildBalances[guildId];
+              if (rewardDef.category === RewardCategory.Currency) {
+                  balanceSheet.purse[c.rewardTypeId] = (balanceSheet.purse[c.rewardTypeId] || 0) - amount;
+              } else {
+                  balanceSheet.experience[c.rewardTypeId] = (balanceSheet.experience[c.rewardTypeId] || 0) - amount;
+              }
+          } else {
+              if (rewardDef.category === RewardCategory.Currency) {
+                  userCopy.personalPurse[c.rewardTypeId] = (userCopy.personalPurse[c.rewardTypeId] || 0) - amount;
+              } else {
+                  userCopy.personalExperience[c.rewardTypeId] = (userCopy.personalExperience[c.rewardTypeId] || 0) - amount;
+              }
+          }
+      });
+      return userCopy;
+    });
     
-    cost.forEach(c => {
-        const rewardDef = rewardTypes.find(rt => rt.id === c.rewardTypeId);
-        if (!rewardDef) return;
-
-        if (guildId) {
-            if (!userCopy.guildBalances[guildId]) userCopy.guildBalances[guildId] = { purse: {}, experience: {} };
-            const balanceSheet = userCopy.guildBalances[guildId];
-            if (rewardDef.category === RewardCategory.Currency) {
-                balanceSheet.purse[c.rewardTypeId] = (balanceSheet.purse[c.rewardTypeId] || 0) - c.amount;
-            } else {
-                balanceSheet.experience[c.rewardTypeId] = (balanceSheet.experience[c.rewardTypeId] || 0) - c.amount;
-            }
-        } else {
-            if (rewardDef.category === RewardCategory.Currency) {
-                userCopy.personalPurse[c.rewardTypeId] = (userCopy.personalPurse[c.rewardTypeId] || 0) - c.amount;
-            } else {
-                userCopy.personalExperience[c.rewardTypeId] = (userCopy.personalExperience[c.rewardTypeId] || 0) - c.amount;
-            }
-        }
-    });
-
-    authDispatch.updateUser(userId, { 
-        personalPurse: userCopy.personalPurse, 
-        personalExperience: userCopy.personalExperience,
-        guildBalances: userCopy.guildBalances 
-    });
-
     return true;
   }, [users, rewardTypes, authDispatch]);
   

@@ -156,7 +156,7 @@ const EditRewardTypeDialog: React.FC<EditRewardTypeDialogProps> = ({ rewardType,
             />
           </div>
            <Input
-                label={`Units of this reward equal to 1 ${settings.rewardValuation.realWorldCurrency}`}
+                label={`1 unit of this reward equals [X] ${settings.rewardValuation.realWorldCurrency}`}
                 id="baseValue"
                 name="baseValue"
                 type="number"

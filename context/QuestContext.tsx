@@ -1,7 +1,7 @@
 import React, { createContext, useState, useContext, ReactNode, useCallback, useMemo, useRef, useEffect } from 'react';
 import { Quest, QuestGroup, QuestCompletion, BulkQuestUpdates, QuestCompletionStatus } from '../types';
 import { useNotificationsDispatch } from './NotificationsContext';
-import { useAuthState } from './AuthContext';
+import { useAuthDispatch, useAuthState } from './AuthContext';
 import { bugLogger } from '../utils/bugLogger';
 import { useEconomyDispatch } from './EconomyContext';
 
@@ -44,6 +44,7 @@ const QuestDispatchContext = createContext<QuestDispatch | undefined>(undefined)
 export const QuestProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const { addNotification } = useNotificationsDispatch();
   const economyDispatch = useEconomyDispatch();
+  const authDispatch = useAuthDispatch();
 
   const [quests, setQuests] = useState<Quest[]>([]);
   const [questGroups, setQuestGroups] = useState<QuestGroup[]>([]);
@@ -115,13 +116,23 @@ export const QuestProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   }, [updateQuest]);
 
   const completeQuest = useCallback(async (completionData: any) => {
-      const { questId, userId, status, guildId } = completionData;
-      if (status === QuestCompletionStatus.Approved) {
-          const quest = questsRef.current.find(q => q.id === questId);
-          if (quest) economyDispatchRef.current.applyRewards(userId, quest.rewards, guildId);
-      }
-      await apiRequest('POST', '/api/actions/complete-quest', { completionData });
-  }, [apiRequest]);
+    try {
+        const result = await apiRequest('POST', '/api/actions/complete-quest', { completionData });
+
+        if (result && result.updatedUser && result.newCompletion) {
+            // Update the local state with the authoritative response from the server.
+            authDispatch.updateUser(result.updatedUser.id, result.updatedUser);
+            setQuestCompletions(prev => [...prev, result.newCompletion]);
+            
+            const quest = questsRef.current.find(q => q.id === completionData.questId);
+            if (quest) {
+                addNotification({type: 'success', message: `Quest "${quest.title}" completed!`});
+            }
+        }
+    } catch (error) {
+        // apiRequest helper handles notification
+    }
+  }, [apiRequest, authDispatch, addNotification]);
 
   const approveQuestCompletion = useCallback(async (completionId: string, note?: string) => {
       const completion = questCompletionsRef.current.find(c => c.id === completionId);

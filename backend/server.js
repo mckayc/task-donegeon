@@ -1155,6 +1155,7 @@ app.use('/api/reward-types', rewardTypesRouter);
 // Business Logic Actions
 app.post('/api/actions/complete-quest', asyncMiddleware(async (req, res) => {
     const { completionData } = req.body;
+    let updatedUserResult, newCompletionResult;
     
     try {
         await dataSource.transaction(async manager => {
@@ -1203,12 +1204,16 @@ app.post('/api/actions/complete-quest', asyncMiddleware(async (req, res) => {
                     }
                 });
                 await manager.save(updateTimestamps(user));
-                // After applying rewards, check for trophies
                 await checkAndAwardTrophies(manager, user.id, quest.guildId);
             }
+            updatedUserResult = await manager.findOneBy(UserEntity, { id: completionData.userId });
+            newCompletionResult = await manager.findOneBy(QuestCompletionEntity, { id: completion.id });
         });
 
-        res.status(204).send();
+        res.status(200).json({ 
+            updatedUser: updatedUserResult, 
+            newCompletion: newCompletionResult 
+        });
 
     } catch (error) {
         if (error.statusCode) {

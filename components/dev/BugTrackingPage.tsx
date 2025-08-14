@@ -153,7 +153,7 @@ const BugTrackingPage: React.FC = () => {
                                 const otherTags = (report.tags || []).filter(tag => !tag.startsWith('Copy #'));
 
                                 return (
-                                    <tr key={report.id} className="border-b border-stone-700/40 last:border-b-0">
+                                    <tr key={report.id} className={`border-b border-stone-700/40 last:border-b-0 transition-opacity ${report.lastCopiedAt ? 'opacity-60 hover:opacity-100' : ''}`}>
                                         <td className="p-4">
                                             <input type="checkbox" checked={selectedReports.includes(report.id)} onChange={e => handleCheckboxClick(e, report.id)} className="h-4 w-4 rounded text-emerald-600 bg-stone-700 border-stone-600 focus:ring-emerald-500" />
                                         </td>

@@ -28,6 +28,11 @@ const Dashboard: React.FC = () => {
     
     const { terminology } = settings;
 
+    const getRewardInfo = (id: string) => {
+        const rewardDef = rewardTypes.find(rt => rt.id === id);
+        return { name: rewardDef?.name || 'Unknown Reward', icon: rewardDef?.icon || '❓' };
+    };
+
     const handleQuestSelect = (quest: Quest) => {
         setSelectedQuest(quest);
     };
@@ -268,31 +273,35 @@ const Dashboard: React.FC = () => {
                 <div className="lg:col-span-2 space-y-6">
                      <Card title="Quick Actions">
                         {quickActionQuests.length > 0 ? (
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                {quickActionQuests.slice(0, 6).map(quest => (
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[400px] overflow-y-auto pr-2 scrollbar-hide">
+                                {quickActionQuests.map(quest => (
                                     <div
                                         key={quest.id}
                                         onClick={() => handleQuestSelect(quest)}
-                                        className="bg-stone-900/50 p-3 rounded-lg border border-stone-700/60 hover:border-accent cursor-pointer"
+                                        className="bg-stone-900/50 p-3 rounded-lg border border-stone-700/60 hover:border-accent cursor-pointer flex flex-col justify-between"
                                     >
-                                        <div className="flex justify-between items-start">
+                                        <div>
                                             <p className="font-semibold text-stone-100 flex items-center gap-2">
                                                 {quest.icon} {quest.title}
                                             </p>
+                                            <p className="text-xs text-stone-400 mt-1">{getDueDateString(quest)}</p>
                                         </div>
-                                        <p className="text-xs text-stone-400 mt-1">{getDueDateString(quest)}</p>
+                                        {quest.rewards.length > 0 && (
+                                            <div className="mt-2 pt-2 border-t border-stone-700/50">
+                                                <p className="text-xs font-semibold text-accent/80 uppercase tracking-wider">{terminology.points}</p>
+                                                <div className="flex flex-wrap gap-x-3 gap-y-1 text-sm font-semibold mt-1">
+                                                    {quest.rewards.map(r => {
+                                                        const { name, icon } = getRewardInfo(r.rewardTypeId);
+                                                        return <span key={`${r.rewardTypeId}-${r.amount}`} className="text-accent-light flex items-center gap-1" title={name}>+ {r.amount} <span className="text-base">{icon}</span></span>
+                                                    })}
+                                                </div>
+                                            </div>
+                                        )}
                                     </div>
                                 ))}
                             </div>
                         ) : (
                             <p className="text-stone-400 text-center">No available quests right now. Great job!</p>
-                        )}
-                        {quickActionQuests.length > 6 && (
-                            <div className="text-center mt-4">
-                                <Button onClick={() => setActivePage('Quests')} variant="secondary">
-                                    View All {quickActionQuests.length} Quests
-                                </Button>
-                            </div>
                         )}
                     </Card>
                     

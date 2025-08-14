@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo } from 'react';
 import { useAppState } from '../../context/AppContext';
 import { Quest, QuestType, QuestAvailability, User, AppMode, QuestCompletionStatus } from '../../types';
@@ -126,6 +127,18 @@ const SharedCalendarPage: React.FC = () => {
         setSelectedQuestDetails({ quest, user });
     };
 
+    const handleStartCompletionFromDialog = () => {
+        if (!selectedQuestDetails) return;
+        const { quest, user } = selectedQuestDetails;
+
+        if (quest.requiresApproval) {
+            handleNoteCompletion(quest, user);
+        } else {
+            handleQuickComplete(quest, user);
+        }
+        setSelectedQuestDetails(null);
+    };
+
     const handleToggleTodo = () => {
         if (!selectedQuestDetails) return;
         const { quest, user } = selectedQuestDetails;
@@ -158,19 +171,14 @@ const SharedCalendarPage: React.FC = () => {
                             </div>
                             <div className="flex-grow bg-stone-800/50 rounded-lg p-4 space-y-3 overflow-y-auto scrollbar-hide">
                                 {(questsByUser.get(user.id) || []).map(({ quest }) => (
-                                     <div key={quest.id} className="bg-stone-900/50 rounded-lg p-3">
-                                         <div onClick={() => handleDetailView(quest, user)} className="cursor-pointer">
-                                            <p className="font-semibold text-stone-100 flex items-center gap-2">{quest.icon} {quest.title}</p>
-                                            <p className="text-xs text-stone-400 mt-1">{getDueDateString(quest)}</p>
-                                         </div>
-                                         {settings.sharedMode.allowCompletion && (
-                                            <div className="mt-2 pt-2 border-t border-stone-700/60 flex justify-end">
-                                                <Button size="sm" onClick={() => quest.requiresApproval ? handleNoteCompletion(quest, user) : handleQuickComplete(quest, user)}>
-                                                    Complete
-                                                </Button>
-                                            </div>
-                                         )}
-                                     </div>
+                                     <button
+                                        key={quest.id}
+                                        onClick={() => handleDetailView(quest, user)}
+                                        className="w-full text-left bg-stone-900/50 rounded-lg p-3 hover:bg-stone-700/50 transition-colors"
+                                    >
+                                        <p className="font-semibold text-stone-100 flex items-center gap-2">{quest.icon} {quest.title}</p>
+                                        <p className="text-xs text-stone-400 mt-1">{getDueDateString(quest)}</p>
+                                     </button>
                                 ))}
                                 {(questsByUser.get(user.id) || []).length === 0 && (
                                     <p className="text-center text-stone-500 pt-8">No quests for today.</p>
@@ -195,6 +203,7 @@ const SharedCalendarPage: React.FC = () => {
                 <QuestDetailDialog
                     quest={selectedQuestDetails.quest}
                     onClose={() => setSelectedQuestDetails(null)}
+                    onComplete={settings.sharedMode.allowCompletion ? handleStartCompletionFromDialog : undefined}
                     onToggleTodo={handleToggleTodo}
                     isTodo={selectedQuestDetails.quest.type === QuestType.Venture && !!selectedQuestDetails.quest.todoUserIds?.includes(selectedQuestDetails.user.id)}
                     dialogTitle={`For ${selectedQuestDetails.user.gameName}`}

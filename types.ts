@@ -62,7 +62,8 @@ export interface RewardTypeDefinition {
   iconType: 'emoji' | 'image';
   icon: string;
   imageUrl?: string;
-  baseValue: number; // How many units of this reward equals 1 unit of the real-world currency.
+  // How many units of the real-world currency are equal to 1 unit of this reward.
+  baseValue: number; 
 }
 
 export interface RewardItem {
@@ -676,6 +677,7 @@ export interface BugReport {
   status: BugReportStatus;
   tags: string[];
   logs: BugReportLogEntry[];
+  lastCopiedAt?: string;
 }
 
 export interface IAppData {

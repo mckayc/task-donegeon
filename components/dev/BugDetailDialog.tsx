@@ -102,12 +102,17 @@ export const BugDetailDialog: React.FC<BugDetailDialogProps> = ({ report, onClos
             const otherTags = existingTags.filter(t => !t.startsWith(copyTagPrefix));
             const newTags = [...otherTags, newCopyTag];
             
-            updateBugReport(report.id, { tags: newTags });
+            const updates: Partial<BugReport> = {
+                tags: newTags,
+                lastCopiedAt: new Date().toISOString()
+            };
 
             if (report.status === 'Open') {
-                handleStatusChange('In Progress');
+                updates.status = 'In Progress';
                 addNotification({ type: 'info', message: `Status automatically updated to "In Progress".` });
             }
+
+            updateBugReport(report.id, updates);
         });
     };
     

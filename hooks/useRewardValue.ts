@@ -32,7 +32,7 @@ export const useRewardValue = (amount: number, rewardTypeId: string): string | n
     const reward = rewardTypes.find(rt => rt.id === rewardTypeId);
     if (!reward || !reward.baseValue || reward.baseValue <= 0) return null;
 
-    const realWorldValue = amount / reward.baseValue;
+    const realWorldValue = amount * reward.baseValue;
     
     return formatCurrency(realWorldValue, rewardValuation.realWorldCurrency);
 };

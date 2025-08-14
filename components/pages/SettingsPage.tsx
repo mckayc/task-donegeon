@@ -264,6 +264,7 @@ export const SettingsPage: React.FC = () => {
                                     {REAL_WORLD_CURRENCIES.map(c => <option key={c} value={c}>{c}</option>)}
                                  </Input>
                                  <h4 className="font-semibold text-stone-200 pt-2 border-t border-stone-700/60">Transaction Fees</h4>
+                                <p className="text-xs text-stone-400 -mt-3 mb-2">Fees are applied when exchanging rewards. E.g., a 5% fee means paying 105 Gold to receive the equivalent value of 100 Gold in another currency.</p>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <Input label="Currency Exchange Fee (%)" type="number" min="0" value={formState.rewardValuation.currencyExchangeFeePercent} onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleRewardValuationChange('currencyExchangeFeePercent', parseInt(e.target.value) || 0)} />
                                     <Input label="XP Exchange Fee (%)" type="number" min="0" value={formState.rewardValuation.xpExchangeFeePercent} onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleRewardValuationChange('xpExchangeFeePercent', parseInt(e.target.value) || 0)} />

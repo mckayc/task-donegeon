@@ -92,11 +92,15 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       }
   
       let payloadForApi: Partial<User> | null = null;
+      let isFullObject = false;
   
       setUsers(prevUsers => {
           return prevUsers.map(u => {
               if (u.id === userId) {
                   const updateData = typeof update === 'function' ? update(u) : update;
+                  if ('id' in updateData) {
+                      isFullObject = true;
+                  }
                   payloadForApi = updateData;
                   return { ...u, ...updateData };
               }
@@ -111,7 +115,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           return prevCurrentUser;
       });
   
-      if (payloadForApi && Object.keys(payloadForApi).length > 0) {
+      if (payloadForApi && Object.keys(payloadForApi).length > 0 && !isFullObject) {
           apiRequest('PUT', `/api/users/${userId}`, payloadForApi).catch(error => {
               console.error("Failed to update user on server, optimistic update may be stale.", error);
           });

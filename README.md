@@ -1,6 +1,6 @@
 # Task Donegeon
 
-**Version:** 0.0.52 - development
+**Version:** 0.0.52
 
 ---
 

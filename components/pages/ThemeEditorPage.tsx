@@ -1,39 +1,90 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { ThemeDefinition, ThemeStyle } from '../../types';
 import Button from '../user-interface/Button';
 import Card from '../user-interface/Card';
 import Input from '../user-interface/Input';
-import { getContrast, getWcagRating } from '../../utils/colors';
 import ThemeIdeaGenerator from '../quests/ThemeIdeaGenerator';
 import ConfirmDialog from '../user-interface/ConfirmDialog';
-import SimpleColorPicker from '../user-interface/SimpleColorPicker';
 import { useNotificationsDispatch } from '../../context/NotificationsContext';
+import SimpleColorPicker from '../user-interface/SimpleColorPicker';
+
+// --- UTILITIES (Normally in utils/colors.ts) ---
+function parseHslString(hsl: string): { h: number, s: number, l: number } {
+    const parts = hsl.trim().replace(/%/g, '').split(' ').map(Number);
+    if (parts.length === 3) {
+        return { h: parts[0], s: parts[1], l: parts[2] };
+    }
+    return { h: 0, s: 0, l: 0 };
+}
+
+function hslToRgb(h: number, s: number, l: number): { r: number, g: number, b: number } {
+    s /= 100; l /= 100;
+    let c = (1 - Math.abs(2 * l - 1)) * s;
+    let x = c * (1 - Math.abs((h / 60) % 2 - 1));
+    let m = l - c / 2;
+    let r = 0, g = 0, b = 0;
+    if (0 <= h && h < 60) { [r, g, b] = [c, x, 0]; } 
+    else if (60 <= h && h < 120) { [r, g, b] = [x, c, 0]; } 
+    else if (120 <= h && h < 180) { [r, g, b] = [0, c, x]; } 
+    else if (180 <= h && h < 240) { [r, g, b] = [0, x, c]; } 
+    else if (240 <= h && h < 300) { [r, g, b] = [x, 0, c]; } 
+    else if (300 <= h && h <= 360) { [r, g, b] = [c, 0, x]; }
+    r = Math.round((r + m) * 255); g = Math.round((g + m) * 255); b = Math.round((b + m) * 255);
+    return { r, g, b };
+}
+
+function getLuminance({ r, g, b }: { r: number, g: number, b: number }): number {
+    const a = [r, g, b].map(v => {
+        v /= 255;
+        return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
+    });
+    return a[0] * 0.2126 + a[1] * 0.7152 + a[2] * 0.0722;
+}
+
+function getContrast(color1HslStr: string, color2HslStr: string): number {
+    try {
+        const rgb1 = hslToRgb(parseHslString(color1HslStr).h, parseHslString(color1HslStr).s, parseHslString(color1HslStr).l);
+        const rgb2 = hslToRgb(parseHslString(color2HslStr).h, parseHslString(color2HslStr).s, parseHslString(color2HslStr).l);
+        const lum1 = getLuminance(rgb1);
+        const lum2 = getLuminance(rgb2);
+        const brightest = Math.max(lum1, lum2);
+        const darkest = Math.min(lum1, lum2);
+        return (brightest + 0.05) / (darkest + 0.05);
+    } catch { return 1; }
+}
+
+function getWcagRating(ratio: number): 'AAA' | 'AA' | 'Fail' {
+    if (ratio >= 7) return 'AAA';
+    if (ratio >= 4.5) return 'AA';
+    return 'Fail';
+}
+// --- END UTILITIES ---
+
 
 const FONT_OPTIONS = [
     "'MedievalSharp', cursive", "'Uncial Antiqua', cursive", "'Press Start 2P', cursive", "'IM Fell English SC', serif", 
-    "'Cinzel Decorative', cursive", "'Comic Neue', 'cursive'", "'Special Elite', cursive", "'Metamorphous', serif", 
+    "'Cinzel Decorative', cursive", "'Cinzel', serif", "'Comic Neue', cursive", "'Special Elite', cursive", "'Metamorphous', serif", 
     "'Almendra', serif", "'Almendra Display', serif", "'Almendra SC', serif", "'Butcherman', cursive", 
     "'Creepster', cursive", "'Eater', cursive", "'Fondamento', cursive", "'Fruktur', cursive", "'Griffy', cursive", 
     "'Henny Penny', cursive", "'New Rocker', cursive", "'Nosifer', cursive", "'Pirata One', cursive", "'Rye', cursive", 
     "'Sancreek', cursive", "'Smokum', cursive", "'Roboto', sans-serif", "'Lora', serif", "'Vollkorn', serif", 
-    "'EB Garamond', serif", "'Cormorant Garamond', serif", "'Crimson Pro', serif", "'Cinzel', serif"
+    "'EB Garamond', serif", "'Cormorant Garamond', serif", "'Crimson Pro', serif"
 ];
 
-
+// --- SUB-COMPONENTS ---
 const ContrastChecker: React.FC<{ styles: ThemeStyle }> = ({ styles }) => {
-    const pairs = [
+    const pairs = useMemo(() => [
         { label: "Text on Primary BG", fg: styles['--color-text-primary-hsl'], bg: styles['--color-bg-primary-hsl'] },
         { label: "Secondary Text on Primary BG", fg: styles['--color-text-secondary-hsl'], bg: styles['--color-bg-primary-hsl'] },
         { label: "Text on Secondary BG", fg: styles['--color-text-primary-hsl'], bg: styles['--color-bg-secondary-hsl'] },
-        { label: "Accent Text on Primary BG", fg: `hsl(${styles['--color-accent-hue']} ${styles['--color-accent-saturation']} ${styles['--color-accent-lightness']})`, bg: styles['--color-bg-primary-hsl']},
-        { label: "Button Text on Button BG", fg: '0 0% 100%', bg: `hsl(${styles['--color-primary-hue']} ${styles['--color-primary-saturation']} ${styles['--color-primary-lightness']})`}
-    ];
+        { label: "Button Text on Button BG", fg: '210 40% 98%', bg: `var(--primary)` }
+    ], [styles]);
 
     return (
         <div className="space-y-2">
             {pairs.map(pair => {
-                const ratio = getContrast(pair.fg, pair.bg);
+                const ratio = getContrast(pair.fg, `hsl(${getComputedStyle(document.documentElement).getPropertyValue(pair.bg.replace(/var\((--[a-zA-Z0-9-]+)\)/, '$1')).trim()})`);
                 const rating = getWcagRating(ratio);
                 return (
                     <div key={pair.label} className="flex justify-between items-center text-sm p-2 bg-stone-900/40 rounded-md">
@@ -49,20 +100,15 @@ const ContrastChecker: React.FC<{ styles: ThemeStyle }> = ({ styles }) => {
     );
 };
 
-
-const ThemePreview: React.FC<{ themeData: ThemeStyle }> = ({ themeData }) => {
+const ThemePreview: React.FC<{ themeStyles: React.CSSProperties }> = ({ themeStyles }) => {
     const { settings } = useAppState();
-    
-    // This creates a style object that sets the CSS variables for this component's scope.
-    const livePreviewStyles: React.CSSProperties = { ...themeData } as any;
-
     return (
-        <div style={livePreviewStyles} className="p-4 rounded-lg transition-all duration-300 flex flex-col border-2 border-stone-700" data-theme>
+        <div style={themeStyles} className="p-4 rounded-lg transition-all duration-300 flex flex-col border-2 border-stone-700 h-full" data-theme>
              <div className="flex-grow p-4 rounded-lg space-y-4" style={{ backgroundColor: 'hsl(var(--color-bg-tertiary))' }}>
-                <h1 style={{ fontFamily: 'var(--font-display)' }}>
+                <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--font-size-h1)', color: 'hsl(var(--color-h1))' }}>
                     {settings.terminology.appName}
                 </h1>
-                <p style={{ fontFamily: 'var(--font-body)' }}>
+                <p style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--font-size-body)', color: 'hsl(var(--color-body))' }}>
                     This is a preview of your theme. The quick brown fox jumps over the lazy dog.
                 </p>
                 <div className="flex gap-4">
@@ -77,9 +123,9 @@ const ThemePreview: React.FC<{ themeData: ThemeStyle }> = ({ themeData }) => {
     );
 };
 
-
+// --- MAIN COMPONENT ---
 const ThemeEditorPage: React.FC = () => {
-    const { themes, isAiConfigured } = useAppState();
+    const { themes, isAiConfigured, settings } = useAppState();
     const { addTheme, updateTheme, deleteTheme } = useAppDispatch();
     const { addNotification } = useNotificationsDispatch();
 
@@ -88,32 +134,24 @@ const ThemeEditorPage: React.FC = () => {
     const [deletingTheme, setDeletingTheme] = useState<ThemeDefinition | null>(null);
     const [isGeneratorOpen, setIsGeneratorOpen] = useState(false);
     const [activeTab, setActiveTab] = useState<'general' | 'fonts' | 'colors' | 'accessibility'>('general');
-    const isAiAvailable = useAppState().settings.enableAiFeatures && isAiConfigured;
+    const isAiAvailable = settings.enableAiFeatures && isAiConfigured;
 
     useEffect(() => {
         const themeToEdit = themes.find(t => t.id === selectedThemeId);
         if (themeToEdit) {
             setFormData(JSON.parse(JSON.stringify(themeToEdit)));
         } else {
-            // New Theme state
             const defaultStyles = themes.find(t => t.id === 'emerald')?.styles;
             setFormData({
-                id: 'new',
-                name: 'New Custom Theme',
-                isCustom: true,
+                id: 'new', name: 'New Custom Theme', isCustom: true,
                 styles: defaultStyles || {} as ThemeStyle
             });
         }
     }, [selectedThemeId, themes]);
 
-    // Apply styles for live preview whenever formData changes
-    useEffect(() => {
-      if (formData) {
-        Object.entries(formData.styles).forEach(([key, value]) => {
-            document.documentElement.style.setProperty(key, value as string);
-        });
-        document.body.dataset.theme = formData.id;
-      }
+    const livePreviewStyles = useMemo(() => {
+        if (!formData) return {};
+        return { ...formData.styles } as any;
     }, [formData]);
 
     const handleStyleChange = (key: keyof ThemeStyle, value: string) => {
@@ -126,7 +164,6 @@ const ThemeEditorPage: React.FC = () => {
             addNotification({type: 'error', message: 'Theme name cannot be empty.'});
             return;
         }
-        
         if (formData.id === 'new') {
             const { id, ...newThemeData } = formData;
             addTheme(newThemeData);
@@ -136,29 +173,17 @@ const ThemeEditorPage: React.FC = () => {
         addNotification({ type: 'success', message: `Theme "${formData.name}" saved!` });
     };
 
-     const handleCreateNew = () => {
-        setSelectedThemeId('new');
-    };
+    const handleCreateNew = () => setSelectedThemeId('new');
     
     const handleUseIdea = (idea: { name: string; styles: any; }) => {
-        const fullStyles = {
-            ...themes.find(t => t.id === 'emerald')!.styles, // ensure all keys exist
-            ...idea.styles,
-        }
-        setFormData({ name: idea.name, styles: fullStyles, isCustom: true, id: 'new' });
+        const defaultStyles = themes.find(t => t.id === 'emerald')?.styles || {} as ThemeStyle;
+        setFormData({ name: idea.name, styles: { ...defaultStyles, ...idea.styles }, isCustom: true, id: 'new' });
         setSelectedThemeId('new');
         setIsGeneratorOpen(false);
     };
     
     const TabButton: React.FC<{tabName: typeof activeTab; children: React.ReactNode}> = ({tabName, children}) => (
-        <button
-            onClick={() => setActiveTab(tabName)}
-            className={`whitespace-nowrap pb-4 px-1 border-b-2 font-medium text-sm transition-colors ${
-                activeTab === tabName
-                ? 'border-emerald-500 text-emerald-400'
-                : 'border-transparent text-stone-400 hover:text-stone-200'
-            }`}
-        >
+        <button onClick={() => setActiveTab(tabName)} className={`whitespace-nowrap pb-4 px-1 border-b-2 font-medium text-sm transition-colors ${activeTab === tabName ? 'border-emerald-500 text-emerald-400' : 'border-transparent text-stone-400 hover:text-stone-200'}`}>
             {children}
         </button>
     );
@@ -169,11 +194,15 @@ const ThemeEditorPage: React.FC = () => {
         color: `hsl(${theme.styles['--color-text-primary-hsl']})`,
     });
     
-    const getAccentStyle = (theme: ThemeDefinition, type: 'primary' | 'accent' | 'accent-light') => ({
-        backgroundColor: `hsl(${theme.styles[`--color-${type}-hue`]} ${theme.styles[`--color-${type}-saturation`]} ${theme.styles[`--color-${type}-lightness`]})`
-    });
+    const getAccentStyle = (theme: ThemeDefinition, type: 'primary' | 'accent' | 'accent-light') => {
+        const hue = theme.styles[`--color-${type}-hue`];
+        const sat = theme.styles[`--color-${type}-saturation`];
+        const light = theme.styles[`--color-${type}-lightness`];
+        if (!hue || !sat || !light) return { backgroundColor: 'transparent' };
+        return { backgroundColor: `hsl(${hue} ${sat} ${light})` };
+    };
 
-    if (!formData) return <div>Loading theme data...</div>
+    if (!formData) return <div>Loading theme data...</div>;
 
     return (
         <div className="space-y-8 relative">
@@ -186,61 +215,33 @@ const ThemeEditorPage: React.FC = () => {
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 <div className="lg:sticky top-24 self-start">
-                    <ThemePreview themeData={formData.styles} />
+                    <ThemePreview themeStyles={livePreviewStyles} />
                 </div>
                 
                 <div className="space-y-6">
                     <Card title="Select Theme">
                         <div className="grid grid-cols-3 md:grid-cols-4 gap-2 max-h-48 overflow-y-auto pr-2">
                              <button onClick={handleCreateNew} className="w-full aspect-square rounded-lg transition-all duration-200 border-2 border-dashed border-stone-600 hover:border-emerald-500 hover:text-emerald-400 flex flex-col items-center justify-center">
-                                <span className="text-3xl">+</span>
-                                <span className="text-xs font-semibold">New Theme</span>
+                                <span className="text-3xl">+</span><span className="text-xs font-semibold">New Theme</span>
                              </button>
                             {themes.map(theme => (
                                 <div key={theme.id} className="relative group">
-                                <button
-                                    onClick={() => setSelectedThemeId(theme.id)}
-                                    className={`w-full aspect-square rounded-lg transition-all duration-200 border-4 ${selectedThemeId === theme.id ? 'border-white shadow-lg' : 'border-transparent opacity-70 hover:opacity-100'}`}
-                                    style={getPreviewStyle(theme)}
-                                >
-                                    <div className="p-1 flex flex-col justify-between h-full">
-                                        <h3 className="text-sm font-bold capitalize truncate">{theme.name}</h3>
-                                        <div className="flex justify-end items-center gap-1">
-                                            <div className="w-4 h-4 rounded-full" style={getAccentStyle(theme, 'primary')}></div>
-                                            <div className="w-4 h-4 rounded-full" style={getAccentStyle(theme, 'accent')}></div>
-                                            <div className="w-4 h-4 rounded-full" style={getAccentStyle(theme, 'accent-light')}></div>
-                                        </div>
-                                    </div>
+                                <button onClick={() => setSelectedThemeId(theme.id)} className={`w-full aspect-square rounded-lg transition-all duration-200 border-4 ${selectedThemeId === theme.id ? 'border-white shadow-lg' : 'border-transparent opacity-70 hover:opacity-100'}`} style={getPreviewStyle(theme)}>
+                                    <div className="p-1 flex flex-col justify-between h-full"><h3 className="text-sm font-bold capitalize truncate">{theme.name}</h3><div className="flex justify-end items-center gap-1"><div className="w-4 h-4 rounded-full" style={getAccentStyle(theme, 'primary')}></div><div className="w-4 h-4 rounded-full" style={getAccentStyle(theme, 'accent')}></div><div className="w-4 h-4 rounded-full" style={getAccentStyle(theme, 'accent-light')}></div></div></div>
                                 </button>
-                                {theme.isCustom && (
-                                    <button onClick={() => setDeletingTheme(theme)} className="absolute top-1 right-1 w-5 h-5 bg-red-600 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                                        &times;
-                                    </button>
-                                )}
+                                {theme.isCustom && (<button onClick={() => setDeletingTheme(theme)} className="absolute top-1 right-1 w-5 h-5 bg-red-600 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">&times;</button>)}
                                 </div>
                             ))}
                         </div>
                     </Card>
 
                     <Card>
-                        <div className="border-b border-stone-700 mb-6">
-                            <nav className="-mb-px flex space-x-6">
-                                <TabButton tabName="general">General</TabButton>
-                                <TabButton tabName="fonts">Fonts</TabButton>
-                                <TabButton tabName="colors">Colors</TabButton>
-                                <TabButton tabName="accessibility">Accessibility</TabButton>
-                            </nav>
-                        </div>
-                        
+                        <div className="border-b border-stone-700 mb-6"><nav className="-mb-px flex space-x-6"><TabButton tabName="general">General</TabButton><TabButton tabName="fonts">Fonts</TabButton><TabButton tabName="colors">Colors</TabButton><TabButton tabName="accessibility">Accessibility</TabButton></nav></div>
                         <div>
                             {activeTab === 'general' && (
                                 <div className="space-y-4">
                                     <Input label="Theme Name" value={formData.name} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData(p => p ? ({...p, name: e.target.value}) : null)} required disabled={!formData.isCustom} />
-                                    {isAiAvailable && (
-                                        <Button onClick={() => setIsGeneratorOpen(true)} variant="secondary">
-                                            Generate Theme with AI
-                                        </Button>
-                                    )}
+                                    {isAiAvailable && (<Button onClick={() => setIsGeneratorOpen(true)} variant="secondary">Generate Theme with AI</Button>)}
                                 </div>
                             )}
                             {activeTab === 'fonts' && (
@@ -251,49 +252,30 @@ const ThemeEditorPage: React.FC = () => {
                                     <Input as="select" label="Body Font" value={formData.styles['--font-body']} onChange={(e: React.ChangeEvent<HTMLSelectElement>) => handleStyleChange('--font-body', e.target.value)}>
                                         {FONT_OPTIONS.map(f => <option key={f} value={f}>{f.split(',')[0].replace(/'/g, '')}</option>)}
                                     </Input>
-                                     <Input as="select" label="Label Font" value={formData.styles['--font-label']} onChange={(e: React.ChangeEvent<HTMLSelectElement>) => handleStyleChange('--font-label', e.target.value)}>
-                                        {FONT_OPTIONS.map(f => <option key={f} value={f}>{f.split(',')[0].replace(/'/g, '')}</option>)}
-                                    </Input>
-                                     <Input as="select" label="Span Font (Optional)" value={formData.styles['--font-span'] || ''} onChange={(e: React.ChangeEvent<HTMLSelectElement>) => handleStyleChange('--font-span', e.target.value)}>
-                                        <option value="">-- Inherit from Body --</option>
-                                        {FONT_OPTIONS.map(f => <option key={f} value={f}>{f.split(',')[0].replace(/'/g, '')}</option>)}
-                                    </Input>
-                                    <div>
-                                        <label className="flex justify-between text-sm font-medium mb-1">H1 Font Size <span>({formData.styles['--font-size-h1']})</span></label>
-                                        <input type="range" min="1.5" max="4" step="0.1" value={parseFloat(formData.styles['--font-size-h1'])} onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleStyleChange('--font-size-h1', `${e.target.value}rem`)} className="w-full h-2 bg-stone-700 rounded-lg appearance-none cursor-pointer" />
-                                    </div>
-                                     <div>
-                                        <label className="flex justify-between text-sm font-medium mb-1">H2 Font Size <span>({formData.styles['--font-size-h2']})</span></label>
-                                        <input type="range" min="1.25" max="3.5" step="0.1" value={parseFloat(formData.styles['--font-size-h2'])} onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleStyleChange('--font-size-h2', `${e.target.value}rem`)} className="w-full h-2 bg-stone-700 rounded-lg appearance-none cursor-pointer" />
-                                    </div>
-                                    <div>
-                                        <label className="flex justify-between text-sm font-medium mb-1">H3 Font Size <span>({formData.styles['--font-size-h3']})</span></label>
-                                        <input type="range" min="1" max="3" step="0.1" value={parseFloat(formData.styles['--font-size-h3'])} onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleStyleChange('--font-size-h3', `${e.target.value}rem`)} className="w-full h-2 bg-stone-700 rounded-lg appearance-none cursor-pointer" />
-                                    </div>
-                                    <div>
-                                        <label className="flex justify-between text-sm font-medium mb-1">Body Font Size <span>({formData.styles['--font-size-body']})</span></label>
-                                        <input type="range" min="0.8" max="1.2" step="0.05" value={parseFloat(formData.styles['--font-size-body'])} onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleStyleChange('--font-size-body', `${e.target.value}rem`)} className="w-full h-2 bg-stone-700 rounded-lg appearance-none cursor-pointer" />
-                                    </div>
-                                    <div>
-                                        <label className="flex justify-between text-sm font-medium mb-1">Label Font Size <span>({formData.styles['--font-size-label']})</span></label>
-                                        <input type="range" min="0.7" max="1.1" step="0.05" value={parseFloat(formData.styles['--font-size-label'])} onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleStyleChange('--font-size-label', `${e.target.value}rem`)} className="w-full h-2 bg-stone-700 rounded-lg appearance-none cursor-pointer" />
-                                    </div>
-                                     <div>
-                                        <label className="flex justify-between text-sm font-medium mb-1">Span Font Size <span>({formData.styles['--font-size-span'] || '1rem'})</span></label>
-                                        <input type="range" min="0.7" max="1.1" step="0.05" value={parseFloat(formData.styles['--font-size-span'] || '1')} onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleStyleChange('--font-size-span', `${e.target.value}rem`)} className="w-full h-2 bg-stone-700 rounded-lg appearance-none cursor-pointer" />
-                                    </div>
+                                    <div><label className="flex justify-between text-sm font-medium mb-1">H1 Font Size <span>({formData.styles['--font-size-h1']})</span></label><input type="range" min="1.5" max="4" step="0.1" value={parseFloat(formData.styles['--font-size-h1'])} onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleStyleChange('--font-size-h1', `${e.target.value}rem`)} className="w-full h-2 bg-stone-700 rounded-lg appearance-none cursor-pointer" /></div>
+                                    <div><label className="flex justify-between text-sm font-medium mb-1">Body Font Size <span>({formData.styles['--font-size-body']})</span></label><input type="range" min="0.8" max="1.2" step="0.05" value={parseFloat(formData.styles['--font-size-body'])} onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleStyleChange('--font-size-body', `${e.target.value}rem`)} className="w-full h-2 bg-stone-700 rounded-lg appearance-none cursor-pointer" /></div>
                                 </div>
                             )}
-                             {activeTab === 'colors' && (
-                                <div className="space-y-4">
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <SimpleColorPicker label="Primary Background" hslValue={formData.styles['--color-bg-primary-hsl']} onChange={(v: string) => handleStyleChange('--color-bg-primary-hsl', v)} />
-                                        <SimpleColorPicker label="Secondary Background" hslValue={formData.styles['--color-bg-secondary-hsl']} onChange={(v: string) => handleStyleChange('--color-bg-secondary-hsl', v)} />
-                                        <SimpleColorPicker label="Tertiary Background" hslValue={formData.styles['--color-bg-tertiary-hsl']} onChange={(v: string) => handleStyleChange('--color-bg-tertiary-hsl', v)} />
-                                        <SimpleColorPicker label="Primary Text" hslValue={formData.styles['--color-text-primary-hsl']} onChange={(v: string) => handleStyleChange('--color-text-primary-hsl', v)} />
-                                        <SimpleColorPicker label="Secondary Text" hslValue={formData.styles['--color-text-secondary-hsl']} onChange={(v: string) => handleStyleChange('--color-text-secondary-hsl', v)} />
-                                        <SimpleColorPicker label="Border" hslValue={formData.styles['--color-border-hsl']} onChange={(v: string) => handleStyleChange('--color-border-hsl', v)} />
-                                    </div>
+                            {activeTab === 'colors' && (
+                                <div className="grid grid-cols-2 gap-4">
+                                    <SimpleColorPicker label="Primary BG" hslValue={formData.styles['--color-bg-primary-hsl']} onChange={(v: string) => handleStyleChange('--color-bg-primary-hsl', v)} />
+                                    <SimpleColorPicker label="Secondary BG" hslValue={formData.styles['--color-bg-secondary-hsl']} onChange={(v: string) => handleStyleChange('--color-bg-secondary-hsl', v)} />
+                                    <SimpleColorPicker label="Tertiary BG" hslValue={formData.styles['--color-bg-tertiary-hsl']} onChange={(v: string) => handleStyleChange('--color-bg-tertiary-hsl', v)} />
+                                    <SimpleColorPicker label="Primary Text" hslValue={formData.styles['--color-text-primary-hsl']} onChange={(v: string) => handleStyleChange('--color-text-primary-hsl', v)} />
+                                    <SimpleColorPicker label="Secondary Text" hslValue={formData.styles['--color-text-secondary-hsl']} onChange={(v: string) => handleStyleChange('--color-text-secondary-hsl', v)} />
+                                    <SimpleColorPicker label="Border" hslValue={formData.styles['--color-border-hsl']} onChange={(v: string) => handleStyleChange('--color-border-hsl', v)} />
+                                    <SimpleColorPicker label="Primary Accent" hslValue={`${formData.styles['--color-primary-hue']} ${formData.styles['--color-primary-saturation']} ${formData.styles['--color-primary-lightness']}`} onChange={(v: string) => {
+                                        const {h, s, l} = parseHslString(v);
+                                        handleStyleChange('--color-primary-hue', String(h));
+                                        handleStyleChange('--color-primary-saturation', `${s}%`);
+                                        handleStyleChange('--color-primary-lightness', `${l}%`);
+                                    }} />
+                                    <SimpleColorPicker label="Secondary Accent" hslValue={`${formData.styles['--color-accent-hue']} ${formData.styles['--color-accent-saturation']} ${formData.styles['--color-accent-lightness']}`} onChange={(v: string) => {
+                                        const {h, s, l} = parseHslString(v);
+                                        handleStyleChange('--color-accent-hue', String(h));
+                                        handleStyleChange('--color-accent-saturation', `${s}%`);
+                                        handleStyleChange('--color-accent-lightness', `${l}%`);
+                                    }} />
                                 </div>
                             )}
                             {activeTab === 'accessibility' && <ContrastChecker styles={formData.styles} />}
@@ -301,21 +283,11 @@ const ThemeEditorPage: React.FC = () => {
                     </Card>
                 </div>
             </div>
-
             {isGeneratorOpen && <ThemeIdeaGenerator onUseIdea={handleUseIdea} onClose={() => setIsGeneratorOpen(false)} />}
-            <ConfirmDialog
-                isOpen={!!deletingTheme}
-                onClose={() => setDeletingTheme(null)}
-                onConfirm={() => {
-                    if (deletingTheme) {
-                        deleteTheme(deletingTheme.id);
-                        setSelectedThemeId('emerald');
-                    }
-                    setDeletingTheme(null);
-                }}
-                title="Delete Theme"
-                message={`Are you sure you want to delete the theme "${deletingTheme?.name}"? This action cannot be undone.`}
-            />
+            <ConfirmDialog isOpen={!!deletingTheme} onClose={() => setDeletingTheme(null)} onConfirm={() => {
+                if (deletingTheme) { deleteTheme(deletingTheme.id); setSelectedThemeId('emerald'); }
+                setDeletingTheme(null);
+            }} title="Delete Theme" message={`Are you sure you want to delete "${deletingTheme?.name}"?`} />
         </div>
     );
 };

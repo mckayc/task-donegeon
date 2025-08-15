@@ -13,7 +13,7 @@ import { useShiftSelect } from '../../hooks/useShiftSelect';
 
 const BugTrackingPage: React.FC = () => {
     const { bugReports } = useAppState();
-    const { updateBugReport, deleteBugReports } = useAppDispatch();
+    const { updateBugReport, deleteBugReports, importBugReports } = useAppDispatch();
     const { addNotification } = useNotificationsDispatch();
     
     const [detailedReportId, setDetailedReportId] = useState<string | null>(null);
@@ -22,6 +22,8 @@ const BugTrackingPage: React.FC = () => {
     const [deletingIds, setDeletingIds] = useState<string[]>([]);
     const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
     const dropdownRef = useRef<HTMLDivElement | null>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
+    const [importingFileContent, setImportingFileContent] = useState<BugReport[] | null>(null);
 
     const detailedReport = useMemo(() => {
         if (!detailedReportId) return null;
@@ -75,6 +77,47 @@ const BugTrackingPage: React.FC = () => {
         setSelectedReports(prev => prev.filter(id => !deletingIds.includes(id)));
     };
     
+    const handleExport = () => {
+        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(bugReports, null, 2));
+        const downloadAnchorNode = document.createElement('a');
+        downloadAnchorNode.setAttribute("href", dataStr);
+        downloadAnchorNode.setAttribute("download", `bug_reports_${new Date().toISOString().split('T')[0]}.json`);
+        document.body.appendChild(downloadAnchorNode);
+        downloadAnchorNode.click();
+        downloadAnchorNode.remove();
+        addNotification({ type: 'success', message: 'All bug reports exported.' });
+    };
+
+    const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const reports = JSON.parse(e.target?.result as string);
+                    if (!Array.isArray(reports) || (reports.length > 0 && (!reports[0].id || !reports[0].title || !reports[0].logs))) {
+                        throw new Error("Invalid bug report file format.");
+                    }
+                    setImportingFileContent(reports);
+                } catch (err) {
+                    addNotification({ type: 'error', message: err instanceof Error ? err.message : 'Invalid JSON file.' });
+                }
+            };
+            reader.readAsText(file);
+        }
+        if(event.target) event.target.value = ''; // Reset file input
+    };
+
+    const handleConfirmImport = async (mode: 'merge' | 'replace') => {
+        if (!importingFileContent) return;
+        try {
+            await importBugReports(importingFileContent, mode);
+            addNotification({ type: 'success', message: `Reports imported successfully (${mode} mode).` });
+        } finally {
+            setImportingFileContent(null);
+        }
+    };
+
     const getTagColor = (tag: string) => {
         const lowerTag = tag.toLowerCase();
         if (lowerTag.startsWith('ai submissions:')) {
@@ -105,7 +148,16 @@ const BugTrackingPage: React.FC = () => {
     
     return (
         <div className="space-y-6">
-            <Card title="Bug Tracker">
+            <Card
+                title="Bug Tracker"
+                headerAction={
+                    <div className="flex items-center gap-2">
+                        <Button size="sm" variant="secondary" onClick={handleExport}>Export All</Button>
+                        <Button size="sm" onClick={() => fileInputRef.current?.click()}>Import</Button>
+                        <input type="file" ref={fileInputRef} onChange={handleFileSelect} accept=".json" className="hidden" />
+                    </div>
+                }
+            >
                  <div className="border-b border-stone-700 mb-6">
                     <nav className="-mb-px flex space-x-6">
                         {statuses.map(status => (
@@ -195,6 +247,24 @@ const BugTrackingPage: React.FC = () => {
             
             {detailedReport && (
                 <BugDetailDialog report={detailedReport} onClose={() => setDetailedReportId(null)} allTags={allBugReportTags} getTagColor={getTagColor} />
+            )}
+            
+            {importingFileContent && (
+                <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+                    <div className="bg-stone-800 border border-stone-700 rounded-xl shadow-2xl p-8 max-w-lg w-full">
+                        <h2 className="text-2xl font-medieval text-amber-400 mb-4">Import Bug Reports</h2>
+                        <p className="text-stone-300 mb-6">Found {importingFileContent.length} reports in the file. How would you like to import them?</p>
+                        <ul className="text-sm text-stone-400 list-disc list-inside space-y-2 mb-6">
+                            <li><strong>Merge:</strong> Add new reports from the file. Reports with IDs that already exist in your system will be skipped.</li>
+                            <li><strong>Replace:</strong> <span className="font-bold text-red-400">Deletes all</span> current bug reports and replaces them with the content of this file.</li>
+                        </ul>
+                        <div className="flex justify-end space-x-4">
+                            <Button variant="secondary" onClick={() => setImportingFileContent(null)}>Cancel</Button>
+                            <Button variant="secondary" onClick={() => handleConfirmImport('merge')}>Merge</Button>
+                            <Button variant="destructive" onClick={() => handleConfirmImport('replace')}>Replace All</Button>
+                        </div>
+                    </div>
+                </div>
             )}
 
             <ConfirmDialog

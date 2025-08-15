@@ -29,7 +29,7 @@ interface AuthDispatch {
   setTargetedUserForLogin: (user: User | null) => void;
   exitToSharedView: () => void;
   setIsSharedViewActive: (isActive: boolean) => void;
-  resetAllUsersData: (dummy?: any) => void;
+  resetAllUsersData: () => void;
   completeFirstRun: (adminUserData: any) => void;
 }
 
@@ -135,7 +135,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       localStorage.removeItem('lastUserId');
   }, []);
 
-  const resetAllUsersData = useCallback((dummy?: any) => {
+  const resetAllUsersData = useCallback(() => {
       setUsers(prev => prev.map(u => u.role !== Role.DonegeonMaster ? { ...u, personalPurse: {}, personalExperience: {}, guildBalances: {}, ownedAssetIds: [], avatar: {} } : u));
   }, []);
 

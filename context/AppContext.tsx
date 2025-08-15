@@ -61,7 +61,7 @@ interface AppDispatch {
   addBugReport: (report: Omit<BugReport, 'id' | 'status' | 'tags'> & { reportType: BugReportType }) => Promise<void>;
   updateBugReport: (reportId: string, updates: Partial<BugReport>) => Promise<void>;
   deleteBugReports: (reportIds: string[]) => Promise<void>;
-  importBugReports: (reports: BugReport[]) => Promise<void>;
+  importBugReports: (reports: BugReport[], mode: 'merge' | 'replace') => Promise<void>;
   restoreFromBackup: (backupData: IAppData) => Promise<void>;
   clearAllHistory: () => void;
   resetAllPlayerData: () => void;
@@ -533,11 +533,13 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     const deleteScheduledEvent = async (eventId: string) => { apiRequest('DELETE', `/api/events/${eventId}`).catch(() => {}); };
     const addBugReport = async (report: Omit<BugReport, 'id' | 'status' | 'tags'> & { reportType: BugReportType }) => {
         const { reportType, ...rest } = report;
-        apiRequest('POST', '/api/bug-reports', { ...rest, status: 'Open', tags: [reportType] }).catch(() => {});
+        apiRequest('POST', '/api/bug-reports', { ...rest, status: 'Open', tags: [reportType] });
     };
     const updateBugReport = async (reportId: string, updates: Partial<BugReport>) => { registerOptimisticUpdate(`bugReport-${reportId}`); apiRequest('PUT', `/api/bug-reports/${reportId}`, updates).catch(() => {}); };
     const deleteBugReports = async (reportIds: string[]) => { apiRequest('DELETE', '/api/bug-reports', { ids: reportIds }).catch(() => {}); };
-    const importBugReports = async (reports: BugReport[]) => { apiRequest('POST', '/api/bug-reports/import', reports).catch(() => {}); };
+    const importBugReports = async (reports: BugReport[], mode: 'merge' | 'replace') => {
+        apiRequest('POST', '/api/bug-reports/import', { reports, mode });
+    };
     const restoreFromBackup = async (backupData: IAppData) => { apiRequest('POST', '/api/data/restore', backupData).then(() => { addNotification({ type: 'success', message: 'Restore successful! App will reload.' }); setTimeout(() => window.location.reload(), 1500); }).catch(() => {}); };
     const clearAllHistory = () => { /* Server logic needed */ };
     const resetAllPlayerData = () => authDispatch.resetAllUsersData();

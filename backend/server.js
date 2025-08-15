@@ -878,26 +878,41 @@ bugReportsRouter.delete('/', asyncMiddleware(async (req, res) => {
 }));
 
 bugReportsRouter.post('/import', asyncMiddleware(async (req, res) => {
-    const reportsToImport = req.body;
-    if (!Array.isArray(reportsToImport)) {
-        return res.status(400).json({ error: 'Request body must be an array of bug reports.' });
+    const { reports: reportsToImport, mode } = req.body;
+    if (!Array.isArray(reportsToImport) || !['merge', 'replace'].includes(mode)) {
+        return res.status(400).json({ error: 'Invalid request. Expected { reports: [], mode: "merge" | "replace" }' });
     }
-    // Basic validation of the first report object
+    
     if (reportsToImport.length > 0) {
         const firstReport = reportsToImport[0];
         if (!firstReport.id || !firstReport.title || !firstReport.createdAt || !firstReport.logs) {
-             return res.status(400).json({ error: 'Invalid bug report format.' });
+             return res.status(400).json({ error: 'Invalid bug report file format.' });
         }
     }
 
     await dataSource.transaction(async manager => {
-        await manager.clear(BugReportEntity);
-        const reports = reportsToImport.map(r => manager.create(BugReportEntity, updateTimestamps(r, true)));
-        await manager.save(reports);
+        if (mode === 'replace') {
+            console.log('[Bug Import] Replacing all existing bug reports.');
+            await manager.clear(BugReportEntity);
+            const reports = reportsToImport.map(r => manager.create(BugReportEntity, updateTimestamps(r, true)));
+            if (reports.length > 0) await manager.save(reports);
+        } else { // merge
+            console.log('[Bug Import] Merging new bug reports.');
+            const existingIds = (await manager.find(BugReportEntity, { select: ["id"] })).map(r => r.id);
+            const newReports = reportsToImport.filter(r => !existingIds.includes(r.id));
+            
+            if (newReports.length > 0) {
+                console.log(`[Bug Import] Found ${newReports.length} new reports to add.`);
+                const reports = newReports.map(r => manager.create(BugReportEntity, updateTimestamps(r, true)));
+                await manager.save(reports);
+            } else {
+                 console.log(`[Bug Import] No new reports to add.`);
+            }
+        }
     });
 
     updateEmitter.emit('update');
-    res.status(200).json({ message: `${reportsToImport.length} bug reports imported successfully.` });
+    res.status(200).json({ message: `Import successful (${mode} mode).` });
 }));
 
 

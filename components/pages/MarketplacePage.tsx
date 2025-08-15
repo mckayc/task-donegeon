@@ -270,30 +270,29 @@ const MarketplacePage: React.FC = () => {
                     {visibleMarkets.map(market => (
                         <button key={market.id} onClick={() => setActiveMarketId(market.id)} className="text-left group">
                             <div className="bg-stone-800/50 border border-stone-700/60 rounded-xl shadow-lg backdrop-blur-sm aspect-square flex flex-col justify-center items-center group-hover:bg-stone-700/50 group-hover:border-accent transition-colors duration-200">
-                                <div className="p-4">
+                                <div className="p-3">
                                     <div className="flex flex-col items-center text-center">
-                                        <div className="size-36 mb-4 rounded-full overflow-hidden flex items-center justify-center">
-                                            <button
+                                        <div className="size-32 mb-2 rounded-full overflow-hidden flex items-center justify-center">
+                                            <div
                                                 onClick={(e) => {
-                                                    e.stopPropagation();
                                                     if (market.iconType === 'image' && market.imageUrl) {
+                                                        e.stopPropagation();
                                                         setPreviewImageUrl(market.imageUrl);
                                                     }
                                                 }}
-                                                disabled={market.iconType !== 'image' || !market.imageUrl}
-                                                className="w-full h-full disabled:cursor-default flex items-center justify-center"
+                                                className={`w-full h-full flex items-center justify-center ${market.iconType === 'image' && market.imageUrl ? 'cursor-pointer' : ''}`}
                                             >
                                                 <DynamicIcon 
                                                     iconType={market.iconType} 
                                                     icon={market.icon} 
                                                     imageUrl={market.imageUrl} 
-                                                    className="text-[10rem] !leading-none !text-[10rem] group-hover:scale-110 transition-transform duration-200"
+                                                    className="text-[10rem] !leading-none !text-[8rem] group-hover:scale-110 transition-transform duration-200"
                                                     altText={`${market.title} icon`}
                                                 />
-                                            </button>
+                                            </div>
                                         </div>
-                                        <h3 className="text-2xl font-bold text-accent-light">{market.title}</h3>
-                                        <p className="text-stone-400 mt-2">{market.description}</p>
+                                        <h3 className="text-xl font-bold text-accent-light">{market.title}</h3>
+                                        <p className="text-stone-400 mt-1 text-sm">{market.description}</p>
                                     </div>
                                 </div>
                             </div>

@@ -447,6 +447,7 @@ export interface Terminology {
   link_manage_ranks: string;
   link_manage_trophies: string;
   link_manage_events: string;
+  link_manage_rotations: string;
   link_appearance: string;
   link_approvals: string;
   link_manage_users: string;
@@ -466,7 +467,7 @@ export interface Terminology {
 
 export type Page = 'Dashboard' | 'Avatar' | 'Quests' | 'Marketplace' | 'Chronicles' | 'Guild' | 'Calendar' | 'Progress' | 'Trophies' | 'Ranks' | 'Manage Users' | 'Manage Rewards' | 'Manage Quests' | 'Manage Goods' | 'Approvals' | 'Manage Markets' | 'Manage Guilds' | 'Settings' | 'Profile' | 'About' | 'Help Guide' | 'Manage Ranks' | 'Manage Trophies' | 'Collection' | 'Suggestion Engine' | 'Appearance'
 | 'Object Exporter' | 'Asset Manager' | 'Backup & Import' | 'Asset Library'
-| 'Chat' | 'Manage Quest Groups' | 'Manage Events'
+| 'Chat' | 'Manage Quest Groups' | 'Manage Events' | 'Manage Rotations'
 | 'Bug Tracker' | 'Themes';
 
 export interface SidebarLink {
@@ -720,6 +721,26 @@ export interface BugReport {
   logs: BugReportLogEntry[];
 }
 
+export interface Rotation {
+  id: string;
+  name: string;
+  description: string;
+  questIds: string[];
+  userIds: string[];
+  // 0=Sun, 6=Sat
+  activeDays: number[];
+  // How often the assignment rotates
+  frequency: 'DAILY' | 'WEEKLY';
+  // Tracks the last date an assignment was made to prevent duplicates on the same day.
+  lastAssignmentDate: string | null;
+  // Tracks the index of the last user assigned a quest in the userIds array.
+  lastUserIndex: number;
+  // Tracks the index of the last quest assigned a quest in the questIds array.
+  lastQuestIndex: number;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
 export interface IAppData {
   users: User[];
   quests: Quest[];
@@ -741,6 +762,7 @@ export interface IAppData {
   chatMessages: ChatMessage[];
   systemNotifications: SystemNotification[];
   scheduledEvents: ScheduledEvent[];
+  rotations: Rotation[];
   bugReports: BugReport[];
 }
 

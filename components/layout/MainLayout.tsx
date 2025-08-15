@@ -42,6 +42,7 @@ import ChatPanel from '../chat/ChatPanel';
 import LoginNotificationPopup from '../user-interface/LoginNotificationPopup';
 import ManageEventsPage from '../pages/management/ManageEventsPage';
 import BugTrackingPage from '../dev/BugTrackingPage';
+import ManageRotationsPage from '../pages/management/ManageRotationsPage';
 
 const MainLayout: React.FC = () => {
   const { settings, systemNotifications, activePage } = useAppState();
@@ -54,7 +55,7 @@ const MainLayout: React.FC = () => {
   const prevUserIdRef = useRef<string | undefined>(undefined);
   
   const ADMIN_ONLY_PAGES: Page[] = [
-    'Manage Users', 'Manage Rewards', 'Manage Quests', 'Manage Quest Groups', 'Manage Goods', 'Manage Markets',
+    'Manage Users', 'Manage Rewards', 'Manage Quests', 'Manage Quest Groups', 'Manage Rotations', 'Manage Goods', 'Manage Markets',
     'Manage Guilds', 'Manage Ranks', 'Manage Trophies', 'Settings', 'Suggestion Engine',
     'Appearance', 'Object Exporter', 'Asset Manager', 'Backup & Import', 'Asset Library',
     'Manage Events', 'Bug Tracker'
@@ -123,6 +124,7 @@ const MainLayout: React.FC = () => {
       case 'Manage Rewards': return <RewardsPage />;
       case 'Manage Quests': return <ManageQuestsPage />;
       case 'Manage Quest Groups': return <ManageQuestGroupsPage />;
+      case 'Manage Rotations': return <ManageRotationsPage />;
       case 'Manage Goods': return <ManageItemsPage />;
       case 'Manage Markets': return <ManageMarketsPage />;
       case 'Manage Guilds': return <ManageGuildsPage />;

@@ -1,6 +1,7 @@
 
+
 import React, { createContext, useState, useContext, ReactNode, useEffect, useCallback, useMemo, useRef } from 'react';
-import { AppSettings, User, Quest, RewardItem, Guild, Rank, Trophy, UserTrophy, AppMode, Page, IAppData, ShareableAssetType, GameAsset, Role, RewardCategory, AdminAdjustment, AdminAdjustmentType, SystemLog, QuestType, QuestAvailability, AssetPack, ImportResolution, TrophyRequirementType, ThemeDefinition, ChatMessage, SystemNotification, SystemNotificationType, MarketStatus, QuestGroup, BulkQuestUpdates, ScheduledEvent, BugReport, QuestCompletion, BugReportType, PurchaseRequest, PurchaseRequestStatus, Market, RewardTypeDefinition } from '../types';
+import { AppSettings, User, Quest, RewardItem, Guild, Rank, Trophy, UserTrophy, AppMode, Page, IAppData, ShareableAssetType, GameAsset, Role, RewardCategory, AdminAdjustment, AdminAdjustmentType, SystemLog, QuestType, QuestAvailability, AssetPack, ImportResolution, TrophyRequirementType, ThemeDefinition, ChatMessage, SystemNotification, SystemNotificationType, MarketStatus, QuestGroup, BulkQuestUpdates, ScheduledEvent, BugReport, QuestCompletion, BugReportType, PurchaseRequest, PurchaseRequestStatus, Market, RewardTypeDefinition, Rotation } from '../types';
 import { INITIAL_SETTINGS, INITIAL_RANKS, INITIAL_TROPHIES, INITIAL_THEMES } from '../data/initialData';
 import { useNotificationsDispatch } from './NotificationsContext';
 import { useAuthState, useAuthDispatch } from './AuthContext';
@@ -36,6 +37,7 @@ interface AppDispatch {
   setRewardTypes: React.Dispatch<React.SetStateAction<RewardTypeDefinition[]>>;
   setPurchaseRequests: React.Dispatch<React.SetStateAction<PurchaseRequest[]>>;
   setGameAssets: React.Dispatch<React.SetStateAction<GameAsset[]>>;
+  setRotations: React.Dispatch<React.SetStateAction<Rotation[]>>;
 
   // UI
   setActivePage: (page: Page) => void;
@@ -102,6 +104,9 @@ interface AppDispatch {
   deleteQuests: (questIds: string[]) => void;
   updateQuestsStatus: (questIds: string[], isActive: boolean) => void;
   bulkUpdateQuests: (questIds: string[], updates: BulkQuestUpdates) => Promise<void>;
+  addRotation: (rotation: Omit<Rotation, 'id'>) => Promise<void>;
+  updateRotation: (rotation: Rotation) => Promise<void>;
+  deleteRotation: (rotationId: string) => Promise<void>;
 
   // Economy
   addRewardType: (rewardType: Omit<RewardTypeDefinition, 'id' | 'isCore'>) => Promise<void>;
@@ -156,6 +161,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [systemNotifications, setSystemNotifications] = useState<SystemNotification[]>([]);
   const [scheduledEvents, setScheduledEvents] = useState<ScheduledEvent[]>([]);
   const [bugReports, setBugReports] = useState<BugReport[]>([]);
+  const [rotations, setRotations] = useState<Rotation[]>([]);
   // Quest State
   const [quests, setQuests] = useState<Quest[]>([]);
   const [questGroups, setQuestGroups] = useState<QuestGroup[]>([]);
@@ -256,6 +262,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
           processDelta('systemNotification', dataToSet.systemNotifications, setSystemNotifications);
           processDelta('scheduledEvent', dataToSet.scheduledEvents, setScheduledEvents);
           processDelta('bugReport', dataToSet.bugReports, setBugReports);
+          processDelta('rotation', dataToSet.rotations, setRotations);
 
           if (dataToSet.loginHistory) authDispatch.setLoginHistory(dataToSet.loginHistory);
       } else { // Full data load
@@ -293,6 +300,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
           setSystemNotifications(dataToSet.systemNotifications || []);
           setScheduledEvents(dataToSet.scheduledEvents || []);
           setBugReports(dataToSet.bugReports || []);
+          setRotations(dataToSet.rotations || []);
           return { loadedSettings };
       }
       return { loadedSettings: undefined };
@@ -399,6 +407,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       users, loginHistory, quests, questGroups, markets, rewardTypes, questCompletions,
       purchaseRequests, guilds, ranks, trophies, userTrophies, adminAdjustments, gameAssets,
       systemLogs, settings, themes, chatMessages, systemNotifications, scheduledEvents, bugReports,
+      rotations,
       // AppState
       isDataLoaded, isAiConfigured, syncStatus, syncError,
       // UIState
@@ -409,7 +418,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   }, [
       users, loginHistory, quests, questGroups, markets, rewardTypes, questCompletions, purchaseRequests,
       guilds, ranks, trophies, userTrophies, adminAdjustments, gameAssets, systemLogs, settings,
-      themes, chatMessages, systemNotifications, scheduledEvents, bugReports, isDataLoaded,
+      themes, chatMessages, systemNotifications, scheduledEvents, bugReports, rotations, isDataLoaded,
       isAiConfigured, syncStatus, syncError, activePage, isSidebarCollapsed, isChatOpen,
       appMode, activeMarketId, allTags
   ]);
@@ -418,13 +427,13 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const state = useMemo(() => ({
       users, quests, questGroups, markets, rewardTypes, questCompletions, purchaseRequests,
       guilds, ranks, trophies, userTrophies, adminAdjustments, gameAssets, systemLogs, settings,
-      themes, chatMessages, systemNotifications, scheduledEvents, bugReports, isDataLoaded,
+      themes, chatMessages, systemNotifications, scheduledEvents, bugReports, rotations, isDataLoaded,
       isAiConfigured, syncStatus, syncError, activePage, isSidebarCollapsed, isChatOpen,
       appMode, activeMarketId, allTags, loginHistory
   }), [
       users, quests, questGroups, markets, rewardTypes, questCompletions, purchaseRequests,
       guilds, ranks, trophies, userTrophies, adminAdjustments, gameAssets, systemLogs, settings,
-      themes, chatMessages, systemNotifications, scheduledEvents, bugReports, isDataLoaded,
+      themes, chatMessages, systemNotifications, scheduledEvents, bugReports, rotations, isDataLoaded,
       isAiConfigured, syncStatus, syncError, activePage, isSidebarCollapsed, isChatOpen,
       appMode, activeMarketId, allTags, loginHistory
   ]);
@@ -666,6 +675,9 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     const deleteQuests = (questIds: string[]) => { apiRequest('DELETE', '/api/quests', { ids: questIds }).catch(() => {}); };
     const updateQuestsStatus = (questIds: string[], isActive: boolean) => { apiRequest('PUT', '/api/quests/bulk-status', { ids: questIds, isActive }).catch(() => {}); };
     const bulkUpdateQuests = async (questIds: string[], updates: BulkQuestUpdates) => { await apiRequest('PUT', '/api/quests/bulk-update', { ids: questIds, updates }); };
+    const addRotation = async (rotation: Omit<Rotation, 'id'>) => { apiRequest('POST', '/api/rotations', rotation).catch(() => {}); };
+    const updateRotation = async (rotation: Rotation) => { registerOptimisticUpdate(`rotation-${rotation.id}`); apiRequest('PUT', `/api/rotations/${rotation.id}`, rotation).catch(() => {}); };
+    const deleteRotation = async (rotationId: string) => { apiRequest('DELETE', `/api/rotations/${rotationId}`).catch(() => {}); };
     
     // Economy Functions
     const addRewardType = async (rewardType: Omit<RewardTypeDefinition, 'id' | 'isCore'>) => { apiRequest('POST', '/api/reward-types', rewardType).catch(() => {}); };
@@ -751,17 +763,18 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       addQuest, updateQuest, deleteQuest, cloneQuest, dismissQuest, claimQuest, releaseQuest,
       markQuestAsTodo, unmarkQuestAsTodo, completeQuest, approveQuestCompletion, rejectQuestCompletion,
       addQuestGroup, updateQuestGroup, deleteQuestGroup, deleteQuestGroups, assignQuestGroupToUsers,
-      deleteQuests, updateQuestsStatus, bulkUpdateQuests, addRewardType, updateRewardType, deleteRewardType, cloneRewardType,
+      deleteQuests, updateQuestsStatus, bulkUpdateQuests, addRotation, updateRotation, deleteRotation,
+      addRewardType, updateRewardType, deleteRewardType, cloneRewardType,
       addMarket, updateMarket, deleteMarket, cloneMarket, deleteMarkets, updateMarketsStatus,
       addGameAsset, updateGameAsset, cloneGameAsset, deleteGameAssets, purchaseMarketItem, cancelPurchaseRequest,
       approvePurchaseRequest, rejectPurchaseRequest, applyRewards, deductRewards,
-      executeExchange, importAssetPack,
+      executeExchange, importAssetPack, setRotations,
     };
   }, [
     authDispatch, addNotification, updateNotification, quests, users, rewardTypes,
     guilds, ranks, trophies, userTrophies, adminAdjustments, gameAssets, systemLogs, settings,
     themes, chatMessages, systemNotifications, scheduledEvents, bugReports, questGroups, questCompletions,
-    markets, purchaseRequests, loginHistory, performDeltaSync, registerOptimisticUpdate, appMode
+    markets, purchaseRequests, loginHistory, performDeltaSync, registerOptimisticUpdate, appMode, rotations
   ]);
 
   return (

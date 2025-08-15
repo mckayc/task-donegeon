@@ -1,48 +1,48 @@
 import React, { useMemo, useEffect, useState, useRef } from 'react';
-import Sidebar from './Sidebar';
-import Header from './Header';
-import Dashboard from '../pages/Dashboard';
-import QuestsPage from '../pages/QuestsPage';
-import MarketplacePage from '../pages/MarketplacePage';
-import ChroniclesPage from '../pages/ChroniclesPage';
-import GuildPage from '../pages/GuildPage';
-import UserManagementPage from '../pages/UserManagementPage';
-import { Page, Role } from '../../types';
-import RewardsPage from '../pages/RewardsPage';
-import ManageQuestsPage from '../pages/management/ManageQuestsPage';
-import ApprovalsPage from '../pages/ApprovalsPage';
-import ManageMarketsPage from '../pages/management/ManageMarketsPage';
-import ManageGuildsPage from '../pages/ManageGuildsPage';
-import { SettingsPage } from '../pages/SettingsPage';
-import ProfilePage from '../pages/ProfilePage';
-import CalendarPage from '../pages/CalendarPage';
-import ProgressPage from '../pages/ProgressPage';
-import TrophiesPage from '../pages/TrophiesPage';
-import RanksPage from '../pages/RanksPage';
-import HelpPage from '../pages/HelpPage';
-import AvatarPage from '../pages/AvatarPage';
-import VacationModeBanner from '../settings/VacationModeBanner';
-import ManageRanksPage from '../pages/management/ManageRanksPage';
-import ManageTrophiesPage from '../pages/management/ManageTrophiesPage';
-import ThemesPage from '../pages/ThemesPage';
-import { AboutPage } from '../pages/AboutPage';
-import CollectionPage from '../pages/CollectionPage';
-import ManageItemsPage from '../pages/management/ManageItemsPage';
-import SuggestionEnginePage from '../pages/SuggestionEnginePage';
-import AppearancePage from '../pages/AppearancePage';
-import ObjectExporterPage from '../pages/management/ObjectExporterPage';
-import AssetManagerPage from '../pages/management/MediaManagerPage';
-import BackupAndImportPage from '../pages/management/BackupAndImportPage';
-import AssetLibraryPage from '../pages/management/AssetLibraryPage';
-import ManageQuestGroupsPage from '../pages/ManageQuestGroupsPage';
-import { useAppState } from '../../context/AppContext';
-import { useAuthState } from '../../context/AuthContext';
-import { useNotificationsDispatch } from '../../context/NotificationsContext';
-import { useUIState, useUIDispatch } from '../../context/UIStateContext';
-import ChatPanel from '../chat/ChatPanel';
-import LoginNotificationPopup from '../user-interface/LoginNotificationPopup';
-import ManageEventsPage from '../pages/management/ManageEventsPage';
-import BugTrackingPage from '../dev/BugTrackingPage';
+import Sidebar from './layout/Sidebar';
+import Header from './layout/Header';
+import Dashboard from './pages/Dashboard';
+import QuestsPage from './pages/QuestsPage';
+import MarketplacePage from './pages/MarketplacePage';
+import ChroniclesPage from './pages/ChroniclesPage';
+import GuildPage from './pages/GuildPage';
+import UserManagementPage from './pages/UserManagementPage';
+import { Page, Role, SystemNotification } from '../types';
+import RewardsPage from './pages/RewardsPage';
+import ManageQuestsPage from './pages/management/ManageQuestsPage';
+import ApprovalsPage from './pages/ApprovalsPage';
+import ManageMarketsPage from './pages/management/ManageMarketsPage';
+import ManageGuildsPage from './pages/ManageGuildsPage';
+import { SettingsPage } from './pages/SettingsPage';
+import ProfilePage from './pages/ProfilePage';
+import CalendarPage from './pages/CalendarPage';
+import ProgressPage from './pages/ProgressPage';
+import TrophiesPage from './pages/TrophiesPage';
+import RanksPage from './pages/RanksPage';
+import HelpPage from './pages/HelpPage';
+import AvatarPage from './pages/AvatarPage';
+import VacationModeBanner from './settings/VacationModeBanner';
+import ManageRanksPage from './pages/management/ManageRanksPage';
+import ManageTrophiesPage from './pages/management/ManageTrophiesPage';
+import ThemesPage from './pages/ThemesPage';
+import { AboutPage } from './pages/AboutPage';
+import CollectionPage from './pages/CollectionPage';
+import ManageItemsPage from './pages/management/ManageItemsPage';
+import SuggestionEnginePage from './pages/SuggestionEnginePage';
+import AppearancePage from './pages/AppearancePage';
+import ObjectExporterPage from './pages/management/ObjectExporterPage';
+import AssetManagerPage from './pages/management/MediaManagerPage';
+import BackupAndImportPage from './pages/management/BackupAndImportPage';
+import AssetLibraryPage from './pages/management/AssetLibraryPage';
+import ManageQuestGroupsPage from './pages/ManageQuestGroupsPage';
+import { useAppState } from '../context/AppContext';
+import { useAuthState } from '../context/AuthContext';
+import { useNotificationsDispatch } from '../context/NotificationsContext';
+import { useUIState, useUIDispatch } from '../context/UIStateContext';
+import ChatPanel from './chat/ChatPanel';
+import LoginNotificationPopup from './user-interface/LoginNotificationPopup';
+import ManageEventsPage from './pages/management/ManageEventsPage';
+import BugTrackingPage from './dev/BugTrackingPage';
 
 const MainLayout: React.FC = () => {
   const { settings, systemNotifications } = useAppState();
@@ -65,7 +65,7 @@ const MainLayout: React.FC = () => {
 
   const unreadNotifications = useMemo(() => {
     if (!currentUser) return [];
-    return systemNotifications.filter(n => 
+    return systemNotifications.filter((n: SystemNotification) => 
         n.recipientUserIds.includes(currentUser.id) && 
         !n.readByUserIds.includes(currentUser.id) &&
         n.senderId !== currentUser.id // Don't show popups for your own announcements

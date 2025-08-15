@@ -1,16 +1,17 @@
-import React, { useMemo, useState } from 'react';
+
+import React, { useMemo, useState, useEffect } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { useAuthState } from '../../context/AuthContext';
 import { useUIState, useUIDispatch } from '../../context/UIStateContext';
-import { Quest, QuestAvailability, QuestCompletionStatus, RewardCategory, Role, User, QuestType, PurchaseRequest, UserTrophy } from '../../types';
+import { Quest, QuestCompletionStatus, RewardCategory, QuestType } from '../../types';
 import Card from '../user-interface/Card';
-import Button from '../user-interface/Button';
-import { isQuestAvailableForUser, isQuestVisibleToUserInMode, fromYMD, getQuestUserStatus, questSorter } from '../../utils/quests';
+import { isQuestAvailableForUser, isQuestVisibleToUserInMode, questSorter } from '../../utils/quests';
 import QuestDetailDialog from '../quests/QuestDetailDialog';
 import CompleteQuestDialog from '../quests/CompleteQuestDialog';
 import { useRewardValue } from '../../hooks/useRewardValue';
 import { useEconomyState } from '../../context/EconomyContext';
 import { useQuestState, useQuestDispatch } from '../../context/QuestContext';
+import BarChart from '../user-interface/BarChart';
 
 const Dashboard: React.FC = () => {
     const { ranks, userTrophies, trophies, settings, scheduledEvents } = useAppState();
@@ -23,6 +24,24 @@ const Dashboard: React.FC = () => {
     
     const [selectedQuest, setSelectedQuest] = useState<Quest | null>(null);
     const [completingQuest, setCompletingQuest] = useState<Quest | null>(null);
+    const [chartColor, setChartColor] = useState<string>('hsl(158 84% 39%)');
+
+     useEffect(() => {
+        // A short delay ensures that the theme variables from App.tsx have been applied.
+        const timer = setTimeout(() => {
+            if (typeof window !== 'undefined') {
+                const style = getComputedStyle(document.documentElement);
+                const h = style.getPropertyValue('--color-primary-hue').trim();
+                const s = style.getPropertyValue('--color-primary-saturation').trim();
+                const l = style.getPropertyValue('--color-primary-lightness').trim();
+                if (h && s && l) {
+                    setChartColor(`hsl(${h} ${s} ${l})`);
+                }
+            }
+        }, 100);
+        return () => clearTimeout(timer);
+    }, [appMode, currentUser]);
+
 
     if (!currentUser) return <div>Loading adventurer's data...</div>;
     
@@ -141,7 +160,7 @@ const Dashboard: React.FC = () => {
                     type: 'Purchase' as const,
                     title: `Purchased "${p.assetDetails.name}"`,
                     date: p.requestedAt,
-                    rewardsText: p.assetDetails.cost.map(r => `-${r.amount} ${getRewardInfo(r.rewardTypeId).icon}`).join(' '),
+                    note: p.assetDetails.cost.map(r => `-${r.amount} ${getRewardInfo(r.rewardTypeId).icon}`).join(' '),
                     status: p.status,
                     icon: '💰',
                 })),
@@ -161,7 +180,7 @@ const Dashboard: React.FC = () => {
                 })
         ];
 
-        return allActivities.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).slice(0, 5);
+        return allActivities.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).slice(0, 10);
     }, [questCompletions, purchaseRequests, userTrophies, quests, trophies, currentUser.id, appMode, terminology, rewardTypes]);
 
     const leaderboard = useMemo(() => {
@@ -200,11 +219,11 @@ const Dashboard: React.FC = () => {
     }, [quests, currentUser, questCompletions, appMode, scheduledEvents]);
 
     const getDueDateString = (quest: Quest): string | null => {
-        if (quest.type === QuestType.Venture && quest.startDateTime) {
-            return `Due: ${new Date(quest.startDateTime).toLocaleDateString()}`;
+        if (quest.type === QuestType.Venture && quest.endDateTime) {
+            return `Due: ${new Date(quest.endDateTime).toLocaleDateString()}`;
         }
-        if (quest.type === QuestType.Duty && quest.startTime) {
-            return `Due Today at: ${quest.startTime}`;
+        if (quest.type === QuestType.Duty && quest.endTime) {
+            return `Due Today at: ${new Date(`1970-01-01T${quest.endTime}`).toLocaleTimeString([], { hour: '2-digit', minute:'2-digit' })}`;
         }
         return null;
     };
@@ -224,6 +243,51 @@ const Dashboard: React.FC = () => {
         }
     };
     
+    const weeklyProgressData = useMemo(() => {
+        const dataByDay: { [date: string]: number } = {};
+        const today = new Date();
+        
+        for (let i = 6; i >= 0; i--) {
+            const date = new Date();
+            date.setDate(today.getDate() - i);
+            const dateKey = date.toISOString().split('T')[0];
+            dataByDay[dateKey] = 0;
+        }
+
+        const currentGuildId = appMode.mode === 'guild' ? appMode.guildId : undefined;
+        const userCompletions = questCompletions.filter(
+            c => c.userId === currentUser.id && c.status === QuestCompletionStatus.Approved && c.guildId == currentGuildId
+        );
+
+        userCompletions.forEach(completion => {
+            const completionDate = new Date(completion.completedAt);
+            const sevenDaysAgo = new Date(today);
+            sevenDaysAgo.setDate(today.getDate() - 7);
+
+            if (completionDate >= sevenDaysAgo) {
+                const quest = quests.find(q => q.id === completion.questId);
+                if (!quest) return;
+                
+                const dateKey = completion.completedAt.split('T')[0];
+                const xpForThisQuest = quest.rewards
+                    .filter(r => rewardTypes.find(rt => rt.id === r.rewardTypeId)?.category === RewardCategory.XP)
+                    .reduce((sum, r) => sum + r.amount, 0);
+
+                if (dateKey in dataByDay) {
+                    dataByDay[dateKey] += xpForThisQuest;
+                }
+            }
+        });
+
+        return Object.entries(dataByDay)
+            .map(([date, value]) => ({
+                label: new Date(date + 'T00:00:00').toLocaleDateString('default', { weekday: 'short' }),
+                value
+            }));
+            
+    }, [currentUser.id, appMode, questCompletions, quests, rewardTypes]);
+
+
     const CurrencyDisplay: React.FC<{currency: {id: string, name: string, icon?: string, amount: number}}> = ({ currency }) => {
         const realValue = useRewardValue(currency.amount, currency.id);
         const title = `${currency.name}: ${currency.amount}${realValue ? ` (${realValue})` : ''}`;
@@ -315,8 +379,8 @@ const Dashboard: React.FC = () => {
                 <div className="lg:col-span-2 space-y-6">
                      <Card title="Quick Actions">
                         {quickActionQuests.length > 0 ? (
-                            <div className="flex flex-col gap-3">
-                                {quickActionQuests.slice(0, 4).map(quest => {
+                            <div className="space-y-3 max-h-80 overflow-y-auto pr-2">
+                                {quickActionQuests.slice(0, 10).map(quest => {
                                     const cardClass = quest.type === QuestType.Duty
                                         ? 'bg-blue-950/70 border-blue-800/80 hover:border-blue-600'
                                         : 'bg-purple-950/70 border-purple-800/80 hover:border-purple-600';
@@ -325,24 +389,21 @@ const Dashboard: React.FC = () => {
                                         <div
                                             key={quest.id}
                                             onClick={() => handleQuestSelect(quest)}
-                                            className={`p-3 rounded-lg border-2 cursor-pointer transition-colors ${cardClass}`}
+                                            className={`p-3 rounded-lg border-2 cursor-pointer transition-colors grid grid-cols-1 md:grid-cols-3 gap-2 items-center ${cardClass}`}
                                         >
-                                            <div className="flex justify-between items-center">
-                                                <div>
-                                                    <p className="font-semibold text-stone-100 flex items-center gap-2">
-                                                        {quest.icon} {quest.title}
-                                                    </p>
-                                                    <p className="text-xs text-stone-400 mt-1">{getDueDateString(quest)}</p>
+                                            <p className="font-semibold text-stone-100 flex items-center gap-2 md:col-span-1 truncate" title={quest.title}>
+                                                {quest.icon} {quest.title}
+                                            </p>
+                                             <p className="text-xs text-stone-400 md:col-span-1 md:text-center truncate">{getDueDateString(quest)}</p>
+
+                                            {quest.rewards.length > 0 && (
+                                                <div className="flex flex-wrap gap-x-3 gap-y-1 text-sm font-semibold md:col-span-1 md:justify-end">
+                                                    {quest.rewards.map(r => {
+                                                        const { name, icon } = getRewardInfo(r.rewardTypeId);
+                                                        return <span key={`${r.rewardTypeId}-${r.amount}`} className="text-accent-light flex items-center gap-1" title={name}>+ {r.amount} <span className="text-base">{icon}</span></span>
+                                                    })}
                                                 </div>
-                                                {quest.rewards.length > 0 && (
-                                                    <div className="flex flex-wrap gap-x-3 gap-y-1 text-sm font-semibold ml-2 flex-shrink-0">
-                                                        {quest.rewards.map(r => {
-                                                            const { name, icon } = getRewardInfo(r.rewardTypeId);
-                                                            return <span key={`${r.rewardTypeId}-${r.amount}`} className="text-accent-light flex items-center gap-1" title={name}>+ {r.amount} <span className="text-base">{icon}</span></span>
-                                                        })}
-                                                    </div>
-                                                )}
-                                            </div>
+                                            )}
                                         </div>
                                     );
                                 })}
@@ -354,22 +415,34 @@ const Dashboard: React.FC = () => {
                     
                     <Card title={`Recent ${terminology.history}`}>
                         {recentActivities.length > 0 ? (
-                            <ul className="space-y-4">
+                            <div className="space-y-4 max-h-96 overflow-y-auto pr-2">
                                 {recentActivities.map(activity => (
-                                    <li key={activity.id} className="flex items-start gap-3 text-sm">
-                                        <span className="text-xl mt-1">{activity.icon}</span>
-                                        <div className="flex-grow min-w-0">
-                                            <p className="text-stone-300 truncate" title={activity.title}>{activity.title}</p>
-                                            <div className="flex items-center gap-4 text-xs">
-                                                {activity.note && <p className="text-stone-400 italic">{activity.note}</p>}
-                                                {activity.rewardsText && <p className="text-stone-300 font-semibold">{activity.rewardsText}</p>}
-                                            </div>
-                                        </div>
-                                        <span className={`font-semibold ${statusColorClass(activity.status)} flex-shrink-0`}>{activity.status}</span>
-                                    </li>
+                                    <div key={activity.id} className="grid grid-cols-1 md:grid-cols-3 gap-2 items-center text-sm">
+                                        <p className="text-stone-300 truncate md:col-span-1 flex items-center gap-2" title={activity.title}>
+                                           <span className="text-xl">{activity.icon}</span>
+                                           <span>{activity.title}</span>
+                                        </p>
+                                        <p className="text-stone-400 italic truncate md:col-span-1 md:text-center" title={activity.note}>
+                                            {activity.note}
+                                        </p>
+                                        <p className={`font-semibold ${statusColorClass(activity.status)} flex-shrink-0 md:col-span-1 md:text-right flex items-center md:justify-end gap-2`}>
+                                            {activity.rewardsText && <span className="text-stone-300 font-semibold">{activity.rewardsText}</span>}
+                                            <span>{activity.status}</span>
+                                        </p>
+                                    </div>
                                 ))}
-                            </ul>
+                            </div>
                         ) : <p className="text-stone-400 text-sm italic">No recent activity.</p>}
+                    </Card>
+
+                    <Card title="Weekly Progress">
+                        <div className="h-60">
+                           {weeklyProgressData.some(d => d.value > 0) ? (
+                                <BarChart data={weeklyProgressData} color={chartColor} />
+                            ) : (
+                                <p className="text-stone-400 text-center pt-16">No XP earned this week. Time for a quest!</p>
+                            )}
+                        </div>
                     </Card>
                 </div>
             </div>

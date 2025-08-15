@@ -533,12 +533,42 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     const deleteScheduledEvent = async (eventId: string) => { apiRequest('DELETE', `/api/events/${eventId}`).catch(() => {}); };
     const addBugReport = async (report: Omit<BugReport, 'id' | 'status' | 'tags'> & { reportType: BugReportType }) => {
         const { reportType, ...rest } = report;
-        apiRequest('POST', '/api/bug-reports', { ...rest, status: 'Open', tags: [reportType] });
+        try {
+            const savedReport = await apiRequest('POST', '/api/bug-reports', { ...rest, status: 'Open', tags: [reportType] });
+            if (savedReport) {
+                setBugReports(prev => [savedReport, ...prev].sort((a,b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
+            }
+        } catch(e) {
+            // apiRequest will show a notification
+        }
     };
-    const updateBugReport = async (reportId: string, updates: Partial<BugReport>) => { registerOptimisticUpdate(`bugReport-${reportId}`); apiRequest('PUT', `/api/bug-reports/${reportId}`, updates).catch(() => {}); };
-    const deleteBugReports = async (reportIds: string[]) => { apiRequest('DELETE', '/api/bug-reports', { ids: reportIds }).catch(() => {}); };
+    const updateBugReport = async (reportId: string, updates: Partial<BugReport>) => {
+        registerOptimisticUpdate(`bugReport-${reportId}`);
+        setBugReports(prev => prev.map(r => r.id === reportId ? { ...r, ...updates, updatedAt: new Date().toISOString() } : r));
+        try {
+            const updatedReportFromServer = await apiRequest('PUT', `/api/bug-reports/${reportId}`, updates);
+            setBugReports(prev => prev.map(r => r.id === reportId ? updatedReportFromServer : r));
+        } catch (e) {
+            performDeltaSync(); // Revert optimistic update on failure by re-syncing with the server
+        }
+    };
+    const deleteBugReports = async (reportIds: string[]) => {
+        const originalReports = bugReports;
+        setBugReports(prev => prev.filter(r => !reportIds.includes(r.id)));
+        try {
+            await apiRequest('DELETE', '/api/bug-reports', { ids: reportIds });
+        } catch (e) {
+            setBugReports(originalReports);
+        }
+    };
     const importBugReports = async (reports: BugReport[], mode: 'merge' | 'replace') => {
-        apiRequest('POST', '/api/bug-reports/import', { reports, mode });
+        try {
+            await apiRequest('POST', '/api/bug-reports/import', { reports, mode });
+            addNotification({ type: 'success', message: 'Import successful! Refreshing data...' });
+            performDeltaSync();
+        } catch(e) {
+            // apiRequest handles notification
+        }
     };
     const restoreFromBackup = async (backupData: IAppData) => { apiRequest('POST', '/api/data/restore', backupData).then(() => { addNotification({ type: 'success', message: 'Restore successful! App will reload.' }); setTimeout(() => window.location.reload(), 1500); }).catch(() => {}); };
     const clearAllHistory = () => { /* Server logic needed */ };
@@ -575,11 +605,20 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       }
     };
     const applyManualAdjustment = (adj: Omit<AdminAdjustment, 'id'|'adjustedAt'>): boolean => {
+      if (adj.type === AdminAdjustmentType.Setback) {
+        if (!deductRewards(adj.userId, adj.setbacks, adj.guildId)) {
+            return false; // Deduction failed, so don't log the adjustment.
+        }
+      }
+      
       const fullAdj = {...adj, id: `adj-${Date.now()}`, adjustedAt: new Date().toISOString() };
       setAdminAdjustments(p => [...p, fullAdj]);
-      if (adj.type === AdminAdjustmentType.Trophy && adj.trophyId) awardTrophy(adj.userId, adj.trophyId, adj.guildId);
-      else if (adj.type === AdminAdjustmentType.Reward) applyRewards(adj.userId, adj.rewards, adj.guildId);
-      else if (adj.type === AdminAdjustmentType.Setback) deductRewards(adj.userId, adj.setbacks, adj.guildId);
+      
+      if (adj.type === AdminAdjustmentType.Trophy && adj.trophyId) {
+        awardTrophy(adj.userId, adj.trophyId, adj.guildId);
+      } else if (adj.type === AdminAdjustmentType.Reward) {
+        applyRewards(adj.userId, adj.rewards, adj.guildId);
+      }
       return true;
     };
     const deleteSelectedAssets = async (selection: Partial<Record<ShareableAssetType, string[]>>, onComplete?: () => void) => {
@@ -684,7 +723,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       const request = purchaseRequests.find(r => r.id === purchaseId);
       if (!request) return;
       if (deductRewards(request.userId, request.assetDetails.cost, request.guildId)) {
-        authDispatch.updateUser(request.userId, u => ({ ownedAssetIds: [...u.ownedAssetIds, request.assetId] }));
+        authDispatch.updateUser(request.userId, u => ({ ...u, ownedAssetIds: [...u.ownedAssetIds, request.assetId] }));
         setGameAssets(p => p.map(a => a.id === request.assetId ? { ...a, purchaseCount: a.purchaseCount + 1 } : a));
         setPurchaseRequests(p => p.map(req => req.id === purchaseId ? { ...req, status: PurchaseRequestStatus.Completed, actedAt: new Date().toISOString() } : req));
       } else {

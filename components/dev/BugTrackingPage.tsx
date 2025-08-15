@@ -112,7 +112,6 @@ const BugTrackingPage: React.FC = () => {
         if (!importingFileContent) return;
         try {
             await importBugReports(importingFileContent, mode);
-            addNotification({ type: 'success', message: `Reports imported successfully (${mode} mode).` });
         } finally {
             setImportingFileContent(null);
         }

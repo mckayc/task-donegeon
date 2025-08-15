@@ -1,4 +1,5 @@
 
+
 import React, { useState } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { useAuthState } from '../../context/AuthContext';
@@ -12,7 +13,7 @@ interface ManualAdjustmentDialogProps {
 }
 
 const ManualAdjustmentDialog: React.FC<ManualAdjustmentDialogProps> = ({ user, onClose }) => {
-  const { guilds, trophies, userTrophies } = useAppState();
+  const { guilds, trophies, userTrophies, rewardTypes } = useAppState();
   const { applyManualAdjustment } = useAppDispatch();
   const { currentUser } = useAuthState();
   const [reason, setReason] = useState('');
@@ -34,7 +35,9 @@ const ManualAdjustmentDialog: React.FC<ManualAdjustmentDialogProps> = ({ user, o
   };
   
   const handleAddRewardForCategory = (setter: React.Dispatch<React.SetStateAction<RewardItem[]>>) => (rewardCat: RewardCategory) => {
-    setter(prev => [...prev, { rewardTypeId: '', amount: 1 }]);
+    const defaultReward = rewardTypes.find(rt => rt.category === rewardCat);
+    if (!defaultReward) return;
+    setter(prev => [...prev, { rewardTypeId: defaultReward.id, amount: 1 }]);
   };
   
   const handleRemoveReward = (items: RewardItem[], setter: React.Dispatch<React.SetStateAction<RewardItem[]>>) => (indexToRemove: number) => {

@@ -1,7 +1,7 @@
 
 
 import React, { createContext, useState, useContext, ReactNode, useEffect, useCallback, useMemo, useRef } from 'react';
-import { AppSettings, User, Quest, RewardItem, Guild, Rank, Trophy, UserTrophy, AppMode, Page, IAppData, ShareableAssetType, GameAsset, Role, RewardCategory, AdminAdjustment, AdminAdjustmentType, SystemLog, QuestType, QuestAvailability, AssetPack, ImportResolution, TrophyRequirementType, ThemeDefinition, ChatMessage, SystemNotification, SystemNotificationType, MarketStatus, QuestGroup, BulkQuestUpdates, ScheduledEvent, BugReport, QuestCompletion, BugReportType, PurchaseRequest, PurchaseRequestStatus, Market, RewardTypeDefinition, Rotation } from '../types';
+import { AppSettings, User, Quest, RewardItem, Guild, Rank, Trophy, UserTrophy, AppMode, Page, IAppData, ShareableAssetType, GameAsset, Role, RewardCategory, AdminAdjustment, AdminAdjustmentType, SystemLog, QuestType, QuestAvailability, AssetPack, ImportResolution, TrophyRequirementType, ThemeDefinition, ChatMessage, SystemNotification, SystemNotificationType, MarketStatus, QuestGroup, BulkQuestUpdates, ScheduledEvent, BugReport, QuestCompletion, BugReportType, PurchaseRequest, PurchaseRequestStatus, Market, RewardTypeDefinition, Rotation, SidebarConfigItem } from '../types';
 import { INITIAL_SETTINGS, INITIAL_RANKS, INITIAL_TROPHIES, INITIAL_THEMES } from '../data/initialData';
 import { useNotificationsDispatch } from './NotificationsContext';
 import { useAuthState, useAuthDispatch } from './AuthContext';
@@ -50,7 +50,7 @@ interface AppDispatch {
   addGuild: (guild: Omit<Guild, 'id'>) => Promise<void>;
   updateGuild: (guild: Guild) => Promise<void>;
   deleteGuild: (guildId: string) => Promise<void>;
-  setRanks: (ranks: Rank[]) => void;
+  setRanks: React.Dispatch<React.SetStateAction<Rank[]>>;
   addTrophy: (trophy: Omit<Trophy, 'id'>) => void;
   updateTrophy: (trophy: Trophy) => void;
   awardTrophy: (userId: string, trophyId: string, guildId?: string) => void;
@@ -76,6 +76,7 @@ interface AppDispatch {
   // Settings & System
   updateSettings: (settings: Partial<AppSettings>) => Promise<void>;
   resetSettings: () => void;
+  applySettingsUpdates: () => void;
   sendMessage: (message: Omit<ChatMessage, 'id' | 'timestamp' | 'readBy' | 'senderId'> & { isAnnouncement?: boolean }) => Promise<void>;
   markMessagesAsRead: (params: { partnerId?: string; guildId?: string; }) => void;
   addSystemNotification: (notification: Omit<SystemNotification, 'id' | 'timestamp' | 'readByUserIds'>) => void;
@@ -268,16 +269,16 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       } else { // Full data load
           const savedSettings: Partial<AppSettings> = dataToSet.settings || {};
           const loadedSettings: AppSettings = { ...INITIAL_SETTINGS, ...savedSettings,
-              questDefaults: { ...INITIAL_SETTINGS.questDefaults, ...savedSettings.questDefaults },
-              security: { ...INITIAL_SETTINGS.security, ...savedSettings.security },
-              sharedMode: { ...INITIAL_SETTINGS.sharedMode, ...savedSettings.sharedMode },
-              automatedBackups: { ...INITIAL_SETTINGS.automatedBackups, ...savedSettings.automatedBackups },
-              loginNotifications: { ...INITIAL_SETTINGS.loginNotifications, ...savedSettings.loginNotifications },
-              googleCalendar: { ...INITIAL_SETTINGS.googleCalendar, ...savedSettings.googleCalendar },
-              developerMode: { ...INITIAL_SETTINGS.developerMode, ...savedSettings.developerMode },
-              chat: { ...INITIAL_SETTINGS.chat, ...savedSettings.chat },
-              terminology: { ...INITIAL_SETTINGS.terminology, ...savedSettings.terminology },
-              rewardValuation: { ...INITIAL_SETTINGS.rewardValuation, ...savedSettings.rewardValuation },
+              questDefaults: { ...INITIAL_SETTINGS.questDefaults, ...(savedSettings.questDefaults || {}) },
+              security: { ...INITIAL_SETTINGS.security, ...(savedSettings.security || {}) },
+              sharedMode: { ...INITIAL_SETTINGS.sharedMode, ...(savedSettings.sharedMode || {}) },
+              automatedBackups: { ...INITIAL_SETTINGS.automatedBackups, ...(savedSettings.automatedBackups || {}) },
+              loginNotifications: { ...INITIAL_SETTINGS.loginNotifications, ...(savedSettings.loginNotifications || {}) },
+              googleCalendar: { ...INITIAL_SETTINGS.googleCalendar, ...(savedSettings.googleCalendar || {}) },
+              developerMode: { ...INITIAL_SETTINGS.developerMode, ...(savedSettings.developerMode || {}) },
+              chat: { ...INITIAL_SETTINGS.chat, ...(savedSettings.chat || {}) },
+              terminology: { ...INITIAL_SETTINGS.terminology, ...(savedSettings.terminology || {}) },
+              rewardValuation: { ...INITIAL_SETTINGS.rewardValuation, ...(savedSettings.rewardValuation || {}) },
           };
           setSettings(loadedSettings);
           authDispatch.setUsers(dataToSet.users || []);
@@ -449,14 +450,13 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         return newState;
     });
     const toggleChat = () => setIsChatOpen(prev => !prev);
-    const setRanksStable = (newRanks: Rank[]) => setRanks(newRanks);
 
      const applyRewards = (userId: string, rewardsToApply: RewardItem[], guildId?: string) => {
         authDispatch.updateUser(userId, (u: User) => {
             const newUser = { ...u, 
-                personalPurse: {...u.personalPurse},
-                personalExperience: {...u.personalExperience},
-                guildBalances: JSON.parse(JSON.stringify(u.guildBalances))
+                personalPurse: {...(u.personalPurse || {})},
+                personalExperience: {...(u.personalExperience || {})},
+                guildBalances: JSON.parse(JSON.stringify(u.guildBalances || {}))
             };
             rewardsToApply.forEach(reward => {
                 const rewardDef = rewardTypes.find(rt => rt.id === reward.rewardTypeId);
@@ -478,7 +478,11 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
                     }
                 }
             });
-            return newUser;
+            return {
+                personalPurse: newUser.personalPurse,
+                personalExperience: newUser.personalExperience,
+                guildBalances: newUser.guildBalances
+            };
         });
     };
 
@@ -492,7 +496,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         const canAfford = cost.every(item => {
             const rewardDef = rewardTypes.find(rt => rt.id === item.rewardTypeId);
             if (!rewardDef) return false;
-            const balance = rewardDef.category === 'Currency' ? (balances.purse[item.rewardTypeId] || 0) : (balances.experience[item.rewardTypeId] || 0);
+            const balance = rewardDef.category === 'Currency' ? (balances.purse?.[item.rewardTypeId] || 0) : (balances.experience?.[item.rewardTypeId] || 0);
             return balance >= item.amount;
         });
 
@@ -502,24 +506,26 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         }
 
         authDispatch.updateUser(userId, u => {
-            const newUser = { ...u, 
-                personalPurse: {...u.personalPurse},
-                personalExperience: {...u.personalExperience},
-                guildBalances: JSON.parse(JSON.stringify(u.guildBalances))
-            };
+            const newPurse = { ...(u.personalPurse || {}) };
+            const newExperience = { ...(u.personalExperience || {}) };
+            const newGuildBalances = JSON.parse(JSON.stringify(u.guildBalances || {}));
             cost.forEach(item => {
                 const rewardDef = rewardTypes.find(rt => rt.id === item.rewardTypeId);
                 if (!rewardDef) return;
                 if (guildId) {
-                    const balanceSheet = newUser.guildBalances[guildId];
+                    const balanceSheet = newGuildBalances[guildId];
                     if (rewardDef.category === 'Currency') balanceSheet.purse[item.rewardTypeId] -= item.amount;
                     else balanceSheet.experience[item.rewardTypeId] -= item.amount;
                 } else {
-                    if (rewardDef.category === 'Currency') newUser.personalPurse[item.rewardTypeId] -= item.amount;
-                    else newUser.personalExperience[item.rewardTypeId] -= item.amount;
+                    if (rewardDef.category === 'Currency') newPurse[item.rewardTypeId] -= item.amount;
+                    else newExperience[item.rewardTypeId] -= item.amount;
                 }
             });
-            return newUser;
+            return {
+                personalPurse: newPurse,
+                personalExperience: newExperience,
+                guildBalances: newGuildBalances
+            };
         });
         return true;
     };
@@ -599,6 +605,43 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     const factoryReset = async () => { apiRequest('POST', '/api/data/factory-reset').then(() => { addNotification({ type: 'success', message: 'Factory reset initiated. The app will restart.' }); setTimeout(() => window.location.reload(), 2000); }).catch(() => {}); };
     const updateSettings = async (newSettings: Partial<AppSettings>) => { registerOptimisticUpdate('settings'); setSettings(prev => ({...prev, ...newSettings})); apiRequest('PUT', '/api/settings', {...settings, ...newSettings}).catch(() => {}); };
     const resetSettings = () => updateSettings(INITIAL_SETTINGS);
+    const applySettingsUpdates = () => {
+        const newSettings = JSON.parse(JSON.stringify(settings)); // Deep copy
+
+        // Merge top-level objects, prioritizing user's existing values
+        const objectsToMerge: (keyof AppSettings)[] = [
+            'questDefaults', 'security', 'sharedMode', 'automatedBackups',
+            'loginNotifications', 'googleCalendar', 'developerMode',
+            'chat', 'terminology', 'rewardValuation'
+        ];
+
+        objectsToMerge.forEach(key => {
+            if (typeof newSettings[key] === 'object' && !Array.isArray(newSettings[key]) && newSettings[key] !== null) {
+                (newSettings[key] as any) = { ...(INITIAL_SETTINGS[key] || {}), ...(newSettings[key] || {}) };
+            }
+        });
+
+        // Special handling for sidebar to preserve user customizations but add new links
+        const userItemsById = new Map(
+            (newSettings.sidebars.main || []).map((item: SidebarConfigItem) => [item.id, item])
+        );
+        
+        const finalSidebar = INITIAL_SETTINGS.sidebars.main.map((defaultItem: SidebarConfigItem) => {
+            if (userItemsById.has(defaultItem.id)) {
+                const userItem = userItemsById.get(defaultItem.id);
+                // Combine, giving user's customization precedence
+                return { ...defaultItem, ...(userItem || {}) };
+            }
+            // It's a new item, add it as is
+            return defaultItem;
+        });
+
+        newSettings.sidebars.main = finalSidebar;
+
+        // Now call the existing update function
+        updateSettings(newSettings);
+        addNotification({type: 'success', message: 'Feature updates applied successfully!'});
+    };
     const sendMessage = async (message: Omit<ChatMessage, 'id' | 'timestamp' | 'readBy' | 'senderId'> & { isAnnouncement?: boolean }) => {
         if (!currentUserRef.current) return;
         const notifId = addNotification({ message: 'Sending...', type: 'info', duration: 0 });
@@ -727,7 +770,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         addNotification({ type: 'info', message: 'Purchase requested. Awaiting approval.' });
       } else {
         if (deductRewards(user.id, cost, guildId)) {
-            authDispatch.updateUser(user.id, u => ({ ...u, ownedAssetIds: [...u.ownedAssetIds, asset.id] }));
+            authDispatch.updateUser(user.id, u => ({ ownedAssetIds: [...(u.ownedAssetIds || []), asset.id] }));
             updateGameAsset({ ...asset, purchaseCount: asset.purchaseCount + 1 });
             addNotification({ type: 'success', message: `Purchased ${asset.name}!` });
         }
@@ -738,7 +781,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       const request = purchaseRequests.find(r => r.id === purchaseId);
       if (!request) return;
       if (deductRewards(request.userId, request.assetDetails.cost, request.guildId)) {
-        authDispatch.updateUser(request.userId, u => ({ ...u, ownedAssetIds: [...u.ownedAssetIds, request.assetId] }));
+        authDispatch.updateUser(request.userId, u => ({ ownedAssetIds: [...(u.ownedAssetIds || []), request.assetId] }));
         setGameAssets(p => p.map(a => a.id === request.assetId ? { ...a, purchaseCount: a.purchaseCount + 1 } : a));
         setPurchaseRequests(p => p.map(req => req.id === purchaseId ? { ...req, status: PurchaseRequestStatus.Completed, actedAt: new Date().toISOString() } : req));
       } else {
@@ -754,11 +797,11 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       setQuests, setQuestGroups, setQuestCompletions, setMarkets, setRewardTypes,
       setPurchaseRequests, setGameAssets, setActivePage: setActivePageStable, toggleSidebar,
       toggleChat, setAppMode, setActiveMarketId, addGuild, updateGuild, deleteGuild,
-      setRanks: setRanksStable, addTrophy, updateTrophy, awardTrophy, applyManualAdjustment,
+      setRanks, addTrophy, updateTrophy, awardTrophy, applyManualAdjustment,
       addTheme, updateTheme, deleteTheme, addScheduledEvent, updateScheduledEvent, deleteScheduledEvent,
       addBugReport, updateBugReport, deleteBugReports, importBugReports, restoreFromBackup,
       clearAllHistory, resetAllPlayerData, deleteAllCustomContent, deleteSelectedAssets, uploadFile, factoryReset,
-      updateSettings, resetSettings, sendMessage, markMessagesAsRead, addSystemNotification,
+      updateSettings, resetSettings, applySettingsUpdates, sendMessage, markMessagesAsRead, addSystemNotification,
       markSystemNotificationsAsRead, triggerSync: performDeltaSync, registerOptimisticUpdate,
       addQuest, updateQuest, deleteQuest, cloneQuest, dismissQuest, claimQuest, releaseQuest,
       markQuestAsTodo, unmarkQuestAsTodo, completeQuest, approveQuestCompletion, rejectQuestCompletion,

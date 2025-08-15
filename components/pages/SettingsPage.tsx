@@ -59,31 +59,35 @@ const DangerZoneAction: React.FC<{
 
 const terminologyLabels: { [key in keyof Terminology]: string } = {
   appName: 'App Name',
+  // Singular
   task: 'Task (Singular)',
-  tasks: 'Tasks (Plural)',
   recurringTask: 'Recurring Task (e.g., Duty)',
-  recurringTasks: 'Recurring Tasks (Plural)',
   singleTask: 'Single Task (e.g., Venture)',
-  singleTasks: 'Single Tasks (Plural)',
-  shoppingCenter: 'Shopping Center (e.g., Marketplace)',
   store: 'Store (e.g., Market)',
-  stores: 'Stores (Plural)',
   history: 'History (e.g., Chronicles)',
   group: 'Group (e.g., Guild)',
-  groups: 'Groups (Plural)',
   level: 'Level (e.g., Rank)',
-  levels: 'Levels (Plural)',
   award: 'Award (e.g., Trophy)',
-  awards: 'Awards (Plural)',
   point: 'Point (e.g., Reward)',
-  points: 'Points (Plural)',
   xp: 'Experience Points',
   currency: 'Currency',
   negativePoint: 'Negative Point (e.g., Setback)',
+  // Plural
+  tasks: 'Tasks (Plural)',
+  recurringTasks: 'Recurring Tasks (Plural)',
+  singleTasks: 'Single Tasks (Plural)',
+  shoppingCenter: 'Shopping Center (e.g., Marketplace)',
+  stores: 'Stores (Plural)',
+  groups: 'Groups (Plural)',
+  levels: 'Levels (Plural)',
+  awards: 'Awards (Plural)',
+  points: 'Points (Plural)',
   negativePoints: 'Negative Points (Plural)',
+  // Roles
   admin: 'Admin (e.g., Donegeon Master)',
   moderator: 'Moderator (e.g., Gatekeeper)',
   user: 'User (e.g., Explorer)',
+  // Sidebar Links
   link_dashboard: 'Sidebar: Dashboard',
   link_quests: 'Sidebar: Quests',
   link_marketplace: 'Sidebar: Marketplace',
@@ -127,7 +131,7 @@ const REAL_WORLD_CURRENCIES = ['USD', 'EUR', 'GBP', 'JPY', 'CAD', 'AUD', 'CNY'];
 export const SettingsPage: React.FC = () => {
     const { settings } = useAppState();
     const { users } = useAuthState();
-    const { updateSettings, resetSettings, clearAllHistory, resetAllPlayerData, deleteAllCustomContent, factoryReset } = useAppDispatch();
+    const { updateSettings, resetSettings, applySettingsUpdates, clearAllHistory, resetAllPlayerData, deleteAllCustomContent, factoryReset } = useAppDispatch();
     const { addNotification } = useNotificationsDispatch();
     
     // Create a local copy of settings for form manipulation
@@ -166,6 +170,7 @@ export const SettingsPage: React.FC = () => {
         if (!confirmation) return;
         switch(confirmation) {
             case 'resetSettings': resetSettings(); break;
+            case 'applyUpdates': applySettingsUpdates(); break;
             case 'clearHistory': clearAllHistory(); break;
             case 'resetPlayers': resetAllPlayerData(); break;
             case 'deleteContent': deleteAllCustomContent(); break;
@@ -328,6 +333,19 @@ export const SettingsPage: React.FC = () => {
                         ))}
                     </div>
                 </CollapsibleSection>
+                <CollapsibleSection title="Maintenance">
+                     <div className="p-6 space-y-4">
+                        <div className="p-4 border border-stone-600 bg-stone-900/30 rounded-lg flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                            <div>
+                                <h4 className="font-bold text-emerald-300">Apply Feature Updates</h4>
+                                <p className="text-sm text-stone-300 mt-1 max-w-xl">Safely adds new features and settings from the latest app version without overwriting your customizations. Use this if new sidebar links or options are not appearing after an update.</p>
+                            </div>
+                            <Button onClick={() => setConfirmation('applyUpdates')} className="flex-shrink-0">
+                                Apply Updates
+                            </Button>
+                        </div>
+                    </div>
+                </CollapsibleSection>
                 <CollapsibleSection title="Danger Zone">
                      <div className="p-6 space-y-4">
                          <DangerZoneAction
@@ -368,7 +386,7 @@ export const SettingsPage: React.FC = () => {
                 onClose={() => setConfirmation(null)}
                 onConfirm={handleConfirm}
                 title="Are you absolutely sure?"
-                message="This action is permanent and cannot be undone."
+                message={confirmation === 'applyUpdates' ? 'This will apply new default settings without overwriting your changes. Proceed?' : "This action is permanent and cannot be undone."}
             />
         </div>
     );

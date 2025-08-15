@@ -9,11 +9,11 @@ interface InputProps extends Omit<React.InputHTMLAttributes<HTMLInputElement | H
   type?: string;
   children?: React.ReactNode;
   'data-log-id'?: string;
+  rows?: number;
 }
 
-const Input = forwardRef<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement, InputProps>(({ label, id, className, as = 'input', children, ...props }, ref) => {
+const Input = forwardRef<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement, InputProps>(({ label, id, className, as = 'input', children, rows, ...props }, ref) => {
   
-  const baseClasses = `w-full bg-stone-700 border border-stone-600 rounded-md focus:ring-emerald-500 focus:border-emerald-500 transition`;
   const shadCnInputClasses = "flex h-10 w-full rounded-md border border-input bg-stone-900 px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50";
 
   const inputElement = (() => {
@@ -34,6 +34,7 @@ const Input = forwardRef<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElem
           <textarea
             id={id}
             ref={ref as React.ForwardedRef<HTMLTextAreaElement>}
+            rows={rows}
             {...(props as React.TextareaHTMLAttributes<HTMLTextAreaElement>)}
             className={cn(shadCnInputClasses, 'h-auto', className)}
           />

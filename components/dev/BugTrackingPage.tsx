@@ -7,9 +7,9 @@ import { useNotificationsDispatch } from '../../context/NotificationsContext';
 import Input from '../user-interface/Input';
 import ConfirmDialog from '../user-interface/ConfirmDialog';
 import { BugDetailDialog } from './BugDetailDialog';
-import { bugLogger } from '../../utils/bugLogger';
 import { EllipsisVerticalIcon } from '../user-interface/Icons';
 import { useShiftSelect } from '../../hooks/useShiftSelect';
+import CreateBugReportDialog from './CreateBugReportDialog';
 
 const BugTrackingPage: React.FC = () => {
     const { bugReports } = useAppState();
@@ -21,16 +21,19 @@ const BugTrackingPage: React.FC = () => {
     const [activeTab, setActiveTab] = useState<BugReportStatus>('In Progress');
     const [deletingIds, setDeletingIds] = useState<string[]>([]);
     const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
+    const [statusMenuOpenFor, setStatusMenuOpenFor] = useState<string | null>(null);
     const dropdownRef = useRef<HTMLDivElement | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [importingFileContent, setImportingFileContent] = useState<BugReport[] | null>(null);
+    const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+
 
     const detailedReport = useMemo(() => {
         if (!detailedReportId) return null;
         return bugReports.find(r => r.id === detailedReportId) || null;
     }, [detailedReportId, bugReports]);
     
-    const statuses: BugReportStatus[] = ['In Progress', 'Open', 'Resolved', 'Closed'];
+    const statuses: BugReportStatus[] = ['Open', 'In Progress', 'Resolved', 'Closed'];
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
@@ -151,6 +154,7 @@ const BugTrackingPage: React.FC = () => {
                 title="Bug Tracker"
                 headerAction={
                     <div className="flex items-center gap-2">
+                        <Button size="sm" onClick={() => setIsCreateDialogOpen(true)}>Create New Issue</Button>
                         <Button size="sm" variant="secondary" onClick={handleExport}>Export All</Button>
                         <Button size="sm" onClick={() => fileInputRef.current?.click()}>Import</Button>
                         <input type="file" ref={fileInputRef} onChange={handleFileSelect} accept=".json" className="hidden" />
@@ -227,8 +231,33 @@ const BugTrackingPage: React.FC = () => {
                                                 <EllipsisVerticalIcon className="w-5 h-5 text-stone-300" />
                                             </button>
                                             {openDropdownId === report.id && (
-                                                <div ref={dropdownRef} className="absolute right-10 top-0 mt-2 w-36 bg-stone-900 border border-stone-700 rounded-lg shadow-xl z-20">
+                                                <div ref={dropdownRef} className="absolute right-10 top-0 mt-2 w-48 bg-stone-900 border border-stone-700 rounded-lg shadow-xl z-20">
                                                     <button onClick={() => { setDetailedReportId(report.id); setOpenDropdownId(null); }} className="w-full text-left block px-4 py-2 text-sm text-stone-300 hover:bg-stone-700/50">View Details</button>
+                                                    
+                                                    <div className="relative" onMouseEnter={() => setStatusMenuOpenFor(report.id)} onMouseLeave={() => setStatusMenuOpenFor(null)}>
+                                                        <button className="w-full text-left flex justify-between items-center px-4 py-2 text-sm text-stone-300 hover:bg-stone-700/50">
+                                                            Change Status <span className="text-xs">▶</span>
+                                                        </button>
+                                                        {statusMenuOpenFor === report.id && (
+                                                            <div className="absolute left-full -top-1 ml-1 w-36 bg-stone-900 border border-stone-700 rounded-lg shadow-xl z-30">
+                                                                {statuses.map(s => (
+                                                                    <button
+                                                                        key={s}
+                                                                        onClick={() => {
+                                                                            updateBugReport(report.id, { status: s });
+                                                                            addNotification({ type: 'info', message: `Report status updated.` });
+                                                                            setOpenDropdownId(null);
+                                                                        }}
+                                                                        className={`w-full text-left block px-4 py-2 text-sm hover:bg-stone-700/50 ${report.status === s ? 'text-emerald-400 font-bold' : 'text-stone-300'}`}
+                                                                    >
+                                                                        {report.status === s && '✔ '}{s}
+                                                                    </button>
+                                                                ))}
+                                                            </div>
+                                                        )}
+                                                    </div>
+
+                                                    <div className="border-t border-stone-700/60 my-1"></div>
                                                     <button onClick={() => { setDeletingIds([report.id]); setOpenDropdownId(null); }} className="w-full text-left block px-4 py-2 text-sm text-red-400 hover:bg-stone-700/50">Delete</button>
                                                 </div>
                                             )}
@@ -247,6 +276,8 @@ const BugTrackingPage: React.FC = () => {
             {detailedReport && (
                 <BugDetailDialog report={detailedReport} onClose={() => setDetailedReportId(null)} allTags={allBugReportTags} getTagColor={getTagColor} />
             )}
+
+            {isCreateDialogOpen && <CreateBugReportDialog onClose={() => setIsCreateDialogOpen(false)} />}
             
             {importingFileContent && (
                 <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">

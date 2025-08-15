@@ -166,7 +166,9 @@ const BackupAndImportPage: React.FC = () => {
         if (editingSchedule) {
             const index = updatedSchedules.findIndex(s => s.id === editingSchedule.id);
             if (index !== -1) {
-                updatedSchedules[index] = { ...editingSchedule, ...scheduleData };
+                // IMPORTANT FIX: Merge with the existing schedule object from settings
+                // to preserve the `lastBackupTimestamp` which is not present in `scheduleData`.
+                updatedSchedules[index] = { ...updatedSchedules[index], ...scheduleData };
             }
         } else {
             updatedSchedules.push({ ...scheduleData, id: `schedule-${Date.now()}` });

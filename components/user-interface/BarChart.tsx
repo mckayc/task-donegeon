@@ -73,13 +73,13 @@ const BarChart: React.FC<BarChartProps> = ({ data, color = '#10b981' }) => {
       {yAxisLabels.map(({ y, label }) => (
         <g key={`y-axis-${label}`} className="text-xs">
           <line x1={40} x2={width - 20} y1={y} y2={y} stroke="currentColor" strokeOpacity={0.2} />
-          <text x={35} y={y + 4} textAnchor="end">{label}</text>
+          <text x={35} y={y + 4} textAnchor="end" fill="currentColor">{label}</text>
         </g>
       ))}
 
       {/* X Axis Labels */}
       {xAxisLabels.map(({ x, label }) => (
-        <text key={`x-axis-${label}`} x={x} y={height - 15} textAnchor="middle" className="text-xs">
+        <text key={`x-axis-${label}`} x={x} y={height - 15} textAnchor="middle" className="text-xs" fill="currentColor">
           {label}
         </text>
       ))}

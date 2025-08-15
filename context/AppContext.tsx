@@ -655,7 +655,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             if (typeof newVal === 'object' && newVal !== null && !Array.isArray(newVal)) {
                 (newSettings[key] as any) = { 
                     ...(typeof initialVal === 'object' && initialVal !== null ? initialVal : {}), 
-                    ...newVal 
+                    ...(newVal as object) 
                 };
             }
         });

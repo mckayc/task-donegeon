@@ -7,7 +7,7 @@ import { useNotificationsDispatch } from '../../context/NotificationsContext';
 import Input from '../user-interface/Input';
 import ConfirmDialog from '../user-interface/ConfirmDialog';
 import { BugDetailDialog } from './BugDetailDialog';
-import { EllipsisVerticalIcon } from '../user-interface/Icons';
+import { ChevronDownIcon } from '../user-interface/Icons';
 import { useShiftSelect } from '../../hooks/useShiftSelect';
 import CreateBugReportDialog from './CreateBugReportDialog';
 
@@ -21,7 +21,6 @@ const BugTrackingPage: React.FC = () => {
     const [activeTab, setActiveTab] = useState<BugReportStatus>('In Progress');
     const [deletingIds, setDeletingIds] = useState<string[]>([]);
     const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
-    const [statusMenuOpenFor, setStatusMenuOpenFor] = useState<string | null>(null);
     const dropdownRef = useRef<HTMLDivElement | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [importingFileContent, setImportingFileContent] = useState<BugReport[] | null>(null);
@@ -227,38 +226,34 @@ const BugTrackingPage: React.FC = () => {
                                         </td>
                                         <td className="p-4 text-stone-400">{new Date(report.createdAt).toLocaleDateString()}</td>
                                         <td className="p-4 relative">
-                                             <button onClick={() => setOpenDropdownId(openDropdownId === report.id ? null : report.id)} className="p-2 rounded-full hover:bg-stone-700/50">
-                                                <EllipsisVerticalIcon className="w-5 h-5 text-stone-300" />
-                                            </button>
+                                            <Button variant="secondary" size="sm" onClick={() => setOpenDropdownId(openDropdownId === report.id ? null : report.id)} className="flex items-center gap-1">
+                                                Actions <ChevronDownIcon className="w-4 h-4" />
+                                            </Button>
                                             {openDropdownId === report.id && (
-                                                <div ref={dropdownRef} className="absolute right-10 top-0 mt-2 w-48 bg-stone-900 border border-stone-700 rounded-lg shadow-xl z-20">
-                                                    <button onClick={() => { setDetailedReportId(report.id); setOpenDropdownId(null); }} className="w-full text-left block px-4 py-2 text-sm text-stone-300 hover:bg-stone-700/50">View Details</button>
-                                                    
-                                                    <div className="relative" onMouseEnter={() => setStatusMenuOpenFor(report.id)} onMouseLeave={() => setStatusMenuOpenFor(null)}>
-                                                        <button className="w-full text-left flex justify-between items-center px-4 py-2 text-sm text-stone-300 hover:bg-stone-700/50">
-                                                            Change Status <span className="text-xs">▶</span>
-                                                        </button>
-                                                        {statusMenuOpenFor === report.id && (
-                                                            <div className="absolute left-full -top-1 ml-1 w-36 bg-stone-900 border border-stone-700 rounded-lg shadow-xl z-30">
-                                                                {statuses.map(s => (
-                                                                    <button
-                                                                        key={s}
-                                                                        onClick={() => {
-                                                                            updateBugReport(report.id, { status: s });
-                                                                            addNotification({ type: 'info', message: `Report status updated.` });
-                                                                            setOpenDropdownId(null);
-                                                                        }}
-                                                                        className={`w-full text-left block px-4 py-2 text-sm hover:bg-stone-700/50 ${report.status === s ? 'text-emerald-400 font-bold' : 'text-stone-300'}`}
-                                                                    >
-                                                                        {report.status === s && '✔ '}{s}
-                                                                    </button>
-                                                                ))}
-                                                            </div>
-                                                        )}
-                                                    </div>
-
+                                                <div ref={dropdownRef} className="absolute right-0 top-full mt-2 w-48 bg-stone-900 border border-stone-700 rounded-lg shadow-xl z-20">
+                                                    <button onClick={() => { setDetailedReportId(report.id); setOpenDropdownId(null); }} className="w-full text-left block px-4 py-2 text-sm text-stone-300 hover:bg-stone-700/50">
+                                                        View Details
+                                                    </button>
                                                     <div className="border-t border-stone-700/60 my-1"></div>
-                                                    <button onClick={() => { setDeletingIds([report.id]); setOpenDropdownId(null); }} className="w-full text-left block px-4 py-2 text-sm text-red-400 hover:bg-stone-700/50">Delete</button>
+                                                    <div className="px-4 pt-2 pb-1 text-xs text-stone-500 font-semibold uppercase">Change Status</div>
+                                                    {statuses.map(s => (
+                                                        <button
+                                                            key={s}
+                                                            onClick={() => {
+                                                                updateBugReport(report.id, { status: s });
+                                                                addNotification({ type: 'info', message: `Report status updated.` });
+                                                                setOpenDropdownId(null);
+                                                            }}
+                                                            className={`w-full text-left block px-4 py-2 text-sm hover:bg-stone-700/50 ${report.status === s ? 'text-emerald-400 font-bold' : 'text-stone-300'}`}
+                                                            disabled={report.status === s}
+                                                        >
+                                                            {s}
+                                                        </button>
+                                                    ))}
+                                                    <div className="border-t border-stone-700/60 my-1"></div>
+                                                    <button onClick={() => { setDeletingIds([report.id]); setOpenDropdownId(null); }} className="w-full text-left block px-4 py-2 text-sm text-red-400 hover:bg-stone-700/50">
+                                                        Delete
+                                                    </button>
                                                 </div>
                                             )}
                                         </td>

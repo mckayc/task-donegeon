@@ -104,7 +104,7 @@ const ThemeEditorPage: React.FC = () => {
                 styles: defaultStyles || {} as ThemeStyle
             });
         }
-    }, [selectedThemeId]);
+    }, [selectedThemeId, themes]);
 
     // Apply styles for live preview whenever formData changes
     useEffect(() => {

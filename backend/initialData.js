@@ -14,7 +14,6 @@ const INITIAL_MAIN_SIDEBAR_CONFIG = [
     { type: 'link', id: 'Ranks', emoji: '🎖️', isVisible: true, level: 1, role: 'Explorer', termKey: 'link_ranks' },
     { type: 'link', id: 'Collection', emoji: '🎒', isVisible: true, level: 1, role: 'Explorer', termKey: 'link_collection' },
     { type: 'link', id: 'Trophies', emoji: '🏆', isVisible: true, level: 1, role: 'Explorer', termKey: 'link_trophies' },
-    { type: 'link', id: 'Themes', emoji: '🎨', isVisible: true, level: 1, role: 'Explorer', termKey: 'link_themes' },
     { type: 'header', id: 'header-admin-community', title: 'User Management', emoji: '🛡️', level: 0, role: 'Gatekeeper', isVisible: true },
     { type: 'link', id: 'Approvals', emoji: '✅', isVisible: true, level: 1, role: 'Gatekeeper', termKey: 'link_approvals' },
     { type: 'link', id: 'Manage Users', emoji: '👥', isVisible: true, level: 1, role: 'Donegeon Master', termKey: 'link_manage_users' },
@@ -28,11 +27,11 @@ const INITIAL_MAIN_SIDEBAR_CONFIG = [
     { type: 'link', id: 'Manage Ranks', emoji: '🏅', isVisible: true, level: 1, role: 'Donegeon Master', termKey: 'link_manage_ranks' },
     { type: 'link', id: 'Manage Rewards', emoji: '💎', isVisible: true, level: 1, role: 'Donegeon Master', termKey: 'link_manage_rewards' },
     { type: 'link', id: 'Manage Events', emoji: '🎉', isVisible: true, level: 1, role: 'Donegeon Master', termKey: 'link_manage_events' },
-    { type: 'link', id: 'Appearance', emoji: '🖌️', isVisible: true, level: 1, role: 'Donegeon Master', termKey: 'link_appearance' },
     { type: 'header', id: 'header-admin-system', title: 'System Tools', emoji: '🛠️', level: 0, role: 'Donegeon Master', isVisible: true },
     { type: 'link', id: 'Asset Manager', emoji: '🖼️', isVisible: true, level: 1, role: 'Donegeon Master', termKey: 'link_asset_manager' },
     { type: 'link', id: 'Backup & Import', emoji: '💾', isVisible: true, level: 1, role: 'Donegeon Master', termKey: 'link_backup_import' },
     { type: 'link', id: 'Object Exporter', emoji: '🗂️', isVisible: true, level: 1, role: 'Donegeon Master', termKey: 'link_object_exporter' },
+    { type: 'link', id: 'Appearance', emoji: '🖌️', isVisible: true, level: 1, role: 'Donegeon Master', termKey: 'link_appearance' },
     { type: 'link', id: 'Asset Library', emoji: '📚', isVisible: true, level: 1, role: 'Donegeon Master', termKey: 'link_asset_library' },
     { type: 'link', id: 'Suggestion Engine', emoji: '✨', isVisible: true, level: 1, role: 'Donegeon Master', termKey: 'link_suggestion_engine' },
     { type: 'link', id: 'Bug Tracker', emoji: '🐞', isVisible: true, level: 1, role: 'Donegeon Master', termKey: 'link_bug_tracker' },
@@ -96,7 +95,7 @@ const INITIAL_SETTINGS = {
       admin: 'Donegeon Master', moderator: 'Gatekeeper', user: 'Explorer',
       link_dashboard: 'Dashboard', link_quests: 'Quests', link_marketplace: 'Marketplace',
       link_calendar: 'Calendar', link_avatar: 'Avatar', link_collection: 'Collection',
-      link_themes: 'Themes', link_guild: 'Guild', link_progress: 'Progress',
+      link_guild: 'Guild', link_progress: 'Progress',
       link_trophies: 'Trophies', link_ranks: 'Ranks', link_chronicles: 'Chronicles',
       link_manage_quests: 'Manage Quests', link_manage_quest_groups: 'Manage Quest Groups',
       link_manage_items: 'Manage Goods', link_manage_markets: 'Manage Markets',
@@ -305,18 +304,14 @@ const rawThemes = {
   eerie: { '--font-display': "'Metamorphous', serif", '--font-body': "'Roboto', sans-serif", '--font-label': "'IM Fell English SC', serif", '--font-span': "'Roboto', sans-serif", '--font-button': "'Roboto', sans-serif", '--font-size-h1': '2.25rem', '--font-size-h2': '1.75rem', '--font-size-h3': '1.5rem', '--font-size-body': '1rem', '--font-size-label': '0.875rem', '--font-size-span': '1rem', '--color-bg-primary-hsl': "120 10% 8%", '--color-bg-secondary-hsl': "120 8% 12%", '--color-bg-tertiary-hsl': "120 5% 18%", '--color-text-primary-hsl': "120 30% 88%", '--color-text-secondary-hsl': "120 15% 65%", '--color-border-hsl': "120 10% 30%", '--color-primary-hue': "120", '--color-primary-saturation': "40%", '--color-primary-lightness': "45%", '--color-accent-hue': "80", '--color-accent-saturation': "50%", '--color-accent-lightness': "55%", '--color-accent-light-hue': "30", '--color-accent-light-saturation': "40%", '--color-accent-light-lightness': "50%" },
 };
 
-const INITIAL_THEMES = Object.entries(rawThemes).map(([id, styles]) => ({
+export const INITIAL_THEMES: ThemeDefinition[] = Object.entries(rawThemes).map(([id, styles]) => ({
   id,
   name: id.charAt(0).toUpperCase() + id.slice(1),
   isCustom: false,
-  styles: styles,
+  styles: styles as ThemeStyle,
 }));
 
-module.exports = {
-    INITIAL_SETTINGS,
-    INITIAL_QUEST_GROUPS,
-    INITIAL_REWARD_TYPES,
-    INITIAL_RANKS,
-    INITIAL_TROPHIES,
-    INITIAL_THEMES,
+export const createInitialQuestCompletions = (users: User[], quests: Quest[]): QuestCompletion[] => {
+    // This function can be used to populate some initial "completed" quests for demonstration
+    return [];
 };

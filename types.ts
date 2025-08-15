@@ -403,7 +403,6 @@ export interface Terminology {
   link_calendar: string;
   link_avatar: string;
   link_collection: string;
-  link_themes: string;
   link_guild: string;
   link_progress: string;
   link_trophies: string;
@@ -431,12 +430,13 @@ export interface Terminology {
   link_help_guide: string;
   link_chat: string;
   link_bug_tracker: string;
+  link_themes: string;
 }
 
-export type Page = 'Dashboard' | 'Avatar' | 'Quests' | 'Marketplace' | 'Chronicles' | 'Guild' | 'Calendar' | 'Progress' | 'Trophies' | 'Ranks' | 'Manage Users' | 'Manage Rewards' | 'Manage Quests' | 'Manage Goods' | 'Approvals' | 'Manage Markets' | 'Manage Guilds' | 'Settings' | 'Profile' | 'About' | 'Help Guide' | 'Manage Ranks' | 'Manage Trophies' | 'Themes' | 'Collection' | 'Suggestion Engine' | 'Appearance'
+export type Page = 'Dashboard' | 'Avatar' | 'Quests' | 'Marketplace' | 'Chronicles' | 'Guild' | 'Calendar' | 'Progress' | 'Trophies' | 'Ranks' | 'Manage Users' | 'Manage Rewards' | 'Manage Quests' | 'Manage Goods' | 'Approvals' | 'Manage Markets' | 'Manage Guilds' | 'Settings' | 'Profile' | 'About' | 'Help Guide' | 'Manage Ranks' | 'Manage Trophies' | 'Collection' | 'Suggestion Engine' | 'Appearance'
 | 'Object Exporter' | 'Asset Manager' | 'Backup & Import' | 'Asset Library'
 | 'Chat' | 'Manage Quest Groups' | 'Manage Events'
-| 'Bug Tracker';
+| 'Bug Tracker' | 'Themes';
 
 export interface SidebarLink {
   type: 'link';

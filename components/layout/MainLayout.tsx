@@ -113,7 +113,6 @@ const MainLayout: React.FC = () => {
       case 'Dashboard': return <Dashboard />;
       case 'Avatar': return <AvatarPage />;
       case 'Collection': return <CollectionPage />;
-      case 'Themes': return <ThemesPage />;
       case 'Quests': return <QuestsPage />;
       case 'Marketplace': return <MarketplacePage />;
       case 'Calendar': return <CalendarPage />;

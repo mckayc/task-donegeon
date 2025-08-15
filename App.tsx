@@ -1,6 +1,5 @@
 import React, { useEffect } from 'react';
-import { useAppState } from './context/AppContext';
-import { useUIState } from './context/UIStateContext';
+import { useAppState, useAppDispatch } from './context/AppContext';
 import { useAuthState } from './context/AuthContext';
 import FirstRunWizard from './components/auth/FirstRunWizard';
 import MainLayout from './components/layout/MainLayout';
@@ -15,9 +14,8 @@ import { Role } from './types';
 import { useDeveloper, useDeveloperState } from './context/DeveloperContext';
 
 const App: React.FC = () => {
-  const { isDataLoaded, settings, guilds, themes } = useAppState();
+  const { isDataLoaded, settings, guilds, themes, appMode, activePage } = useAppState();
   const { currentUser, isAppUnlocked, isFirstRun, isSwitchingUser, isSharedViewActive } = useAuthState();
-  const { appMode, activePage } = useUIState();
   const { isRecording, addLogEntry } = useDeveloper();
   const { isPickingElement } = useDeveloperState();
 
@@ -46,7 +44,7 @@ const App: React.FC = () => {
     const theme = themes.find(t => t.id === activeThemeId);
     if (theme) {
         Object.entries(theme.styles).forEach(([key, value]) => {
-            document.documentElement.style.setProperty(key, value);
+            document.documentElement.style.setProperty(key, value as string);
         });
     }
 

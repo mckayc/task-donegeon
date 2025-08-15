@@ -1,8 +1,8 @@
 
+
 import React, { useState, useMemo } from 'react';
 import Card from '../user-interface/Card';
-import { useAppState } from '../../context/AppContext';
-import { useUIState, useUIDispatch } from '../../context/UIStateContext';
+import { useAppState, useAppDispatch } from '../../context/AppContext';
 import Button from '../user-interface/Button';
 import { PurchaseRequestStatus, RewardCategory, Market, GameAsset, RewardItem, ScheduledEvent, IAppData } from '../../types';
 import PurchaseDialog from '../markets/PurchaseDialog';
@@ -12,14 +12,10 @@ import ImagePreviewDialog from '../user-interface/ImagePreviewDialog';
 import DynamicIcon from '../user-interface/DynamicIcon';
 import { toYMD } from '../../utils/quests';
 import { useAuthState } from '../../context/AuthContext';
-import { useEconomyState } from '../../context/EconomyContext';
-import { useQuestState } from '../../context/QuestContext';
 
 const MarketItemView: React.FC<{ market: Market }> = ({ market }) => {
-    const { settings, scheduledEvents } = useAppState();
-    const { rewardTypes, gameAssets } = useEconomyState();
+    const { settings, scheduledEvents, rewardTypes, gameAssets, appMode } = useAppState();
     const { currentUser } = useAuthState();
-    const { appMode } = useUIState();
     const [sortBy, setSortBy] = useState<'default' | 'title-asc' | 'title-desc'>('default');
     const [itemToPurchase, setItemToPurchase] = useState<GameAsset | null>(null);
     const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null);
@@ -220,26 +216,20 @@ const MarketItemView: React.FC<{ market: Market }> = ({ market }) => {
 
 const MarketplacePage: React.FC = () => {
     const appState = useAppState();
-    const authState = useAuthState();
-    const economyState = useEconomyState();
-    const questState = useQuestState();
-    const { settings } = appState;
-    const { markets } = economyState;
-    const { currentUser } = authState;
-    const { appMode, activeMarketId } = useUIState();
-    const { setActiveMarketId } = useUIDispatch();
+    const { currentUser } = useAuthState();
+    const { settings, markets, appMode, activeMarketId } = appState;
+    const { setActiveMarketId } = useAppDispatch();
     const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null);
     
     const visibleMarkets = React.useMemo(() => {
         if (!currentUser) return [];
         
-        const fullAppDataForCheck: IAppData = { ...appState, ...authState, ...economyState, ...questState };
         const currentGuildId = appMode.mode === 'guild' ? appMode.guildId : undefined;
 
         return markets.filter(market => 
-            (market.id === 'market-bank' || market.guildId === currentGuildId) && isMarketOpenForUser(market, currentUser, fullAppDataForCheck)
+            (market.id === 'market-bank' || market.guildId === currentGuildId) && isMarketOpenForUser(market, currentUser, appState as IAppData)
         );
-    }, [markets, appMode, currentUser, appState, authState, economyState, questState]);
+    }, [markets, appMode, currentUser, appState]);
 
     const activeMarket = React.useMemo(() => {
         return markets.find(m => m.id === activeMarketId);

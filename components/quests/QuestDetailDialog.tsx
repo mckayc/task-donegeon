@@ -3,7 +3,6 @@ import { Quest, RewardCategory, RewardItem, QuestType } from '../../types';
 import { useAppState } from '../../context/AppContext';
 import Button from '../user-interface/Button';
 import ToggleSwitch from '../user-interface/ToggleSwitch';
-import { useEconomyState } from '../../context/EconomyContext';
 import { bugLogger } from '../../utils/bugLogger';
 
 interface QuestDetailDialogProps {
@@ -16,8 +15,7 @@ interface QuestDetailDialogProps {
 }
 
 const QuestDetailDialog: React.FC<QuestDetailDialogProps> = ({ quest, onClose, onComplete, onToggleTodo, isTodo, dialogTitle }) => {
-    const { settings } = useAppState();
-    const { rewardTypes } = useEconomyState();
+    const { settings, rewardTypes } = useAppState();
 
     useEffect(() => {
         if (bugLogger.isRecording()) {

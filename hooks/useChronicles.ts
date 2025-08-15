@@ -2,7 +2,7 @@ import { useMemo, useState, useEffect } from 'react';
 import {
   ChronicleEvent,
 } from '../types';
-import { useUIState } from '../context/UIStateContext';
+import { useAppState } from '../context/AppContext';
 import { toYMD } from '../utils/quests';
 import { useAuthState } from '../context/AuthContext';
 
@@ -14,7 +14,7 @@ interface UseChroniclesProps {
 
 export const useChronicles = ({ startDate, endDate }: UseChroniclesProps): Map<string, ChronicleEvent[]> => {
     const { currentUser } = useAuthState();
-    const { appMode } = useUIState();
+    const { appMode } = useAppState();
     const [events, setEvents] = useState<Map<string, ChronicleEvent[]>>(new Map());
     const [isLoading, setIsLoading] = useState(false);
 

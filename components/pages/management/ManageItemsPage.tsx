@@ -12,14 +12,12 @@ import Input from '../../user-interface/Input';
 import ImagePreviewDialog from '../../user-interface/ImagePreviewDialog';
 import { useDebounce } from '../../../hooks/useDebounce';
 import { useNotificationsDispatch } from '../../../context/NotificationsContext';
-import { useEconomyState } from '../../../context/EconomyContext';
 import UploadWithCategoryDialog from '../../admin/UploadWithCategoryDialog';
 import { useShiftSelect } from '../../../hooks/useShiftSelect';
 
 const ManageItemsPage: React.FC = () => {
-    const { settings, isAiConfigured } = useAppState();
-    const { uploadFile } = useAppDispatch();
-    const { gameAssets: allGameAssets } = useEconomyState();
+    const { settings, isAiConfigured, gameAssets: allGameAssets } = useAppState();
+    const { uploadFile, addGameAsset, updateGameAsset, cloneGameAsset, deleteGameAssets } = useAppDispatch();
     const { addNotification } = useNotificationsDispatch();
     
     const [pageAssets, setPageAssets] = useState<GameAsset[]>([]);

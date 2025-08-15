@@ -8,7 +8,6 @@ import { useNotificationsDispatch } from '../../context/NotificationsContext';
 import SimpleColorPicker from '../user-interface/SimpleColorPicker';
 import { getContrast, getWcagRating, parseHslString } from '../../utils/colors';
 import { useAuthState } from '../../context/AuthContext';
-import { useUIState } from '../../context/UIStateContext';
 import ConfirmDialog from '../user-interface/ConfirmDialog';
 
 const FONT_OPTIONS = [
@@ -87,12 +86,10 @@ const ContrastChecker: React.FC<{ styles?: ThemeStyle }> = ({ styles }) => {
 };
 
 const AppearancePage: React.FC = () => {
-    const { settings, themes } = useAppState();
+    const { settings, themes, guilds, appMode } = useAppState();
     const { addTheme, updateTheme, deleteTheme } = useAppDispatch();
     const { addNotification } = useNotificationsDispatch();
     const { currentUser } = useAuthState();
-    const { appMode } = useUIState();
-    const { guilds } = useAppState();
 
     const [selectedThemeId, setSelectedThemeId] = useState<string>(themes[0]?.id || 'new');
     const [formData, setFormData] = useState<ThemeDefinition | null>(null);

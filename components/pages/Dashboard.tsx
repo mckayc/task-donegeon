@@ -2,25 +2,18 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { useAuthState } from '../../context/AuthContext';
-import { useUIState, useUIDispatch } from '../../context/UIStateContext';
 import { Quest, QuestCompletionStatus, RewardCategory, QuestType } from '../../types';
 import Card from '../user-interface/Card';
 import { isQuestAvailableForUser, isQuestVisibleToUserInMode, questSorter } from '../../utils/quests';
 import QuestDetailDialog from '../quests/QuestDetailDialog';
 import CompleteQuestDialog from '../quests/CompleteQuestDialog';
 import { useRewardValue } from '../../hooks/useRewardValue';
-import { useEconomyState } from '../../context/EconomyContext';
-import { useQuestState, useQuestDispatch } from '../../context/QuestContext';
 import BarChart from '../user-interface/BarChart';
 
 const Dashboard: React.FC = () => {
-    const { ranks, userTrophies, trophies, settings, scheduledEvents } = useAppState();
-    const { quests, questCompletions } = useQuestState();
-    const { rewardTypes, purchaseRequests } = useEconomyState();
-    const { currentUser, users } = useAuthState();
-    const { appMode } = useUIState();
-    const { markQuestAsTodo, unmarkQuestAsTodo } = useQuestDispatch();
-    const { setActivePage } = useUIDispatch();
+    const { ranks, userTrophies, trophies, settings, scheduledEvents, quests, questCompletions, rewardTypes, purchaseRequests, users, appMode } = useAppState();
+    const { currentUser } = useAuthState();
+    const { markQuestAsTodo, unmarkQuestAsTodo, setActivePage } = useAppDispatch();
     
     const [selectedQuest, setSelectedQuest] = useState<Quest | null>(null);
     const [completingQuest, setCompletingQuest] = useState<Quest | null>(null);
@@ -82,7 +75,7 @@ const Dashboard: React.FC = () => {
 
     const rankData = useMemo(() => {
         const sortedRanks = [...ranks].sort((a, b) => a.xpThreshold - b.xpThreshold);
-        const totalXp = Object.values(currentBalances.experience).reduce((sum, amount) => sum + Number(amount), 0);
+        const totalXp = Object.values(currentBalances.experience).reduce((sum: number, amount: number) => sum + Number(amount), 0);
         
         let currentRank = sortedRanks[0];
         let nextRank = sortedRanks[1] || null;

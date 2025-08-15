@@ -1,19 +1,13 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import Card from '../user-interface/Card';
 import { useAppState } from '../../context/AppContext';
-import { useUIState } from '../../context/UIStateContext';
-import { Role, ChronicleEvent, QuestCompletionStatus, AdminAdjustmentType, PurchaseRequestStatus, RewardItem } from '../../types';
+import { Role, ChronicleEvent, QuestCompletionStatus, AdminAdjustmentType, PurchaseRequestStatus, RewardItem, Quest, Trophy, RewardTypeDefinition } from '../../types';
 import Button from '../user-interface/Button';
 import { useAuthState } from '../../context/AuthContext';
-import { useQuestState } from '../../context/QuestContext';
-import { useEconomyState } from '../../context/EconomyContext';
 
 const ChroniclesPage: React.FC = () => {
-    const { settings, userTrophies, trophies, adminAdjustments, systemLogs, systemNotifications } = useAppState();
-    const { currentUser, users } = useAuthState();
-    const { appMode } = useUIState();
-    const { quests, questCompletions } = useQuestState();
-    const { purchaseRequests, rewardTypes } = useEconomyState();
+    const { settings, userTrophies, trophies, adminAdjustments, systemLogs, systemNotifications, users, quests, questCompletions, purchaseRequests, rewardTypes, appMode } = useAppState();
+    const { currentUser } = useAuthState();
 
     const [viewMode, setViewMode] = useState<'all' | 'personal'>(currentUser?.role === Role.Explorer ? 'personal' : 'all');
     const [itemsPerPage, setItemsPerPage] = useState(50);
@@ -54,7 +48,7 @@ const ChroniclesPage: React.FC = () => {
         // 1. Quest Completions
         questCompletions.forEach(c => {
             if (!shouldInclude({ userId: c.userId, guildId: c.guildId })) return;
-            const quest = questMap.get(c.questId);
+            const quest = questMap.get(c.questId) as Quest | undefined;
             let finalNote = c.note || '';
             if (c.status === 'Approved' && quest && quest.rewards.length > 0) {
                 const rewardsText = getRewardDisplay(quest.rewards).replace(/(\d+)/g, '+$1');
@@ -83,7 +77,7 @@ const ChroniclesPage: React.FC = () => {
         // 3. User Trophies
         userTrophies.forEach(ut => {
             if (!shouldInclude({ userId: ut.userId, guildId: ut.guildId })) return;
-            const trophy = trophyMap.get(ut.trophyId);
+            const trophy = trophyMap.get(ut.trophyId) as Trophy | undefined;
             events.push({
                 id: ut.id, date: ut.awardedAt, type: 'Trophy', userId: ut.userId,
                 title: `${userMap.get(ut.userId) || 'Unknown'} earned "${trophy?.name || 'Unknown Trophy'}"`,
@@ -111,7 +105,7 @@ const ChroniclesPage: React.FC = () => {
         // 5. System Logs (Global/Admin view only)
         if (viewMode !== 'personal') {
             systemLogs.forEach(log => {
-                const quest = questMap.get(log.questId);
+                const quest = questMap.get(log.questId) as Quest | undefined;
                 const userNames = log.userIds.map(id => userMap.get(id) || 'Unknown').join(', ');
                 const setbacksText = getRewardDisplay(log.setbacksApplied).replace(/(\d+)/g, '-$1');
                 events.push({

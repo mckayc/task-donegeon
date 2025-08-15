@@ -5,7 +5,6 @@ import { useAuthState } from '../../context/AuthContext';
 import { User, RewardItem, RewardCategory, AdminAdjustmentType, Trophy } from '../../types';
 import Button from '../user-interface/Button';
 import RewardInputGroup from '../forms/RewardInputGroup';
-import { useEconomyDispatch } from '../../context/EconomyContext';
 
 interface ManualAdjustmentDialogProps {
   user: User;

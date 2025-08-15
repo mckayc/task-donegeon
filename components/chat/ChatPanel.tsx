@@ -1,7 +1,6 @@
 import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { useAuthState } from '../../context/AuthContext';
-import { useUIState, useUIDispatch } from '../../context/UIStateContext';
 import { Role, User } from '../../types';
 import Avatar from '../user-interface/Avatar';
 import Input from '../user-interface/Input';
@@ -17,11 +16,9 @@ type ChatTarget = User | {
 };
 
 const ChatPanel: React.FC = () => {
-    const { guilds, chatMessages, settings } = useAppState();
+    const { guilds, chatMessages, settings, isChatOpen } = useAppState();
     const { currentUser, users } = useAuthState();
-    const { isChatOpen } = useUIState();
-    const { toggleChat } = useUIDispatch();
-    const { sendMessage, markMessagesAsRead } = useAppDispatch();
+    const { toggleChat, sendMessage, markMessagesAsRead } = useAppDispatch();
     const [activeChatTarget, setActiveChatTarget] = useState<ChatTarget | null>(null);
     const [message, setMessage] = useState('');
     const [isAnnouncement, setIsAnnouncement] = useState(false);

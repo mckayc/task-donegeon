@@ -1,11 +1,9 @@
 import React from 'react';
 import { useAppState } from '../../context/AppContext';
-import { useUIState } from '../../context/UIStateContext';
 import { toYMD } from '../../utils/quests';
 
 const VacationModeBanner: React.FC = () => {
-  const { scheduledEvents } = useAppState();
-  const { appMode } = useUIState();
+  const { scheduledEvents, appMode } = useAppState();
   
   const today = new Date();
   const todayYMD = toYMD(today);

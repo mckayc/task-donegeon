@@ -1,20 +1,18 @@
-import React, { useState, useRef, useEffect, useMemo } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Market } from '../../../types';
 import Button from '../../user-interface/Button';
 import Card from '../../user-interface/Card';
 import EditMarketDialog from '../../markets/EditMarketDialog';
 import ConfirmDialog from '../../user-interface/ConfirmDialog';
-import { useAppState } from '../../../context/AppContext';
-import { useEconomyState, useEconomyDispatch } from '../../../context/EconomyContext';
+import { useAppState, useAppDispatch } from '../../../context/AppContext';
 import EmptyState from '../../user-interface/EmptyState';
 import { MarketplaceIcon, EllipsisVerticalIcon } from '../../user-interface/Icons';
 import MarketIdeaGenerator from '../../quests/MarketIdeaGenerator';
 import { useShiftSelect } from '../../../hooks/useShiftSelect';
 
 const ManageMarketsPage: React.FC = () => {
-    const { settings, isAiConfigured } = useAppState();
-    const { markets } = useEconomyState();
-    const { deleteMarkets, updateMarketsStatus, cloneMarket } = useEconomyDispatch();
+    const { settings, isAiConfigured, markets } = useAppState();
+    const { deleteMarkets, updateMarketsStatus, cloneMarket } = useAppDispatch();
     const [isMarketDialogOpen, setIsMarketDialogOpen] = useState(false);
     const [editingMarket, setEditingMarket] = useState<Market | null>(null);
     const [isGeneratorOpen, setIsGeneratorOpen] = useState(false);
@@ -27,7 +25,7 @@ const ManageMarketsPage: React.FC = () => {
 
     const isAiAvailable = settings.enableAiFeatures && isAiConfigured;
     
-    const marketIds = useMemo(() => markets.map(m => m.id), [markets]);
+    const marketIds = React.useMemo(() => markets.map(m => m.id), [markets]);
     const handleCheckboxClick = useShiftSelect(marketIds, selectedMarkets, setSelectedMarkets);
 
     useEffect(() => {

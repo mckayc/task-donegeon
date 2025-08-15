@@ -2,12 +2,9 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
 import { AppProvider } from './context/AppContext';
-import { UIStateProvider } from './context/UIStateContext';
 import { NotificationsProvider } from './context/NotificationsContext';
 import { AuthProvider } from './context/AuthContext';
-import { EconomyProvider } from './context/EconomyContext';
 import { DeveloperProvider } from './context/DeveloperContext';
-import { QuestProvider } from './context/QuestContext';
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
@@ -29,17 +26,11 @@ root.render(
   <React.StrictMode>
     <NotificationsProvider>
       <AuthProvider>
-        <EconomyProvider>
-          <QuestProvider>
-            <AppProvider>
-              <UIStateProvider>
-                <DeveloperProvider>
-                  <App />
-                </DeveloperProvider>
-              </UIStateProvider>
-            </AppProvider>
-          </QuestProvider>
-        </EconomyProvider>
+        <AppProvider>
+          <DeveloperProvider>
+            <App />
+          </DeveloperProvider>
+        </AppProvider>
       </AuthProvider>
     </NotificationsProvider>
   </React.StrictMode>

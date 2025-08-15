@@ -3,7 +3,6 @@ import Card from '../user-interface/Card';
 import Button from '../user-interface/Button';
 import CreateQuestDialog from '../quests/CreateQuestDialog';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
-import { useUIState } from '../../context/UIStateContext';
 import { Role, QuestType, Quest, QuestAvailability } from '../../types';
 import { isQuestAvailableForUser, questSorter, isQuestVisibleToUserInMode } from '../../utils/quests';
 import CompleteQuestDialog from '../quests/CompleteQuestDialog';
@@ -11,15 +10,13 @@ import QuestDetailDialog from '../quests/QuestDetailDialog';
 import DynamicIcon from '../user-interface/DynamicIcon';
 import ImagePreviewDialog from '../user-interface/ImagePreviewDialog';
 import { useAuthState } from '../../context/AuthContext';
-import { useEconomyState } from '../../context/EconomyContext';
-import { useQuestState, useQuestDispatch } from '../../context/QuestContext';
 
 const getAvailabilityText = (quest: Quest, completionsCount: number): string => {
     if (quest.rrule) {
         if (quest.rrule.includes('FREQ=DAILY')) return 'Resets Daily';
         if (quest.rrule.includes('FREQ=WEEKLY')) {
             const byday = quest.rrule.split(';').find(p => p.startsWith('BYDAY='))?.split('=')[1] || '';
-            const days = byday.split(',').map(d => ({'SU':'Sun','MO':'Mon','TU':'Tue','WE':'Wed','TH':'Thu','FR':'Fri','SA':'Sat'}[d])).join(', ');
+            const days = byday.split(',').map(d => ({'SU':'Sun','MO':'Mon','TU':'Tue','WE':'Wed','TH':'Thu','FR':'Fri','SA':'Sat'}[d as string])).join(', ');
             return `Resets on ${days}`;
         }
         if (quest.rrule.includes('FREQ=MONTHLY')) {
@@ -52,11 +49,8 @@ const formatTimeRemaining = (targetDate: Date, now: Date): string => {
 };
 
 const QuestItem: React.FC<{ quest: Quest; now: Date; onSelect: (quest: Quest) => void; onImagePreview: (url: string) => void; allQuests: Quest[]; }> = ({ quest, now, onSelect, onImagePreview, allQuests }) => {
-    const { settings, scheduledEvents, guilds } = useAppState();
-    const { questGroups, questCompletions } = useQuestState();
-    const { rewardTypes } = useEconomyState();
+    const { settings, scheduledEvents, guilds, questGroups, questCompletions, rewardTypes, appMode } = useAppState();
     const { currentUser } = useAuthState();
-    const { appMode } = useUIState();
     
     if (!currentUser) return null;
 
@@ -202,11 +196,9 @@ const FilterButton: React.FC<{ type: 'all' | QuestType, children: React.ReactNod
 );
 
 const QuestsPage: React.FC = () => {
-    const { settings, scheduledEvents } = useAppState();
-    const { quests, questCompletions } = useQuestState();
+    const { settings, scheduledEvents, quests, questCompletions, appMode } = useAppState();
     const { currentUser } = useAuthState();
-    const { appMode } = useUIState();
-    const { markQuestAsTodo, unmarkQuestAsTodo } = useQuestDispatch();
+    const { markQuestAsTodo, unmarkQuestAsTodo } = useAppDispatch();
     const [filter, setFilter] = useState<'all' | QuestType>('all');
     const [selectedQuest, setSelectedQuest] = useState<Quest | null>(null);
     const [completingQuest, setCompletingQuest] = useState<Quest | null>(null);

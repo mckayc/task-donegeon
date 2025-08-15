@@ -9,8 +9,7 @@ import ToggleSwitch from '../user-interface/ToggleSwitch';
 import ConfirmDialog from '../user-interface/ConfirmDialog';
 import { INITIAL_SETTINGS } from '../../data/initialData';
 import EmojiPicker from '../user-interface/EmojiPicker';
-import { useNotificationsDispatch } from '../../context/NotificationsContext';
-import { useEconomyState } from '../../context/EconomyContext';
+import { useNotificationsDispatch } from '../context/NotificationsContext';
 import Card from '../user-interface/Card';
 import UserMultiSelect from '../user-interface/UserMultiSelect';
 
@@ -125,7 +124,6 @@ const REAL_WORLD_CURRENCIES = ['USD', 'EUR', 'GBP', 'JPY', 'CAD', 'AUD', 'CNY'];
 export const SettingsPage: React.FC = () => {
     const { settings } = useAppState();
     const { users } = useAuthState();
-    const { rewardTypes } = useEconomyState();
     const { updateSettings, resetSettings, clearAllHistory, resetAllPlayerData, deleteAllCustomContent, factoryReset } = useAppDispatch();
     const { addNotification } = useNotificationsDispatch();
     

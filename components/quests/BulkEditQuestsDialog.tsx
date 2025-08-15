@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useQuestState } from '../../context/QuestContext';
+import { useAppState } from '../../context/AppContext';
 import { useAuthState } from '../../context/AuthContext';
 import { BulkQuestUpdates } from '../../types';
 import Button from '../user-interface/Button';
@@ -16,7 +16,7 @@ interface BulkEditQuestsDialogProps {
 type TriState = 'no-change' | 'true' | 'false';
 
 const BulkEditQuestsDialog: React.FC<BulkEditQuestsDialogProps> = ({ questIds, onClose, onSave }) => {
-    const { questGroups, allTags } = useQuestState();
+    const { questGroups, allTags } = useAppState();
     const { users } = useAuthState();
 
     const [isSaving, setIsSaving] = useState(false);

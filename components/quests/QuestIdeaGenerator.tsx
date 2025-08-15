@@ -6,8 +6,6 @@ import { SparklesIcon } from '../user-interface/Icons';
 import { useAppState } from '../../context/AppContext';
 import { QuestType } from '../../types';
 import ToggleSwitch from '../user-interface/ToggleSwitch';
-import { useEconomyState } from '../../context/EconomyContext';
-import { useQuestState } from '../../context/QuestContext';
 import { useAuthState } from '../../context/AuthContext';
 
 interface QuestIdea {
@@ -29,10 +27,8 @@ interface QuestIdeaGeneratorProps {
 }
 
 const QuestIdeaGenerator: React.FC<QuestIdeaGeneratorProps> = ({ onUseIdea, onClose }) => {
-    const { settings } = useAppState();
+    const { settings, questGroups, rewardTypes } = useAppState();
     const { users } = useAuthState();
-    const { questGroups } = useQuestState();
-    const { rewardTypes } = useEconomyState();
     const [prompt, setPrompt] = useState('');
     const [questType, setQuestType] = useState<QuestType>(QuestType.Venture);
     const [selectedUserId, setSelectedUserId] = useState<string>('');

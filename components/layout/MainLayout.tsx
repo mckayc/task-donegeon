@@ -35,21 +35,19 @@ import AssetManagerPage from '../pages/management/MediaManagerPage';
 import BackupAndImportPage from '../pages/management/BackupAndImportPage';
 import AssetLibraryPage from '../pages/management/AssetLibraryPage';
 import ManageQuestGroupsPage from '../pages/ManageQuestGroupsPage';
-import { useAppState } from '../../context/AppContext';
+import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { useAuthState } from '../../context/AuthContext';
 import { useNotificationsDispatch } from '../../context/NotificationsContext';
-import { useUIState, useUIDispatch } from '../../context/UIStateContext';
 import ChatPanel from '../chat/ChatPanel';
 import LoginNotificationPopup from '../user-interface/LoginNotificationPopup';
 import ManageEventsPage from '../pages/management/ManageEventsPage';
 import BugTrackingPage from '../dev/BugTrackingPage';
 
 const MainLayout: React.FC = () => {
-  const { settings, systemNotifications } = useAppState();
+  const { settings, systemNotifications, activePage } = useAppState();
   const { currentUser } = useAuthState();
   const { addNotification } = useNotificationsDispatch();
-  const { activePage } = useUIState();
-  const { setActivePage } = useUIDispatch();
+  const { setActivePage } = useAppDispatch();
   
   const [showLoginNotifications, setShowLoginNotifications] = useState(false);
   const [notificationsShownForSession, setNotificationsShownForSession] = useState(false);

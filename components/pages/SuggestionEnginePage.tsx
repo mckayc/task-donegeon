@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import Button from '../user-interface/Button';
 import Input from '../user-interface/Input';
 import { SparklesIcon, CheckCircleIcon, XCircleIcon } from '../user-interface/Icons';
-import { useAppState } from '../../context/AppContext';
+import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { GenerateContentResponse, Type } from '@google/genai';
 import { QuestType, Terminology } from '../../types';
 import Card from '../user-interface/Card';
@@ -10,9 +10,8 @@ import CreateQuestDialog from '../quests/CreateQuestDialog';
 import EditGameAssetDialog from '../admin/EditGameAssetDialog';
 import EditTrophyDialog from '../settings/EditTrophyDialog';
 import EditMarketDialog from '../markets/EditMarketDialog';
-import { useNotificationsDispatch } from '../../context/NotificationsContext';
-import { useEconomyState } from '../../context/EconomyContext';
-import { useQuestState } from '../../context/QuestContext';
+import { useNotificationsDispatch } from '../context/NotificationsContext';
+import { useAuthState } from '../context/AuthContext';
 
 type AssetType = 'Duties' | 'Ventures' | 'Trophies' | 'Items' | 'Markets';
 
@@ -37,9 +36,7 @@ const ApiInstructions: React.FC = () => (
 );
 
 const SuggestionEnginePage: React.FC = () => {
-    const { settings, isAiConfigured } = useAppState();
-    const { questGroups } = useQuestState();
-    const { rewardTypes } = useEconomyState();
+    const { settings, isAiConfigured, questGroups, rewardTypes } = useAppState();
     const { addNotification } = useNotificationsDispatch();
     const [apiStatus, setApiStatus] = useState<'unknown' | 'testing' | 'valid' | 'invalid'>(isAiConfigured ? 'valid' : 'unknown');
     const [apiError, setApiError] = useState<string | null>(null);

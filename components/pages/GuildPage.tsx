@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
 import Card from '../user-interface/Card';
-import { useAppState } from '../../context/AppContext';
+import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { useAuthState } from '../../context/AuthContext';
-import { useUIDispatch } from '../../context/UIStateContext';
 import Button from '../user-interface/Button';
 import { Guild, User } from '../../types';
 import GuildMemberProfilePage from '../guilds/GuildMemberProfilePage';
@@ -11,7 +10,7 @@ import Avatar from '../user-interface/Avatar';
 const GuildPage: React.FC = () => {
     const { guilds, settings } = useAppState();
     const { currentUser, users } = useAuthState();
-    const { setAppMode, setActivePage } = useUIDispatch();
+    const { setAppMode, setActivePage } = useAppDispatch();
     const [viewingMember, setViewingMember] = useState<{ user: User; guild: Guild } | null>(null);
 
     if (!currentUser) return null;

@@ -1,6 +1,5 @@
-
 import React, { useState, useMemo } from 'react';
-import { useAppState } from '../../context/AppContext';
+import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { Quest, QuestType, QuestAvailability, User, AppMode, QuestCompletionStatus } from '../../types';
 import { isQuestAvailableForUser, toYMD, isQuestScheduledForDay, questSorter } from '../../utils/quests';
 import Card from '../user-interface/Card';
@@ -10,7 +9,6 @@ import PinEntryDialog from '../auth/PinEntryDialog';
 import QuestDetailDialog from '../quests/QuestDetailDialog';
 import CompleteQuestDialog from '../quests/CompleteQuestDialog';
 import { useAuthState } from '../../context/AuthContext';
-import { useQuestDispatch, useQuestState } from '../../context/QuestContext';
 import { useNotificationsDispatch } from '../../context/NotificationsContext';
 
 const getDueDateString = (quest: Quest): string | null => {
@@ -27,9 +25,8 @@ const getDueDateString = (quest: Quest): string | null => {
 };
 
 const SharedCalendarPage: React.FC = () => {
-    const { settings, guilds, scheduledEvents } = useAppState();
-    const { quests, questCompletions } = useQuestState();
-    const { markQuestAsTodo, unmarkQuestAsTodo, completeQuest } = useQuestDispatch();
+    const { settings, guilds, scheduledEvents, quests, questCompletions } = useAppState();
+    const { markQuestAsTodo, unmarkQuestAsTodo, completeQuest } = useAppDispatch();
     const { users } = useAuthState();
     const { addNotification } = useNotificationsDispatch();
 

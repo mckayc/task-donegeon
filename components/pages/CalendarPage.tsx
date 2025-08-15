@@ -1,7 +1,5 @@
-
 import React, { useState, useMemo, useCallback, useRef, useEffect } from 'react';
-import { useAppState } from '../../context/AppContext';
-import { useUIState, useUIDispatch } from '../../context/UIStateContext';
+import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { Role, ScheduledEvent, Quest, QuestType, ChronicleEvent, User, AppMode, RewardTypeDefinition, RewardItem } from '../../types';
 import Card from '../user-interface/Card';
 import Button from '../user-interface/Button';
@@ -16,7 +14,6 @@ import googleCalendarPlugin from '@fullcalendar/google-calendar';
 import listPlugin from '@fullcalendar/list';
 import rrulePlugin from '@fullcalendar/rrule';
 import { EventClickArg, EventSourceInput, EventDropArg, MoreLinkArg, EventInput, EventContentArg } from '@fullcalendar/core';
-import { useQuestState, useQuestDispatch } from '../../context/QuestContext';
 import { useChronicles } from '../../hooks/useChronicles';
 import QuestDetailDialog from '../quests/QuestDetailDialog';
 import CompleteQuestDialog from '../quests/CompleteQuestDialog';
@@ -24,7 +21,6 @@ import { toYMD, isQuestAvailableForUser, isQuestVisibleToUserInMode } from '../.
 import CreateQuestDialog from '../quests/CreateQuestDialog';
 import { useNotificationsDispatch } from '../../context/NotificationsContext';
 import ChroniclesDetailDialog from '../calendar/ChroniclesDetailDialog';
-import { useEconomyState } from '../../context/EconomyContext';
 
 type CalendarMode = 'events' | 'chronicles';
 
@@ -68,14 +64,10 @@ const renderEventContent = (eventInfo: EventContentArg, rewardTypes: RewardTypeD
 };
 
 const CalendarPage: React.FC = () => {
-    const { settings, scheduledEvents } = useAppState();
-    const { quests, questCompletions } = useQuestState();
+    const { settings, scheduledEvents, quests, questCompletions, appMode, rewardTypes } = useAppState();
     const { currentUser, users } = useAuthState();
-    const { appMode } = useUIState();
-    const { setActivePage } = useUIDispatch();
-    const { markQuestAsTodo, unmarkQuestAsTodo, updateQuest } = useQuestDispatch();
+    const { setActivePage, markQuestAsTodo, unmarkQuestAsTodo, updateQuest } = useAppDispatch();
     const { addNotification } = useNotificationsDispatch();
-    const { rewardTypes } = useEconomyState();
     
     const [mode, setMode] = useState<CalendarMode>('events');
     const [viewRange, setViewRange] = useState<{ start: Date; end: Date } | null>(null);

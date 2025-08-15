@@ -2,11 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { RewardCategory, RewardTypeDefinition } from '../../types';
 import Button from '../user-interface/Button';
 import Input from '../user-interface/Input';
-import { useEconomyDispatch } from '../../context/EconomyContext';
+import { useAppDispatch, useAppState } from '../../context/AppContext';
 import EmojiPicker from '../user-interface/EmojiPicker';
 import ImageSelectionDialog from '../user-interface/ImageSelectionDialog';
 import DynamicIcon from '../user-interface/DynamicIcon';
-import { useAppState } from '../../context/AppContext';
 
 interface EditRewardTypeDialogProps {
   rewardType: RewardTypeDefinition | null;
@@ -15,7 +14,7 @@ interface EditRewardTypeDialogProps {
 
 const EditRewardTypeDialog: React.FC<EditRewardTypeDialogProps> = ({ rewardType, onClose }) => {
   const { settings } = useAppState();
-  const { addRewardType, updateRewardType } = useEconomyDispatch();
+  const { addRewardType, updateRewardType } = useAppDispatch();
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -60,155 +59,102 @@ const EditRewardTypeDialog: React.FC<EditRewardTypeDialogProps> = ({ rewardType,
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const finalBaseValue = parseFloat(baseValueString);
-    if (isNaN(finalBaseValue) || finalBaseValue < 0) {
-        // This case should be prevented by the input regex, but as a fallback.
-        return;
+    if (!formData.name.trim()) {
+      // Add notification for error
+      return;
     }
 
-    const finalData = {
-      name: formData.name,
-      description: formData.description,
-      category: formData.category,
-      iconType: formData.iconType,
-      icon: formData.icon,
-      imageUrl: formData.imageUrl,
-      baseValue: finalBaseValue
+    const payload = {
+      ...formData,
+      baseValue: parseFloat(baseValueString) || 0,
     };
 
     if (rewardType) {
-      updateRewardType({ ...rewardType, ...finalData });
+      updateRewardType({ ...rewardType, ...payload });
     } else {
-      addRewardType(finalData);
+      addRewardType(payload);
     }
     onClose();
   };
 
-  const isCore = rewardType?.isCore || false;
-  const dialogTitle = rewardType ? `Edit ${isCore ? '' : 'Custom '}Reward` : 'Create New Reward';
+  const dialogTitle = rewardType ? `Edit ${rewardType.name}` : 'Create New Reward';
 
   return (
     <>
-    <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
-      <div className="bg-stone-800 border border-stone-700 rounded-xl shadow-2xl p-8 max-w-lg w-full">
-        <h2 className="text-3xl font-medieval text-emerald-400 mb-6">{dialogTitle}</h2>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <Input 
-            label="Name" 
-            id="name" 
-            name="name" 
-            value={formData.name} 
-            onChange={handleChange} 
-            required 
-          />
-          <div>
-            <label className="block text-sm font-medium text-stone-300 mb-1">Icon Type</label>
-            <div className="flex gap-4 p-2 bg-stone-700/50 rounded-md">
-                <label className="flex items-center gap-2 cursor-pointer">
-                    <input type="radio" value="emoji" name="iconType" checked={formData.iconType === 'emoji'} onChange={() => setFormData(p => ({...p, iconType: 'emoji'}))} className="h-4 w-4 text-emerald-600 bg-stone-700 border-stone-500"/>
-                    <span>Emoji</span>
-                </label>
-                 <label className="flex items-center gap-2 cursor-pointer">
-                    <input type="radio" value="image" name="iconType" checked={formData.iconType === 'image'} onChange={() => setFormData(p => ({...p, iconType: 'image'}))} className="h-4 w-4 text-emerald-600 bg-stone-700 border-stone-500" />
-                    <span>Image</span>
-                </label>
-            </div>
-          </div>
-          {formData.iconType === 'emoji' ? (
-            <div>
-              <label className="block text-sm font-medium text-stone-300 mb-1">Icon (Emoji)</label>
-              <div className="relative">
-                <button
-                  type="button"
-                  onClick={() => setIsEmojiPickerOpen(prev => !prev)}
-                  className="w-full text-left px-4 py-2 bg-stone-700 border border-stone-600 rounded-md flex items-center gap-2"
-                >
-                  <span className="text-2xl">{formData.icon}</span>
-                  <span className="text-stone-300">Click to change</span>
-                </button>
-                {isEmojiPickerOpen && (
-                  <EmojiPicker
-                    onSelect={(emoji: string) => {
-                      setFormData(p => ({ ...p, icon: emoji }));
-                      setIsEmojiPickerOpen(false);
-                    }}
-                    onClose={() => setIsEmojiPickerOpen(false)}
-                  />
-                )}
-              </div>
-            </div>
-          ) : (
-             <div>
-              <label className="block text-sm font-medium text-stone-300 mb-1">Image Icon</label>
-              <div className="flex items-center gap-4">
-                <div className="w-16 h-16 bg-stone-700 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden">
-                  <DynamicIcon 
-                    iconType={formData.iconType} 
-                    icon={formData.icon} 
-                    imageUrl={formData.imageUrl}
-                    className="w-full h-full text-4xl"
-                    altText="Selected icon"
-                  />
-                </div>
-                <Button type="button" variant="secondary" onClick={() => setIsGalleryOpen(true)}>Select Image</Button>
-              </div>
-            </div>
-          )}
-          <div>
-            <label htmlFor="description" className="block text-sm font-medium text-stone-300 mb-1">
-              Description
-            </label>
-            <textarea
-              id="description"
-              name="description"
-              rows={3}
-              value={formData.description}
-              onChange={handleChange}
-              className="w-full px-4 py-2 bg-stone-700 border border-stone-600 rounded-md focus:ring-emerald-500 focus:border-emerald-500 transition"
-              placeholder="What is this reward for?"
-            />
-          </div>
-           <Input
-                label={`1 unit of this reward equals [X] ${settings.rewardValuation.realWorldCurrency}`}
-                id="baseValue"
-                name="baseValue"
-                type="text"
-                inputMode="decimal"
-                value={baseValueString}
-                onChange={handleBaseValueChange}
-                required
-            />
-          <div>
-            <label htmlFor="category" className="block text-sm font-medium text-stone-300 mb-1">Category</label>
-            <select 
-              id="category" 
-              name="category" 
-              value={formData.category} 
-              onChange={handleChange} 
-              disabled={isCore}
-              className="w-full px-4 py-2 bg-stone-700 border border-stone-600 rounded-md focus:ring-emerald-500 focus:border-emerald-500 transition disabled:opacity-50"
-            >
+      <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+        <div className="bg-stone-800 border border-stone-700 rounded-xl shadow-2xl p-8 max-w-lg w-full">
+          <h2 className="text-3xl font-medieval text-emerald-400 mb-6">{dialogTitle}</h2>
+          <form id="reward-type-form" onSubmit={handleSubmit} className="space-y-4">
+            <Input label="Name" name="name" value={formData.name} onChange={handleChange} required />
+            <Input as="textarea" label="Description" name="description" value={formData.description} onChange={handleChange} />
+            <Input as="select" label="Category" name="category" value={formData.category} onChange={handleChange}>
               <option value={RewardCategory.Currency}>Currency</option>
-              <option value={RewardCategory.XP}>Experience (XP)</option>
-            </select>
-            {isCore && <p className="text-xs text-stone-400 mt-1">Core reward types cannot change their category.</p>}
-          </div>
+              <option value={RewardCategory.XP}>XP</option>
+            </Input>
+
+            <div>
+                <label className="block text-sm font-medium text-stone-300 mb-1">Icon Type</label>
+                <div className="flex gap-4 p-2 bg-stone-700/50 rounded-md">
+                    <label className="flex items-center gap-2 cursor-pointer">
+                        <input type="radio" value="emoji" name="iconType" checked={formData.iconType === 'emoji'} onChange={() => setFormData(p => ({...p, iconType: 'emoji'}))} className="h-4 w-4 text-emerald-600 bg-stone-700 border-stone-500"/>
+                        <span>Emoji</span>
+                    </label>
+                    <label className="flex items-center gap-2 cursor-pointer">
+                        <input type="radio" value="image" name="iconType" checked={formData.iconType === 'image'} onChange={() => setFormData(p => ({...p, iconType: 'image'}))} className="h-4 w-4 text-emerald-600 bg-stone-700 border-stone-500" />
+                        <span>Image</span>
+                    </label>
+                </div>
+            </div>
+
+            {formData.iconType === 'emoji' ? (
+              <div>
+                <label className="block text-sm font-medium text-stone-300 mb-1">Icon (Emoji)</label>
+                <div className="relative">
+                  <button type="button" onClick={() => setIsEmojiPickerOpen(prev => !prev)} className="w-full text-left px-4 py-2 bg-stone-700 border border-stone-600 rounded-md flex items-center gap-2">
+                    <span className="text-2xl">{formData.icon}</span> <span className="text-stone-300">Click to change</span>
+                  </button>
+                  {isEmojiPickerOpen && <EmojiPicker onSelect={(emoji: string) => { setFormData(p => ({ ...p, icon: emoji })); setIsEmojiPickerOpen(false); }} onClose={() => setIsEmojiPickerOpen(false)} />}
+                </div>
+              </div>
+            ) : (
+              <div>
+                <label className="block text-sm font-medium text-stone-300 mb-1">Image Icon</label>
+                <div className="flex items-center gap-4">
+                  <div className="w-16 h-16 bg-stone-700 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden">
+                    <DynamicIcon iconType={formData.iconType} icon={formData.icon} imageUrl={formData.imageUrl} className="w-full h-full text-4xl" altText="Selected icon" />
+                  </div>
+                  <Button type="button" variant="secondary" onClick={() => setIsGalleryOpen(true)}>Select Image</Button>
+                </div>
+              </div>
+            )}
+            
+            {settings.rewardValuation.enabled && (
+                <Input 
+                    label={`Base Value (in ${settings.rewardValuation.realWorldCurrency})`} 
+                    name="baseValue" 
+                    type="number" 
+                    step="0.01"
+                    min="0"
+                    value={baseValueString} 
+                    onChange={handleBaseValueChange} 
+                />
+            )}
+          </form>
           <div className="flex justify-end space-x-4 pt-4">
             <Button type="button" variant="secondary" onClick={onClose}>Cancel</Button>
-            <Button type="submit">{rewardType ? 'Save Changes' : 'Create Reward'}</Button>
+            <Button type="submit" form="reward-type-form">{rewardType ? 'Save Changes' : 'Create Reward'}</Button>
           </div>
-        </form>
+        </div>
       </div>
-    </div>
-    {isGalleryOpen && (
-      <ImageSelectionDialog 
-        onSelect={(url: string) => {
-          setFormData(p => ({...p, imageUrl: url}));
-          setIsGalleryOpen(false);
-        }}
-        onClose={() => setIsGalleryOpen(false)}
-      />
-    )}
+      {isGalleryOpen && (
+        <ImageSelectionDialog 
+          onSelect={(url: string) => {
+            setFormData(p => ({...p, imageUrl: url}));
+            setIsGalleryOpen(false);
+          }}
+          onClose={() => setIsGalleryOpen(false)}
+        />
+      )}
     </>
   );
 };

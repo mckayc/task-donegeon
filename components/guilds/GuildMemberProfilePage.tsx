@@ -4,7 +4,6 @@ import { useAppState } from '../../context/AppContext';
 import Card from '../user-interface/Card';
 import Button from '../user-interface/Button';
 import Avatar from '../user-interface/Avatar';
-import { useEconomyState } from '../../context/EconomyContext';
 
 interface GuildMemberProfilePageProps {
   user: User;
@@ -13,8 +12,7 @@ interface GuildMemberProfilePageProps {
 }
 
 const GuildMemberProfilePage: React.FC<GuildMemberProfilePageProps> = ({ user, guild, onBack }) => {
-    const { ranks, trophies, userTrophies } = useAppState();
-    const { rewardTypes, gameAssets } = useEconomyState();
+    const { ranks, trophies, userTrophies, rewardTypes, gameAssets } = useAppState();
 
     const personalBalances = useMemo(() => {
         return { purse: user.personalPurse, experience: user.personalExperience };

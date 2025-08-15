@@ -1,21 +1,17 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { useAppState } from '../../context/AppContext';
+import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { useAuthState, useAuthDispatch } from '../../context/AuthContext';
-import { useUIState, useUIDispatch } from '../../context/UIStateContext';
 import { ThemeDefinition, AppMode } from '../../types';
 import Button from '../user-interface/Button';
 import Card from '../user-interface/Card';
 import { useNotificationsDispatch } from '../../context/NotificationsContext';
-import { useEconomyState } from '../../context/EconomyContext';
 
 const ThemesPage: React.FC = () => {
-    const { settings, themes, guilds } = useAppState();
-    const { markets } = useEconomyState();
+    const { settings, themes, guilds, markets, appMode } = useAppState();
     const { currentUser } = useAuthState();
-    const { appMode } = useUIState();
     const { updateUser } = useAuthDispatch();
     const { addNotification } = useNotificationsDispatch();
-    const { setActivePage, setActiveMarketId } = useUIDispatch();
+    const { setActivePage, setActiveMarketId } = useAppDispatch();
     
     if (!currentUser) return null;
 
@@ -25,7 +21,7 @@ const ThemesPage: React.FC = () => {
         const theme = themes.find(t => t.id === themeId);
         if (theme) {
             Object.entries(theme.styles).forEach(([key, value]) => {
-                document.documentElement.style.setProperty(key, value);
+                document.documentElement.style.setProperty(key, value as string);
             });
             document.body.dataset.theme = themeId;
         }

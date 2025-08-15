@@ -1,15 +1,12 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { Role, Page, QuestCompletionStatus, PurchaseRequestStatus, Terminology, SidebarConfigItem, SidebarLink, SidebarHeader } from '../../types';
 import { ChevronDownIcon, ArrowLeftIcon, ArrowRightIcon } from '../user-interface/Icons';
-import { useAppState } from '../../context/AppContext';
+import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { useAuthState } from '../../context/AuthContext';
-import { useUIState, useUIDispatch } from '../../context/UIStateContext';
-import { useEconomyState } from '../../context/EconomyContext';
-import { useQuestState } from '../../context/QuestContext';
 
 const FlyoutPanel: React.FC<{ title: string; items?: SidebarLink[]; isVisible: boolean }> = ({ title, items, isVisible }) => {
     const { settings } = useAppState();
-    const { setActivePage } = useUIDispatch();
+    const { setActivePage } = useAppDispatch();
     
     if (!isVisible) return null;
 
@@ -81,7 +78,7 @@ interface CollapsibleNavGroupProps {
 }
 
 const CollapsibleNavGroup: React.FC<CollapsibleNavGroupProps> = ({ header, childItems, activePage, badgeCount, isCollapsed, totalApprovals }) => {
-    const { setActivePage } = useUIDispatch();
+    const { setActivePage } = useAppDispatch();
     const isGroupActive = childItems.some(child => child.id === activePage);
     const [isOpen, setIsOpen] = useState(isGroupActive);
     const [isHovered, setIsHovered] = useState(false);
@@ -166,12 +163,9 @@ const CollapsibleNavGroup: React.FC<CollapsibleNavGroupProps> = ({ header, child
 
 
 const Sidebar: React.FC = () => {
-  const { settings, isAiConfigured, chatMessages, guilds } = useAppState();
-  const { purchaseRequests } = useEconomyState();
-  const { questCompletions } = useQuestState();
+  const { settings, isAiConfigured, chatMessages, guilds, purchaseRequests, questCompletions, activePage, isSidebarCollapsed, isChatOpen } = useAppState();
+  const { setActivePage, toggleSidebar, toggleChat } = useAppDispatch();
   const { currentUser } = useAuthState();
-  const { activePage, isSidebarCollapsed, isChatOpen } = useUIState();
-  const { setActivePage, toggleSidebar, toggleChat } = useUIDispatch();
   const isAiAvailable = settings.enableAiFeatures && isAiConfigured;
   
   if (!currentUser) return null;

@@ -1,16 +1,12 @@
-
-
 import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react';
-import { useAppState } from '../../context/AppContext';
+import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { useAuthState } from '../../context/AuthContext';
-import { useUIState, useUIDispatch } from '../../context/UIStateContext';
 import { RewardTypeDefinition, RewardCategory, Market, RewardItem } from '../../types';
 import Button from '../user-interface/Button';
 import Card from '../user-interface/Card';
 import Input from '../user-interface/Input';
 import { ArrowRightIcon } from '../user-interface/Icons';
 import { useNotificationsDispatch } from '../../context/NotificationsContext';
-import { useEconomyDispatch, useEconomyState } from '../../context/EconomyContext';
 
 interface ExchangeViewProps {
     market: Market;
@@ -44,13 +40,10 @@ const RewardButton: React.FC<{
 
 
 const ExchangeView: React.FC<ExchangeViewProps> = ({ market }) => {
-    const { settings } = useAppState();
-    const { rewardTypes } = useEconomyState();
+    const { settings, rewardTypes, appMode } = useAppState();
     const { currentUser } = useAuthState();
-    const { appMode } = useUIState();
-    const { executeExchange } = useEconomyDispatch();
+    const { executeExchange, setActiveMarketId } = useAppDispatch();
     const { addNotification } = useNotificationsDispatch();
-    const { setActiveMarketId } = useUIDispatch();
 
     const [fromRewardId, setFromRewardId] = useState<string>('');
     const [toRewardId, setToRewardId] = useState<string>('');

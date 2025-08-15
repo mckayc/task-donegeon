@@ -231,7 +231,7 @@ const BugTrackingPage: React.FC = () => {
                                             </Button>
                                             {openDropdownId === report.id && (
                                                 <div ref={dropdownRef} className="absolute right-0 top-full mt-2 w-48 bg-stone-900 border border-stone-700 rounded-lg shadow-xl z-20">
-                                                    <button onClick={() => { setDetailedReportId(report.id); setOpenDropdownId(null); }} className="w-full text-left block px-4 py-2 text-sm text-stone-300 hover:bg-stone-700/50">
+                                                    <button onClick={() => { setDetailedReportId(report.id); setOpenDropdownId(null); }} className="w-full text-left block px-4 py-2 text-sm text-stone-300 hover:bg-stone-700">
                                                         View Details
                                                     </button>
                                                     <div className="border-t border-stone-700/60 my-1"></div>
@@ -244,14 +244,14 @@ const BugTrackingPage: React.FC = () => {
                                                                 addNotification({ type: 'info', message: `Report status updated.` });
                                                                 setOpenDropdownId(null);
                                                             }}
-                                                            className={`w-full text-left block px-4 py-2 text-sm hover:bg-stone-700/50 ${report.status === s ? 'text-emerald-400 font-bold' : 'text-stone-300'}`}
+                                                            className={`w-full text-left block px-4 py-2 text-sm hover:bg-stone-700 disabled:bg-stone-800 disabled:text-stone-500 disabled:cursor-not-allowed ${report.status === s ? 'text-emerald-400 font-bold' : 'text-stone-300'}`}
                                                             disabled={report.status === s}
                                                         >
                                                             {s}
                                                         </button>
                                                     ))}
                                                     <div className="border-t border-stone-700/60 my-1"></div>
-                                                    <button onClick={() => { setDeletingIds([report.id]); setOpenDropdownId(null); }} className="w-full text-left block px-4 py-2 text-sm text-red-400 hover:bg-stone-700/50">
+                                                    <button onClick={() => { setDeletingIds([report.id]); setOpenDropdownId(null); }} className="w-full text-left block px-4 py-2 text-sm text-red-400 hover:bg-stone-700">
                                                         Delete
                                                     </button>
                                                 </div>

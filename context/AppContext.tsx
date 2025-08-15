@@ -2,6 +2,8 @@
 
 
 
+
+
 import React, { createContext, useState, useContext, ReactNode, useEffect, useCallback, useMemo, useRef } from 'react';
 import { AppSettings, User, Quest, RewardItem, Guild, Rank, Trophy, UserTrophy, AppMode, Page, IAppData, ShareableAssetType, GameAsset, Role, RewardCategory, AdminAdjustment, AdminAdjustmentType, SystemLog, QuestType, QuestAvailability, AssetPack, ImportResolution, TrophyRequirementType, ThemeDefinition, ChatMessage, SystemNotification, SystemNotificationType, MarketStatus, QuestGroup, BulkQuestUpdates, ScheduledEvent, BugReport, QuestCompletion, BugReportType, PurchaseRequest, PurchaseRequestStatus, Market, RewardTypeDefinition, Rotation, SidebarConfigItem } from '../types';
 import { INITIAL_SETTINGS, INITIAL_RANKS, INITIAL_TROPHIES, INITIAL_THEMES } from '../data/initialData';
@@ -275,43 +277,43 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
               ...savedSettings,
               questDefaults: {
                   ...INITIAL_SETTINGS.questDefaults,
-                  ...savedSettings.questDefaults,
+                  ...(savedSettings.questDefaults || {}),
               },
               security: {
                   ...INITIAL_SETTINGS.security,
-                  ...savedSettings.security,
+                  ...(savedSettings.security || {}),
               },
               sharedMode: {
                   ...INITIAL_SETTINGS.sharedMode,
-                  ...savedSettings.sharedMode,
+                  ...(savedSettings.sharedMode || {}),
               },
               automatedBackups: {
                   ...INITIAL_SETTINGS.automatedBackups,
-                  ...savedSettings.automatedBackups,
+                  ...(savedSettings.automatedBackups || {}),
               },
               loginNotifications: {
                   ...INITIAL_SETTINGS.loginNotifications,
-                  ...savedSettings.loginNotifications,
+                  ...(savedSettings.loginNotifications || {}),
               },
               googleCalendar: {
                   ...INITIAL_SETTINGS.googleCalendar,
-                  ...savedSettings.googleCalendar,
+                  ...(savedSettings.googleCalendar || {}),
               },
               developerMode: {
                   ...INITIAL_SETTINGS.developerMode,
-                  ...savedSettings.developerMode,
+                  ...(savedSettings.developerMode || {}),
               },
               chat: {
                   ...INITIAL_SETTINGS.chat,
-                  ...savedSettings.chat,
+                  ...(savedSettings.chat || {}),
               },
               terminology: {
                   ...INITIAL_SETTINGS.terminology,
-                  ...savedSettings.terminology,
+                  ...(savedSettings.terminology || {}),
               },
               rewardValuation: {
                   ...INITIAL_SETTINGS.rewardValuation,
-                  ...savedSettings.rewardValuation,
+                  ...(savedSettings.rewardValuation || {}),
               },
           };
           setSettings(loadedSettings);

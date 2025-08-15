@@ -45,11 +45,11 @@ const RewardItem: React.FC<{
                 </button>
                 {isDropdownOpen && (
                     <div ref={dropdownRef} className="absolute right-0 mt-2 w-36 bg-stone-900 border border-stone-700 rounded-lg shadow-xl z-20">
-                        <a href="#" onClick={(e) => { e.preventDefault(); onEdit(reward); setIsDropdownOpen(false); }} className="block px-4 py-2 text-sm text-stone-300 hover:bg-stone-700/50">Edit</a>
+                        <a href="#" onClick={(e) => { e.preventDefault(); onEdit(reward); setIsDropdownOpen(false); }} className="block px-4 py-2 text-sm text-stone-300 hover:bg-stone-700">Edit</a>
                         {!reward.isCore && (
                             <>
-                                <button onClick={() => { onClone(reward.id); setIsDropdownOpen(false); }} className="w-full text-left block px-4 py-2 text-sm text-stone-300 hover:bg-stone-700/50">Clone</button>
-                                <button onClick={() => { onDelete(reward.id); setIsDropdownOpen(false); }} className="w-full text-left block px-4 py-2 text-sm text-red-400 hover:bg-stone-700/50">Delete</button>
+                                <button onClick={() => { onClone(reward.id); setIsDropdownOpen(false); }} className="w-full text-left block px-4 py-2 text-sm text-stone-300 hover:bg-stone-700">Clone</button>
+                                <button onClick={() => { onDelete(reward.id); setIsDropdownOpen(false); }} className="w-full text-left block px-4 py-2 text-sm text-red-400 hover:bg-stone-700">Delete</button>
                             </>
                         )}
                     </div>

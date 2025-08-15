@@ -131,10 +131,10 @@ const ManageRanksPage: React.FC = () => {
                                             </button>
                                             {openDropdownId === rank.id && (
                                                 <div ref={dropdownRef} className="absolute right-10 top-0 mt-2 w-36 bg-stone-900 border border-stone-700 rounded-lg shadow-xl z-20">
-                                                    <a href="#" onClick={(e) => { e.preventDefault(); handleEdit(rank); setOpenDropdownId(null); }} className="block px-4 py-2 text-sm text-stone-300 hover:bg-stone-700/50">Edit</a>
+                                                    <a href="#" onClick={(e) => { e.preventDefault(); handleEdit(rank); setOpenDropdownId(null); }} className="block px-4 py-2 text-sm text-stone-300 hover:bg-stone-700">Edit</a>
                                                     <button 
                                                         onClick={() => { handleDeleteRequest([rank.id]); setOpenDropdownId(null); }} 
-                                                        className="w-full text-left block px-4 py-2 text-sm text-red-400 hover:bg-stone-700/50 disabled:opacity-50 disabled:text-stone-500"
+                                                        className="w-full text-left block px-4 py-2 text-sm text-red-400 hover:bg-stone-700 disabled:bg-stone-800 disabled:text-stone-500 disabled:cursor-not-allowed"
                                                         disabled={rank.xpThreshold === 0}
                                                     >
                                                         Delete

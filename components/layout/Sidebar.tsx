@@ -19,7 +19,7 @@ const FlyoutPanel: React.FC<{ title: string; items?: SidebarLink[]; isVisible: b
                         key={item.id}
                         href="#"
                         onClick={(e) => { e.preventDefault(); setActivePage(item.id); }}
-                        className="flex items-center px-4 py-2 text-stone-300 hover:bg-stone-700/50"
+                        className="flex items-center px-4 py-2 text-stone-300 hover:bg-stone-700"
                         data-log-id={`sidebar-flyout-link-${item.id.toLowerCase().replace(' ', '-')}`}
                      >
                         {item.emoji} <span className="ml-2">{item.termKey ? settings.terminology[item.termKey] : item.id}</span>

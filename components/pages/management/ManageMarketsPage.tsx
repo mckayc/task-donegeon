@@ -8,7 +8,6 @@ import { useAppState, useAppDispatch } from '../../../context/AppContext';
 import EmptyState from '../../user-interface/EmptyState';
 import { MarketplaceIcon, EllipsisVerticalIcon } from '../../user-interface/Icons';
 import MarketIdeaGenerator from '../../quests/MarketIdeaGenerator';
-import { useShiftSelect } from '../../../hooks/useShiftSelect';
 
 const ManageMarketsPage: React.FC = () => {
     const { settings, isAiConfigured, markets } = useAppState();
@@ -24,9 +23,6 @@ const ManageMarketsPage: React.FC = () => {
     const dropdownRef = useRef<HTMLDivElement | null>(null);
 
     const isAiAvailable = settings.enableAiFeatures && isAiConfigured;
-    
-    const marketIds = React.useMemo(() => markets.map(m => m.id), [markets]);
-    const handleCheckboxClick = useShiftSelect(marketIds, selectedMarkets, setSelectedMarkets);
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
@@ -62,6 +58,14 @@ const ManageMarketsPage: React.FC = () => {
             setSelectedMarkets(markets.map(m => m.id));
         } else {
             setSelectedMarkets([]);
+        }
+    };
+
+    const handleSelectOne = (id: string, isChecked: boolean) => {
+        if (isChecked) {
+            setSelectedMarkets(prev => [...prev, id]);
+        } else {
+            setSelectedMarkets(prev => prev.filter(marketId => marketId !== id));
         }
     };
     
@@ -148,7 +152,7 @@ const ManageMarketsPage: React.FC = () => {
 
                                     return (
                                         <tr key={market.id} className="border-b border-stone-700/40 last:border-b-0">
-                                            <td className="p-4"><input type="checkbox" checked={selectedMarkets.includes(market.id)} onChange={e => handleCheckboxClick(e, market.id)} className="h-4 w-4 rounded text-emerald-600 bg-stone-700 border-stone-600 focus:ring-emerald-500" /></td>
+                                            <td className="p-4"><input type="checkbox" checked={selectedMarkets.includes(market.id)} onChange={e => handleSelectOne(market.id, e.target.checked)} className="h-4 w-4 rounded text-emerald-600 bg-stone-700 border-stone-600 focus:ring-emerald-500" /></td>
                                             <td className="p-4 font-bold">{market.icon} {market.title}</td>
                                             <td className="p-4 text-stone-400 hidden md:table-cell">{market.description}</td>
                                             <td className="p-4">
@@ -162,9 +166,9 @@ const ManageMarketsPage: React.FC = () => {
                                                 </button>
                                                 {openDropdownId === market.id && (
                                                     <div ref={dropdownRef} className="absolute right-10 top-0 mt-2 w-36 bg-stone-900 border border-stone-700 rounded-lg shadow-xl z-20">
-                                                        <a href="#" onClick={(e) => { e.preventDefault(); handleEditMarket(market); setOpenDropdownId(null); }} className="block px-4 py-2 text-sm text-stone-300 hover:bg-stone-700/50">Edit</a>
-                                                        <button onClick={() => { cloneMarket(market.id); setOpenDropdownId(null); }} className="w-full text-left block px-4 py-2 text-sm text-stone-300 hover:bg-stone-700/50 disabled:opacity-50 disabled:text-stone-500" disabled={isBank}>Clone</button>
-                                                        <button onClick={() => { setConfirmation({ action: 'delete', ids: [market.id] }); setOpenDropdownId(null); }} className="w-full text-left block px-4 py-2 text-sm text-red-400 hover:bg-stone-700/50 disabled:opacity-50 disabled:text-stone-500" disabled={isBank}>Delete</button>
+                                                        <a href="#" onClick={(e) => { e.preventDefault(); handleEditMarket(market); setOpenDropdownId(null); }} className="block px-4 py-2 text-sm text-stone-300 hover:bg-stone-700">Edit</a>
+                                                        <button onClick={() => { cloneMarket(market.id); setOpenDropdownId(null); }} className="w-full text-left block px-4 py-2 text-sm text-stone-300 hover:bg-stone-700 disabled:bg-stone-800 disabled:text-stone-500 disabled:cursor-not-allowed" disabled={isBank}>Clone</button>
+                                                        <button onClick={() => { setConfirmation({ action: 'delete', ids: [market.id] }); setOpenDropdownId(null); }} className="w-full text-left block px-4 py-2 text-sm text-red-400 hover:bg-stone-700 disabled:bg-stone-800 disabled:text-stone-500 disabled:cursor-not-allowed" disabled={isBank}>Delete</button>
                                                     </div>
                                                 )}
                                             </td>

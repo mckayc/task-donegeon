@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import { useAppState } from '../../../context/AppContext';
 import { Quest, QuestType, QuestGroup } from '../../../types';
@@ -304,9 +305,9 @@ const ManageQuestsPage: React.FC = () => {
                                             </button>
                                             {openDropdownId === quest.id && (
                                                 <div ref={dropdownRef} className="absolute right-10 top-0 mt-2 w-36 bg-stone-900 border border-stone-700 rounded-lg shadow-xl z-20">
-                                                    <a href="#" onClick={(e) => { e.preventDefault(); handleEdit(quest); setOpenDropdownId(null); }} data-log-id={`manage-quests-action-edit-${quest.id}`} className="block px-4 py-2 text-sm text-stone-300 hover:bg-stone-700/50">Edit</a>
-                                                    <button onClick={() => { handleClone(quest.id); setOpenDropdownId(null); }} data-log-id={`manage-quests-action-clone-${quest.id}`} className="w-full text-left block px-4 py-2 text-sm text-stone-300 hover:bg-stone-700/50">Clone</button>
-                                                    <button onClick={() => { setConfirmation({ action: 'delete', ids: [quest.id] }); setOpenDropdownId(null); }} data-log-id={`manage-quests-action-delete-${quest.id}`} className="w-full text-left block px-4 py-2 text-sm text-red-400 hover:bg-stone-700/50">Delete</button>
+                                                    <a href="#" onClick={(e) => { e.preventDefault(); handleEdit(quest); setOpenDropdownId(null); }} data-log-id={`manage-quests-action-edit-${quest.id}`} className="block px-4 py-2 text-sm text-stone-300 hover:bg-stone-700">Edit</a>
+                                                    <button onClick={() => { handleClone(quest.id); setOpenDropdownId(null); }} data-log-id={`manage-quests-action-clone-${quest.id}`} className="w-full text-left block px-4 py-2 text-sm text-stone-300 hover:bg-stone-700">Clone</button>
+                                                    <button onClick={() => { setConfirmation({ action: 'delete', ids: [quest.id] }); setOpenDropdownId(null); }} data-log-id={`manage-quests-action-delete-${quest.id}`} className="w-full text-left block px-4 py-2 text-sm text-red-400 hover:bg-stone-700">Delete</button>
                                                 </div>
                                             )}
                                         </td>

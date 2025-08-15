@@ -67,24 +67,26 @@ const EditMarketDialog: React.FC<EditMarketDialogProps> = ({ market, initialData
   };
   
   const addCondition = () => {
-      if (formData.status.type === 'conditional') {
+      const currentStatus = formData.status;
+      if (currentStatus.type === 'conditional') {
           const newCondition: MarketCondition = { type: MarketConditionType.MinRank, rankId: ranks[0]?.id || '' };
           const newStatus: MarketStatus = {
             type: 'conditional',
-            logic: formData.status.logic,
-            conditions: [...formData.status.conditions, newCondition]
+            logic: currentStatus.logic,
+            conditions: [...currentStatus.conditions, newCondition]
           };
           handleStatusChange(newStatus);
       }
   };
 
   const updateCondition = (index: number, newCondition: MarketCondition) => {
-      if (formData.status.type === 'conditional') {
-          const newConditions = [...formData.status.conditions];
+      const currentStatus = formData.status;
+      if (currentStatus.type === 'conditional') {
+          const newConditions = [...currentStatus.conditions];
           newConditions[index] = newCondition;
           const newStatus: MarketStatus = {
             type: 'conditional',
-            logic: formData.status.logic,
+            logic: currentStatus.logic,
             conditions: newConditions
           };
           handleStatusChange(newStatus);
@@ -93,11 +95,12 @@ const EditMarketDialog: React.FC<EditMarketDialogProps> = ({ market, initialData
 
 
   const removeCondition = (index: number) => {
-      if (formData.status.type === 'conditional') {
+      const currentStatus = formData.status;
+      if (currentStatus.type === 'conditional') {
           const newStatus: MarketStatus = {
             type: 'conditional',
-            logic: formData.status.logic,
-            conditions: formData.status.conditions.filter((_, i) => i !== index)
+            logic: currentStatus.logic,
+            conditions: currentStatus.conditions.filter((_, i) => i !== index)
           };
           handleStatusChange(newStatus);
       }

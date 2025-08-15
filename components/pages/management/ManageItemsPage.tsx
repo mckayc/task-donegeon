@@ -58,43 +58,30 @@ const ManageItemsPage: React.FC = () => {
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
-    const apiRequest = useCallback(async (method: string, path: string, body?: any) => {
-        try {
-            const options: RequestInit = {
-                method,
-                headers: { 'Content-Type': 'application/json' },
-            };
-            if (body) {
-                options.body = JSON.stringify(body);
-            }
-            const response = await window.fetch(path, options);
-            if (!response.ok) {
-                const errorData = await response.json().catch(() => ({ error: 'Server error' }));
-                throw new Error(errorData.error || `Request failed with status ${response.status}`);
-            }
-            return response.status === 204 ? null : await response.json();
-        } catch (error) {
-            addNotification({ type: 'error', message: error instanceof Error ? error.message : 'An unknown network error occurred.' });
-            throw error;
-        }
-    }, [addNotification]);
-
     const fetchAssets = useCallback(async () => {
         setIsLoading(true);
-        try {
-            const params = new URLSearchParams();
-            if (activeTab !== 'All') params.append('category', activeTab);
-            if (debouncedSearchTerm) params.append('searchTerm', debouncedSearchTerm);
-            params.append('sortBy', sortBy);
+        const filtered = allGameAssets.filter(asset => {
+            const categoryMatch = activeTab === 'All' || asset.category === activeTab;
+            const searchMatch = !debouncedSearchTerm || 
+                asset.name.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
+                asset.description.toLowerCase().includes(debouncedSearchTerm.toLowerCase());
+            return categoryMatch && searchMatch;
+        });
 
-            const data = await apiRequest('GET', `/api/assets?${params.toString()}`);
-            setPageAssets(data as GameAsset[]);
-        } catch (error) {
-            console.error("Failed to fetch assets:", error);
-        } finally {
-            setIsLoading(false);
-        }
-    }, [activeTab, debouncedSearchTerm, sortBy, apiRequest]);
+        filtered.sort((a, b) => {
+            switch (sortBy) {
+                case 'name-asc': return a.name.localeCompare(b.name);
+                case 'name-desc': return b.name.localeCompare(a.name);
+                case 'createdAt-asc': return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+                case 'createdAt-desc':
+                default:
+                    return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+            }
+        });
+        
+        setPageAssets(filtered);
+        setIsLoading(false);
+    }, [activeTab, debouncedSearchTerm, sortBy, allGameAssets]);
 
     useEffect(() => {
         fetchAssets();
@@ -167,32 +154,12 @@ const ManageItemsPage: React.FC = () => {
         setIsCreateDialogOpen(true);
     };
 
-    const handleSaveAsset = async (assetData: any) => {
-        const isEditing = !!editingAsset;
-        const method = isEditing ? 'PUT' : 'POST';
-        const url = isEditing ? `/api/assets/${editingAsset!.id}` : '/api/assets';
-        try {
-            await apiRequest(method, url, assetData);
-            addNotification({ type: 'success', message: `Asset ${isEditing ? 'updated' : 'created'} successfully!` });
-            fetchAssets(); // Refresh data
-        } catch (e) { /* error handled by apiRequest */ }
-    };
-
-    const handleClone = async (assetId: string) => {
-        try {
-            await apiRequest('POST', `/api/assets/clone/${assetId}`);
-            addNotification({ type: 'success', message: 'Asset cloned successfully!' });
-            fetchAssets();
-        } catch (e) { /* error handled */ }
-    };
-
     const handleConfirmAction = async () => {
         if (!confirmation || confirmation.action !== 'delete') return;
         try {
-            await apiRequest('DELETE', '/api/assets', { ids: confirmation.ids });
+            await deleteGameAssets(confirmation.ids);
             addNotification({ type: 'info', message: `${confirmation.ids.length} asset(s) deleted.` });
             setSelectedAssets([]);
-            fetchAssets();
         } catch (e) { /* error handled */ }
         setConfirmation(null);
     };
@@ -310,7 +277,7 @@ const ManageItemsPage: React.FC = () => {
                                                 {openDropdownId === asset.id && (
                                                     <div ref={dropdownRef} className="absolute right-10 top-0 mt-2 w-36 bg-stone-900 border border-stone-700 rounded-lg shadow-xl z-20">
                                                         <a href="#" onClick={(e) => { e.preventDefault(); handleEdit(asset); setOpenDropdownId(null); }} data-log-id={`manage-items-action-edit-${asset.id}`} className="block px-4 py-2 text-sm text-stone-300 hover:bg-stone-700/50">Edit</a>
-                                                        <button onClick={() => { handleClone(asset.id); setOpenDropdownId(null); }} data-log-id={`manage-items-action-clone-${asset.id}`} className="w-full text-left block px-4 py-2 text-sm text-stone-300 hover:bg-stone-700/50">Clone</button>
+                                                        <button onClick={() => { cloneGameAsset(asset.id); setOpenDropdownId(null); }} data-log-id={`manage-items-action-clone-${asset.id}`} className="w-full text-left block px-4 py-2 text-sm text-stone-300 hover:bg-stone-700/50">Clone</button>
                                                         <button onClick={() => { setConfirmation({ action: 'delete', ids: [asset.id] }); setOpenDropdownId(null); }} data-log-id={`manage-items-action-delete-${asset.id}`} className="w-full text-left block px-4 py-2 text-sm text-red-400 hover:bg-stone-700/50">Delete</button>
                                                     </div>
                                                 )}
@@ -344,7 +311,6 @@ const ManageItemsPage: React.FC = () => {
                 assetToEdit={editingAsset} 
                 initialData={initialCreateData} 
                 onClose={() => { setEditingAsset(null); setIsCreateDialogOpen(false); setInitialCreateData(null); }}
-                onSave={handleSaveAsset}
             />}
             {isGeneratorOpen && <ItemIdeaGenerator onUseIdea={handleUseIdea} onClose={() => setIsGeneratorOpen(false)} />}
 

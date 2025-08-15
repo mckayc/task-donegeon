@@ -1,4 +1,4 @@
-import { Market, User, IAppData, MarketConditionType, MarketCondition, QuestCompletionStatus } from '../types';
+import { Market, User, IAppData, MarketConditionType, MarketCondition, QuestCompletionStatus, RewardItem, ScheduledEvent, GameAsset } from '../types';
 import { toYMD } from './quests';
 
 export const isMarketOpenForUser = (market: Market, user: User, allData: IAppData): boolean => {
@@ -47,4 +47,28 @@ export const isMarketOpenForUser = (market: Market, user: User, allData: IAppDat
         default:
             return false;
     }
+};
+
+export const getFinalCostGroups = (
+    costGroups: RewardItem[][],
+    marketId: string,
+    assetId: string,
+    scheduledEvents: ScheduledEvent[]
+): RewardItem[][] => {
+    const todayYMD = toYMD(new Date());
+    const activeSaleEvent = scheduledEvents.find(event =>
+        event.eventType === 'MarketSale' &&
+        event.modifiers.marketId === marketId &&
+        todayYMD >= event.startDate &&
+        todayYMD <= event.endDate &&
+        (!event.modifiers.assetIds || event.modifiers.assetIds.length === 0 || event.modifiers.assetIds.includes(assetId))
+    );
+
+    if (activeSaleEvent && activeSaleEvent.modifiers.discountPercent) {
+        const discount = activeSaleEvent.modifiers.discountPercent / 100;
+        return costGroups.map(group =>
+            group.map(c => ({ ...c, amount: Math.max(0, Math.ceil(c.amount * (1 - discount))) }))
+        );
+    }
+    return costGroups;
 };

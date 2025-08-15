@@ -3,17 +3,16 @@ import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { useAuthState } from '../../context/AuthContext';
 import { GameAsset, RewardItem, ScheduledEvent, RewardCategory } from '../../types';
 import Button from '../user-interface/Button';
-import { toYMD } from '../../utils/quests';
+import { getFinalCostGroups } from '../../utils/markets';
 
 interface PurchaseDialogProps {
   asset: GameAsset;
   marketId: string;
   onClose: () => void;
-  scheduledEvents: ScheduledEvent[];
 }
 
-const PurchaseDialog: React.FC<PurchaseDialogProps> = ({ asset, marketId, onClose, scheduledEvents }) => {
-    const { rewardTypes, appMode } = useAppState();
+const PurchaseDialog: React.FC<PurchaseDialogProps> = ({ asset, marketId, onClose }) => {
+    const { rewardTypes, appMode, scheduledEvents } = useAppState();
     const { currentUser } = useAuthState();
     const { purchaseMarketItem } = useAppDispatch();
     
@@ -34,24 +33,7 @@ const PurchaseDialog: React.FC<PurchaseDialogProps> = ({ asset, marketId, onClos
             : currentBalances.experience[rewardTypeId] || 0;
     };
 
-    const getFinalCostGroups = () => {
-        const todayYMD = toYMD(new Date());
-        const activeSaleEvent = scheduledEvents.find(event => 
-            event.eventType === 'MarketSale' && event.modifiers.marketId === marketId &&
-            todayYMD >= event.startDate && todayYMD <= event.endDate &&
-            (!event.modifiers.assetIds || event.modifiers.assetIds.length === 0 || event.modifiers.assetIds.includes(asset.id))
-        );
-
-        if (activeSaleEvent && activeSaleEvent.modifiers.discountPercent) {
-            const discount = activeSaleEvent.modifiers.discountPercent / 100;
-            return asset.costGroups.map(group =>
-                group.map(c => ({ ...c, amount: Math.max(0, Math.ceil(c.amount * (1 - discount))) }))
-            );
-        }
-        return asset.costGroups;
-    };
-
-    const finalCostGroups = getFinalCostGroups();
+    const finalCostGroups = getFinalCostGroups(asset.costGroups, marketId, asset.id, scheduledEvents);
 
     const { costOptions, getRewardInfo } = useMemo(() => {
         const rewardInfo = (id: string) => rewardTypes.find(rt => rt.id === id) || { name: 'Unknown', icon: '❓' };
@@ -69,7 +51,7 @@ const PurchaseDialog: React.FC<PurchaseDialogProps> = ({ asset, marketId, onClos
     }, [finalCostGroups, rewardTypes, getBalance]);
 
     const handlePurchase = (costGroupIndex: number) => {
-        purchaseMarketItem(asset.id, marketId, currentUser, costGroupIndex, scheduledEvents);
+        purchaseMarketItem(asset.id, marketId, currentUser, costGroupIndex);
         onClose();
     };
 

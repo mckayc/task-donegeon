@@ -5,6 +5,7 @@ import { useNotificationsDispatch } from './NotificationsContext';
 import { useAuthState, useAuthDispatch } from './AuthContext';
 import { bugLogger } from '../utils/bugLogger';
 import { toYMD } from '../utils/quests';
+import { getFinalCostGroups } from '../utils/markets';
 
 // The single, unified state for the application
 interface AppState extends IAppData {
@@ -116,7 +117,7 @@ interface AppDispatch {
   updateGameAsset: (asset: GameAsset) => Promise<void>;
   cloneGameAsset: (assetId: string) => Promise<void>;
   deleteGameAssets: (assetIds: string[]) => Promise<void>;
-  purchaseMarketItem: (assetId: string, marketId: string, user: User, costGroupIndex: number, scheduledEvents: ScheduledEvent[]) => void;
+  purchaseMarketItem: (assetId: string, marketId: string, user: User, costGroupIndex: number) => void;
   cancelPurchaseRequest: (purchaseId: string) => void;
   approvePurchaseRequest: (purchaseId: string) => void;
   rejectPurchaseRequest: (purchaseId: string) => void;
@@ -579,6 +580,17 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       else if (adj.type === AdminAdjustmentType.Setback) deductRewards(adj.userId, adj.setbacks, adj.guildId);
       return true;
     };
+    const deleteSelectedAssets = async (selection: Partial<Record<ShareableAssetType, string[]>>, onComplete?: () => void) => {
+      for (const [assetType, ids] of Object.entries(selection)) {
+        if (ids && ids.length > 0) {
+          try {
+            await apiRequest('DELETE', `/api/${assetType}`, { ids });
+          } catch (error) { console.error(`Failed to delete ${assetType}:`, error); }
+        }
+      }
+      addNotification({ type: 'success', message: 'Selected assets have been deleted.' });
+      if (onComplete) onComplete();
+    };
     
     // QuestDispatch functions
     const updateQuest = (updatedQuest: Quest) => { registerOptimisticUpdate(`quest-${updatedQuest.id}`); apiRequest('PUT', `/api/quests/${updatedQuest.id}`, updatedQuest).catch(() => {}); };
@@ -600,9 +612,87 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       setQuestGroups(prev => prev.filter(g => !groupIds.includes(g.id)));
       setQuests(prev => prev.map(q => q.groupId && groupIds.includes(q.groupId) ? { ...q, groupId: undefined } : q));
     };
+    const assignQuestGroupToUsers = (groupId: string, userIds: string[]) => {
+      const questsToUpdate = quests.filter(q => q.groupId === groupId);
+      questsToUpdate.forEach(q => {
+        const newAssigned = Array.from(new Set([...q.assignedUserIds, ...userIds]));
+        updateQuest({ ...q, assignedUserIds: newAssigned });
+      });
+    };
+    const deleteQuests = (questIds: string[]) => { apiRequest('DELETE', '/api/quests', { ids: questIds }).catch(() => {}); };
+    const updateQuestsStatus = (questIds: string[], isActive: boolean) => { apiRequest('PUT', '/api/quests/bulk-status', { ids: questIds, isActive }).catch(() => {}); };
+    const bulkUpdateQuests = (questIds: string[], updates: BulkQuestUpdates) => { apiRequest('PUT', '/api/quests/bulk-update', { ids: questIds, updates }).catch(() => {}); };
     
     // Economy Functions
-    // ...
+    const addRewardType = async (rewardType: Omit<RewardTypeDefinition, 'id' | 'isCore'>) => { apiRequest('POST', '/api/reward-types', rewardType).catch(() => {}); };
+    const updateRewardType = async (rewardType: RewardTypeDefinition) => { registerOptimisticUpdate(`rewardType-${rewardType.id}`); apiRequest('PUT', `/api/reward-types/${rewardType.id}`, rewardType).catch(() => {}); };
+    const deleteRewardType = async (rewardTypeId: string) => { apiRequest('DELETE', '/api/reward-types', { ids: [rewardTypeId] }).catch(() => {}); };
+    const cloneRewardType = async (rewardTypeId: string) => { apiRequest('POST', `/api/reward-types/clone/${rewardTypeId}`).catch(() => {}); };
+    const addMarket = async (market: Omit<Market, 'id'>) => { apiRequest('POST', '/api/markets', market).catch(() => {}); };
+    const updateMarket = async (market: Market) => { registerOptimisticUpdate(`market-${market.id}`); apiRequest('PUT', `/api/markets/${market.id}`, market).catch(() => {}); };
+    const deleteMarket = async (marketId: string) => { apiRequest('DELETE', '/api/markets', { ids: [marketId] }).catch(() => {}); };
+    const cloneMarket = async (marketId: string) => { apiRequest('POST', `/api/markets/clone/${marketId}`).catch(() => {}); };
+    const deleteMarkets = async (marketIds: string[]) => { apiRequest('DELETE', '/api/markets', { ids: marketIds }).catch(() => {}); };
+    const updateMarketsStatus = async (marketIds: string[], statusType: 'open' | 'closed') => { apiRequest('PUT', '/api/markets/bulk-status', { ids: marketIds, statusType }).catch(() => {}); };
+    const addGameAsset = async (asset: Omit<GameAsset, 'id' | 'creatorId' | 'createdAt' | 'purchaseCount'>) => { apiRequest('POST', '/api/assets', asset).catch(() => {}); };
+    const updateGameAsset = async (asset: GameAsset) => { registerOptimisticUpdate(`gameAsset-${asset.id}`); apiRequest('PUT', `/api/assets/${asset.id}`, asset).catch(() => {}); };
+    const cloneGameAsset = async (assetId: string) => { apiRequest('POST', `/api/assets/clone/${assetId}`).catch(() => {}); };
+    const deleteGameAssets = async (assetIds: string[]) => { apiRequest('DELETE', '/api/assets', { ids: assetIds }).catch(() => {}); };
+    const purchaseMarketItem = (assetId: string, marketId: string, user: User, costGroupIndex: number) => {
+      const asset = gameAssets.find(a => a.id === assetId);
+      if (!asset) { addNotification({ type: 'error', message: 'Item not found.' }); return; }
+
+      const finalCostGroups = getFinalCostGroups(asset.costGroups, marketId, assetId, scheduledEvents);
+      const cost = finalCostGroups[costGroupIndex];
+      if (!cost) { addNotification({ type: 'error', message: 'Invalid cost selection.' }); return; }
+
+      const guildId = appMode.mode === 'guild' ? appMode.guildId : undefined;
+      const canAfford = cost.every(item => {
+        const balances = guildId ? user.guildBalances[guildId] : { purse: user.personalPurse, experience: user.personalExperience };
+        if (!balances) return false;
+        const rewardDef = rewardTypes.find(rt => rt.id === item.rewardTypeId);
+        const balance = rewardDef?.category === RewardCategory.Currency ? (balances.purse[item.rewardTypeId] || 0) : (balances.experience[item.rewardTypeId] || 0);
+        return balance >= item.amount;
+      });
+
+      if (!canAfford) { addNotification({ type: 'error', message: "You can't afford this item." }); return; }
+
+      if (asset.requiresApproval) {
+        const newRequest: PurchaseRequest = {
+          id: `pr-${Date.now()}`,
+          userId: user.id,
+          assetId: asset.id,
+          requestedAt: new Date().toISOString(),
+          status: PurchaseRequestStatus.Pending,
+          assetDetails: { name: asset.name, description: asset.description, cost },
+          guildId,
+        };
+        setPurchaseRequests(prev => [...prev, newRequest]);
+        addNotification({ type: 'info', message: 'Purchase requested. Awaiting approval.' });
+      } else {
+        if (deductRewards(user.id, cost, guildId)) {
+            authDispatch.updateUser(user.id, u => ({ ...u, ownedAssetIds: [...u.ownedAssetIds, asset.id] }));
+            updateGameAsset({ ...asset, purchaseCount: asset.purchaseCount + 1 });
+            addNotification({ type: 'success', message: `Purchased ${asset.name}!` });
+        }
+      }
+    };
+    const cancelPurchaseRequest = (purchaseId: string) => { setPurchaseRequests(p => p.map(req => req.id === purchaseId ? { ...req, status: PurchaseRequestStatus.Cancelled, actedAt: new Date().toISOString() } : req)); };
+    const approvePurchaseRequest = (purchaseId: string) => {
+      const request = purchaseRequests.find(r => r.id === purchaseId);
+      if (!request) return;
+      if (deductRewards(request.userId, request.assetDetails.cost, request.guildId)) {
+        authDispatch.updateUser(request.userId, u => ({ ownedAssetIds: [...u.ownedAssetIds, request.assetId] }));
+        setGameAssets(p => p.map(a => a.id === request.assetId ? { ...a, purchaseCount: a.purchaseCount + 1 } : a));
+        setPurchaseRequests(p => p.map(req => req.id === purchaseId ? { ...req, status: PurchaseRequestStatus.Completed, actedAt: new Date().toISOString() } : req));
+      } else {
+        addNotification({type:'error', message: 'User could not afford this item at time of approval.'});
+      }
+    };
+    const rejectPurchaseRequest = (purchaseId: string) => { setPurchaseRequests(p => p.map(req => req.id === purchaseId ? { ...req, status: PurchaseRequestStatus.Rejected, actedAt: new Date().toISOString() } : req)); };
+    const executeExchange = async (userId: string, payItem: RewardItem, receiveItem: RewardItem, guildId?: string) => { apiRequest('POST', '/api/actions/execute-exchange', { userId, payItem, receiveItem, guildId }).catch(() => {}); };
+    const importAssetPack = async (assetPack: AssetPack, resolutions: ImportResolution[], allData: IAppData) => { apiRequest('POST', '/api/data/import-assets', { assetPack, resolutions }).catch(() => {}); };
+    
     return {
       setUsers: authDispatch.setUsers, setLoginHistory: authDispatch.setLoginHistory,
       setQuests, setQuestGroups, setQuestCompletions, setMarkets, setRewardTypes,
@@ -611,26 +701,23 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       setRanks: setRanksStable, addTrophy, updateTrophy, awardTrophy, applyManualAdjustment,
       addTheme, updateTheme, deleteTheme, addScheduledEvent, updateScheduledEvent, deleteScheduledEvent,
       addBugReport, updateBugReport, deleteBugReports, importBugReports, restoreFromBackup,
-      clearAllHistory, resetAllPlayerData: resetAllPlayerData, deleteAllCustomContent, deleteSelectedAssets: (selection: Partial<Record<ShareableAssetType, string[]>>, onComplete?: () => void) => Promise.resolve(), uploadFile, factoryReset,
+      clearAllHistory, resetAllPlayerData, deleteAllCustomContent, deleteSelectedAssets, uploadFile, factoryReset,
       updateSettings, resetSettings, sendMessage, markMessagesAsRead, addSystemNotification,
       markSystemNotificationsAsRead, triggerSync: performDeltaSync, registerOptimisticUpdate,
       addQuest, updateQuest, deleteQuest, cloneQuest, dismissQuest, claimQuest, releaseQuest,
       markQuestAsTodo, unmarkQuestAsTodo, completeQuest, approveQuestCompletion, rejectQuestCompletion,
-      addQuestGroup, updateQuestGroup, deleteQuestGroup, deleteQuestGroups, assignQuestGroupToUsers: (groupId: string, userIds: string[]) => {},
-      deleteQuests: (questIds: string[]) => {}, updateQuestsStatus: (questIds: string[], isActive: boolean) => {}, bulkUpdateQuests: (questIds: string[], updates: BulkQuestUpdates) => {},
-      addRewardType: (rewardType: Omit<RewardTypeDefinition, 'id' | 'isCore'>) => Promise.resolve(), updateRewardType: (rewardType: RewardTypeDefinition) => Promise.resolve(), deleteRewardType: (rewardTypeId: string) => Promise.resolve(), cloneRewardType: (rewardTypeId: string) => Promise.resolve(),
-      addMarket: (market: Omit<Market, 'id'>) => Promise.resolve(), updateMarket: (market: Market) => Promise.resolve(), deleteMarket: (marketId: string) => Promise.resolve(), cloneMarket: (marketId: string) => Promise.resolve(),
-      deleteMarkets: (marketIds: string[]) => Promise.resolve(), updateMarketsStatus: (marketIds: string[], statusType: 'open' | 'closed') => Promise.resolve(),
-      addGameAsset: (asset: Omit<GameAsset, 'id' | 'creatorId' | 'createdAt' | 'purchaseCount'>) => Promise.resolve(), updateGameAsset: (asset: GameAsset) => Promise.resolve(), cloneGameAsset: (assetId: string) => Promise.resolve(),
-      deleteGameAssets: (assetIds: string[]) => Promise.resolve(), purchaseMarketItem: (assetId: string, marketId: string, user: User, costGroupIndex: number, scheduledEvents: ScheduledEvent[]) => {}, cancelPurchaseRequest: (purchaseId: string) => {},
-      approvePurchaseRequest: (purchaseId: string) => {}, rejectPurchaseRequest: (purchaseId: string) => {}, applyRewards, deductRewards,
-      executeExchange: (userId: string, payItem: RewardItem, receiveItem: RewardItem, guildId?: string) => Promise.resolve(), importAssetPack: (assetPack: AssetPack, resolutions: ImportResolution[], allData: IAppData) => Promise.resolve(),
+      addQuestGroup, updateQuestGroup, deleteQuestGroup, deleteQuestGroups, assignQuestGroupToUsers,
+      deleteQuests, updateQuestsStatus, bulkUpdateQuests, addRewardType, updateRewardType, deleteRewardType, cloneRewardType,
+      addMarket, updateMarket, deleteMarket, cloneMarket, deleteMarkets, updateMarketsStatus,
+      addGameAsset, updateGameAsset, cloneGameAsset, deleteGameAssets, purchaseMarketItem, cancelPurchaseRequest,
+      approvePurchaseRequest, rejectPurchaseRequest, applyRewards, deductRewards,
+      executeExchange, importAssetPack,
     };
   }, [
     authDispatch, addNotification, updateNotification, quests, users, rewardTypes,
     guilds, ranks, trophies, userTrophies, adminAdjustments, gameAssets, systemLogs, settings,
     themes, chatMessages, systemNotifications, scheduledEvents, bugReports, questGroups, questCompletions,
-    markets, purchaseRequests, loginHistory, performDeltaSync, registerOptimisticUpdate
+    markets, purchaseRequests, loginHistory, performDeltaSync, registerOptimisticUpdate, appMode
   ]);
 
   return (

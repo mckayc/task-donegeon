@@ -199,7 +199,6 @@ const MarketItemView: React.FC<{ market: Market }> = ({ market }) => {
                     asset={itemToPurchase}
                     marketId={market.id}
                     onClose={() => setItemToPurchase(null)}
-                    scheduledEvents={scheduledEvents}
                 />
             )}
             {previewImageUrl && (

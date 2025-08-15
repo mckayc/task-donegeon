@@ -56,13 +56,13 @@ const ThemePreview: React.FC<{ themeStyles: React.CSSProperties }> = ({ themeSty
     );
 };
 
-const ContrastChecker: React.FC<{ styles: ThemeStyle }> = ({ styles }) => {
+const ContrastChecker: React.FC<{ styles?: ThemeStyle }> = ({ styles }) => {
     const pairs = useMemo(() => {
-        const primaryHsl = `${styles['--color-primary-hue']} ${styles['--color-primary-saturation']} ${styles['--color-primary-lightness']}`;
+        const primaryHsl = `${styles?.['--color-primary-hue'] ?? '0'} ${styles?.['--color-primary-saturation'] ?? '0%'} ${styles?.['--color-primary-lightness'] ?? '0%'}`;
         return [
-            { label: "Text on Primary BG", fg: styles['--color-text-primary-hsl'], bg: styles['--color-bg-primary-hsl'] },
-            { label: "Muted Text on Primary BG", fg: styles['--color-text-muted-hsl'] || styles['--color-text-secondary-hsl'], bg: styles['--color-bg-primary-hsl'] },
-            { label: "Text on Card BG", fg: styles['--color-text-primary-hsl'], bg: styles['--color-bg-secondary-hsl'] },
+            { label: "Text on Primary BG", fg: styles?.['--color-text-primary-hsl'] ?? '0 0% 100%', bg: styles?.['--color-bg-primary-hsl'] ?? '0 0% 0%' },
+            { label: "Muted Text on Primary BG", fg: styles?.['--color-text-muted-hsl'] || styles?.['--color-text-secondary-hsl'] || '0 0% 50%', bg: styles?.['--color-bg-primary-hsl'] ?? '0 0% 0%' },
+            { label: "Text on Card BG", fg: styles?.['--color-text-primary-hsl'] ?? '0 0% 100%', bg: styles?.['--color-bg-secondary-hsl'] ?? '0 0% 5%' },
             { label: "Button Text on Primary Button", fg: '210 40% 98%', bg: primaryHsl }
         ];
     }, [styles]);
@@ -101,29 +101,48 @@ const AppearancePage: React.FC = () => {
     // Set initial form data based on selected theme
     useEffect(() => {
         const themeToEdit = themes.find(t => t.id === selectedThemeId);
-        // Use emerald as base for any missing styles
         const emeraldTheme = themes.find(t => t.id === 'emerald');
-        const defaultStyles = emeraldTheme?.styles || {} as ThemeStyle;
-
-        const newPropertyDefaults = {
-            '--color-text-muted-hsl': defaultStyles['--color-text-secondary-hsl'],
+        
+        // A critical fallback. If emerald is somehow missing, we create a very basic object to prevent crashes.
+        const defaultStyles: ThemeStyle = emeraldTheme?.styles || {
+            '--font-display': "'MedievalSharp', cursive",
+            '--font-body': "'Roboto', sans-serif",
+            '--font-label': "'IM Fell English SC', serif",
+            '--font-size-h1': '2.25rem',
+            '--font-size-h2': '1.75rem',
+            '--font-size-h3': '1.5rem',
+            '--font-size-body': '1rem',
+            '--font-size-label': '0.875rem',
+            '--color-bg-primary-hsl': "224 71% 4%",
+            '--color-bg-secondary-hsl': "224 39% 10%",
+            '--color-bg-tertiary-hsl': "240 10% 19%",
+            '--color-text-primary-hsl': "240 8% 90%",
+            '--color-text-secondary-hsl': "240 6% 65%",
+            '--color-border-hsl': "240 6% 30%",
+            '--color-primary-hue': "158",
+            '--color-primary-saturation': "84%",
+            '--color-primary-lightness': "39%",
+            '--color-accent-hue': "158",
+            '--color-accent-saturation': "75%",
+            '--color-accent-lightness': "58%",
+            '--color-accent-light-hue': "158",
+            '--color-accent-light-saturation': "70%",
+            '--color-accent-light-lightness': "45%",
+            '--color-text-muted-hsl': "240 6% 65%",
             '--input-bg-hsl': '240 10% 25%',
             '--button-radius': '0.375rem',
-        };
+        } as ThemeStyle;
 
         if (themeToEdit) {
-            // Copy theme and merge defaults for any missing new properties
             const newFormData = JSON.parse(JSON.stringify(themeToEdit));
-            newFormData.styles = { ...newPropertyDefaults, ...newFormData.styles };
+            // Merge the saved styles on top of the defaults to fill in any missing properties
+            newFormData.styles = { ...defaultStyles, ...newFormData.styles };
             setFormData(newFormData);
         } else {
-            // Create new theme based on emerald, but with our new property defaults
+            // Create new theme based on defaults
             setFormData({
                 id: 'new', name: 'New Custom Theme', isCustom: true,
-                styles: {
-                    ...defaultStyles,
-                    ...newPropertyDefaults,
-                } as ThemeStyle
+                styles: { ...defaultStyles }
             });
         }
     }, [selectedThemeId, themes]);
@@ -204,41 +223,41 @@ const AppearancePage: React.FC = () => {
                         </CollapsibleSection>
                         <CollapsibleSection title="Colors">
                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <SimpleColorPicker label="Primary Accent" hslValue={`${formData.styles['--color-primary-hue']} ${formData.styles['--color-primary-saturation']} ${formData.styles['--color-primary-lightness']}`} onChange={v => {
+                                <SimpleColorPicker label="Primary Accent" hslValue={`${formData.styles?.['--color-primary-hue'] ?? '0'} ${formData.styles?.['--color-primary-saturation'] ?? '0%'} ${formData.styles?.['--color-primary-lightness'] ?? '0%'}`} onChange={v => {
                                     const { h, s, l } = parseHslString(v);
                                     handleStyleChange('--color-primary-hue', String(h));
                                     handleStyleChange('--color-primary-saturation', `${s}%`);
                                     handleStyleChange('--color-primary-lightness', `${l}%`);
                                 }} />
-                                <SimpleColorPicker label="Secondary Accent" hslValue={`${formData.styles['--color-accent-hue']} ${formData.styles['--color-accent-saturation']} ${formData.styles['--color-accent-lightness']}`} onChange={v => {
+                                <SimpleColorPicker label="Secondary Accent" hslValue={`${formData.styles?.['--color-accent-hue'] ?? '0'} ${formData.styles?.['--color-accent-saturation'] ?? '0%'} ${formData.styles?.['--color-accent-lightness'] ?? '0%'}`} onChange={v => {
                                     const { h, s, l } = parseHslString(v);
                                     handleStyleChange('--color-accent-hue', String(h));
                                     handleStyleChange('--color-accent-saturation', `${s}%`);
                                     handleStyleChange('--color-accent-lightness', `${l}%`);
                                 }} />
-                                <SimpleColorPicker label="Main Background" hslValue={formData.styles['--color-bg-primary-hsl']} onChange={v => handleStyleChange('--color-bg-primary-hsl', v)} />
-                                <SimpleColorPicker label="Card Background" hslValue={formData.styles['--color-bg-secondary-hsl']} onChange={v => handleStyleChange('--color-bg-secondary-hsl', v)} />
-                                <SimpleColorPicker label="Primary Text" hslValue={formData.styles['--color-text-primary-hsl']} onChange={v => handleStyleChange('--color-text-primary-hsl', v)} />
-                                <SimpleColorPicker label="Muted Text" hslValue={formData.styles['--color-text-muted-hsl'] || ''} onChange={v => handleStyleChange('--color-text-muted-hsl', v)} />
-                                <SimpleColorPicker label="Border" hslValue={formData.styles['--color-border-hsl']} onChange={v => handleStyleChange('--color-border-hsl', v)} />
-                                <SimpleColorPicker label="Input Background" hslValue={formData.styles['--input-bg-hsl'] || ''} onChange={v => handleStyleChange('--input-bg-hsl', v)} />
+                                <SimpleColorPicker label="Main Background" hslValue={formData.styles?.['--color-bg-primary-hsl'] ?? '0 0% 0%'} onChange={v => handleStyleChange('--color-bg-primary-hsl', v)} />
+                                <SimpleColorPicker label="Card Background" hslValue={formData.styles?.['--color-bg-secondary-hsl'] ?? '0 0% 5%'} onChange={v => handleStyleChange('--color-bg-secondary-hsl', v)} />
+                                <SimpleColorPicker label="Primary Text" hslValue={formData.styles?.['--color-text-primary-hsl'] ?? '0 0% 100%'} onChange={v => handleStyleChange('--color-text-primary-hsl', v)} />
+                                <SimpleColorPicker label="Muted Text" hslValue={formData.styles?.['--color-text-muted-hsl'] ?? '0 0% 50%'} onChange={v => handleStyleChange('--color-text-muted-hsl', v)} />
+                                <SimpleColorPicker label="Border" hslValue={formData.styles?.['--color-border-hsl'] ?? '0 0% 20%'} onChange={v => handleStyleChange('--color-border-hsl', v)} />
+                                <SimpleColorPicker label="Input Background" hslValue={formData.styles?.['--input-bg-hsl'] ?? '0 0% 15%'} onChange={v => handleStyleChange('--input-bg-hsl', v)} />
                              </div>
                         </CollapsibleSection>
                         <CollapsibleSection title="Typography">
-                            <Input as="select" label="Heading Font" value={formData.styles['--font-display']} onChange={e => handleStyleChange('--font-display', e.target.value)}>
+                            <Input as="select" label="Heading Font" value={formData.styles?.['--font-display'] ?? FONT_OPTIONS[0]} onChange={e => handleStyleChange('--font-display', e.target.value)}>
                                 {FONT_OPTIONS.map(f => <option key={f} value={f}>{f.split(',')[0].replace(/'/g, '')}</option>)}
                             </Input>
-                            <Input as="select" label="Body Font" value={formData.styles['--font-body']} onChange={e => handleStyleChange('--font-body', e.target.value)}>
+                            <Input as="select" label="Body Font" value={formData.styles?.['--font-body'] ?? FONT_OPTIONS[0]} onChange={e => handleStyleChange('--font-body', e.target.value)}>
                                 {FONT_OPTIONS.map(f => <option key={f} value={f}>{f.split(',')[0].replace(/'/g, '')}</option>)}
                             </Input>
-                            <div><label className="flex justify-between text-sm">H1 Size <span>({formData.styles['--font-size-h1']})</span></label><input type="range" min="1.5" max="4" step="0.1" value={parseFloat(formData.styles['--font-size-h1'])} onChange={e => handleStyleChange('--font-size-h1', `${e.target.value}rem`)} className="w-full" /></div>
-                            <div><label className="flex justify-between text-sm">Body Size <span>({formData.styles['--font-size-body']})</span></label><input type="range" min="0.8" max="1.2" step="0.05" value={parseFloat(formData.styles['--font-size-body'])} onChange={e => handleStyleChange('--font-size-body', `${e.target.value}rem`)} className="w-full" /></div>
+                            <div><label className="flex justify-between text-sm">H1 Size <span>({formData.styles?.['--font-size-h1']})</span></label><input type="range" min="1.5" max="4" step="0.1" value={parseFloat(formData.styles?.['--font-size-h1'] || '2.25')} onChange={e => handleStyleChange('--font-size-h1', `${e.target.value}rem`)} className="w-full" /></div>
+                            <div><label className="flex justify-between text-sm">Body Size <span>({formData.styles?.['--font-size-body']})</span></label><input type="range" min="0.8" max="1.2" step="0.05" value={parseFloat(formData.styles?.['--font-size-body'] || '1')} onChange={e => handleStyleChange('--font-size-body', `${e.target.value}rem`)} className="w-full" /></div>
                         </CollapsibleSection>
                         <CollapsibleSection title="Components">
-                            <div><label className="flex justify-between text-sm">Button Radius <span>({formData.styles['--button-radius']})</span></label><input type="range" min="0" max="2" step="0.1" value={parseFloat(formData.styles['--button-radius'] || '0')} onChange={e => handleStyleChange('--button-radius', `${e.target.value}rem`)} className="w-full" /></div>
+                            <div><label className="flex justify-between text-sm">Button Radius <span>({formData.styles?.['--button-radius']})</span></label><input type="range" min="0" max="2" step="0.1" value={parseFloat(formData.styles?.['--button-radius'] || '0')} onChange={e => handleStyleChange('--button-radius', `${e.target.value}rem`)} className="w-full" /></div>
                         </CollapsibleSection>
                          <CollapsibleSection title="Accessibility">
-                             <ContrastChecker styles={formData.styles} />
+                             <ContrastChecker styles={formData?.styles} />
                         </CollapsibleSection>
                     </Card>
                 </div>

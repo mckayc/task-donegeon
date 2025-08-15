@@ -108,6 +108,7 @@ const Dashboard: React.FC = () => {
             title: string;
             date: string;
             note?: string;
+            rewardsText?: string;
             status: string;
             icon: string;
         };
@@ -121,15 +122,14 @@ const Dashboard: React.FC = () => {
                     if (c.status === QuestCompletionStatus.Approved && quest && quest.rewards.length > 0) {
                         rewardsText = quest.rewards.map(r => `+${r.amount} ${getRewardInfo(r.rewardTypeId).icon}`).join(' ');
                     }
-                    const noteText = c.note ? `"${c.note}"` : '';
-                    const combinedNote = [noteText, rewardsText].filter(Boolean).join(' ');
 
                     return {
                         id: c.id,
                         type: 'Quest' as const,
                         title: quest?.title || `Unknown ${terminology.task}`,
                         date: c.completedAt,
-                        note: combinedNote,
+                        note: c.note ? `"${c.note}"` : undefined,
+                        rewardsText: rewardsText || undefined,
                         status: c.status,
                         icon: quest?.icon || '📜',
                     };
@@ -141,7 +141,7 @@ const Dashboard: React.FC = () => {
                     type: 'Purchase' as const,
                     title: `Purchased "${p.assetDetails.name}"`,
                     date: p.requestedAt,
-                    note: p.assetDetails.cost.map(r => `-${r.amount} ${getRewardInfo(r.rewardTypeId).icon}`).join(' '),
+                    rewardsText: p.assetDetails.cost.map(r => `-${r.amount} ${getRewardInfo(r.rewardTypeId).icon}`).join(' '),
                     status: p.status,
                     icon: '💰',
                 })),
@@ -154,7 +154,7 @@ const Dashboard: React.FC = () => {
                         type: 'Trophy' as const,
                         title: `Earned ${terminology.award}: "${trophy?.name || ''}"`,
                         date: ut.awardedAt,
-                        note: undefined,
+                        note: trophy?.description,
                         status: 'Awarded!',
                         icon: trophy?.icon || '🏆',
                     };
@@ -284,41 +284,65 @@ const Dashboard: React.FC = () => {
                             </div>
                         </div>
                     </Card>
+
+                    {mostRecentTrophy && (
+                        <Card title={`Latest ${terminology.award}`}>
+                            <div className="flex items-center gap-4 cursor-pointer" onClick={() => setActivePage('Trophies')}>
+                                <div className="text-5xl">{mostRecentTrophy.icon}</div>
+                                <div>
+                                    <h4 className="font-bold text-lg text-amber-300">{mostRecentTrophy.name}</h4>
+                                    <p className="text-stone-400 text-sm">{mostRecentTrophy.description}</p>
+                                </div>
+                            </div>
+                        </Card>
+                    )}
+
+                    <Card title="Leaderboard">
+                         {leaderboard.length > 0 ? (
+                            <ul className="space-y-2">
+                                {leaderboard.map((player, index) => (
+                                    <li key={player.name} className="flex justify-between items-center text-sm font-semibold">
+                                        <span className="text-stone-200">{index + 1}. {player.name}</span>
+                                        <span className="text-sky-400">{player.xp} XP</span>
+                                    </li>
+                                ))}
+                            </ul>
+                        ) : <p className="text-stone-400 text-sm italic">No players to rank.</p>}
+                    </Card>
                 </div>
 
                 {/* Right Column */}
                 <div className="lg:col-span-2 space-y-6">
                      <Card title="Quick Actions">
                         {quickActionQuests.length > 0 ? (
-                            <div className="grid grid-cols-1 gap-4 max-h-80 overflow-y-auto pr-2 scrollbar-hide">
-                                {quickActionQuests.map(quest => {
+                            <div className="flex flex-col gap-3">
+                                {quickActionQuests.slice(0, 4).map(quest => {
                                     const cardClass = quest.type === QuestType.Duty
-                                        ? 'bg-sky-950/50 border-sky-800/60 hover:border-sky-600'
-                                        : 'bg-amber-950/50 border-amber-800/60 hover:border-amber-600';
+                                        ? 'bg-blue-950/70 border-blue-800/80 hover:border-blue-600'
+                                        : 'bg-purple-950/70 border-purple-800/80 hover:border-purple-600';
                                     
                                     return (
                                         <div
                                             key={quest.id}
                                             onClick={() => handleQuestSelect(quest)}
-                                            className={`p-3 rounded-lg border-2 cursor-pointer flex flex-col justify-between transition-colors ${cardClass}`}
+                                            className={`p-3 rounded-lg border-2 cursor-pointer transition-colors ${cardClass}`}
                                         >
-                                            <div>
-                                                <p className="font-semibold text-stone-100 flex items-center gap-2">
-                                                    {quest.icon} {quest.title}
-                                                </p>
-                                                <p className="text-xs text-stone-400 mt-1">{getDueDateString(quest)}</p>
-                                            </div>
-                                            {quest.rewards.length > 0 && (
-                                                <div className="mt-2 pt-2 border-t border-white/10">
-                                                    <p className="text-xs font-semibold text-accent/80 uppercase tracking-wider">{terminology.points}</p>
-                                                    <div className="flex flex-wrap gap-x-3 gap-y-1 text-sm font-semibold mt-1">
+                                            <div className="flex justify-between items-center">
+                                                <div>
+                                                    <p className="font-semibold text-stone-100 flex items-center gap-2">
+                                                        {quest.icon} {quest.title}
+                                                    </p>
+                                                    <p className="text-xs text-stone-400 mt-1">{getDueDateString(quest)}</p>
+                                                </div>
+                                                {quest.rewards.length > 0 && (
+                                                    <div className="flex flex-wrap gap-x-3 gap-y-1 text-sm font-semibold ml-2 flex-shrink-0">
                                                         {quest.rewards.map(r => {
                                                             const { name, icon } = getRewardInfo(r.rewardTypeId);
                                                             return <span key={`${r.rewardTypeId}-${r.amount}`} className="text-accent-light flex items-center gap-1" title={name}>+ {r.amount} <span className="text-base">{icon}</span></span>
                                                         })}
                                                     </div>
-                                                </div>
-                                            )}
+                                                )}
+                                            </div>
                                         </div>
                                     );
                                 })}
@@ -328,47 +352,25 @@ const Dashboard: React.FC = () => {
                         )}
                     </Card>
                     
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <Card title={`Recent ${terminology.history}`}>
-                            {recentActivities.length > 0 ? (
-                                <ul className="space-y-4">
-                                    {recentActivities.map(activity => (
-                                        <li key={activity.id} className="flex items-start gap-3 text-sm">
-                                            <span className="text-xl mt-1">{activity.icon}</span>
-                                            <div className="flex-grow min-w-0">
-                                                <p className="text-stone-300 truncate" title={activity.title}>{activity.title}</p>
-                                                {activity.note && <p className="text-xs text-stone-400 italic truncate">{activity.note}</p>}
+                    <Card title={`Recent ${terminology.history}`}>
+                        {recentActivities.length > 0 ? (
+                            <ul className="space-y-4">
+                                {recentActivities.map(activity => (
+                                    <li key={activity.id} className="flex items-start gap-3 text-sm">
+                                        <span className="text-xl mt-1">{activity.icon}</span>
+                                        <div className="flex-grow min-w-0">
+                                            <p className="text-stone-300 truncate" title={activity.title}>{activity.title}</p>
+                                            <div className="flex items-center gap-4 text-xs">
+                                                {activity.note && <p className="text-stone-400 italic">{activity.note}</p>}
+                                                {activity.rewardsText && <p className="text-stone-300 font-semibold">{activity.rewardsText}</p>}
                                             </div>
-                                            <span className={`font-semibold ${statusColorClass(activity.status)} flex-shrink-0`}>{activity.status}</span>
-                                        </li>
-                                    ))}
-                                </ul>
-                            ) : <p className="text-stone-400 text-sm italic">No recent activity.</p>}
-                        </Card>
-                        <Card title="Leaderboard">
-                             {leaderboard.length > 0 ? (
-                                <ul className="space-y-2">
-                                    {leaderboard.map((player, index) => (
-                                        <li key={player.name} className="flex justify-between items-center text-sm font-semibold">
-                                            <span className="text-stone-200">{index + 1}. {player.name}</span>
-                                            <span className="text-sky-400">{player.xp} XP</span>
-                                        </li>
-                                    ))}
-                                </ul>
-                            ) : <p className="text-stone-400 text-sm italic">No players to rank.</p>}
-                        </Card>
-                         {mostRecentTrophy && (
-                            <Card title={`Latest ${terminology.award}`} className="md:col-span-2">
-                                <div className="flex items-center gap-4 cursor-pointer" onClick={() => setActivePage('Trophies')}>
-                                    <div className="text-5xl">{mostRecentTrophy.icon}</div>
-                                    <div>
-                                        <h4 className="font-bold text-lg text-amber-300">{mostRecentTrophy.name}</h4>
-                                        <p className="text-stone-400 text-sm">{mostRecentTrophy.description}</p>
-                                    </div>
-                                </div>
-                            </Card>
-                        )}
-                    </div>
+                                        </div>
+                                        <span className={`font-semibold ${statusColorClass(activity.status)} flex-shrink-0`}>{activity.status}</span>
+                                    </li>
+                                ))}
+                            </ul>
+                        ) : <p className="text-stone-400 text-sm italic">No recent activity.</p>}
+                    </Card>
                 </div>
             </div>
              {selectedQuest && (

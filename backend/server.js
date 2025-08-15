@@ -909,10 +909,12 @@ bugReportsRouter.post('/import', asyncMiddleware(async (req, res) => {
                  console.log(`[Bug Import] No new reports to add.`);
             }
         }
+        
+        updateEmitter.emit('update');
+        // Fetch and return all bug reports after the operation.
+        const allReports = await manager.find(BugReportEntity, { order: { createdAt: "DESC" } });
+        res.status(200).json(allReports);
     });
-
-    updateEmitter.emit('update');
-    res.status(200).json({ message: `Import successful (${mode} mode).` });
 }));
 
 

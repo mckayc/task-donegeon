@@ -2,6 +2,7 @@ import React, { createContext, useState, useContext, ReactNode, useCallback, use
 import { User, Role } from '../types';
 import { useNotificationsDispatch } from './NotificationsContext';
 import { bugLogger } from '../utils/bugLogger';
+import { useAppDispatch } from './AppContext';
 
 // State managed by this context
 interface AuthState {
@@ -38,6 +39,7 @@ const AuthDispatchContext = createContext<AuthDispatch | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const { addNotification } = useNotificationsDispatch();
+  const { registerOptimisticUpdate } = useAppDispatch();
   const [users, setUsers] = useState<User[]>([]);
   const [currentUser, _setCurrentUser] = useState<User | null>(null);
   const [isAppUnlocked, _setAppUnlocked] = useState<boolean>(() => localStorage.getItem('isAppUnlocked') === 'true');
@@ -94,6 +96,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       let payloadForApi: Partial<User> | null = null;
       let isFullObject = false;
   
+      registerOptimisticUpdate(`user-${userId}`);
+
       setUsers(prevUsers => {
           return prevUsers.map(u => {
               if (u.id === userId) {
@@ -120,7 +124,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
               console.error("Failed to update user on server, optimistic update may be stale.", error);
           });
       }
-  }, [apiRequest]);
+  }, [apiRequest, registerOptimisticUpdate]);
   
   const markUserAsOnboarded = useCallback((userId: string) => updateUser(userId, { hasBeenOnboarded: true }), [updateUser]);
 

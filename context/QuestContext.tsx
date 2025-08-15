@@ -4,6 +4,7 @@ import { useNotificationsDispatch } from './NotificationsContext';
 import { useAuthDispatch, useAuthState } from './AuthContext';
 import { bugLogger } from '../utils/bugLogger';
 import { useEconomyDispatch } from './EconomyContext';
+import { useAppDispatch } from './AppContext';
 
 interface QuestState {
   quests: Quest[];
@@ -43,6 +44,7 @@ const QuestDispatchContext = createContext<QuestDispatch | undefined>(undefined)
 
 export const QuestProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const { addNotification } = useNotificationsDispatch();
+  const { registerOptimisticUpdate } = useAppDispatch();
   const economyDispatch = useEconomyDispatch();
   const authDispatch = useAuthDispatch();
 
@@ -86,7 +88,10 @@ export const QuestProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   
   const state = useMemo(() => ({ quests, questGroups, questCompletions, allTags }), [quests, questGroups, questCompletions, allTags]);
 
-  const updateQuest = useCallback((updatedQuest: Quest) => { apiRequest('PUT', `/api/quests/${updatedQuest.id}`, updatedQuest).catch(() => {}); }, [apiRequest]);
+  const updateQuest = useCallback((updatedQuest: Quest) => {
+    registerOptimisticUpdate(`quest-${updatedQuest.id}`);
+    apiRequest('PUT', `/api/quests/${updatedQuest.id}`, updatedQuest).catch(() => {});
+  }, [apiRequest, registerOptimisticUpdate]);
     
   const addQuest = useCallback((quest: Omit<Quest, 'id' | 'claimedByUserIds' | 'dismissals'>) => { apiRequest('POST', '/api/quests', quest).catch(() => {}); }, [apiRequest]);
   const deleteQuest = useCallback((questId: string) => { apiRequest('DELETE', `/api/quests`, { ids: [questId] }).catch(() => {}); }, [apiRequest]);
@@ -117,6 +122,7 @@ export const QuestProvider: React.FC<{ children: ReactNode }> = ({ children }) =
 
   const completeQuest = useCallback(async (completionData: any) => {
     try {
+        registerOptimisticUpdate(`user-${completionData.userId}`);
         const result = await apiRequest('POST', '/api/actions/complete-quest', { completionData });
 
         if (result && result.updatedUser && result.newCompletion) {
@@ -132,7 +138,7 @@ export const QuestProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     } catch (error) {
         // apiRequest helper handles notification
     }
-  }, [apiRequest, authDispatch, addNotification]);
+  }, [apiRequest, authDispatch, addNotification, registerOptimisticUpdate]);
 
   const approveQuestCompletion = useCallback(async (completionId: string, note?: string) => {
       const completion = questCompletionsRef.current.find(c => c.id === completionId);
@@ -140,12 +146,14 @@ export const QuestProvider: React.FC<{ children: ReactNode }> = ({ children }) =
           const quest = questsRef.current.find(q => q.id === completion.questId);
           if (quest) economyDispatchRef.current.applyRewards(completion.userId, quest.rewards, completion.guildId);
       }
+      registerOptimisticUpdate(`questCompletion-${completionId}`);
       await apiRequest('POST', `/api/actions/approve-quest/${completionId}`, { note });
-  }, [apiRequest]);
+  }, [apiRequest, registerOptimisticUpdate]);
 
   const rejectQuestCompletion = useCallback(async (completionId: string, note?: string) => {
+      registerOptimisticUpdate(`questCompletion-${completionId}`);
       await apiRequest('POST', `/api/actions/reject-quest/${completionId}`, { note });
-  }, [apiRequest]);
+  }, [apiRequest, registerOptimisticUpdate]);
 
   const addQuestGroup = useCallback((group: Omit<QuestGroup, 'id'>): QuestGroup => {
       const newGroup = { ...group, id: `qg-${Date.now()}-${Math.random().toString(36).substring(2, 9)}` };
@@ -153,7 +161,11 @@ export const QuestProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       return newGroup;
   }, []);
 
-  const updateQuestGroup = useCallback((group: QuestGroup) => setQuestGroups(prev => prev.map(g => g.id === group.id ? group : g)), []);
+  const updateQuestGroup = useCallback((group: QuestGroup) => {
+    registerOptimisticUpdate(`questGroup-${group.id}`);
+    setQuestGroups(prev => prev.map(g => g.id === group.id ? group : g));
+  }, [registerOptimisticUpdate]);
+
   const deleteQuestGroup = useCallback((groupId: string) => {
       setQuestGroups(prev => prev.filter(g => g.id !== groupId));
       setQuests(prev => prev.map(q => q.groupId === groupId ? { ...q, groupId: undefined } : q));
@@ -167,8 +179,16 @@ export const QuestProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       setQuests(prev => prev.map(q => q.groupId === groupId ? { ...q, assignedUserIds: userIds } : q));
   }, []);
   const deleteQuests = useCallback((questIds: string[]) => { apiRequest('DELETE', '/api/quests', { ids: questIds }).catch(() => {}); }, [apiRequest]);
-  const updateQuestsStatus = useCallback((questIds: string[], isActive: boolean) => { apiRequest('PUT', '/api/quests/bulk-status', { ids: questIds, isActive }).catch(() => {}); }, [apiRequest]);
-  const bulkUpdateQuests = useCallback((questIds: string[], updates: BulkQuestUpdates) => { apiRequest('PUT', '/api/quests/bulk-update', { ids: questIds, updates }).catch(() => {}); }, [apiRequest]);
+  
+  const updateQuestsStatus = useCallback((questIds: string[], isActive: boolean) => {
+      questIds.forEach(id => registerOptimisticUpdate(`quest-${id}`));
+      apiRequest('PUT', '/api/quests/bulk-status', { ids: questIds, isActive }).catch(() => {});
+  }, [apiRequest, registerOptimisticUpdate]);
+
+  const bulkUpdateQuests = useCallback((questIds: string[], updates: BulkQuestUpdates) => {
+      questIds.forEach(id => registerOptimisticUpdate(`quest-${id}`));
+      apiRequest('PUT', '/api/quests/bulk-update', { ids: questIds, updates }).catch(() => {});
+  }, [apiRequest, registerOptimisticUpdate]);
 
   const dispatch = useMemo(() => ({
     setQuests, setQuestGroups, setQuestCompletions, addQuest, updateQuest, deleteQuest,

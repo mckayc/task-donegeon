@@ -52,6 +52,7 @@ interface AppDispatch {
   addSystemNotification: (notification: Omit<SystemNotification, 'id' | 'timestamp' | 'readByUserIds'>) => void;
   markSystemNotificationsAsRead: (notificationIds: string[]) => void;
   triggerSync: () => void;
+  registerOptimisticUpdate: (key: string) => void;
 }
 
 const AppStateContext = createContext<AppState | undefined>(undefined);
@@ -148,12 +149,65 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   
   // === DATA SYNC & LOADING ===
   
-  const processAndSetData = useCallback((dataToSet: IAppData, isDelta = false) => {
-      const savedSettings: Partial<AppSettings> = dataToSet.settings || {};
-      let settingsUpdated = false;
-      let loadedSettingsResult: AppSettings | undefined = undefined;
+  const processAndSetData = useCallback((dataToSet: Partial<IAppData>, isDelta = false) => {
+      
+      const processDelta = <T extends { id: string; updatedAt?: string }>(
+          keyPrefix: string,
+          serverData: T[] | undefined,
+          localStateSetter: React.Dispatch<React.SetStateAction<T[]>>
+      ) => {
+          if (!serverData) return;
 
-      if (!isDelta) {
+          const filteredData = serverData.filter(item => {
+              const optimisticTimestamp = recentOptimisticUpdates.current.get(`${keyPrefix}-${item.id}`);
+              const serverTimestamp = item.updatedAt;
+              if (optimisticTimestamp && serverTimestamp && new Date(serverTimestamp) < new Date(optimisticTimestamp)) {
+                  console.log(`[SYNC] Ignoring stale server update for ${keyPrefix} ${item.id}`);
+                  return false;
+              }
+              return true;
+          });
+
+          if (filteredData.length > 0) {
+              localStateSetter(prev => mergeData(prev, filteredData));
+          }
+      };
+
+      if (isDelta) {
+          if (dataToSet.settings) {
+              const optimisticTimestamp = recentOptimisticUpdates.current.get('settings');
+              const serverTimestamp = dataToSet.settings.updatedAt;
+              if (!optimisticTimestamp || !serverTimestamp || new Date(serverTimestamp) >= new Date(optimisticTimestamp)) {
+                  setSettings(prev => ({ ...prev, ...dataToSet.settings }));
+              } else {
+                  console.log('[SYNC] Ignoring stale server update for settings');
+              }
+          }
+
+          processDelta('user', dataToSet.users, authDispatch.setUsers);
+          processDelta('quest', dataToSet.quests, questDispatch.setQuests);
+          processDelta('questGroup', dataToSet.questGroups, questDispatch.setQuestGroups);
+          processDelta('questCompletion', dataToSet.questCompletions, questDispatch.setQuestCompletions);
+          processDelta('market', dataToSet.markets, economyDispatch.setMarkets);
+          processDelta('rewardType', dataToSet.rewardTypes, economyDispatch.setRewardTypes);
+          processDelta('purchaseRequest', dataToSet.purchaseRequests, economyDispatch.setPurchaseRequests);
+          processDelta('gameAsset', dataToSet.gameAssets, economyDispatch.setGameAssets);
+          processDelta('guild', dataToSet.guilds, setGuilds);
+          processDelta('rank', dataToSet.ranks, setRanks);
+          processDelta('trophy', dataToSet.trophies, setTrophies);
+          processDelta('userTrophy', dataToSet.userTrophies, setUserTrophies);
+          processDelta('adminAdjustment', dataToSet.adminAdjustments, setAdminAdjustments);
+          processDelta('systemLog', dataToSet.systemLogs, setSystemLogs);
+          processDelta('theme', dataToSet.themes, setThemes);
+          processDelta('chatMessage', dataToSet.chatMessages, setChatMessages);
+          processDelta('systemNotification', dataToSet.systemNotifications, setSystemNotifications);
+          processDelta('scheduledEvent', dataToSet.scheduledEvents, setScheduledEvents);
+          processDelta('bugReport', dataToSet.bugReports, setBugReports);
+
+          if (dataToSet.loginHistory) authDispatch.setLoginHistory(dataToSet.loginHistory);
+
+      } else { // Full data load
+          const savedSettings: Partial<AppSettings> = dataToSet.settings || {};
           const loadedSettings: AppSettings = {
             ...INITIAL_SETTINGS, ...savedSettings,
             questDefaults: { ...INITIAL_SETTINGS.questDefaults, ...(savedSettings.questDefaults || {}) },
@@ -168,58 +222,32 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             rewardValuation: { ...INITIAL_SETTINGS.rewardValuation, ...(savedSettings.rewardValuation || {}) },
           };
           setSettings(loadedSettings);
-          loadedSettingsResult = loadedSettings;
-      } else if (dataToSet.settings) {
-          // If it's a delta update and settings are present, just merge them
-          setSettings(prev => ({ ...prev, ...dataToSet.settings }));
+          
+          authDispatch.setUsers(dataToSet.users || []);
+          authDispatch.setLoginHistory(dataToSet.loginHistory || []);
+          questDispatch.setQuests(dataToSet.quests || []);
+          questDispatch.setQuestGroups(dataToSet.questGroups || []);
+          questDispatch.setQuestCompletions(dataToSet.questCompletions || []);
+          economyDispatch.setMarkets(dataToSet.markets || []);
+          economyDispatch.setRewardTypes(dataToSet.rewardTypes || []);
+          economyDispatch.setPurchaseRequests(dataToSet.purchaseRequests || []);
+          economyDispatch.setGameAssets(dataToSet.gameAssets || []);
+          setGuilds(dataToSet.guilds || []);
+          setRanks(dataToSet.ranks || []);
+          setTrophies(dataToSet.trophies || []);
+          setUserTrophies(dataToSet.userTrophies || []);
+          setAdminAdjustments(dataToSet.adminAdjustments || []);
+          setSystemLogs(dataToSet.systemLogs || []);
+          setThemes(dataToSet.themes || []);
+          setChatMessages(dataToSet.chatMessages || []);
+          setSystemNotifications(dataToSet.systemNotifications || []);
+          setScheduledEvents(dataToSet.scheduledEvents || []);
+          setBugReports(dataToSet.bugReports || []);
+          
+          return { settingsUpdated: false, loadedSettings };
       }
+      return { settingsUpdated: false, loadedSettings: undefined };
 
-      // Update states, either by full replacement or by merging
-      if (dataToSet.users) authDispatch.setUsers(prev => isDelta ? mergeData(prev, dataToSet.users!) : dataToSet.users!);
-      if (dataToSet.loginHistory) authDispatch.setLoginHistory(dataToSet.loginHistory);
-
-      if (dataToSet.quests) questDispatch.setQuests(prev => isDelta ? mergeData(prev, dataToSet.quests!) : dataToSet.quests!);
-      if (dataToSet.questGroups) questDispatch.setQuestGroups(prev => isDelta ? mergeData(prev, dataToSet.questGroups!) : dataToSet.questGroups!);
-      if (dataToSet.questCompletions) questDispatch.setQuestCompletions(prev => isDelta ? mergeData(prev, dataToSet.questCompletions!) : dataToSet.questCompletions!);
-      
-      if (dataToSet.markets) economyDispatch.setMarkets(prev => isDelta ? mergeData(prev, dataToSet.markets!) : dataToSet.markets!);
-      if (dataToSet.rewardTypes) economyDispatch.setRewardTypes(prev => isDelta ? mergeData(prev, dataToSet.rewardTypes!) : dataToSet.rewardTypes!);
-      if (dataToSet.purchaseRequests) economyDispatch.setPurchaseRequests(prev => isDelta ? mergeData(prev, dataToSet.purchaseRequests!) : dataToSet.purchaseRequests!);
-      if (dataToSet.gameAssets) economyDispatch.setGameAssets(prev => isDelta ? mergeData(prev, dataToSet.gameAssets!) : dataToSet.gameAssets!);
-
-      if (dataToSet.guilds) setGuilds(prev => isDelta ? mergeData(prev, dataToSet.guilds!) : dataToSet.guilds!);
-      if (dataToSet.ranks) setRanks(prev => isDelta ? mergeData(prev, dataToSet.ranks!) : dataToSet.ranks!);
-      if (dataToSet.trophies) setTrophies(prev => isDelta ? mergeData(prev, dataToSet.trophies!) : dataToSet.trophies!);
-      if (dataToSet.userTrophies) setUserTrophies(prev => isDelta ? mergeData(prev, dataToSet.userTrophies!) : dataToSet.userTrophies!);
-      if (dataToSet.adminAdjustments) setAdminAdjustments(prev => isDelta ? mergeData(prev, dataToSet.adminAdjustments!) : dataToSet.adminAdjustments!);
-      if (dataToSet.systemLogs) setSystemLogs(prev => isDelta ? mergeData(prev, dataToSet.systemLogs!) : dataToSet.systemLogs!);
-      if (dataToSet.themes) setThemes(prev => isDelta ? mergeData(prev, dataToSet.themes!) : dataToSet.themes!);
-      if (dataToSet.chatMessages) setChatMessages(prev => isDelta ? mergeData(prev, dataToSet.chatMessages!) : dataToSet.chatMessages!);
-      if (dataToSet.systemNotifications) setSystemNotifications(prev => isDelta ? mergeData(prev, dataToSet.systemNotifications!) : dataToSet.systemNotifications!);
-      if (dataToSet.scheduledEvents) setScheduledEvents(prev => isDelta ? mergeData(prev, dataToSet.scheduledEvents!) : dataToSet.scheduledEvents!);
-      
-      if (dataToSet.bugReports) {
-        setBugReports(prev => {
-            if (!isDelta) return dataToSet.bugReports!;
-            
-            const dataMap = new Map(prev.map(item => [item.id, item]));
-            
-            dataToSet.bugReports!.forEach(incomingReport => {
-                const optimisticTimestamp = recentOptimisticUpdates.current.get(incomingReport.id);
-                const serverTimestamp = incomingReport.updatedAt;
-
-                if (optimisticTimestamp && serverTimestamp && new Date(serverTimestamp) < new Date(optimisticTimestamp)) {
-                    return; 
-                }
-                
-                dataMap.set(incomingReport.id, incomingReport);
-            });
-            
-            return Array.from(dataMap.values());
-        });
-    }
-
-      return { settingsUpdated, loadedSettings: loadedSettingsResult };
   }, [authDispatch, questDispatch, economyDispatch]);
   
   const initialSync = useCallback(async () => {
@@ -396,6 +424,17 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   };
 
   const dispatch = useMemo(() => {
+    const registerOptimisticUpdate = (key: string) => {
+        const timestamp = new Date().toISOString();
+        recentOptimisticUpdates.current.set(key, timestamp);
+        // Clean up the key after a safe period to prevent memory leaks
+        setTimeout(() => {
+            if (recentOptimisticUpdates.current.get(key) === timestamp) {
+                recentOptimisticUpdates.current.delete(key);
+            }
+        }, 15000); // 15 seconds should be more than enough
+    };
+
     const setRanksStable = (ranks: Rank[]) => setRanks(ranks);
 
     const addGuild = async (guild: Omit<Guild, 'id'>) => {
@@ -411,6 +450,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     };
     const updateGuild = async (guild: Guild) => {
         const originalGuilds = [...guildsRef.current];
+        registerOptimisticUpdate(`guild-${guild.id}`);
         setGuilds(prev => prev.map(g => g.id === guild.id ? guild : g));
         try {
             await apiRequest('PUT', `/api/guilds/${guild.id}`, guild);
@@ -429,9 +469,15 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     };
 
     const addTrophy = (trophy: Omit<Trophy, 'id'>) => setTrophies(prev => [...prev, { ...trophy, id: `trophy-${Date.now()}` }]);
-    const updateTrophy = (trophy: Trophy) => setTrophies(prev => prev.map(t => t.id === trophy.id ? trophy : t));
+    const updateTrophy = (trophy: Trophy) => {
+      registerOptimisticUpdate(`trophy-${trophy.id}`);
+      setTrophies(prev => prev.map(t => t.id === trophy.id ? trophy : t));
+    };
     const addTheme = (theme: Omit<ThemeDefinition, 'id'>) => setThemes(p => [...p, { ...theme, id: `theme-${Date.now()}` }]);
-    const updateTheme = (theme: ThemeDefinition) => setThemes(p => p.map(t => t.id === theme.id ? theme : t));
+    const updateTheme = (theme: ThemeDefinition) => {
+      registerOptimisticUpdate(`theme-${theme.id}`);
+      setThemes(p => p.map(t => t.id === theme.id ? theme : t));
+    };
     const deleteTheme = (themeId: string) => setThemes(p => p.filter(t => t.id !== themeId));
     
     const addScheduledEvent = async (event: Omit<ScheduledEvent, 'id'>) => {
@@ -446,6 +492,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     };
     const updateScheduledEvent = async (event: ScheduledEvent) => {
         const originalEvents = [...scheduledEventsRef.current];
+        registerOptimisticUpdate(`scheduledEvent-${event.id}`);
         setScheduledEvents(prev => prev.map(e => e.id === event.id ? event : e));
         try {
             await apiRequest('PUT', `/api/events/${event.id}`, event);
@@ -476,19 +523,12 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     };
     const updateBugReport = async (reportId: string, updates: Partial<BugReport>) => {
         const originalReports = [...bugReportsRef.current];
-        const optimisticTimestamp = new Date().toISOString();
-        
-        recentOptimisticUpdates.current.set(reportId, optimisticTimestamp);
-        setTimeout(() => {
-            recentOptimisticUpdates.current.delete(reportId);
-        }, 10000); // 10 second safety net to prevent stale lock
-
-        setBugReports(prev => prev.map(r => r.id === reportId ? { ...r, ...updates, updatedAt: optimisticTimestamp } : r));
+        registerOptimisticUpdate(`bugReport-${reportId}`);
+        setBugReports(prev => prev.map(r => r.id === reportId ? { ...r, ...updates, updatedAt: new Date().toISOString() } : r));
         try {
             await apiRequest('PUT', `/api/bug-reports/${reportId}`, updates);
         } catch (error) {
             setBugReports(originalReports);
-            recentOptimisticUpdates.current.delete(reportId);
         }
     };
     const deleteBugReports = async (reportIds: string[]) => {
@@ -540,6 +580,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     const updateSettings = async (newSettings: Partial<AppSettings>) => {
         const originalSettings = { ...settingsRef.current };
         const updatedSettings = { ...originalSettings, ...newSettings };
+        registerOptimisticUpdate('settings');
         setSettings(updatedSettings);
         try {
             await apiRequest('PUT', '/api/settings', updatedSettings);
@@ -585,7 +626,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       updateBugReport, deleteBugReports, importBugReports, restoreFromBackup, clearAllHistory,
       resetAllPlayerData, deleteAllCustomContent, deleteSelectedAssets, uploadFile,
       factoryReset, updateSettings, resetSettings, sendMessage, markMessagesAsRead,
-      addSystemNotification, markSystemNotificationsAsRead, triggerSync,
+      addSystemNotification, markSystemNotificationsAsRead, triggerSync, registerOptimisticUpdate,
     };
   }, [apiRequest, addNotification, updateNotification, economyDispatch, questDispatch, authDispatch, addSystemNotification, awardTrophy, triggerSync, guildsRef, scheduledEventsRef, bugReportsRef, settingsRef, ranks, trophies]);
 

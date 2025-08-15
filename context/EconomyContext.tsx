@@ -1,5 +1,3 @@
-
-
 import React, { createContext, useState, useContext, ReactNode, useCallback, useMemo } from 'react';
 import { 
     RewardTypeDefinition, Market, PurchaseRequest, GameAsset, RewardItem, 
@@ -10,6 +8,7 @@ import { useNotificationsDispatch } from './NotificationsContext';
 import { useAuthDispatch, useAuthState } from './AuthContext';
 import { toYMD } from '../utils/quests';
 import { bugLogger } from '../utils/bugLogger';
+import { useAppDispatch } from './AppContext';
 
 // State managed by this context
 interface EconomyState {
@@ -69,6 +68,7 @@ const EconomyDispatchContext = createContext<EconomyDispatch | undefined>(undefi
 
 export const EconomyProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const { addNotification } = useNotificationsDispatch();
+  const { registerOptimisticUpdate } = useAppDispatch();
   const authDispatch = useAuthDispatch();
   const { users } = useAuthState();
 
@@ -104,6 +104,7 @@ export const EconomyProvider: React.FC<{ children: ReactNode }> = ({ children })
   // === CORE ECONOMY LOGIC ===
 
   const applyRewards = useCallback((userId: string, rewardsToApply: RewardItem[], guildId?: string) => {
+    registerOptimisticUpdate(`user-${userId}`);
     authDispatch.updateUser(userId, (userToUpdate) => {
       const newUser = JSON.parse(JSON.stringify(userToUpdate));
       rewardsToApply.forEach(reward => {
@@ -128,7 +129,7 @@ export const EconomyProvider: React.FC<{ children: ReactNode }> = ({ children })
       });
       return newUser; // Return only the changed part
     });
-  }, [rewardTypes, authDispatch]);
+  }, [rewardTypes, authDispatch, registerOptimisticUpdate]);
 
   const deductRewards = useCallback((userId: string, cost: RewardItem[], guildId?: string): boolean => {
     const user = users.find(u => u.id === userId);
@@ -154,7 +155,8 @@ export const EconomyProvider: React.FC<{ children: ReactNode }> = ({ children })
     if (!canAfford) {
         return false;
     }
-
+    
+    registerOptimisticUpdate(`user-${userId}`);
     authDispatch.updateUser(userId, userToUpdate => {
       const userCopy = JSON.parse(JSON.stringify(userToUpdate));
       cost.forEach(c => {
@@ -182,7 +184,7 @@ export const EconomyProvider: React.FC<{ children: ReactNode }> = ({ children })
     });
     
     return true;
-  }, [users, rewardTypes, authDispatch]);
+  }, [users, rewardTypes, authDispatch, registerOptimisticUpdate]);
   
   const purchaseMarketItem = useCallback((assetId: string, marketId: string, user: User, costGroupIndex: number, scheduledEvents: ScheduledEvent[]) => {
     if (bugLogger.isRecording()) {
@@ -224,6 +226,7 @@ export const EconomyProvider: React.FC<{ children: ReactNode }> = ({ children })
             setPurchaseRequests(p => [...p, newRequest]);
             addNotification({ type: 'info', message: 'Purchase requested. Funds have been held.' });
         } else {
+            registerOptimisticUpdate(`user-${user.id}`);
             authDispatch.updateUser(user.id, updatedUser => {
                 const userCopy = JSON.parse(JSON.stringify(updatedUser));
                 if (asset.payouts && asset.payouts.length > 0) applyRewards(user.id, asset.payouts, market.guildId);
@@ -237,7 +240,7 @@ export const EconomyProvider: React.FC<{ children: ReactNode }> = ({ children })
     } else {
         addNotification({ type: 'error', message: 'You cannot afford this item.' });
     }
-  }, [markets, gameAssets, deductRewards, addNotification, applyRewards, authDispatch]);
+  }, [markets, gameAssets, deductRewards, addNotification, applyRewards, authDispatch, registerOptimisticUpdate]);
 
   const cancelPurchaseRequest = useCallback((purchaseId: string) => {
     const r = purchaseRequests.find(p => p.id === purchaseId);
@@ -254,6 +257,7 @@ export const EconomyProvider: React.FC<{ children: ReactNode }> = ({ children })
     const asset = gameAssets.find(a => a.id === r.assetId);
     if (!asset) return;
     
+    registerOptimisticUpdate(`user-${r.userId}`);
     authDispatch.updateUser(r.userId, updatedUser => {
         const userCopy = JSON.parse(JSON.stringify(updatedUser));
         if (asset.linkedThemeId && !userCopy.ownedThemes.includes(asset.linkedThemeId)) userCopy.ownedThemes.push(asset.linkedThemeId);
@@ -267,7 +271,7 @@ export const EconomyProvider: React.FC<{ children: ReactNode }> = ({ children })
 
     setPurchaseRequests(p => p.map(pr => pr.id === purchaseId ? { ...pr, status: PurchaseRequestStatus.Completed, actedAt: new Date().toISOString() } : pr));
     addNotification({type: 'success', message: 'Purchase approved.'});
-  }, [purchaseRequests, gameAssets, addNotification, applyRewards, authDispatch]);
+  }, [purchaseRequests, gameAssets, addNotification, applyRewards, authDispatch, registerOptimisticUpdate]);
   
   const rejectPurchaseRequest = useCallback((purchaseId: string) => {
     const r = purchaseRequests.find(p => p.id === purchaseId);
@@ -281,6 +285,7 @@ export const EconomyProvider: React.FC<{ children: ReactNode }> = ({ children })
   const executeExchange = useCallback(async (userId: string, payItem: RewardItem, receiveItem: RewardItem, guildId?: string) => {
     const notifId = addNotification({ type: 'info', message: 'Processing exchange...', duration: 0 });
     try {
+        registerOptimisticUpdate(`user-${userId}`);
         await apiRequest('POST', '/api/actions/execute-exchange', { userId, payItem, receiveItem, guildId });
         addNotification({ type: 'success', message: `Exchange successful!` });
     } catch (error) {
@@ -288,7 +293,7 @@ export const EconomyProvider: React.FC<{ children: ReactNode }> = ({ children })
     } finally {
         addNotification({ type: 'info', message: '', duration: 1 }); // self-closing
     }
-  }, [apiRequest, addNotification]);
+  }, [apiRequest, addNotification, registerOptimisticUpdate]);
   
   // === DISPATCH FUNCTIONS ===
 
@@ -297,8 +302,9 @@ export const EconomyProvider: React.FC<{ children: ReactNode }> = ({ children })
   }, [apiRequest]);
 
   const updateRewardType = useCallback(async (rewardType: RewardTypeDefinition) => {
+    registerOptimisticUpdate(`rewardType-${rewardType.id}`);
     await apiRequest('PUT', `/api/reward-types/${rewardType.id}`, rewardType);
-  }, [apiRequest]);
+  }, [apiRequest, registerOptimisticUpdate]);
 
   const deleteRewardType = useCallback(async (rewardTypeId: string) => {
     await apiRequest('DELETE', `/api/reward-types`, { ids: [rewardTypeId] });
@@ -313,8 +319,9 @@ export const EconomyProvider: React.FC<{ children: ReactNode }> = ({ children })
   }, [apiRequest]);
 
   const updateMarket = useCallback(async (market: Market) => {
+    registerOptimisticUpdate(`market-${market.id}`);
     await apiRequest('PUT', `/api/markets/${market.id}`, market);
-  }, [apiRequest]);
+  }, [apiRequest, registerOptimisticUpdate]);
 
   const deleteMarket = useCallback(async (marketId: string) => {
     await apiRequest('DELETE', `/api/markets`, { ids: [marketId] });
@@ -329,16 +336,18 @@ export const EconomyProvider: React.FC<{ children: ReactNode }> = ({ children })
   }, [apiRequest]);
 
   const updateMarketsStatus = useCallback(async (marketIds: string[], statusType: 'open' | 'closed') => {
+    marketIds.forEach(id => registerOptimisticUpdate(`market-${id}`));
     await apiRequest('PUT', '/api/markets/bulk-status', { ids: marketIds, statusType });
-  }, [apiRequest]);
+  }, [apiRequest, registerOptimisticUpdate]);
 
   const addGameAsset = useCallback(async (asset: Omit<GameAsset, 'id'|'creatorId'|'createdAt'|'purchaseCount'>) => {
     await apiRequest('POST', '/api/assets', asset);
   }, [apiRequest]);
 
   const updateGameAsset = useCallback(async (asset: GameAsset) => {
+    registerOptimisticUpdate(`gameAsset-${asset.id}`);
     await apiRequest('PUT', `/api/assets/${asset.id}`, asset);
-  }, [apiRequest]);
+  }, [apiRequest, registerOptimisticUpdate]);
   
   const cloneGameAsset = useCallback(async (assetId: string) => {
     await apiRequest('POST', `/api/assets/clone/${assetId}`);

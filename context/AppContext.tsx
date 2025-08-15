@@ -4,6 +4,7 @@
 
 
 
+
 import React, { createContext, useState, useContext, ReactNode, useEffect, useCallback, useMemo, useRef } from 'react';
 import { AppSettings, User, Quest, RewardItem, Guild, Rank, Trophy, UserTrophy, AppMode, Page, IAppData, ShareableAssetType, GameAsset, Role, RewardCategory, AdminAdjustment, AdminAdjustmentType, SystemLog, QuestType, QuestAvailability, AssetPack, ImportResolution, TrophyRequirementType, ThemeDefinition, ChatMessage, SystemNotification, SystemNotificationType, MarketStatus, QuestGroup, BulkQuestUpdates, ScheduledEvent, BugReport, QuestCompletion, BugReportType, PurchaseRequest, PurchaseRequestStatus, Market, RewardTypeDefinition, Rotation, SidebarConfigItem } from '../types';
 import { INITIAL_SETTINGS, INITIAL_RANKS, INITIAL_TROPHIES, INITIAL_THEMES } from '../data/initialData';
@@ -625,9 +626,9 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         }
     };
     const restoreFromBackup = async (backupData: IAppData) => { apiRequest('POST', '/api/data/restore', backupData).then(() => { addNotification({ type: 'success', message: 'Restore successful! App will reload.' }); setTimeout(() => window.location.reload(), 1500); }).catch(() => {}); };
-    const clearAllHistory = () => { /* Server logic needed */ };
+    const clearAllHistory = () => { apiRequest('POST', '/api/actions/clear-history').catch(() => addNotification({type: 'error', message: 'Failed to clear history.'})); };
     const resetAllPlayerData = () => authDispatch.resetAllUsersData();
-    const deleteAllCustomContent = () => { /* Server logic needed */ };
+    const deleteAllCustomContent = () => { apiRequest('POST', '/api/data/delete-custom-content').catch(() => addNotification({type: 'error', message: 'Failed to delete custom content.'})); };
     const uploadFile = async (file: File, category?: string) => {
         const formData = new FormData();
         formData.append('file', file);
@@ -656,7 +657,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
             if (typeof newVal === 'object' && newVal !== null && !Array.isArray(newVal)) {
                 (newSettings[key] as any) = { 
-                    ...(typeof initialVal === 'object' && initialVal !== null ? initialVal : {}), 
+                    ...(typeof initialVal === 'object' && initialVal !== null && !Array.isArray(initialVal) ? initialVal : {}), 
                     ...(newVal as object) 
                 };
             }
@@ -669,7 +670,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         const finalSidebar = INITIAL_SETTINGS.sidebars.main.map((defaultItem: SidebarConfigItem) => {
             if (userItemsById.has(defaultItem.id)) {
                 const userItem = userItemsById.get(defaultItem.id);
-                return { ...defaultItem, ...(userItem || {}) };
+                return { ...defaultItem, ...userItem };
             }
             return defaultItem;
         });

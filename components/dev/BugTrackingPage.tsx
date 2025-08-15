@@ -22,7 +22,7 @@ const BugTrackingPage: React.FC = () => {
     const [deletingIds, setDeletingIds] = useState<string[]>([]);
     const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
     const dropdownRef = useRef<HTMLDivElement | null>(null);
-    const fileInputRef = useRef<HTMLInputElement>(null);
+    const fileInputRef = useRef<HTMLInputElement | null>(null);
     const [importingFileContent, setImportingFileContent] = useState<BugReport[] | null>(null);
     const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
 
@@ -208,29 +208,29 @@ const BugTrackingPage: React.FC = () => {
                                 return (
                                     <tr 
                                         key={report.id} 
-                                        className={`border-b border-stone-700/40 last:border-b-0 transition-opacity ${allLogsCopied ? 'opacity-50 border-l-4 border-green-500' : ''}`}
+                                        className={`border-b border-stone-700/40 last:border-b-0 ${allLogsCopied ? 'border-l-4 border-green-500' : ''}`}
                                         title={allLogsCopied ? "All log entries for this report have been processed." : ""}
                                     >
-                                        <td className="p-4">
+                                        <td className={`p-4 transition-opacity ${allLogsCopied ? 'opacity-50' : ''}`}>
                                             <input type="checkbox" checked={selectedReports.includes(report.id)} onChange={e => handleCheckboxClick(e, report.id)} className="h-4 w-4 rounded text-emerald-600 bg-stone-700 border-stone-600 focus:ring-emerald-500" />
                                         </td>
-                                        <td className="p-4 font-bold">
+                                        <td className={`p-4 font-bold transition-opacity ${allLogsCopied ? 'opacity-50' : ''}`}>
                                             <button onClick={() => setDetailedReportId(report.id)} className="hover:underline hover:text-accent transition-colors">{report.title}</button>
                                         </td>
-                                        <td className="p-4">
+                                        <td className={`p-4 transition-opacity ${allLogsCopied ? 'opacity-50' : ''}`}>
                                             <div className="flex flex-wrap gap-1">
                                                 {(report.tags || []).map(tag => (
                                                     <span key={tag} className={`px-2 py-1 text-xs font-semibold rounded-full ${getTagColor(tag)}`}>{tag}</span>
                                                 ))}
                                             </div>
                                         </td>
-                                        <td className="p-4 text-stone-400">{new Date(report.createdAt).toLocaleDateString()}</td>
+                                        <td className={`p-4 text-stone-400 transition-opacity ${allLogsCopied ? 'opacity-50' : ''}`}>{new Date(report.createdAt).toLocaleDateString()}</td>
                                         <td className="p-4 relative">
                                             <Button variant="secondary" size="sm" onClick={() => setOpenDropdownId(openDropdownId === report.id ? null : report.id)} className="flex items-center gap-1">
                                                 Actions <ChevronDownIcon className="w-4 h-4" />
                                             </Button>
                                             {openDropdownId === report.id && (
-                                                <div ref={dropdownRef} className="absolute right-0 top-full mt-2 w-48 bg-stone-900 border border-stone-700 rounded-lg shadow-xl z-20">
+                                                <div ref={dropdownRef} className="absolute right-0 top-full mt-2 w-48 bg-stone-900 border border-stone-700 rounded-lg shadow-xl z-50">
                                                     <button onClick={() => { setDetailedReportId(report.id); setOpenDropdownId(null); }} className="w-full text-left block px-4 py-2 text-sm text-stone-300 hover:bg-stone-700">
                                                         View Details
                                                     </button>

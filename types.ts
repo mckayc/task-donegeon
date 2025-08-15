@@ -626,6 +626,10 @@ export interface ThemeStyle {
   '--color-accent-light-hue': string;
   '--color-accent-light-saturation': string;
   '--color-accent-light-lightness': string;
+  // New properties for Theme Editor
+  '--color-text-muted-hsl'?: string;
+  '--input-bg-hsl'?: string;
+  '--button-radius'?: string;
 }
 
 export interface ThemeDefinition {

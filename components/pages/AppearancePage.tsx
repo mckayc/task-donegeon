@@ -1,223 +1,252 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
-import { AppSettings, ThemeDefinition, SidebarConfigItem, Page, SidebarLink } from '../../types';
+import { ThemeDefinition, ThemeStyle } from '../../types';
 import Button from '../user-interface/Button';
-import Input from '../user-interface/Input';
 import Card from '../user-interface/Card';
-import ToggleSwitch from '../user-interface/ToggleSwitch';
-import EmojiPicker from '../user-interface/EmojiPicker';
-import { GrabHandleIcon, ArrowLeftIcon, ArrowRightIcon } from '../user-interface/Icons';
+import Input from '../user-interface/Input';
 import { useNotificationsDispatch } from '../../context/NotificationsContext';
+import SimpleColorPicker from '../user-interface/SimpleColorPicker';
+import { getContrast, getWcagRating, parseHslString } from '../../utils/colors';
 import { useAuthState } from '../../context/AuthContext';
 import { useUIState } from '../../context/UIStateContext';
+import ConfirmDialog from '../user-interface/ConfirmDialog';
 
-type SidebarKey = keyof AppSettings['sidebars'];
+const FONT_OPTIONS = [
+    "'MedievalSharp', cursive", "'Uncial Antiqua', cursive", "'Press Start 2P', cursive", "'IM Fell English SC', serif", 
+    "'Cinzel Decorative', cursive", "'Cinzel', serif", "'Comic Neue', cursive", "'Special Elite', cursive", "'Metamorphous', serif", 
+    "'Almendra', serif", "'Almendra Display', serif", "'Almendra SC', serif", "'Butcherman', cursive", 
+    "'Creepster', cursive", "'Eater', cursive", "'Fondamento', cursive", "'Fruktur', cursive", "'Griffy', cursive", 
+    "'Henny Penny', cursive", "'New Rocker', cursive", "'Nosifer', cursive", "'Pirata One', cursive", "'Rye', cursive", 
+    "'Sancreek', cursive", "'Smokum', cursive", "'Roboto', sans-serif", "'Lora', serif", "'Vollkorn', serif", 
+    "'EB Garamond', serif", "'Cormorant Garamond', serif", "'Crimson Pro', serif"
+];
+
+const CollapsibleSection: React.FC<{ title: string; children: React.ReactNode; defaultOpen?: boolean; }> = ({ title, children, defaultOpen = false }) => {
+    const [isOpen, setIsOpen] = useState(defaultOpen);
+    return (
+        <div className="border-b border-stone-700/60 last:border-b-0">
+            <button
+                className="w-full flex justify-between items-center text-left py-4"
+                onClick={() => setIsOpen(!isOpen)}
+            >
+                <h3 className="text-xl font-semibold text-stone-200">{title}</h3>
+                <span className={`transform transition-transform ${isOpen ? 'rotate-180' : ''}`}>▼</span>
+            </button>
+            {isOpen && <div className="pb-6 space-y-4">{children}</div>}
+        </div>
+    );
+};
+
+const ThemePreview: React.FC<{ themeStyles: React.CSSProperties }> = ({ themeStyles }) => {
+    const { settings } = useAppState();
+    return (
+        <div style={themeStyles} className="p-4 rounded-lg transition-all duration-300 flex flex-col border-2 border-stone-700 h-full" data-theme>
+             <div className="flex-grow p-4 rounded-lg space-y-4" style={{ backgroundColor: 'hsl(var(--color-bg-tertiary))' }}>
+                <h1>{settings.terminology.appName}</h1>
+                <p>This is a preview of your theme. The quick brown fox jumps over the lazy dog.</p>
+                <div className="flex gap-4">
+                    <Button variant="default">Primary</Button>
+                    <Button variant="secondary">Secondary</Button>
+                </div>
+                <Card title="Sample Card" className="mt-4">
+                    <p>This card uses the secondary background color.</p>
+                </Card>
+             </div>
+        </div>
+    );
+};
+
+const ContrastChecker: React.FC<{ styles: ThemeStyle }> = ({ styles }) => {
+    const pairs = useMemo(() => {
+        const primaryHsl = `${styles['--color-primary-hue']} ${styles['--color-primary-saturation']} ${styles['--color-primary-lightness']}`;
+        return [
+            { label: "Text on Primary BG", fg: styles['--color-text-primary-hsl'], bg: styles['--color-bg-primary-hsl'] },
+            { label: "Muted Text on Primary BG", fg: styles['--color-text-muted-hsl'] || styles['--color-text-secondary-hsl'], bg: styles['--color-bg-primary-hsl'] },
+            { label: "Text on Card BG", fg: styles['--color-text-primary-hsl'], bg: styles['--color-bg-secondary-hsl'] },
+            { label: "Button Text on Primary Button", fg: '210 40% 98%', bg: primaryHsl }
+        ];
+    }, [styles]);
+
+    return (
+        <div className="space-y-2">
+            {pairs.map(pair => {
+                const ratio = getContrast(pair.fg, `hsl(${pair.bg})`);
+                const rating = getWcagRating(ratio);
+                return (
+                    <div key={pair.label} className="flex justify-between items-center text-sm p-2 bg-stone-900/40 rounded-md">
+                        <span className="text-stone-300">{pair.label}</span>
+                        <div className="flex items-center gap-2">
+                            <span className={`font-bold ${rating === 'Fail' ? 'text-red-400' : 'text-green-400'}`}>{ratio.toFixed(2)}:1</span>
+                            <span className={`px-2 py-0.5 text-xs font-bold rounded-full ${rating === 'Fail' ? 'bg-red-500/20 text-red-300' : 'bg-green-500/20 text-green-300'}`}>{rating}</span>
+                        </div>
+                    </div>
+                );
+            })}
+        </div>
+    );
+};
 
 const AppearancePage: React.FC = () => {
-    const { settings, themes: allThemes, guilds } = useAppState();
-    const { updateSettings } = useAppDispatch();
+    const { settings, themes } = useAppState();
+    const { addTheme, updateTheme, deleteTheme } = useAppDispatch();
     const { addNotification } = useNotificationsDispatch();
     const { currentUser } = useAuthState();
     const { appMode } = useUIState();
-    
-    // Initialize state once from settings, preventing resets on re-render from sync
-    const [formState, setFormState] = useState<AppSettings>(() => JSON.parse(JSON.stringify(settings)));
-    
-    const [activeTab, setActiveTab] = useState<SidebarKey>('main');
-    const [pickerOpenFor, setPickerOpenFor] = useState<number | null>(null);
+    const { guilds } = useAppState();
 
-    const dragItem = useRef<number | null>(null);
-    const dragOverItem = useRef<number | null>(null);
+    const [selectedThemeId, setSelectedThemeId] = useState<string>(themes[0]?.id || 'new');
+    const [formData, setFormData] = useState<ThemeDefinition | null>(null);
+    const [deletingTheme, setDeletingTheme] = useState<ThemeDefinition | null>(null);
     
-    const applyThemeStyles = (themeId: string) => {
-        const theme = allThemes.find(t => t.id === themeId);
-        if (theme) {
-            Object.entries(theme.styles).forEach(([key, value]) => {
+    // Set initial form data based on selected theme
+    useEffect(() => {
+        const themeToEdit = themes.find(t => t.id === selectedThemeId);
+        // Use emerald as base for any missing styles
+        const emeraldTheme = themes.find(t => t.id === 'emerald');
+        const defaultStyles = emeraldTheme?.styles || {} as ThemeStyle;
+
+        const newPropertyDefaults = {
+            '--color-text-muted-hsl': defaultStyles['--color-text-secondary-hsl'],
+            '--input-bg-hsl': '240 10% 25%',
+            '--button-radius': '0.375rem',
+        };
+
+        if (themeToEdit) {
+            // Copy theme and merge defaults for any missing new properties
+            const newFormData = JSON.parse(JSON.stringify(themeToEdit));
+            newFormData.styles = { ...newPropertyDefaults, ...newFormData.styles };
+            setFormData(newFormData);
+        } else {
+            // Create new theme based on emerald, but with our new property defaults
+            setFormData({
+                id: 'new', name: 'New Custom Theme', isCustom: true,
+                styles: {
+                    ...defaultStyles,
+                    ...newPropertyDefaults,
+                } as ThemeStyle
+            });
+        }
+    }, [selectedThemeId, themes]);
+    
+    // Apply live preview styles
+    useEffect(() => {
+        if (formData) {
+            Object.entries(formData.styles).forEach(([key, value]) => {
                 document.documentElement.style.setProperty(key, value as string);
             });
-            document.body.dataset.theme = themeId;
+            document.body.dataset.theme = formData.id;
         }
-    };
+    }, [formData]);
 
-    // Effect for live previewing the theme
+    // Revert to saved theme on unmount
     useEffect(() => {
-        if (formState.theme) {
-            applyThemeStyles(formState.theme);
-        }
-
-        // Cleanup function to revert to the actual saved theme on unmount
         return () => {
             let activeThemeId: string | undefined = settings.theme;
             if (appMode.mode === 'guild') {
                 const guild = guilds.find(g => g.id === appMode.guildId);
-                if (guild?.themeId) {
-                    activeThemeId = guild.themeId;
-                } else if (currentUser?.theme) {
-                    activeThemeId = currentUser.theme;
-                }
+                activeThemeId = guild?.themeId || currentUser?.theme || settings.theme;
             } else {
-                if (currentUser?.theme) {
-                    activeThemeId = currentUser.theme;
-                }
+                activeThemeId = currentUser?.theme || settings.theme;
             }
-            if (activeThemeId) {
-                applyThemeStyles(activeThemeId);
-            } else {
-                // Revert to original settings default if no user/guild theme
-                applyThemeStyles(settings.theme);
+            const theme = themes.find(t => t.id === activeThemeId);
+            if (theme) {
+                Object.entries(theme.styles).forEach(([key, value]) => {
+                    document.documentElement.style.setProperty(key, value as string);
+                });
+                document.body.dataset.theme = theme.id;
             }
         };
-    }, [formState.theme, allThemes, settings.theme, currentUser?.theme, appMode, guilds]);
+    }, []);
 
+    const handleStyleChange = (key: keyof ThemeStyle, value: string) => {
+        if (formData) setFormData(p => p ? { ...p, styles: { ...p.styles, [key]: value } } : null);
+    };
 
     const handleSave = () => {
-        updateSettings(formState);
-        addNotification({ type: 'success', message: 'Appearance settings saved successfully!' });
+        if (!formData || !formData.name.trim()) return;
+        if (formData.id === 'new') addTheme({ name: formData.name, isCustom: true, styles: formData.styles });
+        else updateTheme(formData);
+        addNotification({ type: 'success', message: 'Theme saved!' });
     };
 
-    const handleSidebarItemChange = (index: number, field: keyof SidebarLink, value: string | boolean) => {
-        const newSidebarConfig = [...formState.sidebars[activeTab]];
-        const item = newSidebarConfig[index];
-        if (item.type === 'link') {
-            (item as any)[field] = value;
-            setFormState(p => ({ ...p, sidebars: { ...p.sidebars, [activeTab]: newSidebarConfig }}));
-        }
-    };
-    
-    const handleIndent = (index: number) => {
-        const newSidebarConfig = [...formState.sidebars[activeTab]];
-        const item = newSidebarConfig[index];
-        const prevItem = newSidebarConfig[index - 1];
-        if (item.type === 'link' && index > 0 && prevItem) {
-            item.level = Math.min(item.level + 1, prevItem.level + 1);
-            setFormState(p => ({ ...p, sidebars: { ...p.sidebars, [activeTab]: newSidebarConfig }}));
-        }
-    };
-
-    const handleOutdent = (index: number) => {
-        const newSidebarConfig = [...formState.sidebars[activeTab]];
-        const item = newSidebarConfig[index];
-        if (item.type === 'link' && item.level > 0) {
-            item.level = item.level - 1;
-            setFormState(p => ({ ...p, sidebars: { ...p.sidebars, [activeTab]: newSidebarConfig }}));
-        }
-    };
-
-    const handleDragStart = (e: React.DragEvent<HTMLDivElement>, position: number) => {
-        dragItem.current = position;
-        e.dataTransfer.effectAllowed = 'move';
-        e.dataTransfer.setData('text/html', e.currentTarget.innerHTML); // for Firefox
-        setTimeout(() => e.currentTarget.classList.add('opacity-50'), 0);
-    };
-
-    const handleDragEnter = (e: React.DragEvent<HTMLDivElement>, position: number) => {
-        dragOverItem.current = position;
-    };
-    
-    const handleDragEnd = (e: React.DragEvent<HTMLDivElement>) => {
-        e.currentTarget.classList.remove('opacity-50');
-        dragItem.current = null;
-        dragOverItem.current = null;
-    };
-
-    const handleDrop = () => {
-        if (dragItem.current === null || dragOverItem.current === null || dragItem.current === dragOverItem.current) return;
-        
-        const newSidebarConfig = [...formState.sidebars[activeTab]];
-        const dragItemContent = newSidebarConfig.splice(dragItem.current, 1)[0];
-        newSidebarConfig.splice(dragOverItem.current, 0, dragItemContent);
-        
-        setFormState(p => ({ ...p, sidebars: { ...p.sidebars, [activeTab]: newSidebarConfig }}));
-    };
-
-    const themes: ThemeDefinition[] = allThemes;
-
-    const renderSidebarEditor = () => {
-        const items = formState.sidebars[activeTab];
-        if (!items) return null; // Guard against empty sidebar configs
-        return (
-            <div className="space-y-2">
-                {items.map((item, index) => (
-                     <div
-                        key={item.id}
-                        className="flex items-center gap-2 p-2 rounded-md border border-stone-700 bg-stone-800/50"
-                        draggable={item.type === 'link'}
-                        onDragStart={item.type === 'link' ? (e) => handleDragStart(e, index) : undefined}
-                        onDragEnter={item.type === 'link' ? (e) => handleDragEnter(e, index) : undefined}
-                        onDragEnd={item.type === 'link' ? handleDragEnd : undefined}
-                        onDragOver={(e) => e.preventDefault()}
-                        onDrop={item.type === 'link' ? handleDrop : undefined}
-                        style={{ marginLeft: `${item.level * 2}rem`}}
-                     >
-                        {item.type === 'link' && <GrabHandleIcon className="w-5 h-5 text-stone-500 cursor-grab" />}
-                        {item.type === 'link' ? (
-                            <>
-                                <div className="relative">
-                                    <button type="button" onClick={() => setPickerOpenFor(pickerOpenFor === index ? null : index)} className="w-12 h-10 text-xl p-1 rounded-md bg-stone-700 hover:bg-stone-600 flex items-center justify-center">
-                                        {item.emoji}
-                                    </button>
-                                    {pickerOpenFor === index && <EmojiPicker onSelect={(emoji: string) => handleSidebarItemChange(index, 'emoji', emoji)} onClose={() => setPickerOpenFor(null)} />}
-                                </div>
-                                <span className="font-semibold text-stone-200 flex-grow">{item.termKey ? formState.terminology[item.termKey] : item.id}</span>
-                                <button type="button" onClick={() => handleOutdent(index)} disabled={item.level === 0} className="p-1 rounded-md hover:bg-stone-700 disabled:opacity-30 disabled:cursor-not-allowed"><ArrowLeftIcon className="w-5 h-5" /></button>
-                                <button type="button" onClick={() => handleIndent(index)} disabled={index === 0} className="p-1 rounded-md hover:bg-stone-700 disabled:opacity-30 disabled:cursor-not-allowed"><ArrowRightIcon className="w-5 h-5" /></button>
-                                <ToggleSwitch enabled={item.isVisible} setEnabled={(val: boolean) => handleSidebarItemChange(index, 'isVisible', val)} label="" />
-                            </>
-                        ) : (
-                            item.type === 'header' && <h4 className="font-bold text-accent flex-grow pl-2">{item.title}</h4>
-                        )}
-                     </div>
-                ))}
-            </div>
-        )
-    };
+    if (!formData) return null;
 
     return (
         <div className="space-y-8 relative">
-            <div className="sticky top-0 z-10 -mx-8 -mt-8 px-8 pt-6 pb-4 mb-2" style={{ backgroundColor: 'hsl(var(--color-bg-tertiary))', borderBottom: '1px solid hsl(var(--color-border))' }}>
-                <div className="flex justify-end items-center">
-                    <Button onClick={handleSave}>Save Appearance Settings</Button>
+            <div className="sticky top-0 z-10 -mx-8 -mt-8 px-8 pt-6 pb-4 mb-2 bg-stone-800/80 backdrop-blur-sm border-b border-stone-700/60">
+                <div className="flex justify-between items-center">
+                    <h1 className="text-4xl font-medieval text-stone-100">Appearance Settings</h1>
+                    <Button onClick={handleSave}>{formData.id === 'new' ? 'Create Theme' : 'Save Changes'}</Button>
                 </div>
             </div>
 
-            <Card title="General Appearance">
-                <div className="space-y-6">
-                    <Input label="App Name" value={formState.terminology.appName} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormState(p => ({...p, terminology: { ...p.terminology, appName: e.target.value}}))} />
-                    <div>
-                        <label className="block text-sm font-medium mb-2" style={{ color: 'hsl(var(--color-text-secondary))' }}>Default Theme</label>
-                        <div className="flex flex-wrap gap-4">
-                            {themes.map(theme => {
-                                const themeStyle = {
-                                    fontFamily: theme.styles['--font-display'],
-                                    backgroundColor: `hsl(${theme.styles['--color-primary-hue']} ${theme.styles['--color-primary-saturation']} ${theme.styles['--color-primary-lightness']})`
-                                };
-                                return (
-                                <button
-                                    key={theme.id}
-                                    type="button"
-                                    onClick={() => setFormState(p => ({...p, theme: theme.id}))}
-                                    className={`capitalize w-24 h-16 rounded-lg font-bold text-white flex items-center justify-center transition-all ${formState.theme === theme.id ? 'ring-2 ring-offset-2 ring-offset-stone-800 ring-white' : ''}`}
-                                    style={themeStyle}
-                                    data-log-id={`appearance-theme-select-${theme.id}`}
-                                >
-                                    {theme.name}
-                                </button>
-                                )
-                            })}
-                        </div>
-                    </div>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
+                <div className="lg:sticky top-28 self-start">
+                    <ThemePreview themeStyles={formData.styles as React.CSSProperties} />
                 </div>
-            </Card>
 
-            <Card>
-                 <div className="border-b border-stone-700 mb-6">
-                    <nav className="-mb-px flex space-x-6">
-                        <button onClick={() => setActiveTab('main')} className={`whitespace-nowrap pb-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'main' ? 'border-emerald-500 text-emerald-400' : 'border-transparent text-stone-400 hover:text-stone-200'}`}>Main Sidebar</button>
-                    </nav>
+                <div className="space-y-6">
+                    <Card>
+                        <CollapsibleSection title="General" defaultOpen>
+                            <div className="space-y-4">
+                                <Input as="select" label="Theme to Edit" value={selectedThemeId} onChange={e => setSelectedThemeId(e.target.value)}>
+                                    <optgroup label="Custom Themes">
+                                        <option value="new">-- Create New --</option>
+                                        {themes.filter(t => t.isCustom).map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+                                    </optgroup>
+                                    <optgroup label="Premade Themes">
+                                        {themes.filter(t => !t.isCustom).map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+                                    </optgroup>
+                                </Input>
+                                <Input label="Theme Name" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} disabled={!formData.isCustom} />
+                                {formData.isCustom && formData.id !== 'new' && <Button variant="destructive" size="sm" onClick={() => setDeletingTheme(formData)}>Delete Theme</Button>}
+                            </div>
+                        </CollapsibleSection>
+                        <CollapsibleSection title="Colors">
+                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <SimpleColorPicker label="Primary Accent" hslValue={`${formData.styles['--color-primary-hue']} ${formData.styles['--color-primary-saturation']} ${formData.styles['--color-primary-lightness']}`} onChange={v => {
+                                    const { h, s, l } = parseHslString(v);
+                                    handleStyleChange('--color-primary-hue', String(h));
+                                    handleStyleChange('--color-primary-saturation', `${s}%`);
+                                    handleStyleChange('--color-primary-lightness', `${l}%`);
+                                }} />
+                                <SimpleColorPicker label="Secondary Accent" hslValue={`${formData.styles['--color-accent-hue']} ${formData.styles['--color-accent-saturation']} ${formData.styles['--color-accent-lightness']}`} onChange={v => {
+                                    const { h, s, l } = parseHslString(v);
+                                    handleStyleChange('--color-accent-hue', String(h));
+                                    handleStyleChange('--color-accent-saturation', `${s}%`);
+                                    handleStyleChange('--color-accent-lightness', `${l}%`);
+                                }} />
+                                <SimpleColorPicker label="Main Background" hslValue={formData.styles['--color-bg-primary-hsl']} onChange={v => handleStyleChange('--color-bg-primary-hsl', v)} />
+                                <SimpleColorPicker label="Card Background" hslValue={formData.styles['--color-bg-secondary-hsl']} onChange={v => handleStyleChange('--color-bg-secondary-hsl', v)} />
+                                <SimpleColorPicker label="Primary Text" hslValue={formData.styles['--color-text-primary-hsl']} onChange={v => handleStyleChange('--color-text-primary-hsl', v)} />
+                                <SimpleColorPicker label="Muted Text" hslValue={formData.styles['--color-text-muted-hsl'] || ''} onChange={v => handleStyleChange('--color-text-muted-hsl', v)} />
+                                <SimpleColorPicker label="Border" hslValue={formData.styles['--color-border-hsl']} onChange={v => handleStyleChange('--color-border-hsl', v)} />
+                                <SimpleColorPicker label="Input Background" hslValue={formData.styles['--input-bg-hsl'] || ''} onChange={v => handleStyleChange('--input-bg-hsl', v)} />
+                             </div>
+                        </CollapsibleSection>
+                        <CollapsibleSection title="Typography">
+                            <Input as="select" label="Heading Font" value={formData.styles['--font-display']} onChange={e => handleStyleChange('--font-display', e.target.value)}>
+                                {FONT_OPTIONS.map(f => <option key={f} value={f}>{f.split(',')[0].replace(/'/g, '')}</option>)}
+                            </Input>
+                            <Input as="select" label="Body Font" value={formData.styles['--font-body']} onChange={e => handleStyleChange('--font-body', e.target.value)}>
+                                {FONT_OPTIONS.map(f => <option key={f} value={f}>{f.split(',')[0].replace(/'/g, '')}</option>)}
+                            </Input>
+                            <div><label className="flex justify-between text-sm">H1 Size <span>({formData.styles['--font-size-h1']})</span></label><input type="range" min="1.5" max="4" step="0.1" value={parseFloat(formData.styles['--font-size-h1'])} onChange={e => handleStyleChange('--font-size-h1', `${e.target.value}rem`)} className="w-full" /></div>
+                            <div><label className="flex justify-between text-sm">Body Size <span>({formData.styles['--font-size-body']})</span></label><input type="range" min="0.8" max="1.2" step="0.05" value={parseFloat(formData.styles['--font-size-body'])} onChange={e => handleStyleChange('--font-size-body', `${e.target.value}rem`)} className="w-full" /></div>
+                        </CollapsibleSection>
+                        <CollapsibleSection title="Components">
+                            <div><label className="flex justify-between text-sm">Button Radius <span>({formData.styles['--button-radius']})</span></label><input type="range" min="0" max="2" step="0.1" value={parseFloat(formData.styles['--button-radius'] || '0')} onChange={e => handleStyleChange('--button-radius', `${e.target.value}rem`)} className="w-full" /></div>
+                        </CollapsibleSection>
+                         <CollapsibleSection title="Accessibility">
+                             <ContrastChecker styles={formData.styles} />
+                        </CollapsibleSection>
+                    </Card>
                 </div>
-                <p className="text-stone-400 text-sm mb-4">Drag and drop to reorder links. Use arrows to create nested groups.</p>
-                {renderSidebarEditor()}
-            </Card>
+            </div>
+            <ConfirmDialog isOpen={!!deletingTheme} onClose={() => setDeletingTheme(null)} onConfirm={() => {
+                if (deletingTheme) { deleteTheme(deletingTheme.id); setSelectedThemeId('emerald'); }
+                setDeletingTheme(null);
+            }} title="Delete Theme" message={`Are you sure you want to delete "${deletingTheme?.name}"?`} />
         </div>
     );
 };

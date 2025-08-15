@@ -154,19 +154,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       let loadedSettingsResult: AppSettings | undefined = undefined;
 
       if (!isDelta) {
-          // --- Sidebar Migration Logic ---
-          const savedSidebarConfig = savedSettings.sidebars?.main || [];
-          const defaultSidebarConfig = INITIAL_SETTINGS.sidebars.main;
-          const savedIds = new Set(savedSidebarConfig.map(item => item.id));
-          const missingItems = defaultSidebarConfig.filter(item => !savedIds.has(item.id));
-          
-          let finalSidebarConfig = savedSidebarConfig;
-          if (missingItems.length > 0) {
-              finalSidebarConfig = [...savedSidebarConfig, ...missingItems];
-              settingsUpdated = true;
-              console.log(`Migrating sidebar: Added ${missingItems.length} new items.`);
-          }
-
           const loadedSettings: AppSettings = {
             ...INITIAL_SETTINGS, ...savedSettings,
             questDefaults: { ...INITIAL_SETTINGS.questDefaults, ...(savedSettings.questDefaults || {}) },
@@ -177,7 +164,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             googleCalendar: { ...INITIAL_SETTINGS.googleCalendar, ...(savedSettings.googleCalendar || {}) },
             developerMode: { ...INITIAL_SETTINGS.developerMode, ...(savedSettings.developerMode || {}) },
             chat: { ...INITIAL_SETTINGS.chat, ...(savedSettings.chat || {}) },
-            sidebars: { main: finalSidebarConfig },
             terminology: { ...INITIAL_SETTINGS.terminology, ...(savedSettings.terminology || {}) },
             rewardValuation: { ...INITIAL_SETTINGS.rewardValuation, ...(savedSettings.rewardValuation || {}) },
           };

@@ -58,7 +58,7 @@ const MainLayout: React.FC = () => {
   const ADMIN_ONLY_PAGES: Page[] = [
     'Manage Users', 'Manage Rewards', 'Manage Quests', 'Manage Quest Groups', 'Manage Goods', 'Manage Markets',
     'Manage Guilds', 'Manage Ranks', 'Manage Trophies', 'Settings', 'Suggestion Engine',
-    'Appearance', 'Theme Editor', 'Object Exporter', 'Asset Manager', 'Backup & Import', 'Asset Library',
+    'Appearance', 'Object Exporter', 'Asset Manager', 'Backup & Import', 'Asset Library',
     'Manage Events', 'Bug Tracker'
   ];
   const GATEKEEPER_PAGES: Page[] = ['Approvals'];
@@ -136,7 +136,6 @@ const MainLayout: React.FC = () => {
       case 'Approvals': return <ApprovalsPage />;
       case 'Settings': return <SettingsPage />;
       case 'Appearance': return <AppearancePage />;
-      case 'Theme Editor': return <AppearancePage />;
       case 'Object Exporter': return <ObjectExporterPage />;
       case 'Asset Manager': return <AssetManagerPage />;
       case 'Backup & Import': return <BackupAndImportPage />;

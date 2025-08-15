@@ -23,7 +23,7 @@ const App: React.FC = () => {
 
   useEffect(() => {
     // If we are on a page that handles its own theme preview, don't apply the global theme.
-    if (activePage === 'Appearance' || activePage === 'Theme Editor') {
+    if (activePage === 'Appearance') {
         return;
     }
 

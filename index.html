@@ -13,7 +13,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Almendra+Display&family=Almendra+SC&family=Almendra&family=Butcherman&family=Cinzel+Decorative&family=Cinzel&family=Comic+Neue:wght@400;700&family=Cormorant+Garamond&family=Creepster&family=Crimson+Pro&family=EB+Garamond&family=Eater&family=Fondamento&family=Fruktur&family=Griffy&family=Henny+Penny&family=IM+Fell+English+SC&family=Lora&family=MedievalSharp&family=Metamorphous&family=New+Rocker&family=Nosifer&family=Pirata+One&family=Press+Start+2P&family=Roboto:wght@400;500;700&family=Rye&family=Sancreek&family=Smokum&family=Special+Elite&family=Uncial+Antiqua&family=Vollkorn&display=swap" rel="stylesheet">
     <style>
       .font-medieval {
-        font-family: var(--font-display);
+        font-family: var(--font-family-heading);
       }
       /* For hiding scrollbars */
       .scrollbar-hide::-webkit-scrollbar {
@@ -37,95 +37,92 @@
       /* THEME VARIABLES */
       :root {
         /* FONT DEFAULTS */
-        --font-display: 'MedievalSharp', cursive;
-        --font-body: 'Roboto', sans-serif;
-        --font-label: 'IM Fell English SC', serif;
-        --font-span: 'Roboto', sans-serif;
-        --font-button: 'Roboto', sans-serif;
+        --font-family-heading: 'MedievalSharp', cursive;
+        --font-family-body: 'Roboto', sans-serif;
+        --font-weight-normal: 400;
+        --font-weight-bold: 700;
+        --line-height: 1.5;
+
         --font-size-h1: 2.25rem;
         --font-size-h2: 1.75rem;
         --font-size-h3: 1.5rem;
         --font-size-body: 1rem;
-        --font-size-label: 1rem;
-        --font-size-span: 1rem;
-        --font-size-button: 1rem;
-        
-        /* Original Theme Colors */
-        --color-bg-primary-hsl: 224 71% 4%;    /* stone-950 */
-        --color-bg-secondary-hsl: 224 39% 10%; /* stone-900 */
-        --color-bg-tertiary-hsl: 240 10% 19%;  /* stone-800 */
-        --color-text-primary-hsl: 240 8% 90%;   /* stone-200 */
-        --color-text-secondary-hsl: 240 6% 65%; /* stone-400 */
-        --color-border-hsl: 240 6% 30%; /* stone-700/60 */
-        --color-primary-hue: 158; --color-primary-saturation: 84%; --color-primary-lightness: 39%;
-        
-        /* New Per-Element Colors */
-        --color-h1: var(--color-text-primary-hsl);
-        --color-h2: var(--color-text-primary-hsl);
-        --color-h3: var(--color-text-primary-hsl);
-        --color-body: var(--color-text-primary-hsl);
-        --color-label: var(--color-text-secondary-hsl);
-        --color-span: var(--color-text-secondary-hsl);
+        --font-size-small: 0.875rem;
 
-        /* ShadCN/UI Theme Variables */
+        /* COLOR DEFAULTS */
+        --color-primary-hsl: 158 84% 39%;
+        --color-secondary-hsl: 204 85% 54%;
+        --color-bg-primary-hsl: 224 71% 4%;
+        --color-bg-secondary-hsl: 224 39% 10%;
+        --color-bg-tertiary-hsl: 240 10% 19%;
+        --color-text-primary-hsl: 240 8% 90%;
+        --color-text-secondary-hsl: 240 6% 65%;
+        --color-text-muted-hsl: 240 5% 50%;
+        --color-link-hsl: 202 90% 70%;
+        --color-link-hover-hsl: 202 80% 60%;
+        --color-border-hsl: 240 6% 30%;
+
+        /* COMPONENT DEFAULTS */
+        --button-radius: 0.5rem;
+        --input-bg-hsl: var(--color-bg-tertiary-hsl);
+        --input-border-hsl: var(--color-border-hsl);
+        --input-focus-ring-hsl: var(--color-primary-hsl);
+
+        /* NAVIGATION DEFAULTS */
+        --nav-header-bg-hsl: 224 39% 10%;
+        --nav-sidebar-bg-hsl: 224 71% 4%;
+
+        /* SHADOW DEFAULTS */
+        --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.1);
+        --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.15), 0 2px 4px -2px rgb(0 0 0 / 0.15);
+        --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.2), 0 4px 6px -4px rgb(0 0 0 / 0.2);
+
+        /* ShadCN/UI Theme Variables - Derived */
         --background: var(--color-bg-primary-hsl);
         --foreground: var(--color-text-primary-hsl);
         --card: var(--color-bg-secondary-hsl);
         --card-foreground: var(--color-text-primary-hsl);
         --popover: var(--color-bg-primary-hsl);
         --popover-foreground: var(--color-text-primary-hsl);
-        --primary: var(--color-primary-hue) var(--color-primary-saturation) var(--color-primary-lightness);
+        --primary: var(--color-primary-hsl);
         --primary-foreground: 210 40% 98%;
-        --secondary: var(--color-bg-secondary-hsl);
-        --secondary-foreground: var(--color-text-primary-hsl);
+        --secondary: var(--color-secondary-hsl);
+        --secondary-foreground: 210 40% 98%;
         --muted: var(--color-bg-tertiary-hsl);
-        --muted-foreground: var(--color-text-secondary-hsl);
-        --accent: var(--color-primary-hue) var(--color-primary-saturation) 45%;
+        --muted-foreground: var(--color-text-muted-hsl);
+        --accent: var(--color-primary-hsl);
         --accent-foreground: 210 40% 98%;
         --destructive: 0 84.2% 60.2%;
         --destructive-foreground: 210 40% 98%;
         --border: var(--color-border-hsl);
-        --input: 240 6% 30%;
-        --ring: 158 84% 45%;
-        --radius: 0.5rem;
+        --input: var(--input-border-hsl);
+        --ring: var(--input-focus-ring-hsl);
+        --radius: var(--button-radius);
       }
 
       body {
-        font-family: var(--font-body);
+        font-family: var(--font-family-body);
         font-size: var(--font-size-body);
+        font-weight: var(--font-weight-normal);
+        line-height: var(--line-height);
         background-color: hsl(var(--background));
-        color: hsl(var(--color-body));
+        color: hsl(var(--foreground));
       }
       
       body[data-theme] h1, 
       body[data-theme] h2, 
       body[data-theme] h3 {
-        font-family: var(--font-display);
+        font-family: var(--font-family-heading);
+        font-weight: var(--font-weight-bold);
       }
-      body[data-theme] h1 { font-size: var(--font-size-h1); color: hsl(var(--color-h1)); }
-      body[data-theme] h2 { font-size: var(--font-size-h2); color: hsl(var(--color-h2)); }
-      body[data-theme] h3 { font-size: var(--font-size-h3); color: hsl(var(--color-h3)); }
-
-      body[data-theme] p {
-        font-family: var(--font-body);
-        font-size: var(--font-size-body);
-        color: hsl(var(--color-body));
-      }
-      body[data-theme] span {
-        font-family: var(--font-span);
-        font-size: var(--font-size-span);
-        color: hsl(var(--color-span));
-      }
-      body[data-theme] label {
-        font-family: var(--font-label);
-        font-size: var(--font-size-label);
-        color: hsl(var(--color-label));
-      }
-      body[data-theme] button {
-         font-family: var(--font-button);
-         font-size: var(--font-size-button);
-         font-weight: 500;
-      }
+      body[data-theme] h1 { font-size: var(--font-size-h1); }
+      body[data-theme] h2 { font-size: var(--font-size-h2); }
+      body[data-theme] h3 { font-size: var(--font-size-h3); }
+      body[data-theme] p { color: hsl(var(--foreground)); }
+      body[data-theme] small { font-size: var(--font-size-small); color: hsl(var(--muted-foreground)); }
+      body[data-theme] label { color: hsl(var(--color-text-secondary-hsl)); }
+      body[data-theme] a { color: hsl(var(--color-link-hsl)); }
+      body[data-theme] a:hover { color: hsl(var(--color-link-hover-hsl)); }
       
       @keyframes fadeInOut {
         0% { opacity: 0; transform: translateY(5px); }

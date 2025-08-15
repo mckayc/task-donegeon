@@ -28,11 +28,11 @@ const INITIAL_MAIN_SIDEBAR_CONFIG = [
     { type: 'link', id: 'Manage Ranks', emoji: '🏅', isVisible: true, level: 1, role: 'Donegeon Master', termKey: 'link_manage_ranks' },
     { type: 'link', id: 'Manage Rewards', emoji: '💎', isVisible: true, level: 1, role: 'Donegeon Master', termKey: 'link_manage_rewards' },
     { type: 'link', id: 'Manage Events', emoji: '🎉', isVisible: true, level: 1, role: 'Donegeon Master', termKey: 'link_manage_events' },
+    { type: 'link', id: 'Appearance', emoji: '🖌️', isVisible: true, level: 1, role: 'Donegeon Master', termKey: 'link_appearance' },
     { type: 'header', id: 'header-admin-system', title: 'System Tools', emoji: '🛠️', level: 0, role: 'Donegeon Master', isVisible: true },
     { type: 'link', id: 'Asset Manager', emoji: '🖼️', isVisible: true, level: 1, role: 'Donegeon Master', termKey: 'link_asset_manager' },
     { type: 'link', id: 'Backup & Import', emoji: '💾', isVisible: true, level: 1, role: 'Donegeon Master', termKey: 'link_backup_import' },
     { type: 'link', id: 'Object Exporter', emoji: '🗂️', isVisible: true, level: 1, role: 'Donegeon Master', termKey: 'link_object_exporter' },
-    { type: 'link', id: 'Appearance', emoji: '🖌️', isVisible: true, level: 1, role: 'Donegeon Master', termKey: 'link_appearance' },
     { type: 'link', id: 'Asset Library', emoji: '📚', isVisible: true, level: 1, role: 'Donegeon Master', termKey: 'link_asset_library' },
     { type: 'link', id: 'Suggestion Engine', emoji: '✨', isVisible: true, level: 1, role: 'Donegeon Master', termKey: 'link_suggestion_engine' },
     { type: 'link', id: 'Bug Tracker', emoji: '🐞', isVisible: true, level: 1, role: 'Donegeon Master', termKey: 'link_bug_tracker' },
@@ -102,10 +102,9 @@ const INITIAL_SETTINGS = {
       link_manage_items: 'Manage Goods', link_manage_markets: 'Manage Markets',
       link_manage_rewards: 'Manage Rewards', link_manage_ranks: 'Manage Ranks',
       link_manage_trophies: 'Manage Trophies', link_manage_events: 'Manage Events',
-      link_theme_editor: 'Theme Editor', link_approvals: 'Approvals',
+      link_appearance: 'Sidebar: Appearance', link_approvals: 'Approvals',
       link_manage_users: 'Manage Users', link_manage_guilds: 'Manage Guilds',
       link_suggestion_engine: 'Suggestion Engine',
-      link_appearance: 'Appearance',
       link_object_exporter: 'Object Exporter',
       link_asset_manager: 'Asset Manager',
       link_backup_import: 'Backup & Import',
@@ -306,23 +305,14 @@ const rawThemes = {
   eerie: { '--font-display': "'Metamorphous', serif", '--font-body': "'Roboto', sans-serif", '--font-label': "'IM Fell English SC', serif", '--font-span': "'Roboto', sans-serif", '--font-button': "'Roboto', sans-serif", '--font-size-h1': '2.25rem', '--font-size-h2': '1.75rem', '--font-size-h3': '1.5rem', '--font-size-body': '1rem', '--font-size-label': '0.875rem', '--font-size-span': '1rem', '--color-bg-primary-hsl': "120 10% 8%", '--color-bg-secondary-hsl': "120 8% 12%", '--color-bg-tertiary-hsl': "120 5% 18%", '--color-text-primary-hsl': "120 30% 88%", '--color-text-secondary-hsl': "120 15% 65%", '--color-border-hsl': "120 10% 30%", '--color-primary-hue': "120", '--color-primary-saturation': "40%", '--color-primary-lightness': "45%", '--color-accent-hue': "80", '--color-accent-saturation': "50%", '--color-accent-lightness': "55%", '--color-accent-light-hue': "30", '--color-accent-light-saturation': "40%", '--color-accent-light-lightness': "50%" },
 };
 
-const INITIAL_THEMES = Object.entries(rawThemes).map(([id, styles]) => ({
+export const INITIAL_THEMES: ThemeDefinition[] = Object.entries(rawThemes).map(([id, styles]) => ({
   id,
   name: id.charAt(0).toUpperCase() + id.slice(1),
   isCustom: false,
-  styles: styles,
+  styles: styles as ThemeStyle,
 }));
 
-const createInitialQuestCompletions = (users, quests) => {
+export const createInitialQuestCompletions = (users: User[], quests: Quest[]): QuestCompletion[] => {
     // This function can be used to populate some initial "completed" quests for demonstration
     return [];
-};
-
-module.exports = {
-    INITIAL_SETTINGS,
-    INITIAL_REWARD_TYPES,
-    INITIAL_RANKS,
-    INITIAL_TROPHIES,
-    INITIAL_THEMES,
-    INITIAL_QUEST_GROUPS,
 };

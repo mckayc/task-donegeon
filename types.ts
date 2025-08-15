@@ -417,12 +417,11 @@ export interface Terminology {
   link_manage_ranks: string;
   link_manage_trophies: string;
   link_manage_events: string;
-  link_theme_editor: string;
+  link_appearance: string;
   link_approvals: string;
   link_manage_users: string;
   link_manage_guilds: string;
   link_suggestion_engine: string;
-  link_appearance: string;
   link_object_exporter: string;
   link_asset_manager: string;
   link_backup_import: string;

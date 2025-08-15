@@ -1,10 +1,5 @@
 
 
-
-
-
-
-
 import React, { createContext, useState, useContext, ReactNode, useEffect, useCallback, useMemo, useRef } from 'react';
 import { AppSettings, User, Quest, RewardItem, Guild, Rank, Trophy, UserTrophy, AppMode, Page, IAppData, ShareableAssetType, GameAsset, Role, RewardCategory, AdminAdjustment, AdminAdjustmentType, SystemLog, QuestType, QuestAvailability, AssetPack, ImportResolution, TrophyRequirementType, ThemeDefinition, ChatMessage, SystemNotification, SystemNotificationType, MarketStatus, QuestGroup, BulkQuestUpdates, ScheduledEvent, BugReport, QuestCompletion, BugReportType, PurchaseRequest, PurchaseRequestStatus, Market, RewardTypeDefinition, Rotation, SidebarConfigItem } from '../types';
 import { INITIAL_SETTINGS, INITIAL_RANKS, INITIAL_TROPHIES, INITIAL_THEMES } from '../data/initialData';
@@ -272,49 +267,52 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
           if (dataToSet.loginHistory) authDispatch.setLoginHistory(dataToSet.loginHistory);
       } else { // Full data load
+          const isObject = (v: any) => typeof v === 'object' && v !== null && !Array.isArray(v);
+          const spreadIfObject = (v: any) => isObject(v) ? v : {};
+
           const savedSettings: Partial<AppSettings> = dataToSet.settings || {};
           const loadedSettings: AppSettings = {
               ...INITIAL_SETTINGS,
-              ...savedSettings,
+              ...spreadIfObject(savedSettings),
               questDefaults: {
                   ...INITIAL_SETTINGS.questDefaults,
-                  ...(savedSettings.questDefaults || {}),
+                  ...spreadIfObject(savedSettings.questDefaults),
               },
               security: {
                   ...INITIAL_SETTINGS.security,
-                  ...(savedSettings.security || {}),
+                  ...spreadIfObject(savedSettings.security),
               },
               sharedMode: {
                   ...INITIAL_SETTINGS.sharedMode,
-                  ...(savedSettings.sharedMode || {}),
+                  ...spreadIfObject(savedSettings.sharedMode),
               },
               automatedBackups: {
                   ...INITIAL_SETTINGS.automatedBackups,
-                  ...(savedSettings.automatedBackups || {}),
+                  ...spreadIfObject(savedSettings.automatedBackups),
               },
               loginNotifications: {
                   ...INITIAL_SETTINGS.loginNotifications,
-                  ...(savedSettings.loginNotifications || {}),
+                  ...spreadIfObject(savedSettings.loginNotifications),
               },
               googleCalendar: {
                   ...INITIAL_SETTINGS.googleCalendar,
-                  ...(savedSettings.googleCalendar || {}),
+                  ...spreadIfObject(savedSettings.googleCalendar),
               },
               developerMode: {
                   ...INITIAL_SETTINGS.developerMode,
-                  ...(savedSettings.developerMode || {}),
+                  ...spreadIfObject(savedSettings.developerMode),
               },
               chat: {
                   ...INITIAL_SETTINGS.chat,
-                  ...(savedSettings.chat || {}),
+                  ...spreadIfObject(savedSettings.chat),
               },
               terminology: {
                   ...INITIAL_SETTINGS.terminology,
-                  ...(savedSettings.terminology || {}),
+                  ...spreadIfObject(savedSettings.terminology),
               },
               rewardValuation: {
                   ...INITIAL_SETTINGS.rewardValuation,
-                  ...(savedSettings.rewardValuation || {}),
+                  ...spreadIfObject(savedSettings.rewardValuation),
               },
           };
           setSettings(loadedSettings);
@@ -626,9 +624,9 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         }
     };
     const restoreFromBackup = async (backupData: IAppData) => { apiRequest('POST', '/api/data/restore', backupData).then(() => { addNotification({ type: 'success', message: 'Restore successful! App will reload.' }); setTimeout(() => window.location.reload(), 1500); }).catch(() => {}); };
-    const clearAllHistory = () => { apiRequest('POST', '/api/actions/clear-history').catch(() => addNotification({type: 'error', message: 'Failed to clear history.'})); };
-    const resetAllPlayerData = () => authDispatch.resetAllUsersData();
-    const deleteAllCustomContent = () => { apiRequest('POST', '/api/data/delete-custom-content').catch(() => addNotification({type: 'error', message: 'Failed to delete custom content.'})); };
+    const clearAllHistory = () => { apiRequest('POST', '/api/actions/clear-history').catch(() => {}); };
+    const resetAllPlayerData = () => { authDispatch.resetAllUsersData(); };
+    const deleteAllCustomContent = () => { apiRequest('POST', '/api/data/delete-custom-content').catch(() => {}); };
     const uploadFile = async (file: File, category?: string) => {
         const formData = new FormData();
         formData.append('file', file);
@@ -655,11 +653,16 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             const initialVal = INITIAL_SETTINGS[key];
             const newVal = newSettings[key];
 
+            // Ensure newVal is a non-array object before proceeding.
             if (typeof newVal === 'object' && newVal !== null && !Array.isArray(newVal)) {
-                (newSettings[key] as any) = { 
-                    ...(typeof initialVal === 'object' && initialVal !== null && !Array.isArray(initialVal) ? initialVal : {}), 
-                    ...(newVal as object) 
-                };
+                // Ensure initialVal is also a non-array object, otherwise use an empty object.
+                const initialObj = (typeof initialVal === 'object' && initialVal !== null && !Array.isArray(initialVal))
+                    ? initialVal
+                    : {};
+                
+                // Merge the initial/default object with the user's settings object.
+                // The type guard on newVal should be sufficient for TypeScript here.
+                (newSettings[key] as any) = { ...initialObj, ...newVal };
             }
         });
 
@@ -670,7 +673,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         const finalSidebar = INITIAL_SETTINGS.sidebars.main.map((defaultItem: SidebarConfigItem) => {
             if (userItemsById.has(defaultItem.id)) {
                 const userItem = userItemsById.get(defaultItem.id);
-                return { ...defaultItem, ...userItem };
+                return { ...defaultItem, ...(userItem || {}) };
             }
             return defaultItem;
         });

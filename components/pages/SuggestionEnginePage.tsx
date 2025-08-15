@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import Button from '../user-interface/Button';
 import Input from '../user-interface/Input';
@@ -10,8 +11,8 @@ import CreateQuestDialog from '../quests/CreateQuestDialog';
 import EditGameAssetDialog from '../admin/EditGameAssetDialog';
 import EditTrophyDialog from '../settings/EditTrophyDialog';
 import EditMarketDialog from '../markets/EditMarketDialog';
-import { useNotificationsDispatch } from '../context/NotificationsContext';
-import { useAuthState } from '../context/AuthContext';
+import { useNotificationsDispatch } from '../../context/NotificationsContext';
+import { useAuthState } from '../../context/AuthContext';
 
 type AssetType = 'Duties' | 'Ventures' | 'Trophies' | 'Items' | 'Markets';
 

@@ -100,7 +100,7 @@ interface AppDispatch {
   assignQuestGroupToUsers: (groupId: string, userIds: string[]) => void;
   deleteQuests: (questIds: string[]) => void;
   updateQuestsStatus: (questIds: string[], isActive: boolean) => void;
-  bulkUpdateQuests: (questIds: string[], updates: BulkQuestUpdates) => void;
+  bulkUpdateQuests: (questIds: string[], updates: BulkQuestUpdates) => Promise<void>;
 
   // Economy
   addRewardType: (rewardType: Omit<RewardTypeDefinition, 'id' | 'isCore'>) => Promise<void>;
@@ -621,7 +621,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     };
     const deleteQuests = (questIds: string[]) => { apiRequest('DELETE', '/api/quests', { ids: questIds }).catch(() => {}); };
     const updateQuestsStatus = (questIds: string[], isActive: boolean) => { apiRequest('PUT', '/api/quests/bulk-status', { ids: questIds, isActive }).catch(() => {}); };
-    const bulkUpdateQuests = (questIds: string[], updates: BulkQuestUpdates) => { apiRequest('PUT', '/api/quests/bulk-update', { ids: questIds, updates }).catch(() => {}); };
+    const bulkUpdateQuests = async (questIds: string[], updates: BulkQuestUpdates) => { await apiRequest('PUT', '/api/quests/bulk-update', { ids: questIds, updates }); };
     
     // Economy Functions
     const addRewardType = async (rewardType: Omit<RewardTypeDefinition, 'id' | 'isCore'>) => { apiRequest('POST', '/api/reward-types', rewardType).catch(() => {}); };

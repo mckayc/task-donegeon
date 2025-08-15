@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { Market, MarketStatus, MarketCondition, MarketConditionType, Quest } from '../../types';
@@ -104,6 +105,18 @@ const EditMarketDialog: React.FC<EditMarketDialogProps> = ({ market, initialData
           };
           handleStatusChange(newStatus);
       }
+  };
+
+  const handleConditionalLogicChange = (logic: 'all' | 'any') => {
+    const currentStatus = formData.status;
+    if (currentStatus.type === 'conditional') {
+        const newStatus: MarketStatus = {
+            type: 'conditional',
+            conditions: currentStatus.conditions,
+            logic: logic
+        };
+        handleStatusChange(newStatus);
+    }
   };
 
 
@@ -248,8 +261,8 @@ const EditMarketDialog: React.FC<EditMarketDialogProps> = ({ market, initialData
                   <div className="space-y-4 pt-4 border-t border-stone-700/60">
                      <div className="flex items-center gap-4">
                          <span className="text-sm font-medium text-stone-300">Logic:</span>
-                         <label className="flex items-center"><input type="radio" name="logic" checked={formData.status.logic === 'all'} onChange={() => handleStatusChange({ type: 'conditional', conditions: formData.status.conditions, logic: 'all' })} /> <span className="ml-2">All conditions met (AND)</span></label>
-                         <label className="flex items-center"><input type="radio" name="logic" checked={formData.status.logic === 'any'} onChange={() => handleStatusChange({ type: 'conditional', conditions: formData.status.conditions, logic: 'any' })} /> <span className="ml-2">Any condition met (OR)</span></label>
+                         <label className="flex items-center"><input type="radio" name="logic" checked={formData.status.logic === 'all'} onChange={() => handleConditionalLogicChange('all')} /> <span className="ml-2">All conditions met (AND)</span></label>
+                         <label className="flex items-center"><input type="radio" name="logic" checked={formData.status.logic === 'any'} onChange={() => handleConditionalLogicChange('any')} /> <span className="ml-2">Any condition met (OR)</span></label>
                      </div>
                      <div className="space-y-3">{formData.status.conditions.map(renderConditionEditor)}</div>
                      <Button type="button" variant="secondary" onClick={addCondition}>+ Add Condition</Button>

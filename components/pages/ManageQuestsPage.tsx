@@ -1,5 +1,6 @@
+
 import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
-import { useAppState } from '../../context/AppContext';
+import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { Quest, QuestType, QuestGroup } from '../../types';
 import Button from '../user-interface/Button';
 import Card from '../user-interface/Card';
@@ -11,16 +12,11 @@ import EmptyState from '../user-interface/EmptyState';
 import Input from '../user-interface/Input';
 import BulkEditQuestsDialog from '../quests/BulkEditQuestsDialog';
 import { useDebounce } from '../../hooks/useDebounce';
-import { useNotificationsDispatch } from '../../context/NotificationsContext';
-import { useQuestState } from '../../context/QuestContext';
 
 const ManageQuestsPage: React.FC = () => {
-    const { settings, isAiConfigured } = useAppState();
-    const { questGroups } = useQuestState();
-    const { addNotification } = useNotificationsDispatch();
+    const { settings, isAiConfigured, quests, questGroups } = useAppState();
+    const { deleteQuests, updateQuestsStatus, bulkUpdateQuests, cloneQuest, addQuest, updateQuest } = useAppDispatch();
     
-    const [pageQuests, setPageQuests] = useState<Quest[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
     const [editingQuest, setEditingQuest] = useState<Quest | null>(null);
     const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
     const [isGeneratorOpen, setIsGeneratorOpen] = useState(false);
@@ -38,54 +34,35 @@ const ManageQuestsPage: React.FC = () => {
 
     const isAiAvailable = settings.enableAiFeatures && isAiConfigured;
 
-    const apiRequest = useCallback(async (method: string, path: string, body?: any) => {
-        try {
-            const options: RequestInit = {
-                method,
-                headers: { 'Content-Type': 'application/json' },
-            };
-            if (body) {
-                options.body = JSON.stringify(body);
-            }
-            const response = await window.fetch(path, options);
-            if (!response.ok) {
-                const errorData = await response.json().catch(() => ({ error: 'Server error' }));
-                throw new Error(errorData.error || `Request failed with status ${response.status}`);
-            }
-            if (response.status === 204) {
-                 return null;
-            }
-            return await response.json();
-        } catch (error) {
-            addNotification({ type: 'error', message: error instanceof Error ? error.message : 'An unknown network error occurred.' });
-            throw error;
-        }
-    }, [addNotification]);
+    const pageQuests = useMemo(() => {
+        const group = questGroups.find(g => g.name === activeTab);
+        const groupId = activeTab === 'All' ? 'All' : (group ? group.id : 'Uncategorized');
 
-    const fetchQuests = useCallback(async () => {
-        setIsLoading(true);
-        try {
-            const params = new URLSearchParams();
-            const group = questGroups.find(g => g.name === activeTab);
-            const groupId = activeTab === 'All' ? 'All' : (group ? group.id : 'Uncategorized');
+        const filtered = quests.filter(quest => {
+            const groupMatch = groupId === 'All' || 
+                               (groupId === 'Uncategorized' && !quest.groupId) ||
+                               quest.groupId === groupId;
+
+            const searchMatch = !debouncedSearchTerm ||
+                quest.title.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
+                quest.description.toLowerCase().includes(debouncedSearchTerm.toLowerCase());
             
-            params.append('groupId', groupId);
-            if (debouncedSearchTerm) params.append('searchTerm', debouncedSearchTerm);
-            params.append('sortBy', sortBy);
+            return groupMatch && searchMatch;
+        });
 
-            const data = await apiRequest('GET', `/api/quests?${params.toString()}`);
-            setPageQuests(data as Quest[]);
-        } catch (error) {
-            console.error("Failed to fetch quests:", error);
-        } finally {
-            setIsLoading(false);
-        }
-    }, [activeTab, debouncedSearchTerm, sortBy, questGroups, apiRequest]);
-
-    useEffect(() => {
-        fetchQuests();
-    }, [fetchQuests]);
-
+        filtered.sort((a, b) => {
+             switch (sortBy) {
+                case 'title-desc': return b.title.localeCompare(a.title);
+                case 'status-asc': return (a.isActive ? 1 : 0) - (b.isActive ? 1 : 0);
+                case 'status-desc': return (b.isActive ? 1 : 0) - (a.isActive ? 1 : 0);
+                case 'title-asc': 
+                default: 
+                    return a.title.localeCompare(b.title);
+            }
+        });
+        
+        return filtered;
+    }, [activeTab, debouncedSearchTerm, sortBy, quests, questGroups]);
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
@@ -114,45 +91,22 @@ const ManageQuestsPage: React.FC = () => {
         setEditingQuest(null);
         setIsCreateDialogOpen(true);
     };
-    
-    const handleSaveQuest = async (questData: any) => {
-        const isEditing = !!editingQuest;
-        const method = isEditing ? 'PUT' : 'POST';
-        const url = isEditing ? `/api/quests/${editingQuest!.id}` : '/api/quests';
-        try {
-            await apiRequest(method, url, questData);
-            addNotification({ type: 'success', message: `Quest ${isEditing ? 'updated' : 'created'} successfully!` });
-            fetchQuests();
-        } catch (e) { /* error handled by apiRequest helper */ }
-    };
-
-    const handleClone = async (questId: string) => {
-        try {
-            await apiRequest('POST', `/api/quests/clone/${questId}`);
-            addNotification({ type: 'success', message: 'Quest cloned successfully!' });
-            fetchQuests();
-        } catch (e) { /* error handled */ }
-    };
 
     const handleConfirmAction = async () => {
         if (!confirmation) return;
         
-        try {
-            switch(confirmation.action) {
-                case 'delete':
-                    await apiRequest('DELETE', '/api/quests', { ids: confirmation.ids });
-                    addNotification({ type: 'info', message: `${confirmation.ids.length} quest(s) deleted.` });
-                    break;
-                case 'activate':
-                case 'deactivate':
-                    await apiRequest('PUT', '/api/quests/bulk-status', { ids: confirmation.ids, isActive: confirmation.action === 'activate' });
-                    addNotification({ type: 'success', message: `${confirmation.ids.length} quest(s) updated.` });
-                    break;
-            }
-            setSelectedQuests([]);
-            fetchQuests();
-        } catch (e) { /* error handled */ }
-        
+        switch(confirmation.action) {
+            case 'delete':
+                await deleteQuests(confirmation.ids);
+                break;
+            case 'activate':
+                await updateQuestsStatus(confirmation.ids, true);
+                break;
+            case 'deactivate':
+                await updateQuestsStatus(confirmation.ids, false);
+                break;
+        }
+        setSelectedQuests([]);
         setConfirmation(null);
     };
     
@@ -185,15 +139,6 @@ const ManageQuestsPage: React.FC = () => {
         }
     };
     
-    const handleBulkSave = async (updates: any) => {
-        try {
-            await apiRequest('PUT', '/api/quests/bulk-update', { ids: selectedQuests, updates });
-            addNotification({ type: 'success', message: `Bulk updated ${selectedQuests.length} quest(s).` });
-            setSelectedQuests([]);
-            fetchQuests();
-        } catch(e) { /* error handled */ }
-    };
-
     const getConfirmationMessage = () => {
         if (!confirmation) return '';
         const count = confirmation.ids.length;
@@ -261,7 +206,7 @@ const ManageQuestsPage: React.FC = () => {
                     )}
                 </div>
 
-                {isLoading ? (
+                {!quests ? (
                     <div className="text-center py-10"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-400 mx-auto"></div></div>
                 ) : pageQuests.length > 0 ? (
                     <div className="overflow-x-auto">
@@ -307,7 +252,7 @@ const ManageQuestsPage: React.FC = () => {
                                             {openDropdownId === quest.id && (
                                                 <div ref={dropdownRef} className="absolute right-10 top-0 mt-2 w-36 bg-stone-900 border border-stone-700 rounded-lg shadow-xl z-20">
                                                     <a href="#" onClick={(e) => { e.preventDefault(); handleEdit(quest); setOpenDropdownId(null); }} data-log-id={`manage-quests-action-edit-${quest.id}`} className="block px-4 py-2 text-sm text-stone-300 hover:bg-stone-700/50">Edit</a>
-                                                    <button onClick={() => { handleClone(quest.id); setOpenDropdownId(null); }} data-log-id={`manage-quests-action-clone-${quest.id}`} className="w-full text-left block px-4 py-2 text-sm text-stone-300 hover:bg-stone-700/50">Clone</button>
+                                                    <button onClick={() => { cloneQuest(quest.id); setOpenDropdownId(null); }} data-log-id={`manage-quests-action-clone-${quest.id}`} className="w-full text-left block px-4 py-2 text-sm text-stone-300 hover:bg-stone-700/50">Clone</button>
                                                     <button onClick={() => { setConfirmation({ action: 'delete', ids: [quest.id] }); setOpenDropdownId(null); }} data-log-id={`manage-quests-action-delete-${quest.id}`} className="w-full text-left block px-4 py-2 text-sm text-red-400 hover:bg-stone-700/50">Delete</button>
                                                 </div>
                                             )}
@@ -327,11 +272,11 @@ const ManageQuestsPage: React.FC = () => {
                 )}
             </Card>
             
-            {isCreateDialogOpen && <CreateQuestDialog questToEdit={editingQuest || undefined} initialData={initialCreateData || undefined} onClose={handleCloseDialog} onSave={handleSaveQuest} />}
+            {isCreateDialogOpen && <CreateQuestDialog questToEdit={editingQuest || undefined} initialData={initialCreateData || undefined} onClose={handleCloseDialog} />}
             
             {isGeneratorOpen && <QuestIdeaGenerator onUseIdea={handleUseIdea} onClose={() => setIsGeneratorOpen(false)} />}
 
-            {isBulkEditDialogOpen && <BulkEditQuestsDialog questIds={selectedQuests} onClose={() => setIsBulkEditDialogOpen(false)} onSave={handleBulkSave} />}
+            {isBulkEditDialogOpen && <BulkEditQuestsDialog questIds={selectedQuests} onClose={() => setIsBulkEditDialogOpen(false)} onSave={(updates) => bulkUpdateQuests(selectedQuests, updates)} />}
 
             <ConfirmDialog
                 isOpen={!!confirmation}

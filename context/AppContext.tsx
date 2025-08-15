@@ -1,5 +1,7 @@
 
 
+
+
 import React, { createContext, useState, useContext, ReactNode, useEffect, useCallback, useMemo, useRef } from 'react';
 import { AppSettings, User, Quest, RewardItem, Guild, Rank, Trophy, UserTrophy, AppMode, Page, IAppData, ShareableAssetType, GameAsset, Role, RewardCategory, AdminAdjustment, AdminAdjustmentType, SystemLog, QuestType, QuestAvailability, AssetPack, ImportResolution, TrophyRequirementType, ThemeDefinition, ChatMessage, SystemNotification, SystemNotificationType, MarketStatus, QuestGroup, BulkQuestUpdates, ScheduledEvent, BugReport, QuestCompletion, BugReportType, PurchaseRequest, PurchaseRequestStatus, Market, RewardTypeDefinition, Rotation, SidebarConfigItem } from '../types';
 import { INITIAL_SETTINGS, INITIAL_RANKS, INITIAL_TROPHIES, INITIAL_THEMES } from '../data/initialData';
@@ -238,7 +240,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
               const optimisticTimestamp = recentOptimisticUpdates.current.get('settings');
               const serverTimestamp = dataToSet.settings.updatedAt;
               if (!optimisticTimestamp || !serverTimestamp || new Date(serverTimestamp) >= new Date(optimisticTimestamp)) {
-                  setSettings(prev => ({ ...prev, ...dataToSet.settings }));
+                  setSettings(prev => ({ ...prev, ...(dataToSet.settings || {}) }));
               } else {
                   console.log('[SYNC] Ignoring stale server update for settings');
               }
@@ -268,17 +270,49 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
           if (dataToSet.loginHistory) authDispatch.setLoginHistory(dataToSet.loginHistory);
       } else { // Full data load
           const savedSettings: Partial<AppSettings> = dataToSet.settings || {};
-          const loadedSettings: AppSettings = { ...INITIAL_SETTINGS, ...savedSettings,
-              questDefaults: { ...INITIAL_SETTINGS.questDefaults, ...(savedSettings.questDefaults || {}) },
-              security: { ...INITIAL_SETTINGS.security, ...(savedSettings.security || {}) },
-              sharedMode: { ...INITIAL_SETTINGS.sharedMode, ...(savedSettings.sharedMode || {}) },
-              automatedBackups: { ...INITIAL_SETTINGS.automatedBackups, ...(savedSettings.automatedBackups || {}) },
-              loginNotifications: { ...INITIAL_SETTINGS.loginNotifications, ...(savedSettings.loginNotifications || {}) },
-              googleCalendar: { ...INITIAL_SETTINGS.googleCalendar, ...(savedSettings.googleCalendar || {}) },
-              developerMode: { ...INITIAL_SETTINGS.developerMode, ...(savedSettings.developerMode || {}) },
-              chat: { ...INITIAL_SETTINGS.chat, ...(savedSettings.chat || {}) },
-              terminology: { ...INITIAL_SETTINGS.terminology, ...(savedSettings.terminology || {}) },
-              rewardValuation: { ...INITIAL_SETTINGS.rewardValuation, ...(savedSettings.rewardValuation || {}) },
+          const loadedSettings: AppSettings = {
+              ...INITIAL_SETTINGS,
+              ...savedSettings,
+              questDefaults: {
+                  ...INITIAL_SETTINGS.questDefaults,
+                  ...savedSettings.questDefaults,
+              },
+              security: {
+                  ...INITIAL_SETTINGS.security,
+                  ...savedSettings.security,
+              },
+              sharedMode: {
+                  ...INITIAL_SETTINGS.sharedMode,
+                  ...savedSettings.sharedMode,
+              },
+              automatedBackups: {
+                  ...INITIAL_SETTINGS.automatedBackups,
+                  ...savedSettings.automatedBackups,
+              },
+              loginNotifications: {
+                  ...INITIAL_SETTINGS.loginNotifications,
+                  ...savedSettings.loginNotifications,
+              },
+              googleCalendar: {
+                  ...INITIAL_SETTINGS.googleCalendar,
+                  ...savedSettings.googleCalendar,
+              },
+              developerMode: {
+                  ...INITIAL_SETTINGS.developerMode,
+                  ...savedSettings.developerMode,
+              },
+              chat: {
+                  ...INITIAL_SETTINGS.chat,
+                  ...savedSettings.chat,
+              },
+              terminology: {
+                  ...INITIAL_SETTINGS.terminology,
+                  ...savedSettings.terminology,
+              },
+              rewardValuation: {
+                  ...INITIAL_SETTINGS.rewardValuation,
+                  ...savedSettings.rewardValuation,
+              },
           };
           setSettings(loadedSettings);
           authDispatch.setUsers(dataToSet.users || []);
@@ -606,9 +640,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     const updateSettings = async (newSettings: Partial<AppSettings>) => { registerOptimisticUpdate('settings'); setSettings(prev => ({...prev, ...newSettings})); apiRequest('PUT', '/api/settings', {...settings, ...newSettings}).catch(() => {}); };
     const resetSettings = () => updateSettings(INITIAL_SETTINGS);
     const applySettingsUpdates = () => {
-        const newSettings = JSON.parse(JSON.stringify(settings)); // Deep copy
+        const newSettings = JSON.parse(JSON.stringify(settings));
 
-        // Merge top-level objects, prioritizing user's existing values
         const objectsToMerge: (keyof AppSettings)[] = [
             'questDefaults', 'security', 'sharedMode', 'automatedBackups',
             'loginNotifications', 'googleCalendar', 'developerMode',
@@ -616,29 +649,34 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         ];
 
         objectsToMerge.forEach(key => {
-            if (typeof newSettings[key] === 'object' && !Array.isArray(newSettings[key]) && newSettings[key] !== null) {
-                (newSettings[key] as any) = { ...(INITIAL_SETTINGS[key] || {}), ...(newSettings[key] || {}) };
+            const initialVal = INITIAL_SETTINGS[key];
+            const newVal = newSettings[key];
+
+            if (typeof newVal === 'object' && newVal !== null && !Array.isArray(newVal)) {
+                (newSettings[key] as any) = { 
+                    ...(typeof initialVal === 'object' && initialVal !== null ? initialVal : {}), 
+                    ...newVal 
+                };
             }
         });
 
-        // Special handling for sidebar to preserve user customizations but add new links
         const userItemsById = new Map(
-            (newSettings.sidebars.main || []).map((item: SidebarConfigItem) => [item.id, item])
+            (newSettings.sidebars?.main || []).map((item: SidebarConfigItem) => [item.id, item])
         );
         
         const finalSidebar = INITIAL_SETTINGS.sidebars.main.map((defaultItem: SidebarConfigItem) => {
             if (userItemsById.has(defaultItem.id)) {
                 const userItem = userItemsById.get(defaultItem.id);
-                // Combine, giving user's customization precedence
                 return { ...defaultItem, ...(userItem || {}) };
             }
-            // It's a new item, add it as is
             return defaultItem;
         });
 
+        if (!newSettings.sidebars) {
+            newSettings.sidebars = { main: [] };
+        }
         newSettings.sidebars.main = finalSidebar;
-
-        // Now call the existing update function
+        
         updateSettings(newSettings);
         addNotification({type: 'success', message: 'Feature updates applied successfully!'});
     };
@@ -750,7 +788,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         const balances = guildId ? user.guildBalances[guildId] : { purse: user.personalPurse, experience: user.personalExperience };
         if (!balances) return false;
         const rewardDef = rewardTypes.find(rt => rt.id === item.rewardTypeId);
-        const balance = rewardDef?.category === RewardCategory.Currency ? (balances.purse[item.rewardTypeId] || 0) : (balances.experience[item.rewardTypeId] || 0);
+        const balance = rewardDef?.category === RewardCategory.Currency ? (balances.purse?.[item.rewardTypeId] || 0) : (balances.experience?.[item.rewardTypeId] || 0);
         return balance >= item.amount;
       });
 
@@ -771,7 +809,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       } else {
         if (deductRewards(user.id, cost, guildId)) {
             authDispatch.updateUser(user.id, u => ({ ownedAssetIds: [...(u.ownedAssetIds || []), asset.id] }));
-            updateGameAsset({ ...asset, purchaseCount: asset.purchaseCount + 1 });
+            updateGameAsset({ ...asset, purchaseCount: (asset.purchaseCount || 0) + 1 });
             addNotification({ type: 'success', message: `Purchased ${asset.name}!` });
         }
       }
@@ -782,7 +820,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       if (!request) return;
       if (deductRewards(request.userId, request.assetDetails.cost, request.guildId)) {
         authDispatch.updateUser(request.userId, u => ({ ownedAssetIds: [...(u.ownedAssetIds || []), request.assetId] }));
-        setGameAssets(p => p.map(a => a.id === request.assetId ? { ...a, purchaseCount: a.purchaseCount + 1 } : a));
+        setGameAssets(p => p.map(a => a.id === request.assetId ? { ...a, purchaseCount: (a.purchaseCount || 0) + 1 } : a));
         setPurchaseRequests(p => p.map(req => req.id === purchaseId ? { ...req, status: PurchaseRequestStatus.Completed, actedAt: new Date().toISOString() } : req));
       } else {
         addNotification({type:'error', message: 'User could not afford this item at time of approval.'});

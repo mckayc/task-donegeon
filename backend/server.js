@@ -278,15 +278,41 @@ app.get('/api/data/events', (req, res) => {
     // Send a welcome message to confirm connection
     res.write('data: connected\n\n');
 
+    const heartbeatInterval = setInterval(() => {
+        try {
+            res.write(': heartbeat\n\n');
+        } catch (error) {
+            console.error(`[SSE] Error writing heartbeat to client ${clientId}, closing connection.`);
+            clearInterval(heartbeatInterval);
+            req.socket.end(); // Manually close the socket
+        }
+    }, 20000); // Send a heartbeat every 20 seconds
+
     req.on('close', () => {
+        clearInterval(heartbeatInterval);
         console.log(`[SSE] Client disconnected: ${clientId}`);
         clients = clients.filter(client => client.id !== clientId);
     });
 });
 
 const sendUpdateToClients = () => {
-    console.log('[SSE] Broadcasting sync event to all clients.');
-    clients.forEach(client => client.res.write('data: sync\n\n'));
+    console.log(`[SSE] Broadcasting sync event to ${clients.length} client(s).`);
+    const clientsToRemove = [];
+
+    clients.forEach(client => {
+        try {
+            client.res.write('data: sync\n\n');
+        } catch (error) {
+            console.error(`[SSE] Error writing to client ${client.id}:`, error.message);
+            // If we can't write, the connection is likely closed.
+            clientsToRemove.push(client.id);
+        }
+    });
+
+    if (clientsToRemove.length > 0) {
+        console.log(`[SSE] Removing ${clientsToRemove.length} disconnected client(s).`);
+        clients = clients.filter(client => !clientsToRemove.includes(client.id));
+    }
 };
 
 updateEmitter.on('update', sendUpdateToClients);

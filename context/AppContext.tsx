@@ -1,12 +1,3 @@
-
-
-
-
-
-
-
-
-
 import React, { createContext, useState, useContext, ReactNode, useEffect, useCallback, useMemo, useRef } from 'react';
 import { AppSettings, User, Quest, RewardItem, Guild, Rank, Trophy, UserTrophy, AppMode, Page, IAppData, ShareableAssetType, GameAsset, Role, RewardCategory, AdminAdjustment, AdminAdjustmentType, SystemLog, QuestType, QuestAvailability, AssetPack, ImportResolution, TrophyRequirementType, ThemeDefinition, ChatMessage, SystemNotification, SystemNotificationType, MarketStatus, QuestGroup, BulkQuestUpdates, ScheduledEvent, BugReport, QuestCompletion, BugReportType, PurchaseRequest, PurchaseRequestStatus, Market, RewardTypeDefinition, Rotation, SidebarConfigItem, BugReportLogEntry } from '../types';
 import { INITIAL_SETTINGS, INITIAL_RANKS, INITIAL_TROPHIES, INITIAL_THEMES } from '../data/initialData';
@@ -345,7 +336,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
           return { loadedSettings };
       }
       return { loadedSettings: undefined };
-  }, [authDispatch]);
+  }, [authDispatch, setAdminAdjustments, setBugReports, setChatMessages, setGameAssets, setGuilds, setMarkets, setQuestCompletions, setQuestGroups, setQuests, setRanks, setRewardTypes, setRotations, setScheduledEvents, setSettings, setSystemLogs, setSystemNotifications, setThemes, setTrophies, setUserTrophies, setPurchaseRequests]);
   
   const performDeltaSync = useCallback(async () => {
     if (mutationsInFlight.current > 0 || !lastSyncTimestamp.current) return;
@@ -633,7 +624,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     };
     const restoreFromBackup = async (backupData: IAppData) => { apiRequest('POST', '/api/data/restore', backupData).then(() => { addNotification({ type: 'success', message: 'Restore successful! App will reload.' }); setTimeout(() => window.location.reload(), 1500); }).catch(() => {}); };
     const clearAllHistory = () => { apiRequest('POST', '/api/actions/clear-history').catch(() => {}); };
-    const resetAllPlayerData = () => { authDispatch.resetAllUsersData(users); };
+    const resetAllPlayerData = () => { authDispatch.resetAllUsersData(); };
     const deleteAllCustomContent = () => { apiRequest('POST', '/api/data/delete-custom-content').catch(() => {}); };
     const uploadFile = async (file: File, category?: string) => {
         const formData = new FormData();
@@ -869,7 +860,11 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     authDispatch, addNotification, updateNotification, quests, users, rewardTypes,
     guilds, ranks, trophies, userTrophies, adminAdjustments, gameAssets, systemLogs, settings,
     themes, chatMessages, systemNotifications, scheduledEvents, bugReports, questGroups, questCompletions,
-    markets, purchaseRequests, loginHistory, performDeltaSync, registerOptimisticUpdate, appMode, rotations
+    markets, purchaseRequests, loginHistory, performDeltaSync, registerOptimisticUpdate, appMode, rotations,
+    setQuests, setQuestGroups, setQuestCompletions, setMarkets, setRewardTypes, setPurchaseRequests, setGameAssets,
+    _setActivePage, setIsSidebarCollapsed, setIsChatOpen, setAppMode, setActiveMarketId, setGuilds, setRanks,
+    setTrophies, setUserTrophies, setThemes, setScheduledEvents, setBugReports, setAdminAdjustments, setSystemNotifications,
+    setChatMessages, setSystemLogs, setSettings, setRotations, apiRequest, bugReports
   ]);
 
   return (

@@ -94,7 +94,6 @@ const terminologyLabels: { [key in keyof Terminology]: string } = {
   link_calendar: 'Sidebar: Calendar',
   link_avatar: 'Sidebar: Avatar',
   link_collection: 'Sidebar: Collection',
-  link_themes: 'Sidebar: Themes',
   link_guild: 'Sidebar: Guild',
   link_progress: 'Sidebar: Progress',
   link_trophies: 'Sidebar: Trophies',
@@ -109,6 +108,7 @@ const terminologyLabels: { [key in keyof Terminology]: string } = {
   link_manage_trophies: 'Sidebar: Manage Trophies',
   link_manage_events: 'Sidebar: Manage Events',
   link_manage_rotations: 'Sidebar: Manage Rotations',
+  link_manage_setbacks: 'Sidebar: Manage Setbacks',
   link_appearance: 'Sidebar: Appearance',
   link_approvals: 'Sidebar: Approvals',
   link_manage_users: 'Sidebar: Manage Users',
@@ -123,6 +123,7 @@ const terminologyLabels: { [key in keyof Terminology]: string } = {
   link_help_guide: 'Help Guide',
   link_chat: 'Sidebar: Chat',
   link_bug_tracker: 'Sidebar: Bug Tracker',
+  link_themes: 'Sidebar: Themes',
 };
 
 const REAL_WORLD_CURRENCIES = ['USD', 'EUR', 'GBP', 'JPY', 'CAD', 'AUD', 'CNY'];

@@ -21,6 +21,7 @@ const ExportPanel: React.FC = () => {
         gameAssets: [],
         users: [],
         rotations: [],
+        setbackDefinitions: [],
     });
     const [blueprintName, setBlueprintName] = useState('');
     const [blueprintDesc, setBlueprintDesc] = useState('');
@@ -36,6 +37,7 @@ const ExportPanel: React.FC = () => {
         { key: 'gameAssets', label: 'link_manage_items', data: appState.gameAssets },
         { key: 'users', label: 'link_manage_users', data: users },
         { key: 'rotations', label: 'link_manage_rotations', data: appState.rotations },
+        { key: 'setbackDefinitions', label: 'link_manage_setbacks', data: appState.setbackDefinitions },
     ], [appState, users]);
 
     const handleCheckboxChange = useCallback((

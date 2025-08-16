@@ -43,6 +43,7 @@ import LoginNotificationPopup from '../user-interface/LoginNotificationPopup';
 import ManageEventsPage from '../pages/management/ManageEventsPage';
 import BugTrackingPage from '../dev/BugTrackingPage';
 import ManageRotationsPage from '../pages/management/ManageRotationsPage';
+import ManageSetbacksPage from '../pages/management/ManageSetbacksPage';
 
 const MainLayout: React.FC = () => {
   const { settings, systemNotifications, activePage } = useAppState();
@@ -58,7 +59,7 @@ const MainLayout: React.FC = () => {
     'Manage Users', 'Manage Rewards', 'Manage Quests', 'Manage Quest Groups', 'Manage Rotations', 'Manage Goods', 'Manage Markets',
     'Manage Guilds', 'Manage Ranks', 'Manage Trophies', 'Settings', 'Suggestion Engine',
     'Appearance', 'Object Exporter', 'Asset Manager', 'Backup & Import', 'Asset Library',
-    'Manage Events', 'Bug Tracker'
+    'Manage Events', 'Bug Tracker', 'Manage Setbacks'
   ];
   const GATEKEEPER_PAGES: Page[] = ['Approvals'];
 
@@ -131,6 +132,7 @@ const MainLayout: React.FC = () => {
       case 'Manage Ranks': return <ManageRanksPage />;
       case 'Manage Trophies': return <ManageTrophiesPage />;
       case 'Manage Events': return <ManageEventsPage />;
+      case 'Manage Setbacks': return <ManageSetbacksPage />;
       case 'Suggestion Engine': return <SuggestionEnginePage />;
       case 'Approvals': return <ApprovalsPage />;
       case 'Settings': return <SettingsPage />;

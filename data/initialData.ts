@@ -114,6 +114,7 @@ export const INITIAL_MAIN_SIDEBAR_CONFIG: SidebarConfigItem[] = [
   { type: 'link', id: 'Approvals', emoji: '✅', isVisible: true, level: 1, role: Role.Gatekeeper, termKey: 'link_approvals' },
   { type: 'link', id: 'Manage Users', emoji: '👥', isVisible: true, level: 1, role: Role.DonegeonMaster, termKey: 'link_manage_users' },
   { type: 'link', id: 'Manage Guilds', emoji: '🏰', isVisible: true, level: 1, role: Role.DonegeonMaster, termKey: 'link_manage_guilds' },
+  { type: 'link', id: 'Manage Setbacks', emoji: '⚖️', isVisible: true, level: 1, role: Role.DonegeonMaster, termKey: 'link_manage_setbacks' },
 
   // Content Management Section
   { type: 'header', id: 'header-admin-content', title: 'Content Management', emoji: '📚', level: 0, role: Role.DonegeonMaster, isVisible: true },
@@ -236,6 +237,7 @@ export const INITIAL_SETTINGS: AppSettings = {
       link_manage_trophies: 'Manage Trophies',
       link_manage_events: 'Manage Events',
       link_manage_rotations: 'Manage Rotations',
+      link_manage_setbacks: 'Manage Setbacks',
       link_appearance: 'Appearance',
       link_approvals: 'Approvals',
       link_manage_users: 'Manage Users',

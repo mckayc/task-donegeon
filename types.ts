@@ -450,6 +450,7 @@ export interface Terminology {
   link_manage_trophies: string;
   link_manage_events: string;
   link_manage_rotations: string;
+  link_manage_setbacks: string;
   link_appearance: string;
   link_approvals: string;
   link_manage_users: string;
@@ -469,7 +470,7 @@ export interface Terminology {
 
 export type Page = 'Dashboard' | 'Avatar' | 'Quests' | 'Marketplace' | 'Chronicles' | 'Guild' | 'Calendar' | 'Progress' | 'Trophies' | 'Ranks' | 'Manage Users' | 'Manage Rewards' | 'Manage Quests' | 'Manage Goods' | 'Approvals' | 'Manage Markets' | 'Manage Guilds' | 'Settings' | 'Profile' | 'About' | 'Help Guide' | 'Manage Ranks' | 'Manage Trophies' | 'Collection' | 'Suggestion Engine' | 'Appearance'
 | 'Object Exporter' | 'Asset Manager' | 'Backup & Import' | 'Asset Library'
-| 'Chat' | 'Manage Quest Groups' | 'Manage Events' | 'Manage Rotations'
+| 'Chat' | 'Manage Quest Groups' | 'Manage Events' | 'Manage Rotations' | 'Manage Setbacks'
 | 'Bug Tracker' | 'Themes';
 
 export interface SidebarLink {
@@ -569,7 +570,7 @@ export interface AppSettings {
   updatedAt?: string;
 }
 
-export type ShareableAssetType = 'quests' | 'rewardTypes' | 'ranks' | 'trophies' | 'markets' | 'gameAssets' | 'questGroups' | 'users' | 'rotations';
+export type ShareableAssetType = 'quests' | 'rewardTypes' | 'ranks' | 'trophies' | 'markets' | 'gameAssets' | 'questGroups' | 'users' | 'rotations' | 'setbackDefinitions';
 
 export type UserTemplate = Omit<User, 'personalPurse' | 'personalExperience' | 'guildBalances' | 'avatar' | 'ownedAssetIds' | 'ownedThemes' | 'hasBeenOnboarded'>;
 
@@ -744,6 +745,39 @@ export interface Rotation {
   updatedAt?: string;
 }
 
+export enum SetbackEffectType {
+  DeductRewards = 'DEDUCT_REWARDS',
+  CloseMarket = 'CLOSE_MARKET',
+}
+
+export type SetbackEffect = 
+  | { type: SetbackEffectType.DeductRewards; rewards: RewardItem[] }
+  | { type: SetbackEffectType.CloseMarket; marketIds: string[]; durationHours: number };
+
+export interface SetbackDefinition {
+  id: string;
+  name: string;
+  description: string;
+  icon: string;
+  effects: SetbackEffect[];
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface AppliedSetback {
+  id: string;
+  userId: string;
+  setbackDefinitionId: string;
+  appliedAt: string;
+  expiresAt?: string;
+  overrides?: Partial<SetbackDefinition>;
+  reason: string;
+  appliedById: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+
 export interface IAppData {
   users: User[];
   quests: Quest[];
@@ -767,6 +801,8 @@ export interface IAppData {
   scheduledEvents: ScheduledEvent[];
   rotations: Rotation[];
   bugReports: BugReport[];
+  setbackDefinitions: SetbackDefinition[];
+  appliedSetbacks: AppliedSetback[];
 }
 
 export type ChronicleEvent = {

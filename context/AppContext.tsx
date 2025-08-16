@@ -1,7 +1,8 @@
 
 
+
 import React, { createContext, useState, useContext, ReactNode, useEffect, useCallback, useMemo, useRef } from 'react';
-import { AppSettings, User, Quest, RewardItem, Guild, Rank, Trophy, UserTrophy, AppMode, Page, IAppData, ShareableAssetType, GameAsset, Role, RewardCategory, AdminAdjustment, AdminAdjustmentType, SystemLog, QuestType, QuestAvailability, AssetPack, ImportResolution, TrophyRequirementType, ThemeDefinition, ChatMessage, SystemNotification, SystemNotificationType, MarketStatus, QuestGroup, BulkQuestUpdates, ScheduledEvent, BugReport, QuestCompletion, BugReportType, PurchaseRequest, PurchaseRequestStatus, Market, RewardTypeDefinition, Rotation, SidebarConfigItem, BugReportLogEntry, QuestCompletionStatus } from '../types';
+import { AppSettings, User, Quest, RewardItem, Guild, Rank, Trophy, UserTrophy, AppMode, Page, IAppData, ShareableAssetType, GameAsset, Role, RewardCategory, AdminAdjustment, AdminAdjustmentType, SystemLog, QuestType, QuestAvailability, AssetPack, ImportResolution, TrophyRequirementType, ThemeDefinition, ChatMessage, SystemNotification, SystemNotificationType, MarketStatus, QuestGroup, BulkQuestUpdates, ScheduledEvent, BugReport, QuestCompletion, BugReportType, PurchaseRequest, PurchaseRequestStatus, Market, RewardTypeDefinition, Rotation, SidebarConfigItem, BugReportLogEntry, QuestCompletionStatus, SetbackDefinition, AppliedSetback } from '../types';
 import { INITIAL_SETTINGS, INITIAL_RANKS, INITIAL_TROPHIES, INITIAL_THEMES } from '../data/initialData';
 import { useNotificationsDispatch } from './NotificationsContext';
 import { useAuthState, useAuthDispatch } from './AuthContext';
@@ -36,6 +37,8 @@ interface AppDispatch {
   setPurchaseRequests: React.Dispatch<React.SetStateAction<PurchaseRequest[]>>;
   setGameAssets: React.Dispatch<React.SetStateAction<GameAsset[]>>;
   setRotations: React.Dispatch<React.SetStateAction<Rotation[]>>;
+  setSetbackDefinitions: React.Dispatch<React.SetStateAction<SetbackDefinition[]>>;
+  setAppliedSetbacks: React.Dispatch<React.SetStateAction<AppliedSetback[]>>;
 
   // UI
   setActivePage: (page: Page) => void;
@@ -70,6 +73,9 @@ interface AppDispatch {
   deleteSelectedAssets: (selection: Partial<Record<ShareableAssetType, string[]>>, onComplete?: () => void) => Promise<void>;
   uploadFile: (file: File, category?: string) => Promise<{ url: string } | null>;
   factoryReset: () => Promise<void>;
+  addSetbackDefinition: (definition: Omit<SetbackDefinition, 'id'>) => Promise<void>;
+  updateSetbackDefinition: (definition: SetbackDefinition) => Promise<void>;
+
 
   // Settings & System
   updateSettings: (settings: Partial<AppSettings>) => Promise<void>;
@@ -152,6 +158,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [scheduledEvents, setScheduledEvents] = useState<ScheduledEvent[]>([]);
   const [bugReports, setBugReports] = useState<BugReport[]>([]);
   const [rotations, setRotations] = useState<Rotation[]>([]);
+  const [setbackDefinitions, setSetbackDefinitions] = useState<SetbackDefinition[]>([]);
+  const [appliedSetbacks, setAppliedSetbacks] = useState<AppliedSetback[]>([]);
   // Quest State
   const [quests, setQuests] = useState<Quest[]>([]);
   const [questGroups, setQuestGroups] = useState<QuestGroup[]>([]);
@@ -253,6 +261,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
           processDelta('scheduledEvent', dataToSet.scheduledEvents, setScheduledEvents);
           processDelta('bugReport', dataToSet.bugReports, setBugReports);
           processDelta('rotation', dataToSet.rotations, setRotations);
+          processDelta('setbackDefinition', dataToSet.setbackDefinitions, setSetbackDefinitions);
+          processDelta('appliedSetback', dataToSet.appliedSetbacks, setAppliedSetbacks);
 
           if (dataToSet.loginHistory) authDispatch.setLoginHistory(dataToSet.loginHistory);
           return { loadedSettings: undefined };
@@ -327,9 +337,11 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
           setScheduledEvents(dataToSet.scheduledEvents || []);
           setBugReports(dataToSet.bugReports || []);
           setRotations(dataToSet.rotations || []);
+          setSetbackDefinitions(dataToSet.setbackDefinitions || []);
+          setAppliedSetbacks(dataToSet.appliedSetbacks || []);
           return { loadedSettings };
       }
-  }, [authDispatch, setAdminAdjustments, setBugReports, setChatMessages, setGameAssets, setGuilds, setMarkets, setQuestCompletions, setQuestGroups, setQuests, setRanks, setRewardTypes, setRotations, setScheduledEvents, setSettings, setSystemLogs, setSystemNotifications, setThemes, setTrophies, setUserTrophies, setPurchaseRequests]);
+  }, [authDispatch, setAdminAdjustments, setBugReports, setChatMessages, setGameAssets, setGuilds, setMarkets, setQuestCompletions, setQuestGroups, setQuests, setRanks, setRewardTypes, setRotations, setScheduledEvents, setSettings, setSystemLogs, setSystemNotifications, setThemes, setTrophies, setUserTrophies, setPurchaseRequests, setSetbackDefinitions, setAppliedSetbacks]);
   
   const performDeltaSync = useCallback(async () => {
     if (mutationsInFlight.current > 0 || !lastSyncTimestamp.current) return;
@@ -432,7 +444,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       users, loginHistory, quests, questGroups, markets, rewardTypes, questCompletions,
       purchaseRequests, guilds, ranks, trophies, userTrophies, adminAdjustments, gameAssets,
       systemLogs, settings, themes, chatMessages, systemNotifications, scheduledEvents, bugReports,
-      rotations,
+      rotations, setbackDefinitions, appliedSetbacks,
       // AppState
       isDataLoaded, isAiConfigured, syncStatus, syncError,
       // UIState
@@ -445,7 +457,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       guilds, ranks, trophies, userTrophies, adminAdjustments, gameAssets, systemLogs, settings,
       themes, chatMessages, systemNotifications, scheduledEvents, bugReports, rotations, isDataLoaded,
       isAiConfigured, syncStatus, syncError, activePage, isSidebarCollapsed, isChatOpen,
-      appMode, activeMarketId, allTags
+      appMode, activeMarketId, allTags, setbackDefinitions, appliedSetbacks,
   ]);
 
 
@@ -454,13 +466,13 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       guilds, ranks, trophies, userTrophies, adminAdjustments, gameAssets, systemLogs, settings,
       themes, chatMessages, systemNotifications, scheduledEvents, bugReports, rotations, isDataLoaded,
       isAiConfigured, syncStatus, syncError, activePage, isSidebarCollapsed, isChatOpen,
-      appMode, activeMarketId, allTags, loginHistory
+      appMode, activeMarketId, allTags, loginHistory, setbackDefinitions, appliedSetbacks,
   }), [
       users, quests, questGroups, markets, rewardTypes, questCompletions, purchaseRequests,
       guilds, ranks, trophies, userTrophies, adminAdjustments, gameAssets, systemLogs, settings,
       themes, chatMessages, systemNotifications, scheduledEvents, bugReports, rotations, isDataLoaded,
       isAiConfigured, syncStatus, syncError, activePage, isSidebarCollapsed, isChatOpen,
-      appMode, activeMarketId, allTags, loginHistory
+      appMode, activeMarketId, allTags, loginHistory, setbackDefinitions, appliedSetbacks,
   ]);
 
   const dispatch = useMemo(() => {
@@ -719,11 +731,12 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             quests: [...quests], questGroups: [...questGroups], markets: [...markets],
             gameAssets: [...gameAssets], rewardTypes: [...rewardTypes], ranks: [...ranks],
             trophies: [...trophies], users: [...users], rotations: [...rotations],
+            setbackDefinitions: [...setbackDefinitions],
         };
         const setters: Record<ShareableAssetType, React.Dispatch<any>> = {
             quests: setQuests, questGroups: setQuestGroups, markets: setMarkets, gameAssets: setGameAssets,
             rewardTypes: setRewardTypes, ranks: setRanks, trophies: setTrophies, users: authDispatch.setUsers,
-            rotations: setRotations,
+            rotations: setRotations, setbackDefinitions: setSetbackDefinitions,
         };
 
         // Optimistic updates
@@ -753,6 +766,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             if (selection.trophies) setTrophies(originalState.trophies);
             if (selection.users) authDispatch.setUsers(originalState.users);
             if (selection.rotations) setRotations(originalState.rotations);
+            if (selection.setbackDefinitions) setSetbackDefinitions(originalState.setbackDefinitions);
         }
 
         if (onComplete) onComplete();
@@ -867,6 +881,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     const addGameAsset = async (asset: Omit<GameAsset, 'id' | 'creatorId' | 'createdAt' | 'purchaseCount'>) => { apiRequest('POST', '/api/assets', asset).catch((_e) => {}); };
     const updateGameAsset = async (asset: GameAsset) => { registerOptimisticUpdate(`gameAsset-${asset.id}`); const originalState = gameAssets; setGameAssets(p => p.map(a => a.id === asset.id ? asset : a)); apiRequest('PUT', `/api/assets/${asset.id}`, asset).catch(() => setGameAssets(originalState)); };
     const cloneGameAsset = async (assetId: string) => { apiRequest('POST', `/api/assets/clone/${assetId}`).catch((_e) => {}); };
+    const addSetbackDefinition = async (definition: Omit<SetbackDefinition, 'id'>) => { apiRequest('POST', '/api/setbacks', definition).catch((_e) => {}); };
+    const updateSetbackDefinition = async (definition: SetbackDefinition) => { registerOptimisticUpdate(`setbackDefinition-${definition.id}`); const originalState = setbackDefinitions; setSetbackDefinitions(p => p.map(d => d.id === definition.id ? definition : d)); apiRequest('PUT', `/api/setbacks/${definition.id}`, definition).catch(() => setSetbackDefinitions(originalState)); };
     const purchaseMarketItem = (assetId: string, marketId: string, user: User, costGroupIndex: number) => {
       const asset = gameAssets.find(a => a.id === assetId);
       if (!asset) { addNotification({ type: 'error', message: 'Item not found.' }); return; }
@@ -962,17 +978,18 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       addMarket, updateMarket, cloneMarket, updateMarketsStatus,
       addGameAsset, updateGameAsset, cloneGameAsset, purchaseMarketItem, cancelPurchaseRequest,
       approvePurchaseRequest, rejectPurchaseRequest, applyRewards, deductRewards,
-      executeExchange, importAssetPack, setRotations,
+      executeExchange, importAssetPack, setRotations, setSetbackDefinitions, setAppliedSetbacks,
+      addSetbackDefinition, updateSetbackDefinition
     };
   }, [
     authDispatch, addNotification, updateNotification, quests, users, rewardTypes,
     guilds, ranks, trophies, userTrophies, adminAdjustments, gameAssets, systemLogs, settings,
     themes, chatMessages, systemNotifications, scheduledEvents, bugReports, questGroups, questCompletions,
-    markets, purchaseRequests, loginHistory, performDeltaSync, registerOptimisticUpdate, appMode, rotations,
+    markets, purchaseRequests, loginHistory, performDeltaSync, registerOptimisticUpdate, appMode, rotations, setbackDefinitions,
     setQuests, setQuestGroups, setQuestCompletions, setMarkets, setRewardTypes, setPurchaseRequests, setGameAssets,
     _setActivePage, setIsSidebarCollapsed, setIsChatOpen, setAppMode, setActiveMarketId, setGuilds, setRanks,
     setTrophies, setUserTrophies, setThemes, setScheduledEvents, setBugReports, setAdminAdjustments, setSystemNotifications,
-    setChatMessages, setSystemLogs, setSettings, setRotations, apiRequest
+    setChatMessages, setSystemLogs, setSettings, setRotations, setSetbackDefinitions, setAppliedSetbacks, apiRequest
   ]);
 
   return (

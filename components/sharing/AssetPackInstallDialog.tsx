@@ -24,6 +24,7 @@ const terminologyMap: { [key in ShareableAssetType]: keyof Terminology } = {
     gameAssets: 'link_manage_items',
     users: 'link_manage_users',
     rotations: 'link_manage_rotations',
+    setbackDefinitions: 'link_manage_setbacks',
 };
 
 const AssetCard: React.FC<{

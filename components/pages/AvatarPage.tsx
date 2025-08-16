@@ -37,9 +37,9 @@ const AvatarPage: React.FC = () => {
         if (!currentUser) return [];
         return currentUser.ownedAssetIds
             .map(id => gameAssets.find(asset => asset.id === id))
-            .filter((asset): asset is GameAsset => !!asset) // Filter out nulls
+            .filter((asset): asset is GameAsset => !!asset && !!asset.imageUrl) // Filter out nulls and assets without images
             .map(asset => ({
-                url: asset.url,
+                url: asset.imageUrl!,
                 name: asset.name,
                 category: asset.category,
             }));
@@ -66,9 +66,9 @@ const AvatarPage: React.FC = () => {
         const file = e.target.files?.[0];
         if (file) {
             setIsUploading(true);
-            const result = await uploadFile(file);
-            if (result?.url) {
-                handleProfilePictureSelect(result.url);
+            const result = await uploadFile(file, 'profile-pictures');
+            if (result?.imageUrl) {
+                handleProfilePictureSelect(result.imageUrl);
             }
             setIsUploading(false);
         }
@@ -134,7 +134,7 @@ const AvatarPage: React.FC = () => {
                                         }`}
                                     >
                                         <div className="w-20 h-20 mx-auto bg-stone-700 rounded-lg flex items-center justify-center overflow-hidden mb-2">
-                                            <img src={asset.url} alt={asset.name} className="w-full h-full object-contain" />
+                                            <img src={asset.imageUrl} alt={asset.name} className="w-full h-full object-contain" />
                                         </div>
                                         <p className="font-semibold text-sm text-stone-200 truncate" title={asset.name}>
                                             {asset.name}

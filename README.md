@@ -1,6 +1,6 @@
 # Task Donegeon
 
-**Version:** 0.0.52
+**Version:** 0.0.53
 
 ---
 
@@ -15,12 +15,11 @@ Task Donegeon is a gamified task and chore management application designed for f
 
 ## ✨ Features
 
-### What's New in Version 0.0.52 (August 14, 2025)
--   **New Built-in Exchange Market:** A default "Exchange Post" market is now automatically available in all new and existing games, allowing users to trade between different reward types based on their configured economic values.
--   **New Exchange UI:** A dedicated, user-friendly interface for the Exchange Post has been created to facilitate easy trades.
--   **Market-Enabled Asset Packs:** Several new and existing asset packs have been updated to include their own themed marketplaces and items, providing more complete and ready-to-use content bundles (e.g., "Fantasy Starter," "Tech Enthusiast," "Cooking & Kitchen").
+### What's New in Version 0.0.53 (August 15, 2025)
+-   **Asset Pack Update:** Renamed the "McKay's Daily Routine" asset pack to "Student's Daily Quest" to be more generic. Added four new tech-related rewards to its marketplace, including app installations and purchases.
 
 ### Version History
+- **v0.0.52 (August 15, 2025):** Added a new default asset pack, "McKay's Daily Routine," featuring a series of timed daily duties for school days and a conditional weekend marketplace with screen-time rewards.
 - **v0.0.51 (August 8, 2025):** Fixed a UI inconsistency where the notification count for pending approvals was not shown on the 'Approvals' link when its parent 'User Management' group was expanded. The badge now correctly moves to the specific link, improving user experience.
 - **v0.0.97 (July 23, 2025):** New "Vacation" Event Type, Calendar-Driven Vacations, Automatic Penalty Pausing, Streamlined Settings.
 - **v0.0.96 (July 22, 2025):** Default Quest Groups, AI-powered group suggestions, streamlined quest creation.
@@ -80,4 +79,4 @@ This phase focuses on high-impact improvements for admins and players that enhan
 This phase introduces major new creative outlets and systems for deeper engagement.
 
 -   **User-Created Content:** A system allowing Explorers to design their own quests and items, then submit them to admins for approval. This fosters creativity and allows the game world to be co-created by its members.
--   **Reward R---
+-   **Reward R------ END OF FILE README.md ---

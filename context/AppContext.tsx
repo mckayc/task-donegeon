@@ -1,7 +1,10 @@
 
 
+
+
+
 import React, { createContext, useState, useContext, ReactNode, useEffect, useCallback, useMemo, useRef } from 'react';
-import { AppSettings, User, Quest, RewardItem, Guild, Rank, Trophy, UserTrophy, AppMode, Page, IAppData, ShareableAssetType, GameAsset, Role, RewardCategory, AdminAdjustment, AdminAdjustmentType, SystemLog, QuestType, QuestAvailability, AssetPack, ImportResolution, TrophyRequirementType, ThemeDefinition, ChatMessage, SystemNotification, SystemNotificationType, MarketStatus, QuestGroup, BulkQuestUpdates, ScheduledEvent, BugReport, QuestCompletion, BugReportType, PurchaseRequest, PurchaseRequestStatus, Market, RewardTypeDefinition, Rotation, SidebarConfigItem } from '../types';
+import { AppSettings, User, Quest, RewardItem, Guild, Rank, Trophy, UserTrophy, AppMode, Page, IAppData, ShareableAssetType, GameAsset, Role, RewardCategory, AdminAdjustment, AdminAdjustmentType, SystemLog, QuestType, QuestAvailability, AssetPack, ImportResolution, TrophyRequirementType, ThemeDefinition, ChatMessage, SystemNotification, SystemNotificationType, MarketStatus, QuestGroup, BulkQuestUpdates, ScheduledEvent, BugReport, QuestCompletion, BugReportType, PurchaseRequest, PurchaseRequestStatus, Market, RewardTypeDefinition, Rotation, SidebarConfigItem, BugReportLogEntry } from '../types';
 import { INITIAL_SETTINGS, INITIAL_RANKS, INITIAL_TROPHIES, INITIAL_THEMES } from '../data/initialData';
 import { useNotificationsDispatch } from './NotificationsContext';
 import { useAuthState, useAuthDispatch } from './AuthContext';
@@ -28,8 +31,6 @@ interface AppState extends IAppData {
 // The single, unified dispatch for the application
 interface AppDispatch {
   // Data Setters (from sync)
-  setUsers: React.Dispatch<React.SetStateAction<User[]>>;
-  setLoginHistory: React.Dispatch<React.SetStateAction<string[]>>;
   setQuests: React.Dispatch<React.SetStateAction<Quest[]>>;
   setQuestGroups: React.Dispatch<React.SetStateAction<QuestGroup[]>>;
   setQuestCompletions: React.Dispatch<React.SetStateAction<QuestCompletion[]>>;
@@ -583,7 +584,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     const updateScheduledEvent = async (event: ScheduledEvent) => { registerOptimisticUpdate(`scheduledEvent-${event.id}`); apiRequest('PUT', `/api/events/${event.id}`, event).catch(() => {}); };
     const deleteScheduledEvent = async (eventId: string) => { apiRequest('DELETE', `/api/events/${eventId}`).catch(() => {}); };
     const addBugReport = async (report: Omit<BugReport, 'id' | 'status' | 'tags'> & { reportType: BugReportType }) => {
-        const { reportType, ...rest } = report;
+        const { reportType, title, createdAt, updatedAt, logs } = report;
+        const rest = { title, createdAt, updatedAt, logs };
         try {
             const savedReport = await apiRequest('POST', '/api/bug-reports', { ...rest, status: 'Open', tags: [reportType] });
             if (savedReport) {
@@ -595,12 +597,14 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     };
     const updateBugReport = async (reportId: string, updates: Partial<BugReport>) => {
         registerOptimisticUpdate(`bugReport-${reportId}`);
+        const originalReports = [...bugReports];
         setBugReports(prev => prev.map(r => r.id === reportId ? { ...r, ...updates, updatedAt: new Date().toISOString() } : r));
         try {
             const updatedReportFromServer = await apiRequest('PUT', `/api/bug-reports/${reportId}`, updates);
             setBugReports(prev => prev.map(r => r.id === reportId ? updatedReportFromServer : r));
         } catch (e) {
-            performDeltaSync(); // Revert optimistic update on failure by re-syncing with the server
+            setBugReports(originalReports);
+            addNotification({type: 'error', message: 'Failed to update report. Reverting changes.'})
         }
     };
     const deleteBugReports = async (reportIds: string[]) => {
@@ -662,7 +666,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
                 
                 // Merge the initial/default object with the user's settings object.
                 // The type guard on newVal should be sufficient for TypeScript here.
-                (newSettings[key] as any) = { ...initialObj, ...newVal };
+                (newSettings[key] as any) = { ...initialObj, ...(newVal as object) };
             }
         });
 
@@ -673,7 +677,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         const finalSidebar = INITIAL_SETTINGS.sidebars.main.map((defaultItem: SidebarConfigItem) => {
             if (userItemsById.has(defaultItem.id)) {
                 const userItem = userItemsById.get(defaultItem.id);
-                return { ...defaultItem, ...(userItem || {}) };
+                const userItemObject = (userItem && typeof userItem === 'object') ? userItem : {};
+                return { ...defaultItem, ...userItemObject };
             }
             return defaultItem;
         });
@@ -837,7 +842,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     const importAssetPack = async (assetPack: AssetPack, resolutions: ImportResolution[], allData: IAppData) => { apiRequest('POST', '/api/data/import-assets', { assetPack, resolutions }).catch(() => {}); };
     
     return {
-      setUsers: authDispatch.setUsers, setLoginHistory: authDispatch.setLoginHistory,
       setQuests, setQuestGroups, setQuestCompletions, setMarkets, setRewardTypes,
       setPurchaseRequests, setGameAssets, setActivePage: setActivePageStable, toggleSidebar,
       toggleChat, setAppMode, setActiveMarketId, addGuild, updateGuild, deleteGuild,

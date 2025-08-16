@@ -21,9 +21,9 @@
       { "id": "ehm1", "title": "The Time Traveler's Trunk", "description": "Artifacts and attire from across the ages.", "icon": "⏳", "iconType": "emoji", "status": { "type": "open" } }
     ],
     "gameAssets": [
-      { "id": "ehga1", "name": "Roman Helmet", "description": "A classic Roman legionary helmet for your avatar.", "url": "/uploads/avatar-hats/roman-helmet.png", "category": "Avatar", "avatarSlot": "hat", "isForSale": true, "costGroups": [[{ "rewardTypeId": "core-gold", "amount": 35 }]], "marketIds": ["ehm1"] },
-      { "id": "ehga2", "name": "Viking Axe (Toy)", "description": "A prop Viking axe for your collection.", "url": "/uploads/tools/viking-axe.png", "category": "Toy", "isForSale": true, "costGroups": [[{ "rewardTypeId": "core-gold", "amount": 30 }]], "marketIds": ["ehm1"] },
-      { "id": "ehga3", "name": "Parchment Theme", "description": "Unlocks the old-fashioned 'Parchment' theme.", "url": "/uploads/themes/parchment-theme.png", "category": "Theme", "isForSale": true, "costGroups": [[{ "rewardTypeId": "core-gems", "amount": 50 }]], "marketIds": ["ehm1"], "linkedThemeId": "parchment" }
+      { "id": "ehga1", "name": "Roman Helmet", "description": "A classic Roman legionary helmet for your avatar.", "iconType": "emoji", "icon": "🛡️", "category": "Avatar", "avatarSlot": "hat", "isForSale": true, "costGroups": [[{ "rewardTypeId": "core-gold", "amount": 35 }]], "marketIds": ["ehm1"] },
+      { "id": "ehga2", "name": "Viking Axe (Toy)", "description": "A prop Viking axe for your collection.", "iconType": "emoji", "icon": "🪓", "category": "Toy", "isForSale": true, "costGroups": [[{ "rewardTypeId": "core-gold", "amount": 30 }]], "marketIds": ["ehm1"] },
+      { "id": "ehga3", "name": "Parchment Theme", "description": "Unlocks the old-fashioned 'Parchment' theme.", "iconType": "emoji", "icon": "📜", "category": "Theme", "isForSale": true, "costGroups": [[{ "rewardTypeId": "core-gems", "amount": 50 }]], "marketIds": ["ehm1"], "linkedThemeId": "parchment" }
     ],
     "trophies": [
       { "id": "eht1", "name": "Historian", "description": "Complete 5 history-themed quests.", "icon": "🎓", "iconType": "emoji", "isManual": true, "requirements": [] }

@@ -133,7 +133,7 @@ const GuildMemberProfilePage: React.FC<GuildMemberProfilePageProps> = ({ user, g
                              {ownedItems.map(asset => asset && (
                                 <div key={asset.id} className="bg-stone-800/60 p-3 rounded-lg flex flex-col items-center text-center">
                                     <div className="w-16 h-16 mb-2 bg-stone-700 rounded-lg flex items-center justify-center overflow-hidden">
-                                        <img src={asset.url} alt={asset.name} className="w-full h-full object-contain" />
+                                        <img src={asset.imageUrl} alt={asset.name} className="w-full h-full object-contain" />
                                     </div>
                                     <p className="font-semibold text-sm text-stone-200 truncate w-full">{asset.name}</p>
                                     <p className="text-xs text-stone-400">{asset.category}</p>

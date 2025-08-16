@@ -32,7 +32,7 @@ const Avatar: React.FC<AvatarProps> = ({ user, className }) => {
                 equippedAssets.map(asset => (
                     <img
                         key={asset.id}
-                        src={asset.url}
+                        src={asset.imageUrl}
                         alt={asset.name}
                         className="absolute inset-0 w-full h-full object-contain"
                     />

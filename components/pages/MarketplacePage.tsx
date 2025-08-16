@@ -114,11 +114,18 @@ const MarketItemView: React.FC<{ market: Market }> = ({ market }) => {
                 )}
                 <div className="p-4 border-b border-white/10">
                     <button
-                        onClick={() => setPreviewImageUrl(asset.url)}
-                        className="w-full h-32 bg-black/20 rounded-md mb-3 flex items-center justify-center overflow-hidden group focus:outline-none focus:ring-2 focus:ring-emerald-500 ring-offset-2 ring-offset-violet-900/30"
+                        onClick={() => asset.iconType === 'image' && asset.imageUrl && setPreviewImageUrl(asset.imageUrl)}
+                        disabled={asset.iconType !== 'image' || !asset.imageUrl}
+                        className="w-full h-32 bg-black/20 rounded-md mb-3 flex items-center justify-center overflow-hidden group focus:outline-none focus:ring-2 focus:ring-emerald-500 ring-offset-2 ring-offset-violet-900/30 disabled:cursor-default"
                         aria-label={`View larger image of ${asset.name}`}
                     >
-                        <img src={asset.url} alt={asset.name} className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-200" />
+                        <DynamicIcon
+                            iconType={asset.iconType}
+                            icon={asset.icon}
+                            imageUrl={asset.imageUrl}
+                            className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-200 text-6xl"
+                            altText={asset.name}
+                        />
                     </button>
                     <h4 className="font-bold text-lg text-stone-100">{asset.name}</h4>
                     <p className="text-stone-300 text-sm mt-1">{asset.description}</p>

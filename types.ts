@@ -151,8 +151,9 @@ export interface GameAsset {
   id: string;
   name: string;
   description: string;
-  url: string;
-  icon?: string;
+  iconType: 'emoji' | 'image';
+  icon: string;
+  imageUrl?: string;
   category: string;
   avatarSlot?: string;
   isForSale: boolean;

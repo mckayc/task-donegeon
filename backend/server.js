@@ -1,6 +1,8 @@
 
 
 
+
+
 require("reflect-metadata");
 const express = require('express');
 const cors = require('cors');
@@ -546,6 +548,12 @@ app.post('/api/data/import-assets', asyncMiddleware(async (req, res) => {
                 }
             }
 
+            if (res.type === 'gameAssets') {
+                const ga = newAssetData;
+                ga.creatorId = ga.creatorId || 'system';
+                ga.purchaseCount = ga.purchaseCount || 0;
+            }
+
             if (res.resolution === 'rename' && res.newName) {
                 if ('title' in newAssetData) newAssetData.title = res.newName;
                 else newAssetData.name = res.newName;
@@ -650,10 +658,15 @@ app.post('/api/data/import-assets', asyncMiddleware(async (req, res) => {
         // Populate importedData with the newly created and fully resolved entities
         for(const type in createdEntityIds) {
             if (!importedData[type]) importedData[type] = [];
-            const entities = await manager.getRepository(type.slice(0, -1)).find({
-                where: { id: In(createdEntityIds[type]) },
-                relations: ['assignedUsers', 'members'] // Add any relations needed by frontend
-            });
+
+            const findOptions = { where: { id: In(createdEntityIds[type]) } };
+            if (type === 'quests') {
+                findOptions.relations = ['assignedUsers'];
+            } else if (type === 'guilds') {
+                findOptions.relations = ['members'];
+            }
+
+            const entities = await manager.getRepository(type.slice(0, -1)).find(findOptions);
             importedData[type] = entities;
         }
     });

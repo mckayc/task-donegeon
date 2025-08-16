@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { useAppState, useAppDispatch } from '../../context/AppContext';
+import { useData } from '../../context/DataProvider';
+import { useActionsDispatch } from '../../context/ActionsContext';
 import { useAuthState } from '../../context/AuthContext';
 import { Guild } from '../../types';
 import Button from '../user-interface/Button';
@@ -11,9 +12,9 @@ interface EditGuildDialogProps {
 }
 
 const EditGuildDialog: React.FC<EditGuildDialogProps> = ({ guild, onClose }) => {
-  const { guilds, themes } = useAppState();
+  const { guilds, themes } = useData();
   const { users } = useAuthState();
-  const { addGuild, updateGuild } = useAppDispatch();
+  const { addGuild, updateGuild } = useActionsDispatch();
   const [formData, setFormData] = useState({
     name: '',
     purpose: '',
@@ -70,7 +71,11 @@ const EditGuildDialog: React.FC<EditGuildDialogProps> = ({ guild, onClose }) => 
     if (guild) {
       updateGuild({ ...guild, ...payload });
     } else {
-      addGuild(payload);
+      const newGuildPayload = {
+        ...payload,
+        treasury: { purse: {}, ownedAssetIds: [] },
+      };
+      addGuild(newGuildPayload);
     }
     onClose();
   };

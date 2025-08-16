@@ -1,21 +1,33 @@
 import React, { useMemo } from 'react';
-import { useAppState, useAppDispatch } from '../../context/AppContext';
+import { useData } from '../../context/DataProvider';
+import { useUIState, useUIDispatch } from '../../context/UIContext';
 import { useAuthState } from '../../context/AuthContext';
 
 const ChatController: React.FC = () => {
-    const { settings, chatMessages, isChatOpen } = useAppState();
+    const { settings, chatMessages, guilds } = useData();
+    const { isChatOpen } = useUIState();
     const { currentUser } = useAuthState();
-    const { toggleChat } = useAppDispatch();
+    const { toggleChat } = useUIDispatch();
 
     const unreadMessagesCount = useMemo(() => {
         if (!currentUser) return 0;
-        const sendersWithUnread = new Set(
-            chatMessages
-                .filter(msg => msg.recipientId === currentUser.id && !msg.readBy.includes(currentUser.id))
-                .map(msg => msg.senderId)
+        
+        // 1. Unread DMs are always relevant
+        const unreadDms = chatMessages.filter(
+            msg => msg.recipientId === currentUser.id && !msg.readBy.includes(currentUser.id)
         );
-        return sendersWithUnread.size;
-    }, [chatMessages, currentUser]);
+        const uniqueSenders = new Set(unreadDms.map(msg => msg.senderId));
+        
+        // 2. Unread messages from any of the user's guilds
+        const userGuildIds = new Set(guilds.filter(g => g.memberIds.includes(currentUser.id)).map(g => g.id));
+        const unreadGuilds = new Set(
+            chatMessages
+                .filter(msg => msg.guildId && userGuildIds.has(msg.guildId) && !msg.readBy.includes(currentUser.id))
+                .map(msg => msg.guildId)
+        );
+        
+        return uniqueSenders.size + unreadGuilds.size;
+      }, [chatMessages, currentUser, guilds]);
 
     if (!settings.chat.enabled || !currentUser || isChatOpen) {
         return null;

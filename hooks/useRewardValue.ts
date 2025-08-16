@@ -1,4 +1,4 @@
-import { useAppState } from '../context/AppContext';
+import { useData } from '../context/DataProvider';
 
 /**
  * Formats a number into a currency string based on a currency code.
@@ -22,7 +22,7 @@ const formatCurrency = (amount: number, currencyCode: string): string => {
  * @returns A formatted currency string like "$5.00" or null if valuation is disabled or not applicable.
  */
 export const useRewardValue = (amount: number, rewardTypeId: string): string | null => {
-    const { settings, rewardTypes } = useAppState();
+    const { settings, rewardTypes } = useData();
     const { rewardValuation } = settings;
 
     if (!rewardValuation.enabled) return null;

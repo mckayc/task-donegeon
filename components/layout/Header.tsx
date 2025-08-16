@@ -1,7 +1,8 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { Page, Role, AppMode, User } from '../../types';
 import Avatar from '../user-interface/Avatar';
-import { useAppState, useAppDispatch } from '../../context/AppContext';
+import { useData } from '../../context/DataProvider';
+import { useUIState, useUIDispatch } from '../../context/UIContext';
 import { useAuthState, useAuthDispatch } from '../../context/AuthContext';
 import FullscreenToggle from '../user-interface/FullscreenToggle';
 import { ChevronDownIcon } from '../user-interface/Icons';
@@ -9,7 +10,7 @@ import RewardDisplay from '../user-interface/RewardDisplay';
 
 const Clock: React.FC = () => {
     const [time, setTime] = useState(new Date());
-    const { syncStatus, syncError } = useAppState();
+    const { syncStatus, syncError } = useData();
 
     useEffect(() => {
         const timerId = setInterval(() => setTime(new Date()), 1000);
@@ -36,8 +37,9 @@ const Clock: React.FC = () => {
 };
 
 const Header: React.FC = () => {
-  const { guilds, settings, appMode } = useAppState();
-  const { setAppMode, setActivePage } = useAppDispatch();
+  const { guilds, settings } = useData();
+  const { appMode } = useUIState();
+  const { setAppMode, setActivePage } = useUIDispatch();
   const { currentUser } = useAuthState();
   const { setCurrentUser, setIsSwitchingUser, setAppUnlocked, exitToSharedView } = useAuthDispatch();
 

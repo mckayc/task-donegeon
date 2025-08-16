@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { useAppState, useAppDispatch } from '../../context/AppContext';
+import { useData } from '../../context/DataProvider';
+import { useActionsDispatch } from '../../context/ActionsContext';
 import { Rank } from '../../types';
 import Button from '../user-interface/Button';
 import Input from '../user-interface/Input';
@@ -13,8 +14,8 @@ interface EditRankDialogProps {
 }
 
 const EditRankDialog: React.FC<EditRankDialogProps> = ({ rank, onClose }) => {
-  const { ranks } = useAppState();
-  const { setRanks } = useAppDispatch();
+  const { ranks } = useData();
+  const { setRanks } = useActionsDispatch();
   const [formData, setFormData] = useState({ 
       name: '', 
       xpThreshold: 0,

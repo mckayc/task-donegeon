@@ -1,5 +1,7 @@
+
 import React, { useEffect } from 'react';
-import { useAppState, useAppDispatch } from './context/AppContext';
+import { useData } from './context/DataProvider';
+import { useUIState } from './context/UIContext';
 import { useAuthState } from './context/AuthContext';
 import FirstRunWizard from './components/auth/FirstRunWizard';
 import MainLayout from './components/layout/MainLayout';
@@ -14,7 +16,8 @@ import { Role } from './types';
 import { useDeveloper, useDeveloperState } from './context/DeveloperContext';
 
 const App: React.FC = () => {
-  const { isDataLoaded, settings, guilds, themes, appMode, activePage } = useAppState();
+  const { isDataLoaded, settings, guilds, themes } = useData();
+  const { appMode, activePage } = useUIState();
   const { currentUser, isAppUnlocked, isFirstRun, isSwitchingUser, isSharedViewActive } = useAuthState();
   const { isRecording, addLogEntry } = useDeveloper();
   const { isPickingElement } = useDeveloperState();

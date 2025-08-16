@@ -1,42 +1,67 @@
 
+
 import React, { useMemo, useState, useEffect } from 'react';
-import { useAppState, useAppDispatch } from '../../context/AppContext';
+import { useData } from '../../context/DataProvider';
+import { useUIState, useUIDispatch } from '../../context/UIContext';
+import { useActionsDispatch } from '../../context/ActionsContext';
 import { useAuthState } from '../../context/AuthContext';
-import { Quest, QuestCompletionStatus, RewardCategory, QuestType } from '../../types';
+import { Quest, QuestCompletionStatus, RewardCategory, QuestType, QuestKind } from '../../types';
 import Card from '../user-interface/Card';
 import { isQuestAvailableForUser, isQuestVisibleToUserInMode, questSorter } from '../../utils/quests';
 import QuestDetailDialog from '../quests/QuestDetailDialog';
 import CompleteQuestDialog from '../quests/CompleteQuestDialog';
 import { useRewardValue } from '../../hooks/useRewardValue';
 import BarChart from '../user-interface/BarChart';
+import GuildDashboard from './GuildDashboard';
+import ContributeToQuestDialog from '../quests/ContributeToQuestDialog';
 
 const Dashboard: React.FC = () => {
-    const { ranks, userTrophies, trophies, settings, scheduledEvents, quests, questCompletions, rewardTypes, purchaseRequests, users, appMode } = useAppState();
+    const { ranks, userTrophies, trophies, settings, scheduledEvents, quests, questCompletions, rewardTypes, purchaseRequests, users, guilds } = useData();
+    const { appMode } = useUIState();
     const { currentUser } = useAuthState();
-    const { markQuestAsTodo, unmarkQuestAsTodo, setActivePage } = useAppDispatch();
+    const { markQuestAsTodo, unmarkQuestAsTodo, setActivePage } = useActionsDispatch();
     
     const [selectedQuest, setSelectedQuest] = useState<Quest | null>(null);
     const [completingQuest, setCompletingQuest] = useState<Quest | null>(null);
+    const [contributingQuest, setContributingQuest] = useState<Quest | null>(null);
     const [chartColor, setChartColor] = useState<string>('hsl(158 84% 39%)');
 
-     useEffect(() => {
-        // A short delay ensures that the theme variables from App.tsx have been applied.
-        const timer = setTimeout(() => {
-            if (typeof window !== 'undefined') {
-                const style = getComputedStyle(document.documentElement);
-                const h = style.getPropertyValue('--color-primary-hue').trim();
-                const s = style.getPropertyValue('--color-primary-saturation').trim();
-                const l = style.getPropertyValue('--color-primary-lightness').trim();
-                if (h && s && l) {
-                    setChartColor(`hsl(${h} ${s} ${l})`);
-                }
+    const activeThemeId = useMemo(() => {
+        let themeId: string | undefined = settings.theme;
+        if (appMode.mode === 'guild') {
+            const currentGuild = guilds.find(g => g.id === appMode.guildId);
+            if (currentGuild?.themeId) {
+                themeId = currentGuild.themeId;
+            } else if (currentUser?.theme) {
+                themeId = currentUser.theme;
             }
-        }, 100);
-        return () => clearTimeout(timer);
-    }, [appMode, currentUser]);
+        } else {
+            if (currentUser?.theme) {
+                themeId = currentUser.theme;
+            }
+        }
+        return themeId || 'default'; // fallback key
+    }, [settings.theme, currentUser?.theme, appMode, guilds]);
+
+    useEffect(() => {
+        // This effect now runs reliably after the component re-mounts with the correct theme styles.
+        if (typeof window !== 'undefined') {
+            const style = getComputedStyle(document.documentElement);
+            const h = style.getPropertyValue('--color-primary-hue').trim();
+            const s = style.getPropertyValue('--color-primary-saturation').trim();
+            const l = style.getPropertyValue('--color-primary-lightness').trim();
+            if (h && s && l) {
+                setChartColor(`hsl(${h} ${s} ${l})`);
+            }
+        }
+    }, [activeThemeId]); // Depend on the theme ID.
 
 
     if (!currentUser) return <div>Loading adventurer's data...</div>;
+
+    if (appMode.mode === 'guild' && currentUser.role === 'Donegeon Master') {
+        return <GuildDashboard />;
+    }
     
     const { terminology } = settings;
 
@@ -49,18 +74,22 @@ const Dashboard: React.FC = () => {
         setSelectedQuest(quest);
     };
 
-    const handleStartCompletion = (questToComplete: Quest) => {
+    const handleStartAction = (questToAction: Quest) => {
         setSelectedQuest(null);
-        setCompletingQuest(questToComplete);
+        if (questToAction.kind === QuestKind.GuildCollaborative) {
+            setContributingQuest(questToAction);
+        } else {
+            setCompletingQuest(questToAction);
+        }
     };
 
-    const handleToggleTodo = (questToComplete: Quest) => {
-        if (!currentUser || questToComplete.type !== QuestType.Venture) return;
-        const isTodo = questToComplete.todoUserIds?.includes(currentUser.id);
+    const handleToggleTodo = (questToToggle: Quest) => {
+        if (!currentUser || questToToggle.type !== QuestType.Venture) return;
+        const isTodo = questToToggle.todoUserIds?.includes(currentUser.id);
         if (isTodo) {
-            unmarkQuestAsTodo(questToComplete.id, currentUser.id);
+            unmarkQuestAsTodo(questToToggle.id, currentUser.id);
         } else {
-            markQuestAsTodo(questToComplete.id, currentUser.id);
+            markQuestAsTodo(questToToggle.id, currentUser.id);
         }
         // Also update the selectedQuest so the dialog reflects the change immediately
         setSelectedQuest(prev => prev ? {...prev, todoUserIds: isTodo ? (prev.todoUserIds || []).filter(id => id !== currentUser.id) : [...(prev.todoUserIds || []), currentUser.id]} : null);
@@ -75,7 +104,7 @@ const Dashboard: React.FC = () => {
 
     const rankData = useMemo(() => {
         const sortedRanks = [...ranks].sort((a, b) => a.xpThreshold - b.xpThreshold);
-        const totalXp = Object.values(currentBalances.experience).reduce((sum: number, amount: number) => sum + Number(amount), 0);
+        const totalXp = Object.values(currentBalances.experience).reduce((sum: number, amount: number) => sum + amount, 0);
         
         let currentRank = sortedRanks[0];
         let nextRank = sortedRanks[1] || null;
@@ -182,9 +211,9 @@ const Dashboard: React.FC = () => {
             .map(user => {
                 let userTotalXp = 0;
                 if (currentGuildId) {
-                    userTotalXp = Object.values(user.guildBalances[currentGuildId]?.experience || {}).reduce((sum, amount) => sum + Number(amount), 0);
+                    userTotalXp = Object.values(user.guildBalances[currentGuildId]?.experience || {}).reduce((sum: number, amount) => sum + (amount as number), 0);
                 } else {
-                    userTotalXp = Object.values(user.personalExperience).reduce((sum, amount) => sum + Number(amount), 0);
+                    userTotalXp = Object.values(user.personalExperience).reduce((sum: number, amount) => sum + (amount as number), 0);
                 }
                 return { name: user.gameName, xp: userTotalXp };
             })
@@ -378,15 +407,25 @@ const Dashboard: React.FC = () => {
                                         ? 'bg-blue-950/70 border-blue-800/80 hover:border-blue-600'
                                         : 'bg-purple-950/70 border-purple-800/80 hover:border-purple-600';
                                     
+                                    const isCollaborative = quest.kind === QuestKind.GuildCollaborative;
+                                    const progress = isCollaborative ? ((quest.contributions?.length || 0) / (quest.completionGoal || 1)) * 100 : 0;
+                                    
                                     return (
                                         <div
                                             key={quest.id}
                                             onClick={() => handleQuestSelect(quest)}
                                             className={`p-3 rounded-lg border-2 cursor-pointer transition-colors grid grid-cols-1 md:grid-cols-3 gap-2 items-center ${cardClass}`}
                                         >
-                                            <p className="font-semibold text-stone-100 flex items-center gap-2 md:col-span-1 truncate" title={quest.title}>
-                                                {quest.icon} {quest.title}
-                                            </p>
+                                            <div className="md:col-span-1 truncate">
+                                                <p className="font-semibold text-stone-100 flex items-center gap-2 truncate" title={quest.title}>
+                                                    {quest.icon} {quest.title}
+                                                </p>
+                                                {isCollaborative && (
+                                                    <div className="w-full bg-stone-700 rounded-full h-2.5 mt-2">
+                                                        <div className="bg-green-600 h-2.5 rounded-full" style={{width: `${progress}%`}}></div>
+                                                    </div>
+                                                )}
+                                            </div>
                                              <p className="text-xs text-stone-400 md:col-span-1 md:text-center truncate">{getDueDateString(quest)}</p>
 
                                             {quest.rewards.length > 0 && (
@@ -431,7 +470,7 @@ const Dashboard: React.FC = () => {
                     <Card title="Weekly Progress">
                         <div className="h-60">
                            {weeklyProgressData.some(d => d.value > 0) ? (
-                                <BarChart data={weeklyProgressData} color={chartColor} />
+                                <BarChart key={activeThemeId} data={weeklyProgressData} color={chartColor} />
                             ) : (
                                 <p className="text-stone-400 text-center pt-16">No XP earned this week. Time for a quest!</p>
                             )}
@@ -443,7 +482,7 @@ const Dashboard: React.FC = () => {
                 <QuestDetailDialog
                     quest={selectedQuest}
                     onClose={() => setSelectedQuest(null)}
-                    onComplete={() => handleStartCompletion(selectedQuest)}
+                    onComplete={() => handleStartAction(selectedQuest)}
                     onToggleTodo={() => handleToggleTodo(selectedQuest)}
                     isTodo={!!(selectedQuest.type === QuestType.Venture && selectedQuest.todoUserIds?.includes(currentUser.id))}
                 />
@@ -452,6 +491,12 @@ const Dashboard: React.FC = () => {
                 <CompleteQuestDialog
                     quest={completingQuest}
                     onClose={() => setCompletingQuest(null)}
+                />
+            )}
+            {contributingQuest && (
+                <ContributeToQuestDialog
+                    quest={contributingQuest}
+                    onClose={() => setContributingQuest(null)}
                 />
             )}
         </div>

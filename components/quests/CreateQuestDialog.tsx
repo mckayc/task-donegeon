@@ -1,8 +1,7 @@
-
-
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { useAppState, useAppDispatch } from '../../context/AppContext';
-import { Quest, QuestType, RewardItem, RewardCategory, Role, BugReport } from '../../types';
+import { useData } from '../../context/DataProvider';
+import { useActionsDispatch } from '../../context/ActionsContext';
+import { Quest, QuestType, RewardItem, RewardCategory, Role, BugReport, QuestKind } from '../../types';
 import Button from '../user-interface/Button';
 import Input from '../user-interface/Input';
 import ToggleSwitch from '../user-interface/ToggleSwitch';
@@ -29,9 +28,9 @@ interface QuestDialogProps {
 }
 
 const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialData, onClose, mode = (questToEdit ? 'edit' : 'create'), onTryAgain, isGenerating, onSave, initialDataFromBug }) => {
-  const { guilds, settings, allTags, questGroups, rewardTypes } = useAppState();
+  const { guilds, settings, allTags, questGroups, rewardTypes } = useData();
   const { users } = useAuthState();
-  const { addQuest, updateQuest, addQuestGroup } = useAppDispatch();
+  const { addQuest, updateQuest, addQuestGroup } = useActionsDispatch();
   const hasLoggedOpen = useRef(false);
 
   const getInitialFormData = useCallback((): QuestFormData => {
@@ -39,6 +38,7 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
     const baseData: QuestFormData = {
         title: '', description: '',
         type: QuestType.Venture,
+        kind: QuestKind.Personal,
         iconType: 'emoji' as 'emoji' | 'image',
         icon: '📝', imageUrl: '',
         rewards: [] as RewardItem[], lateSetbacks: [] as RewardItem[], incompleteSetbacks: [] as RewardItem[],
@@ -208,6 +208,7 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
         title: formData.title,
         description: formData.description,
         type: formData.type,
+        kind: formData.guildId ? QuestKind.Guild : QuestKind.Personal,
         iconType: formData.iconType,
         icon: formData.icon,
         imageUrl: formData.imageUrl || undefined,

@@ -1,6 +1,6 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { Quest, RewardCategory, RewardItem, QuestType } from '../../types';
-import { useAppState } from '../../context/AppContext';
+import { useData } from '../../context/DataProvider';
 import Button from '../user-interface/Button';
 import ToggleSwitch from '../user-interface/ToggleSwitch';
 import { bugLogger } from '../../utils/bugLogger';
@@ -15,7 +15,7 @@ interface QuestDetailDialogProps {
 }
 
 const QuestDetailDialog: React.FC<QuestDetailDialogProps> = ({ quest, onClose, onComplete, onToggleTodo, isTodo, dialogTitle }) => {
-    const { settings, rewardTypes } = useAppState();
+    const { settings, rewardTypes, quests } = useData();
 
     useEffect(() => {
         if (bugLogger.isRecording()) {
@@ -43,6 +43,11 @@ const QuestDetailDialog: React.FC<QuestDetailDialogProps> = ({ quest, onClose, o
         const rewardDef = rewardTypes.find(rt => rt.id === id);
         return { name: rewardDef?.name || 'Unknown Reward', icon: rewardDef?.icon || '❓' };
     };
+    
+    const nextQuest = useMemo(() => {
+        if (!quest.nextQuestId) return null;
+        return quests.find(q => q.id === quest.nextQuestId);
+    }, [quest.nextQuestId, quests]);
 
     const renderRewardList = (rewards: RewardItem[], title: string, colorClass: string) => {
         if (!rewards || rewards.length === 0) return null;
@@ -117,6 +122,19 @@ const QuestDetailDialog: React.FC<QuestDetailDialogProps> = ({ quest, onClose, o
                         {renderRewardList(quest.lateSetbacks, `Late ${settings.terminology.negativePoints}`, 'text-yellow-400')}
                         {renderRewardList(quest.incompleteSetbacks, `Incomplete ${settings.terminology.negativePoints}`, 'text-red-400')}
                     </div>
+
+                    {nextQuest && (
+                         <div className="pt-4 border-t border-white/10">
+                            <p className="text-xs font-semibold text-indigo-400 uppercase tracking-wider">Unlocks Next Quest</p>
+                            <div className="flex items-center gap-3 mt-2">
+                                <span className="text-3xl">{nextQuest.icon}</span>
+                                <div>
+                                    <p className="font-bold text-stone-100">{nextQuest.title}</p>
+                                    <p className="text-sm text-stone-400 truncate">{nextQuest.description}</p>
+                                </div>
+                            </div>
+                         </div>
+                    )}
                 </div>
 
                 <div className="p-4 bg-black/20 rounded-b-xl flex justify-between items-center gap-2 flex-wrap">

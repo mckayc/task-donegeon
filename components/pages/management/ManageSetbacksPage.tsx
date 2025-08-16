@@ -7,13 +7,16 @@ import { EllipsisVerticalIcon } from '../../user-interface/Icons';
 import EmptyState from '../../user-interface/EmptyState';
 import EditSetbackDialog from '../../admin/EditSetbackDialog';
 import ConfirmDialog from '../../user-interface/ConfirmDialog';
+import ApplySetbackDialog from '../../admin/ApplySetbackDialog';
 
 const ManageSetbacksPage: React.FC = () => {
     const { settings, setbackDefinitions } = useAppState();
     const { deleteSelectedAssets } = useAppDispatch();
     
     const [isDialogOpen, setIsDialogOpen] = useState(false);
+    const [isApplyDialogOpen, setIsApplyDialogOpen] = useState(false);
     const [editingSetback, setEditingSetback] = useState<SetbackDefinition | null>(null);
+    const [applyingSetback, setApplyingSetback] = useState<SetbackDefinition | null>(null);
     const [deletingSetback, setDeletingSetback] = useState<SetbackDefinition | null>(null);
     const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
     const dropdownRef = useRef<HTMLDivElement | null>(null);
@@ -38,6 +41,11 @@ const ManageSetbacksPage: React.FC = () => {
         setIsDialogOpen(true);
     };
 
+    const handleApply = (setback: SetbackDefinition) => {
+        setApplyingSetback(setback);
+        setIsApplyDialogOpen(true);
+    };
+
     const handleConfirmDelete = () => {
         if (deletingSetback) {
             deleteSelectedAssets({ setbackDefinitions: [deletingSetback.id] });
@@ -48,7 +56,7 @@ const ManageSetbacksPage: React.FC = () => {
     return (
         <div className="space-y-6">
             <Card
-                title="Manage Setback Definitions"
+                title={settings.terminology.link_manage_setbacks}
                 headerAction={<Button onClick={handleCreate} size="sm">Create New Setback</Button>}
             >
                 {setbackDefinitions.length > 0 ? (
@@ -67,7 +75,7 @@ const ManageSetbacksPage: React.FC = () => {
                                         <td className="p-4 font-bold">{setback.icon} {setback.name}</td>
                                         <td className="p-4 text-stone-400">{setback.description}</td>
                                         <td className="p-4 relative">
-                                            <Button variant="secondary" size="sm" disabled>Apply</Button>
+                                            <Button variant="secondary" size="sm" onClick={() => handleApply(setback)}>Apply</Button>
                                             <button onClick={() => setOpenDropdownId(openDropdownId === setback.id ? null : setback.id)} className="p-2 rounded-full hover:bg-stone-700/50 ml-2">
                                                 <EllipsisVerticalIcon className="w-5 h-5 text-stone-300" />
                                             </button>
@@ -94,6 +102,7 @@ const ManageSetbacksPage: React.FC = () => {
             </Card>
 
             {isDialogOpen && <EditSetbackDialog setbackToEdit={editingSetback} onClose={() => setIsDialogOpen(false)} />}
+            {isApplyDialogOpen && applyingSetback && <ApplySetbackDialog setback={applyingSetback} onClose={() => setIsApplyDialogOpen(false)} />}
             
             <ConfirmDialog
                 isOpen={!!deletingSetback}

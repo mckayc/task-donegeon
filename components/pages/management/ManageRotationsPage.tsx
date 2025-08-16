@@ -1,16 +1,19 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useAppState, useAppDispatch } from '../../../context/AppContext';
-import { Rotation } from '../../../types';
+import { Rotation, SystemNotificationType } from '../../../types';
 import Button from '../../user-interface/Button';
 import Card from '../../user-interface/Card';
 import { EllipsisVerticalIcon } from '../../user-interface/Icons';
 import EmptyState from '../../user-interface/EmptyState';
 import EditRotationDialog from '../../rotations/EditRotationDialog';
 import ConfirmDialog from '../../user-interface/ConfirmDialog';
+import { toYMD } from '../../../utils/quests';
+import { useNotificationsDispatch } from '../../../context/NotificationsContext';
 
 const ManageRotationsPage: React.FC = () => {
-    const { settings, rotations } = useAppState();
-    const { deleteSelectedAssets } = useAppDispatch();
+    const { settings, rotations, quests } = useAppState();
+    const { deleteSelectedAssets, updateQuest, updateRotation, addSystemNotification } = useAppDispatch();
+    const { addNotification } = useNotificationsDispatch();
     
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [editingRotation, setEditingRotation] = useState<Rotation | null>(null);
@@ -45,10 +48,48 @@ const ManageRotationsPage: React.FC = () => {
         setDeletingRotation(null);
     };
 
+    const handleRunRotation = (rotationId: string) => {
+        const rotation = rotations.find(r => r.id === rotationId);
+        if (!rotation || rotation.questIds.length === 0 || rotation.userIds.length === 0) {
+            addNotification({ type: 'error', message: 'Rotation is not configured with quests and users.' });
+            return;
+        }
+
+        const nextUserIndex = (rotation.lastUserIndex + 1) % rotation.userIds.length;
+        const nextQuestIndex = (rotation.lastQuestIndex + 1) % rotation.questIds.length;
+        
+        const userIdToAssign = rotation.userIds[nextUserIndex];
+        const questIdToAssign = rotation.questIds[nextQuestIndex];
+        const questToAssign = quests.find(q => q.id === questIdToAssign);
+
+        if (!questToAssign) {
+            addNotification({ type: 'error', message: `Quest with ID ${questIdToAssign} not found in rotation.` });
+            return;
+        }
+
+        updateQuest({ ...questToAssign, assignedUserIds: [userIdToAssign] });
+        addSystemNotification({
+            type: SystemNotificationType.QuestAssigned,
+            message: `You have been assigned a new quest: "${questToAssign.title}"`,
+            recipientUserIds: [userIdToAssign],
+            link: 'Quests',
+            guildId: questToAssign.guildId
+        });
+        
+        updateRotation({
+            ...rotation,
+            lastUserIndex: nextUserIndex,
+            lastQuestIndex: nextQuestIndex,
+            lastAssignmentDate: toYMD(new Date()),
+        });
+        
+        addNotification({ type: 'success', message: `Assigned "${questToAssign.title}" to the next user.` });
+    };
+
     return (
         <div className="space-y-6">
             <Card
-                title="Manage Rotations"
+                title={settings.terminology.link_manage_rotations}
                 headerAction={<Button onClick={handleCreate} size="sm">Create New Rotation</Button>}
             >
                 {rotations.length > 0 ? (
@@ -69,11 +110,12 @@ const ManageRotationsPage: React.FC = () => {
                                         <td className="p-4 text-stone-400">{rotation.description}</td>
                                         <td className="p-4 text-stone-300 capitalize">{rotation.frequency.toLowerCase()}</td>
                                         <td className="p-4 relative">
-                                            <button onClick={() => setOpenDropdownId(openDropdownId === rotation.id ? null : rotation.id)} className="p-2 rounded-full hover:bg-stone-700/50">
+                                            <Button variant="secondary" size="sm" onClick={() => handleRunRotation(rotation.id)}>Run Now</Button>
+                                            <button onClick={() => setOpenDropdownId(openDropdownId === rotation.id ? null : rotation.id)} className="p-2 rounded-full hover:bg-stone-700/50 ml-2">
                                                 <EllipsisVerticalIcon className="w-5 h-5 text-stone-300" />
                                             </button>
                                             {openDropdownId === rotation.id && (
-                                                <div ref={dropdownRef} className="absolute right-10 top-0 mt-2 w-36 bg-stone-900 border border-stone-700 rounded-lg shadow-xl z-20">
+                                                <div ref={dropdownRef} className="absolute right-0 top-full mt-2 w-36 bg-stone-900 border border-stone-700 rounded-lg shadow-xl z-20">
                                                     <a href="#" onClick={(e) => { e.preventDefault(); handleEdit(rotation); setOpenDropdownId(null); }} className="block px-4 py-2 text-sm text-stone-300 hover:bg-stone-700/50">Edit</a>
                                                     <button onClick={() => { setDeletingRotation(rotation); setOpenDropdownId(null); }} className="w-full text-left block px-4 py-2 text-sm text-red-400 hover:bg-stone-700/50">Delete</button>
                                                 </div>

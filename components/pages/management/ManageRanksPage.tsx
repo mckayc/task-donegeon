@@ -1,19 +1,18 @@
-
-
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { Rank } from '../../../types';
 import Button from '../../user-interface/Button';
 import Card from '../../user-interface/Card';
 import EditRankDialog from '../../settings/EditRankDialog';
 import ConfirmDialog from '../../user-interface/ConfirmDialog';
-import { useAppState, useAppDispatch } from '../../../context/AppContext';
+import { useData } from '../../../context/DataProvider';
+import { useActionsDispatch } from '../../../context/ActionsContext';
 import EmptyState from '../../user-interface/EmptyState';
 import { RankIcon, EllipsisVerticalIcon } from '../../user-interface/Icons';
 import { useShiftSelect } from '../../../hooks/useShiftSelect';
 
 const ManageRanksPage: React.FC = () => {
-    const { ranks, settings } = useAppState();
-    const { deleteSelectedAssets } = useAppDispatch();
+    const { ranks, settings } = useData();
+    const { deleteSelectedAssets } = useActionsDispatch();
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [editingRank, setEditingRank] = useState<Rank | null>(null);
     const [deletingIds, setDeletingIds] = useState<string[]>([]);
@@ -112,7 +111,7 @@ const ManageRanksPage: React.FC = () => {
                                 </tr>
                             </thead>
                             <tbody>
-                                {sortedRanks.map((rank: Rank) => (
+                                {sortedRanks.map(rank => (
                                     <tr key={rank.id} className="border-b border-stone-700/40 last:border-b-0">
                                         <td className="p-4">
                                             <input 
@@ -131,10 +130,10 @@ const ManageRanksPage: React.FC = () => {
                                             </button>
                                             {openDropdownId === rank.id && (
                                                 <div ref={dropdownRef} className="absolute right-10 top-0 mt-2 w-36 bg-stone-900 border border-stone-700 rounded-lg shadow-xl z-20">
-                                                    <a href="#" onClick={(e) => { e.preventDefault(); handleEdit(rank); setOpenDropdownId(null); }} className="block px-4 py-2 text-sm text-stone-300 hover:bg-stone-700">Edit</a>
+                                                    <a href="#" onClick={(e) => { e.preventDefault(); handleEdit(rank); setOpenDropdownId(null); }} className="block px-4 py-2 text-sm text-stone-300 hover:bg-stone-700/50">Edit</a>
                                                     <button 
                                                         onClick={() => { handleDeleteRequest([rank.id]); setOpenDropdownId(null); }} 
-                                                        className="w-full text-left block px-4 py-2 text-sm text-red-400 hover:bg-stone-700 disabled:bg-stone-800 disabled:text-stone-500 disabled:cursor-not-allowed"
+                                                        className="w-full text-left block px-4 py-2 text-sm text-red-400 hover:bg-stone-700/50 disabled:opacity-50 disabled:text-stone-500"
                                                         disabled={rank.xpThreshold === 0}
                                                     >
                                                         Delete

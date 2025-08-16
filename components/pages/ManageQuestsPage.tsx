@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
-import { useAppState, useAppDispatch } from '../../context/AppContext';
+import { useData } from '../../context/DataProvider';
+import { useActionsDispatch } from '../../context/ActionsContext';
 import { Quest, QuestType, QuestGroup } from '../../types';
 import Button from '../user-interface/Button';
 import Card from '../user-interface/Card';
@@ -13,8 +14,8 @@ import BulkEditQuestsDialog from '../quests/BulkEditQuestsDialog';
 import { useDebounce } from '../../hooks/useDebounce';
 
 const ManageQuestsPage: React.FC = () => {
-    const { settings, isAiConfigured, quests, questGroups } = useAppState();
-    const { deleteSelectedAssets, updateQuestsStatus, bulkUpdateQuests, cloneQuest } = useAppDispatch();
+    const { settings, isAiConfigured, quests, questGroups } = useData();
+    const { deleteSelectedAssets, updateQuestsStatus, bulkUpdateQuests, cloneQuest } = useActionsDispatch();
     
     const [editingQuest, setEditingQuest] = useState<Quest | null>(null);
     const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
@@ -271,7 +272,7 @@ const ManageQuestsPage: React.FC = () => {
                 )}
             </Card>
             
-            {isCreateDialogOpen && <CreateQuestDialog questToEdit={editingQuest || undefined} initialData={initialCreateData || undefined} onClose={handleCloseDialog} onSave={() => {}} />}
+            {isCreateDialogOpen && <CreateQuestDialog questToEdit={editingQuest || undefined} initialData={initialCreateData || undefined} onClose={handleCloseDialog} />}
             
             {isGeneratorOpen && <QuestIdeaGenerator onUseIdea={handleUseIdea} onClose={() => setIsGeneratorOpen(false)} />}
 

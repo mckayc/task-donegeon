@@ -1,14 +1,17 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import Card from '../user-interface/Card';
-import { useAppState, useAppDispatch } from '../../context/AppContext';
-import { Role, ChronicleEvent, QuestCompletionStatus, AdminAdjustmentType, PurchaseRequestStatus, RewardItem, Quest, Trophy, RewardTypeDefinition, PurchaseRequest } from '../../types';
+import { useData } from '../../context/DataProvider';
+import { useUIState } from '../../context/UIContext';
+import { useActionsDispatch } from '../../context/ActionsContext';
+import { Role, ChronicleEvent, QuestCompletionStatus, AdminAdjustmentType, PurchaseRequestStatus, RewardItem, Quest, Trophy, RewardTypeDefinition, PurchaseRequest, GameAsset } from '../../types';
 import Button from '../user-interface/Button';
 import { useAuthState } from '../../context/AuthContext';
 
 const ChroniclesPage: React.FC = () => {
-    const { settings, userTrophies, trophies, adminAdjustments, systemLogs, systemNotifications, users, quests, questCompletions, purchaseRequests, rewardTypes, appMode } = useAppState();
+    const { settings, userTrophies, trophies, adminAdjustments, systemLogs, systemNotifications, users, quests, questCompletions, purchaseRequests, rewardTypes, gifts, tradeOffers, gameAssets } = useData();
+    const { appMode } = useUIState();
     const { currentUser } = useAuthState();
-    const { cancelPurchaseRequest } = useAppDispatch();
+    const { cancelPurchaseRequest } = useActionsDispatch();
 
     const [viewMode, setViewMode] = useState<'all' | 'personal'>(currentUser?.role === Role.Explorer ? 'personal' : 'all');
     const [itemsPerPage, setItemsPerPage] = useState(50);
@@ -21,10 +24,12 @@ const ChroniclesPage: React.FC = () => {
     if (!currentUser) return null;
 
     const allEvents = useMemo(() => {
-        const userMap = new Map(users.map(u => [u.id, u.gameName]));
-        const questMap = new Map(quests.map(q => [q.id, q]));
-        const trophyMap = new Map(trophies.map(t => [t.id, t]));
-        const rewardMap = new Map(rewardTypes.map(rt => [rt.id, rt]));
+        const userMap = new Map<string, string>(users.map(u => [u.id, u.gameName]));
+        const questMap = new Map<string, Quest>(quests.map(q => [q.id, q]));
+        const trophyMap = new Map<string, Trophy>(trophies.map(t => [t.id, t]));
+        const rewardMap = new Map<string, RewardTypeDefinition>(rewardTypes.map(rt => [rt.id, rt]));
+        const assetMap = new Map<string, GameAsset>(gameAssets.map(a => [a.id, a]));
+
 
         const getRewardDisplay = (rewardItems: RewardItem[]) => (rewardItems || []).map(r => {
             const reward = rewardMap.get(r.rewardTypeId);
@@ -34,10 +39,10 @@ const ChroniclesPage: React.FC = () => {
         const events: ChronicleEvent[] = [];
         const currentGuildId = appMode.mode === 'guild' ? appMode.guildId : undefined;
 
-        const shouldInclude = (item: { userId?: string, userIds?: string[], recipientUserIds?: string[], guildId?: string | null }) => {
+        const shouldInclude = (item: { userId?: string, userIds?: string[], recipientUserIds?: string[], senderId?: string, guildId?: string | null }) => {
             if (item.guildId != currentGuildId) return false;
             if (viewMode === 'personal') {
-                const userIdsToCheck = [item.userId, ...(item.userIds || []), ...(item.recipientUserIds || [])].filter(Boolean) as string[];
+                const userIdsToCheck = [item.userId, ...(item.userIds || []), ...(item.recipientUserIds || []), item.senderId].filter(Boolean) as string[];
                 return userIdsToCheck.includes(currentUser.id);
             }
             return true;
@@ -46,7 +51,7 @@ const ChroniclesPage: React.FC = () => {
         // 1. Quest Completions
         questCompletions.forEach(c => {
             if (!shouldInclude({ userId: c.userId, guildId: c.guildId })) return;
-            const quest = questMap.get(c.questId) as Quest | undefined;
+            const quest = questMap.get(c.questId);
             let finalNote = c.note || '';
             if (c.status === 'Approved' && quest && quest.rewards.length > 0) {
                 const rewardsText = getRewardDisplay(quest.rewards).replace(/(\d+)/g, '+$1');
@@ -112,7 +117,7 @@ const ChroniclesPage: React.FC = () => {
         // 3. User Trophies
         userTrophies.forEach(ut => {
             if (!shouldInclude({ userId: ut.userId, guildId: ut.guildId })) return;
-            const trophy = trophyMap.get(ut.trophyId) as Trophy | undefined;
+            const trophy = trophyMap.get(ut.trophyId);
             events.push({
                 id: ut.id, originalId: ut.id, date: ut.awardedAt, type: 'Trophy', userId: ut.userId,
                 title: `${userMap.get(ut.userId) || 'Unknown'} earned "${trophy?.name || 'Unknown Trophy'}"`,
@@ -140,7 +145,7 @@ const ChroniclesPage: React.FC = () => {
         // 5. System Logs (Global/Admin view only)
         if (viewMode !== 'personal') {
             systemLogs.forEach(log => {
-                const quest = questMap.get(log.questId) as Quest | undefined;
+                const quest = questMap.get(log.questId);
                 const userNames = log.userIds.map(id => userMap.get(id) || 'Unknown').join(', ');
                 const setbacksText = getRewardDisplay(log.setbacksApplied).replace(/(\d+)/g, '-$1');
                 events.push({
@@ -150,11 +155,50 @@ const ChroniclesPage: React.FC = () => {
                 });
             });
         }
+        
+        // 6. Gifts
+        gifts.forEach(g => {
+            if (!shouldInclude({ userId: g.recipientId, senderId: g.senderId, guildId: g.guildId })) return;
+            const asset = assetMap.get(g.assetId);
+            events.push({
+                id: g.id, originalId: g.id, date: g.sentAt, type: 'Gift', userId: g.recipientId, actorName: userMap.get(g.senderId),
+                title: `${userMap.get(g.senderId) || 'Unknown'} gifted "${asset?.name || 'an item'}" to ${userMap.get(g.recipientId) || 'Unknown'}`,
+                status: "Gifted", note: asset?.description, icon: asset?.icon || '🎁',
+                color: '#ec4899', guildId: g.guildId
+            });
+        });
+        
+        // 7. Trades
+        tradeOffers.filter(t => t.status === 'Completed').forEach(t => {
+             if (!shouldInclude({ userId: t.recipientId, senderId: t.initiatorId, guildId: t.guildId })) return;
+             
+             const initiatorName = userMap.get(t.initiatorId) || 'Unknown';
+             const recipientName = userMap.get(t.recipientId) || 'Unknown';
+
+             const formatOffer = (offer: { assetIds: string[], rewards: RewardItem[] }) => {
+                 const assets = offer.assetIds.map(id => assetMap.get(id)?.name).filter(Boolean).join(', ');
+                 const rewards = getRewardDisplay(offer.rewards);
+                 return [assets, rewards].filter(Boolean).join(' & ');
+             };
+             
+             const initiatorOfferText = formatOffer(t.initiatorOffer) || 'nothing';
+             const recipientOfferText = formatOffer(t.recipientOffer) || 'nothing';
+
+             events.push({
+                id: t.id, originalId: t.id, date: t.updatedAt || t.createdAt, type: 'Trade', userId: t.recipientId, actorName: userMap.get(t.initiatorId),
+                title: `Trade completed between ${initiatorName} and ${recipientName}`,
+                status: "Completed", 
+                note: `${initiatorName} gave: ${initiatorOfferText}\n${recipientName} gave: ${recipientOfferText}`,
+                icon: '🤝',
+                color: '#8b5cf6', guildId: t.guildId
+            });
+        });
+
 
         return events.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
     }, [
         currentUser, users, quests, trophies, rewardTypes, appMode, viewMode,
-        questCompletions, purchaseRequests, userTrophies, adminAdjustments, systemLogs
+        questCompletions, purchaseRequests, userTrophies, adminAdjustments, systemLogs, gifts, tradeOffers, gameAssets
     ]);
 
     const totalPages = Math.ceil(allEvents.length / itemsPerPage);
@@ -167,10 +211,12 @@ const ChroniclesPage: React.FC = () => {
     const statusColor = (status: any) => {
         switch (status) {
           case "Awarded":
+          case "Gifted":
           case QuestCompletionStatus.Approved:
           case PurchaseRequestStatus.Completed:
           case AdminAdjustmentType.Reward:
           case AdminAdjustmentType.Trophy:
+          case "Completed":
             return 'text-green-400';
           case "Requested":
           case QuestCompletionStatus.Pending:

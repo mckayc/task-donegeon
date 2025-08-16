@@ -1,5 +1,3 @@
-
-
 import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import { useAppState, useAppDispatch } from '../../../context/AppContext';
 import { GameAsset } from '../../../types';
@@ -203,7 +201,7 @@ const ManageItemsPage: React.FC = () => {
                     </div>
                 </div>
             </Card>
-            <Card title="All Created Items & Assets">
+            <Card title={`All Created ${settings.terminology.link_manage_items}`}>
                 <div className="border-b border-stone-700 mb-4">
                     <nav className="-mb-px flex space-x-4 overflow-x-auto">
                         {categories.map(category => (

@@ -50,6 +50,12 @@ export enum QuestType {
   Venture = 'Venture',
 }
 
+export enum QuestKind {
+    Personal = 'Personal', // Personal scope, personal rewards
+    Guild = 'Guild', // Guild scope, but each person completes it for themselves
+    GuildCollaborative = 'GuildCollaborative', // Guild scope, requires multiple people to complete
+}
+
 export enum RewardCategory {
   Currency = 'Currency',
   XP = 'XP',
@@ -88,6 +94,7 @@ export interface Quest {
   title: string;
   description: string;
   type: QuestType;
+  kind: QuestKind; // New field to distinguish quest types
   iconType: 'emoji' | 'image';
   icon: string;
   imageUrl?: string;
@@ -102,6 +109,8 @@ export interface Quest {
   endTime: string | null;       // 'HH:mm' for recurring events (Duties).
   
   availabilityCount: number | null; // For Ventures that can be completed multiple times.
+  completionGoal?: number; // For collaborative quests
+  contributions?: { userId: string, contributedAt: string }[]; // For collaborative quests
 
   rewards: RewardItem[];
   lateSetbacks: RewardItem[];
@@ -166,8 +175,15 @@ export interface GameAsset {
   purchaseLimit: number | null; // null for infinite
   purchaseLimitType: 'Total' | 'PerUser';
   purchaseCount: number;
+  useCount?: number; // How many times a consumable has been used across all users
   requiresApproval: boolean;
   linkedThemeId?: string; // Links this asset to a theme that gets unlocked on purchase
+  recipe?: {
+    ingredients: {
+      assetId: string;
+      quantity: number;
+    }[];
+  };
 }
 
 export enum MarketConditionType {
@@ -254,6 +270,10 @@ export interface Guild {
   memberIds: string[];
   isDefault?: boolean;
   themeId?: string;
+  treasury: {
+    purse: { [rewardTypeId: string]: number };
+    ownedAssetIds: string[];
+  };
   createdAt?: string;
   updatedAt?: string;
 }
@@ -357,7 +377,12 @@ export enum SystemNotificationType {
     Announcement = 'Announcement',
     QuestAssigned = 'QuestAssigned',
     TrophyAwarded = 'TrophyAwarded',
-    ApprovalRequired = 'ApprovalRequired'
+    ApprovalRequired = 'ApprovalRequired',
+    GiftReceived = 'GiftReceived',
+    TradeRequestReceived = 'TradeRequestReceived',
+    TradeAccepted = 'TradeAccepted',
+    TradeCancelled = 'TradeCancelled',
+    TradeRejected = 'TradeRejected',
 }
 
 export interface SystemNotification {
@@ -777,6 +802,46 @@ export interface AppliedSetback {
   updatedAt?: string;
 }
 
+export enum TradeStatus {
+    Pending = 'Pending',
+    OfferUpdated = 'OfferUpdated',
+    AcceptedByInitiator = 'AcceptedByInitiator',
+    AcceptedByRecipient = 'AcceptedByRecipient',
+    Completed = 'Completed',
+    Cancelled = 'Cancelled',
+    Rejected = 'Rejected',
+}
+
+export interface TradeOffer {
+    id: string;
+    initiatorId: string;
+    recipientId: string;
+    guildId: string;
+    status: TradeStatus;
+    initiatorOffer: {
+        assetIds: string[];
+        rewards: RewardItem[];
+    };
+    recipientOffer: {
+        assetIds: string[];
+        rewards: RewardItem[];
+    };
+    initiatorLocked: boolean;
+    recipientLocked: boolean;
+    createdAt: string;
+    updatedAt?: string;
+}
+
+export interface Gift {
+    id: string;
+    senderId: string;
+    recipientId: string;
+    assetId: string;
+    guildId: string;
+    sentAt: string;
+    createdAt?: string;
+    updatedAt?: string;
+}
 
 export interface IAppData {
   users: User[];
@@ -803,13 +868,15 @@ export interface IAppData {
   bugReports: BugReport[];
   setbackDefinitions: SetbackDefinition[];
   appliedSetbacks: AppliedSetback[];
+  tradeOffers: TradeOffer[];
+  gifts: Gift[];
 }
 
 export type ChronicleEvent = {
     id: string;
     originalId: string; // The ID of the source object (e.g., PurchaseRequest)
     date: string;
-    type: 'Quest' | 'Purchase' | 'Trophy' | 'Adjustment' | 'System' | 'Announcement' | 'ScheduledEvent';
+    type: 'Quest' | 'Purchase' | 'Trophy' | 'Adjustment' | 'System' | 'Announcement' | 'ScheduledEvent' | 'Crafting' | 'Donation' | 'Gift' | 'Trade';
     title: string;
     note?: string;
     status: string;

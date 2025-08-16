@@ -1,12 +1,10 @@
-
-
 import React, { useState, useMemo, useEffect } from 'react';
 import { RewardCategory, QuestCompletionStatus } from '../../types';
 import Card from '../user-interface/Card';
 import LineChart from '../user-interface/LineChart';
 import BarChart from '../user-interface/BarChart';
 import { useAuthState } from '../../context/AuthContext';
-import { useAppState } from '../../context/AppContext';
+import { useData } from '../../context/DataProvider';
 
 const StatCard: React.FC<{ title: string; value: string | number; icon: string; subtext?: string }> = ({ title, value, icon, subtext }) => (
     <div className="bg-stone-900/40 p-4 rounded-lg">
@@ -22,7 +20,7 @@ const StatCard: React.FC<{ title: string; value: string | number; icon: string; 
 );
 
 const ProgressPage: React.FC = () => {
-    const { quests, questCompletions, rewardTypes, appMode } = useAppState();
+    const { quests, questCompletions, rewardTypes, appMode, guilds, settings } = useData();
     const { currentUser } = useAuthState();
     
     const xpTypes = useMemo(() => {
@@ -36,20 +34,34 @@ const ProgressPage: React.FC = () => {
     const [selectedXpType, setSelectedXpType] = useState<string>(xpTypes.length > 0 ? xpTypes[0].id : '');
     const [chartColor, setChartColor] = useState<string>('hsl(158 84% 39%)');
 
-    useEffect(() => {
-        const timer = setTimeout(() => {
-            if (typeof window !== 'undefined') {
-                const style = getComputedStyle(document.documentElement);
-                const h = style.getPropertyValue('--color-primary-hue').trim();
-                const s = style.getPropertyValue('--color-primary-saturation').trim();
-                const l = style.getPropertyValue('--color-primary-lightness').trim();
-                if (h && s && l) {
-                    setChartColor(`hsl(${h} ${s} ${l})`);
-                }
+    const activeThemeId = useMemo(() => {
+        let themeId: string | undefined = settings.theme;
+        if (appMode.mode === 'guild') {
+            const currentGuild = guilds.find(g => g.id === appMode.guildId);
+            if (currentGuild?.themeId) {
+                themeId = currentGuild.themeId;
+            } else if (currentUser?.theme) {
+                themeId = currentUser.theme;
             }
-        }, 0);
-        return () => clearTimeout(timer);
-    }, [appMode, currentUser]);
+        } else {
+            if (currentUser?.theme) {
+                themeId = currentUser.theme;
+            }
+        }
+        return themeId || 'default';
+    }, [settings.theme, currentUser?.theme, appMode, guilds]);
+
+    useEffect(() => {
+        if (typeof window !== 'undefined') {
+            const style = getComputedStyle(document.documentElement);
+            const h = style.getPropertyValue('--color-primary-hue').trim();
+            const s = style.getPropertyValue('--color-primary-saturation').trim();
+            const l = style.getPropertyValue('--color-primary-lightness').trim();
+            if (h && s && l) {
+                setChartColor(`hsl(${h} ${s} ${l})`);
+            }
+        }
+    }, [activeThemeId]);
 
     const { dailyData, cumulativeData, summaryStats } = useMemo(() => {
         const defaultSummary = { totalXp: 0, questsCompleted: 0, xpGained30d: 0, bestDay: { date: '-', xp: 0 } };
@@ -181,7 +193,7 @@ const ProgressPage: React.FC = () => {
                 <Card title="Daily XP Earned">
                      <div className="p-6">
                         {hasData ? (
-                            <BarChart data={dailyData} color={chartColor} />
+                            <BarChart key={activeThemeId} data={dailyData} color={chartColor} />
                         ) : (
                             <p className="text-stone-400 text-center py-10">No XP of this type has been earned recently. Go complete some quests!</p>
                         )}
@@ -190,7 +202,7 @@ const ProgressPage: React.FC = () => {
                  <Card title="Cumulative Growth">
                      <div className="p-6">
                         {hasData ? (
-                            <LineChart data={cumulativeData} color={chartColor} />
+                            <LineChart key={activeThemeId} data={cumulativeData} color={chartColor} />
                         ) : (
                              <p className="text-stone-400 text-center py-10">Waiting for data...</p>
                         )}

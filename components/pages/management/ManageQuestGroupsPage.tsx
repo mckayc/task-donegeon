@@ -54,7 +54,7 @@ const ManageQuestGroupsPage: React.FC = () => {
     return (
         <div className="space-y-6">
             <Card
-                title="All Quest Groups"
+                title={settings.terminology.link_manage_quest_groups}
                 headerAction={<Button onClick={handleCreate} size="sm">Create New Group</Button>}
             >
                 {questGroups.length > 0 ? (

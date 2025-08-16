@@ -1,6 +1,6 @@
-
 import React, { useState, ChangeEvent, ReactNode, useEffect } from 'react';
-import { useAppState, useAppDispatch } from '../../context/AppContext';
+import { useData } from '../../context/DataProvider';
+import { useActionsDispatch } from '../../context/ActionsContext';
 import { useAuthState } from '../../context/AuthContext';
 import { AppSettings, Terminology, RewardCategory, RewardTypeDefinition, BackupSchedule } from '../../types';
 import Button from '../user-interface/Button';
@@ -129,9 +129,9 @@ const REAL_WORLD_CURRENCIES = ['USD', 'EUR', 'GBP', 'JPY', 'CAD', 'AUD', 'CNY'];
 
 
 export const SettingsPage: React.FC = () => {
-    const { settings } = useAppState();
+    const { settings, themes } = useData();
     const { users } = useAuthState();
-    const { updateSettings, resetSettings, applySettingsUpdates, clearAllHistory, resetAllPlayerData, deleteAllCustomContent, factoryReset } = useAppDispatch();
+    const { updateSettings, resetSettings, applySettingsUpdates, clearAllHistory, resetAllPlayerData, deleteAllCustomContent, factoryReset } = useActionsDispatch();
     const { addNotification } = useNotificationsDispatch();
     
     // Create a local copy of settings for form manipulation
@@ -216,7 +216,7 @@ export const SettingsPage: React.FC = () => {
                                 {isEmojiPickerOpen.general && <EmojiPicker onSelect={(emoji: string) => { handleSimpleChange('favicon', emoji); setIsEmojiPickerOpen(p => ({...p, general: false})); }} onClose={() => setIsEmojiPickerOpen(p => ({...p, general: false}))} />}
                              </div>
                              <Input label="Default Theme" as="select" value={formState.theme} onChange={(e: React.ChangeEvent<HTMLSelectElement>) => handleSimpleChange('theme', e.target.value)}>
-                                 {useAppState().themes.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+                                 {themes.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
                             </Input>
                         </div>
                          <div className="pt-4 border-t border-stone-700/60 grid grid-cols-1 md:grid-cols-2 gap-4">

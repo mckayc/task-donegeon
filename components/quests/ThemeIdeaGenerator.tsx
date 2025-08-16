@@ -1,11 +1,9 @@
-
-
 import React, { useState } from 'react';
 import { GenerateContentResponse, Type } from "@google/genai";
 import Button from '../user-interface/Button';
 import Input from '../user-interface/Input';
 import { SparklesIcon } from '../user-interface/Icons';
-import { useAppState } from '../../context/AppContext';
+import { useData } from '../../context/DataProvider';
 
 interface ThemeIdea {
   name: string;
@@ -18,7 +16,7 @@ interface ThemeIdeaGeneratorProps {
 }
 
 const ThemeIdeaGenerator: React.FC<ThemeIdeaGeneratorProps> = ({ onUseIdea, onClose }) => {
-    const { settings } = useAppState();
+    const { settings } = useData();
     const [prompt, setPrompt] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');

@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { RewardCategory, RewardTypeDefinition } from '../../types';
 import Button from '../user-interface/Button';
 import Input from '../user-interface/Input';
-import { useAppDispatch, useAppState } from '../../context/AppContext';
+import { useData } from '../../context/DataProvider';
+import { useActionsDispatch } from '../../context/ActionsContext';
 import EmojiPicker from '../user-interface/EmojiPicker';
 import ImageSelectionDialog from '../user-interface/ImageSelectionDialog';
 import DynamicIcon from '../user-interface/DynamicIcon';
@@ -13,8 +14,8 @@ interface EditRewardTypeDialogProps {
 }
 
 const EditRewardTypeDialog: React.FC<EditRewardTypeDialogProps> = ({ rewardType, onClose }) => {
-  const { settings } = useAppState();
-  const { addRewardType, updateRewardType } = useAppDispatch();
+  const { settings } = useData();
+  const { addRewardType, updateRewardType } = useActionsDispatch();
   const [formData, setFormData] = useState({
     name: '',
     description: '',

@@ -95,7 +95,7 @@ const ManageEventsPage: React.FC = () => {
     return (
         <div className="space-y-6">
             <Card
-                title="Manage Calendar Events"
+                title={settings.terminology.link_manage_events}
                 headerAction={<Button onClick={handleCreate}>Schedule New Event</Button>}
             >
                 <div className="space-y-6">

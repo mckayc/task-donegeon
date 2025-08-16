@@ -1,12 +1,13 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
-import { Role, Page, QuestCompletionStatus, PurchaseRequestStatus, Terminology, SidebarConfigItem, SidebarLink, SidebarHeader } from '../../types';
+import { Role, Page, QuestCompletionStatus, PurchaseRequestStatus, Terminology, SidebarConfigItem, SidebarLink, SidebarHeader, TradeStatus } from '../../types';
 import { ChevronDownIcon, ArrowLeftIcon, ArrowRightIcon } from '../user-interface/Icons';
-import { useAppState, useAppDispatch } from '../../context/AppContext';
+import { useData } from '../../context/DataProvider';
+import { useUIState, useUIDispatch } from '../../context/UIContext';
 import { useAuthState } from '../../context/AuthContext';
 
-const FlyoutPanel: React.FC<{ title: string; items?: SidebarLink[]; isVisible: boolean }> = ({ title, items, isVisible }) => {
-    const { settings } = useAppState();
-    const { setActivePage } = useAppDispatch();
+const FlyoutPanel: React.FC<{ title: string; items?: SidebarLink[]; isVisible: boolean; totalApprovals?: number }> = ({ title, items, isVisible, totalApprovals }) => {
+    const { settings } = useData();
+    const { setActivePage } = useUIDispatch();
     
     if (!isVisible) return null;
 
@@ -23,6 +24,11 @@ const FlyoutPanel: React.FC<{ title: string; items?: SidebarLink[]; isVisible: b
                         data-log-id={`sidebar-flyout-link-${item.id.toLowerCase().replace(' ', '-')}`}
                      >
                         {item.emoji} <span className="ml-2">{item.termKey ? settings.terminology[item.termKey] : item.id}</span>
+                        {item.id === 'Approvals' && totalApprovals && totalApprovals > 0 && (
+                            <span className="ml-auto flex items-center justify-center w-5 h-5 text-xs font-bold text-white bg-red-600 rounded-full">
+                                {totalApprovals > 9 ? '9+' : totalApprovals}
+                            </span>
+                        )}
                      </a>
                 )) : (
                     <div className="px-4 py-1 text-stone-200">{title}</div>
@@ -34,7 +40,7 @@ const FlyoutPanel: React.FC<{ title: string; items?: SidebarLink[]; isVisible: b
 
 
 const NavLink: React.FC<{ item: SidebarLink, activePage: Page, setActivePage: (page: Page) => void, badgeCount?: number, isCollapsed: boolean }> = ({ item, activePage, setActivePage, badgeCount = 0, isCollapsed }) => {
-    const { settings } = useAppState();
+    const { settings } = useData();
     const [isHovered, setIsHovered] = useState(false);
     const linkName = item.termKey ? settings.terminology[item.termKey] : item.id;
 
@@ -78,7 +84,7 @@ interface CollapsibleNavGroupProps {
 }
 
 const CollapsibleNavGroup: React.FC<CollapsibleNavGroupProps> = ({ header, childItems, activePage, badgeCount, isCollapsed, totalApprovals }) => {
-    const { setActivePage } = useAppDispatch();
+    const { setActivePage } = useUIDispatch();
     const isGroupActive = childItems.some(child => child.id === activePage);
     const [isOpen, setIsOpen] = useState(isGroupActive);
     const [isHovered, setIsHovered] = useState(false);
@@ -118,7 +124,7 @@ const CollapsibleNavGroup: React.FC<CollapsibleNavGroupProps> = ({ header, child
                         ))}
                     </div>
                 )}
-                 <FlyoutPanel title={header.title} items={childItems} isVisible={isHovered && !isOpen} />
+                 <FlyoutPanel title={header.title} items={childItems} isVisible={isHovered && !isOpen} totalApprovals={totalApprovals} />
             </div>
         );
     }
@@ -163,8 +169,9 @@ const CollapsibleNavGroup: React.FC<CollapsibleNavGroupProps> = ({ header, child
 
 
 const Sidebar: React.FC = () => {
-  const { settings, isAiConfigured, chatMessages, guilds, purchaseRequests, questCompletions, activePage, isSidebarCollapsed, isChatOpen } = useAppState();
-  const { setActivePage, toggleSidebar, toggleChat } = useAppDispatch();
+  const { settings, isAiConfigured, chatMessages, guilds, purchaseRequests, questCompletions, tradeOffers } = useData();
+  const { activePage, isSidebarCollapsed, isChatOpen } = useUIState();
+  const { setActivePage, toggleSidebar, toggleChat } = useUIDispatch();
   const { currentUser } = useAuthState();
   const isAiAvailable = settings.enableAiFeatures && isAiConfigured;
   
@@ -182,7 +189,8 @@ const Sidebar: React.FC = () => {
 
   const pendingQuestApprovals = questCompletions.filter(c => c.status === QuestCompletionStatus.Pending).length;
   const pendingPurchaseApprovals = purchaseRequests.filter(p => p.status === PurchaseRequestStatus.Pending).length;
-  const totalApprovals = pendingQuestApprovals + (currentUser?.role === Role.DonegeonMaster ? pendingPurchaseApprovals : 0);
+  const pendingTrades = tradeOffers.filter(t => t.recipientId === currentUser.id && (t.status === TradeStatus.Pending || t.status === TradeStatus.OfferUpdated)).length;
+  const totalApprovals = pendingQuestApprovals + (currentUser?.role === Role.DonegeonMaster ? pendingPurchaseApprovals : 0) + pendingTrades;
 
   const unreadMessagesCount = useMemo(() => {
     if (!currentUser) return 0;

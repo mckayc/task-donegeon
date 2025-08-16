@@ -3,7 +3,7 @@ import { GenerateContentResponse, Type } from "@google/genai";
 import Button from '../user-interface/Button';
 import Input from '../user-interface/Input';
 import { SparklesIcon } from '../user-interface/Icons';
-import { useAppState } from '../../context/AppContext';
+import { useData } from '../../context/DataProvider';
 import { useAuthState } from '../../context/AuthContext';
 
 interface ItemIdea {
@@ -19,7 +19,7 @@ interface ItemIdeaGeneratorProps {
 }
 
 const ItemIdeaGenerator: React.FC<ItemIdeaGeneratorProps> = ({ onUseIdea, onClose }) => {
-    const { settings } = useAppState();
+    const { settings } = useData();
     const { users } = useAuthState();
     const [prompt, setPrompt] = useState('');
     const [selectedUserId, setSelectedUserId] = useState<string>('');

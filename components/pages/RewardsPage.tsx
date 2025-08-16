@@ -6,7 +6,8 @@ import EditRewardTypeDialog from '../rewards/EditRewardTypeDialog';
 import ConfirmDialog from '../user-interface/ConfirmDialog';
 import { useRewardValuePerUnit } from '../../hooks/useRewardValue';
 import { EllipsisVerticalIcon } from '../user-interface/Icons';
-import { useAppState, useAppDispatch } from '../../context/AppContext';
+import { useData } from '../../context/DataProvider';
+import { useActionsDispatch } from '../../context/ActionsContext';
 
 const RewardItem: React.FC<{
     reward: RewardTypeDefinition;
@@ -74,8 +75,8 @@ const RewardList: React.FC<{ title: string; rewards: RewardTypeDefinition[]; onE
 );
 
 const RewardsPage: React.FC = () => {
-    const { rewardTypes } = useAppState();
-    const { deleteSelectedAssets, cloneRewardType } = useAppDispatch();
+    const { rewardTypes, settings } = useData();
+    const { deleteSelectedAssets, cloneRewardType } = useActionsDispatch();
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [editingReward, setEditingReward] = useState<RewardTypeDefinition | null>(null);
     const [isConfirmOpen, setIsConfirmOpen] = useState(false);
@@ -117,25 +118,25 @@ const RewardsPage: React.FC = () => {
     return (
         <div className="space-y-6">
             <div className="flex justify-between items-center">
-                <h1 className="text-4xl font-medieval text-stone-100">Reward Definitions</h1>
+                <h1 className="text-4xl font-medieval text-stone-100">{settings.terminology.link_manage_rewards}</h1>
                 <Button onClick={handleCreate}>
-                    Create New Reward
+                    Create New {settings.terminology.point}
                 </Button>
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* Column 1: Currencies */}
                 <div className="space-y-6">
-                    <h2 className="text-3xl font-medieval text-emerald-400 border-b-2 border-emerald-800/50 pb-2">Currencies</h2>
-                    <RewardList title="Core Currencies" rewards={coreCurrencies} onEdit={handleEdit} onDelete={handleDeleteRequest} onClone={handleCloneRequest} />
-                    <RewardList title="Custom Currencies" rewards={customCurrencies} onEdit={handleEdit} onDelete={handleDeleteRequest} onClone={handleCloneRequest} />
+                    <h2 className="text-3xl font-medieval text-emerald-400 border-b-2 border-emerald-800/50 pb-2 capitalize">{settings.terminology.currency}</h2>
+                    <RewardList title={`Core ${settings.terminology.currency}`} rewards={coreCurrencies} onEdit={handleEdit} onDelete={handleDeleteRequest} onClone={handleCloneRequest} />
+                    <RewardList title={`Custom ${settings.terminology.currency}`} rewards={customCurrencies} onEdit={handleEdit} onDelete={handleDeleteRequest} onClone={handleCloneRequest} />
                 </div>
 
                 {/* Column 2: XP */}
                 <div className="space-y-6">
-                    <h2 className="text-3xl font-medieval text-emerald-400 border-b-2 border-emerald-800/50 pb-2">Experience Points (XP)</h2>
-                    <RewardList title="Core XP Types" rewards={coreXPs} onEdit={handleEdit} onDelete={handleDeleteRequest} onClone={handleCloneRequest} />
-                    <RewardList title="Custom XP Types" rewards={customXPs} onEdit={handleEdit} onDelete={handleDeleteRequest} onClone={handleCloneRequest} />
+                    <h2 className="text-3xl font-medieval text-emerald-400 border-b-2 border-emerald-800/50 pb-2 capitalize">{settings.terminology.xp}</h2>
+                    <RewardList title={`Core ${settings.terminology.xp}`} rewards={coreXPs} onEdit={handleEdit} onDelete={handleDeleteRequest} onClone={handleCloneRequest} />
+                    <RewardList title={`Custom ${settings.terminology.xp}`} rewards={customXPs} onEdit={handleEdit} onDelete={handleDeleteRequest} onClone={handleCloneRequest} />
                 </div>
             </div>
 
@@ -151,8 +152,8 @@ const RewardsPage: React.FC = () => {
                 isOpen={isConfirmOpen}
                 onClose={() => setIsConfirmOpen(false)}
                 onConfirm={handleConfirmDelete}
-                title="Delete Reward Type"
-                message="Are you sure you want to delete this reward type? This action cannot be undone."
+                title={`Delete ${settings.terminology.point} Type`}
+                message={`Are you sure you want to delete this ${settings.terminology.point.toLowerCase()} type? This action cannot be undone.`}
             />
         </div>
     );

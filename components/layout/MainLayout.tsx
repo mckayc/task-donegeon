@@ -1,3 +1,4 @@
+
 import React, { useMemo, useEffect, useState, useRef } from 'react';
 import Sidebar from './Sidebar';
 import Header from './Header';
@@ -10,7 +11,7 @@ import UserManagementPage from '../pages/UserManagementPage';
 import { Page, Role, SystemNotification } from '../../types';
 import RewardsPage from '../pages/RewardsPage';
 import ManageQuestsPage from '../pages/management/ManageQuestsPage';
-import ApprovalsPage from '../pages/ApprovalsPage';
+import { ApprovalsPage } from '../pages/ApprovalsPage';
 import ManageMarketsPage from '../pages/management/ManageMarketsPage';
 import ManageGuildsPage from '../pages/ManageGuildsPage';
 import { SettingsPage } from '../pages/SettingsPage';
@@ -35,10 +36,11 @@ import AssetManagerPage from '../pages/management/MediaManagerPage';
 import BackupAndImportPage from '../pages/management/BackupAndImportPage';
 import AssetLibraryPage from '../pages/management/AssetLibraryPage';
 import ManageQuestGroupsPage from '../pages/ManageQuestGroupsPage';
-import { useAppState, useAppDispatch } from '../../context/AppContext';
+import { useData } from '../../context/DataProvider';
+import { useUIState, useUIDispatch } from '../../context/UIContext';
 import { useAuthState } from '../../context/AuthContext';
 import { useNotificationsDispatch } from '../../context/NotificationsContext';
-import ChatPanel from '../chat/ChatPanel';
+import { ChatPanel } from '../chat/ChatPanel';
 import LoginNotificationPopup from '../user-interface/LoginNotificationPopup';
 import ManageEventsPage from '../pages/management/ManageEventsPage';
 import BugTrackingPage from '../dev/BugTrackingPage';
@@ -46,10 +48,11 @@ import ManageRotationsPage from '../pages/management/ManageRotationsPage';
 import ManageSetbacksPage from '../pages/management/ManageSetbacksPage';
 
 const MainLayout: React.FC = () => {
-  const { settings, systemNotifications, activePage } = useAppState();
+  const { settings, systemNotifications } = useData();
+  const { activePage } = useUIState();
   const { currentUser } = useAuthState();
   const { addNotification } = useNotificationsDispatch();
-  const { setActivePage } = useAppDispatch();
+  const { setActivePage } = useUIDispatch();
   
   const [showLoginNotifications, setShowLoginNotifications] = useState(false);
   const [notificationsShownForSession, setNotificationsShownForSession] = useState(false);

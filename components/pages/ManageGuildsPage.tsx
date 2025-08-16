@@ -3,19 +3,20 @@ import { Guild } from '../../types';
 import Button from '../user-interface/Button';
 import Card from '../user-interface/Card';
 import EditGuildDialog from '../guilds/EditGuildDialog';
-import { useAppState, useAppDispatch } from '../../context/AppContext';
+import { useData } from '../../context/DataProvider';
+import { useActionsDispatch } from '../../context/ActionsContext';
 import ConfirmDialog from '../user-interface/ConfirmDialog';
 import EmptyState from '../user-interface/EmptyState';
 import { GuildIcon, EllipsisVerticalIcon } from '../user-interface/Icons';
 
 const ManageGuildsPage: React.FC = () => {
-    const { guilds, settings } = useAppState();
-    const { deleteGuild } = useAppDispatch();
+    const { guilds, settings } = useData();
+    const { deleteGuild } = useActionsDispatch();
     const [isGuildDialogOpen, setIsGuildDialogOpen] = useState(false);
     const [editingGuild, setEditingGuild] = useState<Guild | null>(null);
     const [deletingGuild, setDeletingGuild] = useState<Guild | null>(null);
     const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
-    const dropdownRef = useRef<HTMLDivElement>(null);
+    const dropdownRef = useRef<HTMLDivElement | null>(null);
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {

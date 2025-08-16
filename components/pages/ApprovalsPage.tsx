@@ -1,17 +1,21 @@
+
 import React, { useState } from 'react';
 import Card from '../user-interface/Card';
 import Button from '../user-interface/Button';
-import { useAppState, useAppDispatch } from '../../context/AppContext';
-import { QuestCompletionStatus, Role, PurchaseRequestStatus } from '../../types';
+import { useData } from '../../context/DataProvider';
+import { useActionsDispatch } from '../../context/ActionsContext';
+import { QuestCompletionStatus, Role, PurchaseRequestStatus, TradeStatus, TradeOffer } from '../../types';
 import Input from '../user-interface/Input';
 import { useAuthState } from '../../context/AuthContext';
+import TradeDialog from '../trading/TradeDialog';
 
-const ApprovalsPage: React.FC = () => {
-    const { guilds, quests, questCompletions, purchaseRequests, gameAssets } = useAppState();
+export const ApprovalsPage: React.FC = () => {
+    const { guilds, quests, questCompletions, purchaseRequests, gameAssets, tradeOffers } = useData();
     const { currentUser, users } = useAuthState();
-    const { approveQuestCompletion, rejectQuestCompletion, approvePurchaseRequest, rejectPurchaseRequest } = useAppDispatch();
+    const { approveQuestCompletion, rejectQuestCompletion, approvePurchaseRequest, rejectPurchaseRequest } = useActionsDispatch();
     
     const [notes, setNotes] = useState<{ [key: string]: string }>({});
+    const [tradeToView, setTradeToView] = useState<TradeOffer | null>(null);
 
     if (!currentUser || (currentUser.role !== Role.DonegeonMaster && currentUser.role !== Role.Gatekeeper)) {
         return (
@@ -26,6 +30,8 @@ const ApprovalsPage: React.FC = () => {
     
     const pendingCompletions = questCompletions.filter(c => c.status === QuestCompletionStatus.Pending);
     const pendingPurchases = purchaseRequests.filter(p => p.status === PurchaseRequestStatus.Pending);
+    const pendingTrades = tradeOffers.filter(t => t.recipientId === currentUser.id && (t.status === TradeStatus.Pending || t.status === TradeStatus.OfferUpdated));
+
 
     const getQuestTitle = (questId: string) => quests.find(q => q.id === questId)?.title || 'Unknown Quest';
     const getUserName = (userId: string) => users.find(u => u.id === userId)?.gameName || 'Unknown User';
@@ -48,70 +54,77 @@ const ApprovalsPage: React.FC = () => {
                                             <span className="text-emerald-300">{getUserName(completion.userId)}</span>
                                             <span className="text-stone-300 font-normal"> completed </span>
                                             "{getQuestTitle(completion.questId)}"
-                                            <span className="px-2 py-0.5 text-xs font-semibold rounded-full bg-blue-500/20 text-blue-300">
-                                                {getGuildName(completion.guildId)}
-                                            </span>
+                                            <span className="text-xs font-semibold text-blue-400 bg-blue-900/50 px-2 py-0.5 rounded-full">{getGuildName(completion.guildId)}</span>
                                         </p>
-                                        <p className="text-sm text-stone-400 mt-1">
-                                            Submitted: {new Date(completion.completedAt).toLocaleString()}
-                                        </p>
-                                        {completion.note && <p className="text-sm italic text-stone-300 mt-2">Note: "{completion.note}"</p>}
+                                        <p className="text-stone-400 text-sm mt-1">{completion.note ? `Note: "${completion.note}"` : 'No note provided.'}</p>
                                     </div>
                                 </div>
-                                <div className="mt-4 flex flex-col sm:flex-row items-stretch gap-3">
-                                    <Input
-                                        placeholder="Add an optional note..."
+                                 <div className="flex flex-col sm:flex-row gap-2 mt-4 pt-4 border-t border-stone-700/60">
+                                    <Input 
+                                        placeholder="Add a rejection note (optional)..."
                                         value={notes[completion.id] || ''}
-                                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleNoteChange(completion.id, e.target.value)}
+                                        onChange={(e) => handleNoteChange(completion.id, e.target.value)}
                                         className="flex-grow"
                                     />
-                                    <div className="flex space-x-3 flex-shrink-0 justify-end mt-2 sm:mt-0">
-                                        <Button onClick={() => approveQuestCompletion(completion.id, notes[completion.id])} className="text-sm py-1 px-4">Approve</Button>
-                                        <Button onClick={() => rejectQuestCompletion(completion.id, notes[completion.id])} variant="secondary" className="text-sm py-1 px-4 !bg-red-900/50 hover:!bg-red-800/60 text-red-300">Reject</Button>
+                                     <div className="flex gap-2 justify-end">
+                                        <Button size="sm" variant="destructive" onClick={() => rejectQuestCompletion(completion.id, notes[completion.id] || '')}>Reject</Button>
+                                        <Button size="sm" onClick={() => approveQuestCompletion(completion.id, notes[completion.id] || '')}>Approve</Button>
                                     </div>
                                 </div>
                             </li>
                         ))}
                     </ul>
-                ) : (
-                    <p className="text-stone-400 text-center py-4">There are no quests pending approval.</p>
-                )}
+                ) : <p className="text-stone-400">No quests are currently pending approval.</p>}
             </Card>
 
             {currentUser.role === Role.DonegeonMaster && (
-              <Card title="Purchases Awaiting Fulfillment">
-                  {pendingPurchases.length > 0 ? (
-                      <ul className="space-y-4">
-                          {pendingPurchases.map(purchase => {
-                            const asset = gameAssets.find(a => a.id === purchase.assetId);
-                            return (
-                              <li key={purchase.id} className="bg-stone-800/60 p-4 rounded-lg flex flex-col sm:flex-row justify-between sm:items-center gap-4">
-                                  <div className="flex-grow">
-                                      <p className="font-bold text-stone-100 flex items-center gap-2">
-                                          <span className="text-emerald-300">{getUserName(purchase.userId)}</span>
-                                          <span className="text-stone-300 font-normal"> requests to purchase </span>
-                                          "{purchase.assetDetails.name}"
-                                           <span className="px-2 py-0.5 text-xs font-semibold rounded-full bg-blue-500/20 text-blue-300">
-                                                {getGuildName(purchase.guildId)}
-                                            </span>
-                                      </p>
-                                      <p className="text-sm text-stone-400 mt-1">
-                                          Requested: {new Date(purchase.requestedAt).toLocaleString()}
-                                      </p>
-                                  </div>
-                                  <div className="flex space-x-3 flex-shrink-0">
-                                      <Button onClick={() => approvePurchaseRequest(purchase.id)} className="text-sm py-1 px-4">Approve</Button>
-                                      <Button onClick={() => rejectPurchaseRequest(purchase.id)} variant="secondary" className="text-sm py-1 px-4 !bg-red-900/50 hover:!bg-red-800/60 text-red-300">Reject</Button>
-                                  </div>
-                              </li>
-                            )
-                          })}
-                      </ul>
-                  ) : (
-                      <p className="text-stone-400 text-center py-4">There are no purchases pending fulfillment.</p>
-                  )}
-              </Card>
+                <>
+                <Card title="Item Purchases Requiring Approval" className="mb-8">
+                    {pendingPurchases.length > 0 ? (
+                        <ul className="space-y-4">
+                            {pendingPurchases.map(purchase => (
+                                <li key={purchase.id} className="bg-stone-800/60 p-4 rounded-lg flex flex-col sm:flex-row justify-between sm:items-center">
+                                    <div className="mb-4 sm:mb-0">
+                                        <p className="font-bold text-stone-100">
+                                            <span className="text-emerald-300">{getUserName(purchase.userId)}</span> wants to purchase <span className="text-amber-300">"{purchase.assetDetails.name}"</span>
+                                            <span className="text-xs font-semibold text-blue-400 bg-blue-900/50 px-2 py-0.5 rounded-full ml-2">{getGuildName(purchase.guildId)}</span>
+                                        </p>
+                                        <p className="text-stone-400 text-sm mt-1">Cost: {purchase.assetDetails.cost.map(c => `${c.amount} ${rewardTypes.find(rt => rt.id === c.rewardTypeId)?.name || '?'}`).join(', ')}</p>
+                                    </div>
+                                    <div className="flex gap-2">
+                                        <Button size="sm" variant="destructive" onClick={() => rejectPurchaseRequest(purchase.id)}>Reject</Button>
+                                        <Button size="sm" onClick={() => approvePurchaseRequest(purchase.id)}>Approve</Button>
+                                    </div>
+                                </li>
+                            ))}
+                        </ul>
+                    ) : <p className="text-stone-400">No item purchases are currently pending approval.</p>}
+                </Card>
+
+                <Card title="Pending Trade Offers">
+                     {pendingTrades.length > 0 ? (
+                        <ul className="space-y-4">
+                            {pendingTrades.map(trade => (
+                                <li key={trade.id} className="bg-stone-800/60 p-4 rounded-lg flex flex-col sm:flex-row justify-between sm:items-center">
+                                    <div>
+                                        <p className="font-bold text-stone-100">
+                                            <span className="text-emerald-300">{getUserName(trade.initiatorId)}</span> sent you a trade offer.
+                                             <span className="text-xs font-semibold text-blue-400 bg-blue-900/50 px-2 py-0.5 rounded-full ml-2">{getGuildName(trade.guildId)}</span>
+                                        </p>
+                                        <p className="text-stone-400 text-sm mt-1">{trade.status === TradeStatus.OfferUpdated ? 'The offer has been updated.' : 'A new offer has been proposed.'}</p>
+                                    </div>
+                                    <div className="flex gap-2">
+                                        <Button size="sm" onClick={() => setTradeToView(trade)}>View Offer</Button>
+                                    </div>
+                                </li>
+                            ))}
+                        </ul>
+                    ) : <p className="text-stone-400">You have no pending trade offers.</p>}
+                </Card>
+                </>
             )}
+
+            {tradeToView && <TradeDialog tradeOffer={tradeToView} onClose={() => setTradeToView(null)} />}
         </div>
     );
 };

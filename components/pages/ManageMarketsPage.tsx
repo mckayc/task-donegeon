@@ -4,14 +4,15 @@ import Button from '../user-interface/Button';
 import Card from '../user-interface/Card';
 import EditMarketDialog from '../markets/EditMarketDialog';
 import ConfirmDialog from '../user-interface/ConfirmDialog';
-import { useAppState, useAppDispatch } from '../../context/AppContext';
+import { useData } from '../../context/DataProvider';
+import { useActionsDispatch } from '../../context/ActionsContext';
 import EmptyState from '../user-interface/EmptyState';
 import { MarketplaceIcon, EllipsisVerticalIcon } from '../user-interface/Icons';
 import MarketIdeaGenerator from '../quests/MarketIdeaGenerator';
 
 const ManageMarketsPage: React.FC = () => {
-    const { settings, isAiConfigured, markets } = useAppState();
-    const { deleteSelectedAssets, updateMarketsStatus, cloneMarket } = useAppDispatch();
+    const { settings, isAiConfigured, markets } = useData();
+    const { deleteSelectedAssets, updateMarketsStatus, cloneMarket } = useActionsDispatch();
     const [isMarketDialogOpen, setIsMarketDialogOpen] = useState(false);
     const [editingMarket, setEditingMarket] = useState<Market | null>(null);
     const [isGeneratorOpen, setIsGeneratorOpen] = useState(false);

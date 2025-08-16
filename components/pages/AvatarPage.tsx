@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from 'react';
-import { useAppState, useAppDispatch } from '../../context/AppContext';
+import { useData } from '../../context/DataProvider';
+import { useActionsDispatch } from '../../context/ActionsContext';
 import { useAuthState, useAuthDispatch } from '../../context/AuthContext';
 import Avatar from '../user-interface/Avatar';
 import Card from '../user-interface/Card';
@@ -8,8 +9,8 @@ import Button from '../user-interface/Button';
 import ImageSelectionDialog from '../user-interface/ImageSelectionDialog';
 
 const AvatarPage: React.FC = () => {
-    const { gameAssets } = useAppState();
-    const { uploadFile } = useAppDispatch();
+    const { gameAssets } = useData();
+    const { uploadFile } = useActionsDispatch();
     const { currentUser } = useAuthState();
     const { updateUser } = useAuthDispatch();
     const [isGalleryOpen, setIsGalleryOpen] = useState(false);

@@ -1,6 +1,5 @@
-
 import React, { useState, useRef, useCallback, useMemo } from 'react';
-import { useAppState } from '../../context/AppContext';
+import { useData } from '../../context/DataProvider';
 import { ShareableAssetType, Terminology, IAppData } from '../../types';
 import Button from '../user-interface/Button';
 import Input from '../user-interface/Input';
@@ -8,7 +7,7 @@ import { generateAssetPack } from '../../utils/sharing';
 import { useAuthState } from '../../context/AuthContext';
 
 const ExportPanel: React.FC = () => {
-    const appState = useAppState();
+    const appState = useData();
     const authState = useAuthState();
     const { settings } = appState;
     const { users } = authState;
@@ -96,7 +95,6 @@ const ExportPanel: React.FC = () => {
         const fullAppData: IAppData = {
             ...appState,
             ...authState,
-            ...appState, // Contains economy and quest states
         };
 
         generateAssetPack(

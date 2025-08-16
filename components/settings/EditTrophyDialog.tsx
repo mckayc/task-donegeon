@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useAppState, useAppDispatch } from '../../context/AppContext';
+import { useData } from '../../context/DataProvider';
+import { useActionsDispatch } from '../../context/ActionsContext';
 import { Trophy, TrophyRequirement, TrophyRequirementType, QuestType } from '../../types';
 import Button from '../user-interface/Button';
 import Input from '../user-interface/Input';
@@ -19,8 +20,8 @@ interface EditTrophyDialogProps {
 }
 
 const EditTrophyDialog: React.FC<EditTrophyDialogProps> = ({ trophy, initialData, onClose, mode = (trophy ? 'edit' : 'create'), onTryAgain, isGenerating, onSave }) => {
-  const { ranks, quests, allTags } = useAppState();
-  const { addTrophy, updateTrophy } = useAppDispatch();
+  const { ranks, quests, allTags } = useData();
+  const { addTrophy, updateTrophy } = useActionsDispatch();
 
   const getInitialFormData = useCallback(() => {
     const data = trophy || initialData;

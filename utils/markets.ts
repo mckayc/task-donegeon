@@ -1,7 +1,23 @@
-import { Market, User, IAppData, MarketConditionType, MarketCondition, QuestCompletionStatus, RewardItem, ScheduledEvent, GameAsset } from '../types';
+import { Market, User, IAppData, MarketConditionType, MarketCondition, QuestCompletionStatus, RewardItem, ScheduledEvent, GameAsset, SetbackEffectType } from '../types';
 import { toYMD } from './quests';
 
 export const isMarketOpenForUser = (market: Market, user: User, allData: IAppData): boolean => {
+    // First, check if an active setback is closing this market for the user.
+    const isClosedBySetback = allData.appliedSetbacks.some(s => {
+        if (s.userId !== user.id || !s.expiresAt || new Date() >= new Date(s.expiresAt)) {
+            return false;
+        }
+        const definition = allData.setbackDefinitions.find(d => d.id === s.setbackDefinitionId);
+        return definition?.effects.some(effect => 
+            effect.type === SetbackEffectType.CloseMarket && effect.marketIds.includes(market.id)
+        ) ?? false;
+    });
+
+    if (isClosedBySetback) {
+        return false;
+    }
+
+    // If not closed by a setback, check the market's own status.
     switch (market.status.type) {
         case 'open':
             return true;

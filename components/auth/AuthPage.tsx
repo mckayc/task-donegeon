@@ -1,7 +1,7 @@
 
 
 import React, { useState } from 'react';
-import { useAppState } from '../../context/AppContext';
+import { useData } from '../../context/DataProvider';
 import { Role, User } from '../../types';
 import Button from '../user-interface/Button';
 import Input from '../user-interface/Input';
@@ -162,7 +162,7 @@ const RegisterForm: React.FC<{ onSwitchMode: () => void }> = ({ onSwitchMode }) 
 };
 
 const AuthPage: React.FC = () => {
-    const { settings } = useAppState();
+    const { settings } = useData();
     const { setIsSwitchingUser } = useAuthDispatch();
     const [isLoginMode, setIsLoginMode] = useState(true);
     

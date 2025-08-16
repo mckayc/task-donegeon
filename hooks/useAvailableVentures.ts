@@ -1,11 +1,13 @@
 import { useMemo } from 'react';
-import { useAppState } from '../context/AppContext';
+import { useData } from '../context/DataProvider';
+import { useUIState } from '../context/UIContext';
 import { QuestType } from '../types';
 import { isQuestAvailableForUser } from '../utils/quests';
 import { useAuthState } from '../context/AuthContext';
 
 export const useAvailableVentures = () => {
-    const { scheduledEvents, quests, questCompletions, appMode } = useAppState();
+    const { scheduledEvents, quests, questCompletions } = useData();
+    const { appMode } = useUIState();
     const { currentUser } = useAuthState();
 
     const top10AvailableVentures = useMemo(() => {

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuthState, useAuthDispatch } from '../../context/AuthContext';
-import { useAppState } from '../../context/AppContext';
+import { useData } from '../../context/DataProvider';
 import { User, Role } from '../../types';
 import Button from '../user-interface/Button';
 import Keypad from '../user-interface/Keypad';
@@ -10,7 +10,7 @@ import Input from '../user-interface/Input';
 const SwitchUser: React.FC = () => {
     const { users, currentUser: anyCurrentUser, targetedUserForLogin } = useAuthState();
     const { setCurrentUser, setIsSwitchingUser, setTargetedUserForLogin } = useAuthDispatch();
-    const { settings } = useAppState();
+    const { settings } = useData();
     const [selectedUser, setSelectedUser] = useState<User | null>(null);
     const [pin, setPin] = useState('');
     const [password, setPassword] = useState('');

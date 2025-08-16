@@ -1,6 +1,6 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
-import { useAppState, useAppDispatch } from '../../context/AppContext';
+import { useData } from '../../context/DataProvider';
+import { useActionsDispatch } from '../../context/ActionsContext';
 import { Market, MarketStatus, MarketCondition, MarketConditionType, Quest } from '../../types';
 import Button from '../user-interface/Button';
 import Input from '../user-interface/Input';
@@ -21,8 +21,8 @@ interface EditMarketDialogProps {
 const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
 const EditMarketDialog: React.FC<EditMarketDialogProps> = ({ market, initialData, onClose, mode = (market ? 'edit' : 'create'), onTryAgain, isGenerating, onSave }) => {
-  const { guilds, ranks, quests } = useAppState();
-  const { addMarket, updateMarket } = useAppDispatch();
+  const { guilds, ranks, quests } = useData();
+  const { addMarket, updateMarket } = useActionsDispatch();
   
   const getInitialFormData = useCallback(() => {
     const data = market || initialData;

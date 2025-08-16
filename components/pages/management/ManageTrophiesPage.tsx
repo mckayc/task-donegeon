@@ -4,15 +4,16 @@ import Button from '../../user-interface/Button';
 import Card from '../../user-interface/Card';
 import EditTrophyDialog from '../../settings/EditTrophyDialog';
 import ConfirmDialog from '../../user-interface/ConfirmDialog';
-import { useAppState, useAppDispatch } from '../../../context/AppContext';
+import { useData } from '../../../context/DataProvider';
+import { useActionsDispatch } from '../../../context/ActionsContext';
 import EmptyState from '../../user-interface/EmptyState';
 import TrophyIdeaGenerator from '../../quests/TrophyIdeaGenerator';
 import { TrophyIcon, EllipsisVerticalIcon } from '../../user-interface/Icons';
 import { useShiftSelect } from '../../../hooks/useShiftSelect';
 
 const ManageTrophiesPage: React.FC = () => {
-    const { trophies, settings, isAiConfigured } = useAppState();
-    const { deleteSelectedAssets } = useAppDispatch();
+    const { trophies, settings, isAiConfigured } = useData();
+    const { deleteSelectedAssets } = useActionsDispatch();
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [editingTrophy, setEditingTrophy] = useState<Trophy | null>(null);
     const [deletingIds, setDeletingIds] = useState<string[]>([]);
@@ -134,8 +135,8 @@ const ManageTrophiesPage: React.FC = () => {
                                             </button>
                                             {openDropdownId === trophy.id && (
                                                 <div ref={dropdownRef} className="absolute right-10 top-0 mt-2 w-36 bg-stone-900 border border-stone-700 rounded-lg shadow-xl z-20">
-                                                    <a href="#" onClick={(e) => { e.preventDefault(); handleEdit(trophy); setOpenDropdownId(null); }} className="block px-4 py-2 text-sm text-stone-300 hover:bg-stone-700">Edit</a>
-                                                    <button onClick={() => { handleDeleteRequest([trophy.id]); setOpenDropdownId(null); }} className="w-full text-left block px-4 py-2 text-sm text-red-400 hover:bg-stone-700">Delete</button>
+                                                    <a href="#" onClick={(e) => { e.preventDefault(); handleEdit(trophy); setOpenDropdownId(null); }} className="block px-4 py-2 text-sm text-stone-300 hover:bg-stone-700/50">Edit</a>
+                                                    <button onClick={() => { handleDeleteRequest([trophy.id]); setOpenDropdownId(null); }} className="w-full text-left block px-4 py-2 text-sm text-red-400 hover:bg-stone-700/50">Delete</button>
                                                 </div>
                                             )}
                                         </td>

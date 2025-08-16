@@ -2,7 +2,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import Button from '../../user-interface/Button';
 import Card from '../../user-interface/Card';
 import { AssetPack, AssetPackManifestInfo, IAppData, ImportResolution } from '../../../types';
-import { useAppState, useAppDispatch } from '../../context/AppContext';
+import { useAppState, useAppDispatch } from '../../../context/AppContext';
 import Input from '../../user-interface/Input';
 import { analyzeAssetPackForConflicts } from '../../../utils/sharing';
 import AssetPackInstallDialog from '../../sharing/AssetPackInstallDialog';

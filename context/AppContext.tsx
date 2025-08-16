@@ -577,7 +577,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         try {
             const savedReport = await apiRequest('POST', '/api/bug-reports', { ...rest, status: 'Open', tags: [reportType] });
             if (savedReport) {
-                setBugReports(prev => [savedReport, ...prev].sort((a,b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
+                setBugReports(prev => [savedReport, ...prev].sort((a,b) => Date.parse(b.createdAt) - Date.parse(a.createdAt)));
             }
         } catch(e) {
             // apiRequest will show a notification

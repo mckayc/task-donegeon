@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
-import { Quest, QuestType, RewardItem, RewardCategory, QuestAvailability, BugReport, Role } from '../../types';
+import { Quest, QuestType, RewardItem, RewardCategory, Role, BugReport } from '../../types';
 import Button from '../user-interface/Button';
 import Input from '../user-interface/Input';
 import ToggleSwitch from '../user-interface/ToggleSwitch';
@@ -13,6 +13,7 @@ import ImageSelectionDialog from '../user-interface/ImageSelectionDialog';
 import DynamicIcon from '../user-interface/DynamicIcon';
 import { useAuthState } from '../../context/AuthContext';
 import { bugLogger } from '../../utils/bugLogger';
+import QuestScheduling from '../forms/QuestScheduling';
 
 interface QuestDialogProps {
   questToEdit?: Quest;
@@ -25,11 +26,6 @@ interface QuestDialogProps {
   initialDataFromBug?: BugReport;
 }
 
-const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-const DUTY_AVAILABILITIES = [QuestAvailability.Daily, QuestAvailability.Weekly, QuestAvailability.Monthly];
-const VENTURE_AVAILABILITIES = [QuestAvailability.Frequency, QuestAvailability.Unlimited];
-
-
 const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialData, onClose, mode = (questToEdit ? 'edit' : 'create'), onTryAgain, isGenerating, onSave, initialDataFromBug }) => {
   const { guilds, settings, allTags, questGroups, rewardTypes } = useAppState();
   const { users } = useAuthState();
@@ -37,117 +33,90 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
   const hasLoggedOpen = useRef(false);
 
   const getInitialFormData = useCallback(() => {
-      if (mode === 'edit' && questToEdit) {
-        return {
-          title: questToEdit.title,
-          description: questToEdit.description,
-          type: questToEdit.type,
-          iconType: questToEdit.iconType || 'emoji',
-          icon: questToEdit.icon || '📝',
-          imageUrl: questToEdit.imageUrl || '',
-          rewards: [...(questToEdit.rewards || [])],
-          lateSetbacks: questToEdit.lateSetbacks ? [...questToEdit.lateSetbacks] : [],
-          incompleteSetbacks: questToEdit.incompleteSetbacks ? [...questToEdit.incompleteSetbacks] : [],
-          isActive: questToEdit.isActive,
-          isOptional: questToEdit.isOptional || false,
-          requiresApproval: questToEdit.requiresApproval,
-          availabilityCount: questToEdit.availabilityCount || 1,
-          assignedUserIds: [...(questToEdit.assignedUserIds || [])],
-          guildId: questToEdit.guildId || '',
-          groupId: questToEdit.groupId || '',
-          tags: questToEdit.tags || [],
-          startDateTime: questToEdit.startDateTime ? questToEdit.startDateTime.slice(0, 16) : '',
-          endDateTime: questToEdit.endDateTime ? questToEdit.endDateTime.slice(0, 16) : '',
-          startTime: questToEdit.startTime || '',
-          endTime: questToEdit.endTime || '',
-          allDay: questToEdit.allDay,
-          rrule: questToEdit.rrule,
-          hasDeadlines: !!(questToEdit.endDateTime || questToEdit.endTime),
-        };
-      }
-      
-      const admins = users.filter(u => u.role === Role.DonegeonMaster);
-
-      if (initialDataFromBug) {
-        const formattedLogs = initialDataFromBug.logs.map(log => 
-          `[${new Date(log.timestamp).toLocaleString()}] [${log.type}] ${log.message}` +
-          (log.element ? `\n  Element: <${log.element.tag} id="${log.element.id || ''}" class="${log.element.classes || ''}">` : '')
-        ).join('\n');
-
-        const description = `From bug report #${initialDataFromBug.id.substring(0, 8)}: ${initialDataFromBug.title}\n\n--- BUG LOG ---\n${formattedLogs}`;
-        
-        return {
-          title: `Fix Bug: ${initialDataFromBug.title}`,
-          description,
-          type: QuestType.Venture,
-          iconType: 'emoji' as 'emoji' | 'image',
-          icon: '🐞',
-          imageUrl: '',
-          rewards: [{ rewardTypeId: 'core-diligence', amount: 50 }], // Default reward
-          lateSetbacks: [] as RewardItem[],
-          incompleteSetbacks: [] as RewardItem[],
-          isActive: true,
-          requiresApproval: true,
-          isOptional: false,
-          availabilityCount: 1,
-          assignedUserIds: admins.map(a => a.id), // Assign to all admins by default
-          guildId: '',
-          groupId: '',
-          tags: ['bugfix', 'development'],
-          startDateTime: new Date().toISOString().slice(0, 16),
-          endDateTime: '',
-          startTime: '',
-          endTime: '',
-          allDay: true,
-          rrule: null,
-          hasDeadlines: false,
-        };
-      }
-
-
-      // Map AI suggested rewards to actual reward items
-      const suggestedRewardItems: RewardItem[] = initialData?.suggestedRewards
-        ?.map((reward: { rewardTypeName: string; amount: number; }) => {
-            const foundType = rewardTypes.find(rt => rt.name.toLowerCase() === reward.rewardTypeName.toLowerCase().replace(' xp', ''));
-            if (foundType) {
-                return { rewardTypeId: foundType.id, amount: reward.amount };
-            }
-            return null;
-        })
-        .filter((r: RewardItem | null): r is RewardItem => r !== null) || [];
-      
-      const isCreatingNewAIGroup = initialData?.isNewGroup && !!initialData.groupName;
-      const suggestedGroupId = !isCreatingNewAIGroup && initialData?.groupName
-        ? questGroups.find(g => g.name.toLowerCase() === initialData.groupName?.toLowerCase())?.id || ''
-        : '';
-
-      // New quest or AI creation
-      return {
-        title: initialData?.title || '',
-        description: initialData?.description || '',
-        type: initialData?.type || QuestType.Duty,
+    // Base structure for a new quest
+    const baseData = {
+        title: '', description: '',
+        type: QuestType.Venture,
         iconType: 'emoji' as 'emoji' | 'image',
-        icon: initialData?.icon || '📝',
-        imageUrl: '',
-        rewards: suggestedRewardItems,
-        lateSetbacks: [] as RewardItem[],
-        incompleteSetbacks: [] as RewardItem[],
+        icon: '📝', imageUrl: '',
+        rewards: [] as RewardItem[], lateSetbacks: [] as RewardItem[], incompleteSetbacks: [] as RewardItem[],
         isActive: settings.questDefaults.isActive,
         requiresApproval: settings.questDefaults.requiresApproval,
         isOptional: settings.questDefaults.isOptional,
-        availabilityCount: 1,
         assignedUserIds: users.map(u => u.id),
-        guildId: '',
-        groupId: suggestedGroupId,
-        tags: initialData?.tags || [],
-        startDateTime: new Date().toISOString().slice(0,16),
-        endDateTime: '',
-        startTime: '',
-        endTime: '',
-        allDay: true,
-        rrule: 'FREQ=DAILY',
-        hasDeadlines: initialData?.hasDeadlines || false,
+        guildId: '', groupId: '', tags: [],
+        startDateTime: null, endDateTime: null, allDay: true, rrule: null,
+        startTime: null, endTime: null, availabilityCount: 1,
+    };
+
+    // Mode: Edit
+    if (mode === 'edit' && questToEdit) {
+      return {
+        ...questToEdit,
+        startDateTime: questToEdit.startDateTime || null,
+        endDateTime: questToEdit.endDateTime || null,
+        allDay: questToEdit.allDay ?? true,
+        rrule: questToEdit.rrule || null,
+        startTime: questToEdit.startTime || null,
+        endTime: questToEdit.endTime || null,
+        availabilityCount: questToEdit.availabilityCount ?? 1,
       };
+    }
+
+    // Mode: AI Creation
+    if (mode === 'ai-creation' && initialData) {
+        const suggestedRewardItems: RewardItem[] = initialData?.suggestedRewards
+          ?.map((reward: { rewardTypeName: string; amount: number; }) => {
+              const foundType = rewardTypes.find(rt => rt.name.toLowerCase() === reward.rewardTypeName.toLowerCase().replace(' xp', ''));
+              if (foundType) return { rewardTypeId: foundType.id, amount: reward.amount };
+              return null;
+          }).filter((r: RewardItem | null): r is RewardItem => r !== null) || [];
+        
+        const isCreatingNewAIGroup = initialData?.isNewGroup && !!initialData.groupName;
+        const suggestedGroupId = !isCreatingNewAIGroup && initialData?.groupName
+          ? questGroups.find(g => g.name.toLowerCase() === initialData.groupName?.toLowerCase())?.id || ''
+          : '';
+
+        const suggestedType = initialData.type === 'Duty' ? QuestType.Duty : QuestType.Venture;
+
+        return {
+            ...baseData,
+            title: initialData.title || '',
+            description: initialData.description || '',
+            icon: initialData.icon || '📝',
+            tags: initialData.tags || [],
+            rewards: suggestedRewardItems,
+            groupId: suggestedGroupId,
+            type: suggestedType,
+            rrule: suggestedType === QuestType.Duty ? 'FREQ=DAILY' : null,
+        };
+    }
+    
+    // Mode: From Bug Report
+    if (initialDataFromBug) {
+      const admins = users.filter(u => u.role === Role.DonegeonMaster);
+      const formattedLogs = initialDataFromBug.logs.map(log => 
+        `[${new Date(log.timestamp).toLocaleString()}] [${log.type}] ${log.message}` +
+        (log.element ? `\n  Element: <${log.element.tag} id="${log.element.id || ''}" class="${log.element.classes || ''}">` : '')
+      ).join('\n');
+      const description = `From bug report #${initialDataFromBug.id.substring(0, 8)}: ${initialDataFromBug.title}\n\n--- BUG LOG ---\n${formattedLogs}`;
+      
+      return {
+        ...baseData,
+        title: `Fix Bug: ${initialDataFromBug.title}`,
+        description,
+        icon: '🐞',
+        rewards: [{ rewardTypeId: 'core-diligence', amount: 50 }],
+        requiresApproval: true,
+        assignedUserIds: admins.map(a => a.id),
+        tags: ['bugfix', 'development'],
+        startDateTime: new Date().toISOString(),
+        type: QuestType.Venture,
+      };
+    }
+
+    // Default: Create
+    return baseData;
   }, [questToEdit, initialData, initialDataFromBug, mode, rewardTypes, questGroups, settings.questDefaults, users]);
 
   const [formData, setFormData] = useState(getInitialFormData());
@@ -181,30 +150,6 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
   }, [initialData, initialDataFromBug, questToEdit, getInitialFormData]);
 
 
-  useEffect(() => {
-    if (!formData.hasDeadlines) {
-      setFormData(p => ({
-        ...p,
-        endDateTime: '',
-        endTime: '',
-        lateSetbacks: [],
-        incompleteSetbacks: [],
-      }));
-    }
-  }, [formData.hasDeadlines]);
-
-  useEffect(() => {
-    const newType = formData.type;
-    if (!questToEdit && newType === QuestType.Venture) setFormData(p => ({...p, requiresApproval: true}));
-    
-    // Auto-set allDay to false for timed duties
-    if (newType === QuestType.Duty && (formData.startTime || formData.endTime)) {
-        if (formData.allDay) {
-            setFormData(p => ({...p, allDay: false}));
-        }
-    }
-  }, [formData.type, questToEdit, formData.startTime, formData.endTime, formData.allDay]);
-  
   const handleUserAssignmentChange = (userId: string) => {
     setFormData(prev => ({...prev, assignedUserIds: prev.assignedUserIds.includes(userId) ? prev.assignedUserIds.filter(id => id !== userId) : [...prev.assignedUserIds, userId]}));
   };
@@ -233,6 +178,10 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
   const handleRemoveReward = (category: 'rewards' | 'lateSetbacks' | 'incompleteSetbacks') => (indexToRemove: number) => {
     setFormData(prev => ({ ...prev, [category]: prev[category].filter((_, i) => i !== indexToRemove) }));
   };
+  
+  const handleScheduleChange = (scheduleUpdate: Partial<typeof formData>) => {
+    setFormData(prev => ({ ...prev, ...scheduleUpdate }));
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -260,13 +209,13 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
         icon: formData.icon,
         imageUrl: formData.imageUrl || undefined,
         tags: formData.tags,
-        startDateTime: formData.type === QuestType.Venture && formData.startDateTime ? new Date(formData.startDateTime).toISOString() : null,
-        endDateTime: formData.type === QuestType.Venture && formData.hasDeadlines && formData.endDateTime ? new Date(formData.endDateTime).toISOString() : null,
+        startDateTime: formData.startDateTime,
+        endDateTime: formData.endDateTime,
         allDay: formData.allDay,
-        rrule: formData.type === QuestType.Duty ? formData.rrule : null,
-        startTime: formData.type === QuestType.Duty ? formData.startTime : null,
-        endTime: formData.type === QuestType.Duty && formData.hasDeadlines ? formData.endTime : null,
-        availabilityCount: formData.type === QuestType.Venture ? formData.availabilityCount : null,
+        rrule: formData.rrule,
+        startTime: formData.startTime,
+        endTime: formData.endTime,
+        availabilityCount: formData.availabilityCount,
         rewards: formData.rewards.filter(r => r.rewardTypeId && r.amount > 0),
         lateSetbacks: formData.lateSetbacks.filter(s => s.rewardTypeId && s.amount > 0),
         incompleteSetbacks: formData.incompleteSetbacks.filter(s => s.rewardTypeId && s.amount > 0),
@@ -298,6 +247,8 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
           setFormData(p => ({...p, groupId: value}));
       }
   };
+
+  const hasDeadlines = !!(formData.endTime || formData.endDateTime);
 
   return (
     <>
@@ -394,44 +345,21 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
             </div>
           </div>
 
-          <div>
-            <label htmlFor="type" className="block text-sm font-medium text-stone-300 mb-1">{settings.terminology.task} Type</label>
-            <select id="type" name="type" value={formData.type} onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setFormData(p => ({...p, type: e.target.value as QuestType}))} className="w-full px-4 py-2 bg-stone-700 border border-stone-600 rounded-md" disabled={!!initialDataFromBug}>
-              <option value={QuestType.Duty}>{settings.terminology.recurringTask} (Recurring Task)</option>
-              <option value={QuestType.Venture}>{settings.terminology.singleTask} (One-time Chore)</option>
-            </select>
-          </div>
+          <QuestScheduling value={formData} onChange={handleScheduleChange} />
           
            <div className="flex justify-between items-center">
              <h3 className="font-semibold text-lg text-stone-200">Approval</h3>
             <ToggleSwitch enabled={formData.requiresApproval} setEnabled={(val: boolean) => setFormData(p => ({...p, requiresApproval: val}))} label="Requires Approval" />
           </div>
 
-          <div className="p-4 bg-stone-900/50 rounded-lg space-y-4">
-            <div className="flex justify-between items-center">
-              <h3 className="font-semibold text-lg text-stone-200">Deadlines & Time-based {settings.terminology.negativePoints}</h3>
-              <ToggleSwitch enabled={formData.hasDeadlines} setEnabled={(val: boolean) => setFormData(p => ({...p, hasDeadlines: val}))} label="Enable" />
+          {hasDeadlines && (
+            <div className="p-4 bg-stone-900/50 rounded-lg space-y-4">
+              <h3 className="font-semibold text-lg text-stone-200">Time-based {settings.terminology.negativePoints}</h3>
+              <p className="text-sm text-stone-400 -mt-2">Assign {settings.terminology.negativePoints.toLowerCase()} for being late or incomplete.</p>
+              <RewardInputGroup category='lateSetbacks' items={formData.lateSetbacks} onChange={handleRewardChange('lateSetbacks')} onAdd={handleAddRewardForCategory('lateSetbacks')} onRemove={handleRemoveReward('lateSetbacks')} />
+              <RewardInputGroup category='incompleteSetbacks' items={formData.incompleteSetbacks} onChange={handleRewardChange('incompleteSetbacks')} onAdd={handleAddRewardForCategory('incompleteSetbacks')} onRemove={handleRemoveReward('incompleteSetbacks')} />
             </div>
-            
-            {formData.hasDeadlines && (
-              <>
-                <p className="text-sm text-stone-400 -mt-2">Set specific times for when a {settings.terminology.task.toLowerCase()} becomes late or incomplete, and assign {settings.terminology.negativePoints.toLowerCase()} for each.</p>
-                 {formData.type === QuestType.Venture ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <Input label="Start Date/Time" type="datetime-local" value={formData.startDateTime} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData(p => ({...p, startDateTime: e.target.value}))} />
-                        <Input label="End Date/Time" type="datetime-local" value={formData.endDateTime} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData(p => ({...p, endDateTime: e.target.value}))} />
-                    </div>
-                ) : ( // Duty
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <Input label="Start Time (Daily)" type="time" value={formData.startTime} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData(p => ({...p, startTime: e.target.value}))} />
-                        <Input label="End Time (Daily)" type="time" value={formData.endTime} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData(p => ({...p, endTime: e.target.value}))} />
-                    </div>
-                )}
-                <RewardInputGroup category='lateSetbacks' items={formData.lateSetbacks} onChange={handleRewardChange('lateSetbacks')} onAdd={handleAddRewardForCategory('lateSetbacks')} onRemove={handleRemoveReward('lateSetbacks')} />
-                <RewardInputGroup category='incompleteSetbacks' items={formData.incompleteSetbacks} onChange={handleRewardChange('incompleteSetbacks')} onAdd={handleAddRewardForCategory('incompleteSetbacks')} onRemove={handleRemoveReward('incompleteSetbacks')} />
-              </>
-            )}
-          </div>
+          )}
 
           <RewardInputGroup category='rewards' items={formData.rewards} onChange={handleRewardChange('rewards')} onAdd={handleAddRewardForCategory('rewards')} onRemove={handleRemoveReward('rewards')} />
 

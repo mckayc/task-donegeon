@@ -1,6 +1,7 @@
 
 
 
+
 import React, { createContext, useState, useContext, ReactNode, useEffect, useCallback, useMemo, useRef } from 'react';
 import { AppSettings, User, Quest, RewardItem, Guild, Rank, Trophy, UserTrophy, AppMode, Page, IAppData, ShareableAssetType, GameAsset, Role, RewardCategory, AdminAdjustment, AdminAdjustmentType, SystemLog, QuestType, QuestAvailability, AssetPack, ImportResolution, TrophyRequirementType, ThemeDefinition, ChatMessage, SystemNotification, SystemNotificationType, MarketStatus, QuestGroup, BulkQuestUpdates, ScheduledEvent, BugReport, QuestCompletion, BugReportType, PurchaseRequest, PurchaseRequestStatus, Market, RewardTypeDefinition, Rotation, SidebarConfigItem, BugReportLogEntry, QuestCompletionStatus, SetbackDefinition, AppliedSetback } from '../types';
 import { INITIAL_SETTINGS, INITIAL_RANKS, INITIAL_TROPHIES, INITIAL_THEMES } from '../data/initialData';
@@ -435,31 +436,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
           }
       }, 15000);
   }, []);
-  
-  // A ref to the full app state to avoid dependency issues in callbacks
-  const fullStateRef = useRef<AppState>();
-  useEffect(() => {
-    fullStateRef.current = {
-      // IAppData
-      users, loginHistory, quests, questGroups, markets, rewardTypes, questCompletions,
-      purchaseRequests, guilds, ranks, trophies, userTrophies, adminAdjustments, gameAssets,
-      systemLogs, settings, themes, chatMessages, systemNotifications, scheduledEvents, bugReports,
-      rotations, setbackDefinitions, appliedSetbacks,
-      // AppState
-      isDataLoaded, isAiConfigured, syncStatus, syncError,
-      // UIState
-      activePage, isSidebarCollapsed, isChatOpen, appMode, activeMarketId,
-      // Derived
-      allTags
-    };
-  }, [
-      users, loginHistory, quests, questGroups, markets, rewardTypes, questCompletions, purchaseRequests,
-      guilds, ranks, trophies, userTrophies, adminAdjustments, gameAssets, systemLogs, settings,
-      themes, chatMessages, systemNotifications, scheduledEvents, bugReports, rotations, isDataLoaded,
-      isAiConfigured, syncStatus, syncError, activePage, isSidebarCollapsed, isChatOpen,
-      appMode, activeMarketId, allTags, setbackDefinitions, appliedSetbacks,
-  ]);
-
 
   const state = useMemo(() => ({
       users, quests, questGroups, markets, rewardTypes, questCompletions, purchaseRequests,

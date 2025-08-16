@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { SetbackDefinition, SetbackEffect, SetbackEffectType, RewardCategory, RewardItem } from '../../types';
@@ -137,9 +138,8 @@ const EditSetbackDialog: React.FC<EditSetbackDialogProps> = ({ setbackToEdit, on
 
                                 {effect.type === SetbackEffectType.CloseMarket && (
                                     <div className="grid grid-cols-2 gap-4">
-                                        <Input as="select" label="Markets to Close" multiple value={effect.marketIds} onChange={e => {
-                                            const target = e.target as HTMLSelectElement;
-                                            const selectedValues = Array.from(target.selectedOptions, option => option.value);
+                                        <Input as="select" label="Markets to Close" multiple value={effect.marketIds} onChange={(e: React.ChangeEvent<HTMLSelectElement>) => {
+                                            const selectedValues = Array.from(e.target.selectedOptions, option => option.value);
                                             handleEffectChange(index, { ...effect, marketIds: selectedValues });
                                         }}>
                                             {markets.map(m => <option key={m.id} value={m.id}>{m.title}</option>)}

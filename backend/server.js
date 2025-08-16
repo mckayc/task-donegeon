@@ -201,8 +201,8 @@ const initializeApp = async () => {
     // Copy default asset packs if they don't exist in the user's volume
     await ensureDefaultAssetPacksExist();
     
-    // Start automated backup scheduler
-    startAutomatedBackupScheduler();
+    // Placeholder for automated backup scheduler
+    // startAutomatedBackupScheduler();
 
     console.log(`Asset directory is ready at: ${UPLOADS_DIR}`);
     console.log(`Backup directory is ready at: ${BACKUP_DIR}`);
@@ -322,19 +322,17 @@ app.post('/api/data/import-assets', asyncMiddleware(async (req, res) => {
                 for (const asset of packAssets) {
                     const resolution = resolutions.find(r => r.id === asset.id && r.type === assetType);
                     if (resolution && resolution.selected) {
-                        const newId = `${entity.name.toLowerCase()}-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+                        const newId = `${entity.name.toLowerCase().replace('entity', '').trim()}-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
                         idMap.set(asset.id, newId);
                         
                         let finalAsset = {
-                            // Provide robust defaults for all asset types
-                            iconType: 'emoji', // Default for all
-                            claimedByUserIds: [], // Quest default
-                            dismissals: [], // Quest default
-                            purchaseLimit: null, // GameAsset default
-                            purchaseLimitType: 'Total', // GameAsset default
-                            purchaseCount: 0, // GameAsset default
-                            requiresApproval: false, // GameAsset default
-                            icon: '📦', // GameAsset default
+                            // Provide robust defaults for GameAsset properties
+                            purchaseLimit: null,
+                            purchaseLimitType: 'Total',
+                            purchaseCount: 0,
+                            requiresApproval: false,
+                            icon: '📦',
+                            iconType: 'emoji',
                             ...asset,
                             id: newId,
                             [nameField]: resolution.resolution === 'rename' ? resolution.newName : asset[nameField],
@@ -374,10 +372,14 @@ app.post('/api/data/import-assets', asyncMiddleware(async (req, res) => {
                     }));
 
                     const finalQuest = {
+                        // DEFAULTS FOR QUEST to prevent crashes
                         iconType: 'emoji',
                         claimedByUserIds: [],
                         dismissals: [],
-                        ...quest,
+                        lateSetbacks: [],
+                        incompleteSetbacks: [],
+                        assignedUserIds: [],
+                        ...quest, // SPREAD QUEST OVER DEFAULTS
                         id: newId,
                         title: resolution.resolution === 'rename' ? resolution.newName : quest.title,
                         groupId: idMap.get(quest.groupId) || quest.groupId,

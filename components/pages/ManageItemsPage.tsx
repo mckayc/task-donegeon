@@ -1,4 +1,5 @@
 
+
 import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { GameAsset } from '../../types';
@@ -21,6 +22,8 @@ const ManageItemsPage: React.FC = () => {
     const { uploadFile, cloneGameAsset, deleteGameAssets } = useAppDispatch();
     const { addNotification } = useNotificationsDispatch();
     
+    const [pageAssets, setPageAssets] = useState<GameAsset[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
     const [editingAsset, setEditingAsset] = useState<GameAsset | null>(null);
     const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
     const [isGeneratorOpen, setIsGeneratorOpen] = useState(false);
@@ -44,29 +47,6 @@ const ManageItemsPage: React.FC = () => {
     
     const categories = useMemo(() => ['All', ...Array.from(new Set(allGameAssets.map(a => a.category)))], [allGameAssets]);
 
-    const pageAssets = useMemo(() => {
-        const filtered = allGameAssets.filter(asset => {
-            const categoryMatch = activeTab === 'All' || asset.category === activeTab;
-            const searchMatch = !debouncedSearchTerm || 
-                asset.name.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
-                asset.description.toLowerCase().includes(debouncedSearchTerm.toLowerCase());
-            return categoryMatch && searchMatch;
-        });
-
-        filtered.sort((a: GameAsset, b: GameAsset) => {
-            switch (sortBy) {
-                case 'name-asc': return a.name.localeCompare(b.name);
-                case 'name-desc': return b.name.localeCompare(a.name);
-                case 'createdAt-asc': return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
-                case 'createdAt-desc':
-                default:
-                    return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-            }
-        });
-        
-        return filtered;
-    }, [activeTab, debouncedSearchTerm, sortBy, allGameAssets]);
-    
     const pageAssetIds = useMemo(() => pageAssets.map(a => a.id), [pageAssets]);
     const handleCheckboxClick = useShiftSelect(pageAssetIds, selectedAssets, setSelectedAssets);
 
@@ -79,7 +59,36 @@ const ManageItemsPage: React.FC = () => {
         document.addEventListener('mousedown', handleClickOutside);
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
-    
+
+    const fetchAssets = useCallback(async () => {
+        setIsLoading(true);
+        const filtered = allGameAssets.filter(asset => {
+            const categoryMatch = activeTab === 'All' || asset.category === activeTab;
+            const searchMatch = !debouncedSearchTerm || 
+                asset.name.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
+                asset.description.toLowerCase().includes(debouncedSearchTerm.toLowerCase());
+            return categoryMatch && searchMatch;
+        });
+
+        filtered.sort((a, b) => {
+            switch (sortBy) {
+                case 'name-asc': return a.name.localeCompare(b.name);
+                case 'name-desc': return b.name.localeCompare(a.name);
+                case 'createdAt-asc': return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+                case 'createdAt-desc':
+                default:
+                    return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+            }
+        });
+        
+        setPageAssets(filtered);
+        setIsLoading(false);
+    }, [activeTab, debouncedSearchTerm, sortBy, allGameAssets]);
+
+    useEffect(() => {
+        fetchAssets();
+    }, [fetchAssets]);
+
     useEffect(() => {
         setSelectedAssets([]);
     }, [activeTab, searchTerm, sortBy]);
@@ -197,7 +206,7 @@ const ManageItemsPage: React.FC = () => {
             <Card title="All Created Items & Assets">
                 <div className="border-b border-stone-700 mb-4">
                     <nav className="-mb-px flex space-x-4 overflow-x-auto">
-                        {categories.map((category: any) => (
+                        {categories.map(category => (
                             <button key={category} onClick={() => setActiveTab(category)}
                                 data-log-id={`manage-items-tab-${category.toLowerCase()}`}
                                 className={`capitalize whitespace-nowrap pb-4 px-1 border-b-2 font-medium text-sm transition-colors ${
@@ -227,7 +236,7 @@ const ManageItemsPage: React.FC = () => {
                     )}
                 </div>
 
-                {!allGameAssets ? (
+                {isLoading ? (
                     <div className="text-center py-10"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-400 mx-auto"></div></div>
                 ) : pageAssets.length > 0 ? (
                      <div className="overflow-x-auto">
@@ -251,8 +260,8 @@ const ManageItemsPage: React.FC = () => {
                                                 <input type="checkbox" checked={selectedAssets.includes(asset.id)} onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleCheckboxClick(e, asset.id)} className="h-4 w-4 rounded text-emerald-600 bg-stone-700 border-stone-600 focus:ring-emerald-500" />
                                             </td>
                                             <td className="p-2">
-                                                <button onClick={() => setPreviewImageUrl(asset.url)} className="w-12 h-12 bg-stone-700 rounded-md overflow-hidden hover:ring-2 ring-accent">
-                                                    <img src={asset.url} alt={asset.name} className="w-full h-full object-cover" />
+                                                <button onClick={() => asset.imageUrl && setPreviewImageUrl(asset.imageUrl)} className="w-12 h-12 bg-stone-700 rounded-md overflow-hidden hover:ring-2 ring-accent">
+                                                    <img src={asset.imageUrl} alt={asset.name} className="w-full h-full object-cover" />
                                                 </button>
                                             </td>
                                             <td className="p-4 font-bold">

@@ -67,8 +67,8 @@ const AvatarPage: React.FC = () => {
         if (file) {
             setIsUploading(true);
             const result = await uploadFile(file, 'profile-pictures');
-            if (result?.imageUrl) {
-                handleProfilePictureSelect(result.imageUrl);
+            if (result?.url) {
+                handleProfilePictureSelect(result.url);
             }
             setIsUploading(false);
         }

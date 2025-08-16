@@ -17,7 +17,7 @@ import { useShiftSelect } from '../../../hooks/useShiftSelect';
 
 const ManageItemsPage: React.FC = () => {
     const { settings, isAiConfigured, gameAssets: allGameAssets } = useAppState();
-    const { uploadFile, addGameAsset, updateGameAsset, cloneGameAsset, deleteGameAssets } = useAppDispatch();
+    const { uploadFile, cloneGameAsset, deleteGameAssets } = useAppDispatch();
     const { addNotification } = useNotificationsDispatch();
     
     const [pageAssets, setPageAssets] = useState<GameAsset[]>([]);
@@ -258,8 +258,8 @@ const ManageItemsPage: React.FC = () => {
                                                 <input type="checkbox" checked={selectedAssets.includes(asset.id)} onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleCheckboxClick(e, asset.id)} className="h-4 w-4 rounded text-emerald-600 bg-stone-700 border-stone-600 focus:ring-emerald-500" />
                                             </td>
                                             <td className="p-2">
-                                                <button onClick={() => setPreviewImageUrl(asset.url)} className="w-12 h-12 bg-stone-700 rounded-md overflow-hidden hover:ring-2 ring-accent">
-                                                    <img src={asset.url} alt={asset.name} className="w-full h-full object-cover" />
+                                                <button onClick={() => setPreviewImageUrl(asset.imageUrl)} className="w-12 h-12 bg-stone-700 rounded-md overflow-hidden hover:ring-2 ring-accent">
+                                                    <img src={asset.imageUrl} alt={asset.name} className="w-full h-full object-cover" />
                                                 </button>
                                             </td>
                                             <td className="p-4 font-bold">

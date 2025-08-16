@@ -38,11 +38,11 @@ const EditGameAssetDialog: React.FC<EditGameAssetDialogProps> = ({ assetToEdit, 
   const getInitialFormData = useCallback(() => {
     const data = assetToEdit || initialData;
     if (mode !== 'create' && data) {
-      const d = data as Partial<GameAsset> & { url: string; name: string; category: string; description?: string; };
+      const d = data as Partial<GameAsset> & { url?: string; name: string; category: string; description?: string; };
       return {
         name: d.name,
         description: d.description || '',
-        url: d.url,
+        url: d.imageUrl || d.url || '',
         category: PREDEFINED_CATEGORIES.includes(d.category) ? d.category : 'Other',
         avatarSlot: d.avatarSlot || '',
         isForSale: typeof d.isForSale === 'boolean' ? d.isForSale : false,
@@ -195,8 +195,14 @@ const EditGameAssetDialog: React.FC<EditGameAssetDialogProps> = ({ assetToEdit, 
       costGroups: formData.costGroups.map(g => g.filter(c => c.amount > 0 && c.rewardTypeId)).filter(g => g.length > 0),
     };
     
-    const { allowExchange, ...finalPayload } = payload;
-    
+    const { allowExchange, url, ...intermediatePayload } = payload;
+    const finalPayload = {
+        ...intermediatePayload,
+        iconType: 'image' as const,
+        icon: '🖼️',
+        imageUrl: url,
+    };
+
     if (onSave) {
         onSave(finalPayload);
     } else if (assetToEdit) {

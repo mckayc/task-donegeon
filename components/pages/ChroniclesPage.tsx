@@ -1,13 +1,14 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import Card from '../user-interface/Card';
-import { useAppState } from '../../context/AppContext';
-import { Role, ChronicleEvent, QuestCompletionStatus, AdminAdjustmentType, PurchaseRequestStatus, RewardItem, Quest, Trophy, RewardTypeDefinition } from '../../types';
+import { useAppState, useAppDispatch } from '../../context/AppContext';
+import { Role, ChronicleEvent, QuestCompletionStatus, AdminAdjustmentType, PurchaseRequestStatus, RewardItem, Quest, Trophy, RewardTypeDefinition, PurchaseRequest } from '../../types';
 import Button from '../user-interface/Button';
 import { useAuthState } from '../../context/AuthContext';
 
 const ChroniclesPage: React.FC = () => {
     const { settings, userTrophies, trophies, adminAdjustments, systemLogs, systemNotifications, users, quests, questCompletions, purchaseRequests, rewardTypes, appMode } = useAppState();
     const { currentUser } = useAuthState();
+    const { cancelPurchaseRequest } = useAppDispatch();
 
     const [viewMode, setViewMode] = useState<'all' | 'personal'>(currentUser?.role === Role.Explorer ? 'personal' : 'all');
     const [itemsPerPage, setItemsPerPage] = useState(50);
@@ -34,10 +35,7 @@ const ChroniclesPage: React.FC = () => {
         const currentGuildId = appMode.mode === 'guild' ? appMode.guildId : undefined;
 
         const shouldInclude = (item: { userId?: string, userIds?: string[], recipientUserIds?: string[], guildId?: string | null }) => {
-            // The loose equality operator `!=` correctly handles comparing `null` from the database
-            // with `undefined` from the application state for personal-scope items.
             if (item.guildId != currentGuildId) return false;
-
             if (viewMode === 'personal') {
                 const userIdsToCheck = [item.userId, ...(item.userIds || []), ...(item.recipientUserIds || [])].filter(Boolean) as string[];
                 return userIdsToCheck.includes(currentUser.id);
@@ -55,23 +53,60 @@ const ChroniclesPage: React.FC = () => {
                 finalNote = finalNote ? `${finalNote}\n(${rewardsText})` : rewardsText;
             }
             events.push({
-                id: c.id, date: c.completedAt, type: 'Quest',
+                id: c.id, originalId: c.id, date: c.completedAt, type: 'Quest',
                 title: `${userMap.get(c.userId) || 'Unknown'} completed "${quest?.title || 'Unknown Quest'}"`,
                 status: c.status, note: finalNote, icon: quest?.icon || '📜',
                 color: '#3b82f6', userId: c.userId, guildId: c.guildId
             });
         });
 
-        // 2. Purchase Requests
+        // 2. Purchase Requests (Split into two events)
         purchaseRequests.forEach(p => {
             if (!shouldInclude({ userId: p.userId, guildId: p.guildId })) return;
+            const requesterName = userMap.get(p.userId) || 'Unknown';
             const costText = getRewardDisplay(p.assetDetails.cost).replace(/(\d+)/g, '-$1');
+
+            // Event 1: The initial request
             events.push({
-                id: p.id, date: p.requestedAt, type: 'Purchase', userId: p.userId,
-                title: `${userMap.get(p.userId) || 'Unknown'} purchased "${p.assetDetails.name}"`,
-                status: p.status, note: costText, icon: '💰',
-                color: '#22c55e', guildId: p.guildId
+                id: p.id + '-req', originalId: p.id, date: p.requestedAt, type: 'Purchase', userId: p.userId,
+                title: `${requesterName} requested to purchase "${p.assetDetails.name}"`,
+                status: PurchaseRequestStatus.Pending, note: costText, icon: '🛒',
+                color: '#f59e0b', guildId: p.guildId
             });
+
+            // Event 2: The action (approve, reject, cancel)
+            if (p.actedAt && p.status !== PurchaseRequestStatus.Pending) {
+                const actorName = userMap.get(p.actedById || '') || 'System';
+                let actionTitle = '';
+                let actionColor = '#64748b';
+                let actionIcon = '✔️';
+                let actionNote = `For ${requesterName}`;
+
+                switch (p.status) {
+                    case PurchaseRequestStatus.Completed:
+                        actionTitle = `${actorName} approved purchase of "${p.assetDetails.name}"`;
+                        actionColor = '#22c55e';
+                        actionIcon = '✅';
+                        break;
+                    case PurchaseRequestStatus.Rejected:
+                        actionTitle = `${actorName} rejected purchase of "${p.assetDetails.name}"`;
+                        actionColor = '#ef4444';
+                        actionIcon = '❌';
+                        actionNote += ` (Funds refunded)`;
+                        break;
+                    case PurchaseRequestStatus.Cancelled:
+                        actionTitle = `${actorName} cancelled purchase of "${p.assetDetails.name}"`;
+                        actionColor = '#64748b';
+                        actionIcon = '🚫';
+                        actionNote += ` (Funds refunded)`;
+                        break;
+                }
+                
+                events.push({
+                    id: p.id + '-act', originalId: p.id, date: p.actedAt, type: 'Purchase', userId: p.userId, actorName,
+                    title: actionTitle, status: p.status, note: actionNote, icon: actionIcon, color: actionColor, guildId: p.guildId
+                });
+            }
         });
 
         // 3. User Trophies
@@ -79,7 +114,7 @@ const ChroniclesPage: React.FC = () => {
             if (!shouldInclude({ userId: ut.userId, guildId: ut.guildId })) return;
             const trophy = trophyMap.get(ut.trophyId) as Trophy | undefined;
             events.push({
-                id: ut.id, date: ut.awardedAt, type: 'Trophy', userId: ut.userId,
+                id: ut.id, originalId: ut.id, date: ut.awardedAt, type: 'Trophy', userId: ut.userId,
                 title: `${userMap.get(ut.userId) || 'Unknown'} earned "${trophy?.name || 'Unknown Trophy'}"`,
                 status: "Awarded", note: trophy?.description, icon: trophy?.icon || '🏆',
                 color: '#f59e0b', guildId: ut.guildId
@@ -92,7 +127,7 @@ const ChroniclesPage: React.FC = () => {
             const rewardsText = getRewardDisplay(adj.rewards).replace(/(\d+)/g, '+$1');
             const setbacksText = getRewardDisplay(adj.setbacks).replace(/(\d+)/g, '-$1');
             events.push({
-                id: adj.id, date: adj.adjustedAt, type: 'Adjustment', userId: adj.userId,
+                id: adj.id, originalId: adj.id, date: adj.adjustedAt, type: 'Adjustment', userId: adj.userId,
                 title: `${userMap.get(adj.userId) || 'Unknown'} received an adjustment from ${userMap.get(adj.adjusterId) || 'Admin'}`,
                 status: adj.type,
                 note: `${adj.reason}\n(${rewardsText} ${setbacksText})`.trim(),
@@ -109,7 +144,7 @@ const ChroniclesPage: React.FC = () => {
                 const userNames = log.userIds.map(id => userMap.get(id) || 'Unknown').join(', ');
                 const setbacksText = getRewardDisplay(log.setbacksApplied).replace(/(\d+)/g, '-$1');
                 events.push({
-                    id: log.id, date: log.timestamp, type: 'System',
+                    id: log.id, originalId: log.id, date: log.timestamp, type: 'System',
                     title: `System: ${quest?.title || 'Unknown Quest'} marked as ${log.type.split('_')[1]}`,
                     status: log.type, note: `For: ${userNames}\n(${setbacksText})`, icon: '⚙️', color: '#64748b'
                 });
@@ -147,9 +182,10 @@ const ChroniclesPage: React.FC = () => {
             return 'text-red-500 font-semibold';
           case QuestCompletionStatus.Rejected:
           case PurchaseRequestStatus.Rejected:
-          case PurchaseRequestStatus.Cancelled:
           case AdminAdjustmentType.Setback:
             return 'text-red-400';
+          case PurchaseRequestStatus.Cancelled:
+            return 'text-stone-400';
           default:
             return 'text-stone-400';
         }
@@ -212,8 +248,13 @@ const ChroniclesPage: React.FC = () => {
                                     <div className="w-2/5 flex-shrink-0 text-sm text-stone-400 italic" title={activity.note}>
                                         {activity.note ? <p className="whitespace-pre-wrap">"{activity.note}"</p> : ''}
                                     </div>
-                                    <div className={`w-28 flex-shrink-0 text-right font-semibold ${statusColor(activity.status)}`}>
-                                        {activity.status}
+                                    <div className={`w-28 flex-shrink-0 text-right font-semibold flex items-center justify-end gap-2 ${statusColor(activity.status)}`}>
+                                        <span>{activity.status}</span>
+                                         {activity.type === 'Purchase' && activity.status === 'Pending' && activity.userId === currentUser.id && (
+                                            <Button variant="destructive" size="sm" className="!text-xs !py-0.5" onClick={() => cancelPurchaseRequest(activity.originalId)}>
+                                                Cancel
+                                            </Button>
+                                        )}
                                     </div>
                                 </li>
                             ))}

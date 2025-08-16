@@ -235,6 +235,7 @@ export interface PurchaseRequest {
   assetId: string;
   requestedAt: string;
   actedAt?: string;
+  actedById?: string; // ID of the user who approved, rejected, or cancelled.
   status: PurchaseRequestStatus;
   assetDetails: {
       name: string;
@@ -770,6 +771,7 @@ export interface IAppData {
 
 export type ChronicleEvent = {
     id: string;
+    originalId: string; // The ID of the source object (e.g., PurchaseRequest)
     date: string;
     type: 'Quest' | 'Purchase' | 'Trophy' | 'Adjustment' | 'System' | 'Announcement' | 'ScheduledEvent';
     title: string;
@@ -780,6 +782,7 @@ export type ChronicleEvent = {
     imageUrl?: string;
     color: string;
     userId?: string; // The primary actor/user
+    actorName?: string; // Name of the user who acted (e.g., approved/rejected)
     recipientUserIds?: string[]; // The users this event applies to (for announcements, system logs)
     questType?: QuestType;
     guildId?: string; // The scope of the event

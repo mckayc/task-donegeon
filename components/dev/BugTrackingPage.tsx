@@ -7,7 +7,7 @@ import { useNotificationsDispatch } from '../../context/NotificationsContext';
 import Input from '../user-interface/Input';
 import ConfirmDialog from '../user-interface/ConfirmDialog';
 import { BugDetailDialog } from './BugDetailDialog';
-import { ChevronDownIcon } from '../user-interface/Icons';
+import { EllipsisVerticalIcon } from '../user-interface/Icons';
 import { useShiftSelect } from '../../hooks/useShiftSelect';
 import CreateBugReportDialog from './CreateBugReportDialog';
 
@@ -226,9 +226,9 @@ const BugTrackingPage: React.FC = () => {
                                         </td>
                                         <td className={`p-4 text-stone-400 transition-opacity ${allLogsCopied ? 'opacity-50' : ''}`}>{new Date(report.createdAt).toLocaleDateString()}</td>
                                         <td className="p-4 relative">
-                                            <Button variant="secondary" size="sm" onClick={() => setOpenDropdownId(openDropdownId === report.id ? null : report.id)} className="flex items-center gap-1">
-                                                Actions <ChevronDownIcon className="w-4 h-4" />
-                                            </Button>
+                                            <button onClick={() => setOpenDropdownId(openDropdownId === report.id ? null : report.id)} className="p-2 rounded-full hover:bg-stone-700/50">
+                                                <EllipsisVerticalIcon className="w-5 h-5 text-stone-300" />
+                                            </button>
                                             {openDropdownId === report.id && (
                                                 <div ref={dropdownRef} className="absolute right-0 top-full mt-2 w-48 bg-stone-900 border border-stone-700 rounded-lg shadow-xl z-50">
                                                     <button onClick={() => { setDetailedReportId(report.id); setOpenDropdownId(null); }} className="w-full text-left block px-4 py-2 text-sm text-stone-300 hover:bg-stone-700">

@@ -255,6 +255,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
           processDelta('rotation', dataToSet.rotations, setRotations);
 
           if (dataToSet.loginHistory) authDispatch.setLoginHistory(dataToSet.loginHistory);
+          return { loadedSettings: undefined };
       } else { // Full data load
           const isObject = (v: any) => typeof v === 'object' && v !== null && !Array.isArray(v);
           const spreadIfObject = (v: any) => isObject(v) ? v : {};
@@ -328,7 +329,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
           setRotations(dataToSet.rotations || []);
           return { loadedSettings };
       }
-      return { loadedSettings: undefined };
   }, [authDispatch, setAdminAdjustments, setBugReports, setChatMessages, setGameAssets, setGuilds, setMarkets, setQuestCompletions, setQuestGroups, setQuests, setRanks, setRewardTypes, setRotations, setScheduledEvents, setSettings, setSystemLogs, setSystemNotifications, setThemes, setTrophies, setUserTrophies, setPurchaseRequests]);
   
   const performDeltaSync = useCallback(async () => {
@@ -775,7 +775,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             return;
         }
 
-        // --- Optimistic Update ---
         const optimisticCompletion: QuestCompletion = {
             ...completionData,
             id: `temp-comp-${Date.now()}`,
@@ -789,19 +788,60 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             applyRewards(userId, quest.rewards, guildId);
         }
         
-        registerOptimisticUpdate(`user-${userId}`);
-        registerOptimisticUpdate(`questCompletion-${optimisticCompletion.id}`);
-        
-        // --- Server Sync ---
         apiRequest('POST', '/api/actions/complete-quest', { completionData })
+            .then(response => {
+                if (response?.newCompletion) {
+                    setQuestCompletions(prev => {
+                        const nextState = prev.filter(c => c.id !== optimisticCompletion.id);
+                        nextState.push(response.newCompletion);
+                        return nextState;
+                    });
+                    if (response.updatedUser) {
+                        authDispatch.updateUser(response.updatedUser.id, response.updatedUser);
+                    }
+                }
+            })
             .catch(() => {
                 addNotification({ type: 'error', message: `Failed to sync completion for "${quest.title}". Reverting.` });
                 setQuestCompletions(prev => prev.filter(c => c.id !== optimisticCompletion.id));
-                // Note: A full rollback is complex. The next server sync will correct any inconsistencies.
+                // Let the next sync fix balances.
             });
     };
-    const approveQuestCompletion = async (completionId: string, note?: string) => { registerOptimisticUpdate(`questCompletion-${completionId}`); apiRequest('POST', `/api/actions/approve-quest/${completionId}`, { note }).catch((_e) => {}); };
-    const rejectQuestCompletion = async (completionId: string, note?: string) => { registerOptimisticUpdate(`questCompletion-${completionId}`); apiRequest('POST', `/api/actions/reject-quest/${completionId}`, { note }).catch((_e) => {}); };
+    const approveQuestCompletion = async (completionId: string, note?: string) => {
+        const originalCompletions = [...questCompletions];
+        const originalUsers = [...users];
+        const completion = originalCompletions.find(c => c.id === completionId);
+        const quest = completion ? quests.find(q => q.id === completion.questId) : null;
+        
+        if (!completion || !quest) {
+            addNotification({type: 'error', message: 'Could not find quest or completion to approve.'});
+            return;
+        }
+
+        // Optimistic Update
+        setQuestCompletions(prev => prev.filter(c => c.id !== completionId));
+        applyRewards(completion.userId, quest.rewards, quest.guildId);
+
+        apiRequest('POST', `/api/actions/approve-quest/${completionId}`, { note })
+            .catch(() => {
+                addNotification({ type: 'error', message: `Approval for "${quest.title}" failed. Reverting.` });
+                setQuestCompletions(originalCompletions);
+                authDispatch.setUsers(originalUsers); // Revert user balances
+            });
+    };
+    const rejectQuestCompletion = async (completionId: string, note?: string) => {
+        const originalCompletions = [...questCompletions];
+        const quest = quests.find(q => q.id === originalCompletions.find(c => c.id === completionId)?.questId);
+
+        // Optimistic Update
+        setQuestCompletions(prev => prev.filter(c => c.id !== completionId));
+
+        apiRequest('POST', `/api/actions/reject-quest/${completionId}`, { note })
+            .catch(() => {
+                addNotification({ type: 'error', message: `Rejection for "${quest?.title || 'quest'}" failed. Reverting.` });
+                setQuestCompletions(originalCompletions);
+            });
+    };
     const addQuestGroup = (group: Omit<QuestGroup, 'id'>) => { const newGroup = { ...group, id: `qg-${Date.now()}` }; setQuestGroups(prev => [...prev, newGroup]); return newGroup; };
     const updateQuestGroup = (group: QuestGroup) => { registerOptimisticUpdate(`questGroup-${group.id}`); const originalState = questGroups; setQuestGroups(prev => prev.map(g => g.id === group.id ? group : g)); apiRequest('PUT', `/api/quest-groups/${group.id}`, group).catch(() => setQuestGroups(originalState)); };
     const assignQuestGroupToUsers = (groupId: string, userIds: string[]) => {
@@ -836,28 +876,21 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       if (!cost) { addNotification({ type: 'error', message: 'Invalid cost selection.' }); return; }
 
       const guildId = appMode.mode === 'guild' ? appMode.guildId : undefined;
-      const canAfford = cost.every(item => {
-        const balances = guildId ? user.guildBalances[guildId] : { purse: user.personalPurse, experience: user.personalExperience };
-        if (!balances) return false;
-        const rewardDef = rewardTypes.find(rt => rt.id === item.rewardTypeId);
-        const balance = rewardDef?.category === RewardCategory.Currency ? (balances.purse?.[item.rewardTypeId] || 0) : (balances.experience?.[item.rewardTypeId] || 0);
-        return balance >= item.amount;
-      });
-
-      if (!canAfford) { addNotification({ type: 'error', message: "You can't afford this item." }); return; }
-
+      
       if (asset.requiresApproval) {
-        const newRequest: PurchaseRequest = {
-          id: `pr-${Date.now()}`,
-          userId: user.id,
-          assetId: asset.id,
-          requestedAt: new Date().toISOString(),
-          status: PurchaseRequestStatus.Pending,
-          assetDetails: { name: asset.name, description: asset.description, cost },
-          guildId,
-        };
-        setPurchaseRequests(prev => [...prev, newRequest]);
-        addNotification({ type: 'info', message: 'Purchase requested. Awaiting approval.' });
+        if (deductRewards(user.id, cost, guildId)) {
+            const newRequest: PurchaseRequest = {
+              id: `pr-${Date.now()}`,
+              userId: user.id,
+              assetId: asset.id,
+              requestedAt: new Date().toISOString(),
+              status: PurchaseRequestStatus.Pending,
+              assetDetails: { name: asset.name, description: asset.description, cost },
+              guildId,
+            };
+            setPurchaseRequests(prev => [...prev, newRequest]);
+            addNotification({ type: 'info', message: 'Purchase requested. Awaiting approval.' });
+        }
       } else {
         if (deductRewards(user.id, cost, guildId)) {
             authDispatch.updateUser(user.id, u => ({ ownedAssetIds: [...(u.ownedAssetIds || []), asset.id] }));
@@ -866,19 +899,25 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         }
       }
     };
-    const cancelPurchaseRequest = (purchaseId: string) => { setPurchaseRequests(p => p.map(req => req.id === purchaseId ? { ...req, status: PurchaseRequestStatus.Cancelled, actedAt: new Date().toISOString() } : req)); };
+    const cancelPurchaseRequest = (purchaseId: string) => {
+        const request = purchaseRequests.find(r => r.id === purchaseId);
+        if (!request || !currentUserRef.current) return;
+        applyRewards(request.userId, request.assetDetails.cost, request.guildId);
+        setPurchaseRequests(p => p.map(req => req.id === purchaseId ? { ...req, status: PurchaseRequestStatus.Cancelled, actedAt: new Date().toISOString(), actedById: currentUserRef.current?.id } : req));
+    };
     const approvePurchaseRequest = (purchaseId: string) => {
       const request = purchaseRequests.find(r => r.id === purchaseId);
-      if (!request) return;
-      if (deductRewards(request.userId, request.assetDetails.cost, request.guildId)) {
-        authDispatch.updateUser(request.userId, u => ({ ownedAssetIds: [...(u.ownedAssetIds || []), request.assetId] }));
-        setGameAssets(p => p.map(a => a.id === request.assetId ? { ...a, purchaseCount: (a.purchaseCount || 0) + 1 } : a));
-        setPurchaseRequests(p => p.map(req => req.id === purchaseId ? { ...req, status: PurchaseRequestStatus.Completed, actedAt: new Date().toISOString() } : req));
-      } else {
-        addNotification({type:'error', message: 'User could not afford this item at time of approval.'});
-      }
+      if (!request || !currentUserRef.current) return;
+      authDispatch.updateUser(request.userId, u => ({ ownedAssetIds: [...(u.ownedAssetIds || []), request.assetId] }));
+      setGameAssets(p => p.map(a => a.id === request.assetId ? { ...a, purchaseCount: (a.purchaseCount || 0) + 1 } : a));
+      setPurchaseRequests(p => p.map(req => req.id === purchaseId ? { ...req, status: PurchaseRequestStatus.Completed, actedAt: new Date().toISOString(), actedById: currentUserRef.current?.id } : req));
     };
-    const rejectPurchaseRequest = (purchaseId: string) => { setPurchaseRequests(p => p.map(req => req.id === purchaseId ? { ...req, status: PurchaseRequestStatus.Rejected, actedAt: new Date().toISOString() } : req)); };
+    const rejectPurchaseRequest = (purchaseId: string) => {
+      const request = purchaseRequests.find(r => r.id === purchaseId);
+      if (!request || !currentUserRef.current) return;
+      applyRewards(request.userId, request.assetDetails.cost, request.guildId);
+      setPurchaseRequests(p => p.map(req => req.id === purchaseId ? { ...req, status: PurchaseRequestStatus.Rejected, actedAt: new Date().toISOString(), actedById: currentUserRef.current?.id } : req));
+    };
     const executeExchange = async (userId: string, payItem: RewardItem, receiveItem: RewardItem, guildId?: string) => { apiRequest('POST', '/api/actions/execute-exchange', { userId, payItem, receiveItem, guildId }).catch((_e) => {}); };
     const importAssetPack = async (assetPack: AssetPack, resolutions: ImportResolution[]) => {
         try {
@@ -933,7 +972,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     setQuests, setQuestGroups, setQuestCompletions, setMarkets, setRewardTypes, setPurchaseRequests, setGameAssets,
     _setActivePage, setIsSidebarCollapsed, setIsChatOpen, setAppMode, setActiveMarketId, setGuilds, setRanks,
     setTrophies, setUserTrophies, setThemes, setScheduledEvents, setBugReports, setAdminAdjustments, setSystemNotifications,
-    setChatMessages, setSystemLogs, setSettings, setRotations, apiRequest, bugReports
+    setChatMessages, setSystemLogs, setSettings, setRotations, apiRequest
   ]);
 
   return (

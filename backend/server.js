@@ -114,6 +114,10 @@ app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
+// Serve frontend static files from the build directory
+const frontendDistPath = path.join(__dirname, '..', 'dist');
+app.use(express.static(frontendDistPath));
+
 
 // === Gemini AI Client ===
 let ai;
@@ -401,3 +405,9 @@ app.post('/api/data/import-assets', asyncMiddleware(async (req, res) => {
     sendUpdateToClients();
     res.status(204).send();
 }));
+
+// SPA Catch-all: For any route that is not an API route and didn't find a static file,
+// serve the index.html file. This must be the LAST route.
+app.get('*', (req, res) => {
+    res.sendFile(path.join(frontendDistPath, 'index.html'));
+});

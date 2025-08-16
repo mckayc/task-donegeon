@@ -1,3 +1,5 @@
+
+
 import React, { createContext, useState, useContext, ReactNode, useEffect, useCallback, useMemo, useRef } from 'react';
 import { AppSettings, User, Quest, RewardItem, Guild, Rank, Trophy, UserTrophy, AppMode, Page, IAppData, ShareableAssetType, GameAsset, Role, RewardCategory, AdminAdjustment, AdminAdjustmentType, SystemLog, QuestType, QuestAvailability, AssetPack, ImportResolution, TrophyRequirementType, ThemeDefinition, ChatMessage, SystemNotification, SystemNotificationType, MarketStatus, QuestGroup, BulkQuestUpdates, ScheduledEvent, BugReport, QuestCompletion, BugReportType, PurchaseRequest, PurchaseRequestStatus, Market, RewardTypeDefinition, Rotation, SidebarConfigItem, BugReportLogEntry } from '../types';
 import { INITIAL_SETTINGS, INITIAL_RANKS, INITIAL_TROPHIES, INITIAL_THEMES } from '../data/initialData';
@@ -568,16 +570,16 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         try { const savedGuild = await apiRequest('POST', '/api/guilds', guild); setGuilds(prev => prev.map(g => g.id === optimisticGuild.id ? savedGuild : g)); } 
         catch { setGuilds(prev => prev.filter(g => g.id !== optimisticGuild.id)); }
     };
-    const updateGuild = async (guild: Guild) => { registerOptimisticUpdate(`guild-${guild.id}`); apiRequest('PUT', `/api/guilds/${guild.id}`, guild).catch(() => {}); };
-    const deleteGuild = async (guildId: string) => { apiRequest('DELETE', `/api/guilds/${guildId}`).catch(() => {}); };
+    const updateGuild = async (guild: Guild) => { registerOptimisticUpdate(`guild-${guild.id}`); const originalState = guilds; setGuilds(p => p.map(g => g.id === guild.id ? guild : g)); apiRequest('PUT', `/api/guilds/${guild.id}`, guild).catch(() => setGuilds(originalState)); };
+    const deleteGuild = async (guildId: string) => { const originalState = guilds; setGuilds(p => p.filter(g => g.id !== guildId)); apiRequest('DELETE', `/api/guilds/${guildId}`).catch(() => setGuilds(originalState)); };
     const addTrophy = (trophy: Omit<Trophy, 'id'>) => setTrophies(prev => [...prev, { ...trophy, id: `trophy-${Date.now()}` }]);
-    const updateTrophy = (trophy: Trophy) => { registerOptimisticUpdate(`trophy-${trophy.id}`); setTrophies(prev => prev.map(t => t.id === trophy.id ? trophy : t)); };
+    const updateTrophy = (trophy: Trophy) => { registerOptimisticUpdate(`trophy-${trophy.id}`); const originalState = trophies; setTrophies(p => p.map(t => t.id === trophy.id ? trophy : t)); apiRequest('PUT', `/api/trophies/${trophy.id}`, trophy).catch(() => setTrophies(originalState)); };
     const addTheme = (theme: Omit<ThemeDefinition, 'id'>) => setThemes(p => [...p, { ...theme, id: `theme-${Date.now()}` }]);
-    const updateTheme = (theme: ThemeDefinition) => { registerOptimisticUpdate(`theme-${theme.id}`); setThemes(p => p.map(t => t.id === theme.id ? theme : t)); };
-    const deleteTheme = (themeId: string) => setThemes(p => p.filter(t => t.id !== themeId));
+    const updateTheme = (theme: ThemeDefinition) => { registerOptimisticUpdate(`theme-${theme.id}`); const originalState = themes; setThemes(p => p.map(t => t.id === theme.id ? theme : t)); apiRequest('PUT', `/api/themes/${theme.id}`, theme).catch(() => setThemes(originalState)); };
+    const deleteTheme = (themeId: string) => { const originalState = themes; setThemes(p => p.filter(t => t.id !== themeId)); apiRequest('DELETE', `/api/themes/${themeId}`).catch(() => setThemes(originalState)); };
     const addScheduledEvent = async (event: Omit<ScheduledEvent, 'id'>) => { apiRequest('POST', '/api/events', event).catch(() => {}); };
-    const updateScheduledEvent = async (event: ScheduledEvent) => { registerOptimisticUpdate(`scheduledEvent-${event.id}`); apiRequest('PUT', `/api/events/${event.id}`, event).catch(() => {}); };
-    const deleteScheduledEvent = async (eventId: string) => { apiRequest('DELETE', `/api/events/${eventId}`).catch(() => {}); };
+    const updateScheduledEvent = async (event: ScheduledEvent) => { registerOptimisticUpdate(`scheduledEvent-${event.id}`); const originalState = scheduledEvents; setScheduledEvents(p => p.map(e => e.id === event.id ? event : e)); apiRequest('PUT', `/api/events/${event.id}`, event).catch(() => setScheduledEvents(originalState)); };
+    const deleteScheduledEvent = async (eventId: string) => { const originalState = scheduledEvents; setScheduledEvents(p => p.filter(e => e.id !== eventId)); apiRequest('DELETE', `/api/events/${eventId}`).catch(() => setScheduledEvents(originalState)); };
     const addBugReport = async (report: Omit<BugReport, 'id' | 'status' | 'tags'> & { reportType: BugReportType }) => {
         const { reportType, title, createdAt, updatedAt, logs } = report;
         const rest = { title, createdAt, updatedAt, logs };
@@ -624,7 +626,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     };
     const restoreFromBackup = async (backupData: IAppData) => { apiRequest('POST', '/api/data/restore', backupData).then(() => { addNotification({ type: 'success', message: 'Restore successful! App will reload.' }); setTimeout(() => window.location.reload(), 1500); }).catch(() => {}); };
     const clearAllHistory = () => { apiRequest('POST', '/api/actions/clear-history').catch(() => {}); };
-    const resetAllPlayerData = () => { authDispatch.resetAllUsersData(); };
+    const resetAllPlayerData = () => { authDispatch.setUsers(prev => prev.map(u => u.role !== Role.DonegeonMaster ? { ...u, personalPurse: {}, personalExperience: {}, guildBalances: {}, ownedAssetIds: [], avatar: {} } : u)); };
     const deleteAllCustomContent = () => { apiRequest('POST', '/api/data/delete-custom-content').catch(() => {}); };
     const uploadFile = async (file: File, category?: string) => {
         const formData = new FormData();
@@ -733,9 +735,9 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     };
     
     // QuestDispatch functions
-    const updateQuest = (updatedQuest: Quest) => { registerOptimisticUpdate(`quest-${updatedQuest.id}`); apiRequest('PUT', `/api/quests/${updatedQuest.id}`, updatedQuest).catch(() => {}); };
+    const updateQuest = (updatedQuest: Quest) => { registerOptimisticUpdate(`quest-${updatedQuest.id}`); const originalState = quests; setQuests(p => p.map(q => q.id === updatedQuest.id ? updatedQuest : q)); apiRequest('PUT', `/api/quests/${updatedQuest.id}`, updatedQuest).catch(() => setQuests(originalState)); };
     const addQuest = (quest: Omit<Quest, 'id'|'claimedByUserIds'|'dismissals'>) => { apiRequest('POST', '/api/quests', quest).catch(() => {}); };
-    const deleteQuest = (questId: string) => { apiRequest('DELETE', '/api/quests', { ids: [questId] }).catch(() => {}); };
+    const deleteQuest = (questId: string) => { deleteQuests([questId]); };
     const cloneQuest = (questId: string) => { apiRequest('POST', `/api/quests/clone/${questId}`).catch(() => {}); };
     const dismissQuest = (questId: string, userId: string) => { const q = quests.find(q=>q.id===questId); if(q) updateQuest({...q, dismissals: [...q.dismissals, { userId, dismissedAt: new Date().toISOString() }]}); };
     const claimQuest = (questId: string, userId: string) => { const q = quests.find(q=>q.id===questId); if(q) updateQuest({...q, claimedByUserIds: [...(q.claimedByUserIds || []), userId]}); };
@@ -746,12 +748,9 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     const approveQuestCompletion = async (completionId: string, note?: string) => { registerOptimisticUpdate(`questCompletion-${completionId}`); apiRequest('POST', `/api/actions/approve-quest/${completionId}`, { note }).catch(() => {}); };
     const rejectQuestCompletion = async (completionId: string, note?: string) => { registerOptimisticUpdate(`questCompletion-${completionId}`); apiRequest('POST', `/api/actions/reject-quest/${completionId}`, { note }).catch(() => {}); };
     const addQuestGroup = (group: Omit<QuestGroup, 'id'>) => { const newGroup = { ...group, id: `qg-${Date.now()}` }; setQuestGroups(prev => [...prev, newGroup]); return newGroup; };
-    const updateQuestGroup = (group: QuestGroup) => { registerOptimisticUpdate(`questGroup-${group.id}`); setQuestGroups(prev => prev.map(g => g.id === group.id ? group : g)); };
-    const deleteQuestGroup = (groupId: string) => { setQuestGroups(prev => prev.filter(g => g.id !== groupId)); setQuests(prev => prev.map(q => q.groupId === groupId ? { ...q, groupId: undefined } : q)); };
-    const deleteQuestGroups = (groupIds: string[]) => {
-      setQuestGroups(prev => prev.filter(g => !groupIds.includes(g.id)));
-      setQuests(prev => prev.map(q => q.groupId && groupIds.includes(q.groupId) ? { ...q, groupId: undefined } : q));
-    };
+    const updateQuestGroup = (group: QuestGroup) => { registerOptimisticUpdate(`questGroup-${group.id}`); const originalState = questGroups; setQuestGroups(prev => prev.map(g => g.id === group.id ? group : g)); apiRequest('PUT', `/api/quest-groups/${group.id}`, group).catch(() => setQuestGroups(originalState)); };
+    const deleteQuestGroup = (groupId: string) => { deleteQuestGroups([groupId]); };
+    const deleteQuestGroups = (groupIds: string[]) => { const originalState = questGroups; const originalQuests = quests; setQuestGroups(prev => prev.filter(g => !groupIds.includes(g.id))); setQuests(prev => prev.map(q => q.groupId && groupIds.includes(q.groupId) ? { ...q, groupId: undefined } : q)); apiRequest('DELETE', '/api/quest-groups', { ids: groupIds }).catch(() => { setQuestGroups(originalState); setQuests(originalQuests); });};
     const assignQuestGroupToUsers = (groupId: string, userIds: string[]) => {
       const questsToUpdate = quests.filter(q => q.groupId === groupId);
       questsToUpdate.forEach(q => {
@@ -759,28 +758,28 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         updateQuest({ ...q, assignedUserIds: newAssigned });
       });
     };
-    const deleteQuests = (questIds: string[]) => { apiRequest('DELETE', '/api/quests', { ids: questIds }).catch(() => {}); };
-    const updateQuestsStatus = (questIds: string[], isActive: boolean) => { apiRequest('PUT', '/api/quests/bulk-status', { ids: questIds, isActive }).catch(() => {}); };
+    const deleteQuests = (questIds: string[]) => { const originalState = quests; setQuests(p => p.filter(q => !questIds.includes(q.id))); apiRequest('DELETE', '/api/quests', { ids: questIds }).catch(() => setQuests(originalState)); };
+    const updateQuestsStatus = (questIds: string[], isActive: boolean) => { const originalState = quests; setQuests(p => p.map(q => questIds.includes(q.id) ? {...q, isActive} : q)); apiRequest('PUT', '/api/quests/bulk-status', { ids: questIds, isActive }).catch(() => setQuests(originalState)); };
     const bulkUpdateQuests = async (questIds: string[], updates: BulkQuestUpdates) => { await apiRequest('PUT', '/api/quests/bulk-update', { ids: questIds, updates }); };
     const addRotation = async (rotation: Omit<Rotation, 'id'>) => { apiRequest('POST', '/api/rotations', rotation).catch(() => {}); };
-    const updateRotation = async (rotation: Rotation) => { registerOptimisticUpdate(`rotation-${rotation.id}`); apiRequest('PUT', `/api/rotations/${rotation.id}`, rotation).catch(() => {}); };
-    const deleteRotation = async (rotationId: string) => { apiRequest('DELETE', `/api/rotations/${rotationId}`).catch(() => {}); };
+    const updateRotation = async (rotation: Rotation) => { registerOptimisticUpdate(`rotation-${rotation.id}`); const originalState = rotations; setRotations(p => p.map(r => r.id === rotation.id ? rotation : r)); apiRequest('PUT', `/api/rotations/${rotation.id}`, rotation).catch(() => setRotations(originalState)); };
+    const deleteRotation = async (rotationId: string) => { const originalState = rotations; setRotations(p => p.filter(r => r.id !== rotationId)); apiRequest('DELETE', `/api/rotations/${rotationId}`).catch(() => setRotations(originalState)); };
     
     // Economy Functions
     const addRewardType = async (rewardType: Omit<RewardTypeDefinition, 'id' | 'isCore'>) => { apiRequest('POST', '/api/reward-types', rewardType).catch(() => {}); };
-    const updateRewardType = async (rewardType: RewardTypeDefinition) => { registerOptimisticUpdate(`rewardType-${rewardType.id}`); apiRequest('PUT', `/api/reward-types/${rewardType.id}`, rewardType).catch(() => {}); };
-    const deleteRewardType = async (rewardTypeId: string) => { apiRequest('DELETE', '/api/reward-types', { ids: [rewardTypeId] }).catch(() => {}); };
+    const updateRewardType = async (rewardType: RewardTypeDefinition) => { registerOptimisticUpdate(`rewardType-${rewardType.id}`); const originalState = rewardTypes; setRewardTypes(p => p.map(rt => rt.id === rewardType.id ? rewardType : rt)); apiRequest('PUT', `/api/reward-types/${rewardType.id}`, rewardType).catch(() => setRewardTypes(originalState)); };
+    const deleteRewardType = async (rewardTypeId: string) => { const originalState = rewardTypes; setRewardTypes(p => p.filter(rt => rt.id !== rewardTypeId)); apiRequest('DELETE', '/api/reward-types', { ids: [rewardTypeId] }).catch(() => setRewardTypes(originalState)); };
     const cloneRewardType = async (rewardTypeId: string) => { apiRequest('POST', `/api/reward-types/clone/${rewardTypeId}`).catch(() => {}); };
     const addMarket = async (market: Omit<Market, 'id'>) => { apiRequest('POST', '/api/markets', market).catch(() => {}); };
-    const updateMarket = async (market: Market) => { registerOptimisticUpdate(`market-${market.id}`); apiRequest('PUT', `/api/markets/${market.id}`, market).catch(() => {}); };
-    const deleteMarket = async (marketId: string) => { apiRequest('DELETE', '/api/markets', { ids: [marketId] }).catch(() => {}); };
+    const updateMarket = async (market: Market) => { registerOptimisticUpdate(`market-${market.id}`); const originalState = markets; setMarkets(p => p.map(m => m.id === market.id ? market : m)); apiRequest('PUT', `/api/markets/${market.id}`, market).catch(() => setMarkets(originalState)); };
+    const deleteMarket = async (marketId: string) => { deleteMarkets([marketId]); };
     const cloneMarket = async (marketId: string) => { apiRequest('POST', `/api/markets/clone/${marketId}`).catch(() => {}); };
-    const deleteMarkets = async (marketIds: string[]) => { apiRequest('DELETE', '/api/markets', { ids: marketIds }).catch(() => {}); };
-    const updateMarketsStatus = async (marketIds: string[], statusType: 'open' | 'closed') => { apiRequest('PUT', '/api/markets/bulk-status', { ids: marketIds, statusType }).catch(() => {}); };
+    const deleteMarkets = async (marketIds: string[]) => { const originalState = markets; setMarkets(p => p.filter(m => !marketIds.includes(m.id))); apiRequest('DELETE', '/api/markets', { ids: marketIds }).catch(() => setMarkets(originalState)); };
+    const updateMarketsStatus = async (marketIds: string[], statusType: 'open' | 'closed') => { const originalState = markets; setMarkets(p => p.map(m => marketIds.includes(m.id) ? {...m, status: { type: statusType }} : m)); apiRequest('PUT', '/api/markets/bulk-status', { ids: marketIds, statusType }).catch(() => setMarkets(originalState)); };
     const addGameAsset = async (asset: Omit<GameAsset, 'id' | 'creatorId' | 'createdAt' | 'purchaseCount'>) => { apiRequest('POST', '/api/assets', asset).catch(() => {}); };
-    const updateGameAsset = async (asset: GameAsset) => { registerOptimisticUpdate(`gameAsset-${asset.id}`); apiRequest('PUT', `/api/assets/${asset.id}`, asset).catch(() => {}); };
+    const updateGameAsset = async (asset: GameAsset) => { registerOptimisticUpdate(`gameAsset-${asset.id}`); const originalState = gameAssets; setGameAssets(p => p.map(a => a.id === asset.id ? asset : a)); apiRequest('PUT', `/api/assets/${asset.id}`, asset).catch(() => setGameAssets(originalState)); };
     const cloneGameAsset = async (assetId: string) => { apiRequest('POST', `/api/assets/clone/${assetId}`).catch(() => {}); };
-    const deleteGameAssets = async (assetIds: string[]) => { apiRequest('DELETE', '/api/assets', { ids: assetIds }).catch(() => {}); };
+    const deleteGameAssets = async (assetIds: string[]) => { const originalState = gameAssets; setGameAssets(p => p.filter(a => !assetIds.includes(a.id))); apiRequest('DELETE', '/api/assets', { ids: assetIds }).catch(() => setGameAssets(originalState)); };
     const purchaseMarketItem = (assetId: string, marketId: string, user: User, costGroupIndex: number) => {
       const asset = gameAssets.find(a => a.id === assetId);
       if (!asset) { addNotification({ type: 'error', message: 'Item not found.' }); return; }

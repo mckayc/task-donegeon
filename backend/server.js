@@ -513,23 +513,32 @@ app.post('/api/data/import-assets', asyncMiddleware(async (req, res) => {
             const newAssetData = JSON.parse(JSON.stringify(originalAsset));
             
             if (res.type === 'quests') {
-                // FIX: Default missing properties to ensure data integrity during import.
+                // Robust defaults for missing properties
                 newAssetData.iconType = newAssetData.iconType || 'emoji';
                 newAssetData.lateSetbacks = newAssetData.lateSetbacks || [];
                 newAssetData.incompleteSetbacks = newAssetData.incompleteSetbacks || [];
-                newAssetData.weeklyRecurrenceDays = newAssetData.weeklyRecurrenceDays || [];
-                newAssetData.monthlyRecurrenceDays = newAssetData.monthlyRecurrenceDays || [];
                 newAssetData.assignedUserIds = newAssetData.assignedUserIds || [];
                 newAssetData.claimedByUserIds = newAssetData.claimedByUserIds || [];
                 newAssetData.dismissals = newAssetData.dismissals || [];
                 newAssetData.todoUserIds = newAssetData.todoUserIds || [];
+                newAssetData.startDateTime = newAssetData.startDateTime || null;
+                newAssetData.endDateTime = newAssetData.endDateTime || null;
+                newAssetData.startTime = newAssetData.startTime || null;
+                newAssetData.endTime = newAssetData.endTime || null;
+                if (typeof newAssetData.allDay !== 'boolean') {
+                    newAssetData.allDay = true;
+                }
                 if (newAssetData.guildId === undefined) {
                     newAssetData.guildId = null;
                 }
-                 if (newAssetData.availabilityType === 'Frequency' && newAssetData.availabilityCount == null) {
-                    newAssetData.availabilityCount = 1; // Default to 1 if frequency is set but count isn't
-                } else if (newAssetData.availabilityType !== 'Frequency') {
-                    newAssetData.availabilityCount = null; // Ensure it's null for other types
+                if (newAssetData.type === 'Duty') {
+                    newAssetData.rrule = newAssetData.rrule || 'FREQ=DAILY';
+                    newAssetData.availabilityCount = null;
+                } else { // Venture
+                    newAssetData.rrule = null;
+                    if (typeof newAssetData.availabilityCount !== 'number') {
+                        newAssetData.availabilityCount = null; // `null` is handled as completable once by frontend
+                    }
                 }
             }
 

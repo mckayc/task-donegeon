@@ -29,7 +29,6 @@ interface AuthDispatch {
   setTargetedUserForLogin: (user: User | null) => void;
   exitToSharedView: () => void;
   setIsSharedViewActive: (isActive: boolean) => void;
-  resetAllUsersData: () => void;
   completeFirstRun: (adminUserData: any) => void;
 }
 
@@ -135,10 +134,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       localStorage.removeItem('lastUserId');
   }, []);
 
-  const resetAllUsersData = useCallback(() => {
-      setUsers(prev => prev.map(u => u.role !== Role.DonegeonMaster ? { ...u, personalPurse: {}, personalExperience: {}, guildBalances: {}, ownedAssetIds: [], avatar: {} } : u));
-  }, [setUsers]);
-
   const addUser = useCallback(async (userData: Omit<User, 'id' | 'personalPurse' | 'personalExperience' | 'guildBalances' | 'avatar' | 'ownedAssetIds' | 'ownedThemes' | 'hasBeenOnboarded'>) => {
       if (bugLogger.isRecording()) {
           bugLogger.add({ type: 'ACTION', message: `Attempting to add user: ${userData.gameName}` });
@@ -183,9 +178,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       setTargetedUserForLogin,
       exitToSharedView,
       setIsSharedViewActive,
-      resetAllUsersData,
       completeFirstRun,
-  }), [setUsers, setLoginHistory, addUser, updateUser, deleteUsers, setCurrentUser, markUserAsOnboarded, setAppUnlocked, setIsSwitchingUser, setTargetedUserForLogin, exitToSharedView, setIsSharedViewActive, resetAllUsersData, completeFirstRun]);
+  }), [
+      setUsers, setLoginHistory, addUser, updateUser, deleteUsers, setCurrentUser, 
+      markUserAsOnboarded, setAppUnlocked, setIsSwitchingUser, setTargetedUserForLogin, 
+      exitToSharedView, setIsSharedViewActive, completeFirstRun
+  ]);
 
   const stateValue: AuthState = {
     users, currentUser, isAppUnlocked, isFirstRun, isSwitchingUser,

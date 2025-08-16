@@ -15,6 +15,8 @@ import { useAuthState } from '../../context/AuthContext';
 import { bugLogger } from '../../utils/bugLogger';
 import QuestScheduling from '../forms/QuestScheduling';
 
+type QuestFormData = Omit<Quest, 'id' | 'claimedByUserIds' | 'dismissals'> & { id?: string };
+
 interface QuestDialogProps {
   questToEdit?: Quest;
   initialData?: any; // Loosened type to accept raw AI data
@@ -32,9 +34,9 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
   const { addQuest, updateQuest, addQuestGroup } = useAppDispatch();
   const hasLoggedOpen = useRef(false);
 
-  const getInitialFormData = useCallback(() => {
+  const getInitialFormData = useCallback((): QuestFormData => {
     // Base structure for a new quest
-    const baseData = {
+    const baseData: QuestFormData = {
         title: '', description: '',
         type: QuestType.Venture,
         iconType: 'emoji' as 'emoji' | 'image',
@@ -47,6 +49,7 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
         guildId: '', groupId: '', tags: [],
         startDateTime: null, endDateTime: null, allDay: true, rrule: null,
         startTime: null, endTime: null, availabilityCount: 1,
+        todoUserIds: [],
     };
 
     // Mode: Edit
@@ -119,7 +122,7 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
     return baseData;
   }, [questToEdit, initialData, initialDataFromBug, mode, rewardTypes, questGroups, settings.questDefaults, users]);
 
-  const [formData, setFormData] = useState(getInitialFormData());
+  const [formData, setFormData] = useState<QuestFormData>(getInitialFormData());
   const [error, setError] = useState('');
   const [isEmojiPickerOpen, setIsEmojiPickerOpen] = useState(false);
   const [isGalleryOpen, setIsGalleryOpen] = useState(false);
@@ -164,7 +167,7 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
 
 
   const handleRewardChange = (category: 'rewards' | 'lateSetbacks' | 'incompleteSetbacks') => (index: number, field: keyof RewardItem, value: string | number) => {
-    const newItems = [...formData[category]];
+    const newItems = [...(formData[category] || [])];
     newItems[index] = { ...newItems[index], [field]: field === 'amount' ? Math.max(0.01, parseFloat(String(value)) || 0) : value };
     setFormData(prev => ({ ...prev, [category]: newItems }));
   };
@@ -172,14 +175,14 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
   const handleAddRewardForCategory = (category: 'rewards' | 'lateSetbacks' | 'incompleteSetbacks') => (rewardCat: RewardCategory) => {
     const defaultReward = rewardTypes.find(rt => rt.category === rewardCat);
     if (!defaultReward) return;
-    setFormData(prev => ({ ...prev, [category]: [...prev[category], { rewardTypeId: defaultReward.id, amount: 1 }] }));
+    setFormData(prev => ({ ...prev, [category]: [...(prev[category] || []), { rewardTypeId: defaultReward.id, amount: 1 }] }));
   };
   
   const handleRemoveReward = (category: 'rewards' | 'lateSetbacks' | 'incompleteSetbacks') => (indexToRemove: number) => {
-    setFormData(prev => ({ ...prev, [category]: prev[category].filter((_, i) => i !== indexToRemove) }));
+    setFormData(prev => ({ ...prev, [category]: (prev[category] || []).filter((_, i) => i !== indexToRemove) }));
   };
   
-  const handleScheduleChange = (scheduleUpdate: Partial<typeof formData>) => {
+  const handleScheduleChange = (scheduleUpdate: Partial<QuestFormData>) => {
     setFormData(prev => ({ ...prev, ...scheduleUpdate }));
   };
 
@@ -216,15 +219,17 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
         startTime: formData.startTime,
         endTime: formData.endTime,
         availabilityCount: formData.availabilityCount,
-        rewards: formData.rewards.filter(r => r.rewardTypeId && r.amount > 0),
-        lateSetbacks: formData.lateSetbacks.filter(s => s.rewardTypeId && s.amount > 0),
-        incompleteSetbacks: formData.incompleteSetbacks.filter(s => s.rewardTypeId && s.amount > 0),
+        rewards: (formData.rewards || []).filter(r => r.rewardTypeId && r.amount > 0),
+        lateSetbacks: (formData.lateSetbacks || []).filter(s => s.rewardTypeId && s.amount > 0),
+        incompleteSetbacks: (formData.incompleteSetbacks || []).filter(s => s.rewardTypeId && s.amount > 0),
         isActive: formData.isActive,
         isOptional: formData.isOptional,
         assignedUserIds: formData.assignedUserIds,
         guildId: formData.guildId || undefined,
         groupId: finalGroupId || undefined,
         requiresApproval: formData.requiresApproval,
+        todoUserIds: formData.todoUserIds,
+        nextQuestId: formData.nextQuestId
     };
 
     if (onSave) {

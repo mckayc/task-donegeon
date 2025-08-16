@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { QuestType } from '../../types';
 import Input from '../user-interface/Input';

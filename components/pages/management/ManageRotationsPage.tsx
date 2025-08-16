@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { useAppState, useAppDispatch } from '../../../context/AppContext';
+import { useData } from '../../../context/DataProvider';
+import { useActionsDispatch } from '../../../context/ActionsContext';
 import { Rotation, SystemNotificationType } from '../../../types';
 import Button from '../../user-interface/Button';
 import Card from '../../user-interface/Card';
@@ -11,8 +12,8 @@ import { toYMD } from '../../../utils/quests';
 import { useNotificationsDispatch } from '../../../context/NotificationsContext';
 
 const ManageRotationsPage: React.FC = () => {
-    const { settings, rotations, quests } = useAppState();
-    const { deleteSelectedAssets, updateQuest, updateRotation, addSystemNotification } = useAppDispatch();
+    const { settings, rotations, quests } = useData();
+    const { deleteSelectedAssets, updateQuest, updateRotation, addSystemNotification } = useActionsDispatch();
     const { addNotification } = useNotificationsDispatch();
     
     const [isDialogOpen, setIsDialogOpen] = useState(false);

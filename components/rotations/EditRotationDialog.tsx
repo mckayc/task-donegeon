@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { useAppState, useAppDispatch } from '../../context/AppContext';
+import { useData } from '../../context/DataProvider';
+import { useActionsDispatch } from '../../context/ActionsContext';
 import { useAuthState } from '../../context/AuthContext';
 import { Rotation, Quest, User } from '../../types';
 import Button from '../user-interface/Button';
@@ -11,13 +12,13 @@ interface EditRotationDialogProps {
 }
 
 const WEEKDAYS = [
-    { label: 'Sun', value: 0 }, { label: 'Mon', value: 1 }, { label: 'Tue', value: 2 },
-    { label: 'Wed', value: 3 }, { label: 'Thu', value: 4 }, { label: 'Fri', value: 5 }, { label: 'Sat', value: 6 }
+    { label: 'S', value: 0 }, { label: 'M', value: 1 }, { label: 'T', value: 2 },
+    { label: 'W', value: 3 }, { label: 'T', value: 4 }, { label: 'F', value: 5 }, { label: 'S', value: 6 }
 ];
 
 const EditRotationDialog: React.FC<EditRotationDialogProps> = ({ rotationToEdit, onClose }) => {
-    const { addRotation, updateRotation } = useAppDispatch();
-    const { quests } = useAppState();
+    const { addRotation, updateRotation } = useActionsDispatch();
+    const { quests } = useData();
     const { users } = useAuthState();
 
     const [formData, setFormData] = useState<Omit<Rotation, 'id' | 'createdAt' | 'updatedAt' | 'lastAssignmentDate' | 'lastUserIndex' | 'lastQuestIndex'>>({

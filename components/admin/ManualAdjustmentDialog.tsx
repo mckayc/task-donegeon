@@ -1,7 +1,8 @@
 
 
 import React, { useState } from 'react';
-import { useAppState, useAppDispatch } from '../../context/AppContext';
+import { useData } from '../../context/DataProvider';
+import { useActionsDispatch } from '../../context/ActionsContext';
 import { useAuthState } from '../../context/AuthContext';
 import { User, RewardItem, RewardCategory, AdminAdjustmentType, Trophy } from '../../types';
 import Button from '../user-interface/Button';
@@ -13,8 +14,8 @@ interface ManualAdjustmentDialogProps {
 }
 
 const ManualAdjustmentDialog: React.FC<ManualAdjustmentDialogProps> = ({ user, onClose }) => {
-  const { guilds, trophies, userTrophies, rewardTypes } = useAppState();
-  const { applyManualAdjustment } = useAppDispatch();
+  const { guilds, trophies, userTrophies, rewardTypes } = useData();
+  const { applyManualAdjustment } = useActionsDispatch();
   const { currentUser } = useAuthState();
   const [reason, setReason] = useState('');
   const [guildId, setGuildId] = useState('');

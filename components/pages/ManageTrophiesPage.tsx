@@ -1,18 +1,20 @@
+
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { Trophy } from '../../types';
 import Button from '../user-interface/Button';
 import Card from '../user-interface/Card';
 import EditTrophyDialog from '../settings/EditTrophyDialog';
 import ConfirmDialog from '../user-interface/ConfirmDialog';
-import { useAppState, useAppDispatch } from '../../context/AppContext';
 import EmptyState from '../user-interface/EmptyState';
 import TrophyIdeaGenerator from '../quests/TrophyIdeaGenerator';
 import { TrophyIcon, EllipsisVerticalIcon } from '../user-interface/Icons';
 import { useShiftSelect } from '../../hooks/useShiftSelect';
+import { useData } from '../../context/DataProvider';
+import { useActionsDispatch } from '../../context/ActionsContext';
 
 const ManageTrophiesPage: React.FC = () => {
-    const { trophies, settings, isAiConfigured } = useAppState();
-    const { deleteSelectedAssets } = useAppDispatch();
+    const { trophies, settings, isAiConfigured } = useData();
+    const { deleteSelectedAssets } = useActionsDispatch();
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [editingTrophy, setEditingTrophy] = useState<Trophy | null>(null);
     const [deletingIds, setDeletingIds] = useState<string[]>([]);

@@ -1,8 +1,8 @@
 import React from 'react';
 import { SystemNotification, SystemNotificationType, User } from '../../types';
 import Button from './Button';
-import { useAppDispatch } from '../../context/AppContext';
 import { XCircleIcon } from './Icons';
+import { useActionsDispatch } from '../../context/ActionsContext';
 
 // Icons for different notification types
 const getIconForType = (type: SystemNotificationType) => {
@@ -22,7 +22,7 @@ interface LoginNotificationPopupProps {
 }
 
 const LoginNotificationPopup: React.FC<LoginNotificationPopupProps> = ({ notifications, user, onClose }) => {
-    const { markSystemNotificationsAsRead } = useAppDispatch();
+    const { markSystemNotificationsAsRead } = useActionsDispatch();
 
     const handleDismiss = () => {
         const notificationIds = notifications.map(n => n.id);

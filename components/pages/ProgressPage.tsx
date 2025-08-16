@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo, useEffect } from 'react';
 import { RewardCategory, QuestCompletionStatus } from '../../types';
 import Card from '../user-interface/Card';
@@ -5,6 +6,7 @@ import LineChart from '../user-interface/LineChart';
 import BarChart from '../user-interface/BarChart';
 import { useAuthState } from '../../context/AuthContext';
 import { useData } from '../../context/DataProvider';
+import { useUIState } from '../../context/UIContext';
 
 const StatCard: React.FC<{ title: string; value: string | number; icon: string; subtext?: string }> = ({ title, value, icon, subtext }) => (
     <div className="bg-stone-900/40 p-4 rounded-lg">
@@ -20,7 +22,8 @@ const StatCard: React.FC<{ title: string; value: string | number; icon: string; 
 );
 
 const ProgressPage: React.FC = () => {
-    const { quests, questCompletions, rewardTypes, appMode, guilds, settings } = useData();
+    const { quests, questCompletions, rewardTypes, guilds, settings } = useData();
+    const { appMode } = useUIState();
     const { currentUser } = useAuthState();
     
     const xpTypes = useMemo(() => {

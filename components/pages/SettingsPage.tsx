@@ -1,3 +1,4 @@
+
 import React, { useState, ChangeEvent, ReactNode, useEffect } from 'react';
 import { useData } from '../../context/DataProvider';
 import { useActionsDispatch } from '../../context/ActionsContext';
@@ -10,7 +11,7 @@ import ToggleSwitch from '../user-interface/ToggleSwitch';
 import ConfirmDialog from '../user-interface/ConfirmDialog';
 import { INITIAL_SETTINGS } from '../../data/initialData';
 import EmojiPicker from '../user-interface/EmojiPicker';
-import { useNotificationsDispatch } from '../../context/NotificationsContext';
+import { useNotificationsDispatch } from '../context/NotificationsContext';
 import Card from '../user-interface/Card';
 import UserMultiSelect from '../user-interface/UserMultiSelect';
 
@@ -180,7 +181,7 @@ export const SettingsPage: React.FC = () => {
     };
 
     const handleSaveSchedule = (scheduleData: Omit<BackupSchedule, 'id'>) => {
-        const updatedSchedules = [...settings.automatedBackups.schedules];
+        const updatedSchedules = [...formState.automatedBackups.schedules];
         if (editingSchedule) {
             const index = updatedSchedules.findIndex(s => s.id === editingSchedule.id);
             if (index !== -1) {
@@ -191,9 +192,19 @@ export const SettingsPage: React.FC = () => {
         } else {
             updatedSchedules.push({ ...scheduleData, id: `schedule-${Date.now()}` });
         }
-        updateSettings({ automatedBackups: { ...settings.automatedBackups, schedules: updatedSchedules } });
+        updateSettings({ ...formState, automatedBackups: { ...formState.automatedBackups, schedules: updatedSchedules } });
         setEditingSchedule(null);
     };
+
+    const handleDeleteSchedule = () => {
+        if (!deletingSchedule) return;
+        const updatedSchedules = formState.automatedBackups.schedules.filter(s => s.id !== deletingSchedule.id);
+        updateSettings({ ...formState, automatedBackups: { ...formState.automatedBackups, schedules: updatedSchedules } });
+        setDeletingSchedule(null);
+    };
+
+    const [deletingSchedule, setDeletingSchedule] = useState<BackupSchedule | null>(null);
+
 
     return (
         <div className="space-y-8 relative">

@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
-import { useAppState, useAppDispatch } from '../../context/AppContext';
+import { useData } from '../../context/DataProvider';
+import { useActionsDispatch } from '../../context/ActionsContext';
 import { BugReport, BugReportStatus } from '../../types';
 import Card from '../user-interface/Card';
 import Button from '../user-interface/Button';
@@ -12,8 +13,8 @@ import { useShiftSelect } from '../../hooks/useShiftSelect';
 import CreateBugReportDialog from './CreateBugReportDialog';
 
 const BugTrackingPage: React.FC = () => {
-    const { bugReports } = useAppState();
-    const { updateBugReport, deleteBugReports, importBugReports } = useAppDispatch();
+    const { bugReports } = useData();
+    const { updateBugReport, deleteBugReports, importBugReports } = useActionsDispatch();
     const { addNotification } = useNotificationsDispatch();
     
     const [detailedReportId, setDetailedReportId] = useState<string | null>(null);

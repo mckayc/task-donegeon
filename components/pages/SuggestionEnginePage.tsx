@@ -3,7 +3,7 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import Button from '../user-interface/Button';
 import Input from '../user-interface/Input';
 import { SparklesIcon, CheckCircleIcon, XCircleIcon } from '../user-interface/Icons';
-import { useAppState, useAppDispatch } from '../../context/AppContext';
+import { useData } from '../../context/DataProvider';
 import { GenerateContentResponse, Type } from '@google/genai';
 import { QuestType, Terminology } from '../../types';
 import Card from '../user-interface/Card';
@@ -37,7 +37,7 @@ const ApiInstructions: React.FC = () => (
 );
 
 const SuggestionEnginePage: React.FC = () => {
-    const { settings, isAiConfigured, questGroups, rewardTypes } = useAppState();
+    const { settings, isAiConfigured, questGroups, rewardTypes } = useData();
     const { addNotification } = useNotificationsDispatch();
     const [apiStatus, setApiStatus] = useState<'unknown' | 'testing' | 'valid' | 'invalid'>(isAiConfigured ? 'valid' : 'unknown');
     const [apiError, setApiError] = useState<string | null>(null);

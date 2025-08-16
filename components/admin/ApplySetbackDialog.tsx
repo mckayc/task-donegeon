@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useAppState, useAppDispatch } from '../../context/AppContext';
+import { useActionsDispatch } from '../../context/ActionsContext';
 import { useAuthState } from '../../context/AuthContext';
 import { User, SetbackDefinition, Role } from '../../types';
 import Button from '../user-interface/Button';
@@ -13,7 +13,7 @@ interface ApplySetbackDialogProps {
 
 const ApplySetbackDialog: React.FC<ApplySetbackDialogProps> = ({ setback, onClose }) => {
     const { users } = useAuthState();
-    const { applySetback } = useAppDispatch();
+    const { applySetback } = useActionsDispatch();
     const { addNotification } = useNotificationsDispatch();
 
     const [selectedUserId, setSelectedUserId] = useState<string>('');

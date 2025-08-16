@@ -1,5 +1,7 @@
+
 import React, { useState, useEffect, useMemo } from 'react';
-import { useAppState, useAppDispatch } from '../../context/AppContext';
+import { useData } from '../../context/DataProvider';
+import { useActionsDispatch } from '../../context/ActionsContext';
 import { ThemeDefinition, ThemeStyle } from '../../types';
 import Button from '../user-interface/Button';
 import Card from '../user-interface/Card';
@@ -9,6 +11,7 @@ import SimpleColorPicker from '../user-interface/SimpleColorPicker';
 import { getContrast, getWcagRating, parseHslString } from '../../utils/colors';
 import { useAuthState } from '../../context/AuthContext';
 import ConfirmDialog from '../user-interface/ConfirmDialog';
+import { useUIState } from '../../context/UIContext';
 
 const FONT_OPTIONS = [
     "'MedievalSharp', cursive", "'Uncial Antiqua', cursive", "'Press Start 2P', cursive", "'IM Fell English SC', serif", 
@@ -37,7 +40,7 @@ const CollapsibleSection: React.FC<{ title: string; children: React.ReactNode; d
 };
 
 const ThemePreview: React.FC<{ themeStyles: React.CSSProperties }> = ({ themeStyles }) => {
-    const { settings } = useAppState();
+    const { settings } = useData();
     return (
         <div style={themeStyles} className="p-4 rounded-lg transition-all duration-300 flex flex-col border-2 border-stone-700 h-full" data-theme>
              <div className="flex-grow p-4 rounded-lg space-y-4" style={{ backgroundColor: 'hsl(var(--color-bg-tertiary))' }}>
@@ -86,8 +89,9 @@ const ContrastChecker: React.FC<{ styles?: ThemeStyle }> = ({ styles }) => {
 };
 
 const AppearancePage: React.FC = () => {
-    const { settings, themes, guilds, appMode } = useAppState();
-    const { addTheme, updateTheme, deleteTheme } = useAppDispatch();
+    const { settings, themes, guilds } = useData();
+    const { appMode } = useUIState();
+    const { addTheme, updateTheme, deleteTheme } = useActionsDispatch();
     const { addNotification } = useNotificationsDispatch();
     const { currentUser } = useAuthState();
 

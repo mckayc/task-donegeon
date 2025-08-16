@@ -12,7 +12,7 @@ import AppLockScreen from './components/auth/AppLockScreen';
 import OnboardingWizard from './components/auth/OnboardingWizard';
 import SharedLayout from './components/layout/SharedLayout';
 import BugReporter from './components/dev/BugReporter';
-import { Role } from './types';
+import { Role, Guild, ThemeDefinition } from './types';
 import { useDeveloper, useDeveloperState } from './context/DeveloperContext';
 
 const App: React.FC = () => {
@@ -31,7 +31,7 @@ const App: React.FC = () => {
     let activeThemeId: string | undefined = settings.theme; // Default to system theme
 
     if (appMode.mode === 'guild') {
-        const currentGuild = guilds.find(g => g.id === appMode.guildId);
+        const currentGuild = guilds.find((g: Guild) => g.id === appMode.guildId);
         if (currentGuild?.themeId) {
             activeThemeId = currentGuild.themeId; // Guild theme is priority in guild mode
         } else if (currentUser?.theme) {
@@ -44,7 +44,7 @@ const App: React.FC = () => {
     }
     
     // Find the theme definition and apply its styles
-    const theme = themes.find(t => t.id === activeThemeId);
+    const theme = themes.find((t: ThemeDefinition) => t.id === activeThemeId);
     if (theme) {
         Object.entries(theme.styles).forEach(([key, value]) => {
             document.documentElement.style.setProperty(key, value as string);

@@ -1,24 +1,30 @@
 
+
 import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { useData } from '../../context/DataProvider';
 import { useUIState, useUIDispatch } from '../../context/UIContext';
 import { useActionsDispatch } from '../../context/ActionsContext';
 import { useAuthState } from '../../context/AuthContext';
-import { Role, User } from '../../types';
+import { Role, User, ChatMessage, Guild } from '../../types';
 import Avatar from '../user-interface/Avatar';
 import Input from '../user-interface/Input';
 import { XCircleIcon } from '../user-interface/Icons';
 import Button from '../user-interface/Button';
 import ToggleSwitch from '../user-interface/ToggleSwitch';
 
-type ChatTarget = User | {
+type GuildTarget = {
     id: string;
     gameName: string;
     isGuild: true;
     icon: string;
 };
+type ChatTarget = User | GuildTarget;
 
-export const ChatPanel: React.FC = () => {
+const isGuildChatTarget = (target: ChatTarget | null): target is GuildTarget => {
+    return !!target && 'isGuild' in target && target.isGuild === true;
+}
+
+const ChatPanel: React.FC = () => {
     const { guilds, chatMessages, settings } = useData();
     const { isChatOpen } = useUIState();
     const { currentUser, users } = useAuthState();
@@ -32,8 +38,8 @@ export const ChatPanel: React.FC = () => {
 
     const guildChatTargets = useMemo((): ChatTarget[] => {
         if (!currentUser) return [];
-        const userGuilds = guilds.filter(g => g.memberIds.includes(currentUser.id));
-        return userGuilds.map(guild => ({
+        const userGuilds = guilds.filter((g: Guild) => g.memberIds.includes(currentUser.id));
+        return userGuilds.map((guild: Guild) => ({
             id: guild.id,
             gameName: `${guild.name} Hall`,
             isGuild: true,
@@ -49,34 +55,34 @@ export const ChatPanel: React.FC = () => {
 
     const unreadInfo = useMemo(() => {
         if (!currentUser) return { dms: new Set(), guilds: new Set() };
-        const dms = new Set(chatMessages.filter(msg => msg.recipientId === currentUser.id && !msg.readBy.includes(currentUser.id)).map(msg => msg.senderId));
-        const guildsWithUnread = new Set(chatMessages.filter(msg => msg.guildId && !msg.readBy.includes(currentUser.id) && users.find(u => u.id === msg.senderId)).map(msg => msg.guildId));
+        const dms = new Set(chatMessages.filter((msg: ChatMessage) => msg.recipientId === currentUser.id && !msg.readBy.includes(currentUser.id)).map((msg: ChatMessage) => msg.senderId));
+        const guildsWithUnread = new Set(chatMessages.filter((msg: ChatMessage) => msg.guildId && !msg.readBy.includes(currentUser.id) && users.find(u => u.id === msg.senderId)).map((msg: ChatMessage) => msg.guildId));
         return { dms, guilds: guildsWithUnread };
     }, [chatMessages, currentUser, users]);
 
     const activeConversation = useMemo(() => {
         if (!currentUser || !activeChatTarget) return [];
         
-        if ('isGuild' in activeChatTarget && activeChatTarget.isGuild) {
-            return chatMessages.filter(msg => msg.guildId === activeChatTarget.id)
-                .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+        if (isGuildChatTarget(activeChatTarget)) {
+            return chatMessages.filter((msg: ChatMessage) => msg.guildId === activeChatTarget.id)
+                .sort((a: ChatMessage, b: ChatMessage) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
         }
 
-        return chatMessages.filter(msg =>
+        return chatMessages.filter((msg: ChatMessage) =>
             (msg.senderId === currentUser.id && msg.recipientId === activeChatTarget.id) ||
             (msg.senderId === activeChatTarget.id && msg.recipientId === currentUser.id)
-        ).sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+        ).sort((a: ChatMessage, b: ChatMessage) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
     }, [chatMessages, currentUser, activeChatTarget]);
     
     const unreadInActiveConvo = useMemo(() => {
         if (!currentUser || !activeConversation) return 0;
         // Don't count our own messages as unread
-        return activeConversation.filter(msg => msg.senderId !== currentUser.id && !msg.readBy.includes(currentUser.id)).length;
+        return activeConversation.filter((msg: ChatMessage) => msg.senderId !== currentUser.id && !msg.readBy.includes(currentUser.id)).length;
     }, [activeConversation, currentUser]);
 
     useEffect(() => {
         if (activeChatTarget && unreadInActiveConvo > 0) {
-            if ('isGuild' in activeChatTarget && activeChatTarget.isGuild) {
+            if (isGuildChatTarget(activeChatTarget)) {
                 markMessagesAsRead({ guildId: activeChatTarget.id });
             } else {
                 markMessagesAsRead({ partnerId: activeChatTarget.id });
@@ -110,8 +116,8 @@ export const ChatPanel: React.FC = () => {
         
         sendMessage({
             senderId: currentUser.id,
-            recipientId: 'isGuild' in activeChatTarget ? undefined : activeChatTarget.id,
-            guildId: 'isGuild' in activeChatTarget ? activeChatTarget.id : undefined,
+            recipientId: isGuildChatTarget(activeChatTarget) ? undefined : activeChatTarget.id,
+            guildId: isGuildChatTarget(activeChatTarget) ? activeChatTarget.id : undefined,
             message: message,
             isAnnouncement: isAnnouncement,
         });
@@ -140,8 +146,8 @@ export const ChatPanel: React.FC = () => {
                     <option value="">Select a chat...</option>
                     {chatPartners.map(partner => (
                         <option key={partner.id} value={partner.id}>
-                            {'isGuild' in partner && partner.isGuild ? '🏰' : '👤'} {partner.gameName}
-                            {(unreadInfo.dms.has(partner.id) || (partner.isGuild && unreadInfo.guilds.has(partner.id))) ? ' (New!)' : ''}
+                            {isGuildChatTarget(partner) ? '🏰' : '👤'} {partner.gameName}
+                            {(unreadInfo.dms.has(partner.id) || (isGuildChatTarget(partner) && unreadInfo.guilds.has(partner.id))) ? ' (New!)' : ''}
                         </option>
                     ))}
                 </Input>
@@ -152,7 +158,7 @@ export const ChatPanel: React.FC = () => {
                 {activeConversation.map(msg => {
                     const sender = users.find(u => u.id === msg.senderId);
                     const isMyMessage = msg.senderId === currentUser.id;
-                    const isSystemAnnouncement = msg.isAnnouncement && activeChatTarget && 'isGuild' in activeChatTarget && activeChatTarget.isGuild;
+                    const isSystemAnnouncement = msg.isAnnouncement && isGuildChatTarget(activeChatTarget);
 
                     if (isSystemAnnouncement) {
                         return (
@@ -186,7 +192,7 @@ export const ChatPanel: React.FC = () => {
                         />
                         <Button type="submit" disabled={!message.trim()} className="h-10">Send</Button>
                     </div>
-                    {currentUser.role === Role.DonegeonMaster && activeChatTarget && 'isGuild' in activeChatTarget && (
+                    {currentUser.role === Role.DonegeonMaster && isGuildChatTarget(activeChatTarget) && (
                         <ToggleSwitch enabled={isAnnouncement} setEnabled={setIsAnnouncement} label="Send as Announcement" />
                     )}
                 </form>

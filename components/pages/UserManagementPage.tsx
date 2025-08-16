@@ -1,5 +1,4 @@
 
-
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { useData } from '../../context/DataProvider';
 import { useAuthState, useAuthDispatch } from '../../context/AuthContext';
@@ -15,15 +14,15 @@ import { useDebounce } from '../../hooks/useDebounce';
 import Input from '../user-interface/Input';
 import { useNotificationsDispatch } from '../../context/NotificationsContext';
 import { useShiftSelect } from '../../hooks/useShiftSelect';
+import { useActionsDispatch } from '../../context/ActionsContext';
 
 const UserManagementPage: React.FC = () => {
     const { settings } = useData();
-    const { currentUser } = useAuthState();
-    const { deleteUsers } = useAuthDispatch();
+    const { currentUser, users } = useAuthState();
+    const { deleteUsers } = useAuthDispatch(); // From AuthContext for local state management
+    const { updateUser } = useAuthDispatch(); // From AuthContext for local state management
     const { addNotification } = useNotificationsDispatch();
     
-    const [pageUsers, setPageUsers] = useState<User[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const [sortBy, setSortBy] = useState<'gameName-asc' | 'gameName-desc' | 'username-asc' | 'username-desc' | 'role-asc' | 'role-desc'>('gameName-asc');
     const debouncedSearchTerm = useDebounce(searchTerm, 300);
@@ -35,33 +34,38 @@ const UserManagementPage: React.FC = () => {
     const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
     const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
     const dropdownRef = useRef<HTMLDivElement | null>(null);
+    
+    // Data is now sourced from context, no local fetching needed.
+    const pageUsers = useMemo(() => {
+        let filteredUsers = [...users];
+
+        if (debouncedSearchTerm) {
+            const lowercasedTerm = debouncedSearchTerm.toLowerCase();
+            filteredUsers = filteredUsers.filter(user => 
+                user.gameName.toLowerCase().includes(lowercasedTerm) ||
+                user.username.toLowerCase().includes(lowercasedTerm)
+            );
+        }
+
+        return filteredUsers.sort((a, b) => {
+            switch (sortBy) {
+                case 'gameName-desc': return b.gameName.localeCompare(a.gameName);
+                case 'username-asc': return a.username.localeCompare(b.username);
+                case 'username-desc': return b.username.localeCompare(a.username);
+                case 'role-asc': return a.role.localeCompare(b.role);
+                case 'role-desc': return b.role.localeCompare(a.role);
+                case 'gameName-asc':
+                default: return a.gameName.localeCompare(b.gameName);
+            }
+        });
+    }, [users, debouncedSearchTerm, sortBy]);
 
     const pageUserIds = useMemo(() => pageUsers.map(u => u.id), [pageUsers]);
     const handleCheckboxClick = useShiftSelect(pageUserIds, selectedUsers, setSelectedUsers);
 
-    const fetchUsers = useCallback(async () => {
-        setIsLoading(true);
-        try {
-            const params = new URLSearchParams();
-            if (debouncedSearchTerm) params.append('searchTerm', debouncedSearchTerm);
-            params.append('sortBy', sortBy);
+    // This effect can be removed as we are no longer fetching data locally.
+    // The DataProvider handles all data fetching and updates.
 
-            const response = await fetch(`/api/users?${params.toString()}`);
-            if (!response.ok) throw new Error('Failed to fetch users.');
-            const data = await response.json();
-            setPageUsers(data);
-        } catch (error) {
-            console.error(error);
-            addNotification({ type: 'error', message: error instanceof Error ? error.message : 'Unknown error' });
-        } finally {
-            setIsLoading(false);
-        }
-    }, [debouncedSearchTerm, sortBy, addNotification]);
-
-    useEffect(() => {
-        fetchUsers();
-    }, [fetchUsers]);
-    
     useEffect(() => {
         setSelectedUsers([]);
     }, [debouncedSearchTerm, sortBy]);
@@ -86,7 +90,7 @@ const UserManagementPage: React.FC = () => {
 
     const handleConfirmDelete = async () => {
         if (deletingIds.length === 0) return;
-        await deleteUsers(deletingIds);
+        deleteUsers(deletingIds); // This will call the server via ActionsContext
         setDeletingIds([]);
         setSelectedUsers([]);
     };
@@ -137,7 +141,7 @@ const UserManagementPage: React.FC = () => {
                     )}
                 </div>
 
-                {isLoading ? (
+                {users.length === 0 ? (
                      <div className="text-center py-10"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-400 mx-auto"></div></div>
                 ) : (
                     <div className="overflow-x-auto">
@@ -204,12 +208,12 @@ const UserManagementPage: React.FC = () => {
                 )}
             </Card>
 
-            {isAddUserDialogOpen && <AddUserDialog onClose={() => setIsAddUserDialogOpen(false)} onUserAdded={fetchUsers} />}
+            {isAddUserDialogOpen && <AddUserDialog onClose={() => setIsAddUserDialogOpen(false)} onUserAdded={() => {}} />}
             {editingUser && (
                 <EditUserDialog 
                     user={editingUser} 
                     onClose={() => setEditingUser(null)} 
-                    onUserUpdated={fetchUsers}
+                    onUserUpdated={() => {}}
                 />
             )}
             {adjustingUser && (

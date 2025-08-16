@@ -1,9 +1,8 @@
 import React, { useState, useMemo, useCallback, useRef, useEffect } from 'react';
-import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { Role, ScheduledEvent, Quest, QuestType, ChronicleEvent, User, AppMode, RewardTypeDefinition, RewardItem } from '../../types';
 import Card from '../user-interface/Card';
 import Button from '../user-interface/Button';
-import ScheduleEventDialog from '../admin/ScheduleEventDialog';
+import { ScheduleEventDialog } from '../admin/ScheduleEventDialog';
 import EventDetailDialog from '../calendar/EventDetailDialog';
 import { useAuthState } from '../../context/AuthContext';
 import FullCalendar from '@fullcalendar/react';
@@ -21,6 +20,9 @@ import { toYMD, isQuestAvailableForUser, isQuestVisibleToUserInMode } from '../.
 import CreateQuestDialog from '../quests/CreateQuestDialog';
 import { useNotificationsDispatch } from '../../context/NotificationsContext';
 import ChroniclesDetailDialog from '../calendar/ChroniclesDetailDialog';
+import { useData } from '../../context/DataProvider';
+import { useUIState, useUIDispatch } from '../../context/UIContext';
+import { useActionsDispatch } from '../../context/ActionsContext';
 
 type CalendarMode = 'events' | 'chronicles';
 
@@ -64,9 +66,11 @@ const renderEventContent = (eventInfo: EventContentArg, rewardTypes: RewardTypeD
 };
 
 const CalendarPage: React.FC = () => {
-    const { settings, scheduledEvents, quests, questCompletions, appMode, rewardTypes } = useAppState();
+    const { settings, scheduledEvents, quests, questCompletions, rewardTypes } = useData();
+    const { appMode } = useUIState();
     const { currentUser, users } = useAuthState();
-    const { setActivePage, markQuestAsTodo, unmarkQuestAsTodo, updateQuest } = useAppDispatch();
+    const { setActivePage } = useUIDispatch();
+    const { markQuestAsTodo, unmarkQuestAsTodo, updateQuest } = useActionsDispatch();
     const { addNotification } = useNotificationsDispatch();
     
     const [mode, setMode] = useState<CalendarMode>('events');

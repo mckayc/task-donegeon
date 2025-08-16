@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { useAppState, useAppDispatch } from '../../context/AppContext';
+import { useData } from '../../context/DataProvider';
+import { useActionsDispatch } from '../../context/ActionsContext';
 import { ScheduledEvent, RewardCategory } from '../../types';
 import Button from '../user-interface/Button';
 import Input from '../user-interface/Input';
@@ -23,9 +24,9 @@ const colorPalette = [
     '286 85% 61%', // Fuchsia
 ];
 
-const ScheduleEventDialog: React.FC<ScheduleEventDialogProps> = ({ event, onClose }) => {
-    const { addScheduledEvent, updateScheduledEvent, deleteScheduledEvent } = useAppDispatch();
-    const { guilds, markets, rewardTypes } = useAppState();
+export const ScheduleEventDialog: React.FC<ScheduleEventDialogProps> = ({ event, onClose }) => {
+    const { addScheduledEvent, updateScheduledEvent, deleteScheduledEvent } = useActionsDispatch();
+    const { guilds, markets, rewardTypes } = useData();
     
     const [formData, setFormData] = useState<Omit<ScheduledEvent, 'id'>>({
         title: '', description: '', startDate: '', endDate: '', isAllDay: true, eventType: 'Announcement', guildId: '',
@@ -106,45 +107,15 @@ const ScheduleEventDialog: React.FC<ScheduleEventDialogProps> = ({ event, onClos
                             ))}
                         </div>
                     </div>
-
-                    <div className="grid grid-cols-2 gap-4">
-                        <Input label="Start Date" name="startDate" type="date" value={formData.startDate} onChange={handleChange} required />
-                        <Input label="End Date" name="endDate" type="date" value={formData.endDate} onChange={handleChange} required />
-                    </div>
-                    <Input as="select" label="Event Type" name="eventType" value={formData.eventType} onChange={handleChange}>
-                        <option value="Announcement">Announcement</option>
-                        <option value="BonusXP">Bonus XP</option>
-                        <option value="MarketSale">Market Sale</option>
-                        <option value="Vacation">Vacation</option>
-                    </Input>
-                    
-                    {showModifiers && (
-                        <>
-                            {formData.eventType === 'BonusXP' && (
-                                <div className="p-4 bg-stone-900/50 rounded-lg space-y-4">
-                                    <h4 className="font-semibold text-stone-200">Bonus XP Modifiers</h4>
-                                    <Input label="XP Multiplier" type="number" step="0.1" value={formData.modifiers.xpMultiplier || 1.5} onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleModifierChange('xpMultiplier', parseFloat(e.target.value))} />
-                                </div>
-                            )}
-                            {formData.eventType === 'MarketSale' && (
-                                <div className="p-4 bg-stone-900/50 rounded-lg space-y-4">
-                                    <h4 className="font-semibold text-stone-200">Market Sale Modifiers</h4>
-                                    <Input as="select" label="Market" value={formData.modifiers.marketId || ''} onChange={(e: React.ChangeEvent<HTMLSelectElement>) => handleModifierChange('marketId', e.target.value)}>
-                                        <option value="">Select a market...</option>
-                                        {markets.filter(m => m.guildId === (formData.guildId || undefined)).map(m => <option key={m.id} value={m.id}>{m.title}</option>)}
-                                    </Input>
-                                    <Input label="Discount Percentage" type="number" min="1" max="100" value={formData.modifiers.discountPercent || 10} onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleModifierChange('discountPercent', parseInt(e.target.value))} />
-                                </div>
-                            )}
-                        </>
-                    )}
                 </form>
                 <div className="p-6 border-t border-stone-700/60 flex justify-between items-center">
                     <div>
-                        {event && <Button type="button" variant="secondary" className="!bg-red-900/50 hover:!bg-red-800/60 text-red-300" onClick={() => { deleteScheduledEvent(event.id); onClose(); }}>Delete</Button>}
+                        {event && (
+                             <Button variant="destructive" onClick={() => { deleteScheduledEvent(event.id); onClose(); }}>Delete</Button>
+                        )}
                     </div>
                     <div className="flex gap-4">
-                        <Button type="button" variant="secondary" onClick={onClose}>Cancel</Button>
+                        <Button variant="secondary" onClick={onClose}>Cancel</Button>
                         <Button type="submit" form="event-form">{event ? 'Save Changes' : 'Schedule Event'}</Button>
                     </div>
                 </div>
@@ -152,5 +123,3 @@ const ScheduleEventDialog: React.FC<ScheduleEventDialogProps> = ({ event, onClos
         </div>
     );
 };
-
-export default ScheduleEventDialog;

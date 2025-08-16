@@ -3,7 +3,7 @@ import React, { createContext, useState, useContext, ReactNode, useCallback } fr
 import { AppMode, Page } from '../types';
 import { bugLogger } from '../utils/bugLogger';
 
-interface UIState {
+export interface UIState {
   activePage: Page;
   isSidebarCollapsed: boolean;
   isChatOpen: boolean;
@@ -11,7 +11,7 @@ interface UIState {
   activeMarketId: string | null;
 }
 
-interface UIDispatch {
+export interface UIDispatch {
   setActivePage: (page: Page) => void;
   toggleSidebar: () => void;
   toggleChat: () => void;

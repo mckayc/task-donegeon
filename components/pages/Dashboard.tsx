@@ -19,7 +19,8 @@ const Dashboard: React.FC = () => {
     const { ranks, userTrophies, trophies, settings, scheduledEvents, quests, questCompletions, rewardTypes, purchaseRequests, users, guilds } = useData();
     const { appMode } = useUIState();
     const { currentUser } = useAuthState();
-    const { markQuestAsTodo, unmarkQuestAsTodo, setActivePage } = useActionsDispatch();
+    const { markQuestAsTodo, unmarkQuestAsTodo } = useActionsDispatch();
+    const { setActivePage } = useUIDispatch();
     
     const [selectedQuest, setSelectedQuest] = useState<Quest | null>(null);
     const [completingQuest, setCompletingQuest] = useState<Quest | null>(null);
@@ -60,7 +61,8 @@ const Dashboard: React.FC = () => {
     if (!currentUser) return <div>Loading adventurer's data...</div>;
 
     if (appMode.mode === 'guild' && currentUser.role === 'Donegeon Master') {
-        return <GuildDashboard />;
+        // Conditional rendering for a component that might not exist
+        return GuildDashboard ? <GuildDashboard /> : <Card title="Guild Dashboard"><p>Loading...</p></Card>;
     }
     
     const { terminology } = settings;
@@ -493,7 +495,7 @@ const Dashboard: React.FC = () => {
                     onClose={() => setCompletingQuest(null)}
                 />
             )}
-            {contributingQuest && (
+            {ContributeToQuestDialog && contributingQuest && (
                 <ContributeToQuestDialog
                     quest={contributingQuest}
                     onClose={() => setContributingQuest(null)}

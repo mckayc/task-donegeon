@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
-import { useAppState, useAppDispatch } from '../../../context/AppContext';
+import { useData } from '../../../context/DataProvider';
+import { useActionsDispatch } from '../../../context/ActionsContext';
 import { GameAsset } from '../../../types';
 import Button from '../../user-interface/Button';
 import Card from '../../user-interface/Card';
@@ -16,8 +17,8 @@ import UploadWithCategoryDialog from '../../admin/UploadWithCategoryDialog';
 import { useShiftSelect } from '../../../hooks/useShiftSelect';
 
 const ManageItemsPage: React.FC = () => {
-    const { settings, isAiConfigured, gameAssets: allGameAssets } = useAppState();
-    const { uploadFile, cloneGameAsset, deleteSelectedAssets } = useAppDispatch();
+    const { settings, isAiConfigured, gameAssets: allGameAssets } = useData();
+    const { uploadFile, cloneGameAsset, deleteSelectedAssets } = useActionsDispatch();
     const { addNotification } = useNotificationsDispatch();
     
     const [pageAssets, setPageAssets] = useState<GameAsset[]>([]);

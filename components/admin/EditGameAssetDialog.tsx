@@ -1,5 +1,7 @@
+
 import React, { useState, useEffect, useCallback } from 'react';
-import { useAppDispatch, useAppState } from '../../context/AppContext';
+import { useData } from '../../context/DataProvider';
+import { useActionsDispatch } from '../../context/ActionsContext';
 import { GameAsset, RewardItem, RewardCategory } from '../../types';
 import Button from '../user-interface/Button';
 import Input from '../user-interface/Input';
@@ -31,9 +33,9 @@ const PREDEFINED_CATEGORIES = [
 ];
 
 const EditGameAssetDialog: React.FC<EditGameAssetDialogProps> = ({ assetToEdit, initialData, onClose, mode = (assetToEdit ? 'edit' : 'create'), onTryAgain, isGenerating, onSave }) => {
-  const { uploadFile, addGameAsset, updateGameAsset } = useAppDispatch();
+  const { uploadFile, addGameAsset, updateGameAsset } = useActionsDispatch();
   const { addNotification } = useNotificationsDispatch();
-  const { markets, rewardTypes } = useAppState();
+  const { markets, rewardTypes } = useData();
 
   const getInitialFormData = useCallback(() => {
     const data = assetToEdit || initialData;
@@ -208,7 +210,7 @@ const EditGameAssetDialog: React.FC<EditGameAssetDialogProps> = ({ assetToEdit, 
     } else if (assetToEdit) {
       updateGameAsset({ ...assetToEdit, ...finalPayload });
     } else {
-      addGameAsset(finalPayload);
+      addGameAsset({ ...finalPayload, createdAt: new Date().toISOString() });
     }
     onClose();
   };

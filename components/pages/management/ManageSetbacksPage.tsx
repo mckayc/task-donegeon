@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { useAppState, useAppDispatch } from '../../../context/AppContext';
+import { useData } from '../../../context/DataProvider';
+import { useActionsDispatch } from '../../../context/ActionsContext';
 import { SetbackDefinition } from '../../../types';
 import Button from '../../user-interface/Button';
 import Card from '../../user-interface/Card';
@@ -10,8 +11,8 @@ import ConfirmDialog from '../../user-interface/ConfirmDialog';
 import ApplySetbackDialog from '../../admin/ApplySetbackDialog';
 
 const ManageSetbacksPage: React.FC = () => {
-    const { settings, setbackDefinitions } = useAppState();
-    const { deleteSelectedAssets } = useAppDispatch();
+    const { settings, setbackDefinitions } = useData();
+    const { deleteSelectedAssets } = useActionsDispatch();
     
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [isApplyDialogOpen, setIsApplyDialogOpen] = useState(false);

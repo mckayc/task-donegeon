@@ -1,5 +1,7 @@
+
 import React, { useMemo, useState } from 'react';
-import { useAppState } from '../../context/AppContext';
+import { useData } from '../../context/DataProvider';
+import { useUIState } from '../../context/UIContext';
 import { Rank } from '../../types';
 import Card from '../user-interface/Card';
 import { RankIcon } from '../user-interface/Icons';
@@ -8,7 +10,8 @@ import ImagePreviewDialog from '../user-interface/ImagePreviewDialog';
 import { useAuthState } from '../../context/AuthContext';
 
 const RanksPage: React.FC = () => {
-    const { ranks, appMode } = useAppState();
+    const { ranks } = useData();
+    const { appMode } = useUIState();
     const { currentUser } = useAuthState();
     const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null);
 

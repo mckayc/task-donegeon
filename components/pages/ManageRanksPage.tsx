@@ -6,14 +6,15 @@ import Button from '../user-interface/Button';
 import Card from '../user-interface/Card';
 import EditRankDialog from '../settings/EditRankDialog';
 import ConfirmDialog from '../user-interface/ConfirmDialog';
-import { useAppState, useAppDispatch } from '../../context/AppContext';
 import EmptyState from '../user-interface/EmptyState';
 import { RankIcon, EllipsisVerticalIcon } from '../user-interface/Icons';
 import { useShiftSelect } from '../../hooks/useShiftSelect';
+import { useData } from '../../context/DataProvider';
+import { useActionsDispatch } from '../../context/ActionsContext';
 
 const ManageRanksPage: React.FC = () => {
-    const { ranks, settings } = useAppState();
-    const { deleteSelectedAssets } = useAppDispatch();
+    const { ranks, settings } = useData();
+    const { deleteSelectedAssets } = useActionsDispatch();
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [editingRank, setEditingRank] = useState<Rank | null>(null);
     const [deletingIds, setDeletingIds] = useState<string[]>([]);

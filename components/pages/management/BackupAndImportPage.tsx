@@ -1,6 +1,7 @@
 import React, { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import Card from '../../user-interface/Card';
-import { useAppState, useAppDispatch } from '../../../context/AppContext';
+import { useData } from '../../../context/DataProvider';
+import { useActionsDispatch } from '../../../context/ActionsContext';
 import { IAppData, BackupInfo, BackupSchedule } from '../../../types';
 import ConfirmDialog from '../../user-interface/ConfirmDialog';
 import { useNotificationsDispatch } from '../../../context/NotificationsContext';
@@ -63,9 +64,9 @@ const BackupList: React.FC<{ backupsToList: BackupInfo[]; onDelete: (filename: s
     </div>
 );
 
-const BackupAndImportPage: React.FC = () => {
-    const { settings } = useAppState();
-    const { updateSettings } = useAppDispatch();
+export const BackupAndImportPage: React.FC = () => {
+    const { settings } = useData();
+    const { updateSettings } = useActionsDispatch();
     const [backups, setBackups] = useState<BackupInfo[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isCreating, setIsCreating] = useState<boolean>(false);
@@ -173,7 +174,7 @@ const BackupAndImportPage: React.FC = () => {
         } else {
             updatedSchedules.push({ ...scheduleData, id: `schedule-${Date.now()}` });
         }
-        updateSettings({ automatedBackups: { ...settings.automatedBackups, schedules: updatedSchedules } });
+        updateSettings({ ...settings, automatedBackups: { ...settings.automatedBackups, schedules: updatedSchedules } });
         setIsScheduleDialogOpen(false);
         setEditingSchedule(null);
     };
@@ -181,7 +182,7 @@ const BackupAndImportPage: React.FC = () => {
     const handleDeleteSchedule = () => {
         if (!deletingSchedule) return;
         const updatedSchedules = settings.automatedBackups.schedules.filter(s => s.id !== deletingSchedule.id);
-        updateSettings({ automatedBackups: { ...settings.automatedBackups, schedules: updatedSchedules } });
+        updateSettings({ ...settings, automatedBackups: { ...settings.automatedBackups, schedules: updatedSchedules } });
         setDeletingSchedule(null);
     };
     
@@ -237,93 +238,47 @@ const BackupAndImportPage: React.FC = () => {
                     {/* Right Column: Automated */}
                     <div className="p-4 bg-stone-900/40 rounded-lg">
                         <ToggleSwitch 
-                            enabled={settings.automatedBackups.enabled} 
-                            setEnabled={(val) => updateSettings({ automatedBackups: { ...settings.automatedBackups, enabled: val }})} 
-                            label="Enable Automated Server Backups" 
+                            enabled={settings.automatedBackups.enabled}
+                            setEnabled={(val) => updateSettings({ ...settings, automatedBackups: { ...settings.automatedBackups, enabled: val } })}
+                            label="Enable Automated Backups"
                         />
-                         {settings.automatedBackups.enabled && (
-                            <div className="mt-4 pt-4 border-t border-stone-700/60 space-y-3">
-                                <Input
-                                    as="select"
-                                    label="Automated Backup Format"
-                                    value={settings.automatedBackups.format || 'json'}
-                                    onChange={(e: React.ChangeEvent<HTMLSelectElement>) => updateSettings({
-                                        automatedBackups: {
-                                            ...settings.automatedBackups,
-                                            format: e.target.value as any,
-                                        }
-                                    })}
-                                >
-                                    <option value="json">JSON</option>
-                                    <option value="sqlite">SQLite</option>
-                                    <option value="both">Both</option>
-                                </Input>
-                                <div className="flex justify-between items-center pt-2 mt-2 border-t border-stone-700/60">
-                                    <h4 className="font-semibold text-stone-200">Schedules</h4>
-                                    <Button size="sm" onClick={() => { setEditingSchedule(null); setIsScheduleDialogOpen(true); }}>Add Schedule</Button>
-                                </div>
-                                {settings.automatedBackups.schedules.length > 0 ? (
-                                    settings.automatedBackups.schedules.map(schedule => (
-                                        <div key={schedule.id} className="bg-stone-900/50 p-2 rounded-md flex justify-between items-center">
-                                            <div>
-                                                <p className="text-sm font-semibold text-stone-200">Every {schedule.frequency} {schedule.unit}</p>
-                                                <p className="text-xs text-stone-400">Keeps the last {schedule.maxBackups}</p>
-                                            </div>
-                                            <div className="flex gap-1">
-                                                <Button size="sm" variant="secondary" onClick={() => { setEditingSchedule(schedule); setIsScheduleDialogOpen(true); }}>Edit</Button>
-                                                <Button size="sm" variant="destructive" onClick={() => setDeletingSchedule(schedule)}>Del</Button>
-                                            </div>
-                                        </div>
-                                    ))
-                                ) : <p className="text-stone-400 text-sm italic">No schedules configured.</p>}
-                            </div>
-                        )}
                     </div>
                 </div>
             </Card>
-
-            <Card>
+            
+             <Card>
                  <div className="border-b border-stone-700 mb-4">
                     <nav className="-mb-px flex space-x-6">
-                        <button onClick={() => setActiveTab('manual')} className={`whitespace-nowrap pb-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'manual' ? 'border-emerald-500 text-emerald-400' : 'border-transparent text-stone-400 hover:text-stone-200'}`}>Manual Backups ({manualBackups.length})</button>
-                        <button onClick={() => setActiveTab('automated')} className={`whitespace-nowrap pb-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'automated' ? 'border-emerald-500 text-emerald-400' : 'border-transparent text-stone-400 hover:text-stone-200'}`}>Automated Backups ({automatedBackups.length})</button>
+                        <button onClick={() => setActiveTab('manual')} className={`whitespace-nowrap pb-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'manual' ? 'border-emerald-500 text-emerald-400' : 'border-transparent text-stone-400 hover:text-stone-200'}`}>
+                            Manual ({manualBackups.length})
+                        </button>
+                        <button onClick={() => setActiveTab('automated')} className={`whitespace-nowrap pb-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'automated' ? 'border-emerald-500 text-emerald-400' : 'border-transparent text-stone-400 hover:text-stone-200'}`}>
+                            Automated ({automatedBackups.length})
+                        </button>
                     </nav>
                 </div>
-                {isLoading ? (
-                    <p className="text-stone-400 text-center">Loading backups...</p>
-                ) : (
-                    activeTab === 'manual' ? 
-                        manualBackups.length > 0 ? <BackupList backupsToList={manualBackups} onDelete={setConfirmDelete} /> : <p className="text-stone-400 text-center py-4">No manual backups found.</p>
-                        :
-                        automatedBackups.length > 0 ? <BackupList backupsToList={automatedBackups} onDelete={setConfirmDelete} /> : <p className="text-stone-400 text-center py-4">No automated backups have been generated yet.</p>
+                {isLoading ? <p>Loading backups...</p> : (
+                    activeTab === 'manual' 
+                        ? <BackupList backupsToList={manualBackups} onDelete={setConfirmDelete} />
+                        : <BackupList backupsToList={automatedBackups} onDelete={setConfirmDelete} />
                 )}
             </Card>
-            
-            {isScheduleDialogOpen && (
-                <EditBackupScheduleDialog
-                    scheduleToEdit={editingSchedule}
-                    onClose={() => setIsScheduleDialogOpen(false)}
-                    onSave={handleSaveSchedule}
-                />
-            )}
 
+            <ConfirmDialog 
+                isOpen={!!confirmDelete}
+                onClose={() => setConfirmDelete(null)}
+                onConfirm={handleConfirmDelete}
+                title="Delete Backup"
+                message={`Are you sure you want to permanently delete the backup file "${confirmDelete}"?`}
+            />
+            {isScheduleDialogOpen && <EditBackupScheduleDialog scheduleToEdit={editingSchedule} onClose={() => {setIsScheduleDialogOpen(false); setEditingSchedule(null);}} onSave={handleSaveSchedule} />}
             <ConfirmDialog
                 isOpen={!!deletingSchedule}
                 onClose={() => setDeletingSchedule(null)}
                 onConfirm={handleDeleteSchedule}
                 title="Delete Schedule"
-                message="Are you sure you want to delete this automated backup schedule?"
-            />
-
-            <ConfirmDialog
-                isOpen={!!confirmDelete}
-                onClose={() => setConfirmDelete(null)}
-                onConfirm={handleConfirmDelete}
-                title="Confirm Deletion"
-                message={`Are you sure you want to permanently delete "${confirmDelete}"?`}
+                message="Are you sure you want to delete this backup schedule?"
             />
         </div>
     );
 };
-
-export default BackupAndImportPage;

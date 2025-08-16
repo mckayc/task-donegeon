@@ -1,7 +1,8 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import Card from '../user-interface/Card';
 import { useData } from '../../context/DataProvider';
-import { useUIState, useUIDispatch } from '../../context/UIContext';
+import { useUIDispatch } from '../../context/UIContext';
 import { useActionsDispatch } from '../../context/ActionsContext';
 import { useAuthState } from '../../context/AuthContext';
 import Button from '../user-interface/Button';

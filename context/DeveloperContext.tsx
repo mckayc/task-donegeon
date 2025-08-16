@@ -1,6 +1,7 @@
 import React, { createContext, useState, useContext, ReactNode, useCallback, useEffect, useMemo, useRef } from 'react';
 import { BugReport, BugReportLogEntry, BugReportType } from '../types';
-import { useAppDispatch, useAppState } from './AppContext';
+import { useActionsDispatch } from './ActionsContext';
+import { useData } from './DataProvider';
 import { bugLogger } from '../utils/bugLogger';
 
 // State
@@ -32,11 +33,11 @@ export const DeveloperProvider: React.FC<{ children: ReactNode }> = ({ children 
   const onPickCallbackRef = useRef<((info: any) => void) | null>(null);
   const highlightedElementRef = useRef<HTMLElement | null>(null);
 
-  const appDispatch = useAppDispatch();
-  const { bugReports } = useAppState();
+  const { addBugReport, updateBugReport } = useActionsDispatch();
+  const { bugReports } = useData();
   
-  const appDispatchRef = useRef(appDispatch);
-  useEffect(() => { appDispatchRef.current = appDispatch; }, [appDispatch]);
+  const actionsDispatchRef = useRef({ addBugReport, updateBugReport });
+  useEffect(() => { actionsDispatchRef.current = { addBugReport, updateBugReport }; }, [addBugReport, updateBugReport]);
 
   const bugReportsRef = useRef(bugReports);
   useEffect(() => { bugReportsRef.current = bugReports; }, [bugReports]);
@@ -79,7 +80,7 @@ export const DeveloperProvider: React.FC<{ children: ReactNode }> = ({ children 
     const finalLogs = bugLogger.stop();
     
     if (activeBugIdRef.current) {
-        appDispatchRef.current.updateBugReport(activeBugIdRef.current, { logs: finalLogs });
+        actionsDispatchRef.current.updateBugReport(activeBugIdRef.current, { logs: finalLogs });
     } else {
         const newReport = {
             title,
@@ -87,7 +88,7 @@ export const DeveloperProvider: React.FC<{ children: ReactNode }> = ({ children 
             createdAt: new Date().toISOString(),
             logs: finalLogs,
         };
-        appDispatchRef.current.addBugReport(newReport);
+        actionsDispatchRef.current.addBugReport(newReport);
     }
 
     setIsRecording(false);

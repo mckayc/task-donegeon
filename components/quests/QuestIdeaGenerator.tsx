@@ -1,9 +1,10 @@
+
 import React, { useState } from 'react';
 import { GenerateContentResponse, Type } from "@google/genai";
 import Button from '../user-interface/Button';
 import Input from '../user-interface/Input';
 import { SparklesIcon } from '../user-interface/Icons';
-import { useAppState } from '../../context/AppContext';
+import { useData } from '../../context/DataProvider';
 import { QuestType } from '../../types';
 import ToggleSwitch from '../user-interface/ToggleSwitch';
 import { useAuthState } from '../../context/AuthContext';
@@ -27,7 +28,7 @@ interface QuestIdeaGeneratorProps {
 }
 
 const QuestIdeaGenerator: React.FC<QuestIdeaGeneratorProps> = ({ onUseIdea, onClose }) => {
-    const { settings, questGroups, rewardTypes } = useAppState();
+    const { settings, questGroups, rewardTypes } = useData();
     const { users } = useAuthState();
     const [prompt, setPrompt] = useState('');
     const [questType, setQuestType] = useState<QuestType>(QuestType.Venture);

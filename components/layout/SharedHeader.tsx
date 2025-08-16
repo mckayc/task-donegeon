@@ -1,5 +1,6 @@
+
 import React, { useMemo, useState, useEffect } from 'react';
-import { useAppState } from '../../context/AppContext';
+import { useData } from '../../context/DataProvider';
 import { useAuthState, useAuthDispatch } from '../../context/AuthContext';
 import { User } from '../../types';
 import Avatar from '../user-interface/Avatar';
@@ -19,7 +20,7 @@ const Clock: React.FC = () => {
 };
 
 const SharedHeader: React.FC = () => {
-  const { settings } = useAppState();
+  const { settings } = useData();
   const { users } = useAuthState();
   const { setTargetedUserForLogin, setIsSwitchingUser } = useAuthDispatch();
   const [currentDate, setCurrentDate] = useState(new Date());

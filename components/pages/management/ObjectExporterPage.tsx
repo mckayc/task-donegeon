@@ -1,8 +1,10 @@
+
 import React, { useState } from 'react';
 import Card from '../../user-interface/Card';
 import ExportPanel from '../../sharing/ExportPanel';
 import ImportPanel from '../../sharing/ImportPanel';
-import { useAppDispatch, useAppState } from '../../../context/AppContext';
+import { useData } from '../../../context/DataProvider';
+import { useActionsDispatch } from '../../../context/ActionsContext';
 import { useAuthState } from '../../../context/AuthContext';
 import { IAppData, AssetPack, ImportResolution } from '../../../types';
 import { analyzeAssetPackForConflicts } from '../../../utils/sharing';
@@ -12,9 +14,9 @@ import BlueprintPreviewDialog from '../../sharing/BlueprintPreviewDialog';
 const ObjectExporterPage: React.FC = () => {
     const [activeTab, setActiveTab] = useState('export');
     
-    const appState = useAppState();
+    const appState = useData();
     const authState = useAuthState();
-    const { importAssetPack } = useAppDispatch();
+    const { importAssetPack } = useActionsDispatch();
     const { addNotification } = useNotificationsDispatch();
 
     const [assetPackToPreview, setAssetPackToPreview] = useState<AssetPack | null>(null);

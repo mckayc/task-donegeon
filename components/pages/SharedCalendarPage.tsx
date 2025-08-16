@@ -1,5 +1,7 @@
+
 import React, { useState, useMemo } from 'react';
-import { useAppState, useAppDispatch } from '../../context/AppContext';
+import { useData } from '../../context/DataProvider';
+import { useActionsDispatch } from '../../context/ActionsContext';
 import { Quest, QuestType, QuestAvailability, User, AppMode, QuestCompletionStatus } from '../../types';
 import { isQuestAvailableForUser, toYMD, isQuestScheduledForDay, questSorter } from '../../utils/quests';
 import Card from '../user-interface/Card';
@@ -25,8 +27,8 @@ const getDueDateString = (quest: Quest): string | null => {
 };
 
 const SharedCalendarPage: React.FC = () => {
-    const { settings, guilds, scheduledEvents, quests, questCompletions } = useAppState();
-    const { markQuestAsTodo, unmarkQuestAsTodo, completeQuest } = useAppDispatch();
+    const { settings, guilds, scheduledEvents, quests, questCompletions } = useData();
+    const { markQuestAsTodo, unmarkQuestAsTodo, completeQuest } = useActionsDispatch();
     const { users } = useAuthState();
     const { addNotification } = useNotificationsDispatch();
 

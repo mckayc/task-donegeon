@@ -9,8 +9,8 @@ import Input from '../user-interface/Input';
 import { useAuthState } from '../../context/AuthContext';
 import TradeDialog from '../trading/TradeDialog';
 
-export const ApprovalsPage: React.FC = () => {
-    const { guilds, quests, questCompletions, purchaseRequests, gameAssets, tradeOffers } = useData();
+const ApprovalsPage: React.FC = () => {
+    const { guilds, quests, questCompletions, purchaseRequests, tradeOffers, rewardTypes } = useData();
     const { currentUser, users } = useAuthState();
     const { approveQuestCompletion, rejectQuestCompletion, approvePurchaseRequest, rejectPurchaseRequest } = useActionsDispatch();
     

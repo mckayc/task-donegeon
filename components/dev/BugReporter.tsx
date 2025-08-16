@@ -4,11 +4,11 @@ import Input from '../user-interface/Input';
 import { useDeveloper } from '../../context/DeveloperContext';
 import { ChevronDownIcon, ChevronUpIcon } from '../user-interface/Icons';
 import { BugReportType } from '../../types';
-import { useAppState } from '../../context/AppContext';
+import { useData } from '../../context/DataProvider';
 
 const BugReporter: React.FC = () => {
     const { isRecording, startRecording, stopRecording, addLogEntry, isPickingElement, startPickingElement, stopPickingElement, logs, activeBugId } = useDeveloper();
-    const { bugReports } = useAppState();
+    const { bugReports } = useData();
 
     const [title, setTitle] = useState('');
     const [note, setNote] = useState('');

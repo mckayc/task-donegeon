@@ -1,12 +1,12 @@
-
 import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react';
-import { useAppState } from '../../context/AppContext';
 import { AssetPack, ImportResolution, ShareableAssetType, Terminology, Role, UserTemplate, Quest } from '../../types';
 import Button from '../user-interface/Button';
 import Input from '../user-interface/Input';
 import UserMultiSelect from '../user-interface/UserMultiSelect';
 import { useAuthState } from '../../context/AuthContext';
 import { bugLogger } from '../../utils/bugLogger';
+import { useData } from '../../context/DataProvider';
+import { useActionsDispatch } from '../../context/ActionsContext';
 
 interface AssetPackInstallDialogProps {
   assetPack: AssetPack;
@@ -97,7 +97,7 @@ const AssetCard: React.FC<{
 
 
 const AssetPackInstallDialog: React.FC<AssetPackInstallDialogProps> = ({ assetPack, initialResolutions, onClose, onConfirm }) => {
-    const { settings } = useAppState();
+    const { settings } = useData();
     const { users } = useAuthState();
     const [resolutions, setResolutions] = useState(initialResolutions);
     const [assignedUserIds, setAssignedUserIds] = useState<string[]>(() => users.map(u => u.id));

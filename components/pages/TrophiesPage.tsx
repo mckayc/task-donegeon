@@ -1,5 +1,7 @@
+
 import React, { useMemo, useState } from 'react';
 import { useData } from '../../context/DataProvider';
+import { useUIState } from '../../context/UIContext';
 import { Role, Trophy, UserTrophy, TrophyRequirementType, QuestType, QuestCompletionStatus, Quest, AppMode, User } from '../../types';
 import Card from '../user-interface/Card';
 import { fromYMD } from '../../utils/quests';
@@ -9,7 +11,8 @@ import ImagePreviewDialog from '../user-interface/ImagePreviewDialog';
 import { useAuthState } from '../../context/AuthContext';
 
 const TrophiesPage: React.FC = () => {
-    const { trophies, userTrophies, settings, ranks, quests, questCompletions, appMode } = useData();
+    const { trophies, userTrophies, settings, ranks, quests, questCompletions } = useData();
+    const { appMode } = useUIState();
     const { currentUser } = useAuthState();
     const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null);
 

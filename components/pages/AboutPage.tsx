@@ -1,6 +1,7 @@
+
 import React, { useState, ReactNode } from 'react';
 import Card from '../user-interface/Card';
-import { useAppState } from '../../context/AppContext';
+import { useData } from '../../context/DataProvider';
 import { ChevronDownIcon } from '../user-interface/Icons';
 import Button from '../user-interface/Button';
 
@@ -254,7 +255,7 @@ const RoadmapContent: React.FC = () => (
 );
 
 export const AboutPage: React.FC = () => {
-    const { settings } = useAppState();
+    const { settings } = useData();
     
     return (
         <div className="max-w-4xl mx-auto pb-12">

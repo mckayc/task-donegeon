@@ -1,6 +1,6 @@
-
 import React, { useState, useEffect } from 'react';
-import { useAppState, useAppDispatch } from '../../context/AppContext';
+import { useData } from '../../context/DataProvider';
+import { useActionsDispatch } from '../../context/ActionsContext';
 import { SetbackDefinition, SetbackEffect, SetbackEffectType, RewardCategory, RewardItem } from '../../types';
 import Button from '../user-interface/Button';
 import Input from '../user-interface/Input';
@@ -13,8 +13,8 @@ interface EditSetbackDialogProps {
 }
 
 const EditSetbackDialog: React.FC<EditSetbackDialogProps> = ({ setbackToEdit, onClose }) => {
-    const { addSetbackDefinition, updateSetbackDefinition } = useAppDispatch();
-    const { markets, rewardTypes } = useAppState();
+    const { addSetbackDefinition, updateSetbackDefinition } = useActionsDispatch();
+    const { markets, rewardTypes } = useData();
     const [formData, setFormData] = useState<Omit<SetbackDefinition, 'id' | 'createdAt' | 'updatedAt'>>({
         name: '',
         description: '',

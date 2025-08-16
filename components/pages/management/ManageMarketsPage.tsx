@@ -1,18 +1,18 @@
-import React, { useState, useRef, useEffect, useMemo } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Market } from '../../../types';
 import Button from '../../user-interface/Button';
 import Card from '../../user-interface/Card';
 import EditMarketDialog from '../../markets/EditMarketDialog';
 import ConfirmDialog from '../../user-interface/ConfirmDialog';
-import { useAppState, useAppDispatch } from '../../../context/AppContext';
+import { useData } from '../../../context/DataProvider';
+import { useActionsDispatch } from '../../../context/ActionsContext';
 import EmptyState from '../../user-interface/EmptyState';
 import { MarketplaceIcon, EllipsisVerticalIcon } from '../../user-interface/Icons';
 import MarketIdeaGenerator from '../../quests/MarketIdeaGenerator';
-import { useShiftSelect } from '../../../hooks/useShiftSelect';
 
 const ManageMarketsPage: React.FC = () => {
-    const { settings, isAiConfigured, markets } = useAppState();
-    const { deleteSelectedAssets, updateMarketsStatus, cloneMarket } = useAppDispatch();
+    const { settings, isAiConfigured, markets } = useData();
+    const { deleteSelectedAssets, updateMarketsStatus, cloneMarket } = useActionsDispatch();
     const [isMarketDialogOpen, setIsMarketDialogOpen] = useState(false);
     const [editingMarket, setEditingMarket] = useState<Market | null>(null);
     const [isGeneratorOpen, setIsGeneratorOpen] = useState(false);
@@ -24,9 +24,6 @@ const ManageMarketsPage: React.FC = () => {
     const dropdownRef = useRef<HTMLDivElement | null>(null);
 
     const isAiAvailable = settings.enableAiFeatures && isAiConfigured;
-    
-    const marketIds = useMemo(() => markets.map(m => m.id), [markets]);
-    const handleCheckboxClick = useShiftSelect(marketIds, selectedMarkets, setSelectedMarkets);
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
@@ -62,6 +59,14 @@ const ManageMarketsPage: React.FC = () => {
             setSelectedMarkets(markets.map(m => m.id));
         } else {
             setSelectedMarkets([]);
+        }
+    };
+
+    const handleSelectOne = (id: string, isChecked: boolean) => {
+        if (isChecked) {
+            setSelectedMarkets(prev => [...prev, id]);
+        } else {
+            setSelectedMarkets(prev => prev.filter(marketId => marketId !== id));
         }
     };
     
@@ -148,7 +153,7 @@ const ManageMarketsPage: React.FC = () => {
 
                                     return (
                                         <tr key={market.id} className="border-b border-stone-700/40 last:border-b-0">
-                                            <td className="p-4"><input type="checkbox" checked={selectedMarkets.includes(market.id)} onChange={e => handleCheckboxClick(e, market.id)} className="h-4 w-4 rounded text-emerald-600 bg-stone-700 border-stone-600 focus:ring-emerald-500" /></td>
+                                            <td className="p-4"><input type="checkbox" checked={selectedMarkets.includes(market.id)} onChange={(e) => handleSelectOne(market.id, e.target.checked)} className="h-4 w-4 rounded text-emerald-600 bg-stone-700 border-stone-600 focus:ring-emerald-500" /></td>
                                             <td className="p-4 font-bold">{market.icon} {market.title}</td>
                                             <td className="p-4 text-stone-400 hidden md:table-cell">{market.description}</td>
                                             <td className="p-4">

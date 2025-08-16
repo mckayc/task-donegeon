@@ -11,7 +11,7 @@ import ToggleSwitch from '../user-interface/ToggleSwitch';
 import ConfirmDialog from '../user-interface/ConfirmDialog';
 import { INITIAL_SETTINGS } from '../../data/initialData';
 import EmojiPicker from '../user-interface/EmojiPicker';
-import { useNotificationsDispatch } from '../context/NotificationsContext';
+import { useNotificationsDispatch } from '../../context/NotificationsContext';
 import Card from '../user-interface/Card';
 import UserMultiSelect from '../user-interface/UserMultiSelect';
 

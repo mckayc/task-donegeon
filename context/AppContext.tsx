@@ -472,9 +472,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
   const dispatch = useMemo(() => {
     const setActivePageStable = (page: Page) => {
-        if (bugLogger.isRecording()) {
-          bugLogger.add({ type: 'NAVIGATION', message: `Navigated to ${page} page.` });
-        }
+        if (bugLogger.isRecording()) bugLogger.add({ type: 'NAVIGATION', message: `Navigated to ${page} page.`});
         _setActivePage(page);
     };
     const toggleSidebar = () => setIsSidebarCollapsed(prev => {
@@ -484,7 +482,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     });
     const toggleChat = () => setIsChatOpen(prev => !prev);
 
-    const applyRewards = (userId: string, rewardsToApply: RewardItem[], guildId?: string) => {
+     const applyRewards = (userId: string, rewardsToApply: RewardItem[], guildId?: string) => {
         authDispatch.updateUser(userId, (u: User) => {
             const newUser = { ...u, 
                 personalPurse: {...(u.personalPurse || {})},
@@ -563,18 +561,140 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         return true;
     };
 
-    // --- HOISTED FUNCTIONS FOR INTERNAL USE ---
-    const updateSettings = async (newSettings: Partial<AppSettings>) => {
-      registerOptimisticUpdate('settings');
-      setSettings(prev => ({ ...prev, ...newSettings }));
-      apiRequest('PUT', '/api/settings', { ...settings, ...newSettings }).catch(() => {});
+    // AppDispatch functions
+    const addGuild = async (guild: Omit<Guild, 'id'>) => {
+        const optimisticGuild = { ...guild, id: `temp-guild-${Date.now()}`, memberIds: guild.memberIds || [] };
+        setGuilds(prev => [...prev, optimisticGuild]);
+        try { const savedGuild = await apiRequest('POST', '/api/guilds', guild); setGuilds(prev => prev.map(g => g.id === optimisticGuild.id ? savedGuild : g)); } 
+        catch { setGuilds(prev => prev.filter(g => g.id !== optimisticGuild.id)); }
     };
-    
-    const addSystemNotification = (notification: Omit<SystemNotification, 'id' | 'timestamp' | 'readByUserIds'>) => {
-      if (!notification.recipientUserIds || notification.recipientUserIds.length === 0) return;
-      setSystemNotifications(prev => [...prev, { id: `sysnotif-${Date.now()}`, timestamp: new Date().toISOString(), readByUserIds: [], ...notification }]);
+    const updateGuild = async (guild: Guild) => { registerOptimisticUpdate(`guild-${guild.id}`); apiRequest('PUT', `/api/guilds/${guild.id}`, guild).catch(() => {}); };
+    const deleteGuild = async (guildId: string) => { apiRequest('DELETE', `/api/guilds/${guildId}`).catch(() => {}); };
+    const addTrophy = (trophy: Omit<Trophy, 'id'>) => setTrophies(prev => [...prev, { ...trophy, id: `trophy-${Date.now()}` }]);
+    const updateTrophy = (trophy: Trophy) => { registerOptimisticUpdate(`trophy-${trophy.id}`); setTrophies(prev => prev.map(t => t.id === trophy.id ? trophy : t)); };
+    const addTheme = (theme: Omit<ThemeDefinition, 'id'>) => setThemes(p => [...p, { ...theme, id: `theme-${Date.now()}` }]);
+    const updateTheme = (theme: ThemeDefinition) => { registerOptimisticUpdate(`theme-${theme.id}`); setThemes(p => p.map(t => t.id === theme.id ? theme : t)); };
+    const deleteTheme = (themeId: string) => setThemes(p => p.filter(t => t.id !== themeId));
+    const addScheduledEvent = async (event: Omit<ScheduledEvent, 'id'>) => { apiRequest('POST', '/api/events', event).catch(() => {}); };
+    const updateScheduledEvent = async (event: ScheduledEvent) => { registerOptimisticUpdate(`scheduledEvent-${event.id}`); apiRequest('PUT', `/api/events/${event.id}`, event).catch(() => {}); };
+    const deleteScheduledEvent = async (eventId: string) => { apiRequest('DELETE', `/api/events/${eventId}`).catch(() => {}); };
+    const addBugReport = async (report: Omit<BugReport, 'id' | 'status' | 'tags'> & { reportType: BugReportType }) => {
+        const { reportType, title, createdAt, updatedAt, logs } = report;
+        const rest = { title, createdAt, updatedAt, logs };
+        try {
+            const savedReport = await apiRequest('POST', '/api/bug-reports', { ...rest, status: 'Open', tags: [reportType] });
+            if (savedReport) {
+                setBugReports(prev => [savedReport, ...prev].sort((a,b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
+            }
+        } catch(e) {
+            // apiRequest will show a notification
+        }
     };
-    
+    const updateBugReport = async (reportId: string, updates: Partial<BugReport>) => {
+        registerOptimisticUpdate(`bugReport-${reportId}`);
+        const originalReports = [...bugReports];
+        setBugReports(prev => prev.map(r => r.id === reportId ? { ...r, ...updates, updatedAt: new Date().toISOString() } : r));
+        try {
+            const updatedReportFromServer = await apiRequest('PUT', `/api/bug-reports/${reportId}`, updates);
+            setBugReports(prev => prev.map(r => r.id === reportId ? updatedReportFromServer : r));
+        } catch (e) {
+            setBugReports(originalReports);
+            addNotification({type: 'error', message: 'Failed to update report. Reverting changes.'})
+        }
+    };
+    const deleteBugReports = async (reportIds: string[]) => {
+        const originalReports = bugReports;
+        setBugReports(prev => prev.filter(r => !reportIds.includes(r.id)));
+        try {
+            await apiRequest('DELETE', '/api/bug-reports', { ids: reportIds });
+        } catch (e) {
+            setBugReports(originalReports);
+        }
+    };
+    const importBugReports = async (reports: BugReport[], mode: 'merge' | 'replace') => {
+        try {
+            const updatedReports = await apiRequest('POST', '/api/bug-reports/import', { reports, mode });
+            if (updatedReports) {
+                setBugReports(updatedReports);
+            }
+            addNotification({ type: 'success', message: 'Import successful!' });
+        } catch(e) {
+            // apiRequest handles notification
+        }
+    };
+    const restoreFromBackup = async (backupData: IAppData) => { apiRequest('POST', '/api/data/restore', backupData).then(() => { addNotification({ type: 'success', message: 'Restore successful! App will reload.' }); setTimeout(() => window.location.reload(), 1500); }).catch(() => {}); };
+    const clearAllHistory = () => { apiRequest('POST', '/api/actions/clear-history').catch(() => {}); };
+    const resetAllPlayerData = () => { authDispatch.resetAllUsersData(); };
+    const deleteAllCustomContent = () => { apiRequest('POST', '/api/data/delete-custom-content').catch(() => {}); };
+    const uploadFile = async (file: File, category?: string) => {
+        const formData = new FormData();
+        formData.append('file', file);
+        if (category) formData.append('category', category);
+        try {
+            const response = await fetch('/api/media/upload', { method: 'POST', body: formData });
+            if (!response.ok) throw new Error('Upload failed');
+            return await response.json();
+        } catch { addNotification({type: 'error', message: 'File upload failed.'}); return null; }
+    };
+    const factoryReset = async () => { apiRequest('POST', '/api/data/factory-reset').then(() => { addNotification({ type: 'success', message: 'Factory reset initiated. The app will restart.' }); setTimeout(() => window.location.reload(), 2000); }).catch(() => {}); };
+    const updateSettings = async (newSettings: Partial<AppSettings>) => { registerOptimisticUpdate('settings'); setSettings(prev => ({...prev, ...newSettings})); apiRequest('PUT', '/api/settings', {...settings, ...newSettings}).catch(() => {}); };
+    const resetSettings = () => updateSettings(INITIAL_SETTINGS);
+    const applySettingsUpdates = () => {
+        const newSettings = JSON.parse(JSON.stringify(settings));
+
+        const objectsToMerge: (keyof AppSettings)[] = [
+            'questDefaults', 'security', 'sharedMode', 'automatedBackups',
+            'loginNotifications', 'googleCalendar', 'developerMode',
+            'chat', 'terminology', 'rewardValuation'
+        ];
+
+        objectsToMerge.forEach(key => {
+            const initialVal = INITIAL_SETTINGS[key];
+            const newVal = newSettings[key];
+
+            // Ensure newVal is a non-array object before proceeding.
+            if (typeof newVal === 'object' && newVal !== null && !Array.isArray(newVal)) {
+                // Ensure initialVal is also a non-array object, otherwise use an empty object.
+                const initialObj = (typeof initialVal === 'object' && initialVal !== null && !Array.isArray(initialVal))
+                    ? initialVal
+                    : {};
+                
+                // Merge the initial/default object with the user's settings object.
+                // The type guard on newVal should be sufficient for TypeScript here.
+                (newSettings[key] as any) = { ...initialObj, ...(newVal as object) };
+            }
+        });
+
+        const userItemsById = new Map(
+            (newSettings.sidebars?.main || []).map((item: SidebarConfigItem) => [item.id, item])
+        );
+        
+        const finalSidebar = INITIAL_SETTINGS.sidebars.main.map((defaultItem: SidebarConfigItem) => {
+            if (userItemsById.has(defaultItem.id)) {
+                const userItem = userItemsById.get(defaultItem.id);
+                const userItemObject = (userItem && typeof userItem === 'object') ? userItem : {};
+                return { ...defaultItem, ...userItemObject };
+            }
+            return defaultItem;
+        });
+
+        if (!newSettings.sidebars) {
+            newSettings.sidebars = { main: [] };
+        }
+        newSettings.sidebars.main = finalSidebar;
+        
+        updateSettings(newSettings);
+        addNotification({type: 'success', message: 'Feature updates applied successfully!'});
+    };
+    const sendMessage = async (message: Omit<ChatMessage, 'id' | 'timestamp' | 'readBy' | 'senderId'> & { isAnnouncement?: boolean }) => {
+        if (!currentUserRef.current) return;
+        const notifId = addNotification({ message: 'Sending...', type: 'info', duration: 0 });
+        try { await apiRequest('POST', '/api/chat/send', { ...message, senderId: currentUserRef.current.id }); updateNotification(notifId, { message: 'Message sent!', type: 'success', duration: 3000 }); }
+        catch { updateNotification(notifId, { message: 'Failed to send.', type: 'error', duration: 5000 }); }
+    };
+    const markMessagesAsRead = (params: { partnerId?: string; guildId?: string; }) => { if (!currentUserRef.current) return; apiRequest('POST', '/api/chat/read', { ...params, userId: currentUserRef.current.id }).catch(() => {}); };
+    const addSystemNotification = (notification: Omit<SystemNotification, 'id' | 'timestamp' | 'readByUserIds'>) => { if (!notification.recipientUserIds || notification.recipientUserIds.length === 0) return; setSystemNotifications(prev => [...prev, { id: `sysnotif-${Date.now()}`, timestamp: new Date().toISOString(), readByUserIds: [], ...notification }]); };
+    const markSystemNotificationsAsRead = (notificationIds: string[]) => { if (!currentUserRef.current) return; const id = currentUserRef.current.id; setSystemNotifications(prev => prev.map(n => notificationIds.includes(n.id) && !n.readByUserIds.includes(id) ? { ...n, readByUserIds: [...n.readByUserIds, id] } : n)); };
     const awardTrophy = (userId: string, trophyId: string, guildId?: string) => {
       const t = trophies.find(trophy => trophy.id === trophyId);
       if (t) {
@@ -583,246 +703,158 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         addSystemNotification({ type: SystemNotificationType.TrophyAwarded, message: `You unlocked a new trophy: "${t.name}"!`, recipientUserIds: [userId], guildId, icon: t.icon, link: 'Trophies' });
       }
     };
-    
-    const updateQuest = (updatedQuest: Quest) => {
-      registerOptimisticUpdate(`quest-${updatedQuest.id}`);
-      apiRequest('PUT', `/api/quests/${updatedQuest.id}`, updatedQuest).catch(() => {});
+    const applyManualAdjustment = (adj: Omit<AdminAdjustment, 'id'|'adjustedAt'>): boolean => {
+      if (adj.type === AdminAdjustmentType.Setback) {
+        if (!deductRewards(adj.userId, adj.setbacks, adj.guildId)) {
+            return false; // Deduction failed, so don't log the adjustment.
+        }
+      }
+      
+      const fullAdj = {...adj, id: `adj-${Date.now()}`, adjustedAt: new Date().toISOString() };
+      setAdminAdjustments(p => [...p, fullAdj]);
+      
+      if (adj.type === AdminAdjustmentType.Trophy && adj.trophyId) {
+        awardTrophy(adj.userId, adj.trophyId, adj.guildId);
+      } else if (adj.type === AdminAdjustmentType.Reward) {
+        applyRewards(adj.userId, adj.rewards, adj.guildId);
+      }
+      return true;
+    };
+    const deleteSelectedAssets = async (selection: Partial<Record<ShareableAssetType, string[]>>, onComplete?: () => void) => {
+      for (const [assetType, ids] of Object.entries(selection)) {
+        if (ids && ids.length > 0) {
+          try {
+            await apiRequest('DELETE', `/api/${assetType}`, { ids });
+          } catch (error) { console.error(`Failed to delete ${assetType}:`, error); }
+        }
+      }
+      addNotification({ type: 'success', message: 'Selected assets have been deleted.' });
+      if (onComplete) onComplete();
     };
     
-    const updateGameAsset = async (asset: GameAsset) => {
-      registerOptimisticUpdate(`gameAsset-${asset.id}`);
-      apiRequest('PUT', `/api/assets/${asset.id}`, asset).catch(() => {});
+    // QuestDispatch functions
+    const updateQuest = (updatedQuest: Quest) => { registerOptimisticUpdate(`quest-${updatedQuest.id}`); apiRequest('PUT', `/api/quests/${updatedQuest.id}`, updatedQuest).catch(() => {}); };
+    const addQuest = (quest: Omit<Quest, 'id'|'claimedByUserIds'|'dismissals'>) => { apiRequest('POST', '/api/quests', quest).catch(() => {}); };
+    const deleteQuest = (questId: string) => { apiRequest('DELETE', '/api/quests', { ids: [questId] }).catch(() => {}); };
+    const cloneQuest = (questId: string) => { apiRequest('POST', `/api/quests/clone/${questId}`).catch(() => {}); };
+    const dismissQuest = (questId: string, userId: string) => { const q = quests.find(q=>q.id===questId); if(q) updateQuest({...q, dismissals: [...q.dismissals, { userId, dismissedAt: new Date().toISOString() }]}); };
+    const claimQuest = (questId: string, userId: string) => { const q = quests.find(q=>q.id===questId); if(q) updateQuest({...q, claimedByUserIds: [...(q.claimedByUserIds || []), userId]}); };
+    const releaseQuest = (questId: string, userId: string) => { const q = quests.find(q=>q.id===questId); if(q) updateQuest({...q, claimedByUserIds: (q.claimedByUserIds || []).filter(id => id !== userId)}); };
+    const markQuestAsTodo = (questId: string, userId: string) => { const q = quests.find(q=>q.id===questId); if(q) updateQuest({ ...q, todoUserIds: [...(q.todoUserIds || []), userId] }); };
+    const unmarkQuestAsTodo = (questId: string, userId: string) => { const q = quests.find(q=>q.id===questId); if(q) updateQuest({ ...q, todoUserIds: (q.todoUserIds || []).filter(id => id !== userId) }); };
+    const completeQuest = async (completionData: any) => { registerOptimisticUpdate(`user-${completionData.userId}`); apiRequest('POST', '/api/actions/complete-quest', { completionData }).catch(() => {}); };
+    const approveQuestCompletion = async (completionId: string, note?: string) => { registerOptimisticUpdate(`questCompletion-${completionId}`); apiRequest('POST', `/api/actions/approve-quest/${completionId}`, { note }).catch(() => {}); };
+    const rejectQuestCompletion = async (completionId: string, note?: string) => { registerOptimisticUpdate(`questCompletion-${completionId}`); apiRequest('POST', `/api/actions/reject-quest/${completionId}`, { note }).catch(() => {}); };
+    const addQuestGroup = (group: Omit<QuestGroup, 'id'>) => { const newGroup = { ...group, id: `qg-${Date.now()}` }; setQuestGroups(prev => [...prev, newGroup]); return newGroup; };
+    const updateQuestGroup = (group: QuestGroup) => { registerOptimisticUpdate(`questGroup-${group.id}`); setQuestGroups(prev => prev.map(g => g.id === group.id ? group : g)); };
+    const deleteQuestGroup = (groupId: string) => { setQuestGroups(prev => prev.filter(g => g.id !== groupId)); setQuests(prev => prev.map(q => q.groupId === groupId ? { ...q, groupId: undefined } : q)); };
+    const deleteQuestGroups = (groupIds: string[]) => {
+      setQuestGroups(prev => prev.filter(g => !groupIds.includes(g.id)));
+      setQuests(prev => prev.map(q => q.groupId && groupIds.includes(q.groupId) ? { ...q, groupId: undefined } : q));
     };
+    const assignQuestGroupToUsers = (groupId: string, userIds: string[]) => {
+      const questsToUpdate = quests.filter(q => q.groupId === groupId);
+      questsToUpdate.forEach(q => {
+        const newAssigned = Array.from(new Set([...q.assignedUserIds, ...userIds]));
+        updateQuest({ ...q, assignedUserIds: newAssigned });
+      });
+    };
+    const deleteQuests = (questIds: string[]) => { apiRequest('DELETE', '/api/quests', { ids: questIds }).catch(() => {}); };
+    const updateQuestsStatus = (questIds: string[], isActive: boolean) => { apiRequest('PUT', '/api/quests/bulk-status', { ids: questIds, isActive }).catch(() => {}); };
+    const bulkUpdateQuests = async (questIds: string[], updates: BulkQuestUpdates) => { await apiRequest('PUT', '/api/quests/bulk-update', { ids: questIds, updates }); };
+    const addRotation = async (rotation: Omit<Rotation, 'id'>) => { apiRequest('POST', '/api/rotations', rotation).catch(() => {}); };
+    const updateRotation = async (rotation: Rotation) => { registerOptimisticUpdate(`rotation-${rotation.id}`); apiRequest('PUT', `/api/rotations/${rotation.id}`, rotation).catch(() => {}); };
+    const deleteRotation = async (rotationId: string) => { apiRequest('DELETE', `/api/rotations/${rotationId}`).catch(() => {}); };
     
-    // --- DISPATCH OBJECT ---
+    // Economy Functions
+    const addRewardType = async (rewardType: Omit<RewardTypeDefinition, 'id' | 'isCore'>) => { apiRequest('POST', '/api/reward-types', rewardType).catch(() => {}); };
+    const updateRewardType = async (rewardType: RewardTypeDefinition) => { registerOptimisticUpdate(`rewardType-${rewardType.id}`); apiRequest('PUT', `/api/reward-types/${rewardType.id}`, rewardType).catch(() => {}); };
+    const deleteRewardType = async (rewardTypeId: string) => { apiRequest('DELETE', '/api/reward-types', { ids: [rewardTypeId] }).catch(() => {}); };
+    const cloneRewardType = async (rewardTypeId: string) => { apiRequest('POST', `/api/reward-types/clone/${rewardTypeId}`).catch(() => {}); };
+    const addMarket = async (market: Omit<Market, 'id'>) => { apiRequest('POST', '/api/markets', market).catch(() => {}); };
+    const updateMarket = async (market: Market) => { registerOptimisticUpdate(`market-${market.id}`); apiRequest('PUT', `/api/markets/${market.id}`, market).catch(() => {}); };
+    const deleteMarket = async (marketId: string) => { apiRequest('DELETE', '/api/markets', { ids: [marketId] }).catch(() => {}); };
+    const cloneMarket = async (marketId: string) => { apiRequest('POST', `/api/markets/clone/${marketId}`).catch(() => {}); };
+    const deleteMarkets = async (marketIds: string[]) => { apiRequest('DELETE', '/api/markets', { ids: marketIds }).catch(() => {}); };
+    const updateMarketsStatus = async (marketIds: string[], statusType: 'open' | 'closed') => { apiRequest('PUT', '/api/markets/bulk-status', { ids: marketIds, statusType }).catch(() => {}); };
+    const addGameAsset = async (asset: Omit<GameAsset, 'id' | 'creatorId' | 'createdAt' | 'purchaseCount'>) => { apiRequest('POST', '/api/assets', asset).catch(() => {}); };
+    const updateGameAsset = async (asset: GameAsset) => { registerOptimisticUpdate(`gameAsset-${asset.id}`); apiRequest('PUT', `/api/assets/${asset.id}`, asset).catch(() => {}); };
+    const cloneGameAsset = async (assetId: string) => { apiRequest('POST', `/api/assets/clone/${assetId}`).catch(() => {}); };
+    const deleteGameAssets = async (assetIds: string[]) => { apiRequest('DELETE', '/api/assets', { ids: assetIds }).catch(() => {}); };
+    const purchaseMarketItem = (assetId: string, marketId: string, user: User, costGroupIndex: number) => {
+      const asset = gameAssets.find(a => a.id === assetId);
+      if (!asset) { addNotification({ type: 'error', message: 'Item not found.' }); return; }
+
+      const finalCostGroups = getFinalCostGroups(asset.costGroups, marketId, assetId, scheduledEvents);
+      const cost = finalCostGroups[costGroupIndex];
+      if (!cost) { addNotification({ type: 'error', message: 'Invalid cost selection.' }); return; }
+
+      const guildId = appMode.mode === 'guild' ? appMode.guildId : undefined;
+      const canAfford = cost.every(item => {
+        const balances = guildId ? user.guildBalances[guildId] : { purse: user.personalPurse, experience: user.personalExperience };
+        if (!balances) return false;
+        const rewardDef = rewardTypes.find(rt => rt.id === item.rewardTypeId);
+        const balance = rewardDef?.category === RewardCategory.Currency ? (balances.purse?.[item.rewardTypeId] || 0) : (balances.experience?.[item.rewardTypeId] || 0);
+        return balance >= item.amount;
+      });
+
+      if (!canAfford) { addNotification({ type: 'error', message: "You can't afford this item." }); return; }
+
+      if (asset.requiresApproval) {
+        const newRequest: PurchaseRequest = {
+          id: `pr-${Date.now()}`,
+          userId: user.id,
+          assetId: asset.id,
+          requestedAt: new Date().toISOString(),
+          status: PurchaseRequestStatus.Pending,
+          assetDetails: { name: asset.name, description: asset.description, cost },
+          guildId,
+        };
+        setPurchaseRequests(prev => [...prev, newRequest]);
+        addNotification({ type: 'info', message: 'Purchase requested. Awaiting approval.' });
+      } else {
+        if (deductRewards(user.id, cost, guildId)) {
+            authDispatch.updateUser(user.id, u => ({ ownedAssetIds: [...(u.ownedAssetIds || []), asset.id] }));
+            updateGameAsset({ ...asset, purchaseCount: (asset.purchaseCount || 0) + 1 });
+            addNotification({ type: 'success', message: `Purchased ${asset.name}!` });
+        }
+      }
+    };
+    const cancelPurchaseRequest = (purchaseId: string) => { setPurchaseRequests(p => p.map(req => req.id === purchaseId ? { ...req, status: PurchaseRequestStatus.Cancelled, actedAt: new Date().toISOString() } : req)); };
+    const approvePurchaseRequest = (purchaseId: string) => {
+      const request = purchaseRequests.find(r => r.id === purchaseId);
+      if (!request) return;
+      if (deductRewards(request.userId, request.assetDetails.cost, request.guildId)) {
+        authDispatch.updateUser(request.userId, u => ({ ownedAssetIds: [...(u.ownedAssetIds || []), request.assetId] }));
+        setGameAssets(p => p.map(a => a.id === request.assetId ? { ...a, purchaseCount: (a.purchaseCount || 0) + 1 } : a));
+        setPurchaseRequests(p => p.map(req => req.id === purchaseId ? { ...req, status: PurchaseRequestStatus.Completed, actedAt: new Date().toISOString() } : req));
+      } else {
+        addNotification({type:'error', message: 'User could not afford this item at time of approval.'});
+      }
+    };
+    const rejectPurchaseRequest = (purchaseId: string) => { setPurchaseRequests(p => p.map(req => req.id === purchaseId ? { ...req, status: PurchaseRequestStatus.Rejected, actedAt: new Date().toISOString() } : req)); };
+    const executeExchange = async (userId: string, payItem: RewardItem, receiveItem: RewardItem, guildId?: string) => { apiRequest('POST', '/api/actions/execute-exchange', { userId, payItem, receiveItem, guildId }).catch(() => {}); };
+    const importAssetPack = async (assetPack: AssetPack, resolutions: ImportResolution[], allData: IAppData) => { apiRequest('POST', '/api/data/import-assets', { assetPack, resolutions }).catch(() => {}); };
+    
     return {
       setQuests, setQuestGroups, setQuestCompletions, setMarkets, setRewardTypes,
       setPurchaseRequests, setGameAssets, setActivePage: setActivePageStable, toggleSidebar,
-      toggleChat, setAppMode, setActiveMarketId, setRanks, setRotations,
-      
-      addGuild: async (guild: Omit<Guild, 'id'>) => {
-          const optimisticGuild = { ...guild, id: `temp-guild-${Date.now()}`, memberIds: guild.memberIds || [] };
-          setGuilds(prev => [...prev, optimisticGuild]);
-          try { const savedGuild = await apiRequest('POST', '/api/guilds', guild); setGuilds(prev => prev.map(g => g.id === optimisticGuild.id ? savedGuild : g)); } 
-          catch { setGuilds(prev => prev.filter(g => g.id !== optimisticGuild.id)); }
-      },
-      updateGuild: async (guild: Guild) => { registerOptimisticUpdate(`guild-${guild.id}`); apiRequest('PUT', `/api/guilds/${guild.id}`, guild).catch(() => {}); },
-      deleteGuild: async (guildId: string) => { apiRequest('DELETE', `/api/guilds/${guildId}`).catch(() => {}); },
-      addTrophy: (trophy: Omit<Trophy, 'id'>) => setTrophies(prev => [...prev, { ...trophy, id: `trophy-${Date.now()}` }]),
-      updateTrophy: (trophy: Trophy) => { registerOptimisticUpdate(`trophy-${trophy.id}`); setTrophies(prev => prev.map(t => t.id === trophy.id ? trophy : t)); },
-      addTheme: (theme: Omit<ThemeDefinition, 'id'>) => setThemes(p => [...p, { ...theme, id: `theme-${Date.now()}` }]),
-      updateTheme: (theme: ThemeDefinition) => { registerOptimisticUpdate(`theme-${theme.id}`); setThemes(p => p.map(t => t.id === theme.id ? theme : t)); },
-      deleteTheme: (themeId: string) => setThemes(p => p.filter(t => t.id !== themeId)),
-      addScheduledEvent: async (event: Omit<ScheduledEvent, 'id'>) => { apiRequest('POST', '/api/events', event).catch(() => {}); },
-      updateScheduledEvent: async (event: ScheduledEvent) => { registerOptimisticUpdate(`scheduledEvent-${event.id}`); apiRequest('PUT', `/api/events/${event.id}`, event).catch(() => {}); },
-      deleteScheduledEvent: async (eventId: string) => { apiRequest('DELETE', `/api/events/${eventId}`).catch(() => {}); },
-      addBugReport: async (report: Omit<BugReport, 'id' | 'status' | 'tags'> & { reportType: BugReportType }) => {
-          const { reportType, title, createdAt, updatedAt, logs } = report;
-          const rest = { title, createdAt, updatedAt, logs };
-          try {
-              const savedReport = await apiRequest('POST', '/api/bug-reports', { ...rest, status: 'Open', tags: [reportType] });
-              if (savedReport) {
-                  setBugReports(prev => [savedReport, ...prev].sort((a,b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
-              }
-          } catch(e) { /* apiRequest will show a notification */ }
-      },
-      updateBugReport: async (reportId: string, updates: Partial<BugReport>) => {
-          registerOptimisticUpdate(`bugReport-${reportId}`);
-          const originalReports = [...bugReports];
-          setBugReports(prev => prev.map(r => r.id === reportId ? { ...r, ...updates, updatedAt: new Date().toISOString() } : r));
-          try {
-              const updatedReportFromServer = await apiRequest('PUT', `/api/bug-reports/${reportId}`, updates);
-              setBugReports(prev => prev.map(r => r.id === reportId ? updatedReportFromServer : r));
-          } catch (e) {
-              setBugReports(originalReports);
-              addNotification({type: 'error', message: 'Failed to update report. Reverting changes.'})
-          }
-      },
-      deleteBugReports: async (reportIds: string[]) => {
-          const originalReports = bugReports;
-          setBugReports(prev => prev.filter(r => !reportIds.includes(r.id)));
-          try { await apiRequest('DELETE', '/api/bug-reports', { ids: reportIds }); } 
-          catch (e) { setBugReports(originalReports); }
-      },
-      importBugReports: async (reports: BugReport[], mode: 'merge' | 'replace') => {
-          try {
-              const updatedReports = await apiRequest('POST', '/api/bug-reports/import', { reports, mode });
-              if (updatedReports) setBugReports(updatedReports);
-              addNotification({ type: 'success', message: 'Import successful!' });
-          } catch(e) { /* apiRequest handles notification */ }
-      },
-      uploadFile: async (file: File, category?: string) => {
-          const formData = new FormData();
-          formData.append('file', file);
-          if (category) formData.append('category', category);
-          try {
-              const response = await fetch('/api/media/upload', { method: 'POST', body: formData });
-              if (!response.ok) throw new Error('Upload failed');
-              return await response.json();
-          } catch { addNotification({type: 'error', message: 'File upload failed.'}); return null; }
-      },
-      
-      restoreFromBackup: (backupData: IAppData) => apiRequest('POST', '/api/data/restore', backupData).then(() => { addNotification({ type: 'success', message: 'Restore successful! App will reload.' }); setTimeout(() => window.location.reload(), 1500); }).catch(() => {}),
-      clearAllHistory: () => apiRequest('POST', '/api/actions/clear-history').catch(() => {}),
-      resetAllPlayerData: () => apiRequest('POST', '/api/actions/reset-all-player-data').catch(() => {}),
-      deleteAllCustomContent: () => apiRequest('POST', '/api/data/delete-custom-content').catch(() => {}),
-      factoryReset: async () => apiRequest('POST', '/api/data/factory-reset').then(() => { addNotification({ type: 'success', message: 'Factory reset initiated. The app will restart.' }); setTimeout(() => window.location.reload(), 2000); }).catch(err => {}),
-
-      updateSettings,
-      resetSettings: () => updateSettings(INITIAL_SETTINGS),
-      applySettingsUpdates: () => {
-          const newSettings = JSON.parse(JSON.stringify(settings));
-          const objectsToMerge: (keyof AppSettings)[] = ['questDefaults', 'security', 'sharedMode', 'automatedBackups', 'loginNotifications', 'googleCalendar', 'developerMode', 'chat', 'terminology', 'rewardValuation'];
-          objectsToMerge.forEach(key => {
-              const initialVal = INITIAL_SETTINGS[key]; const newVal = newSettings[key];
-              if (typeof newVal === 'object' && newVal !== null && !Array.isArray(newVal)) {
-                  const initialObj = (typeof initialVal === 'object' && initialVal !== null && !Array.isArray(initialVal)) ? initialVal : {};
-                  (newSettings[key] as any) = { ...initialObj, ...(newVal as object) };
-              }
-          });
-          const userItemsById = new Map((newSettings.sidebars?.main || []).map((item: SidebarConfigItem) => [item.id, item]));
-          const finalSidebar = INITIAL_SETTINGS.sidebars.main.map((defaultItem: SidebarConfigItem) => {
-              if (userItemsById.has(defaultItem.id)) {
-                  const userItem = userItemsById.get(defaultItem.id);
-                  const userItemObject = (userItem && typeof userItem === 'object') ? userItem : {};
-                  return { ...defaultItem, ...userItemObject };
-              }
-              return defaultItem;
-          });
-          if (!newSettings.sidebars) newSettings.sidebars = { main: [] };
-          newSettings.sidebars.main = finalSidebar;
-          updateSettings(newSettings);
-          addNotification({type: 'success', message: 'Feature updates applied successfully!'});
-      },
-      sendMessage: async (message: Omit<ChatMessage, 'id' | 'timestamp' | 'readBy' | 'senderId'> & { isAnnouncement?: boolean }) => {
-          if (!currentUserRef.current) return;
-          const notifId = addNotification({ message: 'Sending...', type: 'info', duration: 0 });
-          try { await apiRequest('POST', '/api/chat/send', { ...message, senderId: currentUserRef.current.id }); updateNotification(notifId, { message: 'Message sent!', type: 'success', duration: 3000 }); }
-          catch { updateNotification(notifId, { message: 'Failed to send.', type: 'error', duration: 5000 }); }
-      },
-      markMessagesAsRead: (params: { partnerId?: string; guildId?: string; }) => { if (!currentUserRef.current) return; apiRequest('POST', '/api/chat/read', { ...params, userId: currentUserRef.current.id }).catch(() => {}); },
-      addSystemNotification,
-      markSystemNotificationsAsRead: (notificationIds: string[]) => { if (!currentUserRef.current) return; const id = currentUserRef.current.id; setSystemNotifications(prev => prev.map(n => notificationIds.includes(n.id) && !n.readByUserIds.includes(id) ? { ...n, readByUserIds: [...n.readByUserIds, id] } : n)); },
-      triggerSync: performDeltaSync,
-      registerOptimisticUpdate,
-      awardTrophy,
-      applyManualAdjustment: (adj: Omit<AdminAdjustment, 'id'|'adjustedAt'>): boolean => {
-        if (adj.type === AdminAdjustmentType.Setback) {
-          if (!deductRewards(adj.userId, adj.setbacks, adj.guildId)) {
-              return false; // Deduction failed, so don't log the adjustment.
-          }
-        }
-        const fullAdj = {...adj, id: `adj-${Date.now()}`, adjustedAt: new Date().toISOString() };
-        setAdminAdjustments(p => [...p, fullAdj]);
-        if (adj.type === AdminAdjustmentType.Trophy && adj.trophyId) {
-          awardTrophy(adj.userId, adj.trophyId, adj.guildId);
-        } else if (adj.type === AdminAdjustmentType.Reward) {
-          applyRewards(adj.userId, adj.rewards, adj.guildId);
-        }
-        return true;
-      },
-      deleteSelectedAssets: async (selection: Partial<Record<ShareableAssetType, string[]>>, onComplete?: () => void) => {
-        for (const [assetType, ids] of Object.entries(selection)) {
-          if (ids && ids.length > 0) {
-            try { await apiRequest('DELETE', `/api/${assetType}`, { ids }); } 
-            catch (error) { console.error(`Failed to delete ${assetType}:`, error); }
-          }
-        }
-        addNotification({ type: 'success', message: 'Selected assets have been deleted.' });
-        if (onComplete) {
-          onComplete();
-        }
-      },
-      addQuest: (quest: Omit<Quest, 'id'|'claimedByUserIds'|'dismissals'>) => { apiRequest('POST', '/api/quests', quest).catch(() => {}); },
-      updateQuest,
-      deleteQuest: (questId: string) => { apiRequest('DELETE', '/api/quests', { ids: [questId] }).catch(() => {}); },
-      cloneQuest: (questId: string) => { apiRequest('POST', `/api/quests/clone/${questId}`).catch(() => {}); },
-      dismissQuest: (questId: string, userId: string) => { const q = quests.find(q=>q.id===questId); if(q) updateQuest({...q, dismissals: [...q.dismissals, { userId, dismissedAt: new Date().toISOString() }]}); },
-      claimQuest: (questId: string, userId: string) => { const q = quests.find(q=>q.id===questId); if(q) updateQuest({...q, claimedByUserIds: [...(q.claimedByUserIds || []), userId]}); },
-      releaseQuest: (questId: string, userId: string) => { const q = quests.find(q=>q.id===questId); if(q) updateQuest({...q, claimedByUserIds: (q.claimedByUserIds || []).filter(id => id !== userId)}); },
-      markQuestAsTodo: (questId: string, userId: string) => { const q = quests.find(q=>q.id===questId); if(q) updateQuest({ ...q, todoUserIds: [...(q.todoUserIds || []), userId] }); },
-      unmarkQuestAsTodo: (questId: string, userId: string) => { const q = quests.find(q=>q.id===questId); if(q) updateQuest({ ...q, todoUserIds: (q.todoUserIds || []).filter(id => id !== userId) }); },
-      completeQuest: async (completionData: any) => { registerOptimisticUpdate(`user-${completionData.userId}`); apiRequest('POST', '/api/actions/complete-quest', { completionData }).catch(() => {}); },
-      approveQuestCompletion: async (completionId: string, note?: string) => { registerOptimisticUpdate(`questCompletion-${completionId}`); apiRequest('POST', `/api/actions/approve-quest/${completionId}`, { note }).catch(() => {}); },
-      rejectQuestCompletion: async (completionId: string, note?: string) => { registerOptimisticUpdate(`questCompletion-${completionId}`); apiRequest('POST', `/api/actions/reject-quest/${completionId}`, { note }).catch(() => {}); },
-      addQuestGroup: (group: Omit<QuestGroup, 'id'>) => { const newGroup = { ...group, id: `qg-${Date.now()}` }; setQuestGroups(prev => [...prev, newGroup]); return newGroup; },
-      updateQuestGroup: (group: QuestGroup) => { registerOptimisticUpdate(`questGroup-${group.id}`); setQuestGroups(prev => prev.map(g => g.id === group.id ? group : g)); },
-      deleteQuestGroup: (groupId: string) => { setQuestGroups(prev => prev.filter(g => g.id !== groupId)); setQuests(prev => prev.map(q => q.groupId === groupId ? { ...q, groupId: undefined } : q)); },
-      deleteQuestGroups: (groupIds: string[]) => {
-        setQuestGroups(prev => prev.filter(g => !groupIds.includes(g.id)));
-        setQuests(prev => prev.map(q => q.groupId && groupIds.includes(q.groupId) ? { ...q, groupId: undefined } : q));
-      },
-      assignQuestGroupToUsers: (groupId: string, userIds: string[]) => {
-        const questsToUpdate = quests.filter(q => q.groupId === groupId);
-        questsToUpdate.forEach(q => {
-          const newAssigned = Array.from(new Set([...q.assignedUserIds, ...userIds]));
-          updateQuest({ ...q, assignedUserIds: newAssigned });
-        });
-      },
-      deleteQuests: (questIds: string[]) => { apiRequest('DELETE', '/api/quests', { ids: questIds }).catch(() => {}); },
-      updateQuestsStatus: (questIds: string[], isActive: boolean) => { apiRequest('PUT', '/api/quests/bulk-status', { ids: questIds, isActive }).catch(() => {}); },
-      bulkUpdateQuests: async (questIds: string[], updates: BulkQuestUpdates) => { await apiRequest('PUT', '/api/quests/bulk-update', { ids: questIds, updates }); },
-      addRotation: async (rotation: Omit<Rotation, 'id'>) => { apiRequest('POST', '/api/rotations', rotation).catch(() => {}); },
-      updateRotation: async (rotation: Rotation) => { registerOptimisticUpdate(`rotation-${rotation.id}`); apiRequest('PUT', `/api/rotations/${rotation.id}`, rotation).catch(() => {}); },
-      deleteRotation: async (rotationId: string) => { apiRequest('DELETE', `/api/rotations/${rotationId}`).catch(() => {}); },
-      addRewardType: async (rewardType: Omit<RewardTypeDefinition, 'id' | 'isCore'>) => { apiRequest('POST', '/api/reward-types', rewardType).catch(() => {}); },
-      updateRewardType: async (rewardType: RewardTypeDefinition) => { registerOptimisticUpdate(`rewardType-${rewardType.id}`); apiRequest('PUT', `/api/reward-types/${rewardType.id}`, rewardType).catch(() => {}); },
-      deleteRewardType: async (rewardTypeId: string) => { apiRequest('DELETE', '/api/reward-types', { ids: [rewardTypeId] }).catch(() => {}); },
-      cloneRewardType: async (rewardTypeId: string) => { apiRequest('POST', `/api/reward-types/clone/${rewardTypeId}`).catch(() => {}); },
-      addMarket: async (market: Omit<Market, 'id'>) => { apiRequest('POST', '/api/markets', market).catch(() => {}); },
-      updateMarket: async (market: Market) => { registerOptimisticUpdate(`market-${market.id}`); apiRequest('PUT', `/api/markets/${market.id}`, market).catch(() => {}); },
-      deleteMarket: async (marketId: string) => { apiRequest('DELETE', '/api/markets', { ids: [marketId] }).catch(() => {}); },
-      cloneMarket: async (marketId: string) => { apiRequest('POST', `/api/markets/clone/${marketId}`).catch(() => {}); },
-      deleteMarkets: async (marketIds: string[]) => { apiRequest('DELETE', '/api/markets', { ids: marketIds }).catch(() => {}); },
-      updateMarketsStatus: async (marketIds: string[], statusType: 'open' | 'closed') => { apiRequest('PUT', '/api/markets/bulk-status', { ids: marketIds, statusType }).catch(() => {}); },
-      addGameAsset: async (asset: Omit<GameAsset, 'id' | 'creatorId' | 'createdAt' | 'purchaseCount'>) => { apiRequest('POST', '/api/assets', asset).catch(() => {}); },
-      updateGameAsset,
-      cloneGameAsset: async (assetId: string) => { apiRequest('POST', `/api/assets/clone/${assetId}`).catch(() => {}); },
-      deleteGameAssets: async (assetIds: string[]) => { apiRequest('DELETE', '/api/assets', { ids: assetIds }).catch(() => {}); },
-      purchaseMarketItem: (assetId: string, marketId: string, user: User, costGroupIndex: number) => {
-        const asset = gameAssets.find(a => a.id === assetId);
-        if (!asset) { addNotification({ type: 'error', message: 'Item not found.' }); return; }
-        const finalCostGroups = getFinalCostGroups(asset.costGroups, marketId, assetId, scheduledEvents);
-        const cost = finalCostGroups[costGroupIndex];
-        if (!cost) { addNotification({ type: 'error', message: 'Invalid cost selection.' }); return; }
-        const guildId = appMode.mode === 'guild' ? appMode.guildId : undefined;
-        if (!cost.every(item => {
-          const balances = guildId ? user.guildBalances[guildId] : { purse: user.personalPurse, experience: user.personalExperience }; if (!balances) return false;
-          const rewardDef = rewardTypes.find(rt => rt.id === item.rewardTypeId);
-          const balance = rewardDef?.category === RewardCategory.Currency ? (balances.purse?.[item.rewardTypeId] || 0) : (balances.experience?.[item.rewardTypeId] || 0);
-          return balance >= item.amount;
-        })) { addNotification({ type: 'error', message: "You can't afford this item." }); return; }
-        if (asset.requiresApproval) {
-          const newRequest: PurchaseRequest = { id: `pr-${Date.now()}`, userId: user.id, assetId: asset.id, requestedAt: new Date().toISOString(), status: PurchaseRequestStatus.Pending, assetDetails: { name: asset.name, description: asset.description, cost }, guildId, };
-          setPurchaseRequests(prev => [...prev, newRequest]);
-          addNotification({ type: 'info', message: 'Purchase requested. Awaiting approval.' });
-        } else {
-          if (deductRewards(user.id, cost, guildId)) {
-              authDispatch.updateUser(user.id, u => ({ ownedAssetIds: [...(u.ownedAssetIds || []), asset.id] }));
-              updateGameAsset({ ...asset, purchaseCount: (asset.purchaseCount || 0) + 1 });
-              addNotification({ type: 'success', message: `Purchased ${asset.name}!` });
-          }
-        }
-      },
-      cancelPurchaseRequest: (purchaseId: string) => { setPurchaseRequests(p => p.map(req => req.id === purchaseId ? { ...req, status: PurchaseRequestStatus.Cancelled, actedAt: new Date().toISOString() } : req)); },
-      approvePurchaseRequest: (purchaseId: string) => {
-        const request = purchaseRequests.find(r => r.id === purchaseId); if (!request) return;
-        if (deductRewards(request.userId, request.assetDetails.cost, request.guildId)) {
-          authDispatch.updateUser(request.userId, u => ({ ownedAssetIds: [...(u.ownedAssetIds || []), request.assetId] }));
-          setGameAssets(p => p.map(a => a.id === request.assetId ? { ...a, purchaseCount: (a.purchaseCount || 0) + 1 } : a));
-          setPurchaseRequests(p => p.map(req => req.id === purchaseId ? { ...req, status: PurchaseRequestStatus.Completed, actedAt: new Date().toISOString() } : req));
-        } else { addNotification({type:'error', message: 'User could not afford this item at time of approval.'}); }
-      },
-      rejectPurchaseRequest: (purchaseId: string) => { setPurchaseRequests(p => p.map(req => req.id === purchaseId ? { ...req, status: PurchaseRequestStatus.Rejected, actedAt: new Date().toISOString() } : req)); },
-      executeExchange: async (userId: string, payItem: RewardItem, receiveItem: RewardItem, guildId?: string) => { apiRequest('POST', '/api/actions/execute-exchange', { userId, payItem, receiveItem, guildId }).catch(() => {}); },
-      importAssetPack: async (assetPack: AssetPack, resolutions: ImportResolution[], allData: IAppData) => {
-          try {
-              await apiRequest('POST', '/api/data/import-assets', { assetPack, resolutions });
-              addNotification({ type: 'success', message: `Successfully imported "${assetPack.manifest.name}"!` });
-          } catch (error) { /* Error is handled by apiRequest */ }
-      },
-      applyRewards,
-      deductRewards,
+      toggleChat, setAppMode, setActiveMarketId, addGuild, updateGuild, deleteGuild,
+      setRanks, addTrophy, updateTrophy, awardTrophy, applyManualAdjustment,
+      addTheme, updateTheme, deleteTheme, addScheduledEvent, updateScheduledEvent, deleteScheduledEvent,
+      addBugReport, updateBugReport, deleteBugReports, importBugReports, restoreFromBackup,
+      clearAllHistory, resetAllPlayerData, deleteAllCustomContent, deleteSelectedAssets, uploadFile, factoryReset,
+      updateSettings, resetSettings, applySettingsUpdates, sendMessage, markMessagesAsRead, addSystemNotification,
+      markSystemNotificationsAsRead, triggerSync: performDeltaSync, registerOptimisticUpdate,
+      addQuest, updateQuest, deleteQuest, cloneQuest, dismissQuest, claimQuest, releaseQuest,
+      markQuestAsTodo, unmarkQuestAsTodo, completeQuest, approveQuestCompletion, rejectQuestCompletion,
+      addQuestGroup, updateQuestGroup, deleteQuestGroup, deleteQuestGroups, assignQuestGroupToUsers,
+      deleteQuests, updateQuestsStatus, bulkUpdateQuests, addRotation, updateRotation, deleteRotation,
+      addRewardType, updateRewardType, deleteRewardType, cloneRewardType,
+      addMarket, updateMarket, deleteMarket, cloneMarket, deleteMarkets, updateMarketsStatus,
+      addGameAsset, updateGameAsset, cloneGameAsset, deleteGameAssets, purchaseMarketItem, cancelPurchaseRequest,
+      approvePurchaseRequest, rejectPurchaseRequest, applyRewards, deductRewards,
+      executeExchange, importAssetPack, setRotations,
     };
   }, [
     authDispatch, addNotification, updateNotification, quests, users, rewardTypes,

@@ -75,7 +75,7 @@ const RewardList: React.FC<{ title: string; rewards: RewardTypeDefinition[]; onE
 
 const RewardsPage: React.FC = () => {
     const { rewardTypes } = useAppState();
-    const { deleteRewardType, cloneRewardType } = useAppDispatch();
+    const { deleteSelectedAssets, cloneRewardType } = useAppDispatch();
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [editingReward, setEditingReward] = useState<RewardTypeDefinition | null>(null);
     const [isConfirmOpen, setIsConfirmOpen] = useState(false);
@@ -103,7 +103,7 @@ const RewardsPage: React.FC = () => {
     
     const handleConfirmDelete = () => {
         if (deletingId) {
-            deleteRewardType(deletingId);
+            deleteSelectedAssets({ rewardTypes: [deletingId] });
         }
         setIsConfirmOpen(false);
         setDeletingId(null);

@@ -10,7 +10,7 @@ import ConfirmDialog from '../../user-interface/ConfirmDialog';
 
 const ManageRotationsPage: React.FC = () => {
     const { settings, rotations } = useAppState();
-    const { deleteRotation } = useAppDispatch();
+    const { deleteSelectedAssets } = useAppDispatch();
     
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [editingRotation, setEditingRotation] = useState<Rotation | null>(null);
@@ -40,7 +40,7 @@ const ManageRotationsPage: React.FC = () => {
 
     const handleConfirmDelete = () => {
         if (deletingRotation) {
-            deleteRotation(deletingRotation.id);
+            deleteSelectedAssets({ rotations: [deletingRotation.id] });
         }
         setDeletingRotation(null);
     };

@@ -11,7 +11,7 @@ import AssignQuestGroupDialog from '../../quests/AssignQuestGroupDialog';
 
 const ManageQuestGroupsPage: React.FC = () => {
     const { settings, questGroups } = useAppState();
-    const { deleteQuestGroup } = useAppDispatch();
+    const { deleteSelectedAssets } = useAppDispatch();
     
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [editingGroup, setEditingGroup] = useState<QuestGroup | null>(null);
@@ -46,7 +46,7 @@ const ManageQuestGroupsPage: React.FC = () => {
 
     const handleConfirmDelete = () => {
         if (deletingGroup) {
-            deleteQuestGroup(deletingGroup.id);
+            deleteSelectedAssets({ questGroups: [deletingGroup.id] });
         }
         setDeletingGroup(null);
     };
@@ -78,9 +78,9 @@ const ManageQuestGroupsPage: React.FC = () => {
                                             </button>
                                             {openDropdownId === group.id && (
                                                 <div ref={dropdownRef} className="absolute right-10 top-0 mt-2 w-36 bg-stone-900 border border-stone-700 rounded-lg shadow-xl z-20">
-                                                    <a href="#" onClick={(e) => { e.preventDefault(); handleAssign(group); setOpenDropdownId(null); }} className="block px-4 py-2 text-sm text-stone-300 hover:bg-stone-700">Assign</a>
-                                                    <a href="#" onClick={(e) => { e.preventDefault(); handleEdit(group); setOpenDropdownId(null); }} className="block px-4 py-2 text-sm text-stone-300 hover:bg-stone-700">Edit</a>
-                                                    <button onClick={() => { setDeletingGroup(group); setOpenDropdownId(null); }} className="w-full text-left block px-4 py-2 text-sm text-red-400 hover:bg-stone-700">Delete</button>
+                                                    <a href="#" onClick={(e) => { e.preventDefault(); handleAssign(group); setOpenDropdownId(null); }} className="block px-4 py-2 text-sm text-stone-300 hover:bg-stone-700/50">Assign</a>
+                                                    <a href="#" onClick={(e) => { e.preventDefault(); handleEdit(group); setOpenDropdownId(null); }} className="block px-4 py-2 text-sm text-stone-300 hover:bg-stone-700/50">Edit</a>
+                                                    <button onClick={() => { setDeletingGroup(group); setOpenDropdownId(null); }} className="w-full text-left block px-4 py-2 text-sm text-red-400 hover:bg-stone-700/50">Delete</button>
                                                 </div>
                                             )}
                                         </td>

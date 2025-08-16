@@ -1,4 +1,5 @@
 
+
 import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import { useAppState, useAppDispatch } from '../../../context/AppContext';
 import { GameAsset } from '../../../types';
@@ -18,7 +19,7 @@ import { useShiftSelect } from '../../../hooks/useShiftSelect';
 
 const ManageItemsPage: React.FC = () => {
     const { settings, isAiConfigured, gameAssets: allGameAssets } = useAppState();
-    const { uploadFile, cloneGameAsset, deleteGameAssets } = useAppDispatch();
+    const { uploadFile, cloneGameAsset, deleteSelectedAssets } = useAppDispatch();
     const { addNotification } = useNotificationsDispatch();
     
     const [pageAssets, setPageAssets] = useState<GameAsset[]>([]);
@@ -158,7 +159,7 @@ const ManageItemsPage: React.FC = () => {
     const handleConfirmAction = async () => {
         if (!confirmation || confirmation.action !== 'delete') return;
         try {
-            await deleteGameAssets(confirmation.ids);
+            await deleteSelectedAssets({ gameAssets: confirmation.ids });
             addNotification({ type: 'info', message: `${confirmation.ids.length} asset(s) deleted.` });
             setSelectedAssets([]);
         } catch (e) { /* error handled */ }

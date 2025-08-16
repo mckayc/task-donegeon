@@ -1,5 +1,6 @@
 
 
+
 require("reflect-metadata");
 const express = require('express');
 const cors = require('cors');
@@ -498,14 +499,11 @@ app.post('/api/data/import-assets', asyncMiddleware(async (req, res) => {
     const createdEntityIds = {};
 
     await dataSource.transaction(async manager => {
-        console.log(`[IMPORT] Starting import for asset pack: ${assetPack.manifest.name}`);
         const idMap = new Map();
         const assetsToSave = {};
         const selectedResolutions = resolutions.filter(r => r.selected);
-        console.log(`[IMPORT] Found ${selectedResolutions.length} selected assets to process.`);
 
-        // Pass 1: Generate new IDs and build the ID map for all selected assets.
-        console.log('[IMPORT] Pass 1: Generating new IDs and creating ID map...');
+        // Pass 1: Sanitize data, generate new IDs, and build the ID map.
         for (const res of selectedResolutions) {
             const assetList = assetPack.assets[res.type];
             if (!assetList) continue;
@@ -516,6 +514,7 @@ app.post('/api/data/import-assets', asyncMiddleware(async (req, res) => {
 
             const newAssetData = JSON.parse(JSON.stringify(originalAsset));
             
+            // --- DATA SANITIZATION AND DEFAULTING ---
             if (res.type === 'quests') {
                 const q = newAssetData;
                 q.iconType = q.iconType || 'emoji';
@@ -535,46 +534,30 @@ app.post('/api/data/import-assets', asyncMiddleware(async (req, res) => {
                 q.nextQuestId = q.nextQuestId || null;
                 q.groupId = q.groupId === undefined ? null : q.groupId;
                 
-                if (typeof q.allDay !== 'boolean') {
-                    q.allDay = !(q.startTime || q.endTime);
-                }
-                if (q.guildId === undefined) {
-                    q.guildId = null;
-                }
+                if (typeof q.allDay !== 'boolean') q.allDay = !(q.startTime || q.endTime);
+                if (q.guildId === undefined) q.guildId = null;
+                
                 if (q.type === 'Duty') {
                     q.rrule = q.rrule || 'FREQ=DAILY';
                     q.availabilityCount = null;
                 } else { // Venture
                     q.rrule = null;
-                    if (typeof q.availabilityCount !== 'number') {
-                        q.availabilityCount = null;
-                    }
+                    if (typeof q.availabilityCount !== 'number') q.availabilityCount = null;
                 }
             }
 
             if (res.resolution === 'rename' && res.newName) {
-                const oldName = newAssetData.title || newAssetData.name;
                 if ('title' in newAssetData) newAssetData.title = res.newName;
                 else newAssetData.name = res.newName;
-                console.log(`[IMPORT] Renaming ${res.type} [${oldName}] -> [${res.newName}]`);
             }
             
             const newId = `${res.type.slice(0, -1)}-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
             
             if (res.type === 'users') {
-                if (originalAsset.id) {
-                    idMap.set(originalAsset.id, newId);
-                    console.log(`[IMPORT] Mapping user [ID: ${originalAsset.id}] -> [${newId}]`);
-                }
-                if (originalAsset.username) {
-                    idMap.set(originalAsset.username, newId);
-                    console.log(`[IMPORT] Mapping user [Username: ${originalAsset.username}] -> [${newId}]`);
-                }
+                if (originalAsset.id) idMap.set(originalAsset.id, newId);
+                if (originalAsset.username) idMap.set(originalAsset.username, newId);
             } else {
-                if (originalAsset.id) {
-                    idMap.set(originalAsset.id, newId);
-                    console.log(`[IMPORT] Mapping ${res.type} [${originalAsset.id}] -> [${newId}]`);
-                }
+                if (originalAsset.id) idMap.set(originalAsset.id, newId);
             }
             newAssetData.id = newId;
 
@@ -582,21 +565,11 @@ app.post('/api/data/import-assets', asyncMiddleware(async (req, res) => {
             assetsToSave[res.type].push(newAssetData);
         }
         
-        const remap = (id) => {
-            const newId = idMap.get(id);
-            if (newId) {
-                console.log(`[IMPORT] Remapping dependency [${id}] -> [${newId}]`);
-                return newId;
-            }
-            return id;
-        };
+        const remap = (id) => idMap.get(id) || id;
 
-        // Pass 2: Remap all internal references using the idMap.
-        console.log('[IMPORT] Pass 2: Remapping internal asset dependencies...');
+        // Pass 2: Remap all internal references.
         const processAssets = (type, processor) => {
-            if (assetsToSave[type]) {
-                assetsToSave[type].forEach(processor);
-            }
+            if (assetsToSave[type]) assetsToSave[type].forEach(processor);
         };
         
         processAssets('quests', quest => {
@@ -632,12 +605,10 @@ app.post('/api/data/import-assets', asyncMiddleware(async (req, res) => {
         });
 
         // Pass 3: Save remapped assets in a dependency-aware order.
-        console.log('[IMPORT] Pass 3: Saving assets to database...');
         const saveOrder = ['markets', 'rewardTypes', 'ranks', 'questGroups', 'users', 'quests', 'trophies', 'gameAssets'];
         for (const type of saveOrder) {
             if (assetsToSave[type]) {
                 if (!createdEntityIds[type]) createdEntityIds[type] = [];
-                console.log(`[IMPORT] Saving ${assetsToSave[type].length} asset(s) of type: ${type}`);
                 for (const asset of assetsToSave[type]) {
                     const assetWithTimestamps = updateTimestamps(asset, true);
                     let savedEntity;
@@ -675,7 +646,6 @@ app.post('/api/data/import-assets', asyncMiddleware(async (req, res) => {
                 }
             }
         }
-        console.log(`[IMPORT] Successfully completed import for asset pack: ${assetPack.manifest.name}`);
         
         // Populate importedData with the newly created and fully resolved entities
         for(const type in createdEntityIds) {

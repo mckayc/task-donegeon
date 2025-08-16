@@ -11,7 +11,7 @@ import MarketIdeaGenerator from '../../quests/MarketIdeaGenerator';
 
 const ManageMarketsPage: React.FC = () => {
     const { settings, isAiConfigured, markets } = useAppState();
-    const { deleteMarkets, updateMarketsStatus, cloneMarket } = useAppDispatch();
+    const { deleteSelectedAssets, updateMarketsStatus, cloneMarket } = useAppDispatch();
     const [isMarketDialogOpen, setIsMarketDialogOpen] = useState(false);
     const [editingMarket, setEditingMarket] = useState<Market | null>(null);
     const [isGeneratorOpen, setIsGeneratorOpen] = useState(false);
@@ -74,7 +74,7 @@ const ManageMarketsPage: React.FC = () => {
         
         switch(confirmation.action) {
             case 'delete':
-                deleteMarkets(confirmation.ids);
+                deleteSelectedAssets({ markets: confirmation.ids });
                 break;
             case 'open':
                 updateMarketsStatus(confirmation.ids, 'open');
@@ -166,9 +166,9 @@ const ManageMarketsPage: React.FC = () => {
                                                 </button>
                                                 {openDropdownId === market.id && (
                                                     <div ref={dropdownRef} className="absolute right-10 top-0 mt-2 w-36 bg-stone-900 border border-stone-700 rounded-lg shadow-xl z-20">
-                                                        <a href="#" onClick={(e) => { e.preventDefault(); handleEditMarket(market); setOpenDropdownId(null); }} className="block px-4 py-2 text-sm text-stone-300 hover:bg-stone-700">Edit</a>
-                                                        <button onClick={() => { cloneMarket(market.id); setOpenDropdownId(null); }} className="w-full text-left block px-4 py-2 text-sm text-stone-300 hover:bg-stone-700 disabled:bg-stone-800 disabled:text-stone-500 disabled:cursor-not-allowed" disabled={isBank}>Clone</button>
-                                                        <button onClick={() => { setConfirmation({ action: 'delete', ids: [market.id] }); setOpenDropdownId(null); }} className="w-full text-left block px-4 py-2 text-sm text-red-400 hover:bg-stone-700 disabled:bg-stone-800 disabled:text-stone-500 disabled:cursor-not-allowed" disabled={isBank}>Delete</button>
+                                                        <a href="#" onClick={(e) => { e.preventDefault(); handleEditMarket(market); setOpenDropdownId(null); }} className="block px-4 py-2 text-sm text-stone-300 hover:bg-stone-700/50">Edit</a>
+                                                        <button onClick={() => { cloneMarket(market.id); setOpenDropdownId(null); }} className="w-full text-left block px-4 py-2 text-sm text-stone-300 hover:bg-stone-700/50 disabled:opacity-50 disabled:text-stone-500" disabled={isBank}>Clone</button>
+                                                        <button onClick={() => { setConfirmation({ action: 'delete', ids: [market.id] }); setOpenDropdownId(null); }} className="w-full text-left block px-4 py-2 text-sm text-red-400 hover:bg-stone-700/50 disabled:opacity-50 disabled:text-stone-500" disabled={isBank}>Delete</button>
                                                     </div>
                                                 )}
                                             </td>

@@ -3,6 +3,7 @@
 
 
 
+
 import React, { createContext, useState, useContext, ReactNode, useEffect, useCallback, useMemo, useRef } from 'react';
 import { AppSettings, User, Quest, RewardItem, Guild, Rank, Trophy, UserTrophy, AppMode, Page, IAppData, ShareableAssetType, GameAsset, Role, RewardCategory, AdminAdjustment, AdminAdjustmentType, SystemLog, QuestType, QuestAvailability, AssetPack, ImportResolution, TrophyRequirementType, ThemeDefinition, ChatMessage, SystemNotification, SystemNotificationType, MarketStatus, QuestGroup, BulkQuestUpdates, ScheduledEvent, BugReport, QuestCompletion, BugReportType, PurchaseRequest, PurchaseRequestStatus, Market, RewardTypeDefinition, Rotation, SidebarConfigItem, BugReportLogEntry, QuestCompletionStatus } from '../types';
 import { INITIAL_SETTINGS, INITIAL_RANKS, INITIAL_TROPHIES, INITIAL_THEMES } from '../data/initialData';
@@ -88,7 +89,6 @@ interface AppDispatch {
   // Quests
   addQuest: (quest: Omit<Quest, 'id' | 'claimedByUserIds' | 'dismissals'>) => void;
   updateQuest: (updatedQuest: Quest) => void;
-  deleteQuest: (questId: string) => void;
   cloneQuest: (questId: string) => void;
   dismissQuest: (questId: string, userId: string) => void;
   claimQuest: (questId: string, userId: string) => void;
@@ -100,31 +100,23 @@ interface AppDispatch {
   rejectQuestCompletion: (completionId: string, note?: string) => Promise<void>;
   addQuestGroup: (group: Omit<QuestGroup, 'id'>) => QuestGroup;
   updateQuestGroup: (group: QuestGroup) => void;
-  deleteQuestGroup: (groupId: string) => void;
-  deleteQuestGroups: (groupIds: string[]) => void;
   assignQuestGroupToUsers: (groupId: string, userIds: string[]) => void;
-  deleteQuests: (questIds: string[]) => void;
   updateQuestsStatus: (questIds: string[], isActive: boolean) => void;
   bulkUpdateQuests: (questIds: string[], updates: BulkQuestUpdates) => Promise<void>;
   addRotation: (rotation: Omit<Rotation, 'id'>) => Promise<void>;
   updateRotation: (rotation: Rotation) => Promise<void>;
-  deleteRotation: (rotationId: string) => Promise<void>;
 
   // Economy
   addRewardType: (rewardType: Omit<RewardTypeDefinition, 'id' | 'isCore'>) => Promise<void>;
   updateRewardType: (rewardType: RewardTypeDefinition) => Promise<void>;
-  deleteRewardType: (rewardTypeId: string) => Promise<void>;
   cloneRewardType: (rewardTypeId: string) => Promise<void>;
   addMarket: (market: Omit<Market, 'id'>) => Promise<void>;
   updateMarket: (market: Market) => Promise<void>;
-  deleteMarket: (marketId: string) => Promise<void>;
   cloneMarket: (marketId: string) => Promise<void>;
-  deleteMarkets: (marketIds: string[]) => Promise<void>;
   updateMarketsStatus: (marketIds: string[], statusType: 'open' | 'closed') => Promise<void>;
   addGameAsset: (asset: Omit<GameAsset, 'id' | 'creatorId' | 'createdAt' | 'purchaseCount'>) => Promise<void>;
   updateGameAsset: (asset: GameAsset) => Promise<void>;
   cloneGameAsset: (assetId: string) => Promise<void>;
-  deleteGameAssets: (assetIds: string[]) => Promise<void>;
   purchaseMarketItem: (assetId: string, marketId: string, user: User, costGroupIndex: number) => void;
   cancelPurchaseRequest: (purchaseId: string) => void;
   approvePurchaseRequest: (purchaseId: string) => void;
@@ -400,7 +392,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       }
     };
     initializeApp();
-  }, [apiRequest, processAndSetData, addNotification, authDispatch]);
+  }, [apiRequest, processAndSetData, authDispatch]);
 
   useEffect(() => {
     if (!isDataLoaded) return;
@@ -726,21 +718,53 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       return true;
     };
     const deleteSelectedAssets = async (selection: Partial<Record<ShareableAssetType, string[]>>, onComplete?: () => void) => {
-      for (const [assetType, ids] of Object.entries(selection)) {
-        if (ids && ids.length > 0) {
-          try {
-            await apiRequest('DELETE', `/api/${assetType}`, { ids });
-          } catch (error) { console.error(`Failed to delete ${assetType}:`, error); }
+        // Keep original state for rollback on error
+        const originalState = {
+            quests: [...quests], questGroups: [...questGroups], markets: [...markets],
+            gameAssets: [...gameAssets], rewardTypes: [...rewardTypes], ranks: [...ranks],
+            trophies: [...trophies], users: [...users], rotations: [...rotations],
+        };
+        const setters: Record<ShareableAssetType, React.Dispatch<any>> = {
+            quests: setQuests, questGroups: setQuestGroups, markets: setMarkets, gameAssets: setGameAssets,
+            rewardTypes: setRewardTypes, ranks: setRanks, trophies: setTrophies, users: authDispatch.setUsers,
+            rotations: setRotations,
+        };
+
+        // Optimistic updates
+        for (const [assetType, ids] of Object.entries(selection)) {
+            if (ids && ids.length > 0) {
+                const setter = setters[assetType as ShareableAssetType];
+                if(setter) setter((prev: any[]) => prev.filter(item => !ids.includes(item.id)));
+            }
         }
-      }
-      addNotification({ type: 'success', message: 'Selected assets have been deleted.' });
-      if (onComplete) onComplete();
+        
+        try {
+            for (const [assetType, ids] of Object.entries(selection)) {
+                if (ids && ids.length > 0) {
+                    await apiRequest('DELETE', `/api/${assetType}`, { ids });
+                }
+            }
+            addNotification({ type: 'success', message: 'Selected assets have been deleted.' });
+        } catch(error) {
+            addNotification({ type: 'error', message: 'Deletion failed. Reverting changes.' });
+            // Rollback state on API error
+            if (selection.quests) setQuests(originalState.quests);
+            if (selection.questGroups) setQuestGroups(originalState.questGroups);
+            if (selection.markets) setMarkets(originalState.markets);
+            if (selection.gameAssets) setGameAssets(originalState.gameAssets);
+            if (selection.rewardTypes) setRewardTypes(originalState.rewardTypes);
+            if (selection.ranks) setRanks(originalState.ranks);
+            if (selection.trophies) setTrophies(originalState.trophies);
+            if (selection.users) authDispatch.setUsers(originalState.users);
+            if (selection.rotations) setRotations(originalState.rotations);
+        }
+
+        if (onComplete) onComplete();
     };
     
     // QuestDispatch functions
     const updateQuest = (updatedQuest: Quest) => { registerOptimisticUpdate(`quest-${updatedQuest.id}`); const originalState = quests; setQuests(p => p.map(q => q.id === updatedQuest.id ? updatedQuest : q)); apiRequest('PUT', `/api/quests/${updatedQuest.id}`, updatedQuest).catch(() => setQuests(originalState)); };
     const addQuest = (quest: Omit<Quest, 'id'|'claimedByUserIds'|'dismissals'>) => { apiRequest('POST', '/api/quests', quest).catch(() => {}); };
-    const deleteQuest = (questId: string) => { deleteQuests([questId]); };
     const cloneQuest = (questId: string) => { apiRequest('POST', `/api/quests/clone/${questId}`).catch(() => {}); };
     const dismissQuest = (questId: string, userId: string) => { const q = quests.find(q=>q.id===questId); if(q) updateQuest({...q, dismissals: [...q.dismissals, { userId, dismissedAt: new Date().toISOString() }]}); };
     const claimQuest = (questId: string, userId: string) => { const q = quests.find(q=>q.id===questId); if(q) updateQuest({...q, claimedByUserIds: [...(q.claimedByUserIds || []), userId]}); };
@@ -784,8 +808,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     const rejectQuestCompletion = async (completionId: string, note?: string) => { registerOptimisticUpdate(`questCompletion-${completionId}`); apiRequest('POST', `/api/actions/reject-quest/${completionId}`, { note }).catch(() => {}); };
     const addQuestGroup = (group: Omit<QuestGroup, 'id'>) => { const newGroup = { ...group, id: `qg-${Date.now()}` }; setQuestGroups(prev => [...prev, newGroup]); return newGroup; };
     const updateQuestGroup = (group: QuestGroup) => { registerOptimisticUpdate(`questGroup-${group.id}`); const originalState = questGroups; setQuestGroups(prev => prev.map(g => g.id === group.id ? group : g)); apiRequest('PUT', `/api/quest-groups/${group.id}`, group).catch(() => setQuestGroups(originalState)); };
-    const deleteQuestGroup = (groupId: string) => { deleteQuestGroups([groupId]); };
-    const deleteQuestGroups = (groupIds: string[]) => { const originalState = questGroups; const originalQuests = quests; setQuestGroups(prev => prev.filter(g => !groupIds.includes(g.id))); setQuests(prev => prev.map(q => q.groupId && groupIds.includes(q.groupId) ? { ...q, groupId: undefined } : q)); apiRequest('DELETE', '/api/quest-groups', { ids: groupIds }).catch(() => { setQuestGroups(originalState); setQuests(originalQuests); });};
     const assignQuestGroupToUsers = (groupId: string, userIds: string[]) => {
       const questsToUpdate = quests.filter(q => q.groupId === groupId);
       questsToUpdate.forEach(q => {
@@ -793,28 +815,22 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         updateQuest({ ...q, assignedUserIds: newAssigned });
       });
     };
-    const deleteQuests = (questIds: string[]) => { const originalState = quests; setQuests(p => p.filter(q => !questIds.includes(q.id))); apiRequest('DELETE', '/api/quests', { ids: questIds }).catch(() => setQuests(originalState)); };
     const updateQuestsStatus = (questIds: string[], isActive: boolean) => { const originalState = quests; setQuests(p => p.map(q => questIds.includes(q.id) ? {...q, isActive} : q)); apiRequest('PUT', '/api/quests/bulk-status', { ids: questIds, isActive }).catch(() => setQuests(originalState)); };
     const bulkUpdateQuests = async (questIds: string[], updates: BulkQuestUpdates) => { await apiRequest('PUT', '/api/quests/bulk-update', { ids: questIds, updates }); };
     const addRotation = async (rotation: Omit<Rotation, 'id'>) => { apiRequest('POST', '/api/rotations', rotation).catch(() => {}); };
     const updateRotation = async (rotation: Rotation) => { registerOptimisticUpdate(`rotation-${rotation.id}`); const originalState = rotations; setRotations(p => p.map(r => r.id === rotation.id ? rotation : r)); apiRequest('PUT', `/api/rotations/${rotation.id}`, rotation).catch(() => setRotations(originalState)); };
-    const deleteRotation = async (rotationId: string) => { const originalState = rotations; setRotations(p => p.filter(r => r.id !== rotationId)); apiRequest('DELETE', `/api/rotations/${rotationId}`).catch(() => setRotations(originalState)); };
     
     // Economy Functions
     const addRewardType = async (rewardType: Omit<RewardTypeDefinition, 'id' | 'isCore'>) => { apiRequest('POST', '/api/reward-types', rewardType).catch(() => {}); };
     const updateRewardType = async (rewardType: RewardTypeDefinition) => { registerOptimisticUpdate(`rewardType-${rewardType.id}`); const originalState = rewardTypes; setRewardTypes(p => p.map(rt => rt.id === rewardType.id ? rewardType : rt)); apiRequest('PUT', `/api/reward-types/${rewardType.id}`, rewardType).catch(() => setRewardTypes(originalState)); };
-    const deleteRewardType = async (rewardTypeId: string) => { const originalState = rewardTypes; setRewardTypes(p => p.filter(rt => rt.id !== rewardTypeId)); apiRequest('DELETE', '/api/reward-types', { ids: [rewardTypeId] }).catch(() => setRewardTypes(originalState)); };
     const cloneRewardType = async (rewardTypeId: string) => { apiRequest('POST', `/api/reward-types/clone/${rewardTypeId}`).catch(() => {}); };
     const addMarket = async (market: Omit<Market, 'id'>) => { apiRequest('POST', '/api/markets', market).catch(() => {}); };
     const updateMarket = async (market: Market) => { registerOptimisticUpdate(`market-${market.id}`); const originalState = markets; setMarkets(p => p.map(m => m.id === market.id ? market : m)); apiRequest('PUT', `/api/markets/${market.id}`, market).catch(() => setMarkets(originalState)); };
-    const deleteMarket = async (marketId: string) => { deleteMarkets([marketId]); };
     const cloneMarket = async (marketId: string) => { apiRequest('POST', `/api/markets/clone/${marketId}`).catch(() => {}); };
-    const deleteMarkets = async (marketIds: string[]) => { const originalState = markets; setMarkets(p => p.filter(m => !marketIds.includes(m.id))); apiRequest('DELETE', '/api/markets', { ids: marketIds }).catch(() => setMarkets(originalState)); };
     const updateMarketsStatus = async (marketIds: string[], statusType: 'open' | 'closed') => { const originalState = markets; setMarkets(p => p.map(m => marketIds.includes(m.id) ? {...m, status: { type: statusType }} : m)); apiRequest('PUT', '/api/markets/bulk-status', { ids: marketIds, statusType }).catch(() => setMarkets(originalState)); };
     const addGameAsset = async (asset: Omit<GameAsset, 'id' | 'creatorId' | 'createdAt' | 'purchaseCount'>) => { apiRequest('POST', '/api/assets', asset).catch(() => {}); };
     const updateGameAsset = async (asset: GameAsset) => { registerOptimisticUpdate(`gameAsset-${asset.id}`); const originalState = gameAssets; setGameAssets(p => p.map(a => a.id === asset.id ? asset : a)); apiRequest('PUT', `/api/assets/${asset.id}`, asset).catch(() => setGameAssets(originalState)); };
     const cloneGameAsset = async (assetId: string) => { apiRequest('POST', `/api/assets/clone/${assetId}`).catch(() => {}); };
-    const deleteGameAssets = async (assetIds: string[]) => { const originalState = gameAssets; setGameAssets(p => p.filter(a => !assetIds.includes(a.id))); apiRequest('DELETE', '/api/assets', { ids: assetIds }).catch(() => setGameAssets(originalState)); };
     const purchaseMarketItem = (assetId: string, marketId: string, user: User, costGroupIndex: number) => {
       const asset = gameAssets.find(a => a.id === assetId);
       if (!asset) { addNotification({ type: 'error', message: 'Item not found.' }); return; }
@@ -903,13 +919,13 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       clearAllHistory, resetAllPlayerData, deleteAllCustomContent, deleteSelectedAssets, uploadFile, factoryReset,
       updateSettings, resetSettings, applySettingsUpdates, sendMessage, markMessagesAsRead, addSystemNotification,
       markSystemNotificationsAsRead, triggerSync: performDeltaSync, registerOptimisticUpdate,
-      addQuest, updateQuest, deleteQuest, cloneQuest, dismissQuest, claimQuest, releaseQuest,
+      addQuest, updateQuest, cloneQuest, dismissQuest, claimQuest, releaseQuest,
       markQuestAsTodo, unmarkQuestAsTodo, completeQuest, approveQuestCompletion, rejectQuestCompletion,
-      addQuestGroup, updateQuestGroup, deleteQuestGroup, deleteQuestGroups, assignQuestGroupToUsers,
-      deleteQuests, updateQuestsStatus, bulkUpdateQuests, addRotation, updateRotation, deleteRotation,
-      addRewardType, updateRewardType, deleteRewardType, cloneRewardType,
-      addMarket, updateMarket, deleteMarket, cloneMarket, deleteMarkets, updateMarketsStatus,
-      addGameAsset, updateGameAsset, cloneGameAsset, deleteGameAssets, purchaseMarketItem, cancelPurchaseRequest,
+      addQuestGroup, updateQuestGroup, assignQuestGroupToUsers,
+      updateQuestsStatus, bulkUpdateQuests, addRotation, updateRotation,
+      addRewardType, updateRewardType, cloneRewardType,
+      addMarket, updateMarket, cloneMarket, updateMarketsStatus,
+      addGameAsset, updateGameAsset, cloneGameAsset, purchaseMarketItem, cancelPurchaseRequest,
       approvePurchaseRequest, rejectPurchaseRequest, applyRewards, deductRewards,
       executeExchange, importAssetPack, setRotations,
     };

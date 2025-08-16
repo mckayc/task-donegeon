@@ -1,8 +1,4 @@
 
-
-
-
-
 require("reflect-metadata");
 const express = require('express');
 const cors = require('cors');
@@ -552,6 +548,12 @@ app.post('/api/data/import-assets', asyncMiddleware(async (req, res) => {
                 const ga = newAssetData;
                 ga.creatorId = ga.creatorId || 'system';
                 ga.purchaseCount = ga.purchaseCount || 0;
+                ga.purchaseLimitType = ga.purchaseLimitType || 'Total';
+                if (typeof ga.isForSale !== 'boolean') ga.isForSale = false;
+                if (typeof ga.requiresApproval !== 'boolean') ga.requiresApproval = false;
+                ga.costGroups = ga.costGroups || [];
+                ga.marketIds = ga.marketIds || [];
+                ga.iconType = ga.iconType || 'emoji';
             }
 
             if (res.resolution === 'rename' && res.newName) {

@@ -624,7 +624,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     };
     const restoreFromBackup = async (backupData: IAppData) => { apiRequest('POST', '/api/data/restore', backupData).then(() => { addNotification({ type: 'success', message: 'Restore successful! App will reload.' }); setTimeout(() => window.location.reload(), 1500); }).catch(() => {}); };
     const clearAllHistory = () => { apiRequest('POST', '/api/actions/clear-history').catch(() => {}); };
-    const resetAllPlayerData = () => { authDispatch.resetAllUsersData(); };
+    const resetAllPlayerData = () => { apiRequest('POST', '/api/actions/reset-all-player-data').catch(() => {}); };
     const deleteAllCustomContent = () => { apiRequest('POST', '/api/data/delete-custom-content').catch(() => {}); };
     const uploadFile = async (file: File, category?: string) => {
         const formData = new FormData();
@@ -834,7 +834,14 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     };
     const rejectPurchaseRequest = (purchaseId: string) => { setPurchaseRequests(p => p.map(req => req.id === purchaseId ? { ...req, status: PurchaseRequestStatus.Rejected, actedAt: new Date().toISOString() } : req)); };
     const executeExchange = async (userId: string, payItem: RewardItem, receiveItem: RewardItem, guildId?: string) => { apiRequest('POST', '/api/actions/execute-exchange', { userId, payItem, receiveItem, guildId }).catch(() => {}); };
-    const importAssetPack = async (assetPack: AssetPack, resolutions: ImportResolution[], allData: IAppData) => { apiRequest('POST', '/api/data/import-assets', { assetPack, resolutions }).catch(() => {}); };
+    const importAssetPack = async (assetPack: AssetPack, resolutions: ImportResolution[], allData: IAppData) => {
+        try {
+            await apiRequest('POST', '/api/data/import-assets', { assetPack, resolutions });
+            addNotification({ type: 'success', message: `Successfully imported "${assetPack.manifest.name}"!` });
+        } catch (error) {
+            // Error is handled by apiRequest
+        }
+    };
     
     return {
       setQuests, setQuestGroups, setQuestCompletions, setMarkets, setRewardTypes,

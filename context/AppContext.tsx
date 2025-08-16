@@ -1,7 +1,7 @@
 
 
 import React, { createContext, useState, useContext, ReactNode, useEffect, useCallback, useMemo, useRef } from 'react';
-import { AppSettings, User, Quest, RewardItem, Guild, Rank, Trophy, UserTrophy, AppMode, Page, IAppData, ShareableAssetType, GameAsset, Role, RewardCategory, AdminAdjustment, AdminAdjustmentType, SystemLog, QuestType, QuestAvailability, AssetPack, ImportResolution, TrophyRequirementType, ThemeDefinition, ChatMessage, SystemNotification, SystemNotificationType, MarketStatus, QuestGroup, BulkQuestUpdates, ScheduledEvent, BugReport, QuestCompletion, BugReportType, PurchaseRequest, PurchaseRequestStatus, Market, RewardTypeDefinition, Rotation, SidebarConfigItem, BugReportLogEntry } from '../types';
+import { AppSettings, User, Quest, RewardItem, Guild, Rank, Trophy, UserTrophy, AppMode, Page, IAppData, ShareableAssetType, GameAsset, Role, RewardCategory, AdminAdjustment, AdminAdjustmentType, SystemLog, QuestType, QuestAvailability, AssetPack, ImportResolution, TrophyRequirementType, ThemeDefinition, ChatMessage, SystemNotification, SystemNotificationType, MarketStatus, QuestGroup, BulkQuestUpdates, ScheduledEvent, BugReport, QuestCompletion, BugReportType, PurchaseRequest, PurchaseRequestStatus, Market, RewardTypeDefinition, Rotation, SidebarConfigItem, BugReportLogEntry, QuestCompletionStatus } from '../types';
 import { INITIAL_SETTINGS, INITIAL_RANKS, INITIAL_TROPHIES, INITIAL_THEMES } from '../data/initialData';
 import { useNotificationsDispatch } from './NotificationsContext';
 import { useAuthState, useAuthDispatch } from './AuthContext';
@@ -626,7 +626,21 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     };
     const restoreFromBackup = async (backupData: IAppData) => { apiRequest('POST', '/api/data/restore', backupData).then(() => { addNotification({ type: 'success', message: 'Restore successful! App will reload.' }); setTimeout(() => window.location.reload(), 1500); }).catch(() => {}); };
     const clearAllHistory = () => { apiRequest('POST', '/api/actions/clear-history').catch(() => {}); };
-    const resetAllPlayerData = () => { authDispatch.setUsers(prev => prev.map(u => u.role !== Role.DonegeonMaster ? { ...u, personalPurse: {}, personalExperience: {}, guildBalances: {}, ownedAssetIds: [], avatar: {} } : u)); };
+    const resetAllPlayerData = () => {
+        const updatedUsers = users.map(u =>
+            u.role !== Role.DonegeonMaster
+                ? {
+                    ...u,
+                    personalPurse: {},
+                    personalExperience: {},
+                    guildBalances: {},
+                    ownedAssetIds: [],
+                    avatar: {},
+                  }
+                : u
+        );
+        authDispatch.setUsers(updatedUsers);
+    };
     const deleteAllCustomContent = () => { apiRequest('POST', '/api/data/delete-custom-content').catch(() => {}); };
     const uploadFile = async (file: File, category?: string) => {
         const formData = new FormData();
@@ -744,7 +758,39 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     const releaseQuest = (questId: string, userId: string) => { const q = quests.find(q=>q.id===questId); if(q) updateQuest({...q, claimedByUserIds: (q.claimedByUserIds || []).filter(id => id !== userId)}); };
     const markQuestAsTodo = (questId: string, userId: string) => { const q = quests.find(q=>q.id===questId); if(q) updateQuest({ ...q, todoUserIds: [...(q.todoUserIds || []), userId] }); };
     const unmarkQuestAsTodo = (questId: string, userId: string) => { const q = quests.find(q=>q.id===questId); if(q) updateQuest({ ...q, todoUserIds: (q.todoUserIds || []).filter(id => id !== userId) }); };
-    const completeQuest = async (completionData: any) => { registerOptimisticUpdate(`user-${completionData.userId}`); apiRequest('POST', '/api/actions/complete-quest', { completionData }).catch(() => {}); };
+    const completeQuest = async (completionData: any) => {
+        const { questId, userId, status, guildId } = completionData;
+        const quest = quests.find(q => q.id === questId);
+        if (!quest) {
+            addNotification({ type: 'error', message: 'Quest not found for completion.' });
+            return;
+        }
+
+        // --- Optimistic Update ---
+        const optimisticCompletion: QuestCompletion = {
+            ...completionData,
+            id: `temp-comp-${Date.now()}`,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+        };
+        
+        setQuestCompletions(prev => [...prev, optimisticCompletion]);
+
+        if (status === QuestCompletionStatus.Approved) {
+            applyRewards(userId, quest.rewards, guildId);
+        }
+        
+        registerOptimisticUpdate(`user-${userId}`);
+        registerOptimisticUpdate(`questCompletion-${optimisticCompletion.id}`);
+        
+        // --- Server Sync ---
+        apiRequest('POST', '/api/actions/complete-quest', { completionData })
+            .catch(() => {
+                addNotification({ type: 'error', message: `Failed to sync completion for "${quest.title}". Reverting.` });
+                setQuestCompletions(prev => prev.filter(c => c.id !== optimisticCompletion.id));
+                // Note: A full rollback is complex. The next server sync will correct any inconsistencies.
+            });
+    };
     const approveQuestCompletion = async (completionId: string, note?: string) => { registerOptimisticUpdate(`questCompletion-${completionId}`); apiRequest('POST', `/api/actions/approve-quest/${completionId}`, { note }).catch(() => {}); };
     const rejectQuestCompletion = async (completionId: string, note?: string) => { registerOptimisticUpdate(`questCompletion-${completionId}`); apiRequest('POST', `/api/actions/reject-quest/${completionId}`, { note }).catch(() => {}); };
     const addQuestGroup = (group: Omit<QuestGroup, 'id'>) => { const newGroup = { ...group, id: `qg-${Date.now()}` }; setQuestGroups(prev => [...prev, newGroup]); return newGroup; };

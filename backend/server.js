@@ -1,4 +1,5 @@
 
+
 require("reflect-metadata");
 const express = require('express');
 const cors = require('cors');
@@ -513,31 +514,37 @@ app.post('/api/data/import-assets', asyncMiddleware(async (req, res) => {
             const newAssetData = JSON.parse(JSON.stringify(originalAsset));
             
             if (res.type === 'quests') {
-                // Robust defaults for missing properties
-                newAssetData.iconType = newAssetData.iconType || 'emoji';
-                newAssetData.lateSetbacks = newAssetData.lateSetbacks || [];
-                newAssetData.incompleteSetbacks = newAssetData.incompleteSetbacks || [];
-                newAssetData.assignedUserIds = newAssetData.assignedUserIds || [];
-                newAssetData.claimedByUserIds = newAssetData.claimedByUserIds || [];
-                newAssetData.dismissals = newAssetData.dismissals || [];
-                newAssetData.todoUserIds = newAssetData.todoUserIds || [];
-                newAssetData.startDateTime = newAssetData.startDateTime || null;
-                newAssetData.endDateTime = newAssetData.endDateTime || null;
-                newAssetData.startTime = newAssetData.startTime || null;
-                newAssetData.endTime = newAssetData.endTime || null;
-                if (typeof newAssetData.allDay !== 'boolean') {
-                    newAssetData.allDay = true;
+                const q = newAssetData;
+                q.iconType = q.iconType || 'emoji';
+                q.imageUrl = q.imageUrl || null;
+                q.tags = q.tags || [];
+                q.rewards = q.rewards || [];
+                q.lateSetbacks = q.lateSetbacks || [];
+                q.incompleteSetbacks = q.incompleteSetbacks || [];
+                q.assignedUserIds = q.assignedUserIds || [];
+                q.claimedByUserIds = q.claimedByUserIds || [];
+                q.dismissals = q.dismissals || [];
+                q.todoUserIds = q.todoUserIds || [];
+                q.startDateTime = q.startDateTime || null;
+                q.endDateTime = q.endDateTime || null;
+                q.startTime = q.startTime || null;
+                q.endTime = q.endTime || null;
+                q.nextQuestId = q.nextQuestId || null;
+                q.groupId = q.groupId === undefined ? null : q.groupId;
+                
+                if (typeof q.allDay !== 'boolean') {
+                    q.allDay = !(q.startTime || q.endTime);
                 }
-                if (newAssetData.guildId === undefined) {
-                    newAssetData.guildId = null;
+                if (q.guildId === undefined) {
+                    q.guildId = null;
                 }
-                if (newAssetData.type === 'Duty') {
-                    newAssetData.rrule = newAssetData.rrule || 'FREQ=DAILY';
-                    newAssetData.availabilityCount = null;
+                if (q.type === 'Duty') {
+                    q.rrule = q.rrule || 'FREQ=DAILY';
+                    q.availabilityCount = null;
                 } else { // Venture
-                    newAssetData.rrule = null;
-                    if (typeof newAssetData.availabilityCount !== 'number') {
-                        newAssetData.availabilityCount = null; // `null` is handled as completable once by frontend
+                    q.rrule = null;
+                    if (typeof q.availabilityCount !== 'number') {
+                        q.availabilityCount = null;
                     }
                 }
             }
@@ -906,7 +913,7 @@ bugReportsRouter.post('/import', asyncMiddleware(async (req, res) => {
             const reports = reportsToImport.map(r => manager.create(BugReportEntity, updateTimestamps(r, true)));
             if (reports.length > 0) await manager.save(reports);
         } else { // merge
-            console.log('[Bug Import] Merging new bug reports.');
+            console.log(`[Bug Import] Merging new bug reports.`);
             const existingIds = (await manager.find(BugReportEntity, { select: ["id"] })).map(r => r.id);
             const newReports = reportsToImport.filter(r => !existingIds.includes(r.id));
             

@@ -11,7 +11,7 @@ import AssignQuestGroupDialog from '../quests/AssignQuestGroupDialog';
 
 const ManageQuestGroupsPage: React.FC = () => {
     const { settings, questGroups } = useAppState();
-    const { deleteQuestGroup } = useAppDispatch();
+    const { deleteSelectedAssets } = useAppDispatch();
     
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [editingGroup, setEditingGroup] = useState<QuestGroup | null>(null);
@@ -46,7 +46,7 @@ const ManageQuestGroupsPage: React.FC = () => {
 
     const handleConfirmDelete = () => {
         if (deletingGroup) {
-            deleteQuestGroup(deletingGroup.id);
+            deleteSelectedAssets({ questGroups: [deletingGroup.id] });
         }
         setDeletingGroup(null);
     };

@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { Quest, QuestType, QuestGroup } from '../../types';
@@ -15,7 +14,7 @@ import { useDebounce } from '../../hooks/useDebounce';
 
 const ManageQuestsPage: React.FC = () => {
     const { settings, isAiConfigured, quests, questGroups } = useAppState();
-    const { deleteQuests, updateQuestsStatus, bulkUpdateQuests, cloneQuest, addQuest, updateQuest } = useAppDispatch();
+    const { deleteSelectedAssets, updateQuestsStatus, bulkUpdateQuests, cloneQuest } = useAppDispatch();
     
     const [editingQuest, setEditingQuest] = useState<Quest | null>(null);
     const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
@@ -97,7 +96,7 @@ const ManageQuestsPage: React.FC = () => {
         
         switch(confirmation.action) {
             case 'delete':
-                await deleteQuests(confirmation.ids);
+                await deleteSelectedAssets({ quests: confirmation.ids });
                 break;
             case 'activate':
                 await updateQuestsStatus(confirmation.ids, true);
@@ -272,7 +271,7 @@ const ManageQuestsPage: React.FC = () => {
                 )}
             </Card>
             
-            {isCreateDialogOpen && <CreateQuestDialog questToEdit={editingQuest || undefined} initialData={initialCreateData || undefined} onClose={handleCloseDialog} />}
+            {isCreateDialogOpen && <CreateQuestDialog questToEdit={editingQuest || undefined} initialData={initialCreateData || undefined} onClose={handleCloseDialog} onSave={() => {}} />}
             
             {isGeneratorOpen && <QuestIdeaGenerator onUseIdea={handleUseIdea} onClose={() => setIsGeneratorOpen(false)} />}
 

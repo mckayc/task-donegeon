@@ -581,6 +581,7 @@ export interface AssetPackAssets {
   markets?: Market[];
   gameAssets?: GameAsset[];
   users?: UserTemplate[];
+  rotations?: Rotation[];
 }
 
 export interface AssetPackManifest {

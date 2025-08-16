@@ -11,7 +11,7 @@ import MarketIdeaGenerator from '../quests/MarketIdeaGenerator';
 
 const ManageMarketsPage: React.FC = () => {
     const { settings, isAiConfigured, markets } = useAppState();
-    const { deleteMarkets, updateMarketsStatus, cloneMarket } = useAppDispatch();
+    const { deleteSelectedAssets, updateMarketsStatus, cloneMarket } = useAppDispatch();
     const [isMarketDialogOpen, setIsMarketDialogOpen] = useState(false);
     const [editingMarket, setEditingMarket] = useState<Market | null>(null);
     const [isGeneratorOpen, setIsGeneratorOpen] = useState(false);
@@ -74,7 +74,7 @@ const ManageMarketsPage: React.FC = () => {
         
         switch(confirmation.action) {
             case 'delete':
-                deleteMarkets(confirmation.ids);
+                deleteSelectedAssets({ markets: confirmation.ids });
                 break;
             case 'open':
                 updateMarketsStatus(confirmation.ids, 'open');

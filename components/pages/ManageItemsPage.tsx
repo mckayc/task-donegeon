@@ -1,5 +1,3 @@
-
-
 import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import { useAppState, useAppDispatch } from '../../context/AppContext';
 import { GameAsset } from '../../types';
@@ -19,7 +17,7 @@ import { useShiftSelect } from '../../hooks/useShiftSelect';
 
 const ManageItemsPage: React.FC = () => {
     const { settings, isAiConfigured, gameAssets: allGameAssets } = useAppState();
-    const { uploadFile, cloneGameAsset, deleteGameAssets } = useAppDispatch();
+    const { uploadFile, cloneGameAsset, deleteSelectedAssets } = useAppDispatch();
     const { addNotification } = useNotificationsDispatch();
     
     const [pageAssets, setPageAssets] = useState<GameAsset[]>([]);
@@ -159,7 +157,7 @@ const ManageItemsPage: React.FC = () => {
     const handleConfirmAction = async () => {
         if (!confirmation || confirmation.action !== 'delete') return;
         try {
-            await deleteGameAssets(confirmation.ids);
+            await deleteSelectedAssets({ gameAssets: confirmation.ids });
             addNotification({ type: 'info', message: `${confirmation.ids.length} asset(s) deleted.` });
             setSelectedAssets([]);
         } catch (e) { /* error handled */ }
@@ -260,7 +258,7 @@ const ManageItemsPage: React.FC = () => {
                                                 <input type="checkbox" checked={selectedAssets.includes(asset.id)} onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleCheckboxClick(e, asset.id)} className="h-4 w-4 rounded text-emerald-600 bg-stone-700 border-stone-600 focus:ring-emerald-500" />
                                             </td>
                                             <td className="p-2">
-                                                <button onClick={() => asset.imageUrl && setPreviewImageUrl(asset.imageUrl)} className="w-12 h-12 bg-stone-700 rounded-md overflow-hidden hover:ring-2 ring-accent">
+                                                <button onClick={() => setPreviewImageUrl(asset.imageUrl || null)} className="w-12 h-12 bg-stone-700 rounded-md overflow-hidden hover:ring-2 ring-accent">
                                                     <img src={asset.imageUrl} alt={asset.name} className="w-full h-full object-cover" />
                                                 </button>
                                             </td>

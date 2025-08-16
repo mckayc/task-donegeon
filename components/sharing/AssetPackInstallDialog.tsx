@@ -23,6 +23,7 @@ const terminologyMap: { [key in ShareableAssetType]: keyof Terminology } = {
     markets: 'stores',
     gameAssets: 'link_manage_items',
     users: 'link_manage_users',
+    rotations: 'link_manage_rotations',
 };
 
 const AssetCard: React.FC<{
@@ -219,7 +220,7 @@ const AssetPackInstallDialog: React.FC<AssetPackInstallDialogProps> = ({ assetPa
                                 <h4 className="font-semibold text-stone-200 capitalize mb-3">{groupName} ({groupResolutions.length})</h4>
                                 <div className="space-y-3 max-h-60 overflow-y-auto pr-2">
                                     {groupResolutions.map(res => {
-                                        const assetList = assetPack.assets[res.type];
+                                        const assetList = assetPack.assets[res.type as keyof typeof assetPack.assets];
                                         const asset = Array.isArray(assetList)
                                             ? assetList.find(a => {
                                                 if (res.type === 'users') {

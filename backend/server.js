@@ -658,6 +658,16 @@ app.post('/api/data/import-assets', asyncMiddleware(async (req, res) => {
         }
         
         // Populate importedData with the newly created and fully resolved entities
+        const entityNameMap = {
+            quests: 'Quest',
+            questGroups: 'QuestGroup',
+            markets: 'Market',
+            rewardTypes: 'RewardTypeDefinition',
+            ranks: 'Rank',
+            trophies: 'Trophy',
+            gameAssets: 'GameAsset',
+            users: 'User',
+        };
         for(const type in createdEntityIds) {
             if (!importedData[type]) importedData[type] = [];
 
@@ -667,8 +677,14 @@ app.post('/api/data/import-assets', asyncMiddleware(async (req, res) => {
             } else if (type === 'guilds') {
                 findOptions.relations = ['members'];
             }
-
-            const entities = await manager.getRepository(type.slice(0, -1)).find(findOptions);
+            
+            const entityName = entityNameMap[type];
+            if (!entityName) {
+                console.warn(`[Asset Import] Unknown asset type for repository lookup: ${type}`);
+                continue;
+            }
+            const repo = manager.getRepository(entityName);
+            const entities = await repo.find(findOptions);
             importedData[type] = entities;
         }
     });

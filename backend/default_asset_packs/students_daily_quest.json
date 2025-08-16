@@ -139,6 +139,8 @@
         "description": "Exchange your hard-earned crystals for awesome screen time rewards! Available on weekends.",
         "iconType": "emoji",
         "icon": "👾",
+        "imageUrl": null,
+        "guildId": null,
         "status": {
           "type": "conditional",
           "logic": "any",

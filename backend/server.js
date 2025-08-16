@@ -494,6 +494,9 @@ app.post('/api/data/import-assets', asyncMiddleware(async (req, res) => {
     const { assetPack, resolutions } = req.body;
     if (!assetPack || !resolutions) return res.status(400).json({ error: 'Missing asset pack or resolutions.' });
 
+    let importedData = {};
+    const createdEntityIds = {};
+
     await dataSource.transaction(async manager => {
         console.log(`[IMPORT] Starting import for asset pack: ${assetPack.manifest.name}`);
         const idMap = new Map();
@@ -598,7 +601,6 @@ app.post('/api/data/import-assets', asyncMiddleware(async (req, res) => {
         
         processAssets('quests', quest => {
             if (quest.groupId) quest.groupId = remap(quest.groupId);
-            // FIX: Ensure properties are arrays before mapping to prevent crashes on missing properties.
             quest.assignedUserIds = (quest.assignedUserIds || []).map(remap);
             quest.rewards = (quest.rewards || []).map(r => ({ ...r, rewardTypeId: remap(r.rewardTypeId) }));
             quest.lateSetbacks = (quest.lateSetbacks || []).map(r => ({ ...r, rewardTypeId: remap(r.rewardTypeId) }));
@@ -634,19 +636,20 @@ app.post('/api/data/import-assets', asyncMiddleware(async (req, res) => {
         const saveOrder = ['markets', 'rewardTypes', 'ranks', 'questGroups', 'users', 'quests', 'trophies', 'gameAssets'];
         for (const type of saveOrder) {
             if (assetsToSave[type]) {
+                if (!createdEntityIds[type]) createdEntityIds[type] = [];
                 console.log(`[IMPORT] Saving ${assetsToSave[type].length} asset(s) of type: ${type}`);
                 for (const asset of assetsToSave[type]) {
                     const assetWithTimestamps = updateTimestamps(asset, true);
+                    let savedEntity;
                     switch (type) {
                         case 'users':
                             const { assignedUsers, guilds, questCompletions, purchaseRequests, ...userData } = assetWithTimestamps;
                             const defaultGuild = await manager.findOneBy(GuildEntity, { isDefault: true });
                             const userToSave = manager.create(UserEntity, {
-                                ...userData,
-                                avatar: {}, ownedAssetIds: [], personalPurse: {}, personalExperience: {}, guildBalances: {},
+                                ...userData, avatar: {}, ownedAssetIds: [], personalPurse: {}, personalExperience: {}, guildBalances: {},
                                 ownedThemes: ['emerald', 'rose', 'sky'], hasBeenOnboarded: false,
                             });
-                            await manager.save(userToSave);
+                            savedEntity = await manager.save(userToSave);
                             if (defaultGuild) {
                                 if (!defaultGuild.members) defaultGuild.members = [];
                                 defaultGuild.members.push(userToSave);
@@ -659,23 +662,44 @@ app.post('/api/data/import-assets', asyncMiddleware(async (req, res) => {
                             if (remappedUserIds && remappedUserIds.length > 0) {
                                 questToSave.assignedUsers = await manager.getRepository(UserEntity).findBy({ id: In(remappedUserIds) });
                             }
-                            await manager.save(questToSave);
+                            savedEntity = await manager.save(questToSave);
                             break;
-                        case 'questGroups': await manager.save(QuestGroupEntity, assetWithTimestamps); break;
-                        case 'rewardTypes': await manager.save(RewardTypeDefinitionEntity, { ...assetWithTimestamps, isCore: false }); break;
-                        case 'ranks': await manager.save(RankEntity, assetWithTimestamps); break;
-                        case 'trophies': await manager.save(TrophyEntity, assetWithTimestamps); break;
-                        case 'markets': await manager.save(MarketEntity, assetWithTimestamps); break;
-                        case 'gameAssets': await manager.save(GameAssetEntity, assetWithTimestamps); break;
+                        case 'questGroups': savedEntity = await manager.save(QuestGroupEntity, assetWithTimestamps); break;
+                        case 'rewardTypes': savedEntity = await manager.save(RewardTypeDefinitionEntity, { ...assetWithTimestamps, isCore: false }); break;
+                        case 'ranks': savedEntity = await manager.save(RankEntity, assetWithTimestamps); break;
+                        case 'trophies': savedEntity = await manager.save(TrophyEntity, assetWithTimestamps); break;
+                        case 'markets': savedEntity = await manager.save(MarketEntity, assetWithTimestamps); break;
+                        case 'gameAssets': savedEntity = await manager.save(GameAssetEntity, assetWithTimestamps); break;
                     }
+                    if (savedEntity) createdEntityIds[type].push(savedEntity.id);
                 }
             }
         }
         console.log(`[IMPORT] Successfully completed import for asset pack: ${assetPack.manifest.name}`);
+        
+        // Populate importedData with the newly created and fully resolved entities
+        for(const type in createdEntityIds) {
+            if (!importedData[type]) importedData[type] = [];
+            const entities = await manager.getRepository(type.slice(0, -1)).find({
+                where: { id: In(createdEntityIds[type]) },
+                relations: ['assignedUsers', 'members'] // Add any relations needed by frontend
+            });
+            importedData[type] = entities;
+        }
     });
+
+    const remappedImportedData = {};
+    if (importedData.quests) remappedImportedData.quests = importedData.quests.map(q => ({ ...q, assignedUserIds: q.assignedUsers?.map(u => u.id) || [] }));
+    if (importedData.markets) remappedImportedData.markets = importedData.markets;
+    if (importedData.gameAssets) remappedImportedData.gameAssets = importedData.gameAssets;
+    if (importedData.questGroups) remappedImportedData.questGroups = importedData.questGroups;
+    if (importedData.rewardTypes) remappedImportedData.rewardTypes = importedData.rewardTypes;
+    if (importedData.ranks) remappedImportedData.ranks = importedData.ranks;
+    if (importedData.trophies) remappedImportedData.trophies = importedData.trophies;
+    if (importedData.users) remappedImportedData.users = importedData.users;
     
     updateEmitter.emit('update');
-    res.status(200).json({ message: 'Assets imported successfully.' });
+    res.status(200).json({ message: 'Assets imported successfully.', importedData: remappedImportedData });
 }));
 
 

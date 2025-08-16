@@ -1,5 +1,7 @@
 
 
+
+
 import React, { createContext, useState, useContext, ReactNode, useEffect, useCallback, useMemo, useRef } from 'react';
 import { AppSettings, User, Quest, RewardItem, Guild, Rank, Trophy, UserTrophy, AppMode, Page, IAppData, ShareableAssetType, GameAsset, Role, RewardCategory, AdminAdjustment, AdminAdjustmentType, SystemLog, QuestType, QuestAvailability, AssetPack, ImportResolution, TrophyRequirementType, ThemeDefinition, ChatMessage, SystemNotification, SystemNotificationType, MarketStatus, QuestGroup, BulkQuestUpdates, ScheduledEvent, BugReport, QuestCompletion, BugReportType, PurchaseRequest, PurchaseRequestStatus, Market, RewardTypeDefinition, Rotation, SidebarConfigItem, BugReportLogEntry, QuestCompletionStatus } from '../types';
 import { INITIAL_SETTINGS, INITIAL_RANKS, INITIAL_TROPHIES, INITIAL_THEMES } from '../data/initialData';
@@ -52,7 +54,7 @@ interface AppDispatch {
   addTrophy: (trophy: Omit<Trophy, 'id'>) => void;
   updateTrophy: (trophy: Trophy) => void;
   awardTrophy: (userId: string, trophyId: string, guildId?: string) => void;
-  applyManualAdjustment: (adjustment: Omit<AdminAdjustment, 'id' | 'adjustedAt'>) => boolean;
+  applyManualAdjustment: (adjustment: Omit<AdminAdjustment, 'id' | 'adjustedAt' | 'adjusterId'>) => boolean;
   addTheme: (theme: Omit<ThemeDefinition, 'id'>) => void;
   updateTheme: (theme: ThemeDefinition) => void;
   deleteTheme: (themeId: string) => void;
@@ -129,7 +131,7 @@ interface AppDispatch {
   applyRewards: (userId: string, rewardsToApply: RewardItem[], guildId?: string) => void;
   deductRewards: (userId: string, cost: RewardItem[], guildId?: string) => boolean;
   executeExchange: (userId: string, payItem: RewardItem, receiveItem: RewardItem, guildId?: string) => Promise<void>;
-  importAssetPack: (assetPack: AssetPack, resolutions: ImportResolution[], allData: IAppData) => Promise<void>;
+  importAssetPack: (assetPack: AssetPack, resolutions: ImportResolution[]) => Promise<void>;
 }
 
 const AppStateContext = createContext<AppState | undefined>(undefined);
@@ -626,21 +628,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     };
     const restoreFromBackup = async (backupData: IAppData) => { apiRequest('POST', '/api/data/restore', backupData).then(() => { addNotification({ type: 'success', message: 'Restore successful! App will reload.' }); setTimeout(() => window.location.reload(), 1500); }).catch(() => {}); };
     const clearAllHistory = () => { apiRequest('POST', '/api/actions/clear-history').catch(() => {}); };
-    const resetAllPlayerData = () => {
-        const updatedUsers = users.map(u =>
-            u.role !== Role.DonegeonMaster
-                ? {
-                    ...u,
-                    personalPurse: {},
-                    personalExperience: {},
-                    guildBalances: {},
-                    ownedAssetIds: [],
-                    avatar: {},
-                  }
-                : u
-        );
-        authDispatch.setUsers(updatedUsers);
-    };
+    const resetAllPlayerData = () => { apiRequest('POST', '/api/data/reset-player-data').catch(() => {}); };
     const deleteAllCustomContent = () => { apiRequest('POST', '/api/data/delete-custom-content').catch(() => {}); };
     const uploadFile = async (file: File, category?: string) => {
         const formData = new FormData();
@@ -719,15 +707,15 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         addSystemNotification({ type: SystemNotificationType.TrophyAwarded, message: `You unlocked a new trophy: "${t.name}"!`, recipientUserIds: [userId], guildId, icon: t.icon, link: 'Trophies' });
       }
     };
-    const applyManualAdjustment = (adj: Omit<AdminAdjustment, 'id'|'adjustedAt'>): boolean => {
+    const applyManualAdjustment = (adj: Omit<AdminAdjustment, 'id'|'adjustedAt'|'adjusterId'>): boolean => {
       if (adj.type === AdminAdjustmentType.Setback) {
         if (!deductRewards(adj.userId, adj.setbacks, adj.guildId)) {
             return false; // Deduction failed, so don't log the adjustment.
         }
       }
-      
-      const fullAdj = {...adj, id: `adj-${Date.now()}`, adjustedAt: new Date().toISOString() };
-      setAdminAdjustments(p => [...p, fullAdj]);
+
+      const fullAdj = {...adj, adjusterId: currentUserRef.current!.id, id: `adj-${Date.now()}`, adjustedAt: new Date().toISOString() };
+      apiRequest('POST', '/api/adjustments', fullAdj).catch(() => {});
       
       if (adj.type === AdminAdjustmentType.Trophy && adj.trophyId) {
         awardTrophy(adj.userId, adj.trophyId, adj.guildId);
@@ -879,7 +867,30 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     };
     const rejectPurchaseRequest = (purchaseId: string) => { setPurchaseRequests(p => p.map(req => req.id === purchaseId ? { ...req, status: PurchaseRequestStatus.Rejected, actedAt: new Date().toISOString() } : req)); };
     const executeExchange = async (userId: string, payItem: RewardItem, receiveItem: RewardItem, guildId?: string) => { apiRequest('POST', '/api/actions/execute-exchange', { userId, payItem, receiveItem, guildId }).catch(() => {}); };
-    const importAssetPack = async (assetPack: AssetPack, resolutions: ImportResolution[], allData: IAppData) => { apiRequest('POST', '/api/data/import-assets', { assetPack, resolutions }).catch(() => {}); };
+    const importAssetPack = async (assetPack: AssetPack, resolutions: ImportResolution[]) => {
+        try {
+            const response = await apiRequest('POST', '/api/data/import-assets', { assetPack, resolutions });
+            if (response && response.importedData) {
+                const { importedData } = response;
+                if (importedData.quests) setQuests(prev => mergeData(prev, importedData.quests));
+                if (importedData.questGroups) setQuestGroups(prev => mergeData(prev, importedData.questGroups));
+                if (importedData.markets) setMarkets(prev => mergeData(prev, importedData.markets));
+                if (importedData.rewardTypes) setRewardTypes(prev => mergeData(prev, importedData.rewardTypes));
+                if (importedData.gameAssets) setGameAssets(prev => mergeData(prev, importedData.gameAssets));
+                if (importedData.ranks) setRanks(p => mergeData(p, importedData.ranks));
+                if (importedData.trophies) setTrophies(p => mergeData(p, importedData.trophies));
+                if (importedData.users) authDispatch.setUsers(p => mergeData(p, importedData.users));
+
+                addNotification({ type: 'success', message: `Asset pack "${assetPack.manifest.name}" imported successfully!` });
+            } else {
+                addNotification({ type: 'success', message: 'Import request sent. Data will sync shortly.' });
+                // Fallback to trigger a sync if the backend doesn't return data
+                performDeltaSync();
+            }
+        } catch (error) {
+            // apiRequest already shows a notification
+        }
+    };
     
     return {
       setQuests, setQuestGroups, setQuestCompletions, setMarkets, setRewardTypes,

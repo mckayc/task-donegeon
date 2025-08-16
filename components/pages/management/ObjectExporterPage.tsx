@@ -2,8 +2,8 @@ import React, { useState } from 'react';
 import Card from '../../user-interface/Card';
 import ExportPanel from '../../sharing/ExportPanel';
 import ImportPanel from '../../sharing/ImportPanel';
-import { useAppDispatch, useAppState } from '../../../context/AppContext';
-import { useAuthState } from '../../../context/AuthContext';
+import { useAppDispatch, useAppState } from '../../context/AppContext';
+import { useAuthState } from '../../context/AuthContext';
 import { IAppData, AssetPack, ImportResolution } from '../../../types';
 import { analyzeAssetPackForConflicts } from '../../../utils/sharing';
 import { useNotificationsDispatch } from '../../../context/NotificationsContext';
@@ -41,8 +41,7 @@ const ObjectExporterPage: React.FC = () => {
     };
     
     const handleConfirmImport = (pack: AssetPack, resolutions: ImportResolution[]) => {
-        const fullCurrentData: IAppData = { ...appState, ...authState };
-        importAssetPack(pack, resolutions, fullCurrentData);
+        importAssetPack(pack, resolutions);
         setAssetPackToPreview(null);
         setInitialResolutions([]);
     };

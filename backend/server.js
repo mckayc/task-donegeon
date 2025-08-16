@@ -267,6 +267,19 @@ const asyncMiddleware = fn => (req, res, next) => {
 
 // === API ROUTES ===
 
+app.get('/api/system/status', (req, res) => {
+    const isCustomDbPath = dbPath !== '/app/data/database/database.sqlite';
+    const status = {
+        geminiConnected: !!ai,
+        database: {
+            connected: dataSource.isInitialized,
+            isCustomPath: isCustomDbPath
+        },
+        jwtSecretSet: !!process.env.JWT_SECRET
+    };
+    res.json(status);
+});
+
 // Server-Sent Events endpoint
 app.get('/api/data/events', (req, res) => {
     res.setHeader('Content-Type', 'text/event-stream');

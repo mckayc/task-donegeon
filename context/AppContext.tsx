@@ -666,7 +666,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       clearAllHistory: () => apiRequest('POST', '/api/actions/clear-history').catch(() => {}),
       resetAllPlayerData: () => apiRequest('POST', '/api/actions/reset-all-player-data').catch(() => {}),
       deleteAllCustomContent: () => apiRequest('POST', '/api/data/delete-custom-content').catch(() => {}),
-      factoryReset: async () => apiRequest('POST', '/api/data/factory-reset').then(() => { addNotification({ type: 'success', message: 'Factory reset initiated. The app will restart.' }); setTimeout(() => window.location.reload(), 2000); }).catch(() => {}),
+      factoryReset: async () => apiRequest('POST', '/api/data/factory-reset').then(() => { addNotification({ type: 'success', message: 'Factory reset initiated. The app will restart.' }); setTimeout(() => window.location.reload(), 2000); }).catch(err => {}),
 
       updateSettings,
       resetSettings: () => updateSettings(INITIAL_SETTINGS),

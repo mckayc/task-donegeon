@@ -77,7 +77,23 @@ const CalendarPage: React.FC = () => {
         
         let displayTime = '';
         if (!event.allDay && event.start) {
-            displayTime = event.start.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            if (extendedProps.type === 'quest' && extendedProps.quest) {
+                const quest = extendedProps.quest as Quest;
+                if (quest.type === QuestType.Duty && quest.startTime) {
+                    const [hours, minutes] = quest.startTime.split(':').map(Number);
+                    const time = new Date();
+                    time.setHours(hours, minutes, 0, 0);
+                    displayTime = time.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+                } else if (quest.type === QuestType.Venture && quest.startDateTime) {
+                    displayTime = new Date(quest.startDateTime).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+                } else {
+                    // Fallback just in case, though one of the above should be true for a non-allDay quest
+                    displayTime = event.start.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+                }
+            } else {
+                // For scheduled events, birthdays, gcal, etc.
+                displayTime = event.start.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+            }
         }
 
         return (

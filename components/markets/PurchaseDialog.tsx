@@ -1,4 +1,3 @@
-
 import React, { useMemo } from 'react';
 import { useData } from '../../context/DataProvider';
 import { useActionsDispatch } from '../../context/ActionsContext';
@@ -15,7 +14,7 @@ interface PurchaseDialogProps {
 }
 
 const PurchaseDialog: React.FC<PurchaseDialogProps> = ({ asset, marketId, onClose }) => {
-    const { rewardTypes, scheduledEvents } = useData();
+    const { rewardTypes, scheduledEvents, markets } = useData();
     const { appMode } = useUIState();
     const { currentUser } = useAuthState();
     const { purchaseMarketItem } = useActionsDispatch();

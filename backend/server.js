@@ -1,4 +1,3 @@
-
 require("reflect-metadata");
 const express = require('express');
 const cors = require('cors');
@@ -1655,10 +1654,10 @@ app.post('/api/actions/execute-exchange', asyncMiddleware(async (req, res) => {
         }
 
         await userRepo.save(updateTimestamps(user));
+        const updatedUser = await userRepo.findOneBy({ id: userId });
         
         updateEmitter.emit('update');
-        // We don't need to send the user back because the websocket will trigger a sync
-        res.status(204).send();
+        res.status(200).json(updatedUser);
     }).catch(err => {
         console.error("Exchange transaction failed:", err.message);
         if (!res.headersSent) {
@@ -1667,6 +1666,117 @@ app.post('/api/actions/execute-exchange', asyncMiddleware(async (req, res) => {
     });
 }));
 
+const toYMD = (date) => {
+    const d = new Date(date);
+    const year = d.getFullYear();
+    const month = (d.getMonth() + 1).toString().padStart(2, '0');
+    const day = d.getDate().toString().padStart(2, '0');
+    return `${year}-${month}-${day}`;
+};
+
+const getFinalCostGroups = (costGroups, marketId, assetId, scheduledEvents) => {
+    const todayYMD = toYMD(new Date());
+    const activeSaleEvent = scheduledEvents.find(event =>
+        event.eventType === 'MarketSale' &&
+        event.modifiers.marketId === marketId &&
+        todayYMD >= event.startDate &&
+        todayYMD <= event.endDate &&
+        (!event.modifiers.assetIds || event.modifiers.assetIds.length === 0 || event.modifiers.assetIds.includes(assetId))
+    );
+
+    if (activeSaleEvent && activeSaleEvent.modifiers.discountPercent) {
+        const discount = activeSaleEvent.modifiers.discountPercent / 100;
+        return costGroups.map(group =>
+            group.map(c => ({ ...c, amount: Math.max(0, Math.ceil(c.amount * (1 - discount))) }))
+        );
+    }
+    return costGroups;
+};
+
+app.post('/api/actions/purchase-item', asyncMiddleware(async (req, res) => {
+    const { assetId, userId, costGroupIndex, guildId } = req.body;
+    let updatedUserResult;
+    
+    await dataSource.transaction(async manager => {
+        const user = await manager.findOneBy(UserEntity, { id: userId });
+        const asset = await manager.findOneBy(GameAssetEntity, { id: assetId });
+        const rewardTypes = await manager.find(RewardTypeDefinitionEntity);
+        const scheduledEvents = await manager.find(ScheduledEventEntity);
+
+        if (!user || !asset) throw new Error('User or Asset not found.');
+        if (!asset.isForSale) throw new Error('This item is not for sale.');
+
+        // User purchase limit check
+        if (asset.purchaseLimitType === 'PerUser' && asset.purchaseLimit !== null) {
+            const userPurchaseCount = user.ownedAssetIds.filter(id => id === assetId).length;
+            if (userPurchaseCount >= asset.purchaseLimit) throw new Error('You have reached the purchase limit for this item.');
+        }
+        
+        // Total purchase limit check
+        if (asset.purchaseLimitType === 'Total' && asset.purchaseLimit !== null) {
+            if (asset.purchaseCount >= asset.purchaseLimit) throw new Error('This item is sold out.');
+        }
+
+        const finalCostGroups = getFinalCostGroups(asset.costGroups, guildId, asset.id, scheduledEvents);
+        const chosenCostGroup = finalCostGroups[costGroupIndex];
+        if (!chosenCostGroup) throw new Error('Invalid cost option selected.');
+
+        const balanceSheet = guildId ? (user.guildBalances[guildId] || { purse: {}, experience: {} }) : { purse: user.personalPurse, experience: user.personalExperience };
+        
+        // Check affordability
+        for (const cost of chosenCostGroup) {
+            const rewardDef = rewardTypes.find(rt => rt.id === cost.rewardTypeId);
+            if (!rewardDef) throw new Error(`Invalid reward type ID: ${cost.rewardTypeId}`);
+            const balance = (rewardDef.category === 'Currency' ? balanceSheet.purse[cost.rewardTypeId] : balanceSheet.experience[cost.rewardTypeId]) || 0;
+            if (balance < cost.amount) throw new Error(`Insufficient funds: You need ${cost.amount} ${rewardDef.name} but only have ${balance}.`);
+        }
+
+        // Deduct funds
+        chosenCostGroup.forEach(cost => {
+            const rewardDef = rewardTypes.find(rt => rt.id === cost.rewardTypeId);
+            const balanceType = rewardDef.category === 'Currency' ? 'purse' : 'experience';
+            balanceSheet[balanceType][cost.rewardTypeId] -= cost.amount;
+        });
+        
+        if (guildId) user.guildBalances[guildId] = balanceSheet;
+        else {
+            user.personalPurse = balanceSheet.purse;
+            user.personalExperience = balanceSheet.experience;
+        }
+
+        // Add item to user
+        user.ownedAssetIds.push(assetId);
+        asset.purchaseCount += 1;
+
+        // Create purchase request record
+        const status = asset.requiresApproval ? 'Pending' : 'Completed';
+        const newPurchaseRequest = manager.create(PurchaseRequestEntity, {
+            id: `purch-${Date.now()}`,
+            userId: user.id,
+            assetId: asset.id,
+            requestedAt: new Date().toISOString(),
+            status,
+            assetDetails: { name: asset.name, description: asset.description, cost: chosenCostGroup },
+            guildId: guildId,
+        });
+
+        // If completed now, unlock linked theme
+        if (status === 'Completed' && asset.linkedThemeId) {
+            if (!user.ownedThemes.includes(asset.linkedThemeId)) {
+                user.ownedThemes.push(asset.linkedThemeId);
+            }
+        }
+        
+        await manager.save(updateTimestamps(user));
+        await manager.save(updateTimestamps(asset));
+        await manager.save(updateTimestamps(newPurchaseRequest, true));
+
+        updatedUserResult = await manager.findOneBy(UserEntity, { id: userId });
+    });
+
+    updateEmitter.emit('update');
+    res.status(200).json(updatedUserResult);
+}));
 
 // Media Upload
 app.post('/api/media/upload', upload.single('file'), async (req, res, next) => {

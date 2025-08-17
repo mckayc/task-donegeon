@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
-import { Role, Page, QuestCompletionStatus, PurchaseRequestStatus, Terminology, SidebarConfigItem, SidebarLink, SidebarHeader, TradeStatus } from '../../types';
+import { Role, Page, QuestCompletionStatus, PurchaseRequestStatus, Terminology, SidebarConfigItem, SidebarLink, SidebarHeader, TradeStatus, ChatMessage } from '../../types';
 import { ChevronDownIcon, ArrowLeftIcon, ArrowRightIcon } from '../user-interface/Icons';
 import { useData } from '../../context/DataProvider';
 import { useUIState, useUIDispatch } from '../../context/UIContext';
@@ -195,17 +195,22 @@ const Sidebar: React.FC = () => {
   const unreadMessagesCount = useMemo(() => {
     if (!currentUser) return 0;
     
-    // 1. Unread DMs are always relevant
     const unreadDms = chatMessages.filter(
-        msg => msg.recipientId === currentUser.id && !msg.readBy.includes(currentUser.id)
+        (msg: ChatMessage) => msg.recipientId === currentUser.id && 
+                !msg.readBy.includes(currentUser.id) &&
+                msg.senderId !== currentUser.id
     );
     const uniqueSenders = new Set(unreadDms.map(msg => msg.senderId));
     
-    // 2. Unread messages from any of the user's guilds
     const userGuildIds = new Set(guilds.filter(g => g.memberIds.includes(currentUser.id)).map(g => g.id));
     const unreadGuilds = new Set(
         chatMessages
-            .filter(msg => msg.guildId && userGuildIds.has(msg.guildId) && !msg.readBy.includes(currentUser.id))
+            .filter((msg: ChatMessage) => 
+                msg.guildId && 
+                userGuildIds.has(msg.guildId) && 
+                !msg.readBy.includes(currentUser.id) &&
+                msg.senderId !== currentUser.id
+            )
             .map(msg => msg.guildId)
     );
     

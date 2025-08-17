@@ -2,7 +2,7 @@ import React, { createContext, useContext, ReactNode, useCallback } from 'react'
 import { IAppData, Quest, User, QuestCompletion, AdminAdjustment, PurchaseRequest, Market, Guild, Rank, Trophy, RewardTypeDefinition, ThemeDefinition, ShareableAssetType, BulkQuestUpdates, ChatMessage, SystemNotification, ScheduledEvent, BugReport, Rotation, SetbackDefinition, AppliedSetback, TradeOffer, Gift, QuestGroup, GameAsset, RewardItem } from '../types';
 import { useNotificationsDispatch } from './NotificationsContext';
 import { bugLogger } from '../utils/bugLogger';
-import { useDataDispatch } from './DataProvider';
+import { useDataDispatch, useData } from './DataProvider';
 import { useAuthDispatch } from './AuthContext';
 
 // This interface defines all the functions our application can dispatch.
@@ -112,6 +112,7 @@ export const ActionsProvider: React.FC<{ children: ReactNode }> = ({ children })
     const { addNotification } = useNotificationsDispatch();
     const dataDispatch = useDataDispatch();
     const { updateUser, deleteUsers, setUsers } = useAuthDispatch();
+    const { markets } = useData();
 
     const apiRequest = useCallback(async (method: string, path: string, body?: any) => {
         try {
@@ -138,6 +139,24 @@ export const ActionsProvider: React.FC<{ children: ReactNode }> = ({ children })
             throw error;
         }
     }, [addNotification]);
+    
+    const purchaseMarketItem = useCallback(async (assetId: string, marketId: string, user: User, costGroupIndex: number) => {
+        const market = markets.find(m => m.id === marketId);
+        const guildId = market?.guildId;
+        const updatedUser = await apiRequest('POST', '/api/actions/purchase-item', { assetId, userId: user.id, costGroupIndex, guildId });
+        if (updatedUser) {
+            updateUser(updatedUser.id, updatedUser);
+            addNotification({ type: 'success', message: `Purchase successful!` });
+        }
+    }, [apiRequest, markets, updateUser, addNotification]);
+
+    const executeExchange = useCallback(async (userId: string, payItem: RewardItem, receiveItem: RewardItem, guildId?: string) => {
+        const updatedUser = await apiRequest('POST', '/api/actions/execute-exchange', { userId, payItem, receiveItem, guildId });
+        if (updatedUser) {
+            updateUser(updatedUser.id, updatedUser);
+            addNotification({ type: 'success', message: 'Exchange successful!' });
+        }
+    }, [apiRequest, updateUser, addNotification]);
     
     // Generic helper for add actions
     const createAddAction = <T_ADD, T_RETURN extends { id: any }, D extends keyof IAppData>(
@@ -255,12 +274,12 @@ export const ActionsProvider: React.FC<{ children: ReactNode }> = ({ children })
         approveQuestCompletion: (id, note) => apiRequest('POST', `/api/actions/approve-quest/${id}`, { note }),
         rejectQuestCompletion: (id, note) => apiRequest('POST', `/api/actions/reject-quest/${id}`, { note }),
 
-        purchaseMarketItem: (assetId, marketId, user, costGroupIndex) => apiRequest('POST', '/api/actions/purchase-item', { assetId, marketId, userId: user.id, costGroupIndex }),
+        purchaseMarketItem,
         approvePurchaseRequest: (id) => apiRequest('POST', `/api/actions/approve-purchase/${id}`),
         rejectPurchaseRequest: (id) => apiRequest('POST', `/api/actions/reject-purchase/${id}`),
         cancelPurchaseRequest: (id) => apiRequest('POST', `/api/actions/cancel-purchase/${id}`),
         
-        executeExchange: (userId, payItem, receiveItem, guildId) => apiRequest('POST', '/api/actions/execute-exchange', { userId, payItem, receiveItem, guildId }),
+        executeExchange,
 
         addGuild: createAddAction('/api/guilds', 'guilds'),
         updateGuild: createUpdateAction(id => `/api/guilds/${id}`, 'guilds'),

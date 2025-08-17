@@ -43,29 +43,52 @@ const ChatPanel: React.FC = () => {
     const dragControls = useDragControls();
     const isResizing = useRef(false);
 
-    const guildChatTargets = useMemo((): ChatTarget[] => {
-        if (!currentUser) return [];
-        const userGuilds = guilds.filter((g: Guild) => g.memberIds.includes(currentUser.id));
-        return userGuilds.map((guild: Guild) => ({
-            id: guild.id,
-            gameName: `${guild.name} Hall`,
-            isGuild: true,
-            icon: '🏰',
-        }));
-    }, [currentUser, guilds]);
-
     const chatPartners = useMemo(() => {
         if (!currentUser) return [];
-        const partners: ChatTarget[] = users.filter(user => user.id !== currentUser.id);
-        return [...guildChatTargets, ...partners];
-    }, [currentUser, users, guildChatTargets]);
+        
+        // Guilds the user is a member of
+        const userGuilds: ChatTarget[] = guilds
+            .filter(g => g.memberIds.includes(currentUser.id))
+            .map(guild => ({
+                id: guild.id,
+                gameName: `${guild.name} Hall`,
+                isGuild: true,
+                icon: '🏰',
+            }));
+    
+        // Other users
+        const userPartners: ChatTarget[] = users.filter(user => user.id !== currentUser.id);
+    
+        return [...userGuilds, ...userPartners];
+    }, [currentUser, users, guilds]);
 
     const unreadInfo = useMemo(() => {
         if (!currentUser) return { dms: new Set(), guilds: new Set() };
-        const dms = new Set(chatMessages.filter((msg: ChatMessage) => msg.recipientId === currentUser.id && !msg.readBy.includes(currentUser.id)).map((msg: ChatMessage) => msg.senderId));
-        const guildsWithUnread = new Set(chatMessages.filter((msg: ChatMessage) => msg.guildId && !msg.readBy.includes(currentUser.id) && users.find(u => u.id === msg.senderId)).map((msg: ChatMessage) => msg.guildId));
+
+        const dms = new Set(
+            chatMessages
+                .filter(msg => 
+                    msg.recipientId === currentUser.id && 
+                    !msg.readBy.includes(currentUser.id) &&
+                    msg.senderId !== currentUser.id
+                )
+                .map(msg => msg.senderId)
+        );
+
+        const userGuildIds = new Set(guilds.filter(g => g.memberIds.includes(currentUser.id)).map(g => g.id));
+        const guildsWithUnread = new Set(
+            chatMessages
+                .filter(msg => 
+                    msg.guildId && 
+                    userGuildIds.has(msg.guildId) && 
+                    !msg.readBy.includes(currentUser.id) &&
+                    msg.senderId !== currentUser.id
+                )
+                .map(msg => msg.guildId)
+        );
+        
         return { dms, guilds: guildsWithUnread };
-    }, [chatMessages, currentUser, users]);
+    }, [chatMessages, currentUser, guilds]);
 
     const activeConversation = useMemo(() => {
         if (!currentUser || !activeChatTarget) return [];

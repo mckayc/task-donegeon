@@ -95,11 +95,16 @@ export const BugDetailDialog: React.FC<BugDetailDialogProps> = ({ report: initia
             addNotification({ type: 'success', message: 'Log content copied to clipboard!' });
 
             const timestampsToUpdate = new Set(logTimestampsToCopy);
-            const newLogs = report.logs.map(log => 
-                timestampsToUpdate.has(log.timestamp)
-                ? { ...log, lastCopiedAt: new Date().toISOString() }
-                : log
-            );
+            const newLogs = report.logs.map(log => {
+                if (timestampsToUpdate.has(log.timestamp)) {
+                    const updatedLog: BugReportLogEntry = { ...log, lastCopiedAt: new Date().toISOString() };
+                    if (log.type === 'COMMENT') {
+                        updatedLog.isDimmed = true;
+                    }
+                    return updatedLog;
+                }
+                return log;
+            });
             
             const updates: Partial<BugReport> = { logs: newLogs };
 
@@ -208,8 +213,11 @@ export const BugDetailDialog: React.FC<BugDetailDialogProps> = ({ report: initia
                                 {sortedLogs.map((log, index) => {
                                     const isSelected = selectedLogs.includes(log.timestamp);
                                     const authorUser = log.type === 'COMMENT' ? users.find(u => u.gameName === log.author) : undefined;
+                                    const isComment = log.type === 'COMMENT';
+                                    const parentDimClass = !isComment && log.lastCopiedAt ? 'opacity-50' : '';
+
                                     return (
-                                        <div key={index} className={`relative group flex items-start gap-3 text-stone-400 text-sm p-2 pl-4 rounded-md transition-colors ${isSelected ? 'bg-emerald-900/40' : ''} ${log.lastCopiedAt ? 'opacity-50' : ''}`}>
+                                        <div key={index} className={`relative group flex items-start gap-3 text-stone-400 text-sm p-2 pl-4 rounded-md transition-colors ${isSelected ? 'bg-emerald-900/40' : ''} ${parentDimClass}`}>
                                             {log.lastCopiedAt && (
                                                 <div 
                                                     className="absolute left-0 top-0 bottom-0 w-1.5 bg-green-500 rounded-l-md" 
@@ -218,7 +226,7 @@ export const BugDetailDialog: React.FC<BugDetailDialogProps> = ({ report: initia
                                             )}
                                             <input type="checkbox" checked={isSelected} onChange={(e) => handleCheckboxClick(e, log.timestamp)} className="mt-1 flex-shrink-0 h-4 w-4 rounded text-emerald-600 bg-stone-700 border-stone-600 focus:ring-emerald-500" />
                                             
-                                            {log.type === 'COMMENT' ? (
+                                            {isComment ? (
                                                 <div className={`flex-grow transition-opacity duration-300 ${log.isDimmed ? 'opacity-40' : 'opacity-100'}`}>
                                                     <div className="flex items-center justify-between">
                                                         <div className="flex items-center gap-2">

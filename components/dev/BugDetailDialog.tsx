@@ -236,7 +236,7 @@ export const BugDetailDialog: React.FC<BugDetailDialogProps> = ({ report: initia
                                 <Button size="sm" variant="secondary" onClick={() => handleCopy(sortedLogs.map(l => l.timestamp))}>Copy Full Log</Button>
                             </div>
                             <div className="relative flex-grow min-h-0">
-                                <div ref={logContainerRef} onScroll={handleScroll} className="absolute inset-0 overflow-y-auto pr-4 space-y-4 scrollbar-hide">
+                                <div ref={logContainerRef} onScroll={handleScroll} className="absolute inset-0 overflow-y-auto pr-4 space-y-4">
                                     {sortedLogs.map((log, index) => {
                                         const isSelected = selectedLogs.includes(log.timestamp);
                                         const authorUser = log.type === 'COMMENT' ? users.find(u => u.gameName === log.author) : undefined;

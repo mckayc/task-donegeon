@@ -1,4 +1,4 @@
-import React, { useState, useMemo, ReactNode } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { BugReport, BugReportStatus, BugReportLogEntry } from '../../types';
 import { useActionsDispatch } from '../../context/ActionsContext';
 import { useNotificationsDispatch } from '../../context/NotificationsContext';
@@ -32,13 +32,18 @@ const LogIcon: React.FC<{type: BugReportLogEntry['type']}> = ({ type }) => {
     }
 }
 
-export const BugDetailDialog: React.FC<BugDetailDialogProps> = ({ report, onClose, allTags, getTagColor }) => {
+export const BugDetailDialog: React.FC<BugDetailDialogProps> = ({ report: initialReport, onClose, allTags, getTagColor }) => {
     const { updateBugReport } = useActionsDispatch();
     const { currentUser, users } = useAuthState();
     const { addNotification } = useNotificationsDispatch();
+    const [report, setReport] = useState(initialReport);
     const [questFromBug, setQuestFromBug] = useState<BugReport | null>(null);
     const [comment, setComment] = useState('');
     const [selectedLogs, setSelectedLogs] = useState<string[]>([]);
+
+    useEffect(() => {
+        setReport(initialReport);
+    }, [initialReport]);
 
     const sortedLogs = useMemo(() => {
         if (!report.logs) return [];
@@ -53,10 +58,14 @@ export const BugDetailDialog: React.FC<BugDetailDialogProps> = ({ report, onClos
     const handleCheckboxClick = useShiftSelect(logTimestamps, selectedLogs, setSelectedLogs);
 
     const handleTagsChange = (newTags: string[]) => {
+        const updatedReport = { ...report, tags: newTags };
+        setReport(updatedReport);
         updateBugReport(report.id, { tags: newTags });
     };
 
     const handleStatusChange = (newStatus: BugReportStatus) => {
+        const updatedReport = { ...report, status: newStatus };
+        setReport(updatedReport);
         updateBugReport(report.id, { status: newStatus });
         addNotification({ type: 'info', message: `Report status updated to ${newStatus}.` });
     };
@@ -91,7 +100,9 @@ export const BugDetailDialog: React.FC<BugDetailDialogProps> = ({ report, onClos
                 updates.status = 'In Progress';
                 addNotification({ type: 'info', message: `Status automatically updated to "In Progress".` });
             }
-
+            
+            const updatedReport = { ...report, ...updates };
+            setReport(updatedReport);
             updateBugReport(report.id, updates);
         });
     };
@@ -100,17 +111,32 @@ export const BugDetailDialog: React.FC<BugDetailDialogProps> = ({ report, onClos
         setQuestFromBug(report);
     };
 
-    const handleAddComment = () => {
+    const handleAddComment = async () => {
         if (!comment.trim() || !currentUser) return;
-        const newEntry: Omit<BugReportLogEntry, 'timestamp'> & { timestamp: string } = {
+        const newEntry: BugReportLogEntry = {
             type: 'COMMENT',
             message: comment.trim(),
             author: currentUser.gameName,
             timestamp: new Date().toISOString()
         };
         const newLogs = [...report.logs, newEntry];
-        updateBugReport(report.id, { logs: newLogs });
+        
+        // Optimistically update the UI
+        setReport(prev => ({ ...prev, logs: newLogs }));
         setComment('');
+
+        try {
+            // Persist the change
+            const updatedReportFromServer = await updateBugReport(report.id, { logs: newLogs });
+            if (updatedReportFromServer) {
+                // Sync with server state if needed, though optimistic update should match
+                setReport(updatedReportFromServer);
+            }
+        } catch (error) {
+            // Revert on failure
+            addNotification({ type: 'error', message: 'Failed to save comment.' });
+            setReport(prev => ({ ...prev, logs: prev.logs.filter(log => log.timestamp !== newEntry.timestamp)}));
+        }
     };
 
     const handleCloseQuestDialog = () => {

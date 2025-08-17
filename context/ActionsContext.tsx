@@ -87,7 +87,7 @@ export interface ActionsDispatch {
   importAssetPack: (pack: any, resolutions: any) => Promise<void>;
 
   addBugReport: (reportData: Partial<BugReport>) => Promise<void>;
-  updateBugReport: (reportId: string, updates: Partial<BugReport>) => Promise<void>;
+  updateBugReport: (reportId: string, updates: Partial<BugReport>) => Promise<BugReport | null>;
   deleteBugReports: (reportIds: string[]) => Promise<void>;
   importBugReports: (reports: BugReport[], mode: 'merge' | 'replace') => Promise<void>;
 
@@ -149,7 +149,7 @@ export const ActionsProvider: React.FC<{ children: ReactNode }> = ({ children })
         
         addMarket: (data) => apiRequest('POST', '/api/markets', data),
         updateMarket: (data) => apiRequest('PUT', `/api/markets/${data.id}`, data),
-        updateMarketsStatus: (ids, statusType) => apiRequest('PUT', '/api/markets/bulk-status', { ids, statusType }),
+        updateMarketsStatus: (marketIds, statusType) => apiRequest('PUT', '/api/markets/bulk-status', { ids: marketIds, statusType }),
         cloneMarket: (id) => apiRequest('POST', `/api/markets/clone/${id}`),
         
         addTrophy: (data) => apiRequest('POST', '/api/trophies', data),

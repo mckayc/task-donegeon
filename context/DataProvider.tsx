@@ -1,4 +1,3 @@
-
 import React, { createContext, useState, useContext, ReactNode, useCallback, useEffect, useReducer, useRef } from 'react';
 import { IAppData, User } from '../types';
 import { INITIAL_SETTINGS } from '../data/initialData';
@@ -96,7 +95,7 @@ export const DataDispatchContext = createContext<React.Dispatch<DataAction> | un
 export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [state, dispatch] = useReducer(dataReducer, initialState);
   const { addNotification } = useNotificationsDispatch();
-  const { setUsers, setCurrentUser, setLoginHistory } = useAuthDispatch();
+  const { setUsers, setCurrentUser, setLoginHistory, updateUser } = useAuthDispatch();
   const { users } = useAuthState();
 
   const lastSyncTimestamp = useRef<string | null>(null);
@@ -116,26 +115,27 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             
             if (lastSyncTimestamp.current) { // Delta update
                 dispatch({ type: 'UPDATE_DATA', payload: updates });
+                if (updates.users) {
+                    updates.users.forEach((user: User) => updateUser(user.id, user));
+                }
             } else { // Initial load
                 dispatch({ type: 'SET_ALL_DATA', payload: updates });
+                if (updates.users) {
+                    setUsers(updates.users);
+                     const lastUserId = localStorage.getItem('lastUserId');
+                     const lastUser = updates.users.find((u: User) => u.id === lastUserId);
+                     if(lastUser) {
+                        setCurrentUser(lastUser);
+                     }
+                }
             }
-            dispatch({ type: 'SET_SYNC_STATE', payload: { syncStatus: 'success', syncError: null } });
-
-
-            // Sync user data with AuthContext
-            if (updates.users) {
-                setUsers(updates.users);
-                 const lastUserId = localStorage.getItem('lastUserId');
-                 const lastUser = updates.users.find((u: User) => u.id === lastUserId);
-                 if(lastUser) {
-                    setCurrentUser(lastUser);
-                 }
-            }
-             if (updates.loginHistory) {
+            
+            if (updates.loginHistory) {
                 setLoginHistory(updates.loginHistory);
             }
 
             lastSyncTimestamp.current = newSyncTimestamp;
+            dispatch({ type: 'SET_SYNC_STATE', payload: { syncStatus: 'success', syncError: null } });
 
         } catch (error) {
             const message = error instanceof Error ? error.message : 'Unknown error';

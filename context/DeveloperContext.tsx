@@ -1,5 +1,5 @@
 import React, { createContext, useState, useContext, ReactNode, useCallback, useEffect, useMemo, useRef } from 'react';
-import { BugReport, BugReportLogEntry, BugReportType } from '../types';
+import { BugReport, BugReportLogEntry, BugReportStatus, BugReportType } from '../types';
 import { useActionsDispatch } from './ActionsContext';
 import { useData } from './DataProvider';
 import { bugLogger } from '../utils/bugLogger';
@@ -84,9 +84,10 @@ export const DeveloperProvider: React.FC<{ children: ReactNode }> = ({ children 
     } else {
         const newReport = {
             title,
-            reportType,
             createdAt: new Date().toISOString(),
             logs: finalLogs,
+            status: 'Open' as BugReportStatus,
+            tags: [reportType],
         };
         actionsDispatchRef.current.addBugReport(newReport);
     }

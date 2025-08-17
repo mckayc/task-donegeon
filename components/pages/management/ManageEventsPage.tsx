@@ -5,7 +5,6 @@ import Card from '../../user-interface/Card';
 import { toYMD } from '../../../utils/quests';
 import { ScheduleEventDialog } from '../../admin/ScheduleEventDialog';
 import ConfirmDialog from '../../user-interface/ConfirmDialog';
-import { EllipsisVerticalIcon } from '../../user-interface/Icons';
 import { useData } from '../../../context/DataProvider';
 import { useActionsDispatch } from '../../../context/ActionsContext';
 
@@ -16,18 +15,6 @@ const ManageEventsPage: React.FC = () => {
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [editingEvent, setEditingEvent] = useState<ScheduledEvent | null>(null);
     const [deletingEvent, setDeletingEvent] = useState<ScheduledEvent | null>(null);
-    const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
-    const dropdownRef = useRef<HTMLDivElement | null>(null);
-
-    useEffect(() => {
-        const handleClickOutside = (event: MouseEvent) => {
-            if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-                setOpenDropdownId(null);
-            }
-        };
-        document.addEventListener('mousedown', handleClickOutside);
-        return () => document.removeEventListener('mousedown', handleClickOutside);
-    }, []);
 
     const { upcoming, past } = useMemo(() => {
         const todayYMD = toYMD(new Date());
@@ -78,16 +65,9 @@ const ManageEventsPage: React.FC = () => {
                         </p>
                     </div>
                 </div>
-                <div className="relative">
-                    <button onClick={() => setOpenDropdownId(openDropdownId === event.id ? null : event.id)} className="p-2 rounded-full hover:bg-stone-700/50">
-                        <EllipsisVerticalIcon className="w-5 h-5 text-stone-300" />
-                    </button>
-                    {openDropdownId === event.id && (
-                        <div ref={dropdownRef} className="absolute right-0 mt-2 w-36 bg-stone-900 border border-stone-700 rounded-lg shadow-xl z-20">
-                            <a href="#" onClick={(e) => { e.preventDefault(); handleEdit(event); setOpenDropdownId(null); }} className="block px-4 py-2 text-sm text-stone-300 hover:bg-stone-700/50">Edit</a>
-                            <button onClick={() => { setDeletingEvent(event); setOpenDropdownId(null); }} className="w-full text-left block px-4 py-2 text-sm text-red-400 hover:bg-stone-700/50">Delete</button>
-                        </div>
-                    )}
+                <div className="flex items-center gap-2">
+                    <Button size="sm" variant="secondary" onClick={() => handleEdit(event)}>Edit</Button>
+                    <Button size="sm" variant="destructive" onClick={() => setDeletingEvent(event)}>Delete</Button>
                 </div>
             </div>
         );

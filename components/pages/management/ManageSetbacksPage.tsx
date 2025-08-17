@@ -1,14 +1,14 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useData } from '../../../context/DataProvider';
 import { useActionsDispatch } from '../../../context/ActionsContext';
 import { SetbackDefinition } from '../../../types';
 import Button from '../../user-interface/Button';
 import Card from '../../user-interface/Card';
-import { EllipsisVerticalIcon } from '../../user-interface/Icons';
 import EmptyState from '../../user-interface/EmptyState';
 import EditSetbackDialog from '../../admin/EditSetbackDialog';
 import ConfirmDialog from '../../user-interface/ConfirmDialog';
 import ApplySetbackDialog from '../../admin/ApplySetbackDialog';
+import { useShiftSelect } from '../../../hooks/useShiftSelect';
 
 const ManageSetbacksPage: React.FC = () => {
     const { settings, setbackDefinitions } = useData();
@@ -18,19 +18,11 @@ const ManageSetbacksPage: React.FC = () => {
     const [isApplyDialogOpen, setIsApplyDialogOpen] = useState(false);
     const [editingSetback, setEditingSetback] = useState<SetbackDefinition | null>(null);
     const [applyingSetback, setApplyingSetback] = useState<SetbackDefinition | null>(null);
-    const [deletingSetback, setDeletingSetback] = useState<SetbackDefinition | null>(null);
-    const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
-    const dropdownRef = useRef<HTMLDivElement | null>(null);
+    const [deletingIds, setDeletingIds] = useState<string[]>([]);
+    const [selectedSetbacks, setSelectedSetbacks] = useState<string[]>([]);
 
-    useEffect(() => {
-        const handleClickOutside = (event: MouseEvent) => {
-            if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-                setOpenDropdownId(null);
-            }
-        };
-        document.addEventListener('mousedown', handleClickOutside);
-        return () => document.removeEventListener('mousedown', handleClickOutside);
-    }, []);
+    const setbackIds = useMemo(() => setbackDefinitions.map(s => s.id), [setbackDefinitions]);
+    const handleCheckboxClick = useShiftSelect(setbackIds, selectedSetbacks, setSelectedSetbacks);
 
     const handleCreate = () => {
         setEditingSetback(null);
@@ -48,10 +40,15 @@ const ManageSetbacksPage: React.FC = () => {
     };
 
     const handleConfirmDelete = () => {
-        if (deletingSetback) {
-            deleteSelectedAssets({ setbackDefinitions: [deletingSetback.id] });
+        if (deletingIds.length > 0) {
+            deleteSelectedAssets({ setbackDefinitions: deletingIds });
         }
-        setDeletingSetback(null);
+        setDeletingIds([]);
+        setSelectedSetbacks(prev => prev.filter(id => !deletingIds.includes(id)));
+    };
+
+    const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setSelectedSetbacks(e.target.checked ? setbackIds : []);
     };
 
     return (
@@ -60,33 +57,37 @@ const ManageSetbacksPage: React.FC = () => {
                 title={settings.terminology.link_manage_setbacks}
                 headerAction={<Button onClick={handleCreate} size="sm">Create New Setback</Button>}
             >
+                {selectedSetbacks.length > 0 && (
+                     <div className="flex items-center gap-2 p-2 mb-4 bg-stone-900/50 rounded-lg">
+                        <span className="text-sm font-semibold text-stone-300 px-2">{selectedSetbacks.length} selected</span>
+                        <Button size="sm" variant="secondary" onClick={() => handleApply(setbackDefinitions.find(s => s.id === selectedSetbacks[0])!)} disabled={selectedSetbacks.length !== 1}>Apply</Button>
+                        <Button size="sm" variant="destructive" onClick={() => setDeletingIds(selectedSetbacks)}>Delete</Button>
+                    </div>
+                )}
                 {setbackDefinitions.length > 0 ? (
                     <div className="overflow-x-auto">
                         <table className="w-full text-left">
                             <thead className="border-b border-stone-700/60">
                                 <tr>
+                                    <th className="p-4 w-12">
+                                        <input type="checkbox" onChange={handleSelectAll} checked={selectedSetbacks.length === setbackIds.length && setbackIds.length > 0} className="h-4 w-4 rounded text-emerald-600 bg-stone-700 border-stone-600 focus:ring-emerald-500" />
+                                    </th>
                                     <th className="p-4 font-semibold">Name</th>
                                     <th className="p-4 font-semibold">Description</th>
-                                    <th className="p-4 font-semibold">Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {setbackDefinitions.map(setback => (
                                     <tr key={setback.id} className="border-b border-stone-700/40 last:border-b-0">
-                                        <td className="p-4 font-bold">{setback.icon} {setback.name}</td>
-                                        <td className="p-4 text-stone-400">{setback.description}</td>
-                                        <td className="p-4 relative">
-                                            <Button variant="secondary" size="sm" onClick={() => handleApply(setback)}>Apply</Button>
-                                            <button onClick={() => setOpenDropdownId(openDropdownId === setback.id ? null : setback.id)} className="p-2 rounded-full hover:bg-stone-700/50 ml-2">
-                                                <EllipsisVerticalIcon className="w-5 h-5 text-stone-300" />
-                                            </button>
-                                            {openDropdownId === setback.id && (
-                                                <div ref={dropdownRef} className="absolute right-0 top-full mt-2 w-36 bg-stone-900 border border-stone-700 rounded-lg shadow-xl z-20">
-                                                    <a href="#" onClick={(e) => { e.preventDefault(); handleEdit(setback); setOpenDropdownId(null); }} className="block px-4 py-2 text-sm text-stone-300 hover:bg-stone-700/50">Edit</a>
-                                                    <button onClick={() => { setDeletingSetback(setback); setOpenDropdownId(null); }} className="w-full text-left block px-4 py-2 text-sm text-red-400 hover:bg-stone-700/50">Delete</button>
-                                                </div>
-                                            )}
+                                        <td className="p-4">
+                                            <input type="checkbox" checked={selectedSetbacks.includes(setback.id)} onChange={(e) => handleCheckboxClick(e, setback.id)} className="h-4 w-4 rounded text-emerald-600 bg-stone-700 border-stone-600 focus:ring-emerald-500" />
                                         </td>
+                                        <td className="p-4 font-bold">
+                                            <button onClick={() => handleEdit(setback)} className="hover:underline hover:text-accent transition-colors text-left flex items-center gap-2">
+                                                {setback.icon} {setback.name}
+                                            </button>
+                                        </td>
+                                        <td className="p-4 text-stone-400">{setback.description}</td>
                                     </tr>
                                 ))}
                             </tbody>
@@ -106,11 +107,11 @@ const ManageSetbacksPage: React.FC = () => {
             {isApplyDialogOpen && applyingSetback && <ApplySetbackDialog setback={applyingSetback} onClose={() => setIsApplyDialogOpen(false)} />}
             
             <ConfirmDialog
-                isOpen={!!deletingSetback}
-                onClose={() => setDeletingSetback(null)}
+                isOpen={deletingIds.length > 0}
+                onClose={() => setDeletingIds([])}
                 onConfirm={handleConfirmDelete}
-                title="Delete Setback Definition"
-                message={`Are you sure you want to delete the definition for "${deletingSetback?.name}"? This cannot be undone.`}
+                title={`Delete ${deletingIds.length > 1 ? 'Definitions' : 'Definition'}`}
+                message={`Are you sure you want to delete ${deletingIds.length > 1 ? `${deletingIds.length} setback definitions` : `the definition for "${setbackDefinitions.find(s=>s.id === deletingIds[0])?.name}"`}? This cannot be undone.`}
             />
         </div>
     );

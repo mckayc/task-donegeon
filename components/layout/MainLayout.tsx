@@ -44,6 +44,7 @@ import ManageEventsPage from '../pages/management/ManageEventsPage';
 import BugTrackingPage from '../dev/BugTrackingPage';
 import ManageRotationsPage from '../pages/management/ManageRotationsPage';
 import ManageSetbacksPage from '../pages/management/ManageSetbacksPage';
+import ThemesPage from '../pages/ThemesPage';
 
 const MainLayout: React.FC = () => {
   const { settings, systemNotifications } = useData();
@@ -114,6 +115,7 @@ const MainLayout: React.FC = () => {
       case 'Dashboard': return <Dashboard />;
       case 'Avatar': return <AvatarPage />;
       case 'Collection': return <CollectionPage />;
+      case 'Themes': return <ThemesPage />;
       case 'Quests': return <QuestsPage />;
       case 'Marketplace': return <MarketplacePage />;
       case 'Calendar': return <CalendarPage />;

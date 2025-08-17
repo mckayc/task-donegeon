@@ -5,7 +5,7 @@ import Card from '../../user-interface/Card';
 import EditRankDialog from '../../settings/EditRankDialog';
 import ConfirmDialog from '../../user-interface/ConfirmDialog';
 import EmptyState from '../../user-interface/EmptyState';
-import { RankIcon, EllipsisVerticalIcon } from '../../user-interface/Icons';
+import { RankIcon } from '../../user-interface/Icons';
 import { useShiftSelect } from '../../../hooks/useShiftSelect';
 import { useData } from '../../../context/DataProvider';
 import { useActionsDispatch } from '../../../context/ActionsContext';
@@ -16,9 +16,7 @@ const ManageRanksPage: React.FC = () => {
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [editingRank, setEditingRank] = useState<Rank | null>(null);
     const [deletingIds, setDeletingIds] = useState<string[]>([]);
-    const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
     const [selectedRanks, setSelectedRanks] = useState<string[]>([]);
-    const dropdownRef = useRef<HTMLDivElement | null>(null);
 
     const sortedRanks = useMemo(() => {
         return [...ranks].sort((a, b) => a.xpThreshold - b.xpThreshold);
@@ -26,16 +24,6 @@ const ManageRanksPage: React.FC = () => {
 
     const rankIds = useMemo(() => sortedRanks.map(r => r.id), [sortedRanks]);
     const handleCheckboxClick = useShiftSelect(rankIds, selectedRanks, setSelectedRanks);
-
-    useEffect(() => {
-        const handleClickOutside = (event: MouseEvent) => {
-            if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-                setOpenDropdownId(null);
-            }
-        };
-        document.addEventListener('mousedown', handleClickOutside);
-        return () => document.removeEventListener('mousedown', handleClickOutside);
-    }, []);
 
     const handleCreate = () => {
         setEditingRank(null);
@@ -70,20 +58,10 @@ const ManageRanksPage: React.FC = () => {
     };
     
     const headerActions = (
-        <div className="flex items-center gap-2 flex-wrap">
-            {selectedRanks.length > 0 && (
-                 <>
-                    <span className="text-sm font-semibold text-stone-300 px-2">{selectedRanks.length} selected</span>
-                    <Button size="sm" variant="secondary" className="!bg-red-900/50 hover:!bg-red-800/60 text-red-300" onClick={() => handleDeleteRequest(selectedRanks)}>Delete</Button>
-                    <div className="border-l h-6 border-stone-600 mx-2"></div>
-                </>
-            )}
-            <Button onClick={handleCreate} size="sm">
-                Create New {settings.terminology.level}
-            </Button>
-        </div>
+        <Button onClick={handleCreate} size="sm">
+            Create New {settings.terminology.level}
+        </Button>
     );
-
 
     return (
         <div className="space-y-6">
@@ -91,6 +69,13 @@ const ManageRanksPage: React.FC = () => {
                 title={`All Created ${settings.terminology.levels}`}
                 headerAction={headerActions}
             >
+                 {selectedRanks.length > 0 && (
+                     <div className="flex items-center gap-2 p-2 mb-4 bg-stone-900/50 rounded-lg">
+                        <span className="text-sm font-semibold text-stone-300 px-2">{selectedRanks.length} selected</span>
+                        <Button size="sm" variant="secondary" onClick={() => handleEdit(sortedRanks.find(r => r.id === selectedRanks[0])!)} disabled={selectedRanks.length !== 1}>Edit</Button>
+                        <Button size="sm" variant="secondary" className="!bg-red-900/50 hover:!bg-red-800/60 text-red-300" onClick={() => handleDeleteRequest(selectedRanks)}>Delete</Button>
+                    </div>
+                )}
                 {sortedRanks.length > 0 ? (
                      <div className="overflow-x-auto">
                         <table className="w-full text-left">
@@ -107,7 +92,6 @@ const ManageRanksPage: React.FC = () => {
                                     <th className="p-4 font-semibold">Icon</th>
                                     <th className="p-4 font-semibold">Name</th>
                                     <th className="p-4 font-semibold">XP Threshold</th>
-                                    <th className="p-4 font-semibold">Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -122,25 +106,12 @@ const ManageRanksPage: React.FC = () => {
                                             />
                                         </td>
                                         <td className="p-4 text-2xl">{rank.icon}</td>
-                                        <td className="p-4 font-bold">{rank.name}</td>
-                                        <td className="p-4 text-stone-300">{rank.xpThreshold}</td>
-                                        <td className="p-4 relative">
-                                            <button onClick={() => setOpenDropdownId(openDropdownId === rank.id ? null : rank.id)} className="p-2 rounded-full hover:bg-stone-700/50">
-                                                <EllipsisVerticalIcon className="w-5 h-5 text-stone-300" />
+                                        <td className="p-4 font-bold">
+                                            <button onClick={() => handleEdit(rank)} className="hover:underline hover:text-accent transition-colors text-left">
+                                                {rank.name}
                                             </button>
-                                            {openDropdownId === rank.id && (
-                                                <div ref={dropdownRef} className="absolute right-10 top-0 mt-2 w-36 bg-stone-900 border border-stone-700 rounded-lg shadow-xl z-20">
-                                                    <a href="#" onClick={(e) => { e.preventDefault(); handleEdit(rank); setOpenDropdownId(null); }} className="block px-4 py-2 text-sm text-stone-300 hover:bg-stone-700/50">Edit</a>
-                                                    <button 
-                                                        onClick={() => { handleDeleteRequest([rank.id]); setOpenDropdownId(null); }} 
-                                                        className="w-full text-left block px-4 py-2 text-sm text-red-400 hover:bg-stone-700/50 disabled:opacity-50 disabled:text-stone-500"
-                                                        disabled={rank.xpThreshold === 0}
-                                                    >
-                                                        Delete
-                                                    </button>
-                                                </div>
-                                            )}
                                         </td>
+                                        <td className="p-4 text-stone-300">{rank.xpThreshold}</td>
                                     </tr>
                                 ))}
                             </tbody>

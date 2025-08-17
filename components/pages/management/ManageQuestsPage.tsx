@@ -2,12 +2,12 @@ import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react'
 import { useData } from '../../../context/DataProvider';
 import { useActionsDispatch } from '../../../context/ActionsContext';
 import { Quest, QuestType, QuestGroup } from '../../../types';
-import Button from '../../user-interface/Button';
-import Card from '../../user-interface/Card';
+import Button from '../user-interface/Button';
+import Card from '../user-interface/Card';
 import CreateQuestDialog from '../../quests/CreateQuestDialog';
 import ConfirmDialog from '../../user-interface/ConfirmDialog';
 import QuestIdeaGenerator from '../../quests/QuestIdeaGenerator';
-import { QuestsIcon, EllipsisVerticalIcon } from '../../user-interface/Icons';
+import { QuestsIcon } from '../../user-interface/Icons';
 import EmptyState from '../../user-interface/EmptyState';
 import Input from '../../user-interface/Input';
 import BulkEditQuestsDialog from '../../quests/BulkEditQuestsDialog';
@@ -24,8 +24,6 @@ const ManageQuestsPage: React.FC = () => {
     const [confirmation, setConfirmation] = useState<{ action: 'delete' | 'activate' | 'deactivate', ids: string[] } | null>(null);
     const [initialCreateData, setInitialCreateData] = useState<any | null>(null);
     const [selectedQuests, setSelectedQuests] = useState<string[]>([]);
-    const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
-    const dropdownRef = useRef<HTMLDivElement | null>(null);
     
     const [activeTab, setActiveTab] = useState('All');
     const [searchTerm, setSearchTerm] = useState('');
@@ -63,16 +61,6 @@ const ManageQuestsPage: React.FC = () => {
         
         return filtered;
     }, [activeTab, debouncedSearchTerm, sortBy, quests, questGroups]);
-
-    useEffect(() => {
-        const handleClickOutside = (event: MouseEvent) => {
-            if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-                setOpenDropdownId(null);
-            }
-        };
-        document.addEventListener('mousedown', handleClickOutside);
-        return () => document.removeEventListener('mousedown', handleClickOutside);
-    }, []);
 
     const tabs = useMemo(() => ['All', 'Uncategorized', ...questGroups.map(g => g.name)], [questGroups]);
     
@@ -198,6 +186,7 @@ const ManageQuestsPage: React.FC = () => {
                     {selectedQuests.length > 0 && (
                         <div className="flex items-center gap-2 p-2 bg-stone-900/50 rounded-lg">
                             <span className="text-sm font-semibold text-stone-300 px-2">{selectedQuests.length} selected</span>
+                            <Button size="sm" variant="secondary" onClick={() => cloneQuest(selectedQuests[0])} disabled={selectedQuests.length !== 1} data-log-id="manage-quests-bulk-clone">Clone</Button>
                             <Button size="sm" variant="secondary" onClick={() => setIsBulkEditDialogOpen(true)} data-log-id="manage-quests-bulk-edit">Bulk Edit</Button>
                             <Button size="sm" variant="secondary" className="!bg-green-800/60 hover:!bg-green-700/70 text-green-200" onClick={() => setConfirmation({ action: 'activate', ids: selectedQuests })} data-log-id="manage-quests-bulk-activate">Mark Active</Button>
                             <Button size="sm" variant="secondary" className="!bg-yellow-800/60 hover:!bg-yellow-700/70 text-yellow-200" onClick={() => setConfirmation({ action: 'deactivate', ids: selectedQuests })} data-log-id="manage-quests-bulk-deactivate">Mark Inactive</Button>
@@ -218,7 +207,6 @@ const ManageQuestsPage: React.FC = () => {
                                     <th className="p-4 font-semibold">Type</th>
                                     <th className="p-4 font-semibold">Status</th>
                                     <th className="p-4 font-semibold">Tags</th>
-                                    <th className="p-4 font-semibold">Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -244,18 +232,6 @@ const ManageQuestsPage: React.FC = () => {
                                                     </span>
                                                 ))}
                                             </div>
-                                        </td>
-                                        <td className="p-4 relative">
-                                            <button onClick={() => setOpenDropdownId(openDropdownId === quest.id ? null : quest.id)} className="p-2 rounded-full hover:bg-stone-700/50">
-                                                <EllipsisVerticalIcon className="w-5 h-5 text-stone-300" />
-                                            </button>
-                                            {openDropdownId === quest.id && (
-                                                <div ref={dropdownRef} className="absolute right-10 top-0 mt-2 w-36 bg-stone-900 border border-stone-700 rounded-lg shadow-xl z-20">
-                                                    <a href="#" onClick={(e) => { e.preventDefault(); handleEdit(quest); setOpenDropdownId(null); }} data-log-id={`manage-quests-action-edit-${quest.id}`} className="block px-4 py-2 text-sm text-stone-300 hover:bg-stone-700/50">Edit</a>
-                                                    <button onClick={() => { cloneQuest(quest.id); setOpenDropdownId(null); }} data-log-id={`manage-quests-action-clone-${quest.id}`} className="w-full text-left block px-4 py-2 text-sm text-stone-300 hover:bg-stone-700/50">Clone</button>
-                                                    <button onClick={() => { setConfirmation({ action: 'delete', ids: [quest.id] }); setOpenDropdownId(null); }} data-log-id={`manage-quests-action-delete-${quest.id}`} className="w-full text-left block px-4 py-2 text-sm text-red-400 hover:bg-stone-700/50">Delete</button>
-                                                </div>
-                                            )}
                                         </td>
                                     </tr>
                                 ))}

@@ -79,7 +79,7 @@ const TrophiesPage: React.FC = () => {
             <h4 className={`font-bold text-lg ${isEarned ? 'text-amber-300' : 'text-stone-300'}`}>{trophy.name}</h4>
             <p className="text-stone-400 text-sm mt-1 flex-grow">{trophy.description}</p>
             {isEarned && trophy.awardedAt && (
-                 <p className="text-xs text-stone-500 mt-2">Awarded: {fromYMD(trophy.awardedAt).toLocaleDateString()}</p>
+                 <p className="text-xs text-stone-500 mt-2">Awarded: {new Date(trophy.awardedAt).toLocaleDateString()}</p>
             )}
             {!isEarned && <RequirementStatus trophy={trophy} />}
         </div>

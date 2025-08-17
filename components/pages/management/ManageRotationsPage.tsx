@@ -1,15 +1,15 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useData } from '../../../context/DataProvider';
 import { useActionsDispatch } from '../../../context/ActionsContext';
 import { Rotation, SystemNotificationType } from '../../../types';
 import Button from '../../user-interface/Button';
 import Card from '../../user-interface/Card';
-import { EllipsisVerticalIcon } from '../../user-interface/Icons';
 import EmptyState from '../../user-interface/EmptyState';
 import EditRotationDialog from '../../rotations/EditRotationDialog';
 import ConfirmDialog from '../../user-interface/ConfirmDialog';
 import { toYMD } from '../../../utils/quests';
 import { useNotificationsDispatch } from '../../../context/NotificationsContext';
+import { useShiftSelect } from '../../../hooks/useShiftSelect';
 
 const ManageRotationsPage: React.FC = () => {
     const { settings, rotations, quests } = useData();
@@ -18,19 +18,11 @@ const ManageRotationsPage: React.FC = () => {
     
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [editingRotation, setEditingRotation] = useState<Rotation | null>(null);
-    const [deletingRotation, setDeletingRotation] = useState<Rotation | null>(null);
-    const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
-    const dropdownRef = useRef<HTMLDivElement | null>(null);
+    const [deletingIds, setDeletingIds] = useState<string[]>([]);
+    const [selectedRotations, setSelectedRotations] = useState<string[]>([]);
 
-    useEffect(() => {
-        const handleClickOutside = (event: MouseEvent) => {
-            if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-                setOpenDropdownId(null);
-            }
-        };
-        document.addEventListener('mousedown', handleClickOutside);
-        return () => document.removeEventListener('mousedown', handleClickOutside);
-    }, []);
+    const rotationIds = useMemo(() => rotations.map(r => r.id), [rotations]);
+    const handleCheckboxClick = useShiftSelect(rotationIds, selectedRotations, setSelectedRotations);
 
     const handleCreate = () => {
         setEditingRotation(null);
@@ -43,10 +35,15 @@ const ManageRotationsPage: React.FC = () => {
     };
 
     const handleConfirmDelete = () => {
-        if (deletingRotation) {
-            deleteSelectedAssets({ rotations: [deletingRotation.id] });
+        if (deletingIds.length > 0) {
+            deleteSelectedAssets({ rotations: deletingIds });
         }
-        setDeletingRotation(null);
+        setDeletingIds([]);
+        setSelectedRotations(prev => prev.filter(id => !deletingIds.includes(id)));
+    };
+    
+    const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setSelectedRotations(e.target.checked ? rotationIds : []);
     };
 
     const handleRunRotation = (rotationId: string) => {
@@ -93,35 +90,37 @@ const ManageRotationsPage: React.FC = () => {
                 title={settings.terminology.link_manage_rotations}
                 headerAction={<Button onClick={handleCreate} size="sm">Create New Rotation</Button>}
             >
+                 {selectedRotations.length > 0 && (
+                     <div className="flex items-center gap-2 p-2 mb-4 bg-stone-900/50 rounded-lg">
+                        <span className="text-sm font-semibold text-stone-300 px-2">{selectedRotations.length} selected</span>
+                        <Button size="sm" variant="secondary" onClick={() => handleRunRotation(selectedRotations[0])} disabled={selectedRotations.length !== 1}>Run Now</Button>
+                        <Button size="sm" variant="destructive" onClick={() => setDeletingIds(selectedRotations)}>Delete</Button>
+                    </div>
+                )}
                 {rotations.length > 0 ? (
                     <div className="overflow-x-auto">
                         <table className="w-full text-left">
                             <thead className="border-b border-stone-700/60">
                                 <tr>
+                                    <th className="p-4 w-12"><input type="checkbox" onChange={handleSelectAll} checked={selectedRotations.length === rotationIds.length && rotationIds.length > 0} className="h-4 w-4 rounded text-emerald-600 bg-stone-700 border-stone-600 focus:ring-emerald-500" /></th>
                                     <th className="p-4 font-semibold">Name</th>
                                     <th className="p-4 font-semibold">Description</th>
                                     <th className="p-4 font-semibold">Frequency</th>
-                                    <th className="p-4 font-semibold">Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {rotations.map(rotation => (
                                     <tr key={rotation.id} className="border-b border-stone-700/40 last:border-b-0">
-                                        <td className="p-4 font-bold">{rotation.name}</td>
+                                         <td className="p-4">
+                                            <input type="checkbox" checked={selectedRotations.includes(rotation.id)} onChange={(e) => handleCheckboxClick(e, rotation.id)} className="h-4 w-4 rounded text-emerald-600 bg-stone-700 border-stone-600 focus:ring-emerald-500" />
+                                        </td>
+                                        <td className="p-4 font-bold">
+                                             <button onClick={() => handleEdit(rotation)} className="hover:underline hover:text-accent transition-colors text-left">
+                                                {rotation.name}
+                                            </button>
+                                        </td>
                                         <td className="p-4 text-stone-400">{rotation.description}</td>
                                         <td className="p-4 text-stone-300 capitalize">{rotation.frequency.toLowerCase()}</td>
-                                        <td className="p-4 relative">
-                                            <Button variant="secondary" size="sm" onClick={() => handleRunRotation(rotation.id)}>Run Now</Button>
-                                            <button onClick={() => setOpenDropdownId(openDropdownId === rotation.id ? null : rotation.id)} className="p-2 rounded-full hover:bg-stone-700/50 ml-2">
-                                                <EllipsisVerticalIcon className="w-5 h-5 text-stone-300" />
-                                            </button>
-                                            {openDropdownId === rotation.id && (
-                                                <div ref={dropdownRef} className="absolute right-0 top-full mt-2 w-36 bg-stone-900 border border-stone-700 rounded-lg shadow-xl z-20">
-                                                    <a href="#" onClick={(e) => { e.preventDefault(); handleEdit(rotation); setOpenDropdownId(null); }} className="block px-4 py-2 text-sm text-stone-300 hover:bg-stone-700/50">Edit</a>
-                                                    <button onClick={() => { setDeletingRotation(rotation); setOpenDropdownId(null); }} className="w-full text-left block px-4 py-2 text-sm text-red-400 hover:bg-stone-700/50">Delete</button>
-                                                </div>
-                                            )}
-                                        </td>
                                     </tr>
                                 ))}
                             </tbody>
@@ -140,11 +139,11 @@ const ManageRotationsPage: React.FC = () => {
             {isDialogOpen && <EditRotationDialog rotationToEdit={editingRotation} onClose={() => setIsDialogOpen(false)} />}
             
             <ConfirmDialog
-                isOpen={!!deletingRotation}
-                onClose={() => setDeletingRotation(null)}
+                isOpen={deletingIds.length > 0}
+                onClose={() => setDeletingIds([])}
                 onConfirm={handleConfirmDelete}
-                title="Delete Rotation"
-                message={`Are you sure you want to delete the rotation "${deletingRotation?.name}"? This cannot be undone.`}
+                title={`Delete ${deletingIds.length > 1 ? 'Rotations' : 'Rotation'}`}
+                message={`Are you sure you want to delete ${deletingIds.length > 1 ? `${deletingIds.length} rotations` : `this rotation`}? This cannot be undone.`}
             />
         </div>
     );

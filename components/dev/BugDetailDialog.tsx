@@ -77,7 +77,7 @@ export const BugDetailDialog: React.FC<BugDetailDialogProps> = ({ report: initia
         addNotification({ type: 'info', message: `Report status updated to ${newStatus}.` });
     };
     
-    const handleCopy = (logTimestampsToCopy: string[]) => {
+    const handleCopy = (logTimestampsToCopy: string[], clearSelection = false) => {
         if (logTimestampsToCopy.length === 0) return;
 
         const logsToCopy = sortedLogs.filter(log => logTimestampsToCopy.includes(log.timestamp));
@@ -111,6 +111,10 @@ export const BugDetailDialog: React.FC<BugDetailDialogProps> = ({ report: initia
             const updatedReport = { ...report, ...updates };
             setReport(updatedReport);
             updateBugReport(report.id, updates);
+
+            if (clearSelection) {
+                setSelectedLogs([]);
+            }
         });
     };
     
@@ -185,7 +189,7 @@ export const BugDetailDialog: React.FC<BugDetailDialogProps> = ({ report: initia
                                     <input type="checkbox" onChange={handleSelectAllLogs} checked={selectedLogs.length === sortedLogs.length && sortedLogs.length > 0} className="h-4 w-4 rounded text-emerald-600 bg-stone-700 border-stone-600 focus:ring-emerald-500" />
                                     <span>Select All</span>
                                 </label>
-                                <Button size="sm" variant="secondary" onClick={() => handleCopy(selectedLogs)} disabled={selectedLogs.length === 0}>Copy Selected ({selectedLogs.length})</Button>
+                                <Button size="sm" variant="secondary" onClick={() => handleCopy(selectedLogs, true)} disabled={selectedLogs.length === 0}>Copy Selected ({selectedLogs.length})</Button>
                                 <Button size="sm" variant="secondary" onClick={() => handleCopy(sortedLogs.map(l => l.timestamp))}>Copy Full Log</Button>
                             </div>
                             <div ref={logContainerRef} className="flex-grow overflow-y-auto pr-4 space-y-4">

@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useData } from '../../../context/DataProvider';
 import { useActionsDispatch } from '../../../context/ActionsContext';
 import { GameAsset } from '../../../types';
@@ -7,7 +7,7 @@ import Card from '../../user-interface/Card';
 import ConfirmDialog from '../../user-interface/ConfirmDialog';
 import EditGameAssetDialog from '../../admin/EditGameAssetDialog';
 import EmptyState from '../../user-interface/EmptyState';
-import { ItemManagerIcon, EllipsisVerticalIcon } from '../../user-interface/Icons';
+import { ItemManagerIcon } from '../../user-interface/Icons';
 import ItemIdeaGenerator from '../../quests/ItemIdeaGenerator';
 import Input from '../../user-interface/Input';
 import ImagePreviewDialog from '../../user-interface/ImagePreviewDialog';
@@ -29,8 +29,6 @@ const ManageItemsPage: React.FC = () => {
     const [confirmation, setConfirmation] = useState<{ action: 'delete', ids: string[] } | null>(null);
     const [initialCreateData, setInitialCreateData] = useState<any | null>(null);
     const [selectedAssets, setSelectedAssets] = useState<string[]>([]);
-    const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
-    const dropdownRef = useRef<HTMLDivElement | null>(null);
     
     const [activeTab, setActiveTab] = useState('All');
     const [searchTerm, setSearchTerm] = useState('');
@@ -48,16 +46,6 @@ const ManageItemsPage: React.FC = () => {
 
     const pageAssetIds = useMemo(() => pageAssets.map(a => a.id), [pageAssets]);
     const handleCheckboxClick = useShiftSelect(pageAssetIds, selectedAssets, setSelectedAssets);
-
-    useEffect(() => {
-        const handleClickOutside = (event: MouseEvent) => {
-            if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-                setOpenDropdownId(null);
-            }
-        };
-        document.addEventListener('mousedown', handleClickOutside);
-        return () => document.removeEventListener('mousedown', handleClickOutside);
-    }, []);
 
     const fetchAssets = useCallback(async () => {
         setIsLoading(true);
@@ -230,6 +218,8 @@ const ManageItemsPage: React.FC = () => {
                     {selectedAssets.length > 0 && (
                         <div className="flex items-center gap-2 p-2 bg-stone-900/50 rounded-lg">
                             <span className="text-sm font-semibold text-stone-300 px-2">{selectedAssets.length} selected</span>
+                            <Button size="sm" variant="secondary" onClick={() => handleEdit(pageAssets.find(a => a.id === selectedAssets[0])!)} disabled={selectedAssets.length !== 1}>Edit</Button>
+                            <Button size="sm" variant="secondary" onClick={() => cloneGameAsset(selectedAssets[0])} disabled={selectedAssets.length !== 1}>Clone</Button>
                             <Button size="sm" variant="secondary" className="!bg-red-900/50 hover:!bg-red-800/60 text-red-300" onClick={() => setConfirmation({ action: 'delete', ids: selectedAssets })} data-log-id="manage-items-bulk-delete">Delete</Button>
                         </div>
                     )}
@@ -247,7 +237,6 @@ const ManageItemsPage: React.FC = () => {
                                     <th className="p-4 font-semibold">Name</th>
                                     <th className="p-4 font-semibold">Category</th>
                                     <th className="p-4 font-semibold">For Sale</th>
-                                    <th className="p-4 font-semibold">Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -271,18 +260,6 @@ const ManageItemsPage: React.FC = () => {
                                             </td>
                                             <td className="p-4 text-stone-400">{asset.category}</td>
                                             <td className="p-4 text-stone-300">{asset.isForSale ? 'Yes' : 'No'}</td>
-                                            <td className="p-4 relative">
-                                                <button onClick={() => setOpenDropdownId(openDropdownId === asset.id ? null : asset.id)} className="p-2 rounded-full hover:bg-stone-700/50">
-                                                    <EllipsisVerticalIcon className="w-5 h-5 text-stone-300" />
-                                                </button>
-                                                {openDropdownId === asset.id && (
-                                                    <div ref={dropdownRef} className="absolute right-10 top-0 mt-2 w-36 bg-stone-900 border border-stone-700 rounded-lg shadow-xl z-20">
-                                                        <a href="#" onClick={(e) => { e.preventDefault(); handleEdit(asset); setOpenDropdownId(null); }} data-log-id={`manage-items-action-edit-${asset.id}`} className="block px-4 py-2 text-sm text-stone-300 hover:bg-stone-700/50">Edit</a>
-                                                        <button onClick={() => { cloneGameAsset(asset.id); setOpenDropdownId(null); }} data-log-id={`manage-items-action-clone-${asset.id}`} className="w-full text-left block px-4 py-2 text-sm text-stone-300 hover:bg-stone-700/50">Clone</button>
-                                                        <button onClick={() => { setConfirmation({ action: 'delete', ids: [asset.id] }); setOpenDropdownId(null); }} data-log-id={`manage-items-action-delete-${asset.id}`} className="w-full text-left block px-4 py-2 text-sm text-red-400 hover:bg-stone-700/50">Delete</button>
-                                                    </div>
-                                                )}
-                                            </td>
                                         </tr>
                                     );
                                 })}

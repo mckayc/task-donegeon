@@ -6,7 +6,7 @@ import EditTrophyDialog from '../../settings/EditTrophyDialog';
 import ConfirmDialog from '../../user-interface/ConfirmDialog';
 import EmptyState from '../../user-interface/EmptyState';
 import TrophyIdeaGenerator from '../../quests/TrophyIdeaGenerator';
-import { TrophyIcon, EllipsisVerticalIcon } from '../../user-interface/Icons';
+import { TrophyIcon } from '../../user-interface/Icons';
 import { useShiftSelect } from '../../../hooks/useShiftSelect';
 import { useData } from '../../../context/DataProvider';
 import { useActionsDispatch } from '../../../context/ActionsContext';
@@ -20,23 +20,11 @@ const ManageTrophiesPage: React.FC = () => {
     const [isGeneratorOpen, setIsGeneratorOpen] = useState(false);
     const [initialCreateData, setInitialCreateData] = useState<{ name: string; description: string; icon: string; } | null>(null);
     const [selectedTrophies, setSelectedTrophies] = useState<string[]>([]);
-    const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
-    const dropdownRef = useRef<HTMLDivElement | null>(null);
 
     const isAiAvailable = settings.enableAiFeatures && isAiConfigured;
 
     const trophyIds = useMemo(() => trophies.map(t => t.id), [trophies]);
     const handleCheckboxClick = useShiftSelect(trophyIds, selectedTrophies, setSelectedTrophies);
-
-    useEffect(() => {
-        const handleClickOutside = (event: MouseEvent) => {
-            if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-                setOpenDropdownId(null);
-            }
-        };
-        document.addEventListener('mousedown', handleClickOutside);
-        return () => document.removeEventListener('mousedown', handleClickOutside);
-    }, []);
 
     const handleCreate = () => {
         setEditingTrophy(null);
@@ -82,13 +70,6 @@ const ManageTrophiesPage: React.FC = () => {
 
     const headerActions = (
         <div className="flex items-center gap-2 flex-wrap">
-            {selectedTrophies.length > 0 && (
-                <>
-                    <span className="text-sm font-semibold text-stone-300 px-2">{selectedTrophies.length} selected</span>
-                    <Button size="sm" variant="secondary" className="!bg-red-900/50 hover:!bg-red-800/60 text-red-300" onClick={() => handleDeleteRequest(selectedTrophies)}>Delete</Button>
-                    <div className="border-l h-6 border-stone-600 mx-2"></div>
-                </>
-            )}
              {isAiAvailable && (
                 <Button size="sm" onClick={() => setIsGeneratorOpen(true)} variant="secondary">
                     Create with AI
@@ -104,6 +85,13 @@ const ManageTrophiesPage: React.FC = () => {
                 title={`All Created ${settings.terminology.awards}`}
                 headerAction={headerActions}
             >
+                 {selectedTrophies.length > 0 && (
+                    <div className="flex items-center gap-2 p-2 mb-4 bg-stone-900/50 rounded-lg">
+                        <span className="text-sm font-semibold text-stone-300 px-2">{selectedTrophies.length} selected</span>
+                        <Button size="sm" variant="secondary" onClick={() => handleEdit(trophies.find(t => t.id === selectedTrophies[0])!)} disabled={selectedTrophies.length !== 1}>Edit</Button>
+                        <Button size="sm" variant="secondary" className="!bg-red-900/50 hover:!bg-red-800/60 text-red-300" onClick={() => handleDeleteRequest(selectedTrophies)}>Delete</Button>
+                    </div>
+                )}
                 {trophies.length > 0 ? (
                      <div className="overflow-x-auto">
                         <table className="w-full text-left">
@@ -114,7 +102,6 @@ const ManageTrophiesPage: React.FC = () => {
                                     <th className="p-4 font-semibold">Name</th>
                                     <th className="p-4 font-semibold">Description</th>
                                     <th className="p-4 font-semibold">Type</th>
-                                    <th className="p-4 font-semibold">Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -122,23 +109,16 @@ const ManageTrophiesPage: React.FC = () => {
                                     <tr key={trophy.id} className="border-b border-stone-700/40 last:border-b-0">
                                         <td className="p-4"><input type="checkbox" checked={selectedTrophies.includes(trophy.id)} onChange={e => handleCheckboxClick(e, trophy.id)} className="h-4 w-4 rounded text-emerald-600 bg-stone-700 border-stone-600 focus:ring-emerald-500" /></td>
                                         <td className="p-4 text-2xl">{trophy.icon}</td>
-                                        <td className="p-4 font-bold">{trophy.name}</td>
+                                        <td className="p-4 font-bold">
+                                            <button onClick={() => handleEdit(trophy)} className="hover:underline hover:text-accent transition-colors text-left">
+                                                {trophy.name}
+                                            </button>
+                                        </td>
                                         <td className="p-4 text-stone-300 max-w-sm truncate">{trophy.description}</td>
                                         <td className="p-4">
                                             <span className={`px-2 py-1 text-xs font-semibold rounded-full ${trophy.isManual ? 'bg-sky-500/20 text-sky-300' : 'bg-purple-500/20 text-purple-300'}`}>
                                                 {trophy.isManual ? 'Manual' : 'Automatic'}
                                             </span>
-                                        </td>
-                                        <td className="p-4 relative">
-                                            <button onClick={() => setOpenDropdownId(openDropdownId === trophy.id ? null : trophy.id)} className="p-2 rounded-full hover:bg-stone-700/50">
-                                                <EllipsisVerticalIcon className="w-5 h-5 text-stone-300" />
-                                            </button>
-                                            {openDropdownId === trophy.id && (
-                                                <div ref={dropdownRef} className="absolute right-10 top-0 mt-2 w-36 bg-stone-900 border border-stone-700 rounded-lg shadow-xl z-20">
-                                                    <a href="#" onClick={(e) => { e.preventDefault(); handleEdit(trophy); setOpenDropdownId(null); }} className="block px-4 py-2 text-sm text-stone-300 hover:bg-stone-700/50">Edit</a>
-                                                    <button onClick={() => { handleDeleteRequest([trophy.id]); setOpenDropdownId(null); }} className="w-full text-left block px-4 py-2 text-sm text-red-400 hover:bg-stone-700/50">Delete</button>
-                                                </div>
-                                            )}
                                         </td>
                                     </tr>
                                 ))}

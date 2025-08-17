@@ -233,11 +233,16 @@ const MarketplacePage: React.FC = () => {
     const visibleMarkets = React.useMemo(() => {
         if (!currentUser) return [];
         
-        const currentGuildId = appMode.mode === 'guild' ? appMode.guildId : undefined;
+        return markets.filter(market => {
+            const isPersonalMarket = market.guildId == null;
+            const isCurrentGuildMarket = appMode.mode === 'guild' && market.guildId === appMode.guildId;
+            
+            if (isPersonalMarket || isCurrentGuildMarket) {
+                return isMarketOpenForUser(market, currentUser, appState as IAppData);
+            }
 
-        return markets.filter(market => 
-            (market.id === 'market-bank' || market.guildId === currentGuildId) && isMarketOpenForUser(market, currentUser, appState as IAppData)
-        );
+            return false;
+        });
     }, [markets, appMode, currentUser, appState]);
 
     const activeMarket = React.useMemo(() => {

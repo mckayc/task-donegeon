@@ -1573,21 +1573,20 @@ app.post('/api/actions/reject-quest/:id', asyncMiddleware(async (req, res) => {
     res.status(204).send();
 }));
 
-app.post('/api/actions/mark-todo', asyncMiddleware(async (req, res) => {
+app.post('/api/actions/unmark-todo', asyncMiddleware(async (req, res) => {
     const { questId, userId } = req.body;
     const questRepo = dataSource.getRepository(QuestEntity);
     const quest = await questRepo.findOneBy({ id: questId });
     if (!quest) return res.status(404).json({ error: 'Quest not found.' });
-    
-    quest.todoUserIds = quest.todoUserIds || [];
-    if (!quest.todoUserIds.includes(userId)) {
-        quest.todoUserIds.push(userId);
+
+    if (quest.todoUserIds && quest.todoUserIds.includes(userId)) {
+        quest.todoUserIds = quest.todoUserIds.filter(id => id !== userId);
         await questRepo.save(updateTimestamps(quest));
     }
-    
+
     updateEmitter.emit('update');
     res.status(204).send();
-});
+}));
 
 app.post('/api/actions/unmark-todo', asyncMiddleware(async (req, res) => {
     const { questId, userId } = req.body;

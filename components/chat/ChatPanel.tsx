@@ -37,7 +37,7 @@ const ChatPanel: React.FC = () => {
 
     const [size, setSize] = useState(() => {
         const savedSize = localStorage.getItem('chatPanelSize');
-        return savedSize ? JSON.parse(savedSize) : { width: 400, height: 600 };
+        return savedSize ? JSON.parse(savedSize) : { width: 550, height: 600 };
     });
     
     const dragControls = useDragControls();
@@ -134,8 +134,9 @@ const ChatPanel: React.FC = () => {
 
     const handleResize = useCallback((e: MouseEvent) => {
         if (isResizing.current && panelRef.current) {
-            const newWidth = e.clientX - panelRef.current.offsetLeft;
-            const newHeight = e.clientY - panelRef.current.offsetTop;
+            const rect = panelRef.current.getBoundingClientRect();
+            const newWidth = e.clientX - rect.left;
+            const newHeight = e.clientY - rect.top;
             setSize({
                 width: Math.max(320, newWidth),
                 height: Math.max(400, newHeight)
@@ -209,63 +210,97 @@ const ChatPanel: React.FC = () => {
                 </div>
             </div>
 
-            <div className="p-2 border-b border-stone-700 flex-shrink-0">
-                <Input as="select" value={activeChatTarget?.id || ''} onChange={e => setActiveChatTarget(chatPartners.find(p => p.id === e.target.value) || null)} aria-label="Select chat partner">
-                    <option value="">Select a chat...</option>
-                    {chatPartners.map(partner => (
-                        <option key={partner.id} value={partner.id}>
-                            {isGuildChatTarget(partner) ? '🏰' : '👤'} {partner.gameName}
-                            {(unreadInfo.dms.has(partner.id) || (isGuildChatTarget(partner) && unreadInfo.guilds.has(partner.id))) ? ' (New!)' : ''}
-                        </option>
-                    ))}
-                </Input>
-            </div>
-            
-            <div ref={messagesContainerRef} onScroll={handleScroll} className="flex-grow p-4 space-y-4 overflow-y-auto scrollbar-hide">
-                {!activeChatTarget && <p className="text-center text-stone-500 pt-10">Select a user or guild to start chatting.</p>}
-                {activeConversation.map(msg => {
-                    const sender = users.find(u => u.id === msg.senderId);
-                    const isMyMessage = msg.senderId === currentUser.id;
-                    const isSystemAnnouncement = msg.isAnnouncement && isGuildChatTarget(activeChatTarget);
-
-                    if (isSystemAnnouncement) {
-                        return (
-                             <div key={msg.id} className="text-center my-2">
-                                <span className="px-3 py-1 bg-amber-800 text-amber-200 text-xs font-bold rounded-full">{msg.message}</span>
-                            </div>
-                        )
-                    }
-
-                    return (
-                        <div key={msg.id} className={`flex items-start gap-3 ${isMyMessage ? 'flex-row-reverse' : ''}`}>
-                            {sender && <Avatar user={sender} className="w-10 h-10 rounded-full flex-shrink-0" />}
-                            <div className={`p-3 rounded-lg max-w-xs ${isMyMessage ? 'bg-emerald-800' : 'bg-stone-700'}`}>
-                                {!isMyMessage && sender && <p className="font-bold text-sm text-accent-light mb-1">{sender.gameName}</p>}
-                                <p className="text-stone-200 whitespace-pre-wrap break-words">{msg.message}</p>
-                                <p className="text-xs text-stone-400 mt-1 text-right">{new Date(msg.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</p>
-                            </div>
-                        </div>
-                    );
-                })}
-            </div>
-            
-            {activeChatTarget && (
-                <form onSubmit={handleSend} className="p-4 border-t border-stone-700 flex-shrink-0 space-y-2">
-                    <div className="flex gap-2">
-                        <Input 
-                            value={message} 
-                            onChange={(e) => setMessage(e.target.value)}
-                            placeholder="Type a message..."
-                            className="flex-grow h-10"
-                        />
-                        <Button type="submit" disabled={!message.trim()} className="h-10">Send</Button>
+            <div className="flex flex-grow overflow-hidden">
+                {/* Sidebar */}
+                <div className="w-48 border-r border-stone-700 flex flex-col flex-shrink-0">
+                    <h4 className="p-3 font-semibold text-stone-300 border-b border-stone-700 flex-shrink-0">Conversations</h4>
+                    <div className="flex-grow overflow-y-auto scrollbar-hide">
+                        {chatPartners.map(partner => {
+                            const hasUnread = unreadInfo.dms.has(partner.id) || (isGuildChatTarget(partner) && unreadInfo.guilds.has(partner.id));
+                            return (
+                                <button
+                                    key={partner.id}
+                                    onClick={() => setActiveChatTarget(partner)}
+                                    className={`w-full text-left p-3 flex items-center gap-3 transition-colors ${
+                                        activeChatTarget?.id === partner.id ? 'bg-emerald-800/50' : 'hover:bg-stone-700/50'
+                                    }`}
+                                >
+                                    {isGuildChatTarget(partner) ? (
+                                        <div className="w-10 h-10 rounded-full bg-stone-700 flex items-center justify-center text-xl flex-shrink-0">{partner.icon}</div>
+                                    ) : (
+                                        <Avatar user={partner as User} className="w-10 h-10 rounded-full flex-shrink-0" />
+                                    )}
+                                    <span className="flex-grow truncate text-stone-200 text-sm font-semibold">{partner.gameName}</span>
+                                    {hasUnread && (
+                                        <div className="w-3 h-3 bg-red-500 rounded-full flex-shrink-0"></div>
+                                    )}
+                                </button>
+                            );
+                        })}
                     </div>
-                    {currentUser.role === Role.DonegeonMaster && isGuildChatTarget(activeChatTarget) && (
-                        <ToggleSwitch enabled={isAnnouncement} setEnabled={setIsAnnouncement} label="Send as Announcement" />
-                    )}
-                </form>
-            )}
+                </div>
 
+                {/* Main Conversation Area */}
+                <div className="flex flex-col flex-grow">
+                    {activeChatTarget ? (
+                        <>
+                            <div className="p-3 border-b border-stone-700 flex-shrink-0 flex items-center gap-3">
+                                {isGuildChatTarget(activeChatTarget) ? (
+                                    <div className="w-8 h-8 rounded-full bg-stone-700 flex items-center justify-center text-lg flex-shrink-0">{activeChatTarget.icon}</div>
+                                ) : (
+                                    <Avatar user={activeChatTarget as User} className="w-8 h-8 rounded-full flex-shrink-0" />
+                                )}
+                                <span className="font-bold text-stone-100">{activeChatTarget.gameName}</span>
+                            </div>
+                            <div ref={messagesContainerRef} onScroll={handleScroll} className="flex-grow p-4 space-y-4 overflow-y-auto scrollbar-hide">
+                                {activeConversation.map(msg => {
+                                    const sender = users.find(u => u.id === msg.senderId);
+                                    const isMyMessage = msg.senderId === currentUser.id;
+                                    const isSystemAnnouncement = msg.isAnnouncement && isGuildChatTarget(activeChatTarget);
+
+                                    if (isSystemAnnouncement) {
+                                        return (
+                                            <div key={msg.id} className="text-center my-2">
+                                                <span className="px-3 py-1 bg-amber-800 text-amber-200 text-xs font-bold rounded-full">{msg.message}</span>
+                                            </div>
+                                        )
+                                    }
+
+                                    return (
+                                        <div key={msg.id} className={`flex items-start gap-3 ${isMyMessage ? 'flex-row-reverse' : ''}`}>
+                                            {sender && <Avatar user={sender} className="w-10 h-10 rounded-full flex-shrink-0" />}
+                                            <div className={`p-3 rounded-lg max-w-xs ${isMyMessage ? 'bg-emerald-800' : 'bg-stone-700'}`}>
+                                                {!isMyMessage && sender && <p className="font-bold text-sm text-accent-light mb-1">{sender.gameName}</p>}
+                                                <p className="text-stone-200 whitespace-pre-wrap break-words">{msg.message}</p>
+                                                <p className="text-xs text-stone-400 mt-1 text-right">{new Date(msg.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</p>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                             <form onSubmit={handleSend} className="p-4 border-t border-stone-700 flex-shrink-0 space-y-2">
+                                <div className="flex gap-2">
+                                    <Input 
+                                        value={message} 
+                                        onChange={(e) => setMessage(e.target.value)}
+                                        placeholder="Type a message..."
+                                        className="flex-grow h-10"
+                                    />
+                                    <Button type="submit" disabled={!message.trim()} className="h-10">Send</Button>
+                                </div>
+                                {currentUser.role === Role.DonegeonMaster && isGuildChatTarget(activeChatTarget) && (
+                                    <ToggleSwitch enabled={isAnnouncement} setEnabled={setIsAnnouncement} label="Send as Announcement" />
+                                )}
+                            </form>
+                        </>
+                    ) : (
+                        <div className="flex items-center justify-center h-full text-stone-500">
+                            <p>Select a conversation from the left.</p>
+                        </div>
+                    )}
+                </div>
+            </div>
+            
             <div
                 className="absolute bottom-0 right-0 w-4 h-4 cursor-se-resize"
                 onMouseDown={startResize}

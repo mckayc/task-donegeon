@@ -60,10 +60,6 @@ const Dashboard: React.FC = () => {
 
 
     if (!currentUser) return <div>Loading adventurer's data...</div>;
-
-    if (appMode.mode === 'guild' && currentUser.role === 'Donegeon Master') {
-        return <GuildPage />;
-    }
     
     const { terminology } = settings;
 

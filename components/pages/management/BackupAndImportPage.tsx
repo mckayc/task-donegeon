@@ -242,6 +242,43 @@ export const BackupAndImportPage: React.FC = () => {
                             setEnabled={(val) => updateSettings({ ...settings, automatedBackups: { ...settings.automatedBackups, enabled: val } })}
                             label="Enable Automated Backups"
                         />
+                        {settings.automatedBackups.enabled && (
+                            <div className="mt-4 pt-4 border-t border-stone-700/60 space-y-4">
+                                <Input
+                                    as="select"
+                                    label="Backup Format"
+                                    value={settings.automatedBackups.format}
+                                    onChange={(e) => updateSettings({ ...settings, automatedBackups: { ...settings.automatedBackups, format: e.target.value as any }})}
+                                >
+                                    <option value="json">JSON (data only)</option>
+                                    <option value="sqlite">SQLite (full database)</option>
+                                    <option value="both">Both</option>
+                                </Input>
+
+                                <div>
+                                    <h5 className="font-semibold text-stone-300 mb-2">Schedules</h5>
+                                    <div className="space-y-2">
+                                        {settings.automatedBackups.schedules.map(schedule => (
+                                            <div key={schedule.id} className="bg-stone-800/50 p-2 rounded-md flex justify-between items-center">
+                                                <p className="text-sm text-stone-300">
+                                                    Every {schedule.frequency} {schedule.unit}, keeping the last {schedule.maxBackups}.
+                                                    {schedule.lastBackupTimestamp && (
+                                                        <span className="block text-xs text-stone-500">
+                                                            Last run: {new Date(schedule.lastBackupTimestamp).toLocaleString()}
+                                                        </span>
+                                                    )}
+                                                </p>
+                                                <div className="flex gap-2">
+                                                    <Button size="sm" variant="secondary" onClick={() => { setEditingSchedule(schedule); setIsScheduleDialogOpen(true); }}>Edit</Button>
+                                                    <Button size="sm" variant="destructive" onClick={() => setDeletingSchedule(schedule)}>Delete</Button>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                    <Button size="sm" onClick={() => { setEditingSchedule(null); setIsScheduleDialogOpen(true); }} className="mt-3">Add Schedule</Button>
+                                </div>
+                            </div>
+                        )}
                     </div>
                 </div>
             </Card>

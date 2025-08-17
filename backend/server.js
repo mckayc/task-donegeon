@@ -902,6 +902,20 @@ app.put('/api/settings', asyncMiddleware(async (req, res) => {
     res.json(req.body);
 }));
 
+// New endpoint for login history
+app.put('/api/data/login-history', asyncMiddleware(async (req, res) => {
+    const { history } = req.body;
+    if (!history || !Array.isArray(history)) {
+        return res.status(400).json({ error: 'Invalid history data provided.' });
+    }
+    const repo = dataSource.getRepository(LoginHistoryEntity);
+    // There's only one row, with id=1. `save` will handle upsert.
+    await repo.save(updateTimestamps({ id: 1, history }));
+    
+    updateEmitter.emit('update');
+    res.status(204).send();
+}));
+
 // Bug Reports Router
 const bugReportsRouter = express.Router();
 const bugReportRepo = dataSource.getRepository(BugReportEntity);
@@ -1563,7 +1577,7 @@ app.post('/api/actions/mark-todo', asyncMiddleware(async (req, res) => {
     const { questId, userId } = req.body;
     const questRepo = dataSource.getRepository(QuestEntity);
     const quest = await questRepo.findOneBy({ id: questId });
-    if (!quest) return res.status(404).json({ error: 'Quest not found.' });
+    if (!quest) return res.status(404).json({ error: 'Quest not found.' }));
     
     quest.todoUserIds = quest.todoUserIds || [];
     if (!quest.todoUserIds.includes(userId)) {
@@ -1579,7 +1593,7 @@ app.post('/api/actions/unmark-todo', asyncMiddleware(async (req, res) => {
     const { questId, userId } = req.body;
     const questRepo = dataSource.getRepository(QuestEntity);
     const quest = await questRepo.findOneBy({ id: questId });
-    if (!quest) return res.status(404).json({ error: 'Quest not found.' });
+    if (!quest) return res.status(404).json({ error: 'Quest not found.' }));
 
     if (quest.todoUserIds && quest.todoUserIds.includes(userId)) {
         quest.todoUserIds = quest.todoUserIds.filter(id => id !== userId);

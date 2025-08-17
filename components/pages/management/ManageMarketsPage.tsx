@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useMemo } from 'react';
+
+import React, { useState } from 'react';
 import { Market } from '../../../types';
 import Button from '../../user-interface/Button';
 import Card from '../../user-interface/Card';
@@ -10,6 +11,7 @@ import EmptyState from '../../user-interface/EmptyState';
 import { MarketplaceIcon } from '../../user-interface/Icons';
 import MarketIdeaGenerator from '../../quests/MarketIdeaGenerator';
 import { useShiftSelect } from '../../../hooks/useShiftSelect';
+import { useMemo } from 'react';
 
 const ManageMarketsPage: React.FC = () => {
     const { settings, isAiConfigured, markets } = useData();
@@ -21,7 +23,7 @@ const ManageMarketsPage: React.FC = () => {
     
     const [selectedMarkets, setSelectedMarkets] = useState<string[]>([]);
     const [confirmation, setConfirmation] = useState<{ action: 'delete' | 'open' | 'close', ids: string[] } | null>(null);
-    
+
     const isAiAvailable = settings.enableAiFeatures && isAiConfigured;
 
     const marketIds = useMemo(() => markets.map(m => m.id), [markets]);

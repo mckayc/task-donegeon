@@ -54,7 +54,7 @@ const CalendarPage: React.FC = () => {
     if (!currentUser) return null;
 
     const renderEventContent = (eventInfo: EventContentArg) => {
-        const { event, timeText } = eventInfo;
+        const { event } = eventInfo;
         const { extendedProps } = event;
     
         const getRewardInfo = (id: string) => {
@@ -75,9 +75,14 @@ const CalendarPage: React.FC = () => {
     
         const isListView = eventInfo.view.type.startsWith('list');
         
+        let displayTime = '';
+        if (!event.allDay && event.start) {
+            displayTime = event.start.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        }
+
         return (
             <div className="flex items-center gap-2 overflow-hidden w-full font-sans">
-                {timeText && <span className="fc-event-time font-semibold">{timeText}</span>}
+                {displayTime && <span className="fc-event-time font-semibold">{displayTime}</span>}
                 {!isListView && <span className="text-lg">{icon}</span>}
                 <span className="truncate flex-grow fc-event-title">{event.title}</span>
                 {rewards.length > 0 && (
@@ -292,8 +297,19 @@ const CalendarPage: React.FC = () => {
 
     const handleStartCompletion = () => {
         if (!viewingQuest) return;
-        setCompletingQuest(viewingQuest);
-        setViewingQuest(null);
+        const isAvailable = isQuestAvailableForUser(
+            viewingQuest.quest,
+            questCompletions.filter(c => c.userId === currentUser.id),
+            new Date(),
+            scheduledEvents,
+            appMode
+        );
+        if (isAvailable) {
+            setCompletingQuest(viewingQuest);
+            setViewingQuest(null);
+        } else {
+             addNotification({ type: 'error', message: 'This quest cannot be completed at this time.' });
+        }
     };
 
     const handleToggleTodo = () => {
@@ -332,7 +348,14 @@ const CalendarPage: React.FC = () => {
                 .fc .fc-button-primary:hover { background-color: hsl(var(--accent) / 0.8); }
                 .fc .fc-button-primary:disabled { background-color: hsl(var(--muted)); }
                 .fc .fc-button-primary:not(:disabled).fc-button-active, .fc .fc-button-primary:not(:disabled):active { background-color: hsl(var(--primary)); color: hsl(var(--primary-foreground)); }
-                .fc .fc-daygrid-day.fc-day-today { background-color: hsl(var(--primary) / 0.1); border: 2px solid hsl(var(--primary)); }
+                
+                .fc .fc-day-today {
+                    background-color: hsl(var(--color-primary-hue) var(--color-primary-saturation) var(--color-primary-lightness) / 0.15) !important;
+                }
+                .fc .fc-daygrid-day.fc-day-today {
+                    border: 2px solid hsl(var(--color-primary-hue) var(--color-primary-saturation) var(--color-primary-lightness)) !important;
+                }
+
                 .fc .fc-daygrid-day-number { color: hsl(var(--foreground)); padding: 4px; }
                 .fc .fc-day-past .fc-daygrid-day-number { color: hsl(var(--muted-foreground)); }
                 .fc .fc-event { border: 1px solid hsl(var(--border)) !important; font-size: 0.75rem; padding: 2px 4px; color: hsl(var(--primary-foreground)); }
@@ -403,15 +426,7 @@ const CalendarPage: React.FC = () => {
                 <QuestDetailDialog
                     quest={viewingQuest.quest}
                     onClose={() => setViewingQuest(null)}
-                    onComplete={
-                        isQuestAvailableForUser(
-                            viewingQuest.quest,
-                            questCompletions.filter(c => c.userId === currentUser.id),
-                            viewingQuest.date,
-                            scheduledEvents,
-                            appMode
-                        ) ? handleStartCompletion : undefined
-                    }
+                    onComplete={handleStartCompletion}
                     onToggleTodo={handleToggleTodo}
                     isTodo={!!(viewingQuest.quest.type === QuestType.Venture && viewingQuest.quest.todoUserIds?.includes(currentUser.id))}
                 />

@@ -1,9 +1,9 @@
-import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { useData } from '../../../context/DataProvider';
 import { useActionsDispatch } from '../../../context/ActionsContext';
-import { Quest, QuestType, QuestGroup } from '../../../types';
-import Button from '../user-interface/Button';
-import Card from '../user-interface/Card';
+import { Quest } from '../../../types';
+import Button from '../../user-interface/Button';
+import Card from '../../user-interface/Card';
 import CreateQuestDialog from '../../quests/CreateQuestDialog';
 import ConfirmDialog from '../../user-interface/ConfirmDialog';
 import QuestIdeaGenerator from '../../quests/QuestIdeaGenerator';
@@ -12,6 +12,7 @@ import EmptyState from '../../user-interface/EmptyState';
 import Input from '../../user-interface/Input';
 import BulkEditQuestsDialog from '../../quests/BulkEditQuestsDialog';
 import { useDebounce } from '../../../hooks/useDebounce';
+import { useShiftSelect } from '../../../hooks/useShiftSelect';
 
 const ManageQuestsPage: React.FC = () => {
     const { settings, isAiConfigured, quests, questGroups } = useData();
@@ -61,6 +62,9 @@ const ManageQuestsPage: React.FC = () => {
         
         return filtered;
     }, [activeTab, debouncedSearchTerm, sortBy, quests, questGroups]);
+        
+    const pageQuestIds = useMemo(() => pageQuests.map(q => q.id), [pageQuests]);
+    const handleCheckboxClick = useShiftSelect(pageQuestIds, selectedQuests, setSelectedQuests);
 
     const tabs = useMemo(() => ['All', 'Uncategorized', ...questGroups.map(g => g.name)], [questGroups]);
     
@@ -112,19 +116,7 @@ const ManageQuestsPage: React.FC = () => {
     };
 
     const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
-        if (e.target.checked) {
-            setSelectedQuests(pageQuests.map(q => q.id));
-        } else {
-            setSelectedQuests([]);
-        }
-    };
-
-    const handleSelectOne = (id: string, isChecked: boolean) => {
-        if (isChecked) {
-            setSelectedQuests(prev => [...prev, id]);
-        } else {
-            setSelectedQuests(prev => prev.filter(questId => questId !== id));
-        }
+        setSelectedQuests(e.target.checked ? pageQuestIds : []);
     };
     
     const getConfirmationMessage = () => {
@@ -212,7 +204,7 @@ const ManageQuestsPage: React.FC = () => {
                             <tbody>
                                 {pageQuests.map(quest => (
                                     <tr key={quest.id} className="border-b border-stone-700/40 last:border-b-0">
-                                        <td className="p-4"><input type="checkbox" checked={selectedQuests.includes(quest.id)} onChange={e => handleSelectOne(quest.id, e.target.checked)} className="h-4 w-4 rounded text-emerald-600 bg-stone-700 border-stone-600 focus:ring-emerald-500" /></td>
+                                        <td className="p-4"><input type="checkbox" checked={selectedQuests.includes(quest.id)} onChange={e => handleCheckboxClick(e, quest.id)} className="h-4 w-4 rounded text-emerald-600 bg-stone-700 border-stone-600 focus:ring-emerald-500" /></td>
                                         <td className="p-4 font-bold">
                                             <button onClick={() => handleEdit(quest)} data-log-id={`manage-quests-edit-title-${quest.id}`} className="hover:underline hover:text-accent transition-colors text-left">
                                                 {quest.title}

@@ -68,7 +68,11 @@ const Header: React.FC = () => {
   const handleModeChange = (mode: AppMode) => {
     setAppMode(mode);
     setGuildDropdownOpen(false);
-    setActivePage('Dashboard');
+    if (mode.mode === 'guild' && currentUser?.role === Role.DonegeonMaster) {
+      setActivePage('Guild');
+    } else {
+      setActivePage('Dashboard');
+    }
   };
 
   const userGuilds = useMemo(() => {

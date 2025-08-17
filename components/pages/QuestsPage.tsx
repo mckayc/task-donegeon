@@ -1,5 +1,4 @@
 
-
 import React, { useState, useMemo, useEffect } from 'react';
 import Card from '../user-interface/Card';
 import Button from '../user-interface/Button';
@@ -194,7 +193,7 @@ const FilterButton: React.FC<{ type: 'all' | QuestType, children: React.ReactNod
     <button
         onClick={() => setFilter(type)}
         data-log-id={`quests-page-filter-${type.toLowerCase()}`}
-        className={`flex-1 text-center py-1.5 px-3 rounded-md font-semibold text-sm transition-colors ${activeFilter === type ? 'bg-primary text-primary-foreground' : 'text-stone-300 hover:bg-stone-700'}`}
+        className={`flex-1 text-center py-1.5 px-3 rounded-md font-semibold text-sm transition-colors ${activeFilter === type ? 'bg-emerald-600 text-white' : 'text-stone-300 hover:bg-stone-700'}`}
     >
         {children}
     </button>

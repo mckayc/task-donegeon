@@ -111,7 +111,7 @@ const ActionsDispatchContext = createContext<ActionsDispatch | undefined>(undefi
 export const ActionsProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     const { addNotification } = useNotificationsDispatch();
     const dataDispatch = useDataDispatch();
-    const { updateUser } = useAuthDispatch();
+    const { updateUser, deleteUsers, setUsers } = useAuthDispatch();
 
     const apiRequest = useCallback(async (method: string, path: string, body?: any) => {
         try {
@@ -216,13 +216,31 @@ export const ActionsProvider: React.FC<{ children: ReactNode }> = ({ children })
         setRanks: (ranks) => apiRequest('POST', '/api/ranks/bulk-update', { ranks }),
         
         deleteSelectedAssets: async (assets, callback) => {
+            const assetsToRemoveFromData: { [key in keyof IAppData]?: string[] } = {};
+
             for (const key in assets) {
                 const assetType = key as ShareableAssetType;
                 const ids = assets[assetType];
-                if (ids && ids.length > 0) {
+                if (!ids || ids.length === 0) continue;
+
+                if (assetType === 'users') {
+                    // AuthContext handles its own state and API call
+                    deleteUsers(ids);
+                } else {
+                    // For other assets, call API first
                     await apiRequest('DELETE', `/api/${assetType}`, { ids });
+                    (assetsToRemoveFromData as any)[assetType] = ids;
                 }
             }
+            
+            // Then dispatch a single action to remove from DataContext state
+            if (Object.keys(assetsToRemoveFromData).length > 0) {
+                dataDispatch({
+                    type: 'REMOVE_DATA',
+                    payload: assetsToRemoveFromData
+                });
+            }
+
             if (callback) callback();
         },
         
@@ -307,7 +325,14 @@ export const ActionsProvider: React.FC<{ children: ReactNode }> = ({ children })
         importAssetPack: async (pack, resolutions) => {
             const result = await apiRequest('POST', '/api/data/import-assets', { assetPack: pack, resolutions });
             if (result.importedData) {
-                dataDispatch({ type: 'UPDATE_DATA', payload: result.importedData });
+                const { users: importedUsers, ...otherAssets } = result.importedData;
+
+                dataDispatch({ type: 'UPDATE_DATA', payload: otherAssets });
+
+                if (importedUsers && importedUsers.length > 0) {
+                    setUsers(currentUsers => [...currentUsers, ...importedUsers]);
+                }
+
                 addNotification({ type: 'success', message: 'Asset pack imported successfully!' });
             }
         },

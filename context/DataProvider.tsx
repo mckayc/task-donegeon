@@ -17,6 +17,7 @@ export interface DataState extends IAppData {
 type DataAction = 
   | { type: 'SET_ALL_DATA', payload: Partial<IAppData> }
   | { type: 'UPDATE_DATA', payload: Partial<IAppData> }
+  | { type: 'REMOVE_DATA', payload: { [key in keyof IAppData]?: string[] } }
   | { type: 'SET_SYNC_STATE', payload: { syncStatus: SyncStatus, syncError: string | null } };
 
 const initialState: DataState = {
@@ -63,6 +64,19 @@ const dataReducer = (state: DataState, action: DataAction): DataState => {
                 ...action.payload,
                 isDataLoaded: true,
                 allTags: Array.from(new Set(action.payload.quests?.flatMap(q => q.tags) || [])),
+            };
+        case 'REMOVE_DATA':
+            const stateWithRemoved = { ...state };
+            for (const key in action.payload) {
+                const typedKey = key as keyof IAppData;
+                if (Array.isArray(stateWithRemoved[typedKey])) {
+                    const idsToRemove = new Set(action.payload[typedKey] as string[]);
+                    (stateWithRemoved as any)[typedKey] = (stateWithRemoved[typedKey] as any[]).filter(item => !idsToRemove.has(item.id));
+                }
+            }
+            return {
+                ...stateWithRemoved,
+                allTags: Array.from(new Set(stateWithRemoved.quests.flatMap(q => q.tags))),
             };
         case 'UPDATE_DATA':
              const updatedState = { ...state };
@@ -118,7 +132,18 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             if (lastSyncTimestamp.current) { // Delta update
                 dispatch({ type: 'UPDATE_DATA', payload: updates });
                 if (updates.users) {
-                    updates.users.forEach((user: User) => updateUser(user.id, user));
+                    const existingUserIds = new Set(users.map(u => u.id));
+                    const usersToAdd: User[] = [];
+                    updates.users.forEach((user: User) => {
+                        if (existingUserIds.has(user.id)) {
+                            updateUser(user.id, user); 
+                        } else {
+                            usersToAdd.push(user);
+                        }
+                    });
+                    if (usersToAdd.length > 0) {
+                        setUsers(currentUsers => [...currentUsers, ...usersToAdd]);
+                    }
                 }
                 if (updates.loginHistory) {
                     setLoginHistory(updates.loginHistory);

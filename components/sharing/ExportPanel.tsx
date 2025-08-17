@@ -124,7 +124,7 @@ const ExportPanel: React.FC = () => {
                              <h5 className="font-semibold capitalize text-stone-200">{settings.terminology[label]}</h5>
                             <Button variant="secondary" className="text-xs py-1 px-2" onClick={() => handleToggleAll(key, data)}>Toggle All</Button>
                         </div>
-                        <div className="max-h-48 overflow-y-auto space-y-1 pr-2">
+                        <div className="max-h-80 overflow-y-auto pr-2 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-4 gap-y-1">
                             {data.map((item: any) => (
                                 <label key={item.id} className="flex items-center p-2 rounded-md hover:bg-stone-800/50 cursor-pointer">
                                     <input
@@ -133,7 +133,7 @@ const ExportPanel: React.FC = () => {
                                         onChange={(e) => handleCheckboxChange(e, key, item.id)}
                                         className="h-4 w-4 rounded text-emerald-600 bg-stone-700 border-stone-500 focus:ring-emerald-500"
                                     />
-                                    <span className="ml-3 text-stone-300">{item.title || item.name || item.gameName}</span>
+                                    <span className="ml-3 text-stone-300 truncate" title={item.title || item.name || item.gameName}>{item.title || item.name || item.gameName}</span>
                                 </label>
                             ))}
                         </div>

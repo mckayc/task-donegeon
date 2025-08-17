@@ -1,13 +1,14 @@
+
 import React, { useState } from 'react';
-import { Guild } from '../../types';
-import Button from '../user-interface/Button';
-import Card from '../user-interface/Card';
-import EditGuildDialog from '../guilds/EditGuildDialog';
-import { useData } from '../../context/DataProvider';
-import { useActionsDispatch } from '../../context/ActionsContext';
-import ConfirmDialog from '../user-interface/ConfirmDialog';
-import EmptyState from '../user-interface/EmptyState';
-import { GuildIcon } from '../user-interface/Icons';
+import { Guild } from '../../../types';
+import Button from '../../user-interface/Button';
+import Card from '../../user-interface/Card';
+import EditGuildDialog from '../../guilds/EditGuildDialog';
+import { useData } from '../../../context/DataProvider';
+import { useActionsDispatch } from '../../../context/ActionsContext';
+import ConfirmDialog from '../../user-interface/ConfirmDialog';
+import EmptyState from '../../user-interface/EmptyState';
+import { GuildIcon } from '../../user-interface/Icons';
 
 const ManageGuildsPage: React.FC = () => {
     const { guilds, settings } = useData();

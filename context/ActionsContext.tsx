@@ -1,8 +1,9 @@
-
 import React, { createContext, useContext, ReactNode, useCallback } from 'react';
 import { IAppData, Quest, User, QuestCompletion, AdminAdjustment, PurchaseRequest, Market, Guild, Rank, Trophy, RewardTypeDefinition, ThemeDefinition, ShareableAssetType, BulkQuestUpdates, ChatMessage, SystemNotification, ScheduledEvent, BugReport, Rotation, SetbackDefinition, AppliedSetback, TradeOffer, Gift, QuestGroup, GameAsset, RewardItem } from '../types';
 import { useNotificationsDispatch } from './NotificationsContext';
 import { bugLogger } from '../utils/bugLogger';
+import { useDataDispatch } from './DataProvider';
+import { useAuthDispatch } from './AuthContext';
 
 // This interface defines all the functions our application can dispatch.
 // Components will use this to trigger state changes.
@@ -13,76 +14,73 @@ export interface ActionsDispatch {
   updateQuestsStatus: (questIds: string[], isActive: boolean) => Promise<void>;
   bulkUpdateQuests: (questIds: string[], updates: BulkQuestUpdates) => Promise<void>;
   
-  addQuestGroup: (groupData: Omit<QuestGroup, 'id'>) => QuestGroup;
-  updateQuestGroup: (groupData: QuestGroup) => void;
-  assignQuestGroupToUsers: (groupId: string, userIds: string[]) => void;
+  addQuestGroup: (groupData: Omit<QuestGroup, 'id'>) => Promise<QuestGroup | null>;
+  updateQuestGroup: (groupData: QuestGroup) => Promise<QuestGroup | null>;
+  assignQuestGroupToUsers: (groupId: string, userIds: string[]) => Promise<void>;
   
-  addMarket: (marketData: Omit<Market, 'id'>) => void;
-  updateMarket: (marketData: Market) => void;
-  updateMarketsStatus: (marketIds: string[], statusType: 'open' | 'closed') => void;
-  cloneMarket: (marketId: string) => void;
+  addMarket: (marketData: Omit<Market, 'id'>) => Promise<Market | null>;
+  updateMarket: (marketData: Market) => Promise<Market | null>;
+  updateMarketsStatus: (marketIds: string[], statusType: 'open' | 'closed') => Promise<void>;
+  cloneMarket: (marketId: string) => Promise<Market | null>;
   
-  addTrophy: (trophyData: Omit<Trophy, 'id'>) => void;
-  updateTrophy: (trophyData: Trophy) => void;
+  addTrophy: (trophyData: Omit<Trophy, 'id'>) => Promise<Trophy | null>;
+  updateTrophy: (trophyData: Trophy) => Promise<Trophy | null>;
   
-  addRewardType: (rewardTypeData: Omit<RewardTypeDefinition, 'id' | 'isCore'>) => void;
-  updateRewardType: (rewardTypeData: RewardTypeDefinition) => void;
-  cloneRewardType: (rewardTypeId: string) => void;
+  addRewardType: (rewardTypeData: Omit<RewardTypeDefinition, 'id' | 'isCore'>) => Promise<RewardTypeDefinition | null>;
+  updateRewardType: (rewardTypeData: RewardTypeDefinition) => Promise<RewardTypeDefinition | null>;
+  cloneRewardType: (rewardTypeId: string) => Promise<RewardTypeDefinition | null>;
   
-  addGameAsset: (assetData: Omit<GameAsset, 'id' | 'creatorId' | 'purchaseCount'>) => void;
-  updateGameAsset: (assetData: GameAsset) => void;
-  cloneGameAsset: (assetId: string) => void;
+  addGameAsset: (assetData: Omit<GameAsset, 'id' | 'creatorId' | 'purchaseCount'>) => Promise<GameAsset | null>;
+  updateGameAsset: (assetData: GameAsset) => Promise<GameAsset | null>;
+  cloneGameAsset: (assetId: string) => Promise<GameAsset | null>;
   
-  setRanks: (ranks: Rank[]) => void;
+  setRanks: (ranks: Rank[]) => Promise<void>;
   
   deleteSelectedAssets: (assets: { [key in ShareableAssetType]?: string[] }, callback?: () => void) => Promise<void>;
   
-  completeQuest: (completionData: Omit<QuestCompletion, 'id'>) => void;
-  approveQuestCompletion: (completionId: string, note?: string) => void;
-  rejectQuestCompletion: (completionId: string, note?: string) => void;
+  completeQuest: (completionData: Omit<QuestCompletion, 'id'>) => Promise<void>;
+  approveQuestCompletion: (completionId: string, note?: string) => Promise<void>;
+  rejectQuestCompletion: (completionId: string, note?: string) => Promise<void>;
 
-  purchaseMarketItem: (assetId: string, marketId: string, user: User, costGroupIndex: number) => void;
-  approvePurchaseRequest: (requestId: string) => void;
-  rejectPurchaseRequest: (requestId: string) => void;
-  cancelPurchaseRequest: (requestId: string) => void;
+  purchaseMarketItem: (assetId: string, marketId: string, user: User, costGroupIndex: number) => Promise<void>;
+  approvePurchaseRequest: (requestId: string) => Promise<void>;
+  rejectPurchaseRequest: (requestId: string) => Promise<void>;
+  cancelPurchaseRequest: (requestId: string) => Promise<void>;
   
-  executeExchange: (userId: string, payItem: RewardItem, receiveItem: RewardItem, guildId?: string) => void;
+  executeExchange: (userId: string, payItem: RewardItem, receiveItem: RewardItem, guildId?: string) => Promise<void>;
 
-  addGuild: (guildData: Omit<Guild, 'id'>) => void;
-  updateGuild: (guildData: Guild) => void;
-  deleteGuild: (guildId: string) => void;
+  addGuild: (guildData: Omit<Guild, 'id'>) => Promise<Guild | null>;
+  updateGuild: (guildData: Guild) => Promise<Guild | null>;
+  deleteGuild: (guildId: string) => Promise<void>;
 
-  applyManualAdjustment: (adjustment: Omit<AdminAdjustment, 'id' | 'adjustedAt'>) => boolean;
+  applyManualAdjustment: (adjustment: Omit<AdminAdjustment, 'id' | 'adjustedAt'>) => Promise<boolean>;
 
   uploadFile: (file: File, category?: string) => Promise<{url: string} | null>;
 
-  addTheme: (themeData: Omit<ThemeDefinition, 'id'>) => void;
-  updateTheme: (themeData: ThemeDefinition) => void;
-  deleteTheme: (themeId: string) => void;
+  addTheme: (themeData: Omit<ThemeDefinition, 'id'>) => Promise<ThemeDefinition | null>;
+  updateTheme: (themeData: ThemeDefinition) => Promise<ThemeDefinition | null>;
+  deleteTheme: (themeId: string) => Promise<void>;
 
-  markQuestAsTodo: (questId: string, userId: string) => void;
-  unmarkQuestAsTodo: (questId: string, userId: string) => void;
+  markQuestAsTodo: (questId: string, userId: string) => Promise<void>;
+  unmarkQuestAsTodo: (questId: string, userId: string) => Promise<void>;
 
-  useItem: (assetId: string) => void;
-  craftItem: (assetId: string) => void;
+  useItem: (assetId: string) => Promise<void>;
+  craftItem: (assetId: string) => Promise<void>;
 
-  updateSettings: (newSettings: IAppData['settings']) => void;
-  resetSettings: () => void;
-  applySettingsUpdates: () => void;
-  clearAllHistory: () => void;
-  resetAllPlayerData: () => void;
-  deleteAllCustomContent: () => void;
-  factoryReset: () => void;
+  updateSettings: (newSettings: IAppData['settings']) => Promise<void>;
+  resetSettings: () => Promise<void>;
+  applySettingsUpdates: () => Promise<void>;
+  clearAllHistory: () => Promise<void>;
+  resetAllPlayerData: () => Promise<void>;
+  deleteAllCustomContent: () => Promise<void>;
+  factoryReset: () => Promise<void>;
   
-  sendMessage: (messageData: Omit<ChatMessage, 'id' | 'timestamp' | 'readBy'>) => void;
-  markMessagesAsRead: (criteria: { partnerId?: string, guildId?: string }) => void;
+  sendMessage: (messageData: Omit<ChatMessage, 'id' | 'timestamp' | 'readBy'>) => Promise<void>;
+  markMessagesAsRead: (criteria: { partnerId?: string, guildId?: string }) => Promise<void>;
   
-  addSystemNotification: (notificationData: Omit<SystemNotification, 'id' | 'timestamp' | 'readByUserIds'>) => void;
-  markSystemNotificationsAsRead: (notificationIds: string[]) => void;
-  
-  addScheduledEvent: (eventData: Omit<ScheduledEvent, 'id'>) => void;
-  updateScheduledEvent: (eventData: ScheduledEvent) => void;
-  deleteScheduledEvent: (eventId: string) => void;
+  addScheduledEvent: (eventData: Omit<ScheduledEvent, 'id'>) => Promise<ScheduledEvent | null>;
+  updateScheduledEvent: (eventData: ScheduledEvent) => Promise<ScheduledEvent | null>;
+  deleteScheduledEvent: (eventId: string) => Promise<void>;
 
   importAssetPack: (pack: any, resolutions: any) => Promise<void>;
 
@@ -91,24 +89,26 @@ export interface ActionsDispatch {
   deleteBugReports: (reportIds: string[]) => Promise<void>;
   importBugReports: (reports: BugReport[], mode: 'merge' | 'replace') => Promise<void>;
 
-  addRotation: (rotationData: Omit<Rotation, 'id'>) => void;
-  updateRotation: (rotationData: Rotation) => void;
+  addRotation: (rotationData: Omit<Rotation, 'id'>) => Promise<Rotation | null>;
+  updateRotation: (rotationData: Rotation) => Promise<Rotation | null>;
 
-  addSetbackDefinition: (setbackData: Omit<SetbackDefinition, 'id'>) => void;
-  updateSetbackDefinition: (setbackData: SetbackDefinition) => void;
-  applySetback: (userId: string, setbackId: string, reason: string) => boolean;
+  addSetbackDefinition: (setbackData: Omit<SetbackDefinition, 'id'>) => Promise<SetbackDefinition | null>;
+  updateSetbackDefinition: (setbackData: SetbackDefinition) => Promise<SetbackDefinition | null>;
+  applySetback: (userId: string, setbackId: string, reason: string) => Promise<boolean>;
 
   proposeTrade: (recipientId: string, guildId: string) => Promise<TradeOffer | null>;
-  updateTradeOffer: (tradeId: string, updates: Partial<TradeOffer>) => void;
-  acceptTrade: (tradeId: string) => void;
-  cancelOrRejectTrade: (tradeId: string, action: 'cancelled' | 'rejected') => void;
-  sendGift: (recipientId: string, assetId: string, guildId: string) => void;
+  updateTradeOffer: (tradeId: string, updates: Partial<TradeOffer>) => Promise<void>;
+  acceptTrade: (tradeId: string) => Promise<void>;
+  cancelOrRejectTrade: (tradeId: string, action: 'cancelled' | 'rejected') => Promise<void>;
+  sendGift: (recipientId: string, assetId: string, guildId: string) => Promise<void>;
 }
 
 const ActionsDispatchContext = createContext<ActionsDispatch | undefined>(undefined);
 
 export const ActionsProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     const { addNotification } = useNotificationsDispatch();
+    const dataDispatch = useDataDispatch();
+    const { updateUser } = useAuthDispatch();
 
     const apiRequest = useCallback(async (method: string, path: string, body?: any) => {
         try {
@@ -136,32 +136,79 @@ export const ActionsProvider: React.FC<{ children: ReactNode }> = ({ children })
         }
     }, [addNotification]);
     
+    // Generic helper for add actions
+    const createAddAction = <T_ADD, T_RETURN extends { id: any }, D extends keyof IAppData>(
+        path: string,
+        dataType: D
+    ) => async (data: T_ADD): Promise<T_RETURN | null> => {
+        const result = await apiRequest('POST', path, data);
+        if (result) {
+            dataDispatch({
+                type: 'UPDATE_DATA',
+                payload: { [dataType]: [result] } as Partial<IAppData>
+            });
+        }
+        return result;
+    };
+    
+    // Generic helper for update actions
+    const createUpdateAction = <T extends { id: any }, D extends keyof IAppData>(
+        pathTemplate: (id: any) => string,
+        dataType: D
+    ) => async (data: T): Promise<T | null> => {
+        const path = pathTemplate(data.id);
+        const result = await apiRequest('PUT', path, data);
+        if (result) {
+            dataDispatch({
+                type: 'UPDATE_DATA',
+                payload: { [dataType]: [result] } as Partial<IAppData>
+            });
+        }
+        return result;
+    };
+
+    // Generic helper for clone actions
+    const createCloneAction = <T_RETURN extends { id: any }, D extends keyof IAppData>(
+        pathTemplate: (id: string) => string,
+        dataType: D
+    ) => async (id: string): Promise<T_RETURN | null> => {
+        const path = pathTemplate(id);
+        const result = await apiRequest('POST', path);
+        if (result) {
+            dataDispatch({
+                type: 'UPDATE_DATA',
+                payload: { [dataType]: [result] } as Partial<IAppData>
+            });
+        }
+        return result;
+    };
+    
     const dispatch: ActionsDispatch = {
-        addQuest: (data) => apiRequest('POST', '/api/quests', data),
-        updateQuest: (data) => apiRequest('PUT', `/api/quests/${data.id}`, data),
-        cloneQuest: (id) => apiRequest('POST', `/api/quests/clone/${id}`),
+        addQuest: createAddAction('/api/quests', 'quests'),
+        updateQuest: createUpdateAction(id => `/api/quests/${id}`, 'quests'),
+        cloneQuest: createCloneAction(id => `/api/quests/clone/${id}`, 'quests'),
         updateQuestsStatus: (ids, isActive) => apiRequest('PUT', '/api/quests/bulk-status', { ids, isActive }),
         bulkUpdateQuests: (ids, updates) => apiRequest('PUT', '/api/quests/bulk-update', { ids, updates }),
         
-        addQuestGroup: (data) => { console.log('STUB: addQuestGroup', data); return { ...data, id: 'temp-id' }; },
-        updateQuestGroup: (data) => { console.log('STUB: updateQuestGroup', data); },
-        assignQuestGroupToUsers: (groupId, userIds) => { console.log('STUB: assignQuestGroupToUsers', groupId, userIds); },
+        addQuestGroup: createAddAction('/api/quest-groups', 'questGroups'),
+        updateQuestGroup: createUpdateAction(id => `/api/quest-groups/${id}`, 'questGroups'),
+        assignQuestGroupToUsers: (groupId, userIds) => apiRequest('POST', `/api/quest-groups/assign`, { groupId, userIds }),
         
-        addMarket: (data) => apiRequest('POST', '/api/markets', data),
-        updateMarket: (data) => apiRequest('PUT', `/api/markets/${data.id}`, data),
+        addMarket: createAddAction('/api/markets', 'markets'),
+        updateMarket: createUpdateAction(id => `/api/markets/${id}`, 'markets'),
+        cloneMarket: createCloneAction(id => `/api/markets/clone/${id}`, 'markets'),
         updateMarketsStatus: (marketIds, statusType) => apiRequest('PUT', '/api/markets/bulk-status', { ids: marketIds, statusType }),
-        cloneMarket: (id) => apiRequest('POST', `/api/markets/clone/${id}`),
         
-        addTrophy: (data) => apiRequest('POST', '/api/trophies', data),
-        updateTrophy: (data) => apiRequest('PUT', `/api/trophies/${data.id}`, data),
+        addTrophy: createAddAction('/api/trophies', 'trophies'),
+        updateTrophy: createUpdateAction(id => `/api/trophies/${id}`, 'trophies'),
         
-        addRewardType: (data) => apiRequest('POST', '/api/reward-types', data),
-        updateRewardType: (data) => apiRequest('PUT', `/api/reward-types/${data.id}`, data),
-        cloneRewardType: (id) => apiRequest('POST', `/api/reward-types/clone/${id}`),
+        addRewardType: createAddAction('/api/reward-types', 'rewardTypes'),
+        updateRewardType: createUpdateAction(id => `/api/reward-types/${id}`, 'rewardTypes'),
+        cloneRewardType: createCloneAction(id => `/api/reward-types/clone/${id}`, 'rewardTypes'),
         
-        addGameAsset: (data) => apiRequest('POST', '/api/assets', data),
-        updateGameAsset: (data) => apiRequest('PUT', `/api/assets/${data.id}`, data),
-        cloneGameAsset: (id) => apiRequest('POST', `/api/assets/clone/${id}`),
+        addGameAsset: createAddAction('/api/assets', 'gameAssets'),
+        updateGameAsset: createUpdateAction(id => `/api/assets/${id}`, 'gameAssets'),
+        cloneGameAsset: createCloneAction(id => `/api/assets/clone/${id}`, 'gameAssets'),
         
         setRanks: (ranks) => apiRequest('POST', '/api/ranks/bulk-update', { ranks }),
         
@@ -176,7 +223,14 @@ export const ActionsProvider: React.FC<{ children: ReactNode }> = ({ children })
             if (callback) callback();
         },
         
-        completeQuest: (data) => apiRequest('POST', '/api/actions/complete-quest', { completionData: data }),
+        completeQuest: async (data) => {
+            const result = await apiRequest('POST', '/api/actions/complete-quest', { completionData: data });
+            if (result) {
+                const { updatedUser, newCompletion } = result;
+                if (updatedUser) updateUser(updatedUser.id, updatedUser);
+                if (newCompletion) dataDispatch({ type: 'UPDATE_DATA', payload: { questCompletions: [newCompletion] } });
+            }
+        },
         approveQuestCompletion: (id, note) => apiRequest('POST', `/api/actions/approve-quest/${id}`, { note }),
         rejectQuestCompletion: (id, note) => apiRequest('POST', `/api/actions/reject-quest/${id}`, { note }),
 
@@ -187,18 +241,16 @@ export const ActionsProvider: React.FC<{ children: ReactNode }> = ({ children })
         
         executeExchange: (userId, payItem, receiveItem, guildId) => apiRequest('POST', '/api/actions/execute-exchange', { userId, payItem, receiveItem, guildId }),
 
-        addGuild: (data) => apiRequest('POST', '/api/guilds', data),
-        updateGuild: (data) => apiRequest('PUT', `/api/guilds/${data.id}`, data),
+        addGuild: createAddAction('/api/guilds', 'guilds'),
+        updateGuild: createUpdateAction(id => `/api/guilds/${id}`, 'guilds'),
         deleteGuild: (id) => apiRequest('DELETE', `/api/guilds/${id}`),
 
-        applyManualAdjustment: (adj) => { apiRequest('POST', '/api/actions/manual-adjustment', adj); return true; },
+        applyManualAdjustment: async (adj) => { await apiRequest('POST', '/api/actions/manual-adjustment', adj); return true; },
 
         uploadFile: async (file, category) => {
             const formData = new FormData();
             formData.append('file', file);
-            if (category) {
-                formData.append('category', category);
-            }
+            if (category) formData.append('category', category);
             try {
                 const response = await fetch('/api/media/upload', { method: 'POST', body: formData });
                 if (!response.ok) throw new Error('Upload failed');
@@ -209,17 +261,26 @@ export const ActionsProvider: React.FC<{ children: ReactNode }> = ({ children })
             }
         },
 
-        addTheme: (data) => apiRequest('POST', '/api/themes', data),
-        updateTheme: (data) => apiRequest('PUT', `/api/themes/${data.id}`, data),
+        addTheme: createAddAction('/api/themes', 'themes'),
+        updateTheme: createUpdateAction(id => `/api/themes/${id}`, 'themes'),
         deleteTheme: (id) => apiRequest('DELETE', `/api/themes/${id}`),
 
-        markQuestAsTodo: (questId, userId) => apiRequest('POST', `/api/actions/mark-todo`, { questId, userId }),
-        unmarkQuestAsTodo: (questId, userId) => apiRequest('POST', `/api/actions/unmark-todo`, { questId, userId }),
+        markQuestAsTodo: async (questId, userId) => {
+            const result = await apiRequest('POST', `/api/actions/mark-todo`, { questId, userId });
+            if (result) dataDispatch({ type: 'UPDATE_DATA', payload: { quests: [result] }});
+        },
+        unmarkQuestAsTodo: async (questId, userId) => {
+            const result = await apiRequest('POST', `/api/actions/unmark-todo`, { questId, userId });
+            if (result) dataDispatch({ type: 'UPDATE_DATA', payload: { quests: [result] }});
+        },
 
         useItem: (id) => apiRequest('POST', `/api/actions/use-item/${id}`),
         craftItem: (id) => apiRequest('POST', `/api/actions/craft-item/${id}`),
 
-        updateSettings: (settings) => apiRequest('PUT', '/api/settings', settings),
+        updateSettings: async (settings) => {
+            const result = await apiRequest('PUT', '/api/settings', settings);
+            if (result) dataDispatch({ type: 'UPDATE_DATA', payload: { settings: result }});
+        },
         resetSettings: () => apiRequest('POST', '/api/data/reset-settings'),
         applySettingsUpdates: () => apiRequest('POST', '/api/data/apply-updates'),
         clearAllHistory: () => apiRequest('POST', '/api/data/clear-history'),
@@ -227,29 +288,53 @@ export const ActionsProvider: React.FC<{ children: ReactNode }> = ({ children })
         deleteAllCustomContent: () => apiRequest('POST', '/api/data/delete-content'),
         factoryReset: () => apiRequest('POST', '/api/data/factory-reset'),
         
-        sendMessage: (data) => apiRequest('POST', '/api/chat/send', data),
+        sendMessage: async (data) => {
+            const result = await apiRequest('POST', '/api/chat/send', data);
+            if (result) dataDispatch({ type: 'UPDATE_DATA', payload: { chatMessages: [result] }});
+        },
         markMessagesAsRead: (criteria) => apiRequest('POST', '/api/chat/read', criteria),
         
         addSystemNotification: (data) => apiRequest('POST', '/api/notifications', data),
         markSystemNotificationsAsRead: (ids) => apiRequest('POST', '/api/notifications/read', { ids }),
         
-        addScheduledEvent: (data) => apiRequest('POST', '/api/events', data),
-        updateScheduledEvent: (data) => apiRequest('PUT', `/api/events/${data.id}`, data),
+        addScheduledEvent: createAddAction('/api/events', 'scheduledEvents'),
+        updateScheduledEvent: createUpdateAction(id => `/api/events/${id}`, 'scheduledEvents'),
         deleteScheduledEvent: (id) => apiRequest('DELETE', `/api/events/${id}`),
 
-        importAssetPack: (pack, resolutions) => apiRequest('POST', '/api/data/import-assets', { assetPack: pack, resolutions }),
+        importAssetPack: async (pack, resolutions) => {
+            const result = await apiRequest('POST', '/api/data/import-assets', { assetPack: pack, resolutions });
+            if (result.importedData) {
+                dataDispatch({ type: 'UPDATE_DATA', payload: result.importedData });
+                addNotification({ type: 'success', message: 'Asset pack imported successfully!' });
+            }
+        },
 
-        addBugReport: (report) => apiRequest('POST', '/api/bug-reports', report),
-        updateBugReport: (id, updates) => apiRequest('PUT', `/api/bug-reports/${id}`, updates),
+        addBugReport: async (report) => {
+            const result = await apiRequest('POST', '/api/bug-reports', report);
+            if (result) dataDispatch({ type: 'UPDATE_DATA', payload: { bugReports: [result] }});
+        },
+        updateBugReport: async (reportId, updates) => {
+            const result = await apiRequest('PUT', `/api/bug-reports/${reportId}`, updates);
+            if (result) {
+                dataDispatch({
+                    type: 'UPDATE_DATA',
+                    payload: { bugReports: [result] }
+                });
+            }
+            return result;
+        },
         deleteBugReports: (ids) => apiRequest('DELETE', '/api/bug-reports', { ids }),
-        importBugReports: (reports, mode) => apiRequest('POST', '/api/bug-reports/import', { reports, mode }),
+        importBugReports: async (reports, mode) => {
+            const result = await apiRequest('POST', '/api/bug-reports/import', { reports, mode });
+            if (result) dataDispatch({ type: 'UPDATE_DATA', payload: { bugReports: result }});
+        },
 
-        addRotation: (data) => apiRequest('POST', '/api/rotations', data),
-        updateRotation: (data) => apiRequest('PUT', `/api/rotations/${data.id}`, data),
+        addRotation: createAddAction('/api/rotations', 'rotations'),
+        updateRotation: createUpdateAction(id => `/api/rotations/${id}`, 'rotations'),
 
-        addSetbackDefinition: (data) => apiRequest('POST', '/api/setbacks', data),
-        updateSetbackDefinition: (data) => apiRequest('PUT', `/api/setbacks/${data.id}`, data),
-        applySetback: (userId, setbackId, reason) => { apiRequest('POST', '/api/actions/apply-setback', { userId, setbackDefinitionId: setbackId, reason }); return true; },
+        addSetbackDefinition: createAddAction('/api/setbacks', 'setbackDefinitions'),
+        updateSetbackDefinition: createUpdateAction(id => `/api/setbacks/${id}`, 'setbackDefinitions'),
+        applySetback: async (userId, setbackId, reason) => { await apiRequest('POST', '/api/actions/apply-setback', { userId, setbackDefinitionId: setbackId, reason }); return true; },
 
         proposeTrade: (recipientId, guildId) => apiRequest('POST', '/api/trades/propose', { recipientId, guildId }),
         updateTradeOffer: (id, updates) => apiRequest('PUT', `/api/trades/${id}`, updates),

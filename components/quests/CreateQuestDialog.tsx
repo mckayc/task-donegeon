@@ -186,7 +186,7 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
     setFormData(prev => ({ ...prev, ...scheduleUpdate }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.title.trim()) {
         setError('Title is required.');
@@ -200,8 +200,8 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
 
     let finalGroupId = formData.groupId;
     if (isCreatingNewGroup && newGroupName.trim()) {
-        const newGroup = addQuestGroup({ name: newGroupName.trim(), description: '', icon: '📂' });
-        finalGroupId = newGroup.id;
+        const newGroup = await addQuestGroup({ name: newGroupName.trim(), description: '', icon: '📂' });
+        finalGroupId = newGroup?.id;
     }
 
     const questPayload: Omit<Quest, 'id' | 'claimedByUserIds' | 'dismissals'> = {

@@ -1,6 +1,5 @@
 
 
-
 import React, { useState, useMemo, useEffect } from 'react';
 import Card from '../user-interface/Card';
 import Button from '../user-interface/Button';
@@ -120,7 +119,7 @@ const QuestItem: React.FC<{ quest: Quest; now: Date; onSelect: (quest: Quest) =>
     const optionalClass = quest.isOptional ? 'border-dashed' : '';
 
     return (
-        <div onClick={() => onSelect(quest)} className={`border-2 rounded-xl shadow-lg flex flex-col h-full transition-all duration-500 cursor-pointer ${baseCardClass} ${borderClass} ${optionalClass} ${!isAvailable ? 'opacity-50' : ''}`}>
+        <div onClick={() => isAvailable && onSelect(quest)} className={`border-2 rounded-xl shadow-lg flex flex-col h-full transition-all duration-500 ${baseCardClass} ${borderClass} ${optionalClass} ${!isAvailable ? 'opacity-50 cursor-default' : 'cursor-pointer'}`}>
             {/* Header */}
             <div className="p-4 border-b border-white/10 flex items-start gap-4">
                 <div className={`w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 text-3xl overflow-hidden ${isDuty ? 'bg-sky-900/70' : 'bg-amber-900/70'}`}>
@@ -195,7 +194,7 @@ const FilterButton: React.FC<{ type: 'all' | QuestType, children: React.ReactNod
     <button
         onClick={() => setFilter(type)}
         data-log-id={`quests-page-filter-${type.toLowerCase()}`}
-        className={`w-full p-2 rounded-md font-semibold text-sm transition-colors ${activeFilter === type ? 'bg-primary text-primary-foreground' : 'text-stone-300 hover:bg-stone-700'}`}
+        className={`flex-1 text-center py-1.5 px-3 rounded-md font-semibold text-sm transition-colors ${activeFilter === type ? 'bg-primary text-primary-foreground' : 'text-stone-300 hover:bg-stone-700'}`}
     >
         {children}
     </button>
@@ -248,13 +247,11 @@ const QuestsPage: React.FC = () => {
 
     return (
         <div className="space-y-6">
-            <Card>
-                <div className="grid grid-cols-3 gap-2 max-w-sm mx-auto p-1 bg-stone-900/50 rounded-lg">
-                    <FilterButton type="all" activeFilter={filter} setFilter={setFilter}>All Quests</FilterButton>
-                    <FilterButton type={QuestType.Duty} activeFilter={filter} setFilter={setFilter}>{settings.terminology.recurringTasks}</FilterButton>
-                    <FilterButton type={QuestType.Venture} activeFilter={filter} setFilter={setFilter}>{settings.terminology.singleTasks}</FilterButton>
-                </div>
-            </Card>
+            <div className="max-w-md mx-auto p-1 bg-stone-900/50 rounded-lg border border-stone-700/60 flex gap-1">
+                <FilterButton type="all" activeFilter={filter} setFilter={setFilter}>All Quests</FilterButton>
+                <FilterButton type={QuestType.Duty} activeFilter={filter} setFilter={setFilter}>{settings.terminology.recurringTasks}</FilterButton>
+                <FilterButton type={QuestType.Venture} activeFilter={filter} setFilter={setFilter}>{settings.terminology.singleTasks}</FilterButton>
+            </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {filteredSortedQuests.map(quest => (

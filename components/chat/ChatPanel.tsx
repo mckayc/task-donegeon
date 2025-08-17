@@ -1,5 +1,3 @@
-
-
 import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { useData } from '../../context/DataProvider';
 import { useUIState, useUIDispatch } from '../../context/UIContext';
@@ -8,9 +6,10 @@ import { useAuthState } from '../../context/AuthContext';
 import { Role, User, ChatMessage, Guild } from '../../types';
 import Avatar from '../user-interface/Avatar';
 import Input from '../user-interface/Input';
-import { XCircleIcon } from '../user-interface/Icons';
+import { XCircleIcon, GrabHandleIcon } from '../user-interface/Icons';
 import Button from '../user-interface/Button';
 import ToggleSwitch from '../user-interface/ToggleSwitch';
+import { motion, useDragControls } from 'framer-motion';
 
 type GuildTarget = {
     id: string;
@@ -26,7 +25,6 @@ const isGuildChatTarget = (target: ChatTarget | null): target is GuildTarget => 
 
 const ChatPanel: React.FC = () => {
     const { guilds, chatMessages, settings } = useData();
-    const { isChatOpen } = useUIState();
     const { currentUser, users } = useAuthState();
     const { toggleChat } = useUIDispatch();
     const { sendMessage, markMessagesAsRead } = useActionsDispatch();
@@ -35,6 +33,15 @@ const ChatPanel: React.FC = () => {
     const [isAnnouncement, setIsAnnouncement] = useState(false);
     const [userScrolledUp, setUserScrolledUp] = useState(false);
     const messagesContainerRef = useRef<HTMLDivElement>(null);
+    const panelRef = useRef<HTMLDivElement>(null);
+
+    const [size, setSize] = useState(() => {
+        const savedSize = localStorage.getItem('chatPanelSize');
+        return savedSize ? JSON.parse(savedSize) : { width: 400, height: 600 };
+    });
+    
+    const dragControls = useDragControls();
+    const isResizing = useRef(false);
 
     const guildChatTargets = useMemo((): ChatTarget[] => {
         if (!currentUser) return [];
@@ -76,7 +83,6 @@ const ChatPanel: React.FC = () => {
     
     const unreadInActiveConvo = useMemo(() => {
         if (!currentUser || !activeConversation) return 0;
-        // Don't count our own messages as unread
         return activeConversation.filter((msg: ChatMessage) => msg.senderId !== currentUser.id && !msg.readBy.includes(currentUser.id)).length;
     }, [activeConversation, currentUser]);
 
@@ -99,7 +105,7 @@ const ChatPanel: React.FC = () => {
     const handleScroll = () => {
         const container = messagesContainerRef.current;
         if (container) {
-            const atBottom = container.scrollHeight - container.scrollTop <= container.clientHeight + 5; // Add a small buffer
+            const atBottom = container.scrollHeight - container.scrollTop <= container.clientHeight + 5;
             setUserScrolledUp(!atBottom);
         }
     };
@@ -126,15 +132,77 @@ const ChatPanel: React.FC = () => {
         setIsAnnouncement(false);
     };
 
+    const handleResize = useCallback((e: MouseEvent) => {
+        if (isResizing.current && panelRef.current) {
+            const newWidth = e.clientX - panelRef.current.offsetLeft;
+            const newHeight = e.clientY - panelRef.current.offsetTop;
+            setSize({
+                width: Math.max(320, newWidth),
+                height: Math.max(400, newHeight)
+            });
+        }
+    }, []);
+
+    const stopResize = useCallback(() => {
+        isResizing.current = false;
+        window.removeEventListener('mousemove', handleResize);
+        window.removeEventListener('mouseup', stopResize);
+        localStorage.setItem('chatPanelSize', JSON.stringify(size));
+    }, [handleResize, size]);
+
+    const startResize = useCallback((e: React.MouseEvent) => {
+        e.preventDefault();
+        isResizing.current = true;
+        window.addEventListener('mousemove', handleResize);
+        window.addEventListener('mouseup', stopResize);
+    }, [handleResize, stopResize]);
+
+    const handleDragEnd = () => {
+        if (panelRef.current) {
+            const { x, y } = panelRef.current.getBoundingClientRect();
+            localStorage.setItem('chatPanelPosition', JSON.stringify({ x, y }));
+        }
+    };
+
     if (!currentUser) {
         return null;
     }
 
     return (
-        <div data-bug-reporter-ignore className={`flex-shrink-0 flex-col bg-stone-800 border-l border-stone-700 transition-all duration-300 ${isChatOpen ? 'w-80 flex' : 'w-0 hidden'}`}>
-            <div className="p-4 border-b border-stone-700 flex-shrink-0">
+        <motion.div
+            ref={panelRef}
+            data-bug-reporter-ignore
+            className="fixed z-50 flex flex-col bg-stone-800 border border-stone-700 rounded-xl shadow-2xl"
+            style={{ 
+                width: size.width, 
+                height: size.height,
+                top: 0,
+                left: 0
+            }}
+            drag
+            dragControls={dragControls}
+            dragListener={false}
+            dragMomentum={false}
+            onDragEnd={handleDragEnd}
+            dragConstraints={{
+                left: 0,
+                right: window.innerWidth - size.width,
+                top: 0,
+                bottom: window.innerHeight - size.height
+            }}
+            initial={{ 
+                x: window.innerWidth - size.width - 20, 
+                y: window.innerHeight - size.height - 20,
+                scale: 0.9, opacity: 0
+            }}
+            animate={{ scale: 1, opacity: 1 }}
+        >
+            <div
+                onPointerDown={(e) => dragControls.start(e)}
+                className="p-4 border-b border-stone-700 flex-shrink-0 cursor-grab active:cursor-grabbing"
+            >
                 <div className="flex justify-between items-center">
-                    <h3 className="text-xl font-medieval text-accent">{settings.terminology.link_chat}</h3>
+                    <h3 className="text-xl font-medieval text-accent flex items-center gap-2"><GrabHandleIcon className="w-5 h-5 text-stone-500" />{settings.terminology.link_chat}</h3>
                     <button onClick={toggleChat} className="text-stone-400 hover:text-white">
                         <XCircleIcon className="w-6 h-6" />
                     </button>
@@ -197,7 +265,13 @@ const ChatPanel: React.FC = () => {
                     )}
                 </form>
             )}
-        </div>
+
+            <div
+                className="absolute bottom-0 right-0 w-4 h-4 cursor-se-resize"
+                onMouseDown={startResize}
+                title="Resize chat panel"
+            />
+        </motion.div>
     );
 };
 

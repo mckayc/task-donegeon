@@ -13,7 +13,7 @@ import QuestDetailDialog from '../quests/QuestDetailDialog';
 import CompleteQuestDialog from '../quests/CompleteQuestDialog';
 import { useRewardValue } from '../../hooks/useRewardValue';
 import BarChart from '../user-interface/BarChart';
-import GuildDashboard from './GuildDashboard';
+import GuildPage from './GuildPage';
 import ContributeToQuestDialog from '../quests/ContributeToQuestDialog';
 
 const Dashboard: React.FC = () => {
@@ -62,8 +62,7 @@ const Dashboard: React.FC = () => {
     if (!currentUser) return <div>Loading adventurer's data...</div>;
 
     if (appMode.mode === 'guild' && currentUser.role === 'Donegeon Master') {
-        // Conditional rendering for a component that might not exist
-        return GuildDashboard ? <GuildDashboard /> : <Card title="Guild Dashboard"><p>Loading...</p></Card>;
+        return <GuildPage />;
     }
     
     const { terminology } = settings;

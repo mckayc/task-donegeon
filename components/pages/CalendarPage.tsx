@@ -26,45 +26,6 @@ import { useActionsDispatch } from '../../context/ActionsContext';
 
 type CalendarMode = 'events' | 'chronicles';
 
-const renderEventContent = (eventInfo: EventContentArg, rewardTypes: RewardTypeDefinition[]) => {
-    const { event } = eventInfo;
-    const { extendedProps } = event;
-
-    const getRewardInfo = (id: string) => {
-        return rewardTypes.find(rt => rt.id === id) || { name: 'Unknown', icon: '❓' };
-    };
-
-    let icon = '';
-    let rewards: RewardItem[] = [];
-    
-    if (extendedProps.type === 'quest' && extendedProps.quest) {
-        icon = extendedProps.quest.icon;
-        rewards = extendedProps.quest.rewards || [];
-    } else if (extendedProps.type === 'scheduled' && extendedProps.appEvent) {
-        icon = extendedProps.appEvent.icon || '🎉';
-    } else if (extendedProps.type === 'chronicle' && extendedProps.chronicleEvent) {
-        icon = extendedProps.chronicleEvent.icon;
-    }
-
-    // In list view, FullCalendar adds its own dot, so we don't need another one.
-    const isListView = eventInfo.view.type.startsWith('list');
-    
-    return (
-        <div className="flex items-center gap-2 overflow-hidden w-full">
-            {!isListView && <span className="text-lg">{icon}</span>}
-            <span className="truncate flex-grow">{event.title}</span>
-            {rewards.length > 0 && (
-                <div className="hidden sm:flex items-center gap-x-2 ml-auto flex-shrink-0">
-                    {rewards.map(r => {
-                        const { icon: rewardIcon } = getRewardInfo(r.rewardTypeId);
-                        return <span key={r.rewardTypeId} className="text-xs font-semibold flex items-center gap-1" title={`${r.amount} ${getRewardInfo(r.rewardTypeId).name}`}>{r.amount}{rewardIcon}</span>
-                    })}
-                </div>
-            )}
-        </div>
-    );
-};
-
 const CalendarPage: React.FC = () => {
     const { settings, scheduledEvents, quests, questCompletions, rewardTypes } = useData();
     const { appMode } = useUIState();
@@ -91,6 +52,45 @@ const CalendarPage: React.FC = () => {
     });
     
     if (!currentUser) return null;
+
+    const renderEventContent = (eventInfo: EventContentArg) => {
+        const { event, timeText } = eventInfo;
+        const { extendedProps } = event;
+    
+        const getRewardInfo = (id: string) => {
+            return rewardTypes.find(rt => rt.id === id) || { name: 'Unknown', icon: '❓' };
+        };
+    
+        let icon = '';
+        let rewards: RewardItem[] = [];
+        
+        if (extendedProps.type === 'quest' && extendedProps.quest) {
+            icon = extendedProps.quest.icon;
+            rewards = extendedProps.quest.rewards || [];
+        } else if (extendedProps.type === 'scheduled' && extendedProps.appEvent) {
+            icon = extendedProps.appEvent.icon || '🎉';
+        } else if (extendedProps.type === 'chronicle' && extendedProps.chronicleEvent) {
+            icon = extendedProps.chronicleEvent.icon;
+        }
+    
+        const isListView = eventInfo.view.type.startsWith('list');
+        
+        return (
+            <div className="flex items-center gap-2 overflow-hidden w-full font-sans">
+                {timeText && <span className="fc-event-time font-semibold">{timeText}</span>}
+                {!isListView && <span className="text-lg">{icon}</span>}
+                <span className="truncate flex-grow fc-event-title">{event.title}</span>
+                {rewards.length > 0 && (
+                    <div className="hidden sm:flex items-center gap-x-2 ml-auto flex-shrink-0">
+                        {rewards.map(r => {
+                            const { icon: rewardIcon, name } = getRewardInfo(r.rewardTypeId);
+                            return <span key={r.rewardTypeId} className="text-xs font-semibold flex items-center gap-1" title={`${r.amount} ${name}`}>{r.amount}{rewardIcon}</span>
+                        })}
+                    </div>
+                )}
+            </div>
+        );
+    };
 
     const visibleQuests = useMemo(() => 
         quests.filter(q => isQuestVisibleToUserInMode(q, currentUser.id, appMode, quests, questCompletions)),
@@ -332,7 +332,7 @@ const CalendarPage: React.FC = () => {
                 .fc .fc-button-primary:hover { background-color: hsl(var(--accent) / 0.8); }
                 .fc .fc-button-primary:disabled { background-color: hsl(var(--muted)); }
                 .fc .fc-button-primary:not(:disabled).fc-button-active, .fc .fc-button-primary:not(:disabled):active { background-color: hsl(var(--primary)); color: hsl(var(--primary-foreground)); }
-                .fc .fc-daygrid-day.fc-day-today { background-color: hsl(var(--primary) / 0.15); }
+                .fc .fc-daygrid-day.fc-day-today { background-color: hsl(var(--primary) / 0.1); border: 2px solid hsl(var(--primary)); }
                 .fc .fc-daygrid-day-number { color: hsl(var(--foreground)); padding: 4px; }
                 .fc .fc-day-past .fc-daygrid-day-number { color: hsl(var(--muted-foreground)); }
                 .fc .fc-event { border: 1px solid hsl(var(--border)) !important; font-size: 0.75rem; padding: 2px 4px; color: hsl(var(--primary-foreground)); }
@@ -385,7 +385,7 @@ const CalendarPage: React.FC = () => {
                         editable={currentUser.role === Role.DonegeonMaster}
                         eventDrop={handleEventDrop}
                         dateClick={handleDateClick}
-                        eventContent={(arg) => renderEventContent(arg, rewardTypes)}
+                        eventContent={renderEventContent}
                         contentHeight="auto"
                         aspectRatio={1.5}
                         slotDuration="00:15:00"
@@ -403,7 +403,15 @@ const CalendarPage: React.FC = () => {
                 <QuestDetailDialog
                     quest={viewingQuest.quest}
                     onClose={() => setViewingQuest(null)}
-                    onComplete={handleStartCompletion}
+                    onComplete={
+                        isQuestAvailableForUser(
+                            viewingQuest.quest,
+                            questCompletions.filter(c => c.userId === currentUser.id),
+                            viewingQuest.date,
+                            scheduledEvents,
+                            appMode
+                        ) ? handleStartCompletion : undefined
+                    }
                     onToggleTodo={handleToggleTodo}
                     isTodo={!!(viewingQuest.quest.type === QuestType.Venture && viewingQuest.quest.todoUserIds?.includes(currentUser.id))}
                 />

@@ -1,8 +1,9 @@
 
-import React, { useState, useRef, useEffect } from 'react';
+
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import Card from '../user-interface/Card';
 import { useData } from '../../context/DataProvider';
-import { useUIDispatch } from '../../context/UIContext';
+import { useUIState, useUIDispatch } from '../../context/UIContext';
 import { useActionsDispatch } from '../../context/ActionsContext';
 import { useAuthState } from '../../context/AuthContext';
 import Button from '../user-interface/Button';
@@ -18,6 +19,7 @@ import { useNotificationsDispatch } from '../../context/NotificationsContext';
 
 const GuildPage: React.FC = () => {
     const { guilds, settings, rewardTypes, gameAssets, tradeOffers } = useData();
+    const { appMode } = useUIState();
     const { currentUser, users } = useAuthState();
     const { setAppMode, setActivePage } = useUIDispatch();
     const { proposeTrade } = useActionsDispatch();
@@ -43,7 +45,13 @@ const GuildPage: React.FC = () => {
 
     if (!currentUser) return null;
 
-    const myGuilds = guilds.filter(g => g.memberIds.includes(currentUser.id));
+    const guildsToShow = useMemo(() => {
+        if (appMode.mode === 'guild') {
+            const currentGuild = guilds.find(g => g.id === appMode.guildId);
+            return currentGuild ? [currentGuild] : [];
+        }
+        return guilds.filter(g => g.memberIds.includes(currentUser.id));
+    }, [guilds, currentUser.id, appMode]);
 
     const handleSwitchView = (guildId: string) => {
         setAppMode({ mode: 'guild', guildId: guildId });
@@ -118,9 +126,9 @@ const GuildPage: React.FC = () => {
 
     return (
         <div>
-            {myGuilds.length > 0 ? (
+            {guildsToShow.length > 0 ? (
                 <div className="space-y-8">
-                    {myGuilds.map(guild => (
+                    {guildsToShow.map(guild => (
                         <Card key={guild.id} className="p-0 overflow-hidden">
                              <div className="px-6 py-4 flex flex-wrap gap-4 justify-between items-center">
                                 <div>
@@ -128,7 +136,9 @@ const GuildPage: React.FC = () => {
                                     <p className="text-stone-400 text-sm">{guild.purpose}</p>
                                 </div>
                                 <div>
-                                    <Button onClick={() => handleSwitchView(guild.id)}>Switch to this {settings.terminology.group}'s View</Button>
+                                    {appMode.mode === 'personal' && (
+                                        <Button onClick={() => handleSwitchView(guild.id)}>Switch to this {settings.terminology.group}'s View</Button>
+                                    )}
                                 </div>
                             </div>
                             <div className="p-6 border-t border-stone-700/60">

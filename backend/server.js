@@ -227,10 +227,22 @@ const getFullAppData = async (manager) => {
     const questCompletions = await manager.find(QuestCompletionEntity, { relations: ['user', 'quest'] });
     const guilds = await manager.find(GuildEntity, { relations: ['members'] });
 
-    data.users = users.map(u => ({ ...u, guildIds: u.guilds?.map(g => g.id) || [] }));
-    data.quests = quests.map(q => ({ ...q, assignedUserIds: q.assignedUsers?.map(u => u.id) || [] }));
-    data.questCompletions = questCompletions.map(qc => ({ ...qc, userId: qc.user?.id, questId: qc.quest?.id }));
-    data.guilds = guilds.map(g => ({ ...g, memberIds: g.members?.map(m => m.id) || [] }));
+    data.users = users.map(u => {
+        const { guilds, ...userData } = u;
+        return { ...userData, guildIds: guilds?.map(g => g.id) || [] };
+    });
+    data.quests = quests.map(q => {
+        const { assignedUsers, ...questData } = q;
+        return { ...questData, assignedUserIds: assignedUsers?.map(u => u.id) || [] };
+    });
+    data.questCompletions = questCompletions.map(qc => {
+        const { user, quest, ...completionData } = qc;
+        return { ...completionData, userId: user?.id, questId: quest?.id };
+    });
+    data.guilds = guilds.map(g => {
+        const { members, ...guildData } = g;
+        return { ...guildData, memberIds: members?.map(m => m.id) || [] };
+    });
 
     data.questGroups = await manager.find(QuestGroupEntity);
     data.markets = await manager.find(MarketEntity);
@@ -417,11 +429,20 @@ app.get('/api/data/sync', asyncMiddleware(async (req, res) => {
             if (changedRecords.length > 0) {
                 // Remap relational data to IDs for frontend
                 if (entity.options.name === 'Quest') {
-                    updates.quests = changedRecords.map(q => ({ ...q, assignedUserIds: q.assignedUsers?.map(u => u.id) || [] }));
+                    updates.quests = changedRecords.map(q => {
+                        const { assignedUsers, ...questData } = q;
+                        return { ...questData, assignedUserIds: assignedUsers?.map(u => u.id) || [] };
+                    });
                 } else if (entity.options.name === 'Guild') {
-                    updates.guilds = changedRecords.map(g => ({ ...g, memberIds: g.members?.map(m => m.id) || [] }));
+                    updates.guilds = changedRecords.map(g => {
+                        const { members, ...guildData } = g;
+                        return { ...guildData, memberIds: members?.map(m => m.id) || [] };
+                    });
                 } else if (entity.options.name === 'QuestCompletion') {
-                    updates.questCompletions = changedRecords.map(qc => ({ ...qc, userId: qc.user?.id, questId: qc.quest?.id }));
+                    updates.questCompletions = changedRecords.map(qc => {
+                        const { user, quest, ...completionData } = qc;
+                        return { ...completionData, userId: user?.id, questId: quest?.id };
+                    });
                 } else {
                      updates[pluralName] = changedRecords;
                 }
@@ -1538,6 +1559,37 @@ app.post('/api/actions/reject-quest/:id', asyncMiddleware(async (req, res) => {
     res.status(204).send();
 }));
 
+app.post('/api/actions/mark-todo', asyncMiddleware(async (req, res) => {
+    const { questId, userId } = req.body;
+    const questRepo = dataSource.getRepository(QuestEntity);
+    const quest = await questRepo.findOneBy({ id: questId });
+    if (!quest) return res.status(404).json({ error: 'Quest not found.' });
+    
+    quest.todoUserIds = quest.todoUserIds || [];
+    if (!quest.todoUserIds.includes(userId)) {
+        quest.todoUserIds.push(userId);
+        await questRepo.save(updateTimestamps(quest));
+    }
+    
+    updateEmitter.emit('update');
+    res.status(204).send();
+}));
+
+app.post('/api/actions/unmark-todo', asyncMiddleware(async (req, res) => {
+    const { questId, userId } = req.body;
+    const questRepo = dataSource.getRepository(QuestEntity);
+    const quest = await questRepo.findOneBy({ id: questId });
+    if (!quest) return res.status(404).json({ error: 'Quest not found.' });
+
+    if (quest.todoUserIds && quest.todoUserIds.includes(userId)) {
+        quest.todoUserIds = quest.todoUserIds.filter(id => id !== userId);
+        await questRepo.save(updateTimestamps(quest));
+    }
+
+    updateEmitter.emit('update');
+    res.status(204).send();
+}));
+
 app.post('/api/actions/execute-exchange', asyncMiddleware(async (req, res) => {
     const { userId, payItem, receiveItem, guildId } = req.body;
 
@@ -1645,7 +1697,7 @@ app.get('/api/media/local-gallery', async (req, res, next) => {
     } catch (err) {
         next(err);
     }
-});
+}));
 
 
 // === Asset Pack Endpoints ===
@@ -2010,7 +2062,7 @@ backupsRouter.get('/download/:filename', (req, res) => {
             }
         }
     });
-});
+}));
 
 backupsRouter.delete('/:filename', asyncMiddleware(async (req, res) => {
     const filename = path.basename(req.params.filename);

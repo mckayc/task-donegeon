@@ -1,4 +1,3 @@
-
 import React, { useMemo, useEffect, useState, useRef } from 'react';
 import Sidebar from './Sidebar';
 import Header from './Header';
@@ -48,7 +47,7 @@ import ManageSetbacksPage from '../pages/management/ManageSetbacksPage';
 
 const MainLayout: React.FC = () => {
   const { settings, systemNotifications } = useData();
-  const { activePage } = useUIState();
+  const { activePage, isChatOpen } = useUIState();
   const { currentUser } = useAuthState();
   const { addNotification } = useNotificationsDispatch();
   const { setActivePage } = useUIDispatch();
@@ -169,8 +168,8 @@ const MainLayout: React.FC = () => {
             {renderPage()}
           </main>
         </div>
-        <ChatPanel />
       </div>
+      {isChatOpen && <ChatPanel />}
     </>
   );
 };

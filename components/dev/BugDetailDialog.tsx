@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { BugReport, BugReportStatus, BugReportLogEntry } from '../../types';
 import { useActionsDispatch } from '../../context/ActionsContext';
 import { useNotificationsDispatch } from '../../context/NotificationsContext';
@@ -40,6 +40,7 @@ export const BugDetailDialog: React.FC<BugDetailDialogProps> = ({ report: initia
     const [questFromBug, setQuestFromBug] = useState<BugReport | null>(null);
     const [comment, setComment] = useState('');
     const [selectedLogs, setSelectedLogs] = useState<string[]>([]);
+    const logContainerRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         setReport(initialReport);
@@ -49,6 +50,12 @@ export const BugDetailDialog: React.FC<BugDetailDialogProps> = ({ report: initia
         if (!report.logs) return [];
         return [...report.logs].sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
     }, [report.logs]);
+    
+    useEffect(() => {
+        if (logContainerRef.current) {
+            logContainerRef.current.scrollTop = logContainerRef.current.scrollHeight;
+        }
+    }, [sortedLogs]);
     
     const shortId = useMemo(() => `bug-${report.id.substring(4, 11)}`, [report.id]);
 
@@ -181,7 +188,7 @@ export const BugDetailDialog: React.FC<BugDetailDialogProps> = ({ report: initia
                                 <Button size="sm" variant="secondary" onClick={() => handleCopy(selectedLogs)} disabled={selectedLogs.length === 0}>Copy Selected ({selectedLogs.length})</Button>
                                 <Button size="sm" variant="secondary" onClick={() => handleCopy(sortedLogs.map(l => l.timestamp))}>Copy Full Log</Button>
                             </div>
-                            <div className="flex-grow overflow-y-auto pr-4 space-y-4">
+                            <div ref={logContainerRef} className="flex-grow overflow-y-auto pr-4 space-y-4">
                                 {sortedLogs.map((log, index) => {
                                     const isSelected = selectedLogs.includes(log.timestamp);
                                     const authorUser = log.type === 'COMMENT' ? users.find(u => u.gameName === log.author) : undefined;

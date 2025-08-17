@@ -161,6 +161,11 @@ export const isQuestAvailableForUser = (
   
   // Duty-specific logic
   if (quest.type === QuestType.Duty) {
+    // Prevent completing duties for a future date
+    if (toYMD(today) > toYMD(new Date())) {
+        return false;
+    }
+      
     if (!onVacation && quest.endTime) {
       if (isQuestScheduledForDay(quest, today)) {
           const [hours, minutes] = quest.endTime.split(':').map(Number);

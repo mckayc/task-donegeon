@@ -19,7 +19,7 @@ const ApplySetbackDialog: React.FC<ApplySetbackDialogProps> = ({ setback, onClos
     const [selectedUserId, setSelectedUserId] = useState<string>('');
     const [reason, setReason] = useState('');
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!selectedUserId) {
             addNotification({ type: 'error', message: 'Please select a user.' });
@@ -30,7 +30,7 @@ const ApplySetbackDialog: React.FC<ApplySetbackDialogProps> = ({ setback, onClos
             return;
         }
         
-        const success = applySetback(selectedUserId, setback.id, reason);
+        const success = await applySetback(selectedUserId, setback.id, reason);
         if (success) {
             addNotification({ type: 'success', message: `Setback "${setback.name}" applied.` });
             onClose();

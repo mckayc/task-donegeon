@@ -1,5 +1,3 @@
-
-
 import React, { useState } from 'react';
 import { useData } from '../../context/DataProvider';
 import { useActionsDispatch } from '../../context/ActionsContext';
@@ -45,7 +43,7 @@ const ManualAdjustmentDialog: React.FC<ManualAdjustmentDialogProps> = ({ user, o
     setter(items.filter((_, i) => i !== indexToRemove));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     
@@ -75,7 +73,7 @@ const ManualAdjustmentDialog: React.FC<ManualAdjustmentDialogProps> = ({ user, o
         return;
     }
     
-    const success = applyManualAdjustment(adjustmentPayload);
+    const success = await applyManualAdjustment(adjustmentPayload);
 
     if (success) {
         onClose();

@@ -78,6 +78,9 @@ export interface ActionsDispatch {
   sendMessage: (messageData: Omit<ChatMessage, 'id' | 'timestamp' | 'readBy'>) => Promise<void>;
   markMessagesAsRead: (criteria: { partnerId?: string, guildId?: string }) => Promise<void>;
   
+  addSystemNotification: (notificationData: Omit<SystemNotification, 'id' | 'timestamp' | 'readByUserIds' | 'createdAt' | 'updatedAt'>) => Promise<void>;
+  markSystemNotificationsAsRead: (notificationIds: string[]) => Promise<void>;
+  
   addScheduledEvent: (eventData: Omit<ScheduledEvent, 'id'>) => Promise<ScheduledEvent | null>;
   updateScheduledEvent: (eventData: ScheduledEvent) => Promise<ScheduledEvent | null>;
   deleteScheduledEvent: (eventId: string) => Promise<void>;

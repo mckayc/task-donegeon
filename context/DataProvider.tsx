@@ -67,6 +67,8 @@ const dataReducer = (state: DataState, action: DataAction): DataState => {
         case 'UPDATE_DATA':
              const updatedState = { ...state };
              for (const key in action.payload) {
+                if (key === 'users') continue; // Let AuthContext handle user updates exclusively to prevent conflicts.
+
                 const typedKey = key as keyof IAppData;
                 if (Array.isArray(updatedState[typedKey])) {
                     const existingItems = new Map((updatedState[typedKey] as any[]).map(item => [item.id, item]));
@@ -118,6 +120,9 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 if (updates.users) {
                     updates.users.forEach((user: User) => updateUser(user.id, user));
                 }
+                if (updates.loginHistory) {
+                    setLoginHistory(updates.loginHistory);
+                }
             } else { // Initial load
                 dispatch({ type: 'SET_ALL_DATA', payload: updates });
                 if (updates.users) {
@@ -128,10 +133,9 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                         setCurrentUser(lastUser);
                      }
                 }
-            }
-            
-            if (updates.loginHistory) {
-                setLoginHistory(updates.loginHistory);
+                if (updates.loginHistory) {
+                    setLoginHistory(updates.loginHistory);
+                }
             }
 
             lastSyncTimestamp.current = newSyncTimestamp;

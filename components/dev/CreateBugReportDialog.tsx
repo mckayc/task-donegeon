@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { BugReport, BugReportType } from '../../types';
+import { BugReport, BugReportType, BugReportStatus } from '../../types';
 import { useActionsDispatch } from '../../context/ActionsContext';
 import Button from '../user-interface/Button';
 import Input from '../user-interface/Input';
@@ -23,9 +23,10 @@ const CreateBugReportDialog: React.FC<CreateBugReportDialogProps> = ({ onClose }
             return;
         }
 
-        const newReport = {
+        const newReport: Partial<BugReport> = {
             title,
-            reportType,
+            status: 'Open',
+            tags: [reportType],
             createdAt: new Date().toISOString(),
             logs: [{
                 type: 'NOTE' as const,

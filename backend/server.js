@@ -2062,7 +2062,7 @@ backupsRouter.get('/download/:filename', (req, res) => {
             }
         }
     });
-}));
+});
 
 backupsRouter.delete('/:filename', asyncMiddleware(async (req, res) => {
     const filename = path.basename(req.params.filename);

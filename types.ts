@@ -738,6 +738,7 @@ export interface BugReportLogEntry {
     text?: string;
   };
   lastCopiedAt?: string;
+  isDimmed?: boolean;
 }
 
 export interface BugReport {

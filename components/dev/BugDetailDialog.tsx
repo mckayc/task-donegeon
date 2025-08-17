@@ -150,6 +150,18 @@ export const BugDetailDialog: React.FC<BugDetailDialogProps> = ({ report: initia
         }
     };
 
+    const handleToggleDim = (logTimestamp: string) => {
+        const newLogs = report.logs.map(log => {
+            if (log.timestamp === logTimestamp && log.type === 'COMMENT') {
+                return { ...log, isDimmed: !log.isDimmed };
+            }
+            return log;
+        });
+        const updatedReport = { ...report, logs: newLogs };
+        setReport(updatedReport); // Optimistic UI update
+        updateBugReport(report.id, { logs: newLogs }); // Persist change
+    };
+
     const handleCloseQuestDialog = () => {
         if (questFromBug) {
             updateBugReport(questFromBug.id, {
@@ -197,7 +209,7 @@ export const BugDetailDialog: React.FC<BugDetailDialogProps> = ({ report: initia
                                     const isSelected = selectedLogs.includes(log.timestamp);
                                     const authorUser = log.type === 'COMMENT' ? users.find(u => u.gameName === log.author) : undefined;
                                     return (
-                                        <div key={index} className={`relative flex items-start gap-3 text-stone-400 text-sm p-2 pl-4 rounded-md transition-colors ${isSelected ? 'bg-emerald-900/40' : ''} ${log.lastCopiedAt ? 'opacity-50' : ''}`}>
+                                        <div key={index} className={`relative group flex items-start gap-3 text-stone-400 text-sm p-2 pl-4 rounded-md transition-colors ${isSelected ? 'bg-emerald-900/40' : ''} ${log.lastCopiedAt ? 'opacity-50' : ''}`}>
                                             {log.lastCopiedAt && (
                                                 <div 
                                                     className="absolute left-0 top-0 bottom-0 w-1.5 bg-green-500 rounded-l-md" 
@@ -207,19 +219,30 @@ export const BugDetailDialog: React.FC<BugDetailDialogProps> = ({ report: initia
                                             <input type="checkbox" checked={isSelected} onChange={(e) => handleCheckboxClick(e, log.timestamp)} className="mt-1 flex-shrink-0 h-4 w-4 rounded text-emerald-600 bg-stone-700 border-stone-600 focus:ring-emerald-500" />
                                             
                                             {log.type === 'COMMENT' ? (
-                                                <div className="flex-grow">
-                                                    <div className="flex items-center gap-2">
-                                                        {authorUser ? (
-                                                            <Avatar user={authorUser} className="w-6 h-6 rounded-full flex-shrink-0" />
-                                                        ) : (
-                                                            <div className="w-6 h-6 rounded-full flex-shrink-0 bg-stone-700 flex items-center justify-center text-xs font-bold">
-                                                                {log.author ? log.author.charAt(0) : '?'}
-                                                            </div>
-                                                        )}
-                                                        <p className="text-sm">
-                                                            <span className="font-bold text-stone-100">{log.author}</span>
-                                                            <span className="text-xs text-stone-500 ml-2">{new Date(log.timestamp).toLocaleString()}</span>
-                                                        </p>
+                                                <div className={`flex-grow transition-opacity duration-300 ${log.isDimmed ? 'opacity-40' : 'opacity-100'}`}>
+                                                    <div className="flex items-center justify-between">
+                                                        <div className="flex items-center gap-2">
+                                                            {authorUser ? (
+                                                                <Avatar user={authorUser} className="w-6 h-6 rounded-full flex-shrink-0" />
+                                                            ) : (
+                                                                <div className="w-6 h-6 rounded-full flex-shrink-0 bg-stone-700 flex items-center justify-center text-xs font-bold">
+                                                                    {log.author ? log.author.charAt(0) : '?'}
+                                                                </div>
+                                                            )}
+                                                            <p className="text-sm">
+                                                                <span className="font-bold text-stone-100">{log.author}</span>
+                                                                <span className="text-xs text-stone-500 ml-2">{new Date(log.timestamp).toLocaleString()}</span>
+                                                            </p>
+                                                        </div>
+                                                        <Button
+                                                            size="sm"
+                                                            variant="ghost"
+                                                            className="!text-xs !py-0 !px-2 !h-auto opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity"
+                                                            onClick={() => handleToggleDim(log.timestamp)}
+                                                            aria-label={log.isDimmed ? 'Undim this comment' : 'Dim this comment'}
+                                                        >
+                                                            {log.isDimmed ? 'Undim' : 'Dim'}
+                                                        </Button>
                                                     </div>
                                                     <div className="mt-1 bg-stone-700/50 p-2 rounded-lg text-stone-200 text-sm whitespace-pre-wrap ml-8">
                                                         {log.message}

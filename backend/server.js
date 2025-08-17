@@ -1577,7 +1577,7 @@ app.post('/api/actions/mark-todo', asyncMiddleware(async (req, res) => {
     const { questId, userId } = req.body;
     const questRepo = dataSource.getRepository(QuestEntity);
     const quest = await questRepo.findOneBy({ id: questId });
-    if (!quest) return res.status(404).json({ error: 'Quest not found.' }));
+    if (!quest) return res.status(404).json({ error: 'Quest not found.' });
     
     quest.todoUserIds = quest.todoUserIds || [];
     if (!quest.todoUserIds.includes(userId)) {
@@ -1593,7 +1593,7 @@ app.post('/api/actions/unmark-todo', asyncMiddleware(async (req, res) => {
     const { questId, userId } = req.body;
     const questRepo = dataSource.getRepository(QuestEntity);
     const quest = await questRepo.findOneBy({ id: questId });
-    if (!quest) return res.status(404).json({ error: 'Quest not found.' }));
+    if (!quest) return res.status(404).json({ error: 'Quest not found.' });
 
     if (quest.todoUserIds && quest.todoUserIds.includes(userId)) {
         quest.todoUserIds = quest.todoUserIds.filter(id => id !== userId);

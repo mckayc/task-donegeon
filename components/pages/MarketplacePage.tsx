@@ -235,9 +235,12 @@ const MarketplacePage: React.FC = () => {
         
         return markets.filter(market => {
             const isPersonalMarket = market.guildId == null;
-            const isCurrentGuildMarket = appMode.mode === 'guild' && market.guildId === appMode.guildId;
+
+            if (appMode.mode === 'personal' && isPersonalMarket) {
+                return isMarketOpenForUser(market, currentUser, appState as IAppData);
+            }
             
-            if (isPersonalMarket || isCurrentGuildMarket) {
+            if (appMode.mode === 'guild' && !isPersonalMarket && market.guildId === appMode.guildId) {
                 return isMarketOpenForUser(market, currentUser, appState as IAppData);
             }
 

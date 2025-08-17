@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Market } from '../../../types';
 import Button from '../../user-interface/Button';
@@ -8,7 +7,7 @@ import ConfirmDialog from '../../user-interface/ConfirmDialog';
 import { useData } from '../../../context/DataProvider';
 import { useActionsDispatch } from '../../../context/ActionsContext';
 import EmptyState from '../../user-interface/EmptyState';
-import { MarketplaceIcon } from '../../user-interface/Icons';
+import { MarketplaceIcon, PencilIcon, CopyIcon, TrashIcon } from '../../user-interface/Icons';
 import MarketIdeaGenerator from '../../quests/MarketIdeaGenerator';
 import { useShiftSelect } from '../../../hooks/useShiftSelect';
 import { useMemo } from 'react';
@@ -127,10 +126,12 @@ const ManageMarketsPage: React.FC = () => {
                                     <th className="p-4 font-semibold">Title</th>
                                     <th className="p-4 font-semibold hidden md:table-cell">Description</th>
                                     <th className="p-4 font-semibold">Status</th>
+                                    <th className="p-4 font-semibold">Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {markets.map(market => {
+                                    const isBank = market.id === 'market-bank';
                                     const status = market.status;
                                     const statusConfig = {
                                         open: { text: 'Open', color: 'bg-green-500/20 text-green-300' },
@@ -148,16 +149,25 @@ const ManageMarketsPage: React.FC = () => {
                                                     className="h-4 w-4 rounded text-emerald-600 bg-stone-700 border-stone-600 focus:ring-emerald-500"
                                                 />
                                             </td>
-                                            <td className="p-4 font-bold">
-                                                 <button onClick={() => handleEditMarket(market)} className="hover:underline hover:text-accent transition-colors text-left flex items-center gap-2">
-                                                    {market.icon} {market.title}
-                                                </button>
-                                            </td>
+                                            <td className="p-4 font-bold">{market.icon} {market.title}</td>
                                             <td className="p-4 text-stone-400 hidden md:table-cell">{market.description}</td>
                                             <td className="p-4">
                                                 <span className={`px-2 py-1 text-xs font-semibold rounded-full capitalize ${statusConfig[status.type].color}`}>
                                                     {statusConfig[status.type].text}
                                                 </span>
+                                            </td>
+                                            <td className="p-4">
+                                                <div className="flex items-center gap-1">
+                                                    <Button variant="ghost" size="icon" title="Edit" onClick={() => handleEditMarket(market)} className="h-8 w-8 text-stone-400 hover:text-white">
+                                                        <PencilIcon className="w-4 h-4" />
+                                                    </Button>
+                                                    <Button variant="ghost" size="icon" title="Clone" onClick={() => cloneMarket(market.id)} className="h-8 w-8 text-stone-400 hover:text-white" disabled={isBank}>
+                                                        <CopyIcon className="w-4 h-4" />
+                                                    </Button>
+                                                    <Button variant="ghost" size="icon" title="Delete" onClick={() => setConfirmation({ action: 'delete', ids: [market.id] })} className="h-8 w-8 text-red-400 hover:text-red-300 hover:bg-red-900/50" disabled={isBank}>
+                                                        <TrashIcon className="w-4 h-4" />
+                                                    </Button>
+                                                </div>
                                             </td>
                                         </tr>
                                     );

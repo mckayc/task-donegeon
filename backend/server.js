@@ -1572,25 +1572,29 @@ app.post('/api/actions/reject-quest/:id', asyncMiddleware(async (req, res) => {
     res.status(204).send();
 }));
 
-app.post('/api/actions/unmark-todo', asyncMiddleware(async (req, res) => {
+app.post('/api/actions/mark-todo', asyncMiddleware(async (req, res) => {
     const { questId, userId } = req.body;
     const questRepo = dataSource.getRepository(QuestEntity);
-    const quest = await questRepo.findOneBy({ id: questId });
+    const quest = await questRepo.findOne({ where: { id: questId }, relations: ['assignedUsers'] });
     if (!quest) return res.status(404).json({ error: 'Quest not found.' });
 
-    if (quest.todoUserIds && quest.todoUserIds.includes(userId)) {
-        quest.todoUserIds = quest.todoUserIds.filter(id => id !== userId);
+    if (!quest.todoUserIds) {
+        quest.todoUserIds = [];
+    }
+    if (!quest.todoUserIds.includes(userId)) {
+        quest.todoUserIds.push(userId);
         await questRepo.save(updateTimestamps(quest));
     }
 
     updateEmitter.emit('update');
-    res.status(204).send();
+    const responseQuest = { ...quest, assignedUserIds: quest.assignedUsers?.map(u => u.id) || [] };
+    res.status(200).json(responseQuest);
 }));
 
 app.post('/api/actions/unmark-todo', asyncMiddleware(async (req, res) => {
     const { questId, userId } = req.body;
     const questRepo = dataSource.getRepository(QuestEntity);
-    const quest = await questRepo.findOneBy({ id: questId });
+    const quest = await questRepo.findOne({ where: { id: questId }, relations: ['assignedUsers'] });
     if (!quest) return res.status(404).json({ error: 'Quest not found.' });
 
     if (quest.todoUserIds && quest.todoUserIds.includes(userId)) {
@@ -1599,8 +1603,9 @@ app.post('/api/actions/unmark-todo', asyncMiddleware(async (req, res) => {
     }
 
     updateEmitter.emit('update');
-    res.status(204).send();
-}));   // ✅ closes async + app.post
+    const responseQuest = { ...quest, assignedUserIds: quest.assignedUsers?.map(u => u.id) || [] };
+    res.status(200).json(responseQuest);
+}));
 
 app.post('/api/actions/execute-exchange', asyncMiddleware(async (req, res) => {
     const { userId, payItem, receiveItem, guildId } = req.body;

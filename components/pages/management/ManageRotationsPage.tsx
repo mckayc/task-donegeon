@@ -10,6 +10,7 @@ import ConfirmDialog from '../../user-interface/ConfirmDialog';
 import { toYMD } from '../../../utils/quests';
 import { useNotificationsDispatch } from '../../../context/NotificationsContext';
 import { useShiftSelect } from '../../../hooks/useShiftSelect';
+import { PencilIcon, PlayIcon, TrashIcon } from '../../user-interface/Icons';
 
 const ManageRotationsPage: React.FC = () => {
     const { settings, rotations, quests } = useData();
@@ -106,6 +107,7 @@ const ManageRotationsPage: React.FC = () => {
                                     <th className="p-4 font-semibold">Name</th>
                                     <th className="p-4 font-semibold">Description</th>
                                     <th className="p-4 font-semibold">Frequency</th>
+                                    <th className="p-4 font-semibold">Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -115,12 +117,23 @@ const ManageRotationsPage: React.FC = () => {
                                             <input type="checkbox" checked={selectedRotations.includes(rotation.id)} onChange={(e) => handleCheckboxClick(e, rotation.id)} className="h-4 w-4 rounded text-emerald-600 bg-stone-700 border-stone-600 focus:ring-emerald-500" />
                                         </td>
                                         <td className="p-4 font-bold">
-                                             <button onClick={() => handleEdit(rotation)} className="hover:underline hover:text-accent transition-colors text-left">
-                                                {rotation.name}
-                                            </button>
+                                             {rotation.name}
                                         </td>
                                         <td className="p-4 text-stone-400">{rotation.description}</td>
                                         <td className="p-4 text-stone-300 capitalize">{rotation.frequency.toLowerCase()}</td>
+                                        <td className="p-4">
+                                            <div className="flex items-center gap-1">
+                                                <Button variant="ghost" size="icon" title="Run Now" onClick={() => handleRunRotation(rotation.id)} className="h-8 w-8 text-stone-400 hover:text-white">
+                                                    <PlayIcon className="w-4 h-4" />
+                                                </Button>
+                                                <Button variant="ghost" size="icon" title="Edit" onClick={() => handleEdit(rotation)} className="h-8 w-8 text-stone-400 hover:text-white">
+                                                    <PencilIcon className="w-4 h-4" />
+                                                </Button>
+                                                <Button variant="ghost" size="icon" title="Delete" onClick={() => setDeletingIds([rotation.id])} className="h-8 w-8 text-red-400 hover:text-red-300 hover:bg-red-900/50">
+                                                    <TrashIcon className="w-4 h-4" />
+                                                </Button>
+                                            </div>
+                                        </td>
                                     </tr>
                                 ))}
                             </tbody>

@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo } from 'react';
 import { Trophy } from '../../../types';
 import Button from '../../user-interface/Button';
@@ -7,7 +6,7 @@ import EditTrophyDialog from '../../settings/EditTrophyDialog';
 import ConfirmDialog from '../../user-interface/ConfirmDialog';
 import EmptyState from '../../user-interface/EmptyState';
 import TrophyIdeaGenerator from '../../quests/TrophyIdeaGenerator';
-import { TrophyIcon } from '../../user-interface/Icons';
+import { TrophyIcon, PencilIcon, TrashIcon } from '../../user-interface/Icons';
 import { useShiftSelect } from '../../../hooks/useShiftSelect';
 import { useData } from '../../../context/DataProvider';
 import { useActionsDispatch } from '../../../context/ActionsContext';
@@ -103,6 +102,7 @@ const ManageTrophiesPage: React.FC = () => {
                                     <th className="p-4 font-semibold">Name</th>
                                     <th className="p-4 font-semibold">Description</th>
                                     <th className="p-4 font-semibold">Type</th>
+                                    <th className="p-4 font-semibold">Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -110,16 +110,22 @@ const ManageTrophiesPage: React.FC = () => {
                                     <tr key={trophy.id} className="border-b border-stone-700/40 last:border-b-0">
                                         <td className="p-4"><input type="checkbox" checked={selectedTrophies.includes(trophy.id)} onChange={e => handleCheckboxClick(e, trophy.id)} className="h-4 w-4 rounded text-emerald-600 bg-stone-700 border-stone-600 focus:ring-emerald-500" /></td>
                                         <td className="p-4 text-2xl">{trophy.icon}</td>
-                                        <td className="p-4 font-bold">
-                                            <button onClick={() => handleEdit(trophy)} className="hover:underline hover:text-accent transition-colors text-left">
-                                                {trophy.name}
-                                            </button>
-                                        </td>
+                                        <td className="p-4 font-bold">{trophy.name}</td>
                                         <td className="p-4 text-stone-300 max-w-sm truncate">{trophy.description}</td>
                                         <td className="p-4">
                                             <span className={`px-2 py-1 text-xs font-semibold rounded-full ${trophy.isManual ? 'bg-sky-500/20 text-sky-300' : 'bg-purple-500/20 text-purple-300'}`}>
                                                 {trophy.isManual ? 'Manual' : 'Automatic'}
                                             </span>
+                                        </td>
+                                        <td className="p-4">
+                                            <div className="flex items-center gap-1">
+                                                <Button variant="ghost" size="icon" title="Edit" onClick={() => handleEdit(trophy)} className="h-8 w-8 text-stone-400 hover:text-white">
+                                                    <PencilIcon className="w-4 h-4" />
+                                                </Button>
+                                                <Button variant="ghost" size="icon" title="Delete" onClick={() => handleDeleteRequest([trophy.id])} className="h-8 w-8 text-red-400 hover:text-red-300 hover:bg-red-900/50">
+                                                    <TrashIcon className="w-4 h-4" />
+                                                </Button>
+                                            </div>
                                         </td>
                                     </tr>
                                 ))}

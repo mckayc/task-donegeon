@@ -35,10 +35,47 @@ const ChatPanel: React.FC = () => {
     const messagesContainerRef = useRef<HTMLDivElement>(null);
     const panelRef = useRef<HTMLDivElement>(null);
 
+    const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+
     const [size, setSize] = useState(() => {
+        if (window.innerWidth < 768) return { width: window.innerWidth, height: window.innerHeight };
         const savedSize = localStorage.getItem('chatPanelSize');
         return savedSize ? JSON.parse(savedSize) : { width: 550, height: 600 };
     });
+
+    useEffect(() => {
+        const handleResize = () => {
+            const newIsMobile = window.innerWidth < 768;
+            if (newIsMobile !== isMobile) { // on breakpoint change
+                setIsMobile(newIsMobile);
+                if (newIsMobile) {
+                    setSize({ width: window.innerWidth, height: window.innerHeight });
+                } else {
+                    const savedSize = localStorage.getItem('chatPanelSize');
+                    setSize(savedSize ? JSON.parse(savedSize) : { width: 550, height: 600 });
+                }
+            } else if (newIsMobile) {
+                setSize({ width: window.innerWidth, height: window.innerHeight });
+            }
+        };
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, [isMobile]); // re-run effect if isMobile changes
+
+    const initialPosition = useMemo(() => {
+        if (isMobile) return { x: 0, y: 0 };
+        const savedPosition = localStorage.getItem('chatPanelPosition');
+        if (savedPosition) {
+            const { x, y } = JSON.parse(savedPosition);
+            const clampedX = Math.min(Math.max(0, x), window.innerWidth - size.width);
+            const clampedY = Math.min(Math.max(0, y), window.innerHeight - size.height);
+            return { x: clampedX, y: clampedY };
+        }
+        return {
+            x: window.innerWidth - size.width - 20,
+            y: window.innerHeight - size.height - 20,
+        };
+    }, [isMobile, size.width, size.height]);
     
     const dragControls = useDragControls();
     const isResizing = useRef(false);
@@ -46,7 +83,6 @@ const ChatPanel: React.FC = () => {
     const chatPartners = useMemo(() => {
         if (!currentUser) return [];
         
-        // Guilds the user is a member of
         const userGuilds: ChatTarget[] = guilds
             .filter(g => g.memberIds.includes(currentUser.id))
             .map(guild => ({
@@ -56,7 +92,6 @@ const ChatPanel: React.FC = () => {
                 icon: '🏰',
             }));
     
-        // Other users
         const userPartners: ChatTarget[] = users.filter(user => user.id !== currentUser.id);
     
         return [...userGuilds, ...userPartners];
@@ -192,41 +227,44 @@ const ChatPanel: React.FC = () => {
         return null;
     }
 
+    const panelStyles: React.CSSProperties = isMobile 
+        ? { width: '100vw', height: '100vh', top: 0, left: 0 }
+        : { width: size.width, height: size.height };
+
+    const dragConstraints = isMobile ? false : {
+        left: 0,
+        right: window.innerWidth - size.width,
+        top: 0,
+        bottom: window.innerHeight - size.height
+    };
+
     return (
         <motion.div
             ref={panelRef}
             data-bug-reporter-ignore
             className="fixed z-50 flex flex-col bg-stone-800 border border-stone-700 rounded-xl shadow-2xl"
-            style={{ 
-                width: size.width, 
-                height: size.height,
-                top: 0,
-                left: 0
-            }}
-            drag
+            style={panelStyles}
+            drag={!isMobile}
             dragControls={dragControls}
             dragListener={false}
             dragMomentum={false}
             onDragEnd={handleDragEnd}
-            dragConstraints={{
-                left: 0,
-                right: window.innerWidth - size.width,
-                top: 0,
-                bottom: window.innerHeight - size.height
-            }}
+            dragConstraints={dragConstraints}
             initial={{ 
-                x: window.innerWidth - size.width - 20, 
-                y: window.innerHeight - size.height - 20,
+                ...initialPosition,
                 scale: 0.9, opacity: 0
             }}
             animate={{ scale: 1, opacity: 1 }}
         >
             <div
-                onPointerDown={(e) => dragControls.start(e)}
-                className="p-4 border-b border-stone-700 flex-shrink-0 cursor-grab active:cursor-grabbing"
+                onPointerDown={(e) => !isMobile && dragControls.start(e)}
+                className={`p-4 border-b border-stone-700 flex-shrink-0 ${isMobile ? '' : 'cursor-grab active:cursor-grabbing'}`}
             >
                 <div className="flex justify-between items-center">
-                    <h3 className="text-xl font-medieval text-accent flex items-center gap-2"><GrabHandleIcon className="w-5 h-5 text-stone-500" />{settings.terminology.link_chat}</h3>
+                    <h3 className="text-xl font-medieval text-accent flex items-center gap-2">
+                        {!isMobile && <GrabHandleIcon className="w-5 h-5 text-stone-500" />}
+                        {settings.terminology.link_chat}
+                    </h3>
                     <button onClick={toggleChat} className="text-stone-400 hover:text-white">
                         <XCircleIcon className="w-6 h-6" />
                     </button>
@@ -235,7 +273,7 @@ const ChatPanel: React.FC = () => {
 
             <div className="flex flex-grow overflow-hidden">
                 {/* Sidebar */}
-                <div className="w-48 border-r border-stone-700 flex flex-col flex-shrink-0">
+                <div className={`border-r border-stone-700 flex flex-col flex-shrink-0 transition-all duration-300 ${isMobile ? (activeChatTarget ? 'hidden' : 'w-full') : 'w-48'}`}>
                     <h4 className="p-3 font-semibold text-stone-300 border-b border-stone-700 flex-shrink-0">Conversations</h4>
                     <div className="flex-grow overflow-y-auto scrollbar-hide">
                         {chatPartners.map(partner => {
@@ -264,10 +302,13 @@ const ChatPanel: React.FC = () => {
                 </div>
 
                 {/* Main Conversation Area */}
-                <div className="flex flex-col flex-grow">
+                <div className={`flex flex-col flex-grow ${isMobile && !activeChatTarget ? 'hidden' : ''}`}>
                     {activeChatTarget ? (
                         <>
                             <div className="p-3 border-b border-stone-700 flex-shrink-0 flex items-center gap-3">
+                                {isMobile && (
+                                    <Button variant="secondary" size="sm" onClick={() => setActiveChatTarget(null)} className="!py-1 !px-2">&larr; Back</Button>
+                                )}
                                 {isGuildChatTarget(activeChatTarget) ? (
                                     <div className="w-8 h-8 rounded-full bg-stone-700 flex items-center justify-center text-lg flex-shrink-0">{activeChatTarget.icon}</div>
                                 ) : (
@@ -324,11 +365,13 @@ const ChatPanel: React.FC = () => {
                 </div>
             </div>
             
-            <div
-                className="absolute bottom-0 right-0 w-4 h-4 cursor-se-resize"
-                onMouseDown={startResize}
-                title="Resize chat panel"
-            />
+            {!isMobile && (
+                <div
+                    className="absolute bottom-0 right-0 w-4 h-4 cursor-se-resize"
+                    onMouseDown={startResize}
+                    title="Resize chat panel"
+                />
+            )}
         </motion.div>
     );
 };

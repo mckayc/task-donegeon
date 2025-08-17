@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Guild } from '../../../types';
 import Button from '../../user-interface/Button';
@@ -8,7 +7,7 @@ import { useData } from '../../../context/DataProvider';
 import { useActionsDispatch } from '../../../context/ActionsContext';
 import ConfirmDialog from '../../user-interface/ConfirmDialog';
 import EmptyState from '../../user-interface/EmptyState';
-import { GuildIcon } from '../../user-interface/Icons';
+import { GuildIcon, PencilIcon, TrashIcon } from '../../user-interface/Icons';
 
 const ManageGuildsPage: React.FC = () => {
     const { guilds, settings } = useData();
@@ -62,10 +61,14 @@ const ManageGuildsPage: React.FC = () => {
                                             </span>
                                         )}
                                     </div>
-                                    <div className="flex items-center gap-2">
-                                        <Button size="sm" variant="secondary" onClick={() => handleEditGuild(guild)}>Edit</Button>
+                                    <div className="flex items-center gap-1">
+                                        <Button variant="ghost" size="icon" title="Edit" onClick={() => handleEditGuild(guild)} className="h-8 w-8 text-stone-400 hover:text-white">
+                                            <PencilIcon className="w-4 h-4" />
+                                        </Button>
                                         {!guild.isDefault && (
-                                            <Button size="sm" variant="destructive" onClick={() => handleDeleteRequest(guild)}>Delete</Button>
+                                            <Button variant="ghost" size="icon" title="Delete" onClick={() => handleDeleteRequest(guild)} className="h-8 w-8 text-red-400 hover:text-red-300 hover:bg-red-900/50">
+                                                <TrashIcon className="w-4 h-4" />
+                                            </Button>
                                         )}
                                     </div>
                                 </div>

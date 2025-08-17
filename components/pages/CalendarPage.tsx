@@ -77,23 +77,9 @@ const CalendarPage: React.FC = () => {
         
         let displayTime = '';
         if (!event.allDay && event.start) {
-            if (extendedProps.type === 'quest' && extendedProps.quest) {
-                const quest = extendedProps.quest as Quest;
-                if (quest.type === QuestType.Duty && quest.startTime) {
-                    const [hours, minutes] = quest.startTime.split(':').map(Number);
-                    const time = new Date();
-                    time.setHours(hours, minutes, 0, 0);
-                    displayTime = time.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
-                } else if (quest.type === QuestType.Venture && quest.startDateTime) {
-                    displayTime = new Date(quest.startDateTime).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
-                } else {
-                    // Fallback just in case, though one of the above should be true for a non-allDay quest
-                    displayTime = event.start.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
-                }
-            } else {
-                // For scheduled events, birthdays, gcal, etc.
-                displayTime = event.start.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
-            }
+            // Let FullCalendar's date object handle the time formatting.
+            // This avoids timezone issues and incorrect dates from `new Date()`.
+            displayTime = event.start.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
         }
 
         return (
@@ -178,10 +164,10 @@ const CalendarPage: React.FC = () => {
                         const dutyEvent: EventInput = {
                             ...baseProps,
                             rrule: quest.rrule,
-                            allDay: quest.allDay,
+                            allDay: !quest.startTime, // A Duty is all-day if and only if it has no start time.
                         };
                 
-                        if (!quest.allDay && quest.startTime) {
+                        if (quest.startTime) {
                             dutyEvent.startTime = quest.startTime;
                             dutyEvent.endTime = quest.endTime || undefined;
                         }

@@ -1,5 +1,4 @@
-
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import { useData } from '../../../context/DataProvider';
 import { useActionsDispatch } from '../../../context/ActionsContext';
 import { GameAsset } from '../../../types';
@@ -8,7 +7,7 @@ import Card from '../../user-interface/Card';
 import ConfirmDialog from '../../user-interface/ConfirmDialog';
 import EditGameAssetDialog from '../../admin/EditGameAssetDialog';
 import EmptyState from '../../user-interface/EmptyState';
-import { ItemManagerIcon } from '../../user-interface/Icons';
+import { ItemManagerIcon, PencilIcon, CopyIcon, TrashIcon } from '../../user-interface/Icons';
 import ItemIdeaGenerator from '../../quests/ItemIdeaGenerator';
 import Input from '../../user-interface/Input';
 import ImagePreviewDialog from '../../user-interface/ImagePreviewDialog';
@@ -238,6 +237,7 @@ const ManageItemsPage: React.FC = () => {
                                     <th className="p-4 font-semibold">Name</th>
                                     <th className="p-4 font-semibold">Category</th>
                                     <th className="p-4 font-semibold">For Sale</th>
+                                    <th className="p-4 font-semibold">Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -261,6 +261,19 @@ const ManageItemsPage: React.FC = () => {
                                             </td>
                                             <td className="p-4 text-stone-400">{asset.category}</td>
                                             <td className="p-4 text-stone-300">{asset.isForSale ? 'Yes' : 'No'}</td>
+                                            <td className="p-4">
+                                                <div className="flex items-center gap-1">
+                                                    <Button variant="ghost" size="icon" title="Edit" onClick={() => handleEdit(asset)} data-log-id={`manage-items-action-edit-${asset.id}`} className="h-8 w-8 text-stone-400 hover:text-white">
+                                                        <PencilIcon className="w-4 h-4" />
+                                                    </Button>
+                                                    <Button variant="ghost" size="icon" title="Clone" onClick={() => cloneGameAsset(asset.id)} data-log-id={`manage-items-action-clone-${asset.id}`} className="h-8 w-8 text-stone-400 hover:text-white">
+                                                        <CopyIcon className="w-4 h-4" />
+                                                    </Button>
+                                                    <Button variant="ghost" size="icon" title="Delete" onClick={() => setConfirmation({ action: 'delete', ids: [asset.id] })} data-log-id={`manage-items-action-delete-${asset.id}`} className="h-8 w-8 text-red-400 hover:text-red-300 hover:bg-red-900/50">
+                                                        <TrashIcon className="w-4 h-4" />
+                                                    </Button>
+                                                </div>
+                                            </td>
                                         </tr>
                                     );
                                 })}

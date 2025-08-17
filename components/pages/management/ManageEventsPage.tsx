@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useRef, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import { ScheduledEvent } from '../../../types';
 import Button from '../../user-interface/Button';
 import Card from '../../user-interface/Card';
@@ -7,6 +7,7 @@ import { ScheduleEventDialog } from '../../admin/ScheduleEventDialog';
 import ConfirmDialog from '../../user-interface/ConfirmDialog';
 import { useData } from '../../../context/DataProvider';
 import { useActionsDispatch } from '../../../context/ActionsContext';
+import { PencilIcon, TrashIcon } from '../../user-interface/Icons';
 
 const ManageEventsPage: React.FC = () => {
     const { scheduledEvents, settings } = useData();
@@ -65,9 +66,13 @@ const ManageEventsPage: React.FC = () => {
                         </p>
                     </div>
                 </div>
-                <div className="flex items-center gap-2">
-                    <Button size="sm" variant="secondary" onClick={() => handleEdit(event)}>Edit</Button>
-                    <Button size="sm" variant="destructive" onClick={() => setDeletingEvent(event)}>Delete</Button>
+                <div className="flex items-center gap-1">
+                    <Button variant="ghost" size="icon" title="Edit" onClick={() => handleEdit(event)} className="h-8 w-8 text-stone-400 hover:text-white">
+                        <PencilIcon className="w-4 h-4" />
+                    </Button>
+                    <Button variant="ghost" size="icon" title="Delete" onClick={() => setDeletingEvent(event)} className="h-8 w-8 text-red-400 hover:text-red-300 hover:bg-red-900/50">
+                        <TrashIcon className="w-4 h-4" />
+                    </Button>
                 </div>
             </div>
         );

@@ -68,11 +68,9 @@ const Header: React.FC = () => {
   const handleModeChange = (mode: AppMode) => {
     setAppMode(mode);
     setGuildDropdownOpen(false);
-    if (mode.mode === 'guild' && currentUser?.role === Role.DonegeonMaster) {
-      setActivePage('Guild');
-    } else {
-      setActivePage('Dashboard');
-    }
+    // Always navigate to the dashboard when switching modes for a consistent experience.
+    // The Guild page is accessible from the sidebar.
+    setActivePage('Dashboard');
   };
 
   const userGuilds = useMemo(() => {

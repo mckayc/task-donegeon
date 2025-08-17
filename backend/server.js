@@ -1601,7 +1601,7 @@ app.post('/api/actions/unmark-todo', asyncMiddleware(async (req, res) => {
 
     updateEmitter.emit('update');
     res.status(204).send();
-});
+}));   // ✅ closes async + app.post
 
 app.post('/api/actions/execute-exchange', asyncMiddleware(async (req, res) => {
     const { userId, payItem, receiveItem, guildId } = req.body;

@@ -42,6 +42,9 @@ export const BugDetailDialog: React.FC<BugDetailDialogProps> = ({ report: initia
     const [selectedLogs, setSelectedLogs] = useState<string[]>([]);
     const logContainerRef = useRef<HTMLDivElement>(null);
 
+    const [userHasScrolledUp, setUserHasScrolledUp] = useState(false);
+    const [showNewCommentIndicator, setShowNewCommentIndicator] = useState(false);
+
     useEffect(() => {
         setReport(initialReport);
     }, [initialReport]);
@@ -52,10 +55,14 @@ export const BugDetailDialog: React.FC<BugDetailDialogProps> = ({ report: initia
     }, [report.logs]);
     
     useEffect(() => {
-        if (logContainerRef.current) {
-            logContainerRef.current.scrollTop = logContainerRef.current.scrollHeight;
+        // Only auto-scroll if the user hasn't scrolled up.
+        if (logContainerRef.current && !userHasScrolledUp) {
+            logContainerRef.current.scrollTo({
+                top: logContainerRef.current.scrollHeight,
+                behavior: 'smooth',
+            });
         }
-    }, [sortedLogs]);
+    }, [sortedLogs.length, userHasScrolledUp]);
     
     const shortId = useMemo(() => `bug-${report.id.substring(4, 11)}`, [report.id]);
 
@@ -129,6 +136,14 @@ export const BugDetailDialog: React.FC<BugDetailDialogProps> = ({ report: initia
 
     const handleAddComment = async () => {
         if (!comment.trim() || !currentUser) return;
+
+        if (logContainerRef.current) {
+            const { scrollHeight, scrollTop, clientHeight } = logContainerRef.current;
+            if (scrollHeight - scrollTop > clientHeight + 10) { // +10px buffer
+                setShowNewCommentIndicator(true);
+            }
+        }
+
         const newEntry: BugReportLogEntry = {
             type: 'COMMENT',
             message: comment.trim(),
@@ -185,6 +200,17 @@ export const BugDetailDialog: React.FC<BugDetailDialogProps> = ({ report: initia
             setSelectedLogs([]);
         }
     };
+    
+    const handleScroll = () => {
+        const container = logContainerRef.current;
+        if (container) {
+            const atBottom = container.scrollHeight - container.scrollTop <= container.clientHeight + 10;
+            setUserHasScrolledUp(!atBottom);
+            if (atBottom) {
+                setShowNewCommentIndicator(false);
+            }
+        }
+    };
 
     return (
         <>
@@ -209,69 +235,85 @@ export const BugDetailDialog: React.FC<BugDetailDialogProps> = ({ report: initia
                                 <Button size="sm" variant="secondary" onClick={() => handleCopy(selectedLogs, true)} disabled={selectedLogs.length === 0}>Copy Selected ({selectedLogs.length})</Button>
                                 <Button size="sm" variant="secondary" onClick={() => handleCopy(sortedLogs.map(l => l.timestamp))}>Copy Full Log</Button>
                             </div>
-                            <div ref={logContainerRef} className="flex-grow overflow-y-auto pr-4 space-y-4">
-                                {sortedLogs.map((log, index) => {
-                                    const isSelected = selectedLogs.includes(log.timestamp);
-                                    const authorUser = log.type === 'COMMENT' ? users.find(u => u.gameName === log.author) : undefined;
-                                    const isComment = log.type === 'COMMENT';
-                                    const parentDimClass = !isComment && log.lastCopiedAt ? 'opacity-50' : '';
+                            <div className="relative flex-grow min-h-0">
+                                <div ref={logContainerRef} onScroll={handleScroll} className="absolute inset-0 overflow-y-auto pr-4 space-y-4 scrollbar-hide">
+                                    {sortedLogs.map((log, index) => {
+                                        const isSelected = selectedLogs.includes(log.timestamp);
+                                        const authorUser = log.type === 'COMMENT' ? users.find(u => u.gameName === log.author) : undefined;
+                                        const isComment = log.type === 'COMMENT';
+                                        const parentDimClass = !isComment && log.lastCopiedAt ? 'opacity-50' : '';
 
-                                    return (
-                                        <div key={index} className={`relative group flex items-start gap-3 text-stone-400 text-sm p-2 pl-4 rounded-md transition-colors ${isSelected ? 'bg-emerald-900/40' : ''} ${parentDimClass}`}>
-                                            {log.lastCopiedAt && (
-                                                <div 
-                                                    className="absolute left-0 top-0 bottom-0 w-1.5 bg-green-500 rounded-l-md" 
-                                                    title={`Copied on: ${new Date(log.lastCopiedAt).toLocaleString()}`}
-                                                ></div>
-                                            )}
-                                            <input type="checkbox" checked={isSelected} onChange={(e) => handleCheckboxClick(e, log.timestamp)} className="mt-1 flex-shrink-0 h-4 w-4 rounded text-emerald-600 bg-stone-700 border-stone-600 focus:ring-emerald-500" />
-                                            
-                                            {isComment ? (
-                                                <div className={`flex-grow transition-opacity duration-300 ${log.isDimmed ? 'opacity-40' : 'opacity-100'}`}>
-                                                    <div className="flex items-center justify-between">
-                                                        <div className="flex items-center gap-2">
-                                                            {authorUser ? (
-                                                                <Avatar user={authorUser} className="w-6 h-6 rounded-full flex-shrink-0" />
-                                                            ) : (
-                                                                <div className="w-6 h-6 rounded-full flex-shrink-0 bg-stone-700 flex items-center justify-center text-xs font-bold">
-                                                                    {log.author ? log.author.charAt(0) : '?'}
-                                                                </div>
-                                                            )}
-                                                            <p className="text-sm">
-                                                                <span className="font-bold text-stone-100">{log.author}</span>
-                                                                <span className="text-xs text-stone-500 ml-2">{new Date(log.timestamp).toLocaleString()}</span>
-                                                            </p>
+                                        return (
+                                            <div key={index} className={`relative group flex items-start gap-3 text-stone-400 text-sm p-2 pl-4 rounded-md transition-colors ${isSelected ? 'bg-emerald-900/40' : ''} ${parentDimClass}`}>
+                                                {log.lastCopiedAt && (
+                                                    <div 
+                                                        className="absolute left-0 top-0 bottom-0 w-1.5 bg-green-500 rounded-l-md" 
+                                                        title={`Copied on: ${new Date(log.lastCopiedAt).toLocaleString()}`}
+                                                    ></div>
+                                                )}
+                                                <input type="checkbox" checked={isSelected} onChange={(e) => handleCheckboxClick(e, log.timestamp)} className="mt-1 flex-shrink-0 h-4 w-4 rounded text-emerald-600 bg-stone-700 border-stone-600 focus:ring-emerald-500" />
+                                                
+                                                {isComment ? (
+                                                    <div className={`flex-grow transition-opacity duration-300 ${log.isDimmed ? 'opacity-40' : 'opacity-100'}`}>
+                                                        <div className="flex items-center justify-between">
+                                                            <div className="flex items-center gap-2">
+                                                                {authorUser ? (
+                                                                    <Avatar user={authorUser} className="w-6 h-6 rounded-full flex-shrink-0" />
+                                                                ) : (
+                                                                    <div className="w-6 h-6 rounded-full flex-shrink-0 bg-stone-700 flex items-center justify-center text-xs font-bold">
+                                                                        {log.author ? log.author.charAt(0) : '?'}
+                                                                    </div>
+                                                                )}
+                                                                <p className="text-sm">
+                                                                    <span className="font-bold text-stone-100">{log.author}</span>
+                                                                    <span className="text-xs text-stone-500 ml-2">{new Date(log.timestamp).toLocaleString()}</span>
+                                                                </p>
+                                                            </div>
+                                                            <Button
+                                                                size="sm"
+                                                                variant="ghost"
+                                                                className="!text-xs !py-0 !px-2 !h-auto opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity"
+                                                                onClick={() => handleToggleDim(log.timestamp)}
+                                                                aria-label={log.isDimmed ? 'Undim this comment' : 'Dim this comment'}
+                                                            >
+                                                                {log.isDimmed ? 'Undim' : 'Dim'}
+                                                            </Button>
                                                         </div>
-                                                        <Button
-                                                            size="sm"
-                                                            variant="ghost"
-                                                            className="!text-xs !py-0 !px-2 !h-auto opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity"
-                                                            onClick={() => handleToggleDim(log.timestamp)}
-                                                            aria-label={log.isDimmed ? 'Undim this comment' : 'Dim this comment'}
-                                                        >
-                                                            {log.isDimmed ? 'Undim' : 'Dim'}
-                                                        </Button>
+                                                        <div className="mt-1 bg-stone-700/50 p-2 rounded-lg text-stone-200 text-sm whitespace-pre-wrap ml-8">
+                                                            {log.message}
+                                                        </div>
                                                     </div>
-                                                    <div className="mt-1 bg-stone-700/50 p-2 rounded-lg text-stone-200 text-sm whitespace-pre-wrap ml-8">
-                                                        {log.message}
-                                                    </div>
-                                                </div>
-                                            ) : (
-                                                 <>
-                                                    <div className="w-8 flex justify-center flex-shrink-0 pt-0.5 text-stone-500"><LogIcon type={log.type} /></div>
-                                                    <div className="flex-grow">
-                                                        <p className="font-mono text-xs">
-                                                            <span className="font-semibold">{log.type}</span>
-                                                            <span className="text-stone-500 ml-2">{new Date(log.timestamp).toLocaleString()}</span>
-                                                        </p>
-                                                        <p className="text-stone-300">{log.message}</p>
-                                                        {log.element && <p className="text-xs text-sky-400 font-mono mt-1">Element: {`<${log.element.tag} id="${log.element.id || ''}" class="${log.element.classes || ''}">`}</p>}
-                                                    </div>
-                                                 </>
-                                            )}
-                                        </div>
-                                    );
-                                })}
+                                                ) : (
+                                                     <>
+                                                        <div className="w-8 flex justify-center flex-shrink-0 pt-0.5 text-stone-500"><LogIcon type={log.type} /></div>
+                                                        <div className="flex-grow">
+                                                            <p className="font-mono text-xs">
+                                                                <span className="font-semibold">{log.type}</span>
+                                                                <span className="text-stone-500 ml-2">{new Date(log.timestamp).toLocaleString()}</span>
+                                                            </p>
+                                                            <p className="text-stone-300">{log.message}</p>
+                                                            {log.element && <p className="text-xs text-sky-400 font-mono mt-1">Element: {`<${log.element.tag} id="${log.element.id || ''}" class="${log.element.classes || ''}">`}</p>}
+                                                        </div>
+                                                     </>
+                                                )}
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                                {showNewCommentIndicator && (
+                                    <div className="absolute bottom-4 left-1/2 -translate-x-1/2">
+                                        <Button
+                                            size="sm"
+                                            onClick={() => {
+                                                logContainerRef.current?.scrollTo({ top: logContainerRef.current.scrollHeight, behavior: 'smooth' });
+                                                setShowNewCommentIndicator(false);
+                                            }}
+                                            className="shadow-lg"
+                                        >
+                                            New Comment 👇
+                                        </Button>
+                                    </div>
+                                )}
                             </div>
                         </div>
 

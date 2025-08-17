@@ -1697,7 +1697,7 @@ app.get('/api/media/local-gallery', async (req, res, next) => {
     } catch (err) {
         next(err);
     }
-}));
+});
 
 
 // === Asset Pack Endpoints ===

@@ -1587,7 +1587,7 @@ app.post('/api/actions/mark-todo', asyncMiddleware(async (req, res) => {
     
     updateEmitter.emit('update');
     res.status(204).send();
-}));
+});
 
 app.post('/api/actions/unmark-todo', asyncMiddleware(async (req, res) => {
     const { questId, userId } = req.body;
@@ -1602,7 +1602,7 @@ app.post('/api/actions/unmark-todo', asyncMiddleware(async (req, res) => {
 
     updateEmitter.emit('update');
     res.status(204).send();
-}));
+});
 
 app.post('/api/actions/execute-exchange', asyncMiddleware(async (req, res) => {
     const { userId, payItem, receiveItem, guildId } = req.body;
@@ -2241,4 +2241,4 @@ app.get('*', (req, res) => {
 app.use((err, req, res, next) => {
     console.error(err.stack);
     res.status(500).send('Something broke!');
-}));
+});

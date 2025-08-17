@@ -1,5 +1,6 @@
 
 
+
 import React, { useMemo, useState, useEffect } from 'react';
 import { useData } from '../../context/DataProvider';
 import { useUIState, useUIDispatch } from '../../context/UIContext';
@@ -246,8 +247,8 @@ const Dashboard: React.FC = () => {
         if (quest.type === QuestType.Venture && quest.endDateTime) {
             return `Due: ${new Date(quest.endDateTime).toLocaleDateString()}`;
         }
-        if (quest.type === QuestType.Duty && quest.endTime) {
-            return `Due Today at: ${new Date(`1970-01-01T${quest.endTime}`).toLocaleTimeString([], { hour: '2-digit', minute:'2-digit' })}`;
+        if (quest.type === QuestType.Duty && quest.startTime) {
+            return `Due Today at: ${new Date(`1970-01-01T${quest.startTime}`).toLocaleTimeString([], { hour: '2-digit', minute:'2-digit' })}`;
         }
         return null;
     };
@@ -470,7 +471,7 @@ const Dashboard: React.FC = () => {
                     </Card>
 
                     <Card title="Weekly Progress">
-                        <div className="h-60">
+                        <div className="h-80">
                            {weeklyProgressData.some(d => d.value > 0) ? (
                                 <BarChart key={activeThemeId} data={weeklyProgressData} color={chartColor} />
                             ) : (

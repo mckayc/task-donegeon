@@ -1,4 +1,6 @@
 
+
+
 import React, { useState, useMemo, useEffect } from 'react';
 import Card from '../user-interface/Card';
 import Button from '../user-interface/Button';
@@ -107,8 +109,8 @@ const QuestItem: React.FC<{ quest: Quest; now: Date; onSelect: (quest: Quest) =>
         if (quest.type === QuestType.Venture && quest.endDateTime) {
             return `Due: ${new Date(quest.endDateTime).toLocaleString([], { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}`;
         }
-        if (quest.type === QuestType.Duty && quest.endTime) {
-            return `Due daily at ${new Date(`1970-01-01T${quest.endTime}`).toLocaleTimeString([], { hour: '2-digit', minute:'2-digit' })}`;
+        if (quest.type === QuestType.Duty && quest.startTime) {
+            return `Due daily at ${new Date(`1970-01-01T${quest.startTime}`).toLocaleTimeString([], { hour: '2-digit', minute:'2-digit' })}`;
         }
         return null;
     }, [quest]);

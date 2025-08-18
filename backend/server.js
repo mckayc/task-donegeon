@@ -535,6 +535,49 @@ app.post('/api/first-run', asyncMiddleware(async (req, res) => {
     });
 }));
 
+app.post('/api/data/apply-updates', asyncMiddleware(async (req, res) => {
+    await dataSource.transaction(async manager => {
+        const settingRepo = manager.getRepository(SettingEntity);
+        const currentSettingRow = await settingRepo.findOneBy({ id: 1 });
+        let currentSettings = currentSettingRow ? currentSettingRow.settings : {};
+        const defaultSettings = INITIAL_SETTINGS;
+
+        const isObject = (item) => item && typeof item === 'object' && !Array.isArray(item);
+
+        const mergeNewProperties = (target, source) => {
+            for (const key in source) {
+                if (key === 'sidebars' && isObject(source[key]) && target[key]) {
+                    // Special handling for sidebar config
+                    const existingIds = new Set((target.sidebars.main || []).map(item => item.id));
+                    const newItems = (source.sidebars.main || []).filter(item => !existingIds.has(item.id));
+                    if (newItems.length > 0) {
+                        if (!target.sidebars.main) target.sidebars.main = [];
+                        target.sidebars.main.push(...newItems);
+                    }
+                } else if (isObject(source[key])) {
+                    if (!target[key]) {
+                        target[key] = {};
+                    }
+                    mergeNewProperties(target[key], source[key]);
+                } else if (!target.hasOwnProperty(key)) {
+                    target[key] = source[key];
+                }
+            }
+        };
+
+        mergeNewProperties(currentSettings, defaultSettings);
+        
+        // Also update contentVersion if it's different.
+        if (currentSettings.contentVersion !== defaultSettings.contentVersion) {
+            currentSettings.contentVersion = defaultSettings.contentVersion;
+        }
+
+        const savedSettings = await settingRepo.save(updateTimestamps({ id: 1, settings: currentSettings }));
+        updateEmitter.emit('update');
+        res.json(savedSettings.settings);
+    });
+}));
+
 app.post('/api/data/import-assets', asyncMiddleware(async (req, res) => {
     const { assetPack, resolutions } = req.body;
     if (!assetPack || !resolutions) return res.status(400).json({ error: 'Missing asset pack or resolutions.' });
@@ -2402,7 +2445,11 @@ chatRouter.post('/send', asyncMiddleware(async (req, res) => {
     });
 
     const savedMessage = await chatRepo.save(updateTimestamps(newMessage, true));
+    
+    // The client that sent the message will get it back directly.
+    // Other clients will be notified to sync.
     updateEmitter.emit('update');
+    
     res.status(201).json({ newChatMessage: savedMessage });
 }));
 

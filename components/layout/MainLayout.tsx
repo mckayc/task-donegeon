@@ -1,3 +1,4 @@
+
 import React, { useMemo, useEffect, useState, useRef } from 'react';
 import Sidebar from './Sidebar';
 import Header from './Header';
@@ -45,6 +46,7 @@ import BugTrackingPage from '../dev/BugTrackingPage';
 import ManageRotationsPage from '../pages/management/ManageRotationsPage';
 import ManageSetbacksPage from '../pages/management/ManageSetbacksPage';
 import ThemesPage from '../pages/ThemesPage';
+import ChatController from '../chat/ChatController';
 
 const MainLayout: React.FC = () => {
   const { settings, systemNotifications } = useData();
@@ -169,6 +171,7 @@ const MainLayout: React.FC = () => {
           </main>
         </div>
       </div>
+      <ChatController />
       {isChatOpen && <ChatPanel />}
     </>
   );

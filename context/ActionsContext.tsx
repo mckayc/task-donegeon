@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, ReactNode, useCallback } from 'react';
 import { IAppData, Quest, User, QuestCompletion, AdminAdjustment, PurchaseRequest, Market, Guild, Rank, Trophy, RewardTypeDefinition, ThemeDefinition, ShareableAssetType, BulkQuestUpdates, ChatMessage, SystemNotification, ScheduledEvent, BugReport, Rotation, SetbackDefinition, AppliedSetback, TradeOffer, Gift, QuestGroup, GameAsset, RewardItem } from '../types';
 import { useNotificationsDispatch } from './NotificationsContext';
@@ -43,8 +44,8 @@ export interface ActionsDispatch {
   rejectQuestCompletion: (completionId: string, note?: string) => Promise<void>;
 
   purchaseMarketItem: (assetId: string, marketId: string, user: User, costGroupIndex: number) => Promise<void>;
-  approvePurchaseRequest: (requestId: string) => Promise<void>;
-  rejectPurchaseRequest: (requestId: string) => Promise<void>;
+  approvePurchaseRequest: (requestId: string, approverId: string) => Promise<void>;
+  rejectPurchaseRequest: (requestId: string, rejecterId: string) => Promise<void>;
   cancelPurchaseRequest: (requestId: string) => Promise<void>;
   
   executeExchange: (userId: string, payItem: RewardItem, receiveItem: RewardItem, guildId?: string) => Promise<void>;
@@ -78,9 +79,9 @@ export interface ActionsDispatch {
   sendMessage: (messageData: Omit<ChatMessage, 'id' | 'timestamp' | 'readBy'>) => Promise<void>;
   markMessagesAsRead: (criteria: { partnerId?: string, guildId?: string }) => Promise<void>;
   
-  addSystemNotification: (notificationData: Omit<SystemNotification, 'id' | 'timestamp' | 'readByUserIds' | 'createdAt' | 'updatedAt'>) => Promise<void>;
+  addSystemNotification: (notificationData: Omit<SystemNotification, 'id' | 'timestamp' | 'readByUserIds' | 'createdAt' | 'updatedAt'>) => Promise<SystemNotification | null>;
   markSystemNotificationsAsRead: (notificationIds: string[], userId: string) => Promise<void>;
-  
+
   addScheduledEvent: (eventData: Omit<ScheduledEvent, 'id'>) => Promise<ScheduledEvent | null>;
   updateScheduledEvent: (eventData: ScheduledEvent) => Promise<ScheduledEvent | null>;
   deleteScheduledEvent: (eventId: string) => Promise<void>;
@@ -116,14 +117,11 @@ export const ActionsProvider: React.FC<{ children: ReactNode }> = ({ children })
 
     const apiRequest = useCallback(async (method: string, path: string, body?: any) => {
         try {
-            const options: RequestInit = {
-                method,
-                headers: { 'Content-Type': 'application/json' },
-            };
+            const options: RequestInit = { method, headers: { 'Content-Type': 'application/json' } };
             if (body) {
                 options.body = JSON.stringify(body);
             }
-            const response = await fetch(path, options);
+            const response = await window.fetch(path, options);
             if (!response.ok) {
                 const errorData = await response.json().catch(() => ({ error: 'An unknown server error occurred.' }));
                 throw new Error(errorData.error || `Request failed with status ${response.status}`);
@@ -143,20 +141,26 @@ export const ActionsProvider: React.FC<{ children: ReactNode }> = ({ children })
     const purchaseMarketItem = useCallback(async (assetId: string, marketId: string, user: User, costGroupIndex: number) => {
         const market = markets.find(m => m.id === marketId);
         const guildId = market?.guildId;
-        const updatedUser = await apiRequest('POST', '/api/actions/purchase-item', { assetId, userId: user.id, costGroupIndex, guildId });
-        if (updatedUser) {
-            updateUser(updatedUser.id, updatedUser);
+        const result = await apiRequest('POST', '/api/actions/purchase-item', { assetId, userId: user.id, costGroupIndex, guildId });
+        if (result && result.updatedUser) {
+            updateUser(result.updatedUser.id, result.updatedUser);
+            if (result.newPurchaseRequest) {
+                dataDispatch({ type: 'UPDATE_DATA', payload: { purchaseRequests: [result.newPurchaseRequest] } });
+            }
             addNotification({ type: 'success', message: `Purchase successful!` });
         }
-    }, [apiRequest, markets, updateUser, addNotification]);
+    }, [apiRequest, markets, updateUser, dataDispatch, addNotification]);
 
     const executeExchange = useCallback(async (userId: string, payItem: RewardItem, receiveItem: RewardItem, guildId?: string) => {
-        const updatedUser = await apiRequest('POST', '/api/actions/execute-exchange', { userId, payItem, receiveItem, guildId });
-        if (updatedUser) {
-            updateUser(updatedUser.id, updatedUser);
+        const result = await apiRequest('POST', '/api/actions/execute-exchange', { userId, payItem, receiveItem, guildId });
+        if (result && result.updatedUser) {
+            updateUser(result.updatedUser.id, result.updatedUser);
+            if (result.newAdjustment) {
+                dataDispatch({ type: 'UPDATE_DATA', payload: { adminAdjustments: [result.newAdjustment] } });
+            }
             addNotification({ type: 'success', message: 'Exchange successful!' });
         }
-    }, [apiRequest, updateUser, addNotification]);
+    }, [apiRequest, updateUser, dataDispatch, addNotification]);
     
     // Generic helper for add actions
     const createAddAction = <T_ADD, T_RETURN extends { id: any }, D extends keyof IAppData>(
@@ -275,8 +279,8 @@ export const ActionsProvider: React.FC<{ children: ReactNode }> = ({ children })
         rejectQuestCompletion: (id, note) => apiRequest('POST', `/api/actions/reject-quest/${id}`, { note }),
 
         purchaseMarketItem,
-        approvePurchaseRequest: (id) => apiRequest('POST', `/api/actions/approve-purchase/${id}`),
-        rejectPurchaseRequest: (id) => apiRequest('POST', `/api/actions/reject-purchase/${id}`),
+        approvePurchaseRequest: (id, approverId) => apiRequest('POST', `/api/actions/approve-purchase/${id}`, { approverId }),
+        rejectPurchaseRequest: (id, rejecterId) => apiRequest('POST', `/api/actions/reject-purchase/${id}`, { rejecterId }),
         cancelPurchaseRequest: (id) => apiRequest('POST', `/api/actions/cancel-purchase/${id}`),
         
         executeExchange,
@@ -285,7 +289,23 @@ export const ActionsProvider: React.FC<{ children: ReactNode }> = ({ children })
         updateGuild: createUpdateAction(id => `/api/guilds/${id}`, 'guilds'),
         deleteGuild: (id) => apiRequest('DELETE', `/api/guilds/${id}`),
 
-        applyManualAdjustment: async (adj) => { await apiRequest('POST', '/api/actions/manual-adjustment', adj); return true; },
+        applyManualAdjustment: async (adjustment) => {
+            const result = await apiRequest('POST', '/api/actions/manual-adjustment', adjustment);
+            if (result && result.newAdjustment) {
+                const updates: Partial<IAppData> = { adminAdjustments: [result.newAdjustment] };
+                if (result.newUserTrophy) {
+                    updates.userTrophies = [result.newUserTrophy];
+                }
+                dataDispatch({ type: 'UPDATE_DATA', payload: updates });
+
+                if (result.updatedUser) {
+                    updateUser(result.updatedUser.id, result.updatedUser);
+                }
+                addNotification({ type: 'success', message: 'Adjustment applied successfully.' });
+                return true;
+            }
+            return false;
+        },
 
         uploadFile: async (file, category) => {
             const formData = new FormData();
@@ -328,9 +348,11 @@ export const ActionsProvider: React.FC<{ children: ReactNode }> = ({ children })
         deleteAllCustomContent: () => apiRequest('POST', '/api/data/delete-content'),
         factoryReset: () => apiRequest('POST', '/api/data/factory-reset'),
         
-        sendMessage: async (data) => {
-            const result = await apiRequest('POST', '/api/chat/send', data);
-            if (result) dataDispatch({ type: 'UPDATE_DATA', payload: { chatMessages: [result] }});
+        sendMessage: async (messageData) => {
+            const result = await apiRequest('POST', '/api/chat/send', messageData);
+            if (result && result.newChatMessage) {
+                dataDispatch({ type: 'UPDATE_DATA', payload: { chatMessages: [result.newChatMessage] } });
+            }
         },
         markMessagesAsRead: (criteria) => apiRequest('POST', '/api/chat/read', criteria),
         

@@ -1,4 +1,5 @@
 
+
 require("reflect-metadata");
 const express = require('express');
 const cors = require('cors');
@@ -175,8 +176,9 @@ const initializeApp = async () => {
     await dataSource.initialize();
     console.log("Data Source has been initialized!");
 
-    // MIGRATION: Ensure the default exchange market exists for existing users
     const manager = dataSource.manager;
+
+    // MIGRATION: Ensure the default exchange market exists for existing users
     const bankMarket = await manager.findOneBy(MarketEntity, { id: 'market-bank' });
     if (!bankMarket) {
         console.log("Exchange Post market not found, creating it for existing instance...");
@@ -192,6 +194,24 @@ const initializeApp = async () => {
         console.log("Exchange Post market created.");
     }
 
+    // MIGRATION/SYNC: Ensure all users are in the default guild if one exists.
+    const defaultGuild = await manager.findOne(GuildEntity, { where: { isDefault: true }, relations: ['members'] });
+    if (defaultGuild) {
+        const allUsers = await manager.find(UserEntity);
+        const guildMemberIds = new Set(defaultGuild.members.map(m => m.id));
+        let needsSave = false;
+        allUsers.forEach(user => {
+            if (!guildMemberIds.has(user.id)) {
+                console.log(`[Data Sync] Adding user "${user.gameName}" (${user.id}) to default guild.`);
+                defaultGuild.members.push(user);
+                needsSave = true;
+            }
+        });
+        if (needsSave) {
+            await manager.save(updateTimestamps(defaultGuild));
+            console.log(`[Data Sync] Default guild membership updated.`);
+        }
+    }
 
     // Ensure asset and backup directories exist
     await fs.mkdir(UPLOADS_DIR, { recursive: true });
@@ -1610,6 +1630,7 @@ app.post('/api/actions/unmark-todo', asyncMiddleware(async (req, res) => {
 
 app.post('/api/actions/execute-exchange', asyncMiddleware(async (req, res) => {
     const { userId, payItem, receiveItem, guildId } = req.body;
+    let newAdjustmentResult;
 
     await dataSource.transaction(async manager => {
         const userRepo = manager.getRepository(UserEntity);
@@ -1672,14 +1693,14 @@ app.post('/api/actions/execute-exchange', asyncMiddleware(async (req, res) => {
                 adjustedAt: new Date().toISOString(),
                 guildId: guildId || null,
             });
-            await manager.save(updateTimestamps(newAdjustment, true));
+            newAdjustmentResult = await manager.save(updateTimestamps(newAdjustment, true));
         }
 
         await userRepo.save(updateTimestamps(user));
         const updatedUser = await userRepo.findOneBy({ id: userId });
         
         updateEmitter.emit('update');
-        res.status(200).json(updatedUser);
+        res.status(200).json({ updatedUser, newAdjustment: newAdjustmentResult });
     }).catch(err => {
         console.error("Exchange transaction failed:", err.message);
         if (!res.headersSent) {
@@ -1718,6 +1739,7 @@ const getFinalCostGroups = (costGroups, marketId, assetId, scheduledEvents) => {
 app.post('/api/actions/purchase-item', asyncMiddleware(async (req, res) => {
     const { assetId, userId, costGroupIndex, guildId } = req.body;
     let updatedUserResult;
+    let newPurchaseRequestResult;
     
     await dataSource.transaction(async manager => {
         const user = await manager.findOneBy(UserEntity, { id: userId });
@@ -1791,14 +1813,299 @@ app.post('/api/actions/purchase-item', asyncMiddleware(async (req, res) => {
         
         await manager.save(updateTimestamps(user));
         await manager.save(updateTimestamps(asset));
-        await manager.save(updateTimestamps(newPurchaseRequest, true));
+        newPurchaseRequestResult = await manager.save(updateTimestamps(newPurchaseRequest, true));
 
         updatedUserResult = await manager.findOneBy(UserEntity, { id: userId });
     });
 
     updateEmitter.emit('update');
-    res.status(200).json(updatedUserResult);
+    res.status(200).json({ updatedUser: updatedUserResult, newPurchaseRequest: newPurchaseRequestResult });
 }));
+
+app.post('/api/actions/approve-purchase/:id', asyncMiddleware(async (req, res) => {
+    const { id } = req.params;
+    const { approverId } = req.body;
+
+    if (!approverId) {
+        return res.status(400).json({ error: 'Approver ID is required.' });
+    }
+    
+    try {
+        await dataSource.transaction(async manager => {
+            const requestRepo = manager.getRepository(PurchaseRequestEntity);
+            const userRepo = manager.getRepository(UserEntity);
+            const assetRepo = manager.getRepository(GameAssetEntity);
+            
+            const request = await requestRepo.findOneBy({ id });
+            if (!request || request.status !== 'Pending') {
+                const err = new Error('Pending purchase request not found.');
+                err.statusCode = 404;
+                throw err;
+            }
+            
+            if (request.userId === approverId) {
+                const approver = await userRepo.findOneBy({ id: approverId });
+                if (approver && approver.role === 'Donegeon Master') {
+                    const adminCount = await userRepo.count({ where: { role: 'Donegeon Master' } });
+                    if (adminCount > 1) {
+                        const settingRow = await manager.findOneBy(SettingEntity, { id: 1 });
+                        const settings = settingRow ? settingRow.settings : INITIAL_SETTINGS;
+                        if (!settings.security.allowAdminSelfApproval) {
+                            const err = new Error('Self-approval is disabled for multiple admins.');
+                            err.statusCode = 403;
+                            throw err;
+                        }
+                    }
+                    // If adminCount is 1, or > 1 and setting is true, fall through to allow.
+                } else {
+                    const err = new Error('You cannot approve your own purchase requests.');
+                    err.statusCode = 403;
+                    throw err;
+                }
+            }
+    
+            request.status = 'Completed';
+            request.actedAt = new Date().toISOString();
+            request.actedById = approverId;
+            
+            const user = await userRepo.findOneBy({ id: request.userId });
+            const asset = await assetRepo.findOneBy({ id: request.assetId });
+            
+            if (user && asset && asset.linkedThemeId) {
+                if (!user.ownedThemes.includes(asset.linkedThemeId)) {
+                    user.ownedThemes.push(asset.linkedThemeId);
+                    await userRepo.save(updateTimestamps(user));
+                }
+            }
+            
+            await requestRepo.save(updateTimestamps(request));
+        });
+    
+        updateEmitter.emit('update');
+        res.status(204).send();
+    } catch (error) {
+        if (error.statusCode) {
+            res.status(error.statusCode).json({ error: error.message });
+        } else {
+            console.error('Unhandled error in approve-purchase:', error);
+            res.status(500).json({ error: 'An unknown server error occurred.' });
+        }
+    }
+}));
+
+app.post('/api/actions/reject-purchase/:id', asyncMiddleware(async (req, res) => {
+    const { id } = req.params;
+    const { rejecterId } = req.body;
+    
+    if (!rejecterId) {
+        return res.status(400).json({ error: 'Rejecter ID is required.' });
+    }
+
+    try {
+        await dataSource.transaction(async manager => {
+            const requestRepo = manager.getRepository(PurchaseRequestEntity);
+            const userRepo = manager.getRepository(UserEntity);
+            const rewardTypes = await manager.find(RewardTypeDefinitionEntity);
+            const rewardTypesMap = new Map(rewardTypes.map(rt => [rt.id, rt]));
+    
+            const request = await requestRepo.findOneBy({ id });
+            if (!request || request.status !== 'Pending') {
+                const err = new Error('Pending purchase request not found.');
+                err.statusCode = 404;
+                throw err;
+            }
+            
+            if (request.userId === rejecterId) {
+                const rejecter = await userRepo.findOneBy({ id: rejecterId });
+                if (rejecter && rejecter.role === 'Donegeon Master') {
+                    const adminCount = await userRepo.count({ where: { role: 'Donegeon Master' } });
+                    if (adminCount > 1) {
+                        const settingRow = await manager.findOneBy(SettingEntity, { id: 1 });
+                        const settings = settingRow ? settingRow.settings : INITIAL_SETTINGS;
+                        if (!settings.security.allowAdminSelfApproval) {
+                             const err = new Error('Self-rejection is disabled for multiple admins.');
+                             err.statusCode = 403;
+                             throw err;
+                        }
+                    }
+                } else {
+                    const err = new Error('You cannot reject your own purchase requests.');
+                    err.statusCode = 403;
+                    throw err;
+                }
+            }
+    
+            const user = await userRepo.findOneBy({ id: request.userId });
+            if (!user) {
+                const err = new Error('User for purchase request not found.');
+                err.statusCode = 404;
+                throw err;
+            }
+    
+            const costGroup = request.assetDetails.cost;
+            costGroup.forEach(cost => {
+                const rewardDef = rewardTypesMap.get(cost.rewardTypeId);
+                if (!rewardDef) return;
+    
+                const balanceSheet = request.guildId ? (user.guildBalances[request.guildId] || { purse: {}, experience: {} }) : { purse: user.personalPurse, experience: user.personalExperience };
+    
+                if (rewardDef.category === 'Currency') {
+                    balanceSheet.purse[cost.rewardTypeId] = (balanceSheet.purse[cost.rewardTypeId] || 0) + cost.amount;
+                } else {
+                    balanceSheet.experience[cost.rewardTypeId] = (balanceSheet.experience[cost.rewardTypeId] || 0) + cost.amount;
+                }
+    
+                if (request.guildId) user.guildBalances[request.guildId] = balanceSheet;
+                else {
+                    user.personalPurse = balanceSheet.purse;
+                    user.personalExperience = balanceSheet.experience;
+                }
+            });
+    
+            request.status = 'Rejected';
+            request.actedAt = new Date().toISOString();
+            request.actedById = rejecterId;
+            
+            await userRepo.save(updateTimestamps(user));
+            await requestRepo.save(updateTimestamps(request));
+        });
+    
+        updateEmitter.emit('update');
+        res.status(204).send();
+    } catch (error) {
+        if (error.statusCode) {
+            res.status(error.statusCode).json({ error: error.message });
+        } else {
+            console.error('Unhandled error in reject-purchase:', error);
+            res.status(500).json({ error: 'An unknown server error occurred.' });
+        }
+    }
+}));
+
+app.post('/api/actions/cancel-purchase/:id', asyncMiddleware(async (req, res) => {
+    const { id } = req.params;
+    
+    await dataSource.transaction(async manager => {
+        const requestRepo = manager.getRepository(PurchaseRequestEntity);
+        const userRepo = manager.getRepository(UserEntity);
+        const rewardTypes = await manager.find(RewardTypeDefinitionEntity);
+        const rewardTypesMap = new Map(rewardTypes.map(rt => [rt.id, rt]));
+
+        const request = await requestRepo.findOneBy({ id });
+        if (!request || request.status !== 'Pending') {
+            return res.status(404).json({ error: 'Pending purchase request not found.' });
+        }
+        
+        const user = await userRepo.findOneBy({ id: request.userId });
+        if (!user) throw new Error('User for purchase request not found.');
+
+        const costGroup = request.assetDetails.cost;
+        costGroup.forEach(cost => {
+            const rewardDef = rewardTypesMap.get(cost.rewardTypeId);
+            if (!rewardDef) return;
+
+            const balanceSheet = request.guildId ? (user.guildBalances[request.guildId] || { purse: {}, experience: {} }) : { purse: user.personalPurse, experience: user.personalExperience };
+
+            if (rewardDef.category === 'Currency') {
+                balanceSheet.purse[cost.rewardTypeId] = (balanceSheet.purse[cost.rewardTypeId] || 0) + cost.amount;
+            } else {
+                balanceSheet.experience[cost.rewardTypeId] = (balanceSheet.experience[cost.rewardTypeId] || 0) + cost.amount;
+            }
+
+            if (request.guildId) user.guildBalances[request.guildId] = balanceSheet;
+            else {
+                user.personalPurse = balanceSheet.purse;
+                user.personalExperience = balanceSheet.experience;
+            }
+        });
+
+        request.status = 'Cancelled';
+        request.actedAt = new Date().toISOString();
+        request.actedById = request.userId;
+        
+        await userRepo.save(updateTimestamps(user));
+        await requestRepo.save(updateTimestamps(request));
+    });
+
+    updateEmitter.emit('update');
+    res.status(204).send();
+}));
+
+app.post('/api/actions/manual-adjustment', asyncMiddleware(async (req, res) => {
+    const { userId, adjusterId, type, rewards, setbacks, trophyId, reason, guildId } = req.body;
+    let newAdjustmentResult;
+    let updatedUserResult;
+    let newUserTrophyResult;
+
+    if (!userId || !adjusterId || !type || !reason) {
+        return res.status(400).json({ error: "Missing required fields for adjustment." });
+    }
+
+    await dataSource.transaction(async manager => {
+        const user = await manager.findOneBy(UserEntity, { id: userId });
+        if (!user) {
+            const error = new Error('User not found.');
+            error.statusCode = 404;
+            throw error;
+        }
+
+        const newAdjustment = manager.create(AdminAdjustmentEntity, {
+            id: `adj-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+            userId, adjusterId, type, rewards, setbacks, trophyId, reason,
+            adjustedAt: new Date().toISOString(),
+            guildId: guildId || null,
+        });
+
+        const rewardTypes = await manager.find(RewardTypeDefinitionEntity);
+        const rewardTypesMap = new Map(rewardTypes.map(rt => [rt.id, rt]));
+
+        const balanceSheet = guildId ? (user.guildBalances[guildId] || { purse: {}, experience: {} }) : { purse: user.personalPurse, experience: user.personalExperience };
+        
+        if (type === 'Reward' && rewards) {
+            rewards.forEach(reward => {
+                const rewardDef = rewardTypesMap.get(reward.rewardTypeId);
+                if (!rewardDef) return;
+                const balanceType = rewardDef.category === 'Currency' ? 'purse' : 'experience';
+                balanceSheet[balanceType][reward.rewardTypeId] = (balanceSheet[balanceType][reward.rewardTypeId] || 0) + reward.amount;
+            });
+        }
+        
+        if (type === 'Setback' && setbacks) {
+            setbacks.forEach(setback => {
+                const rewardDef = rewardTypesMap.get(setback.rewardTypeId);
+                if (!rewardDef) return;
+                const balanceType = rewardDef.category === 'Currency' ? 'purse' : 'experience';
+                balanceSheet[balanceType][setback.rewardTypeId] = Math.max(0, (balanceSheet[balanceType][setback.rewardTypeId] || 0) - setback.amount);
+            });
+        }
+        
+        if (guildId) user.guildBalances[guildId] = balanceSheet;
+        else {
+            user.personalPurse = balanceSheet.purse;
+            user.personalExperience = balanceSheet.experience;
+        }
+
+        if (type === 'Trophy' && trophyId) {
+            const newTrophy = manager.create(UserTrophyEntity, {
+                id: `usertrophy-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+                userId, trophyId, awardedAt: new Date().toISOString(), guildId: guildId || null,
+            });
+            newUserTrophyResult = await manager.save(updateTimestamps(newTrophy, true));
+        }
+
+        await manager.save(updateTimestamps(user));
+        newAdjustmentResult = await manager.save(updateTimestamps(newAdjustment, true));
+        updatedUserResult = await manager.findOneBy(UserEntity, { id: userId });
+    });
+
+    updateEmitter.emit('update');
+    res.status(201).json({
+        updatedUser: updatedUserResult,
+        newAdjustment: newAdjustmentResult,
+        newUserTrophy: newUserTrophyResult, // can be null
+    });
+}));
+
 
 // Media Upload
 app.post('/api/media/upload', upload.single('file'), async (req, res, next) => {
@@ -1842,7 +2149,7 @@ app.get('/api/media/local-gallery', async (req, res, next) => {
     } catch (err) {
         next(err);
     }
-});
+}));
 
 
 // === Asset Pack Endpoints ===
@@ -2070,12 +2377,12 @@ chatRouter.post('/send', asyncMiddleware(async (req, res) => {
         message,
         isAnnouncement: isAnnouncement || false,
         timestamp: new Date().toISOString(),
-        readBy: [senderId], // Sender has implicitly read the message
+        readBy: [senderId],
     });
 
-    await chatRepo.save(updateTimestamps(newMessage, true));
+    const savedMessage = await chatRepo.save(updateTimestamps(newMessage, true));
     updateEmitter.emit('update');
-    res.status(201).json(newMessage);
+    res.status(201).json({ newChatMessage: savedMessage });
 }));
 
 chatRouter.post('/read', asyncMiddleware(async (req, res) => {
@@ -2252,7 +2559,7 @@ backupsRouter.get('/download/:filename', (req, res) => {
             }
         }
     });
-});
+}));
 
 backupsRouter.delete('/:filename', asyncMiddleware(async (req, res) => {
     const filename = path.basename(req.params.filename);

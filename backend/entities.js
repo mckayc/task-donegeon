@@ -196,6 +196,7 @@ const PurchaseRequestEntity = new EntitySchema({
         assetId: { type: "varchar" },
         requestedAt: { type: "varchar" },
         actedAt: { type: "varchar", nullable: true },
+        actedById: { type: "varchar", nullable: true },
         status: { type: "varchar" },
         assetDetails: { type: "simple-json" },
         guildId: { type: "varchar", nullable: true },

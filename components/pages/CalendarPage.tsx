@@ -177,7 +177,19 @@ const CalendarPage: React.FC = () => {
                 
                         if (quest.startTime) {
                             dutyEvent.startTime = quest.startTime;
-                            dutyEvent.endTime = quest.endTime || undefined;
+                            // For recurring events with start and end times, we calculate a `duration` instead of setting `endTime`.
+                            // This provides a more reliable method for the rrule plugin to handle event length.
+                            if (quest.endTime) {
+                                const start = new Date(`1970-01-01T${quest.startTime}`);
+                                const end = new Date(`1970-01-01T${quest.endTime}`);
+                                const diffMs = end.getTime() - start.getTime();
+
+                                if (diffMs > 0) {
+                                    const hours = Math.floor(diffMs / (1000 * 60 * 60));
+                                    const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+                                    dutyEvent.duration = { hours, minutes };
+                                }
+                            }
                         }
                         
                         questEvents.push(dutyEvent);
@@ -407,6 +419,7 @@ const CalendarPage: React.FC = () => {
                             center: 'title',
                             right: 'listWeek,timeGridDay,timeGridWeek,dayGridMonth'
                         }}
+                        timeZone='local'
                         buttonText={{ day: 'Day', week: 'Week', month: 'Month', list: 'Agenda' }}
                         initialView="listWeek"
                         googleCalendarApiKey={settings.googleCalendar.apiKey || undefined}

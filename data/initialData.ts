@@ -166,6 +166,7 @@ export const INITIAL_SETTINGS: AppSettings = {
       requirePinForUsers: true,
       requirePasswordForAdmin: true,
       allowProfileEditing: true,
+      allowAdminSelfApproval: false,
     },
     sharedMode: {
         enabled: false,

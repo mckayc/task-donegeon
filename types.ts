@@ -556,6 +556,7 @@ export interface AppSettings {
     requirePinForUsers: boolean;
     requirePasswordForAdmin: boolean;
     allowProfileEditing: boolean;
+    allowAdminSelfApproval: boolean;
   };
   sharedMode: {
     enabled: boolean;

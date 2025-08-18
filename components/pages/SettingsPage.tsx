@@ -253,6 +253,10 @@ export const SettingsPage: React.FC = () => {
                          <ToggleSwitch enabled={formState.security.requirePinForUsers} setEnabled={(val: boolean) => handleSettingChange('security', 'requirePinForUsers', val)} label="Require PIN for user switching" />
                          <ToggleSwitch enabled={formState.security.requirePasswordForAdmin} setEnabled={(val: boolean) => handleSettingChange('security', 'requirePasswordForAdmin', val)} label="Require Password for Donegeon Masters & Gatekeepers" />
                          <ToggleSwitch enabled={formState.security.allowProfileEditing} setEnabled={(val: boolean) => handleSettingChange('security', 'allowProfileEditing', val)} label="Allow users to edit their own profiles" />
+                         <div className="pt-4 border-t border-stone-700/60">
+                            <ToggleSwitch enabled={formState.security.allowAdminSelfApproval} setEnabled={(val: boolean) => handleSettingChange('security', 'allowAdminSelfApproval', val)} label="Allow Admins to approve their own requests" />
+                            <p className="text-xs text-stone-400 mt-1 ml-12">Applies only when more than one admin exists. If there is only one admin, they can always self-approve.</p>
+                         </div>
                     </div>
                 </CollapsibleSection>
                 

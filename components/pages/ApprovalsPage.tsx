@@ -92,8 +92,8 @@ const ApprovalsPage: React.FC = () => {
                                         <p className="text-stone-400 text-sm mt-1">Cost: {purchase.assetDetails.cost.map(c => `${c.amount} ${rewardTypes.find(rt => rt.id === c.rewardTypeId)?.name || '?'}`).join(', ')}</p>
                                     </div>
                                     <div className="flex gap-2">
-                                        <Button size="sm" variant="destructive" onClick={() => rejectPurchaseRequest(purchase.id)}>Reject</Button>
-                                        <Button size="sm" onClick={() => approvePurchaseRequest(purchase.id)}>Approve</Button>
+                                        <Button size="sm" variant="destructive" onClick={() => rejectPurchaseRequest(purchase.id, currentUser.id)}>Reject</Button>
+                                        <Button size="sm" onClick={() => approvePurchaseRequest(purchase.id, currentUser.id)}>Approve</Button>
                                     </div>
                                 </li>
                             ))}

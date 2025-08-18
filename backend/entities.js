@@ -88,14 +88,14 @@ const UserEntity = new EntitySchema({
         role: { type: "varchar" },
         avatar: { type: "simple-json" },
         profilePictureUrl: { type: "varchar", nullable: true },
-        ownedAssetIds: { type: "simple-array" },
+        ownedAssetIds: { type: "simple-array", default: '' },
         pin: { type: "varchar" },
         password: { type: "varchar", nullable: true },
         personalPurse: { type: "simple-json" },
         personalExperience: { type: "simple-json" },
         guildBalances: { type: "simple-json" },
         theme: { type: "varchar", nullable: true },
-        ownedThemes: { type: "simple-array" },
+        ownedThemes: { type: "simple-array", default: '' },
         hasBeenOnboarded: { type: "boolean", nullable: true, default: false },
         aboutMe: { type: "text", nullable: true },
         adminNotes: { type: "text", nullable: true },
@@ -128,7 +128,7 @@ const QuestEntity = new EntitySchema({
         iconType: { type: "varchar" },
         icon: { type: "varchar" },
         imageUrl: { type: "varchar", nullable: true },
-        tags: { type: "simple-array" },
+        tags: { type: "simple-array", default: '' },
         startDateTime: { type: "varchar", nullable: true },
         endDateTime: { type: "varchar", nullable: true },
         allDay: { type: "boolean", default: true },
@@ -143,9 +143,9 @@ const QuestEntity = new EntitySchema({
         incompleteSetbacks: { type: "simple-json" },
         isActive: { type: "boolean", default: true },
         isOptional: { type: "boolean", default: false },
-        assignedUserIds: { type: "simple-array" },
+        assignedUserIds: { type: "simple-array", default: '' },
         requiresApproval: { type: "boolean", default: false },
-        claimedByUserIds: { type: "simple-array" },
+        claimedByUserIds: { type: "simple-array", default: '' },
         dismissals: { type: "simple-json" },
         todoUserIds: { type: "simple-array", nullable: true },
         guildId: { type: "varchar", nullable: true },
@@ -169,14 +169,14 @@ const RewardTypeDefinitionEntity = new EntitySchema({ name: "RewardTypeDefinitio
 const RankEntity = new EntitySchema({ name: "Rank", target: Rank, columns: { id: { primary: true, type: "varchar" }, name: { type: "varchar" }, xpThreshold: { type: "integer" }, iconType: { type: "varchar" }, icon: { type: "varchar" }, imageUrl: { type: "varchar", nullable: true }, createdAt: { type: "varchar", nullable: true }, updatedAt: { type: "varchar", nullable: true } } });
 const TrophyEntity = new EntitySchema({ name: "Trophy", target: Trophy, columns: { id: { primary: true, type: "varchar" }, name: { type: "varchar" }, description: { type: "text" }, iconType: { type: "varchar" }, icon: { type: "varchar" }, imageUrl: { type: "varchar", nullable: true }, isManual: { type: "boolean" }, requirements: { type: "simple-json" }, createdAt: { type: "varchar", nullable: true }, updatedAt: { type: "varchar", nullable: true } } });
 const ThemeDefinitionEntity = new EntitySchema({ name: "ThemeDefinition", target: ThemeDefinition, columns: { id: { primary: true, type: "varchar" }, name: { type: "varchar" }, isCustom: { type: "boolean" }, styles: { type: "simple-json" }, createdAt: { type: "varchar", nullable: true }, updatedAt: { type: "varchar", nullable: true } } });
-const GameAssetEntity = new EntitySchema({ name: "GameAsset", target: GameAsset, columns: { id: { primary: true, type: "varchar" }, name: { type: "varchar" }, description: { type: "text" }, iconType: { type: "varchar" }, icon: { type: "varchar" }, imageUrl: { type: "varchar", nullable: true }, category: { type: "varchar" }, avatarSlot: { type: "varchar", nullable: true }, isForSale: { type: "boolean" }, costGroups: { type: "simple-json" }, payouts: { type: "simple-json", nullable: true }, marketIds: { type: "simple-array" }, creatorId: { type: "varchar" }, createdAt: { type: "varchar", nullable: true }, updatedAt: { type: "varchar", nullable: true }, purchaseLimit: { type: "integer", nullable: true }, purchaseLimitType: { type: "varchar" }, purchaseCount: { type: "integer" }, useCount: { type: "integer", nullable: true, default: 0 }, requiresApproval: { type: "boolean" }, linkedThemeId: { type: "varchar", nullable: true }, recipe: { type: "simple-json", nullable: true } } });
-const SystemLogEntity = new EntitySchema({ name: "SystemLog", target: SystemLog, columns: { id: { primary: true, type: "varchar" }, timestamp: { type: "varchar" }, type: { type: "varchar" }, questId: { type: "varchar" }, userIds: { type: "simple-array" }, setbacksApplied: { type: "simple-json" }, createdAt: { type: "varchar", nullable: true }, updatedAt: { type: "varchar", nullable: true } } });
-const ChatMessageEntity = new EntitySchema({ name: "ChatMessage", target: ChatMessage, columns: { id: { primary: true, type: "varchar" }, senderId: { type: "varchar" }, recipientId: { type: "varchar", nullable: true }, guildId: { type: "varchar", nullable: true }, message: { type: "text" }, timestamp: { type: "varchar" }, readBy: { type: "simple-array" }, isAnnouncement: { type: "boolean", nullable: true }, createdAt: { type: "varchar", nullable: true }, updatedAt: { type: "varchar", nullable: true } } });
-const SystemNotificationEntity = new EntitySchema({ name: "SystemNotification", target: SystemNotification, columns: { id: { primary: true, type: "varchar" }, senderId: { type: "varchar", nullable: true }, message: { type: "text" }, type: { type: "varchar" }, timestamp: { type: "varchar" }, recipientUserIds: { type: "simple-array" }, readByUserIds: { type: "simple-array" }, link: { type: "varchar", nullable: true }, guildId: { type: "varchar", nullable: true }, iconType: { type: "varchar", nullable: true }, icon: { type: "varchar", nullable: true }, imageUrl: { type: "varchar", nullable: true }, createdAt: { type: "varchar", nullable: true }, updatedAt: { type: "varchar", nullable: true } } });
+const GameAssetEntity = new EntitySchema({ name: "GameAsset", target: GameAsset, columns: { id: { primary: true, type: "varchar" }, name: { type: "varchar" }, description: { type: "text" }, iconType: { type: "varchar" }, icon: { type: "varchar" }, imageUrl: { type: "varchar", nullable: true }, category: { type: "varchar" }, avatarSlot: { type: "varchar", nullable: true }, isForSale: { type: "boolean" }, costGroups: { type: "simple-json" }, payouts: { type: "simple-json", nullable: true }, marketIds: { type: "simple-array", default: '' }, creatorId: { type: "varchar" }, createdAt: { type: "varchar", nullable: true }, updatedAt: { type: "varchar", nullable: true }, purchaseLimit: { type: "integer", nullable: true }, purchaseLimitType: { type: "varchar" }, purchaseCount: { type: "integer" }, useCount: { type: "integer", nullable: true, default: 0 }, requiresApproval: { type: "boolean" }, linkedThemeId: { type: "varchar", nullable: true }, recipe: { type: "simple-json", nullable: true } } });
+const SystemLogEntity = new EntitySchema({ name: "SystemLog", target: SystemLog, columns: { id: { primary: true, type: "varchar" }, timestamp: { type: "varchar" }, type: { type: "varchar" }, questId: { type: "varchar" }, userIds: { type: "simple-array", default: '' }, setbacksApplied: { type: "simple-json" }, createdAt: { type: "varchar", nullable: true }, updatedAt: { type: "varchar", nullable: true } } });
+const ChatMessageEntity = new EntitySchema({ name: "ChatMessage", target: ChatMessage, columns: { id: { primary: true, type: "varchar" }, senderId: { type: "varchar" }, recipientId: { type: "varchar", nullable: true }, guildId: { type: "varchar", nullable: true }, message: { type: "text" }, timestamp: { type: "varchar" }, readBy: { type: "simple-array", default: '' }, isAnnouncement: { type: "boolean", nullable: true }, createdAt: { type: "varchar", nullable: true }, updatedAt: { type: "varchar", nullable: true } } });
+const SystemNotificationEntity = new EntitySchema({ name: "SystemNotification", target: SystemNotification, columns: { id: { primary: true, type: "varchar" }, senderId: { type: "varchar", nullable: true }, message: { type: "text" }, type: { type: "varchar" }, timestamp: { type: "varchar" }, recipientUserIds: { type: "simple-array", default: '' }, readByUserIds: { type: "simple-array", default: '' }, link: { type: "varchar", nullable: true }, guildId: { type: "varchar", nullable: true }, iconType: { type: "varchar", nullable: true }, icon: { type: "varchar", nullable: true }, imageUrl: { type: "varchar", nullable: true }, createdAt: { type: "varchar", nullable: true }, updatedAt: { type: "varchar", nullable: true } } });
 const ScheduledEventEntity = new EntitySchema({ name: "ScheduledEvent", target: ScheduledEvent, columns: { id: { primary: true, type: "varchar" }, title: { type: "varchar" }, description: { type: "text" }, startDate: { type: "varchar" }, endDate: { type: "varchar" }, isAllDay: { type: "boolean" }, eventType: { type: "varchar" }, guildId: { type: "varchar", nullable: true }, icon: { type: "varchar", nullable: true }, color: { type: "varchar", nullable: true }, modifiers: { type: "simple-json" }, createdAt: { type: "varchar", nullable: true }, updatedAt: { type: "varchar", nullable: true } } });
 const SettingEntity = new EntitySchema({ name: "Setting", target: Setting, columns: { id: { primary: true, type: "integer", default: 1 }, settings: { type: "simple-json" }, createdAt: { type: "varchar", nullable: true }, updatedAt: { type: "varchar", nullable: true } } });
 const LoginHistoryEntity = new EntitySchema({ name: "LoginHistory", target: LoginHistory, columns: { id: { primary: true, type: "integer", default: 1 }, history: { type: "simple-array" }, createdAt: { type: "varchar", nullable: true }, updatedAt: { type: "varchar", nullable: true } } });
-const RotationEntity = new EntitySchema({ name: "Rotation", target: Rotation, columns: { id: { primary: true, type: 'varchar' }, name: { type: 'varchar' }, description: { type: 'text' }, questIds: { type: 'simple-array' }, userIds: { type: 'simple-array' }, frequency: { type: 'varchar' }, activeDays: { type: 'simple-json' }, lastAssignmentDate: { type: 'varchar', nullable: true }, lastUserIndex: { type: 'integer' }, lastQuestIndex: { type: 'integer' }, createdAt: { type: 'varchar', nullable: true }, updatedAt: { type: 'varchar', nullable: true } } });
+const RotationEntity = new EntitySchema({ name: "Rotation", target: Rotation, columns: { id: { primary: true, type: 'varchar' }, name: { type: 'varchar' }, description: { type: 'text' }, questIds: { type: 'simple-array', default: '' }, userIds: { type: 'simple-array', default: '' }, frequency: { type: 'varchar' }, activeDays: { type: 'simple-json' }, lastAssignmentDate: { type: 'varchar', nullable: true }, lastUserIndex: { type: 'integer' }, lastQuestIndex: { type: 'integer' }, createdAt: { type: 'varchar', nullable: true }, updatedAt: { type: 'varchar', nullable: true } } });
 const TradeOfferEntity = new EntitySchema({ name: 'TradeOffer', target: TradeOffer, columns: { id: { primary: true, type: 'varchar' }, initiatorId: { type: 'varchar' }, recipientId: { type: 'varchar' }, guildId: { type: 'varchar' }, status: { type: 'varchar' }, initiatorOffer: { type: 'simple-json' }, recipientOffer: { type: 'simple-json' }, initiatorLocked: { type: 'boolean' }, recipientLocked: { type: 'boolean' }, createdAt: { type: 'varchar' }, updatedAt: { type: 'varchar', nullable: true } } });
 const GiftEntity = new EntitySchema({ name: 'Gift', target: Gift, columns: { id: { primary: true, type: 'varchar' }, senderId: { type: 'varchar' }, recipientId: { type: 'varchar' }, assetId: { type: 'varchar' }, sentAt: { type: 'varchar' }, guildId: { type: 'varchar', nullable: true }, createdAt: { type: 'varchar', nullable: true }, updatedAt: { type: 'varchar', nullable: true } } });
 
@@ -247,7 +247,7 @@ const GuildEntity = new EntitySchema({
         id: { primary: true, type: "varchar" },
         name: { type: "varchar" },
         purpose: { type: "text" },
-        memberIds: { type: "simple-array" },
+        memberIds: { type: "simple-array", default: '' },
         isDefault: { type: "boolean", nullable: true },
         themeId: { type: "varchar", nullable: true },
         treasury: { type: "simple-json", default: '{}' },

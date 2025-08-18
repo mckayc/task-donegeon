@@ -40,20 +40,12 @@ const ChroniclesPage: React.FC = () => {
         const events: ChronicleEvent[] = [];
         const currentGuildId = appMode.mode === 'guild' ? appMode.guildId : undefined;
 
-        const shouldInclude = (item: { userId?: string, userIds?: string[], recipientUserIds?: string[], senderId?: string, guildId?: string | null }) => {
-            const itemGuildId = item.guildId === null ? undefined : item.guildId; // Normalize null to undefined
-            if (itemGuildId !== currentGuildId) return false;
-        
-            if (viewMode === 'personal') {
-                const userIdsToCheck = [item.userId, ...(item.userIds || []), ...(item.recipientUserIds || []), item.senderId].filter(Boolean) as string[];
-                return userIdsToCheck.includes(currentUser.id);
-            }
-            return true;
-        };
-
         // 1. Quest Completions
         questCompletions.forEach(c => {
-            if (!shouldInclude({ userId: c.userId, guildId: c.guildId })) return;
+            const itemGuildId = c.guildId === null ? undefined : c.guildId;
+            if (itemGuildId !== currentGuildId) return;
+            if (viewMode === 'personal' && c.userId !== currentUser.id) return;
+            
             const quest = questMap.get(c.questId);
             let finalNote = c.note || '';
             if (c.status === 'Approved' && quest && quest.rewards.length > 0) {
@@ -70,56 +62,68 @@ const ChroniclesPage: React.FC = () => {
 
         // 2. Purchase Requests (Split into two events)
         purchaseRequests.forEach(p => {
-            if (!shouldInclude({ userId: p.userId, guildId: p.guildId })) return;
+            const itemGuildId = p.guildId === null ? undefined : p.guildId;
+            if (itemGuildId !== currentGuildId) return;
+
+            const isRequester = p.userId === currentUser.id;
+            const isActor = p.actedById === currentUser.id;
+
             const requesterName = userMap.get(p.userId) || 'Unknown';
             const costText = getRewardDisplay(p.assetDetails.cost).replace(/(\d+)/g, '-$1');
 
             // Event 1: The initial request
-            events.push({
-                id: p.id + '-req', originalId: p.id, date: p.requestedAt, type: 'Purchase', userId: p.userId,
-                title: `${requesterName} requested to purchase "${p.assetDetails.name}"`,
-                status: PurchaseRequestStatus.Pending, note: costText, icon: '🛒',
-                color: '#f59e0b', guildId: p.guildId
-            });
+            if (viewMode === 'all' || (viewMode === 'personal' && isRequester)) {
+                events.push({
+                    id: p.id + '-req', originalId: p.id, date: p.requestedAt, type: 'Purchase', userId: p.userId,
+                    title: `${requesterName} requested to purchase "${p.assetDetails.name}"`,
+                    status: PurchaseRequestStatus.Pending, note: costText, icon: '🛒',
+                    color: '#f59e0b', guildId: p.guildId
+                });
+            }
 
             // Event 2: The action (approve, reject, cancel)
             if (p.actedAt && p.status !== PurchaseRequestStatus.Pending) {
-                const actorName = userMap.get(p.actedById || '') || 'System';
-                let actionTitle = '';
-                let actionColor = '#64748b';
-                let actionIcon = '✔️';
-                let actionNote = `For ${requesterName}`;
+                if (viewMode === 'all' || (viewMode === 'personal' && (isRequester || isActor))) {
+                    const actorName = userMap.get(p.actedById || '') || 'System';
+                    let actionTitle = '';
+                    let actionColor = '#64748b';
+                    let actionIcon = '✔️';
+                    let actionNote = `For ${requesterName}`;
 
-                switch (p.status) {
-                    case PurchaseRequestStatus.Completed:
-                        actionTitle = `${actorName} approved purchase of "${p.assetDetails.name}"`;
-                        actionColor = '#22c55e';
-                        actionIcon = '✅';
-                        break;
-                    case PurchaseRequestStatus.Rejected:
-                        actionTitle = `${actorName} rejected purchase of "${p.assetDetails.name}"`;
-                        actionColor = '#ef4444';
-                        actionIcon = '❌';
-                        actionNote += ` (Funds refunded)`;
-                        break;
-                    case PurchaseRequestStatus.Cancelled:
-                        actionTitle = `${actorName} cancelled purchase of "${p.assetDetails.name}"`;
-                        actionColor = '#64748b';
-                        actionIcon = '🚫';
-                        actionNote += ` (Funds refunded)`;
-                        break;
+                    switch (p.status) {
+                        case PurchaseRequestStatus.Completed:
+                            actionTitle = `${actorName} approved purchase of "${p.assetDetails.name}"`;
+                            actionColor = '#22c55e';
+                            actionIcon = '✅';
+                            break;
+                        case PurchaseRequestStatus.Rejected:
+                            actionTitle = `${actorName} rejected purchase of "${p.assetDetails.name}"`;
+                            actionColor = '#ef4444';
+                            actionIcon = '❌';
+                            actionNote += ` (Funds refunded)`;
+                            break;
+                        case PurchaseRequestStatus.Cancelled:
+                            actionTitle = `${actorName} cancelled purchase of "${p.assetDetails.name}"`;
+                            actionColor = '#64748b';
+                            actionIcon = '🚫';
+                            actionNote += ` (Funds refunded)`;
+                            break;
+                    }
+                    
+                    events.push({
+                        id: p.id + '-act', originalId: p.id, date: p.actedAt, type: 'Purchase', userId: p.userId, actorName,
+                        title: actionTitle, status: p.status, note: actionNote, icon: actionIcon, color: actionColor, guildId: p.guildId
+                    });
                 }
-                
-                events.push({
-                    id: p.id + '-act', originalId: p.id, date: p.actedAt, type: 'Purchase', userId: p.userId, actorName,
-                    title: actionTitle, status: p.status, note: actionNote, icon: actionIcon, color: actionColor, guildId: p.guildId
-                });
             }
         });
 
         // 3. User Trophies
         userTrophies.forEach(ut => {
-            if (!shouldInclude({ userId: ut.userId, guildId: ut.guildId })) return;
+            const itemGuildId = ut.guildId === null ? undefined : ut.guildId;
+            if (itemGuildId !== currentGuildId) return;
+            if (viewMode === 'personal' && ut.userId !== currentUser.id) return;
+
             const trophy = trophyMap.get(ut.trophyId);
             events.push({
                 id: ut.id, originalId: ut.id, date: ut.awardedAt, type: 'Trophy', userId: ut.userId,
@@ -131,7 +135,12 @@ const ChroniclesPage: React.FC = () => {
 
         // 4. Admin Adjustments
         adminAdjustments.forEach(adj => {
-            if (!shouldInclude({ userId: adj.userId, guildId: adj.guildId })) return;
+            const itemGuildId = adj.guildId === null ? undefined : adj.guildId;
+            if (itemGuildId !== currentGuildId) return;
+
+            const isRelevantToUser = (adj.userId === currentUser.id) || (adj.adjusterId === currentUser.id);
+            if (viewMode === 'personal' && !isRelevantToUser) return;
+            
             const rewardsText = getRewardDisplay(adj.rewards).replace(/(\d+)/g, '+$1');
             const setbacksText = getRewardDisplay(adj.setbacks).replace(/(\d+)/g, '-$1');
             
@@ -152,8 +161,8 @@ const ChroniclesPage: React.FC = () => {
             });
         });
         
-        // 5. System Logs (Global/Admin view only)
-        if (viewMode !== 'personal') {
+        // 5. System Logs (Global/Admin view only, and only in personal scope)
+        if (viewMode === 'all' && currentGuildId === undefined) {
             systemLogs.forEach(log => {
                 const quest = questMap.get(log.questId);
                 const userNames = log.userIds.map(id => userMap.get(id) || 'Unknown').join(', ');
@@ -168,7 +177,12 @@ const ChroniclesPage: React.FC = () => {
         
         // 6. Gifts
         gifts.forEach(g => {
-            if (!shouldInclude({ userId: g.recipientId, senderId: g.senderId, guildId: g.guildId })) return;
+            const itemGuildId = g.guildId === null ? undefined : g.guildId;
+            if (itemGuildId !== currentGuildId) return;
+
+            const isRelevantToUser = g.recipientId === currentUser.id || g.senderId === currentUser.id;
+            if (viewMode === 'personal' && !isRelevantToUser) return;
+
             const asset = assetMap.get(g.assetId);
             events.push({
                 id: g.id, originalId: g.id, date: g.sentAt, type: 'Gift', userId: g.recipientId, actorName: userMap.get(g.senderId),
@@ -180,7 +194,11 @@ const ChroniclesPage: React.FC = () => {
         
         // 7. Trades
         tradeOffers.filter(t => t.status === 'Completed').forEach(t => {
-             if (!shouldInclude({ userId: t.recipientId, senderId: t.initiatorId, guildId: t.guildId })) return;
+             const itemGuildId = t.guildId === null ? undefined : t.guildId;
+             if (itemGuildId !== currentGuildId) return;
+
+             const isRelevantToUser = t.recipientId === currentUser.id || t.initiatorId === currentUser.id;
+             if (viewMode === 'personal' && !isRelevantToUser) return;
              
              const initiatorName = userMap.get(t.initiatorId) || 'Unknown';
              const recipientName = userMap.get(t.recipientId) || 'Unknown';
@@ -255,7 +273,7 @@ const ChroniclesPage: React.FC = () => {
     return (
         <div>
             <div className="flex justify-between items-center mb-8 flex-wrap gap-4">
-                {currentUser.role === Role.DonegeonMaster && (
+                {currentUser.role !== Role.Explorer && (
                     <div className="flex space-x-2 p-1 bg-stone-900/50 rounded-lg">
                         <button
                             onClick={() => setViewMode('all')}

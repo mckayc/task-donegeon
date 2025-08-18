@@ -30,7 +30,7 @@ const EditSetbackDialog: React.FC<EditSetbackDialogProps> = ({ setbackToEdit, on
                 name: setbackToEdit.name,
                 description: setbackToEdit.description,
                 icon: setbackToEdit.icon,
-                effects: JSON.parse(JSON.stringify(setbackToEdit.effects)), // Deep copy
+                effects: setbackToEdit.effects,
             });
         }
     }, [setbackToEdit]);

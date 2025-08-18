@@ -15,7 +15,7 @@ interface EditRankDialogProps {
 
 const EditRankDialog: React.FC<EditRankDialogProps> = ({ rank, onClose }) => {
   const { ranks } = useData();
-  const { addRank, updateRank } = useActionsDispatch();
+  const { setRanks } = useActionsDispatch();
   const [formData, setFormData] = useState({ 
       name: '', 
       xpThreshold: 0,
@@ -42,9 +42,11 @@ const EditRankDialog: React.FC<EditRankDialogProps> = ({ rank, onClose }) => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (rank) {
-      updateRank({ ...rank, ...formData });
+      const updatedRanks = ranks.map(r => r.id === rank.id ? { ...r, ...formData } : r);
+      setRanks(updatedRanks);
     } else {
-      addRank(formData);
+      const newRank: Rank = { id: `rank-${Date.now()}`, ...formData };
+      setRanks([...ranks, newRank]);
     }
     onClose();
   };

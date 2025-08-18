@@ -62,43 +62,19 @@ const EditTrophyDialog: React.FC<EditTrophyDialogProps> = ({ trophy, initialData
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleRequirementChange = (index: number, field: 'type' | 'value' | 'count', value: any) => {
+  const handleRequirementChange = (index: number, field: keyof TrophyRequirement, value: any) => {
     const newRequirements = [...formData.requirements];
-    const currentReq = newRequirements[index];
-
-    let newReq: TrophyRequirement;
-
-    if (field === 'type') {
-        const newType = value as TrophyRequirementType;
-        // When type changes, create a new object with default values, preserving the old count.
-        // This is the correct, type-safe way to handle discriminated unions.
-        switch(newType) {
-            case TrophyRequirementType.CompleteQuestType:
-                newReq = { type: newType, value: QuestType.Duty, count: currentReq.count };
-                break;
-            case TrophyRequirementType.CompleteQuestTag:
-                newReq = { type: newType, value: allTags[0] || '', count: currentReq.count };
-                break;
-            case TrophyRequirementType.AchieveRank:
-                newReq = { type: newType, value: ranks[0]?.id || '', count: currentReq.count };
-                break;
-            case TrophyRequirementType.QuestCompleted:
-                 newReq = { type: newType, value: quests[0]?.id || '', count: currentReq.count };
-                 break;
-            default:
-                newReq = currentReq; // Fallback, should not happen with a controlled select
-        }
+    if (field === 'count') {
+        newRequirements[index] = { ...newRequirements[index], [field]: Math.max(1, parseInt(value)) };
     } else {
-        // To update 'value' or 'count', we can spread the existing object and just update the field.
-        // This is safe because we are not changing the 'type' discriminant.
-        const updatedValue = field === 'count' ? Math.max(1, parseInt(String(value), 10) || 1) : value;
-        newReq = { ...currentReq, [field]: updatedValue } as TrophyRequirement;
+        newRequirements[index] = { ...newRequirements[index], [field]: value };
     }
-    
-    newRequirements[index] = newReq;
+    // Reset value if type changes
+    if (field === 'type') {
+        newRequirements[index].value = '';
+    }
     setFormData(prev => ({ ...prev, requirements: newRequirements }));
   }
-
 
   const handleAddRequirement = () => {
     setFormData(prev => ({
@@ -134,14 +110,14 @@ const EditTrophyDialog: React.FC<EditTrophyDialogProps> = ({ trophy, initialData
     switch (req.type) {
         case TrophyRequirementType.CompleteQuestType:
             return (
-                <select value={req.value} onChange={(e) => handleRequirementChange(index, 'value', e.target.value)} className="w-full px-4 py-2 bg-stone-700 border border-stone-600 rounded-md">
+                <select value={req.value} onChange={(e: React.ChangeEvent<HTMLSelectElement>) => handleRequirementChange(index, 'value', e.target.value)} className="w-full px-4 py-2 bg-stone-700 border border-stone-600 rounded-md">
                     <option value={QuestType.Duty}>Duty</option>
                     <option value={QuestType.Venture}>Venture</option>
                 </select>
             );
         case TrophyRequirementType.AchieveRank:
              return (
-                <select value={req.value} onChange={(e) => handleRequirementChange(index, 'value', e.target.value)} className="w-full px-4 py-2 bg-stone-700 border border-stone-600 rounded-md">
+                <select value={req.value} onChange={(e: React.ChangeEvent<HTMLSelectElement>) => handleRequirementChange(index, 'value', e.target.value)} className="w-full px-4 py-2 bg-stone-700 border border-stone-600 rounded-md">
                      <option value="" disabled>Select a Rank</option>
                     {[...ranks].sort((a,b) => a.xpThreshold - b.xpThreshold).map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
                 </select>
@@ -153,20 +129,19 @@ const EditTrophyDialog: React.FC<EditTrophyDialogProps> = ({ trophy, initialData
                     list="tags-datalist"
                     placeholder="Enter tag"
                     value={req.value}
-                    onChange={(e) => handleRequirementChange(index, 'value', e.target.value)}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleRequirementChange(index, 'value', e.target.value)}
                     required
                 />
             );
         case TrophyRequirementType.QuestCompleted:
              return (
-                <select value={req.value} onChange={(e) => handleRequirementChange(index, 'value', e.target.value)} className="w-full px-4 py-2 bg-stone-700 border border-stone-600 rounded-md">
+                <select value={req.value} onChange={(e: React.ChangeEvent<HTMLSelectElement>) => handleRequirementChange(index, 'value', e.target.value)} className="w-full px-4 py-2 bg-stone-700 border border-stone-600 rounded-md">
                      <option value="" disabled>Select a Quest</option>
                     {quests.map(q => <option key={q.id} value={q.id}>{q.title}</option>)}
                 </select>
             );
         default:
-             const exhaustiveCheck: never = req;
-             return null;
+            return <Input type="text" placeholder="Value" value={req.value} onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleRequirementChange(index, 'value', e.target.value)} required />;
     }
   }
 
@@ -230,14 +205,14 @@ const EditTrophyDialog: React.FC<EditTrophyDialogProps> = ({ trophy, initialData
                                 </button>
                             </div>
                             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                                <select value={req.type} onChange={(e) => handleRequirementChange(index, 'type', e.target.value as TrophyRequirementType)} className="w-full px-4 py-2 bg-stone-700 border border-stone-600 rounded-md">
+                                <select value={req.type} onChange={(e: React.ChangeEvent<HTMLSelectElement>) => handleRequirementChange(index, 'type', e.target.value as TrophyRequirementType)} className="w-full px-4 py-2 bg-stone-700 border border-stone-600 rounded-md">
                                     <option value={TrophyRequirementType.CompleteQuestType}>Complete Quest Type</option>
                                     <option value={TrophyRequirementType.CompleteQuestTag}>Complete Quest w/ Tag</option>
                                     <option value={TrophyRequirementType.AchieveRank}>Achieve Rank</option>
                                     <option value={TrophyRequirementType.QuestCompleted}>Complete Specific Quest</option>
                                 </select>
                                 {renderRequirementValueInput(req, index)}
-                                <Input type="number" value={req.count} min="1" onChange={(e) => handleRequirementChange(index, 'count', e.target.value)} />
+                                <Input type="number" value={req.count} min="1" onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleRequirementChange(index, 'count', e.target.value)} />
                             </div>
                         </div>
                     ))}

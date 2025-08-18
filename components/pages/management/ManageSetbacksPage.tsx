@@ -1,5 +1,4 @@
 
-
 import React, { useState, useMemo } from 'react';
 import { useData } from '../../../context/DataProvider';
 import { useActionsDispatch } from '../../../context/ActionsContext';
@@ -35,9 +34,9 @@ const ManageSetbacksPage: React.FC = () => {
         return appliedSetbacks
             .filter(s => s.expiresAt && new Date(s.expiresAt) > now)
             .map(s => {
-                const user = users.find((u: User) => u.id === s.userId);
+                const user = users.find(u => u.id === s.userId);
                 const definition = setbackDefinitions.find(d => d.id === s.setbackDefinitionId);
-                const appliedBy = users.find((u: User) => u.id === s.appliedById);
+                const appliedBy = users.find(u => u.id === s.appliedById);
                 return { ...s, user, definition, appliedBy };
             })
             .filter(s => s.user && s.definition && s.appliedBy) as (typeof appliedSetbacks[0] & { user: User, definition: SetbackDefinition, appliedBy: User })[];

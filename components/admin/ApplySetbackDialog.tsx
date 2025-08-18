@@ -1,7 +1,4 @@
-
-
-import React, { useState, useMemo } from 'react';
-import { useData } from '../../context/DataProvider';
+import React, { useState } from 'react';
 import { useActionsDispatch } from '../../context/ActionsContext';
 import { useAuthState } from '../../context/AuthContext';
 import { User, SetbackDefinition, Role } from '../../types';
@@ -16,18 +13,11 @@ interface ApplySetbackDialogProps {
 
 const ApplySetbackDialog: React.FC<ApplySetbackDialogProps> = ({ setback, onClose }) => {
     const { users } = useAuthState();
-    const { guilds } = useData();
     const { applySetback } = useActionsDispatch();
     const { addNotification } = useNotificationsDispatch();
 
     const [selectedUserId, setSelectedUserId] = useState<string>('');
     const [reason, setReason] = useState('');
-    const [guildId, setGuildId] = useState('');
-
-    const userGuilds = useMemo(() => {
-        if (!selectedUserId) return [];
-        return guilds.filter(g => g.memberIds.includes(selectedUserId));
-    }, [guilds, selectedUserId]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -40,7 +30,7 @@ const ApplySetbackDialog: React.FC<ApplySetbackDialogProps> = ({ setback, onClos
             return;
         }
         
-        const success = await applySetback(selectedUserId, setback.id, reason, guildId || undefined);
+        const success = await applySetback(selectedUserId, setback.id, reason);
         if (success) {
             addNotification({ type: 'success', message: `Setback "${setback.name}" applied.` });
             onClose();
@@ -58,10 +48,7 @@ const ApplySetbackDialog: React.FC<ApplySetbackDialogProps> = ({ setback, onClos
                         as="select"
                         label="User"
                         value={selectedUserId}
-                        onChange={(e: React.ChangeEvent<HTMLSelectElement>) => {
-                            setSelectedUserId(e.target.value);
-                            setGuildId(''); // Reset scope when user changes
-                        }}
+                        onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setSelectedUserId(e.target.value)}
                         required
                     >
                         <option value="" disabled>Select a user...</option>
@@ -69,19 +56,6 @@ const ApplySetbackDialog: React.FC<ApplySetbackDialogProps> = ({ setback, onClos
                             <option key={user.id} value={user.id}>
                                 {user.gameName}
                             </option>
-                        ))}
-                    </Input>
-
-                    <Input
-                        as="select"
-                        label="Scope"
-                        value={guildId}
-                        onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setGuildId(e.target.value)}
-                        disabled={!selectedUserId}
-                    >
-                        <option value="">Personal</option>
-                        {userGuilds.map(g => (
-                            <option key={g.id} value={g.id}>{g.name}</option>
                         ))}
                     </Input>
                     

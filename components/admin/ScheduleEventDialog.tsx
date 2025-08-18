@@ -25,7 +25,7 @@ const colorPalette = [
 ];
 
 export const ScheduleEventDialog: React.FC<ScheduleEventDialogProps> = ({ event, onClose }) => {
-    const { addScheduledEvent, updateScheduledEvent } = useActionsDispatch();
+    const { addScheduledEvent, updateScheduledEvent, deleteScheduledEvent } = useActionsDispatch();
     const { guilds, markets, rewardTypes } = useData();
     
     const [formData, setFormData] = useState<Omit<ScheduledEvent, 'id'>>({
@@ -59,35 +59,16 @@ export const ScheduleEventDialog: React.FC<ScheduleEventDialogProps> = ({ event,
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        
-        let finalModifiers = {};
-        switch(formData.eventType) {
-            case 'BonusXP':
-                finalModifiers = {
-                    xpMultiplier: formData.modifiers.xpMultiplier || 1,
-                    affectedRewardIds: formData.modifiers.affectedRewardIds || []
-                };
-                break;
-            case 'MarketSale':
-                 finalModifiers = {
-                    marketId: formData.modifiers.marketId || '',
-                    discountPercent: formData.modifiers.discountPercent || 0,
-                    assetIds: [] // Future-proofing: Not implemented in UI yet
-                };
-                break;
-        }
-
-        const payload = { ...formData, guildId: formData.guildId || undefined, modifiers: finalModifiers };
-
         if (event) {
-            updateScheduledEvent({ ...payload, id: event.id });
+            updateScheduledEvent({ ...formData, id: event.id });
         } else {
-            addScheduledEvent(payload);
+            addScheduledEvent(formData);
         }
         onClose();
     };
 
     const xpRewardTypes = rewardTypes.filter(rt => rt.category === RewardCategory.XP);
+    
     const showModifiers = formData.eventType !== 'Announcement' && formData.eventType !== 'Vacation';
 
     return (
@@ -98,12 +79,7 @@ export const ScheduleEventDialog: React.FC<ScheduleEventDialogProps> = ({ event,
                     <Input label="Title" name="title" value={formData.title} onChange={handleChange} required />
                     <Input as="textarea" label="Description" name="description" value={formData.description} onChange={handleChange} />
                     
-                    <div className="grid grid-cols-2 gap-4">
-                        <Input label="Start Date" name="startDate" type="date" value={formData.startDate} onChange={handleChange} required />
-                        <Input label="End Date" name="endDate" type="date" value={formData.endDate} onChange={handleChange} required />
-                    </div>
-
-                    <div className="flex gap-4 items-center">
+                    <div className="flex gap-4">
                         <div className="relative">
                             <label className="block text-sm font-medium text-stone-300 mb-1">Icon</label>
                             <button type="button" onClick={() => setIsEmojiPickerOpen(p => !p)} className="w-16 h-11 text-2xl p-1 rounded-md bg-stone-700 hover:bg-stone-600 flex items-center justify-center">
@@ -111,18 +87,11 @@ export const ScheduleEventDialog: React.FC<ScheduleEventDialogProps> = ({ event,
                             </button>
                             {isEmojiPickerOpen && <EmojiPicker onSelect={(emoji: string) => { setFormData(p => ({...p, icon: emoji})); setIsEmojiPickerOpen(false); }} onClose={() => setIsEmojiPickerOpen(false)} />}
                         </div>
-                        <Input as="select" label="Event Type" name="eventType" value={formData.eventType} onChange={handleChange} className="flex-grow">
-                            <option value="Announcement">Announcement</option>
-                            <option value="Vacation">Vacation</option>
-                            <option value="BonusXP">Bonus XP</option>
-                            <option value="MarketSale">Market Sale</option>
+                        <Input as="select" label="Scope" name="guildId" value={formData.guildId} onChange={handleChange} className="flex-grow">
+                            <option value="">Personal</option>
+                            {guilds.map(g => <option key={g.id} value={g.id}>{g.name}</option>)}
                         </Input>
                     </div>
-
-                    <Input as="select" label="Scope" name="guildId" value={formData.guildId} onChange={handleChange}>
-                        <option value="">Personal (All Users)</option>
-                        {guilds.map(g => <option key={g.id} value={g.id}>{g.name}</option>)}
-                    </Input>
 
                     <div>
                         <label className="block text-sm font-medium text-stone-300 mb-1">Banner Color</label>
@@ -138,40 +107,13 @@ export const ScheduleEventDialog: React.FC<ScheduleEventDialogProps> = ({ event,
                             ))}
                         </div>
                     </div>
-
-                    {showModifiers && (
-                        <div className="pt-4 border-t border-stone-700/60 space-y-4">
-                            <h3 className="font-semibold text-stone-200">Modifiers</h3>
-                            {formData.eventType === 'BonusXP' && (
-                                <Input
-                                    label="XP Multiplier"
-                                    type="number"
-                                    step="0.1"
-                                    min="1"
-                                    value={formData.modifiers.xpMultiplier || 1}
-                                    onChange={e => handleModifierChange('xpMultiplier', parseFloat(e.target.value) || 1)}
-                                />
-                            )}
-                            {formData.eventType === 'MarketSale' && (
-                                <>
-                                    <Input as="select" label="Market" value={formData.modifiers.marketId || ''} onChange={e => handleModifierChange('marketId', e.target.value)} required>
-                                        <option value="" disabled>Select a market...</option>
-                                        {markets.filter(m => m.id !== 'market-bank').map(m => <option key={m.id} value={m.id}>{m.title}</option>)}
-                                    </Input>
-                                    <Input
-                                        label="Discount Percent"
-                                        type="number"
-                                        min="1" max="100"
-                                        value={formData.modifiers.discountPercent || 10}
-                                        onChange={e => handleModifierChange('discountPercent', parseInt(e.target.value) || 0)}
-                                    />
-                                </>
-                            )}
-                        </div>
-                    )}
-
                 </form>
-                <div className="p-6 border-t border-stone-700/60 flex justify-end items-center">
+                <div className="p-6 border-t border-stone-700/60 flex justify-between items-center">
+                    <div>
+                        {event && (
+                             <Button variant="destructive" onClick={() => { deleteScheduledEvent(event.id); onClose(); }}>Delete</Button>
+                        )}
+                    </div>
                     <div className="flex gap-4">
                         <Button variant="secondary" onClick={onClose}>Cancel</Button>
                         <Button type="submit" form="event-form">{event ? 'Save Changes' : 'Schedule Event'}</Button>

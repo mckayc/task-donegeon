@@ -1,4 +1,3 @@
-
 // This file is a JavaScript adaptation of the necessary initial data from the frontend's `initialData.ts`.
 // It ensures the backend can correctly initialize the app on the very first run.
 
@@ -362,115 +361,10 @@ const INITIAL_THEMES = Object.entries(rawThemes).map(([id, styles]) => ({
   styles: styles,
 }));
 
-const INITIAL_GUILDS = [
-    {
-        id: 'guild-default',
-        name: 'The Adventurers Guild',
-        purpose: 'A place for our family/group to collaborate on quests and goals.',
-        isDefault: true,
-        treasury: { purse: {}, ownedAssetIds: [] },
-    }
-];
-
-const INITIAL_MARKETS = [
-    {
-        id: 'market-bank',
-        title: 'Bank & Exchange Post',
-        description: 'Exchange different types of currency and experience points.',
-        iconType: 'emoji',
-        icon: '⚖️',
-        status: { type: 'open' }
-    },
-    {
-        id: 'market-general-store',
-        title: 'General Store',
-        description: 'A collection of useful items, fun rewards, and stylish themes.',
-        iconType: 'emoji',
-        icon: '🏪',
-        status: { type: 'open' }
-    }
-];
-
-const INITIAL_GAME_ASSETS = [
-    {
-        id: 'ga-theme-rose',
-        name: 'Rose Theme',
-        description: 'Unlocks the elegant Rose color theme for personal use.',
-        iconType: 'emoji', icon: '🌹',
-        category: 'Theme',
-        isForSale: true,
-        costGroups: [[{ rewardTypeId: 'core-gems', amount: 10 }]],
-        marketIds: ['market-general-store'],
-        creatorId: 'system',
-        purchaseLimit: 1,
-        purchaseLimitType: 'PerUser',
-        purchaseCount: 0,
-        requiresApproval: false,
-        linkedThemeId: 'rose'
-    },
-    {
-        id: 'ga-avatar-hat',
-        name: 'Simple Cap',
-        description: 'A basic cap for your avatar.',
-        iconType: 'emoji', icon: '🧢',
-        category: 'Avatar',
-        avatarSlot: 'hat',
-        isForSale: true,
-        costGroups: [[{ rewardTypeId: 'core-gold', amount: 25 }]],
-        marketIds: ['market-general-store'],
-        creatorId: 'system',
-        purchaseLimit: 1,
-        purchaseLimitType: 'PerUser',
-        purchaseCount: 0,
-        requiresApproval: false,
-    },
-    {
-        id: 'ga-consumable-snack',
-        name: 'Small Snack Reward',
-        description: 'Can be exchanged for a small real-world snack, with parent approval.',
-        iconType: 'emoji', icon: '🍪',
-        category: 'Real-World Reward',
-        isForSale: true,
-        costGroups: [[{ rewardTypeId: 'core-gold', amount: 50 }]],
-        marketIds: ['market-general-store'],
-        creatorId: 'system',
-        purchaseLimit: null,
-        purchaseLimitType: 'Total',
-        purchaseCount: 0,
-        requiresApproval: true,
-    }
-];
-
-const INITIAL_QUESTS = [
-    {
-        id: 'quest-welcome',
-        title: 'Welcome to the Donegeon!',
-        description: 'Complete this quest to learn the ropes. Visit the Marketplace to buy your first item.',
-        type: 'Venture',
-        kind: 'Personal',
-        iconType: 'emoji', icon: '🎉',
-        tags: ['tutorial'],
-        rewards: [{ rewardTypeId: 'core-gold', amount: 100 }],
-        isActive: true,
-        isOptional: false,
-        requiresApproval: false,
-        availabilityCount: 1,
-    },
-    {
-        id: 'quest-daily-bed',
-        title: 'Make Your Bed',
-        description: 'Start the day right by making your bed.',
-        type: 'Duty',
-        kind: 'Personal',
-        iconType: 'emoji', icon: '🛏️',
-        tags: ['daily', 'household'],
-        rewards: [{ rewardTypeId: 'core-diligence', amount: 5 }],
-        rrule: 'FREQ=DAILY',
-        isActive: true,
-        isOptional: false,
-        requiresApproval: false,
-    }
-];
+const createInitialQuestCompletions = (users, quests) => {
+    // This function can be used to populate some initial "completed" quests for demonstration
+    return [];
+};
 
 module.exports = {
   INITIAL_SETTINGS,
@@ -479,8 +373,4 @@ module.exports = {
   INITIAL_TROPHIES,
   INITIAL_THEMES,
   INITIAL_QUEST_GROUPS,
-  INITIAL_GUILDS,
-  INITIAL_MARKETS,
-  INITIAL_GAME_ASSETS,
-  INITIAL_QUESTS
 };

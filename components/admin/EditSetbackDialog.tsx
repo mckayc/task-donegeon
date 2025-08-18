@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useData } from '../../context/DataProvider';
 import { useActionsDispatch } from '../../context/ActionsContext';
@@ -137,13 +138,18 @@ const EditSetbackDialog: React.FC<EditSetbackDialogProps> = ({ setbackToEdit, on
                                 )}
 
                                 {effect.type === SetbackEffectType.CloseMarket && (
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <Input as="select" label="Markets to Close" multiple value={effect.marketIds} onChange={(e: React.ChangeEvent<HTMLSelectElement>) => {
-                                            const selectedValues = Array.from(e.target.selectedOptions, option => option.value);
-                                            handleEffectChange(index, { ...effect, marketIds: selectedValues });
-                                        }}>
-                                            {markets.map(m => <option key={m.id} value={m.id}>{m.title}</option>)}
-                                        </Input>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div>
+                                            <label className="block text-sm font-medium text-stone-300 mb-1">Markets to Close</label>
+                                             <select multiple value={effect.marketIds}
+                                                className="w-full h-32 px-4 py-2 bg-stone-700 border border-stone-600 rounded-md"
+                                                onChange={(e: React.ChangeEvent<HTMLSelectElement>) => {
+                                                const selectedValues = Array.from(e.target.selectedOptions, option => option.value);
+                                                handleEffectChange(index, { ...effect, marketIds: selectedValues });
+                                            }}>
+                                                {markets.map(m => <option key={m.id} value={m.id}>{m.title}</option>)}
+                                            </select>
+                                        </div>
                                         <Input label="Duration (Hours)" type="number" min="1" value={effect.durationHours} onChange={e => handleEffectChange(index, { ...effect, durationHours: parseInt(e.target.value) || 1 })} />
                                     </div>
                                 )}

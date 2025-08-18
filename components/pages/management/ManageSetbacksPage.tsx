@@ -1,7 +1,8 @@
+
 import React, { useState, useMemo } from 'react';
 import { useData } from '../../../context/DataProvider';
 import { useActionsDispatch } from '../../../context/ActionsContext';
-import { SetbackDefinition } from '../../../types';
+import { SetbackDefinition, User } from '../../../types';
 import Button from '../../user-interface/Button';
 import Card from '../../user-interface/Card';
 import EmptyState from '../../user-interface/EmptyState';
@@ -10,9 +11,12 @@ import ConfirmDialog from '../../user-interface/ConfirmDialog';
 import ApplySetbackDialog from '../../admin/ApplySetbackDialog';
 import { useShiftSelect } from '../../../hooks/useShiftSelect';
 import { PencilIcon, TrashIcon, CheckBadgeIcon } from '../../user-interface/Icons';
+import Avatar from '../../user-interface/Avatar';
+import { useAuthState } from '../../../context/AuthContext';
 
 const ManageSetbacksPage: React.FC = () => {
-    const { settings, setbackDefinitions } = useData();
+    const { settings, setbackDefinitions, appliedSetbacks } = useData();
+    const { users } = useAuthState();
     const { deleteSelectedAssets } = useActionsDispatch();
     
     const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -24,6 +28,19 @@ const ManageSetbacksPage: React.FC = () => {
 
     const setbackIds = useMemo(() => setbackDefinitions.map(s => s.id), [setbackDefinitions]);
     const handleCheckboxClick = useShiftSelect(setbackIds, selectedSetbacks, setSelectedSetbacks);
+
+    const activeSetbacks = useMemo(() => {
+        const now = new Date();
+        return appliedSetbacks
+            .filter(s => s.expiresAt && new Date(s.expiresAt) > now)
+            .map(s => {
+                const user = users.find(u => u.id === s.userId);
+                const definition = setbackDefinitions.find(d => d.id === s.setbackDefinitionId);
+                const appliedBy = users.find(u => u.id === s.appliedById);
+                return { ...s, user, definition, appliedBy };
+            })
+            .filter(s => s.user && s.definition && s.appliedBy) as (typeof appliedSetbacks[0] & { user: User, definition: SetbackDefinition, appliedBy: User })[];
+    }, [appliedSetbacks, users, setbackDefinitions]);
 
     const handleCreate = () => {
         setEditingSetback(null);
@@ -55,7 +72,7 @@ const ManageSetbacksPage: React.FC = () => {
     return (
         <div className="space-y-6">
             <Card
-                title={settings.terminology.link_manage_setbacks}
+                title={`${settings.terminology.link_manage_setbacks} Definitions`}
                 headerAction={<Button onClick={handleCreate} size="sm">Create New Setback</Button>}
             >
                 {selectedSetbacks.length > 0 && (
@@ -113,6 +130,40 @@ const ManageSetbacksPage: React.FC = () => {
                         message="Create setback templates to apply consequences like deducting rewards or closing markets."
                         actionButton={<Button onClick={handleCreate}>Create Setback</Button>}
                     />
+                )}
+            </Card>
+            
+            <Card title="Active Setbacks">
+                {activeSetbacks.length > 0 ? (
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-left">
+                             <thead className="border-b border-stone-700/60">
+                                <tr>
+                                    <th className="p-4 font-semibold">User</th>
+                                    <th className="p-4 font-semibold">Setback</th>
+                                    <th className="p-4 font-semibold">Reason</th>
+                                    <th className="p-4 font-semibold">Applied By</th>
+                                    <th className="p-4 font-semibold">Expires</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {activeSetbacks.map(setback => (
+                                    <tr key={setback.id} className="border-b border-stone-700/40 last:border-b-0">
+                                        <td className="p-4 font-semibold text-stone-200 flex items-center gap-2">
+                                            <Avatar user={setback.user} className="w-8 h-8 rounded-full" />
+                                            {setback.user.gameName}
+                                        </td>
+                                        <td className="p-4 text-stone-300">{setback.definition.name}</td>
+                                        <td className="p-4 text-stone-400 italic">"{setback.reason}"</td>
+                                        <td className="p-4 text-stone-300">{setback.appliedBy.gameName}</td>
+                                        <td className="p-4 text-amber-300">{new Date(setback.expiresAt!).toLocaleString()}</td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                ) : (
+                    <p className="text-stone-400 text-center py-4">No setbacks are currently active on any users.</p>
                 )}
             </Card>
 

@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { useData } from '../../context/DataProvider';
 import { useActionsDispatch } from '../../context/ActionsContext';
@@ -8,7 +9,7 @@ import { useNotificationsDispatch } from '../../context/NotificationsContext';
 import Input from '../user-interface/Input';
 import ConfirmDialog from '../user-interface/ConfirmDialog';
 import { BugDetailDialog } from './BugDetailDialog';
-import { EllipsisVerticalIcon } from '../user-interface/Icons';
+import { EllipsisVerticalIcon, PencilIcon, TrashIcon, PlayIcon, CheckCircleIcon, ArchiveBoxIcon, FolderOpenIcon } from '../user-interface/Icons';
 import { useShiftSelect } from '../../hooks/useShiftSelect';
 import CreateBugReportDialog from './CreateBugReportDialog';
 
@@ -21,8 +22,6 @@ const BugTrackingPage: React.FC = () => {
     const [selectedReports, setSelectedReports] = useState<string[]>([]);
     const [activeTab, setActiveTab] = useState<BugReportStatus>('In Progress');
     const [deletingIds, setDeletingIds] = useState<string[]>([]);
-    const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
-    const dropdownRef = useRef<HTMLDivElement | null>(null);
     const fileInputRef = useRef<HTMLInputElement | null>(null);
     const [importingFileContent, setImportingFileContent] = useState<BugReport[] | null>(null);
     const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
@@ -34,16 +33,6 @@ const BugTrackingPage: React.FC = () => {
     }, [detailedReportId, bugReports]);
     
     const statuses: BugReportStatus[] = ['Open', 'In Progress', 'Resolved', 'Closed'];
-
-    useEffect(() => {
-        const handleClickOutside = (event: MouseEvent) => {
-            if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-                setOpenDropdownId(null);
-            }
-        };
-        document.addEventListener('mousedown', handleClickOutside);
-        return () => document.removeEventListener('mousedown', handleClickOutside);
-    }, []);
 
     useEffect(() => {
         setSelectedReports([]);
@@ -70,6 +59,11 @@ const BugTrackingPage: React.FC = () => {
             addNotification({ type: 'success', message: `Updated status for ${selectedReports.length} reports.` });
             setSelectedReports([]);
         }
+    };
+
+    const handleStatusChange = (reportId: string, newStatus: BugReportStatus) => {
+        updateBugReport(reportId, { status: newStatus });
+        addNotification({ type: 'info', message: `Report status updated.` });
     };
 
     const handleConfirmDelete = () => {
@@ -226,37 +220,37 @@ const BugTrackingPage: React.FC = () => {
                                             </div>
                                         </td>
                                         <td className={`p-4 text-stone-400 transition-opacity ${allLogsCopied ? 'opacity-50' : ''}`}>{new Date(report.createdAt).toLocaleDateString()}</td>
-                                        <td className="p-4 relative">
-                                            <button onClick={() => setOpenDropdownId(openDropdownId === report.id ? null : report.id)} className="p-2 rounded-full hover:bg-stone-700/50">
-                                                <EllipsisVerticalIcon className="w-5 h-5 text-stone-300" />
-                                            </button>
-                                            {openDropdownId === report.id && (
-                                                <div ref={dropdownRef} className="absolute right-0 top-full mt-2 w-48 bg-stone-900 border border-stone-700 rounded-lg shadow-xl z-50">
-                                                    <button onClick={() => { setDetailedReportId(report.id); setOpenDropdownId(null); }} className="w-full text-left block px-4 py-2 text-sm text-stone-300 hover:bg-stone-700">
-                                                        View Details
-                                                    </button>
-                                                    <div className="border-t border-stone-700/60 my-1"></div>
-                                                    <div className="px-4 pt-2 pb-1 text-xs text-stone-500 font-semibold uppercase">Change Status</div>
-                                                    {statuses.map(s => (
-                                                        <button
-                                                            key={s}
-                                                            onClick={() => {
-                                                                updateBugReport(report.id, { status: s });
-                                                                addNotification({ type: 'info', message: `Report status updated.` });
-                                                                setOpenDropdownId(null);
-                                                            }}
-                                                            className={`w-full text-left block px-4 py-2 text-sm hover:bg-stone-700 disabled:bg-stone-800 disabled:text-stone-500 disabled:cursor-not-allowed ${report.status === s ? 'text-emerald-400 font-bold' : 'text-stone-300'}`}
-                                                            disabled={report.status === s}
-                                                        >
-                                                            {s}
-                                                        </button>
-                                                    ))}
-                                                    <div className="border-t border-stone-700/60 my-1"></div>
-                                                    <button onClick={() => { setDeletingIds([report.id]); setOpenDropdownId(null); }} className="w-full text-left block px-4 py-2 text-sm text-red-400 hover:bg-stone-700">
-                                                        Delete
-                                                    </button>
-                                                </div>
-                                            )}
+                                        <td className="p-4">
+                                            <div className="flex items-center gap-1">
+                                                <Button variant="ghost" size="icon" title="View Details" onClick={() => setDetailedReportId(report.id)} className="h-8 w-8 text-stone-400 hover:text-white">
+                                                    <PencilIcon className="w-4 h-4" />
+                                                </Button>
+                                                
+                                                {report.status === 'Open' && (
+                                                    <Button variant="ghost" size="icon" title="Mark as In Progress" onClick={() => handleStatusChange(report.id, 'In Progress')} className="h-8 w-8 text-yellow-400 hover:text-yellow-300">
+                                                        <PlayIcon className="w-4 h-4" />
+                                                    </Button>
+                                                )}
+                                                {report.status === 'In Progress' && (
+                                                    <Button variant="ghost" size="icon" title="Mark as Resolved" onClick={() => handleStatusChange(report.id, 'Resolved')} className="h-8 w-8 text-green-400 hover:text-green-300">
+                                                        <CheckCircleIcon className="w-4 h-4" />
+                                                    </Button>
+                                                )}
+                                                {report.status === 'Resolved' && (
+                                                    <Button variant="ghost" size="icon" title="Close Report" onClick={() => handleStatusChange(report.id, 'Closed')} className="h-8 w-8 text-stone-400 hover:text-white">
+                                                        <ArchiveBoxIcon className="w-4 h-4" />
+                                                    </Button>
+                                                )}
+                                                {report.status === 'Closed' && (
+                                                    <Button variant="ghost" size="icon" title="Re-open Report" onClick={() => handleStatusChange(report.id, 'Open')} className="h-8 w-8 text-sky-400 hover:text-sky-300">
+                                                        <FolderOpenIcon className="w-4 h-4" />
+                                                    </Button>
+                                                )}
+
+                                                <Button variant="ghost" size="icon" title="Delete" onClick={() => setDeletingIds([report.id])} className="h-8 w-8 text-red-400 hover:text-red-300 hover:bg-red-900/50">
+                                                    <TrashIcon className="w-4 h-4" />
+                                                </Button>
+                                            </div>
                                         </td>
                                     </tr>
                                 );

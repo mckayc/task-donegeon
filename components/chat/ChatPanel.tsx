@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { useData } from '../../context/DataProvider';
 import { useUIState, useUIDispatch } from '../../context/UIContext';
@@ -179,7 +180,6 @@ const ChatPanel: React.FC = () => {
         if (!message.trim() || !activeChatTarget || !currentUser) return;
         
         sendMessage({
-            senderId: currentUser.id,
             recipientId: isGuildChatTarget(activeChatTarget) ? undefined : activeChatTarget.id,
             guildId: isGuildChatTarget(activeChatTarget) ? activeChatTarget.id : undefined,
             message: message,

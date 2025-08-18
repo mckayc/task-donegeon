@@ -4,7 +4,7 @@ import { IAppData, Quest, User, QuestCompletion, AdminAdjustment, PurchaseReques
 import { useNotificationsDispatch } from './NotificationsContext';
 import { bugLogger } from '../utils/bugLogger';
 import { useDataDispatch, useData } from './DataProvider';
-import { useAuthDispatch } from './AuthContext';
+import { useAuthDispatch, useAuthState } from './AuthContext';
 
 // This interface defines all the functions our application can dispatch.
 // Components will use this to trigger state changes.
@@ -76,7 +76,7 @@ export interface ActionsDispatch {
   deleteAllCustomContent: () => Promise<void>;
   factoryReset: () => Promise<void>;
   
-  sendMessage: (messageData: Omit<ChatMessage, 'id' | 'timestamp' | 'readBy'>) => Promise<void>;
+  sendMessage: (messageData: Omit<ChatMessage, 'id' | 'timestamp' | 'readBy' | 'senderId'>) => Promise<void>;
   markMessagesAsRead: (criteria: { partnerId?: string, guildId?: string }) => Promise<void>;
   
   addSystemNotification: (notificationData: Omit<SystemNotification, 'id' | 'timestamp' | 'readByUserIds' | 'createdAt' | 'updatedAt'>) => Promise<SystemNotification | null>;
@@ -113,6 +113,7 @@ export const ActionsProvider: React.FC<{ children: ReactNode }> = ({ children })
     const { addNotification } = useNotificationsDispatch();
     const dataDispatch = useDataDispatch();
     const { updateUser, deleteUsers, setUsers } = useAuthDispatch();
+    const { currentUser } = useAuthState();
     const { markets } = useData();
 
     const apiRequest = useCallback(async (method: string, path: string, body?: any) => {
@@ -377,9 +378,36 @@ export const ActionsProvider: React.FC<{ children: ReactNode }> = ({ children })
         factoryReset: () => apiRequest('POST', '/api/data/factory-reset'),
         
         sendMessage: async (messageData) => {
-            const result = await apiRequest('POST', '/api/chat/send', messageData);
-            if (result && result.newChatMessage) {
-                dataDispatch({ type: 'UPDATE_DATA', payload: { chatMessages: [result.newChatMessage] } });
+            if (!currentUser) return;
+
+            const tempId = `temp-chat-${Date.now()}`;
+            const optimisticMessage: ChatMessage = {
+                id: tempId,
+                senderId: currentUser.id,
+                recipientId: messageData.recipientId,
+                guildId: messageData.guildId,
+                message: messageData.message,
+                isAnnouncement: messageData.isAnnouncement,
+                timestamp: new Date().toISOString(),
+                readBy: [currentUser.id],
+            };
+
+            // Optimistically update UI
+            dataDispatch({ type: 'UPDATE_DATA', payload: { chatMessages: [optimisticMessage] } });
+
+            try {
+                const result = await apiRequest('POST', '/api/chat/send', { ...messageData, senderId: currentUser.id });
+                if (result && result.newChatMessage) {
+                    // Replace temp message with server-confirmed one
+                    dataDispatch({ type: 'REMOVE_DATA', payload: { chatMessages: [tempId] } });
+                    dataDispatch({ type: 'UPDATE_DATA', payload: { chatMessages: [result.newChatMessage] } });
+                } else {
+                    throw new Error("Server did not return a valid message.");
+                }
+            } catch (error) {
+                // On error, remove the optimistic message
+                dataDispatch({ type: 'REMOVE_DATA', payload: { chatMessages: [tempId] } });
+                // apiRequest already shows a notification for the error
             }
         },
         markMessagesAsRead: (criteria) => apiRequest('POST', '/api/chat/read', criteria),

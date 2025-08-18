@@ -24,7 +24,7 @@ const getIcon = (type: NotificationType['type'], customIcon?: string) => {
     }
 }
 
-const Notification: React.FC<NotificationProps> = ({ notification, onDismiss }) => {
+const Notification = ({ notification, onDismiss }: NotificationProps) => {
     const onDismissRef = useRef(onDismiss);
     useEffect(() => {
         onDismissRef.current = onDismiss;
@@ -82,4 +82,4 @@ const Notification: React.FC<NotificationProps> = ({ notification, onDismiss }) 
     );
   };
   
-  export default Notification;
+export default Notification;

@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { useData } from '../../context/DataProvider';
 import { useUIState, useUIDispatch } from '../../context/UIContext';
@@ -7,10 +6,10 @@ import { useAuthState } from '../../context/AuthContext';
 import { Role, User, ChatMessage, Guild } from '../../types';
 import Avatar from '../user-interface/Avatar';
 import Input from '../user-interface/Input';
-import { XCircleIcon, GrabHandleIcon } from '../user-interface/Icons';
+import { XCircleIcon } from '../user-interface/Icons';
 import Button from '../user-interface/Button';
 import ToggleSwitch from '../user-interface/ToggleSwitch';
-import { motion, useDragControls } from 'framer-motion';
+import { motion } from 'framer-motion';
 
 type GuildTarget = {
     id: string;
@@ -24,7 +23,7 @@ const isGuildChatTarget = (target: ChatTarget | null): target is GuildTarget => 
     return !!target && 'isGuild' in target && target.isGuild === true;
 }
 
-const ChatPanel: React.FC = () => {
+const ChatPanel = () => {
     const { guilds, chatMessages, settings } = useData();
     const { currentUser, users } = useAuthState();
     const { toggleChat } = useUIDispatch();
@@ -34,69 +33,14 @@ const ChatPanel: React.FC = () => {
     const [isAnnouncement, setIsAnnouncement] = useState(false);
     const [userScrolledUp, setUserScrolledUp] = useState(false);
     const messagesContainerRef = useRef<HTMLDivElement>(null);
-    const panelRef = useRef<HTMLDivElement>(null);
 
     const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
 
-    const [size, setSize] = useState(() => {
-        if (window.innerWidth < 768) return { width: window.innerWidth, height: window.innerHeight };
-        const savedSize = localStorage.getItem('chatPanelSize');
-        const defaultSize = { width: 550, height: 600 };
-        if (savedSize) {
-            try {
-                const parsed = JSON.parse(savedSize);
-                // Validate and clamp the size to ensure it fits on the screen with a margin
-                const clampedWidth = Math.max(320, Math.min(parsed.width, window.innerWidth - 40));
-                const clampedHeight = Math.max(400, Math.min(parsed.height, window.innerHeight - 40));
-                return { width: clampedWidth, height: clampedHeight };
-            } catch (e) {
-                console.error("Failed to parse chat panel size from localStorage", e);
-                return defaultSize;
-            }
-        }
-        return defaultSize;
-    });
-
     useEffect(() => {
-        const handleResize = () => {
-            const newIsMobile = window.innerWidth < 768;
-            if (newIsMobile !== isMobile) { // on breakpoint change
-                setIsMobile(newIsMobile);
-                if (newIsMobile) {
-                    setSize({ width: window.innerWidth, height: window.innerHeight });
-                } else {
-                    const savedSize = localStorage.getItem('chatPanelSize');
-                    setSize(savedSize ? JSON.parse(savedSize) : { width: 550, height: 600 });
-                }
-            } else if (newIsMobile) {
-                setSize({ width: window.innerWidth, height: window.innerHeight });
-            }
-        };
+        const handleResize = () => setIsMobile(window.innerWidth < 768);
         window.addEventListener('resize', handleResize);
         return () => window.removeEventListener('resize', handleResize);
-    }, [isMobile]); // re-run effect if isMobile changes
-
-    const initialPosition = useMemo(() => {
-        if (isMobile) return { x: 0, y: 0 };
-        const savedPosition = localStorage.getItem('chatPanelPosition');
-        if (savedPosition) {
-            try {
-                const { x, y } = JSON.parse(savedPosition);
-                const clampedX = Math.min(Math.max(0, x), window.innerWidth - size.width);
-                const clampedY = Math.min(Math.max(0, y), window.innerHeight - size.height);
-                return { x: clampedX, y: clampedY };
-            } catch (e) {
-                console.error("Failed to parse chat panel position from localStorage", e);
-            }
-        }
-        return {
-            x: window.innerWidth - size.width - 20,
-            y: window.innerHeight - size.height - 20,
-        };
-    }, [isMobile, size.width, size.height]);
-    
-    const dragControls = useDragControls();
-    const isResizing = useRef(false);
+    }, []);
 
     const chatPartners = useMemo(() => {
         if (!currentUser) return [];
@@ -207,79 +151,28 @@ const ChatPanel: React.FC = () => {
         setIsAnnouncement(false);
     };
 
-    const handleResize = useCallback((e: MouseEvent) => {
-        if (isResizing.current && panelRef.current) {
-            const rect = panelRef.current.getBoundingClientRect();
-            const newWidth = e.clientX - rect.left;
-            const newHeight = e.clientY - rect.top;
-            setSize({
-                width: Math.max(320, newWidth),
-                height: Math.max(400, newHeight)
-            });
-        }
-    }, []);
-
-    const stopResize = useCallback(() => {
-        isResizing.current = false;
-        window.removeEventListener('mousemove', handleResize);
-        window.removeEventListener('mouseup', stopResize);
-        localStorage.setItem('chatPanelSize', JSON.stringify(size));
-    }, [handleResize, size]);
-
-    const startResize = useCallback((e: React.MouseEvent) => {
-        e.preventDefault();
-        isResizing.current = true;
-        window.addEventListener('mousemove', handleResize);
-        window.addEventListener('mouseup', stopResize);
-    }, [handleResize, stopResize]);
-
-    const handleDragEnd = () => {
-        if (panelRef.current) {
-            const { x, y } = panelRef.current.getBoundingClientRect();
-            localStorage.setItem('chatPanelPosition', JSON.stringify({ x, y }));
-        }
-    };
-
     if (!currentUser) {
         return null;
     }
 
-    const panelStyles: React.CSSProperties = isMobile 
+    const panelStyles = isMobile 
         ? { width: '100vw', height: '100vh', top: 0, left: 0 }
-        : { width: size.width, height: size.height };
-
-    const dragConstraints = isMobile ? false : {
-        left: 0,
-        right: window.innerWidth - size.width,
-        top: 0,
-        bottom: window.innerHeight - size.height
-    };
+        : { width: 550, height: 600, bottom: '1.5rem', right: '1.5rem' };
 
     return (
         <motion.div
-            ref={panelRef}
             data-bug-reporter-ignore
             className="fixed z-[98] flex flex-col bg-stone-800 border border-stone-700 rounded-xl shadow-2xl"
             style={panelStyles}
-            drag={!isMobile}
-            dragControls={dragControls}
-            dragListener={false}
-            dragMomentum={false}
-            onDragEnd={handleDragEnd}
-            dragConstraints={dragConstraints}
-            initial={{ 
-                ...initialPosition,
-                scale: 0.9, opacity: 0
-            }}
-            animate={{ scale: 1, opacity: 1 }}
+            initial={{ scale: 0.9, opacity: 0, y: 20 }}
+            animate={{ scale: 1, opacity: 1, y: 0 }}
+            transition={{ type: 'spring', stiffness: 400, damping: 30 }}
         >
             <div
-                onPointerDown={(e) => !isMobile && dragControls.start(e)}
-                className={`p-4 border-b border-stone-700 flex-shrink-0 ${isMobile ? '' : 'cursor-grab active:cursor-grabbing'}`}
+                className="p-4 border-b border-stone-700 flex-shrink-0"
             >
                 <div className="flex justify-between items-center">
                     <h3 className="text-xl font-medieval text-accent flex items-center gap-2">
-                        {!isMobile && <GrabHandleIcon className="w-5 h-5 text-stone-500" />}
                         {settings.terminology.link_chat}
                     </h3>
                     <button onClick={toggleChat} className="text-stone-400 hover:text-white">
@@ -381,14 +274,6 @@ const ChatPanel: React.FC = () => {
                     )}
                 </div>
             </div>
-            
-            {!isMobile && (
-                <div
-                    className="absolute bottom-0 right-0 w-4 h-4 cursor-se-resize"
-                    onMouseDown={startResize}
-                    title="Resize chat panel"
-                />
-            )}
         </motion.div>
     );
 };

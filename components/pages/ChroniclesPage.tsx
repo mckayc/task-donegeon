@@ -1,15 +1,13 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
 import Card from '../user-interface/Card';
-import { useData } from '../../context/DataProvider';
 import { useUIState } from '../../context/UIContext';
 import { useActionsDispatch } from '../../context/ActionsContext';
-import { Role, ChronicleEvent, QuestCompletionStatus, AdminAdjustmentType, PurchaseRequestStatus, RewardItem, Quest, Trophy, RewardTypeDefinition, PurchaseRequest, GameAsset } from '../../types';
+import { Role, ChronicleEvent, PurchaseRequestStatus } from '../../types';
 import Button from '../user-interface/Button';
 import { useAuthState } from '../../context/AuthContext';
 
 const ChroniclesPage: React.FC = () => {
-    const { settings, userTrophies, trophies, adminAdjustments, systemLogs, systemNotifications, users, quests, questCompletions, purchaseRequests, rewardTypes, gifts, tradeOffers, gameAssets } = useData();
     const { appMode } = useUIState();
     const { currentUser } = useAuthState();
     const { cancelPurchaseRequest } = useActionsDispatch();
@@ -17,254 +15,65 @@ const ChroniclesPage: React.FC = () => {
     const [viewMode, setViewMode] = useState<'all' | 'personal'>(currentUser?.role === Role.Explorer ? 'personal' : 'all');
     const [itemsPerPage, setItemsPerPage] = useState(50);
     const [currentPage, setCurrentPage] = useState(1);
-    
+    const [events, setEvents] = useState<ChronicleEvent[]>([]);
+    const [totalEvents, setTotalEvents] = useState(0);
+    const [isLoading, setIsLoading] = useState(true);
+
     useEffect(() => {
         setCurrentPage(1);
     }, [viewMode, appMode, itemsPerPage]);
 
+    useEffect(() => {
+        const fetchEvents = async () => {
+            if (!currentUser) return;
+            setIsLoading(true);
+            try {
+                const guildId = appMode.mode === 'guild' ? appMode.guildId : 'null';
+                const params = new URLSearchParams({
+                    page: String(currentPage),
+                    limit: String(itemsPerPage),
+                    userId: currentUser.id,
+                    guildId,
+                    viewMode,
+                });
+                const response = await fetch(`/api/chronicles?${params.toString()}`);
+                if (!response.ok) throw new Error('Failed to fetch chronicles');
+                const data = await response.json();
+                setEvents(data.events || []);
+                setTotalEvents(data.total || 0);
+            } catch (error) {
+                console.error(error);
+                setEvents([]);
+                setTotalEvents(0);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+        fetchEvents();
+    }, [currentPage, itemsPerPage, viewMode, appMode, currentUser]);
+
     if (!currentUser) return null;
 
-    const allEvents = useMemo(() => {
-        const userMap = new Map<string, string>(users.map(u => [u.id, u.gameName]));
-        const questMap = new Map<string, Quest>(quests.map(q => [q.id, q]));
-        const trophyMap = new Map<string, Trophy>(trophies.map(t => [t.id, t]));
-        const rewardMap = new Map<string, RewardTypeDefinition>(rewardTypes.map(rt => [rt.id, rt]));
-        const assetMap = new Map<string, GameAsset>(gameAssets.map(a => [a.id, a]));
-
-
-        const getRewardDisplay = (rewardItems: RewardItem[]) => (rewardItems || []).map(r => {
-            const reward = rewardMap.get(r.rewardTypeId);
-            return `${r.amount} ${reward ? reward.icon : '❓'}`;
-        }).join(' ');
-
-        const events: ChronicleEvent[] = [];
-        const currentGuildId = appMode.mode === 'guild' ? appMode.guildId : undefined;
-
-        // 1. Quest Completions
-        questCompletions.forEach(c => {
-            const itemGuildId = c.guildId === null ? undefined : c.guildId;
-            if (itemGuildId !== currentGuildId) return;
-            // In 'My Activity' mode, show if the user is the one who completed it.
-            // Future enhancement: could also show if the user was the approver.
-            if (viewMode === 'personal' && c.userId !== currentUser.id) return;
-            
-            const quest = questMap.get(c.questId);
-            let finalNote = c.note || '';
-            if (c.status === 'Approved' && quest && quest.rewards.length > 0) {
-                const rewardsText = getRewardDisplay(quest.rewards).replace(/(\d+)/g, '+$1');
-                finalNote = finalNote ? `${finalNote}\n(${rewardsText})` : rewardsText;
-            }
-            events.push({
-                id: c.id, originalId: c.id, date: c.completedAt, type: 'Quest',
-                title: `${userMap.get(c.userId) || 'Unknown'} completed "${quest?.title || 'Unknown Quest'}"`,
-                status: c.status, note: finalNote, icon: quest?.icon || '📜',
-                color: '#3b82f6', userId: c.userId, guildId: c.guildId
-            });
-        });
-
-        // 2. Purchase Requests (Split into two events for clarity)
-        purchaseRequests.forEach(p => {
-            const itemGuildId = p.guildId === null ? undefined : p.guildId;
-            if (itemGuildId !== currentGuildId) return;
-
-            const isRequester = p.userId === currentUser.id;
-            const isActor = p.actedById === currentUser.id;
-            const requesterName = userMap.get(p.userId) || 'Unknown';
-            const costText = getRewardDisplay(p.assetDetails.cost).replace(/(\d+)/g, '-$1');
-
-            // Event 1: The initial request. Show in 'My Activity' if I requested OR acted on it.
-            if (viewMode === 'all' || (viewMode === 'personal' && (isRequester || isActor))) {
-                events.push({
-                    id: p.id + '-req', originalId: p.id, date: p.requestedAt, type: 'Purchase', userId: p.userId,
-                    title: `${requesterName} requested to purchase "${p.assetDetails.name}"`,
-                    status: PurchaseRequestStatus.Pending, note: costText, icon: '🛒',
-                    color: '#f59e0b', guildId: p.guildId
-                });
-            }
-
-            // Event 2: The action (approve, reject, cancel). Show if I requested OR acted on it.
-            if (p.actedAt && p.status !== PurchaseRequestStatus.Pending) {
-                if (viewMode === 'all' || (viewMode === 'personal' && (isRequester || isActor))) {
-                    const actorName = userMap.get(p.actedById || '') || 'System';
-                    let actionTitle = '';
-                    let actionColor = '#64748b';
-                    let actionIcon = '✔️';
-                    let actionNote = `For ${requesterName}`;
-
-                    switch (p.status) {
-                        case PurchaseRequestStatus.Completed:
-                            actionTitle = `${actorName} approved purchase of "${p.assetDetails.name}"`;
-                            actionColor = '#22c55e';
-                            actionIcon = '✅';
-                            break;
-                        case PurchaseRequestStatus.Rejected:
-                            actionTitle = `${actorName} rejected purchase of "${p.assetDetails.name}"`;
-                            actionColor = '#ef4444';
-                            actionIcon = '❌';
-                            actionNote += ` (Funds refunded)`;
-                            break;
-                        case PurchaseRequestStatus.Cancelled:
-                            actionTitle = `${actorName} cancelled purchase of "${p.assetDetails.name}"`;
-                            actionColor = '#64748b';
-                            actionIcon = '🚫';
-                            actionNote += ` (Funds refunded)`;
-                            break;
-                    }
-                    
-                    events.push({
-                        id: p.id + '-act', originalId: p.id, date: p.actedAt, type: 'Purchase', userId: p.userId, actorName,
-                        title: actionTitle, status: p.status, note: actionNote, icon: actionIcon, color: actionColor, guildId: p.guildId
-                    });
-                }
-            }
-        });
-
-        // 3. User Trophies
-        userTrophies.forEach(ut => {
-            const itemGuildId = ut.guildId === null ? undefined : ut.guildId;
-            if (itemGuildId !== currentGuildId) return;
-            if (viewMode === 'personal' && ut.userId !== currentUser.id) return;
-
-            const trophy = trophyMap.get(ut.trophyId);
-            events.push({
-                id: ut.id, originalId: ut.id, date: ut.awardedAt, type: 'Trophy', userId: ut.userId,
-                title: `${userMap.get(ut.userId) || 'Unknown'} earned "${trophy?.name || 'Unknown Trophy'}"`,
-                status: "Awarded", note: trophy?.description, icon: trophy?.icon || '🏆',
-                color: '#f59e0b', guildId: ut.guildId
-            });
-        });
-
-        // 4. Admin Adjustments
-        adminAdjustments.forEach(adj => {
-            const itemGuildId = adj.guildId === null ? undefined : adj.guildId;
-            if (itemGuildId !== currentGuildId) return;
-
-            const isRelevantToUser = (adj.userId === currentUser.id) || (adj.adjusterId === currentUser.id);
-            if (viewMode === 'personal' && !isRelevantToUser) return;
-            
-            const rewardsText = getRewardDisplay(adj.rewards).replace(/(\d+)/g, '+$1');
-            const setbacksText = getRewardDisplay(adj.setbacks).replace(/(\d+)/g, '-$1');
-            
-            const isExchange = adj.userId === adj.adjusterId && adj.reason.startsWith('Exchanged');
-            const title = isExchange
-                ? `${userMap.get(adj.userId) || 'Unknown'} made an exchange`
-                : `${userMap.get(adj.userId) || 'Unknown'} received an adjustment from ${userMap.get(adj.adjusterId) || 'Admin'}`;
-            const icon = isExchange ? '⚖️' : '🛠️';
-
-            events.push({
-                id: adj.id, originalId: adj.id, date: adj.adjustedAt, type: 'Adjustment', userId: adj.userId,
-                title: title,
-                status: adj.type,
-                note: `${adj.reason}\n(${rewardsText} ${setbacksText})`.trim(),
-                icon: icon,
-                color: adj.type === 'Reward' ? '#10b981' : '#ef4444',
-                guildId: adj.guildId
-            });
-        });
-        
-        // 5. System Logs (Scoped to current view)
-        if (viewMode === 'all') {
-            systemLogs.forEach(log => {
-                const quest = questMap.get(log.questId);
-                if (!quest) return; // Can't determine scope if quest is missing
-                
-                const logGuildId = quest.guildId === null ? undefined : quest.guildId;
-                
-                if (logGuildId === currentGuildId) { // This handles both personal (undefined) and guild scopes
-                    const userNames = log.userIds.map(id => userMap.get(id) || 'Unknown').join(', ');
-                    const setbacksText = getRewardDisplay(log.setbacksApplied).replace(/(\d+)/g, '-$1');
-                    events.push({
-                        id: log.id, originalId: log.id, date: log.timestamp, type: 'System',
-                        title: `System: ${quest?.title || 'Unknown Quest'} marked as ${log.type.split('_')[1]}`,
-                        status: log.type, note: `For: ${userNames}\n(${setbacksText})`, icon: '⚙️', color: '#64748b'
-                    });
-                }
-            });
-        }
-        
-        // 6. Gifts
-        gifts.forEach(g => {
-            const itemGuildId = g.guildId === null ? undefined : g.guildId;
-            if (itemGuildId !== currentGuildId) return;
-
-            const isRelevantToUser = g.recipientId === currentUser.id || g.senderId === currentUser.id;
-            if (viewMode === 'personal' && !isRelevantToUser) return;
-
-            const asset = assetMap.get(g.assetId);
-            events.push({
-                id: g.id, originalId: g.id, date: g.sentAt, type: 'Gift', userId: g.recipientId, actorName: userMap.get(g.senderId),
-                title: `${userMap.get(g.senderId) || 'Unknown'} gifted "${asset?.name || 'an item'}" to ${userMap.get(g.recipientId) || 'Unknown'}`,
-                status: "Gifted", note: asset?.description, icon: asset?.icon || '🎁',
-                color: '#ec4899', guildId: g.guildId
-            });
-        });
-        
-        // 7. Trades
-        tradeOffers.filter(t => t.status === 'Completed').forEach(t => {
-             const itemGuildId = t.guildId === null ? undefined : t.guildId;
-             if (itemGuildId !== currentGuildId) return;
-
-             const isRelevantToUser = t.recipientId === currentUser.id || t.initiatorId === currentUser.id;
-             if (viewMode === 'personal' && !isRelevantToUser) return;
-             
-             const initiatorName = userMap.get(t.initiatorId) || 'Unknown';
-             const recipientName = userMap.get(t.recipientId) || 'Unknown';
-
-             const formatOffer = (offer: { assetIds: string[], rewards: RewardItem[] }) => {
-                 const assets = offer.assetIds.map(id => assetMap.get(id)?.name).filter(Boolean).join(', ');
-                 const rewards = getRewardDisplay(offer.rewards);
-                 return [assets, rewards].filter(Boolean).join(' & ');
-             };
-             
-             const initiatorOfferText = formatOffer(t.initiatorOffer) || 'nothing';
-             const recipientOfferText = formatOffer(t.recipientOffer) || 'nothing';
-
-             events.push({
-                id: t.id, originalId: t.id, date: t.updatedAt || t.createdAt, type: 'Trade', userId: t.recipientId, actorName: userMap.get(t.initiatorId),
-                title: `Trade completed between ${initiatorName} and ${recipientName}`,
-                status: "Completed", 
-                note: `${initiatorName} gave: ${initiatorOfferText}\n${recipientName} gave: ${recipientOfferText}`,
-                icon: '🤝',
-                color: '#8b5cf6', guildId: t.guildId
-            });
-        });
-
-
-        return events.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-    }, [
-        currentUser, users, quests, trophies, rewardTypes, appMode, viewMode,
-        questCompletions, purchaseRequests, userTrophies, adminAdjustments, systemLogs, gifts, tradeOffers, gameAssets
-    ]);
-
-    const totalPages = Math.ceil(allEvents.length / itemsPerPage);
-    const paginatedEvents = useMemo(() => {
-        const start = (currentPage - 1) * itemsPerPage;
-        const end = start + itemsPerPage;
-        return allEvents.slice(start, end);
-    }, [allEvents, currentPage, itemsPerPage]);
+    const totalPages = Math.ceil(totalEvents / itemsPerPage);
 
     const statusColor = (status: any) => {
         switch (status) {
           case "Awarded":
           case "Gifted":
-          case QuestCompletionStatus.Approved:
-          case PurchaseRequestStatus.Completed:
-          case AdminAdjustmentType.Reward:
+          case "Approved":
           case "Completed":
             return 'text-green-400';
           case "Requested":
-          case QuestCompletionStatus.Pending:
-          case PurchaseRequestStatus.Pending:
+          case "Pending":
             return 'text-yellow-400';
           case 'QUEST_LATE':
             return 'text-yellow-400 font-semibold';
           case 'QUEST_INCOMPLETE':
             return 'text-red-500 font-semibold';
-          case QuestCompletionStatus.Rejected:
-          case PurchaseRequestStatus.Rejected:
-          case AdminAdjustmentType.Setback:
+          case "Rejected":
+          case "Setback":
             return 'text-red-400';
-          case PurchaseRequestStatus.Cancelled:
+          case "Cancelled":
             return 'text-stone-400';
           default:
             return 'text-stone-400';
@@ -311,10 +120,12 @@ const ChroniclesPage: React.FC = () => {
                 </div>
             </div>
             <Card title="Recent Activity">
-                {paginatedEvents.length > 0 ? (
+                {isLoading ? (
+                    <div className="text-center py-10"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-400 mx-auto"></div></div>
+                ) : events.length > 0 ? (
                     <>
                         <ul className="space-y-4">
-                            {paginatedEvents.map(activity => (
+                            {events.map(activity => (
                                 <li key={activity.id} className="flex items-start gap-4 p-3 bg-stone-800/60 rounded-lg">
                                     <div className="w-8 flex-shrink-0 text-center text-2xl pt-1" style={{ color: activity.color }}>
                                         {activity.icon}

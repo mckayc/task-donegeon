@@ -24,6 +24,8 @@ class ScheduledEvent {}
 class Setting {}
 class LoginHistory {}
 class BugReport {}
+class SetbackDefinition {}
+class AppliedSetback {}
 
 const BugReportEntity = new EntitySchema({
     name: "BugReport",
@@ -157,6 +159,38 @@ const ScheduledEventEntity = new EntitySchema({ name: "ScheduledEvent", target: 
 const SettingEntity = new EntitySchema({ name: "Setting", target: Setting, columns: { id: { primary: true, type: "integer", default: 1 }, settings: { type: "simple-json" }, createdAt: { type: "varchar", nullable: true }, updatedAt: { type: "varchar", nullable: true } } });
 const LoginHistoryEntity = new EntitySchema({ name: "LoginHistory", target: LoginHistory, columns: { id: { primary: true, type: "integer", default: 1 }, history: { type: "simple-array" }, createdAt: { type: "varchar", nullable: true }, updatedAt: { type: "varchar", nullable: true } } });
 
+const SetbackDefinitionEntity = new EntitySchema({
+    name: "SetbackDefinition",
+    target: SetbackDefinition,
+    columns: {
+        id: { primary: true, type: "varchar" },
+        name: { type: "varchar" },
+        description: { type: "text" },
+        icon: { type: "varchar" },
+        effects: { type: "simple-json" },
+        createdAt: { type: "varchar", nullable: true },
+        updatedAt: { type: "varchar", nullable: true },
+    }
+});
+
+const AppliedSetbackEntity = new EntitySchema({
+    name: "AppliedSetback",
+    target: AppliedSetback,
+    columns: {
+        id: { primary: true, type: "varchar" },
+        userId: { type: "varchar" },
+        setbackDefinitionId: { type: "varchar" },
+        appliedAt: { type: "varchar" },
+        expiresAt: { type: "varchar", nullable: true },
+        overrides: { type: "simple-json", nullable: true },
+        reason: { type: "text" },
+        appliedById: { type: "varchar" },
+        createdAt: { type: "varchar", nullable: true },
+        updatedAt: { type: "varchar", nullable: true },
+    }
+});
+
+
 const QuestCompletionEntity = new EntitySchema({
     name: "QuestCompletion",
     target: QuestCompletion,
@@ -275,7 +309,7 @@ const allEntities = [
     QuestCompletionEntity, PurchaseRequestEntity, GuildEntity, RankEntity, TrophyEntity,
     UserTrophyEntity, AdminAdjustmentEntity, GameAssetEntity, SystemLogEntity, ThemeDefinitionEntity,
     ChatMessageEntity, SystemNotificationEntity, ScheduledEventEntity, SettingEntity, LoginHistoryEntity,
-    BugReportEntity
+    BugReportEntity, SetbackDefinitionEntity, AppliedSetbackEntity
 ];
 
 module.exports = { 
@@ -284,5 +318,5 @@ module.exports = {
     QuestCompletionEntity, PurchaseRequestEntity, GuildEntity, RankEntity, TrophyEntity,
     UserTrophyEntity, AdminAdjustmentEntity, GameAssetEntity, SystemLogEntity, ThemeDefinitionEntity,
     ChatMessageEntity, SystemNotificationEntity, ScheduledEventEntity, SettingEntity, LoginHistoryEntity,
-    BugReportEntity
+    BugReportEntity, SetbackDefinitionEntity, AppliedSetbackEntity
 };

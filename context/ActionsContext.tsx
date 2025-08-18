@@ -1,4 +1,5 @@
 
+
 import React, { createContext, useContext, ReactNode, useCallback } from 'react';
 import { IAppData, Quest, User, QuestCompletion, AdminAdjustment, PurchaseRequest, Market, Guild, Rank, Trophy, RewardTypeDefinition, ThemeDefinition, ShareableAssetType, BulkQuestUpdates, ChatMessage, SystemNotification, ScheduledEvent, BugReport, Rotation, SetbackDefinition, AppliedSetback, TradeOffer, Gift, QuestGroup, GameAsset, RewardItem } from '../types';
 import { useNotificationsDispatch } from './NotificationsContext';
@@ -435,7 +436,25 @@ export const ActionsProvider: React.FC<{ children: ReactNode }> = ({ children })
 
         addSetbackDefinition: createAddAction('/api/setbacks', 'setbackDefinitions'),
         updateSetbackDefinition: createUpdateAction(id => `/api/setbacks/${id}`, 'setbackDefinitions'),
-        applySetback: async (userId, setbackId, reason) => { await apiRequest('POST', '/api/actions/apply-setback', { userId, setbackDefinitionId: setbackId, reason }); return true; },
+        applySetback: async (userId, setbackId, reason) => {
+            if (!currentUser) return false;
+            const result = await apiRequest('POST', '/api/actions/apply-setback', {
+                userId,
+                setbackDefinitionId: setbackId,
+                reason,
+                appliedById: currentUser.id
+            });
+             if (result) {
+                if (result.updatedUser) {
+                    updateUser(result.updatedUser.id, result.updatedUser);
+                }
+                if (result.newAppliedSetback) {
+                    dataDispatch({ type: 'UPDATE_DATA', payload: { appliedSetbacks: [result.newAppliedSetback] } });
+                }
+                return true;
+            }
+            return false;
+        },
 
         proposeTrade: (recipientId, guildId) => apiRequest('POST', '/api/trades/propose', { recipientId, guildId }),
         updateTradeOffer: (id, updates) => apiRequest('PUT', `/api/trades/${id}`, updates),

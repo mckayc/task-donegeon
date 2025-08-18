@@ -1,4 +1,5 @@
 
+
 require("reflect-metadata");
 const express = require('express');
 const cors = require('cors');
@@ -14,7 +15,7 @@ const {
     QuestCompletionEntity, PurchaseRequestEntity, GuildEntity, RankEntity, TrophyEntity,
     UserTrophyEntity, AdminAdjustmentEntity, GameAssetEntity, SystemLogEntity, ThemeDefinitionEntity,
     ChatMessageEntity, SystemNotificationEntity, ScheduledEventEntity, SettingEntity, LoginHistoryEntity,
-    BugReportEntity, allEntities
+    BugReportEntity, SetbackDefinitionEntity, AppliedSetbackEntity, allEntities
 } = require('./entities');
 const { EventEmitter } = require('events');
 
@@ -284,6 +285,8 @@ const getFullAppData = async (manager) => {
     data.systemNotifications = await manager.find(SystemNotificationEntity);
     data.scheduledEvents = await manager.find(ScheduledEventEntity);
     data.bugReports = await manager.find(BugReportEntity, { order: { createdAt: "DESC" } });
+    data.setbackDefinitions = await manager.find(SetbackDefinitionEntity);
+    data.appliedSetbacks = await manager.find(AppliedSetbackEntity);
     
     const settingRow = await manager.findOneBy(SettingEntity, { id: 1 });
     data.settings = settingRow ? settingRow.settings : INITIAL_SETTINGS;
@@ -419,7 +422,7 @@ app.get('/api/data/sync', asyncMiddleware(async (req, res) => {
                     users: [], quests: [], questGroups: [], markets: [], rewardTypes: [], questCompletions: [],
                     purchaseRequests: [], guilds: [], ranks: [], trophies: [], userTrophies: [],
                     adminAdjustments: [], gameAssets: [], systemLogs: [], themes: [], chatMessages: [],
-                    systemNotifications: [], scheduledEvents: [], bugReports: [],
+                    systemNotifications: [], scheduledEvents: [], bugReports: [], setbackDefinitions: [], appliedSetbacks: [],
                     settings: { ...INITIAL_SETTINGS, contentVersion: 0 },
                     loginHistory: [],
                 },
@@ -436,7 +439,7 @@ app.get('/api/data/sync', asyncMiddleware(async (req, res) => {
             QuestCompletionEntity, PurchaseRequestEntity, GuildEntity, RankEntity, TrophyEntity,
             UserTrophyEntity, AdminAdjustmentEntity, GameAssetEntity, SystemLogEntity, ThemeDefinitionEntity,
             ChatMessageEntity, SystemNotificationEntity, ScheduledEventEntity, SettingEntity, LoginHistoryEntity,
-            BugReportEntity
+            BugReportEntity, SetbackDefinitionEntity, AppliedSetbackEntity
         ];
         
         for (const entity of entitiesToSync) {
@@ -1486,6 +1489,36 @@ rewardTypesRouter.post('/clone/:id', asyncMiddleware(async (req, res) => {
 }));
 app.use('/api/reward-types', rewardTypesRouter);
 
+// Setbacks Router (for SetbackDefinition)
+const setbacksRouter = express.Router();
+const setbackRepo = dataSource.getRepository(SetbackDefinitionEntity);
+
+setbacksRouter.post('/', asyncMiddleware(async (req, res) => {
+    const newSetback = setbackRepo.create({
+        ...req.body,
+        id: `setback-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+    });
+    const saved = await setbackRepo.save(updateTimestamps(newSetback, true));
+    updateEmitter.emit('update');
+    res.status(201).json(saved);
+}));
+
+setbacksRouter.put('/:id', asyncMiddleware(async (req, res) => {
+    await setbackRepo.update(req.params.id, updateTimestamps(req.body));
+    updateEmitter.emit('update');
+    res.json(await setbackRepo.findOneBy({ id: req.params.id }));
+}));
+
+setbacksRouter.delete('/', asyncMiddleware(async (req, res) => {
+    const { ids } = req.body;
+    if (!ids || !Array.isArray(ids)) return res.status(400).json({ error: 'Invalid request body' });
+    await setbackRepo.delete(ids);
+    updateEmitter.emit('update');
+    res.status(204).send();
+}));
+
+app.use('/api/setbacks', setbacksRouter);
+
 
 // Business Logic Actions
 app.post('/api/actions/complete-quest', asyncMiddleware(async (req, res) => {
@@ -1630,7 +1663,8 @@ app.post('/api/actions/approve-quest/:id', asyncMiddleware(async (req, res) => {
         if (error.statusCode) {
             res.status(error.statusCode).json({ error: error.message });
         } else {
-            throw error;
+            console.error('Unhandled error in approve-quest:', error);
+            res.status(500).json({ error: 'An unknown server error occurred.' });
         }
     }
 }));
@@ -2167,6 +2201,67 @@ app.post('/api/actions/manual-adjustment', asyncMiddleware(async (req, res) => {
         updatedUser: updatedUserResult,
         newAdjustment: newAdjustmentResult,
         newUserTrophy: newUserTrophyResult, // can be null
+    });
+}));
+
+app.post('/api/actions/apply-setback', asyncMiddleware(async (req, res) => {
+    const { userId, setbackDefinitionId, reason, appliedById } = req.body;
+    let updatedUserResult;
+    let newAppliedSetbackResult;
+
+    await dataSource.transaction(async manager => {
+        const user = await manager.findOneBy(UserEntity, { id: userId });
+        const definition = await manager.findOneBy(SetbackDefinitionEntity, { id: setbackDefinitionId });
+        if (!user || !definition) {
+            throw new Error('User or Setback Definition not found.');
+        }
+        
+        const rewardTypes = await manager.find(RewardTypeDefinitionEntity);
+        const rewardTypesMap = new Map(rewardTypes.map(rt => [rt.id, rt]));
+
+        let expires = null;
+        for (const effect of definition.effects) {
+            if (effect.type === 'CLOSE_MARKET' && effect.durationHours) {
+                const durationMs = effect.durationHours * 3600 * 1000;
+                const newExpiry = new Date(Date.now() + durationMs);
+                if (!expires || newExpiry > expires) {
+                    expires = newExpiry;
+                }
+            }
+            if (effect.type === 'DEDUCT_REWARDS' && effect.rewards) {
+                // For now, manual setbacks only affect personal balance. Could be a future enhancement.
+                const balanceSheet = { purse: user.personalPurse, experience: user.personalExperience };
+                
+                effect.rewards.forEach(setbackReward => {
+                    const rewardDef = rewardTypesMap.get(setbackReward.rewardTypeId);
+                    if (!rewardDef) return;
+                    const balanceType = rewardDef.category === 'Currency' ? 'purse' : 'experience';
+                    balanceSheet[balanceType][setbackReward.rewardTypeId] = Math.max(0, (balanceSheet[balanceType][setbackReward.rewardTypeId] || 0) - setbackReward.amount);
+                });
+
+                user.personalPurse = balanceSheet.purse;
+                user.personalExperience = balanceSheet.experience;
+            }
+        }
+
+        const newAppliedSetback = manager.create(AppliedSetbackEntity, {
+            id: `applied-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+            userId,
+            setbackDefinitionId,
+            reason,
+            appliedById,
+            appliedAt: new Date().toISOString(),
+            expiresAt: expires ? expires.toISOString() : null,
+        });
+        
+        newAppliedSetbackResult = await manager.save(updateTimestamps(newAppliedSetback, true));
+        updatedUserResult = await manager.save(updateTimestamps(user));
+    });
+
+    updateEmitter.emit('update');
+    res.status(201).json({
+        updatedUser: updatedUserResult,
+        newAppliedSetback: newAppliedSetbackResult
     });
 }));
 

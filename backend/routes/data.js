@@ -2,7 +2,7 @@
 const express = require('express');
 const { dataSource } = require('../data-source');
 const { allEntities, SettingEntity, LoginHistoryEntity } = require('../entities');
-const { INITIAL_SETTINGS, INITIAL_REWARD_TYPES, INITIAL_RANKS, INITIAL_TROPHIES, INITIAL_THEMES, INITIAL_QUEST_GROUPS } = require('../initialData');
+const { INITIAL_SETTINGS } = require('../initialData');
 
 
 const entityToKeyMap = {
@@ -40,12 +40,16 @@ module.exports = (updateEmitter) => {
 
     const fetchAllData = async () => {
         const data = {};
-        for (const entitySchema of allEntities) {
+        const entitiesToFetch = allEntities.filter(e => e.name in entityToKeyMap);
+
+        for (const entitySchema of entitiesToFetch) {
             const key = entityToKeyMap[entitySchema.name];
+            // This check is now slightly redundant due to the filter above, but it's good for safety.
             if (key) {
                 const repo = dataSource.getRepository(entitySchema.target);
                 data[key] = await repo.find();
             } else {
+                // This block should no longer be reached by standard entities.
                 console.warn(`No key mapping found for entity: ${entitySchema.name}`);
             }
         }

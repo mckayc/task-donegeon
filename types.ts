@@ -54,6 +54,7 @@ export enum QuestKind {
     Personal = 'Personal', // Personal scope, personal rewards
     Guild = 'Guild', // Guild scope, but each person completes it for themselves
     GuildCollaborative = 'GuildCollaborative', // Guild scope, requires multiple people to complete
+    Redemption = 'Redemption', // A quest to redeem a setback
 }
 
 export enum RewardCategory {
@@ -125,6 +126,7 @@ export interface Quest {
   dismissals: { userId: string; dismissedAt: string; }[];
   todoUserIds?: string[];
   nextQuestId?: string; // ID of the quest unlocked by this one
+  isRedemptionFor?: string; // ID of the AppliedSetback this quest is for
   createdAt?: string;
   updatedAt?: string;
 }
@@ -224,6 +226,15 @@ export type MarketStatus =
   | { type: 'open' }
   | { type: 'closed' }
   | { type: 'conditional', conditions: MarketCondition[], logic: 'all' | 'any' }; // 'all' for AND, 'any' for OR
+
+export type MarketOpenStatus = {
+    isOpen: true;
+} | {
+    isOpen: false;
+    reason: 'SETBACK' | 'CLOSED' | 'CONDITIONAL';
+    message: string;
+    redemptionQuest?: Quest;
+};
 
 export interface Market {
   id:string;
@@ -787,6 +798,7 @@ export interface SetbackDefinition {
   description: string;
   icon: string;
   effects: SetbackEffect[];
+  defaultRedemptionQuestId?: string; // Quest ID for automatic assignment
   createdAt?: string;
   updatedAt?: string;
 }
@@ -796,7 +808,12 @@ export interface AppliedSetback {
   userId: string;
   setbackDefinitionId: string;
   appliedAt: string;
-  expiresAt?: string;
+  expiresAt?: string; // For temporary effects like market closures
+  status: 'Active' | 'Completed' | 'Dismissed';
+  redemptionQuestId?: string; // The ID of the specific quest instance created for this setback
+  resolvedAt?: string;
+  resolvedById?: string;
+  resolutionNote?: string;
   overrides?: Partial<SetbackDefinition>;
   reason: string;
   appliedById: string;
@@ -878,7 +895,7 @@ export type ChronicleEvent = {
     id: string;
     originalId: string; // The ID of the source object (e.g., PurchaseRequest)
     date: string;
-    type: 'Quest' | 'Purchase' | 'Trophy' | 'Adjustment' | 'System' | 'Announcement' | 'ScheduledEvent' | 'Crafting' | 'Donation' | 'Gift' | 'Trade';
+    type: 'Quest' | 'Purchase' | 'Trophy' | 'Adjustment' | 'System' | 'Announcement' | 'ScheduledEvent' | 'Crafting' | 'Donation' | 'Gift' | 'Trade' | 'Setback';
     title: string;
     note?: string;
     status: string;

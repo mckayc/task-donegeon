@@ -1,8 +1,7 @@
-
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useData } from '../../context/DataProvider';
 import { useActionsDispatch } from '../../context/ActionsContext';
-import { SetbackDefinition, SetbackEffect, SetbackEffectType, RewardCategory, RewardItem } from '../../types';
+import { SetbackDefinition, SetbackEffect, SetbackEffectType, RewardCategory, RewardItem, QuestKind } from '../../types';
 import Button from '../user-interface/Button';
 import Input from '../user-interface/Input';
 import EmojiPicker from '../user-interface/EmojiPicker';
@@ -15,14 +14,19 @@ interface EditSetbackDialogProps {
 
 const EditSetbackDialog: React.FC<EditSetbackDialogProps> = ({ setbackToEdit, onClose }) => {
     const { addSetbackDefinition, updateSetbackDefinition } = useActionsDispatch();
-    const { markets, rewardTypes } = useData();
+    const { markets, rewardTypes, quests } = useData();
     const [formData, setFormData] = useState<Omit<SetbackDefinition, 'id' | 'createdAt' | 'updatedAt'>>({
         name: '',
         description: '',
         icon: '⚖️',
         effects: [],
+        defaultRedemptionQuestId: '',
     });
     const [isEmojiPickerOpen, setIsEmojiPickerOpen] = useState(false);
+    
+    const redemptionQuests = useMemo(() => {
+        return quests.filter(q => q.kind === QuestKind.Redemption);
+    }, [quests]);
 
     useEffect(() => {
         if (setbackToEdit) {
@@ -31,6 +35,7 @@ const EditSetbackDialog: React.FC<EditSetbackDialogProps> = ({ setbackToEdit, on
                 description: setbackToEdit.description,
                 icon: setbackToEdit.icon,
                 effects: setbackToEdit.effects,
+                defaultRedemptionQuestId: setbackToEdit.defaultRedemptionQuestId || '',
             });
         }
     }, [setbackToEdit]);
@@ -157,6 +162,15 @@ const EditSetbackDialog: React.FC<EditSetbackDialogProps> = ({ setbackToEdit, on
                         ))}
                         <Button type="button" variant="secondary" onClick={handleAddEffect}>+ Add Effect</Button>
                     </div>
+
+                     <div className="pt-4 border-t border-stone-700/60">
+                        <Input as="select" label="Default Redemption Quest (Optional)" name="defaultRedemptionQuestId" value={formData.defaultRedemptionQuestId || ''} onChange={e => setFormData(p => ({...p, defaultRedemptionQuestId: e.target.value}))}>
+                            <option value="">None</option>
+                            {redemptionQuests.map(q => <option key={q.id} value={q.id}>{q.title}</option>)}
+                        </Input>
+                        <p className="text-xs text-stone-400 mt-1">If set, this quest will be automatically assigned to a user when this setback is applied.</p>
+                    </div>
+
                 </form>
                 <div className="flex justify-end space-x-4 pt-4 mt-auto">
                     <Button type="button" variant="secondary" onClick={onClose}>Cancel</Button>

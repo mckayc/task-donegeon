@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo, useEffect } from 'react';
 import Card from '../user-interface/Card';
 import Button from '../user-interface/Button';
@@ -6,7 +5,7 @@ import CreateQuestDialog from '../quests/CreateQuestDialog';
 import { useData } from '../../context/DataProvider';
 import { useUIState } from '../../context/UIContext';
 import { useActionsDispatch } from '../../context/ActionsContext';
-import { Role, QuestType, Quest, QuestAvailability } from '../../types';
+import { Role, QuestType, Quest, QuestAvailability, QuestKind } from '../../types';
 import { isQuestAvailableForUser, questSorter, isQuestVisibleToUserInMode } from '../../utils/quests';
 import CompleteQuestDialog from '../quests/CompleteQuestDialog';
 import QuestDetailDialog from '../quests/QuestDetailDialog';
@@ -60,6 +59,7 @@ const QuestItem: React.FC<{ quest: Quest; now: Date; onSelect: (quest: Quest) =>
 
     const isAvailable = useMemo(() => isQuestAvailableForUser(quest, questCompletions.filter(c => c.userId === currentUser.id), now, scheduledEvents, appMode), [quest, questCompletions, currentUser.id, now, scheduledEvents, appMode]);
     const isTodo = quest.type === QuestType.Venture && quest.todoUserIds?.includes(currentUser.id);
+    const isRedemption = quest.kind === QuestKind.Redemption;
     const questGroup = useMemo(() => quest.groupId ? questGroups.find(g => g.id === quest.groupId) : null, [quest.groupId, questGroups]);
     const scopeName = useMemo(() => quest.guildId ? guilds.find(g => g.id === quest.guildId)?.name || 'Guild Scope' : 'Personal', [quest.guildId, guilds]);
     const nextQuest = useMemo(() => {
@@ -90,7 +90,9 @@ const QuestItem: React.FC<{ quest: Quest; now: Date; onSelect: (quest: Quest) =>
 
     const isOverdue = deadline ? now > deadline : false;
     
-    if (isTodo) {
+    if (isRedemption) {
+        borderClass = 'border-slate-400 ring-2 ring-slate-400/50';
+    } else if (isTodo) {
         borderClass = 'border-purple-500 ring-2 ring-purple-500/50';
     } else if (deadline) {
       borderClass = isOverdue ? 'border-red-600' : 'border-green-600';
@@ -115,13 +117,14 @@ const QuestItem: React.FC<{ quest: Quest; now: Date; onSelect: (quest: Quest) =>
 
     const isDuty = quest.type === QuestType.Duty;
     let baseCardClass = isDuty ? 'bg-sky-900/30' : 'bg-amber-900/30';
+    if (isRedemption) baseCardClass = 'bg-slate-800/50';
     const optionalClass = quest.isOptional ? 'border-dashed' : '';
 
     return (
         <div onClick={() => isAvailable && onSelect(quest)} className={`border-2 rounded-xl shadow-lg flex flex-col h-full transition-all duration-500 ${baseCardClass} ${borderClass} ${optionalClass} ${!isAvailable ? 'opacity-50 cursor-default' : 'cursor-pointer'}`}>
             {/* Header */}
             <div className="p-4 border-b border-white/10 flex items-start gap-4">
-                <div className={`w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 text-3xl overflow-hidden ${isDuty ? 'bg-sky-900/70' : 'bg-amber-900/70'}`}>
+                <div className={`w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 text-3xl overflow-hidden ${isDuty ? 'bg-sky-900/70' : isRedemption ? 'bg-slate-700' : 'bg-amber-900/70'}`}>
                     <button
                         onClick={(e) => {
                             e.stopPropagation();
@@ -137,6 +140,7 @@ const QuestItem: React.FC<{ quest: Quest; now: Date; onSelect: (quest: Quest) =>
                 </div>
                 <div className="flex-grow">
                     <h4 className="font-bold text-lg text-stone-100 flex items-center gap-2 flex-wrap">
+                        {isRedemption && <span title="Redemption Quest">⚖️</span>}
                         <span>{quest.title}</span>
                         {quest.isOptional && <span className="font-normal text-xs px-2 py-0.5 rounded-md bg-stone-700 text-stone-400 border border-stone-600">Optional</span>}
                     </h4>

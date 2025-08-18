@@ -1,31 +1,40 @@
-import { Market, User, IAppData, MarketConditionType, MarketCondition, QuestCompletionStatus, RewardItem, ScheduledEvent, GameAsset, SetbackEffectType } from '../types';
+import { Market, User, IAppData, MarketConditionType, MarketCondition, QuestCompletionStatus, RewardItem, ScheduledEvent, GameAsset, SetbackEffectType, Quest, AppliedSetback, SetbackDefinition, MarketOpenStatus } from '../types';
 import { toYMD } from './quests';
 
-export const isMarketOpenForUser = (market: Market, user: User, allData: IAppData): boolean => {
+export const isMarketOpenForUser = (market: Market, user: User, allData: IAppData): MarketOpenStatus => {
     // First, check if an active setback is closing this market for the user.
-    const isClosedBySetback = allData.appliedSetbacks.some(s => {
-        if (s.userId !== user.id || !s.expiresAt || new Date() >= new Date(s.expiresAt)) {
-            return false;
-        }
+    const now = new Date();
+    const activeSetback = allData.appliedSetbacks.find(s => {
+        if (s.userId !== user.id || s.status !== 'Active') return false;
+        if (s.expiresAt && new Date(s.expiresAt) < now) return false; // Check for expiry
+
         const definition = allData.setbackDefinitions.find(d => d.id === s.setbackDefinitionId);
         return definition?.effects.some(effect => 
             effect.type === SetbackEffectType.CloseMarket && effect.marketIds.includes(market.id)
         ) ?? false;
     });
 
-    if (isClosedBySetback) {
-        return false;
+    if (activeSetback) {
+        const definition = allData.setbackDefinitions.find(d => d.id === activeSetback.setbackDefinitionId);
+        const redemptionQuest = allData.quests.find(q => q.id === activeSetback.redemptionQuestId);
+        
+        return {
+            isOpen: false,
+            reason: 'SETBACK',
+            message: `This market is closed due to the '${definition?.name || 'a setback'}'.`,
+            redemptionQuest: redemptionQuest
+        };
     }
 
     // If not closed by a setback, check the market's own status.
     switch (market.status.type) {
         case 'open':
-            return true;
+            return { isOpen: true };
         case 'closed':
-            return false;
+            return { isOpen: false, reason: 'CLOSED', message: 'This market is currently closed by an administrator.' };
         case 'conditional':
             const { conditions, logic } = market.status;
-            if (conditions.length === 0) return false; // No conditions means it's not open
+            if (conditions.length === 0) return { isOpen: false, reason: 'CONDITIONAL', message: 'Market has no conditions to open.' };
 
             const checkCondition = (condition: MarketCondition): boolean => {
                 switch (condition.type) {
@@ -55,13 +64,15 @@ export const isMarketOpenForUser = (market: Market, user: User, allData: IAppDat
                 }
             };
 
-            if (logic === 'all') {
-                return conditions.every(checkCondition);
-            } else { // 'any'
-                return conditions.some(checkCondition);
+            const conditionsMet = logic === 'all' ? conditions.every(checkCondition) : conditions.some(checkCondition);
+            
+            if (conditionsMet) {
+                return { isOpen: true };
+            } else {
+                return { isOpen: false, reason: 'CONDITIONAL', message: 'You do not meet the requirements to enter this market.' };
             }
         default:
-            return false;
+             return { isOpen: false, reason: 'CLOSED', message: 'Market status is unknown.' };
     }
 };
 

@@ -1,6 +1,3 @@
-
-
-
 import React, { useMemo, useState, useEffect } from 'react';
 import { useData } from '../../context/DataProvider';
 import { useUIState, useUIDispatch } from '../../context/UIContext';
@@ -15,6 +12,7 @@ import { useRewardValue } from '../../hooks/useRewardValue';
 import BarChart from '../user-interface/BarChart';
 import GuildPage from './GuildPage';
 import ContributeToQuestDialog from '../quests/ContributeToQuestDialog';
+import QuestWidget from '../dashboard/QuestWidget';
 
 const Dashboard: React.FC = () => {
     const { ranks, userTrophies, trophies, settings, scheduledEvents, quests, questCompletions, rewardTypes, purchaseRequests, users, guilds } = useData();
@@ -238,16 +236,6 @@ const Dashboard: React.FC = () => {
         return completableQuests.sort(questSorter(currentUser, userCompletions, scheduledEvents, today));
     }, [quests, currentUser, questCompletions, appMode, scheduledEvents]);
 
-    const getDueDateString = (quest: Quest): string | null => {
-        if (quest.type === QuestType.Venture && quest.endDateTime) {
-            return `Due: ${new Date(quest.endDateTime).toLocaleDateString()}`;
-        }
-        if (quest.type === QuestType.Duty && quest.startTime) {
-            return `Due Today at: ${new Date(`1970-01-01T${quest.startTime}`).toLocaleTimeString([], { hour: '2-digit', minute:'2-digit' })}`;
-        }
-        return null;
-    };
-
     const statusColorClass = (status: string) => {
         switch (status) {
             case "Awarded!":
@@ -400,43 +388,9 @@ const Dashboard: React.FC = () => {
                      <Card title="Quick Actions">
                         {quickActionQuests.length > 0 ? (
                             <div className="space-y-3 max-h-80 overflow-y-auto pr-2">
-                                {quickActionQuests.slice(0, 10).map(quest => {
-                                    const cardClass = quest.type === QuestType.Duty
-                                        ? 'bg-blue-950/70 border-blue-800/80 hover:border-blue-600'
-                                        : 'bg-purple-950/70 border-purple-800/80 hover:border-purple-600';
-                                    
-                                    const isCollaborative = quest.kind === QuestKind.GuildCollaborative;
-                                    const progress = isCollaborative ? ((quest.contributions?.length || 0) / (quest.completionGoal || 1)) * 100 : 0;
-                                    
-                                    return (
-                                        <div
-                                            key={quest.id}
-                                            onClick={() => handleQuestSelect(quest)}
-                                            className={`p-3 rounded-lg border-2 cursor-pointer transition-colors grid grid-cols-1 md:grid-cols-3 gap-2 items-center ${cardClass}`}
-                                        >
-                                            <div className="md:col-span-1 truncate">
-                                                <p className="font-semibold text-stone-100 flex items-center gap-2 truncate" title={quest.title}>
-                                                    {quest.icon} {quest.title}
-                                                </p>
-                                                {isCollaborative && (
-                                                    <div className="w-full bg-stone-700 rounded-full h-2.5 mt-2">
-                                                        <div className="bg-green-600 h-2.5 rounded-full" style={{width: `${progress}%`}}></div>
-                                                    </div>
-                                                )}
-                                            </div>
-                                             <p className="text-xs text-stone-400 md:col-span-1 md:text-center truncate">{getDueDateString(quest)}</p>
-
-                                            {quest.rewards.length > 0 && (
-                                                <div className="flex flex-wrap gap-x-3 gap-y-1 text-sm font-semibold md:col-span-1 md:justify-end">
-                                                    {quest.rewards.map(r => {
-                                                        const { name, icon } = getRewardInfo(r.rewardTypeId);
-                                                        return <span key={`${r.rewardTypeId}-${r.amount}`} className="text-accent-light flex items-center gap-1" title={name}>+ {r.amount} <span className="text-base">{icon}</span></span>
-                                                    })}
-                                                </div>
-                                            )}
-                                        </div>
-                                    );
-                                })}
+                                {quickActionQuests.slice(0, 10).map(quest => (
+                                    <QuestWidget key={quest.id} quest={quest} handleQuestSelect={handleQuestSelect} />
+                                ))}
                             </div>
                         ) : (
                             <p className="text-stone-400 text-center">No available quests right now. Great job!</p>

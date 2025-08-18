@@ -208,7 +208,7 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
         title: formData.title,
         description: formData.description,
         type: formData.type,
-        kind: formData.guildId ? QuestKind.Guild : QuestKind.Personal,
+        kind: formData.kind,
         iconType: formData.iconType,
         icon: formData.icon,
         imageUrl: formData.imageUrl || undefined,
@@ -252,6 +252,17 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
           setIsCreatingNewGroup(false);
           setFormData(p => ({...p, groupId: value}));
       }
+  };
+
+  const handleKindChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const newKind = e.target.value as QuestKind;
+    const isPersonalScope = newKind === QuestKind.Personal || newKind === QuestKind.Redemption;
+    
+    setFormData(p => ({
+      ...p,
+      kind: newKind,
+      guildId: isPersonalScope ? '' : p.guildId,
+    }));
   };
 
   const hasDeadlines = !!(formData.endTime || formData.endDateTime);
@@ -325,15 +336,24 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
           </div>
 
           <div className="p-4 bg-stone-900/50 rounded-lg grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Input as="select" label="Quest Kind" name="kind" value={formData.kind} onChange={handleKindChange}>
+                <option value={QuestKind.Personal}>Personal</option>
+                <option value={QuestKind.Guild}>Guild</option>
+                <option value={QuestKind.GuildCollaborative}>Guild Collaborative</option>
+                <option value={QuestKind.Redemption}>Redemption</option>
+            </Input>
             <div>
-              <h3 className="font-semibold text-stone-200 mb-2">Scope</h3>
-              <select name="guildId" value={formData.guildId} onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setFormData(p => ({...p, guildId: e.target.value}))} className="w-full px-4 py-2 bg-stone-700 border border-stone-600 rounded-md">
-                  <option value="">Personal (Available to individuals)</option>
+              <h3 className="font-semibold text-stone-200 mb-1">Scope</h3>
+              <select name="guildId" value={formData.guildId} onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setFormData(p => ({...p, guildId: e.target.value}))} 
+                disabled={formData.kind === QuestKind.Personal || formData.kind === QuestKind.Redemption}
+                className="w-full px-4 py-2 bg-stone-700 border border-stone-600 rounded-md disabled:opacity-50 disabled:cursor-not-allowed">
+                  <option value="">Personal Scope</option>
                   {guilds.map(g => <option key={g.id} value={g.id}>{g.name}</option>)}
               </select>
             </div>
-            <div>
-                <h3 className="font-semibold text-stone-200 mb-2">Quest Group</h3>
+          </div>
+           <div>
+                <h3 className="font-semibold text-stone-200 mb-1">Quest Group</h3>
                  <select name="groupId" value={isCreatingNewGroup ? '--new--' : formData.groupId} onChange={handleGroupChange} className="w-full px-4 py-2 bg-stone-700 border border-stone-600 rounded-md">
                     <option value="">Uncategorized</option>
                     {questGroups.map(g => <option key={g.id} value={g.id}>{g.name}</option>)}
@@ -349,7 +369,6 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
                     />
                 )}
             </div>
-          </div>
 
           <QuestScheduling value={formData} onChange={handleScheduleChange} />
           

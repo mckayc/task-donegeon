@@ -1,11 +1,9 @@
-
-
 import React, { useState, useMemo } from 'react';
 import Card from '../user-interface/Card';
 import { useData } from '../../context/DataProvider';
 import { useUIState, useUIDispatch } from '../../context/UIContext';
 import Button from '../user-interface/Button';
-import { PurchaseRequestStatus, RewardCategory, Market, GameAsset, RewardItem, ScheduledEvent, IAppData } from '../../types';
+import { PurchaseRequestStatus, RewardCategory, Market, GameAsset, RewardItem, ScheduledEvent, IAppData, MarketOpenStatus } from '../../types';
 import PurchaseDialog from '../markets/PurchaseDialog';
 import ExchangeView from '../markets/ExchangeView';
 import { isMarketOpenForUser } from '../../utils/markets';
@@ -13,6 +11,7 @@ import ImagePreviewDialog from '../user-interface/ImagePreviewDialog';
 import DynamicIcon from '../user-interface/DynamicIcon';
 import { toYMD } from '../../utils/quests';
 import { useAuthState } from '../../context/AuthContext';
+import { useNotificationsDispatch } from '../../context/NotificationsContext';
 
 const MarketItemView: React.FC<{ market: Market }> = ({ market }) => {
     const { settings, scheduledEvents, rewardTypes, gameAssets } = useData();
@@ -225,6 +224,7 @@ const MarketItemView: React.FC<{ market: Market }> = ({ market }) => {
 const MarketplacePage: React.FC = () => {
     const appState = useData();
     const { currentUser } = useAuthState();
+    const { addNotification } = useNotificationsDispatch();
     const { settings, markets } = appState;
     const { appMode, activeMarketId } = useUIState();
     const { setActiveMarketId } = useUIDispatch();
@@ -233,19 +233,22 @@ const MarketplacePage: React.FC = () => {
     const visibleMarkets = React.useMemo(() => {
         if (!currentUser) return [];
         
-        return markets.filter(market => {
+        return markets.map(market => {
             const isPersonalMarket = market.guildId == null;
+            let shouldShow = false;
 
             if (appMode.mode === 'personal' && isPersonalMarket) {
-                return isMarketOpenForUser(market, currentUser, appState as IAppData);
+                shouldShow = true;
             }
-            
             if (appMode.mode === 'guild' && !isPersonalMarket && market.guildId === appMode.guildId) {
-                return isMarketOpenForUser(market, currentUser, appState as IAppData);
+                shouldShow = true;
             }
+            if (!shouldShow) return null;
 
-            return false;
-        });
+            const status = isMarketOpenForUser(market, currentUser, appState as IAppData);
+            return { ...market, openStatus: status };
+
+        }).filter((m): m is Market & { openStatus: MarketOpenStatus } => !!m);
     }, [markets, appMode, currentUser, appState]);
 
     const activeMarket = React.useMemo(() => {
@@ -274,37 +277,56 @@ const MarketplacePage: React.FC = () => {
         <div>
             {visibleMarkets.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {visibleMarkets.map(market => (
-                        <button key={market.id} onClick={() => setActiveMarketId(market.id)} className="text-left group">
-                            <div className="bg-stone-800/50 border border-stone-700/60 rounded-xl shadow-lg backdrop-blur-sm aspect-square flex flex-col justify-center items-center group-hover:bg-stone-700/50 group-hover:border-accent transition-colors duration-200">
-                                <div className="p-3">
-                                    <div className="flex flex-col items-center text-center">
-                                        <div className="size-32 mb-2 rounded-full overflow-hidden flex items-center justify-center">
-                                            <div
-                                                onClick={(e) => {
-                                                    if (market.iconType === 'image' && market.imageUrl) {
-                                                        e.stopPropagation();
-                                                        setPreviewImageUrl(market.imageUrl);
-                                                    }
-                                                }}
-                                                className={`w-full h-full flex items-center justify-center ${market.iconType === 'image' && market.imageUrl ? 'cursor-pointer' : ''}`}
-                                            >
-                                                <DynamicIcon 
-                                                    iconType={market.iconType} 
-                                                    icon={market.icon} 
-                                                    imageUrl={market.imageUrl} 
-                                                    className="text-[10rem] !leading-none !text-[8rem] group-hover:scale-110 transition-transform duration-200"
-                                                    altText={`${market.title} icon`}
-                                                />
+                    {visibleMarkets.map(market => {
+                        const { openStatus } = market;
+                        const isDisabled = !openStatus.isOpen;
+                        return (
+                            <button 
+                                key={market.id} 
+                                onClick={() => {
+                                    if (openStatus.isOpen) {
+                                        setActiveMarketId(market.id);
+                                    } else {
+                                        let message = openStatus.message;
+                                        if (openStatus.reason === 'SETBACK' && openStatus.redemptionQuest) {
+                                            message += ` Complete your quest, '${openStatus.redemptionQuest.title}', to unlock it.`
+                                        }
+                                        addNotification({ type: 'error', message, duration: 8000 });
+                                    }
+                                }}
+                                disabled={isDisabled}
+                                className="text-left group"
+                            >
+                                <div className={`bg-stone-800/50 border border-stone-700/60 rounded-xl shadow-lg backdrop-blur-sm aspect-square flex flex-col justify-center items-center ${isDisabled ? 'opacity-50 cursor-not-allowed' : 'group-hover:bg-stone-700/50 group-hover:border-accent transition-colors duration-200'}`}>
+                                    <div className="p-3">
+                                        <div className="flex flex-col items-center text-center">
+                                            <div className="size-32 mb-2 rounded-full overflow-hidden flex items-center justify-center">
+                                                <div
+                                                    onClick={(e) => {
+                                                        if (market.iconType === 'image' && market.imageUrl) {
+                                                            e.stopPropagation();
+                                                            setPreviewImageUrl(market.imageUrl);
+                                                        }
+                                                    }}
+                                                    className={`w-full h-full flex items-center justify-center ${market.iconType === 'image' && market.imageUrl ? 'cursor-pointer' : ''}`}
+                                                >
+                                                    <DynamicIcon 
+                                                        iconType={market.iconType} 
+                                                        icon={market.icon} 
+                                                        imageUrl={market.imageUrl} 
+                                                        className="text-[10rem] !leading-none !text-[8rem] group-hover:scale-110 transition-transform duration-200"
+                                                        altText={`${market.title} icon`}
+                                                    />
+                                                </div>
                                             </div>
+                                            <h3 className="text-xl font-bold text-accent-light">{market.title}</h3>
+                                            <p className="text-stone-400 mt-1 text-sm">{market.description}</p>
                                         </div>
-                                        <h3 className="text-xl font-bold text-accent-light">{market.title}</h3>
-                                        <p className="text-stone-400 mt-1 text-sm">{market.description}</p>
                                     </div>
                                 </div>
-                            </div>
-                        </button>
-                    ))}
+                            </button>
+                        );
+                    })}
                 </div>
             ) : (
                  <Card>

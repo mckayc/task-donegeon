@@ -5,7 +5,7 @@ const path = require('path');
 const multer = require('multer');
 const fs = require('fs').promises;
 const { GoogleGenAI } = require('@google/genai');
-const { In, Brackets, Like, MoreThan, Between } = require("typeorm");
+const { In, Brackets, Like, MoreThan, Between, IsNull } = require("typeorm");
 const { dataSource, ensureDatabaseDirectoryExists } = require('./data-source');
 const { INITIAL_SETTINGS, INITIAL_REWARD_TYPES, INITIAL_RANKS, INITIAL_TROPHIES, INITIAL_THEMES, INITIAL_QUEST_GROUPS } = require('./initialData');
 const { 
@@ -2309,7 +2309,7 @@ app.get('/api/media/local-gallery', async (req, res, next) => {
     } catch (err) {
         next(err);
     }
-});
+}));
 
 
 // === Asset Pack Endpoints ===
@@ -2410,17 +2410,16 @@ app.get('/api/chronicles', asyncMiddleware(async (req, res) => {
     const skip = (parseInt(page) - 1) * parseInt(limit);
     const take = parseInt(limit);
 
-    const [users, quests, trophies, rewardTypes] = await Promise.all([
+    // Fetch supporting data once
+    const [rewardTypes, allUsers, allQuests] = await Promise.all([
+        manager.find(RewardTypeDefinitionEntity),
         manager.find(UserEntity),
-        manager.find(QuestEntity),
-        manager.find(TrophyEntity),
-        manager.find(RewardTypeDefinitionEntity)
+        manager.find(QuestEntity)
     ]);
-    const userMap = new Map(users.map(u => [u.id, u.gameName]));
-    const questMap = new Map(quests.map(q => [q.id, q]));
-    const trophyMap = new Map(trophies.map(t => [t.id, t]));
     const rewardMap = new Map(rewardTypes.map(rt => [rt.id, rt]));
-    
+    const userMap = new Map(allUsers.map(u => [u.id, u.gameName]));
+    const questMap = new Map(allQuests.map(q => [q.id, q]));
+
     const getRewardDisplay = (rewardItems) => (rewardItems || []).map(r => {
         const reward = rewardMap.get(r.rewardTypeId);
         return `${r.amount} ${reward ? reward.icon : '❓'}`;
@@ -2429,80 +2428,117 @@ app.get('/api/chronicles', asyncMiddleware(async (req, res) => {
     let allEvents = [];
     const guildIdQuery = guildId === 'null' ? null : guildId;
 
-    let baseUserConditions = { guildId: guildIdQuery };
-    if (viewMode === 'personal' && userId) {
-        baseUserConditions.userId = userId;
-    }
-    
-    const dateCondition = (dateField) => (startDate && endDate) ? { [dateField]: Between(new Date(startDate), new Date(new Date(endDate).getTime() + 86400000)) } : {};
+    const dateCondition = (alias, dateField) => {
+        if (startDate && endDate) {
+            const end = new Date(new Date(endDate).getTime() + 86400000); // include the whole end day
+            return { clause: `${alias}.${dateField} BETWEEN :start AND :end`, params: { start: new Date(startDate), end } };
+        }
+        return { clause: '1=1', params: {} };
+    };
 
     // 1. Quest Completions
-    const questCompletions = await manager.find(QuestCompletionEntity, { where: { ...baseUserConditions, ...dateCondition('completedAt') } });
+    const qcQb = manager.getRepository(QuestCompletionEntity).createQueryBuilder("completion")
+        .leftJoinAndSelect("completion.user", "user")
+        .leftJoinAndSelect("completion.quest", "quest");
+
+    if (guildIdQuery) qcQb.where("completion.guildId = :guildId", { guildId: guildIdQuery });
+    else qcQb.where("completion.guildId IS NULL");
+    if (viewMode === 'personal' && userId) qcQb.andWhere("completion.userId = :userId", { userId });
+    const qcDateCond = dateCondition('completion', 'completedAt');
+    qcQb.andWhere(qcDateCond.clause, qcDateCond.params);
+    const questCompletions = await qcQb.getMany();
+
     questCompletions.forEach(c => {
-        const quest = questMap.get(c.questId);
+        if (!c.user || !c.quest) return;
         let finalNote = c.note || '';
-        if (c.status === 'Approved' && quest && quest.rewards.length > 0) {
-            const rewardsText = getRewardDisplay(quest.rewards).replace(/(\d+)/g, '+$1');
+        if (c.status === 'Approved' && c.quest.rewards.length > 0) {
+            const rewardsText = getRewardDisplay(c.quest.rewards).replace(/(\d+)/g, '+$1');
             finalNote = finalNote ? `${finalNote}\n(${rewardsText})` : rewardsText;
         }
         allEvents.push({
-            id: c.id, date: c.completedAt, type: 'Quest', userId: c.userId,
-            title: `${userMap.get(c.userId) || 'Unknown'} completed "${quest?.title || 'Unknown Quest'}"`,
-            status: c.status, note: finalNote, icon: quest?.icon || '📜',
-            color: '#3b82f6', guildId: c.guildId
+            id: c.id, originalId: c.id, date: c.completedAt, type: 'Quest', userId: c.user.id, actorName: c.user.gameName,
+            title: `${c.user.gameName} completed "${c.quest.title}"`, status: c.status, note: finalNote, 
+            icon: c.quest.icon || '📜', color: '#3b82f6', guildId: c.guildId
         });
     });
 
     // 2. Purchase Requests
-    const purchaseRequests = await manager.find(PurchaseRequestEntity, { where: { ...baseUserConditions, ...dateCondition('requestedAt') } });
+    const prQb = manager.getRepository(PurchaseRequestEntity).createQueryBuilder("pr")
+        .leftJoinAndSelect("pr.user", "user");
+    if (guildIdQuery) prQb.where("pr.guildId = :guildId", { guildId: guildIdQuery });
+    else prQb.where("pr.guildId IS NULL");
+    if (viewMode === 'personal' && userId) prQb.andWhere("pr.userId = :userId", { userId });
+    const prDateCond = dateCondition('pr', 'requestedAt');
+    prQb.andWhere(prDateCond.clause, prDateCond.params);
+    const purchaseRequests = await prQb.getMany();
+
     purchaseRequests.forEach(p => {
+        if (!p.user) return;
         const costText = getRewardDisplay(p.assetDetails.cost).replace(/(\d+)/g, '-$1');
         allEvents.push({
-            id: p.id, date: p.requestedAt, type: 'Purchase', userId: p.userId,
-            title: `${userMap.get(p.userId) || 'Unknown'} purchased "${p.assetDetails.name}"`,
-            status: p.status, note: costText, icon: '💰',
-            color: '#22c55e', guildId: p.guildId
+            id: p.id, originalId: p.id, date: p.requestedAt, type: 'Purchase', userId: p.user.id, actorName: p.user.gameName,
+            title: `${p.user.gameName} purchased "${p.assetDetails.name}"`, status: p.status, note: costText, 
+            icon: '💰', color: '#22c55e', guildId: p.guildId
         });
     });
 
     // 3. User Trophies
-    const userTrophies = await manager.find(UserTrophyEntity, { where: { ...baseUserConditions, ...dateCondition('awardedAt') } });
+    const utQb = manager.getRepository(UserTrophyEntity).createQueryBuilder("ut")
+        .leftJoinAndSelect("ut.user", "user")
+        .leftJoinAndSelect("ut.trophy", "trophy");
+    if (guildIdQuery) utQb.where("ut.guildId = :guildId", { guildId: guildIdQuery });
+    else utQb.where("ut.guildId IS NULL");
+    if (viewMode === 'personal' && userId) utQb.andWhere("ut.userId = :userId", { userId });
+    const utDateCond = dateCondition('ut', 'awardedAt');
+    utQb.andWhere(utDateCond.clause, utDateCond.params);
+    const userTrophies = await utQb.getMany();
+
     userTrophies.forEach(ut => {
-        const trophy = trophyMap.get(ut.trophyId);
+        if (!ut.user || !ut.trophy) return;
         allEvents.push({
-            id: ut.id, date: ut.awardedAt, type: 'Trophy', userId: ut.userId,
-            title: `${userMap.get(ut.userId) || 'Unknown'} earned "${trophy?.name || 'Unknown Trophy'}"`,
-            status: "Awarded", note: trophy?.description, icon: trophy?.icon || '🏆',
-            color: '#f59e0b', guildId: ut.guildId
+            id: ut.id, originalId: ut.id, date: ut.awardedAt, type: 'Trophy', userId: ut.user.id, actorName: ut.user.gameName,
+            title: `${ut.user.gameName} earned "${ut.trophy.name}"`, status: "Awarded", note: ut.trophy.description, 
+            icon: ut.trophy.icon || '🏆', color: '#f59e0b', guildId: ut.guildId
         });
     });
     
     // 4. Admin Adjustments
-    const adjustments = await manager.find(AdminAdjustmentEntity, { where: { ...baseUserConditions, ...dateCondition('adjustedAt') } });
+    const adjQb = manager.getRepository(AdminAdjustmentEntity).createQueryBuilder("adj")
+        .leftJoinAndSelect("adj.user", "user")
+        .leftJoinAndSelect("adj.adjuster", "adjuster");
+    if (guildIdQuery) adjQb.where("adj.guildId = :guildId", { guildId: guildIdQuery });
+    else adjQb.where("adj.guildId IS NULL");
+    if (viewMode === 'personal' && userId) adjQb.andWhere("adj.userId = :userId", { userId });
+    const adjDateCond = dateCondition('adj', 'adjustedAt');
+    adjQb.andWhere(adjDateCond.clause, adjDateCond.params);
+    const adjustments = await adjQb.getMany();
+
     adjustments.forEach(adj => {
+        if (!adj.user || !adj.adjuster) return;
         const rewardsText = getRewardDisplay(adj.rewards).replace(/(\d+)/g, '+$1');
         const setbacksText = getRewardDisplay(adj.setbacks).replace(/(\d+)/g, '-$1');
         allEvents.push({
-            id: adj.id, date: adj.adjustedAt, type: 'Adjustment', userId: adj.userId,
-            title: `${userMap.get(adj.userId) || 'Unknown'} received an adjustment from ${userMap.get(adj.adjusterId) || 'Admin'}`,
-            status: adj.type,
-            note: `${adj.reason}\n(${rewardsText} ${setbacksText})`.trim(),
-            icon: '🛠️',
-            color: adj.type === 'Reward' ? '#10b981' : '#ef4444',
-            guildId: adj.guildId
+            id: adj.id, originalId: adj.id, date: adj.adjustedAt, type: 'Adjustment', userId: adj.user.id, actorName: adj.adjuster.gameName,
+            title: `${adj.user.gameName} received an adjustment from ${adj.adjuster.gameName}`, status: adj.type,
+            note: `${adj.reason}\n(${rewardsText} ${setbacksText})`.trim(), icon: '🛠️', 
+            color: adj.type === 'Reward' ? '#10b981' : '#ef4444', guildId: adj.guildId
         });
     });
 
      // 5. System Logs
      if (viewMode !== 'personal') {
-        const systemLogs = await manager.find(SystemLogEntity, { where: { ...dateCondition('timestamp') } });
+        const slQb = manager.getRepository(SystemLogEntity).createQueryBuilder("log");
+        const slDateCond = dateCondition('log', 'timestamp');
+        slQb.where(slDateCond.clause, slDateCond.params);
+        const systemLogs = await slQb.getMany();
+
         systemLogs.forEach(log => {
              const quest = questMap.get(log.questId);
              if (quest && (quest.guildId || null) === guildIdQuery) {
                  const userNames = log.userIds.map(id => userMap.get(id) || 'Unknown').join(', ');
                  const setbacksText = getRewardDisplay(log.setbacksApplied).replace(/(\d+)/g, '-$1');
                  allEvents.push({
-                    id: log.id, date: log.timestamp, type: 'System',
+                    id: log.id, originalId: log.id, date: log.timestamp, type: 'System', recipientUserIds: log.userIds,
                     title: `System: ${quest.title} marked as ${log.type.split('_')[1]}`,
                     status: log.type, note: `For: ${userNames}\n(${setbacksText})`, icon: '⚙️', color: '#64748b',
                     guildId: quest.guildId,
@@ -2515,12 +2551,11 @@ app.get('/api/chronicles', asyncMiddleware(async (req, res) => {
     allEvents.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
     const total = allEvents.length;
-    const paginatedEvents = allEvents.slice(skip, skip + take);
+    const paginatedEvents = (startDate && endDate) ? allEvents : allEvents.slice(skip, skip + take);
     
-    const eventsToReturn = (startDate && endDate) ? allEvents : paginatedEvents;
-
-    res.json({ events: eventsToReturn, total });
+    res.json({ events: paginatedEvents, total });
 }));
+
 
 // Chat Router
 const chatRouter = express.Router();

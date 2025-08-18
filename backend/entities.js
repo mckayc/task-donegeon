@@ -96,6 +96,7 @@ const QuestEntity = new EntitySchema({
         title: { type: "varchar" },
         description: { type: "text" },
         type: { type: "varchar" },
+        kind: { type: "varchar", default: "Personal" },
         iconType: { type: "varchar" },
         icon: { type: "varchar" },
         imageUrl: { type: "varchar", nullable: true },
@@ -121,14 +122,6 @@ const QuestEntity = new EntitySchema({
         nextQuestId: { type: "varchar", nullable: true },
         createdAt: { type: "varchar", nullable: true },
         updatedAt: { type: "varchar", nullable: true },
-        // Old columns for migration, can be removed later
-        lateDateTime: { type: "varchar", nullable: true },
-        incompleteDateTime: { type: "varchar", nullable: true },
-        lateTime: { type: "varchar", nullable: true },
-        incompleteTime: { type: "varchar", nullable: true },
-        availabilityType: { type: "varchar", nullable: true },
-        weeklyRecurrenceDays: { type: "simple-json", nullable: true },
-        monthlyRecurrenceDays: { type: "simple-json", nullable: true },
     },
     relations: {
         assignedUsers: {
@@ -282,6 +275,20 @@ const UserTrophyEntity = new EntitySchema({
         guildId: { type: "varchar", nullable: true },
         createdAt: { type: "varchar", nullable: true },
         updatedAt: { type: "varchar", nullable: true },
+    },
+    relations: {
+        user: {
+            type: "many-to-one",
+            target: "User",
+            joinColumn: { name: "userId", referencedColumnName: "id" },
+            onDelete: "CASCADE",
+        },
+        trophy: {
+            type: "many-to-one",
+            target: "Trophy",
+            joinColumn: { name: "trophyId", referencedColumnName: "id" },
+            onDelete: "CASCADE",
+        },
     }
 });
 
@@ -301,6 +308,20 @@ const AdminAdjustmentEntity = new EntitySchema({
         guildId: { type: "varchar", nullable: true },
         createdAt: { type: "varchar", nullable: true },
         updatedAt: { type: "varchar", nullable: true },
+    },
+    relations: {
+        user: {
+            type: "many-to-one",
+            target: "User",
+            joinColumn: { name: "userId", referencedColumnName: "id" },
+            onDelete: "CASCADE",
+        },
+        adjuster: {
+            type: "many-to-one",
+            target: "User",
+            joinColumn: { name: "adjusterId", referencedColumnName: "id" },
+            onDelete: "SET NULL",
+        },
     }
 });
 

@@ -144,17 +144,17 @@ const initializeApp = async () => {
     // Use the factory for entities
     app.use('/api/ranks', createCrudRouter(RankEntity));
     app.use('/api/trophies', createCrudRouter(TrophyEntity));
-    app.use('/api/questGroups', createCrudRouter(QuestGroupEntity, [], 'questgroup'));
+    app.use('/api/quest-groups', createCrudRouter(QuestGroupEntity, [], 'questgroup'));
     app.use('/api/themes', createCrudRouter(ThemeDefinitionEntity));
     app.use('/api/rotations', createCrudRouter(RotationEntity));
     app.use('/api/setbackDefinitions', createCrudRouter(SetbackDefinitionEntity));
     app.use('/api/events', createCrudRouter(ScheduledEventEntity, [], 'event'));
     app.use('/api/assets', createCrudRouter(GameAssetEntity, [], 'gameasset'));
     app.use('/api/markets', createCrudRouter(MarketEntity));
-    app.use('/api/quests', createCrudRouter(QuestEntity, ['assignedUsers']));
-    app.use('/api/guilds', createCrudRouter(GuildEntity, ['members']));
+    app.use('/api/quests', createCrudRouter(QuestEntity));
+    app.use('/api/guilds', createCrudRouter(GuildEntity));
     app.use('/api/reward-types', createCrudRouter(RewardTypeDefinitionEntity));
-    app.use('/api/users', createCrudRouter(UserEntity, ['guilds']));
+    app.use('/api/users', createCrudRouter(UserEntity));
     app.use('/api/bug-reports', createCrudRouter(BugReportEntity));
     
     // Complex routes that don't fit simple CRUD
@@ -171,7 +171,7 @@ const initializeApp = async () => {
     const settingsRouter = require('./routes/settings');
     app.use('/api/settings', settingsRouter(updateEmitter));
     const systemRouter = require('./routes/system');
-    app.use('/api/system', systemRouter);
+    app.use('/api/system', systemRouter(updateEmitter));
     const aiRouter = require('./routes/ai');
     app.use('/api/ai', aiRouter(ai));
     

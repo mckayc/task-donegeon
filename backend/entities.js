@@ -1,3 +1,4 @@
+
 const { EntitySchema } = require("typeorm");
 
 // Placeholder classes for TypeORM entity schemas.
@@ -111,12 +112,7 @@ const UserEntity = new EntitySchema({
             type: "one-to-many",
             target: "PurchaseRequest",
             inverseSide: "user",
-        },
-        guilds: {
-            type: "many-to-many",
-            target: "Guild",
-            inverseSide: "members"
-        },
+        }
     }
 });
 
@@ -147,6 +143,7 @@ const QuestEntity = new EntitySchema({
         incompleteSetbacks: { type: "simple-json" },
         isActive: { type: "boolean", default: true },
         isOptional: { type: "boolean", default: false },
+        assignedUserIds: { type: "simple-array" },
         requiresApproval: { type: "boolean", default: false },
         claimedByUserIds: { type: "simple-array" },
         dismissals: { type: "simple-json" },
@@ -158,12 +155,6 @@ const QuestEntity = new EntitySchema({
         updatedAt: { type: "varchar", nullable: true },
     },
     relations: {
-        assignedUsers: {
-            type: "many-to-many",
-            target: "User",
-            joinTable: true,
-            cascade: true,
-        },
         questCompletions: {
             type: "one-to-many",
             target: "QuestCompletion",
@@ -195,6 +186,8 @@ const QuestCompletionEntity = new EntitySchema({
     target: QuestCompletion,
     columns: {
         id: { primary: true, type: "varchar" },
+        questId: { type: "varchar" }, // Added for easier joins without relations
+        userId: { type: "varchar" }, // Added for easier joins without relations
         completedAt: { type: "varchar" },
         status: { type: "varchar" },
         note: { type: "text", nullable: true },
@@ -254,21 +247,13 @@ const GuildEntity = new EntitySchema({
         id: { primary: true, type: "varchar" },
         name: { type: "varchar" },
         purpose: { type: "text" },
+        memberIds: { type: "simple-array" },
         isDefault: { type: "boolean", nullable: true },
         themeId: { type: "varchar", nullable: true },
         treasury: { type: "simple-json", default: '{}' },
         createdAt: { type: "varchar", nullable: true },
         updatedAt: { type: "varchar", nullable: true },
-    },
-    relations: {
-        members: {
-            type: "many-to-many",
-            target: "User",
-            joinTable: true,
-            cascade: true,
-            inverseSide: "guilds",
-        },
-    },
+    }
 });
 
 const UserTrophyEntity = new EntitySchema({

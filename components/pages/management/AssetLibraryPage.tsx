@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import Button from '../../user-interface/Button';
 import Card from '../../user-interface/Card';
-import { AssetPack, AssetPackManifestInfo, IAppData, ImportResolution } from '../../../types';
+import { AssetPack, AssetPackManifestInfo, IAppData, ImportResolution, Role, Quest, GameAsset, Trophy, UserTemplate, Market, Rank, RewardTypeDefinition, QuestGroup } from '../../../types';
 import { useData } from '../../../context/DataProvider';
 import { useActionsDispatch } from '../../../context/ActionsContext';
 import Input from '../../user-interface/Input';
@@ -34,7 +34,7 @@ const AssetLibraryPage: React.FC = () => {
             try {
                 const response = await fetch('/api/asset-packs/discover');
                 if (!response.ok) throw new Error('Failed to discover local asset packs.');
-                const data = await response.json();
+                const data: AssetPackManifestInfo[] = await response.json();
                 setLocalPacks(data);
             } catch (e) {
                 const msg = e instanceof Error ? e.message : 'Unknown error';
@@ -182,7 +182,7 @@ const AssetLibraryPage: React.FC = () => {
                                 <div key={category}>
                                     <h3 className="text-2xl font-medieval text-accent mb-3">{category}</h3>
                                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                                        {packs.map(packInfo => (
+                                        {packs.map((packInfo: AssetPackManifestInfo) => (
                                             <button key={packInfo.filename} onClick={() => handleInstallLocal(packInfo.filename)} className="h-full w-full text-left">
                                                 <Card className="h-full hover:border-accent transition-colors">
                                                     <div className="flex justify-between items-start">
@@ -198,12 +198,12 @@ const AssetLibraryPage: React.FC = () => {
                                                     
                                                     <div className="mt-4 pt-4 border-t border-stone-700/60 grid grid-cols-2 gap-x-4 gap-y-2">
                                                         <ul className="space-y-1">
-                                                          {(packInfo.summary.quests || []).map(q => <SummaryItem key={q.title} icon={q.icon} name={q.title} />)}
-                                                          {(packInfo.summary.gameAssets || []).map(a => <SummaryItem key={a.name} icon={a.icon} name={a.name} />)}
+                                                          {(packInfo.summary.quests || []).map((q: { title: string; icon: string }) => <SummaryItem key={q.title} icon={q.icon} name={q.title} />)}
+                                                          {(packInfo.summary.gameAssets || []).map((a: { name: string; icon: string }) => <SummaryItem key={a.name} icon={a.icon} name={a.name} />)}
                                                         </ul>
                                                         <ul className="space-y-1">
-                                                          {(packInfo.summary.trophies || []).map(t => <SummaryItem key={t.name} icon={t.icon} name={t.name} />)}
-                                                          {(packInfo.summary.users || []).map(u => <SummaryItem key={u.gameName} icon={'👤'} name={u.gameName} />)}
+                                                          {(packInfo.summary.trophies || []).map((t: { name: string; icon: string }) => <SummaryItem key={t.name} icon={t.icon} name={t.name} />)}
+                                                          {(packInfo.summary.users || []).map((u: { gameName: string; role: Role }) => <SummaryItem key={u.gameName} icon={'👤'} name={u.gameName} />)}
                                                         </ul>
                                                     </div>
                                                 </Card>

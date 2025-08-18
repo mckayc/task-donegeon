@@ -92,7 +92,7 @@ const EditTrophyDialog: React.FC<EditTrophyDialogProps> = ({ trophy, initialData
         // To update 'value' or 'count', we can spread the existing object and just update the field.
         // This is safe because we are not changing the 'type' discriminant.
         const updatedValue = field === 'count' ? Math.max(1, parseInt(String(value), 10) || 1) : value;
-        newReq = { ...currentReq, [field]: updatedValue };
+        newReq = { ...currentReq, [field]: updatedValue } as TrophyRequirement;
     }
     
     newRequirements[index] = newReq;

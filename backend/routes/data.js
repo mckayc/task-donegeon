@@ -44,12 +44,11 @@ module.exports = (updateEmitter) => {
 
         for (const entitySchema of entitiesToFetch) {
             const key = entityToKeyMap[entitySchema.name];
-            // This check is now slightly redundant due to the filter above, but it's good for safety.
             if (key) {
                 const repo = dataSource.getRepository(entitySchema.target);
-                data[key] = await repo.find();
+                // Explicitly disable relation loading to ensure a clean, fast query.
+                data[key] = await repo.find({ relations: [] });
             } else {
-                // This block should no longer be reached by standard entities.
                 console.warn(`No key mapping found for entity: ${entitySchema.name}`);
             }
         }

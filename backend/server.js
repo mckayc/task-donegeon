@@ -2149,7 +2149,7 @@ app.get('/api/media/local-gallery', async (req, res, next) => {
     } catch (err) {
         next(err);
     }
-}));
+});
 
 
 // === Asset Pack Endpoints ===
@@ -2559,7 +2559,7 @@ backupsRouter.get('/download/:filename', (req, res) => {
             }
         }
     });
-}));
+});
 
 backupsRouter.delete('/:filename', asyncMiddleware(async (req, res) => {
     const filename = path.basename(req.params.filename);

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useData } from '../../context/DataProvider';
 import { useActionsDispatch } from '../../context/ActionsContext';
@@ -29,7 +30,7 @@ const EditSetbackDialog: React.FC<EditSetbackDialogProps> = ({ setbackToEdit, on
                 name: setbackToEdit.name,
                 description: setbackToEdit.description,
                 icon: setbackToEdit.icon,
-                effects: setbackToEdit.effects,
+                effects: JSON.parse(JSON.stringify(setbackToEdit.effects)), // Deep copy
             });
         }
     }, [setbackToEdit]);

@@ -18,7 +18,7 @@ const {
 const { EventEmitter } = require('events');
 
 const { version } = require('../package.json');
-const app = express();
+app = express();
 const port = process.env.PORT || 3000;
 const dbPath = process.env.DATABASE_PATH || '/app/data/database/database.sqlite';
 
@@ -194,54 +194,22 @@ initializeApp().catch(err => {
 // === Helper to construct the full app data state from DB ===
 const getFullAppData = async (manager) => {
     const data = {};
+    for (const entity of allEntities) {
+        const repo = manager.getRepository(entity);
+        const tableName = repo.metadata.tableName.charAt(0).toLowerCase() + repo.metadata.tableName.slice(1);
+        data[tableName] = await repo.find();
+    }
     
-    const users = await manager.find(UserEntity, { relations: ['guilds'] });
-    const quests = await manager.find(QuestEntity, { relations: ['assignedUsers'] });
-    const questCompletions = await manager.find(QuestCompletionEntity, { relations: ['user', 'quest'] });
-    const guilds = await manager.find(GuildEntity, { relations: ['members'] });
-
-    data.users = users.map(u => {
-        const { guilds, ...userData } = u;
-        return { ...userData, guildIds: guilds?.map(g => g.id) || [] };
-    });
-    data.quests = quests.map(q => {
-        const { assignedUsers, ...questData } = q;
-        return { ...questData, assignedUserIds: assignedUsers?.map(u => u.id) || [] };
-    });
-    data.questCompletions = questCompletions.map(qc => {
-        const { user, quest, ...completionData } = qc;
-        return { ...completionData, userId: user?.id, questId: quest?.id };
-    });
-    data.guilds = guilds.map(g => {
-        const { members, ...guildData } = g;
-        return { ...guildData, memberIds: members?.map(m => m.id) || [] };
-    });
-
-    data.questGroups = await manager.find(QuestGroupEntity);
-    data.markets = await manager.find(MarketEntity);
-    data.rewardTypes = await manager.find(RewardTypeDefinitionEntity);
-    data.purchaseRequests = await manager.find(PurchaseRequestEntity);
-    data.ranks = await manager.find(RankEntity);
-    data.trophies = await manager.find(TrophyEntity);
-    data.userTrophies = await manager.find(UserTrophyEntity);
-    data.adminAdjustments = await manager.find(AdminAdjustmentEntity);
-    data.gameAssets = await manager.find(GameAssetEntity);
-    data.systemLogs = await manager.find(SystemLogEntity);
-    data.themes = await manager.find(ThemeDefinitionEntity);
-    data.chatMessages = await manager.find(ChatMessageEntity);
-    data.systemNotifications = await manager.find(SystemNotificationEntity);
-    data.scheduledEvents = await manager.find(ScheduledEventEntity);
-    data.bugReports = await manager.find(BugReportEntity, { order: { createdAt: "DESC" } });
-    data.setbackDefinitions = await manager.find(SetbackDefinitionEntity);
-    data.appliedSetbacks = await manager.find(AppliedSetbackEntity);
-    data.rotations = await manager.find(RotationEntity);
-    data.tradeOffers = await manager.find(TradeOfferEntity);
-    data.gifts = await manager.find(GiftEntity);
+    // Handle relations
+    const users = await manager.getRepository(UserEntity).find({ relations: ['guilds'] });
+    data.users = users.map(u => ({ ...u, guildIds: u.guilds.map(g => g.id) }));
+    const quests = await manager.getRepository(QuestEntity).find({ relations: ['assignedUsers'] });
+    data.quests = quests.map(q => ({ ...q, assignedUserIds: q.assignedUsers.map(u => u.id) }));
     
-    const settingRow = await manager.findOneBy(SettingEntity, { id: 1 });
+    const settingRow = await manager.getRepository(SettingEntity).findOneBy({ id: 1 });
     data.settings = settingRow ? settingRow.settings : INITIAL_SETTINGS;
-
-    const historyRow = await manager.findOneBy(LoginHistoryEntity, { id: 1 });
+    
+    const historyRow = await manager.getRepository(LoginHistoryEntity).findOneBy({ id: 1 });
     data.loginHistory = historyRow ? historyRow.history : [];
     
     return data;
@@ -297,18 +265,19 @@ const sendUpdateToClients = () => {
 
 updateEmitter.on('update', sendUpdateToClients);
 
-// ... (rest of the API endpoints) ...
-
 // Generic CRUD factory
-const createCrudRouter = (entity, relations = []) => {
+const createCrudRouter = (entity, relations = [], entityNameOverride = null) => {
     const router = express.Router();
     const repo = dataSource.getRepository(entity);
-    const entityName = repo.metadata.tableName;
+    const entityName = entityNameOverride || repo.metadata.tableName.toLowerCase();
 
+    // Get all
     router.get('/', async (req, res) => {
         const items = await repo.find({ relations });
         res.json(items);
     });
+
+    // Create
     router.post('/', async (req, res) => {
         const newItemData = req.body;
         const id = `${entityName}-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
@@ -317,6 +286,8 @@ const createCrudRouter = (entity, relations = []) => {
         updateEmitter.emit('update');
         res.status(201).json(savedItem);
     });
+
+    // Update
     router.put('/:id', async (req, res) => {
         const item = await repo.preload({ id: req.params.id, ...req.body });
         if (!item) return res.status(404).json({ error: `${entityName} not found` });
@@ -324,8 +295,11 @@ const createCrudRouter = (entity, relations = []) => {
         updateEmitter.emit('update');
         res.json(savedItem);
     });
+
+    // Bulk Delete
     router.delete('/', async (req, res) => {
         const { ids } = req.body;
+        if (!ids || !Array.isArray(ids)) return res.status(400).json({ error: 'Invalid request body' });
         await repo.delete(ids);
         updateEmitter.emit('update');
         res.status(204).send();
@@ -334,78 +308,41 @@ const createCrudRouter = (entity, relations = []) => {
     return router;
 };
 
-// Use the factory for all simple CRUD entities
+// Use the factory for simple CRUD entities
 app.use('/api/ranks', createCrudRouter(RankEntity));
 app.use('/api/trophies', createCrudRouter(TrophyEntity));
-app.use('/api/quest-groups', createCrudRouter(QuestGroupEntity));
+app.use('/api/questGroups', createCrudRouter(QuestGroupEntity, [], 'questgroup'));
 app.use('/api/themes', createCrudRouter(ThemeDefinitionEntity));
 app.use('/api/rotations', createCrudRouter(RotationEntity));
 app.use('/api/setbackDefinitions', createCrudRouter(SetbackDefinitionEntity));
-app.use('/api/events', createCrudRouter(ScheduledEventEntity));
+app.use('/api/events', createCrudRouter(ScheduledEventEntity, [], 'event'));
+app.use('/api/assets', createCrudRouter(GameAssetEntity, [], 'gameasset'));
+app.use('/api/markets', createCrudRouter(MarketEntity));
+app.use('/api/quests', createCrudRouter(QuestEntity, ['assignedUsers']));
 
-// More complex routes
-const ranksRouter = require('./routes/ranks');
-app.use('/api/ranks', ranksRouter);
-
-const questsRouter = require('./routes/quests');
-app.use('/api/quests', questsRouter);
-
+// More complex routes will be implemented directly
 const actionsRouter = require('./routes/actions');
 app.use('/api/actions', actionsRouter);
-
-const assetsRouter = require('./routes/assets');
-app.use('/api/assets', assetsRouter);
-
-const bugReportsRouter = require('./routes/bugReports');
-app.use('/api/bug-reports', bugReportsRouter);
-
-const chatRouter = require('./routes/chat');
-app.use('/api/chat', chatRouter);
-
 const dataRouter = require('./routes/data');
 app.use('/api/data', dataRouter);
-
 const guildsRouter = require('./routes/guilds');
 app.use('/api/guilds', guildsRouter);
-
-const marketsRouter = require('./routes/markets');
-app.use('/api/markets', marketsRouter);
-
 const mediaRouter = require('./routes/media');
 app.use('/api/media', mediaRouter(upload));
-
 const assetPacksRouter = require('./routes/assetPacks');
 app.use('/api/asset-packs', assetPacksRouter);
-
 const imagePacksRouter = require('./routes/imagePacks');
 app.use('/api/image-packs', imagePacksRouter);
-
-const notificationsRouter = require('./routes/notifications');
-app.use('/api/notifications', notificationsRouter);
-
 const rewardTypesRouter = require('./routes/rewardTypes');
 app.use('/api/reward-types', rewardTypesRouter);
-
 const settingsRouter = require('./routes/settings');
 app.use('/api/settings', settingsRouter);
-
 const systemRouter = require('./routes/system');
 app.use('/api/system', systemRouter);
-
-const tradesRouter = require('./routes/trades');
-app.use('/api/trades', tradesRouter);
-
-const giftsRouter = require('./routes/gifts');
-app.use('/api/gifts', giftsRouter);
-
 const usersRouter = require('./routes/users');
 app.use('/api/users', usersRouter);
-
 const aiRouter = require('./routes/ai');
 app.use('/api/ai', aiRouter(ai));
-
-const chroniclesRouter = require('./routes/chronicles');
-app.use('/api/chronicles', chroniclesRouter);
 
 // Serve static assets from React build
 const staticPath = path.join(__dirname, '../dist');
@@ -414,8 +351,7 @@ app.use(express.static(staticPath));
 // Serve uploaded assets
 app.use('/uploads', express.static(UPLOADS_DIR));
 
-// The "catchall" handler: for any request that doesn't
-// match one above, send back React's index.html file.
+// The "catchall" handler
 app.get('*', (req, res) => {
   res.sendFile(path.join(staticPath, 'index.html'));
 });

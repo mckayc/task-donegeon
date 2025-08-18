@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import Button from '../../user-interface/Button';
 import Card from '../../user-interface/Card';
-import { AssetPack, AssetPackManifestInfo, IAppData, ImportResolution } from '../../types';
+import { AssetPack, AssetPackManifestInfo, IAppData, ImportResolution } from '../../../types';
 import { useData } from '../../../context/DataProvider';
 import { useActionsDispatch } from '../../../context/ActionsContext';
 import Input from '../../user-interface/Input';

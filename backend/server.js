@@ -2498,13 +2498,16 @@ app.get('/api/chronicles', asyncMiddleware(async (req, res) => {
         const systemLogs = await manager.find(SystemLogEntity, { where: { ...dateCondition('timestamp') } });
         systemLogs.forEach(log => {
              const quest = questMap.get(log.questId);
-             const userNames = log.userIds.map(id => userMap.get(id) || 'Unknown').join(', ');
-             const setbacksText = getRewardDisplay(log.setbacksApplied).replace(/(\d+)/g, '-$1');
-             allEvents.push({
-                id: log.id, date: log.timestamp, type: 'System',
-                title: `System: ${quest?.title || 'Unknown Quest'} marked as ${log.type.split('_')[1]}`,
-                status: log.type, note: `For: ${userNames}\n(${setbacksText})`, icon: '⚙️', color: '#64748b'
-             });
+             if (quest && (quest.guildId || null) === guildIdQuery) {
+                 const userNames = log.userIds.map(id => userMap.get(id) || 'Unknown').join(', ');
+                 const setbacksText = getRewardDisplay(log.setbacksApplied).replace(/(\d+)/g, '-$1');
+                 allEvents.push({
+                    id: log.id, date: log.timestamp, type: 'System',
+                    title: `System: ${quest.title} marked as ${log.type.split('_')[1]}`,
+                    status: log.type, note: `For: ${userNames}\n(${setbacksText})`, icon: '⚙️', color: '#64748b',
+                    guildId: quest.guildId,
+                 });
+            }
         });
      }
     

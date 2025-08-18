@@ -1,4 +1,3 @@
-
 import React, { useMemo, useEffect, useState, useRef } from 'react';
 import Sidebar from './Sidebar';
 import Header from './Header';
@@ -55,7 +54,6 @@ const MainLayout: React.FC = () => {
   const { setActivePage } = useUIDispatch();
   
   const [showLoginNotifications, setShowLoginNotifications] = useState(false);
-  const [notificationsShownForSession, setNotificationsShownForSession] = useState(false);
   const prevUserIdRef = useRef<string | undefined>(undefined);
   
   const ADMIN_ONLY_PAGES: Page[] = [
@@ -76,24 +74,23 @@ const MainLayout: React.FC = () => {
   }, [systemNotifications, currentUser]);
 
   useEffect(() => {
-    // This effect resets the "shown" flag whenever the user ID changes,
-    // effectively starting a new "notification session" for the new user.
+    // When the user changes, reset the session flag so the popup can show for the new user.
     if (currentUser?.id !== prevUserIdRef.current) {
-        setNotificationsShownForSession(false);
+        sessionStorage.removeItem('notificationsShownForSession');
         prevUserIdRef.current = currentUser?.id;
     }
   }, [currentUser]);
 
   useEffect(() => {
-    // This effect handles the logic for showing the popup.
-    if (currentUser && !notificationsShownForSession && settings.loginNotifications.enabled && unreadNotifications.length > 0) {
+    const alreadyShown = sessionStorage.getItem('notificationsShownForSession') === 'true';
+
+    if (currentUser && !alreadyShown && settings.loginNotifications.enabled && unreadNotifications.length > 0) {
         setShowLoginNotifications(true);
-        setNotificationsShownForSession(true); // Mark as shown for this session.
+        sessionStorage.setItem('notificationsShownForSession', 'true');
     } else if (!currentUser) {
-        // Explicitly hide popup on logout, just in case.
         setShowLoginNotifications(false);
     }
-  }, [currentUser, notificationsShownForSession, settings.loginNotifications.enabled, unreadNotifications]);
+  }, [currentUser, settings.loginNotifications.enabled, unreadNotifications]);
 
   useEffect(() => {
     if (!currentUser) return;

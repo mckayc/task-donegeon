@@ -1,5 +1,4 @@
-
-import React, { createContext, useState, useContext, ReactNode, useCallback } from 'react';
+import React, { createContext, useState, useContext, ReactNode, useCallback, useMemo } from 'react';
 import { AppMode, Page } from '../types';
 import { bugLogger } from '../utils/bugLogger';
 
@@ -26,26 +25,69 @@ export const UIProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [activePage, _setActivePage] = useState<Page>('Dashboard');
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState<boolean>(() => localStorage.getItem('isSidebarCollapsed') === 'true');
   const [isChatOpen, setIsChatOpen] = useState(false);
-  const [appMode, setAppMode] = useState<AppMode>({ mode: 'personal' });
-  const [activeMarketId, setActiveMarketId] = useState<string | null>(null);
+  const [appMode, _setAppMode] = useState<AppMode>({ mode: 'personal' });
+  const [activeMarketId, _setActiveMarketId] = useState<string | null>(null);
 
-  const setActivePage = useCallback((page: Page) => {
+  const setActivePage = (page: Page) => {
     if (bugLogger.isRecording()) bugLogger.add({ type: 'NAVIGATION', message: `Navigated to ${page} page.` });
     _setActivePage(page);
-  }, []);
+  };
 
-  const toggleSidebar = useCallback(() => {
+  const toggleSidebar = () => {
     setIsSidebarCollapsed(prev => {
       const newState = !prev;
       localStorage.setItem('isSidebarCollapsed', String(newState));
       return newState;
     });
-  }, []);
+  };
 
-  const toggleChat = useCallback(() => setIsChatOpen(prev => !prev), []);
+  const toggleChat = () => {
+      if (bugLogger.isRecording()) {
+        bugLogger.add({ type: 'ACTION', message: 'Toggled chat panel visibility.' });
+      }
+      setIsChatOpen(prev => !prev);
+  };
 
-  const state: UIState = { activePage, isSidebarCollapsed, isChatOpen, appMode, activeMarketId };
-  const dispatch: UIDispatch = { setActivePage, toggleSidebar, toggleChat, setAppMode, setActiveMarketId };
+  const setAppMode = (mode: AppMode) => {
+    if (bugLogger.isRecording()) {
+        bugLogger.add({
+            type: 'NAVIGATION',
+            message: `Switched to ${mode.mode} mode${mode.mode === 'guild' ? ` (Guild ID: ${mode.guildId})` : ''}`
+        });
+    }
+    _setAppMode(mode);
+    _setActiveMarketId(null);
+  };
+
+  const setActiveMarketId = (marketId: string | null) => {
+     if (bugLogger.isRecording()) {
+        bugLogger.add({
+            type: 'NAVIGATION',
+            message: marketId ? `Viewing market ${marketId}` : 'Returned to marketplace list'
+        });
+    }
+    _setActiveMarketId(marketId);
+  };
+
+  // Memoize the state value to prevent consumers that only use dispatch from re-rendering.
+  const state = useMemo(() => ({
+    activePage,
+    isSidebarCollapsed,
+    isChatOpen,
+    appMode,
+    activeMarketId
+  }), [activePage, isSidebarCollapsed, isChatOpen, appMode, activeMarketId]);
+
+  // Create a stable dispatch object. These functions don't depend on props or state,
+  // so they don't need to be wrapped in useCallback. A new object is created on each render,
+  // which is fine and more robust against potential stale closure issues.
+  const dispatch: UIDispatch = {
+    setActivePage,
+    toggleSidebar,
+    toggleChat,
+    setAppMode,
+    setActiveMarketId,
+  };
 
   return (
     <UIStateContext.Provider value={state}>

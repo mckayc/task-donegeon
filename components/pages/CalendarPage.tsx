@@ -77,9 +77,17 @@ const CalendarPage: React.FC = () => {
         
         let displayTime = '';
         if (!event.allDay && event.start) {
-            // Let FullCalendar's date object handle the time formatting.
-            // This avoids timezone issues and incorrect dates from `new Date()`.
-            displayTime = event.start.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+            const startTime = event.start.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+            if (event.end) {
+                const endTime = event.end.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+                if (startTime !== endTime) {
+                    displayTime = `${startTime} - ${endTime}`;
+                } else {
+                    displayTime = startTime;
+                }
+            } else {
+                displayTime = startTime;
+            }
         }
 
         return (

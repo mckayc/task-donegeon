@@ -1,4 +1,5 @@
 
+
 import React, { useState, useMemo } from 'react';
 import { Rank } from '../../../types';
 import Button from '../../user-interface/Button';
@@ -6,7 +7,7 @@ import Card from '../../user-interface/Card';
 import EditRankDialog from '../../settings/EditRankDialog';
 import ConfirmDialog from '../../user-interface/ConfirmDialog';
 import EmptyState from '../../user-interface/EmptyState';
-import { RankIcon } from '../../user-interface/Icons';
+import { RankIcon, PencilIcon, TrashIcon } from '../../user-interface/Icons';
 import { useShiftSelect } from '../../../hooks/useShiftSelect';
 import { useData } from '../../../context/DataProvider';
 import { useActionsDispatch } from '../../../context/ActionsContext';
@@ -64,6 +65,7 @@ const ManageRanksPage: React.FC = () => {
         </Button>
     );
 
+
     return (
         <div className="space-y-6">
             <Card
@@ -93,6 +95,7 @@ const ManageRanksPage: React.FC = () => {
                                     <th className="p-4 font-semibold">Icon</th>
                                     <th className="p-4 font-semibold">Name</th>
                                     <th className="p-4 font-semibold">XP Threshold</th>
+                                    <th className="p-4 font-semibold">Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -113,6 +116,23 @@ const ManageRanksPage: React.FC = () => {
                                             </button>
                                         </td>
                                         <td className="p-4 text-stone-300">{rank.xpThreshold}</td>
+                                        <td className="p-4">
+                                            <div className="flex items-center gap-1">
+                                                <Button variant="ghost" size="icon" title="Edit" onClick={() => handleEdit(rank)} className="h-8 w-8 text-stone-400 hover:text-white">
+                                                    <PencilIcon className="w-4 h-4" />
+                                                </Button>
+                                                <Button 
+                                                    variant="ghost" 
+                                                    size="icon" 
+                                                    title="Delete" 
+                                                    onClick={() => handleDeleteRequest([rank.id])} 
+                                                    className="h-8 w-8 text-red-400 hover:text-red-300 hover:bg-red-900/50"
+                                                    disabled={rank.xpThreshold === 0}
+                                                >
+                                                    <TrashIcon className="w-4 h-4" />
+                                                </Button>
+                                            </div>
+                                        </td>
                                     </tr>
                                 ))}
                             </tbody>

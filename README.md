@@ -1,6 +1,6 @@
 # Task Donegeon
 
-**Version:** 0.0.53
+**Version:** 0.0.54
 
 ---
 
@@ -15,10 +15,11 @@ Task Donegeon is a gamified task and chore management application designed for f
 
 ## ✨ Features
 
-### What's New in Version 0.0.53 (August 15, 2025)
--   **Asset Pack Update:** Renamed the "McKay's Daily Routine" asset pack to "Student's Daily Quest" to be more generic. Added four new tech-related rewards to its marketplace, including app installations and purchases.
+### What's New in Version 0.0.54 (August 17, 2025)
+-   **Calendar UI Fix:** The calendar's day and week views now correctly display the full time range (e.g., "3:00 PM - 5:00 PM") for timed quests, making deadlines much clearer. This addresses a bug where only the start time was being shown.
 
 ### Version History
+- **v0.0.53 (August 15, 2025):** Asset Pack Update: Renamed the "McKay's Daily Routine" asset pack to "Student's Daily Quest" to be more generic. Added four new tech-related rewards to its marketplace, including app installations and purchases.
 - **v0.0.52 (August 15, 2025):** Added a new default asset pack, "McKay's Daily Routine," featuring a series of timed daily duties for school days and a conditional weekend marketplace with screen-time rewards.
 - **v0.0.51 (August 8, 2025):** Fixed a UI inconsistency where the notification count for pending approvals was not shown on the 'Approvals' link when its parent 'User Management' group was expanded. The badge now correctly moves to the specific link, improving user experience.
 - **v0.0.97 (July 23, 2025):** New "Vacation" Event Type, Calendar-Driven Vacations, Automatic Penalty Pausing, Streamlined Settings.
@@ -79,4 +80,4 @@ This phase focuses on high-impact improvements for admins and players that enhan
 This phase introduces major new creative outlets and systems for deeper engagement.
 
 -   **User-Created Content:** A system allowing Explorers to design their own quests and items, then submit them to admins for approval. This fosters creativity and allows the game world to be co-created by its members.
--   **Reward R------ END OF FILE README.md ---
+-   **Reward R------ END OF FILE README.md ------ START OF FILE vercel.json ---

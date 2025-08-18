@@ -41,7 +41,9 @@ const ChroniclesPage: React.FC = () => {
         const currentGuildId = appMode.mode === 'guild' ? appMode.guildId : undefined;
 
         const shouldInclude = (item: { userId?: string, userIds?: string[], recipientUserIds?: string[], senderId?: string, guildId?: string | null }) => {
-            if (item.guildId != currentGuildId) return false;
+            const itemGuildId = item.guildId === null ? undefined : item.guildId; // Normalize null to undefined
+            if (itemGuildId !== currentGuildId) return false;
+        
             if (viewMode === 'personal') {
                 const userIdsToCheck = [item.userId, ...(item.userIds || []), ...(item.recipientUserIds || []), item.senderId].filter(Boolean) as string[];
                 return userIdsToCheck.includes(currentUser.id);
@@ -132,12 +134,19 @@ const ChroniclesPage: React.FC = () => {
             if (!shouldInclude({ userId: adj.userId, guildId: adj.guildId })) return;
             const rewardsText = getRewardDisplay(adj.rewards).replace(/(\d+)/g, '+$1');
             const setbacksText = getRewardDisplay(adj.setbacks).replace(/(\d+)/g, '-$1');
+            
+            const isExchange = adj.userId === adj.adjusterId && adj.reason.startsWith('Exchanged');
+            const title = isExchange
+                ? `${userMap.get(adj.userId) || 'Unknown'} made an exchange`
+                : `${userMap.get(adj.userId) || 'Unknown'} received an adjustment from ${userMap.get(adj.adjusterId) || 'Admin'}`;
+            const icon = isExchange ? '⚖️' : '🛠️';
+
             events.push({
                 id: adj.id, originalId: adj.id, date: adj.adjustedAt, type: 'Adjustment', userId: adj.userId,
-                title: `${userMap.get(adj.userId) || 'Unknown'} received an adjustment from ${userMap.get(adj.adjusterId) || 'Admin'}`,
+                title: title,
                 status: adj.type,
                 note: `${adj.reason}\n(${rewardsText} ${setbacksText})`.trim(),
-                icon: '🛠️',
+                icon: icon,
                 color: adj.type === 'Reward' ? '#10b981' : '#ef4444',
                 guildId: adj.guildId
             });
@@ -216,7 +225,6 @@ const ChroniclesPage: React.FC = () => {
           case QuestCompletionStatus.Approved:
           case PurchaseRequestStatus.Completed:
           case AdminAdjustmentType.Reward:
-          case AdminAdjustmentType.Trophy:
           case "Completed":
             return 'text-green-400';
           case "Requested":

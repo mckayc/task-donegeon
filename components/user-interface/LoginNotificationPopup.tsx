@@ -26,7 +26,7 @@ const LoginNotificationPopup: React.FC<LoginNotificationPopupProps> = ({ notific
 
     const handleDismiss = () => {
         const notificationIds = notifications.map(n => n.id);
-        markSystemNotificationsAsRead(notificationIds);
+        markSystemNotificationsAsRead(notificationIds, user.id);
         onClose();
     };
 

@@ -79,7 +79,7 @@ export interface ActionsDispatch {
   markMessagesAsRead: (criteria: { partnerId?: string, guildId?: string }) => Promise<void>;
   
   addSystemNotification: (notificationData: Omit<SystemNotification, 'id' | 'timestamp' | 'readByUserIds' | 'createdAt' | 'updatedAt'>) => Promise<void>;
-  markSystemNotificationsAsRead: (notificationIds: string[]) => Promise<void>;
+  markSystemNotificationsAsRead: (notificationIds: string[], userId: string) => Promise<void>;
   
   addScheduledEvent: (eventData: Omit<ScheduledEvent, 'id'>) => Promise<ScheduledEvent | null>;
   updateScheduledEvent: (eventData: ScheduledEvent) => Promise<ScheduledEvent | null>;
@@ -335,7 +335,7 @@ export const ActionsProvider: React.FC<{ children: ReactNode }> = ({ children })
         markMessagesAsRead: (criteria) => apiRequest('POST', '/api/chat/read', criteria),
         
         addSystemNotification: (data) => apiRequest('POST', '/api/notifications', data),
-        markSystemNotificationsAsRead: (ids) => apiRequest('POST', '/api/notifications/read', { ids }),
+        markSystemNotificationsAsRead: (ids, userId) => apiRequest('POST', '/api/notifications/read', { ids, userId }),
         
         addScheduledEvent: createAddAction('/api/events', 'scheduledEvents'),
         updateScheduledEvent: createUpdateAction(id => `/api/events/${id}`, 'scheduledEvents'),

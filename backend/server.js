@@ -1,3 +1,4 @@
+
 require("reflect-metadata");
 const express = require('express');
 const cors = require('cors');
@@ -1658,6 +1659,22 @@ app.post('/api/actions/execute-exchange', asyncMiddleware(async (req, res) => {
             user.personalExperience = personalBalances.experience;
         }
 
+        // Log the exchange as an adjustment for chronicles
+        if(fromReward && toReward) {
+            const newAdjustment = manager.create(AdminAdjustmentEntity, {
+                id: `adj-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+                userId: userId,
+                adjusterId: userId, // User is adjusting their own funds
+                type: 'Reward', // Neutral, 'Reward' type is for color coding
+                rewards: [receiveItem],
+                setbacks: [payItem],
+                reason: `Exchanged ${totalCost} ${fromReward.name} for ${receiveItem.amount} ${toReward.name}.`,
+                adjustedAt: new Date().toISOString(),
+                guildId: guildId || null,
+            });
+            await manager.save(updateTimestamps(newAdjustment, true));
+        }
+
         await userRepo.save(updateTimestamps(user));
         const updatedUser = await userRepo.findOneBy({ id: userId });
         
@@ -1825,7 +1842,7 @@ app.get('/api/media/local-gallery', async (req, res, next) => {
     } catch (err) {
         next(err);
     }
-});
+}));
 
 
 // === Asset Pack Endpoints ===
@@ -2101,6 +2118,51 @@ chatRouter.post('/read', asyncMiddleware(async (req, res) => {
 }));
 
 app.use('/api/chat', chatRouter);
+
+// System Notifications Router
+const notificationsRouter = express.Router();
+const systemNotificationRepo = dataSource.getRepository(SystemNotificationEntity);
+
+notificationsRouter.post('/', asyncMiddleware(async (req, res) => {
+    const newNotif = systemNotificationRepo.create({
+        ...req.body,
+        id: `sysnotif-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+        timestamp: new Date().toISOString(),
+        readByUserIds: []
+    });
+    const saved = await systemNotificationRepo.save(updateTimestamps(newNotif, true));
+    updateEmitter.emit('update');
+    res.status(201).json(saved);
+}));
+
+notificationsRouter.post('/read', asyncMiddleware(async (req, res) => {
+    const { ids, userId } = req.body;
+    if (!ids || !Array.isArray(ids) || !userId) {
+        return res.status(400).json({ error: 'Missing notification IDs or user ID.' });
+    }
+
+    const notificationsToUpdate = await systemNotificationRepo.findBy({
+        id: In(ids)
+    });
+
+    let updated = false;
+    for (const notification of notificationsToUpdate) {
+        if (!notification.readByUserIds.includes(userId)) {
+            notification.readByUserIds.push(userId);
+            updateTimestamps(notification);
+            updated = true;
+        }
+    }
+
+    if (updated) {
+        await systemNotificationRepo.save(notificationsToUpdate);
+    }
+    
+    updateEmitter.emit('update');
+    res.status(204).send();
+}));
+
+app.use('/api/notifications', notificationsRouter);
 
 // Serve React App
 app.use(express.static(path.join(__dirname, '..', 'dist')));

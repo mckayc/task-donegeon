@@ -2,6 +2,36 @@
 const express = require('express');
 const { dataSource } = require('../data-source');
 const { allEntities, SettingEntity, LoginHistoryEntity } = require('../entities');
+const { INITIAL_SETTINGS, INITIAL_REWARD_TYPES, INITIAL_RANKS, INITIAL_TROPHIES, INITIAL_THEMES, INITIAL_QUEST_GROUPS } = require('../initialData');
+
+
+const entityToKeyMap = {
+    User: 'users',
+    Quest: 'quests',
+    QuestGroup: 'questGroups',
+    Market: 'markets',
+    RewardTypeDefinition: 'rewardTypes',
+    QuestCompletion: 'questCompletions',
+    PurchaseRequest: 'purchaseRequests',
+    Guild: 'guilds',
+    Rank: 'ranks',
+    Trophy: 'trophies',
+    UserTrophy: 'userTrophies',
+    AdminAdjustment: 'adminAdjustments',
+    GameAsset: 'gameAssets',
+    SystemLog: 'systemLogs',
+    ThemeDefinition: 'themes',
+    ChatMessage: 'chatMessages',
+    SystemNotification: 'systemNotifications',
+    ScheduledEvent: 'scheduledEvents',
+    BugReport: 'bugReports',
+    SetbackDefinition: 'setbackDefinitions',
+    AppliedSetback: 'appliedSetbacks',
+    Rotation: 'rotations',
+    TradeOffer: 'tradeOffers',
+    Gift: 'gifts',
+};
+
 
 module.exports = (updateEmitter) => {
     const router = express.Router();
@@ -10,28 +40,38 @@ module.exports = (updateEmitter) => {
 
     const fetchAllData = async () => {
         const data = {};
-        for(const entitySchema of allEntities) {
-            const repo = dataSource.getRepository(entitySchema.target);
-            const tableName = repo.metadata.tableName;
-            data[tableName] = await repo.find();
+        for (const entitySchema of allEntities) {
+            const key = entityToKeyMap[entitySchema.name];
+            if (key) {
+                const repo = dataSource.getRepository(entitySchema.target);
+                data[key] = await repo.find();
+            } else {
+                console.warn(`No key mapping found for entity: ${entitySchema.name}`);
+            }
         }
+        
         // Special handling for single-row entities
         const settingsRepo = dataSource.getRepository(SettingEntity);
-        const settings = await settingsRepo.findOneBy({ id: 1 });
-        data.settings = settings ? settings.settings : null;
+        const settingsResult = await settingsRepo.findOneBy({ id: 1 });
+        data.settings = settingsResult ? settingsResult.settings : INITIAL_SETTINGS;
 
         const loginHistoryRepo = dataSource.getRepository(LoginHistoryEntity);
-        const loginHistory = await loginHistoryRepo.findOneBy({ id: 1 });
-        data.loginHistory = loginHistory ? loginHistory.history : [];
+        const loginHistoryResult = await loginHistoryRepo.findOneBy({ id: 1 });
+        data.loginHistory = loginHistoryResult ? loginHistoryResult.history : [];
         
+        // Check if AI is configured
+        data.isAiConfigured = !!(process.env.API_KEY && process.env.API_KEY !== 'thiswontworkatall');
+
         return data;
     };
 
     router.get('/sync', async (req, res) => {
         try {
             const data = await fetchAllData();
+            lastKnownSyncTimestamp = new Date().toISOString(); // Update timestamp on each full sync
             res.json({ updates: data, newSyncTimestamp: lastKnownSyncTimestamp });
         } catch (error) {
+            console.error('Failed to fetch initial data:', error);
             res.status(500).json({ error: 'Failed to fetch initial data.' });
         }
     });
@@ -57,8 +97,20 @@ module.exports = (updateEmitter) => {
         });
     });
 
-    // ... Other data-related routes like resets ...
-    router.post('/factory-reset', async (req, res) => { /* ... */ updateEmitter.emit('update'); res.status(204).send(); });
+    // --- DANGER ZONE ROUTES ---
+    router.post('/factory-reset', async (req, res) => {
+        try {
+            for (const entity of allEntities) {
+                await dataSource.getRepository(entity.target).clear();
+            }
+            await dataSource.getRepository(SettingEntity).clear();
+            await dataSource.getRepository(LoginHistoryEntity).clear();
+            updateEmitter.emit('update');
+            res.status(204).send();
+        } catch(e) {
+            res.status(500).json({ error: 'Factory reset failed.' });
+        }
+    });
 
     return router;
 };

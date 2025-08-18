@@ -1,8 +1,9 @@
 
 const express = require('express');
 const { dataSource } = require('../data-source');
-const { allEntities, SettingEntity, LoginHistoryEntity } = require('../entities');
+const { UserEntity, SettingEntity, LoginHistoryEntity, RewardTypeDefinitionEntity, RankEntity, TrophyEntity, ThemeDefinitionEntity, QuestGroupEntity } = require('../entities');
 const { INITIAL_SETTINGS, INITIAL_REWARD_TYPES, INITIAL_RANKS, INITIAL_TROPHIES, INITIAL_THEMES, INITIAL_QUEST_GROUPS } = require('../initialData');
+const { updateTimestamps } = require('../utils');
 
 const router = express.Router();
 
@@ -11,57 +12,71 @@ router.get('/status', async (req, res) => {
         const userRepo = dataSource.getRepository('User');
         const userCount = await userRepo.count();
         
-        const status = {
+        res.json({
             isFirstRun: userCount === 0,
             geminiConnected: !!(process.env.API_KEY && process.env.API_KEY !== 'thiswontworkatall'),
             database: {
                 connected: dataSource.isInitialized,
-                isCustomPath: process.env.DATABASE_PATH !== undefined,
+                isCustomPath: !!process.env.DATABASE_PATH,
             },
             jwtSecretSet: !!(process.env.JWT_SECRET && process.env.JWT_SECRET.length > 16),
-        };
-        res.json(status);
+        });
     } catch (error) {
-        // If it fails, it might be before the first run, so return a default "first run" state
+        // This can happen if the database isn't initialized yet on the very first run
         res.json({
             isFirstRun: true,
-            geminiConnected: false,
-            database: { connected: false, isCustomPath: false },
-            jwtSecretSet: false,
+            geminiConnected: !!(process.env.API_KEY && process.env.API_KEY !== 'thiswontworkatall'),
+            database: { connected: false, isCustomPath: !!process.env.DATABASE_PATH },
+            jwtSecretSet: !!(process.env.JWT_SECRET && process.env.JWT_SECRET.length > 16),
         });
     }
 });
 
 router.post('/first-run', async (req, res) => {
-    // This is a simplified first-run setup. A real one would be more transactional.
+    const queryRunner = dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
     try {
         const { adminUserData } = req.body;
-        
-        // Save initial data
-        await dataSource.getRepository('RewardTypeDefinition').save(INITIAL_REWARD_TYPES);
-        await dataSource.getRepository('Rank').save(INITIAL_RANKS);
-        await dataSource.getRepository('Trophy').save(INITIAL_TROPHIES);
-        await dataSource.getRepository('ThemeDefinition').save(INITIAL_THEMES);
-        await dataSource.getRepository('QuestGroup').save(INITIAL_QUEST_GROUPS);
-        
-        // Save settings and login history
-        await dataSource.getRepository(SettingEntity).save({ id: 1, settings: INITIAL_SETTINGS });
-        await dataSource.getRepository(LoginHistoryEntity).save({ id: 1, history: [] });
 
+        // Save all initial data within the transaction
+        await queryRunner.manager.save(RewardTypeDefinitionEntity, INITIAL_REWARD_TYPES.map(e => updateTimestamps(e, true)));
+        await queryRunner.manager.save(RankEntity, INITIAL_RANKS.map(e => updateTimestamps(e, true)));
+        await queryRunner.manager.save(TrophyEntity, INITIAL_TROPHIES.map(e => updateTimestamps(e, true)));
+        await queryRunner.manager.save(ThemeDefinitionEntity, INITIAL_THEMES.map(e => updateTimestamps(e, true)));
+        await queryRunner.manager.save(QuestGroupEntity, INITIAL_QUEST_GROUPS.map(e => updateTimestamps(e, true)));
+
+        const settings = queryRunner.manager.create(SettingEntity, { id: 1, settings: INITIAL_SETTINGS });
+        await queryRunner.manager.save(updateTimestamps(settings, true));
+        
+        const loginHistory = queryRunner.manager.create(LoginHistoryEntity, { id: 1, history: [] });
+        await queryRunner.manager.save(updateTimestamps(loginHistory, true));
+        
         // Create admin user
-        const userRepo = dataSource.getRepository('User');
         const adminId = `user-${Date.now()}`;
-        const admin = userRepo.create({
+        const admin = queryRunner.manager.create(UserEntity, {
             ...adminUserData,
             id: adminId,
-            avatar: {}, ownedAssetIds: [], personalPurse: {}, personalExperience: {},
-            guildBalances: {}, ownedThemes: ['emerald', 'rose', 'sky'], hasBeenOnboarded: true
+            avatar: {}, 
+            ownedAssetIds: [], 
+            personalPurse: {}, 
+            personalExperience: {},
+            guildBalances: {}, 
+            ownedThemes: ['emerald', 'rose', 'sky'], 
+            hasBeenOnboarded: true
         });
-        await userRepo.save(admin);
-        
+        await queryRunner.manager.save(updateTimestamps(admin, true));
+
+        await queryRunner.commitTransaction();
         res.status(201).json({ message: 'First run setup complete.' });
+
     } catch (error) {
+        await queryRunner.rollbackTransaction();
+        console.error(`First run setup failed:`, error);
         res.status(500).json({ error: `First run setup failed: ${error.message}` });
+    } finally {
+        await queryRunner.release();
     }
 });
 

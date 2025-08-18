@@ -175,11 +175,36 @@ const AppliedSetbackEntity = new EntitySchema({
         setbackDefinitionId: { type: "varchar" },
         appliedAt: { type: "varchar" },
         expiresAt: { type: "varchar", nullable: true },
+        status: { type: "varchar", default: 'Active' },
+        redemptionQuestId: { type: "varchar", nullable: true },
+        resolvedAt: { type: "varchar", nullable: true },
+        resolvedById: { type: "varchar", nullable: true },
+        resolutionNote: { type: "text", nullable: true },
         overrides: { type: "simple-json", nullable: true },
         reason: { type: "text" },
         appliedById: { type: "varchar" },
         createdAt: { type: "varchar", nullable: true },
         updatedAt: { type: "varchar", nullable: true },
+    },
+    relations: {
+        user: {
+            type: "many-to-one",
+            target: "User",
+            joinColumn: { name: "userId" },
+            onDelete: "CASCADE",
+        },
+        appliedBy: {
+            type: "many-to-one",
+            target: "User",
+            joinColumn: { name: "appliedById" },
+            onDelete: "SET NULL",
+        },
+        definition: {
+            type: "many-to-one",
+            target: "SetbackDefinition",
+            joinColumn: { name: "setbackDefinitionId" },
+            onDelete: "CASCADE",
+        },
     }
 });
 

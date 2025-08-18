@@ -52,7 +52,7 @@ const RewardInputGroup: React.FC<RewardInputGroupProps> = ({ category, items, on
   const xpTypes = rewardTypes.filter(rt => rt.category === RewardCategory.XP);
 
   const categoryLabel = category.replace(/([A-Z])/g, ' $1').trim();
-  const showAddButtons = category === 'rewards' || category === 'cost' || category === 'payout' || category === 'lateSetbacks' || category === 'incompleteSetbacks';
+  const showAddButtons = category === 'rewards' || category === 'cost' || category === 'payout' || category === 'lateSetbacks' || category === 'incompleteSetbacks' || category === 'setbacks';
   const buttonVerb = category.toLowerCase().includes('setback') ? 'Subtract' : 'Add';
 
   const currencyItems = items

@@ -2546,6 +2546,38 @@ app.get('/api/chronicles', asyncMiddleware(async (req, res) => {
             }
         });
      }
+
+    // 6. Applied Setbacks (Personal Scope Only)
+    if (!guildIdQuery) {
+        const sbQb = manager.getRepository(AppliedSetbackEntity).createQueryBuilder("sb")
+            .leftJoinAndSelect("sb.user", "user")
+            .leftJoinAndSelect("sb.definition", "definition")
+            .leftJoinAndSelect("sb.appliedBy", "appliedBy");
+
+        if (viewMode === 'personal' && userId) {
+            sbQb.andWhere("sb.userId = :userId", { userId });
+        }
+        const sbDateCond = dateCondition('sb', 'appliedAt');
+        sbQb.andWhere(sbDateCond.clause, sbDateCond.params);
+        const appliedSetbacks = await sbQb.getMany();
+
+        appliedSetbacks.forEach(s => {
+            if (!s.user || !s.definition || !s.appliedBy) return;
+            
+            const finalEffects = s.overrides?.effects || s.definition?.effects || [];
+            const setbackRewards = finalEffects
+                .filter(e => e.type === 'DEDUCT_REWARDS')
+                .flatMap(e => e.rewards || []);
+            
+            const note = `${s.reason}\n(${getRewardDisplay(setbackRewards).replace(/(\d+)/g, '-$1')})`.trim();
+
+            allEvents.push({
+                id: s.id, originalId: s.id, date: s.appliedAt, type: 'Setback', userId: s.user.id, actorName: s.appliedBy.gameName,
+                title: `${s.user.gameName} received setback: "${s.definition.name}"`, status: "Setback", note: note, 
+                icon: s.definition.icon || '⚖️', color: '#ef4444', guildId: null
+            });
+        });
+    }
     
     // Sort all events by date descending
     allEvents.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
@@ -2761,7 +2793,7 @@ backupsRouter.get('/download/:filename', (req, res) => {
             }
         }
     });
-});
+}));
 
 backupsRouter.delete('/:filename', asyncMiddleware(async (req, res) => {
     const filename = path.basename(req.params.filename);

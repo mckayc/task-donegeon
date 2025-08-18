@@ -41,7 +41,20 @@ const ChatPanel: React.FC = () => {
     const [size, setSize] = useState(() => {
         if (window.innerWidth < 768) return { width: window.innerWidth, height: window.innerHeight };
         const savedSize = localStorage.getItem('chatPanelSize');
-        return savedSize ? JSON.parse(savedSize) : { width: 550, height: 600 };
+        const defaultSize = { width: 550, height: 600 };
+        if (savedSize) {
+            try {
+                const parsed = JSON.parse(savedSize);
+                // Validate and clamp the size to ensure it fits on the screen with a margin
+                const clampedWidth = Math.max(320, Math.min(parsed.width, window.innerWidth - 40));
+                const clampedHeight = Math.max(400, Math.min(parsed.height, window.innerHeight - 40));
+                return { width: clampedWidth, height: clampedHeight };
+            } catch (e) {
+                console.error("Failed to parse chat panel size from localStorage", e);
+                return defaultSize;
+            }
+        }
+        return defaultSize;
     });
 
     useEffect(() => {
@@ -67,10 +80,14 @@ const ChatPanel: React.FC = () => {
         if (isMobile) return { x: 0, y: 0 };
         const savedPosition = localStorage.getItem('chatPanelPosition');
         if (savedPosition) {
-            const { x, y } = JSON.parse(savedPosition);
-            const clampedX = Math.min(Math.max(0, x), window.innerWidth - size.width);
-            const clampedY = Math.min(Math.max(0, y), window.innerHeight - size.height);
-            return { x: clampedX, y: clampedY };
+            try {
+                const { x, y } = JSON.parse(savedPosition);
+                const clampedX = Math.min(Math.max(0, x), window.innerWidth - size.width);
+                const clampedY = Math.min(Math.max(0, y), window.innerHeight - size.height);
+                return { x: clampedX, y: clampedY };
+            } catch (e) {
+                console.error("Failed to parse chat panel position from localStorage", e);
+            }
         }
         return {
             x: window.innerWidth - size.width - 20,

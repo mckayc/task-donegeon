@@ -62,7 +62,7 @@ export const DeveloperProvider: React.FC<{ children: ReactNode }> = ({ children 
   const startRecording = useCallback((bugId?: string) => {
     let initialLogs: BugReportLogEntry[] = [];
     if (bugId) {
-        const existingReport = bugReportsRef.current.find(b => b.id === bugId);
+        const existingReport = bugReportsRef.current.find((b: BugReport) => b.id === bugId);
         if (existingReport) {
             initialLogs = existingReport.logs;
             setActiveBugId(bugId);
@@ -132,9 +132,6 @@ export const DeveloperProvider: React.FC<{ children: ReactNode }> = ({ children 
     };
 
     const handleClick = (e: MouseEvent) => {
-        e.preventDefault();
-        e.stopPropagation();
-
         const target = e.target as HTMLElement;
         if (target?.closest('[data-bug-reporter-ignore]')) {
             stopPickingElement();
@@ -144,7 +141,7 @@ export const DeveloperProvider: React.FC<{ children: ReactNode }> = ({ children 
         const elementInfo = {
             tag: target.tagName.toLowerCase(),
             id: target.id || undefined,
-            classes: target.className || undefined,
+            classes: typeof target.className === 'string' ? target.className : undefined,
             text: target.innerText?.substring(0, 50) || undefined,
         };
 

@@ -242,7 +242,7 @@ const ChatPanel: React.FC = () => {
         <motion.div
             ref={panelRef}
             data-bug-reporter-ignore
-            className="fixed z-50 flex flex-col bg-stone-800 border border-stone-700 rounded-xl shadow-2xl"
+            className="fixed z-[98] flex flex-col bg-stone-800 border border-stone-700 rounded-xl shadow-2xl"
             style={panelStyles}
             drag={!isMobile}
             dragControls={dragControls}

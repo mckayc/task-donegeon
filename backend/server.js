@@ -1,5 +1,3 @@
-
-
 require("reflect-metadata");
 const express = require('express');
 const cors = require('cors');
@@ -2205,7 +2203,7 @@ app.post('/api/actions/manual-adjustment', asyncMiddleware(async (req, res) => {
 }));
 
 app.post('/api/actions/apply-setback', asyncMiddleware(async (req, res) => {
-    const { userId, setbackDefinitionId, reason, appliedById } = req.body;
+    const { userId, setbackDefinitionId, reason, appliedById, overrides } = req.body;
     let updatedUserResult;
     let newAppliedSetbackResult;
 
@@ -2219,8 +2217,10 @@ app.post('/api/actions/apply-setback', asyncMiddleware(async (req, res) => {
         const rewardTypes = await manager.find(RewardTypeDefinitionEntity);
         const rewardTypesMap = new Map(rewardTypes.map(rt => [rt.id, rt]));
 
+        const finalEffects = overrides?.effects || definition.effects || [];
+
         let expires = null;
-        for (const effect of definition.effects) {
+        for (const effect of finalEffects) {
             if (effect.type === 'CLOSE_MARKET' && effect.durationHours) {
                 const durationMs = effect.durationHours * 3600 * 1000;
                 const newExpiry = new Date(Date.now() + durationMs);
@@ -2252,6 +2252,7 @@ app.post('/api/actions/apply-setback', asyncMiddleware(async (req, res) => {
             appliedById,
             appliedAt: new Date().toISOString(),
             expiresAt: expires ? expires.toISOString() : null,
+            overrides: overrides || null,
         });
         
         newAppliedSetbackResult = await manager.save(updateTimestamps(newAppliedSetback, true));
@@ -2722,7 +2723,7 @@ backupsRouter.get('/download/:filename', (req, res) => {
             }
         }
     });
-});
+}));
 
 backupsRouter.delete('/:filename', asyncMiddleware(async (req, res) => {
     const filename = path.basename(req.params.filename);

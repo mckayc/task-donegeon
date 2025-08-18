@@ -1,5 +1,3 @@
-
-
 import React, { createContext, useContext, ReactNode, useCallback } from 'react';
 import { IAppData, Quest, User, QuestCompletion, AdminAdjustment, PurchaseRequest, Market, Guild, Rank, Trophy, RewardTypeDefinition, ThemeDefinition, ShareableAssetType, BulkQuestUpdates, ChatMessage, SystemNotification, ScheduledEvent, BugReport, Rotation, SetbackDefinition, AppliedSetback, TradeOffer, Gift, QuestGroup, GameAsset, RewardItem } from '../types';
 import { useNotificationsDispatch } from './NotificationsContext';
@@ -99,7 +97,7 @@ export interface ActionsDispatch {
 
   addSetbackDefinition: (setbackData: Omit<SetbackDefinition, 'id'>) => Promise<SetbackDefinition | null>;
   updateSetbackDefinition: (setbackData: SetbackDefinition) => Promise<SetbackDefinition | null>;
-  applySetback: (userId: string, setbackId: string, reason: string) => Promise<boolean>;
+  applySetback: (userId: string, setbackId: string, reason: string, overrides?: Partial<SetbackDefinition>) => Promise<boolean>;
 
   proposeTrade: (recipientId: string, guildId: string) => Promise<TradeOffer | null>;
   updateTradeOffer: (tradeId: string, updates: Partial<TradeOffer>) => Promise<void>;
@@ -436,13 +434,14 @@ export const ActionsProvider: React.FC<{ children: ReactNode }> = ({ children })
 
         addSetbackDefinition: createAddAction('/api/setbacks', 'setbackDefinitions'),
         updateSetbackDefinition: createUpdateAction(id => `/api/setbacks/${id}`, 'setbackDefinitions'),
-        applySetback: async (userId, setbackId, reason) => {
+        applySetback: async (userId, setbackId, reason, overrides) => {
             if (!currentUser) return false;
             const result = await apiRequest('POST', '/api/actions/apply-setback', {
                 userId,
                 setbackDefinitionId: setbackId,
                 reason,
-                appliedById: currentUser.id
+                appliedById: currentUser.id,
+                overrides,
             });
              if (result) {
                 if (result.updatedUser) {

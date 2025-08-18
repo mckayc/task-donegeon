@@ -44,6 +44,8 @@ const ChroniclesPage: React.FC = () => {
         questCompletions.forEach(c => {
             const itemGuildId = c.guildId === null ? undefined : c.guildId;
             if (itemGuildId !== currentGuildId) return;
+            // In 'My Activity' mode, show if the user is the one who completed it.
+            // Future enhancement: could also show if the user was the approver.
             if (viewMode === 'personal' && c.userId !== currentUser.id) return;
             
             const quest = questMap.get(c.questId);
@@ -60,19 +62,18 @@ const ChroniclesPage: React.FC = () => {
             });
         });
 
-        // 2. Purchase Requests (Split into two events)
+        // 2. Purchase Requests (Split into two events for clarity)
         purchaseRequests.forEach(p => {
             const itemGuildId = p.guildId === null ? undefined : p.guildId;
             if (itemGuildId !== currentGuildId) return;
 
             const isRequester = p.userId === currentUser.id;
             const isActor = p.actedById === currentUser.id;
-
             const requesterName = userMap.get(p.userId) || 'Unknown';
             const costText = getRewardDisplay(p.assetDetails.cost).replace(/(\d+)/g, '-$1');
 
-            // Event 1: The initial request
-            if (viewMode === 'all' || (viewMode === 'personal' && isRequester)) {
+            // Event 1: The initial request. Show in 'My Activity' if I requested OR acted on it.
+            if (viewMode === 'all' || (viewMode === 'personal' && (isRequester || isActor))) {
                 events.push({
                     id: p.id + '-req', originalId: p.id, date: p.requestedAt, type: 'Purchase', userId: p.userId,
                     title: `${requesterName} requested to purchase "${p.assetDetails.name}"`,
@@ -81,7 +82,7 @@ const ChroniclesPage: React.FC = () => {
                 });
             }
 
-            // Event 2: The action (approve, reject, cancel)
+            // Event 2: The action (approve, reject, cancel). Show if I requested OR acted on it.
             if (p.actedAt && p.status !== PurchaseRequestStatus.Pending) {
                 if (viewMode === 'all' || (viewMode === 'personal' && (isRequester || isActor))) {
                     const actorName = userMap.get(p.actedById || '') || 'System';
@@ -161,17 +162,23 @@ const ChroniclesPage: React.FC = () => {
             });
         });
         
-        // 5. System Logs (Global/Admin view only, and only in personal scope)
-        if (viewMode === 'all' && currentGuildId === undefined) {
+        // 5. System Logs (Scoped to current view)
+        if (viewMode === 'all') {
             systemLogs.forEach(log => {
                 const quest = questMap.get(log.questId);
-                const userNames = log.userIds.map(id => userMap.get(id) || 'Unknown').join(', ');
-                const setbacksText = getRewardDisplay(log.setbacksApplied).replace(/(\d+)/g, '-$1');
-                events.push({
-                    id: log.id, originalId: log.id, date: log.timestamp, type: 'System',
-                    title: `System: ${quest?.title || 'Unknown Quest'} marked as ${log.type.split('_')[1]}`,
-                    status: log.type, note: `For: ${userNames}\n(${setbacksText})`, icon: '⚙️', color: '#64748b'
-                });
+                if (!quest) return; // Can't determine scope if quest is missing
+                
+                const logGuildId = quest.guildId === null ? undefined : quest.guildId;
+                
+                if (logGuildId === currentGuildId) { // This handles both personal (undefined) and guild scopes
+                    const userNames = log.userIds.map(id => userMap.get(id) || 'Unknown').join(', ');
+                    const setbacksText = getRewardDisplay(log.setbacksApplied).replace(/(\d+)/g, '-$1');
+                    events.push({
+                        id: log.id, originalId: log.id, date: log.timestamp, type: 'System',
+                        title: `System: ${quest?.title || 'Unknown Quest'} marked as ${log.type.split('_')[1]}`,
+                        status: log.type, note: `For: ${userNames}\n(${setbacksText})`, icon: '⚙️', color: '#64748b'
+                    });
+                }
             });
         }
         
@@ -273,7 +280,7 @@ const ChroniclesPage: React.FC = () => {
     return (
         <div>
             <div className="flex justify-between items-center mb-8 flex-wrap gap-4">
-                {currentUser.role !== Role.Explorer && (
+                {(currentUser.role === Role.DonegeonMaster || currentUser.role === Role.Gatekeeper) && (
                     <div className="flex space-x-2 p-1 bg-stone-900/50 rounded-lg">
                         <button
                             onClick={() => setViewMode('all')}

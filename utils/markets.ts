@@ -9,9 +9,11 @@ export const isMarketOpenForUser = (market: Market, user: User, allData: IAppDat
         if (s.expiresAt && new Date(s.expiresAt) < now) return false; // Check for expiry
 
         const definition = allData.setbackDefinitions.find(d => d.id === s.setbackDefinitionId);
-        return definition?.effects.some(effect => 
+        const finalEffects = s.overrides?.effects || definition?.effects || [];
+        
+        return finalEffects.some(effect => 
             effect.type === SetbackEffectType.CloseMarket && effect.marketIds.includes(market.id)
-        ) ?? false;
+        );
     });
 
     if (activeSetback) {

@@ -284,14 +284,14 @@ const MarketplacePage: React.FC = () => {
                             <button 
                                 key={market.id} 
                                 onClick={() => {
-                                    if (openStatus.isOpen) {
-                                        setActiveMarketId(market.id);
-                                    } else {
+                                    if (openStatus.isOpen === false) {
                                         let message = openStatus.message;
                                         if (openStatus.reason === 'SETBACK' && openStatus.redemptionQuest) {
                                             message += ` Complete your quest, '${openStatus.redemptionQuest.title}', to unlock it.`
                                         }
                                         addNotification({ type: 'error', message, duration: 8000 });
+                                    } else {
+                                        setActiveMarketId(market.id);
                                     }
                                 }}
                                 disabled={isDisabled}

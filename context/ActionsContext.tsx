@@ -1,4 +1,5 @@
 
+
 import React, { createContext, useContext, ReactNode, useCallback } from 'react';
 import { IAppData, Quest, User, QuestCompletion, AdminAdjustment, PurchaseRequest, Market, Guild, Rank, Trophy, RewardTypeDefinition, ThemeDefinition, ShareableAssetType, BulkQuestUpdates, ChatMessage, SystemNotification, ScheduledEvent, BugReport, Rotation, SetbackDefinition, AppliedSetback, TradeOffer, Gift, QuestGroup, GameAsset, RewardItem } from '../types';
 import { useNotificationsDispatch } from './NotificationsContext';
@@ -35,6 +36,8 @@ export interface ActionsDispatch {
   updateGameAsset: (assetData: GameAsset) => Promise<GameAsset | null>;
   cloneGameAsset: (assetId: string) => Promise<GameAsset | null>;
   
+  addRank: (rankData: Omit<Rank, 'id'>) => Promise<Rank | null>;
+  updateRank: (rankData: Rank) => Promise<Rank | null>;
   setRanks: (ranks: Rank[]) => Promise<void>;
   
   deleteSelectedAssets: (assets: { [key in ShareableAssetType]?: string[] }, callback?: () => void) => Promise<void>;
@@ -53,6 +56,7 @@ export interface ActionsDispatch {
   addGuild: (guildData: Omit<Guild, 'id'>) => Promise<Guild | null>;
   updateGuild: (guildData: Guild) => Promise<Guild | null>;
   deleteGuild: (guildId: string) => Promise<void>;
+  donateToGuild: (guildId: string, rewards: RewardItem[], assetIds: string[]) => Promise<void>;
 
   applyManualAdjustment: (adjustment: Omit<AdminAdjustment, 'id' | 'adjustedAt'>) => Promise<boolean>;
 
@@ -98,7 +102,7 @@ export interface ActionsDispatch {
 
   addSetbackDefinition: (setbackData: Omit<SetbackDefinition, 'id'>) => Promise<SetbackDefinition | null>;
   updateSetbackDefinition: (setbackData: SetbackDefinition) => Promise<SetbackDefinition | null>;
-  applySetback: (userId: string, setbackId: string, reason: string) => Promise<boolean>;
+  applySetback: (userId: string, setbackId: string, reason: string, guildId?: string) => Promise<boolean>;
 
   proposeTrade: (recipientId: string, guildId: string) => Promise<TradeOffer | null>;
   updateTradeOffer: (tradeId: string, updates: Partial<TradeOffer>) => Promise<void>;
@@ -162,6 +166,22 @@ export const ActionsProvider: React.FC<{ children: ReactNode }> = ({ children })
             addNotification({ type: 'success', message: 'Exchange successful!' });
         }
     }, [apiRequest, updateUser, dataDispatch, addNotification]);
+
+    const donateToGuild = useCallback(async (guildId: string, rewards: RewardItem[], assetIds: string[]) => {
+        if (!currentUser) return;
+        const result = await apiRequest('POST', '/api/actions/donate-to-guild', {
+            userId: currentUser.id,
+            guildId,
+            rewards,
+            assetIds
+        });
+        if (result) {
+            const { updatedUser, updatedGuild } = result;
+            if (updatedUser) updateUser(updatedUser.id, updatedUser);
+            if (updatedGuild) dataDispatch({ type: 'UPDATE_DATA', payload: { guilds: [updatedGuild] } });
+            addNotification({ type: 'success', message: 'Donation successful!' });
+        }
+    }, [apiRequest, currentUser, updateUser, dataDispatch, addNotification]);
     
     // Generic helper for add actions
     const createAddAction = <T_ADD, T_RETURN extends { id: any }, D extends keyof IAppData>(
@@ -236,7 +256,9 @@ export const ActionsProvider: React.FC<{ children: ReactNode }> = ({ children })
         addGameAsset: createAddAction('/api/assets', 'gameAssets'),
         updateGameAsset: createUpdateAction(id => `/api/assets/${id}`, 'gameAssets'),
         cloneGameAsset: createCloneAction(id => `/api/assets/clone/${id}`, 'gameAssets'),
-        
+
+        addRank: createAddAction('/api/ranks', 'ranks'),
+        updateRank: createUpdateAction(id => `/api/ranks/${id}`, 'ranks'),
         setRanks: (ranks) => apiRequest('POST', '/api/ranks/bulk-update', { ranks }),
         
         deleteSelectedAssets: async (assets, callback) => {
@@ -317,6 +339,7 @@ export const ActionsProvider: React.FC<{ children: ReactNode }> = ({ children })
         addGuild: createAddAction('/api/guilds', 'guilds'),
         updateGuild: createUpdateAction(id => `/api/guilds/${id}`, 'guilds'),
         deleteGuild: (id) => apiRequest('DELETE', `/api/guilds/${id}`),
+        donateToGuild,
 
         applyManualAdjustment: async (adjustment) => {
             const result = await apiRequest('POST', '/api/actions/manual-adjustment', adjustment);
@@ -433,9 +456,19 @@ export const ActionsProvider: React.FC<{ children: ReactNode }> = ({ children })
         addRotation: createAddAction('/api/rotations', 'rotations'),
         updateRotation: createUpdateAction(id => `/api/rotations/${id}`, 'rotations'),
 
-        addSetbackDefinition: createAddAction('/api/setbacks', 'setbackDefinitions'),
-        updateSetbackDefinition: createUpdateAction(id => `/api/setbacks/${id}`, 'setbackDefinitions'),
-        applySetback: async (userId, setbackId, reason) => { await apiRequest('POST', '/api/actions/apply-setback', { userId, setbackDefinitionId: setbackId, reason }); return true; },
+        addSetbackDefinition: createAddAction('/api/setbackDefinitions', 'setbackDefinitions'),
+        updateSetbackDefinition: createUpdateAction(id => `/api/setbackDefinitions/${id}`, 'setbackDefinitions'),
+        applySetback: async (userId, setbackId, reason, guildId) => {
+            if (!currentUser) return false;
+            await apiRequest('POST', '/api/actions/apply-setback', { 
+                userId, 
+                setbackDefinitionId: setbackId, 
+                reason,
+                guildId: guildId || null,
+                appliedById: currentUser.id 
+            });
+            return true;
+        },
 
         proposeTrade: (recipientId, guildId) => apiRequest('POST', '/api/trades/propose', { recipientId, guildId }),
         updateTradeOffer: (id, updates) => apiRequest('PUT', `/api/trades/${id}`, updates),

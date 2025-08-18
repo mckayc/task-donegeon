@@ -1,4 +1,5 @@
 
+
 require("reflect-metadata");
 const express = require('express');
 const cors = require('cors');
@@ -14,7 +15,7 @@ const {
     QuestCompletionEntity, PurchaseRequestEntity, GuildEntity, RankEntity, TrophyEntity,
     UserTrophyEntity, AdminAdjustmentEntity, GameAssetEntity, SystemLogEntity, ThemeDefinitionEntity,
     ChatMessageEntity, SystemNotificationEntity, ScheduledEventEntity, SettingEntity, LoginHistoryEntity,
-    BugReportEntity, allEntities
+    BugReportEntity, SetbackDefinitionEntity, AppliedSetbackEntity, allEntities
 } = require('./entities');
 const { EventEmitter } = require('events');
 
@@ -36,38 +37,30 @@ const updateTimestamps = (entity, isNew = false) => {
 };
 
 const checkAndAwardTrophies = async (manager, userId, guildId) => {
-    // Automatic trophies are personal-only for now, as per frontend logic
-    if (guildId) return { newUserTrophies: [], newNotifications: [] };
-
     const user = await manager.findOneBy(UserEntity, { id: userId });
     if (!user) return { newUserTrophies: [], newNotifications: [] };
 
     const newUserTrophies = [];
     const newNotifications = [];
 
-    // Get all necessary data for checks
     const userCompletedQuests = await manager.find(QuestCompletionEntity, {
-        where: { user: { id: userId }, guildId: null, status: 'Approved' },
+        where: { user: { id: userId }, guildId: guildId === undefined ? null : guildId, status: 'Approved' },
         relations: ['quest']
     });
-    const userTrophies = await manager.find(UserTrophyEntity, { where: { userId, guildId: null } });
+    const userTrophies = await manager.find(UserTrophyEntity, { where: { userId, guildId: guildId === undefined ? null : guildId } });
     const ranks = await manager.find(RankEntity);
     const automaticTrophies = await manager.find(TrophyEntity, { where: { isManual: false } });
 
-    const totalXp = Object.values(user.personalExperience || {}).reduce((sum, amount) => sum + amount, 0);
+    const balances = guildId ? user.guildBalances[guildId] : { purse: user.personalPurse, experience: user.personalExperience };
+    const totalXp = Object.values(balances?.experience || {}).reduce((sum, amount) => sum + amount, 0);
     const userRank = ranks.slice().sort((a, b) => b.xpThreshold - a.xpThreshold).find(r => totalXp >= r.xpThreshold);
 
     for (const trophy of automaticTrophies) {
-        // Check if user already has this personal trophy
         if (userTrophies.some(ut => ut.trophyId === trophy.id)) continue;
         
-        // Check requirements
         const requirements = Array.isArray(trophy.requirements) ? trophy.requirements : [];
         const meetsAllRequirements = requirements.every(req => {
-            if (!req || typeof req.type === 'undefined') {
-                console.warn('[Trophy Check] Skipping malformed requirement:', req);
-                return false;
-            }
+            if (!req || typeof req.type === 'undefined') return false;
             switch (req.type) {
                 case 'COMPLETE_QUEST_TYPE':
                     return userCompletedQuests.filter(c => c.quest?.type === req.value).length >= req.count;
@@ -83,18 +76,16 @@ const checkAndAwardTrophies = async (manager, userId, guildId) => {
         });
 
         if (meetsAllRequirements) {
-            // Award trophy
             const newTrophy = manager.create(UserTrophyEntity, {
                 id: `usertrophy-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
                 userId,
                 trophyId: trophy.id,
                 awardedAt: new Date().toISOString(),
-                guildId: null, // Personal trophy
+                guildId: guildId || null,
             });
             const savedTrophy = await manager.save(updateTimestamps(newTrophy, true));
             newUserTrophies.push(savedTrophy);
 
-            // Create notification
             const newNotification = manager.create(SystemNotificationEntity, {
                  id: `sysnotif-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
                  type: 'TrophyAwarded',
@@ -102,7 +93,7 @@ const checkAndAwardTrophies = async (manager, userId, guildId) => {
                  recipientUserIds: [userId],
                  readByUserIds: [],
                  timestamp: new Date().toISOString(),
-                 guildId: null,
+                 guildId: guildId || null,
                  iconType: trophy.iconType,
                  icon: trophy.icon,
                  imageUrl: trophy.imageUrl,
@@ -284,6 +275,8 @@ const getFullAppData = async (manager) => {
     data.systemNotifications = await manager.find(SystemNotificationEntity);
     data.scheduledEvents = await manager.find(ScheduledEventEntity);
     data.bugReports = await manager.find(BugReportEntity, { order: { createdAt: "DESC" } });
+    data.setbackDefinitions = await manager.find(SetbackDefinitionEntity);
+    data.appliedSetbacks = await manager.find(AppliedSetbackEntity);
     
     const settingRow = await manager.findOneBy(SettingEntity, { id: 1 });
     data.settings = settingRow ? settingRow.settings : INITIAL_SETTINGS;
@@ -419,7 +412,7 @@ app.get('/api/data/sync', asyncMiddleware(async (req, res) => {
                     users: [], quests: [], questGroups: [], markets: [], rewardTypes: [], questCompletions: [],
                     purchaseRequests: [], guilds: [], ranks: [], trophies: [], userTrophies: [],
                     adminAdjustments: [], gameAssets: [], systemLogs: [], themes: [], chatMessages: [],
-                    systemNotifications: [], scheduledEvents: [], bugReports: [],
+                    systemNotifications: [], scheduledEvents: [], bugReports: [], setbackDefinitions: [], appliedSetbacks: [],
                     settings: { ...INITIAL_SETTINGS, contentVersion: 0 },
                     loginHistory: [],
                 },
@@ -436,7 +429,7 @@ app.get('/api/data/sync', asyncMiddleware(async (req, res) => {
             QuestCompletionEntity, PurchaseRequestEntity, GuildEntity, RankEntity, TrophyEntity,
             UserTrophyEntity, AdminAdjustmentEntity, GameAssetEntity, SystemLogEntity, ThemeDefinitionEntity,
             ChatMessageEntity, SystemNotificationEntity, ScheduledEventEntity, SettingEntity, LoginHistoryEntity,
-            BugReportEntity
+            BugReportEntity, SetbackDefinitionEntity, AppliedSetbackEntity
         ];
         
         for (const entity of entitiesToSync) {
@@ -1402,6 +1395,20 @@ ranksRouter.get('/', asyncMiddleware(async (req, res) => {
 
     res.json(await qb.getMany());
 }));
+ranksRouter.post('/', asyncMiddleware(async (req, res) => {
+    const newRank = rankRepo.create({
+        ...req.body,
+        id: `rank-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+    });
+    const saved = await rankRepo.save(updateTimestamps(newRank, true));
+    updateEmitter.emit('update');
+    res.status(201).json(saved);
+}));
+ranksRouter.put('/:id', asyncMiddleware(async (req, res) => {
+    await rankRepo.update(req.params.id, updateTimestamps(req.body));
+    updateEmitter.emit('update');
+    res.json(await rankRepo.findOneBy({ id: req.params.id }));
+}));
 ranksRouter.delete('/', asyncMiddleware(async (req, res) => {
     const { ids } = req.body;
     if (!ids || !Array.isArray(ids)) return res.status(400).json({ error: 'Invalid request body' });
@@ -1485,6 +1492,36 @@ rewardTypesRouter.post('/clone/:id', asyncMiddleware(async (req, res) => {
     res.status(201).json(saved);
 }));
 app.use('/api/reward-types', rewardTypesRouter);
+
+
+// Setbacks Router
+const setbacksRouter = express.Router();
+const setbackRepo = dataSource.getRepository(SetbackDefinitionEntity);
+setbacksRouter.get('/', asyncMiddleware(async (req, res) => {
+    res.json(await setbackRepo.find());
+}));
+setbacksRouter.post('/', asyncMiddleware(async (req, res) => {
+    const newSetback = setbackRepo.create({
+        ...req.body,
+        id: `setback-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+    });
+    const saved = await setbackRepo.save(updateTimestamps(newSetback, true));
+    updateEmitter.emit('update');
+    res.status(201).json(saved);
+}));
+setbacksRouter.put('/:id', asyncMiddleware(async (req, res) => {
+    await setbackRepo.update(req.params.id, updateTimestamps(req.body));
+    updateEmitter.emit('update');
+    res.json(await setbackRepo.findOneBy({ id: req.params.id }));
+}));
+setbacksRouter.delete('/', asyncMiddleware(async (req, res) => {
+    const { ids } = req.body;
+    if (!ids || !Array.isArray(ids)) return res.status(400).json({ error: 'Invalid request body' });
+    await setbackRepo.delete(ids);
+    updateEmitter.emit('update');
+    res.status(204).send();
+}));
+app.use('/api/setbackDefinitions', setbacksRouter);
 
 
 // Business Logic Actions
@@ -1630,7 +1667,8 @@ app.post('/api/actions/approve-quest/:id', asyncMiddleware(async (req, res) => {
         if (error.statusCode) {
             res.status(error.statusCode).json({ error: error.message });
         } else {
-            throw error;
+            console.error('Unhandled error in approve-quest:', error);
+            res.status(500).json({ error: 'An unknown server error occurred.' });
         }
     }
 }));
@@ -2170,6 +2208,126 @@ app.post('/api/actions/manual-adjustment', asyncMiddleware(async (req, res) => {
     });
 }));
 
+app.post('/api/actions/donate-to-guild', asyncMiddleware(async (req, res) => {
+    const { userId, guildId, rewards, assetIds } = req.body;
+    let resultPayload = {};
+
+    await dataSource.transaction(async manager => {
+        const userRepo = manager.getRepository(UserEntity);
+        const guildRepo = manager.getRepository(GuildEntity);
+        const rewardTypesRepo = manager.getRepository(RewardTypeDefinitionEntity);
+        
+        const user = await userRepo.findOneBy({ id: userId });
+        const guild = await guildRepo.findOne({ where: { id: guildId }, relations: ['members'] });
+        const rewardTypes = await rewardTypesRepo.find();
+        const rewardTypesMap = new Map(rewardTypes.map(rt => [rt.id, rt]));
+
+        if (!user || !guild) {
+            throw new Error('User or Guild not found.');
+        }
+
+        (rewards || []).forEach(reward => {
+            const rewardDef = rewardTypesMap.get(reward.rewardTypeId);
+            if (!rewardDef || reward.amount <= 0) return;
+            const userBalance = user.personalPurse[reward.rewardTypeId] || 0;
+            if (userBalance < reward.amount) throw new Error(`Insufficient funds for ${rewardDef.name}.`);
+            user.personalPurse[reward.rewardTypeId] -= reward.amount;
+            if (!guild.treasury) guild.treasury = { purse: {}, ownedAssetIds: [] };
+            if (!guild.treasury.purse) guild.treasury.purse = {};
+            guild.treasury.purse[reward.rewardTypeId] = (guild.treasury.purse[reward.rewardTypeId] || 0) + reward.amount;
+        });
+
+        (assetIds || []).forEach(assetId => {
+            const assetIndex = user.ownedAssetIds.indexOf(assetId);
+            if (assetIndex === -1) throw new Error(`User does not own asset with ID ${assetId}.`);
+            user.ownedAssetIds.splice(assetIndex, 1);
+            if (!guild.treasury) guild.treasury = { purse: {}, ownedAssetIds: [] };
+            if (!guild.treasury.ownedAssetIds) guild.treasury.ownedAssetIds = [];
+            guild.treasury.ownedAssetIds.push(assetId);
+        });
+
+        const updatedUser = await userRepo.save(updateTimestamps(user));
+        const updatedGuild = await guildRepo.save(updateTimestamps(guild));
+        
+        resultPayload = { 
+            updatedUser, 
+            updatedGuild: { ...updatedGuild, memberIds: updatedGuild.members.map(m => m.id) }
+        };
+    });
+    
+    updateEmitter.emit('update');
+    res.status(200).json(resultPayload);
+}));
+
+
+app.post('/api/actions/apply-setback', asyncMiddleware(async (req, res) => {
+    const { userId, setbackDefinitionId, reason, guildId, appliedById } = req.body;
+
+    if (!userId || !setbackDefinitionId || !reason || !appliedById) {
+        return res.status(400).json({ error: 'Missing required fields for applying setback.' });
+    }
+
+    await dataSource.transaction(async manager => {
+        const userRepo = manager.getRepository(UserEntity);
+        const setbackDefRepo = manager.getRepository(SetbackDefinitionEntity);
+        const appliedSetbackRepo = manager.getRepository(AppliedSetbackEntity);
+        const rewardTypesRepo = manager.getRepository(RewardTypeDefinitionEntity);
+
+        const user = await userRepo.findOneBy({ id: userId });
+        const definition = await setbackDefRepo.findOneBy({ id: setbackDefinitionId });
+
+        if (!user || !definition) throw new Error('User or Setback Definition not found.');
+
+        let expiresAt = null;
+        
+        const balanceSheet = guildId ? (user.guildBalances[guildId] || { purse: {}, experience: {} }) : { purse: user.personalPurse, experience: user.personalExperience };
+
+        for (const effect of definition.effects) {
+            if (effect.type === 'DEDUCT_REWARDS') {
+                const rewardTypes = await rewardTypesRepo.find();
+                const rewardTypesMap = new Map(rewardTypes.map(rt => [rt.id, rt]));
+                
+                effect.rewards.forEach(reward => {
+                    const rewardDef = rewardTypesMap.get(reward.rewardTypeId);
+                    if (!rewardDef) return;
+                    
+                    const balanceType = rewardDef.category === 'Currency' ? 'purse' : 'experience';
+                    balanceSheet[balanceType][reward.rewardTypeId] = Math.max(0, (balanceSheet[balanceType][reward.rewardTypeId] || 0) - reward.amount);
+                });
+            }
+            if (effect.type === 'CLOSE_MARKET' && effect.durationHours > 0) {
+                const now = new Date();
+                const expiry = new Date(now.getTime() + effect.durationHours * 60 * 60 * 1000);
+                if (!expiresAt || expiry > new Date(expiresAt)) {
+                    expiresAt = expiry.toISOString();
+                }
+            }
+        }
+
+        if (guildId) user.guildBalances[guildId] = balanceSheet;
+        else {
+            user.personalPurse = balanceSheet.purse;
+            user.personalExperience = balanceSheet.experience;
+        }
+        
+        await userRepo.save(updateTimestamps(user));
+        
+        const newAppliedSetback = appliedSetbackRepo.create({
+            id: `applied-${Date.now()}`,
+            userId,
+            setbackDefinitionId,
+            reason,
+            appliedById,
+            appliedAt: new Date().toISOString(),
+            expiresAt
+        });
+        await appliedSetbackRepo.save(updateTimestamps(newAppliedSetback, true));
+    });
+
+    updateEmitter.emit('update');
+    res.status(200).json({ success: true });
+}));
+
 
 // Media Upload
 app.post('/api/media/upload', upload.single('file'), async (req, res, next) => {
@@ -2358,438 +2516,4 @@ app.get('/api/chronicles', asyncMiddleware(async (req, res) => {
     });
 
     // 2. Purchase Requests
-    const purchaseRequests = await manager.find(PurchaseRequestEntity, { where: { ...baseUserConditions, ...dateCondition('requestedAt') } });
-    purchaseRequests.forEach(p => {
-        const costText = getRewardDisplay(p.assetDetails.cost).replace(/(\d+)/g, '-$1');
-        allEvents.push({
-            id: p.id, date: p.requestedAt, type: 'Purchase', userId: p.userId,
-            title: `${userMap.get(p.userId) || 'Unknown'} purchased "${p.assetDetails.name}"`,
-            status: p.status, note: costText, icon: '💰',
-            color: '#22c55e', guildId: p.guildId
-        });
-    });
-
-    // 3. User Trophies
-    const userTrophies = await manager.find(UserTrophyEntity, { where: { ...baseUserConditions, ...dateCondition('awardedAt') } });
-    userTrophies.forEach(ut => {
-        const trophy = trophyMap.get(ut.trophyId);
-        allEvents.push({
-            id: ut.id, date: ut.awardedAt, type: 'Trophy', userId: ut.userId,
-            title: `${userMap.get(ut.userId) || 'Unknown'} earned "${trophy?.name || 'Unknown Trophy'}"`,
-            status: "Awarded", note: trophy?.description, icon: trophy?.icon || '🏆',
-            color: '#f59e0b', guildId: ut.guildId
-        });
-    });
-    
-    // 4. Admin Adjustments
-    const adjustments = await manager.find(AdminAdjustmentEntity, { where: { ...baseUserConditions, ...dateCondition('adjustedAt') } });
-    adjustments.forEach(adj => {
-        const rewardsText = getRewardDisplay(adj.rewards).replace(/(\d+)/g, '+$1');
-        const setbacksText = getRewardDisplay(adj.setbacks).replace(/(\d+)/g, '-$1');
-        allEvents.push({
-            id: adj.id, date: adj.adjustedAt, type: 'Adjustment', userId: adj.userId,
-            title: `${userMap.get(adj.userId) || 'Unknown'} received an adjustment from ${userMap.get(adj.adjusterId) || 'Admin'}`,
-            status: adj.type,
-            note: `${adj.reason}\n(${rewardsText} ${setbacksText})`.trim(),
-            icon: '🛠️',
-            color: adj.type === 'Reward' ? '#10b981' : '#ef4444',
-            guildId: adj.guildId
-        });
-    });
-
-     // 5. System Logs
-     if (viewMode !== 'personal') {
-        const systemLogs = await manager.find(SystemLogEntity, { where: { ...dateCondition('timestamp') } });
-        systemLogs.forEach(log => {
-             const quest = questMap.get(log.questId);
-             const userNames = log.userIds.map(id => userMap.get(id) || 'Unknown').join(', ');
-             const setbacksText = getRewardDisplay(log.setbacksApplied).replace(/(\d+)/g, '-$1');
-             allEvents.push({
-                id: log.id, date: log.timestamp, type: 'System',
-                title: `System: ${quest?.title || 'Unknown Quest'} marked as ${log.type.split('_')[1]}`,
-                status: log.type, note: `For: ${userNames}\n(${setbacksText})`, icon: '⚙️', color: '#64748b'
-             });
-        });
-     }
-    
-    // Sort all events by date descending
-    allEvents.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-
-    const total = allEvents.length;
-    const paginatedEvents = allEvents.slice(skip, skip + take);
-    
-    const eventsToReturn = (startDate && endDate) ? allEvents : paginatedEvents;
-
-    res.json({ events: eventsToReturn, total });
-}));
-
-// Chat Router
-const chatRouter = express.Router();
-const chatRepo = dataSource.getRepository(ChatMessageEntity);
-
-chatRouter.post('/send', asyncMiddleware(async (req, res) => {
-    const { senderId, recipientId, guildId, message, isAnnouncement } = req.body;
-    if (!senderId || !message || (!recipientId && !guildId)) {
-        return res.status(400).json({ error: 'Missing required fields for chat message.' });
-    }
-
-    const newMessage = chatRepo.create({
-        id: `chat-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
-        senderId,
-        recipientId,
-        guildId,
-        message,
-        isAnnouncement: isAnnouncement || false,
-        timestamp: new Date().toISOString(),
-        readBy: [senderId],
-    });
-
-    const savedMessage = await chatRepo.save(updateTimestamps(newMessage, true));
-    
-    // The client that sent the message will get it back directly.
-    // Other clients will be notified to sync.
-    updateEmitter.emit('update');
-    
-    res.status(201).json({ newChatMessage: savedMessage });
-}));
-
-chatRouter.post('/read', asyncMiddleware(async (req, res) => {
-    const { userId, partnerId, guildId } = req.body;
-    if (!userId || (!partnerId && !guildId)) {
-        return res.status(400).json({ error: 'Missing required fields to mark messages as read.' });
-    }
-
-    let messagesToUpdate;
-    if (partnerId) {
-        messagesToUpdate = await chatRepo.find({
-            where: {
-                senderId: partnerId,
-                recipientId: userId,
-            }
-        });
-    } else { // guildId
-        messagesToUpdate = await chatRepo.find({
-            where: {
-                guildId: guildId,
-            }
-        });
-    }
-
-    let updated = false;
-    for (const message of messagesToUpdate) {
-        if (!message.readBy.includes(userId)) {
-            message.readBy.push(userId);
-            updateTimestamps(message);
-            updated = true;
-        }
-    }
-
-    if (updated) {
-        await chatRepo.save(messagesToUpdate);
-    }
-
-    updateEmitter.emit('update');
-    res.status(204).send();
-}));
-
-app.use('/api/chat', chatRouter);
-
-// System Notifications Router
-const notificationsRouter = express.Router();
-const systemNotificationRepo = dataSource.getRepository(SystemNotificationEntity);
-
-notificationsRouter.post('/', asyncMiddleware(async (req, res) => {
-    const newNotif = systemNotificationRepo.create({
-        ...req.body,
-        id: `sysnotif-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
-        timestamp: new Date().toISOString(),
-        readByUserIds: []
-    });
-    const saved = await systemNotificationRepo.save(updateTimestamps(newNotif, true));
-    updateEmitter.emit('update');
-    res.status(201).json(saved);
-}));
-
-notificationsRouter.post('/read', asyncMiddleware(async (req, res) => {
-    const { ids, userId } = req.body;
-    if (!ids || !Array.isArray(ids) || !userId) {
-        return res.status(400).json({ error: 'Missing notification IDs or user ID.' });
-    }
-
-    const notificationsToUpdate = await systemNotificationRepo.findBy({
-        id: In(ids)
-    });
-
-    let updated = false;
-    for (const notification of notificationsToUpdate) {
-        if (!notification.readByUserIds.includes(userId)) {
-            notification.readByUserIds.push(userId);
-            updateTimestamps(notification);
-            updated = true;
-        }
-    }
-
-    if (updated) {
-        await systemNotificationRepo.save(notificationsToUpdate);
-    }
-    
-    updateEmitter.emit('update');
-    res.status(204).send();
-}));
-
-app.use('/api/notifications', notificationsRouter);
-
-// Serve React App
-app.use(express.static(path.join(__dirname, '..', 'dist')));
-app.use('/uploads', express.static(UPLOADS_DIR));
-
-// === BACKUP ROUTES ===
-const backupsRouter = express.Router();
-const restoreStorage = multer.diskStorage({
-    destination: (req, file, cb) => cb(null, BACKUP_DIR), // temp storage
-    filename: (req, file, cb) => cb(null, `restore-upload-${Date.now()}-${file.originalname}`)
-});
-const restoreUpload = multer({ storage: restoreStorage, limits: { fileSize: 50 * 1024 * 1024 }}); // 50MB limit
-
-const generateBackupFilename = (type, format, timestamp) => {
-    const now = timestamp || new Date();
-    const tsString = now.toISOString().slice(0, 19).replace('T', '_').replace(/:/g, '-');
-    return `backup_${tsString}_v${version}_${type}.${format}`;
-};
-
-backupsRouter.get('/', asyncMiddleware(async (req, res) => {
-    try {
-        const files = await fs.readdir(BACKUP_DIR);
-        const backupDetails = await Promise.all(
-            files
-                .filter(file => file.startsWith('backup_') && (file.endsWith('.json') || file.endsWith('.sqlite')))
-                .map(async file => {
-                    const stats = await fs.stat(path.join(BACKUP_DIR, file));
-                    
-                    const regex = /backup_(\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2})_v([^_]+)_(.+)\.(json|sqlite)/;
-                    const match = file.match(regex);
-                    
-                    let parsed = null;
-                    if (match) {
-                        const [datePart, timePart] = match[1].split('_');
-                        const isoDate = `${datePart}T${timePart.replace(/-/g, ':')}`;
-                        parsed = {
-                            date: new Date(isoDate).toISOString(),
-                            version: match[2],
-                            type: match[3],
-                            format: match[4]
-                        };
-                    }
-
-                    return {
-                        filename: file,
-                        size: stats.size,
-                        createdAt: stats.mtime.toISOString(),
-                        parsed,
-                    };
-                })
-        );
-        res.json(backupDetails.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
-    } catch (error) {
-        if (error.code === 'ENOENT') {
-            return res.json([]);
-        }
-        throw error;
-    }
-}));
-
-backupsRouter.post('/create-json', asyncMiddleware(async (req, res) => {
-    const manager = dataSource.manager;
-    const appData = await getFullAppData(manager);
-    const filename = generateBackupFilename('manual', 'json');
-    const filePath = path.join(BACKUP_DIR, filename);
-    await fs.writeFile(filePath, JSON.stringify(appData, null, 2));
-    console.log(`[Backup] Created JSON backup: ${filename}`);
-    res.status(201).json({ success: true, filename });
-}));
-
-backupsRouter.post('/create-sqlite', asyncMiddleware(async (req, res) => {
-    const filename = generateBackupFilename('manual', 'sqlite');
-    const destPath = path.join(BACKUP_DIR, filename);
-    await fs.copyFile(dbPath, destPath);
-    console.log(`[Backup] Created SQLite backup: ${filename}`);
-    res.status(201).json({ success: true, filename });
-}));
-
-backupsRouter.get('/download/:filename', (req, res) => {
-    const filename = path.basename(req.params.filename);
-    const filePath = path.join(BACKUP_DIR, filename);
-    res.download(filePath, err => {
-        if (err) {
-            console.error("Download error:", err);
-            if (!res.headersSent) {
-                res.status(404).send('File not found.');
-            }
-        }
-    });
-});
-
-backupsRouter.delete('/:filename', asyncMiddleware(async (req, res) => {
-    const filename = path.basename(req.params.filename);
-    const filePath = path.join(BACKUP_DIR, filename);
-    try {
-        await fs.unlink(filePath);
-        res.status(204).send();
-    } catch (error) {
-        if (error.code === 'ENOENT') {
-            return res.status(404).send('File not found.');
-        }
-        throw error;
-    }
-}));
-
-backupsRouter.post('/restore-upload', restoreUpload.single('backupFile'), asyncMiddleware(async (req, res) => {
-    if (!req.file) {
-        return res.status(400).json({ error: 'No backup file uploaded.' });
-    }
-    const uploadedFilePath = req.file.path;
-    const isSqlite = req.file.originalname.endsWith('.sqlite');
-
-    try {
-        if (isSqlite) {
-            console.log("Starting SQLite restore...");
-            if (dataSource.isInitialized) {
-                await dataSource.destroy();
-                console.log("Data Source connection closed for restore.");
-            }
-            await fs.copyFile(uploadedFilePath, dbPath);
-            console.log("Database file replaced.");
-            res.status(200).json({ message: 'SQLite restore successful. Server is restarting.' });
-            console.log("Initiating server restart for restore...");
-            setTimeout(() => process.exit(0), 1000); // Trigger restart
-        } else { // Assume JSON
-             console.log("Starting JSON restore...");
-             const backupContent = await fs.readFile(uploadedFilePath, 'utf-8');
-             const data = JSON.parse(backupContent);
-             if (!data.users || !data.settings) {
-                 throw new Error('Invalid backup file format.');
-             }
-
-             await dataSource.transaction(async manager => {
-                 await Promise.all(allEntities.slice().reverse().map(entity => manager.clear(entity.options.name)));
-                 for (const entity of allEntities) {
-                     const pluralName = entity.options.name.toLowerCase() + 's';
-                     const dataToSave = data[pluralName];
-                     if (dataToSave && Array.isArray(dataToSave) && dataToSave.length > 0) {
-                         await manager.save(entity, dataToSave.map(e => updateTimestamps(e, true)));
-                     }
-                 }
-                 if(data.settings) await manager.save(SettingEntity, updateTimestamps({id: 1, settings: data.settings}, true));
-                 if(data.loginHistory) await manager.save(LoginHistoryEntity, updateTimestamps({id: 1, history: data.loginHistory}, true));
-             });
-
-            res.status(200).json({ message: 'JSON restore successful! App will reload.' });
-        }
-    } finally {
-        // Clean up the uploaded temporary file
-        await fs.unlink(uploadedFilePath).catch(err => console.error("Error cleaning up restore file:", err));
-    }
-}));
-
-app.use('/api/backups', backupsRouter);
-
-// === Automated Backup Scheduler ===
-let backupInterval;
-
-async function createAutomatedBackup(scheduleId, format, timestamp) {
-    const filename = generateBackupFilename(`auto-${scheduleId}`, format, timestamp);
-    const filePath = path.join(BACKUP_DIR, filename);
-    if (format === 'json') {
-        const appData = await getFullAppData(dataSource.manager);
-        await fs.writeFile(filePath, JSON.stringify(appData));
-    } else { // sqlite
-        await fs.copyFile(dbPath, filePath);
-    }
-    console.log(`[Backup] Created automated ${format.toUpperCase()} backup: ${filename}`);
-    return filename;
-}
-
-async function runAutomatedBackup() {
-    try {
-        const settingRow = await dataSource.manager.findOneBy(SettingEntity, { id: 1 });
-        const settings = settingRow ? settingRow.settings : INITIAL_SETTINGS;
-
-        if (!settings.automatedBackups.enabled || !settings.automatedBackups.schedules) {
-            return;
-        }
-
-        const now = Date.now();
-        let settingsModified = false;
-        
-        for (const schedule of settings.automatedBackups.schedules) {
-            const lastBackupTime = schedule.lastBackupTimestamp || 0;
-            
-            let frequencyMillis = 0;
-            switch(schedule.unit) {
-                case 'hours': frequencyMillis = schedule.frequency * 3600 * 1000; break;
-                case 'days': frequencyMillis = schedule.frequency * 24 * 3600 * 1000; break;
-                case 'weeks': frequencyMillis = schedule.frequency * 7 * 24 * 3600 * 1000; break;
-            }
-
-            if (now - lastBackupTime >= frequencyMillis) {
-                console.log(`[Backup] Running automated backup for schedule: ${schedule.id}`);
-                const format = settings.automatedBackups.format || 'json';
-                const backupTimestamp = new Date(now);
-
-                if (format === 'json' || format === 'both') {
-                    await createAutomatedBackup(schedule.id, 'json', backupTimestamp);
-                }
-                if (format === 'sqlite' || format === 'both') {
-                    await createAutomatedBackup(schedule.id, 'sqlite', backupTimestamp);
-                }
-
-                schedule.lastBackupTimestamp = now;
-                settingsModified = true;
-
-                // Re-fetch files for retention logic
-                const updatedBackupFiles = await fs.readdir(BACKUP_DIR);
-                const updatedScheduleFiles = updatedBackupFiles
-                    .filter(file => file.includes(`_auto-${schedule.id}.`))
-                    .sort((a, b) => b.localeCompare(a));
-                
-                const fileMultiplier = settings.automatedBackups.format === 'both' ? 2 : 1;
-                const maxFilesToKeep = schedule.maxBackups * fileMultiplier;
-
-                if (updatedScheduleFiles.length > maxFilesToKeep) {
-                    const backupsToDelete = updatedScheduleFiles.slice(maxFilesToKeep);
-                    for (const backupFile of backupsToDelete) {
-                        console.log(`[Backup] Deleting old backup for schedule ${schedule.id}: ${backupFile}`);
-                        await fs.unlink(path.join(BACKUP_DIR, backupFile));
-                    }
-                }
-            }
-        }
-
-        if (settingsModified) {
-            console.log('[Backup] Saving updated backup timestamps to settings.');
-            await dataSource.manager.save(SettingEntity, updateTimestamps({ id: 1, settings }));
-        }
-
-    } catch (error) {
-        console.error('[Backup] Automated backup failed:', error);
-    }
-}
-
-function startAutomatedBackupScheduler() {
-    // Run every minute to check if any backup schedules are due.
-    if(backupInterval) clearInterval(backupInterval);
-    backupInterval = setInterval(runAutomatedBackup, 60 * 1000); // Check every minute
-    console.log('[Backup] Automated backup scheduler started (checking every minute).');
-    // Run once shortly after startup
-    setTimeout(runAutomatedBackup, 10 * 1000); // Run after 10 seconds
-}
-
-app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, '..', 'dist', 'index.html'));
-});
-
-// Error handling middleware
-app.use((err, req, res, next) => {
-    console.error(err.stack);
-    res.status(500).send('Something broke!');
-});
+    const purchaseRequests = await manager

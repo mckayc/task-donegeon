@@ -64,15 +64,33 @@ const EditTrophyDialog: React.FC<EditTrophyDialogProps> = ({ trophy, initialData
 
   const handleRequirementChange = (index: number, field: keyof TrophyRequirement, value: any) => {
     const newRequirements = [...formData.requirements];
-    if (field === 'count') {
-        newRequirements[index] = { ...newRequirements[index], [field]: Math.max(1, parseInt(value)) };
-    } else {
-        newRequirements[index] = { ...newRequirements[index], [field]: value };
-    }
-    // Reset value if type changes
+    const currentReq = newRequirements[index];
+
     if (field === 'type') {
-        newRequirements[index].value = '';
+        const newType = value as TrophyRequirementType;
+        let newReq: TrophyRequirement;
+        switch(newType) {
+            case TrophyRequirementType.CompleteQuestType:
+                newReq = { type: newType, value: QuestType.Duty, count: 1 };
+                break;
+            case TrophyRequirementType.CompleteQuestTag:
+                newReq = { type: newType, value: '', count: 1 };
+                break;
+            case TrophyRequirementType.AchieveRank:
+                newReq = { type: newType, value: ranks[0]?.id || '', count: 1 };
+                break;
+            case TrophyRequirementType.QuestCompleted:
+                 newReq = { type: newType, value: quests[0]?.id || '', count: 1 };
+                 break;
+            default:
+                newReq = currentReq;
+        }
+        newRequirements[index] = newReq;
+    } else {
+         const updatedValue = field === 'count' ? Math.max(1, parseInt(value, 10) || 1) : value;
+         newRequirements[index] = { ...currentReq, [field]: updatedValue };
     }
+    
     setFormData(prev => ({ ...prev, requirements: newRequirements }));
   }
 

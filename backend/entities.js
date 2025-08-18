@@ -24,6 +24,39 @@ class ScheduledEvent {}
 class Setting {}
 class LoginHistory {}
 class BugReport {}
+class SetbackDefinition {}
+class AppliedSetback {}
+
+const SetbackDefinitionEntity = new EntitySchema({
+    name: "SetbackDefinition",
+    target: SetbackDefinition,
+    columns: {
+        id: { primary: true, type: "varchar" },
+        name: { type: "varchar" },
+        description: { type: "text" },
+        icon: { type: "varchar" },
+        effects: { type: "simple-json" },
+        createdAt: { type: "varchar", nullable: true },
+        updatedAt: { type: "varchar", nullable: true },
+    }
+});
+
+const AppliedSetbackEntity = new EntitySchema({
+    name: "AppliedSetback",
+    target: AppliedSetback,
+    columns: {
+        id: { primary: true, type: "varchar" },
+        userId: { type: "varchar" },
+        setbackDefinitionId: { type: "varchar" },
+        appliedAt: { type: "varchar" },
+        expiresAt: { type: "varchar", nullable: true },
+        reason: { type: "text" },
+        appliedById: { type: "varchar" },
+        createdAt: { type: "varchar", nullable: true },
+        updatedAt: { type: "varchar", nullable: true },
+    }
+});
+
 
 const BugReportEntity = new EntitySchema({
     name: "BugReport",
@@ -149,7 +182,7 @@ const RewardTypeDefinitionEntity = new EntitySchema({ name: "RewardTypeDefinitio
 const RankEntity = new EntitySchema({ name: "Rank", target: Rank, columns: { id: { primary: true, type: "varchar" }, name: { type: "varchar" }, xpThreshold: { type: "integer" }, iconType: { type: "varchar" }, icon: { type: "varchar" }, imageUrl: { type: "varchar", nullable: true }, createdAt: { type: "varchar", nullable: true }, updatedAt: { type: "varchar", nullable: true } } });
 const TrophyEntity = new EntitySchema({ name: "Trophy", target: Trophy, columns: { id: { primary: true, type: "varchar" }, name: { type: "varchar" }, description: { type: "text" }, iconType: { type: "varchar" }, icon: { type: "varchar" }, imageUrl: { type: "varchar", nullable: true }, isManual: { type: "boolean" }, requirements: { type: "simple-json" }, createdAt: { type: "varchar", nullable: true }, updatedAt: { type: "varchar", nullable: true } } });
 const ThemeDefinitionEntity = new EntitySchema({ name: "ThemeDefinition", target: ThemeDefinition, columns: { id: { primary: true, type: "varchar" }, name: { type: "varchar" }, isCustom: { type: "boolean" }, styles: { type: "simple-json" }, createdAt: { type: "varchar", nullable: true }, updatedAt: { type: "varchar", nullable: true } } });
-const GameAssetEntity = new EntitySchema({ name: "GameAsset", target: GameAsset, columns: { id: { primary: true, type: "varchar" }, name: { type: "varchar" }, description: { type: "text" }, iconType: { type: "varchar" }, icon: { type: "varchar" }, imageUrl: { type: "varchar", nullable: true }, category: { type: "varchar" }, avatarSlot: { type: "varchar", nullable: true }, isForSale: { type: "boolean" }, costGroups: { type: "simple-json" }, payouts: { type: "simple-json", nullable: true }, marketIds: { type: "simple-array" }, creatorId: { type: "varchar" }, createdAt: { type: "varchar", nullable: true }, updatedAt: { type: "varchar", nullable: true }, purchaseLimit: { type: "integer", nullable: true }, purchaseLimitType: { type: "varchar" }, purchaseCount: { type: "integer" }, requiresApproval: { type: "boolean" }, linkedThemeId: { type: "varchar", nullable: true } } });
+const GameAssetEntity = new EntitySchema({ name: "GameAsset", target: GameAsset, columns: { id: { primary: true, type: "varchar" }, name: { type: "varchar" }, description: { type: "text" }, iconType: { type: "varchar" }, icon: { type: "varchar" }, imageUrl: { type: "varchar", nullable: true }, category: { type: "varchar" }, avatarSlot: { type: "varchar", nullable: true }, isForSale: { type: "boolean" }, costGroups: { type: "simple-json" }, payouts: { type: "simple-json", nullable: true }, marketIds: { type: "simple-array" }, creatorId: { type: "varchar" }, createdAt: { type: "varchar", nullable: true }, updatedAt: { type: "varchar", nullable: true }, purchaseLimit: { type: "integer", nullable: true }, purchaseLimitType: { type: "varchar" }, purchaseCount: { type: "integer" }, useCount: { type: "integer", nullable: true, default: 0 }, requiresApproval: { type: "boolean" }, linkedThemeId: { type: "varchar", nullable: true }, recipe: { type: "simple-json", nullable: true } } });
 const SystemLogEntity = new EntitySchema({ name: "SystemLog", target: SystemLog, columns: { id: { primary: true, type: "varchar" }, timestamp: { type: "varchar" }, type: { type: "varchar" }, questId: { type: "varchar" }, userIds: { type: "simple-array" }, setbacksApplied: { type: "simple-json" }, createdAt: { type: "varchar", nullable: true }, updatedAt: { type: "varchar", nullable: true } } });
 const ChatMessageEntity = new EntitySchema({ name: "ChatMessage", target: ChatMessage, columns: { id: { primary: true, type: "varchar" }, senderId: { type: "varchar" }, recipientId: { type: "varchar", nullable: true }, guildId: { type: "varchar", nullable: true }, message: { type: "text" }, timestamp: { type: "varchar" }, readBy: { type: "simple-array" }, isAnnouncement: { type: "boolean", nullable: true }, createdAt: { type: "varchar", nullable: true }, updatedAt: { type: "varchar", nullable: true } } });
 const SystemNotificationEntity = new EntitySchema({ name: "SystemNotification", target: SystemNotification, columns: { id: { primary: true, type: "varchar" }, senderId: { type: "varchar", nullable: true }, message: { type: "text" }, type: { type: "varchar" }, timestamp: { type: "varchar" }, recipientUserIds: { type: "simple-array" }, readByUserIds: { type: "simple-array" }, link: { type: "varchar", nullable: true }, guildId: { type: "varchar", nullable: true }, iconType: { type: "varchar", nullable: true }, icon: { type: "varchar", nullable: true }, imageUrl: { type: "varchar", nullable: true }, createdAt: { type: "varchar", nullable: true }, updatedAt: { type: "varchar", nullable: true } } });
@@ -223,6 +256,7 @@ const GuildEntity = new EntitySchema({
         purpose: { type: "text" },
         isDefault: { type: "boolean", nullable: true },
         themeId: { type: "varchar", nullable: true },
+        treasury: { type: "simple-json", default: '{}' },
         createdAt: { type: "varchar", nullable: true },
         updatedAt: { type: "varchar", nullable: true },
     },
@@ -275,7 +309,7 @@ const allEntities = [
     QuestCompletionEntity, PurchaseRequestEntity, GuildEntity, RankEntity, TrophyEntity,
     UserTrophyEntity, AdminAdjustmentEntity, GameAssetEntity, SystemLogEntity, ThemeDefinitionEntity,
     ChatMessageEntity, SystemNotificationEntity, ScheduledEventEntity, SettingEntity, LoginHistoryEntity,
-    BugReportEntity
+    BugReportEntity, SetbackDefinitionEntity, AppliedSetbackEntity
 ];
 
 module.exports = { 
@@ -284,5 +318,5 @@ module.exports = {
     QuestCompletionEntity, PurchaseRequestEntity, GuildEntity, RankEntity, TrophyEntity,
     UserTrophyEntity, AdminAdjustmentEntity, GameAssetEntity, SystemLogEntity, ThemeDefinitionEntity,
     ChatMessageEntity, SystemNotificationEntity, ScheduledEventEntity, SettingEntity, LoginHistoryEntity,
-    BugReportEntity
+    BugReportEntity, SetbackDefinitionEntity, AppliedSetbackEntity
 };

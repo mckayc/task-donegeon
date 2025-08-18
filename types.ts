@@ -175,7 +175,7 @@ export interface GameAsset {
   purchaseLimit: number | null; // null for infinite
   purchaseLimitType: 'Total' | 'PerUser';
   purchaseCount: number;
-  useCount?: number; // How many times a consumable has been used across all users
+  useCount?: number;
   requiresApproval: boolean;
   linkedThemeId?: string; // Links this asset to a theme that gets unlocked on purchase
   recipe?: {
@@ -289,46 +289,58 @@ export interface Rank {
   updatedAt?: string;
 }
 
+export interface Trophy {
+  id: string;
+  name: string;
+  description: string;
+  iconType: 'emoji' | 'image';
+  icon: string;
+  imageUrl?: string;
+  isManual: boolean;
+  requirements: TrophyRequirement[];
+  createdAt?: string;
+  updatedAt?: string;
+}
+
 export enum TrophyRequirementType {
     CompleteQuestType = 'COMPLETE_QUEST_TYPE',
-    EarnTotalReward = 'EARN_TOTAL_REWARD',
-    AchieveRank = 'ACHIEVE_RANK',
     CompleteQuestTag = 'COMPLETE_QUEST_TAG',
+    AchieveRank = 'ACHIEVE_RANK',
     QuestCompleted = 'QUEST_COMPLETED',
 }
 
-export interface TrophyRequirement {
+interface BaseTrophyRequirement {
     type: TrophyRequirementType;
-    // For QuestType, this is 'Duty' or 'Venture'
-    // For Reward, this is the rewardTypeId
-    // For Rank, this is the rankId
-    // For QuestTag, this is the tag string
-    // For QuestCompleted, this is the questId
-    value: string; 
     count: number;
 }
-
-export interface Trophy {
-    id: string;
-    name: string;
-    description: string;
-    iconType: 'emoji' | 'image';
-    icon: string;
-    imageUrl?: string;
-    isManual: boolean;
-    requirements: TrophyRequirement[];
-    createdAt?: string;
-    updatedAt?: string;
+export interface CompleteQuestTypeRequirement extends BaseTrophyRequirement {
+    type: TrophyRequirementType.CompleteQuestType;
+    value: QuestType;
+}
+export interface CompleteQuestTagRequirement extends BaseTrophyRequirement {
+    type: TrophyRequirementType.CompleteQuestTag;
+    value: string; // tag name
+}
+export interface AchieveRankRequirement extends BaseTrophyRequirement {
+    type: TrophyRequirementType.AchieveRank;
+    value: string; // rankId
 }
 
+export interface QuestCompletedRequirement extends BaseTrophyRequirement {
+    type: TrophyRequirementType.QuestCompleted;
+    value: string; // questId
+}
+
+export type TrophyRequirement = CompleteQuestTypeRequirement | CompleteQuestTagRequirement | AchieveRankRequirement | QuestCompletedRequirement;
+
 export interface UserTrophy {
-    id: string;
-    userId: string;
-    trophyId: string;
-    awardedAt: string;
-    guildId?: string;
-    createdAt?: string;
-    updatedAt?: string;
+  id: string;
+  userId: string;
+  trophyId: string;
+  awardedAt: string; // ISO 8601 format string
+  guildId?: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export enum AdminAdjustmentType {
@@ -336,7 +348,6 @@ export enum AdminAdjustmentType {
     Setback = 'Setback',
     Trophy = 'Trophy',
 }
-
 export interface AdminAdjustment {
     id: string;
     userId: string;
@@ -351,7 +362,6 @@ export interface AdminAdjustment {
     createdAt?: string;
     updatedAt?: string;
 }
-
 export interface SystemLog {
     id: string;
     timestamp: string;
@@ -363,14 +373,69 @@ export interface SystemLog {
     updatedAt?: string;
 }
 
-export interface Notification {
+export type Page =
+  | 'Dashboard'
+  | 'Avatar'
+  | 'Collection'
+  | 'Themes'
+  | 'Quests'
+  | 'Marketplace'
+  | 'Calendar'
+  | 'Progress'
+  | 'Trophies'
+  | 'Ranks'
+  | 'Chronicles'
+  | 'Guild'
+  | 'Manage Users'
+  | 'Manage Rewards'
+  | 'Manage Quests'
+  | 'Manage Quest Groups'
+  | 'Manage Rotations'
+  | 'Manage Goods'
+  | 'Manage Markets'
+  | 'Manage Guilds'
+  | 'Manage Ranks'
+  | 'Manage Trophies'
+  | 'Manage Events'
+  | 'Manage Setbacks'
+  | 'Suggestion Engine'
+  | 'Approvals'
+  | 'Settings'
+  | 'Appearance'
+  | 'Object Exporter'
+  | 'Asset Manager'
+  | 'Backup & Import'
+  | 'Asset Library'
+  | 'Profile'
+  | 'About'
+  | 'Help Guide'
+  | 'Chat'
+  | 'Bug Tracker';
+
+export type ThemeStyle = {
+  [key: string]: string;
+};
+
+export interface ThemeDefinition {
   id: string;
+  name: string;
+  isCustom: boolean;
+  styles: ThemeStyle;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface ChatMessage {
+  id: string;
+  senderId: string;
+  recipientId?: string;
+  guildId?: string;
   message: string;
-  type: 'success' | 'error' | 'info' | 'trophy';
-  iconType?: 'emoji' | 'image';
-  icon?: string;
-  imageUrl?: string;
-  duration?: number;
+  timestamp: string; // ISO string
+  readBy: string[];
+  isAnnouncement?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export enum SystemNotificationType {
@@ -378,164 +443,52 @@ export enum SystemNotificationType {
     QuestAssigned = 'QuestAssigned',
     TrophyAwarded = 'TrophyAwarded',
     ApprovalRequired = 'ApprovalRequired',
-    GiftReceived = 'GiftReceived',
-    TradeRequestReceived = 'TradeRequestReceived',
-    TradeAccepted = 'TradeAccepted',
-    TradeCancelled = 'TradeCancelled',
-    TradeRejected = 'TradeRejected',
 }
 
 export interface SystemNotification {
-    id: string;
-    senderId?: string;
-    message: string;
-    type: SystemNotificationType;
-    timestamp: string;
-    recipientUserIds: string[]; // Specific users this is for
-    readByUserIds: string[];
-    link?: Page; // Optional link to a relevant page
-    guildId?: string;
-    iconType?: 'emoji' | 'image';
-    icon?: string;
-    imageUrl?: string;
-    createdAt?: string;
-    updatedAt?: string;
+  id: string;
+  senderId?: string;
+  message: string;
+  type: SystemNotificationType;
+  timestamp: string; // ISO string
+  recipientUserIds: string[];
+  readByUserIds: string[];
+  link?: Page;
+  guildId?: string;
+  iconType?: 'emoji' | 'image';
+  icon?: string;
+  imageUrl?: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
+
+export type EventType = 'Announcement' | 'Vacation' | 'BonusXP' | 'MarketSale';
 
 export interface ScheduledEvent {
-    id: string;
-    title: string;
-    description: string;
-    startDate: string; // YYYY-MM-DD
-    endDate: string;   // YYYY-MM-DD
-    isAllDay: boolean;
-    eventType: 'Announcement' | 'BonusXP' | 'MarketSale' | 'Vacation';
-    guildId?: string;
-    icon?: string;
-    color?: string;
-    modifiers: {
-        xpMultiplier?: number;
-        affectedRewardIds?: string[]; // Empty means all XP
-        marketId?: string;
-        assetIds?: string[]; // Empty means all items in market
-        discountPercent?: number;
-    };
-    createdAt?: string;
-    updatedAt?: string;
+  id: string;
+  title: string;
+  description: string;
+  startDate: string; // YYYY-MM-DD
+  endDate: string; // YYYY-MM-DD
+  isAllDay: boolean;
+  eventType: EventType;
+  guildId?: string;
+  icon?: string;
+  color?: string;
+  modifiers: {
+    // For BonusXP
+    xpMultiplier?: number;
+    affectedRewardIds?: string[];
+    // For MarketSale
+    marketId?: string;
+    assetIds?: string[];
+    discountPercent?: number;
+  };
+  createdAt?: string;
+  updatedAt?: string;
 }
 
-export interface Terminology {
-  appName: string;
-  // Singular
-  task: string;
-  recurringTask: string;
-  singleTask: string;
-  store: string;
-  history: string;
-  group: string;
-  level: string;
-  award: string;
-  point: string;
-  xp: string;
-  currency: string;
-  negativePoint: string;
-  // Plural
-  tasks: string;
-  recurringTasks: string;
-  singleTasks: string;
-  shoppingCenter: string;
-  stores: string;
-  groups: string;
-  levels: string;
-  awards: string;
-  points: string;
-  negativePoints: string;
-  // Roles
-  admin: string;
-  moderator: string;
-  user: string;
-  // Sidebar Links
-  link_dashboard: string;
-  link_quests: string;
-  link_marketplace: string;
-  link_calendar: string;
-  link_avatar: string;
-  link_collection: string;
-  link_guild: string;
-  link_progress: string;
-  link_trophies: string;
-  link_ranks: string;
-  link_chronicles: string;
-  link_manage_quests: string;
-  link_manage_quest_groups: string;
-  link_manage_items: string;
-  link_manage_markets: string;
-  link_manage_rewards: string;
-  link_manage_ranks: string;
-  link_manage_trophies: string;
-  link_manage_events: string;
-  link_manage_rotations: string;
-  link_manage_setbacks: string;
-  link_appearance: string;
-  link_approvals: string;
-  link_manage_users: string;
-  link_manage_guilds: string;
-  link_suggestion_engine: string;
-  link_object_exporter: string;
-  link_asset_manager: string;
-  link_backup_import: string;
-  link_asset_library: string;
-  link_settings: string;
-  link_about: string;
-  link_help_guide: string;
-  link_chat: string;
-  link_bug_tracker: string;
-  link_themes: string;
-}
-
-export type Page = 'Dashboard' | 'Avatar' | 'Quests' | 'Marketplace' | 'Chronicles' | 'Guild' | 'Calendar' | 'Progress' | 'Trophies' | 'Ranks' | 'Manage Users' | 'Manage Rewards' | 'Manage Quests' | 'Manage Goods' | 'Approvals' | 'Manage Markets' | 'Manage Guilds' | 'Settings' | 'Profile' | 'About' | 'Help Guide' | 'Manage Ranks' | 'Manage Trophies' | 'Collection' | 'Suggestion Engine' | 'Appearance'
-| 'Object Exporter' | 'Asset Manager' | 'Backup & Import' | 'Asset Library'
-| 'Chat' | 'Manage Quest Groups' | 'Manage Events' | 'Manage Rotations' | 'Manage Setbacks'
-| 'Bug Tracker' | 'Themes';
-
-export interface SidebarLink {
-  type: 'link';
-  id: Page;
-  emoji: string;
-  isVisible: boolean;
-  level: number; // 0 for top-level, 1 for nested, etc.
-  role: Role;
-  termKey?: keyof Terminology;
-}
-
-export interface SidebarHeader {
-    type: 'header';
-    title: string;
-    emoji?: string;
-    id: string; // Unique ID for key prop
-    level: 0; // Headers are always top-level
-    role: Role; // For visibility filtering
-    isVisible: boolean;
-}
-
-export interface SidebarSeparator {
-    type: 'separator';
-    id: string;
-    level: 0;
-    role: Role;
-    isVisible: boolean;
-}
-
-export type SidebarConfigItem = SidebarLink | SidebarHeader | SidebarSeparator;
-
-export interface RewardValuationSettings {
-  enabled: boolean;
-  realWorldCurrency: string; // e.g., 'USD', 'EUR'
-  currencyExchangeFeePercent: number;
-  xpExchangeFeePercent: number;
-}
-
-export interface BackupSchedule {
+export type BackupSchedule = {
   id: string;
   frequency: number;
   unit: 'hours' | 'days' | 'weeks';
@@ -577,13 +530,18 @@ export interface AppSettings {
   theme: string;
   terminology: Terminology;
   enableAiFeatures: boolean;
-  rewardValuation: RewardValuationSettings;
+  rewardValuation: {
+    enabled: boolean;
+    realWorldCurrency: string;
+    currencyExchangeFeePercent: number;
+    xpExchangeFeePercent: number;
+  };
   chat: {
     enabled: boolean;
     chatEmoji: string;
   };
   sidebars: {
-      main: SidebarConfigItem[];
+    main: SidebarConfigItem[];
   };
   googleCalendar: {
     enabled: boolean;
@@ -593,256 +551,133 @@ export interface AppSettings {
   developerMode: {
     enabled: boolean;
   };
-  updatedAt?: string;
 }
 
-export type ShareableAssetType = 'quests' | 'rewardTypes' | 'ranks' | 'trophies' | 'markets' | 'gameAssets' | 'questGroups' | 'users' | 'rotations' | 'setbackDefinitions';
+export type SidebarLink = {
+  type: 'link';
+  id: Page;
+  emoji: string;
+  isVisible: boolean;
+  level: number;
+  role: Role;
+  termKey?: keyof Terminology;
+};
 
-export type UserTemplate = Omit<User, 'personalPurse' | 'personalExperience' | 'guildBalances' | 'avatar' | 'ownedAssetIds' | 'ownedThemes' | 'hasBeenOnboarded'>;
+export type SidebarHeader = {
+  type: 'header';
+  id: string;
+  title: string;
+  emoji?: string;
+  isVisible: boolean;
+  level: number;
+  role: Role;
+};
+export type SidebarSeparator = { type: 'separator', id: string, level: number, role: Role, isVisible: boolean };
+export type SidebarConfigItem = SidebarLink | SidebarHeader | SidebarSeparator;
+
+
+export interface Terminology {
+    appName: string;
+    task: string;
+    tasks: string;
+    recurringTask: string;
+    recurringTasks: string;
+    singleTask: string;
+    singleTasks: string;
+    shoppingCenter: string;
+    store: string;
+    stores: string;
+    history: string;
+    group: string;
+    groups: string;
+    level: string;
+    levels: string;
+    award: string;
+    awards: string;
+    point: string;
+    points: string;
+    xp: string;
+    currency: string;
+    negativePoint: string;
+    negativePoints: string;
+    admin: string;
+    moderator: string;
+    user: string;
+    [key: `link_${string}`]: string;
+}
+
+export type ShareableAssetType = 'quests' | 'questGroups' | 'rewardTypes' | 'ranks' | 'trophies' | 'markets' | 'gameAssets' | 'users' | 'rotations' | 'setbackDefinitions';
 
 export interface AssetPackAssets {
-  quests?: Quest[];
-  questGroups?: QuestGroup[];
-  rewardTypes?: RewardTypeDefinition[];
-  ranks?: Rank[];
-  trophies?: Trophy[];
-  markets?: Market[];
-  gameAssets?: GameAsset[];
-  users?: UserTemplate[];
-  rotations?: Rotation[];
-}
-
-export interface AssetPackManifest {
-  id: string;
-  name: string;
-  author: string;
-  version: string;
-  description: string;
-  emoji?: string;
-  category?: string;
+    quests?: Quest[];
+    questGroups?: QuestGroup[];
+    rewardTypes?: RewardTypeDefinition[];
+    ranks?: Rank[];
+    trophies?: Trophy[];
+    markets?: Market[];
+    gameAssets?: GameAsset[];
+    users?: UserTemplate[];
 }
 
 export interface AssetPack {
-  manifest: AssetPackManifest;
+  manifest: {
+    id: string;
+    name: string;
+    author: string;
+    version: string;
+    description: string;
+    emoji?: string;
+    category?: string;
+  };
   assets: AssetPackAssets;
 }
 
-export interface AssetPackSummary {
-    quests: { title: string; icon: string; description: string; emoji?: string; }[];
-    gameAssets: { name: string; icon?: string; description: string; emoji?: string; }[];
-    trophies: { name: string; icon: string; description: string; emoji?: string; }[];
-    users: { gameName: string; role: Role; }[];
-    markets: { title: string; icon: string; description: string; emoji?: string; }[];
-    ranks: { name: string; icon: string }[];
-    rewardTypes: { name: string; icon: string; description: string; emoji?: string; }[];
-    questGroups: { name: string; icon: string; description: string; emoji?: string; }[];
+export interface UserTemplate extends Omit<User, 'id' | 'personalPurse' | 'personalExperience' | 'guildBalances' | 'avatar' | 'ownedAssetIds' | 'ownedThemes' | 'hasBeenOnboarded'> {}
+
+export interface Notification {
+  id: string;
+  type: 'success' | 'error' | 'info' | 'trophy';
+  message: string;
+  duration?: number; // in ms, 0 for persistent
+  icon?: string; // for trophy notifications
 }
 
+export interface BackupInfo {
+  filename: string;
+  size: number;
+  createdAt: number; // timestamp
+  parsed: {
+    date: string; // ISO string
+    version: string;
+    type: 'manual' | string; // e.g. 'auto-daily'
+    format: 'json' | 'sqlite';
+  } | null;
+}
 
 export interface AssetPackManifestInfo {
-  manifest: AssetPackManifest;
+  manifest: AssetPack['manifest'];
   filename: string;
-  summary: AssetPackSummary;
-}
-
-export interface ImportResolution {
-  type: ShareableAssetType;
-  id: string; // Original ID from blueprint
-  name: string;
-  status: 'new' | 'conflict';
-  resolution: 'skip' | 'rename' | 'keep';
-  newName?: string;
-  selected?: boolean;
-}
-
-export interface ThemeStyle {
-  '--font-display': string;
-  '--font-body': string;
-  '--font-label': string;
-  '--font-span'?: string;
-  '--font-button'?: string;
-  '--font-size-h1': string;
-  '--font-size-h2': string;
-  '--font-size-h3': string;
-  '--font-size-body': string;
-  '--font-size-label': string;
-  '--font-size-span'?: string;
-  '--color-h1'?: string;
-  '--color-h2'?: string;
-  '--color-h3'?: string;
-  '--color-body'?: string;
-  '--color-label'?: string;
-  '--color-span'?: string;
-  '--color-bg-primary-hsl': string;
-  '--color-bg-secondary-hsl': string;
-  '--color-bg-tertiary-hsl': string;
-  '--color-text-primary-hsl': string;
-  '--color-text-secondary-hsl': string;
-  '--color-border-hsl': string;
-  '--color-primary-hue': string;
-  '--color-primary-saturation': string;
-  '--color-primary-lightness': string;
-  '--color-accent-hue': string;
-  '--color-accent-saturation': string;
-  '--color-accent-lightness': string;
-  '--color-accent-light-hue': string;
-  '--color-accent-light-saturation': string;
-  '--color-accent-light-lightness': string;
-  // New properties for Theme Editor
-  '--color-text-muted-hsl'?: string;
-  '--input-bg-hsl'?: string;
-  '--button-radius'?: string;
-}
-
-export interface ThemeDefinition {
-  id: string;
-  name: string;
-  isCustom: boolean;
-  styles: ThemeStyle;
-  createdAt?: string;
-  updatedAt?: string;
-}
-
-export type Theme = ThemeDefinition;
-
-export interface ChatMessage {
-  id: string;
-  senderId: string;
-  recipientId?: string; // For DMs
-  guildId?: string; // For guild chats
-  message: string;
-  timestamp: string;
-  readBy: string[]; // Array of user IDs who have read it
-  isAnnouncement?: boolean;
-  createdAt?: string;
-  updatedAt?: string;
-}
-
-export type BugReportStatus = 'Open' | 'In Progress' | 'Resolved' | 'Closed';
-
-export enum BugReportType {
-    Bug = 'Bug Report',
-    Feature = 'Feature Request',
-    Feedback = 'UI/UX Feedback',
-    Content = 'Content Suggestion',
-}
-
-export interface BugReportLogEntry {
-  timestamp: string;
-  type: 'ACTION' | 'NOTE' | 'NAVIGATION' | 'STATE_CHANGE' | 'ELEMENT_PICK' | 'COMMENT';
-  message: string;
-  author?: string; // For comments
-  element?: {
-    tag: string;
-    id?: string;
-    classes?: string;
-    text?: string;
+  summary: {
+    quests: { title: string; icon: string }[];
+    gameAssets: { name: string; icon: string }[];
+    trophies: { name: string; icon: string }[];
+    users: { gameName: string; role: Role }[];
+    markets: { title: string; icon: string }[];
+    ranks: { name: string; icon: string }[];
+    rewardTypes: { name: string; icon: string }[];
+    questGroups: { name: string; icon: string }[];
   };
-  lastCopiedAt?: string;
-  isDimmed?: boolean;
 }
 
-export interface BugReport {
-  id: string;
-  title: string;
-  createdAt: string;
-  updatedAt?: string;
-  status: BugReportStatus;
-  tags: string[];
-  logs: BugReportLogEntry[];
-}
-
-export interface Rotation {
-  id: string;
-  name: string;
-  description: string;
-  questIds: string[];
-  userIds: string[];
-  // 0=Sun, 6=Sat
-  activeDays: number[];
-  // How often the assignment rotates
-  frequency: 'DAILY' | 'WEEKLY';
-  // Tracks the last date an assignment was made to prevent duplicates on the same day.
-  lastAssignmentDate: string | null;
-  // Tracks the index of the last user assigned a quest in the userIds array.
-  lastUserIndex: number;
-  // Tracks the index of the last quest assigned a quest in the questIds array.
-  lastQuestIndex: number;
-  createdAt?: string;
-  updatedAt?: string;
-}
-
-export enum SetbackEffectType {
-  DeductRewards = 'DEDUCT_REWARDS',
-  CloseMarket = 'CLOSE_MARKET',
-}
-
-export type SetbackEffect = 
-  | { type: SetbackEffectType.DeductRewards; rewards: RewardItem[] }
-  | { type: SetbackEffectType.CloseMarket; marketIds: string[]; durationHours: number };
-
-export interface SetbackDefinition {
-  id: string;
-  name: string;
-  description: string;
-  icon: string;
-  effects: SetbackEffect[];
-  createdAt?: string;
-  updatedAt?: string;
-}
-
-export interface AppliedSetback {
-  id: string;
-  userId: string;
-  setbackDefinitionId: string;
-  appliedAt: string;
-  expiresAt?: string;
-  overrides?: Partial<SetbackDefinition>;
-  reason: string;
-  appliedById: string;
-  createdAt?: string;
-  updatedAt?: string;
-}
-
-export enum TradeStatus {
-    Pending = 'Pending',
-    OfferUpdated = 'OfferUpdated',
-    AcceptedByInitiator = 'AcceptedByInitiator',
-    AcceptedByRecipient = 'AcceptedByRecipient',
-    Completed = 'Completed',
-    Cancelled = 'Cancelled',
-    Rejected = 'Rejected',
-}
-
-export interface TradeOffer {
-    id: string;
-    initiatorId: string;
-    recipientId: string;
-    guildId: string;
-    status: TradeStatus;
-    initiatorOffer: {
-        assetIds: string[];
-        rewards: RewardItem[];
-    };
-    recipientOffer: {
-        assetIds: string[];
-        rewards: RewardItem[];
-    };
-    initiatorLocked: boolean;
-    recipientLocked: boolean;
-    createdAt: string;
-    updatedAt?: string;
-}
-
-export interface Gift {
-    id: string;
-    senderId: string;
-    recipientId: string;
-    assetId: string;
-    guildId: string;
-    sentAt: string;
-    createdAt?: string;
-    updatedAt?: string;
+export interface BulkQuestUpdates {
+    isActive?: boolean;
+    isOptional?: boolean;
+    requiresApproval?: boolean;
+    groupId?: string | null;
+    addTags?: string[];
+    removeTags?: string[];
+    assignUsers?: string[];
+    unassignUsers?: string[];
 }
 
 export interface IAppData {
@@ -860,48 +695,43 @@ export interface IAppData {
   adminAdjustments: AdminAdjustment[];
   gameAssets: GameAsset[];
   systemLogs: SystemLog[];
-  settings: AppSettings;
   themes: ThemeDefinition[];
-  loginHistory: string[];
   chatMessages: ChatMessage[];
   systemNotifications: SystemNotification[];
   scheduledEvents: ScheduledEvent[];
-  rotations: Rotation[];
+  settings: AppSettings;
+  loginHistory: string[];
   bugReports: BugReport[];
+  rotations: Rotation[];
   setbackDefinitions: SetbackDefinition[];
   appliedSetbacks: AppliedSetback[];
   tradeOffers: TradeOffer[];
   gifts: Gift[];
 }
 
-export type ChronicleEvent = {
+export interface ImportResolution {
+    type: ShareableAssetType;
     id: string;
-    originalId: string; // The ID of the source object (e.g., PurchaseRequest)
-    date: string;
-    type: 'Quest' | 'Purchase' | 'Trophy' | 'Adjustment' | 'System' | 'Announcement' | 'ScheduledEvent' | 'Crafting' | 'Donation' | 'Gift' | 'Trade';
-    title: string;
-    note?: string;
-    status: string;
-    iconType?: 'emoji' | 'image';
-    icon: string;
-    imageUrl?: string;
-    color: string;
-    userId?: string; // The primary actor/user
-    actorName?: string; // Name of the user who acted (e.g., approved/rejected)
-    recipientUserIds?: string[]; // The users this event applies to (for announcements, system logs)
-    questType?: QuestType;
-    guildId?: string; // The scope of the event
-};
+    name: string;
+    status: 'new' | 'conflict';
+    resolution: 'keep' | 'skip' | 'rename';
+    newName?: string;
+    selected: boolean;
+}
 
-export interface BulkQuestUpdates {
-    isActive?: boolean;
-    isOptional?: boolean;
-    requiresApproval?: boolean;
-    groupId?: string | null; // null to set as uncategorized
-    addTags?: string[];
-    removeTags?: string[];
-    assignUsers?: string[];
-    unassignUsers?: string[];
+export interface ChronicleEvent {
+  id: string;
+  originalId: string;
+  date: string;
+  type: 'Quest' | 'Purchase' | 'Trophy' | 'Adjustment' | 'System' | 'Gift' | 'Trade';
+  title: string;
+  status: any;
+  note?: string;
+  icon: string;
+  color: string;
+  userId?: string;
+  actorName?: string;
+  guildId?: string | null;
 }
 
 export interface SystemStatus {
@@ -912,15 +742,133 @@ export interface SystemStatus {
   };
   jwtSecretSet: boolean;
 }
+export enum BugReportType {
+  Bug = 'Bug Report',
+  Feature = 'Feature Request',
+  Feedback = 'UI/UX Feedback',
+  Content = 'Content Suggestion',
+}
+export type BugReportStatus = 'Open' | 'In Progress' | 'Resolved' | 'Closed';
 
-export interface BackupInfo {
-    filename: string;
-    size: number;
-    createdAt: string; // file mod time
-    parsed: {
-        date: string; // ISO string from filename
-        version: string;
-        type: string; // 'manual' or 'auto-[schedule_id]'
-        format: 'json' | 'sqlite';
-    } | null;
+export interface BugReportLogEntry {
+  timestamp: string;
+  type: 'ACTION' | 'NAVIGATION' | 'STATE_CHANGE' | 'NOTE' | 'ELEMENT_PICK' | 'COMMENT';
+  message: string;
+  element?: {
+    tag: string;
+    id?: string;
+    classes?: string;
+    text?: string;
+  };
+  author?: string;
+  isDimmed?: boolean;
+  lastCopiedAt?: string;
+}
+
+export interface BugReport {
+  id: string;
+  title: string;
+  createdAt: string;
+  updatedAt: string;
+  status: BugReportStatus;
+  tags: string[];
+  logs: BugReportLogEntry[];
+}
+
+export interface Rotation {
+    id: string;
+    name: string;
+    description: string;
+    questIds: string[];
+    userIds: string[];
+    frequency: 'DAILY' | 'WEEKLY';
+    activeDays: number[]; // 0 for Sunday, 6 for Saturday
+    lastAssignmentDate: string | null; // YYYY-MM-DD
+    lastUserIndex: number;
+    lastQuestIndex: number;
+    createdAt?: string;
+    updatedAt?: string;
+}
+
+export enum SetbackEffectType {
+    DeductRewards = 'DEDUCT_REWARDS',
+    CloseMarket = 'CLOSE_MARKET',
+}
+
+interface BaseSetbackEffect {
+    type: SetbackEffectType;
+}
+
+export interface DeductRewardsEffect extends BaseSetbackEffect {
+    type: SetbackEffectType.DeductRewards;
+    rewards: RewardItem[];
+}
+
+export interface CloseMarketEffect extends BaseSetbackEffect {
+    type: SetbackEffectType.CloseMarket;
+    marketIds: string[];
+    durationHours: number;
+}
+
+export type SetbackEffect = DeductRewardsEffect | CloseMarketEffect;
+
+export interface SetbackDefinition {
+    id: string;
+    name: string;
+    description: string;
+    icon: string;
+    effects: SetbackEffect[];
+    createdAt?: string;
+    updatedAt?: string;
+}
+
+export interface AppliedSetback {
+    id: string;
+    userId: string;
+    setbackDefinitionId: string;
+    appliedAt: string;
+    expiresAt: string | null;
+    reason: string;
+    appliedById: string; // User ID of the admin who applied it
+    createdAt?: string;
+    updatedAt?: string;
+}
+
+export enum TradeStatus {
+  Pending = 'Pending',
+  OfferUpdated = 'OfferUpdated',
+  Completed = 'Completed',
+  Cancelled = 'Cancelled',
+  Rejected = 'Rejected',
+}
+
+export interface TradeOffer {
+  id: string;
+  initiatorId: string;
+  recipientId: string;
+  guildId: string;
+  status: TradeStatus;
+  initiatorOffer: {
+    assetIds: string[];
+    rewards: RewardItem[];
+  };
+  recipientOffer: {
+    assetIds: string[];
+    rewards: RewardItem[];
+  };
+  initiatorLocked: boolean;
+  recipientLocked: boolean;
+  createdAt: string;
+  updatedAt?: string;
+}
+
+export interface Gift {
+  id: string;
+  senderId: string;
+  recipientId: string;
+  assetId: string;
+  sentAt: string;
+  guildId?: string;
+  createdAt?: string;
+  updatedAt?: string;
 }

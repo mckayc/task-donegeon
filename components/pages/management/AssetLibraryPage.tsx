@@ -1,8 +1,7 @@
-
 import React, { useState, useMemo, useEffect } from 'react';
 import Button from '../../user-interface/Button';
 import Card from '../../user-interface/Card';
-import { AssetPack, AssetPackManifestInfo, IAppData, ImportResolution } from '../../../types';
+import { AssetPack, AssetPackManifestInfo, IAppData, ImportResolution } from '../../types';
 import { useData } from '../../../context/DataProvider';
 import { useActionsDispatch } from '../../../context/ActionsContext';
 import Input from '../../user-interface/Input';
@@ -199,12 +198,12 @@ const AssetLibraryPage: React.FC = () => {
                                                     
                                                     <div className="mt-4 pt-4 border-t border-stone-700/60 grid grid-cols-2 gap-x-4 gap-y-2">
                                                         <ul className="space-y-1">
-                                                          {packInfo.summary.quests.map(q => <SummaryItem key={q.title} icon={q.icon} name={q.title} />)}
-                                                          {packInfo.summary.gameAssets.map(a => <SummaryItem key={a.name} icon={a.icon} name={a.name} />)}
+                                                          {(packInfo.summary.quests || []).map(q => <SummaryItem key={q.title} icon={q.icon} name={q.title} />)}
+                                                          {(packInfo.summary.gameAssets || []).map(a => <SummaryItem key={a.name} icon={a.icon} name={a.name} />)}
                                                         </ul>
                                                         <ul className="space-y-1">
-                                                          {packInfo.summary.trophies.map(t => <SummaryItem key={t.name} icon={t.icon} name={t.name} />)}
-                                                          {packInfo.summary.users.map(u => <SummaryItem key={u.gameName} icon={'👤'} name={u.gameName} />)}
+                                                          {(packInfo.summary.trophies || []).map(t => <SummaryItem key={t.name} icon={t.icon} name={t.name} />)}
+                                                          {(packInfo.summary.users || []).map(u => <SummaryItem key={u.gameName} icon={'👤'} name={u.gameName} />)}
                                                         </ul>
                                                     </div>
                                                 </Card>

@@ -26,6 +26,9 @@ class LoginHistory {}
 class BugReport {}
 class SetbackDefinition {}
 class AppliedSetback {}
+class Rotation {}
+class TradeOffer {}
+class Gift {}
 
 const SetbackDefinitionEntity = new EntitySchema({
     name: "SetbackDefinition",
@@ -127,6 +130,7 @@ const QuestEntity = new EntitySchema({
         title: { type: "varchar" },
         description: { type: "text" },
         type: { type: "varchar" },
+        kind: { type: "varchar", default: 'Personal' },
         iconType: { type: "varchar" },
         icon: { type: "varchar" },
         imageUrl: { type: "varchar", nullable: true },
@@ -138,6 +142,8 @@ const QuestEntity = new EntitySchema({
         startTime: { type: "varchar", nullable: true },
         endTime: { type: "varchar", nullable: true },
         availabilityCount: { type: "integer", nullable: true },
+        completionGoal: { type: 'integer', nullable: true },
+        contributions: { type: 'simple-json', nullable: true },
         rewards: { type: "simple-json" },
         lateSetbacks: { type: "simple-json" },
         incompleteSetbacks: { type: "simple-json" },
@@ -152,14 +158,6 @@ const QuestEntity = new EntitySchema({
         nextQuestId: { type: "varchar", nullable: true },
         createdAt: { type: "varchar", nullable: true },
         updatedAt: { type: "varchar", nullable: true },
-        // Old columns for migration, can be removed later
-        lateDateTime: { type: "varchar", nullable: true },
-        incompleteDateTime: { type: "varchar", nullable: true },
-        lateTime: { type: "varchar", nullable: true },
-        incompleteTime: { type: "varchar", nullable: true },
-        availabilityType: { type: "varchar", nullable: true },
-        weeklyRecurrenceDays: { type: "simple-json", nullable: true },
-        monthlyRecurrenceDays: { type: "simple-json", nullable: true },
     },
     relations: {
         assignedUsers: {
@@ -189,6 +187,10 @@ const SystemNotificationEntity = new EntitySchema({ name: "SystemNotification", 
 const ScheduledEventEntity = new EntitySchema({ name: "ScheduledEvent", target: ScheduledEvent, columns: { id: { primary: true, type: "varchar" }, title: { type: "varchar" }, description: { type: "text" }, startDate: { type: "varchar" }, endDate: { type: "varchar" }, isAllDay: { type: "boolean" }, eventType: { type: "varchar" }, guildId: { type: "varchar", nullable: true }, icon: { type: "varchar", nullable: true }, color: { type: "varchar", nullable: true }, modifiers: { type: "simple-json" }, createdAt: { type: "varchar", nullable: true }, updatedAt: { type: "varchar", nullable: true } } });
 const SettingEntity = new EntitySchema({ name: "Setting", target: Setting, columns: { id: { primary: true, type: "integer", default: 1 }, settings: { type: "simple-json" }, createdAt: { type: "varchar", nullable: true }, updatedAt: { type: "varchar", nullable: true } } });
 const LoginHistoryEntity = new EntitySchema({ name: "LoginHistory", target: LoginHistory, columns: { id: { primary: true, type: "integer", default: 1 }, history: { type: "simple-array" }, createdAt: { type: "varchar", nullable: true }, updatedAt: { type: "varchar", nullable: true } } });
+const RotationEntity = new EntitySchema({ name: "Rotation", target: Rotation, columns: { id: { primary: true, type: 'varchar' }, name: { type: 'varchar' }, description: { type: 'text' }, questIds: { type: 'simple-array' }, userIds: { type: 'simple-array' }, frequency: { type: 'varchar' }, activeDays: { type: 'simple-json' }, lastAssignmentDate: { type: 'varchar', nullable: true }, lastUserIndex: { type: 'integer' }, lastQuestIndex: { type: 'integer' }, createdAt: { type: 'varchar', nullable: true }, updatedAt: { type: 'varchar', nullable: true } } });
+const TradeOfferEntity = new EntitySchema({ name: 'TradeOffer', target: TradeOffer, columns: { id: { primary: true, type: 'varchar' }, initiatorId: { type: 'varchar' }, recipientId: { type: 'varchar' }, guildId: { type: 'varchar' }, status: { type: 'varchar' }, initiatorOffer: { type: 'simple-json' }, recipientOffer: { type: 'simple-json' }, initiatorLocked: { type: 'boolean' }, recipientLocked: { type: 'boolean' }, createdAt: { type: 'varchar' }, updatedAt: { type: 'varchar', nullable: true } } });
+const GiftEntity = new EntitySchema({ name: 'Gift', target: Gift, columns: { id: { primary: true, type: 'varchar' }, senderId: { type: 'varchar' }, recipientId: { type: 'varchar' }, assetId: { type: 'varchar' }, sentAt: { type: 'varchar' }, guildId: { type: 'varchar', nullable: true }, createdAt: { type: 'varchar', nullable: true }, updatedAt: { type: 'varchar', nullable: true } } });
+
 
 const QuestCompletionEntity = new EntitySchema({
     name: "QuestCompletion",
@@ -309,7 +311,7 @@ const allEntities = [
     QuestCompletionEntity, PurchaseRequestEntity, GuildEntity, RankEntity, TrophyEntity,
     UserTrophyEntity, AdminAdjustmentEntity, GameAssetEntity, SystemLogEntity, ThemeDefinitionEntity,
     ChatMessageEntity, SystemNotificationEntity, ScheduledEventEntity, SettingEntity, LoginHistoryEntity,
-    BugReportEntity, SetbackDefinitionEntity, AppliedSetbackEntity
+    BugReportEntity, SetbackDefinitionEntity, AppliedSetbackEntity, RotationEntity, TradeOfferEntity, GiftEntity
 ];
 
 module.exports = { 
@@ -318,5 +320,5 @@ module.exports = {
     QuestCompletionEntity, PurchaseRequestEntity, GuildEntity, RankEntity, TrophyEntity,
     UserTrophyEntity, AdminAdjustmentEntity, GameAssetEntity, SystemLogEntity, ThemeDefinitionEntity,
     ChatMessageEntity, SystemNotificationEntity, ScheduledEventEntity, SettingEntity, LoginHistoryEntity,
-    BugReportEntity, SetbackDefinitionEntity, AppliedSetbackEntity
+    BugReportEntity, SetbackDefinitionEntity, AppliedSetbackEntity, RotationEntity, TradeOfferEntity, GiftEntity
 };

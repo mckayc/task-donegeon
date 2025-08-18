@@ -53,7 +53,7 @@ const AssetLibraryPage: React.FC = () => {
     }, [localPacks]);
     
     const filteredPacks = useMemo(() => {
-        let packs = [...localPacks];
+        let packs: AssetPackManifestInfo[] = [...localPacks];
 
         if (selectedCategory !== 'All') {
             packs = packs.filter(p => p.manifest.category === selectedCategory);

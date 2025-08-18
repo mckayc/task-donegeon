@@ -5,7 +5,6 @@ import { ScheduledEvent, RewardCategory } from '../../types';
 import Button from '../user-interface/Button';
 import Input from '../user-interface/Input';
 import EmojiPicker from '../user-interface/EmojiPicker';
-import ToggleSwitch from '../user-interface/ToggleSwitch';
 
 interface ScheduleEventDialogProps {
   event: ScheduledEvent | null;
@@ -78,7 +77,7 @@ export const ScheduleEventDialog: React.FC<ScheduleEventDialogProps> = ({ event,
                 break;
         }
 
-        const payload = { ...formData, modifiers: finalModifiers };
+        const payload = { ...formData, guildId: formData.guildId || undefined, modifiers: finalModifiers };
 
         if (event) {
             updateScheduledEvent({ ...payload, id: event.id });

@@ -73,7 +73,7 @@ const DonateDialog: React.FC<DonateDialogProps> = ({ guild, onClose }) => {
                     {rewardTypes.filter(rt => rt.category === 'Currency').map(rt => {
                         const balance = currentUser.personalPurse[rt.id] || 0;
                         if (balance === 0) return null;
-                        const donatedAmount = rewards.find(r => r.rewardTypeId === rt.id)?.amount || 0;
+                        const donatedAmount = rewards.find(r => r.rewardTypeId === rt.id)?.amount || '';
                         return (
                              <div key={rt.id} className="flex items-center gap-4">
                                 <span className="text-xl w-6 text-center">{rt.icon}</span>

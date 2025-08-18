@@ -135,7 +135,7 @@ export const ActionsProvider: React.FC<{ children: ReactNode }> = ({ children })
             const message = error instanceof Error ? error.message : 'An unknown network error occurred.';
             addNotification({ type: 'error', message });
             bugLogger.add({ type: 'STATE_CHANGE', message: `API Error: ${method} ${path} - ${message}` });
-            throw error;
+            return null;
         }
     }, [addNotification]);
     
@@ -379,35 +379,11 @@ export const ActionsProvider: React.FC<{ children: ReactNode }> = ({ children })
         
         sendMessage: async (messageData) => {
             if (!currentUser) return;
-
-            const tempId = `temp-chat-${Date.now()}`;
-            const optimisticMessage: ChatMessage = {
-                id: tempId,
-                senderId: currentUser.id,
-                recipientId: messageData.recipientId,
-                guildId: messageData.guildId,
-                message: messageData.message,
-                isAnnouncement: messageData.isAnnouncement,
-                timestamp: new Date().toISOString(),
-                readBy: [currentUser.id],
-            };
-
-            // Optimistically update UI
-            dataDispatch({ type: 'UPDATE_DATA', payload: { chatMessages: [optimisticMessage] } });
-
-            try {
-                const result = await apiRequest('POST', '/api/chat/send', { ...messageData, senderId: currentUser.id });
-                if (result && result.newChatMessage) {
-                    // Replace temp message with server-confirmed one
-                    dataDispatch({ type: 'REMOVE_DATA', payload: { chatMessages: [tempId] } });
-                    dataDispatch({ type: 'UPDATE_DATA', payload: { chatMessages: [result.newChatMessage] } });
-                } else {
-                    throw new Error("Server did not return a valid message.");
-                }
-            } catch (error) {
-                // On error, remove the optimistic message
-                dataDispatch({ type: 'REMOVE_DATA', payload: { chatMessages: [tempId] } });
-                // apiRequest already shows a notification for the error
+            const result = await apiRequest('POST', '/api/chat/send', { ...messageData, senderId: currentUser.id });
+            if (result && result.newChatMessage) {
+                dataDispatch({ type: 'UPDATE_DATA', payload: { chatMessages: [result.newChatMessage] } });
+            } else {
+                addNotification({ type: 'error', message: 'Failed to send message. Please try again later.' });
             }
         },
         markMessagesAsRead: (criteria) => apiRequest('POST', '/api/chat/read', criteria),

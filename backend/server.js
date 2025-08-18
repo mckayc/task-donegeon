@@ -1,5 +1,4 @@
 
-
 require("reflect-metadata");
 const express = require('express');
 const cors = require('cors');
@@ -38,10 +37,13 @@ const updateTimestamps = (entity, isNew = false) => {
 
 const checkAndAwardTrophies = async (manager, userId, guildId) => {
     // Automatic trophies are personal-only for now, as per frontend logic
-    if (guildId) return;
+    if (guildId) return { newUserTrophies: [], newNotifications: [] };
 
     const user = await manager.findOneBy(UserEntity, { id: userId });
-    if (!user) return;
+    if (!user) return { newUserTrophies: [], newNotifications: [] };
+
+    const newUserTrophies = [];
+    const newNotifications = [];
 
     // Get all necessary data for checks
     const userCompletedQuests = await manager.find(QuestCompletionEntity, {
@@ -89,7 +91,8 @@ const checkAndAwardTrophies = async (manager, userId, guildId) => {
                 awardedAt: new Date().toISOString(),
                 guildId: null, // Personal trophy
             });
-            await manager.save(updateTimestamps(newTrophy, true));
+            const savedTrophy = await manager.save(updateTimestamps(newTrophy, true));
+            newUserTrophies.push(savedTrophy);
 
             // Create notification
             const newNotification = manager.create(SystemNotificationEntity, {
@@ -105,9 +108,11 @@ const checkAndAwardTrophies = async (manager, userId, guildId) => {
                  imageUrl: trophy.imageUrl,
                  link: 'Trophies',
             });
-            await manager.save(updateTimestamps(newNotification, true));
+            const savedNotification = await manager.save(updateTimestamps(newNotification, true));
+            newNotifications.push(savedNotification);
         }
     }
+    return { newUserTrophies, newNotifications };
 };
 
 // === Middleware ===
@@ -1517,7 +1522,7 @@ app.post('/api/actions/approve-quest/:id', asyncMiddleware(async (req, res) => {
     const { note } = req.body;
 
     try {
-        await dataSource.transaction(async manager => {
+        const resultPayload = await dataSource.transaction(async manager => {
             const completion = await manager.findOne(QuestCompletionEntity, { where: { id }, relations: ['user', 'quest']});
             if (!completion || completion.status !== 'Pending') {
                 const error = new Error("Pending completion not found.");
@@ -1561,14 +1566,23 @@ app.post('/api/actions/approve-quest/:id', asyncMiddleware(async (req, res) => {
                 }
             });
             
-            await manager.save(updateTimestamps(user));
-            await manager.save(updateTimestamps(completion));
-            // After applying rewards, check for trophies
-            await checkAndAwardTrophies(manager, user.id, quest.guildId);
+            const savedUser = await manager.save(updateTimestamps(user));
+            const savedCompletion = await manager.save(updateTimestamps(completion));
+            
+            const trophyResult = await checkAndAwardTrophies(manager, user.id, quest.guildId);
+            
+            const { user: u, quest: q, ...completionData } = savedCompletion;
+
+            return {
+                updatedUser: savedUser,
+                updatedCompletion: { ...completionData, userId: u?.id, questId: q?.id },
+                newUserTrophies: trophyResult.newUserTrophies,
+                newNotifications: trophyResult.newNotifications
+            };
         });
 
         updateEmitter.emit('update');
-        res.status(204).send();
+        res.status(200).json(resultPayload);
     } catch (error) {
         if (error.statusCode) {
             res.status(error.statusCode).json({ error: error.message });
@@ -1582,15 +1596,17 @@ app.post('/api/actions/reject-quest/:id', asyncMiddleware(async (req, res) => {
     const { id } = req.params;
     const { note } = req.body;
     const repo = dataSource.getRepository(QuestCompletionEntity);
-    const completion = await repo.findOneBy({ id });
+    const completion = await repo.findOne({ where: { id }, relations: ['user', 'quest'] });
     if (!completion || completion.status !== 'Pending') {
         return res.status(404).json({ error: 'Pending completion not found.' });
     }
     completion.status = 'Rejected';
     if(note) completion.note = note;
-    await repo.save(updateTimestamps(completion));
+    const savedCompletion = await repo.save(updateTimestamps(completion));
+
+    const { user, quest, ...completionData } = savedCompletion;
     updateEmitter.emit('update');
-    res.status(204).send();
+    res.status(200).json({ updatedCompletion: { ...completionData, userId: user?.id, questId: quest?.id } });
 }));
 
 app.post('/api/actions/mark-todo', asyncMiddleware(async (req, res) => {
@@ -1831,7 +1847,7 @@ app.post('/api/actions/approve-purchase/:id', asyncMiddleware(async (req, res) =
     }
     
     try {
-        await dataSource.transaction(async manager => {
+        const resultPayload = await dataSource.transaction(async manager => {
             const requestRepo = manager.getRepository(PurchaseRequestEntity);
             const userRepo = manager.getRepository(UserEntity);
             const assetRepo = manager.getRepository(GameAssetEntity);
@@ -1871,18 +1887,21 @@ app.post('/api/actions/approve-purchase/:id', asyncMiddleware(async (req, res) =
             const user = await userRepo.findOneBy({ id: request.userId });
             const asset = await assetRepo.findOneBy({ id: request.assetId });
             
+            let savedUser = user;
             if (user && asset && asset.linkedThemeId) {
                 if (!user.ownedThemes.includes(asset.linkedThemeId)) {
                     user.ownedThemes.push(asset.linkedThemeId);
-                    await userRepo.save(updateTimestamps(user));
+                    savedUser = await userRepo.save(updateTimestamps(user));
                 }
             }
             
-            await requestRepo.save(updateTimestamps(request));
+            const savedRequest = await requestRepo.save(updateTimestamps(request));
+
+            return { updatedUser: savedUser, updatedPurchaseRequest: savedRequest };
         });
     
         updateEmitter.emit('update');
-        res.status(204).send();
+        res.status(200).json(resultPayload);
     } catch (error) {
         if (error.statusCode) {
             res.status(error.statusCode).json({ error: error.message });
@@ -1902,7 +1921,7 @@ app.post('/api/actions/reject-purchase/:id', asyncMiddleware(async (req, res) =>
     }
 
     try {
-        await dataSource.transaction(async manager => {
+        const resultPayload = await dataSource.transaction(async manager => {
             const requestRepo = manager.getRepository(PurchaseRequestEntity);
             const userRepo = manager.getRepository(UserEntity);
             const rewardTypes = await manager.find(RewardTypeDefinitionEntity);
@@ -1966,12 +1985,14 @@ app.post('/api/actions/reject-purchase/:id', asyncMiddleware(async (req, res) =>
             request.actedAt = new Date().toISOString();
             request.actedById = rejecterId;
             
-            await userRepo.save(updateTimestamps(user));
-            await requestRepo.save(updateTimestamps(request));
+            const savedUser = await userRepo.save(updateTimestamps(user));
+            const savedRequest = await requestRepo.save(updateTimestamps(request));
+            
+            return { updatedUser: savedUser, updatedPurchaseRequest: savedRequest };
         });
     
         updateEmitter.emit('update');
-        res.status(204).send();
+        res.status(200).json(resultPayload);
     } catch (error) {
         if (error.statusCode) {
             res.status(error.statusCode).json({ error: error.message });

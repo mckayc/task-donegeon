@@ -275,12 +275,40 @@ export const ActionsProvider: React.FC<{ children: ReactNode }> = ({ children })
                 if (newCompletion) dataDispatch({ type: 'UPDATE_DATA', payload: { questCompletions: [newCompletion] } });
             }
         },
-        approveQuestCompletion: (id, note) => apiRequest('POST', `/api/actions/approve-quest/${id}`, { note }),
-        rejectQuestCompletion: (id, note) => apiRequest('POST', `/api/actions/reject-quest/${id}`, { note }),
+        approveQuestCompletion: async (id, note) => {
+            const result = await apiRequest('POST', `/api/actions/approve-quest/${id}`, { note });
+            if (result) {
+                const { updatedUser, updatedCompletion, newUserTrophies, newNotifications } = result;
+                if (updatedUser) updateUser(updatedUser.id, updatedUser);
+                if (updatedCompletion) dataDispatch({ type: 'UPDATE_DATA', payload: { questCompletions: [updatedCompletion] } });
+                if (newUserTrophies?.length) dataDispatch({ type: 'UPDATE_DATA', payload: { userTrophies: newUserTrophies } });
+                if (newNotifications?.length) dataDispatch({ type: 'UPDATE_DATA', payload: { systemNotifications: newNotifications } });
+            }
+        },
+        rejectQuestCompletion: async (id, note) => {
+            const result = await apiRequest('POST', `/api/actions/reject-quest/${id}`, { note });
+            if (result?.updatedCompletion) {
+                dataDispatch({ type: 'UPDATE_DATA', payload: { questCompletions: [result.updatedCompletion] } });
+            }
+        },
 
         purchaseMarketItem,
-        approvePurchaseRequest: (id, approverId) => apiRequest('POST', `/api/actions/approve-purchase/${id}`, { approverId }),
-        rejectPurchaseRequest: (id, rejecterId) => apiRequest('POST', `/api/actions/reject-purchase/${id}`, { rejecterId }),
+        approvePurchaseRequest: async (requestId, approverId) => {
+            const result = await apiRequest('POST', `/api/actions/approve-purchase/${requestId}`, { approverId });
+            if (result) {
+                const { updatedUser, updatedPurchaseRequest } = result;
+                if (updatedUser) updateUser(updatedUser.id, updatedUser);
+                if (updatedPurchaseRequest) dataDispatch({ type: 'UPDATE_DATA', payload: { purchaseRequests: [updatedPurchaseRequest] } });
+            }
+        },
+        rejectPurchaseRequest: async (requestId, rejecterId) => {
+            const result = await apiRequest('POST', `/api/actions/reject-purchase/${requestId}`, { rejecterId });
+            if (result) {
+                const { updatedUser, updatedPurchaseRequest } = result;
+                if (updatedUser) updateUser(updatedUser.id, updatedUser);
+                if (updatedPurchaseRequest) dataDispatch({ type: 'UPDATE_DATA', payload: { purchaseRequests: [updatedPurchaseRequest] } });
+            }
+        },
         cancelPurchaseRequest: (id) => apiRequest('POST', `/api/actions/cancel-purchase/${id}`),
         
         executeExchange,

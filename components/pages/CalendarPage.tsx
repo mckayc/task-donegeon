@@ -26,6 +26,27 @@ import { useActionsDispatch } from '../../context/ActionsContext';
 
 type CalendarMode = 'events' | 'chronicles';
 
+const rruleStringToObject = (rruleString: string) => {
+    const obj: any = {};
+    rruleString.split(';').forEach(part => {
+        const [key, value] = part.split('=');
+        if (!key || !value) return;
+        switch (key.toUpperCase()) {
+            case 'FREQ':
+                obj.freq = value.toLowerCase();
+                break;
+            case 'BYDAY':
+                obj.byweekday = value.split(',').map(d => d.toLowerCase());
+                break;
+            case 'BYMONTHDAY':
+                obj.bymonthday = value.split(',').map(Number);
+                break;
+        }
+    });
+    return obj;
+};
+
+
 const CalendarPage: React.FC = () => {
     const { settings, scheduledEvents, quests, questCompletions, rewardTypes } = useData();
     const { appMode } = useUIState();
@@ -171,24 +192,28 @@ const CalendarPage: React.FC = () => {
                     if (quest.rrule) {
                         const dutyEvent: EventInput = {
                             ...baseProps,
-                            rrule: quest.rrule,
-                            allDay: !quest.startTime, // A Duty is all-day if and only if it has no start time.
+                            allDay: !quest.startTime,
                         };
-                
-                        if (quest.startTime) {
-                            dutyEvent.startTime = quest.startTime;
-                            // For recurring events with start and end times, we calculate a `duration` instead of setting `endTime`.
-                            // This provides a more reliable method for the rrule plugin to handle event length.
-                            if (quest.endTime) {
-                                const start = new Date(`1970-01-01T${quest.startTime}`);
-                                const end = new Date(`1970-01-01T${quest.endTime}`);
-                                const diffMs = end.getTime() - start.getTime();
 
-                                if (diffMs > 0) {
-                                    const hours = Math.floor(diffMs / (1000 * 60 * 60));
-                                    const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
-                                    dutyEvent.duration = { hours, minutes };
-                                }
+                        const rruleObj = rruleStringToObject(quest.rrule);
+
+                        if (quest.startTime) {
+                            rruleObj.dtstart = `1970-01-01T${quest.startTime}`;
+                        } else {
+                            rruleObj.dtstart = `1970-01-01`;
+                        }
+                        
+                        dutyEvent.rrule = rruleObj;
+
+                        if (quest.startTime && quest.endTime) {
+                            const start = new Date(`1970-01-01T${quest.startTime}`);
+                            const end = new Date(`1970-01-01T${quest.endTime}`);
+                            const diffMs = end.getTime() - start.getTime();
+
+                            if (diffMs > 0) {
+                                const hours = Math.floor(diffMs / (1000 * 60 * 60));
+                                const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+                                dutyEvent.duration = { hours, minutes };
                             }
                         }
                         

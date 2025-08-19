@@ -50,7 +50,6 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
         startDateTime: null, endDateTime: null, allDay: true, rrule: null,
         startTime: null, endTime: null, availabilityCount: 1,
         todoUserIds: [],
-        nextQuestId: '',
     };
 
     // Mode: Edit
@@ -231,7 +230,6 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
         groupId: finalGroupId || undefined,
         requiresApproval: formData.requiresApproval,
         todoUserIds: formData.todoUserIds,
-        nextQuestId: formData.nextQuestId || undefined,
     };
 
     if (onSave) {
@@ -388,21 +386,6 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
           )}
 
           <RewardInputGroup category='rewards' items={formData.rewards} onChange={handleRewardChange('rewards')} onAdd={handleAddRewardForCategory('rewards')} onRemove={handleRemoveReward('rewards')} />
-
-           <div className="p-4 bg-stone-900/50 rounded-lg space-y-4">
-              <Input
-                  as="select"
-                  label="Unlocks Next Quest (Optional)"
-                  name="nextQuestId"
-                  value={formData.nextQuestId || ''}
-                  onChange={(e) => setFormData(p => ({ ...p, nextQuestId: e.target.value }))}
-              >
-                  <option value="">None</option>
-                  {quests.filter(q => q.id !== questToEdit?.id).map(q => (
-                      <option key={q.id} value={q.id}>{q.title}</option>
-                  ))}
-              </Input>
-          </div>
 
           <div className="p-4 bg-stone-900/50 rounded-lg space-y-4">
             <div>

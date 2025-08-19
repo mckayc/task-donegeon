@@ -229,7 +229,7 @@ const Dashboard: React.FC = () => {
         const userCompletions = questCompletions.filter(c => c.userId === currentUser.id);
 
         const completableQuests = quests.filter(quest => {
-            return isQuestVisibleToUserInMode(quest, currentUser.id, appMode, quests, questCompletions) &&
+            return isQuestVisibleToUserInMode(quest, currentUser.id, appMode) &&
                    isQuestAvailableForUser(quest, userCompletions, today, scheduledEvents, appMode);
         });
         

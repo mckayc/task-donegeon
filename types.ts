@@ -48,6 +48,7 @@ export interface User {
 export enum QuestType {
   Duty = 'Duty',
   Venture = 'Venture',
+  Journey = 'Journey',
 }
 
 export enum QuestKind {
@@ -90,6 +91,14 @@ export enum QuestAvailability {
     Unlimited = 'Unlimited',
 }
 
+export interface Checkpoint {
+  id: string;
+  description: string;
+  rewards: RewardItem[];
+  trophyId?: string;
+}
+
+
 export interface Quest {
   id: string;
   title: string;
@@ -111,6 +120,8 @@ export interface Quest {
   
   availabilityCount: number | null; // For Ventures that can be completed multiple times.
   completionGoal?: number; // For collaborative quests
+  checkpoints?: Checkpoint[]; // For Journeys
+  checkpointCompletions?: { [userId: string]: number }; // For Journeys. Tracks number of *completed* checkpoints.
   contributions?: { userId: string, contributedAt: string }[]; // For collaborative quests
 
   rewards: RewardItem[];
@@ -124,9 +135,9 @@ export interface Quest {
   requiresApproval: boolean;
   claimedByUserIds: string[];
   dismissals: { userId: string; dismissedAt: string; }[];
-  todoUserIds?: string[];
-  nextQuestId?: string; // ID of the quest unlocked by this one
+  todoUserIds?: string[]; // Kept for Ventures
   isRedemptionFor?: string; // ID of the AppliedSetback this quest is for
+  nextQuestId?: string; // ID of the quest unlocked upon completion
   createdAt?: string;
   updatedAt?: string;
 }
@@ -904,7 +915,7 @@ export type ChronicleEvent = {
     id: string;
     originalId: string; // The ID of the source object (e.g., PurchaseRequest)
     date: string;
-    type: 'Quest' | 'Purchase' | 'Trophy' | 'Adjustment' | 'System' | 'Announcement' | 'ScheduledEvent' | 'Crafting' | 'Donation' | 'Gift' | 'Trade' | 'Triumph' | 'Trial';
+    type: 'Quest' | 'Purchase' | 'Trophy' | 'Adjustment' | 'System' | 'Announcement' | 'ScheduledEvent' | 'Crafting' | 'Donation' | 'Gift' | 'Trade' | 'Triumph' | 'Trial' | 'Checkpoint';
     title: string;
     note?: string;
     status: string;

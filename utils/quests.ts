@@ -40,8 +40,8 @@ export const isVacationActiveOnDate = (date: Date, scheduledEvents: ScheduledEve
  * This does not check for completion status, only if it's supposed to be on the calendar for that day.
  */
 export const isQuestScheduledForDay = (quest: Quest, day: Date): boolean => {
-    if (quest.type === QuestType.Venture) {
-        // A Venture is "scheduled" for its due date range.
+    if (quest.type === QuestType.Journey || quest.type === QuestType.Venture) {
+        // A Venture/Journey is "scheduled" for its due date range.
         if (!quest.startDateTime) return false;
         const startDate = toYMD(new Date(quest.startDateTime));
         const endDate = quest.endDateTime ? toYMD(new Date(quest.endDateTime)) : startDate;
@@ -75,31 +75,12 @@ export const isQuestScheduledForDay = (quest: Quest, day: Date): boolean => {
 /**
  * Checks if a quest should be visible to a user in the current app mode.
  * Verifies active status, guild scope, and user assignment, strictly separating personal and guild contexts.
- * Also checks for quest chain prerequisites.
  */
 export const isQuestVisibleToUserInMode = (
   quest: Quest,
   userId: string,
-  appMode: AppMode,
-  allQuests: Quest[],
-  allCompletions: QuestCompletion[]
+  appMode: AppMode
 ): boolean => {
-  // Find prerequisite quest
-  const prerequisiteQuest = allQuests.find(q => q.nextQuestId === quest.id);
-
-  if (prerequisiteQuest) {
-    // This quest is locked. Check if the user has completed the prerequisite.
-    const hasCompletedPrerequisite = allCompletions.some(c =>
-      c.questId === prerequisiteQuest.id &&
-      c.userId === userId &&
-      c.status === QuestCompletionStatus.Approved
-    );
-    if (!hasCompletedPrerequisite) {
-      return false; // Prerequisite not met, quest is not visible.
-    }
-  }
-  
-  // If prerequisite is met or doesn't exist, proceed with original visibility checks.
   if (!quest.isActive) return false;
 
   const currentGuildId = appMode.mode === 'guild' ? appMode.guildId : undefined;
@@ -158,6 +139,15 @@ export const isQuestAvailableForUser = (
     // Unlimited (completable once)
     return questUserCompletions.length === 0;
   }
+
+  // Journey-specific logic
+  if (quest.type === QuestType.Journey) {
+    if (!onVacation && quest.endDateTime && today > new Date(quest.endDateTime)) {
+      return false; // Past final deadline
+    }
+    // A journey is available as long as it hasn't been fully completed
+    return questUserCompletions.length === 0;
+  }
   
   // Duty-specific logic
   if (quest.type === QuestType.Duty) {
@@ -214,7 +204,7 @@ const getQuestSortKey = (quest: Quest, user: User, date: Date, allCompletions: Q
     let urgencyPriority = 2; // Default: not urgent
     const todayYMD = toYMD(date);
 
-    if (quest.type === QuestType.Venture && quest.endDateTime) {
+    if ((quest.type === QuestType.Venture || quest.type === QuestType.Journey) && quest.endDateTime) {
         const dueDate = new Date(quest.endDateTime);
         // Use a version of 'date' that is at the start of the day for date-only comparisons
         const todayStart = new Date(date.getFullYear(), date.getMonth(), date.getDate());
@@ -238,13 +228,12 @@ const getQuestSortKey = (quest: Quest, user: User, date: Date, allCompletions: Q
     const isTodo = quest.type === QuestType.Venture && quest.todoUserIds?.includes(user.id);
     const isTodoPriority = isTodo ? 0 : 1;
     
-    // --- Key 4: Quest Type (0 = Duty, 1 = Venture) ---
-    // This prioritizes recurring tasks over one-time ones when all else is equal.
-    const typePriority = quest.type === QuestType.Duty ? 0 : 1;
+    // --- Key 4: Quest Type (0 = Duty, 1 = Venture, 2 = Journey) ---
+    const typePriority = quest.type === QuestType.Duty ? 0 : quest.type === QuestType.Venture ? 1 : 2;
     
     // --- Key 5: Time Sorting (earlier times/dates get a smaller number) ---
     let timePriority = Number.MAX_SAFE_INTEGER;
-    if (quest.type === QuestType.Venture && quest.endDateTime) {
+    if ((quest.type === QuestType.Venture || quest.type === QuestType.Journey) && quest.endDateTime) {
         timePriority = new Date(quest.endDateTime).getTime();
     } else if (quest.type === QuestType.Duty && quest.endTime) {
         const [hours, minutes] = quest.endTime.split(':').map(Number);

@@ -7,7 +7,7 @@ const getDependencies = (assets: (Quest | GameAsset)[]): Set<string> => {
     const dependencyIds = new Set<string>();
 
     const extractFromRewardItems = (items: RewardItem[]) => {
-        items.forEach(item => dependencyIds.add(item.rewardTypeId));
+        items?.forEach(item => dependencyIds.add(item.rewardTypeId));
     };
 
     assets.forEach(asset => {
@@ -15,6 +15,7 @@ const getDependencies = (assets: (Quest | GameAsset)[]): Set<string> => {
             extractFromRewardItems(asset.rewards);
             extractFromRewardItems(asset.lateSetbacks);
             extractFromRewardItems(asset.incompleteSetbacks);
+            asset.checkpoints?.forEach(cp => extractFromRewardItems(cp.rewards));
         } else if ('costGroups' in asset) { // It's a GameAsset
              asset.costGroups.forEach(group => extractFromRewardItems(group));
         }
@@ -57,7 +58,7 @@ export const generateAssetPack = (
     // Add selected quests, markets, and quest groups, filtering out runtime-specific properties
     assetPack.assets.quests = allAssets.quests
         .filter(q => selectedAssets.quests.includes(q.id))
-        .map(({ isRedemptionFor, ...quest }) => quest); // Exclude isRedemptionFor
+        .map(({ isRedemptionFor, checkpointCompletions, ...quest }) => quest); // Exclude runtime/user-specific data
         
     assetPack.assets.markets = allAssets.markets.filter(m => selectedAssets.markets.includes(m.id));
     assetPack.assets.questGroups = allAssets.questGroups.filter(qg => selectedAssets.questGroups.includes(qg.id));

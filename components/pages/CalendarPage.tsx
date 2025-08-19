@@ -129,8 +129,8 @@ const CalendarPage: React.FC = () => {
     };
 
     const visibleQuests = useMemo(() => 
-        quests.filter(q => isQuestVisibleToUserInMode(q, currentUser.id, appMode, quests, questCompletions)),
-    [quests, currentUser.id, appMode, questCompletions]);
+        quests.filter(q => isQuestVisibleToUserInMode(q, currentUser.id, appMode)),
+    [quests, currentUser.id, appMode]);
 
     const eventSources = useMemo((): EventSourceInput[] => {
         const sources: EventSourceInput[] = [];

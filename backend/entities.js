@@ -188,7 +188,6 @@ const AppliedModifierEntity = new EntitySchema({
         overrides: { type: "simple-json", nullable: true },
         reason: { type: "text" },
         appliedById: { type: "varchar" },
-        guildId: { type: "varchar", nullable: true },
         createdAt: { type: "varchar", nullable: true },
         updatedAt: { type: "varchar", nullable: true },
     },

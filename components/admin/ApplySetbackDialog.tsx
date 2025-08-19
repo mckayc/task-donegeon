@@ -8,7 +8,6 @@ import Input from '../user-interface/Input';
 import { useNotificationsDispatch } from '../../context/NotificationsContext';
 import EmojiPicker from '../user-interface/EmojiPicker';
 import RewardInputGroup from '../forms/RewardInputGroup';
-import { useUIState } from '../../context/UIContext';
 
 interface ApplyModifierDialogProps {
     setback: ModifierDefinition;
@@ -20,7 +19,6 @@ const ApplySetbackDialog: React.FC<ApplyModifierDialogProps> = ({ setback: modif
     const { currentUser, users } = useAuthState();
     const { markets, rewardTypes, quests } = useData();
     const { addNotification } = useNotificationsDispatch();
-    const { appMode } = useUIState();
     
     const [formData, setFormData] = useState<ModifierDefinition>(() => JSON.parse(JSON.stringify(modifier)));
     const [selectedUserId, setSelectedUserId] = useState<string>('');
@@ -134,8 +132,7 @@ const ApplySetbackDialog: React.FC<ApplyModifierDialogProps> = ({ setback: modif
             overrides.defaultRedemptionQuestId = formData.defaultRedemptionQuestId;
         }
 
-        const guildId = appMode.mode === 'guild' ? appMode.guildId : undefined;
-        const success = await applyModifier(selectedUserId, modifier.id, reason, guildId, Object.keys(overrides).length > 0 ? overrides : undefined);
+        const success = await applyModifier(selectedUserId, modifier.id, reason, Object.keys(overrides).length > 0 ? overrides : undefined);
 
         if (success) {
             addNotification({ type: 'success', message: `"${modifier.name}" applied.` });

@@ -42,8 +42,8 @@ const AddUserDialog: React.FC<AddUserDialogProps> = ({ onClose, onUserAdded }) =
 
   const handleSuggestGameName = async () => {
     setIsSuggesting(true);
-    const { firstName, birthday, adminNotes } = formData;
-    const prompt = `Based on the following user details, suggest a creative, fantasy-themed game name for a person. The name must follow the format: "[First Name] the [Descriptor]". The [Descriptor] should be a single, inspiring, or fitting medieval-style word based on their personality, age, or notes. Details: First Name: ${firstName}, Birthday: ${birthday}, Admin Notes about user: ${adminNotes}. Examples: "Elara the Wise", "Kai the Swift". Return ONLY the suggested name as a single string, without any quotation marks or extra text.`;
+    const { firstName, lastName, birthday, adminNotes } = formData;
+    const prompt = `Based on the following user details, suggest a single, creative, fantasy-themed game name. The name should be cool and inspiring. Details: First Name: ${firstName}, Last Name: ${lastName}, Birthday: ${birthday}, Admin Notes about user: ${adminNotes}. Return ONLY the suggested name as a single string, without any quotation marks or extra text.`;
     
     try {
       const response = await fetch('/api/ai/generate', {

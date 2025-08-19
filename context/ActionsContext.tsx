@@ -97,7 +97,7 @@ export interface ActionsDispatch {
 
   addModifierDefinition: (modifierData: Omit<ModifierDefinition, 'id'>) => Promise<ModifierDefinition | null>;
   updateModifierDefinition: (modifierData: ModifierDefinition) => Promise<ModifierDefinition | null>;
-  applyModifier: (userId: string, modifierId: string, reason: string, guildId?: string, overrides?: Partial<ModifierDefinition>) => Promise<boolean>;
+  applyModifier: (userId: string, modifierId: string, reason: string, overrides?: Partial<ModifierDefinition>) => Promise<boolean>;
 
   proposeTrade: (recipientId: string, guildId: string) => Promise<TradeOffer | null>;
   updateTradeOffer: (tradeId: string, updates: Partial<TradeOffer>) => Promise<void>;
@@ -387,10 +387,7 @@ export const ActionsProvider: React.FC<{ children: ReactNode }> = ({ children })
                 addNotification({ type: 'error', message: 'Failed to send message. Please try again later.' });
             }
         },
-        markMessagesAsRead: async (criteria: { partnerId?: string, guildId?: string }) => {
-            if (!currentUser) return;
-            await apiRequest('POST', '/api/chat/read', { ...criteria, userId: currentUser.id });
-        },
+        markMessagesAsRead: (criteria) => apiRequest('POST', '/api/chat/read', criteria),
         
         addSystemNotification: (data) => apiRequest('POST', '/api/notifications', data),
         markSystemNotificationsAsRead: (ids, userId) => apiRequest('POST', '/api/notifications/read', { ids, userId }),
@@ -439,29 +436,21 @@ export const ActionsProvider: React.FC<{ children: ReactNode }> = ({ children })
 
         addModifierDefinition: createAddAction('/api/setbacks', 'modifierDefinitions'),
         updateModifierDefinition: createUpdateAction(id => `/api/setbacks/${id}`, 'modifierDefinitions'),
-        applyModifier: async (userId, modifierId, reason, guildId, overrides) => {
+        applyModifier: async (userId, modifierId, reason, overrides) => {
             if (!currentUser) return false;
-            const result = await apiRequest('POST', '/api/actions/apply-modifier', {
+            const result = await apiRequest('POST', '/api/actions/apply-setback', {
                 userId,
-                modifierDefinitionId: modifierId,
+                setbackDefinitionId: modifierId,
                 reason,
                 appliedById: currentUser.id,
-                guildId,
                 overrides,
             });
              if (result) {
-                const payloadToDispatch: Partial<IAppData> = {};
                 if (result.updatedUser) {
                     updateUser(result.updatedUser.id, result.updatedUser);
                 }
-                if (result.newAppliedModifier) {
-                    payloadToDispatch.appliedModifiers = [result.newAppliedModifier];
-                }
-                if (result.newRedemptionQuest) {
-                    payloadToDispatch.quests = [result.newRedemptionQuest];
-                }
-                if (Object.keys(payloadToDispatch).length > 0) {
-                    dataDispatch({ type: 'UPDATE_DATA', payload: payloadToDispatch });
+                if (result.newAppliedSetback) {
+                    dataDispatch({ type: 'UPDATE_DATA', payload: { appliedModifiers: [result.newAppliedSetback] } });
                 }
                 return true;
             }

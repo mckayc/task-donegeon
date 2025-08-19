@@ -1,4 +1,5 @@
 
+
 import React, { useState } from 'react';
 import Card from '../user-interface/Card';
 import Button from '../user-interface/Button';
@@ -67,8 +68,8 @@ const ApprovalsPage: React.FC = () => {
                                         className="flex-grow"
                                     />
                                      <div className="flex gap-2 justify-end">
-                                        <Button size="sm" variant="destructive" onClick={() => rejectQuestCompletion(completion.id, notes[completion.id] || '')}>Reject</Button>
-                                        <Button size="sm" onClick={() => approveQuestCompletion(completion.id, notes[completion.id] || '')}>Approve</Button>
+                                        <Button size="sm" variant="destructive" onClick={() => rejectQuestCompletion(completion.id, currentUser.id, notes[completion.id] || '')}>Reject</Button>
+                                        <Button size="sm" onClick={() => approveQuestCompletion(completion.id, currentUser.id, notes[completion.id] || '')}>Approve</Button>
                                     </div>
                                 </div>
                             </li>

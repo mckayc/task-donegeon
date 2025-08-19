@@ -39,8 +39,8 @@ export interface ActionsDispatch {
   deleteSelectedAssets: (assets: { [key in ShareableAssetType]?: string[] }, callback?: () => void) => Promise<void>;
   
   completeQuest: (completionData: Omit<QuestCompletion, 'id'>) => Promise<void>;
-  approveQuestCompletion: (completionId: string, note?: string) => Promise<void>;
-  rejectQuestCompletion: (completionId: string, note?: string) => Promise<void>;
+  approveQuestCompletion: (completionId: string, approverId: string, note?: string) => Promise<void>;
+  rejectQuestCompletion: (completionId: string, rejecterId: string, note?: string) => Promise<void>;
   completeCheckpoint: (questId: string) => Promise<void>;
 
   purchaseMarketItem: (assetId: string, marketId: string, user: User, costGroupIndex: number) => Promise<void>;
@@ -278,8 +278,8 @@ export const ActionsProvider: React.FC<{ children: ReactNode }> = ({ children })
                 if (newCompletion) dataDispatch({ type: 'UPDATE_DATA', payload: { questCompletions: [newCompletion] } });
             }
         },
-        approveQuestCompletion: async (id, note) => {
-            const result = await apiRequest('POST', `/api/actions/approve-quest/${id}`, { note });
+        approveQuestCompletion: async (id, approverId, note) => {
+            const result = await apiRequest('POST', `/api/actions/approve-quest/${id}`, { approverId, note });
             if (result) {
                 const { updatedUser, updatedCompletion, newUserTrophies, newNotifications } = result;
                 if (updatedUser) updateUser(updatedUser.id, updatedUser);
@@ -288,8 +288,8 @@ export const ActionsProvider: React.FC<{ children: ReactNode }> = ({ children })
                 if (newNotifications?.length) dataDispatch({ type: 'UPDATE_DATA', payload: { systemNotifications: newNotifications } });
             }
         },
-        rejectQuestCompletion: async (id, note) => {
-            const result = await apiRequest('POST', `/api/actions/reject-quest/${id}`, { note });
+        rejectQuestCompletion: async (id, rejecterId, note) => {
+            const result = await apiRequest('POST', `/api/actions/reject-quest/${id}`, { rejecterId, note });
             if (result?.updatedCompletion) {
                 dataDispatch({ type: 'UPDATE_DATA', payload: { questCompletions: [result.updatedCompletion] } });
             }

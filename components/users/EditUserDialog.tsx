@@ -31,6 +31,8 @@ const EditUserDialog: React.FC<EditUserDialogProps> = ({ user, onClose, onUserUp
     aboutMe: user.aboutMe || '',
     adminNotes: user.adminNotes || '',
     pin: user.pin || '',
+    password: '',
+    confirmPassword: '',
   });
   const [isSaving, setIsSaving] = useState(false);
   const [isSuggesting, setIsSuggesting] = useState(false);
@@ -42,7 +44,7 @@ const EditUserDialog: React.FC<EditUserDialogProps> = ({ user, onClose, onUserUp
   const handleSuggestGameName = async () => {
     setIsSuggesting(true);
     const { firstName, lastName, birthday, adminNotes } = formData;
-    const prompt = `Based on the following user details, suggest a single, creative, fantasy-themed game name. The name should be cool and inspiring. Details: First Name: ${firstName}, Last Name: ${lastName}, Birthday: ${birthday}, Admin Notes about user: ${adminNotes}. Return ONLY the suggested name as a single string, without any quotation marks or extra text.`;
+    const prompt = `Based on the following user details, suggest a creative, fantasy-themed adjective for a game name. The format will be "${firstName} the [Adjective]". Details: First Name: ${firstName}, Last Name: ${lastName}, Birthday: ${birthday}, Admin Notes about user: ${adminNotes}. Return ONLY the suggested adjective as a single string, without any quotation marks or extra text.`;
     
     try {
       const response = await fetch('/api/ai/generate', {
@@ -52,8 +54,9 @@ const EditUserDialog: React.FC<EditUserDialogProps> = ({ user, onClose, onUserUp
       });
       if (!response.ok) throw new Error('Failed to get suggestion from AI.');
       const result: GenerateContentResponse = await response.json();
-      const suggestedName = (result.text || '').trim().replace(/"/g, '');
-      if (suggestedName) {
+      const suggestedAdjective = (result.text || '').trim().replace(/"/g, '');
+      if (suggestedAdjective) {
+        const suggestedName = `${firstName} the ${suggestedAdjective}`;
         setFormData(p => ({ ...p, gameName: suggestedName }));
       }
     } catch (error) {
@@ -71,16 +74,38 @@ const EditUserDialog: React.FC<EditUserDialogProps> = ({ user, onClose, onUserUp
         return;
     }
 
+    if (formData.password) {
+        if (formData.password.length < 6) {
+            addNotification({ type: 'error', message: 'New password must be at least 6 characters long.' });
+            return;
+        }
+        if (formData.password !== formData.confirmPassword) {
+            addNotification({ type: 'error', message: "Passwords do not match." });
+            return;
+        }
+    }
+
     const payload: Partial<User> = {};
-    Object.keys(formData).forEach(key => {
-        const typedKey = key as keyof typeof formData;
-        // Compare with the original user object to find changes
-        if (formData[typedKey] !== (user as any)[typedKey]) {
-            (payload as any)[typedKey] = formData[typedKey];
+    
+    const fieldsToCompare: (keyof typeof formData)[] = [
+        'firstName', 'lastName', 'username', 'email', 'gameName', 'birthday',
+        'role', 'aboutMe', 'adminNotes', 'pin'
+    ];
+    
+    fieldsToCompare.forEach(key => {
+        const formValue = formData[key];
+        const userValue = user[key as keyof User] || ''; // Handle optional fields
+        if (formValue !== userValue) {
+            (payload as any)[key] = formValue;
         }
     });
 
+    if (formData.password) {
+        payload.password = formData.password;
+    }
+
     if (Object.keys(payload).length === 0) {
+        addNotification({ type: 'info', message: 'No changes were made.' });
         onClose();
         return;
     }
@@ -95,6 +120,7 @@ const EditUserDialog: React.FC<EditUserDialogProps> = ({ user, onClose, onUserUp
   const donegeonMasters = allUsers.filter(u => u.role === Role.DonegeonMaster);
   const isLastDonegeonMaster = user.role === Role.DonegeonMaster && donegeonMasters.length === 1;
   const canChangeRole = currentUser?.role === Role.DonegeonMaster && !isLastDonegeonMaster;
+  const canHavePassword = user.role === Role.DonegeonMaster || user.role === Role.Gatekeeper;
 
   return (
     <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
@@ -123,6 +149,15 @@ const EditUserDialog: React.FC<EditUserDialogProps> = ({ user, onClose, onUserUp
             <Input label="PIN (4-10 digits, optional)" id="edit-pin" name="pin" type="password" value={formData.pin} onChange={handleChange} />
             <p className="text-xs text-stone-400 mt-1">A PIN is an easy way for kids to switch profiles securely.</p>
           </div>
+          {canHavePassword && (
+              <div className="pt-4 border-t border-stone-700/60">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <Input label="New Password (optional)" name="password" type="password" value={formData.password} onChange={handleChange} />
+                  <Input label="Confirm New Password" name="confirmPassword" type="password" value={formData.confirmPassword} onChange={handleChange} disabled={!formData.password} />
+                </div>
+                <p className="text-xs text-stone-400 mt-1">Leave blank to keep the current password.</p>
+              </div>
+          )}
           <div className="pt-4 border-t border-stone-700/60">
             <label htmlFor="gameName" className="block text-sm font-medium text-stone-300 mb-1">Game Name (Nickname)</label>
             <div className="flex items-center gap-2">

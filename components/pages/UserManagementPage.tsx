@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo, useEffect } from 'react';
 import { useData } from '../../context/DataProvider';
 import { useAuthState, useAuthDispatch } from '../../context/AuthContext';
@@ -117,8 +118,6 @@ const UserManagementPage: React.FC = () => {
                     {selectedUsers.length > 0 && (
                         <div className="flex items-center gap-2 p-2 bg-stone-900/50 rounded-lg">
                             <span className="text-sm font-semibold text-stone-300 px-2">{selectedUsers.length} selected</span>
-                            <Button size="sm" variant="secondary" onClick={() => cloneUser(selectedUsers[0])} disabled={selectedUsers.length !== 1}>Clone</Button>
-                            <Button size="sm" variant="secondary" onClick={() => handleAdjust(pageUsers.find(u => u.id === selectedUsers[0])!)} disabled={selectedUsers.length !== 1}>Adjust</Button>
                             <Button size="sm" variant="destructive" onClick={() => handleDeleteRequest(selectedUsers)}>Delete</Button>
                         </div>
                     )}

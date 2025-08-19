@@ -43,7 +43,12 @@ const AddUserDialog: React.FC<AddUserDialogProps> = ({ onClose, onUserAdded }) =
   const handleSuggestGameName = async () => {
     setIsSuggesting(true);
     const { firstName, lastName, birthday, adminNotes } = formData;
-    const prompt = `Based on the following user details, suggest a single, creative, fantasy-themed game name. The name should be cool and inspiring. Details: First Name: ${firstName}, Last Name: ${lastName}, Birthday: ${birthday}, Admin Notes about user: ${adminNotes}. Return ONLY the suggested name as a single string, without any quotation marks or extra text.`;
+    if (!firstName.trim()) {
+        addNotification({ type: 'error', message: 'Please enter a first name before suggesting a game name.' });
+        setIsSuggesting(false);
+        return;
+    }
+    const prompt = `Based on the following user details, suggest a creative, fantasy-themed adjective for a game name. The format will be "${firstName} the [Adjective]". Details: First Name: ${firstName}, Last Name: ${lastName}, Birthday: ${birthday}, Admin Notes about user: ${adminNotes}. Return ONLY the suggested adjective as a single string, without any quotation marks or extra text.`;
     
     try {
       const response = await fetch('/api/ai/generate', {
@@ -53,8 +58,9 @@ const AddUserDialog: React.FC<AddUserDialogProps> = ({ onClose, onUserAdded }) =
       });
       if (!response.ok) throw new Error('Failed to get suggestion from AI.');
       const result: GenerateContentResponse = await response.json();
-      const suggestedName = (result.text || '').trim().replace(/"/g, '');
-      if (suggestedName) {
+      const suggestedAdjective = (result.text || '').trim().replace(/"/g, '');
+      if (suggestedAdjective) {
+        const suggestedName = `${firstName} the ${suggestedAdjective}`;
         setFormData(p => ({ ...p, gameName: suggestedName }));
       }
     } catch (error) {

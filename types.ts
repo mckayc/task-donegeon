@@ -826,6 +826,7 @@ export interface AppliedModifier {
   overrides?: Partial<ModifierDefinition>;
   reason: string;
   appliedById: string;
+  guildId?: string;
   createdAt?: string;
   updatedAt?: string;
 }

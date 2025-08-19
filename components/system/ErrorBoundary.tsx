@@ -27,7 +27,7 @@ class ErrorBoundary extends Component<Props, State> {
       message: `React component crashed: ${error.message}`,
       element: {
           tag: 'ErrorBoundary',
-          text: errorInfo.componentStack
+          text: errorInfo.componentStack ?? undefined
       }
     });
   }

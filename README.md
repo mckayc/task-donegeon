@@ -75,7 +75,6 @@ This phase focuses on high-impact improvements for admins and players that enhan
 -   **Conditional Market Opening:** Allow markets to open based on conditions like the day of the week, user rank, or quest completion.
 -   **Backend Authentication:** Implement JWT-based authentication to secure all backend API endpoints.
 -   **Enhanced Security:** A comprehensive security audit and implementation of best practices like strict input validation, Content Security Policy (CSP), and secure headers.
--   **Quest Bundles:** Group quests into "Quest Chains" or "Storylines." This allows admins to create multi-step adventures.
 -   **Showcase Page:** A public profile page for each explorer to showcase their avatar, earned trophies, and key stats.
 -   **Advanced Object Manager:** Implement bulk editing, quick duplication, and powerful filtering/sorting for all game objects.
 -   **Improved Progress Page:** A more detailed summary of user activity, highlighting strengths and areas for improvement with visual charts.
@@ -85,6 +84,26 @@ This phase introduces major new creative outlets and systems for deeper engageme
 
 -   **User-Created Content:** A system allowing Explorers to design their own quests and items, then submit them to admins for approval. This fosters creativity and allows the game world to be co-created by its members.
 -   **Reward R------ END OF FILE README.md ------ START OF FILE vercel.json ------ START OF FILE vercel.json ---
+
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "package.json",
+      "use": "@vercel/static-build",
+      "config": {
+        "distDir": "dist"
+      }
+    },
+    {
+      "src": "backend/server.js",
+      "use": "@vercel/node"
+    }
+  ],
+  "rewrites": [
+    { "source": "/api/(.*)", "destination": "/backend/server.js" }
+  ]
+}--- START OF FILE vercel.json ---
 
 {
   "version": 2,

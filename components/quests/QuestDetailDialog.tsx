@@ -1,3 +1,4 @@
+
 import React, { useEffect, useMemo } from 'react';
 import { Quest, RewardCategory, RewardItem, QuestType } from '../../types';
 import { useData } from '../../context/DataProvider';
@@ -15,7 +16,7 @@ interface QuestDetailDialogProps {
 }
 
 const QuestDetailDialog: React.FC<QuestDetailDialogProps> = ({ quest, onClose, onComplete, onToggleTodo, isTodo, dialogTitle }) => {
-    const { settings, rewardTypes, quests } = useData();
+    const { settings, rewardTypes } = useData();
 
     useEffect(() => {
         if (bugLogger.isRecording()) {
@@ -43,11 +44,6 @@ const QuestDetailDialog: React.FC<QuestDetailDialogProps> = ({ quest, onClose, o
         const rewardDef = rewardTypes.find(rt => rt.id === id);
         return { name: rewardDef?.name || 'Unknown Reward', icon: rewardDef?.icon || '❓' };
     };
-    
-    const nextQuest = useMemo(() => {
-        if (!quest.nextQuestId) return null;
-        return quests.find(q => q.id === quest.nextQuestId);
-    }, [quest.nextQuestId, quests]);
 
     const renderRewardList = (rewards: RewardItem[], title: string, colorClass: string) => {
         if (!rewards || rewards.length === 0) return null;
@@ -68,6 +64,8 @@ const QuestDetailDialog: React.FC<QuestDetailDialogProps> = ({ quest, onClose, o
 
     const themeClasses = quest.type === QuestType.Duty
       ? 'bg-sky-950 border-sky-800'
+      : quest.type === QuestType.Journey
+      ? 'bg-purple-950 border-purple-800'
       : 'bg-amber-950 border-amber-800';
     
     const todoClass = isTodo ? '!border-purple-500 ring-2 ring-purple-500/50' : '';
@@ -122,19 +120,6 @@ const QuestDetailDialog: React.FC<QuestDetailDialogProps> = ({ quest, onClose, o
                         {renderRewardList(quest.lateSetbacks, `Late ${settings.terminology.negativePoints}`, 'text-yellow-400')}
                         {renderRewardList(quest.incompleteSetbacks, `Incomplete ${settings.terminology.negativePoints}`, 'text-red-400')}
                     </div>
-
-                    {nextQuest && (
-                         <div className="pt-4 border-t border-white/10">
-                            <p className="text-xs font-semibold text-indigo-400 uppercase tracking-wider">Unlocks Next Quest</p>
-                            <div className="flex items-center gap-3 mt-2">
-                                <span className="text-3xl">{nextQuest.icon}</span>
-                                <div>
-                                    <p className="font-bold text-stone-100">{nextQuest.title}</p>
-                                    <p className="text-sm text-stone-400 truncate">{nextQuest.description}</p>
-                                </div>
-                            </div>
-                         </div>
-                    )}
                 </div>
 
                 <div className="p-4 bg-black/20 rounded-b-xl flex justify-between items-center gap-2 flex-wrap">

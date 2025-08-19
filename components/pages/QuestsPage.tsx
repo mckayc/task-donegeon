@@ -14,6 +14,10 @@ import ImagePreviewDialog from '../user-interface/ImagePreviewDialog';
 import { useAuthState } from '../../context/AuthContext';
 
 const getAvailabilityText = (quest: Quest, completionsCount: number): string => {
+    if (quest.type === QuestType.Journey) {
+        return `A multi-step adventure!`
+    }
+    
     if (quest.rrule) {
         if (quest.rrule.includes('FREQ=DAILY')) return 'Resets Daily';
         if (quest.rrule.includes('FREQ=WEEKLY')) {
@@ -50,7 +54,7 @@ const formatTimeRemaining = (targetDate: Date, now: Date): string => {
     return `${minutes}m`;
 };
 
-const QuestItem: React.FC<{ quest: Quest; now: Date; onSelect: (quest: Quest) => void; onImagePreview: (url: string) => void; allQuests: Quest[]; }> = ({ quest, now, onSelect, onImagePreview, allQuests }) => {
+const QuestItem: React.FC<{ quest: Quest; now: Date; onSelect: (quest: Quest) => void; onImagePreview: (url: string) => void; }> = ({ quest, now, onSelect, onImagePreview }) => {
     const { settings, scheduledEvents, guilds, questGroups, questCompletions, rewardTypes } = useData();
     const { appMode } = useUIState();
     const { currentUser } = useAuthState();
@@ -62,10 +66,6 @@ const QuestItem: React.FC<{ quest: Quest; now: Date; onSelect: (quest: Quest) =>
     const isRedemption = quest.kind === QuestKind.Redemption;
     const questGroup = useMemo(() => quest.groupId ? questGroups.find(g => g.id === quest.groupId) : null, [quest.groupId, questGroups]);
     const scopeName = useMemo(() => quest.guildId ? guilds.find(g => g.id === quest.guildId)?.name || 'Guild Scope' : 'Personal', [quest.guildId, guilds]);
-    const nextQuest = useMemo(() => {
-        if (!quest.nextQuestId) return null;
-        return allQuests.find(q => q.id === quest.nextQuestId);
-    }, [quest.nextQuestId, allQuests]);
 
     const getRewardInfo = (id: string) => {
         const rewardDef = rewardTypes.find(rt => rt.id === id);
@@ -115,16 +115,27 @@ const QuestItem: React.FC<{ quest: Quest; now: Date; onSelect: (quest: Quest) =>
         return null;
     }, [quest]);
 
-    const isDuty = quest.type === QuestType.Duty;
-    let baseCardClass = isDuty ? 'bg-sky-900/30' : 'bg-amber-900/30';
+    let baseCardClass = 'bg-stone-800/60';
+    if (quest.type === QuestType.Duty) baseCardClass = 'bg-sky-900/30';
+    if (quest.type === QuestType.Venture) baseCardClass = 'bg-amber-900/30';
+    if (quest.type === QuestType.Journey) baseCardClass = 'bg-purple-900/30';
     if (isRedemption) baseCardClass = 'bg-slate-800/50';
+
     const optionalClass = quest.isOptional ? 'border-dashed' : '';
+    
+    const progressHeader = useMemo(() => {
+        if (quest.type !== QuestType.Journey || !quest.checkpoints || quest.checkpoints.length === 0) return null;
+        const completed = quest.checkpointCompletions?.[currentUser.id] || 0;
+        const total = quest.checkpoints.length;
+        return `Checkpoint ${completed + 1} / ${total}`;
+    }, [quest, currentUser]);
+
 
     return (
         <div onClick={() => isAvailable && onSelect(quest)} className={`border-2 rounded-xl shadow-lg flex flex-col h-full transition-all duration-500 ${baseCardClass} ${borderClass} ${optionalClass} ${!isAvailable ? 'opacity-50 cursor-default' : 'cursor-pointer'}`}>
             {/* Header */}
             <div className="p-4 border-b border-white/10 flex items-start gap-4">
-                <div className={`w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 text-3xl overflow-hidden ${isDuty ? 'bg-sky-900/70' : isRedemption ? 'bg-slate-700' : 'bg-amber-900/70'}`}>
+                <div className={`w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 text-3xl overflow-hidden bg-black/30`}>
                     <button
                         onClick={(e) => {
                             e.stopPropagation();
@@ -144,7 +155,7 @@ const QuestItem: React.FC<{ quest: Quest; now: Date; onSelect: (quest: Quest) =>
                         <span>{quest.title}</span>
                         {quest.isOptional && <span className="font-normal text-xs px-2 py-0.5 rounded-md bg-stone-700 text-stone-400 border border-stone-600">Optional</span>}
                     </h4>
-                    <p className="text-xs text-stone-400 mt-1">{getAvailabilityText(quest, completionsForThisQuest)}</p>
+                     <p className="text-xs text-stone-400 mt-1">{progressHeader || getAvailabilityText(quest, completionsForThisQuest)}</p>
                 </div>
             </div>
 
@@ -175,12 +186,6 @@ const QuestItem: React.FC<{ quest: Quest; now: Date; onSelect: (quest: Quest) =>
                     <span className="font-semibold text-blue-400 bg-blue-900/50 px-2 py-0.5 rounded-full text-xs" title={`This quest exists in the ${scopeName} scope.`}>{scopeName}</span>
                 </div>
                 <div className="text-right">
-                    {nextQuest && (
-                        <div className="text-xs text-indigo-400 font-semibold flex items-center justify-end gap-1" title={`Completing this unlocks "${nextQuest.title}"`}>
-                            <span>🔗</span>
-                            <span className="truncate">Unlocks: {nextQuest.title}</span>
-                        </div>
-                    )}
                     {timeStatusText && (
                         <p className={`text-xs font-semibold ${timeStatusColor}`}>{timeStatusText}</p>
                     )}
@@ -196,7 +201,7 @@ const QuestItem: React.FC<{ quest: Quest; now: Date; onSelect: (quest: Quest) =>
 const FilterButton: React.FC<{ type: 'all' | QuestType, children: React.ReactNode, activeFilter: 'all' | QuestType, setFilter: (filter: 'all' | QuestType) => void }> = ({ type, children, activeFilter, setFilter }) => (
     <button
         onClick={() => setFilter(type)}
-        data-log-id={`quests-page-filter-${type.toLowerCase()}`}
+        data-log-id={`quests-page-filter-${type.toLowerCase().replace(' ', '-')}`}
         className={`flex-1 text-center py-1.5 px-3 rounded-md font-semibold text-sm transition-colors ${activeFilter === type ? 'bg-emerald-600 text-white' : 'text-stone-300 hover:bg-stone-700'}`}
     >
         {children}
@@ -254,6 +259,7 @@ const QuestsPage: React.FC = () => {
                 <FilterButton type="all" activeFilter={filter} setFilter={setFilter}>All Quests</FilterButton>
                 <FilterButton type={QuestType.Duty} activeFilter={filter} setFilter={setFilter}>{settings.terminology.recurringTasks}</FilterButton>
                 <FilterButton type={QuestType.Venture} activeFilter={filter} setFilter={setFilter}>{settings.terminology.singleTasks}</FilterButton>
+                <FilterButton type={QuestType.Journey} activeFilter={filter} setFilter={setFilter}>{settings.terminology.journeys}</FilterButton>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -264,7 +270,6 @@ const QuestsPage: React.FC = () => {
                         now={now} 
                         onSelect={setSelectedQuest} 
                         onImagePreview={setPreviewImageUrl}
-                        allQuests={quests}
                     />
                 ))}
             </div>

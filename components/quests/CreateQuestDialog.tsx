@@ -13,6 +13,7 @@ import DynamicIcon from '../user-interface/DynamicIcon';
 import { useAuthState } from '../../context/AuthContext';
 import { bugLogger } from '../../utils/bugLogger';
 import QuestScheduling from '../forms/QuestScheduling';
+import EditJourneyDialog from './EditJourneyDialog';
 
 type QuestFormData = Omit<Quest, 'id' | 'claimedByUserIds' | 'dismissals'> & { id?: string };
 
@@ -25,9 +26,10 @@ interface QuestDialogProps {
   isGenerating?: boolean;
   onSave?: (updatedData: any) => void;
   initialDataFromBug?: BugReport;
+  onJourneySaved: (questId: string) => void;
 }
 
-const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialData, onClose, mode = (questToEdit ? 'edit' : 'create'), onTryAgain, isGenerating, onSave, initialDataFromBug }) => {
+const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialData, onClose, mode = (questToEdit ? 'edit' : 'create'), onTryAgain, isGenerating, onSave, initialDataFromBug, onJourneySaved }) => {
   const { guilds, settings, allTags, questGroups, rewardTypes, quests } = useData();
   const { users } = useAuthState();
   const { addQuest, updateQuest, addQuestGroup } = useActionsDispatch();
@@ -37,7 +39,7 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
     // Base structure for a new quest
     const baseData: QuestFormData = {
         title: '', description: '',
-        type: QuestType.Venture,
+        type: QuestType.Duty,
         kind: QuestKind.Personal,
         iconType: 'emoji' as 'emoji' | 'image',
         icon: '📝', imageUrl: '',
@@ -47,7 +49,7 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
         isOptional: settings.questDefaults.isOptional,
         assignedUserIds: users.map(u => u.id),
         guildId: '', groupId: '', tags: [],
-        startDateTime: null, endDateTime: null, allDay: true, rrule: null,
+        startDateTime: null, endDateTime: null, allDay: true, rrule: 'FREQ=DAILY',
         startTime: null, endTime: null, availabilityCount: 1,
         todoUserIds: [],
     };
@@ -230,16 +232,27 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
         groupId: finalGroupId || undefined,
         requiresApproval: formData.requiresApproval,
         todoUserIds: formData.todoUserIds,
+        checkpoints: formData.type === QuestType.Journey ? (formData.checkpoints || []) : undefined,
+        checkpointCompletions: formData.type === QuestType.Journey ? (formData.checkpointCompletions || {}) : undefined,
     };
 
     if (onSave) {
         onSave(questPayload);
     } else if (mode === 'edit' && questToEdit) {
-        updateQuest({ ...questToEdit, ...questPayload });
+        const updatedQuest = await updateQuest({ ...questToEdit, ...questPayload });
+        if (updatedQuest && updatedQuest.type === QuestType.Journey) {
+            onJourneySaved(updatedQuest.id);
+        } else {
+            onClose();
+        }
     } else {
-        addQuest(questPayload);
+        const newQuest = await addQuest(questPayload);
+        if (newQuest && newQuest.type === QuestType.Journey) {
+            onJourneySaved(newQuest.id);
+        } else {
+            onClose();
+        }
     }
-    onClose();
   };
   
   const handleGroupChange = (e: React.ChangeEvent<HTMLSelectElement>) => {

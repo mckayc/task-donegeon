@@ -198,6 +198,8 @@ export const INITIAL_SETTINGS: AppSettings = {
       recurringTasks: 'Duties',
       singleTask: 'Venture',
       singleTasks: 'Ventures',
+      journey: 'Journey',
+      journeys: 'Journeys',
       shoppingCenter: 'Marketplace',
       store: 'Market',
       stores: 'Markets',

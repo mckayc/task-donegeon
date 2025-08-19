@@ -1,5 +1,6 @@
 
 
+
 import React, { useState, ChangeEvent, ReactNode, useEffect } from 'react';
 import { useData } from '../../context/DataProvider';
 import { useActionsDispatch } from '../../context/ActionsContext';
@@ -64,6 +65,7 @@ const terminologyLabels: { [key in keyof Terminology]: string } = {
   task: 'Task (Singular)',
   recurringTask: 'Recurring Task (e.g., Duty)',
   singleTask: 'Single Task (e.g., Venture)',
+  journey: 'Journey',
   store: 'Store (e.g., Market)',
   history: 'History (e.g., Chronicles)',
   group: 'Group (e.g., Guild)',
@@ -77,6 +79,7 @@ const terminologyLabels: { [key in keyof Terminology]: string } = {
   tasks: 'Tasks (Plural)',
   recurringTasks: 'Recurring Tasks (Plural)',
   singleTasks: 'Single Tasks (Plural)',
+  journeys: 'Journeys',
   shoppingCenter: 'Shopping Center (e.g., Marketplace)',
   stores: 'Stores (Plural)',
   groups: 'Groups (Plural)',

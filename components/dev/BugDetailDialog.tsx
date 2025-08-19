@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { BugReport, BugReportStatus, BugReportLogEntry } from '../../types';
 import { useActionsDispatch } from '../../context/ActionsContext';
@@ -353,7 +354,7 @@ export const BugDetailDialog: React.FC<BugDetailDialogProps> = ({ report: initia
                     </div>
                 </div>
             </div>
-            {questFromBug && <CreateQuestDialog initialDataFromBug={questFromBug} onClose={handleCloseQuestDialog} />}
+            {questFromBug && <CreateQuestDialog initialDataFromBug={questFromBug} onClose={handleCloseQuestDialog} onJourneySaved={handleCloseQuestDialog} />}
         </>
     );
 };

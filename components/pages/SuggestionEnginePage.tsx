@@ -1,4 +1,5 @@
 
+
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import Button from '../user-interface/Button';
 import Input from '../user-interface/Input';
@@ -287,6 +288,7 @@ const SuggestionEnginePage: React.FC = () => {
                             onClose={handleCloseDialog}
                             onTryAgain={handleGenerate}
                             isGenerating={isLoading}
+                            onJourneySaved={handleCloseDialog}
                         />
                     )}
                      {dialogToShow === 'Items' && (

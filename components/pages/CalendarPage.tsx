@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import { Role, ScheduledEvent, Quest, QuestType, ChronicleEvent, User, AppMode, RewardTypeDefinition, RewardItem } from '../../types';
 import Card from '../user-interface/Card';
@@ -163,7 +164,7 @@ const CalendarPage: React.FC = () => {
                     extendedProps: { quest, type: 'quest' }
                 };
 
-                if (quest.type === QuestType.Venture) {
+                if (quest.type === QuestType.Venture || quest.type === QuestType.Journey) {
                     if (quest.startDateTime) {
                         questEvents.push({
                             ...baseProps,
@@ -310,8 +311,8 @@ const CalendarPage: React.FC = () => {
             return;
         }
 
-        if (!quest || quest.type !== QuestType.Venture) {
-            addNotification({ type: 'info', message: 'Only one-time Ventures can be rescheduled by dragging.' });
+        if (!quest || (quest.type !== QuestType.Venture && quest.type !== QuestType.Journey)) {
+            addNotification({ type: 'info', message: 'Only one-time Ventures or Journeys can be rescheduled by dragging.' });
             dropInfo.revert();
             return;
         }
@@ -490,6 +491,7 @@ const CalendarPage: React.FC = () => {
                 <CreateQuestDialog
                     initialData={createInitialData}
                     onClose={() => setIsCreateDialogOpen(false)}
+                    onJourneySaved={() => setIsCreateDialogOpen(false)}
                 />
             )}
             {chronicleDetail && (

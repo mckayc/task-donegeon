@@ -137,7 +137,6 @@ export interface Quest {
   dismissals: { userId: string; dismissedAt: string; }[];
   todoUserIds?: string[]; // Kept for Ventures
   isRedemptionFor?: string; // ID of the AppliedSetback this quest is for
-  nextQuestId?: string; // ID of the quest unlocked upon completion
   createdAt?: string;
   updatedAt?: string;
 }
@@ -453,6 +452,7 @@ export interface Terminology {
   task: string;
   recurringTask: string;
   singleTask: string;
+  journey: string;
   store: string;
   history: string;
   group: string;
@@ -466,6 +466,7 @@ export interface Terminology {
   tasks: string;
   recurringTasks: string;
   singleTasks: string;
+  journeys: string;
   shoppingCenter: string;
   stores: string;
   groups: string;

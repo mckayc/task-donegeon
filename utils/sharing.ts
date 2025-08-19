@@ -69,7 +69,7 @@ export const generateAssetPack = (
     );
     
     // Find all reward types these quests and market items depend on
-    const requiredRewardTypeIds = getDependencies([...assetPack.assets.quests, ...assetsInSelectedMarkets]);
+    const requiredRewardTypeIds = getDependencies([...(assetPack.assets.quests || []), ...assetsInSelectedMarkets]);
 
     // Add required reward types automatically
     allAssets.rewardTypes.forEach(rt => {

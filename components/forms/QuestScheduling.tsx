@@ -1,8 +1,8 @@
-
 import React, { useState, useEffect } from 'react';
-import { QuestType } from '../../types';
+import { QuestType, Terminology } from '../../types';
 import Input from '../user-interface/Input';
 import ToggleSwitch from '../user-interface/ToggleSwitch';
+import { useData } from '../../context/DataProvider';
 
 interface QuestSchedulingProps {
     value: {
@@ -20,7 +20,42 @@ interface QuestSchedulingProps {
 
 const WEEKDAYS = [{label: 'S', value: 'SU'}, {label: 'M', value: 'MO'}, {label: 'T', value: 'TU'}, {label: 'W', value: 'WE'}, {label: 'T', value: 'TH'}, {label: 'F', value: 'FR'}, {label: 'S', value: 'SA'}];
 
+const TypeButton: React.FC<{
+    type: QuestType;
+    currentType: QuestType;
+    onClick: (type: QuestType) => void;
+    terminology: Terminology;
+    tooltip: string;
+}> = ({ type, currentType, onClick, terminology, tooltip }) => {
+    const termKeyMap = {
+        [QuestType.Duty]: 'recurringTask',
+        [QuestType.Venture]: 'singleTask',
+        [QuestType.Journey]: 'journey',
+    } as const;
+    const label = terminology[termKeyMap[type]];
+    const isActive = type === currentType;
+
+    return (
+        <div className="relative group flex-grow">
+            <button
+                type="button"
+                onClick={() => onClick(type)}
+                className={`w-full p-2 rounded-md font-semibold text-sm transition-colors ${
+                    isActive ? 'bg-primary text-primary-foreground' : 'text-stone-300 hover:bg-stone-700'
+                }`}
+            >
+                {label}
+            </button>
+            <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 w-48 p-2 text-xs bg-stone-900 text-white rounded-md shadow-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                {tooltip}
+            </div>
+        </div>
+    );
+};
+
+
 const QuestScheduling: React.FC<QuestSchedulingProps> = ({ value, onChange }) => {
+    const { settings } = useData();
     const [hasDueDate, setHasDueDate] = useState(!!(value.startDateTime || value.endDateTime));
     const [recurrenceType, setRecurrenceType] = useState('DAILY');
     const [weeklyDays, setWeeklyDays] = useState<string[]>([]);
@@ -62,7 +97,7 @@ const QuestScheduling: React.FC<QuestSchedulingProps> = ({ value, onChange }) =>
                 availabilityCount: null,
                 rrule: 'FREQ=DAILY', // Default to daily
             });
-        } else { // Venture
+        } else { // Venture or Journey
             onChange({
                 type,
                 rrule: null,
@@ -115,17 +150,14 @@ const QuestScheduling: React.FC<QuestSchedulingProps> = ({ value, onChange }) =>
         <fieldset className="p-4 bg-stone-900/50 rounded-lg space-y-4">
             <legend className="text-lg font-semibold text-stone-200 mb-2">Scheduling & Type</legend>
             <div className="flex gap-2 p-1 bg-stone-700/50 rounded-lg">
-                <button type="button" onClick={() => handleTypeChange(QuestType.Venture)} className={`w-full p-2 rounded-md font-semibold text-sm transition-colors ${value.type === QuestType.Venture ? 'bg-primary text-primary-foreground' : 'text-stone-300 hover:bg-stone-700'}`}>
-                    Venture (One-time)
-                </button>
-                 <button type="button" onClick={() => handleTypeChange(QuestType.Duty)} className={`w-full p-2 rounded-md font-semibold text-sm transition-colors ${value.type === QuestType.Duty ? 'bg-primary text-primary-foreground' : 'text-stone-300 hover:bg-stone-700'}`}>
-                    Duty (Recurring)
-                </button>
+                <TypeButton type={QuestType.Duty} currentType={value.type} onClick={handleTypeChange} terminology={settings.terminology} tooltip="For recurring tasks, like daily or weekly chores." />
+                <TypeButton type={QuestType.Venture} currentType={value.type} onClick={handleTypeChange} terminology={settings.terminology} tooltip="For one-time tasks or projects with a specific deadline." />
+                <TypeButton type={QuestType.Journey} currentType={value.type} onClick={handleTypeChange} terminology={settings.terminology} tooltip="A multi-step adventure with checkpoints and staged rewards." />
             </div>
 
-            {value.type === QuestType.Venture ? (
+            {(value.type === QuestType.Venture || value.type === QuestType.Journey) ? (
                 <div className="space-y-4">
-                    <Input label="Completions Allowed" type="number" min="1" value={value.availabilityCount ?? 1} onChange={e => onChange({ availabilityCount: parseInt(e.target.value) || 1 })} />
+                    {value.type === QuestType.Venture && <Input label="Completions Allowed" type="number" min="1" value={value.availabilityCount ?? 1} onChange={e => onChange({ availabilityCount: parseInt(e.target.value) || 1 })} />}
                     <ToggleSwitch label="Specific Due Date" enabled={hasDueDate} setEnabled={val => {
                         setHasDueDate(val);
                         if (!val) {

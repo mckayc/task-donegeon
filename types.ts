@@ -765,6 +765,7 @@ export interface BugReportLogEntry {
   };
   lastCopiedAt?: string;
   isDimmed?: boolean;
+  commentStatus?: 'good' | 'review';
 }
 
 export interface BugReport {

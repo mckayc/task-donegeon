@@ -86,39 +86,54 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   }, []);
 
   const updateUser = useCallback((userId: string, update: Partial<User> | ((user: User) => Partial<User>)) => {
-      if (bugLogger.isRecording()) {
-          bugLogger.add({ type: 'ACTION', message: `Updating user ID: ${userId}` });
-      }
-  
-      let payloadForApi: Partial<User> | null = null;
-      let isFullObject = false;
-  
-      setUsers(prevUsers => {
-          return prevUsers.map(u => {
-              if (u.id === userId) {
-                  const updateData = typeof update === 'function' ? update(u) : update;
-                  if ('id' in updateData) {
-                      isFullObject = true;
-                  }
-                  payloadForApi = updateData;
-                  return { ...u, ...updateData };
-              }
-              return u;
-          });
-      });
-  
-      _setCurrentUser(prevCurrentUser => {
-          if (prevCurrentUser?.id === userId && payloadForApi) {
-              return { ...prevCurrentUser, ...payloadForApi };
-          }
-          return prevCurrentUser;
-      });
-  
-      if (payloadForApi && Object.keys(payloadForApi).length > 0 && !isFullObject) {
-          apiRequest('PUT', `/api/users/${userId}`, payloadForApi).catch(error => {
-              console.error("Failed to update user on server, optimistic update may be stale.", error);
-          });
-      }
+    if (bugLogger.isRecording()) {
+        bugLogger.add({ type: 'ACTION', message: `Updating user ID: ${userId}` });
+    }
+
+    // This implementation optimistically updates state. A functional update is tricky because
+    // we need access to the current user state, which can be stale in this closure.
+    // However, all current call sites pass an object, so we can proceed with a safer assumption.
+    if (typeof update === 'function') {
+        // This is the safest way to handle functional updates without creating a dependency on the `users` array,
+        // which would cause performance issues. All state updates happen within the `setUsers` callback.
+        setUsers(prevUsers => {
+            const userToUpdate = prevUsers.find(u => u.id === userId);
+            if (!userToUpdate) return prevUsers;
+
+            const updateData = update(userToUpdate);
+            const isFullObject = 'id' in updateData;
+
+            // Update current user state if they're the one being changed
+            _setCurrentUser(prevCurrentUser => 
+                prevCurrentUser?.id === userId ? { ...prevCurrentUser, ...updateData } : prevCurrentUser
+            );
+            
+            // Trigger API call if it's not a full sync object
+            if (Object.keys(updateData).length > 0 && !isFullObject) {
+                apiRequest('PUT', `/api/users/${userId}`, updateData).catch(error => {
+                    console.error("Failed to update user on server; optimistic update may be stale.", error);
+                });
+            }
+
+            // Return the updated list
+            return prevUsers.map(u => u.id === userId ? { ...u, ...updateData } : u);
+        });
+    } else {
+        // For simple object updates, we can determine the payload upfront.
+        const updateData = update;
+        const isFullObject = 'id' in updateData;
+        
+        // Optimistically update both `users` and `currentUser` states
+        setUsers(prevUsers => prevUsers.map(u => (u.id === userId ? { ...u, ...updateData } : u)));
+        _setCurrentUser(prevCurrentUser => (prevCurrentUser?.id === userId ? { ...prevCurrentUser, ...updateData } : prevCurrentUser));
+
+        // Trigger the API call only for partial updates originating from the UI
+        if (Object.keys(updateData).length > 0 && !isFullObject) {
+            apiRequest('PUT', `/api/users/${userId}`, updateData).catch(error => {
+                console.error("Failed to update user on server; optimistic update may be stale.", error);
+            });
+        }
+    }
   }, [apiRequest]);
   
   const markUserAsOnboarded = useCallback((userId: string) => updateUser(userId, { hasBeenOnboarded: true }), [updateUser]);

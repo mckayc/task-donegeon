@@ -1,4 +1,5 @@
 
+
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { BugReport, BugReportStatus, BugReportLogEntry } from '../../types';
 import { useActionsDispatch } from '../../context/ActionsContext';
@@ -10,7 +11,7 @@ import CreateQuestDialog from '../quests/CreateQuestDialog';
 import { bugLogger } from '../../utils/bugLogger';
 import { useAuthState } from '../../context/AuthContext';
 import Avatar from '../user-interface/Avatar';
-import { ZapIcon, PencilIcon, CompassIcon, ToggleLeftIcon, MousePointerClickIcon, MessageSquareIcon } from '../user-interface/Icons';
+import { ZapIcon, PencilIcon, CompassIcon, ToggleLeftIcon, MousePointerClickIcon, MessageSquareIcon, CheckCircleIcon, XCircleIcon } from '../user-interface/Icons';
 import { useShiftSelect } from '../../hooks/useShiftSelect';
 
 interface BugDetailDialogProps {
@@ -183,6 +184,19 @@ export const BugDetailDialog: React.FC<BugDetailDialogProps> = ({ report: initia
         updateBugReport(report.id, { logs: newLogs }); // Persist change
     };
 
+    const handleCommentStatusChange = (logTimestamp: string, newStatus: 'good' | 'review') => {
+        const newLogs = report.logs.map(log => {
+            if (log.timestamp === logTimestamp && log.type === 'COMMENT') {
+                const finalStatus = log.commentStatus === newStatus ? undefined : newStatus;
+                return { ...log, commentStatus: finalStatus };
+            }
+            return log;
+        });
+        const updatedReport = { ...report, logs: newLogs };
+        setReport(updatedReport);
+        updateBugReport(report.id, { logs: newLogs });
+    };
+
     const handleCloseQuestDialog = () => {
         if (questFromBug) {
             updateBugReport(questFromBug.id, {
@@ -225,7 +239,7 @@ export const BugDetailDialog: React.FC<BugDetailDialogProps> = ({ report: initia
                         <Button variant="ghost" size="icon" onClick={onClose}>&times;</Button>
                     </div>
 
-                    <div className="flex-grow p-6 flex flex-col md:flex-row gap-6 overflow-hidden">
+                    <div className="flex-grow p-6 flex flex-col md:flex-row gap-6 overflow-hidden min-h-0">
                         
                         <div className="w-full md:w-2/3 flex flex-col space-y-4 overflow-hidden min-h-0">
                              <div className="flex items-center gap-4 flex-shrink-0">
@@ -243,6 +257,7 @@ export const BugDetailDialog: React.FC<BugDetailDialogProps> = ({ report: initia
                                         const authorUser = log.type === 'COMMENT' ? users.find(u => u.gameName === log.author) : undefined;
                                         const isComment = log.type === 'COMMENT';
                                         const parentDimClass = !isComment && log.lastCopiedAt ? 'opacity-50' : '';
+                                        const commentBgClass = log.commentStatus === 'good' ? 'bg-green-900/40' : log.commentStatus === 'review' ? 'bg-red-900/40' : 'bg-stone-700/50';
 
                                         return (
                                             <div key={index} className={`relative group flex items-start gap-3 text-stone-400 text-sm p-2 pl-4 rounded-md transition-colors ${isSelected ? 'bg-emerald-900/40' : ''} ${parentDimClass}`}>
@@ -270,17 +285,19 @@ export const BugDetailDialog: React.FC<BugDetailDialogProps> = ({ report: initia
                                                                     <span className="text-xs text-stone-500 ml-2">{new Date(log.timestamp).toLocaleString()}</span>
                                                                 </p>
                                                             </div>
-                                                            <Button
-                                                                size="sm"
-                                                                variant="ghost"
-                                                                className="!text-xs !py-0 !px-2 !h-auto opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity"
-                                                                onClick={() => handleToggleDim(log.timestamp)}
-                                                                aria-label={log.isDimmed ? 'Undim this comment' : 'Dim this comment'}
-                                                            >
-                                                                {log.isDimmed ? 'Undim' : 'Dim'}
-                                                            </Button>
+                                                            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
+                                                                <Button size="sm" variant="ghost" className="!text-xs !py-0 !px-2 !h-auto" onClick={() => handleToggleDim(log.timestamp)} aria-label={log.isDimmed ? 'Undim comment' : 'Dim comment'}>
+                                                                    {log.isDimmed ? 'Undim' : 'Dim'}
+                                                                </Button>
+                                                                <Button size="icon" variant="ghost" className={`!h-6 !w-6 ${log.commentStatus === 'good' ? 'text-green-400' : 'text-stone-400 hover:text-green-400'}`} onClick={() => handleCommentStatusChange(log.timestamp, 'good')} title="Mark as good">
+                                                                    <CheckCircleIcon className="w-4 h-4" />
+                                                                </Button>
+                                                                <Button size="icon" variant="ghost" className={`!h-6 !w-6 ${log.commentStatus === 'review' ? 'text-red-400' : 'text-stone-400 hover:text-red-400'}`} onClick={() => handleCommentStatusChange(log.timestamp, 'review')} title="Mark for review">
+                                                                    <XCircleIcon className="w-4 h-4" />
+                                                                </Button>
+                                                            </div>
                                                         </div>
-                                                        <div className="mt-1 bg-stone-700/50 p-2 rounded-lg text-stone-200 text-sm whitespace-pre-wrap ml-8">
+                                                        <div className={`mt-1 p-2 rounded-lg text-stone-200 text-sm whitespace-pre-wrap ml-8 ${commentBgClass}`}>
                                                             {log.message}
                                                         </div>
                                                     </div>

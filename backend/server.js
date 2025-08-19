@@ -1547,6 +1547,133 @@ chatRouter.post('/read', asyncMiddleware(async (req, res) => {
     res.status(204).send();
 }));
 
+// Chronicles Endpoint
+app.get('/api/chronicles', asyncMiddleware(async (req, res) => {
+    const manager = dataSource.manager;
+    const { page = 1, limit = 50, userId, guildId, viewMode, startDate, endDate } = req.query;
+    
+    const scopeGuildId = guildId === 'null' ? null : (guildId || undefined);
+
+    let allEvents = [];
+
+    // Pre-fetch data to avoid N+1 queries in loops
+    const rewardTypes = await manager.find(RewardTypeDefinitionEntity);
+    const rewardTypeMap = new Map(rewardTypes.map(rt => [rt.id, rt]));
+    const users = await manager.find(UserEntity);
+    const userMap = new Map(users.map(u => [u.id, u]));
+    const quests = await manager.find(QuestEntity);
+    const questMap = new Map(quests.map(q => [q.id, q]));
+    const trophies = await manager.find(TrophyEntity);
+    const trophyMap = new Map(trophies.map(t => [t.id, t]));
+    const modifierDefs = await manager.find(ModifierDefinitionEntity);
+    const modifierDefMap = new Map(modifierDefs.map(m => [m.id, m]));
+
+
+    const baseQuery = (repo, alias = 'event') => {
+        let qb = repo.createQueryBuilder(alias);
+        if (viewMode === 'personal') {
+            qb.andWhere(`${alias}.userId = :userId`, { userId });
+        }
+        if (scopeGuildId !== undefined) {
+            if (scopeGuildId === null) {
+                qb.andWhere(`${alias}.guildId IS NULL`);
+            } else {
+                qb.andWhere(`${alias}.guildId = :scopeGuildId`, { scopeGuildId });
+            }
+        }
+        if (startDate && endDate) {
+            qb.andWhere(`${alias}.createdAt BETWEEN :startDate AND :endDate`, { startDate: new Date(startDate).toISOString(), endDate: new Date(endDate).toISOString() });
+        }
+        return qb;
+    };
+    
+    // Quest Completions
+    const questCompletions = await baseQuery(manager.getRepository(QuestCompletionEntity))
+        .getMany();
+
+    allEvents.push(...questCompletions.map(c => ({
+        id: `qc-${c.id}`, originalId: c.id, date: c.completedAt, type: 'Quest',
+        title: `${userMap.get(c.userId)?.gameName || 'Someone'} completed "${questMap.get(c.questId)?.title || 'a quest'}"`,
+        note: c.note, status: c.status, icon: questMap.get(c.questId)?.icon || '📜', color: '#10b981', userId: c.userId
+    })));
+
+    // Purchase Requests
+    const purchaseRequests = await baseQuery(manager.getRepository(PurchaseRequestEntity))
+        .getMany();
+
+    allEvents.push(...purchaseRequests.map(p => ({
+        id: `pr-${p.id}`, originalId: p.id, date: p.requestedAt, type: 'Purchase',
+        title: `${userMap.get(p.userId)?.gameName || 'Someone'} requested "${p.assetDetails.name}"`,
+        note: p.assetDetails.cost.map(c => `-${c.amount} ${rewardTypeMap.get(c.rewardTypeId)?.icon || '?'}`).join(' '),
+        status: p.status, icon: '💰', color: '#f59e0b', userId: p.userId
+    })));
+
+    // User Trophies
+    const userTrophies = await baseQuery(manager.getRepository(UserTrophyEntity))
+        .getMany();
+    allEvents.push(...userTrophies.map(ut => ({
+        id: `ut-${ut.id}`, originalId: ut.id, date: ut.awardedAt, type: 'Trophy',
+        title: `${userMap.get(ut.userId)?.gameName || 'Someone'} earned "${trophyMap.get(ut.trophyId)?.name || 'a trophy'}"`,
+        note: trophyMap.get(ut.trophyId)?.description, status: 'Awarded', icon: trophyMap.get(ut.trophyId)?.icon || '🏆', color: '#facc15', userId: ut.userId
+    })));
+
+    // Admin Adjustments
+    const adjustments = await baseQuery(manager.getRepository(AdminAdjustmentEntity))
+        .getMany();
+    allEvents.push(...adjustments.map(adj => {
+        const rewardText = [...adj.rewards, ...adj.setbacks].map(r => `${r.amount > 0 ? '+' : ''}${r.amount} ${rewardTypeMap.get(r.rewardTypeId)?.icon || '?'}`).join(' ');
+        return {
+            id: `adj-${adj.id}`, originalId: adj.id, date: adj.adjustedAt, type: 'Adjustment',
+            title: `Adjustment for ${userMap.get(adj.userId)?.gameName || 'Someone'} by ${userMap.get(adj.adjusterId)?.gameName || 'Admin'}`,
+            note: `${adj.reason} ${rewardText ? `(${rewardText})` : ''}`, status: adj.type, icon: '🔧', color: '#60a5fa', userId: adj.userId
+        }
+    }));
+    
+    // Applied Modifiers (Triumphs/Trials)
+    const appliedModifiers = await baseQuery(manager.getRepository(AppliedModifierEntity)).getMany();
+    allEvents.push(...appliedModifiers.map(am => {
+        const def = modifierDefMap.get(am.modifierDefinitionId);
+        return {
+            id: `am-${am.id}`, originalId: am.id, date: am.appliedAt, type: def?.category || 'Modifier',
+            title: `${userMap.get(am.userId)?.gameName} received ${def?.category}: "${def?.name}"`,
+            note: am.reason, status: 'Applied', icon: def?.icon || '⚖️', color: def?.category === 'Triumph' ? '#4ade80' : '#f87171', userId: am.userId,
+        }
+    }));
+    
+    // System Notifications (Announcements)
+    if (viewMode === 'personal' || scopeGuildId !== undefined) {
+        const announcementRepo = manager.getRepository(SystemNotificationEntity);
+        const qb = announcementRepo.createQueryBuilder('an')
+            .where('an.type = :type', { type: 'Announcement' });
+
+        if (scopeGuildId === null) {
+            qb.andWhere('an.guildId IS NULL');
+        } else if (scopeGuildId) {
+            qb.andWhere('an.guildId = :scopeGuildId', { scopeGuildId });
+        }
+
+        if (viewMode === 'personal') {
+            qb.andWhere('an.recipientUserIds LIKE :userIdPattern', { userIdPattern: `%${userId}%` });
+        }
+        
+        const announcements = await qb.getMany();
+
+        allEvents.push(...announcements.map(an => ({
+            id: `an-${an.id}`, originalId: an.id, date: an.timestamp, type: 'Announcement',
+            title: `Announcement from ${userMap.get(an.senderId)?.gameName || 'Admin'}`,
+            note: an.message, status: 'Sent', icon: an.icon || '📢', color: '#a78bfa'
+        })));
+    }
+
+
+    allEvents.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+    const total = allEvents.length;
+    const paginatedEvents = allEvents.slice((page - 1) * limit, page * limit);
+    
+    res.json({ events: paginatedEvents, total });
+}));
+
 // ... (The rest of the file will go here)
 
 app.use('/api/actions', actionsRouter);

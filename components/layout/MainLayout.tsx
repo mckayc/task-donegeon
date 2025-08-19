@@ -6,7 +6,7 @@ import Header from './Header';
 import Dashboard from '../pages/Dashboard';
 import QuestsPage from '../pages/QuestsPage';
 import MarketplacePage from '../pages/MarketplacePage';
-import ChroniclesPage from '../pages/ChroniclesPage';
+import { ChroniclesPage } from '../pages/ChroniclesPage';
 import GuildPage from '../pages/GuildPage';
 import UserManagementPage from '../pages/management/UserManagementPage';
 import { Page, Role, SystemNotification } from '../../types';

@@ -1,14 +1,13 @@
 
-
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import Card from '../user-interface/Card';
 import { useUIState } from '../../context/UIContext';
 import { useActionsDispatch } from '../../context/ActionsContext';
-import { Role, ChronicleEvent, PurchaseRequestStatus } from '../../types';
+import { Role, ChronicleEvent } from '../../types';
 import Button from '../user-interface/Button';
 import { useAuthState } from '../../context/AuthContext';
 
-const ChroniclesPage: React.FC = () => {
+export const ChroniclesPage: React.FC = () => {
     const { appMode } = useUIState();
     const { currentUser } = useAuthState();
     const { cancelPurchaseRequest } = useActionsDispatch();
@@ -153,18 +152,22 @@ const ChroniclesPage: React.FC = () => {
                         </ul>
                         {totalPages > 1 && (
                             <div className="flex justify-between items-center mt-6 pt-4 border-t border-stone-700">
-                                <Button variant="secondary" onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1}>Previous</Button>
-                                <span className="text-stone-400">Page {currentPage} of {totalPages}</span>
-                                <Button variant="secondary" onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages}>Next</Button>
+                                <Button variant="secondary" onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1}>
+                                    Previous
+                                </Button>
+                                <span className="text-sm text-stone-400">
+                                    Page {currentPage} of {totalPages}
+                                </span>
+                                <Button variant="secondary" onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages}>
+                                    Next
+                                </Button>
                             </div>
                         )}
                     </>
                 ) : (
-                    <p className="text-stone-400 text-center py-4">No activities have been recorded yet in this mode.</p>
+                    <p className="text-center py-10 text-stone-400">No activity recorded for this view.</p>
                 )}
             </Card>
         </div>
     );
 };
-
-export default ChroniclesPage;

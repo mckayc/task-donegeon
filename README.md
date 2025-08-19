@@ -1,6 +1,6 @@
 # Task Donegeon
 
-**Version:** 0.0.55
+**Version:** 0.0.54
 
 ---
 
@@ -15,11 +15,10 @@ Task Donegeon is a gamified task and chore management application designed for f
 
 ## ✨ Features
 
-### What's New in Version 0.0.55 (August 18, 2025)
--   **Dependency Updates:** Updated all major frontend and backend dependencies to their latest stable versions. This includes React, Vite, FullCalendar, and the Google Gemini SDK. This maintenance improves security, performance, and ensures compatibility with the latest features.
+### What's New in Version 0.0.54 (August 17, 2025)
+-   **Calendar UI Fix:** The calendar's day and week views now correctly display the full time range (e.g., "3:00 PM - 5:00 PM") for timed quests, making deadlines much clearer. This addresses a bug where only the start time was being shown.
 
 ### Version History
-- **v0.0.54 (August 17, 2025):** **Calendar UI Fix:** The calendar's day and week views now correctly display the full time range (e.g., "3:00 PM - 5:00 PM") for timed quests, making deadlines much clearer. This addresses a bug where only the start time was being shown.
 - **v0.0.53 (August 15, 2025):** Asset Pack Update: Renamed the "McKay's Daily Routine" asset pack to "Student's Daily Quest" to be more generic. Added four new tech-related rewards to its marketplace, including app installations and purchases.
 - **v0.0.52 (August 15, 2025):** Added a new default asset pack, "McKay's Daily Routine," featuring a series of timed daily duties for school days and a conditional weekend marketplace with screen-time rewards.
 - **v0.0.51 (August 8, 2025):** Fixed a UI inconsistency where the notification count for pending approvals was not shown on the 'Approvals' link when its parent 'User Management' group was expanded. The badge now correctly moves to the specific link, improving user experience.
@@ -81,24 +80,4 @@ This phase focuses on high-impact improvements for admins and players that enhan
 This phase introduces major new creative outlets and systems for deeper engagement.
 
 -   **User-Created Content:** A system allowing Explorers to design their own quests and items, then submit them to admins for approval. This fosters creativity and allows the game world to be co-created by its members.
--   **Reward R------ END OF FILE README.md ------ START OF FILE vercel.json ------ START OF FILE vercel.json ---
-
-{
-  "version": 2,
-  "builds": [
-    {
-      "src": "package.json",
-      "use": "@vercel/static-build",
-      "config": {
-        "distDir": "dist"
-      }
-    },
-    {
-      "src": "backend/server.js",
-      "use": "@vercel/node"
-    }
-  ],
-  "rewrites": [
-    { "source": "/api/(.*)", "destination": "/backend/server.js" }
-  ]
-}
+-   **Reward R------ END OF FILE README.md ------ START OF FILE vercel.json ---

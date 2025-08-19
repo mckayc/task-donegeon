@@ -97,7 +97,7 @@ export interface ActionsDispatch {
 
   addModifierDefinition: (modifierData: Omit<ModifierDefinition, 'id'>) => Promise<ModifierDefinition | null>;
   updateModifierDefinition: (modifierData: ModifierDefinition) => Promise<ModifierDefinition | null>;
-  applyModifier: (userId: string, modifierId: string, reason: string, overrides?: Partial<ModifierDefinition>) => Promise<boolean>;
+  applyModifier: (userId: string, modifierId: string, reason: string, guildId?: string, overrides?: Partial<ModifierDefinition>) => Promise<boolean>;
 
   proposeTrade: (recipientId: string, guildId: string) => Promise<TradeOffer | null>;
   updateTradeOffer: (tradeId: string, updates: Partial<TradeOffer>) => Promise<void>;
@@ -436,21 +436,22 @@ export const ActionsProvider: React.FC<{ children: ReactNode }> = ({ children })
 
         addModifierDefinition: createAddAction('/api/setbacks', 'modifierDefinitions'),
         updateModifierDefinition: createUpdateAction(id => `/api/setbacks/${id}`, 'modifierDefinitions'),
-        applyModifier: async (userId, modifierId, reason, overrides) => {
+        applyModifier: async (userId, modifierId, reason, guildId, overrides) => {
             if (!currentUser) return false;
-            const result = await apiRequest('POST', '/api/actions/apply-setback', {
+            const result = await apiRequest('POST', '/api/actions/apply-modifier', {
                 userId,
-                setbackDefinitionId: modifierId,
+                modifierDefinitionId: modifierId,
                 reason,
                 appliedById: currentUser.id,
+                guildId,
                 overrides,
             });
              if (result) {
                 if (result.updatedUser) {
                     updateUser(result.updatedUser.id, result.updatedUser);
                 }
-                if (result.newAppliedSetback) {
-                    dataDispatch({ type: 'UPDATE_DATA', payload: { appliedModifiers: [result.newAppliedSetback] } });
+                if (result.newAppliedModifier) {
+                    dataDispatch({ type: 'UPDATE_DATA', payload: { appliedModifiers: [result.newAppliedModifier] } });
                 }
                 return true;
             }

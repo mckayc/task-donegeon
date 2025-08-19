@@ -24,9 +24,11 @@ class ScheduledEvent {}
 class Setting {}
 class LoginHistory {}
 class BugReport {}
-class SetbackDefinition {}
-class AppliedSetback {}
+class ModifierDefinition {}
+class AppliedModifier {}
 class Rotation {}
+class TradeOffer {}
+class Gift {}
 
 const BugReportEntity = new EntitySchema({
     name: "BugReport",
@@ -153,27 +155,29 @@ const ScheduledEventEntity = new EntitySchema({ name: "ScheduledEvent", target: 
 const SettingEntity = new EntitySchema({ name: "Setting", target: Setting, columns: { id: { primary: true, type: "integer", default: 1 }, settings: { type: "simple-json" }, createdAt: { type: "varchar", nullable: true }, updatedAt: { type: "varchar", nullable: true } } });
 const LoginHistoryEntity = new EntitySchema({ name: "LoginHistory", target: LoginHistory, columns: { id: { primary: true, type: "integer", default: 1 }, history: { type: "simple-array" }, createdAt: { type: "varchar", nullable: true }, updatedAt: { type: "varchar", nullable: true } } });
 
-const SetbackDefinitionEntity = new EntitySchema({
-    name: "SetbackDefinition",
-    target: SetbackDefinition,
+const ModifierDefinitionEntity = new EntitySchema({
+    name: "ModifierDefinition",
+    target: ModifierDefinition,
     columns: {
         id: { primary: true, type: "varchar" },
+        category: { type: "varchar" },
         name: { type: "varchar" },
         description: { type: "text" },
         icon: { type: "varchar" },
         effects: { type: "simple-json" },
+        defaultRedemptionQuestId: { type: "varchar", nullable: true },
         createdAt: { type: "varchar", nullable: true },
         updatedAt: { type: "varchar", nullable: true },
     }
 });
 
-const AppliedSetbackEntity = new EntitySchema({
-    name: "AppliedSetback",
-    target: AppliedSetback,
+const AppliedModifierEntity = new EntitySchema({
+    name: "AppliedModifier",
+    target: AppliedModifier,
     columns: {
         id: { primary: true, type: "varchar" },
         userId: { type: "varchar" },
-        setbackDefinitionId: { type: "varchar" },
+        modifierDefinitionId: { type: "varchar" },
         appliedAt: { type: "varchar" },
         expiresAt: { type: "varchar", nullable: true },
         status: { type: "varchar", default: 'Active' },
@@ -202,8 +206,8 @@ const AppliedSetbackEntity = new EntitySchema({
         },
         definition: {
             type: "many-to-one",
-            target: "SetbackDefinition",
-            joinColumn: { name: "setbackDefinitionId" },
+            target: "ModifierDefinition",
+            joinColumn: { name: "modifierDefinitionId" },
             onDelete: "CASCADE",
         },
     }
@@ -276,6 +280,7 @@ const GuildEntity = new EntitySchema({
         purpose: { type: "text" },
         isDefault: { type: "boolean", nullable: true },
         themeId: { type: "varchar", nullable: true },
+        treasury: { type: "simple-json", default: '{}' },
         createdAt: { type: "varchar", nullable: true },
         updatedAt: { type: "varchar", nullable: true },
     },
@@ -370,12 +375,16 @@ const RotationEntity = new EntitySchema({
     }
 });
 
+const TradeOfferEntity = new EntitySchema({ name: "TradeOffer", target: TradeOffer, columns: { id: { primary: true, type: "varchar" }, initiatorId: { type: "varchar" }, recipientId: { type: "varchar" }, guildId: { type: "varchar" }, status: { type: "varchar" }, initiatorOffer: { type: "simple-json" }, recipientOffer: { type: "simple-json" }, initiatorLocked: { type: "boolean" }, recipientLocked: { type: "boolean" }, createdAt: { type: "varchar", nullable: true }, updatedAt: { type: "varchar", nullable: true } } });
+const GiftEntity = new EntitySchema({ name: "Gift", target: Gift, columns: { id: { primary: true, type: "varchar" }, senderId: { type: "varchar" }, recipientId: { type: "varchar" }, assetId: { type: "varchar" }, guildId: { type: "varchar" }, sentAt: { type: "varchar" }, createdAt: { type: "varchar", nullable: true }, updatedAt: { type: "varchar", nullable: true } } });
+
+
 const allEntities = [
     UserEntity, QuestEntity, QuestGroupEntity, MarketEntity, RewardTypeDefinitionEntity,
     QuestCompletionEntity, PurchaseRequestEntity, GuildEntity, RankEntity, TrophyEntity,
     UserTrophyEntity, AdminAdjustmentEntity, GameAssetEntity, SystemLogEntity, ThemeDefinitionEntity,
     ChatMessageEntity, SystemNotificationEntity, ScheduledEventEntity, SettingEntity, LoginHistoryEntity,
-    BugReportEntity, SetbackDefinitionEntity, AppliedSetbackEntity, RotationEntity
+    BugReportEntity, ModifierDefinitionEntity, AppliedModifierEntity, RotationEntity, TradeOfferEntity, GiftEntity
 ];
 
 module.exports = { 
@@ -384,5 +393,5 @@ module.exports = {
     QuestCompletionEntity, PurchaseRequestEntity, GuildEntity, RankEntity, TrophyEntity,
     UserTrophyEntity, AdminAdjustmentEntity, GameAssetEntity, SystemLogEntity, ThemeDefinitionEntity,
     ChatMessageEntity, SystemNotificationEntity, ScheduledEventEntity, SettingEntity, LoginHistoryEntity,
-    BugReportEntity, SetbackDefinitionEntity, AppliedSetbackEntity, RotationEntity
+    BugReportEntity, ModifierDefinitionEntity, AppliedModifierEntity, RotationEntity, TradeOfferEntity, GiftEntity
 };

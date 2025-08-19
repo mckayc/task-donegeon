@@ -290,7 +290,41 @@ const getFullAppData = async (manager) => {
     data.rotations = await manager.find(RotationEntity);
     
     const settingRow = await manager.findOneBy(SettingEntity, { id: 1 });
-    data.settings = settingRow ? settingRow.settings : INITIAL_SETTINGS;
+    let finalSettings = settingRow ? settingRow.settings : INITIAL_SETTINGS;
+
+    if (settingRow) { // Only merge if settings were loaded from DB
+        const defaultSettings = INITIAL_SETTINGS;
+        const isObject = (item) => item && typeof item === 'object' && !Array.isArray(item);
+
+        const mergeNewProperties = (target, source) => {
+            for (const key in source) {
+                if (key === 'sidebars' && isObject(source[key]) && target[key] && source.sidebars.main) {
+                    const userVisibilityMap = new Map();
+                    (target.sidebars.main || []).forEach(item => {
+                        if (item.id) {
+                            userVisibilityMap.set(item.id, item.isVisible);
+                        }
+                    });
+                    const newSidebar = (source.sidebars.main || []).map(defaultItem => {
+                        if (defaultItem.id && userVisibilityMap.has(defaultItem.id)) {
+                            return { ...defaultItem, isVisible: userVisibilityMap.get(defaultItem.id) };
+                        }
+                        return defaultItem;
+                    });
+                    target.sidebars.main = newSidebar;
+                } else if (isObject(source[key])) {
+                    if (!target[key] || !isObject(target[key])) {
+                        target[key] = {};
+                    }
+                    mergeNewProperties(target[key], source[key]);
+                } else if (!target.hasOwnProperty(key)) {
+                    target[key] = source[key];
+                }
+            }
+        };
+        mergeNewProperties(finalSettings, defaultSettings);
+    }
+    data.settings = finalSettings;
 
     const historyRow = await manager.findOneBy(LoginHistoryEntity, { id: 1 });
     data.loginHistory = historyRow ? historyRow.history : [];

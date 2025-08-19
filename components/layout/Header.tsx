@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo, useEffect } from 'react';
 import { Page, Role, AppMode, User } from '../../types';
 import Avatar from '../user-interface/Avatar';
@@ -146,8 +147,7 @@ const Header: React.FC = () => {
             </button>
         )}
         <div className="relative">
-          <button data-log-id="header-profile-dropdown-button" onClick={() => setProfileDropdownOpen(!profileDropdownOpen)} className="flex items-center space-x-3">
-            <span className="hidden sm:inline text-stone-200 font-medium">{currentUser.gameName}</span>
+          <button data-log-id="header-profile-dropdown-button" onClick={() => setProfileDropdownOpen(!profileDropdownOpen)} className="flex items-center" title={currentUser.gameName}>
             <Avatar user={currentUser} className="w-12 h-12 bg-emerald-800 rounded-full border-2 border-accent overflow-hidden" />
           </button>
           {profileDropdownOpen && (

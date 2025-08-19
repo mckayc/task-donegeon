@@ -1,5 +1,3 @@
-
-
 require("reflect-metadata");
 const express = require('express');
 const cors = require('cors');
@@ -289,6 +287,7 @@ const getFullAppData = async (manager) => {
     data.appliedModifiers = await manager.find(AppliedModifierEntity);
     data.tradeOffers = await manager.find(TradeOfferEntity);
     data.gifts = await manager.find(GiftEntity);
+    data.rotations = await manager.find(RotationEntity);
     
     const settingRow = await manager.findOneBy(SettingEntity, { id: 1 });
     data.settings = settingRow ? settingRow.settings : INITIAL_SETTINGS;
@@ -425,6 +424,7 @@ app.get('/api/data/sync', asyncMiddleware(async (req, res) => {
                     purchaseRequests: [], guilds: [], ranks: [], trophies: [], userTrophies: [],
                     adminAdjustments: [], gameAssets: [], systemLogs: [], themes: [], chatMessages: [],
                     systemNotifications: [], scheduledEvents: [], bugReports: [], modifierDefinitions: [], appliedModifiers: [],
+                    rotations: [], tradeOffers: [], gifts: [],
                     settings: { ...INITIAL_SETTINGS, contentVersion: 0 },
                     loginHistory: [],
                 },
@@ -441,7 +441,7 @@ app.get('/api/data/sync', asyncMiddleware(async (req, res) => {
             QuestCompletionEntity, PurchaseRequestEntity, GuildEntity, RankEntity, TrophyEntity,
             UserTrophyEntity, AdminAdjustmentEntity, GameAssetEntity, SystemLogEntity, ThemeDefinitionEntity,
             ChatMessageEntity, SystemNotificationEntity, ScheduledEventEntity, SettingEntity, LoginHistoryEntity,
-            BugReportEntity, ModifierDefinitionEntity, AppliedModifierEntity
+            BugReportEntity, ModifierDefinitionEntity, AppliedModifierEntity, RotationEntity, TradeOfferEntity, GiftEntity
         ];
         
         for (const entity of entitiesToSync) {
@@ -551,14 +551,26 @@ app.post('/api/data/apply-updates', asyncMiddleware(async (req, res) => {
 
         const mergeNewProperties = (target, source) => {
             for (const key in source) {
-                if (key === 'sidebars' && isObject(source[key]) && target[key]) {
-                    // Special handling for sidebar config
-                    const existingIds = new Set((target.sidebars.main || []).map(item => item.id));
-                    const newItems = (source.sidebars.main || []).filter(item => !existingIds.has(item.id));
-                    if (newItems.length > 0) {
-                        if (!target.sidebars.main) target.sidebars.main = [];
-                        target.sidebars.main.push(...newItems);
-                    }
+                if (key === 'sidebars' && isObject(source[key]) && target[key] && source.sidebars.main) {
+                    // Rebuild the sidebar from the default, preserving user's visibility settings
+                    const userVisibilityMap = new Map();
+                    // Use a unique key for each item, like its id, for the map.
+                    (target.sidebars.main || []).forEach(item => {
+                        if (item.id) {
+                            userVisibilityMap.set(item.id, item.isVisible);
+                        }
+                    });
+                    
+                    const newSidebar = (source.sidebars.main || []).map(defaultItem => {
+                        // Check if the user has a saved visibility setting for this item.
+                        if (defaultItem.id && userVisibilityMap.has(defaultItem.id)) {
+                            // If yes, apply it. Otherwise, use the default visibility.
+                            return { ...defaultItem, isVisible: userVisibilityMap.get(defaultItem.id) };
+                        }
+                        return defaultItem;
+                    });
+                    
+                    target.sidebars.main = newSidebar;
                 } else if (isObject(source[key])) {
                     if (!target[key]) {
                         target[key] = {};
@@ -1403,6 +1415,8 @@ app.use('/api/quest-groups', createGenericRouter(QuestGroupEntity));
 app.use('/api/rotations', createGenericRouter(RotationEntity));
 app.use('/api/setbacks', createGenericRouter(ModifierDefinitionEntity));
 app.use('/api/applied-setbacks', createGenericRouter(AppliedModifierEntity));
+app.use('/api/trades', createGenericRouter(TradeOfferEntity));
+app.use('/api/gifts', createGenericRouter(GiftEntity));
 
 // Serve static assets from the 'uploads' directory
 app.use('/uploads', express.static(UPLOADS_DIR));

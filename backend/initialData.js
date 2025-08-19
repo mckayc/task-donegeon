@@ -24,11 +24,13 @@ const INITIAL_MAIN_SIDEBAR_CONFIG = [
   { type: 'link', id: 'Approvals', emoji: '✅', isVisible: true, level: 1, role: 'Gatekeeper', termKey: 'link_approvals' },
   { type: 'link', id: 'Manage Users', emoji: '👥', isVisible: true, level: 1, role: 'Donegeon Master', termKey: 'link_manage_users' },
   { type: 'link', id: 'Manage Guilds', emoji: '🏰', isVisible: true, level: 1, role: 'Donegeon Master', termKey: 'link_manage_guilds' },
+  { type: 'link', id: 'Triumphs & Trials', emoji: '⚖️', isVisible: true, level: 1, role: 'Donegeon Master', termKey: 'link_triumphs_trials' },
 
   // Content Management Section
   { type: 'header', id: 'header-admin-content', title: 'Content Management', emoji: '📚', level: 0, role: 'Donegeon Master', isVisible: true },
   { type: 'link', id: 'Manage Quests', emoji: '📜', isVisible: true, level: 1, role: 'Donegeon Master', termKey: 'link_manage_quests' },
   { type: 'link', id: 'Manage Quest Groups', emoji: '📂', isVisible: true, level: 1, role: 'Donegeon Master', termKey: 'link_manage_quest_groups' },
+  { type: 'link', id: 'Manage Rotations', emoji: '🔄', isVisible: true, level: 1, role: 'Donegeon Master', termKey: 'link_manage_rotations' },
   { type: 'link', id: 'Manage Markets', emoji: '🛒', isVisible: true, level: 1, role: 'Donegeon Master', termKey: 'link_manage_markets' },
   { type: 'link', id: 'Manage Goods', emoji: '⚔️', isVisible: true, level: 1, role: 'Donegeon Master', termKey: 'link_manage_items' },
   { type: 'link', id: 'Manage Trophies', emoji: '🏆', isVisible: true, level: 1, role: 'Donegeon Master', termKey: 'link_manage_trophies' },
@@ -144,6 +146,8 @@ const INITIAL_SETTINGS = {
       link_manage_ranks: 'Manage Ranks',
       link_manage_trophies: 'Manage Trophies',
       link_manage_events: 'Manage Events',
+      link_manage_rotations: 'Manage Rotations',
+      link_triumphs_trials: 'Triumphs & Trials',
       link_appearance: 'Appearance',
       link_approvals: 'Approvals',
       link_manage_users: 'Manage Users',

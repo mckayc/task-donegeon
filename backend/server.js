@@ -1,3 +1,4 @@
+
 require("reflect-metadata");
 const express = require('express');
 const cors = require('cors');
@@ -46,7 +47,7 @@ const checkAndAwardTrophies = async (manager, userId, guildId) => {
 
     // Get all necessary data for checks
     const userCompletedQuests = await manager.find(QuestCompletionEntity, {
-        where: { user: { id: userId }, guildId: IsNull(), status: 'Approved' },
+        where: { userId: userId, guildId: IsNull(), status: 'Approved' },
         relations: ['quest']
     });
     const userTrophies = await manager.find(UserTrophyEntity, { where: { userId, guildId: IsNull() } });
@@ -156,7 +157,51 @@ const upload = multer({
 // === Backup Configuration ===
 const BACKUP_DIR = '/app/data/backups';
 
+// Helper to fetch all data from DB
+const fetchAllData = async (manager) => {
+    const repos = {
+        users: manager.getRepository(UserEntity),
+        quests: manager.getRepository(QuestEntity),
+        questGroups: manager.getRepository(QuestGroupEntity),
+        markets: manager.getRepository(MarketEntity),
+        rewardTypes: manager.getRepository(RewardTypeDefinitionEntity),
+        questCompletions: manager.getRepository(QuestCompletionEntity),
+        purchaseRequests: manager.getRepository(PurchaseRequestEntity),
+        guilds: manager.getRepository(GuildEntity),
+        ranks: manager.getRepository(RankEntity),
+        trophies: manager.getRepository(TrophyEntity),
+        userTrophies: manager.getRepository(UserTrophyEntity),
+        adminAdjustments: manager.getRepository(AdminAdjustmentEntity),
+        gameAssets: manager.getRepository(GameAssetEntity),
+        systemLogs: manager.getRepository(SystemLogEntity),
+        themes: manager.getRepository(ThemeDefinitionEntity),
+        chatMessages: manager.getRepository(ChatMessageEntity),
+        systemNotifications: manager.getRepository(SystemNotificationEntity),
+        scheduledEvents: manager.getRepository(ScheduledEventEntity),
+        settings: manager.getRepository(SettingEntity),
+        loginHistory: manager.getRepository(LoginHistoryEntity),
+        bugReports: manager.getRepository(BugReportEntity),
+        modifierDefinitions: manager.getRepository(ModifierDefinitionEntity),
+        appliedModifiers: manager.getRepository(AppliedModifierEntity),
+        rotations: manager.getRepository(RotationEntity),
+        tradeOffers: manager.getRepository(TradeOfferEntity),
+        gifts: manager.getRepository(GiftEntity),
+    };
+    
+    const data = {};
+    for (const key in repos) {
+        if (key === 'settings' || key === 'loginHistory') {
+             const result = await repos[key].findOneBy({ id: 1 });
+             data[key] = result ? (key === 'settings' ? result.settings : result.history) : (key === 'settings' ? INITIAL_SETTINGS : []);
+        } else {
+            data[key] = await repos[key].find();
+        }
+    }
+    return data;
+};
+
 // === API Routes ===
+
 // --- System Status ---
 app.get('/api/system/status', async (req, res) => {
     try {
@@ -183,8 +228,6 @@ app.post('/api/ai/generate', async (req, res) => {
     if (!ai) return res.status(400).json({ error: 'AI features are not configured.' });
     try {
         const { model, prompt, generationConfig } = req.body;
-        const finalModel = generationConfig ? model : ai.models.getGenerativeModel({ model });
-        
         const result = await ai.models.generateContent({
             model: model,
             contents: [{ role: 'user', parts: [{ text: prompt }] }],
@@ -256,50 +299,148 @@ app.get('/api/media/local-gallery', async (req, res) => {
 });
 
 // --- Main Data Sync ---
-let initialDataCache = null;
+app.get('/api/data/sync', async (req, res) => {
+    const { lastSync } = req.query;
+    const newSyncTimestamp = new Date().toISOString();
 
-// Helper to fetch all data from DB
-const fetchAllData = async (manager) => {
-    const repos = {
-        users: manager.getRepository(UserEntity),
-        quests: manager.getRepository(QuestEntity),
-        questGroups: manager.getRepository(QuestGroupEntity),
-        markets: manager.getRepository(MarketEntity),
-        rewardTypes: manager.getRepository(RewardTypeDefinitionEntity),
-        questCompletions: manager.getRepository(QuestCompletionEntity),
-        purchaseRequests: manager.getRepository(PurchaseRequestEntity),
-        guilds: manager.getRepository(GuildEntity),
-        ranks: manager.getRepository(RankEntity),
-        trophies: manager.getRepository(TrophyEntity),
-        userTrophies: manager.getRepository(UserTrophyEntity),
-        adminAdjustments: manager.getRepository(AdminAdjustmentEntity),
-        gameAssets: manager.getRepository(GameAssetEntity),
-        systemLogs: manager.getRepository(SystemLogEntity),
-        themes: manager.getRepository(ThemeDefinitionEntity),
-        chatMessages: manager.getRepository(ChatMessageEntity),
-        systemNotifications: manager.getRepository(SystemNotificationEntity),
-        scheduledEvents: manager.getRepository(ScheduledEventEntity),
-        settings: manager.getRepository(SettingEntity),
-        loginHistory: manager.getRepository(LoginHistoryEntity),
-        bugReports: manager.getRepository(BugReportEntity),
-        modifierDefinitions: manager.getRepository(ModifierDefinitionEntity),
-        appliedModifiers: manager.getRepository(AppliedModifierEntity),
-        rotations: manager.getRepository(RotationEntity),
-        tradeOffers: manager.getRepository(TradeOfferEntity),
-        gifts: manager.getRepository(GiftEntity),
-    };
-    
-    const data = {};
-    for (const key in repos) {
-        if (key === 'settings' || key === 'loginHistory') {
-             const result = await repos[key].findOneBy({ id: 1 });
-             data[key] = result ? (key === 'settings' ? result.settings : result.history) : (key === 'settings' ? INITIAL_SETTINGS : []);
-        } else {
-            data[key] = await repos[key].find();
-        }
+    try {
+        await dataSource.manager.transaction(async manager => {
+            if (!lastSync) {
+                // Initial full load
+                const allData = await fetchAllData(manager);
+                res.json({ updates: allData, newSyncTimestamp });
+            } else {
+                // Delta sync - this is a simplified version. A real app might need more complex logic for deletions.
+                const updates = {};
+                for (const entity of allEntities) {
+                    const repo = manager.getRepository(entity.target);
+                    const key = entity.name.charAt(0).toLowerCase() + entity.name.slice(1) + 's';
+                    
+                    if (entity.name === 'Setting') {
+                        const result = await repo.findOne({ where: { id: 1, updatedAt: MoreThan(lastSync) } });
+                        if(result) updates.settings = result.settings;
+                    } else if (entity.name === 'LoginHistory') {
+                        const result = await repo.findOne({ where: { id: 1, updatedAt: MoreThan(lastSync) } });
+                        if(result) updates.loginHistory = result.history;
+                    } else {
+                        const records = await repo.find({ where: { updatedAt: MoreThan(lastSync) } });
+                        if (records.length > 0) {
+                            updates[key] = records;
+                        }
+                    }
+                }
+                res.json({ updates, newSyncTimestamp });
+            }
+        });
+    } catch (error) {
+        console.error('Sync error:', error);
+        res.status(500).json({ error: 'Data synchronization failed.', details: error.message });
     }
-    return data;
-};
+});
+
+
+app.get('/api/data/events', (req, res) => {
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+    res.flushHeaders();
+
+    const listener = () => {
+        try {
+            res.write('data: sync\n\n');
+        } catch (error) {
+            console.error('SSE write error:', error);
+        }
+    };
+    updateEmitter.on('update', listener);
+    
+    clients.push({ req, res, listener });
+
+    req.on('close', () => {
+        updateEmitter.removeListener('update', listener);
+        clients = clients.filter(client => client.res !== res);
+    });
+});
+
+// Chronicles Endpoint
+app.get('/api/chronicles', async (req, res) => {
+    const { page = 1, limit = 50, userId, guildId: guildIdQuery, viewMode, startDate, endDate } = req.query;
+    const guildId = guildIdQuery === 'null' ? null : guildIdQuery;
+
+    try {
+        await dataSource.manager.transaction(async manager => {
+            const allEvents = [];
+
+            const dateRangeWhere = (dateField) => {
+                if(startDate && endDate) {
+                    return { [dateField]: Between(new Date(startDate).toISOString(), new Date(endDate).toISOString()) };
+                }
+                return {};
+            };
+
+            const scopeWhere = viewMode === 'personal'
+                ? { userId: userId, guildId: IsNull() }
+                : (guildId ? { guildId } : {});
+
+            const prefetchData = {
+                users: await manager.find(UserEntity),
+                quests: await manager.find(QuestEntity),
+                trophies: await manager.find(TrophyEntity),
+                modifierDefinitions: await manager.find(ModifierDefinitionEntity),
+            };
+
+            const userMap = new Map(prefetchData.users.map(u => [u.id, u]));
+            const questMap = new Map(prefetchData.quests.map(q => [q.id, q]));
+            const trophyMap = new Map(prefetchData.trophies.map(t => [t.id, t]));
+            const modifierMap = new Map(prefetchData.modifierDefinitions.map(d => [d.id, d]));
+
+            const entitiesToFetch = [
+                { entity: QuestCompletionEntity, dateField: 'completedAt', where: { ...scopeWhere, ...dateRangeWhere('completedAt') } },
+                { entity: PurchaseRequestEntity, dateField: 'requestedAt', where: { ...scopeWhere, ...dateRangeWhere('requestedAt') } },
+                { entity: UserTrophyEntity, dateField: 'awardedAt', where: { ...scopeWhere, ...dateRangeWhere('awardedAt') } },
+                { entity: AdminAdjustmentEntity, dateField: 'adjustedAt', where: { ...scopeWhere, ...dateRangeWhere('adjustedAt') } },
+                { entity: AppliedModifierEntity, dateField: 'appliedAt', where: { ...scopeWhere, ...dateRangeWhere('appliedAt') } },
+            ];
+
+            for (const { entity, dateField, where } of entitiesToFetch) {
+                const records = await manager.find(entity, { where });
+                for (const record of records) {
+                    const user = userMap.get(record.userId);
+                    if (!user) continue;
+
+                    let event = null;
+                    if (entity === QuestCompletionEntity) {
+                        const quest = questMap.get(record.questId);
+                        if (quest) event = { id: `qc-${record.id}`, originalId: record.id, date: record.completedAt, type: 'Quest', title: `${user.gameName} completed "${quest.title}"`, note: record.note, status: record.status, icon: quest.icon, color: 'green', userId, guildId: record.guildId };
+                    } else if (entity === PurchaseRequestEntity) {
+                        event = { id: `pr-${record.id}`, originalId: record.id, date: record.requestedAt, type: 'Purchase', title: `${user.gameName} purchased "${record.assetDetails.name}"`, note: record.assetDetails.cost.map(c => `-${c.amount}`).join(' '), status: record.status, icon: '💰', color: 'gold', userId, guildId: record.guildId };
+                    } else if (entity === UserTrophyEntity) {
+                        const trophy = trophyMap.get(record.trophyId);
+                        if (trophy) event = { id: `ut-${record.id}`, originalId: record.id, date: record.awardedAt, type: 'Trophy', title: `${user.gameName} earned "${trophy.name}"`, note: trophy.description, status: 'Awarded', icon: trophy.icon, color: 'yellow', userId, guildId: record.guildId };
+                    } else if (entity === AdminAdjustmentEntity) {
+                        event = { id: `aa-${record.id}`, originalId: record.id, date: record.adjustedAt, type: 'Adjustment', title: `${user.gameName} received an adjustment`, note: record.reason, status: record.type, icon: '⚖️', color: 'cyan', userId, guildId: record.guildId };
+                    } else if (entity === AppliedModifierEntity) {
+                        const definition = modifierMap.get(record.modifierDefinitionId);
+                        if (definition) event = { id: `am-${record.id}`, originalId: record.id, date: record.appliedAt, type: definition.category, title: `${user.gameName} received ${definition.category}: ${definition.name}`, note: record.reason, status: record.status, icon: definition.icon, color: definition.category === 'Triumph' ? 'lime' : 'red', userId, guildId: record.guildId };
+                    }
+                    if (event) allEvents.push(event);
+                }
+            }
+            
+            allEvents.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+            
+            const total = allEvents.length;
+            const start = (page - 1) * limit;
+            const end = start + parseInt(limit, 10);
+            const paginatedEvents = allEvents.slice(start, end);
+
+            res.json({ events: paginatedEvents, total });
+        });
+    } catch (error) {
+        console.error("Chronicles Error:", error);
+        res.status(500).json({ error: 'Failed to fetch chronicles.', details: error.message });
+    }
+});
 
 // --- First Run Setup ---
 app.post('/api/first-run', async (req, res) => {
@@ -618,7 +759,7 @@ app.post('/api/actions/apply-modifier', async (req, res) => {
                 reason,
                 appliedById,
                 overrides,
-                guildId: guildId, 
+                guildId: guildId || null, 
             });
 
             const finalEffects = overrides?.effects || definition.effects;

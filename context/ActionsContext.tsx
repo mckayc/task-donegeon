@@ -41,6 +41,7 @@ export interface ActionsDispatch {
   completeQuest: (completionData: Omit<QuestCompletion, 'id'>) => Promise<void>;
   approveQuestCompletion: (completionId: string, note?: string) => Promise<void>;
   rejectQuestCompletion: (completionId: string, note?: string) => Promise<void>;
+  completeCheckpoint: (questId: string) => Promise<void>;
 
   purchaseMarketItem: (assetId: string, marketId: string, user: User, costGroupIndex: number) => Promise<void>;
   approvePurchaseRequest: (requestId: string, approverId: string) => Promise<void>;
@@ -291,6 +292,19 @@ export const ActionsProvider: React.FC<{ children: ReactNode }> = ({ children })
             const result = await apiRequest('POST', `/api/actions/reject-quest/${id}`, { note });
             if (result?.updatedCompletion) {
                 dataDispatch({ type: 'UPDATE_DATA', payload: { questCompletions: [result.updatedCompletion] } });
+            }
+        },
+        completeCheckpoint: async (questId) => {
+            if (!currentUser) return;
+            const result = await apiRequest('POST', `/api/actions/complete-checkpoint`, { questId, userId: currentUser.id });
+            if (result) {
+                const { updatedUser, updatedQuest, newCompletion, newUserTrophies, newNotifications } = result;
+                if (updatedUser) updateUser(updatedUser.id, updatedUser);
+                if (updatedQuest) dataDispatch({ type: 'UPDATE_DATA', payload: { quests: [updatedQuest] }});
+                if (newCompletion) dataDispatch({ type: 'UPDATE_DATA', payload: { questCompletions: [newCompletion] }});
+                if (newUserTrophies?.length) dataDispatch({ type: 'UPDATE_DATA', payload: { userTrophies: newUserTrophies } });
+                if (newNotifications?.length) dataDispatch({ type: 'UPDATE_DATA', payload: { systemNotifications: newNotifications } });
+                addNotification({ type: 'success', message: `Checkpoint complete!` });
             }
         },
 

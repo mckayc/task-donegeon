@@ -635,7 +635,8 @@ app.post('/api/data/import-assets', asyncMiddleware(async (req, res) => {
                 q.endDateTime = q.endDateTime || null;
                 q.startTime = q.startTime || null;
                 q.endTime = q.endTime || null;
-                q.nextQuestId = q.nextQuestId || null;
+                q.checkpoints = q.checkpoints || undefined;
+                q.checkpointCompletions = q.checkpointCompletions || undefined;
                 q.groupId = q.groupId === undefined ? null : q.groupId;
                 
                 if (typeof q.allDay !== 'boolean') q.allDay = !(q.startTime || q.endTime);
@@ -644,7 +645,7 @@ app.post('/api/data/import-assets', asyncMiddleware(async (req, res) => {
                 if (q.type === 'Duty') {
                     q.rrule = q.rrule || 'FREQ=DAILY';
                     q.availabilityCount = null;
-                } else { // Venture
+                } else { // Venture or Journey
                     q.rrule = null;
                     if (typeof q.availabilityCount !== 'number') q.availabilityCount = null;
                 }
@@ -1208,7 +1209,6 @@ actionsRouter.post('/approve-quest/:id', asyncMiddleware(async (req, res) => {
         const user = completion.user;
         const quest = completion.quest;
         let updatedUser = null;
-        let newNotificationsForUnlock = [];
 
         if (user && quest) {
             const rewardTypes = await manager.find(RewardTypeDefinitionEntity);
@@ -1231,30 +1231,10 @@ actionsRouter.post('/approve-quest/:id', asyncMiddleware(async (req, res) => {
 
             updatedUser = await manager.save(updateTimestamps(user));
 
-            if (quest.nextQuestId) {
-                const nextQuest = await manager.findOneBy(QuestEntity, { id: quest.nextQuestId });
-                if (nextQuest) {
-                    const unlockNotification = manager.create(SystemNotificationEntity, {
-                        id: `sysnotif-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
-                        type: 'QuestAssigned',
-                        message: `You've unlocked a new quest: "${nextQuest.title}"!`,
-                        recipientUserIds: [user.id],
-                        readByUserIds: [],
-                        timestamp: new Date().toISOString(),
-                        guildId: nextQuest.guildId || null,
-                        link: 'Quests'
-                    });
-                    const savedNotification = await manager.save(updateTimestamps(unlockNotification, true));
-                    newNotificationsForUnlock.push(savedNotification);
-                }
-            }
-
-            const { newUserTrophies, newNotifications: trophyNotifications } = await checkAndAwardTrophies(manager, user.id, completion.guildId);
-
-            const allNewNotifications = [...trophyNotifications, ...newNotificationsForUnlock];
+            const { newUserTrophies, newNotifications } = await checkAndAwardTrophies(manager, user.id, completion.guildId);
 
             updateEmitter.emit('update');
-            res.json({ updatedUser, updatedCompletion, newUserTrophies, newNotifications: allNewNotifications });
+            res.json({ updatedUser, updatedCompletion, newUserTrophies, newNotifications });
         } else {
             updateEmitter.emit('update');
             res.json({ updatedCompletion });
@@ -1274,6 +1254,92 @@ actionsRouter.post('/reject-quest/:id', asyncMiddleware(async (req, res) => {
     const updatedCompletion = await dataSource.manager.save(updateTimestamps(completion));
     updateEmitter.emit('update');
     res.json({ updatedCompletion });
+}));
+
+actionsRouter.post('/complete-checkpoint', asyncMiddleware(async (req, res) => {
+    const { questId, userId } = req.body;
+    await dataSource.transaction(async manager => {
+        const quest = await manager.findOneBy(QuestEntity, { id: questId });
+        const user = await manager.findOneBy(UserEntity, { id: userId });
+
+        if (!quest || !user || quest.type !== 'Journey' || !quest.checkpoints) {
+            return res.status(404).json({ error: 'Valid journey quest and user not found.' });
+        }
+        
+        if (!quest.checkpointCompletions) {
+            quest.checkpointCompletions = {};
+        }
+        
+        const completedCount = quest.checkpointCompletions[userId] || 0;
+        const totalCheckpoints = quest.checkpoints.length;
+
+        if (completedCount >= totalCheckpoints) {
+            return res.status(400).json({ error: 'Journey already completed.' });
+        }
+
+        const currentCheckpoint = quest.checkpoints[completedCount];
+        
+        // --- Award Rewards ---
+        const rewardTypes = await manager.find(RewardTypeDefinitionEntity);
+        const isGuildScope = !!quest.guildId;
+        let balances = isGuildScope ? user.guildBalances[quest.guildId] : { purse: user.personalPurse, experience: user.personalExperience };
+        if (!balances) {
+            balances = { purse: {}, experience: {} };
+            if (isGuildScope) user.guildBalances[quest.guildId] = balances;
+        }
+        if (!balances.purse) balances.purse = {};
+        if (!balances.experience) balances.experience = {};
+
+        currentCheckpoint.rewards.forEach(reward => {
+            const rewardDef = rewardTypes.find(rt => rt.id === reward.rewardTypeId);
+            if (rewardDef) {
+                const target = rewardDef.category === 'Currency' ? balances.purse : balances.experience;
+                target[reward.rewardTypeId] = (target[reward.rewardTypeId] || 0) + reward.amount;
+            }
+        });
+
+        // --- Update Quest Progress ---
+        quest.checkpointCompletions[userId] = completedCount + 1;
+        const updatedQuest = await manager.save(updateTimestamps(quest));
+        
+        const updatedUser = await manager.save(updateTimestamps(user));
+
+        // --- Award Trophy ---
+        let newUserTrophy = null;
+        if (currentCheckpoint.trophyId) {
+            const newTrophy = manager.create(UserTrophyEntity, {
+                id: `usertrophy-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+                userId,
+                trophyId: currentCheckpoint.trophyId,
+                awardedAt: new Date().toISOString(),
+                guildId: quest.guildId || null
+            });
+            newUserTrophy = await manager.save(updateTimestamps(newTrophy, true));
+        }
+
+        const isFinalCheckpoint = (completedCount + 1) === totalCheckpoints;
+        let newCompletion = null;
+        if (isFinalCheckpoint) {
+            // If it's the last checkpoint, also create a full QuestCompletion record
+            newCompletion = manager.create(QuestCompletionEntity, {
+                id: `qc-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+                userId: userId,
+                questId: questId,
+                completedAt: new Date().toISOString(),
+                status: 'Approved',
+                note: 'Journey Completed!',
+                guildId: quest.guildId
+            });
+            await manager.save(updateTimestamps(newCompletion, true));
+        }
+        
+        const { newUserTrophies, newNotifications } = await checkAndAwardTrophies(manager, user.id, quest.guildId);
+
+        if (newUserTrophy) newUserTrophies.push(newUserTrophy);
+
+        updateEmitter.emit('update');
+        res.status(200).json({ updatedUser, updatedQuest, newCompletion, newUserTrophies, newNotifications });
+    });
 }));
 
 actionsRouter.post('/purchase-item', asyncMiddleware(async (req, res) => {

@@ -7,6 +7,7 @@ import ToggleSwitch from '../user-interface/ToggleSwitch';
 import { bugLogger } from '../../utils/bugLogger';
 import { useAuthState } from '../../context/AuthContext';
 import { CheckCircleIcon } from '../user-interface/Icons';
+import { useActionsDispatch } from '../../context/ActionsContext';
 
 interface QuestDetailDialogProps {
   quest: Quest;
@@ -20,6 +21,7 @@ interface QuestDetailDialogProps {
 const QuestDetailDialog: React.FC<QuestDetailDialogProps> = ({ quest, onClose, onComplete, onToggleTodo, isTodo, dialogTitle }) => {
     const { settings, rewardTypes } = useData();
     const { currentUser } = useAuthState();
+    const { completeCheckpoint } = useActionsDispatch();
 
     useEffect(() => {
         if (bugLogger.isRecording()) {
@@ -35,7 +37,10 @@ const QuestDetailDialog: React.FC<QuestDetailDialogProps> = ({ quest, onClose, o
     };
 
     const handleComplete = () => {
-        if (onComplete) {
+        if (quest.type === QuestType.Journey && currentUser) {
+            completeCheckpoint(quest.id);
+            onClose(); // Close dialog immediately after action is dispatched
+        } else if (onComplete) {
             if (bugLogger.isRecording()) {
                 bugLogger.add({ type: 'ACTION', message: `Clicked 'Complete' in Quest Detail dialog for "${quest.title}".` });
             }

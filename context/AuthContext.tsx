@@ -90,51 +90,32 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         bugLogger.add({ type: 'ACTION', message: `Updating user ID: ${userId}` });
     }
 
-    // This implementation optimistically updates state. A functional update is tricky because
-    // we need access to the current user state, which can be stale in this closure.
-    // However, all current call sites pass an object, so we can proceed with a safer assumption.
+    let updatePayload: Partial<User>;
+
     if (typeof update === 'function') {
-        // This is the safest way to handle functional updates without creating a dependency on the `users` array,
-        // which would cause performance issues. All state updates happen within the `setUsers` callback.
-        setUsers(prevUsers => {
-            const userToUpdate = prevUsers.find(u => u.id === userId);
-            if (!userToUpdate) return prevUsers;
-
-            const updateData = update(userToUpdate);
-            const isFullObject = 'id' in updateData;
-
-            // Update current user state if they're the one being changed
-            _setCurrentUser(prevCurrentUser => 
-                prevCurrentUser?.id === userId ? { ...prevCurrentUser, ...updateData } : prevCurrentUser
-            );
-            
-            // Trigger API call if it's not a full sync object
-            if (Object.keys(updateData).length > 0 && !isFullObject) {
-                apiRequest('PUT', `/api/users/${userId}`, updateData).catch(error => {
-                    console.error("Failed to update user on server; optimistic update may be stale.", error);
-                });
-            }
-
-            // Return the updated list
-            return prevUsers.map(u => u.id === userId ? { ...u, ...updateData } : u);
-        });
-    } else {
-        // For simple object updates, we can determine the payload upfront.
-        const updateData = update;
-        const isFullObject = 'id' in updateData;
-        
-        // Optimistically update both `users` and `currentUser` states
-        setUsers(prevUsers => prevUsers.map(u => (u.id === userId ? { ...u, ...updateData } : u)));
-        _setCurrentUser(prevCurrentUser => (prevCurrentUser?.id === userId ? { ...prevCurrentUser, ...updateData } : prevCurrentUser));
-
-        // Trigger the API call only for partial updates originating from the UI
-        if (Object.keys(updateData).length > 0 && !isFullObject) {
-            apiRequest('PUT', `/api/users/${userId}`, updateData).catch(error => {
-                console.error("Failed to update user on server; optimistic update may be stale.", error);
-            });
+        const userToUpdate = users.find(u => u.id === userId);
+        if (!userToUpdate) {
+            console.error(`[updateUser] User with ID ${userId} not found.`);
+            addNotification({ type: 'error', message: 'Could not find user to update.'});
+            return;
         }
+        updatePayload = update(userToUpdate);
+    } else {
+        updatePayload = update;
     }
-  }, [apiRequest]);
+
+    // Now that the payload is stable, apply all optimistic updates and the API call.
+    setUsers(prevUsers => prevUsers.map(u => (u.id === userId ? { ...u, ...updatePayload } : u)));
+    _setCurrentUser(prevCurrentUser => (prevCurrentUser?.id === userId ? { ...prevCurrentUser, ...updatePayload } : prevCurrentUser));
+
+    const isFullObject = 'id' in updatePayload;
+    if (Object.keys(updatePayload).length > 0 && !isFullObject) {
+        apiRequest('PUT', `/api/users/${userId}`, updatePayload).catch(error => {
+            console.error("Failed to update user on server; optimistic update may be stale.", error);
+            // In a production app, one might add logic here to revert the optimistic update.
+        });
+    }
+  }, [apiRequest, users, addNotification]);
   
   const markUserAsOnboarded = useCallback((userId: string) => updateUser(userId, { hasBeenOnboarded: true }), [updateUser]);
 

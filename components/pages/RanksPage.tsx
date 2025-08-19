@@ -45,7 +45,7 @@ const RanksPage: React.FC = () => {
         }
 
         const xpForNext = (foundRank && foundNextRank) ? foundNextRank.xpThreshold - foundRank.xpThreshold : 0;
-        const xpIntoCurrent = foundRank ? currentTotalXp - foundRank.xpThreshold : 0;
+        const xpIntoCurrent = foundRank ? Math.max(0, currentTotalXp - foundRank.xpThreshold) : 0;
         const progress = (foundNextRank && xpForNext > 0) ? Math.min(100, (xpIntoCurrent / xpForNext) * 100) : 100;
         
         return {

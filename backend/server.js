@@ -1482,6 +1482,99 @@ actionsRouter.post('/cancel-purchase/:id', asyncMiddleware(async (req, res) => {
     });
 }));
 
+actionsRouter.post('/execute-exchange', asyncMiddleware(async (req, res) => {
+    const { userId, payItem, receiveItem, guildId } = req.body;
+
+    await dataSource.transaction(async manager => {
+        const user = await manager.findOneBy(UserEntity, { id: userId });
+        if (!user) {
+            return res.status(404).json({ error: 'User not found.' });
+        }
+
+        const settingRow = await manager.findOneBy(SettingEntity, { id: 1 });
+        const settings = settingRow ? settingRow.settings : INITIAL_SETTINGS;
+        
+        const rewardTypes = await manager.find(RewardTypeDefinitionEntity);
+        const fromReward = rewardTypes.find(rt => rt.id === payItem.rewardTypeId);
+        const toReward = rewardTypes.find(rt => rt.id === receiveItem.rewardTypeId);
+
+        if (!fromReward || !toReward || fromReward.baseValue <= 0 || toReward.baseValue <= 0) {
+            return res.status(400).json({ error: 'Invalid or non-exchangeable reward types selected.' });
+        }
+        
+        // --- Server-side validation of cost ---
+        const { currencyExchangeFeePercent, xpExchangeFeePercent } = settings.rewardValuation;
+        const feePercent = fromReward.category === 'Currency' ? currencyExchangeFeePercent : xpExchangeFeePercent;
+        const feeMultiplier = 1 + (Number(feePercent) / 100);
+
+        const toValueInReal = receiveItem.amount * toReward.baseValue;
+        const fromAmountBase = toValueInReal / fromReward.baseValue;
+        const provisionalTotalCost = fromAmountBase * feeMultiplier;
+        const totalCost = Math.ceil(provisionalTotalCost);
+        
+        // Security check: Recalculate cost on server and use it instead of client-provided amount
+        if (payItem.amount !== totalCost) {
+            console.warn(`[Exchange Mismatch] Client cost: ${payItem.amount}, Server cost: ${totalCost}. Using server cost.`);
+        }
+        
+        const isGuildScope = !!guildId;
+        let balances = isGuildScope ? user.guildBalances[guildId] : { purse: user.personalPurse, experience: user.personalExperience };
+        
+        if (!balances) {
+             balances = { purse: {}, experience: {} };
+             if (isGuildScope) user.guildBalances[guildId] = balances;
+        }
+        if (!balances.purse) balances.purse = {};
+        if (!balances.experience) balances.experience = {};
+
+        const fromBalance = (fromReward.category === 'Currency' ? balances.purse[fromReward.id] : balances.experience[fromReward.id]) || 0;
+
+        if (fromBalance < totalCost) {
+            return res.status(400).json({ error: 'Insufficient funds for this exchange.' });
+        }
+        
+        // --- Apply changes ---
+        if (fromReward.category === 'Currency') {
+            balances.purse[fromReward.id] = fromBalance - totalCost;
+        } else {
+            balances.experience[fromReward.id] = fromBalance - totalCost;
+        }
+
+        const toBalance = (toReward.category === 'Currency' ? balances.purse[toReward.id] : balances.experience[toReward.id]) || 0;
+        if (toReward.category === 'Currency') {
+            balances.purse[toReward.id] = toBalance + receiveItem.amount;
+        } else {
+            balances.experience[toReward.id] = toBalance + receiveItem.amount;
+        }
+        
+        if (isGuildScope) {
+            user.guildBalances[guildId] = balances;
+        } else {
+            user.personalPurse = balances.purse;
+            user.personalExperience = balances.experience;
+        }
+
+        const updatedUser = await manager.save(updateTimestamps(user));
+        
+        // Log the transaction
+        const newAdjustment = manager.create(AdminAdjustmentEntity, {
+            id: `adj-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+            userId,
+            adjusterId: userId, // Self-adjustment
+            type: 'Reward', // Using Reward/Setback for logging
+            rewards: [receiveItem],
+            setbacks: [{ rewardTypeId: fromReward.id, amount: totalCost }],
+            reason: `Exchanged ${totalCost} ${fromReward.name} for ${receiveItem.amount} ${toReward.name}.`,
+            adjustedAt: new Date().toISOString(),
+            guildId: guildId || null,
+        });
+        const savedAdjustment = await manager.save(updateTimestamps(newAdjustment, true));
+        
+        updateEmitter.emit('update');
+        res.json({ updatedUser, newAdjustment: savedAdjustment });
+    });
+}));
+
 
 // ... (The rest of the file will go here)
 

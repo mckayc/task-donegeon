@@ -1,3 +1,4 @@
+
 import React, { useMemo, useState, useEffect } from 'react';
 import { useData } from '../../context/DataProvider';
 import { useUIState, useUIDispatch } from '../../context/UIContext';
@@ -114,8 +115,8 @@ const Dashboard: React.FC = () => {
         }
         
         const xpForNextRank = nextRank ? nextRank.xpThreshold - currentRank.xpThreshold : 0;
-        const xpIntoCurrentRank = totalXp - currentRank.xpThreshold;
-        const progressPercentage = nextRank ? Math.min(100, (xpIntoCurrentRank / xpForNextRank) * 100) : 100;
+        const xpIntoCurrentRank = Math.max(0, totalXp - currentRank.xpThreshold);
+        const progressPercentage = (nextRank && xpForNextRank > 0) ? Math.min(100, (xpIntoCurrentRank / xpForNextRank) * 100) : 100;
         const currentLevel = sortedRanks.findIndex(r => r.id === currentRank.id) + 1;
         
         return { totalXp, currentRank, nextRank, progressPercentage, currentLevel };

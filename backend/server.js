@@ -1485,12 +1485,12 @@ app.get('/api/chronicles', asyncMiddleware(async(req, res) => {
     }
 
     // Quest Completions
-    const completions = await manager.find(QuestCompletionEntity, { where: whereConditions, relations: ['user'] });
+    const completions = await manager.find(QuestCompletionEntity, { where: whereConditions, relations: ['user', 'quest'] });
     allEvents.push(...completions.map(c => ({
         id: `quest-${c.id}`, originalId: c.id, date: c.completedAt, type: 'Quest',
-        title: `${c.user?.gameName || 'Unknown'} completed "${questMap.get(c.questId)?.title || 'Unknown Quest'}"`,
-        note: c.note, status: c.status, icon: questMap.get(c.questId)?.icon || '📜',
-        color: 'hsl(158 84% 39%)', userId: c.userId, questType: questMap.get(c.questId)?.type, guildId: c.guildId
+        title: `${c.user?.gameName || 'Unknown'} completed "${c.quest?.title || 'Unknown Quest'}"`,
+        note: c.note, status: c.status, icon: c.quest?.icon || '📜',
+        color: 'hsl(158 84% 39%)', userId: c.userId, questType: c.quest?.type, guildId: c.guildId
     })));
 
     // Purchase Requests

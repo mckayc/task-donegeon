@@ -1207,6 +1207,8 @@ actionsRouter.post('/approve-quest/:id', asyncMiddleware(async (req, res) => {
         const updatedCompletion = await manager.save(updateTimestamps(completion));
         const user = completion.user;
         const quest = completion.quest;
+        let updatedUser = null;
+        let newNotificationsForUnlock = [];
 
         if (user && quest) {
             const rewardTypes = await manager.find(RewardTypeDefinitionEntity);
@@ -1227,11 +1229,32 @@ actionsRouter.post('/approve-quest/:id', asyncMiddleware(async (req, res) => {
                 }
             });
 
-            const updatedUser = await manager.save(updateTimestamps(user));
-            const { newUserTrophies, newNotifications } = await checkAndAwardTrophies(manager, user.id, completion.guildId);
+            updatedUser = await manager.save(updateTimestamps(user));
+
+            if (quest.nextQuestId) {
+                const nextQuest = await manager.findOneBy(QuestEntity, { id: quest.nextQuestId });
+                if (nextQuest) {
+                    const unlockNotification = manager.create(SystemNotificationEntity, {
+                        id: `sysnotif-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+                        type: 'QuestAssigned',
+                        message: `You've unlocked a new quest: "${nextQuest.title}"!`,
+                        recipientUserIds: [user.id],
+                        readByUserIds: [],
+                        timestamp: new Date().toISOString(),
+                        guildId: nextQuest.guildId || null,
+                        link: 'Quests'
+                    });
+                    const savedNotification = await manager.save(updateTimestamps(unlockNotification, true));
+                    newNotificationsForUnlock.push(savedNotification);
+                }
+            }
+
+            const { newUserTrophies, newNotifications: trophyNotifications } = await checkAndAwardTrophies(manager, user.id, completion.guildId);
+
+            const allNewNotifications = [...trophyNotifications, ...newNotificationsForUnlock];
 
             updateEmitter.emit('update');
-            res.json({ updatedUser, updatedCompletion, newUserTrophies, newNotifications });
+            res.json({ updatedUser, updatedCompletion, newUserTrophies, newNotifications: allNewNotifications });
         } else {
             updateEmitter.emit('update');
             res.json({ updatedCompletion });

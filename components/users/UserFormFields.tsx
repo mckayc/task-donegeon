@@ -7,7 +7,6 @@ interface UserFormFieldsProps {
     lastName: string;
     username: string;
     email: string;
-    gameName: string;
     birthday: string;
     aboutMe: string;
   };
@@ -24,7 +23,6 @@ const UserFormFields: React.FC<UserFormFieldsProps> = ({ formData, handleChange,
       </div>
       <Input label="Username" id={`${isEditMode ? 'edit-' : 'reg-'}username`} name="username" value={formData.username} onChange={handleChange} required />
       <Input label="Email" id={`${isEditMode ? 'edit-' : 'reg-'}email`} name="email" type="email" value={formData.email} onChange={handleChange} required />
-      <Input label="Game Name (Nickname)" id={`${isEditMode ? 'edit-' : 'reg-'}gameName`} name="gameName" value={formData.gameName} onChange={handleChange} required />
       <Input label="Birthday" id={`${isEditMode ? 'edit-' : 'reg-'}birthday`} name="birthday" type="date" value={formData.birthday} onChange={handleChange} required />
       <Input as="textarea" label="About Me (Public)" id={`${isEditMode ? 'edit-' : 'reg-'}aboutMe`} name="aboutMe" value={formData.aboutMe} onChange={handleChange} placeholder="A short bio about interests, hobbies, or personality. This helps the AI generate personalized content." />
     </>

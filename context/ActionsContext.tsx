@@ -104,6 +104,7 @@ export interface ActionsDispatch {
   acceptTrade: (tradeId: string) => Promise<void>;
   cancelOrRejectTrade: (tradeId: string, action: 'cancelled' | 'rejected') => Promise<void>;
   sendGift: (recipientId: string, assetId: string, guildId: string) => Promise<void>;
+  cloneUser: (userId: string) => Promise<User | null>;
 }
 
 const ActionsDispatchContext = createContext<ActionsDispatch | undefined>(undefined);
@@ -460,6 +461,16 @@ export const ActionsProvider: React.FC<{ children: ReactNode }> = ({ children })
         acceptTrade: (id) => apiRequest('POST', `/api/trades/accept/${id}`),
         cancelOrRejectTrade: (id, action) => apiRequest('POST', `/api/trades/resolve/${id}`, { action }),
         sendGift: (recipientId, assetId, guildId) => apiRequest('POST', '/api/gifts/send', { recipientId, assetId, guildId }),
+        cloneUser: async (userId: string) => {
+            if (bugLogger.isRecording()) {
+                bugLogger.add({ type: 'ACTION', message: `Cloning user ID: ${userId}` });
+            }
+            const result = await apiRequest('POST', `/api/users/clone/${userId}`);
+            if (result) {
+                addNotification({ type: 'success', message: `User "${result.gameName}" cloned successfully.` });
+            }
+            return result;
+        },
     };
 
     return (

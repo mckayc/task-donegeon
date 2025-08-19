@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { useData } from '../../context/DataProvider';
 import { useAuthState, useAuthDispatch } from '../../context/AuthContext';
@@ -13,11 +12,14 @@ import { useDebounce } from '../../hooks/useDebounce';
 import Input from '../user-interface/Input';
 import { useNotificationsDispatch } from '../../context/NotificationsContext';
 import { useShiftSelect } from '../../hooks/useShiftSelect';
+import { PencilIcon, CopyIcon, TrashIcon, AdjustmentsIcon } from '../user-interface/Icons';
+import { useActionsDispatch } from '../../context/ActionsContext';
 
 const UserManagementPage: React.FC = () => {
     const { settings } = useData();
     const { currentUser, users } = useAuthState();
-    const { deleteUsers } = useAuthDispatch(); // From AuthContext for local state management
+    const { deleteUsers } = useAuthDispatch();
+    const { cloneUser } = useActionsDispatch();
     
     const [searchTerm, setSearchTerm] = useState('');
     const [sortBy, setSortBy] = useState<'gameName-asc' | 'gameName-desc' | 'username-asc' | 'username-desc' | 'role-asc' | 'role-desc'>('gameName-asc');
@@ -116,7 +118,7 @@ const UserManagementPage: React.FC = () => {
                     {selectedUsers.length > 0 && (
                         <div className="flex items-center gap-2 p-2 bg-stone-900/50 rounded-lg">
                             <span className="text-sm font-semibold text-stone-300 px-2">{selectedUsers.length} selected</span>
-                            <Button size="sm" variant="secondary" onClick={() => handleEdit(pageUsers.find(u => u.id === selectedUsers[0])!)} disabled={selectedUsers.length !== 1}>Edit</Button>
+                            <Button size="sm" variant="secondary" onClick={() => cloneUser(selectedUsers[0])} disabled={selectedUsers.length !== 1}>Clone</Button>
                             <Button size="sm" variant="secondary" onClick={() => handleAdjust(pageUsers.find(u => u.id === selectedUsers[0])!)} disabled={selectedUsers.length !== 1}>Adjust</Button>
                             <Button size="sm" variant="destructive" onClick={() => handleDeleteRequest(selectedUsers)}>Delete</Button>
                         </div>
@@ -141,6 +143,7 @@ const UserManagementPage: React.FC = () => {
                                     <th className="p-4 font-semibold">Game Name</th>
                                     <th className="p-4 font-semibold">Username</th>
                                     <th className="p-4 font-semibold">Role</th>
+                                    <th className="p-4 font-semibold">Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -155,9 +158,7 @@ const UserManagementPage: React.FC = () => {
                                             />
                                         </td>
                                         <td className="p-4 font-semibold">
-                                            <button onClick={() => handleEdit(user)} className="hover:underline hover:text-accent transition-colors text-left">
-                                                {user.gameName}
-                                            </button>
+                                            {user.gameName}
                                         </td>
                                         <td className="p-4 text-stone-400">{user.username}</td>
                                         <td className="p-4">
@@ -168,6 +169,22 @@ const UserManagementPage: React.FC = () => {
                                             }`}>
                                                 {roleName(user.role)}
                                             </span>
+                                        </td>
+                                        <td className="p-4">
+                                            <div className="flex items-center gap-1">
+                                                <Button variant="ghost" size="icon" title="Edit" onClick={() => handleEdit(user)} className="h-8 w-8 text-stone-400 hover:text-white">
+                                                    <PencilIcon className="w-4 h-4" />
+                                                </Button>
+                                                <Button variant="ghost" size="icon" title="Clone" onClick={() => cloneUser(user.id)} className="h-8 w-8 text-stone-400 hover:text-white">
+                                                    <CopyIcon className="w-4 h-4" />
+                                                </Button>
+                                                <Button variant="ghost" size="icon" title="Adjust" onClick={() => handleAdjust(user)} className="h-8 w-8 text-stone-400 hover:text-white">
+                                                    <AdjustmentsIcon className="w-4 h-4" />
+                                                </Button>
+                                                <Button variant="ghost" size="icon" title="Delete" onClick={() => handleDeleteRequest([user.id])} className="h-8 w-8 text-red-400 hover:text-red-300 hover:bg-red-900/50">
+                                                    <TrashIcon className="w-4 h-4" />
+                                                </Button>
+                                            </div>
                                         </td>
                                     </tr>
                                 ))}

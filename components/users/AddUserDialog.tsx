@@ -5,6 +5,9 @@ import Button from '../user-interface/Button';
 import Input from '../user-interface/Input';
 import UserFormFields from './UserFormFields';
 import { useNotificationsDispatch } from '../../context/NotificationsContext';
+import { useData } from '../../context/DataProvider';
+import { SparklesIcon } from '../user-interface/Icons';
+import { GenerateContentResponse } from '@google/genai';
 
 interface AddUserDialogProps {
   onClose: () => void;
@@ -15,6 +18,7 @@ const AddUserDialog: React.FC<AddUserDialogProps> = ({ onClose, onUserAdded }) =
   const { addUser } = useAuthDispatch();
   const { users } = useAuthState();
   const { addNotification } = useNotificationsDispatch();
+  const { isAiConfigured } = useData();
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -30,9 +34,34 @@ const AddUserDialog: React.FC<AddUserDialogProps> = ({ onClose, onUserAdded }) =
     pin: '',
   });
   const [isSaving, setIsSaving] = useState(false);
+  const [isSuggesting, setIsSuggesting] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const handleSuggestGameName = async () => {
+    setIsSuggesting(true);
+    const { firstName, lastName, birthday, adminNotes } = formData;
+    const prompt = `Based on the following user details, suggest a single, creative, fantasy-themed game name. The name should be cool and inspiring. Details: First Name: ${firstName}, Last Name: ${lastName}, Birthday: ${birthday}, Admin Notes about user: ${adminNotes}. Return ONLY the suggested name as a single string, without any quotation marks or extra text.`;
+    
+    try {
+      const response = await fetch('/api/ai/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ model: 'gemini-2.5-flash', prompt })
+      });
+      if (!response.ok) throw new Error('Failed to get suggestion from AI.');
+      const result: GenerateContentResponse = await response.json();
+      const suggestedName = result.text.trim().replace(/"/g, '');
+      if (suggestedName) {
+        setFormData(p => ({ ...p, gameName: suggestedName }));
+      }
+    } catch (error) {
+      addNotification({ type: 'error', message: error instanceof Error ? error.message : 'Could not generate name.' });
+    } finally {
+      setIsSuggesting(false);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -93,6 +122,18 @@ const AddUserDialog: React.FC<AddUserDialogProps> = ({ onClose, onUserAdded }) =
             <Input label="Confirm Password" name="confirmPassword" type="password" value={formData.confirmPassword} onChange={handleChange} disabled={!formData.password} />
           </div>
           <Input label="PIN (optional, 4-10 digits)" name="pin" type="password" value={formData.pin} onChange={handleChange} />
+          
+          <div className="pt-4 border-t border-stone-700/60">
+            <label htmlFor="gameName" className="block text-sm font-medium text-stone-300 mb-1">Game Name (Nickname)</label>
+            <div className="flex items-center gap-2">
+              <Input id="gameName" name="gameName" value={formData.gameName} onChange={handleChange} required className="flex-grow" />
+              {isAiConfigured && (
+                <Button type="button" variant="secondary" onClick={handleSuggestGameName} disabled={isSuggesting} className="h-10 px-3">
+                  <SparklesIcon className={`w-5 h-5 ${isSuggesting ? 'animate-spin' : ''}`} />
+                </Button>
+              )}
+            </div>
+          </div>
         </form>
         <div className="flex justify-end space-x-4 pt-4 mt-auto">
             <Button type="button" variant="secondary" onClick={onClose} disabled={isSaving}>Cancel</Button>

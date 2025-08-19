@@ -927,6 +927,33 @@ usersRouter.post('/', asyncMiddleware(async (req, res) => {
     res.status(201).json(newUser);
 }));
 
+usersRouter.post('/clone/:id', asyncMiddleware(async (req, res) => {
+    const userToClone = await userRepo.findOneBy({ id: req.params.id });
+    if (!userToClone) return res.status(404).send('User not found');
+
+    const suffix = Date.now().toString().slice(-5);
+    const newUser = userRepo.create({
+        ...userToClone,
+        id: `user-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+        username: `${userToClone.username}${suffix}`,
+        email: `clone_${suffix}_${userToClone.email}`,
+        gameName: `${userToClone.gameName} (Copy)`,
+        password: null, // Cloned users should reset their password
+        hasBeenOnboarded: false,
+    });
+
+    const savedUser = await userRepo.save(updateTimestamps(newUser, true));
+
+    const defaultGuild = await guildRepo.findOne({ where: { isDefault: true }, relations: ['members'] });
+    if (defaultGuild) {
+        defaultGuild.members.push(savedUser);
+        await guildRepo.save(updateTimestamps(defaultGuild));
+    }
+    
+    updateEmitter.emit('update');
+    res.status(201).json(savedUser);
+}));
+
 usersRouter.put('/:id', asyncMiddleware(async (req, res) => {
     const { id } = req.params;
     const userData = req.body;
@@ -2793,7 +2820,7 @@ backupsRouter.get('/download/:filename', (req, res) => {
             }
         }
     });
-});
+}));
 
 backupsRouter.delete('/:filename', asyncMiddleware(async (req, res) => {
     const filename = path.basename(req.params.filename);

@@ -1,4 +1,5 @@
 
+
 require("reflect-metadata");
 const express = require('express');
 const cors = require('cors');
@@ -14,7 +15,7 @@ const {
     QuestCompletionEntity, PurchaseRequestEntity, GuildEntity, RankEntity, TrophyEntity,
     UserTrophyEntity, AdminAdjustmentEntity, GameAssetEntity, SystemLogEntity, ThemeDefinitionEntity,
     ChatMessageEntity, SystemNotificationEntity, ScheduledEventEntity, SettingEntity, LoginHistoryEntity,
-    BugReportEntity, ModifierDefinitionEntity, AppliedModifierEntity, allEntities
+    BugReportEntity, ModifierDefinitionEntity, AppliedModifierEntity, RotationEntity, allEntities
 } = require('./entities');
 const { EventEmitter } = require('events');
 

@@ -26,6 +26,7 @@ class LoginHistory {}
 class BugReport {}
 class SetbackDefinition {}
 class AppliedSetback {}
+class Rotation {}
 
 const BugReportEntity = new EntitySchema({
     name: "BugReport",
@@ -350,12 +351,31 @@ const AdminAdjustmentEntity = new EntitySchema({
     }
 });
 
+const RotationEntity = new EntitySchema({
+    name: "Rotation",
+    target: Rotation,
+    columns: {
+        id: { primary: true, type: "varchar" },
+        name: { type: "varchar" },
+        description: { type: "text" },
+        questIds: { type: "simple-array" },
+        userIds: { type: "simple-array" },
+        activeDays: { type: "simple-array" },
+        frequency: { type: "varchar" },
+        lastAssignmentDate: { type: "varchar", nullable: true },
+        lastUserIndex: { type: "integer" },
+        lastQuestIndex: { type: "integer" },
+        createdAt: { type: "varchar", nullable: true },
+        updatedAt: { type: "varchar", nullable: true },
+    }
+});
+
 const allEntities = [
     UserEntity, QuestEntity, QuestGroupEntity, MarketEntity, RewardTypeDefinitionEntity,
     QuestCompletionEntity, PurchaseRequestEntity, GuildEntity, RankEntity, TrophyEntity,
     UserTrophyEntity, AdminAdjustmentEntity, GameAssetEntity, SystemLogEntity, ThemeDefinitionEntity,
     ChatMessageEntity, SystemNotificationEntity, ScheduledEventEntity, SettingEntity, LoginHistoryEntity,
-    BugReportEntity, SetbackDefinitionEntity, AppliedSetbackEntity
+    BugReportEntity, SetbackDefinitionEntity, AppliedSetbackEntity, RotationEntity
 ];
 
 module.exports = { 
@@ -364,5 +384,5 @@ module.exports = {
     QuestCompletionEntity, PurchaseRequestEntity, GuildEntity, RankEntity, TrophyEntity,
     UserTrophyEntity, AdminAdjustmentEntity, GameAssetEntity, SystemLogEntity, ThemeDefinitionEntity,
     ChatMessageEntity, SystemNotificationEntity, ScheduledEventEntity, SettingEntity, LoginHistoryEntity,
-    BugReportEntity, SetbackDefinitionEntity, AppliedSetbackEntity
+    BugReportEntity, SetbackDefinitionEntity, AppliedSetbackEntity, RotationEntity
 };

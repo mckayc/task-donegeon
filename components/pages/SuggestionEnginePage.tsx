@@ -1,5 +1,3 @@
-
-
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import Button from '../user-interface/Button';
 import Input from '../user-interface/Input';
@@ -277,58 +275,11 @@ const SuggestionEnginePage: React.FC = () => {
                     </Card>
                 </div>
             </div>
-
-            {dialogToShow && aiGeneratedData && (
-                <>
-                    {(dialogToShow === 'Ventures' || dialogToShow === 'Duties') && (
-                        <CreateQuestDialog
-                            key={JSON.stringify(aiGeneratedData)}
-                            mode="ai-creation"
-                            initialData={{ ...aiGeneratedData, type: dialogToShow === 'Duties' ? QuestType.Duty : QuestType.Venture }}
-                            onClose={handleCloseDialog}
-                            onTryAgain={handleGenerate}
-                            isGenerating={isLoading}
-                            onJourneySaved={handleCloseDialog}
-                        />
-                    )}
-                     {dialogToShow === 'Items' && (
-                        <EditGameAssetDialog
-                            key={JSON.stringify(aiGeneratedData)}
-                            assetToEdit={null}
-                            initialData={{
-                                ...aiGeneratedData,
-                                url: `https://placehold.co/150/FFFFFF/000000?text=${encodeURIComponent(aiGeneratedData.icon)}`
-                            }}
-                            onClose={handleCloseDialog}
-                            mode="ai-creation"
-                            onTryAgain={handleGenerate}
-                            isGenerating={isLoading}
-                        />
-                    )}
-                     {dialogToShow === 'Trophies' && (
-                        <EditTrophyDialog
-                            key={JSON.stringify(aiGeneratedData)}
-                            trophy={null}
-                            initialData={aiGeneratedData}
-                            onClose={handleCloseDialog}
-                            mode="ai-creation"
-                            onTryAgain={handleGenerate}
-                            isGenerating={isLoading}
-                        />
-                    )}
-                     {dialogToShow === 'Markets' && (
-                        <EditMarketDialog
-                            key={JSON.stringify(aiGeneratedData)}
-                            market={null}
-                            initialData={aiGeneratedData}
-                            onClose={handleCloseDialog}
-                            mode="ai-creation"
-                            onTryAgain={handleGenerate}
-                            isGenerating={isLoading}
-                        />
-                    )}
-                </>
-            )}
+            {dialogToShow === 'Ventures' && <CreateQuestDialog initialData={{...aiGeneratedData, type: QuestType.Venture}} onClose={handleCloseDialog} mode="ai-creation" onTryAgain={handleGenerate} isGenerating={isLoading} onJourneySaved={handleCloseDialog} />}
+            {dialogToShow === 'Duties' && <CreateQuestDialog initialData={{...aiGeneratedData, type: QuestType.Duty}} onClose={handleCloseDialog} mode="ai-creation" onTryAgain={handleGenerate} isGenerating={isLoading} onJourneySaved={handleCloseDialog} />}
+            {dialogToShow === 'Items' && <EditGameAssetDialog assetToEdit={null} initialData={aiGeneratedData} onClose={handleCloseDialog} mode="ai-creation" onTryAgain={handleGenerate} isGenerating={isLoading} />}
+            {dialogToShow === 'Trophies' && <EditTrophyDialog trophy={null} initialData={aiGeneratedData} onClose={handleCloseDialog} mode="ai-creation" onTryAgain={handleGenerate} isGenerating={isLoading} />}
+            {dialogToShow === 'Markets' && <EditMarketDialog market={null} initialData={aiGeneratedData} onClose={handleCloseDialog} mode="ai-creation" onTryAgain={handleGenerate} isGenerating={isLoading} />}
         </>
     );
 };

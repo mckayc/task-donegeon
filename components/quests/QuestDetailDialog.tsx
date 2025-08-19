@@ -5,6 +5,8 @@ import { useData } from '../../context/DataProvider';
 import Button from '../user-interface/Button';
 import ToggleSwitch from '../user-interface/ToggleSwitch';
 import { bugLogger } from '../../utils/bugLogger';
+import { useAuthState } from '../../context/AuthContext';
+import { CheckCircleIcon } from '../user-interface/Icons';
 
 interface QuestDetailDialogProps {
   quest: Quest;
@@ -17,6 +19,7 @@ interface QuestDetailDialogProps {
 
 const QuestDetailDialog: React.FC<QuestDetailDialogProps> = ({ quest, onClose, onComplete, onToggleTodo, isTodo, dialogTitle }) => {
     const { settings, rewardTypes } = useData();
+    const { currentUser } = useAuthState();
 
     useEffect(() => {
         if (bugLogger.isRecording()) {
@@ -45,7 +48,7 @@ const QuestDetailDialog: React.FC<QuestDetailDialogProps> = ({ quest, onClose, o
         return { name: rewardDef?.name || 'Unknown Reward', icon: rewardDef?.icon || '❓' };
     };
 
-    const renderRewardList = (rewards: RewardItem[], title: string, colorClass: string) => {
+    const renderRewardList = (rewards: RewardItem[], title: string, colorClass: string, isObfuscated: boolean = false) => {
         if (!rewards || rewards.length === 0) return null;
         return (
             <div>
@@ -53,14 +56,23 @@ const QuestDetailDialog: React.FC<QuestDetailDialogProps> = ({ quest, onClose, o
                 <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm font-semibold mt-1">
                     {rewards.map(r => {
                         const { name, icon } = getRewardInfo(r.rewardTypeId);
+                        const prefix = title.toLowerCase().includes(settings.terminology.negativePoint.toLowerCase()) ? '- ' : '+ ';
                         return <span key={`${r.rewardTypeId}-${r.amount}`} className="text-stone-300 flex items-center gap-1" title={name}>
-                            {title.toLowerCase().includes(settings.terminology.negativePoint.toLowerCase()) ? '- ' : '+ '}{r.amount} <span className="text-base">{icon}</span>
+                            {isObfuscated ? `??` : `${prefix}${r.amount}`} <span className="text-base">{icon}</span>
                         </span>
                     })}
                 </div>
             </div>
         );
     }
+    
+    const journeyProgress = useMemo(() => {
+        if (quest.type !== QuestType.Journey || !currentUser) return { completed: 0, total: 0, currentIdx: 0 };
+        const completed = quest.checkpointCompletions?.[currentUser.id] || 0;
+        const total = quest.checkpoints?.length || 0;
+        return { completed, total, currentIdx: completed };
+    }, [quest, currentUser]);
+
 
     const themeClasses = quest.type === QuestType.Duty
       ? 'bg-sky-950 border-sky-800'
@@ -115,8 +127,33 @@ const QuestDetailDialog: React.FC<QuestDetailDialogProps> = ({ quest, onClose, o
                         </div>
                     )}
 
+                    {quest.type === QuestType.Journey && quest.checkpoints && (
+                        <div className="space-y-3 pt-4 border-t border-white/10">
+                            <h3 className="font-bold text-lg text-stone-200">Checkpoints</h3>
+                            {quest.checkpoints.map((cp, idx) => {
+                                const isCompleted = idx < journeyProgress.completed;
+                                const isCurrent = idx === journeyProgress.currentIdx;
+                                const isFuture = idx > journeyProgress.currentIdx;
+
+                                return (
+                                    <div key={cp.id} className={`p-3 rounded-lg border-l-4 ${isCompleted ? 'bg-green-950/50 border-green-600' : isCurrent ? 'bg-blue-950/50 border-blue-500' : 'bg-stone-800/50 border-stone-600'}`}>
+                                        <div className="flex items-center gap-2">
+                                            {isCompleted && <CheckCircleIcon className="w-5 h-5 text-green-500 flex-shrink-0" />}
+                                            <p className={`font-semibold ${isCompleted ? 'text-stone-400 line-through' : 'text-stone-200'}`}>Checkpoint {idx + 1}</p>
+                                        </div>
+                                        {!isFuture && <p className="text-sm text-stone-300 mt-1">{cp.description}</p>}
+                                        <div className="mt-2">
+                                            {renderRewardList(cp.rewards, `Checkpoint ${settings.terminology.points}`, 'text-sky-400', isFuture)}
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    )}
+
+
                     <div className="space-y-3 pt-4 border-t border-white/10">
-                        {renderRewardList(quest.rewards, settings.terminology.points, 'text-green-400')}
+                        {renderRewardList(quest.rewards, `Final ${settings.terminology.points}`, 'text-green-400')}
                         {renderRewardList(quest.lateSetbacks, `Late ${settings.terminology.negativePoints}`, 'text-yellow-400')}
                         {renderRewardList(quest.incompleteSetbacks, `Incomplete ${settings.terminology.negativePoints}`, 'text-red-400')}
                     </div>
@@ -133,7 +170,9 @@ const QuestDetailDialog: React.FC<QuestDetailDialogProps> = ({ quest, onClose, o
                             />
                         )}
                         {onComplete && (
-                            <Button onClick={handleComplete}>Complete</Button>
+                            <Button onClick={handleComplete}>
+                                {quest.type === QuestType.Journey ? 'Complete Checkpoint' : 'Complete'}
+                            </Button>
                         )}
                     </div>
                 </div>

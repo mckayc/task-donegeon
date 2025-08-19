@@ -1,4 +1,5 @@
 
+
 import React, { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import { Role, ScheduledEvent, Quest, QuestType, ChronicleEvent, User, AppMode, RewardTypeDefinition, RewardItem } from '../../types';
 import Card from '../user-interface/Card';

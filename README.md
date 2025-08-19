@@ -123,4 +123,24 @@ This phase introduces major new creative outlets and systems for deeper engageme
   "rewrites": [
     { "source": "/api/(.*)", "destination": "/backend/server.js" }
   ]
+}--- START OF FILE vercel.json ---
+
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "package.json",
+      "use": "@vercel/static-build",
+      "config": {
+        "distDir": "dist"
+      }
+    },
+    {
+      "src": "backend/server.js",
+      "use": "@vercel/node"
+    }
+  ],
+  "rewrites": [
+    { "source": "/api/(.*)", "destination": "/backend/server.js" }
+  ]
 }

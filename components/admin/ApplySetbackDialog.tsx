@@ -30,9 +30,12 @@ const ApplySetbackDialog: React.FC<ApplyModifierDialogProps> = ({ setback: modif
     }, [quests]);
 
     const handleAddEffect = () => {
+        const newEffect: ModifierEffect = formData.category === 'Bane'
+            ? { type: ModifierEffectType.CloseMarket, marketIds: [], durationHours: 24 }
+            : { type: ModifierEffectType.GrantRewards, rewards: [] };
         setFormData(prev => ({
             ...prev,
-            effects: [...prev.effects, { type: ModifierEffectType.DeductRewards, rewards: [] }]
+            effects: [...prev.effects, newEffect]
         }));
     };
 
@@ -40,39 +43,71 @@ const ApplySetbackDialog: React.FC<ApplyModifierDialogProps> = ({ setback: modif
         setFormData(prev => ({ ...prev, effects: prev.effects.filter((_, i) => i !== index) }));
     };
     
-    const handleEffectChange = (index: number, newEffect: ModifierEffect) => {
+    const handleEffectTypeChange = (effectIndex: number, newType: ModifierEffectType) => {
         setFormData(prev => {
             const newEffects = [...prev.effects];
-            newEffects[index] = newEffect;
+            let newEffect: ModifierEffect;
+            switch(newType) {
+                case ModifierEffectType.DeductRewards: newEffect = { type: newType, rewards: [] }; break;
+                case ModifierEffectType.GrantRewards: newEffect = { type: newType, rewards: [] }; break;
+                case ModifierEffectType.CloseMarket: newEffect = { type: newType, marketIds: [], durationHours: 24 }; break;
+                case ModifierEffectType.OpenMarket: newEffect = { type: newType, marketIds: [], durationHours: 24 }; break;
+                case ModifierEffectType.MarketDiscount: newEffect = { type: newType, marketId: '', discountPercent: 10, durationHours: 24 }; break;
+                default:
+                    // Should not happen, but as a fallback, keep the old effect
+                    newEffect = newEffects[effectIndex];
+            }
+            newEffects[effectIndex] = newEffect;
+            return { ...prev, effects: newEffects };
+        });
+    };
+
+     const handleEffectPropChange = (effectIndex: number, prop: string, value: any) => {
+        setFormData(prev => {
+            const newEffects = JSON.parse(JSON.stringify(prev.effects));
+            const effect = newEffects[effectIndex];
+            if(effect) {
+                (effect as any)[prop] = value;
+            }
             return { ...prev, effects: newEffects };
         });
     };
     
     const handleRewardChange = (effectIndex: number) => (itemIndex: number, field: keyof RewardItem, value: string | number) => {
-        const effect = formData.effects[effectIndex];
-        if (effect.type === ModifierEffectType.DeductRewards || effect.type === ModifierEffectType.GrantRewards) {
-            const newRewards = [...effect.rewards];
-            newRewards[itemIndex] = { ...newRewards[itemIndex], [field]: field === 'amount' ? Math.max(0.01, parseFloat(String(value)) || 0) : value };
-            handleEffectChange(effectIndex, { ...effect, rewards: newRewards });
-        }
+        setFormData(prev => {
+            const newEffects = JSON.parse(JSON.stringify(prev.effects));
+            const effect = newEffects[effectIndex];
+            if (effect.type === ModifierEffectType.DeductRewards || effect.type === ModifierEffectType.GrantRewards) {
+                const newRewards = effect.rewards;
+                newRewards[itemIndex] = { ...newRewards[itemIndex], [field]: field === 'amount' ? Math.max(0.01, parseFloat(String(value)) || 0) : value };
+                effect.rewards = newRewards;
+            }
+            return { ...prev, effects: newEffects };
+        });
     };
     
     const handleAddRewardToEffect = (effectIndex: number) => (rewardCat: RewardCategory) => {
-        const effect = formData.effects[effectIndex];
-        if (effect.type === ModifierEffectType.DeductRewards || effect.type === ModifierEffectType.GrantRewards) {
-            const defaultReward = rewardTypes.find(rt => rt.category === rewardCat);
-            if (!defaultReward) return;
-            const newRewards = [...effect.rewards, { rewardTypeId: defaultReward.id, amount: 1 }];
-            handleEffectChange(effectIndex, { ...effect, rewards: newRewards });
-        }
+        setFormData(prev => {
+            const newEffects = JSON.parse(JSON.stringify(prev.effects));
+            const effect = newEffects[effectIndex];
+            if (effect.type === ModifierEffectType.DeductRewards || effect.type === ModifierEffectType.GrantRewards) {
+                const defaultReward = rewardTypes.find(rt => rt.category === rewardCat);
+                if (!defaultReward) return prev;
+                effect.rewards.push({ rewardTypeId: defaultReward.id, amount: 1 });
+            }
+            return { ...prev, effects: newEffects };
+        });
     };
 
-    const handleRemoveRewardFromEffect = (effectIndex: number) => (itemIndex: number) => {
-        const effect = formData.effects[effectIndex];
-        if (effect.type === ModifierEffectType.DeductRewards || effect.type === ModifierEffectType.GrantRewards) {
-            const newRewards = effect.rewards.filter((_, i) => i !== itemIndex);
-            handleEffectChange(effectIndex, { ...effect, rewards: newRewards });
-        }
+    const handleRemoveRewardFromEffect = (effectIndex: number) => (itemIndexToRemove: number) => {
+        setFormData(prev => {
+            const newEffects = JSON.parse(JSON.stringify(prev.effects));
+            const effect = newEffects[effectIndex];
+            if (effect.type === ModifierEffectType.DeductRewards || effect.type === ModifierEffectType.GrantRewards) {
+                effect.rewards = effect.rewards.filter((_: any, i: number) => i !== itemIndexToRemove);
+            }
+            return { ...prev, effects: newEffects };
+        });
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -104,6 +139,8 @@ const ApplySetbackDialog: React.FC<ApplyModifierDialogProps> = ({ setback: modif
             onClose();
         }
     };
+    
+    const isBane = formData.category === 'Bane';
 
     return (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
@@ -137,33 +174,49 @@ const ApplySetbackDialog: React.FC<ApplyModifierDialogProps> = ({ setback: modif
                             {formData.effects.map((effect, index) => (
                                 <div key={index} className="p-3 bg-stone-900/50 rounded-lg space-y-3">
                                     <div className="flex justify-between items-center">
-                                        <Input as="select" label="" value={effect.type} onChange={e => {
-                                            const newType = e.target.value as ModifierEffectType;
-                                            if (newType === ModifierEffectType.DeductRewards) handleEffectChange(index, { type: newType, rewards: [] });
-                                            else handleEffectChange(index, { type: newType, marketIds: [], durationHours: 24 });
-                                        }}>
-                                            <option value={ModifierEffectType.DeductRewards}>Deduct Rewards</option>
-                                            <option value={ModifierEffectType.CloseMarket}>Close Market</option>
+                                         <Input as="select" label="" value={effect.type} onChange={e => handleEffectTypeChange(index, e.target.value as ModifierEffectType)}>
+                                            {isBane ? (
+                                                <>
+                                                    <option value={ModifierEffectType.DeductRewards}>Deduct Rewards</option>
+                                                    <option value={ModifierEffectType.CloseMarket}>Close Market</option>
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <option value={ModifierEffectType.GrantRewards}>Grant Rewards</option>
+                                                    <option value={ModifierEffectType.OpenMarket}>Open Market</option>
+                                                    <option value={ModifierEffectType.MarketDiscount}>Market Discount</option>
+                                                </>
+                                            )}
                                         </Input>
                                         <Button type="button" variant="destructive" size="sm" onClick={() => handleRemoveEffect(index)}>Remove</Button>
                                     </div>
-                                    {effect.type === ModifierEffectType.DeductRewards && (
-                                        <RewardInputGroup category="setbacks" items={effect.rewards} onChange={handleRewardChange(index)} onAdd={handleAddRewardToEffect(index)} onRemove={handleRemoveRewardFromEffect(index)} />
+                                    {(effect.type === ModifierEffectType.DeductRewards || effect.type === ModifierEffectType.GrantRewards) && (
+                                        <RewardInputGroup category={effect.type === ModifierEffectType.DeductRewards ? 'setbacks' : 'rewards'} items={effect.rewards} onChange={handleRewardChange(index)} onAdd={handleAddRewardToEffect(index)} onRemove={handleRemoveRewardFromEffect(index)} />
                                     )}
-                                    {effect.type === ModifierEffectType.CloseMarket && (
+                                    {(effect.type === ModifierEffectType.CloseMarket || effect.type === ModifierEffectType.OpenMarket) && (
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                             <div>
-                                                <label className="block text-sm font-medium text-stone-300 mb-1">Markets to Close</label>
+                                                <label className="block text-sm font-medium text-stone-300 mb-1">Markets to Affect</label>
                                                 <select multiple value={effect.marketIds}
                                                     className="w-full h-32 px-4 py-2 bg-stone-700 border border-stone-600 rounded-md"
                                                     onChange={(e: React.ChangeEvent<HTMLSelectElement>) => {
                                                         const selectedValues = Array.from(e.target.selectedOptions, option => option.value);
-                                                        handleEffectChange(index, { ...effect, marketIds: selectedValues });
+                                                        handleEffectPropChange(index, 'marketIds', selectedValues);
                                                 }}>
                                                     {markets.map(m => <option key={m.id} value={m.id}>{m.title}</option>)}
                                                 </select>
                                             </div>
-                                            <Input label="Duration (Hours)" type="number" min="1" value={effect.durationHours} onChange={e => handleEffectChange(index, { ...effect, durationHours: parseInt(e.target.value) || 1 })} />
+                                            <Input label="Duration (Hours)" type="number" min="1" value={effect.durationHours} onChange={e => handleEffectPropChange(index, 'durationHours', parseInt(e.target.value) || 1)} />
+                                        </div>
+                                    )}
+                                    {effect.type === ModifierEffectType.MarketDiscount && (
+                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                            <Input as="select" label="Market" value={effect.marketId} onChange={e => handleEffectPropChange(index, 'marketId', e.target.value)}>
+                                                <option value="" disabled>Select...</option>
+                                                {markets.map(m => <option key={m.id} value={m.id}>{m.title}</option>)}
+                                            </Input>
+                                            <Input label="Discount (%)" type="number" min="1" max="100" value={effect.discountPercent} onChange={e => handleEffectPropChange(index, 'discountPercent', parseInt(e.target.value) || 1)} />
+                                            <Input label="Duration (Hours)" type="number" min="1" value={effect.durationHours} onChange={e => handleEffectPropChange(index, 'durationHours', parseInt(e.target.value) || 1)} />
                                         </div>
                                     )}
                                 </div>

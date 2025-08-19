@@ -1,29 +1,29 @@
-import { Market, User, IAppData, MarketConditionType, MarketCondition, QuestCompletionStatus, RewardItem, ScheduledEvent, GameAsset, SetbackEffectType, Quest, AppliedSetback, SetbackDefinition, MarketOpenStatus } from '../types';
+import { Market, User, IAppData, MarketConditionType, MarketCondition, QuestCompletionStatus, RewardItem, ScheduledEvent, GameAsset, ModifierEffectType, Quest, AppliedModifier, ModifierDefinition, MarketOpenStatus } from '../types';
 import { toYMD } from './quests';
 
 export const isMarketOpenForUser = (market: Market, user: User, allData: IAppData): MarketOpenStatus => {
-    // First, check if an active setback is closing this market for the user.
+    // First, check if an active modifier is closing this market for the user.
     const now = new Date();
-    const activeSetback = allData.appliedSetbacks.find(s => {
+    const activeModifier = allData.appliedModifiers.find(s => {
         if (s.userId !== user.id || s.status !== 'Active') return false;
         if (s.expiresAt && new Date(s.expiresAt) < now) return false; // Check for expiry
 
-        const definition = allData.setbackDefinitions.find(d => d.id === s.setbackDefinitionId);
+        const definition = allData.modifierDefinitions.find(d => d.id === s.modifierDefinitionId);
         const finalEffects = s.overrides?.effects || definition?.effects || [];
         
         return finalEffects.some(effect => 
-            effect.type === SetbackEffectType.CloseMarket && effect.marketIds.includes(market.id)
+            effect.type === ModifierEffectType.CloseMarket && effect.marketIds.includes(market.id)
         );
     });
 
-    if (activeSetback) {
-        const definition = allData.setbackDefinitions.find(d => d.id === activeSetback.setbackDefinitionId);
-        const redemptionQuest = allData.quests.find(q => q.id === activeSetback.redemptionQuestId);
+    if (activeModifier) {
+        const definition = allData.modifierDefinitions.find(d => d.id === activeModifier.modifierDefinitionId);
+        const redemptionQuest = allData.quests.find(q => q.id === activeModifier.redemptionQuestId);
         
         return {
             isOpen: false,
             reason: 'SETBACK',
-            message: `This market is closed due to the '${definition?.name || 'a setback'}'.`,
+            message: `This market is closed due to '${definition?.name || 'a modifier'}'.`,
             redemptionQuest: redemptionQuest
         };
     }

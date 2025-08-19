@@ -229,6 +229,7 @@ export type MarketStatus =
 
 export type MarketOpenStatus = {
     isOpen: true;
+    discountPercent?: number;
 } | {
     isOpen: false;
     reason: 'SETBACK' | 'CLOSED' | 'CONDITIONAL';
@@ -486,7 +487,7 @@ export interface Terminology {
   link_manage_trophies: string;
   link_manage_events: string;
   link_manage_rotations: string;
-  link_manage_setbacks: string;
+  link_boons_banes: string;
   link_appearance: string;
   link_approvals: string;
   link_manage_users: string;
@@ -506,7 +507,7 @@ export interface Terminology {
 
 export type Page = 'Dashboard' | 'Avatar' | 'Quests' | 'Marketplace' | 'Chronicles' | 'Guild' | 'Calendar' | 'Progress' | 'Trophies' | 'Ranks' | 'Manage Users' | 'Manage Rewards' | 'Manage Quests' | 'Manage Goods' | 'Approvals' | 'Manage Markets' | 'Manage Guilds' | 'Settings' | 'Profile' | 'About' | 'Help Guide' | 'Manage Ranks' | 'Manage Trophies' | 'Collection' | 'Suggestion Engine' | 'Appearance'
 | 'Object Exporter' | 'Asset Manager' | 'Backup & Import' | 'Asset Library'
-| 'Chat' | 'Manage Quest Groups' | 'Manage Events' | 'Manage Rotations' | 'Manage Setbacks'
+| 'Chat' | 'Manage Quest Groups' | 'Manage Events' | 'Manage Rotations' | 'Boons & Banes'
 | 'Bug Tracker' | 'Themes';
 
 export interface SidebarLink {
@@ -607,7 +608,7 @@ export interface AppSettings {
   updatedAt?: string;
 }
 
-export type ShareableAssetType = 'quests' | 'rewardTypes' | 'ranks' | 'trophies' | 'markets' | 'gameAssets' | 'questGroups' | 'users' | 'rotations' | 'setbackDefinitions';
+export type ShareableAssetType = 'quests' | 'rewardTypes' | 'ranks' | 'trophies' | 'markets' | 'gameAssets' | 'questGroups' | 'users' | 'rotations' | 'modifierDefinitions';
 
 export type UserTemplate = Omit<User, 'personalPurse' | 'personalExperience' | 'guildBalances' | 'avatar' | 'ownedAssetIds' | 'ownedThemes' | 'hasBeenOnboarded'>;
 
@@ -621,6 +622,7 @@ export interface AssetPackAssets {
   gameAssets?: GameAsset[];
   users?: UserTemplate[];
   rotations?: Rotation[];
+  modifierDefinitions?: ModifierDefinition[];
 }
 
 export interface AssetPackManifest {
@@ -783,38 +785,45 @@ export interface Rotation {
   updatedAt?: string;
 }
 
-export enum SetbackEffectType {
+export enum ModifierEffectType {
   DeductRewards = 'DEDUCT_REWARDS',
   CloseMarket = 'CLOSE_MARKET',
+  GrantRewards = 'GRANT_REWARDS',
+  OpenMarket = 'OPEN_MARKET',
+  MarketDiscount = 'MARKET_DISCOUNT',
 }
 
-export type SetbackEffect = 
-  | { type: SetbackEffectType.DeductRewards; rewards: RewardItem[] }
-  | { type: SetbackEffectType.CloseMarket; marketIds: string[]; durationHours: number };
+export type ModifierEffect = 
+  | { type: ModifierEffectType.DeductRewards; rewards: RewardItem[] }
+  | { type: ModifierEffectType.CloseMarket; marketIds: string[]; durationHours: number }
+  | { type: ModifierEffectType.GrantRewards; rewards: RewardItem[] }
+  | { type: ModifierEffectType.OpenMarket; marketIds: string[]; durationHours: number }
+  | { type: ModifierEffectType.MarketDiscount; marketId: string; discountPercent: number; durationHours: number };
 
-export interface SetbackDefinition {
+export interface ModifierDefinition {
   id: string;
+  category: 'Boon' | 'Bane';
   name: string;
   description: string;
   icon: string;
-  effects: SetbackEffect[];
-  defaultRedemptionQuestId?: string; // Quest ID for automatic assignment
+  effects: ModifierEffect[];
+  defaultRedemptionQuestId?: string; // Quest ID for automatic assignment (Banes only)
   createdAt?: string;
   updatedAt?: string;
 }
 
-export interface AppliedSetback {
+export interface AppliedModifier {
   id: string;
   userId: string;
-  setbackDefinitionId: string;
+  modifierDefinitionId: string;
   appliedAt: string;
-  expiresAt?: string; // For temporary effects like market closures
+  expiresAt?: string; // For temporary effects like market closures/openings/discounts
   status: 'Active' | 'Completed' | 'Dismissed';
-  redemptionQuestId?: string; // The ID of the specific quest instance created for this setback
+  redemptionQuestId?: string; // The ID of the specific quest instance created for this bane
   resolvedAt?: string;
   resolvedById?: string;
   resolutionNote?: string;
-  overrides?: Partial<SetbackDefinition>;
+  overrides?: Partial<ModifierDefinition>;
   reason: string;
   appliedById: string;
   createdAt?: string;
@@ -885,8 +894,8 @@ export interface IAppData {
   scheduledEvents: ScheduledEvent[];
   rotations: Rotation[];
   bugReports: BugReport[];
-  setbackDefinitions: SetbackDefinition[];
-  appliedSetbacks: AppliedSetback[];
+  modifierDefinitions: ModifierDefinition[];
+  appliedModifiers: AppliedModifier[];
   tradeOffers: TradeOffer[];
   gifts: Gift[];
 }
@@ -895,7 +904,7 @@ export type ChronicleEvent = {
     id: string;
     originalId: string; // The ID of the source object (e.g., PurchaseRequest)
     date: string;
-    type: 'Quest' | 'Purchase' | 'Trophy' | 'Adjustment' | 'System' | 'Announcement' | 'ScheduledEvent' | 'Crafting' | 'Donation' | 'Gift' | 'Trade' | 'Setback';
+    type: 'Quest' | 'Purchase' | 'Trophy' | 'Adjustment' | 'System' | 'Announcement' | 'ScheduledEvent' | 'Crafting' | 'Donation' | 'Gift' | 'Trade' | 'Setback' | 'Boon';
     title: string;
     note?: string;
     status: string;

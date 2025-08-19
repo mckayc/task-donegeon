@@ -1,5 +1,5 @@
 import React, { createContext, useContext, ReactNode, useCallback } from 'react';
-import { IAppData, Quest, User, QuestCompletion, AdminAdjustment, PurchaseRequest, Market, Guild, Rank, Trophy, RewardTypeDefinition, ThemeDefinition, ShareableAssetType, BulkQuestUpdates, ChatMessage, SystemNotification, ScheduledEvent, BugReport, Rotation, SetbackDefinition, AppliedSetback, TradeOffer, Gift, QuestGroup, GameAsset, RewardItem } from '../types';
+import { IAppData, Quest, User, QuestCompletion, AdminAdjustment, PurchaseRequest, Market, Guild, Rank, Trophy, RewardTypeDefinition, ThemeDefinition, ShareableAssetType, BulkQuestUpdates, ChatMessage, SystemNotification, ScheduledEvent, BugReport, Rotation, ModifierDefinition, AppliedModifier, TradeOffer, Gift, QuestGroup, GameAsset, RewardItem } from '../types';
 import { useNotificationsDispatch } from './NotificationsContext';
 import { bugLogger } from '../utils/bugLogger';
 import { useDataDispatch, useData } from './DataProvider';
@@ -95,9 +95,9 @@ export interface ActionsDispatch {
   addRotation: (rotationData: Omit<Rotation, 'id'>) => Promise<Rotation | null>;
   updateRotation: (rotationData: Rotation) => Promise<Rotation | null>;
 
-  addSetbackDefinition: (setbackData: Omit<SetbackDefinition, 'id'>) => Promise<SetbackDefinition | null>;
-  updateSetbackDefinition: (setbackData: SetbackDefinition) => Promise<SetbackDefinition | null>;
-  applySetback: (userId: string, setbackId: string, reason: string, overrides?: Partial<SetbackDefinition>) => Promise<boolean>;
+  addModifierDefinition: (modifierData: Omit<ModifierDefinition, 'id'>) => Promise<ModifierDefinition | null>;
+  updateModifierDefinition: (modifierData: ModifierDefinition) => Promise<ModifierDefinition | null>;
+  applyModifier: (userId: string, modifierId: string, reason: string, overrides?: Partial<ModifierDefinition>) => Promise<boolean>;
 
   proposeTrade: (recipientId: string, guildId: string) => Promise<TradeOffer | null>;
   updateTradeOffer: (tradeId: string, updates: Partial<TradeOffer>) => Promise<void>;
@@ -251,8 +251,9 @@ export const ActionsProvider: React.FC<{ children: ReactNode }> = ({ children })
                     // AuthContext handles its own state and API call
                     deleteUsers(ids);
                 } else {
-                    // For other assets, call API first
-                    await apiRequest('DELETE', `/api/${assetType}`, { ids });
+                    // Handle case where frontend type name differs from backend route
+                    const apiPath = assetType === 'modifierDefinitions' ? 'setbacks' : assetType;
+                    await apiRequest('DELETE', `/api/${apiPath}`, { ids });
                     (assetsToRemoveFromData as any)[assetType] = ids;
                 }
             }
@@ -433,13 +434,13 @@ export const ActionsProvider: React.FC<{ children: ReactNode }> = ({ children })
         addRotation: createAddAction('/api/rotations', 'rotations'),
         updateRotation: createUpdateAction(id => `/api/rotations/${id}`, 'rotations'),
 
-        addSetbackDefinition: createAddAction('/api/setbacks', 'setbackDefinitions'),
-        updateSetbackDefinition: createUpdateAction(id => `/api/setbacks/${id}`, 'setbackDefinitions'),
-        applySetback: async (userId, setbackId, reason, overrides) => {
+        addModifierDefinition: createAddAction('/api/setbacks', 'modifierDefinitions'),
+        updateModifierDefinition: createUpdateAction(id => `/api/setbacks/${id}`, 'modifierDefinitions'),
+        applyModifier: async (userId, modifierId, reason, overrides) => {
             if (!currentUser) return false;
             const result = await apiRequest('POST', '/api/actions/apply-setback', {
                 userId,
-                setbackDefinitionId: setbackId,
+                setbackDefinitionId: modifierId,
                 reason,
                 appliedById: currentUser.id,
                 overrides,
@@ -449,7 +450,7 @@ export const ActionsProvider: React.FC<{ children: ReactNode }> = ({ children })
                     updateUser(result.updatedUser.id, result.updatedUser);
                 }
                 if (result.newAppliedSetback) {
-                    dataDispatch({ type: 'UPDATE_DATA', payload: { appliedSetbacks: [result.newAppliedSetback] } });
+                    dataDispatch({ type: 'UPDATE_DATA', payload: { appliedModifiers: [result.newAppliedSetback] } });
                 }
                 return true;
             }

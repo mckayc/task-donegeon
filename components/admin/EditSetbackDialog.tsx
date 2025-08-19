@@ -1,24 +1,25 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useData } from '../../context/DataProvider';
 import { useActionsDispatch } from '../../context/ActionsContext';
-import { SetbackDefinition, SetbackEffect, SetbackEffectType, RewardCategory, RewardItem, QuestKind } from '../../types';
+import { ModifierDefinition, ModifierEffect, ModifierEffectType, RewardCategory, RewardItem, QuestKind } from '../../types';
 import Button from '../user-interface/Button';
 import Input from '../user-interface/Input';
 import EmojiPicker from '../user-interface/EmojiPicker';
 import RewardInputGroup from '../forms/RewardInputGroup';
 
-interface EditSetbackDialogProps {
-    setbackToEdit: SetbackDefinition | null;
+interface EditModifierDialogProps {
+    setbackToEdit: ModifierDefinition | null;
     onClose: () => void;
 }
 
-const EditSetbackDialog: React.FC<EditSetbackDialogProps> = ({ setbackToEdit, onClose }) => {
-    const { addSetbackDefinition, updateSetbackDefinition } = useActionsDispatch();
+const EditSetbackDialog: React.FC<EditModifierDialogProps> = ({ setbackToEdit: modifierToEdit, onClose }) => {
+    const { addModifierDefinition, updateModifierDefinition } = useActionsDispatch();
     const { markets, rewardTypes, quests } = useData();
-    const [formData, setFormData] = useState<Omit<SetbackDefinition, 'id' | 'createdAt' | 'updatedAt'>>({
+    const [formData, setFormData] = useState<Omit<ModifierDefinition, 'id' | 'createdAt' | 'updatedAt'>>({
         name: '',
         description: '',
         icon: '⚖️',
+        category: 'Bane',
         effects: [],
         defaultRedemptionQuestId: '',
     });
@@ -29,21 +30,22 @@ const EditSetbackDialog: React.FC<EditSetbackDialogProps> = ({ setbackToEdit, on
     }, [quests]);
 
     useEffect(() => {
-        if (setbackToEdit) {
+        if (modifierToEdit) {
             setFormData({
-                name: setbackToEdit.name,
-                description: setbackToEdit.description,
-                icon: setbackToEdit.icon,
-                effects: JSON.parse(JSON.stringify(setbackToEdit.effects)), // Deep copy
-                defaultRedemptionQuestId: setbackToEdit.defaultRedemptionQuestId || '',
+                name: modifierToEdit.name,
+                description: modifierToEdit.description,
+                icon: modifierToEdit.icon,
+                category: modifierToEdit.category,
+                effects: JSON.parse(JSON.stringify(modifierToEdit.effects)), // Deep copy
+                defaultRedemptionQuestId: modifierToEdit.defaultRedemptionQuestId || '',
             });
         }
-    }, [setbackToEdit]);
+    }, [modifierToEdit]);
 
     const handleAddEffect = () => {
         setFormData(prev => ({
             ...prev,
-            effects: [...prev.effects, { type: SetbackEffectType.DeductRewards, rewards: [] }]
+            effects: [...prev.effects, { type: ModifierEffectType.DeductRewards, rewards: [] }]
         }));
     };
 
@@ -51,14 +53,18 @@ const EditSetbackDialog: React.FC<EditSetbackDialogProps> = ({ setbackToEdit, on
         setFormData(prev => ({ ...prev, effects: prev.effects.filter((_, i) => i !== index) }));
     };
     
-    const handleEffectTypeChange = (effectIndex: number, newType: SetbackEffectType) => {
+    const handleEffectTypeChange = (effectIndex: number, newType: ModifierEffectType) => {
         setFormData(prev => {
             const newEffects = [...prev.effects];
-            if (newType === SetbackEffectType.DeductRewards) {
-                newEffects[effectIndex] = { type: newType, rewards: [] };
-            } else {
-                newEffects[effectIndex] = { type: newType, marketIds: [], durationHours: 24 };
+            let newEffect: ModifierEffect;
+            switch(newType) {
+                case ModifierEffectType.DeductRewards: newEffect = { type: newType, rewards: [] }; break;
+                case ModifierEffectType.GrantRewards: newEffect = { type: newType, rewards: [] }; break;
+                case ModifierEffectType.CloseMarket: newEffect = { type: newType, marketIds: [], durationHours: 24 }; break;
+                case ModifierEffectType.OpenMarket: newEffect = { type: newType, marketIds: [], durationHours: 24 }; break;
+                case ModifierEffectType.MarketDiscount: newEffect = { type: newType, marketId: '', discountPercent: 10, durationHours: 24 }; break;
             }
+            newEffects[effectIndex] = newEffect;
             return { ...prev, effects: newEffects };
         });
     };
@@ -78,7 +84,7 @@ const EditSetbackDialog: React.FC<EditSetbackDialogProps> = ({ setbackToEdit, on
         setFormData(prev => {
             const newEffects = JSON.parse(JSON.stringify(prev.effects));
             const effect = newEffects[effectIndex];
-            if (effect.type === SetbackEffectType.DeductRewards) {
+            if (effect.type === ModifierEffectType.DeductRewards || effect.type === ModifierEffectType.GrantRewards) {
                 const newRewards = effect.rewards;
                 newRewards[itemIndex] = { ...newRewards[itemIndex], [field]: field === 'amount' ? Math.max(0.01, parseFloat(String(value)) || 0) : value };
                 effect.rewards = newRewards;
@@ -91,7 +97,7 @@ const EditSetbackDialog: React.FC<EditSetbackDialogProps> = ({ setbackToEdit, on
         setFormData(prev => {
             const newEffects = JSON.parse(JSON.stringify(prev.effects));
             const effect = newEffects[effectIndex];
-            if (effect.type === SetbackEffectType.DeductRewards) {
+            if (effect.type === ModifierEffectType.DeductRewards || effect.type === ModifierEffectType.GrantRewards) {
                 const defaultReward = rewardTypes.find(rt => rt.category === rewardCat);
                 if (!defaultReward) return prev;
                 effect.rewards.push({ rewardTypeId: defaultReward.id, amount: 1 });
@@ -104,7 +110,7 @@ const EditSetbackDialog: React.FC<EditSetbackDialogProps> = ({ setbackToEdit, on
         setFormData(prev => {
             const newEffects = JSON.parse(JSON.stringify(prev.effects));
             const effect = newEffects[effectIndex];
-            if (effect.type === SetbackEffectType.DeductRewards) {
+            if (effect.type === ModifierEffectType.DeductRewards || effect.type === ModifierEffectType.GrantRewards) {
                 effect.rewards = effect.rewards.filter((_: any, i: number) => i !== itemIndexToRemove);
             }
             return { ...prev, effects: newEffects };
@@ -113,15 +119,15 @@ const EditSetbackDialog: React.FC<EditSetbackDialogProps> = ({ setbackToEdit, on
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        if (setbackToEdit) {
-            updateSetbackDefinition({ ...setbackToEdit, ...formData });
+        if (modifierToEdit) {
+            updateModifierDefinition({ ...modifierToEdit, ...formData });
         } else {
-            addSetbackDefinition(formData);
+            addModifierDefinition(formData);
         }
         onClose();
     };
 
-    const dialogTitle = setbackToEdit ? 'Edit Setback' : 'Create New Setback';
+    const dialogTitle = modifierToEdit ? `Edit ${formData.category}` : 'Create New Boon/Bane';
 
     return (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
@@ -130,6 +136,10 @@ const EditSetbackDialog: React.FC<EditSetbackDialogProps> = ({ setbackToEdit, on
                 <form id="setback-form" onSubmit={handleSubmit} className="flex-1 space-y-4 overflow-y-auto pr-2">
                     <Input label="Name" value={formData.name} onChange={e => setFormData(p => ({ ...p, name: e.target.value }))} required />
                     <Input as="textarea" label="Description" value={formData.description} onChange={e => setFormData(p => ({ ...p, description: e.target.value }))} />
+                    <Input as="select" label="Category" value={formData.category} onChange={e => setFormData(p => ({ ...p, category: e.target.value as 'Boon' | 'Bane' }))}>
+                        <option value="Bane">Bane (Negative)</option>
+                        <option value="Boon">Boon (Positive)</option>
+                    </Input>
                     <div>
                         <label className="block text-sm font-medium text-stone-300 mb-1">Icon</label>
                         <div className="relative">
@@ -146,16 +156,19 @@ const EditSetbackDialog: React.FC<EditSetbackDialogProps> = ({ setbackToEdit, on
                         {formData.effects.map((effect, index) => (
                             <div key={index} className="p-3 bg-stone-900/50 rounded-lg space-y-3">
                                 <div className="flex justify-between items-center">
-                                    <Input as="select" label="" value={effect.type} onChange={e => handleEffectTypeChange(index, e.target.value as SetbackEffectType)}>
-                                        <option value={SetbackEffectType.DeductRewards}>Deduct Rewards</option>
-                                        <option value={SetbackEffectType.CloseMarket}>Close Market</option>
+                                    <Input as="select" label="" value={effect.type} onChange={e => handleEffectTypeChange(index, e.target.value as ModifierEffectType)}>
+                                        <option value={ModifierEffectType.DeductRewards}>Deduct Rewards</option>
+                                        <option value={ModifierEffectType.GrantRewards}>Grant Rewards</option>
+                                        <option value={ModifierEffectType.CloseMarket}>Close Market</option>
+                                        <option value={ModifierEffectType.OpenMarket}>Open Market</option>
+                                        <option value={ModifierEffectType.MarketDiscount}>Market Discount</option>
                                     </Input>
                                     <Button type="button" variant="destructive" size="sm" onClick={() => handleRemoveEffect(index)}>Remove</Button>
                                 </div>
                                 
-                                {effect.type === SetbackEffectType.DeductRewards && (
+                                {(effect.type === ModifierEffectType.DeductRewards || effect.type === ModifierEffectType.GrantRewards) && (
                                     <RewardInputGroup 
-                                        category="setbacks" 
+                                        category="rewards" 
                                         items={effect.rewards} 
                                         onChange={handleRewardChange(index)} 
                                         onAdd={handleAddRewardToEffect(index)} 
@@ -163,10 +176,10 @@ const EditSetbackDialog: React.FC<EditSetbackDialogProps> = ({ setbackToEdit, on
                                     />
                                 )}
 
-                                {effect.type === SetbackEffectType.CloseMarket && (
+                                {(effect.type === ModifierEffectType.CloseMarket || effect.type === ModifierEffectType.OpenMarket) && (
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         <div>
-                                            <label className="block text-sm font-medium text-stone-300 mb-1">Markets to Close</label>
+                                            <label className="block text-sm font-medium text-stone-300 mb-1">Markets to Affect</label>
                                              <select multiple value={effect.marketIds}
                                                 className="w-full h-32 px-4 py-2 bg-stone-700 border border-stone-600 rounded-md"
                                                 onChange={(e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -176,6 +189,16 @@ const EditSetbackDialog: React.FC<EditSetbackDialogProps> = ({ setbackToEdit, on
                                                 {markets.map(m => <option key={m.id} value={m.id}>{m.title}</option>)}
                                             </select>
                                         </div>
+                                        <Input label="Duration (Hours)" type="number" min="1" value={effect.durationHours} onChange={e => handleEffectPropChange(index, 'durationHours', parseInt(e.target.value) || 1)} />
+                                    </div>
+                                )}
+                                 {effect.type === ModifierEffectType.MarketDiscount && (
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                        <Input as="select" label="Market" value={effect.marketId} onChange={e => handleEffectPropChange(index, 'marketId', e.target.value)}>
+                                            <option value="" disabled>Select...</option>
+                                            {markets.map(m => <option key={m.id} value={m.id}>{m.title}</option>)}
+                                        </Input>
+                                        <Input label="Discount (%)" type="number" min="1" max="100" value={effect.discountPercent} onChange={e => handleEffectPropChange(index, 'discountPercent', parseInt(e.target.value) || 1)} />
                                         <Input label="Duration (Hours)" type="number" min="1" value={effect.durationHours} onChange={e => handleEffectPropChange(index, 'durationHours', parseInt(e.target.value) || 1)} />
                                     </div>
                                 )}
@@ -189,13 +212,13 @@ const EditSetbackDialog: React.FC<EditSetbackDialogProps> = ({ setbackToEdit, on
                             <option value="">None</option>
                             {redemptionQuests.map(q => <option key={q.id} value={q.id}>{q.title}</option>)}
                         </Input>
-                        <p className="text-xs text-stone-400 mt-1">If set, this quest will be automatically assigned to a user when this setback is applied.</p>
+                        <p className="text-xs text-stone-400 mt-1">If set, this quest will be automatically assigned to a user when this is applied.</p>
                     </div>
 
                 </form>
                 <div className="flex justify-end space-x-4 pt-4 mt-auto">
                     <Button type="button" variant="secondary" onClick={onClose}>Cancel</Button>
-                    <Button type="submit" form="setback-form">{setbackToEdit ? 'Save Changes' : 'Create Setback'}</Button>
+                    <Button type="submit" form="setback-form">{modifierToEdit ? 'Save Changes' : 'Create'}</Button>
                 </div>
             </div>
         </div>

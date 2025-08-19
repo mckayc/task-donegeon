@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useData } from '../../context/DataProvider';
 import { useAuthState, useAuthDispatch } from '../../context/AuthContext';
 import Button from '../user-interface/Button';
@@ -10,14 +10,13 @@ import Card from '../user-interface/Card';
 import ConfirmDialog from '../user-interface/ConfirmDialog';
 import { useDebounce } from '../../hooks/useDebounce';
 import Input from '../user-interface/Input';
-import { useNotificationsDispatch } from '../../context/NotificationsContext';
 import { useShiftSelect } from '../../hooks/useShiftSelect';
 import { PencilIcon, CopyIcon, TrashIcon, AdjustmentsIcon } from '../user-interface/Icons';
 import { useActionsDispatch } from '../../context/ActionsContext';
 
 const UserManagementPage: React.FC = () => {
     const { settings } = useData();
-    const { currentUser, users } = useAuthState();
+    const { users } = useAuthState();
     const { deleteUsers } = useAuthDispatch();
     const { cloneUser } = useActionsDispatch();
     

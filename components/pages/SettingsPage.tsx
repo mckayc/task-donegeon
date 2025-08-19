@@ -1,4 +1,5 @@
 
+
 import React, { useState, ChangeEvent, ReactNode, useEffect } from 'react';
 import { useData } from '../../context/DataProvider';
 import { useActionsDispatch } from '../../context/ActionsContext';
@@ -108,7 +109,7 @@ const terminologyLabels: { [key in keyof Terminology]: string } = {
   link_manage_trophies: 'Sidebar: Manage Trophies',
   link_manage_events: 'Sidebar: Manage Events',
   link_manage_rotations: 'Sidebar: Manage Rotations',
-  link_manage_setbacks: 'Sidebar: Manage Setbacks',
+  link_boons_banes: 'Sidebar: Boons & Banes',
   link_appearance: 'Sidebar: Appearance',
   link_approvals: 'Sidebar: Approvals',
   link_manage_users: 'Sidebar: Manage Users',

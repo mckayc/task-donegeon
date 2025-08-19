@@ -18,6 +18,7 @@ type DataAction =
   | { type: 'SET_ALL_DATA', payload: Partial<IAppData> }
   | { type: 'UPDATE_DATA', payload: Partial<IAppData> }
   | { type: 'REMOVE_DATA', payload: { [key in keyof IAppData]?: string[] } }
+  | { type: 'SET_AI_CONFIGURED', payload: boolean }
   | { type: 'SET_SYNC_STATE', payload: { syncStatus: SyncStatus, syncError: string | null } };
 
 const initialState: DataState = {
@@ -46,8 +47,8 @@ const initialState: DataState = {
   scheduledEvents: [],
   rotations: [],
   bugReports: [],
-  setbackDefinitions: [],
-  appliedSetbacks: [],
+  modifierDefinitions: [],
+  appliedModifiers: [],
   tradeOffers: [],
   gifts: [],
   settings: INITIAL_SETTINGS,
@@ -58,6 +59,8 @@ const dataReducer = (state: DataState, action: DataAction): DataState => {
     switch (action.type) {
         case 'SET_SYNC_STATE':
             return { ...state, syncStatus: action.payload.syncStatus, syncError: action.payload.syncError };
+        case 'SET_AI_CONFIGURED':
+            return { ...state, isAiConfigured: action.payload };
         case 'SET_ALL_DATA':
             return {
                 ...state,
@@ -160,6 +163,17 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 }
                 if (updates.loginHistory) {
                     setLoginHistory(updates.loginHistory);
+                }
+
+                // After initial load, check system status for AI configuration
+                try {
+                    const statusRes = await fetch('/api/system/status');
+                    if (statusRes.ok) {
+                        const statusData = await statusRes.json();
+                        dispatch({ type: 'SET_AI_CONFIGURED', payload: statusData.geminiConnected });
+                    }
+                } catch (e) {
+                    console.error("Could not fetch system status for AI check", e);
                 }
             }
 

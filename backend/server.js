@@ -1407,7 +1407,44 @@ app.use('/api/trophies', createGenericRouter(TrophyEntity));
 app.use('/api/assets', createGenericRouter(GameAssetEntity));
 app.use('/api/themes', createGenericRouter(ThemeDefinitionEntity));
 app.use('/api/settings', createGenericRouter(SettingEntity));
-app.use('/api/chat', createGenericRouter(ChatMessageEntity));
+
+const chatRouter = express.Router();
+const chatRepo = dataSource.getRepository(ChatMessageEntity);
+chatRouter.get('/', asyncMiddleware(async (req, res) => { res.json(await chatRepo.find()); }));
+chatRouter.post('/send', asyncMiddleware(async (req, res) => {
+    const { senderId, recipientId, guildId, message, isAnnouncement } = req.body;
+    if (!senderId || (!recipientId && !guildId) || !message) return res.status(400).json({ error: 'Missing required fields for chat message.' });
+    const newChatMessage = chatRepo.create({
+        id: `chat-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+        senderId, recipientId, guildId, message, timestamp: new Date().toISOString(),
+        readBy: [senderId], isAnnouncement: !!isAnnouncement,
+    });
+    const savedMessage = await chatRepo.save(updateTimestamps(newChatMessage, true));
+    updateEmitter.emit('update');
+    res.status(201).json({ newChatMessage: savedMessage });
+}));
+chatRouter.post('/read', asyncMiddleware(async (req, res) => {
+    const { userId, partnerId, guildId } = req.body;
+    if (!userId || (!partnerId && !guildId)) return res.status(400).json({ error: 'Missing user and target.' });
+    let messagesToUpdate;
+    if (partnerId) {
+        messagesToUpdate = await chatRepo.find({ where: { senderId: partnerId, recipientId: userId } });
+    } else {
+        messagesToUpdate = await chatRepo.find({ where: { guildId } });
+    }
+    const updatedMessages = [];
+    for (const msg of messagesToUpdate) {
+        if (!msg.readBy.includes(userId)) {
+            msg.readBy.push(userId);
+            const saved = await chatRepo.save(updateTimestamps(msg));
+            updatedMessages.push(saved);
+        }
+    }
+    if (updatedMessages.length > 0) updateEmitter.emit('update');
+    res.status(200).json({ updatedMessages });
+}));
+app.use('/api/chat', chatRouter);
+
 app.use('/api/notifications', createGenericRouter(SystemNotificationEntity));
 app.use('/api/events', createGenericRouter(ScheduledEventEntity));
 app.use('/api/bug-reports', createGenericRouter(BugReportEntity));
@@ -1428,10 +1465,12 @@ app.get('/api/chronicles', asyncMiddleware(async(req, res) => {
     const trophies = await manager.find(TrophyEntity);
     const rewardTypes = await manager.find(RewardTypeDefinitionEntity);
     const gameAssets = await manager.find(GameAssetEntity);
-    
+    const modifierDefinitions = await manager.find(ModifierDefinitionEntity);
+
     const userMap = new Map(users.map(u => [u.id, u.gameName]));
     const questMap = new Map(quests.map(q => [q.id, { title: q.title, icon: q.icon, type: q.type }]));
     const trophyMap = new Map(trophies.map(t => [t.id, { name: t.name, icon: t.icon }]));
+    const assetMap = new Map(gameAssets.map(a => [a.id, { name: a.name, icon: a.icon }]));
 
     const whereConditions = {};
     if (guildId === 'null') {
@@ -1439,45 +1478,56 @@ app.get('/api/chronicles', asyncMiddleware(async(req, res) => {
     } else if (guildId) {
         whereConditions.guildId = guildId;
     }
+    
+    const whereConditionsAll = { ...whereConditions };
     if (viewMode === 'personal' && userId) {
         whereConditions.userId = userId;
     }
 
     // Quest Completions
     const completions = await manager.find(QuestCompletionEntity, { where: whereConditions, relations: ['user'] });
-    allEvents.push(...completions.map(c => {
-        const questInfo = questMap.get(c.questId) || { title: 'Unknown Quest', icon: '📜', type: 'Venture' };
-        return {
-            id: `quest-${c.id}`, originalId: c.id, date: c.completedAt, type: 'Quest',
-            title: `${c.user?.gameName || 'Unknown User'} completed "${questInfo.title}"`,
-            note: c.note, status: c.status, icon: questInfo.icon,
-            color: 'hsl(158 84% 39%)', userId: c.userId, questType: questInfo.type, guildId: c.guildId
-        };
-    }));
+    allEvents.push(...completions.map(c => ({
+        id: `quest-${c.id}`, originalId: c.id, date: c.completedAt, type: 'Quest',
+        title: `${c.user?.gameName || 'Unknown'} completed "${questMap.get(c.questId)?.title || 'Unknown Quest'}"`,
+        note: c.note, status: c.status, icon: questMap.get(c.questId)?.icon || '📜',
+        color: 'hsl(158 84% 39%)', userId: c.userId, questType: questMap.get(c.questId)?.type, guildId: c.guildId
+    })));
 
     // Purchase Requests
     const purchases = await manager.find(PurchaseRequestEntity, { where: whereConditions, relations: ['user'] });
-    allEvents.push(...purchases.map(p => {
-        const costText = p.assetDetails.cost.map(r => `${r.amount} ${rewardTypes.find(rt => rt.id === r.rewardTypeId)?.icon || '?'}`).join(', ');
-        return {
-            id: `purchase-${p.id}`, originalId: p.id, date: p.requestedAt, type: 'Purchase',
-            title: `${p.user?.gameName || 'Unknown User'} requested "${p.assetDetails.name}"`,
-            note: `Cost: ${costText}`, status: p.status, icon: '💰',
-            color: 'hsl(280 60% 60%)', userId: p.userId, guildId: p.guildId
-        };
-    }));
+    allEvents.push(...purchases.map(p => ({
+        id: `purchase-${p.id}`, originalId: p.id, date: p.requestedAt, type: 'Purchase',
+        title: `${p.user?.gameName || 'Unknown'} requested "${p.assetDetails.name}"`,
+        note: `Cost: ${p.assetDetails.cost.map(r => `${r.amount} ${rewardTypes.find(rt => rt.id === r.rewardTypeId)?.icon || '?'}`).join(', ')}`, status: p.status, icon: '💰',
+        color: 'hsl(280 60% 60%)', userId: p.userId, guildId: p.guildId
+    })));
 
     // User Trophies
     const userTrophyAwards = await manager.find(UserTrophyEntity, { where: whereConditions, relations: ['user'] });
-    allEvents.push(...userTrophyAwards.map(ut => {
-        const trophyInfo = trophyMap.get(ut.trophyId) || { name: 'Unknown Trophy', icon: '🏆' };
-        return {
-            id: `trophy-${ut.id}`, originalId: ut.id, date: ut.awardedAt, type: 'Trophy',
-            title: `${ut.user?.gameName || 'Unknown User'} earned "${trophyInfo.name}"`,
-            note: '', status: 'Awarded', icon: trophyInfo.icon,
-            color: 'hsl(50 90% 60%)', userId: ut.userId, guildId: ut.guildId
-        };
-    }));
+    allEvents.push(...userTrophyAwards.map(ut => ({
+        id: `trophy-${ut.id}`, originalId: ut.id, date: ut.awardedAt, type: 'Trophy',
+        title: `${ut.user?.gameName || 'Unknown'} earned "${trophyMap.get(ut.trophyId)?.name || 'Unknown Trophy'}"`,
+        note: '', status: 'Awarded', icon: trophyMap.get(ut.trophyId)?.icon || '🏆',
+        color: 'hsl(50 90% 60%)', userId: ut.userId, guildId: ut.guildId
+    })));
+    
+    // Admin Adjustments
+    const adjustments = await manager.find(AdminAdjustmentEntity, { where: whereConditionsAll });
+    allEvents.push(...adjustments.map(a => ({
+        id: `adj-${a.id}`, originalId: a.id, date: a.adjustedAt, type: 'Adjustment',
+        title: `${userMap.get(a.adjusterId) || 'Admin'} applied an adjustment to ${userMap.get(a.userId) || 'a user'}.`,
+        note: a.reason, status: a.type, icon: '🛠️',
+        color: 'hsl(220 60% 60%)', userId: a.userId, guildId: a.guildId
+    })));
+    
+    // Gifts
+    const gifts = await manager.find(GiftEntity, { where: whereConditionsAll });
+    allEvents.push(...gifts.map(g => ({
+        id: `gift-${g.id}`, originalId: g.id, date: g.sentAt, type: 'Gift',
+        title: `${userMap.get(g.senderId)} gifted "${assetMap.get(g.assetId)?.name || 'an item'}" to ${userMap.get(g.recipientId)}`,
+        status: 'Gifted', icon: '🎁',
+        color: 'hsl(330 80% 60%)', guildId: g.guildId
+    })));
 
     allEvents.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
     

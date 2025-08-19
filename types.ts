@@ -487,7 +487,7 @@ export interface Terminology {
   link_manage_trophies: string;
   link_manage_events: string;
   link_manage_rotations: string;
-  link_boons_banes: string;
+  link_triumphs_trials: string;
   link_appearance: string;
   link_approvals: string;
   link_manage_users: string;
@@ -507,7 +507,7 @@ export interface Terminology {
 
 export type Page = 'Dashboard' | 'Avatar' | 'Quests' | 'Marketplace' | 'Chronicles' | 'Guild' | 'Calendar' | 'Progress' | 'Trophies' | 'Ranks' | 'Manage Users' | 'Manage Rewards' | 'Manage Quests' | 'Manage Goods' | 'Approvals' | 'Manage Markets' | 'Manage Guilds' | 'Settings' | 'Profile' | 'About' | 'Help Guide' | 'Manage Ranks' | 'Manage Trophies' | 'Collection' | 'Suggestion Engine' | 'Appearance'
 | 'Object Exporter' | 'Asset Manager' | 'Backup & Import' | 'Asset Library'
-| 'Chat' | 'Manage Quest Groups' | 'Manage Events' | 'Manage Rotations' | 'Boons & Banes'
+| 'Chat' | 'Manage Quest Groups' | 'Manage Events' | 'Manage Rotations' | 'Triumphs & Trials'
 | 'Bug Tracker' | 'Themes';
 
 export interface SidebarLink {
@@ -802,12 +802,12 @@ export type ModifierEffect =
 
 export interface ModifierDefinition {
   id: string;
-  category: 'Boon' | 'Bane';
+  category: 'Triumph' | 'Trial';
   name: string;
   description: string;
   icon: string;
   effects: ModifierEffect[];
-  defaultRedemptionQuestId?: string; // Quest ID for automatic assignment (Banes only)
+  defaultRedemptionQuestId?: string; // Quest ID for automatic assignment (Trials only)
   createdAt?: string;
   updatedAt?: string;
 }
@@ -904,7 +904,7 @@ export type ChronicleEvent = {
     id: string;
     originalId: string; // The ID of the source object (e.g., PurchaseRequest)
     date: string;
-    type: 'Quest' | 'Purchase' | 'Trophy' | 'Adjustment' | 'System' | 'Announcement' | 'ScheduledEvent' | 'Crafting' | 'Donation' | 'Gift' | 'Trade' | 'Setback' | 'Boon';
+    type: 'Quest' | 'Purchase' | 'Trophy' | 'Adjustment' | 'System' | 'Announcement' | 'ScheduledEvent' | 'Crafting' | 'Donation' | 'Gift' | 'Trade' | 'Triumph' | 'Trial';
     title: string;
     note?: string;
     status: string;

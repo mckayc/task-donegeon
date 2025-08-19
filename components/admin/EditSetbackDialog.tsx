@@ -19,7 +19,7 @@ const EditSetbackDialog: React.FC<EditModifierDialogProps> = ({ setbackToEdit: m
         name: '',
         description: '',
         icon: '⚖️',
-        category: 'Bane',
+        category: 'Trial',
         effects: [],
         defaultRedemptionQuestId: '',
     });
@@ -127,7 +127,7 @@ const EditSetbackDialog: React.FC<EditModifierDialogProps> = ({ setbackToEdit: m
         onClose();
     };
 
-    const dialogTitle = modifierToEdit ? `Edit ${formData.category}` : 'Create New Boon/Bane';
+    const dialogTitle = modifierToEdit ? `Edit ${formData.category}` : 'Create New Triumph/Trial';
 
     return (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
@@ -136,9 +136,9 @@ const EditSetbackDialog: React.FC<EditModifierDialogProps> = ({ setbackToEdit: m
                 <form id="setback-form" onSubmit={handleSubmit} className="flex-1 space-y-4 overflow-y-auto pr-2">
                     <Input label="Name" value={formData.name} onChange={e => setFormData(p => ({ ...p, name: e.target.value }))} required />
                     <Input as="textarea" label="Description" value={formData.description} onChange={e => setFormData(p => ({ ...p, description: e.target.value }))} />
-                    <Input as="select" label="Category" value={formData.category} onChange={e => setFormData(p => ({ ...p, category: e.target.value as 'Boon' | 'Bane' }))}>
-                        <option value="Bane">Bane (Negative)</option>
-                        <option value="Boon">Boon (Positive)</option>
+                    <Input as="select" label="Category" value={formData.category} onChange={e => setFormData(p => ({ ...p, category: e.target.value as 'Triumph' | 'Trial' }))}>
+                        <option value="Trial">Trial (Negative)</option>
+                        <option value="Triumph">Triumph (Positive)</option>
                     </Input>
                     <div>
                         <label className="block text-sm font-medium text-stone-300 mb-1">Icon</label>

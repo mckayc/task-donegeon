@@ -21,7 +21,7 @@ const terminologyMap: { [key in ShareableAssetType]: keyof Terminology } = {
     gameAssets: 'link_manage_items',
     users: 'link_manage_users',
     rotations: 'link_manage_rotations',
-    modifierDefinitions: 'link_boons_banes',
+    modifierDefinitions: 'link_triumphs_trials',
 };
 
 const BlueprintPreviewDialog: React.FC<BlueprintPreviewDialogProps> = ({ blueprint, initialResolutions, onClose, onConfirm }) => {

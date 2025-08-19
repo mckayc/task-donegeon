@@ -63,7 +63,7 @@ const MainLayout: React.FC = () => {
     'Manage Users', 'Manage Rewards', 'Manage Quests', 'Manage Quest Groups', 'Manage Rotations', 'Manage Goods', 'Manage Markets',
     'Manage Guilds', 'Manage Ranks', 'Manage Trophies', 'Settings', 'Suggestion Engine',
     'Appearance', 'Object Exporter', 'Asset Manager', 'Backup & Import', 'Asset Library',
-    'Manage Events', 'Bug Tracker', 'Boons & Banes'
+    'Manage Events', 'Bug Tracker', 'Triumphs & Trials'
   ];
   const GATEKEEPER_PAGES: Page[] = ['Approvals'];
 
@@ -136,7 +136,7 @@ const MainLayout: React.FC = () => {
       case 'Manage Ranks': return <ManageRanksPage />;
       case 'Manage Trophies': return <ManageTrophiesPage />;
       case 'Manage Events': return <ManageEventsPage />;
-      case 'Boons & Banes': return <ManageSetbacksPage />;
+      case 'Triumphs & Trials': return <ManageSetbacksPage />;
       case 'Suggestion Engine': return <SuggestionEnginePage />;
       case 'Approvals': return <ApprovalsPage />;
       case 'Settings': return <SettingsPage />;

@@ -37,7 +37,7 @@ const ExportPanel: React.FC = () => {
         { key: 'gameAssets', label: 'link_manage_items', data: appState.gameAssets },
         { key: 'users', label: 'link_manage_users', data: users },
         { key: 'rotations', label: 'link_manage_rotations', data: appState.rotations },
-        { key: 'modifierDefinitions', label: 'link_boons_banes', data: appState.modifierDefinitions },
+        { key: 'modifierDefinitions', label: 'link_triumphs_trials', data: appState.modifierDefinitions },
     ], [appState, users]);
 
     const handleCheckboxChange = useCallback((

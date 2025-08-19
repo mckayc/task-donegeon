@@ -109,7 +109,7 @@ const terminologyLabels: { [key in keyof Terminology]: string } = {
   link_manage_trophies: 'Sidebar: Manage Trophies',
   link_manage_events: 'Sidebar: Manage Events',
   link_manage_rotations: 'Sidebar: Manage Rotations',
-  link_boons_banes: 'Sidebar: Boons & Banes',
+  link_triumphs_trials: 'Sidebar: Triumphs & Trials',
   link_appearance: 'Sidebar: Appearance',
   link_approvals: 'Sidebar: Approvals',
   link_manage_users: 'Sidebar: Manage Users',

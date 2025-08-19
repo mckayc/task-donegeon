@@ -30,7 +30,7 @@ const ApplySetbackDialog: React.FC<ApplyModifierDialogProps> = ({ setback: modif
     }, [quests]);
 
     const handleAddEffect = () => {
-        const newEffect: ModifierEffect = formData.category === 'Bane'
+        const newEffect: ModifierEffect = formData.category === 'Trial'
             ? { type: ModifierEffectType.CloseMarket, marketIds: [], durationHours: 24 }
             : { type: ModifierEffectType.GrantRewards, rewards: [] };
         setFormData(prev => ({
@@ -140,7 +140,7 @@ const ApplySetbackDialog: React.FC<ApplyModifierDialogProps> = ({ setback: modif
         }
     };
     
-    const isBane = formData.category === 'Bane';
+    const isTrial = formData.category === 'Trial';
 
     return (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
@@ -175,7 +175,7 @@ const ApplySetbackDialog: React.FC<ApplyModifierDialogProps> = ({ setback: modif
                                 <div key={index} className="p-3 bg-stone-900/50 rounded-lg space-y-3">
                                     <div className="flex justify-between items-center">
                                          <Input as="select" label="" value={effect.type} onChange={e => handleEffectTypeChange(index, e.target.value as ModifierEffectType)}>
-                                            {isBane ? (
+                                            {isTrial ? (
                                                 <>
                                                     <option value={ModifierEffectType.DeductRewards}>Deduct Rewards</option>
                                                     <option value={ModifierEffectType.CloseMarket}>Close Market</option>

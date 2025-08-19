@@ -71,8 +71,8 @@ const ManageSetbacksPage: React.FC = () => {
     return (
         <div className="space-y-6">
             <Card
-                title={`${settings.terminology.link_boons_banes} Definitions`}
-                headerAction={<Button onClick={handleCreate} size="sm">Create New Boon/Bane</Button>}
+                title={`${settings.terminology.link_triumphs_trials} Definitions`}
+                headerAction={<Button onClick={handleCreate} size="sm">Create New Triumph/Trial</Button>}
             >
                 {selectedModifiers.length > 0 && (
                      <div className="flex items-center gap-2 p-2 mb-4 bg-stone-900/50 rounded-lg">
@@ -125,9 +125,9 @@ const ManageSetbacksPage: React.FC = () => {
                 ) : (
                     <EmptyState
                         Icon={() => <span className="text-4xl">⚖️</span>}
-                        title="No Boon/Bane Definitions Created Yet"
+                        title="No Triumph/Trial Definitions Created Yet"
                         message="Create templates to apply positive or negative effects like deducting rewards or closing markets."
-                        actionButton={<Button onClick={handleCreate}>Create Boon/Bane</Button>}
+                        actionButton={<Button onClick={handleCreate}>Create Triumph/Trial</Button>}
                     />
                 )}
             </Card>

@@ -1,4 +1,3 @@
-
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
@@ -8,6 +7,7 @@ import { DeveloperProvider } from './context/DeveloperContext';
 import { DataProvider } from './context/DataProvider';
 import { UIProvider } from './context/UIContext';
 import { ActionsProvider } from './context/ActionsContext';
+import ErrorBoundary from './components/system/ErrorBoundary';
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
@@ -27,18 +27,20 @@ if (!rootElement) {
 const root = ReactDOM.createRoot(rootElement);
 root.render(
   <React.StrictMode>
-    <NotificationsProvider>
-      <AuthProvider>
-        <DataProvider>
-          <UIProvider>
-            <ActionsProvider>
-              <DeveloperProvider>
-                <App />
-              </DeveloperProvider>
-            </ActionsProvider>
-          </UIProvider>
-        </DataProvider>
-      </AuthProvider>
-    </NotificationsProvider>
+    <ErrorBoundary>
+      <NotificationsProvider>
+        <AuthProvider>
+          <DataProvider>
+            <UIProvider>
+              <ActionsProvider>
+                <DeveloperProvider>
+                  <App />
+                </DeveloperProvider>
+              </ActionsProvider>
+            </UIProvider>
+          </DataProvider>
+        </AuthProvider>
+      </NotificationsProvider>
+    </ErrorBoundary>
   </React.StrictMode>
 );

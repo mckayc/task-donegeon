@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, ReactNode, useCallback } from 'react';
 import { IAppData, Quest, User, QuestCompletion, AdminAdjustment, PurchaseRequest, Market, Guild, Rank, Trophy, RewardTypeDefinition, ThemeDefinition, ShareableAssetType, BulkQuestUpdates, ChatMessage, SystemNotification, ScheduledEvent, BugReport, Rotation, ModifierDefinition, AppliedModifier, TradeOffer, Gift, QuestGroup, GameAsset, RewardItem } from '../types';
 import { useNotificationsDispatch } from './NotificationsContext';
@@ -87,7 +88,7 @@ export interface ActionsDispatch {
 
   importAssetPack: (pack: any, resolutions: any) => Promise<void>;
 
-  addBugReport: (reportData: Partial<BugReport>) => Promise<void>;
+  addBugReport: (reportData: Partial<BugReport>) => Promise<BugReport | null>;
   updateBugReport: (reportId: string, updates: Partial<BugReport>) => Promise<BugReport | null>;
   deleteBugReports: (reportIds: string[]) => Promise<void>;
   importBugReports: (reports: BugReport[], mode: 'merge' | 'replace') => Promise<void>;
@@ -135,32 +136,36 @@ export const ActionsProvider: React.FC<{ children: ReactNode }> = ({ children })
             const message = error instanceof Error ? error.message : 'An unknown network error occurred.';
             addNotification({ type: 'error', message });
             bugLogger.add({ type: 'STATE_CHANGE', message: `API Error: ${method} ${path} - ${message}` });
-            return null;
+            throw error;
         }
     }, [addNotification]);
     
     const purchaseMarketItem = useCallback(async (assetId: string, marketId: string, user: User, costGroupIndex: number) => {
         const market = markets.find(m => m.id === marketId);
         const guildId = market?.guildId;
-        const result = await apiRequest('POST', '/api/actions/purchase-item', { assetId, userId: user.id, costGroupIndex, guildId });
-        if (result && result.updatedUser) {
-            updateUser(result.updatedUser.id, result.updatedUser);
-            if (result.newPurchaseRequest) {
-                dataDispatch({ type: 'UPDATE_DATA', payload: { purchaseRequests: [result.newPurchaseRequest] } });
+        try {
+            const result = await apiRequest('POST', '/api/actions/purchase-item', { assetId, userId: user.id, costGroupIndex, guildId });
+            if (result && result.updatedUser) {
+                updateUser(result.updatedUser.id, result.updatedUser);
+                if (result.newPurchaseRequest) {
+                    dataDispatch({ type: 'UPDATE_DATA', payload: { purchaseRequests: [result.newPurchaseRequest] } });
+                }
+                addNotification({ type: 'success', message: `Purchase successful!` });
             }
-            addNotification({ type: 'success', message: `Purchase successful!` });
-        }
+        } catch(e) { /* error handled by apiRequest */ }
     }, [apiRequest, markets, updateUser, dataDispatch, addNotification]);
 
     const executeExchange = useCallback(async (userId: string, payItem: RewardItem, receiveItem: RewardItem, guildId?: string) => {
-        const result = await apiRequest('POST', '/api/actions/execute-exchange', { userId, payItem, receiveItem, guildId });
-        if (result && result.updatedUser) {
-            updateUser(result.updatedUser.id, result.updatedUser);
-            if (result.newAdjustment) {
-                dataDispatch({ type: 'UPDATE_DATA', payload: { adminAdjustments: [result.newAdjustment] } });
+        try {
+            const result = await apiRequest('POST', '/api/actions/execute-exchange', { userId, payItem, receiveItem, guildId });
+            if (result && result.updatedUser) {
+                updateUser(result.updatedUser.id, result.updatedUser);
+                if (result.newAdjustment) {
+                    dataDispatch({ type: 'UPDATE_DATA', payload: { adminAdjustments: [result.newAdjustment] } });
+                }
+                addNotification({ type: 'success', message: 'Exchange successful!' });
             }
-            addNotification({ type: 'success', message: 'Exchange successful!' });
-        }
+        } catch(e) { /* error handled */ }
     }, [apiRequest, updateUser, dataDispatch, addNotification]);
     
     // Generic helper for add actions
@@ -168,14 +173,16 @@ export const ActionsProvider: React.FC<{ children: ReactNode }> = ({ children })
         path: string,
         dataType: D
     ) => async (data: T_ADD): Promise<T_RETURN | null> => {
-        const result = await apiRequest('POST', path, data);
-        if (result) {
-            dataDispatch({
-                type: 'UPDATE_DATA',
-                payload: { [dataType]: [result] } as Partial<IAppData>
-            });
-        }
-        return result;
+        try {
+            const result = await apiRequest('POST', path, data);
+            if (result) {
+                dataDispatch({
+                    type: 'UPDATE_DATA',
+                    payload: { [dataType]: [result] } as Partial<IAppData>
+                });
+            }
+            return result;
+        } catch (e) { return null; }
     };
     
     // Generic helper for update actions
@@ -184,14 +191,16 @@ export const ActionsProvider: React.FC<{ children: ReactNode }> = ({ children })
         dataType: D
     ) => async (data: T): Promise<T | null> => {
         const path = pathTemplate(data.id);
-        const result = await apiRequest('PUT', path, data);
-        if (result) {
-            dataDispatch({
-                type: 'UPDATE_DATA',
-                payload: { [dataType]: [result] } as Partial<IAppData>
-            });
-        }
-        return result;
+        try {
+            const result = await apiRequest('PUT', path, data);
+            if (result) {
+                dataDispatch({
+                    type: 'UPDATE_DATA',
+                    payload: { [dataType]: [result] } as Partial<IAppData>
+                });
+            }
+            return result;
+        } catch (e) { return null; }
     };
 
     // Generic helper for clone actions
@@ -200,31 +209,33 @@ export const ActionsProvider: React.FC<{ children: ReactNode }> = ({ children })
         dataType: D
     ) => async (id: string): Promise<T_RETURN | null> => {
         const path = pathTemplate(id);
-        const result = await apiRequest('POST', path);
-        if (result) {
-            dataDispatch({
-                type: 'UPDATE_DATA',
-                payload: { [dataType]: [result] } as Partial<IAppData>
-            });
-        }
-        return result;
+        try {
+            const result = await apiRequest('POST', path);
+            if (result) {
+                dataDispatch({
+                    type: 'UPDATE_DATA',
+                    payload: { [dataType]: [result] } as Partial<IAppData>
+                });
+            }
+            return result;
+        } catch (e) { return null; }
     };
     
     const dispatch: ActionsDispatch = {
         addQuest: createAddAction('/api/quests', 'quests'),
         updateQuest: createUpdateAction(id => `/api/quests/${id}`, 'quests'),
         cloneQuest: createCloneAction(id => `/api/quests/clone/${id}`, 'quests'),
-        updateQuestsStatus: (ids, isActive) => apiRequest('PUT', '/api/quests/bulk-status', { ids, isActive }),
-        bulkUpdateQuests: (ids, updates) => apiRequest('PUT', '/api/quests/bulk-update', { ids, updates }),
+        updateQuestsStatus: (ids, isActive) => apiRequest('PUT', '/api/quests/bulk-status', { ids, isActive }).catch(() => {}),
+        bulkUpdateQuests: (ids, updates) => apiRequest('PUT', '/api/quests/bulk-update', { ids, updates }).catch(() => {}),
         
         addQuestGroup: createAddAction('/api/quest-groups', 'questGroups'),
         updateQuestGroup: createUpdateAction(id => `/api/quest-groups/${id}`, 'questGroups'),
-        assignQuestGroupToUsers: (groupId, userIds) => apiRequest('POST', `/api/quest-groups/assign`, { groupId, userIds }),
+        assignQuestGroupToUsers: (groupId, userIds) => apiRequest('POST', `/api/quest-groups/assign`, { groupId, userIds }).catch(() => {}),
         
         addMarket: createAddAction('/api/markets', 'markets'),
         updateMarket: createUpdateAction(id => `/api/markets/${id}`, 'markets'),
         cloneMarket: createCloneAction(id => `/api/markets/clone/${id}`, 'markets'),
-        updateMarketsStatus: (marketIds, statusType) => apiRequest('PUT', '/api/markets/bulk-status', { ids: marketIds, statusType }),
+        updateMarketsStatus: (marketIds, statusType) => apiRequest('PUT', '/api/markets/bulk-status', { ids: marketIds, statusType }).catch(() => {}),
         
         addTrophy: createAddAction('/api/trophies', 'trophies'),
         updateTrophy: createUpdateAction(id => `/api/trophies/${id}`, 'trophies'),
@@ -237,7 +248,7 @@ export const ActionsProvider: React.FC<{ children: ReactNode }> = ({ children })
         updateGameAsset: createUpdateAction(id => `/api/assets/${id}`, 'gameAssets'),
         cloneGameAsset: createCloneAction(id => `/api/assets/clone/${id}`, 'gameAssets'),
         
-        setRanks: (ranks) => apiRequest('POST', '/api/ranks/bulk-update', { ranks }),
+        setRanks: (ranks) => apiRequest('POST', '/api/ranks/bulk-update', { ranks }).catch(() => {}),
         
         deleteSelectedAssets: async (assets, callback) => {
             const assetsToRemoveFromData: { [key in keyof IAppData]?: string[] } = {};
@@ -246,19 +257,18 @@ export const ActionsProvider: React.FC<{ children: ReactNode }> = ({ children })
                 const assetType = key as ShareableAssetType;
                 const ids = assets[assetType];
                 if (!ids || ids.length === 0) continue;
-
-                if (assetType === 'users') {
-                    // AuthContext handles its own state and API call
-                    deleteUsers(ids);
-                } else {
-                    // Handle case where frontend type name differs from backend route
-                    const apiPath = assetType === 'modifierDefinitions' ? 'setbacks' : assetType;
-                    await apiRequest('DELETE', `/api/${apiPath}`, { ids });
-                    (assetsToRemoveFromData as any)[assetType] = ids;
-                }
+                
+                try {
+                    if (assetType === 'users') {
+                        deleteUsers(ids);
+                    } else {
+                        const apiPath = assetType === 'modifierDefinitions' ? 'setbacks' : assetType;
+                        await apiRequest('DELETE', `/api/${apiPath}`, { ids });
+                        (assetsToRemoveFromData as any)[assetType] = ids;
+                    }
+                } catch(e) { /* already handled by apiRequest */ }
             }
             
-            // Then dispatch a single action to remove from DataContext state
             if (Object.keys(assetsToRemoveFromData).length > 0) {
                 dataDispatch({
                     type: 'REMOVE_DATA',
@@ -270,71 +280,83 @@ export const ActionsProvider: React.FC<{ children: ReactNode }> = ({ children })
         },
         
         completeQuest: async (data) => {
-            const result = await apiRequest('POST', '/api/actions/complete-quest', { completionData: data });
-            if (result) {
-                const { updatedUser, newCompletion } = result;
-                if (updatedUser) updateUser(updatedUser.id, updatedUser);
-                if (newCompletion) dataDispatch({ type: 'UPDATE_DATA', payload: { questCompletions: [newCompletion] } });
-            }
+            try {
+                const result = await apiRequest('POST', '/api/actions/complete-quest', { completionData: data });
+                if (result) {
+                    const { updatedUser, newCompletion } = result;
+                    if (updatedUser) updateUser(updatedUser.id, updatedUser);
+                    if (newCompletion) dataDispatch({ type: 'UPDATE_DATA', payload: { questCompletions: [newCompletion] } });
+                }
+            } catch(e) {}
         },
         approveQuestCompletion: async (id, note) => {
-            const result = await apiRequest('POST', `/api/actions/approve-quest/${id}`, { note });
-            if (result) {
-                const { updatedUser, updatedCompletion, newUserTrophies, newNotifications } = result;
-                if (updatedUser) updateUser(updatedUser.id, updatedUser);
-                if (updatedCompletion) dataDispatch({ type: 'UPDATE_DATA', payload: { questCompletions: [updatedCompletion] } });
-                if (newUserTrophies?.length) dataDispatch({ type: 'UPDATE_DATA', payload: { userTrophies: newUserTrophies } });
-                if (newNotifications?.length) dataDispatch({ type: 'UPDATE_DATA', payload: { systemNotifications: newNotifications } });
-            }
+             try {
+                const result = await apiRequest('POST', `/api/actions/approve-quest/${id}`, { note });
+                if (result) {
+                    const { updatedUser, updatedCompletion, newUserTrophies, newNotifications } = result;
+                    if (updatedUser) updateUser(updatedUser.id, updatedUser);
+                    if (updatedCompletion) dataDispatch({ type: 'UPDATE_DATA', payload: { questCompletions: [updatedCompletion] } });
+                    if (newUserTrophies?.length) dataDispatch({ type: 'UPDATE_DATA', payload: { userTrophies: newUserTrophies } });
+                    if (newNotifications?.length) dataDispatch({ type: 'UPDATE_DATA', payload: { systemNotifications: newNotifications } });
+                }
+            } catch(e) {}
         },
         rejectQuestCompletion: async (id, note) => {
-            const result = await apiRequest('POST', `/api/actions/reject-quest/${id}`, { note });
-            if (result?.updatedCompletion) {
-                dataDispatch({ type: 'UPDATE_DATA', payload: { questCompletions: [result.updatedCompletion] } });
-            }
+            try {
+                const result = await apiRequest('POST', `/api/actions/reject-quest/${id}`, { note });
+                if (result?.updatedCompletion) {
+                    dataDispatch({ type: 'UPDATE_DATA', payload: { questCompletions: [result.updatedCompletion] } });
+                }
+            } catch(e) {}
         },
 
         purchaseMarketItem,
         approvePurchaseRequest: async (requestId, approverId) => {
-            const result = await apiRequest('POST', `/api/actions/approve-purchase/${requestId}`, { approverId });
-            if (result) {
-                const { updatedUser, updatedPurchaseRequest } = result;
-                if (updatedUser) updateUser(updatedUser.id, updatedUser);
-                if (updatedPurchaseRequest) dataDispatch({ type: 'UPDATE_DATA', payload: { purchaseRequests: [updatedPurchaseRequest] } });
-            }
+            try {
+                const result = await apiRequest('POST', `/api/actions/approve-purchase/${requestId}`, { approverId });
+                if (result) {
+                    const { updatedUser, updatedPurchaseRequest } = result;
+                    if (updatedUser) updateUser(updatedUser.id, updatedUser);
+                    if (updatedPurchaseRequest) dataDispatch({ type: 'UPDATE_DATA', payload: { purchaseRequests: [updatedPurchaseRequest] } });
+                }
+            } catch(e) {}
         },
         rejectPurchaseRequest: async (requestId, rejecterId) => {
-            const result = await apiRequest('POST', `/api/actions/reject-purchase/${requestId}`, { rejecterId });
-            if (result) {
-                const { updatedUser, updatedPurchaseRequest } = result;
-                if (updatedUser) updateUser(updatedUser.id, updatedUser);
-                if (updatedPurchaseRequest) dataDispatch({ type: 'UPDATE_DATA', payload: { purchaseRequests: [updatedPurchaseRequest] } });
-            }
+            try {
+                const result = await apiRequest('POST', `/api/actions/reject-purchase/${requestId}`, { rejecterId });
+                if (result) {
+                    const { updatedUser, updatedPurchaseRequest } = result;
+                    if (updatedUser) updateUser(updatedUser.id, updatedUser);
+                    if (updatedPurchaseRequest) dataDispatch({ type: 'UPDATE_DATA', payload: { purchaseRequests: [updatedPurchaseRequest] } });
+                }
+            } catch(e) {}
         },
-        cancelPurchaseRequest: (id) => apiRequest('POST', `/api/actions/cancel-purchase/${id}`),
+        cancelPurchaseRequest: (id) => apiRequest('POST', `/api/actions/cancel-purchase/${id}`).catch(() => {}),
         
         executeExchange,
 
         addGuild: createAddAction('/api/guilds', 'guilds'),
         updateGuild: createUpdateAction(id => `/api/guilds/${id}`, 'guilds'),
-        deleteGuild: (id) => apiRequest('DELETE', `/api/guilds/${id}`),
+        deleteGuild: (id) => apiRequest('DELETE', `/api/guilds/${id}`).catch(() => {}),
 
         applyManualAdjustment: async (adjustment) => {
-            const result = await apiRequest('POST', '/api/actions/manual-adjustment', adjustment);
-            if (result && result.newAdjustment) {
-                const updates: Partial<IAppData> = { adminAdjustments: [result.newAdjustment] };
-                if (result.newUserTrophy) {
-                    updates.userTrophies = [result.newUserTrophy];
-                }
-                dataDispatch({ type: 'UPDATE_DATA', payload: updates });
+            try {
+                const result = await apiRequest('POST', '/api/actions/manual-adjustment', adjustment);
+                if (result && result.newAdjustment) {
+                    const updates: Partial<IAppData> = { adminAdjustments: [result.newAdjustment] };
+                    if (result.newUserTrophy) {
+                        updates.userTrophies = [result.newUserTrophy];
+                    }
+                    dataDispatch({ type: 'UPDATE_DATA', payload: updates });
 
-                if (result.updatedUser) {
-                    updateUser(result.updatedUser.id, result.updatedUser);
+                    if (result.updatedUser) {
+                        updateUser(result.updatedUser.id, result.updatedUser);
+                    }
+                    addNotification({ type: 'success', message: 'Adjustment applied successfully.' });
+                    return true;
                 }
-                addNotification({ type: 'success', message: 'Adjustment applied successfully.' });
-                return true;
-            }
-            return false;
+                return false;
+            } catch (e) { return false; }
         },
 
         uploadFile: async (file, category) => {
@@ -353,79 +375,88 @@ export const ActionsProvider: React.FC<{ children: ReactNode }> = ({ children })
 
         addTheme: createAddAction('/api/themes', 'themes'),
         updateTheme: createUpdateAction(id => `/api/themes/${id}`, 'themes'),
-        deleteTheme: (id) => apiRequest('DELETE', `/api/themes/${id}`),
+        deleteTheme: (id) => apiRequest('DELETE', `/api/themes/${id}`).catch(() => {}),
 
         markQuestAsTodo: async (questId, userId) => {
-            const result = await apiRequest('POST', `/api/actions/mark-todo`, { questId, userId });
-            if (result) dataDispatch({ type: 'UPDATE_DATA', payload: { quests: [result] }});
+            try {
+                const result = await apiRequest('POST', `/api/actions/mark-todo`, { questId, userId });
+                if (result) dataDispatch({ type: 'UPDATE_DATA', payload: { quests: [result] }});
+            } catch(e) {}
         },
         unmarkQuestAsTodo: async (questId, userId) => {
-            const result = await apiRequest('POST', `/api/actions/unmark-todo`, { questId, userId });
-            if (result) dataDispatch({ type: 'UPDATE_DATA', payload: { quests: [result] }});
+            try {
+                const result = await apiRequest('POST', `/api/actions/unmark-todo`, { questId, userId });
+                if (result) dataDispatch({ type: 'UPDATE_DATA', payload: { quests: [result] }});
+            } catch(e) {}
         },
 
-        useItem: (id) => apiRequest('POST', `/api/actions/use-item/${id}`),
-        craftItem: (id) => apiRequest('POST', `/api/actions/craft-item/${id}`),
+        useItem: (id) => apiRequest('POST', `/api/actions/use-item/${id}`).catch(() => {}),
+        craftItem: (id) => apiRequest('POST', `/api/actions/craft-item/${id}`).catch(() => {}),
 
         updateSettings: async (settings) => {
-            const result = await apiRequest('PUT', '/api/settings', settings);
-            if (result) dataDispatch({ type: 'UPDATE_DATA', payload: { settings: result }});
+            try {
+                const result = await apiRequest('PUT', '/api/settings', settings);
+                if (result) dataDispatch({ type: 'UPDATE_DATA', payload: { settings: result }});
+            } catch(e) {}
         },
-        resetSettings: () => apiRequest('POST', '/api/data/reset-settings'),
-        applySettingsUpdates: () => apiRequest('POST', '/api/data/apply-updates'),
-        clearAllHistory: () => apiRequest('POST', '/api/data/clear-history'),
-        resetAllPlayerData: () => apiRequest('POST', '/api/data/reset-players'),
-        deleteAllCustomContent: () => apiRequest('POST', '/api/data/delete-content'),
-        factoryReset: () => apiRequest('POST', '/api/data/factory-reset'),
+        resetSettings: () => apiRequest('POST', '/api/data/reset-settings').catch(() => {}),
+        applySettingsUpdates: () => apiRequest('POST', '/api/data/apply-updates').catch(() => {}),
+        clearAllHistory: () => apiRequest('POST', '/api/data/clear-history').catch(() => {}),
+        resetAllPlayerData: () => apiRequest('POST', '/api/data/reset-players').catch(() => {}),
+        deleteAllCustomContent: () => apiRequest('POST', '/api/data/delete-content').catch(() => {}),
+        factoryReset: () => apiRequest('POST', '/api/data/factory-reset').catch(() => {}),
         
         sendMessage: async (messageData) => {
             if (!currentUser) return;
-            const result = await apiRequest('POST', '/api/chat/send', { ...messageData, senderId: currentUser.id });
-            if (result && result.newChatMessage) {
-                dataDispatch({ type: 'UPDATE_DATA', payload: { chatMessages: [result.newChatMessage] } });
-            } else {
-                addNotification({ type: 'error', message: 'Failed to send message. Please try again later.' });
-            }
+            try {
+                const result = await apiRequest('POST', '/api/chat/send', { ...messageData, senderId: currentUser.id });
+                if (result && result.newChatMessage) {
+                    dataDispatch({ type: 'UPDATE_DATA', payload: { chatMessages: [result.newChatMessage] } });
+                } else {
+                    addNotification({ type: 'error', message: 'Failed to send message. Please try again later.' });
+                }
+            } catch(e) {}
         },
-        markMessagesAsRead: (criteria) => apiRequest('POST', '/api/chat/read', criteria),
+        markMessagesAsRead: (criteria) => apiRequest('POST', '/api/chat/read', criteria).catch(() => {}),
         
-        addSystemNotification: (data) => apiRequest('POST', '/api/notifications', data),
-        markSystemNotificationsAsRead: (ids, userId) => apiRequest('POST', '/api/notifications/read', { ids, userId }),
+        addSystemNotification: createAddAction('/api/notifications', 'systemNotifications'),
+        markSystemNotificationsAsRead: (ids, userId) => apiRequest('POST', '/api/notifications/read', { ids, userId }).catch(() => {}),
         
         addScheduledEvent: createAddAction('/api/events', 'scheduledEvents'),
         updateScheduledEvent: createUpdateAction(id => `/api/events/${id}`, 'scheduledEvents'),
-        deleteScheduledEvent: (id) => apiRequest('DELETE', `/api/events/${id}`),
+        deleteScheduledEvent: (id) => apiRequest('DELETE', `/api/events/${id}`).catch(() => {}),
 
         importAssetPack: async (pack, resolutions) => {
-            const result = await apiRequest('POST', '/api/data/import-assets', { assetPack: pack, resolutions });
-            if (result.importedData) {
-                const { users: importedUsers, ...otherAssets } = result.importedData;
+            try {
+                const result = await apiRequest('POST', '/api/data/import-assets', { assetPack: pack, resolutions });
+                if (result.importedData) {
+                    const { users: importedUsers, ...otherAssets } = result.importedData;
 
-                dataDispatch({ type: 'UPDATE_DATA', payload: otherAssets });
+                    dataDispatch({ type: 'UPDATE_DATA', payload: otherAssets });
 
-                if (importedUsers && importedUsers.length > 0) {
-                    setUsers(currentUsers => [...currentUsers, ...importedUsers]);
+                    if (importedUsers && importedUsers.length > 0) {
+                        setUsers(currentUsers => [...currentUsers, ...importedUsers]);
+                    }
+
+                    addNotification({ type: 'success', message: 'Asset pack imported successfully!' });
                 }
-
-                addNotification({ type: 'success', message: 'Asset pack imported successfully!' });
-            }
+            } catch(e) {}
         },
 
-        addBugReport: async (report) => {
-            const result = await apiRequest('POST', '/api/bug-reports', report);
-            if (result) dataDispatch({ type: 'UPDATE_DATA', payload: { bugReports: [result] }});
-        },
+        addBugReport: createAddAction('/api/bug-reports', 'bugReports'),
         updateBugReport: async (reportId, updates) => {
-            const result = await apiRequest('PUT', `/api/bug-reports/${reportId}`, updates);
-            if (result) {
-                dataDispatch({
-                    type: 'UPDATE_DATA',
-                    payload: { bugReports: [result] }
-                });
-            }
-            return result;
+            try {
+                const result = await apiRequest('PUT', `/api/bug-reports/${reportId}`, updates);
+                if (result) {
+                    dataDispatch({
+                        type: 'UPDATE_DATA',
+                        payload: { bugReports: [result] }
+                    });
+                }
+                return result;
+            } catch (e) { return null; }
         },
-        deleteBugReports: (ids) => apiRequest('DELETE', '/api/bug-reports', { ids }),
+        deleteBugReports: (ids) => apiRequest('DELETE', '/api/bug-reports', { ids }).catch(() => {}),
         importBugReports: async (reports, mode) => {
             const result = await apiRequest('POST', '/api/bug-reports/import', { reports, mode });
             if (result) dataDispatch({ type: 'UPDATE_DATA', payload: { bugReports: result }});
@@ -438,39 +469,43 @@ export const ActionsProvider: React.FC<{ children: ReactNode }> = ({ children })
         updateModifierDefinition: createUpdateAction(id => `/api/setbacks/${id}`, 'modifierDefinitions'),
         applyModifier: async (userId, modifierId, reason, overrides) => {
             if (!currentUser) return false;
-            const result = await apiRequest('POST', '/api/actions/apply-setback', {
-                userId,
-                setbackDefinitionId: modifierId,
-                reason,
-                appliedById: currentUser.id,
-                overrides,
-            });
-             if (result) {
-                if (result.updatedUser) {
-                    updateUser(result.updatedUser.id, result.updatedUser);
+            try {
+                const result = await apiRequest('POST', '/api/actions/apply-setback', {
+                    userId,
+                    setbackDefinitionId: modifierId,
+                    reason,
+                    appliedById: currentUser.id,
+                    overrides,
+                });
+                if (result) {
+                    if (result.updatedUser) {
+                        updateUser(result.updatedUser.id, result.updatedUser);
+                    }
+                    if (result.newAppliedSetback) {
+                        dataDispatch({ type: 'UPDATE_DATA', payload: { appliedModifiers: [result.newAppliedSetback] } });
+                    }
+                    return true;
                 }
-                if (result.newAppliedSetback) {
-                    dataDispatch({ type: 'UPDATE_DATA', payload: { appliedModifiers: [result.newAppliedSetback] } });
-                }
-                return true;
-            }
-            return false;
+                return false;
+            } catch(e) { return false; }
         },
 
-        proposeTrade: (recipientId, guildId) => apiRequest('POST', '/api/trades/propose', { recipientId, guildId }),
-        updateTradeOffer: (id, updates) => apiRequest('PUT', `/api/trades/${id}`, updates),
-        acceptTrade: (id) => apiRequest('POST', `/api/trades/accept/${id}`),
-        cancelOrRejectTrade: (id, action) => apiRequest('POST', `/api/trades/resolve/${id}`, { action }),
-        sendGift: (recipientId, assetId, guildId) => apiRequest('POST', '/api/gifts/send', { recipientId, assetId, guildId }),
+        proposeTrade: createAddAction('/api/trades/propose', 'tradeOffers'),
+        updateTradeOffer: (id, updates) => apiRequest('PUT', `/api/trades/${id}`, updates).catch(() => {}),
+        acceptTrade: (id) => apiRequest('POST', `/api/trades/accept/${id}`).catch(() => {}),
+        cancelOrRejectTrade: (id, action) => apiRequest('POST', `/api/trades/resolve/${id}`, { action }).catch(() => {}),
+        sendGift: (recipientId, assetId, guildId) => apiRequest('POST', '/api/gifts/send', { recipientId, assetId, guildId }).catch(() => {}),
         cloneUser: async (userId: string) => {
             if (bugLogger.isRecording()) {
                 bugLogger.add({ type: 'ACTION', message: `Cloning user ID: ${userId}` });
             }
-            const result = await apiRequest('POST', `/api/users/clone/${userId}`);
-            if (result) {
-                addNotification({ type: 'success', message: `User "${result.gameName}" cloned successfully.` });
-            }
-            return result;
+            try {
+                const result = await apiRequest('POST', `/api/users/clone/${userId}`);
+                if (result) {
+                    addNotification({ type: 'success', message: `User "${result.gameName}" cloned successfully.` });
+                }
+                return result;
+            } catch(e) { return null; }
         },
     };
 

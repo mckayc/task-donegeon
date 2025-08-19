@@ -1,7 +1,7 @@
 {
   "name": "task-donegeon",
   "private": true,
-  "version": "0.0.54",
+  "version": "0.0.55",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -9,33 +9,33 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@fullcalendar/core": "^6.1.14",
-    "@fullcalendar/daygrid": "^6.1.14",
-    "@fullcalendar/google-calendar": "^6.1.14",
-    "@fullcalendar/interaction": "^6.1.14",
-    "@fullcalendar/list": "^6.1.14",
-    "@fullcalendar/react": "^6.1.14",
-    "@fullcalendar/resource-timegrid": "^6.1.14",
-    "@fullcalendar/timegrid": "^6.1.14",
+    "@fullcalendar/core": "^6.1.15",
+    "@fullcalendar/daygrid": "^6.1.15",
+    "@fullcalendar/google-calendar": "^6.1.15",
+    "@fullcalendar/interaction": "^6.1.15",
+    "@fullcalendar/list": "^6.1.15",
+    "@fullcalendar/react": "^6.1.15",
+    "@fullcalendar/resource-timegrid": "^6.1.15",
+    "@fullcalendar/timegrid": "^6.1.15",
     "@radix-ui/react-slot": "^1.0.2",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.1",
-    "emoji-picker-react": "^4.5.2",
-    "framer-motion": "^11.2.10",
-    "lucide-react": "^0.395.0",
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0",
+    "emoji-picker-react": "^4.10.0",
+    "framer-motion": "^11.3.8",
+    "lucide-react": "^0.408.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
     "tailwind-merge": "^2.3.0",
     "tailwindcss-animate": "^1.0.7"
   },
   "devDependencies": {
-    "@fullcalendar/rrule": "^6.1.11",
-    "@google/genai": "^1.9.0",
-    "@types/node": "^20.11.20",
-    "@types/react": "^18.2.15",
-    "@types/react-dom": "^18.2.7",
-    "@vitejs/plugin-react": "^4.0.3",
-    "typescript": "^5.0.2",
-    "vite": "^4.4.5"
+    "@fullcalendar/rrule": "^6.1.15",
+    "@google/genai": "^1.13.0",
+    "@types/node": "^20.14.9",
+    "@types/react": "^18.3.3",
+    "@types/react-dom": "^18.3.0",
+    "@vitejs/plugin-react": "^4.3.1",
+    "typescript": "^5.5.3",
+    "vite": "^5.3.3"
   }
 }

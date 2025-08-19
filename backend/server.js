@@ -5,7 +5,7 @@ const path = require('path');
 const multer = require('multer');
 const fs = require('fs').promises;
 const { GoogleGenAI } = require('@google/genai');
-const { In, Brackets, Like, MoreThan, Between, IsNull } = require("typeorm");
+const { In, Brackets, Like, MoreThan, Between, IsNull, Not } = require("typeorm");
 const { dataSource, ensureDatabaseDirectoryExists } = require('./data-source');
 const { INITIAL_SETTINGS, INITIAL_REWARD_TYPES, INITIAL_RANKS, INITIAL_TROPHIES, INITIAL_THEMES, INITIAL_QUEST_GROUPS } = require('./initialData');
 const { 
@@ -112,6 +112,51 @@ const checkAndAwardTrophies = async (manager, userId, guildId) => {
         }
     }
     return { newUserTrophies, newNotifications };
+};
+
+// === Validators ===
+const rewardTypeValidator = async (data, repo, existingId = null) => {
+    if (!data.name || data.name.trim().length === 0) return "Reward type name cannot be empty.";
+    if (data.baseValue !== undefined && (typeof data.baseValue !== 'number' || data.baseValue < 0)) return "Base value must be a non-negative number.";
+    const conflict = await repo.findOne({ where: { name: data.name, id: Not(existingId || '') }});
+    if (conflict) return `A reward type with the name "${data.name}" already exists.`;
+    return null;
+};
+
+const marketValidator = async (data, repo, existingId = null) => {
+    if (!data.title || data.title.trim().length === 0) return "Market title cannot be empty.";
+    const conflict = await repo.findOne({ where: { title: data.title, id: Not(existingId || '') }});
+    if (conflict) return `A market with the title "${data.title}" already exists.`;
+    return null;
+};
+
+const rankValidator = async (data, repo, existingId = null) => {
+    if (!data.name || data.name.trim().length === 0) return "Rank name cannot be empty.";
+    if (data.xpThreshold === undefined || typeof data.xpThreshold !== 'number' || data.xpThreshold < 0) return "XP Threshold must be a non-negative number.";
+    const nameConflict = await repo.findOne({ where: { name: data.name, id: Not(existingId || '') }});
+    if (nameConflict) return `A rank with the name "${data.name}" already exists.`;
+    return null;
+};
+
+const trophyValidator = async (data, repo, existingId = null) => {
+    if (!data.name || data.name.trim().length === 0) return "Trophy name cannot be empty.";
+    const conflict = await repo.findOne({ where: { name: data.name, id: Not(existingId || '') }});
+    if (conflict) return `A trophy with the name "${data.name}" already exists.`;
+    return null;
+};
+
+const questGroupValidator = async (data, repo, existingId = null) => {
+    if (!data.name || data.name.trim().length === 0) return "Group name cannot be empty.";
+    const conflict = await repo.findOne({ where: { name: data.name, id: Not(existingId || '') }});
+    if (conflict) return `A quest group with the name "${data.name}" already exists.`;
+    return null;
+};
+
+const gameAssetValidator = async (data, repo, existingId = null) => {
+    if (!data.name || data.name.trim().length === 0) return "Asset name cannot be empty.";
+    const conflict = await repo.findOne({ where: { name: data.name, id: Not(existingId || '') }});
+    if (conflict) return `An asset with the name "${data.name}" already exists.`;
+    return null;
 };
 
 // === Middleware ===
@@ -916,6 +961,19 @@ usersRouter.get('/', asyncMiddleware(async (req, res) => {
 usersRouter.post('/', asyncMiddleware(async (req, res) => {
     const userData = req.body;
     
+    // --- Validation Start ---
+    const errors = [];
+    if (!userData.username || userData.username.length < 3) errors.push("Username must be at least 3 characters long.");
+    if (!userData.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(userData.email)) errors.push("A valid email is required.");
+    if (!userData.gameName || userData.gameName.length < 3) errors.push("Game Name must be at least 3 characters long.");
+    if (userData.pin && (String(userData.pin).length < 4 || String(userData.pin).length > 10 || !/^\d+$/.test(userData.pin))) errors.push("PIN must be 4-10 digits.");
+    if (userData.password && userData.password.length < 6) errors.push("Password must be at least 6 characters long.");
+    
+    if (errors.length > 0) {
+        return res.status(400).json({ error: errors.join(' ') });
+    }
+    // --- Validation End ---
+
     const conflict = await userRepo.findOne({
         where: [
             { username: userData.username },
@@ -979,13 +1037,28 @@ usersRouter.post('/clone/:id', asyncMiddleware(async (req, res) => {
 usersRouter.put('/:id', asyncMiddleware(async (req, res) => {
     const user = await userRepo.findOneBy({ id: req.params.id });
     if (!user) return res.status(404).send('User not found');
+
+    const userData = req.body;
+
+    // --- Validation Start ---
+    const errors = [];
+    if (userData.username !== undefined && userData.username.length < 3) errors.push("Username must be at least 3 characters long.");
+    if (userData.email !== undefined && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(userData.email)) errors.push("A valid email is required.");
+    if (userData.gameName !== undefined && userData.gameName.length < 3) errors.push("Game Name must be at least 3 characters long.");
+    if (userData.pin !== undefined && userData.pin && (String(userData.pin).length < 4 || String(userData.pin).length > 10 || !/^\d+$/.test(userData.pin))) errors.push("PIN must be 4-10 digits.");
+    if (userData.password !== undefined && userData.password && userData.password.length < 6) errors.push("Password must be at least 6 characters long.");
     
-    if (req.body.username && req.body.username !== user.username) {
-        const conflict = await userRepo.findOneBy({ username: req.body.username });
+    if (errors.length > 0) {
+        return res.status(400).json({ error: errors.join(' ') });
+    }
+    // --- Validation End ---
+    
+    if (userData.username && userData.username !== user.username) {
+        const conflict = await userRepo.findOneBy({ username: userData.username });
         if (conflict) return res.status(409).json({ error: 'Username already in use.' });
     }
-    if (req.body.email && req.body.email !== user.email) {
-        const conflict = await userRepo.findOneBy({ email: req.body.email });
+    if (userData.email && userData.email !== user.email) {
+        const conflict = await userRepo.findOneBy({ email: userData.email });
         if (conflict) return res.status(409).json({ error: 'Email already in use.' });
     }
 
@@ -1004,7 +1077,7 @@ usersRouter.delete('/', asyncMiddleware(async (req, res) => {
 }));
 
 
-const createGenericRouter = (entity, relations = []) => {
+const createGenericRouter = (entity, relations = [], validator) => {
     const router = express.Router();
     const repo = dataSource.getRepository(entity);
     const entityName = entity.options.name;
@@ -1015,6 +1088,10 @@ const createGenericRouter = (entity, relations = []) => {
     }));
 
     router.post('/', asyncMiddleware(async (req, res) => {
+        if (validator) {
+            const error = await validator(req.body, repo);
+            if (error) return res.status(400).json({ error });
+        }
         const newItem = repo.create({
             ...req.body,
             id: `${entityName.toLowerCase()}-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`
@@ -1027,6 +1104,12 @@ const createGenericRouter = (entity, relations = []) => {
     router.put('/:id', asyncMiddleware(async (req, res) => {
         const item = await repo.findOneBy({ id: req.params.id });
         if (!item) return res.status(404).send(`${entityName} not found`);
+        
+        if (validator) {
+            const error = await validator(req.body, repo, req.params.id);
+            if (error) return res.status(400).json({ error });
+        }
+
         repo.merge(item, req.body);
         const saved = await repo.save(updateTimestamps(item));
         updateEmitter.emit('update');
@@ -1053,6 +1136,21 @@ questsRouter.get('/', asyncMiddleware(async (req, res) => {
 
 questsRouter.post('/', asyncMiddleware(async (req, res) => {
     const { assignedUserIds, ...questData } = req.body;
+    
+    // --- Validation Start ---
+    if (!questData.title || questData.title.trim().length === 0) {
+        return res.status(400).json({ error: "Quest title cannot be empty." });
+    }
+    const validateRewards = (rewards) => {
+        if (!rewards) return true;
+        if (!Array.isArray(rewards)) return false;
+        return rewards.every(r => r && typeof r.rewardTypeId === 'string' && typeof r.amount === 'number' && r.amount > 0);
+    };
+    if (!validateRewards(questData.rewards) || !validateRewards(questData.lateSetbacks) || !validateRewards(questData.incompleteSetbacks)) {
+        return res.status(400).json({ error: "Invalid reward format. Rewards must have a rewardTypeId and a positive amount." });
+    }
+    // --- Validation End ---
+
     const newQuest = questRepo.create({
         ...questData,
         id: `quest-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`
@@ -1087,6 +1185,23 @@ questsRouter.put('/:id', asyncMiddleware(async (req, res) => {
     if (!quest) return res.status(404).send('Quest not found');
 
     const { assignedUserIds, ...questData } = req.body;
+
+    // --- Validation Start ---
+    if (questData.title !== undefined && questData.title.trim().length === 0) {
+        return res.status(400).json({ error: "Quest title cannot be empty." });
+    }
+    const validateRewards = (rewards) => {
+        if (!rewards) return true;
+        if (!Array.isArray(rewards)) return false;
+        return rewards.every(r => r && typeof r.rewardTypeId === 'string' && typeof r.amount === 'number' && r.amount > 0);
+    };
+    if ((questData.rewards && !validateRewards(questData.rewards)) || 
+        (questData.lateSetbacks && !validateRewards(questData.lateSetbacks)) || 
+        (questData.incompleteSetbacks && !validateRewards(questData.incompleteSetbacks))) {
+        return res.status(400).json({ error: "Invalid reward format. Rewards must have a rewardTypeId and a positive amount." });
+    }
+    // --- Validation End ---
+
     questRepo.merge(quest, questData);
 
     if (assignedUserIds) {
@@ -1149,17 +1264,12 @@ app.post('/api/ai/generate', asyncMiddleware(async (req, res) => {
         return res.status(400).json({ error: 'AI features are not configured on the server.' });
     }
     const { model, prompt, generationConfig } = req.body;
-    try {
-        const response = await ai.models.generateContent({
-            model: model || 'gemini-2.5-flash',
-            contents: prompt,
-            config: generationConfig,
-        });
-        res.json({ text: response.text });
-    } catch (error) {
-        console.error("Gemini AI Error:", error);
-        res.status(500).json({ error: error.message || 'An error occurred while communicating with the AI.' });
-    }
+    const response = await ai.models.generateContent({
+        model: model || 'gemini-2.5-flash',
+        contents: prompt,
+        config: generationConfig,
+    });
+    res.json({ text: response.text });
 }));
 
 
@@ -1400,18 +1510,18 @@ app.use('/api/actions', actionsRouter);
 app.use('/api/quests', questsRouter);
 app.use('/api/users', usersRouter);
 app.use('/api/guilds', guildsRouter);
-app.use('/api/markets', createGenericRouter(MarketEntity));
-app.use('/api/reward-types', createGenericRouter(RewardTypeDefinitionEntity));
-app.use('/api/ranks', createGenericRouter(RankEntity));
-app.use('/api/trophies', createGenericRouter(TrophyEntity));
-app.use('/api/assets', createGenericRouter(GameAssetEntity));
+app.use('/api/markets', createGenericRouter(MarketEntity, [], marketValidator));
+app.use('/api/reward-types', createGenericRouter(RewardTypeDefinitionEntity, [], rewardTypeValidator));
+app.use('/api/ranks', createGenericRouter(RankEntity, [], rankValidator));
+app.use('/api/trophies', createGenericRouter(TrophyEntity, [], trophyValidator));
+app.use('/api/assets', createGenericRouter(GameAssetEntity, [], gameAssetValidator));
 app.use('/api/themes', createGenericRouter(ThemeDefinitionEntity));
 app.use('/api/settings', createGenericRouter(SettingEntity));
 app.use('/api/chat', createGenericRouter(ChatMessageEntity));
 app.use('/api/notifications', createGenericRouter(SystemNotificationEntity));
 app.use('/api/events', createGenericRouter(ScheduledEventEntity));
 app.use('/api/bug-reports', createGenericRouter(BugReportEntity));
-app.use('/api/quest-groups', createGenericRouter(QuestGroupEntity));
+app.use('/api/quest-groups', createGenericRouter(QuestGroupEntity, [], questGroupValidator));
 app.use('/api/rotations', createGenericRouter(RotationEntity));
 app.use('/api/setbacks', createGenericRouter(ModifierDefinitionEntity));
 app.use('/api/applied-setbacks', createGenericRouter(AppliedModifierEntity));
@@ -1420,6 +1530,25 @@ app.use('/api/gifts', createGenericRouter(GiftEntity));
 
 // Serve static assets from the 'uploads' directory
 app.use('/uploads', express.static(UPLOADS_DIR));
+
+// === Centralized Error Handling ===
+// This must be after all API routes and before the static file server
+app.use((err, req, res, next) => {
+    console.error('----------------------------------------------------');
+    console.error(`[ERROR] Caught unhandled exception for ${req.method} ${req.path}`);
+    console.error(err.stack);
+    console.error('----------------------------------------------------');
+
+    // Avoid sending stack trace in production environments
+    const isProduction = process.env.NODE_ENV === 'production';
+    
+    if (!res.headersSent) {
+        res.status(500).json({
+            error: isProduction ? 'An internal server error occurred.' : err.message,
+        });
+    }
+});
+
 
 // Serve frontend
 app.use(express.static(path.join(__dirname, '..', 'dist')));

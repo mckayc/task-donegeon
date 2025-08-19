@@ -1418,6 +1418,90 @@ app.use('/api/applied-setbacks', createGenericRouter(AppliedModifierEntity));
 app.use('/api/trades', createGenericRouter(TradeOfferEntity));
 app.use('/api/gifts', createGenericRouter(GiftEntity));
 
+app.get('/api/chronicles', asyncMiddleware(async(req, res) => {
+    const { page, limit, userId, guildId, viewMode, startDate, endDate } = req.query;
+    const manager = dataSource.manager;
+    let allEvents = [];
+
+    const users = await manager.find(UserEntity);
+    const quests = await manager.find(QuestEntity);
+    const trophies = await manager.find(TrophyEntity);
+    const rewardTypes = await manager.find(RewardTypeDefinitionEntity);
+    const gameAssets = await manager.find(GameAssetEntity);
+    
+    const userMap = new Map(users.map(u => [u.id, u.gameName]));
+    const questMap = new Map(quests.map(q => [q.id, { title: q.title, icon: q.icon, type: q.type }]));
+    const trophyMap = new Map(trophies.map(t => [t.id, { name: t.name, icon: t.icon }]));
+
+    const whereConditions = {};
+    if (guildId === 'null') {
+        whereConditions.guildId = IsNull();
+    } else if (guildId) {
+        whereConditions.guildId = guildId;
+    }
+    if (viewMode === 'personal' && userId) {
+        whereConditions.userId = userId;
+    }
+
+    // Quest Completions
+    const completions = await manager.find(QuestCompletionEntity, { where: whereConditions, relations: ['user'] });
+    allEvents.push(...completions.map(c => {
+        const questInfo = questMap.get(c.questId) || { title: 'Unknown Quest', icon: '📜', type: 'Venture' };
+        return {
+            id: `quest-${c.id}`, originalId: c.id, date: c.completedAt, type: 'Quest',
+            title: `${c.user?.gameName || 'Unknown User'} completed "${questInfo.title}"`,
+            note: c.note, status: c.status, icon: questInfo.icon,
+            color: 'hsl(158 84% 39%)', userId: c.userId, questType: questInfo.type, guildId: c.guildId
+        };
+    }));
+
+    // Purchase Requests
+    const purchases = await manager.find(PurchaseRequestEntity, { where: whereConditions, relations: ['user'] });
+    allEvents.push(...purchases.map(p => {
+        const costText = p.assetDetails.cost.map(r => `${r.amount} ${rewardTypes.find(rt => rt.id === r.rewardTypeId)?.icon || '?'}`).join(', ');
+        return {
+            id: `purchase-${p.id}`, originalId: p.id, date: p.requestedAt, type: 'Purchase',
+            title: `${p.user?.gameName || 'Unknown User'} requested "${p.assetDetails.name}"`,
+            note: `Cost: ${costText}`, status: p.status, icon: '💰',
+            color: 'hsl(280 60% 60%)', userId: p.userId, guildId: p.guildId
+        };
+    }));
+
+    // User Trophies
+    const userTrophyAwards = await manager.find(UserTrophyEntity, { where: whereConditions, relations: ['user'] });
+    allEvents.push(...userTrophyAwards.map(ut => {
+        const trophyInfo = trophyMap.get(ut.trophyId) || { name: 'Unknown Trophy', icon: '🏆' };
+        return {
+            id: `trophy-${ut.id}`, originalId: ut.id, date: ut.awardedAt, type: 'Trophy',
+            title: `${ut.user?.gameName || 'Unknown User'} earned "${trophyInfo.name}"`,
+            note: '', status: 'Awarded', icon: trophyInfo.icon,
+            color: 'hsl(50 90% 60%)', userId: ut.userId, guildId: ut.guildId
+        };
+    }));
+
+    allEvents.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    
+    let finalEvents = allEvents;
+    const total = allEvents.length;
+
+    if (page && limit) {
+        const pageNum = parseInt(page, 10);
+        const limitNum = parseInt(limit, 10);
+        const offset = (pageNum - 1) * limitNum;
+        finalEvents = allEvents.slice(offset, offset + limitNum);
+    } else if (startDate && endDate) {
+        const start = new Date(startDate);
+        const end = new Date(endDate);
+        finalEvents = allEvents.filter(e => {
+            const eventDate = new Date(e.date);
+            return eventDate >= start && eventDate <= end;
+        });
+    }
+
+    res.json({ events: finalEvents, total });
+}));
+
+
 // Serve static assets from the 'uploads' directory
 app.use('/uploads', express.static(UPLOADS_DIR));
 

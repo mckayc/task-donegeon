@@ -127,8 +127,8 @@ const ChroniclesPage: React.FC = () => {
                     <>
                         <ul className="space-y-4">
                             {events.map(activity => (
-                                <li key={activity.id} className="flex items-start gap-4 p-3 bg-stone-800/60 rounded-lg">
-                                    <div className="w-8 flex-shrink-0 text-center text-2xl pt-1" style={{ color: activity.color }}>
+                                <li key={activity.id} className="flex items-start gap-4 p-3 bg-stone-800/60 rounded-lg border-l-4" style={{ borderColor: activity.color }}>
+                                    <div className="w-8 flex-shrink-0 text-center text-2xl pt-1">
                                         {activity.icon}
                                     </div>
                                     <div className="flex-grow min-w-0">
@@ -136,11 +136,13 @@ const ChroniclesPage: React.FC = () => {
                                            {activity.title}
                                         </p>
                                         <p className="text-xs text-stone-400 mt-1">{formatTimestamp(activity.date)}</p>
+                                        {activity.note && (
+                                            <p className="text-sm text-stone-400 italic mt-2 whitespace-pre-wrap" title={activity.note}>
+                                                "{activity.note}"
+                                            </p>
+                                        )}
                                     </div>
-                                    <div className="w-2/5 flex-shrink-0 text-sm text-stone-400 italic" title={activity.note}>
-                                        {activity.note ? <p className="whitespace-pre-wrap">"{activity.note}"</p> : ''}
-                                    </div>
-                                    <div className={`w-28 flex-shrink-0 text-right font-semibold flex items-center justify-end gap-2 ${statusColor(activity.status)}`}>
+                                    <div className={`w-32 flex-shrink-0 text-right font-semibold flex items-center justify-end gap-2 ${statusColor(activity.status)}`}>
                                         <span>{activity.status}</span>
                                          {activity.type === 'Purchase' && activity.status === 'Pending' && activity.userId === currentUser.id && (
                                             <Button variant="destructive" size="sm" className="!text-xs !py-0.5" onClick={() => cancelPurchaseRequest(activity.originalId)}>

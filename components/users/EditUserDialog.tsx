@@ -52,7 +52,7 @@ const EditUserDialog: React.FC<EditUserDialogProps> = ({ user, onClose, onUserUp
       });
       if (!response.ok) throw new Error('Failed to get suggestion from AI.');
       const result: GenerateContentResponse = await response.json();
-      const suggestedName = result.text.trim().replace(/"/g, '');
+      const suggestedName = (result.text || '').trim().replace(/"/g, '');
       if (suggestedName) {
         setFormData(p => ({ ...p, gameName: suggestedName }));
       }

@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { useData } from '../../context/DataProvider';
 import { useAuthState, useAuthDispatch } from '../../context/AuthContext';
 import Button from '../user-interface/Button';
@@ -11,7 +11,7 @@ import ConfirmDialog from '../user-interface/ConfirmDialog';
 import { useDebounce } from '../../hooks/useDebounce';
 import Input from '../user-interface/Input';
 import { useShiftSelect } from '../../hooks/useShiftSelect';
-import { PencilIcon, CopyIcon, TrashIcon, AdjustmentsIcon } from '../user-interface/Icons';
+import { EllipsisVerticalIcon } from '../user-interface/Icons';
 import { useActionsDispatch } from '../../context/ActionsContext';
 
 const UserManagementPage: React.FC = () => {
@@ -29,7 +29,19 @@ const UserManagementPage: React.FC = () => {
     const [adjustingUser, setAdjustingUser] = useState<User | null>(null);
     const [deletingIds, setDeletingIds] = useState<string[]>([]);
     const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
-    
+    const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
+    const dropdownRef = useRef<HTMLDivElement | null>(null);
+
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+                setOpenDropdownId(null);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
     const pageUsers = useMemo(() => {
         let filteredUsers = [...users];
 
@@ -169,21 +181,18 @@ const UserManagementPage: React.FC = () => {
                                                 {roleName(user.role)}
                                             </span>
                                         </td>
-                                        <td className="p-4">
-                                            <div className="flex items-center gap-1">
-                                                <Button variant="ghost" size="icon" title="Edit" onClick={() => handleEdit(user)} className="h-8 w-8 text-stone-400 hover:text-white">
-                                                    <PencilIcon className="w-4 h-4" />
-                                                </Button>
-                                                <Button variant="ghost" size="icon" title="Clone" onClick={() => cloneUser(user.id)} className="h-8 w-8 text-stone-400 hover:text-white">
-                                                    <CopyIcon className="w-4 h-4" />
-                                                </Button>
-                                                <Button variant="ghost" size="icon" title="Adjust" onClick={() => handleAdjust(user)} className="h-8 w-8 text-stone-400 hover:text-white">
-                                                    <AdjustmentsIcon className="w-4 h-4" />
-                                                </Button>
-                                                <Button variant="ghost" size="icon" title="Delete" onClick={() => handleDeleteRequest([user.id])} className="h-8 w-8 text-red-400 hover:text-red-300 hover:bg-red-900/50">
-                                                    <TrashIcon className="w-4 h-4" />
-                                                </Button>
-                                            </div>
+                                        <td className="p-4 relative">
+                                            <button onClick={() => setOpenDropdownId(openDropdownId === user.id ? null : user.id)} className="p-2 rounded-full hover:bg-stone-700/50">
+                                                <EllipsisVerticalIcon className="w-5 h-5 text-stone-300" />
+                                            </button>
+                                            {openDropdownId === user.id && (
+                                                <div ref={dropdownRef} className="absolute right-10 top-0 mt-2 w-36 bg-stone-900 border border-stone-700 rounded-lg shadow-xl z-20">
+                                                    <button onClick={() => { handleEdit(user); setOpenDropdownId(null); }} className="w-full text-left block px-4 py-2 text-sm text-stone-300 hover:bg-stone-700/50">Edit</button>
+                                                    <button onClick={() => { cloneUser(user.id); setOpenDropdownId(null); }} className="w-full text-left block px-4 py-2 text-sm text-stone-300 hover:bg-stone-700/50">Clone</button>
+                                                    <button onClick={() => { handleAdjust(user); setOpenDropdownId(null); }} className="w-full text-left block px-4 py-2 text-sm text-stone-300 hover:bg-stone-700/50">Adjust</button>
+                                                    <button onClick={() => { handleDeleteRequest([user.id]); setOpenDropdownId(null); }} className="w-full text-left block px-4 py-2 text-sm text-red-400 hover:bg-stone-700/50">Delete</button>
+                                                </div>
+                                            )}
                                         </td>
                                     </tr>
                                 ))}

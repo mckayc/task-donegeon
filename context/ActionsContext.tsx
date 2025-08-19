@@ -387,7 +387,10 @@ export const ActionsProvider: React.FC<{ children: ReactNode }> = ({ children })
                 addNotification({ type: 'error', message: 'Failed to send message. Please try again later.' });
             }
         },
-        markMessagesAsRead: (criteria) => apiRequest('POST', '/api/chat/read', criteria),
+        markMessagesAsRead: async (criteria: { partnerId?: string, guildId?: string }) => {
+            if (!currentUser) return;
+            await apiRequest('POST', '/api/chat/read', { ...criteria, userId: currentUser.id });
+        },
         
         addSystemNotification: (data) => apiRequest('POST', '/api/notifications', data),
         markSystemNotificationsAsRead: (ids, userId) => apiRequest('POST', '/api/notifications/read', { ids, userId }),
@@ -447,11 +450,18 @@ export const ActionsProvider: React.FC<{ children: ReactNode }> = ({ children })
                 overrides,
             });
              if (result) {
+                const payloadToDispatch: Partial<IAppData> = {};
                 if (result.updatedUser) {
                     updateUser(result.updatedUser.id, result.updatedUser);
                 }
                 if (result.newAppliedModifier) {
-                    dataDispatch({ type: 'UPDATE_DATA', payload: { appliedModifiers: [result.newAppliedModifier] } });
+                    payloadToDispatch.appliedModifiers = [result.newAppliedModifier];
+                }
+                if (result.newRedemptionQuest) {
+                    payloadToDispatch.quests = [result.newRedemptionQuest];
+                }
+                if (Object.keys(payloadToDispatch).length > 0) {
+                    dataDispatch({ type: 'UPDATE_DATA', payload: payloadToDispatch });
                 }
                 return true;
             }

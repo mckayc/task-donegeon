@@ -1393,6 +1393,159 @@ actionsRouter.post('/cancel-purchase/:id', asyncMiddleware(async (req, res) => {
     });
 }));
 
+actionsRouter.post('/apply-modifier', asyncMiddleware(async (req, res) => {
+    const { userId, modifierDefinitionId, reason, appliedById, guildId, overrides } = req.body;
+    let newAppliedModifier = null;
+    let updatedUser = null;
+    let newRedemptionQuest = null;
+
+    await dataSource.transaction(async manager => {
+        const user = await manager.findOneBy(UserEntity, { id: userId });
+        const definition = await manager.findOneBy(ModifierDefinitionEntity, { id: modifierDefinitionId });
+
+        if (!user || !definition) {
+            return res.status(404).json({ error: 'User or Modifier Definition not found.' });
+        }
+
+        const finalDefinition = { ...definition, ...overrides };
+        const now = new Date();
+
+        newAppliedModifier = manager.create(AppliedModifierEntity, {
+            id: `appliedmod-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+            userId,
+            modifierDefinitionId,
+            appliedAt: now.toISOString(),
+            status: 'Active',
+            reason,
+            appliedById,
+            overrides: Object.keys(overrides || {}).length > 0 ? overrides : undefined,
+        });
+
+        // Process effects
+        const rewardTypes = await manager.find(RewardTypeDefinitionEntity);
+        const balances = guildId ? user.guildBalances[guildId] || { purse: {}, experience: {} } : { purse: user.personalPurse, experience: user.personalExperience };
+        if (guildId && !user.guildBalances[guildId]) {
+            user.guildBalances[guildId] = balances;
+        }
+
+        for (const effect of finalDefinition.effects) {
+            switch (effect.type) {
+                case 'GRANT_REWARDS':
+                case 'DEDUCT_REWARDS':
+                    const sign = effect.type === 'GRANT_REWARDS' ? 1 : -1;
+                    for (const reward of effect.rewards) {
+                        const def = rewardTypes.find(rt => rt.id === reward.rewardTypeId);
+                        if (def) {
+                            const target = def.category === 'Currency' ? balances.purse : balances.experience;
+                            target[reward.rewardTypeId] = (target[reward.rewardTypeId] || 0) + (reward.amount * sign);
+                        }
+                    }
+                    break;
+                case 'CLOSE_MARKET':
+                case 'OPEN_MARKET':
+                case 'MARKET_DISCOUNT':
+                    if (effect.durationHours) {
+                        newAppliedModifier.expiresAt = new Date(now.getTime() + effect.durationHours * 60 * 60 * 1000).toISOString();
+                    }
+                    break;
+            }
+        }
+
+        // Handle redemption quest for Trials
+        if (finalDefinition.category === 'Trial' && finalDefinition.defaultRedemptionQuestId) {
+            const templateQuest = await manager.findOne(QuestEntity, { where: { id: finalDefinition.defaultRedemptionQuestId }, relations: ['assignedUsers'] });
+            if (templateQuest) {
+                const userToAssign = await manager.findOneBy(UserEntity, { id: userId });
+                const redemptionQuest = manager.create(QuestEntity, {
+                    ...templateQuest,
+                    id: `quest-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+                    isRedemptionFor: newAppliedModifier.id,
+                    title: `Redemption: ${templateQuest.title}`,
+                    isActive: true, // Make sure it's active
+                });
+                if(userToAssign) redemptionQuest.assignedUsers = [userToAssign];
+
+                newRedemptionQuest = await manager.save(updateTimestamps(redemptionQuest, true));
+                newAppliedModifier.redemptionQuestId = newRedemptionQuest.id;
+            }
+        }
+        
+        await manager.save(updateTimestamps(newAppliedModifier, true));
+        updatedUser = await manager.save(updateTimestamps(user));
+    });
+
+    const responsePayload = { newAppliedModifier, updatedUser };
+    if (newRedemptionQuest) {
+        // Need to format quest for frontend before sending
+        const { assignedUsers, ...questData } = newRedemptionQuest;
+        responsePayload.newRedemptionQuest = { ...questData, assignedUserIds: assignedUsers?.map(u => u.id) || [] };
+    }
+
+    updateEmitter.emit('update');
+    res.status(201).json(responsePayload);
+}));
+
+
+const chatRouter = express.Router();
+const chatRepo = dataSource.getRepository(ChatMessageEntity);
+
+chatRouter.post('/send', asyncMiddleware(async (req, res) => {
+    const { senderId, recipientId, guildId, message, isAnnouncement } = req.body;
+    if (!senderId || !message || (!recipientId && !guildId)) {
+        return res.status(400).json({ error: 'Missing required fields for chat message.' });
+    }
+
+    const newChatMessage = chatRepo.create({
+        id: `chat-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+        senderId,
+        recipientId,
+        guildId,
+        message,
+        isAnnouncement: isAnnouncement || false,
+        timestamp: new Date().toISOString(),
+        readBy: [senderId], // Sender has read it by default
+    });
+
+    const saved = await chatRepo.save(updateTimestamps(newChatMessage, true));
+    updateEmitter.emit('update');
+    // Correct response format for the frontend
+    res.status(201).json({ newChatMessage: saved });
+}));
+
+chatRouter.post('/read', asyncMiddleware(async (req, res) => {
+    const { partnerId, guildId, userId } = req.body;
+    if (!userId || (!partnerId && !guildId)) {
+        return res.status(400).json({ error: 'Missing user ID or chat identifier.' });
+    }
+
+    let messagesToUpdateQuery;
+    if (guildId) {
+        messagesToUpdateQuery = chatRepo.createQueryBuilder("chat")
+            .where("chat.guildId = :guildId", { guildId })
+            .andWhere("chat.senderId != :userId", { userId })
+            .andWhere("NOT chat.readBy LIKE :readByPattern", { readByPattern: `%${userId}%` });
+    } else { // DM with partner
+        messagesToUpdateQuery = chatRepo.createQueryBuilder("chat")
+            .where("(chat.senderId = :partnerId AND chat.recipientId = :userId)", { partnerId, userId })
+            .andWhere("NOT chat.readBy LIKE :readByPattern", { readByPattern: `%${userId}%` });
+    }
+    
+    const messagesToUpdate = await messagesToUpdateQuery.getMany();
+    
+    if (messagesToUpdate.length > 0) {
+        for (const message of messagesToUpdate) {
+            // Double check to prevent duplicates if LIKE was imprecise
+            if (!message.readBy.includes(userId)) {
+                message.readBy.push(userId);
+                updateTimestamps(message); // update the updatedAt timestamp
+            }
+        }
+        await chatRepo.save(messagesToUpdate);
+        updateEmitter.emit('update');
+    }
+    
+    res.status(204).send();
+}));
 
 // ... (The rest of the file will go here)
 
@@ -1407,7 +1560,7 @@ app.use('/api/trophies', createGenericRouter(TrophyEntity));
 app.use('/api/assets', createGenericRouter(GameAssetEntity));
 app.use('/api/themes', createGenericRouter(ThemeDefinitionEntity));
 app.use('/api/settings', createGenericRouter(SettingEntity));
-app.use('/api/chat', createGenericRouter(ChatMessageEntity));
+app.use('/api/chat', chatRouter);
 app.use('/api/notifications', createGenericRouter(SystemNotificationEntity));
 app.use('/api/events', createGenericRouter(ScheduledEventEntity));
 app.use('/api/bug-reports', createGenericRouter(BugReportEntity));

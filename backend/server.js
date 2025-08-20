@@ -1388,6 +1388,48 @@ actionsRouter.post('/reject-quest/:id', asyncMiddleware(async (req, res) => {
     res.json({ updatedCompletion });
 }));
 
+actionsRouter.post('/mark-todo', asyncMiddleware(async (req, res) => {
+    const { questId, userId } = req.body;
+    await dataSource.transaction(async manager => {
+        const quest = await manager.findOneBy(QuestEntity, { id: questId });
+        if (!quest) {
+            return res.status(404).json({ error: 'Quest not found.' });
+        }
+        
+        if (!quest.todoUserIds) {
+            quest.todoUserIds = [];
+        }
+
+        if (!quest.todoUserIds.includes(userId)) {
+            quest.todoUserIds.push(userId);
+            const updatedQuest = await manager.save(updateTimestamps(quest));
+            updateEmitter.emit('update');
+            res.json(updatedQuest);
+        } else {
+            res.json(quest); // No change needed
+        }
+    });
+}));
+
+actionsRouter.post('/unmark-todo', asyncMiddleware(async (req, res) => {
+    const { questId, userId } = req.body;
+    await dataSource.transaction(async manager => {
+        const quest = await manager.findOneBy(QuestEntity, { id: questId });
+        if (!quest) {
+            return res.status(404).json({ error: 'Quest not found.' });
+        }
+
+        if (quest.todoUserIds && quest.todoUserIds.includes(userId)) {
+            quest.todoUserIds = quest.todoUserIds.filter(id => id !== userId);
+            const updatedQuest = await manager.save(updateTimestamps(quest));
+            updateEmitter.emit('update');
+            res.json(updatedQuest);
+        } else {
+            res.json(quest); // No change needed
+        }
+    });
+}));
+
 actionsRouter.post('/complete-checkpoint', asyncMiddleware(async (req, res) => {
     const { questId, userId } = req.body;
     await dataSource.transaction(async manager => {

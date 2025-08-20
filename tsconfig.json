@@ -14,8 +14,9 @@
     "resolveJsonModule": true,
     "isolatedModules": true,
     "noEmit": true,
-    "jsx": "react-jsx"
+    "jsx": "react-jsx",
+    "types": ["jest"]
   },
-  "include": ["components", "context", "data", "hooks", "utils", "lib", "index.tsx", "App.tsx", "types.ts", "metadata.json"],
+  "include": ["components", "context", "data", "hooks", "utils", "lib", "index.tsx", "App.tsx", "types.ts", "metadata.json", "test-utils.tsx"],
   "references": [{ "path": "./tsconfig.node.json" }]
 }

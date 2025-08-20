@@ -1,4 +1,3 @@
-
 {
   "manifest": {
     "id": "com.taskdonegeon.outdooradventure.v1",
@@ -37,7 +36,8 @@
         "requiresApproval": true,
         "lateSetbacks": [],
         "incompleteSetbacks": [],
-        "availabilityCount": 20,
+        "totalCompletionsLimit": 20,
+        "dailyCompletionsLimit": 1,
         "assignedUserIds": [],
         "guildId": null,
         "groupId": "qg-outdoor",
@@ -72,7 +72,8 @@
         "requiresApproval": false,
         "lateSetbacks": [],
         "incompleteSetbacks": [],
-        "availabilityCount": 20,
+        "totalCompletionsLimit": 20,
+        "dailyCompletionsLimit": 1,
         "assignedUserIds": [],
         "guildId": null,
         "groupId": "qg-outdoor",
@@ -107,7 +108,8 @@
         "requiresApproval": true,
         "lateSetbacks": [],
         "incompleteSetbacks": [],
-        "availabilityCount": null,
+        "totalCompletionsLimit": 0,
+        "dailyCompletionsLimit": 1,
         "assignedUserIds": [],
         "guildId": null,
         "groupId": "qg-outdoor",

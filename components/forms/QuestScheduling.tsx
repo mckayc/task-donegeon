@@ -13,7 +13,8 @@ interface QuestSchedulingProps {
         rrule: string | null;
         startTime: string | null;
         endTime: string | null;
-        availabilityCount?: number | null;
+        dailyCompletionsLimit?: number;
+        totalCompletionsLimit?: number;
     };
     onChange: (newValue: Partial<QuestSchedulingProps['value']>) => void;
 }
@@ -94,7 +95,8 @@ const QuestScheduling: React.FC<QuestSchedulingProps> = ({ value, onChange }) =>
                 type,
                 startDateTime: null,
                 endDateTime: null,
-                availabilityCount: null,
+                totalCompletionsLimit: 0,
+                dailyCompletionsLimit: 1,
                 rrule: 'FREQ=DAILY', // Default to daily
             });
         } else { // Venture or Journey
@@ -157,7 +159,12 @@ const QuestScheduling: React.FC<QuestSchedulingProps> = ({ value, onChange }) =>
 
             {(value.type === QuestType.Venture || value.type === QuestType.Journey) ? (
                 <div className="space-y-4">
-                    {value.type === QuestType.Venture && <Input label="Completions Allowed" type="number" min="1" value={value.availabilityCount ?? 1} onChange={e => onChange({ availabilityCount: parseInt(e.target.value) || 1 })} />}
+                    {value.type === QuestType.Venture && (
+                       <div className="grid grid-cols-2 gap-4">
+                           <Input label="Daily Completions Limit (0 for unlimited)" type="number" min="0" value={value.dailyCompletionsLimit ?? 1} onChange={e => onChange({ dailyCompletionsLimit: parseInt(e.target.value) || 0 })} />
+                           <Input label="Total Completions Limit (0 for unlimited)" type="number" min="0" value={value.totalCompletionsLimit ?? 0} onChange={e => onChange({ totalCompletionsLimit: parseInt(e.target.value) || 0 })} />
+                       </div>
+                    )}
                     <ToggleSwitch label="Specific Due Date" enabled={hasDueDate} setEnabled={val => {
                         setHasDueDate(val);
                         if (!val) {

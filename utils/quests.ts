@@ -128,16 +128,32 @@ export const isQuestAvailableForUser = (
   const guildId = appMode.mode === 'guild' ? appMode.guildId : undefined;
   const onVacation = isVacationActiveOnDate(today, scheduledEvents, guildId);
 
-  // Venture-specific logic for early completion and deadlines
+  // Venture-specific logic
   if (quest.type === QuestType.Venture) {
+    // 1. Check total completions limit. A limit of 0 means infinite.
+    const totalLimit = quest.totalCompletionsLimit;
+    if (totalLimit && totalLimit > 0) {
+      if (questUserCompletions.length >= totalLimit) {
+        return false; // Total limit reached
+      }
+    }
+
+    // 2. Check daily completions limit. A limit of 0 means infinite.
+    const dailyLimit = quest.dailyCompletionsLimit;
+    if (dailyLimit && dailyLimit > 0) {
+      const todayYMD = toYMD(today);
+      const todayCompletions = questUserCompletions.filter(c => toYMD(new Date(c.completedAt)) === todayYMD);
+      if (todayCompletions.length >= dailyLimit) {
+        return false; // Daily limit for today has been reached
+      }
+    }
+      
+    // 3. Check deadlines
     if (!onVacation && quest.endDateTime && today > new Date(quest.endDateTime)) {
-      return false; // Past the final deadline, and not on vacation
+      return false; // Past the final deadline
     }
-    if (quest.availabilityCount) { // Frequency
-      return questUserCompletions.length < quest.availabilityCount;
-    }
-    // Unlimited (completable once)
-    return questUserCompletions.length === 0;
+
+    return true;
   }
 
   // Journey-specific logic
@@ -305,18 +321,18 @@ export const getQuestUserStatus = (
   
   // Handle general completion for non-daily quests
   const approvedCompletions = userCompletionsForQuest.filter(c => c.status === QuestCompletionStatus.Approved);
-  if (quest.availabilityCount === null && approvedCompletions.length > 0) { // Unlimited
+  if (quest.totalCompletionsLimit === 1 && approvedCompletions.length > 0) { // Unlimited (original logic for one-time quests)
       return { status: 'COMPLETED', buttonText: 'Completed', isActionDisabled: true };
   }
-  if (quest.availabilityCount && approvedCompletions.length >= quest.availabilityCount) { // Frequency
+  if (quest.totalCompletionsLimit && quest.totalCompletionsLimit > 0 && approvedCompletions.length >= quest.totalCompletionsLimit) { // Frequency
      return { status: 'COMPLETED', buttonText: 'Completed', isActionDisabled: true };
   }
 
 
-  const isClaimableVenture = quest.type === QuestType.Venture && !!quest.availabilityCount;
+  const isClaimableVenture = quest.type === QuestType.Venture && quest.totalCompletionsLimit && quest.totalCompletionsLimit > 0;
   if (isClaimableVenture) {
     const isClaimedByCurrentUser = (quest.claimedByUserIds || []).includes(user.id);
-    const isFullyClaimed = (quest.claimedByUserIds || []).length >= (quest.availabilityCount || 1);
+    const isFullyClaimed = (quest.claimedByUserIds || []).length >= (quest.totalCompletionsLimit || 1);
 
     if (isClaimedByCurrentUser) {
       return { status: 'RELEASEABLE', buttonText: 'Complete', isActionDisabled: false };

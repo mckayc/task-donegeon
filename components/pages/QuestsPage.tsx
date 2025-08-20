@@ -31,8 +31,8 @@ const getAvailabilityText = (quest: Quest, completionsCount: number): string => 
         }
     }
 
-    if (quest.availabilityCount) {
-        return `${completionsCount} / ${quest.availabilityCount} completed`;
+    if (quest.totalCompletionsLimit && quest.totalCompletionsLimit > 0) {
+        return `${completionsCount} / ${quest.totalCompletionsLimit} completed`;
     }
     
     return 'One-time Venture';

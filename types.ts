@@ -118,7 +118,8 @@ export interface Quest {
   startTime: string | null;     // 'HH:mm' for recurring events (Duties).
   endTime: string | null;       // 'HH:mm' for recurring events (Duties).
   
-  availabilityCount?: number | null; // For Ventures. How many times it can be completed in total.
+  dailyCompletionsLimit?: number; // How many times it can be completed per day. 0 for unlimited.
+  totalCompletionsLimit?: number; // How many times it can be completed in total. 0 for unlimited.
   completionGoal?: number; // For collaborative quests
   checkpoints?: Checkpoint[]; // For Journeys
   checkpointCompletions?: { [userId: string]: number }; // For Journeys. Tracks number of *completed* checkpoints.

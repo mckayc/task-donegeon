@@ -1638,6 +1638,9 @@ actionsRouter.post('/execute-exchange', asyncMiddleware(async (req, res) => {
 
 const assetPacksRouter = express.Router();
 const imagePacksRouter = express.Router();
+const backupsRouter = express.Router();
+const mediaRouter = express.Router();
+
 const GITHUB_REPO_URL = 'https://api.github.com/repos/google/codewithme-task-donegeon/contents/public/images/packs';
 
 // Helper to create asset pack summary
@@ -1784,6 +1787,141 @@ imagePacksRouter.post('/import', asyncMiddleware(async (req, res) => {
     res.status(204).send();
 }));
 
+const parseBackupFilename = (filename) => {
+    const match = filename.match(/backup-(manual|auto-.+?)-(.+?)-v(\d+)\.(json|sqlite)/);
+    if (!match) return null;
+    return {
+        type: match[1],
+        date: new Date(match[2].replace(/-/g, ':').replace('T', ' ')).toISOString(),
+        version: match[3],
+        format: match[4],
+    };
+};
+
+backupsRouter.get('/', asyncMiddleware(async (req, res) => {
+    await fs.mkdir(BACKUP_DIR, { recursive: true });
+    const files = await fs.readdir(BACKUP_DIR);
+    const backupInfos = await Promise.all(files.map(async (file) => {
+        const filePath = path.join(BACKUP_DIR, file);
+        const stats = await fs.stat(filePath);
+        return {
+            filename: file,
+            size: stats.size,
+            createdAt: stats.mtime.toISOString(),
+            parsed: parseBackupFilename(file),
+        };
+    }));
+    backupInfos.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    res.json(backupInfos);
+}));
+
+backupsRouter.post('/create-json', asyncMiddleware(async (req, res) => {
+    const manager = dataSource.manager;
+    const appData = await getFullAppData(manager);
+    const version = appData.settings?.contentVersion || 1;
+    const timestamp = new Date().toISOString().replace(/:/g, '-');
+    const filename = `backup-manual-${timestamp}-v${version}.json`;
+    const filePath = path.join(BACKUP_DIR, filename);
+    await fs.writeFile(filePath, JSON.stringify(appData, null, 2));
+    res.status(201).json({ message: 'JSON backup created.', filename });
+}));
+
+backupsRouter.post('/create-sqlite', asyncMiddleware(async (req, res) => {
+    const manager = dataSource.manager;
+    const settingsRow = await manager.findOneBy(SettingEntity, { id: 1 });
+    const version = settingsRow?.settings?.contentVersion || 1;
+    const timestamp = new Date().toISOString().replace(/:/g, '-');
+    const filename = `backup-manual-${timestamp}-v${version}.sqlite`;
+    const filePath = path.join(BACKUP_DIR, filename);
+    await fs.copyFile(dbPath, filePath);
+    res.status(201).json({ message: 'SQLite backup created.', filename });
+}));
+
+backupsRouter.get('/download/:filename', asyncMiddleware(async (req, res) => {
+    const { filename } = req.params;
+    const safeFilename = path.basename(filename);
+    if (safeFilename !== filename) return res.status(400).send('Invalid filename.');
+    const filePath = path.join(BACKUP_DIR, safeFilename);
+    try {
+        await fs.access(filePath);
+        res.download(filePath);
+    } catch (err) {
+        res.status(404).send('Backup not found.');
+    }
+}));
+
+backupsRouter.delete('/:filename', asyncMiddleware(async (req, res) => {
+    const { filename } = req.params;
+    const safeFilename = path.basename(filename);
+    if (safeFilename !== filename) return res.status(400).send('Invalid filename.');
+    const filePath = path.join(BACKUP_DIR, safeFilename);
+    try {
+        await fs.unlink(filePath);
+        res.status(204).send();
+    } catch (err) {
+        res.status(404).send('Backup not found.');
+    }
+}));
+
+const restoreUpload = multer({ dest: '/tmp/' });
+backupsRouter.post('/restore-upload', restoreUpload.single('backupFile'), asyncMiddleware(async (req, res) => {
+    if (!req.file) return res.status(400).json({ error: 'No backup file provided.' });
+    if (dataSource.isInitialized) await dataSource.destroy();
+    if (req.file.originalname.endsWith('.sqlite')) {
+        await fs.copyFile(req.file.path, dbPath);
+    } else {
+        await fs.unlink(dbPath).catch(err => { if (err.code !== 'ENOENT') throw err; });
+        await dataSource.initialize();
+        const manager = dataSource.manager;
+        const backupContent = await fs.readFile(req.file.path, 'utf-8');
+        const backupData = JSON.parse(backupContent);
+        // Simplified restore logic
+        for (const entity of allEntities) {
+            const repo = manager.getRepository(entity);
+            const pluralName = entity.options.name.toLowerCase() + 's';
+            if (backupData[pluralName]) await repo.save(backupData[pluralName]);
+        }
+        if (backupData.settings) await manager.save(SettingEntity, { id: 1, settings: backupData.settings });
+        if (backupData.loginHistory) await manager.save(LoginHistoryEntity, { id: 1, history: backupData.loginHistory });
+    }
+    await fs.unlink(req.file.path);
+    res.json({ message: 'Restore successful! The application will now reload.' });
+}));
+
+
+mediaRouter.get('/local-gallery', asyncMiddleware(async (req, res) => {
+    const gallery = [];
+    const readDirRecursive = async (dir, category) => {
+        try {
+            const files = await fs.readdir(dir, { withFileTypes: true });
+            for (const file of files) {
+                const fullPath = path.join(dir, file.name);
+                if (file.isDirectory()) {
+                    await readDirRecursive(fullPath, file.name);
+                } else if (!file.name.startsWith('.')) { // Ignore hidden files
+                    gallery.push({
+                        url: `/uploads/${category ? `${category}/` : ''}${file.name}`,
+                        category: category || 'Miscellaneous',
+                        name: file.name,
+                    });
+                }
+            }
+        } catch (error) {
+            if (error.code !== 'ENOENT') console.error(`Error reading directory ${dir}:`, error);
+        }
+    };
+    await readDirRecursive(UPLOADS_DIR, '');
+    res.json(gallery);
+}));
+
+mediaRouter.post('/upload', upload.single('file'), asyncMiddleware(async (req, res) => {
+    if (!req.file) return res.status(400).json({ error: 'No file uploaded.' });
+    const category = req.body.category || 'Miscellaneous';
+    const sanitizedCategory = category.replace(/[^a-zA-Z0-9-_ ]/g, '').trim();
+    const url = `/uploads/${sanitizedCategory}/${req.file.filename}`;
+    res.status(201).json({ url });
+}));
+
 // ... (The rest of the file will go here)
 
 app.use('/api/actions', actionsRouter);
@@ -1798,6 +1936,8 @@ app.use('/api/assets', createGenericRouter(GameAssetEntity));
 app.use('/api/themes', createGenericRouter(ThemeDefinitionEntity));
 app.use('/api/asset-packs', assetPacksRouter);
 app.use('/api/image-packs', imagePacksRouter);
+app.use('/api/backups', backupsRouter);
+app.use('/api/media', mediaRouter);
 
 
 // Special handling for Settings, as it's a singleton resource.

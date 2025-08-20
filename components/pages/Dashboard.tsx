@@ -365,7 +365,7 @@ const Dashboard: React.FC = () => {
                             <p className="text-2xl font-bold text-accent-light">{rankData.currentRank.name}</p>
                             <p className="text-stone-400">Level {rankData.currentLevel}</p>
                             <div className="relative w-full bg-stone-700 rounded-full h-5 mt-4 overflow-hidden text-white">
-                                <div className="absolute inset-0 h-full rounded-full bg-primary transition-all duration-500" style={{width: `${rankData.progressPercentage}%`}}></div>
+                                <div className="absolute inset-0 h-full rounded-full transition-all duration-500" style={{width: `${rankData.progressPercentage}%`, backgroundColor: 'hsl(var(--primary))'}}></div>
                                 <div className="absolute inset-0 flex items-center justify-center">
                                     {rankData.nextRank ? (
                                         <span className="text-xs font-bold" style={{textShadow: '1px 1px 2px rgba(0,0,0,0.7)'}}>

@@ -50,7 +50,8 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
         assignedUserIds: users.map(u => u.id),
         guildId: '', groupId: '', tags: [],
         startDateTime: null, endDateTime: null, allDay: true, rrule: 'FREQ=DAILY',
-        startTime: null, endTime: null, availabilityCount: 1,
+        startTime: null, endTime: null, 
+        dailyCompletionsLimit: 1, totalCompletionsLimit: 0,
         todoUserIds: [],
     };
 
@@ -64,7 +65,8 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
         rrule: questToEdit.rrule || null,
         startTime: questToEdit.startTime || null,
         endTime: questToEdit.endTime || null,
-        availabilityCount: questToEdit.availabilityCount ?? 1,
+        dailyCompletionsLimit: questToEdit.dailyCompletionsLimit ?? 1,
+        totalCompletionsLimit: questToEdit.totalCompletionsLimit ?? 0,
       };
     }
 
@@ -221,7 +223,8 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
         rrule: formData.rrule,
         startTime: formData.startTime,
         endTime: formData.endTime,
-        availabilityCount: formData.availabilityCount,
+        dailyCompletionsLimit: formData.dailyCompletionsLimit,
+        totalCompletionsLimit: formData.totalCompletionsLimit,
         rewards: (formData.rewards || []).filter(r => r.rewardTypeId && r.amount > 0),
         lateSetbacks: (formData.lateSetbacks || []).filter(s => s.rewardTypeId && s.amount > 0),
         incompleteSetbacks: (formData.incompleteSetbacks || []).filter(s => s.rewardTypeId && s.amount > 0),

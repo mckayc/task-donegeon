@@ -8,7 +8,7 @@ import Card from '../../user-interface/Card';
 import CreateQuestDialog from '../../quests/CreateQuestDialog';
 import ConfirmDialog from '../../user-interface/ConfirmDialog';
 import QuestIdeaGenerator from '../../quests/QuestIdeaGenerator';
-import { QuestsIcon, EllipsisVerticalIcon } from '../../user-interface/Icons';
+import { QuestsIcon, PencilIcon, CopyIcon, TrashIcon } from '../../user-interface/Icons';
 import EmptyState from '../../user-interface/EmptyState';
 import Input from '../../user-interface/Input';
 import BulkEditQuestsDialog from '../../quests/BulkEditQuestsDialog';
@@ -26,8 +26,6 @@ const ManageQuestsPage: React.FC = () => {
     const [confirmation, setConfirmation] = useState<{ action: 'delete' | 'activate' | 'deactivate', ids: string[] } | null>(null);
     const [initialCreateData, setInitialCreateData] = useState<any | null>(null);
     const [selectedQuests, setSelectedQuests] = useState<string[]>([]);
-    const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
-    const dropdownRef = useRef<HTMLDivElement | null>(null);
     const [editingJourneyId, setEditingJourneyId] = useState<string | null>(null);
     
     const [activeTab, setActiveTab] = useState('All');
@@ -66,16 +64,6 @@ const ManageQuestsPage: React.FC = () => {
         
         return filtered;
     }, [activeTab, debouncedSearchTerm, sortBy, quests, questGroups]);
-
-    useEffect(() => {
-        const handleClickOutside = (event: MouseEvent) => {
-            if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-                setOpenDropdownId(null);
-            }
-        };
-        document.addEventListener('mousedown', handleClickOutside);
-        return () => document.removeEventListener('mousedown', handleClickOutside);
-    }, []);
 
     const tabs = useMemo(() => ['All', 'Uncategorized', ...questGroups.map(g => g.name)], [questGroups]);
     
@@ -252,17 +240,18 @@ const ManageQuestsPage: React.FC = () => {
                                                 ))}
                                             </div>
                                         </td>
-                                        <td className="p-4 relative">
-                                            <button onClick={() => setOpenDropdownId(openDropdownId === quest.id ? null : quest.id)} className="p-2 rounded-full hover:bg-stone-700/50">
-                                                <EllipsisVerticalIcon className="w-5 h-5 text-stone-300" />
-                                            </button>
-                                            {openDropdownId === quest.id && (
-                                                <div ref={dropdownRef} className="absolute right-10 top-0 mt-2 w-36 bg-stone-900 border border-stone-700 rounded-lg shadow-xl z-20">
-                                                    <a href="#" onClick={(e) => { e.preventDefault(); handleEdit(quest); setOpenDropdownId(null); }} data-log-id={`manage-quests-action-edit-${quest.id}`} className="block px-4 py-2 text-sm text-stone-300 hover:bg-stone-700/50">Edit</a>
-                                                    <button onClick={() => { cloneQuest(quest.id); setOpenDropdownId(null); }} data-log-id={`manage-quests-action-clone-${quest.id}`} className="w-full text-left block px-4 py-2 text-sm text-stone-300 hover:bg-stone-700/50">Clone</button>
-                                                    <button onClick={() => { setConfirmation({ action: 'delete', ids: [quest.id] }); setOpenDropdownId(null); }} data-log-id={`manage-quests-action-delete-${quest.id}`} className="w-full text-left block px-4 py-2 text-sm text-red-400 hover:bg-stone-700/50">Delete</button>
-                                                </div>
-                                            )}
+                                        <td className="p-4">
+                                            <div className="flex items-center gap-1">
+                                                <Button variant="ghost" size="icon" title="Edit" onClick={() => handleEdit(quest)} data-log-id={`manage-quests-action-edit-${quest.id}`} className="h-8 w-8 text-stone-400 hover:text-white">
+                                                    <PencilIcon className="w-4 h-4" />
+                                                </Button>
+                                                <Button variant="ghost" size="icon" title="Clone" onClick={() => cloneQuest(quest.id)} data-log-id={`manage-quests-action-clone-${quest.id}`} className="h-8 w-8 text-stone-400 hover:text-white">
+                                                    <CopyIcon className="w-4 h-4" />
+                                                </Button>
+                                                <Button variant="ghost" size="icon" title="Delete" onClick={() => setConfirmation({ action: 'delete', ids: [quest.id] })} data-log-id={`manage-quests-action-delete-${quest.id}`} className="h-8 w-8 text-red-400 hover:text-red-300 hover:bg-red-900/50">
+                                                    <TrashIcon className="w-4 h-4" />
+                                                </Button>
+                                            </div>
                                         </td>
                                     </tr>
                                 ))}

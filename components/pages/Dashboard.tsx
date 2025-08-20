@@ -58,6 +58,18 @@ const Dashboard: React.FC = () => {
         }
     }, [activeThemeId]); // Depend on the theme ID.
 
+    useEffect(() => {
+        // If a quest is selected and the master list of quests changes,
+        // find the updated version of the selected quest and update the dialog's state.
+        // This prevents the dialog from showing stale data and fixes bugs with state conflicts.
+        if (selectedQuest) {
+          const updatedQuest = quests.find(q => q.id === selectedQuest.id);
+          if (updatedQuest && JSON.stringify(updatedQuest) !== JSON.stringify(selectedQuest)) {
+            setSelectedQuest(updatedQuest);
+          }
+        }
+    }, [quests, selectedQuest]);
+
 
     if (!currentUser) return <div>Loading adventurer's data...</div>;
     
@@ -89,8 +101,6 @@ const Dashboard: React.FC = () => {
         } else {
             markQuestAsTodo(questToToggle.id, currentUser.id);
         }
-        // Also update the selectedQuest so the dialog reflects the change immediately
-        setSelectedQuest(prev => prev ? {...prev, todoUserIds: isTodo ? (prev.todoUserIds || []).filter(id => id !== currentUser.id) : [...(prev.todoUserIds || []), currentUser.id]} : null);
     };
 
     const currentBalances = useMemo(() => {

@@ -224,6 +224,18 @@ const QuestsPage: React.FC = () => {
         return () => clearInterval(timer);
     }, []);
 
+    useEffect(() => {
+        // If a quest is selected and the master list of quests changes,
+        // find the updated version of the selected quest and update the dialog's state.
+        // This prevents the dialog from showing stale data and fixes bugs with state conflicts.
+        if (selectedQuest) {
+          const updatedQuest = quests.find(q => q.id === selectedQuest.id);
+          if (updatedQuest && JSON.stringify(updatedQuest) !== JSON.stringify(selectedQuest)) {
+            setSelectedQuest(updatedQuest);
+          }
+        }
+    }, [quests, selectedQuest]);
+
     if (!currentUser) return null;
 
     const handleToggleTodo = (quest: Quest) => {
@@ -234,7 +246,6 @@ const QuestsPage: React.FC = () => {
         } else {
             markQuestAsTodo(quest.id, currentUser.id);
         }
-        setSelectedQuest(prev => prev ? {...prev, todoUserIds: isTodo ? (prev.todoUserIds || []).filter(id => id !== currentUser.id) : [...(prev.todoUserIds || []), currentUser.id]} : null);
     };
 
     const handleStartCompletion = (quest: Quest) => {

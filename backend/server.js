@@ -1230,28 +1230,14 @@ actionsRouter.post('/complete-quest', asyncMiddleware(async (req, res) => {
 
 actionsRouter.post('/approve-quest/:id', asyncMiddleware(async (req, res) => {
     const { id } = req.params;
-    const { approverId, note } = req.body;
+    const { note } = req.body;
     await dataSource.transaction(async manager => {
         const completion = await manager.findOne(QuestCompletionEntity, { where: { id }, relations: ['user', 'quest'] });
         if (!completion || completion.status !== 'Pending') {
             return res.status(404).json({ error: 'Completion not found or not pending.' });
         }
-
-        const settingRow = await manager.findOneBy(SettingEntity, { id: 1 });
-        const settings = settingRow ? settingRow.settings : INITIAL_SETTINGS;
-        const isSelfApproval = completion.userId === approverId;
-
-        if (isSelfApproval && !settings.security.allowAdminSelfApproval) {
-            const adminCount = await manager.count(UserEntity, { where: { role: 'Donegeon Master' } });
-            if (adminCount > 1) {
-                return res.status(403).json({ error: 'Self-approval is disabled. Another administrator must approve this quest.' });
-            }
-        }
-
         completion.status = 'Approved';
-        completion.actedById = approverId;
-        completion.actedAt = new Date().toISOString();
-        if (note) completion.note = `${completion.note ? `${completion.note}\n` : ''}Approver note: ${note}`;
+        if (note) completion.note = `${completion.note ? `${completion.note}\n` : ''}Approver: ${note}`;
         
         const updatedCompletion = await manager.save(updateTimestamps(completion));
         const user = completion.user;
@@ -1261,36 +1247,24 @@ actionsRouter.post('/approve-quest/:id', asyncMiddleware(async (req, res) => {
         if (user && quest) {
             const rewardTypes = await manager.find(RewardTypeDefinitionEntity);
             const isGuildScope = !!completion.guildId;
-
-            if (isGuildScope) {
-                if (!user.guildBalances) user.guildBalances = {};
-                if (!user.guildBalances[completion.guildId]) {
-                    user.guildBalances[completion.guildId] = { purse: {}, experience: {} };
-                }
-                const balances = user.guildBalances[completion.guildId];
-                if (!balances.purse) balances.purse = {};
-                if (!balances.experience) balances.experience = {};
-                
-                quest.rewards.forEach(reward => {
-                    const rewardDef = rewardTypes.find(rt => rt.id === reward.rewardTypeId);
-                    if (rewardDef) {
-                        const target = rewardDef.category === 'Currency' ? balances.purse : balances.experience;
-                        target[reward.rewardTypeId] = (target[reward.rewardTypeId] || 0) + reward.amount;
-                    }
-                });
-            } else {
-                if (!user.personalPurse) user.personalPurse = {};
-                if (!user.personalExperience) user.personalExperience = {};
-                quest.rewards.forEach(reward => {
-                    const rewardDef = rewardTypes.find(rt => rt.id === reward.rewardTypeId);
-                    if (rewardDef) {
-                        const target = rewardDef.category === 'Currency' ? user.personalPurse : user.personalExperience;
-                        target[reward.rewardTypeId] = (target[reward.rewardTypeId] || 0) + reward.amount;
-                    }
-                });
+            let balances = isGuildScope ? user.guildBalances[completion.guildId] : { purse: user.personalPurse, experience: user.personalExperience };
+            if (!balances) {
+                balances = { purse: {}, experience: {} };
+                if (isGuildScope) user.guildBalances[completion.guildId] = balances;
             }
+            if (!balances.purse) balances.purse = {};
+            if (!balances.experience) balances.experience = {};
+
+            quest.rewards.forEach(reward => {
+                const rewardDef = rewardTypes.find(rt => rt.id === reward.rewardTypeId);
+                if (rewardDef) {
+                    const target = rewardDef.category === 'Currency' ? balances.purse : balances.experience;
+                    target[reward.rewardTypeId] = (target[reward.rewardTypeId] || 0) + reward.amount;
+                }
+            });
 
             updatedUser = await manager.save(updateTimestamps(user));
+
             const { newUserTrophies, newNotifications } = await checkAndAwardTrophies(manager, user.id, completion.guildId);
 
             updateEmitter.emit('update');
@@ -1301,7 +1275,6 @@ actionsRouter.post('/approve-quest/:id', asyncMiddleware(async (req, res) => {
         }
     });
 }));
-
 
 actionsRouter.post('/reject-quest/:id', asyncMiddleware(async (req, res) => {
     const { id } = req.params;

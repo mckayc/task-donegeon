@@ -42,8 +42,9 @@ const TypeButton: React.FC<{
                 type="button"
                 onClick={() => onClick(type)}
                 className={`w-full p-2 rounded-md font-semibold text-sm transition-colors ${
-                    isActive ? 'bg-primary text-primary-foreground' : 'text-stone-300 hover:bg-stone-700'
+                    !isActive ? 'text-stone-300 hover:bg-stone-700' : ''
                 }`}
+                style={isActive ? { backgroundColor: 'hsl(var(--primary))', color: 'hsl(var(--primary-foreground))' } : {}}
             >
                 {label}
             </button>
@@ -204,7 +205,8 @@ const QuestScheduling: React.FC<QuestSchedulingProps> = ({ value, onChange }) =>
                                         key={day.value}
                                         type="button"
                                         onClick={() => handleWeeklyDayToggle(day.value)}
-                                        className={`w-10 h-10 rounded-full font-bold transition-colors ${weeklyDays.includes(day.value) ? 'bg-primary text-primary-foreground' : 'bg-stone-700 text-stone-300 hover:bg-stone-600'}`}
+                                        className={`w-10 h-10 rounded-full font-bold transition-colors ${!weeklyDays.includes(day.value) ? 'bg-stone-700 text-stone-300 hover:bg-stone-600' : ''}`}
+                                        style={weeklyDays.includes(day.value) ? { backgroundColor: 'hsl(var(--primary))', color: 'hsl(var(--primary-foreground))' } : {}}
                                     >{day.label}</button>
                                 ))}
                             </div>

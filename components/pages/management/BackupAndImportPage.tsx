@@ -10,8 +10,14 @@ import ToggleSwitch from '../../user-interface/ToggleSwitch';
 import EditBackupScheduleDialog from '../../admin/EditBackupScheduleDialog';
 import Input from '../../user-interface/Input';
 import { DatabaseIcon } from '../../user-interface/Icons';
+import { useShiftSelect } from '../../../hooks/useShiftSelect';
 
-const BackupListItem: React.FC<{ backup: BackupInfo; onDelete: (filename: string) => void; }> = ({ backup, onDelete }) => {
+const BackupListItem: React.FC<{ 
+    backup: BackupInfo; 
+    onDelete: (filename: string) => void;
+    isSelected: boolean;
+    onToggle: (event: React.ChangeEvent<HTMLInputElement>) => void;
+}> = ({ backup, onDelete, isSelected, onToggle }) => {
     const { parsed, filename, size, createdAt } = backup;
     
     let displayType = 'Manual';
@@ -27,6 +33,12 @@ const BackupListItem: React.FC<{ backup: BackupInfo; onDelete: (filename: string
     return (
         <div className="bg-stone-900/50 p-3 rounded-lg flex justify-between items-center gap-4">
             <div className="flex items-center gap-3 flex-grow">
+                 <input
+                    type="checkbox"
+                    checked={isSelected}
+                    onChange={onToggle}
+                    className="h-5 w-5 rounded text-emerald-600 bg-stone-700 border-stone-600 focus:ring-emerald-500 flex-shrink-0"
+                />
                 <div className={`w-10 h-10 rounded-md flex items-center justify-center text-xl font-mono border ${colorClass} bg-black/20 flex-shrink-0`}>
                     {icon}
                 </div>
@@ -56,13 +68,80 @@ const BackupListItem: React.FC<{ backup: BackupInfo; onDelete: (filename: string
     );
 };
 
-const BackupList: React.FC<{ backupsToList: BackupInfo[]; onDelete: (filename: string) => void; }> = ({ backupsToList, onDelete }) => (
-    <div className="space-y-3">
-        {backupsToList.map(backup => (
-            <BackupListItem key={backup.filename} backup={backup} onDelete={onDelete} />
-        ))}
-    </div>
-);
+const BackupList: React.FC<{ 
+    backupsToList: BackupInfo[]; 
+    onDelete: (filename: string) => void;
+}> = ({ backupsToList, onDelete }) => {
+    const backupFilenames = useMemo(() => backupsToList.map(b => b.filename), [backupsToList]);
+    const [selectedBackups, setSelectedBackups] = useState<string[]>([]);
+    const [confirmBulkDelete, setConfirmBulkDelete] = useState(false);
+    const { addNotification } = useNotificationsDispatch();
+    
+    const handleCheckboxClick = useShiftSelect(backupFilenames, selectedBackups, setSelectedBackups);
+
+    useEffect(() => {
+        setSelectedBackups([]);
+    }, [backupsToList]);
+
+    const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setSelectedBackups(e.target.checked ? backupFilenames : []);
+    };
+    
+    const handleBulkDelete = async () => {
+        try {
+            const response = await fetch('/api/backups/bulk-delete', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ filenames: selectedBackups })
+            });
+            if (!response.ok) throw new Error('Failed to delete backups.');
+            addNotification({ type: 'info', message: `${selectedBackups.length} backups deleted.` });
+            // The parent component will refetch the list.
+        } catch (e) {
+            addNotification({ type: 'error', message: e instanceof Error ? e.message : 'Deletion failed.' });
+        } finally {
+            setConfirmBulkDelete(false);
+            setSelectedBackups([]);
+        }
+    };
+    
+    return (
+        <div className="space-y-3">
+             {selectedBackups.length > 0 && (
+                <div className="p-2 bg-stone-900/50 rounded-lg flex items-center gap-4">
+                    <span className="text-sm font-semibold text-stone-300">{selectedBackups.length} selected</span>
+                    <Button size="sm" variant="destructive" onClick={() => setConfirmBulkDelete(true)}>Delete Selected</Button>
+                </div>
+            )}
+            <div className="flex items-center gap-3 p-2 border-b border-stone-700/60">
+                <input
+                    type="checkbox"
+                    checked={selectedBackups.length === backupFilenames.length && backupFilenames.length > 0}
+                    onChange={handleSelectAll}
+                    disabled={backupFilenames.length === 0}
+                    className="h-5 w-5 rounded text-emerald-600 bg-stone-700 border-stone-600 focus:ring-emerald-500"
+                />
+                <label className="font-semibold text-stone-400 text-sm">Select All</label>
+            </div>
+            {backupsToList.map(backup => (
+                <BackupListItem 
+                    key={backup.filename} 
+                    backup={backup} 
+                    onDelete={onDelete} 
+                    isSelected={selectedBackups.includes(backup.filename)}
+                    onToggle={(e) => handleCheckboxClick(e, backup.filename)}
+                />
+            ))}
+            <ConfirmDialog
+                isOpen={confirmBulkDelete}
+                onClose={() => setConfirmBulkDelete(false)}
+                onConfirm={handleBulkDelete}
+                title="Confirm Bulk Delete"
+                message={`Are you sure you want to permanently delete ${selectedBackups.length} backup files? This cannot be undone.`}
+            />
+        </div>
+    );
+};
 
 export const BackupAndImportPage: React.FC = () => {
     const { settings } = useData();
@@ -167,8 +246,6 @@ export const BackupAndImportPage: React.FC = () => {
         if (editingSchedule) {
             const index = updatedSchedules.findIndex(s => s.id === editingSchedule.id);
             if (index !== -1) {
-                // IMPORTANT FIX: Merge with the existing schedule object from settings
-                // to preserve the `lastBackupTimestamp` which is not present in `scheduleData`.
                 updatedSchedules[index] = { ...updatedSchedules[index], ...scheduleData };
             }
         } else {

@@ -174,8 +174,7 @@ const ManageQuestsPage: React.FC = () => {
                                     activeTab === tab
                                     ? 'border-emerald-500 text-emerald-400'
                                     : 'border-transparent text-stone-400 hover:text-stone-200 hover:border-stone-500'
-                                }`}
-                            >
+                                }`}>
                                 {tab}
                             </button>
                         ))}

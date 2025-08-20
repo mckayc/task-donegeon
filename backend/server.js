@@ -158,13 +158,80 @@ const BACKUP_DIR = '/app/data/backups';
 const ASSET_PACKS_DIR = '/app/data/asset_packs';
 const DEFAULT_ASSET_PACKS_SOURCE_DIR = path.join(__dirname, 'default_asset_packs');
 
+const runScheduledBackups = async () => {
+    try {
+        const manager = dataSource.manager;
+        const settingsRow = await manager.findOneBy(SettingEntity, { id: 1 });
+        if (!settingsRow || !settingsRow.settings.automatedBackups?.enabled) {
+            return;
+        }
+
+        const { schedules, format } = settingsRow.settings.automatedBackups;
+        const now = Date.now();
+        let settingsChanged = false;
+
+        for (const schedule of schedules) {
+            const frequencyMs = schedule.frequency * (schedule.unit === 'hours' ? 3600000 : schedule.unit === 'days' ? 86400000 : 604800000);
+            const lastBackup = schedule.lastBackupTimestamp || 0;
+
+            if (now - lastBackup > frequencyMs) {
+                console.log(`[Backup] Running automated backup for schedule: ${schedule.id}`);
+                const version = settingsRow.settings.contentVersion || 1;
+                const timestamp = new Date().toISOString().slice(0, 19).replace('T', '_').replace(/:/g, '-');
+                
+                if (format === 'json' || format === 'both') {
+                    const filename = `backup-auto-${schedule.id}-${timestamp}-v${version}.json`;
+                    const filePath = path.join(BACKUP_DIR, filename);
+                    const appData = await getFullAppData(manager);
+                    await fs.writeFile(filePath, JSON.stringify(appData, null, 2));
+                }
+                if (format === 'sqlite' || format === 'both') {
+                    const filename = `backup-auto-${schedule.id}-${timestamp}-v${version}.sqlite`;
+                    const filePath = path.join(BACKUP_DIR, filename);
+                    await fs.copyFile(dbPath, filePath);
+                }
+
+                schedule.lastBackupTimestamp = now;
+                settingsChanged = true;
+
+                // Cleanup old backups for this schedule
+                const allBackups = await fs.readdir(BACKUP_DIR);
+                const scheduleBackups = allBackups
+                    .filter(file => file.startsWith(`backup-auto-${schedule.id}`))
+                    .sort()
+                    .reverse(); // Newest first
+
+                if (scheduleBackups.length > schedule.maxBackups) {
+                    const backupsToDelete = scheduleBackups.slice(schedule.maxBackups);
+                    for (const fileToDelete of backupsToDelete) {
+                        await fs.unlink(path.join(BACKUP_DIR, fileToDelete));
+                        console.log(`[Backup] Cleaned up old backup: ${fileToDelete}`);
+                    }
+                }
+            }
+        }
+
+        if (settingsChanged) {
+            await manager.save(SettingEntity, updateTimestamps({ id: 1, settings: settingsRow.settings }));
+        }
+    } catch (err) {
+        console.error("[Backup] Error during automated backup:", err);
+    }
+};
+
+const startAutomatedBackupScheduler = () => {
+    // Check every hour.
+    setInterval(runScheduledBackups, 3600000);
+    // Also run shortly after startup.
+    setTimeout(runScheduledBackups, 10000); // 10 seconds after start
+};
+
 const ensureDefaultAssetPacksExist = async () => {
     try {
         const defaultPacks = await fs.readdir(DEFAULT_ASSET_PACKS_SOURCE_DIR);
         for (const packFilename of defaultPacks) {
             const sourcePath = path.join(DEFAULT_ASSET_PACKS_SOURCE_DIR, packFilename);
             const destPath = path.join(ASSET_PACKS_DIR, packFilename);
-            // Unconditionally copy the file to ensure the user's volume always has the latest version from the codebase.
             await fs.copyFile(sourcePath, destPath);
             console.log(`Synced default asset pack: ${packFilename}`);
         }
@@ -226,7 +293,7 @@ const initializeApp = async () => {
     await ensureDefaultAssetPacksExist();
     
     // Start automated backup scheduler
-    // startAutomatedBackupScheduler();
+    startAutomatedBackupScheduler();
 
     console.log(`Asset directory is ready at: ${UPLOADS_DIR}`);
     console.log(`Backup directory is ready at: ${BACKUP_DIR}`);
@@ -259,10 +326,12 @@ const getFullAppData = async (manager) => {
         const { assignedUsers, ...questData } = q;
         return { ...questData, assignedUserIds: assignedUsers?.map(u => u.id) || [] };
     });
-    data.questCompletions = questCompletions.map(qc => {
-        const { user, quest, ...completionData } = qc;
-        return { ...completionData, userId: user?.id, questId: quest?.id };
-    });
+    data.questCompletions = questCompletions
+        .filter(qc => qc.user && qc.quest) // Filter out orphaned records
+        .map(qc => {
+            const { user, quest, ...completionData } = qc;
+            return { ...completionData, userId: user.id, questId: quest.id };
+        });
     data.guilds = guilds.map(g => {
         const { members, ...guildData } = g;
         return { ...guildData, memberIds: members?.map(m => m.id) || [] };
@@ -503,10 +572,12 @@ app.get('/api/data/sync', asyncMiddleware(async (req, res) => {
                         return { ...guildData, memberIds: members?.map(m => m.id) || [] };
                     });
                 } else if (entity.options.name === 'QuestCompletion') {
-                    updates.questCompletions = changedRecords.map(qc => {
-                        const { user, quest, ...completionData } = qc;
-                        return { ...completionData, userId: user?.id, questId: quest?.id };
-                    });
+                    updates.questCompletions = changedRecords
+                        .filter(qc => qc.user && qc.quest) // Filter out orphaned records
+                        .map(qc => {
+                            const { user, quest, ...completionData } = qc;
+                            return { ...completionData, userId: user.id, questId: quest.id };
+                        });
                 } else {
                      updates[pluralName] = changedRecords;
                 }
@@ -1361,23 +1432,7 @@ actionsRouter.post('/complete-checkpoint', asyncMiddleware(async (req, res) => {
 
         // --- Update Quest Progress ---
         quest.checkpointCompletions[userId] = completedCount + 1;
-        const updatedQuest = await manager.save(updateTimestamps(quest));
         
-        const updatedUser = await manager.save(updateTimestamps(user));
-
-        // --- Award Trophy ---
-        let newUserTrophy = null;
-        if (currentCheckpoint.trophyId) {
-            const newTrophy = manager.create(UserTrophyEntity, {
-                id: `usertrophy-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
-                userId,
-                trophyId: currentCheckpoint.trophyId,
-                awardedAt: new Date().toISOString(),
-                guildId: quest.guildId || null
-            });
-            newUserTrophy = await manager.save(updateTimestamps(newTrophy, true));
-        }
-
         const isFinalCheckpoint = (completedCount + 1) === totalCheckpoints;
         let newCompletion = null;
         if (isFinalCheckpoint) {
@@ -1392,6 +1447,22 @@ actionsRouter.post('/complete-checkpoint', asyncMiddleware(async (req, res) => {
                 guildId: quest.guildId
             });
             await manager.save(updateTimestamps(newCompletion, true));
+        }
+
+        const updatedQuest = await manager.save(updateTimestamps(quest));
+        const updatedUser = await manager.save(updateTimestamps(user));
+
+        // --- Award Trophy ---
+        let newUserTrophy = null;
+        if (currentCheckpoint.trophyId) {
+            const newTrophy = manager.create(UserTrophyEntity, {
+                id: `usertrophy-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+                userId,
+                trophyId: currentCheckpoint.trophyId,
+                awardedAt: new Date().toISOString(),
+                guildId: quest.guildId || null
+            });
+            newUserTrophy = await manager.save(updateTimestamps(newTrophy, true));
         }
         
         const { newUserTrophies, newNotifications } = await checkAndAwardTrophies(manager, user.id, quest.guildId);
@@ -1454,6 +1525,17 @@ actionsRouter.post('/approve-purchase/:id', asyncMiddleware(async (req, res) => 
     await dataSource.transaction(async manager => {
         const request = await manager.findOneBy(PurchaseRequestEntity, { id });
         if (!request || request.status !== 'Pending') return res.status(404).json({ error: 'Request not found or not pending.' });
+        
+        const settingRow = await manager.findOneBy(SettingEntity, { id: 1 });
+        const settings = settingRow ? settingRow.settings : INITIAL_SETTINGS;
+        const isSelfApproval = request.userId === approverId;
+
+        if (isSelfApproval && !settings.security.allowAdminSelfApproval) {
+            const adminCount = await manager.count(UserEntity, { where: { role: 'Donegeon Master' } });
+            if (adminCount > 1) {
+                return res.status(403).json({ error: 'Self-approval is disabled. Another administrator must approve this request.' });
+            }
+        }
         
         request.status = 'Completed';
         request.actedAt = new Date().toISOString();
@@ -1641,8 +1723,6 @@ const imagePacksRouter = express.Router();
 const backupsRouter = express.Router();
 const mediaRouter = express.Router();
 
-const GITHUB_REPO_URL = 'https://api.github.com/repos/google/codewithme-task-donegeon/contents/public/images/packs';
-
 // Helper to create asset pack summary
 const createAssetPackSummary = (pack) => {
     const summary = {
@@ -1725,6 +1805,7 @@ assetPacksRouter.get('/fetch-remote', asyncMiddleware(async (req, res) => {
 
 // GET /api/image-packs
 imagePacksRouter.get('/', asyncMiddleware(async (req, res) => {
+    const GITHUB_REPO_URL = 'https://api.github.com/repos/google/codewithme-task-donegeon/contents/public/images/packs';
     const response = await fetch(GITHUB_REPO_URL);
     if (!response.ok) throw new Error('Failed to fetch image packs from GitHub');
     const data = await response.json();
@@ -1739,6 +1820,7 @@ imagePacksRouter.get('/', asyncMiddleware(async (req, res) => {
 
 // GET /api/image-packs/:packName
 imagePacksRouter.get('/:packName', asyncMiddleware(async (req, res) => {
+    const GITHUB_REPO_URL = 'https://api.github.com/repos/google/codewithme-task-donegeon/contents/public/images/packs';
     const { packName } = req.params;
     const safePackName = path.basename(packName);
     const packUrl = `${GITHUB_REPO_URL}/${safePackName}`;
@@ -1792,7 +1874,7 @@ const parseBackupFilename = (filename) => {
     if (!match) return null;
     return {
         type: match[1],
-        date: new Date(match[2].replace(/-/g, ':').replace('T', ' ')).toISOString(),
+        date: new Date(match[2].replace(/_/g, 'T').replace(/-/g, ':')).toISOString(),
         version: match[3],
         format: match[4],
     };
@@ -1819,7 +1901,7 @@ backupsRouter.post('/create-json', asyncMiddleware(async (req, res) => {
     const manager = dataSource.manager;
     const appData = await getFullAppData(manager);
     const version = appData.settings?.contentVersion || 1;
-    const timestamp = new Date().toISOString().replace(/:/g, '-');
+    const timestamp = new Date().toISOString().slice(0, 19).replace('T', '_').replace(/:/g, '-');
     const filename = `backup-manual-${timestamp}-v${version}.json`;
     const filePath = path.join(BACKUP_DIR, filename);
     await fs.writeFile(filePath, JSON.stringify(appData, null, 2));
@@ -1830,7 +1912,7 @@ backupsRouter.post('/create-sqlite', asyncMiddleware(async (req, res) => {
     const manager = dataSource.manager;
     const settingsRow = await manager.findOneBy(SettingEntity, { id: 1 });
     const version = settingsRow?.settings?.contentVersion || 1;
-    const timestamp = new Date().toISOString().replace(/:/g, '-');
+    const timestamp = new Date().toISOString().slice(0, 19).replace('T', '_').replace(/:/g, '-');
     const filename = `backup-manual-${timestamp}-v${version}.sqlite`;
     const filePath = path.join(BACKUP_DIR, filename);
     await fs.copyFile(dbPath, filePath);
@@ -1861,6 +1943,30 @@ backupsRouter.delete('/:filename', asyncMiddleware(async (req, res) => {
     } catch (err) {
         res.status(404).send('Backup not found.');
     }
+}));
+
+backupsRouter.post('/bulk-delete', asyncMiddleware(async (req, res) => {
+    const { filenames } = req.body;
+    if (!filenames || !Array.isArray(filenames)) {
+        return res.status(400).json({ error: 'Expected an array of filenames.' });
+    }
+    for (const filename of filenames) {
+        const safeFilename = path.basename(filename);
+        if (safeFilename !== filename) {
+             console.warn(`Skipping invalid filename during bulk delete: ${filename}`);
+             continue;
+        }
+        const filePath = path.join(BACKUP_DIR, safeFilename);
+        try {
+            await fs.unlink(filePath);
+        } catch (err) {
+            if (err.code !== 'ENOENT') { // It's okay if file doesn't exist
+                console.error(`Error deleting file ${safeFilename}:`, err);
+            }
+        }
+    }
+    updateEmitter.emit('update');
+    res.status(204).send();
 }));
 
 const restoreUpload = multer({ dest: '/tmp/' });
@@ -2072,75 +2178,77 @@ app.get('/api/chronicles', asyncMiddleware(async(req, res) => {
     const trophies = await manager.find(TrophyEntity);
     const rewardTypes = await manager.find(RewardTypeDefinitionEntity);
     const gameAssets = await manager.find(GameAssetEntity);
-    const modifierDefinitions = await manager.find(ModifierDefinitionEntity);
 
     const userMap = new Map(users.map(u => [u.id, u.gameName]));
     const questMap = new Map(quests.map(q => [q.id, { title: q.title, icon: q.icon, type: q.type }]));
     const trophyMap = new Map(trophies.map(t => [t.id, { name: t.name, icon: t.icon }]));
     const assetMap = new Map(gameAssets.map(a => [a.id, { name: a.name, icon: a.icon }]));
 
-    const whereConditions = {};
+    const baseWhere = {};
     if (guildId === 'null') {
-        whereConditions.guildId = IsNull();
+        baseWhere.guildId = IsNull();
     } else if (guildId) {
-        whereConditions.guildId = guildId;
-    }
-    
-    const whereConditionsAll = { ...whereConditions };
-    if (viewMode === 'personal' && userId) {
-        whereConditions.userId = userId;
+        baseWhere.guildId = guildId;
     }
 
-    // Quest Completions
-    const completions = await manager.find(QuestCompletionEntity, { where: whereConditions, relations: ['user', 'quest'] });
+    const personalUserFilter = viewMode === 'personal' && userId ? { user: { id: userId } } : {};
+
+    const completions = await manager.find(QuestCompletionEntity, { where: { ...baseWhere, ...personalUserFilter }, relations: ['user', 'quest'] });
     allEvents.push(...completions.map(c => ({
         id: `quest-${c.id}`, originalId: c.id, date: c.completedAt, type: 'Quest',
-        title: `${c.user?.gameName || 'Unknown'} completed "${c.quest?.title || 'Unknown Quest'}"`,
+        title: `${c.user?.gameName || 'Unknown User'} completed "${c.quest?.title || 'Unknown Quest'}"`,
         note: c.note, status: c.status, icon: c.quest?.icon || '📜',
         color: 'hsl(158 84% 39%)', userId: c.userId, questType: c.quest?.type, guildId: c.guildId
     })));
 
-    // Purchase Requests
-    const purchases = await manager.find(PurchaseRequestEntity, { where: whereConditions, relations: ['user'] });
+    const purchases = await manager.find(PurchaseRequestEntity, { where: { ...baseWhere, ...personalUserFilter }, relations: ['user'] });
     allEvents.push(...purchases.map(p => ({
         id: `purchase-${p.id}`, originalId: p.id, date: p.requestedAt, type: 'Purchase',
-        title: `${p.user?.gameName || 'Unknown'} requested "${p.assetDetails.name}"`,
+        title: `${p.user?.gameName || 'Unknown User'} requested "${p.assetDetails.name}"`,
         note: `Cost: ${p.assetDetails.cost.map(r => `${r.amount} ${rewardTypes.find(rt => rt.id === r.rewardTypeId)?.icon || '?'}`).join(', ')}`, status: p.status, icon: '💰',
         color: 'hsl(280 60% 60%)', userId: p.userId, guildId: p.guildId
     })));
 
-    // User Trophies
-    const userTrophyAwards = await manager.find(UserTrophyEntity, { where: whereConditions, relations: ['user'] });
+    const userTrophyAwards = await manager.find(UserTrophyEntity, { where: { ...baseWhere, ...personalUserFilter }, relations: ['user'] });
     allEvents.push(...userTrophyAwards.map(ut => ({
         id: `trophy-${ut.id}`, originalId: ut.id, date: ut.awardedAt, type: 'Trophy',
-        title: `${ut.user?.gameName || 'Unknown'} earned "${trophyMap.get(ut.trophyId)?.name || 'Unknown Trophy'}"`,
+        title: `${ut.user?.gameName || 'Unknown User'} earned "${trophyMap.get(ut.trophyId)?.name || 'Unknown Trophy'}"`,
         note: '', status: 'Awarded', icon: trophyMap.get(ut.trophyId)?.icon || '🏆',
         color: 'hsl(50 90% 60%)', userId: ut.userId, guildId: ut.guildId
     })));
     
-    // Admin Adjustments
-    const adjustments = await manager.find(AdminAdjustmentEntity, { where: whereConditionsAll });
+    let adjustmentsWhere = { ...baseWhere };
+    if (viewMode === 'personal' && userId) {
+        adjustmentsWhere = [
+            { ...baseWhere, user: { id: userId } },
+            { ...baseWhere, adjuster: { id: userId } },
+        ];
+    }
+    const adjustments = await manager.find(AdminAdjustmentEntity, { where: adjustmentsWhere, relations: ['user', 'adjuster'] });
     allEvents.push(...adjustments.map(a => {
         const isExchange = a.userId === a.adjusterId && a.reason.startsWith('Exchanged');
         const title = isExchange
-            ? `${userMap.get(a.userId) || 'A user'} made an exchange`
-            : `${userMap.get(a.adjusterId) || 'Admin'} applied an adjustment to ${userMap.get(a.userId) || 'a user'}.`;
+            ? `${a.user?.gameName || 'A user'} made an exchange`
+            : `${a.adjuster?.gameName || 'Admin'} applied an adjustment to ${a.user?.gameName || 'a user'}.`;
         
         return {
             id: `adj-${a.id}`, originalId: a.id, date: a.adjustedAt, 
-            type: 'Adjustment',
-            title: title,
-            note: a.reason, 
+            type: 'Adjustment', title, note: a.reason, 
             status: isExchange ? 'Exchanged' : a.type, 
             icon: isExchange ? '⚖️' : '🛠️',
             color: isExchange ? 'hsl(180 60% 50%)' : 'hsl(220 60% 60%)', 
-            userId: a.userId, 
-            guildId: a.guildId
+            userId: a.userId, guildId: a.guildId
         };
     }));
     
-    // Gifts
-    const gifts = await manager.find(GiftEntity, { where: whereConditionsAll });
+    let giftsWhere = { ...baseWhere };
+    if (viewMode === 'personal' && userId) {
+      giftsWhere = [
+        { ...baseWhere, senderId: userId },
+        { ...baseWhere, recipientId: userId }
+      ]
+    }
+    const gifts = await manager.find(GiftEntity, { where: giftsWhere });
     allEvents.push(...gifts.map(g => ({
         id: `gift-${g.id}`, originalId: g.id, date: g.sentAt, type: 'Gift',
         title: `${userMap.get(g.senderId)} gifted "${assetMap.get(g.assetId)?.name || 'an item'}" to ${userMap.get(g.recipientId)}`,

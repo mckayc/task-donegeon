@@ -90,22 +90,21 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         bugLogger.add({ type: 'ACTION', message: `Updating user ID: ${userId}` });
     }
 
-    // Use a single functional state update to prevent race conditions from stale closures.
+    // Using a single functional update for `setUsers` ensures all logic operates on the most recent state,
+    // preventing race conditions. This is a more robust implementation.
     setUsers(prevUsers => {
-        const userToUpdate = prevUsers.find(u => u.id === userId);
-        if (!userToUpdate) {
+        const userIndex = prevUsers.findIndex(u => u.id === userId);
+        if (userIndex === -1) {
             console.error(`[updateUser] User with ID ${userId} not found.`);
             addNotification({ type: 'error', message: 'Could not find user to update.'});
-            return prevUsers;
+            return prevUsers; // Return original state if user not found
         }
-
-        // 1. Calculate the stable payload using the guaranteed-fresh 'prevUsers' state.
-        const updatePayload = typeof update === 'function' ? update(userToUpdate) : update;
         
-        // 2. Queue the dependent state update for the current user. This is safe inside the parent state update.
-        _setCurrentUser(prevCurrentUser => (prevCurrentUser?.id === userId ? { ...prevCurrentUser, ...updatePayload } : prevCurrentUser));
+        const userToUpdate = prevUsers[userIndex];
+        const updatePayload = typeof update === 'function' ? update(userToUpdate) : update;
+        const updatedUser = { ...userToUpdate, ...updatePayload };
 
-        // 3. Trigger the API call with the same stable payload.
+        // The API call is initiated from within this atomic block.
         const isFullObject = 'id' in updatePayload;
         if (Object.keys(updatePayload).length > 0 && !isFullObject) {
             apiRequest('PUT', `/api/users/${userId}`, updatePayload).catch(error => {
@@ -113,8 +112,14 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             });
         }
         
-        // 4. Return the new state for the main users array.
-        return prevUsers.map(u => (u.id === userId ? { ...u, ...updatePayload } : u));
+        // The dependent state update for `currentUser` is also handled here to ensure atomicity.
+        _setCurrentUser(prevCurrentUser => (prevCurrentUser?.id === userId ? updatedUser : prevCurrentUser));
+        
+        // Construct the new users array by explicitly replacing the user at the specific index.
+        // This is a clearer and safer "replace" operation than map, preventing duplicates.
+        const newUsers = [...prevUsers];
+        newUsers[userIndex] = updatedUser;
+        return newUsers;
     });
   }, [apiRequest, addNotification]);
   

@@ -5,7 +5,7 @@ import { useData } from '../../context/DataProvider';
 import { useUIState, useUIDispatch } from '../../context/UIContext';
 import { useActionsDispatch } from '../../context/ActionsContext';
 import { useAuthState } from '../../context/AuthContext';
-import { Quest, QuestCompletionStatus, RewardCategory, QuestType, QuestKind } from '../../types';
+import { Quest, QuestCompletionStatus, RewardCategory, QuestType, QuestKind, Rank } from '../../types';
 import Card from '../user-interface/Card';
 import { isQuestAvailableForUser, isQuestVisibleToUserInMode, questSorter } from '../../utils/quests';
 import QuestDetailDialog from '../quests/QuestDetailDialog';
@@ -104,8 +104,12 @@ const Dashboard: React.FC = () => {
         const sortedRanks = [...ranks].sort((a, b) => a.xpThreshold - b.xpThreshold);
         const totalXp = Object.values(currentBalances.experience).reduce((sum: number, amount: number) => sum + amount, 0);
         
-        let currentRank = sortedRanks[0];
-        let nextRank = sortedRanks[1] || null;
+        let currentRank: Rank | null = sortedRanks[0] || null;
+        let nextRank: Rank | null = sortedRanks[1] || null;
+
+        if (!currentRank) {
+            return { totalXp, currentRank: null, nextRank: null, progressPercentage: 0, currentLevel: 0, xpIntoCurrentRank: 0, xpForNextRank: 0 };
+        }
 
         for (let i = sortedRanks.length - 1; i >= 0; i--) {
             if (totalXp >= sortedRanks[i].xpThreshold) {
@@ -116,11 +120,15 @@ const Dashboard: React.FC = () => {
         }
         
         const xpForNextRank = nextRank ? nextRank.xpThreshold - currentRank.xpThreshold : 0;
-        const xpIntoCurrentRank = Math.max(0, totalXp - currentRank.xpThreshold);
-        const progressPercentage = (nextRank && xpForNextRank > 0) ? Math.min(100, (xpIntoCurrentRank / xpForNextRank) * 100) : 100;
-        const currentLevel = sortedRanks.findIndex(r => r.id === currentRank.id) + 1;
+        const xpIntoCurrentRank = totalXp - currentRank.xpThreshold;
+
+        // Ensure progress is always between 0 and 100, even with negative XP for display.
+        const clampedXpIntoRank = Math.max(0, xpIntoCurrentRank);
+        const progressPercentage = (nextRank && xpForNextRank > 0) ? Math.min(100, (clampedXpIntoRank / xpForNextRank) * 100) : 100;
+
+        const currentLevel = sortedRanks.findIndex(r => r.id === currentRank!.id) + 1;
         
-        return { totalXp, currentRank, nextRank, progressPercentage, currentLevel };
+        return { totalXp, currentRank, nextRank, progressPercentage, currentLevel, xpIntoCurrentRank: clampedXpIntoRank, xpForNextRank };
     }, [currentBalances.experience, ranks]);
 
 
@@ -339,6 +347,10 @@ const Dashboard: React.FC = () => {
             </div>
         );
     }
+    
+    if (!rankData.currentRank) {
+        return <Card title="Loading..."><p>Calculating your rank...</p></Card>;
+    }
 
     return (
         <div>
@@ -352,10 +364,21 @@ const Dashboard: React.FC = () => {
                             </div>
                             <p className="text-2xl font-bold text-accent-light">{rankData.currentRank.name}</p>
                             <p className="text-stone-400">Level {rankData.currentLevel}</p>
-                            <div className="w-full bg-stone-700 rounded-full h-4 mt-4 overflow-hidden">
-                                <div className="h-4 rounded-full bg-primary" style={{width: `${rankData.progressPercentage}%`}}></div>
+                            <div className="relative w-full bg-stone-700 rounded-full h-5 mt-4 overflow-hidden text-white">
+                                <div className="absolute inset-0 h-full rounded-full bg-primary transition-all duration-500" style={{width: `${rankData.progressPercentage}%`}}></div>
+                                <div className="absolute inset-0 flex items-center justify-center">
+                                    {rankData.nextRank ? (
+                                        <span className="text-xs font-bold" style={{textShadow: '1px 1px 2px rgba(0,0,0,0.7)'}}>
+                                            {rankData.xpIntoCurrentRank} / {rankData.xpForNextRank} XP
+                                        </span>
+                                    ) : (
+                                        <span className="text-xs font-bold" style={{textShadow: '1px 1px 2px rgba(0,0,0,0.7)'}}>
+                                            Max Rank!
+                                        </span>
+                                    )}
+                                </div>
                             </div>
-                            <p className="text-sm text-stone-300 mt-2">{rankData.totalXp} / {rankData.nextRank ? rankData.nextRank.xpThreshold : rankData.totalXp} {terminology.xp}</p>
+                            <p className="text-sm text-stone-300 mt-2">Total XP: {rankData.totalXp}</p>
                         </div>
                     </Card>
 

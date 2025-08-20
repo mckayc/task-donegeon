@@ -16,9 +16,9 @@ const RanksPage: React.FC = () => {
     const { currentUser } = useAuthState();
     const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null);
 
-    const { currentRank, nextRank, totalXp, progressPercentage, sortedRanks } = useMemo(() => {
+    const { currentRank, nextRank, totalXp, progressPercentage, sortedRanks, xpIntoCurrent, xpForNext } = useMemo(() => {
         if (!currentUser || !ranks || ranks.length === 0) {
-            return { currentRank: null, nextRank: null, totalXp: 0, progressPercentage: 0, sortedRanks: [] };
+            return { currentRank: null, nextRank: null, totalXp: 0, progressPercentage: 0, sortedRanks: [], xpIntoCurrent: 0, xpForNext: 0 };
         }
 
         const currentBalances = appMode.mode === 'personal'
@@ -29,7 +29,7 @@ const RanksPage: React.FC = () => {
         
         const allRanks = [...ranks].sort((a, b) => a.xpThreshold - b.xpThreshold);
         
-        let foundRank: Rank | null = null;
+        let foundRank: Rank | null = allRanks[0] || null;
         let foundNextRank: Rank | null = null;
 
         for (let i = allRanks.length - 1; i >= 0; i--) {
@@ -40,21 +40,21 @@ const RanksPage: React.FC = () => {
             }
         }
         
-        if (!foundRank && allRanks.length > 0) {
-            foundRank = allRanks[0];
-            foundNextRank = allRanks[1] || null;
-        }
-
-        const xpForNext = (foundRank && foundNextRank) ? foundNextRank.xpThreshold - foundRank.xpThreshold : 0;
-        const xpIntoCurrent = foundRank ? Math.max(0, currentTotalXp - foundRank.xpThreshold) : 0;
-        const progress = (foundNextRank && xpForNext > 0) ? Math.min(100, (xpIntoCurrent / xpForNext) * 100) : 100;
+        const xpForNextRank = (foundRank && foundNextRank) ? foundNextRank.xpThreshold - foundRank.xpThreshold : 0;
+        const xpIntoCurrentRank = foundRank ? currentTotalXp - foundRank.xpThreshold : 0;
+        
+        // Clamp for display
+        const clampedXpIntoRank = Math.max(0, xpIntoCurrentRank);
+        const progress = (foundNextRank && xpForNextRank > 0) ? Math.min(100, (clampedXpIntoRank / xpForNextRank) * 100) : 100;
         
         return {
             currentRank: foundRank,
             nextRank: foundNextRank,
             totalXp: currentTotalXp,
             progressPercentage: progress,
-            sortedRanks: allRanks
+            sortedRanks: allRanks,
+            xpIntoCurrent: clampedXpIntoRank,
+            xpForNext: xpForNextRank,
         };
     }, [currentUser, ranks, appMode]);
 
@@ -88,12 +88,20 @@ const RanksPage: React.FC = () => {
                     <div className="flex-grow w-full text-center sm:text-left">
                         <h3 className="text-3xl font-bold text-accent-light">{currentRank.name}</h3>
                         <p className="text-stone-400">Total XP: {totalXp}</p>
-                        <div className="w-full bg-stone-700 rounded-full h-4 mt-4 overflow-hidden">
-                            <div className="h-4 rounded-full btn-primary" style={{width: `${progressPercentage}%`}}></div>
+                         <div className="relative w-full bg-stone-700 rounded-full h-5 mt-4 overflow-hidden text-white">
+                            <div className="absolute inset-0 h-full rounded-full bg-primary transition-all duration-500" style={{width: `${progressPercentage}%`}}></div>
+                            <div className="absolute inset-0 flex items-center justify-center">
+                                {nextRank ? (
+                                    <span className="text-xs font-bold" style={{textShadow: '1px 1px 2px rgba(0,0,0,0.7)'}}>
+                                        {xpIntoCurrent} / {xpForNext} XP towards {nextRank.name}
+                                    </span>
+                                ) : (
+                                    <span className="text-xs font-bold" style={{textShadow: '1px 1px 2px rgba(0,0,0,0.7)'}}>
+                                        Max Rank Achieved!
+                                    </span>
+                                )}
+                            </div>
                         </div>
-                        <p className="text-sm text-stone-300 mt-2">
-                            {nextRank ? `${totalXp} / ${nextRank.xpThreshold} XP towards ${nextRank.name}` : `You have reached the highest rank!`}
-                        </p>
                     </div>
                 </div>
             </Card>

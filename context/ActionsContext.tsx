@@ -382,8 +382,10 @@ export const ActionsProvider: React.FC<{ children: ReactNode }> = ({ children })
         craftItem: (id) => apiRequest('POST', `/api/actions/craft-item/${id}`),
 
         updateSettings: async (settings) => {
-            const result = await apiRequest('PUT', '/api/settings', settings);
-            if (result) dataDispatch({ type: 'UPDATE_DATA', payload: { settings: result }});
+            const result = await apiRequest('PUT', '/api/settings/1', settings);
+            if (result) {
+                dataDispatch({ type: 'UPDATE_DATA', payload: { settings: result } });
+            }
         },
         resetSettings: () => apiRequest('POST', '/api/data/reset-settings'),
         applySettingsUpdates: () => apiRequest('POST', '/api/data/apply-updates'),

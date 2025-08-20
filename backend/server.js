@@ -1649,7 +1649,23 @@ app.use('/api/ranks', createGenericRouter(RankEntity));
 app.use('/api/trophies', createGenericRouter(TrophyEntity));
 app.use('/api/assets', createGenericRouter(GameAssetEntity));
 app.use('/api/themes', createGenericRouter(ThemeDefinitionEntity));
-app.use('/api/settings', createGenericRouter(SettingEntity));
+
+// Special handling for Settings, as it's a singleton resource.
+const settingsRouter = express.Router();
+const settingsRepo = dataSource.getRepository(SettingEntity);
+settingsRouter.put('/:id', asyncMiddleware(async (req, res) => {
+    let settingsRow = await settingsRepo.findOneBy({ id: 1 });
+    if (!settingsRow) {
+        settingsRow = settingsRepo.create({ id: 1, settings: INITIAL_SETTINGS });
+    }
+    // The request body IS the full settings object. We replace the existing one.
+    settingsRow.settings = req.body;
+    const saved = await settingsRepo.save(updateTimestamps(settingsRow));
+    updateEmitter.emit('update');
+    // Important: return just the settings object, not the whole DB row
+    res.json(saved.settings); 
+}));
+app.use('/api/settings', settingsRouter);
 
 const chatRouter = express.Router();
 const chatRepo = dataSource.getRepository(ChatMessageEntity);

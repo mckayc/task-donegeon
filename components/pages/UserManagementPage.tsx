@@ -158,7 +158,9 @@ const UserManagementPage: React.FC = () => {
                                             />
                                         </td>
                                         <td className="p-4 font-semibold">
-                                            {user.gameName}
+                                            <button onClick={() => handleEdit(user)} className="hover:underline hover:text-accent transition-colors text-left">
+                                                {user.gameName}
+                                            </button>
                                         </td>
                                         <td className="p-4 text-stone-400">{user.username}</td>
                                         <td className="p-4">

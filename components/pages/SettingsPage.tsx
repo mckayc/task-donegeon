@@ -1,4 +1,3 @@
-
 import React, { useState, ChangeEvent, ReactNode, useEffect } from 'react';
 import { useData } from '../../context/DataProvider';
 import { useActionsDispatch } from '../../context/ActionsContext';
@@ -126,6 +125,7 @@ const terminologyLabels: { [key in keyof Terminology]: string } = {
   link_chat: 'Sidebar: Chat',
   link_bug_tracker: 'Sidebar: Bug Tracker',
   link_themes: 'Sidebar: Themes',
+  link_test_cases: 'Sidebar: Test Cases',
 };
 
 const REAL_WORLD_CURRENCIES = ['USD', 'EUR', 'GBP', 'JPY', 'CAD', 'AUD', 'CNY'];

@@ -844,34 +844,53 @@ app.post('/api/data/import-assets', asyncMiddleware(async (req, res) => {
     res.status(200).json({ message: 'Assets imported successfully.', importedData: remappedImportedData });
 }));
 
-
 app.post('/api/data/factory-reset', asyncMiddleware(async (req, res) => {
     try {
-        if (dataSource.isInitialized) {
-            await dataSource.destroy();
-            console.log("Data Source connection closed.");
-        }
+        await dataSource.transaction(async manager => {
+            console.log("Starting factory reset transaction...");
+            
+            // Clear all data from all tables
+            for (const entity of dataSource.entityMetadatas) {
+                await manager.getRepository(entity.name).clear();
+            }
+            console.log("All tables cleared.");
 
-        await fs.unlink(dbPath);
-        console.log("Database file deleted successfully.");
+            // Re-initialize with default data, but NO users.
+            // The first-run wizard will handle creating the first admin user.
+            await manager.save(RewardTypeDefinitionEntity, INITIAL_REWARD_TYPES.map(e => updateTimestamps(e, true)));
+            await manager.save(RankEntity, INITIAL_RANKS.map(e => updateTimestamps(e, true)));
+            await manager.save(TrophyEntity, INITIAL_TROPHIES.map(e => updateTimestamps(e, true)));
+            await manager.save(ThemeDefinitionEntity, INITIAL_THEMES.map(e => updateTimestamps(e, true)));
+            await manager.save(QuestGroupEntity, INITIAL_QUEST_GROUPS.map(e => updateTimestamps(e, true)));
+
+            // Create the default exchange market
+            const exchangeMarket = { id: 'market-bank', title: 'The Exchange Post', description: 'Exchange your various currencies and experience points.', iconType: 'emoji', icon: '⚖️', status: { type: 'open' } };
+            await manager.save(MarketEntity, updateTimestamps(exchangeMarket, true));
+            
+            // Save the initial settings
+            const settings = { ...INITIAL_SETTINGS, contentVersion: 1 };
+            // Ensure settings table has a row to update/insert
+            await manager.query("DELETE FROM setting"); // clear can be tricky with single-row tables
+            await manager.save(SettingEntity, updateTimestamps({ id: 1, settings }, true));
+
+            // Reset login history
+            await manager.query("DELETE FROM login_history");
+            await manager.save(LoginHistoryEntity, updateTimestamps({ id: 1, history: [] }, true));
+
+            console.log("Initial data re-inserted.");
+        });
+
+        // After transaction, tell all clients to do a full resync.
+        updateEmitter.emit('update');
         
-        res.status(200).json({ message: "Factory reset successful. The application will restart." });
-        
-        console.log("Initiating server restart for factory reset...");
-        setTimeout(() => process.exit(0), 1000);
+        res.status(200).json({ message: "Factory reset successful. The application will now reload its state." });
 
     } catch (err) {
-        if (err.code === 'ENOENT') {
-            console.log("Database file did not exist, which is fine for a factory reset.");
-            res.status(200).json({ message: "No database file found to delete. The application will restart." });
-            console.log("Initiating server restart for factory reset...");
-            setTimeout(() => process.exit(0), 1000);
-        } else {
-            console.error("Error during factory reset:", err);
-            res.status(500).json({ error: "Failed to perform factory reset." });
-        }
+        console.error("Error during factory reset transaction:", err);
+        res.status(500).json({ error: "Failed to perform factory reset due to a database error." });
     }
 }));
+
 
 // Guilds Router (custom handling for members)
 const guildsRouter = express.Router();

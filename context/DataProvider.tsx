@@ -119,74 +119,74 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const lastSyncTimestamp = useRef<string | null>(null);
 
-  useEffect(() => {
-    const syncData = async () => {
-        dispatch({ type: 'SET_SYNC_STATE', payload: { syncStatus: 'syncing', syncError: null } });
-        try {
-            const endpoint = lastSyncTimestamp.current ? `/api/data/sync?lastSync=${encodeURIComponent(lastSyncTimestamp.current)}` : '/api/data/sync';
-            const response = await fetch(endpoint);
+  const syncData = useCallback(async () => {
+    dispatch({ type: 'SET_SYNC_STATE', payload: { syncStatus: 'syncing', syncError: null } });
+    try {
+        const endpoint = lastSyncTimestamp.current ? `/api/data/sync?lastSync=${encodeURIComponent(lastSyncTimestamp.current)}` : '/api/data/sync';
+        const response = await fetch(endpoint);
 
-            if (!response.ok) {
-                throw new Error(`Server responded with status ${response.status}`);
-            }
-
-            const { updates, newSyncTimestamp } = await response.json();
-            
-            if (lastSyncTimestamp.current) { // Delta update
-                dispatch({ type: 'UPDATE_DATA', payload: updates });
-                if (updates.users) {
-                    const existingUserIds = new Set(users.map(u => u.id));
-                    const usersToAdd: User[] = [];
-                    updates.users.forEach((user: User) => {
-                        if (existingUserIds.has(user.id)) {
-                            updateUser(user.id, user); 
-                        } else {
-                            usersToAdd.push(user);
-                        }
-                    });
-                    if (usersToAdd.length > 0) {
-                        setUsers(currentUsers => [...currentUsers, ...usersToAdd]);
-                    }
-                }
-                if (updates.loginHistory) {
-                    setLoginHistory(updates.loginHistory);
-                }
-            } else { // Initial load
-                dispatch({ type: 'SET_ALL_DATA', payload: updates });
-                if (updates.users) {
-                    setUsers(updates.users);
-                     const lastUserId = localStorage.getItem('lastUserId');
-                     const lastUser = updates.users.find((u: User) => u.id === lastUserId);
-                     if(lastUser) {
-                        setCurrentUser(lastUser);
-                     }
-                }
-                if (updates.loginHistory) {
-                    setLoginHistory(updates.loginHistory);
-                }
-
-                // After initial load, check system status for AI configuration
-                try {
-                    const statusRes = await fetch('/api/system/status');
-                    if (statusRes.ok) {
-                        const statusData = await statusRes.json();
-                        dispatch({ type: 'SET_AI_CONFIGURED', payload: statusData.geminiConnected });
-                    }
-                } catch (e) {
-                    console.error("Could not fetch system status for AI check", e);
-                }
-            }
-
-            lastSyncTimestamp.current = newSyncTimestamp;
-            dispatch({ type: 'SET_SYNC_STATE', payload: { syncStatus: 'success', syncError: null } });
-
-        } catch (error) {
-            const message = error instanceof Error ? error.message : 'Unknown error';
-            console.error("Sync failed:", message);
-            dispatch({ type: 'SET_SYNC_STATE', payload: { syncStatus: 'error', syncError: message } });
+        if (!response.ok) {
+            throw new Error(`Server responded with status ${response.status}`);
         }
-    };
-    
+
+        const { updates, newSyncTimestamp } = await response.json();
+        
+        if (lastSyncTimestamp.current) { // Delta update
+            dispatch({ type: 'UPDATE_DATA', payload: updates });
+            if (updates.users) {
+                const existingUserIds = new Set(users.map(u => u.id));
+                const usersToAdd: User[] = [];
+                updates.users.forEach((user: User) => {
+                    if (existingUserIds.has(user.id)) {
+                        updateUser(user.id, user); 
+                    } else {
+                        usersToAdd.push(user);
+                    }
+                });
+                if (usersToAdd.length > 0) {
+                    setUsers(currentUsers => [...currentUsers, ...usersToAdd]);
+                }
+            }
+            if (updates.loginHistory) {
+                setLoginHistory(updates.loginHistory);
+            }
+        } else { // Initial load
+            dispatch({ type: 'SET_ALL_DATA', payload: updates });
+            if (updates.users) {
+                setUsers(updates.users);
+                 const lastUserId = localStorage.getItem('lastUserId');
+                 const lastUser = updates.users.find((u: User) => u.id === lastUserId);
+                 if(lastUser) {
+                    setCurrentUser(lastUser);
+                 }
+            }
+            if (updates.loginHistory) {
+                setLoginHistory(updates.loginHistory);
+            }
+
+            // After initial load, check system status for AI configuration
+            try {
+                const statusRes = await fetch('/api/system/status');
+                if (statusRes.ok) {
+                    const statusData = await statusRes.json();
+                    dispatch({ type: 'SET_AI_CONFIGURED', payload: statusData.geminiConnected });
+                }
+            } catch (e) {
+                console.error("Could not fetch system status for AI check", e);
+            }
+        }
+
+        lastSyncTimestamp.current = newSyncTimestamp;
+        dispatch({ type: 'SET_SYNC_STATE', payload: { syncStatus: 'success', syncError: null } });
+
+    } catch (error) {
+        const message = error instanceof Error ? error.message : 'Unknown error';
+        console.error("Sync failed:", message);
+        dispatch({ type: 'SET_SYNC_STATE', payload: { syncStatus: 'error', syncError: message } });
+    }
+  }, [users, addNotification, setUsers, setCurrentUser, setLoginHistory, updateUser]);
+
+  useEffect(() => {
     syncData(); // Initial sync
 
     const eventSource = new EventSource('/api/data/events');
@@ -204,7 +204,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     return () => {
         eventSource.close();
     };
-  }, []);
+  }, [syncData]);
 
   return (
     <DataStateContext.Provider value={state}>

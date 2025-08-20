@@ -1,7 +1,9 @@
+
 import React, { useMemo } from 'react';
 import { useData } from '../../context/DataProvider';
 import { useUIState, useUIDispatch } from '../../context/UIContext';
 import { useAuthState } from '../../context/AuthContext';
+import { Role, ChatMessage } from '../../types';
 
 const ChatController: React.FC = () => {
     const { settings, chatMessages, guilds } = useData();
@@ -9,20 +11,29 @@ const ChatController: React.FC = () => {
     const { currentUser } = useAuthState();
     const { toggleChat } = useUIDispatch();
 
+    const showBugReporter = useMemo(() => {
+        return settings.developerMode.enabled && currentUser?.role === Role.DonegeonMaster;
+    }, [settings.developerMode.enabled, currentUser?.role]);
+
     const unreadMessagesCount = useMemo(() => {
         if (!currentUser) return 0;
         
-        // 1. Unread DMs are always relevant
         const unreadDms = chatMessages.filter(
-            msg => msg.recipientId === currentUser.id && !msg.readBy.includes(currentUser.id)
+            (msg: ChatMessage) => msg.recipientId === currentUser.id && 
+                    !msg.readBy.includes(currentUser.id) &&
+                    msg.senderId !== currentUser.id
         );
         const uniqueSenders = new Set(unreadDms.map(msg => msg.senderId));
         
-        // 2. Unread messages from any of the user's guilds
         const userGuildIds = new Set(guilds.filter(g => g.memberIds.includes(currentUser.id)).map(g => g.id));
         const unreadGuilds = new Set(
             chatMessages
-                .filter(msg => msg.guildId && userGuildIds.has(msg.guildId) && !msg.readBy.includes(currentUser.id))
+                .filter((msg: ChatMessage) => 
+                    msg.guildId && 
+                    userGuildIds.has(msg.guildId) && 
+                    !msg.readBy.includes(currentUser.id) &&
+                    msg.senderId !== currentUser.id
+                )
                 .map(msg => msg.guildId)
         );
         
@@ -34,7 +45,7 @@ const ChatController: React.FC = () => {
     }
 
     return (
-        <div className="fixed bottom-6 right-6 z-40">
+        <div className={`fixed right-6 z-40 transition-all duration-300 ${showBugReporter ? 'bottom-24' : 'bottom-6'}`}>
             <button
                 onClick={toggleChat}
                 className="relative w-16 h-16 bg-emerald-600 rounded-full shadow-lg text-white flex items-center justify-center text-3xl hover:bg-emerald-500 transition-transform transform hover:scale-110"

@@ -239,7 +239,7 @@ const QuestsPage: React.FC = () => {
     if (!currentUser) return null;
 
     const handleToggleTodo = (quest: Quest) => {
-        if (!currentUser) return;
+        if (!currentUser || quest.type !== QuestType.Venture) return;
         const isTodo = quest.todoUserIds?.includes(currentUser.id);
         if (isTodo) {
             unmarkQuestAsTodo(quest.id, currentUser.id);

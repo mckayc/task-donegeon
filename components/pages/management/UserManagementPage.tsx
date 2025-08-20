@@ -12,11 +12,14 @@ import ConfirmDialog from '../../user-interface/ConfirmDialog';
 import { useDebounce } from '../../../hooks/useDebounce';
 import Input from '../../user-interface/Input';
 import { useShiftSelect } from '../../../hooks/useShiftSelect';
+import { PencilIcon, CopyIcon, AdjustmentsIcon, TrashIcon } from '../../user-interface/Icons';
+import { useActionsDispatch } from '../../../context/ActionsContext';
 
 const UserManagementPage: React.FC = () => {
     const { settings } = useData();
     const { users } = useAuthState();
     const { deleteUsers } = useAuthDispatch();
+    const { cloneUser } = useActionsDispatch();
     
     const [searchTerm, setSearchTerm] = useState('');
     const [sortBy, setSortBy] = useState<'gameName-asc' | 'gameName-desc' | 'username-asc' | 'username-desc' | 'role-asc' | 'role-desc'>('gameName-asc');
@@ -42,7 +45,7 @@ const UserManagementPage: React.FC = () => {
         return filteredUsers.sort((a, b) => {
             switch (sortBy) {
                 case 'gameName-desc': return b.gameName.localeCompare(a.gameName);
-                case 'username-asc': return a.username.localeCompare(a.username);
+                case 'username-asc': return a.username.localeCompare(b.username);
                 case 'username-desc': return b.username.localeCompare(a.username);
                 case 'role-asc': return a.role.localeCompare(b.role);
                 case 'role-desc': return b.role.localeCompare(a.role);
@@ -140,6 +143,7 @@ const UserManagementPage: React.FC = () => {
                                     <th className="p-4 font-semibold">Game Name</th>
                                     <th className="p-4 font-semibold">Username</th>
                                     <th className="p-4 font-semibold">Role</th>
+                                    <th className="p-4 font-semibold">Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -167,6 +171,22 @@ const UserManagementPage: React.FC = () => {
                                             }`}>
                                                 {roleName(user.role)}
                                             </span>
+                                        </td>
+                                        <td className="p-4">
+                                            <div className="flex items-center gap-1">
+                                                <Button variant="ghost" size="icon" title="Edit" onClick={() => handleEdit(user)} className="h-8 w-8 text-stone-400 hover:text-white">
+                                                    <PencilIcon className="w-4 h-4" />
+                                                </Button>
+                                                <Button variant="ghost" size="icon" title="Clone" onClick={() => cloneUser(user.id)} className="h-8 w-8 text-stone-400 hover:text-white">
+                                                    <CopyIcon className="w-4 h-4" />
+                                                </Button>
+                                                <Button variant="ghost" size="icon" title="Adjust" onClick={() => handleAdjust(user)} className="h-8 w-8 text-stone-400 hover:text-white">
+                                                    <AdjustmentsIcon className="w-4 h-4" />
+                                                </Button>
+                                                <Button variant="ghost" size="icon" title="Delete" onClick={() => handleDeleteRequest([user.id])} className="h-8 w-8 text-red-400 hover:text-red-300 hover:bg-red-900/50">
+                                                    <TrashIcon className="w-4 h-4" />
+                                                </Button>
+                                            </div>
                                         </td>
                                     </tr>
                                 ))}

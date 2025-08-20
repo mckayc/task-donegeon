@@ -242,13 +242,13 @@ const ManageQuestsPage: React.FC = () => {
                                         </td>
                                         <td className="p-4">
                                             <div className="flex items-center gap-1">
-                                                <Button variant="ghost" size="icon" title="Edit" onClick={() => handleEdit(quest)} data-log-id={`manage-quests-action-edit-${quest.id}`} className="h-8 w-8 text-stone-400 hover:text-white">
+                                                <Button variant="ghost" size="icon" title="Edit" onClick={() => handleEdit(quest)} className="h-8 w-8 text-stone-400 hover:text-white">
                                                     <PencilIcon className="w-4 h-4" />
                                                 </Button>
-                                                <Button variant="ghost" size="icon" title="Clone" onClick={() => cloneQuest(quest.id)} data-log-id={`manage-quests-action-clone-${quest.id}`} className="h-8 w-8 text-stone-400 hover:text-white">
+                                                <Button variant="ghost" size="icon" title="Clone" onClick={() => cloneQuest(quest.id)} className="h-8 w-8 text-stone-400 hover:text-white">
                                                     <CopyIcon className="w-4 h-4" />
                                                 </Button>
-                                                <Button variant="ghost" size="icon" title="Delete" onClick={() => setConfirmation({ action: 'delete', ids: [quest.id] })} data-log-id={`manage-quests-action-delete-${quest.id}`} className="h-8 w-8 text-red-400 hover:text-red-300 hover:bg-red-900/50">
+                                                <Button variant="ghost" size="icon" title="Delete" onClick={() => setConfirmation({ action: 'delete', ids: [quest.id] })} className="h-8 w-8 text-red-400 hover:text-red-300 hover:bg-red-900/50">
                                                     <TrashIcon className="w-4 h-4" />
                                                 </Button>
                                             </div>

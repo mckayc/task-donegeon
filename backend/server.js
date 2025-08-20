@@ -1704,9 +1704,67 @@ chatRouter.post('/read', asyncMiddleware(async (req, res) => {
 }));
 app.use('/api/chat', chatRouter);
 
+// Bug Reports Router with Custom Import Logic
+const bugReportsRouter = express.Router();
+const bugReportRepo = dataSource.getRepository(BugReportEntity);
+
+bugReportsRouter.post('/import', asyncMiddleware(async (req, res) => {
+    const { reports, mode } = req.body;
+    if (!reports || !Array.isArray(reports) || !mode) {
+        return res.status(400).json({ error: 'Invalid request body for bug report import.' });
+    }
+
+    await dataSource.transaction(async manager => {
+        const repo = manager.getRepository(BugReportEntity);
+        if (mode === 'replace') {
+            await repo.clear();
+            const reportsToSave = reports.map(r => updateTimestamps(r, true));
+            await repo.save(reportsToSave);
+        } else { // mode === 'merge'
+            const existingIds = (await repo.find({ select: ["id"] })).map(r => r.id);
+            const newReports = reports.filter(r => !existingIds.includes(r.id));
+            if (newReports.length > 0) {
+                const reportsToSave = newReports.map(r => updateTimestamps(r, true));
+                await repo.save(reportsToSave);
+            }
+        }
+        
+        const allReports = await repo.find({ order: { createdAt: "DESC" } });
+        updateEmitter.emit('update');
+        res.status(200).json(allReports);
+    });
+}));
+
+// Replicated generic routes for Bug Reports
+bugReportsRouter.get('/', asyncMiddleware(async (req, res) => {
+    const items = await bugReportRepo.find({ order: { createdAt: "DESC" } });
+    res.json(items);
+}));
+bugReportsRouter.post('/', asyncMiddleware(async (req, res) => {
+    const newItem = bugReportRepo.create({ ...req.body, id: `bug-${Date.now()}-${Math.random().toString(36).substring(2, 9)}` });
+    const saved = await bugReportRepo.save(updateTimestamps(newItem, true));
+    updateEmitter.emit('update');
+    res.status(201).json(saved);
+}));
+bugReportsRouter.put('/:id', asyncMiddleware(async (req, res) => {
+    const item = await bugReportRepo.findOneBy({ id: req.params.id });
+    if (!item) return res.status(404).send('BugReport not found');
+    bugReportRepo.merge(item, req.body);
+    const saved = await bugReportRepo.save(updateTimestamps(item));
+    updateEmitter.emit('update');
+    res.json(saved);
+}));
+bugReportsRouter.delete('/', asyncMiddleware(async (req, res) => {
+    await bugReportRepo.delete(req.body.ids);
+    updateEmitter.emit('update');
+    res.status(204).send();
+}));
+
+app.use('/api/bug-reports', bugReportsRouter);
+
+
 app.use('/api/notifications', createGenericRouter(SystemNotificationEntity));
 app.use('/api/events', createGenericRouter(ScheduledEventEntity));
-app.use('/api/bug-reports', createGenericRouter(BugReportEntity));
 app.use('/api/quest-groups', createGenericRouter(QuestGroupEntity));
 app.use('/api/rotations', createGenericRouter(RotationEntity));
 app.use('/api/setbacks', createGenericRouter(ModifierDefinitionEntity));

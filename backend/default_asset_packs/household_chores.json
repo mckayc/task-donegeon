@@ -38,7 +38,8 @@
         "rrule": null,
         "startTime": null,
         "endTime": null,
-        "availabilityCount": 100
+        "totalCompletionsLimit": 100,
+        "dailyCompletionsLimit": 1
       },
       {
         "id": "chore-quest-2",
@@ -68,7 +69,8 @@
         "rrule": "FREQ=DAILY",
         "startTime": null,
         "endTime": null,
-        "availabilityCount": null
+        "totalCompletionsLimit": 0,
+        "dailyCompletionsLimit": 1
       },
       {
         "id": "chore-quest-3",
@@ -98,7 +100,8 @@
         "rrule": "FREQ=WEEKLY;BYDAY=TU,FR",
         "startTime": null,
         "endTime": null,
-        "availabilityCount": null
+        "totalCompletionsLimit": 0,
+        "dailyCompletionsLimit": 1
       }
     ],
     "questGroups": [],

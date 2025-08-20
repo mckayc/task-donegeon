@@ -13,7 +13,7 @@ interface QuestSchedulingProps {
         rrule: string | null;
         startTime: string | null;
         endTime: string | null;
-        availabilityCount: number | null;
+        availabilityCount?: number | null;
     };
     onChange: (newValue: Partial<QuestSchedulingProps['value']>) => void;
 }

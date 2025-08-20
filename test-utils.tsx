@@ -1,3 +1,5 @@
+import '@testing-library/jest-dom';
+
 import React, { ReactElement } from 'react';
 import { render, RenderOptions } from '@testing-library/react';
 import { NotificationsProvider } from './context/NotificationsContext';

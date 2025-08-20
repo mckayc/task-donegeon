@@ -85,6 +85,14 @@ export const generateAssetPack = (
     assetPack.assets.ranks = allAssets.ranks.filter(r => selectedAssets.ranks.includes(r.id));
     assetPack.assets.trophies = allAssets.trophies.filter(t => selectedAssets.trophies.includes(t.id));
     
+    // Add selected users, filtering out runtime/personal data to create a template
+    assetPack.assets.users = allAssets.users
+        .filter(u => selectedAssets.users.includes(u.id))
+        .map(({ 
+            personalPurse, personalExperience, guildBalances, avatar, 
+            ownedAssetIds, ownedThemes, hasBeenOnboarded, ...userTemplate 
+        }) => userTemplate);
+
     // Download the file
     const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(assetPack, null, 2));
     const downloadAnchorNode = document.createElement('a');

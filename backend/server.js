@@ -1636,6 +1636,153 @@ actionsRouter.post('/execute-exchange', asyncMiddleware(async (req, res) => {
     });
 }));
 
+const assetPacksRouter = express.Router();
+const imagePacksRouter = express.Router();
+const GITHUB_REPO_URL = 'https://api.github.com/repos/google/codewithme-task-donegeon/contents/public/images/packs';
+
+// Helper to create asset pack summary
+const createAssetPackSummary = (pack) => {
+    const summary = {
+        quests: [], gameAssets: [], trophies: [], users: [], markets: [],
+        ranks: [], rewardTypes: [], questGroups: [],
+    };
+    if (!pack.assets) return summary;
+
+    summary.quests = (pack.assets.quests || []).map(q => ({ title: q.title, icon: q.icon, description: q.description }));
+    summary.gameAssets = (pack.assets.gameAssets || []).map(a => ({ name: a.name, icon: a.icon, description: a.description }));
+    summary.trophies = (pack.assets.trophies || []).map(t => ({ name: t.name, icon: t.icon, description: t.description }));
+    summary.users = (pack.assets.users || []).map(u => ({ gameName: u.gameName, role: u.role }));
+    summary.markets = (pack.assets.markets || []).map(m => ({ title: m.title, icon: m.icon, description: m.description }));
+    summary.ranks = (pack.assets.ranks || []).map(r => ({ name: r.name, icon: r.icon }));
+    summary.rewardTypes = (pack.assets.rewardTypes || []).map(rt => ({ name: rt.name, icon: rt.icon, description: rt.description }));
+    summary.questGroups = (pack.assets.questGroups || []).map(qg => ({ name: qg.name, icon: qg.icon, description: qg.description }));
+
+    return summary;
+};
+
+// GET /api/asset-packs/discover
+assetPacksRouter.get('/discover', asyncMiddleware(async (req, res) => {
+    const files = await fs.readdir(ASSET_PACKS_DIR);
+    const packInfos = [];
+    for (const file of files) {
+        if (path.extname(file) === '.json') {
+            try {
+                const filePath = path.join(ASSET_PACKS_DIR, file);
+                const content = await fs.readFile(filePath, 'utf-8');
+                const pack = JSON.parse(content);
+                if (pack.manifest && pack.assets) {
+                    packInfos.push({
+                        manifest: pack.manifest,
+                        filename: file,
+                        summary: createAssetPackSummary(pack)
+                    });
+                }
+            } catch (err) {
+                console.error(`Error processing asset pack ${file}:`, err);
+            }
+        }
+    }
+    res.json(packInfos);
+}));
+
+// GET /api/asset-packs/get/:filename
+assetPacksRouter.get('/get/:filename', asyncMiddleware(async (req, res) => {
+    const { filename } = req.params;
+    const safeFilename = path.basename(filename);
+    if (safeFilename !== filename) {
+        return res.status(400).json({ error: 'Invalid filename.' });
+    }
+    const filePath = path.join(ASSET_PACKS_DIR, safeFilename);
+    try {
+        await fs.access(filePath);
+        res.sendFile(filePath);
+    } catch (err) {
+        res.status(404).json({ error: 'Asset pack not found.' });
+    }
+}));
+
+// GET /api/asset-packs/fetch-remote
+assetPacksRouter.get('/fetch-remote', asyncMiddleware(async (req, res) => {
+    const { url } = req.query;
+    if (!url) {
+        return res.status(400).json({ error: 'URL parameter is required.' });
+    }
+    try {
+        const response = await fetch(url);
+        if (!response.ok) {
+            throw new Error(`Failed to fetch from URL with status ${response.status}`);
+        }
+        const data = await response.json();
+        res.json(data);
+    } catch (err) {
+        console.error('Error fetching remote asset pack:', err);
+        res.status(500).json({ error: 'Failed to fetch or parse remote asset pack.' });
+    }
+}));
+
+// GET /api/image-packs
+imagePacksRouter.get('/', asyncMiddleware(async (req, res) => {
+    const response = await fetch(GITHUB_REPO_URL);
+    if (!response.ok) throw new Error('Failed to fetch image packs from GitHub');
+    const data = await response.json();
+    const packs = data
+        .filter(item => item.type === 'dir')
+        .map(dir => ({
+            name: dir.name,
+            sampleImageUrl: `https://raw.githubusercontent.com/google/codewithme-task-donegeon/main/public/images/packs/${dir.name}/sample.png`
+        }));
+    res.json(packs);
+}));
+
+// GET /api/image-packs/:packName
+imagePacksRouter.get('/:packName', asyncMiddleware(async (req, res) => {
+    const { packName } = req.params;
+    const safePackName = path.basename(packName);
+    const packUrl = `${GITHUB_REPO_URL}/${safePackName}`;
+    const response = await fetch(packUrl);
+    if (!response.ok) throw new Error(`Failed to fetch pack details for ${safePackName}`);
+    const filesData = await response.json();
+    
+    const packFiles = await Promise.all(filesData
+        .filter(item => item.type === 'file' && item.name !== 'sample.png')
+        .map(async file => {
+            const localPath = path.join(UPLOADS_DIR, safePackName, file.name);
+            let exists = false;
+            try {
+                await fs.access(localPath);
+                exists = true;
+            } catch { /* File doesn't exist locally */ }
+            return {
+                name: file.name,
+                category: safePackName,
+                url: file.download_url,
+                exists
+            };
+        }));
+
+    res.json(packFiles);
+}));
+
+// POST /api/image-packs/import
+imagePacksRouter.post('/import', asyncMiddleware(async (req, res) => {
+    const { files } = req.body;
+    if (!files || !Array.isArray(files)) return res.status(400).json({ error: 'Invalid files data.' });
+    for (const file of files) {
+        try {
+            const categoryDir = path.join(UPLOADS_DIR, file.category);
+            await fs.mkdir(categoryDir, { recursive: true });
+            const localPath = path.join(categoryDir, file.name);
+            const response = await fetch(file.url);
+            if (!response.ok) throw new Error(`Failed to download ${file.name}`);
+            
+            const buffer = Buffer.from(await response.arrayBuffer());
+            await fs.writeFile(localPath, buffer);
+        } catch (err) {
+            console.error(`Failed to import ${file.name}:`, err);
+        }
+    }
+    res.status(204).send();
+}));
 
 // ... (The rest of the file will go here)
 
@@ -1649,6 +1796,9 @@ app.use('/api/ranks', createGenericRouter(RankEntity));
 app.use('/api/trophies', createGenericRouter(TrophyEntity));
 app.use('/api/assets', createGenericRouter(GameAssetEntity));
 app.use('/api/themes', createGenericRouter(ThemeDefinitionEntity));
+app.use('/api/asset-packs', assetPacksRouter);
+app.use('/api/image-packs', imagePacksRouter);
+
 
 // Special handling for Settings, as it's a singleton resource.
 const settingsRouter = express.Router();

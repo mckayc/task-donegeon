@@ -22,6 +22,9 @@ const app = express();
 const port = process.env.PORT || 3000;
 const dbPath = process.env.DATABASE_PATH || '/app/data/database/database.sqlite';
 
+const updateEmitter = new EventEmitter();
+let clients = [];
+
 const updateTimestamps = (entity, isNew = false) => {
     const now = new Date().toISOString();
     if (isNew) {

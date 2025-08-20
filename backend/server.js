@@ -22,9 +22,6 @@ const app = express();
 const port = process.env.PORT || 3000;
 const dbPath = process.env.DATABASE_PATH || '/app/data/database/database.sqlite';
 
-const updateEmitter = new EventEmitter();
-let clients = [];
-
 const updateTimestamps = (entity, isNew = false) => {
     const now = new Date().toISOString();
     if (isNew) {
@@ -1729,12 +1726,24 @@ app.get('/api/chronicles', asyncMiddleware(async(req, res) => {
     
     // Admin Adjustments
     const adjustments = await manager.find(AdminAdjustmentEntity, { where: whereConditionsAll });
-    allEvents.push(...adjustments.map(a => ({
-        id: `adj-${a.id}`, originalId: a.id, date: a.adjustedAt, type: 'Adjustment',
-        title: `${userMap.get(a.adjusterId) || 'Admin'} applied an adjustment to ${userMap.get(a.userId) || 'a user'}.`,
-        note: a.reason, status: a.type, icon: '🛠️',
-        color: 'hsl(220 60% 60%)', userId: a.userId, guildId: a.guildId
-    })));
+    allEvents.push(...adjustments.map(a => {
+        const isExchange = a.userId === a.adjusterId && a.reason.startsWith('Exchanged');
+        const title = isExchange
+            ? `${userMap.get(a.userId) || 'A user'} made an exchange`
+            : `${userMap.get(a.adjusterId) || 'Admin'} applied an adjustment to ${userMap.get(a.userId) || 'a user'}.`;
+        
+        return {
+            id: `adj-${a.id}`, originalId: a.id, date: a.adjustedAt, 
+            type: 'Adjustment',
+            title: title,
+            note: a.reason, 
+            status: isExchange ? 'Exchanged' : a.type, 
+            icon: isExchange ? '⚖️' : '🛠️',
+            color: isExchange ? 'hsl(180 60% 50%)' : 'hsl(220 60% 60%)', 
+            userId: a.userId, 
+            guildId: a.guildId
+        };
+    }));
     
     // Gifts
     const gifts = await manager.find(GiftEntity, { where: whereConditionsAll });

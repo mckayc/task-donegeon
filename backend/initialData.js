@@ -107,6 +107,8 @@ const INITIAL_SETTINGS = {
       recurringTasks: 'Duties',
       singleTask: 'Venture',
       singleTasks: 'Ventures',
+      journey: 'Journey',
+      journeys: 'Journeys',
       shoppingCenter: 'Marketplace',
       store: 'Market',
       stores: 'Markets',

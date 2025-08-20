@@ -63,6 +63,7 @@ const ChroniclesPage: React.FC = () => {
           case "Gifted":
           case "Approved":
           case "Completed":
+          case "Exchanged":
             return 'text-green-400';
           case "Requested":
           case "Pending":

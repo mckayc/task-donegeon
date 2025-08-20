@@ -1,4 +1,5 @@
 
+
 import React, { useMemo, useState, useEffect } from 'react';
 import { useData } from '../../context/DataProvider';
 import { useUIState, useUIDispatch } from '../../context/UIContext';
@@ -16,7 +17,7 @@ import ContributeToQuestDialog from '../quests/ContributeToQuestDialog';
 import QuestWidget from '../dashboard/QuestWidget';
 
 const Dashboard: React.FC = () => {
-    const { ranks, userTrophies, trophies, settings, scheduledEvents, quests, questCompletions, rewardTypes, purchaseRequests, users, guilds } = useData();
+    const { ranks, userTrophies, trophies, settings, scheduledEvents, quests, questCompletions, rewardTypes, purchaseRequests, users, guilds, adminAdjustments } = useData();
     const { appMode } = useUIState();
     const { currentUser } = useAuthState();
     const { markQuestAsTodo, unmarkQuestAsTodo } = useActionsDispatch();
@@ -142,7 +143,7 @@ const Dashboard: React.FC = () => {
         
         type Activity = {
             id: string;
-            type: 'Quest' | 'Purchase' | 'Trophy';
+            type: 'Quest' | 'Purchase' | 'Trophy' | 'Adjustment';
             title: string;
             date: string;
             note?: string;
@@ -196,11 +197,37 @@ const Dashboard: React.FC = () => {
                         status: 'Awarded!',
                         icon: trophy?.icon || '🏆',
                     };
-                })
+                }),
+            ...adminAdjustments
+                .filter(a => a.userId === currentUser.id && a.guildId == currentGuildId)
+                .map(a => {
+                    const isExchange = a.userId === a.adjusterId && a.reason.startsWith('Exchanged');
+                    
+                    if (!isExchange) return null; // Only show exchanges on dashboard
+
+                    const title = `Made an Exchange`;
+                    let rewardsText = '';
+                    if (a.rewards.length > 0 || a.setbacks.length > 0) {
+                        const paid = a.setbacks.map(r => `-${r.amount} ${getRewardInfo(r.rewardTypeId).icon}`).join(' ');
+                        const received = a.rewards.map(r => `+${r.amount} ${getRewardInfo(r.rewardTypeId).icon}`).join(' ');
+                        rewardsText = `${paid} ${received}`.trim();
+                    }
+
+                    return {
+                        id: a.id,
+                        type: 'Adjustment' as const,
+                        title,
+                        date: a.adjustedAt,
+                        note: a.reason,
+                        rewardsText: rewardsText || undefined,
+                        status: 'Exchanged!',
+                        icon: '⚖️',
+                    };
+                }).filter((a): a is NonNullable<typeof a> => !!a),
         ];
 
         return allActivities.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).slice(0, 10);
-    }, [questCompletions, purchaseRequests, userTrophies, quests, trophies, currentUser.id, appMode, terminology, rewardTypes]);
+    }, [adminAdjustments, questCompletions, purchaseRequests, userTrophies, quests, trophies, currentUser.id, appMode, terminology, rewardTypes, users]);
 
     const leaderboard = useMemo(() => {
         const currentGuildId = appMode.mode === 'guild' ? appMode.guildId : undefined;
@@ -242,6 +269,7 @@ const Dashboard: React.FC = () => {
             case "Awarded!":
             case QuestCompletionStatus.Approved:
             case "Completed":
+            case "Exchanged!":
                 return 'text-green-400';
             case QuestCompletionStatus.Pending:
                 return 'text-yellow-400';

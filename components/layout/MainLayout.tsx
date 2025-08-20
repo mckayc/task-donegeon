@@ -48,6 +48,7 @@ import ManageRotationsPage from '../pages/management/ManageRotationsPage';
 import ManageSetbacksPage from '../pages/management/ManageSetbacksPage';
 import ThemesPage from '../pages/ThemesPage';
 import ChatController from '../chat/ChatController';
+import TestCasesPage from '../dev/TestCasesPage';
 
 const MainLayout: React.FC = () => {
   const { settings, systemNotifications } = useData();
@@ -63,7 +64,7 @@ const MainLayout: React.FC = () => {
     'Manage Users', 'Manage Rewards', 'Manage Quests', 'Manage Quest Groups', 'Manage Rotations', 'Manage Goods', 'Manage Markets',
     'Manage Guilds', 'Manage Ranks', 'Manage Trophies', 'Settings', 'Suggestion Engine',
     'Appearance', 'Object Exporter', 'Asset Manager', 'Backup & Import', 'Asset Library',
-    'Manage Events', 'Bug Tracker', 'Triumphs & Trials'
+    'Manage Events', 'Bug Tracker', 'Triumphs & Trials', 'Test Cases'
   ];
   const GATEKEEPER_PAGES: Page[] = ['Approvals'];
 
@@ -149,6 +150,7 @@ const MainLayout: React.FC = () => {
       case 'About': return <AboutPage />;
       case 'Help Guide': return <HelpPage />;
       case 'Bug Tracker': return <BugTrackingPage />;
+      case 'Test Cases': return <TestCasesPage />;
       default: return <Dashboard />;
     }
   };

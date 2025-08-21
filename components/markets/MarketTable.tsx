@@ -1,4 +1,3 @@
-
 import React, { useMemo } from 'react';
 import { Market, Terminology } from '../../types';
 import Button from '../user-interface/Button';
@@ -9,7 +8,8 @@ import { useShiftSelect } from '../../hooks/useShiftSelect';
 interface MarketTableProps {
     markets: Market[];
     selectedMarkets: string[];
-    setSelectedMarkets: (ids: string[]) => void;
+    onSelectAll: (e: React.ChangeEvent<HTMLInputElement>) => void;
+    onSelectOne: (e: React.ChangeEvent<HTMLInputElement>, id: string) => void;
     onEdit: (market: Market) => void;
     onClone: (marketId: string) => void;
     onDeleteRequest: (ids: string[]) => void;
@@ -20,20 +20,14 @@ interface MarketTableProps {
 const MarketTable: React.FC<MarketTableProps> = ({
     markets,
     selectedMarkets,
-    setSelectedMarkets,
+    onSelectAll,
+    onSelectOne,
     onEdit,
     onClone,
     onDeleteRequest,
     terminology,
     onCreate,
 }) => {
-    const marketIds = useMemo(() => markets.map(m => m.id), [markets]);
-    const handleCheckboxClick = useShiftSelect(marketIds, selectedMarkets, setSelectedMarkets);
-
-    const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
-        setSelectedMarkets(e.target.checked ? marketIds : []);
-    };
-
     if (markets.length === 0) {
         return (
             <EmptyState 
@@ -50,7 +44,7 @@ const MarketTable: React.FC<MarketTableProps> = ({
             <table className="w-full text-left">
                 <thead className="border-b border-stone-700/60">
                     <tr>
-                        <th className="p-4 w-12"><input type="checkbox" onChange={handleSelectAll} checked={selectedMarkets.length === markets.length && markets.length > 0} className="h-4 w-4 rounded text-emerald-600 bg-stone-700 border-stone-600 focus:ring-emerald-500" /></th>
+                        <th className="p-4 w-12"><input type="checkbox" onChange={onSelectAll} checked={selectedMarkets.length === markets.length && markets.length > 0} className="h-4 w-4 rounded text-emerald-600 bg-stone-700 border-stone-600 focus:ring-emerald-500" /></th>
                         <th className="p-4 font-semibold">Title</th>
                         <th className="p-4 font-semibold hidden md:table-cell">Description</th>
                         <th className="p-4 font-semibold">Status</th>
@@ -73,7 +67,7 @@ const MarketTable: React.FC<MarketTableProps> = ({
                                     <input 
                                         type="checkbox" 
                                         checked={selectedMarkets.includes(market.id)} 
-                                        onChange={(e) => handleCheckboxClick(e, market.id)} 
+                                        onChange={(e) => onSelectOne(e, market.id)} 
                                         className="h-4 w-4 rounded text-emerald-600 bg-stone-700 border-stone-600 focus:ring-emerald-500"
                                     />
                                 </td>

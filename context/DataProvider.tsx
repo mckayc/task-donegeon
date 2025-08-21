@@ -1,4 +1,5 @@
 
+
 import React, { createContext, useState, useContext, ReactNode, useCallback, useEffect, useReducer, useRef } from 'react';
 import { User } from '../types';
 import { useNotificationsDispatch } from './NotificationsContext';
@@ -61,7 +62,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         const communityPayload = { guilds };
 
         if (lastSyncTimestamp.current) { // Delta update
-            if (Object.values(questsPayload).some(v => v !== undefined)) (questsDispatch as React.Dispatch<QuestsAction>)({ type: 'UPDATE_QUESTS_DATA', payload: questsPayload });
+            if (Object.values(questsPayload).some(v => v !== undefined)) questsDispatch.dispatch({ type: 'UPDATE_QUESTS_DATA', payload: questsPayload });
             if (Object.values(economyPayload).some(v => v !== undefined)) (economyDispatch as React.Dispatch<EconomyAction>)({ type: 'UPDATE_ECONOMY_DATA', payload: economyPayload });
             if (Object.values(progressionPayload).some(v => v !== undefined)) (progressionDispatch as React.Dispatch<ProgressionAction>)({ type: 'UPDATE_PROGRESSION_DATA', payload: progressionPayload });
             if (Object.values(communityPayload).some(v => v !== undefined)) (communityDispatch as React.Dispatch<CommunityAction>)({ type: 'UPDATE_COMMUNITY_DATA', payload: communityPayload });
@@ -82,7 +83,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             if (updatedLoginHistory) setLoginHistory(updatedLoginHistory);
 
         } else { // Initial load
-            (questsDispatch as React.Dispatch<QuestsAction>)({ type: 'SET_QUESTS_DATA', payload: questsPayload });
+            questsDispatch.dispatch({ type: 'SET_QUESTS_DATA', payload: questsPayload });
             (economyDispatch as React.Dispatch<EconomyAction>)({ type: 'SET_ECONOMY_DATA', payload: economyPayload });
             (progressionDispatch as React.Dispatch<ProgressionAction>)({ type: 'SET_PROGRESSION_DATA', payload: progressionPayload });
             (communityDispatch as React.Dispatch<CommunityAction>)({ type: 'SET_COMMUNITY_DATA', payload: communityPayload });

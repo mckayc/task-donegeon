@@ -23,7 +23,7 @@ const TrophyTable: React.FC<TrophyTableProps> = ({
     onEdit,
     onDeleteRequest,
     terminology,
-    onCreate
+    onCreate,
 }) => {
     if (trophies.length === 0) {
         return (

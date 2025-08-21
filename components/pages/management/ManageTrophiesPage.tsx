@@ -1,14 +1,14 @@
 import React, { useState, useMemo } from 'react';
-import { Trophy } from '../../trophies/types';
-import Button from '../../user-interface/Button';
-import Card from '../../user-interface/Card';
-import EditTrophyDialog from '../../settings/EditTrophyDialog';
-import ConfirmDialog from '../../user-interface/ConfirmDialog';
-import TrophyIdeaGenerator from '../../quests/TrophyIdeaGenerator';
-import { useShiftSelect } from '../../../hooks/useShiftSelect';
-import { useProgressionState } from '../../../context/ProgressionContext';
-import { useSystemState, useSystemDispatch } from '../../../context/SystemContext';
-import TrophyTable from '../../trophies/TrophyTable';
+import { Trophy } from '../../types';
+import Button from '../user-interface/Button';
+import Card from '../user-interface/Card';
+import EditTrophyDialog from '../settings/EditTrophyDialog';
+import ConfirmDialog from '../user-interface/ConfirmDialog';
+import TrophyIdeaGenerator from '../quests/TrophyIdeaGenerator';
+import { useShiftSelect } from '../../hooks/useShiftSelect';
+import { useProgressionState } from '../../context/ProgressionContext';
+import { useSystemState, useSystemDispatch } from '../../context/SystemContext';
+import TrophyTable from '../trophies/TrophyTable';
 
 const ManageTrophiesPage: React.FC = () => {
     const { trophies } = useProgressionState();
@@ -59,6 +59,14 @@ const ManageTrophiesPage: React.FC = () => {
         setEditingTrophy(null);
         setIsDialogOpen(true);
     };
+    
+    const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.checked) {
+            setSelectedTrophies(trophies.map((t: Trophy) => t.id));
+        } else {
+            setSelectedTrophies([]);
+        }
+    };
 
     const headerActions = (
         <div className="flex items-center gap-2 flex-wrap">
@@ -86,7 +94,7 @@ const ManageTrophiesPage: React.FC = () => {
                 <TrophyTable
                     trophies={trophies}
                     selectedTrophies={selectedTrophies}
-                    onSelectAll={(e) => setSelectedTrophies(e.target.checked ? trophyIds : [])}
+                    onSelectAll={handleSelectAll}
                     onSelectOne={handleCheckboxClick}
                     onEdit={handleEdit}
                     onDeleteRequest={(ids) => setDeletingIds(ids)}

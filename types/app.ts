@@ -1,6 +1,4 @@
-
 import { Role } from '../components/users/types';
-import { ThemeDefinition } from '../components/themes/types';
 
 // This file is for truly global types that don't belong to a specific feature domain.
 

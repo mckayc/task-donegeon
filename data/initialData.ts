@@ -3,7 +3,7 @@ import { RewardTypeDefinition, RewardCategory } from '../components/items/types'
 import { Rank } from '../components/ranks/types';
 import { Trophy, TrophyRequirementType } from '../components/trophies/types';
 import { QuestType, Quest, QuestGroup } from '../components/quests/types';
-import { Market } from '../components/markets/types';
+import { Market } from '../types';
 import { Guild } from '../components/guilds/types';
 import { AppSettings, SidebarConfigItem } from '../types/app';
 import { GameAsset } from '../components/items/types';

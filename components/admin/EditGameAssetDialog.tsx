@@ -1,7 +1,6 @@
 
+
 import React, { useState, useEffect, useCallback } from 'react';
-import { useData } from '../../context/DataProvider';
-import { useActionsDispatch } from '../../context/ActionsContext';
 import { GameAsset, RewardItem, RewardCategory } from '../../types';
 import Button from '../user-interface/Button';
 import Input from '../user-interface/Input';
@@ -9,6 +8,8 @@ import RewardInputGroup from '../forms/RewardInputGroup';
 import ToggleSwitch from '../user-interface/ToggleSwitch';
 import ImageSelectionDialog from '../user-interface/ImageSelectionDialog';
 import { useNotificationsDispatch } from '../../context/NotificationsContext';
+import { useEconomyState, useEconomyDispatch } from '../../context/EconomyContext';
+import { useSystemDispatch } from '../../context/SystemContext';
 
 interface EditGameAssetDialogProps {
   assetToEdit: GameAsset | null;
@@ -33,9 +34,10 @@ const PREDEFINED_CATEGORIES = [
 ];
 
 const EditGameAssetDialog: React.FC<EditGameAssetDialogProps> = ({ assetToEdit, initialData, onClose, mode = (assetToEdit ? 'edit' : 'create'), onTryAgain, isGenerating, onSave }) => {
-  const { uploadFile, addGameAsset, updateGameAsset } = useActionsDispatch();
+  const { uploadFile } = useSystemDispatch();
+  const { addGameAsset, updateGameAsset } = useEconomyDispatch();
   const { addNotification } = useNotificationsDispatch();
-  const { markets, rewardTypes } = useData();
+  const { markets, rewardTypes } = useEconomyState();
 
   const getInitialFormData = useCallback(() => {
     const data = assetToEdit || initialData;
@@ -210,7 +212,7 @@ const EditGameAssetDialog: React.FC<EditGameAssetDialogProps> = ({ assetToEdit, 
     } else if (assetToEdit) {
       updateGameAsset({ ...assetToEdit, ...finalPayload });
     } else {
-      addGameAsset({ ...finalPayload, createdAt: new Date().toISOString() });
+      addGameAsset({ ...finalPayload, createdAt: new Date().toISOString() } as any);
     }
     onClose();
   };

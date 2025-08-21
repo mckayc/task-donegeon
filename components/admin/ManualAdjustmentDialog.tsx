@@ -1,19 +1,23 @@
 import React, { useState } from 'react';
-import { useData } from '../../context/DataProvider';
-import { useActionsDispatch } from '../../context/ActionsContext';
+import { useSystemState, useSystemDispatch } from '../../context/SystemContext';
 import { useAuthState } from '../../context/AuthContext';
 import { User, RewardItem, RewardCategory, AdminAdjustmentType, Trophy } from '../../types';
 import Button from '../user-interface/Button';
 import RewardInputGroup from '../forms/RewardInputGroup';
+import { useCommunityState } from '../../context/CommunityContext';
+import { useProgressionState } from '../../context/ProgressionContext';
+import { useEconomyState } from '../../context/EconomyContext';
 
 interface ManualAdjustmentDialogProps {
   user: User;
   onClose: () => void;
 }
 
-const ManualAdjustmentDialog: React.FC<ManualAdjustmentDialogProps> = ({ user, onClose }) => {
-  const { guilds, trophies, userTrophies, rewardTypes } = useData();
-  const { applyManualAdjustment } = useActionsDispatch();
+export const ManualAdjustmentDialog: React.FC<ManualAdjustmentDialogProps> = ({ user, onClose }) => {
+  const { guilds } = useCommunityState();
+  const { trophies, userTrophies } = useProgressionState();
+  const { rewardTypes } = useEconomyState();
+  const { applyManualAdjustment } = useSystemDispatch();
   const { currentUser } = useAuthState();
   const [reason, setReason] = useState('');
   const [guildId, setGuildId] = useState('');
@@ -93,40 +97,50 @@ const ManualAdjustmentDialog: React.FC<ManualAdjustmentDialogProps> = ({ user, o
                 <label className="block text-sm font-medium text-stone-300 mb-1">Scope</label>
                 <select value={guildId} onChange={e => setGuildId(e.target.value)} className="w-full px-4 py-2 bg-stone-700 border border-stone-600 rounded-md">
                     <option value="">Personal</option>
-                    {userGuilds.map(g => <option key={g.id} value={g.id}>{g.name}</option>)}
+                    {userGuilds.map(g => (
+                        <option key={g.id} value={g.id}>{g.name}</option>
+                    ))}
                 </select>
             </div>
              <div>
                 <label className="block text-sm font-medium text-stone-300 mb-1">Action Type</label>
                 <select value={actionType} onChange={e => setActionType(e.target.value as AdminAdjustmentType)} className="w-full px-4 py-2 bg-stone-700 border border-stone-600 rounded-md">
-                    <option value={AdminAdjustmentType.Reward}>Reward</option>
-                    <option value={AdminAdjustmentType.Setback}>Setback</option>
-                    <option value={AdminAdjustmentType.Trophy}>Trophy</option>
+                    <option value={AdminAdjustmentType.Reward}>Give Reward</option>
+                    <option value={AdminAdjustmentType.Setback}>Apply Setback</option>
+                    <option value={AdminAdjustmentType.Trophy}>Award Trophy</option>
                 </select>
             </div>
 
             {actionType === AdminAdjustmentType.Reward && (
-                <RewardInputGroup category='rewards' items={rewards} onChange={handleRewardChange(rewards, setRewards)} onAdd={handleAddRewardForCategory(setRewards)} onRemove={handleRemoveReward(rewards, setRewards)} />
+                <RewardInputGroup category="rewards" items={rewards} onChange={handleRewardChange(rewards, setRewards)} onAdd={handleAddRewardForCategory(setRewards)} onRemove={handleRemoveReward(rewards, setRewards)} />
             )}
             {actionType === AdminAdjustmentType.Setback && (
-                 <RewardInputGroup category='setbacks' items={setbacks} onChange={handleRewardChange(setbacks, setSetbacks)} onAdd={handleAddRewardForCategory(setSetbacks)} onRemove={handleRemoveReward(setbacks, setSetbacks)} />
+                <RewardInputGroup category="setbacks" items={setbacks} onChange={handleRewardChange(setbacks, setSetbacks)} onAdd={handleAddRewardForCategory(setSetbacks)} onRemove={handleRemoveReward(setbacks, setSetbacks)} />
             )}
             {actionType === AdminAdjustmentType.Trophy && (
-                <div>
-                    <label htmlFor="trophy" className="block text-sm font-medium text-stone-300 mb-1">Trophy to Award</label>
-                     <select id="trophy" value={trophyId} onChange={(e) => setTrophyId(e.target.value)} className="w-full px-4 py-2 bg-stone-700 border border-stone-600 rounded-md">
+                 <div>
+                    <label className="block text-sm font-medium text-stone-300 mb-1">Trophy to Award</label>
+                    <select value={trophyId} onChange={e => setTrophyId(e.target.value)} className="w-full px-4 py-2 bg-stone-700 border border-stone-600 rounded-md">
                         <option value="" disabled>Select a trophy...</option>
-                        {availableTrophies.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+                        {availableTrophies.map(t => (
+                            <option key={t.id} value={t.id}>{t.name}</option>
+                        ))}
                     </select>
                 </div>
             )}
-            
+           
             <div>
-                <label htmlFor="reason" className="block text-sm font-medium text-stone-300 mb-1">Reason</label>
-                <textarea id="reason" rows={3} value={reason} onChange={e => setReason(e.target.value)} className="w-full px-4 py-2 bg-stone-700 border border-stone-600 rounded-md" required />
+                <label className="block text-sm font-medium text-stone-300 mb-1">Reason</label>
+                <textarea
+                    value={reason}
+                    onChange={e => setReason(e.target.value)}
+                    rows={3}
+                    className="w-full px-4 py-2 bg-stone-700 border border-stone-600 rounded-md"
+                    placeholder="e.g., Excellent report card, helping a sibling, etc."
+                    required
+                />
             </div>
-
-            {error && <p className="text-red-400 text-center">{error}</p>}
+             {error && <p className="text-red-400 text-center">{error}</p>}
         </form>
         <div className="flex justify-end space-x-4 pt-4 mt-auto">
             <Button type="button" variant="secondary" onClick={onClose}>Cancel</Button>
@@ -136,5 +150,3 @@ const ManualAdjustmentDialog: React.FC<ManualAdjustmentDialogProps> = ({ user, o
     </div>
   );
 };
-
-export default ManualAdjustmentDialog;

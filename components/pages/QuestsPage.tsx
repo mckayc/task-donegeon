@@ -2,16 +2,19 @@ import React, { useState, useMemo, useEffect } from 'react';
 import Card from '../user-interface/Card';
 import Button from '../user-interface/Button';
 import CreateQuestDialog from '../quests/CreateQuestDialog';
-import { useData } from '../../context/DataProvider';
+import { useSystemState } from '../../context/SystemContext';
 import { useUIState } from '../../context/UIContext';
-import { useActionsDispatch } from '../../context/ActionsContext';
-import { Role, QuestType, Quest, QuestAvailability, QuestKind } from '../../types';
-import { isQuestAvailableForUser, questSorter, isQuestVisibleToUserInMode } from '../../utils/quests';
+import { useQuestsState, useQuestsDispatch } from '../../context/QuestsContext';
+import { Role } from '../users/types';
+import { QuestType, Quest, QuestKind } from '../quests/types';
+import { isQuestAvailableForUser, questSorter, isQuestVisibleToUserInMode } from '../quests/utils/quests';
 import CompleteQuestDialog from '../quests/CompleteQuestDialog';
 import QuestDetailDialog from '../quests/QuestDetailDialog';
 import DynamicIcon from '../user-interface/DynamicIcon';
 import ImagePreviewDialog from '../user-interface/ImagePreviewDialog';
 import { useAuthState } from '../../context/AuthContext';
+import { useEconomyState } from '../../context/EconomyContext';
+import { useCommunityState } from '../../context/CommunityContext';
 
 const getAvailabilityText = (quest: Quest, completionsCount: number): string => {
     if (quest.type === QuestType.Journey) {
@@ -55,7 +58,10 @@ const formatTimeRemaining = (targetDate: Date, now: Date): string => {
 };
 
 const QuestItem: React.FC<{ quest: Quest; now: Date; onSelect: (quest: Quest) => void; onImagePreview: (url: string) => void; }> = ({ quest, now, onSelect, onImagePreview }) => {
-    const { settings, scheduledEvents, guilds, questGroups, questCompletions, rewardTypes } = useData();
+    const { settings, scheduledEvents } = useSystemState();
+    const { guilds } = useCommunityState();
+    const { rewardTypes } = useEconomyState();
+    const { questGroups, questCompletions } = useQuestsState();
     const { appMode } = useUIState();
     const { currentUser } = useAuthState();
     
@@ -209,10 +215,11 @@ const FilterButton: React.FC<{ type: 'all' | QuestType, children: React.ReactNod
 );
 
 const QuestsPage: React.FC = () => {
-    const { settings, scheduledEvents, quests, questCompletions } = useData();
+    const { settings, scheduledEvents } = useSystemState();
+    const { quests, questCompletions } = useQuestsState();
     const { appMode } = useUIState();
     const { currentUser } = useAuthState();
-    const { markQuestAsTodo, unmarkQuestAsTodo } = useActionsDispatch();
+    const { markQuestAsTodo, unmarkQuestAsTodo } = useQuestsDispatch();
     const [filter, setFilter] = useState<'all' | QuestType>('all');
     const [selectedQuest, setSelectedQuest] = useState<Quest | null>(null);
     const [completingQuest, setCompletingQuest] = useState<Quest | null>(null);

@@ -5,8 +5,7 @@ import Input from '../user-interface/Input';
 import UserMultiSelect from '../user-interface/UserMultiSelect';
 import { useAuthState } from '../../context/AuthContext';
 import { bugLogger } from '../../utils/bugLogger';
-import { useData } from '../../context/DataProvider';
-import { useActionsDispatch } from '../../context/ActionsContext';
+import { useSystemState, useSystemDispatch } from '../../context/SystemContext';
 
 interface AssetPackInstallDialogProps {
   assetPack: AssetPack;
@@ -97,7 +96,7 @@ const AssetCard: React.FC<{
 
 
 const AssetPackInstallDialog: React.FC<AssetPackInstallDialogProps> = ({ assetPack, initialResolutions, onClose, onConfirm }) => {
-    const { settings } = useData();
+    const { settings } = useSystemState();
     const { users } = useAuthState();
     const [resolutions, setResolutions] = useState(initialResolutions);
     const [assignedUserIds, setAssignedUserIds] = useState<string[]>(() => users.map(u => u.id));
@@ -192,7 +191,8 @@ const AssetPackInstallDialog: React.FC<AssetPackInstallDialogProps> = ({ assetPa
 
     const groupedResolutions = useMemo(() => {
         return resolutions.reduce((acc, res) => {
-            const typeKey = settings.terminology[terminologyMap[res.type]] || res.type;
+            const termKey = terminologyMap[res.type]
+            const typeKey = settings.terminology[termKey] || res.type;
             if (!acc[typeKey]) {
                 acc[typeKey] = [];
             }

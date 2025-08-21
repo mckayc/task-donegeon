@@ -40,6 +40,12 @@ export const UserPlusIcon: React.FC<{className?: string}> = ({ className }) => (
     </svg>
 );
 
+export const UserGroupIcon: React.FC<{className?: string}> = ({ className }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={className || "w-6 h-6"}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m-7.5-2.952a4.5 4.5 0 01-9 0m9 0a4.5 4.5 0 00-9 0m9 0h.008m-3.75 0h.008m-3.75 0h.008m9 0h.008m-3.75 0h.008m-3.75 0h.008M12.75 6.75h.008v.008h-.008V6.75zm-3.75 0h.008v.008h-.008V6.75zm-3.75 0h.008v.008h-.008V6.75z" />
+    </svg>
+);
+
 export const PlayIcon: React.FC<{className?: string}> = ({ className }) => (
     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={className || "w-6 h-6"}>
         <path strokeLinecap="round" strokeLinejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.348a1.125 1.125 0 010 1.971l-11.54 6.347a1.125 1.125 0 01-1.667-.985V5.653z" />

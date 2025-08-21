@@ -1,7 +1,6 @@
 import React, { createContext, useState, useContext, ReactNode, useCallback, useEffect, useMemo, useRef } from 'react';
 import { BugReport, BugReportLogEntry, BugReportStatus, BugReportType } from '../../types';
-import { useActionsDispatch } from '../../context/ActionsContext';
-import { useData } from '../../context/DataProvider';
+import { useSystemDispatch, useSystemState } from '../../context/SystemContext';
 import { bugLogger } from '../../utils/bugLogger';
 
 // State
@@ -33,8 +32,8 @@ export const DeveloperProvider: React.FC<{ children: ReactNode }> = ({ children 
   const onPickCallbackRef = useRef<((info: any) => void) | null>(null);
   const highlightedElementRef = useRef<HTMLElement | null>(null);
 
-  const { addBugReport, updateBugReport } = useActionsDispatch();
-  const { bugReports } = useData();
+  const { addBugReport, updateBugReport } = useSystemDispatch();
+  const { bugReports } = useSystemState();
   
   const actionsDispatchRef = useRef({ addBugReport, updateBugReport });
   useEffect(() => { actionsDispatchRef.current = { addBugReport, updateBugReport }; }, [addBugReport, updateBugReport]);
@@ -186,6 +185,12 @@ export const useDeveloperState = (): DeveloperState => {
   const context = useContext(DeveloperStateContext);
   if (context === undefined) throw new Error('useDeveloperState must be used within a DeveloperProvider');
   return context;
+};
+
+export const useDeveloperDispatch = (): DeveloperDispatch => {
+    const context = useContext(DeveloperDispatchContext);
+    if(context === undefined) throw new Error('useDeveloperDispatch must be used within a DeveloperProvider');
+    return context;
 };
 
 export const useDeveloper = (): DeveloperDispatch & DeveloperState => {

@@ -1,6 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { useData } from '../../context/DataProvider';
-import { useActionsDispatch } from '../../context/ActionsContext';
+import { useEconomyState, useEconomyDispatch } from '../../context/EconomyContext';
 import { useAuthState } from '../../context/AuthContext';
 import Card from '../user-interface/Card';
 import { CollectionIcon } from '../user-interface/Icons';
@@ -10,9 +9,9 @@ import Button from '../user-interface/Button';
 import { GameAsset } from '../../types';
 
 const CollectionPage: React.FC = () => {
-    const { gameAssets } = useData();
+    const { gameAssets } = useEconomyState();
     const { currentUser } = useAuthState();
-    const { useItem, craftItem } = useActionsDispatch();
+    const { useItem, craftItem } = useEconomyDispatch();
     const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null);
     const [activeTab, setActiveTab] = useState<'collection' | 'crafting'>('collection');
 

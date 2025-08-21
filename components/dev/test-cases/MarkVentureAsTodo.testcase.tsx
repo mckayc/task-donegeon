@@ -2,14 +2,14 @@ import React, { useState, useMemo } from 'react';
 import { Quest, QuestType, QuestKind, Role } from '../../../types';
 import Card from '../../user-interface/Card';
 import QuestDetailDialog from '../../quests/QuestDetailDialog';
-import { useActionsDispatch } from '../../../context/ActionsContext';
+import { useQuestsDispatch } from '../../../context/QuestsContext';
 import { useAuthState } from '../../../context/AuthContext';
 import Button from '../../user-interface/Button';
 
 // A mock, self-contained component to test the "Mark Venture as To-Do" functionality.
 const MarkVentureAsTodoTestCase: React.FC = () => {
   const { currentUser } = useAuthState();
-  const { markQuestAsTodo, unmarkQuestAsTodo } = useActionsDispatch();
+  const { markQuestAsTodo, unmarkQuestAsTodo } = useQuestsDispatch();
 
   // Create a stable, mock quest object for this test case.
   const mockQuest = useMemo<Quest>(() => ({

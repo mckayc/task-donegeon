@@ -1,6 +1,4 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { useData } from '../../context/DataProvider';
-import { useActionsDispatch } from '../../context/ActionsContext';
 import { useAuthState } from '../../context/AuthContext';
 import { User, ModifierDefinition, Role, ModifierEffect, ModifierEffectType, RewardItem, RewardCategory, QuestKind } from '../../types';
 import Button from '../user-interface/Button';
@@ -8,6 +6,9 @@ import Input from '../user-interface/Input';
 import { useNotificationsDispatch } from '../../context/NotificationsContext';
 import EmojiPicker from '../user-interface/EmojiPicker';
 import RewardInputGroup from '../forms/RewardInputGroup';
+import { useQuestsState } from '../../context/QuestsContext';
+import { useEconomyState } from '../../context/EconomyContext';
+import { useSystemDispatch } from '../../context/SystemContext';
 
 interface ApplyModifierDialogProps {
     setback: ModifierDefinition;
@@ -15,9 +16,10 @@ interface ApplyModifierDialogProps {
 }
 
 const ApplySetbackDialog: React.FC<ApplyModifierDialogProps> = ({ setback: modifier, onClose }) => {
-    const { applyModifier } = useActionsDispatch();
+    const { applyModifier } = useSystemDispatch();
     const { currentUser, users } = useAuthState();
-    const { markets, rewardTypes, quests } = useData();
+    const { markets, rewardTypes } = useEconomyState();
+    const { quests } = useQuestsState();
     const { addNotification } = useNotificationsDispatch();
     
     const [formData, setFormData] = useState<ModifierDefinition>(() => JSON.parse(JSON.stringify(modifier)));

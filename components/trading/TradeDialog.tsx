@@ -1,7 +1,6 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { GameAsset, TradeOffer, RewardItem, TradeStatus, RewardTypeDefinition, User } from '../../types';
-import { useData } from '../../context/DataProvider';
-import { useActionsDispatch } from '../../context/ActionsContext';
+import { useEconomyState, useEconomyDispatch } from '../../context/EconomyContext';
 import { useAuthState } from '../../context/AuthContext';
 import Button from '../user-interface/Button';
 import DynamicIcon from '../user-interface/DynamicIcon';
@@ -21,7 +20,7 @@ const TradeOfferPanel: React.FC<{
     isMyPanel: boolean;
     onOfferChange?: (updates: { assetIds?: string[], rewards?: RewardItem[] }) => void;
 }> = ({ user, offer, isLocked, isMyPanel, onOfferChange }) => {
-    const { gameAssets, rewardTypes } = useData();
+    const { gameAssets, rewardTypes } = useEconomyState();
     const [isAssetSelectorOpen, setIsAssetSelectorOpen] = useState(false);
 
     const offeredAssets = useMemo(() => offer.assetIds.map(id => gameAssets.find(a => a.id === id)).filter((a): a is GameAsset => !!a), [offer.assetIds, gameAssets]);
@@ -123,7 +122,7 @@ const TradeOfferPanel: React.FC<{
 const TradeDialog: React.FC<TradeDialogProps> = ({ tradeOffer, onClose }) => {
     const { users } = useAuthState();
     const { currentUser } = useAuthState();
-    const { updateTradeOffer, acceptTrade, cancelOrRejectTrade } = useActionsDispatch();
+    const { updateTradeOffer, acceptTrade, cancelOrRejectTrade } = useEconomyDispatch();
     
     if (!currentUser || !tradeOffer) return null;
 

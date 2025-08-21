@@ -1,8 +1,11 @@
+
 import React, { useState } from 'react';
-import { useData } from '../../context/DataProvider';
-import { AssetPack, ImportResolution, ShareableAssetType, Terminology } from '../../types';
+import { AssetPack, ImportResolution, ShareableAssetType } from '../../types';
+import { Terminology } from '../../types/app';
 import Button from '../user-interface/Button';
 import Input from '../user-interface/Input';
+import { useSystemState } from '../../context/SystemContext';
+import { analyzeAssetPackForConflicts } from '../../utils/sharing';
 
 interface BlueprintPreviewDialogProps {
   blueprint: AssetPack;
@@ -25,7 +28,7 @@ const terminologyMap: { [key in ShareableAssetType]: keyof Terminology } = {
 };
 
 const BlueprintPreviewDialog: React.FC<BlueprintPreviewDialogProps> = ({ blueprint, initialResolutions, onClose, onConfirm }) => {
-    const { settings } = useData();
+    const { settings } = useSystemState();
     const [resolutions, setResolutions] = useState(initialResolutions);
 
     const handleResolutionChange = (id: string, type: ShareableAssetType, resolution: 'skip' | 'rename') => {

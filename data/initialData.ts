@@ -1,4 +1,14 @@
-import { User, Role, RewardTypeDefinition, RewardCategory, Rank, Trophy, TrophyRequirementType, QuestType, Market, Quest, QuestAvailability, Guild, AppSettings, SidebarConfigItem, GameAsset, ThemeDefinition, ThemeStyle, QuestCompletion, QuestCompletionStatus, MarketStatus, QuestGroup } from '../types';
+import { User, Role } from '../components/users/types';
+import { RewardTypeDefinition, RewardCategory } from '../components/items/types';
+import { Rank } from '../components/ranks/types';
+import { Trophy, TrophyRequirementType } from '../components/trophies/types';
+import { QuestType, Quest, QuestGroup } from '../components/quests/types';
+import { Market } from '../components/markets/types';
+import { Guild } from '../components/guilds/types';
+import { AppSettings, SidebarConfigItem } from '../types/app';
+import { GameAsset } from '../components/items/types';
+import { ThemeDefinition, ThemeStyle } from '../components/themes/types';
+import { QuestCompletion } from '../components/quests/types';
 
 export const INITIAL_QUEST_GROUPS: QuestGroup[] = [
     { id: 'qg-household', name: 'Household Chores', description: 'General tasks related to keeping the house clean and tidy.', icon: '🏡' },

@@ -3,30 +3,18 @@ import { Guild } from '../../types';
 import Button from '../user-interface/Button';
 import Card from '../user-interface/Card';
 import EditGuildDialog from '../guilds/EditGuildDialog';
-import { useData } from '../../context/DataProvider';
-import { useActionsDispatch } from '../../context/ActionsContext';
+import { useCommunityDispatch, useCommunityState } from '../../context/CommunityContext';
 import ConfirmDialog from '../user-interface/ConfirmDialog';
-import EmptyState from '../user-interface/EmptyState';
-import { GuildIcon, EllipsisVerticalIcon } from '../user-interface/Icons';
+import GuildList from '../guilds/GuildList';
+import { useSystemState } from '../../context/SystemContext';
 
 const ManageGuildsPage: React.FC = () => {
-    const { guilds, settings } = useData();
-    const { deleteGuild } = useActionsDispatch();
+    const { guilds } = useCommunityState();
+    const { settings } = useSystemState();
+    const { deleteGuild } = useCommunityDispatch();
     const [isGuildDialogOpen, setIsGuildDialogOpen] = useState(false);
     const [editingGuild, setEditingGuild] = useState<Guild | null>(null);
     const [deletingGuild, setDeletingGuild] = useState<Guild | null>(null);
-    const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
-    const dropdownRef = useRef<HTMLDivElement | null>(null);
-
-    useEffect(() => {
-        const handleClickOutside = (event: MouseEvent) => {
-            if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-                setOpenDropdownId(null);
-            }
-        };
-        document.addEventListener('mousedown', handleClickOutside);
-        return () => document.removeEventListener('mousedown', handleClickOutside);
-    }, []);
 
     const handleCreateGuild = () => {
         setEditingGuild(null);
@@ -59,48 +47,13 @@ const ManageGuildsPage: React.FC = () => {
                     </Button>
                 }
             >
-                {guilds.length > 0 ? (
-                     <div className="space-y-4">
-                        {guilds.map(guild => (
-                            <div key={guild.id} className="bg-stone-900/40 rounded-lg overflow-hidden">
-                                <div className="px-6 py-4 border-b border-stone-700/60 flex flex-wrap gap-4 justify-between items-center">
-                                    <div>
-                                        <h3 className="text-xl font-bold text-stone-100">{guild.name}</h3>
-                                        <p className="text-stone-400 text-sm">{guild.purpose}</p>
-                                        {guild.isDefault && (
-                                            <span className="mt-2 inline-block px-2 py-0.5 text-xs font-semibold rounded-full bg-blue-500/20 text-blue-300">
-                                                Default {settings.terminology.group}
-                                            </span>
-                                        )}
-                                    </div>
-                                    <div className="relative">
-                                        <button onClick={() => setOpenDropdownId(openDropdownId === guild.id ? null : guild.id)} className="p-2 rounded-full hover:bg-stone-700/50">
-                                            <EllipsisVerticalIcon className="w-5 h-5 text-stone-300" />
-                                        </button>
-                                        {openDropdownId === guild.id && (
-                                            <div ref={dropdownRef} className="absolute right-0 mt-2 w-36 bg-stone-900 border border-stone-700 rounded-lg shadow-xl z-20">
-                                                <a href="#" onClick={(e) => { e.preventDefault(); handleEditGuild(guild); setOpenDropdownId(null); }} className="block px-4 py-2 text-sm text-stone-300 hover:bg-stone-700/50">Edit</a>
-                                                {!guild.isDefault && (
-                                                    <button onClick={() => { handleDeleteRequest(guild); setOpenDropdownId(null); }} className="w-full text-left block px-4 py-2 text-sm text-red-400 hover:bg-stone-700/50">Delete</button>
-                                                )}
-                                            </div>
-                                        )}
-                                    </div>
-                                </div>
-                                <div className="p-6">
-                                    <h4 className="font-semibold text-sm mb-2 text-stone-300">{guild.memberIds.length} Members</h4>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                ) : (
-                     <EmptyState
-                        Icon={GuildIcon}
-                        title={`No ${settings.terminology.groups} Created`}
-                        message={`Create your first ${settings.terminology.group.toLowerCase()} to organize users and quests.`}
-                        actionButton={<Button onClick={handleCreateGuild}>Create {settings.terminology.group}</Button>}
-                    />
-                )}
+                <GuildList
+                    guilds={guilds}
+                    settings={settings}
+                    onEditGuild={handleEditGuild}
+                    onDeleteRequest={handleDeleteRequest}
+                    onCreateGuild={handleCreateGuild}
+                />
             </Card>
 
             {isGuildDialogOpen && (

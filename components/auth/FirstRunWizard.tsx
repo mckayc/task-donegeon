@@ -2,7 +2,8 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { useAuthDispatch } from '../../context/AuthContext';
-import { Role, SystemStatus } from '../../types';
+import { Role } from '../users/types';
+import { SystemStatus } from '../../types/app';
 import Button from '../user-interface/Button';
 import Input from '../user-interface/Input';
 import UserFormFields from '../users/UserFormFields';

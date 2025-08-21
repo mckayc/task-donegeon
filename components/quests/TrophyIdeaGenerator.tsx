@@ -3,8 +3,8 @@ import { GenerateContentResponse, Type } from "@google/genai";
 import Button from '../user-interface/Button';
 import Input from '../user-interface/Input';
 import { SparklesIcon } from '../user-interface/Icons';
-import { useData } from '../../context/DataProvider';
 import { useAuthState } from '../../context/AuthContext';
+import { useSystemState } from '../../context/SystemContext';
 
 interface TrophyIdea {
   name: string;
@@ -18,7 +18,7 @@ interface TrophyIdeaGeneratorProps {
 }
 
 const TrophyIdeaGenerator: React.FC<TrophyIdeaGeneratorProps> = ({ onUseIdea, onClose }) => {
-    const { settings } = useData();
+    const { settings } = useSystemState();
     const { users } = useAuthState();
     const [prompt, setPrompt] = useState('');
     const [selectedUserId, setSelectedUserId] = useState<string>('');

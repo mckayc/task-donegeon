@@ -1,18 +1,16 @@
 
-
 import React, { useState, useMemo, useEffect } from 'react';
 import { Quest, QuestType, QuestKind, Role } from '../../../types';
 import Card from '../../user-interface/Card';
 import QuestDetailDialog from '../../quests/QuestDetailDialog';
-import { useActionsDispatch } from '../../../context/ActionsContext';
+import { useQuestsDispatch, useQuestsState } from '../../../context/QuestsContext';
 import { useAuthState } from '../../../context/AuthContext';
 import Button from '../../user-interface/Button';
-import { useData } from '../../../context/DataProvider';
 
 const MarkVentureAsTodoIntegrationTestCase: React.FC = () => {
   const { currentUser } = useAuthState();
-  const { quests: allQuestsFromProvider } = useData();
-  const { markQuestAsTodo, unmarkQuestAsTodo } = useActionsDispatch();
+  const { quests: allQuestsFromProvider } = useQuestsState();
+  const { markQuestAsTodo, unmarkQuestAsTodo } = useQuestsDispatch();
 
   // Find the first available Venture quest from the real data to use for the test.
   const testableQuestFromProvider = useMemo(() => {

@@ -1,59 +1,52 @@
-
 import React, { useState, useMemo, useEffect } from 'react';
 import { RewardCategory, QuestCompletionStatus } from '../../types';
 import Card from '../user-interface/Card';
 import LineChart from '../user-interface/LineChart';
 import BarChart from '../user-interface/BarChart';
 import { useAuthState } from '../../context/AuthContext';
-import { useData } from '../../context/DataProvider';
+import { useSystemState } from '../../context/SystemContext';
 import { useUIState } from '../../context/UIContext';
+import { useQuestsState } from '../../context/QuestsContext';
+import { useEconomyState } from '../../context/EconomyContext';
+import { useProgressionState } from '../../context/ProgressionContext';
+import { useCommunityState } from '../../context/CommunityContext';
 
 const StatCard: React.FC<{ title: string; value: string | number; icon: string; subtext?: string }> = ({ title, value, icon, subtext }) => (
-    <div className="bg-stone-900/40 p-4 rounded-lg">
-        <p className="text-sm text-stone-400">{title}</p>
-        <div className="flex items-baseline gap-2 mt-1">
-            <span className="text-2xl">{icon}</span>
-            <div>
-                <p className="text-3xl font-bold text-stone-100">{value}</p>
-                {subtext && <p className="text-xs text-stone-400 -mt-1">{subtext}</p>}
-            </div>
+    <div className="bg-stone-800/60 p-4 rounded-lg flex items-center gap-4">
+        <div className="w-12 h-12 rounded-full bg-emerald-900/50 flex items-center justify-center text-2xl text-emerald-300 flex-shrink-0">
+            {icon}
+        </div>
+        <div>
+            <p className="text-sm font-semibold text-stone-400">{title}</p>
+            <p className="text-2xl font-bold text-stone-100">{value}</p>
+            {subtext && <p className="text-xs text-stone-500">{subtext}</p>}
         </div>
     </div>
 );
 
-const ProgressPage: React.FC = () => {
-    const { quests, questCompletions, rewardTypes, guilds, settings } = useData();
-    const { appMode } = useUIState();
-    const { currentUser } = useAuthState();
-    
-    const xpTypes = useMemo(() => {
-        const allXpTypes = rewardTypes.filter(rt => rt.category === RewardCategory.XP);
-        return [
-            { id: 'total-xp', name: 'Total XP', icon: '⭐' },
-            ...allXpTypes
-        ];
-    }, [rewardTypes]);
 
-    const [selectedXpType, setSelectedXpType] = useState<string>(xpTypes.length > 0 ? xpTypes[0].id : '');
+const ProgressPage: React.FC = () => {
+    const { currentUser } = useAuthState();
+    const { settings } = useSystemState();
+    const { appMode } = useUIState();
+    const { quests, questCompletions } = useQuestsState();
+    const { rewardTypes } = useEconomyState();
+    const { ranks } = useProgressionState();
+
     const [chartColor, setChartColor] = useState<string>('hsl(158 84% 39%)');
+    const { guilds } = useCommunityState();
 
     const activeThemeId = useMemo(() => {
         let themeId: string | undefined = settings.theme;
         if (appMode.mode === 'guild') {
             const currentGuild = guilds.find(g => g.id === appMode.guildId);
-            if (currentGuild?.themeId) {
-                themeId = currentGuild.themeId;
-            } else if (currentUser?.theme) {
-                themeId = currentUser.theme;
-            }
+            themeId = currentGuild?.themeId || currentUser?.theme;
         } else {
-            if (currentUser?.theme) {
-                themeId = currentUser.theme;
-            }
+            themeId = currentUser?.theme;
         }
         return themeId || 'default';
     }, [settings.theme, currentUser?.theme, appMode, guilds]);
-
+    
     useEffect(() => {
         if (typeof window !== 'undefined') {
             const style = getComputedStyle(document.documentElement);
@@ -65,153 +58,75 @@ const ProgressPage: React.FC = () => {
             }
         }
     }, [activeThemeId]);
-
-    const { dailyData, cumulativeData, summaryStats } = useMemo(() => {
-        const defaultSummary = { totalXp: 0, questsCompleted: 0, xpGained30d: 0, bestDay: { date: '-', xp: 0 } };
-        if (!currentUser) return { dailyData: [], cumulativeData: [], summaryStats: defaultSummary };
+    
+    const { totalXp, currentRank, weeklyProgressData, monthlyProgressData, questsCompleted, dutiesCompleted, venturesCompleted } = useMemo(() => {
+        if (!currentUser) return { totalXp: 0, currentRank: null, weeklyProgressData: [], monthlyProgressData: [], questsCompleted: 0, dutiesCompleted: 0, venturesCompleted: 0 };
         
         const currentGuildId = appMode.mode === 'guild' ? appMode.guildId : undefined;
+        const experience = appMode.mode === 'guild' ? currentUser.guildBalances[appMode.guildId]?.experience || {} : currentUser.personalExperience;
+        const totalXp = Object.values(experience).reduce((sum: number, amount: number) => sum + amount, 0);
 
-        const userCompletions = questCompletions.filter(
-            c => c.userId === currentUser.id && c.status === QuestCompletionStatus.Approved && c.guildId == currentGuildId
-        );
-
-        const dataByDay: { [date: string]: number } = {};
-        const questsCompletedByDay: { [date: string]: number } = {};
-        const today = new Date();
+        const currentRank = [...ranks].sort((a,b) => b.xpThreshold - a.xpThreshold).find(r => totalXp >= r.xpThreshold) || null;
         
+        const completionsInScope = questCompletions.filter(c => c.userId === currentUser.id && c.status === QuestCompletionStatus.Approved && c.guildId == currentGuildId);
+        
+        // --- Chart Data ---
+        const today = new Date();
+        const weeklyData: { [date: string]: number } = {};
+        for (let i = 6; i >= 0; i--) {
+            const date = new Date();
+            date.setDate(today.getDate() - i);
+            weeklyData[date.toISOString().split('T')[0]] = 0;
+        }
+
+        const monthlyData: { [date: string]: number } = {};
         for (let i = 29; i >= 0; i--) {
             const date = new Date();
             date.setDate(today.getDate() - i);
-            const dateKey = date.toISOString().split('T')[0];
-            dataByDay[dateKey] = 0;
-            questsCompletedByDay[dateKey] = 0;
+            monthlyData[date.toISOString().split('T')[0]] = 0;
         }
 
-        userCompletions.forEach(completion => {
-            const completionDate = new Date(completion.completedAt);
-            const thirtyDaysAgo = new Date(today);
-            thirtyDaysAgo.setDate(today.getDate() - 30);
+        completionsInScope.forEach(comp => {
+            const quest = quests.find(q => q.id === comp.questId);
+            if (!quest) return;
+            const xpForThisQuest = quest.rewards.filter(r => rewardTypes.find(rt => rt.id === r.rewardTypeId)?.category === RewardCategory.XP).reduce((sum, r) => sum + r.amount, 0);
 
-            if (completionDate >= thirtyDaysAgo) {
-                const quest = quests.find(q => q.id === completion.questId);
-                if (!quest) return;
-                
-                const dateKey = completion.completedAt.split('T')[0];
-                if (dateKey in questsCompletedByDay) {
-                    questsCompletedByDay[dateKey]++;
-                }
-
-                let xpForThisQuest = 0;
-                if (selectedXpType === 'total-xp') {
-                    xpForThisQuest = quest.rewards
-                        .filter(r => rewardTypes.find(rt => rt.id === r.rewardTypeId)?.category === RewardCategory.XP)
-                        .reduce((sum, r) => sum + r.amount, 0);
-                } else {
-                    const xpReward = quest.rewards.find(r => r.rewardTypeId === selectedXpType);
-                    if (xpReward) {
-                        xpForThisQuest = xpReward.amount;
-                    }
-                }
-                if (dateKey in dataByDay) {
-                    dataByDay[dateKey] += xpForThisQuest;
-                }
-            }
+            const dateKey = comp.completedAt.split('T')[0];
+            if (dateKey in weeklyData) weeklyData[dateKey] += xpForThisQuest;
+            if (dateKey in monthlyData) monthlyData[dateKey] += xpForThisQuest;
         });
+
+        const weeklyProgressData = Object.entries(weeklyData).map(([date, value]) => ({ label: new Date(date + 'T00:00:00').toLocaleDateString('default', { weekday: 'short' }), value }));
+        const monthlyProgressData = Object.entries(monthlyData).map(([date, value]) => ({ label: new Date(date + 'T00:00:00').toLocaleDateString('default', { month: 'short', day: 'numeric' }), value }));
         
-        const sortedDaily = Object.entries(dataByDay)
-            .map(([date, value]) => ({ date: new Date(date), value }))
-            .sort((a, b) => a.date.getTime() - b.date.getTime());
+        const questsCompleted = completionsInScope.length;
+        const dutiesCompleted = completionsInScope.filter(c => quests.find(q => q.id === c.questId)?.type === 'Duty').length;
+        const venturesCompleted = completionsInScope.filter(c => quests.find(q => q.id === c.questId)?.type === 'Venture').length;
 
-        const dailyChartData = sortedDaily.map(item => ({
-            label: item.date.toLocaleDateString('default', { month: 'short', day: 'numeric' }),
-            value: item.value
-        }));
+        return { totalXp, currentRank, weeklyProgressData, monthlyProgressData, questsCompleted, dutiesCompleted, venturesCompleted };
 
-        let cumulativeTotal = 0;
-        const cumulativeChartData = sortedDaily.map(item => {
-            cumulativeTotal += item.value;
-            return {
-                label: item.date.toLocaleDateString('default', { month: 'short', day: 'numeric' }),
-                value: cumulativeTotal
-            };
-        });
-        
-        const xpGained30d = sortedDaily.reduce((sum, day) => sum + day.value, 0);
-        const questsCompleted30d = Object.values(questsCompletedByDay).reduce((sum, count) => sum + count, 0);
-        
-        const bestDayEntry = sortedDaily.reduce((best, current) => current.value > best.value ? current : best, { date: new Date(), value: 0 });
-        
-        const currentBalances = appMode.mode === 'personal'
-            ? currentUser.personalExperience
-            : currentUser.guildBalances[appMode.guildId]?.experience || {};
-        
-        const totalXp = Object.values(currentBalances).reduce((sum: number, amount: number) => sum + amount, 0);
+    }, [currentUser, appMode, questCompletions, quests, rewardTypes, ranks]);
 
-        return {
-            dailyData: dailyChartData,
-            cumulativeData: cumulativeChartData,
-            summaryStats: {
-                totalXp,
-                questsCompleted: questsCompleted30d,
-                xpGained30d,
-                bestDay: {
-                    date: bestDayEntry.value > 0 ? bestDayEntry.date.toLocaleDateString('default', { month: 'short', day: 'numeric' }) : '-',
-                    xp: bestDayEntry.value
-                }
-            }
-        };
-
-    }, [currentUser, questCompletions, quests, selectedXpType, appMode, rewardTypes]);
-
-    if (!currentUser) return <div>Loading...</div>;
-
-    const hasData = dailyData.some(d => d.value > 0);
+    if (!currentUser) return null;
 
     return (
         <div className="space-y-6">
-            <Card>
-                 <div className="flex justify-between items-center px-6 py-4">
-                    <h3 className="text-xl font-medieval text-emerald-400">Progress Overview</h3>
-                    {xpTypes.length > 0 && (
-                        <select
-                            value={selectedXpType}
-                            onChange={(e) => setSelectedXpType(e.target.value)}
-                            className="px-4 py-2 bg-stone-700 border border-stone-600 rounded-md focus:ring-emerald-500 focus:border-emerald-500 transition"
-                        >
-                            {xpTypes.map(xp => <option key={xp.id} value={xp.id}>{xp.name}</option>)}
-                        </select>
-                    )}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <StatCard title="Total XP" value={totalXp} icon="⭐" subtext={currentRank?.name || 'Unranked'} />
+                <StatCard title={`Total ${settings.terminology.tasks}`} value={questsCompleted} icon="🗺️" />
+                <StatCard title={settings.terminology.recurringTasks} value={dutiesCompleted} icon="🔄" />
+                <StatCard title={settings.terminology.singleTasks} value={venturesCompleted} icon="📍" />
+            </div>
+            <Card title="Weekly XP Progress">
+                <div className="h-80">
+                    <BarChart key={`weekly-${activeThemeId}`} data={weeklyProgressData} color={chartColor} />
                 </div>
             </Card>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                <StatCard title="Total XP" value={summaryStats.totalXp} icon="⭐" />
-                <StatCard title="Quests Completed (30d)" value={summaryStats.questsCompleted} icon="🗺️" />
-                <StatCard title="XP Gained (30d)" value={summaryStats.xpGained30d} icon="📈" />
-                <StatCard title="Best Day (30d)" value={`${summaryStats.bestDay.xp} XP`} icon="🏆" subtext={summaryStats.bestDay.date}/>
-            </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <Card title="Daily XP Earned">
-                     <div className="p-6">
-                        {hasData ? (
-                            <BarChart key={activeThemeId} data={dailyData} color={chartColor} />
-                        ) : (
-                            <p className="text-stone-400 text-center py-10">No XP of this type has been earned recently. Go complete some quests!</p>
-                        )}
-                    </div>
-                </Card>
-                 <Card title="Cumulative Growth">
-                     <div className="p-6">
-                        {hasData ? (
-                            <LineChart key={activeThemeId} data={cumulativeData} color={chartColor} />
-                        ) : (
-                             <p className="text-stone-400 text-center py-10">Waiting for data...</p>
-                        )}
-                    </div>
-                </Card>
-            </div>
+             <Card title="Monthly XP Progress">
+                <div className="h-80">
+                    <LineChart key={`monthly-${activeThemeId}`} data={monthlyProgressData} color={chartColor} />
+                </div>
+            </Card>
         </div>
     );
 };

@@ -1,23 +1,24 @@
 
-import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
-import { useData } from '../../../context/DataProvider';
-import { useActionsDispatch } from '../../../context/ActionsContext';
+import React, { useState, useMemo, useEffect } from 'react';
+import { useSystemState, useSystemDispatch } from '../../../context/SystemContext';
+import { useQuestsState, useQuestsDispatch } from '../../../context/QuestsContext';
 import { Quest, QuestType, QuestGroup } from '../../../types';
 import Button from '../../user-interface/Button';
 import Card from '../../user-interface/Card';
 import CreateQuestDialog from '../../quests/CreateQuestDialog';
 import ConfirmDialog from '../../user-interface/ConfirmDialog';
 import QuestIdeaGenerator from '../../quests/QuestIdeaGenerator';
-import { QuestsIcon, PencilIcon, CopyIcon, TrashIcon } from '../../user-interface/Icons';
-import EmptyState from '../../user-interface/EmptyState';
 import Input from '../../user-interface/Input';
 import BulkEditQuestsDialog from '../../quests/BulkEditQuestsDialog';
 import { useDebounce } from '../../../hooks/useDebounce';
 import EditJourneyDialog from '../../quests/EditJourneyDialog';
+import { QuestTable } from '../../quests/QuestTable';
 
 const ManageQuestsPage: React.FC = () => {
-    const { settings, isAiConfigured, quests, questGroups } = useData();
-    const { deleteSelectedAssets, updateQuestsStatus, bulkUpdateQuests, cloneQuest } = useActionsDispatch();
+    const { settings, isAiConfigured } = useSystemState();
+    const { quests, questGroups } = useQuestsState();
+    const { deleteSelectedAssets } = useSystemDispatch();
+    const { updateQuestsStatus, bulkUpdateQuests, cloneQuest } = useQuestsDispatch();
     
     const [editingQuest, setEditingQuest] = useState<Quest | null>(null);
     const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
@@ -117,22 +118,6 @@ const ManageQuestsPage: React.FC = () => {
         setEditingQuest(null);
         setIsCreateDialogOpen(true);
     };
-
-    const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
-        if (e.target.checked) {
-            setSelectedQuests(pageQuests.map(q => q.id));
-        } else {
-            setSelectedQuests([]);
-        }
-    };
-
-    const handleSelectOne = (id: string, isChecked: boolean) => {
-        if (isChecked) {
-            setSelectedQuests(prev => [...prev, id]);
-        } else {
-            setSelectedQuests(prev => prev.filter(questId => questId !== id));
-        }
-    };
     
     const getConfirmationMessage = () => {
         if (!confirmation) return '';
@@ -200,71 +185,18 @@ const ManageQuestsPage: React.FC = () => {
                     )}
                 </div>
 
-                {!quests ? (
-                    <div className="text-center py-10"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-400 mx-auto"></div></div>
-                ) : pageQuests.length > 0 ? (
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-left">
-                            <thead className="border-b border-stone-700/60">
-                                <tr>
-                                    <th className="p-4 w-12"><input type="checkbox" onChange={handleSelectAll} checked={selectedQuests.length === pageQuests.length && pageQuests.length > 0} className="h-4 w-4 rounded text-emerald-600 bg-stone-700 border-stone-600 focus:ring-emerald-500" /></th>
-                                    <th className="p-4 font-semibold">Title</th>
-                                    <th className="p-4 font-semibold">Type</th>
-                                    <th className="p-4 font-semibold">Status</th>
-                                    <th className="p-4 font-semibold">Tags</th>
-                                    <th className="p-4 font-semibold">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {pageQuests.map(quest => (
-                                    <tr key={quest.id} className="border-b border-stone-700/40 last:border-b-0">
-                                        <td className="p-4"><input type="checkbox" checked={selectedQuests.includes(quest.id)} onChange={e => handleSelectOne(quest.id, e.target.checked)} className="h-4 w-4 rounded text-emerald-600 bg-stone-700 border-stone-600 focus:ring-emerald-500" /></td>
-                                        <td className="p-4 font-bold">
-                                            <button onClick={() => handleEdit(quest)} data-log-id={`manage-quests-edit-title-${quest.id}`} className="hover:underline hover:text-accent transition-colors text-left">
-                                                {quest.title}
-                                            </button>
-                                        </td>
-                                        <td className="p-4 text-stone-400">{quest.type}</td>
-                                        <td className="p-4">
-                                            <span className={`px-2 py-1 text-xs font-semibold rounded-full ${quest.isActive ? 'bg-green-500/20 text-green-300' : 'bg-stone-500/20 text-stone-300'}`}>
-                                                {quest.isActive ? 'Active' : 'Inactive'}
-                                            </span>
-                                        </td>
-                                        <td className="p-4">
-                                            <div className="flex flex-wrap gap-1">
-                                                {quest.tags?.map(tag => (
-                                                    <span key={tag} className="bg-blue-500/20 text-blue-300 text-xs font-medium px-2 py-1 rounded-full">
-                                                        {tag}
-                                                    </span>
-                                                ))}
-                                            </div>
-                                        </td>
-                                        <td className="p-4">
-                                            <div className="flex items-center gap-1">
-                                                <Button variant="ghost" size="icon" title="Edit" onClick={() => handleEdit(quest)} className="h-8 w-8 text-stone-400 hover:text-white">
-                                                    <PencilIcon className="w-4 h-4" />
-                                                </Button>
-                                                <Button variant="ghost" size="icon" title="Clone" onClick={() => cloneQuest(quest.id)} className="h-8 w-8 text-stone-400 hover:text-white">
-                                                    <CopyIcon className="w-4 h-4" />
-                                                </Button>
-                                                <Button variant="ghost" size="icon" title="Delete" onClick={() => setConfirmation({ action: 'delete', ids: [quest.id] })} className="h-8 w-8 text-red-400 hover:text-red-300 hover:bg-red-900/50">
-                                                    <TrashIcon className="w-4 h-4" />
-                                                </Button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
-                ) : (
-                    <EmptyState 
-                        Icon={QuestsIcon}
-                        title={`No ${settings.terminology.tasks} Found`}
-                        message={searchTerm ? "No quests match your search." : `Create your first ${settings.terminology.task.toLowerCase()} to get your adventurers started.`}
-                        actionButton={<Button onClick={handleCreate} data-log-id="manage-quests-create-empty-state">Create {settings.terminology.task}</Button>}
-                    />
-                )}
+                <QuestTable
+                    quests={pageQuests}
+                    selectedQuests={selectedQuests}
+                    setSelectedQuests={setSelectedQuests}
+                    onEdit={handleEdit}
+                    onClone={cloneQuest}
+                    onDeleteRequest={(ids) => setConfirmation({ action: 'delete', ids })}
+                    terminology={settings.terminology}
+                    isLoading={!quests}
+                    searchTerm={debouncedSearchTerm}
+                    onCreate={handleCreate}
+                />
             </Card>
             
             {isCreateDialogOpen && <CreateQuestDialog questToEdit={editingQuest || undefined} initialData={initialCreateData || undefined} onClose={handleCloseDialog} onJourneySaved={(questId) => { handleCloseDialog(); setEditingJourneyId(questId); }} />}

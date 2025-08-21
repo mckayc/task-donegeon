@@ -7,21 +7,33 @@ import { AuthProvider } from './context/AuthContext';
 import { DeveloperProvider } from './context/DeveloperContext';
 import { DataProvider } from './context/DataProvider';
 import { UIProvider } from './context/UIContext';
-import { ActionsProvider } from './context/ActionsContext';
+import { QuestsProvider } from './context/QuestsContext';
+import { EconomyProvider } from './context/EconomyContext';
+import { ProgressionProvider } from './context/ProgressionContext';
+import { CommunityProvider } from './context/CommunityContext';
+import { SystemProvider } from './context/SystemContext';
 
 const AllTheProviders: React.FC<{children: React.ReactNode}> = ({ children }) => {
   return (
     <NotificationsProvider>
       <AuthProvider>
-        <DataProvider>
-          <UIProvider>
-            <ActionsProvider>
-              <DeveloperProvider>
-                {children}
-              </DeveloperProvider>
-            </ActionsProvider>
-          </UIProvider>
-        </DataProvider>
+        <SystemProvider>
+          <QuestsProvider>
+            <EconomyProvider>
+              <ProgressionProvider>
+                <CommunityProvider>
+                  <DataProvider>
+                    <UIProvider>
+                      <DeveloperProvider>
+                        {children}
+                      </DeveloperProvider>
+                    </UIProvider>
+                  </DataProvider>
+                </CommunityProvider>
+              </ProgressionProvider>
+            </EconomyProvider>
+          </QuestsProvider>
+        </SystemProvider>
       </AuthProvider>
     </NotificationsProvider>
   );

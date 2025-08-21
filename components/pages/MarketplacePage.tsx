@@ -1,20 +1,28 @@
+
+
 import React, { useState, useMemo } from 'react';
 import Card from '../user-interface/Card';
-import { useData } from '../../context/DataProvider';
+import { useSystemState } from '../../context/SystemContext';
 import { useUIState, useUIDispatch } from '../../context/UIContext';
 import Button from '../user-interface/Button';
-import { PurchaseRequestStatus, RewardCategory, Market, GameAsset, RewardItem, ScheduledEvent, IAppData, MarketOpenStatus } from '../../types';
+import { PurchaseRequestStatus, RewardCategory, Market, GameAsset, RewardItem, MarketOpenStatus } from '../items/types';
+import { ScheduledEvent } from '../events/types';
 import PurchaseDialog from '../markets/PurchaseDialog';
 import ExchangeView from '../markets/ExchangeView';
-import { isMarketOpenForUser } from '../../utils/markets';
+import { isMarketOpenForUser } from '../markets/utils/markets';
 import ImagePreviewDialog from '../user-interface/ImagePreviewDialog';
 import DynamicIcon from '../user-interface/DynamicIcon';
-import { toYMD } from '../../utils/quests';
+import { toYMD } from '../quests/utils/quests';
 import { useAuthState } from '../../context/AuthContext';
 import { useNotificationsDispatch } from '../../context/NotificationsContext';
+import { useQuestsState } from '../../context/QuestsContext';
+import { useEconomyState } from '../../context/EconomyContext';
+import { useCommunityState } from '../../context/CommunityContext';
+import { useProgressionState } from '../../context/ProgressionContext';
 
 const MarketItemView: React.FC<{ market: Market }> = ({ market }) => {
-    const { settings, scheduledEvents, rewardTypes, gameAssets } = useData();
+    const { settings, scheduledEvents } = useSystemState();
+    const { rewardTypes, gameAssets } = useEconomyState();
     const { appMode } = useUIState();
     const { currentUser } = useAuthState();
     const [sortBy, setSortBy] = useState<'default' | 'title-asc' | 'title-desc'>('default');
@@ -59,7 +67,7 @@ const MarketItemView: React.FC<{ market: Market }> = ({ market }) => {
                 return activeSaleEvent;
             }
             return null;
-        }, [asset.id]);
+        }, [asset.id, activeSaleEvent]);
 
         const getDiscountedCostGroups = (costGroups: RewardItem[][], sale: ScheduledEvent | null): RewardItem[][] => {
             if (!sale || !sale.modifiers.discountPercent) return costGroups;
@@ -72,14 +80,14 @@ const MarketItemView: React.FC<{ market: Market }> = ({ market }) => {
             );
         };
 
-        const finalCostGroups = useMemo(() => getDiscountedCostGroups(asset.costGroups, saleForThisItem), [saleForThisItem, asset.costGroups]);
+        const finalCostGroups = useMemo(() => getDiscountedCostGroups(asset.costGroups, saleForThisItem), [saleForThisItem]);
         
         const canAffordAny = useMemo(() => {
             if (!currentUser) return false;
             
             let balances: { purse: { [key: string]: number }, experience: { [key: string]: number } };
             
-            if (appMode.mode === 'guild') {
+            if (appMode.mode === 'guild' && appMode.guildId) {
                 balances = currentUser.guildBalances[appMode.guildId] || { purse: {}, experience: {} };
             } else {
                 balances = { purse: currentUser.personalPurse, experience: currentUser.personalExperience };
@@ -183,7 +191,7 @@ const MarketItemView: React.FC<{ market: Market }> = ({ market }) => {
                         <select
                             id="sort-market-items"
                             value={sortBy}
-                            onChange={e => setSortBy(e.target.value as any)}
+                            onChange={(e) => setSortBy(e.target.value as any)}
                             className="px-3 py-1.5 bg-stone-700 border border-stone-600 rounded-md focus:ring-emerald-500 focus:border-emerald-500 transition text-sm"
                         >
                             <option value="default">Default</option>
@@ -222,14 +230,20 @@ const MarketItemView: React.FC<{ market: Market }> = ({ market }) => {
 
 
 const MarketplacePage: React.FC = () => {
-    const appState = useData();
+    const { settings, appliedModifiers, modifierDefinitions, scheduledEvents } = useSystemState();
+    const { quests, questCompletions } = useQuestsState();
+    const { ranks } = useProgressionState();
+    const { markets } = useEconomyState();
     const { currentUser } = useAuthState();
     const { addNotification } = useNotificationsDispatch();
-    const { settings, markets } = appState;
     const { appMode, activeMarketId } = useUIState();
     const { setActiveMarketId } = useUIDispatch();
     const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null);
     
+    const marketDependencies = useMemo(() => ({
+        appliedModifiers, modifierDefinitions, quests, ranks, questCompletions
+    }), [appliedModifiers, modifierDefinitions, quests, ranks, questCompletions]);
+
     const visibleMarkets = React.useMemo(() => {
         if (!currentUser) return [];
         
@@ -245,11 +259,11 @@ const MarketplacePage: React.FC = () => {
             }
             if (!shouldShow) return null;
 
-            const status = isMarketOpenForUser(market, currentUser, appState as IAppData);
+            const status = isMarketOpenForUser(market, currentUser, marketDependencies);
             return { ...market, openStatus: status };
 
         }).filter((m): m is Market & { openStatus: MarketOpenStatus } => !!m);
-    }, [markets, appMode, currentUser, appState]);
+    }, [markets, appMode, currentUser, marketDependencies]);
 
     const activeMarket = React.useMemo(() => {
         return markets.find(m => m.id === activeMarketId);

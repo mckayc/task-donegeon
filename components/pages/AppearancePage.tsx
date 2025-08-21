@@ -1,7 +1,6 @@
 
+
 import React, { useState, useEffect, useMemo } from 'react';
-import { useData } from '../../context/DataProvider';
-import { useActionsDispatch } from '../../context/ActionsContext';
 import { ThemeDefinition, ThemeStyle } from '../../types';
 import Button from '../user-interface/Button';
 import Card from '../user-interface/Card';
@@ -12,6 +11,8 @@ import { getContrast, getWcagRating, parseHslString } from '../../utils/colors';
 import { useAuthState } from '../../context/AuthContext';
 import ConfirmDialog from '../user-interface/ConfirmDialog';
 import { useUIState } from '../../context/UIContext';
+import { useSystemState, useSystemDispatch } from '../../context/SystemContext';
+import { useCommunityState } from '../../context/CommunityContext';
 
 const FONT_OPTIONS = [
     "'MedievalSharp', cursive", "'Uncial Antiqua', cursive", "'Press Start 2P', cursive", "'IM Fell English SC', serif", 
@@ -40,7 +41,7 @@ const CollapsibleSection: React.FC<{ title: string; children: React.ReactNode; d
 };
 
 const ThemePreview: React.FC<{ themeStyles: React.CSSProperties }> = ({ themeStyles }) => {
-    const { settings } = useData();
+    const { settings } = useSystemState();
     return (
         <div style={themeStyles} className="p-4 rounded-lg transition-all duration-300 flex flex-col border-2 border-stone-700 h-full" data-theme>
              <div className="flex-grow p-4 rounded-lg space-y-4" style={{ backgroundColor: 'hsl(var(--color-bg-tertiary))' }}>
@@ -89,9 +90,10 @@ const ContrastChecker: React.FC<{ styles?: ThemeStyle }> = ({ styles }) => {
 };
 
 const AppearancePage: React.FC = () => {
-    const { settings, themes, guilds } = useData();
+    const { settings, themes } = useSystemState();
+    const { guilds } = useCommunityState();
     const { appMode } = useUIState();
-    const { addTheme, updateTheme, deleteTheme } = useActionsDispatch();
+    const { addTheme, updateTheme, deleteTheme } = useSystemDispatch();
     const { addNotification } = useNotificationsDispatch();
     const { currentUser } = useAuthState();
 
@@ -161,6 +163,7 @@ const AppearancePage: React.FC = () => {
     // Revert to saved theme on unmount
     useEffect(() => {
         return () => {
+            if (!currentUser) return;
             let activeThemeId: string | undefined = settings.theme;
             if (appMode.mode === 'guild') {
                 const guild = guilds.find(g => g.id === appMode.guildId);
@@ -176,7 +179,7 @@ const AppearancePage: React.FC = () => {
                 document.body.dataset.theme = theme.id;
             }
         };
-    }, []);
+    }, [currentUser, settings.theme, appMode, guilds, themes]);
 
     const handleStyleChange = (key: keyof ThemeStyle, value: string) => {
         if (formData) setFormData(p => p ? { ...p, styles: { ...p.styles, [key]: value } } : null);

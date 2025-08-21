@@ -1,8 +1,7 @@
 import React, { useState, ChangeEvent, ReactNode, useEffect } from 'react';
-import { useData } from '../../context/DataProvider';
-import { useActionsDispatch } from '../../context/ActionsContext';
+import { useSystemState, useSystemDispatch } from '../../context/SystemContext';
 import { useAuthState } from '../../context/AuthContext';
-import { AppSettings, Terminology, RewardCategory, RewardTypeDefinition, BackupSchedule } from '../../types';
+import { AppSettings, Terminology, BackupSchedule } from '../../types/app';
 import Button from '../user-interface/Button';
 import { ChevronDownIcon } from '../user-interface/Icons';
 import Input from '../user-interface/Input';
@@ -132,9 +131,9 @@ const REAL_WORLD_CURRENCIES = ['USD', 'EUR', 'GBP', 'JPY', 'CAD', 'AUD', 'CNY'];
 
 
 export const SettingsPage: React.FC = () => {
-    const { settings, themes } = useData();
+    const { settings, themes } = useSystemState();
     const { users } = useAuthState();
-    const { updateSettings, resetSettings, applySettingsUpdates, clearAllHistory, resetAllPlayerData, deleteAllCustomContent, factoryReset } = useActionsDispatch();
+    const { updateSettings, resetSettings, applySettingsUpdates, clearAllHistory, resetAllPlayerData, deleteAllCustomContent, factoryReset } = useSystemDispatch();
     const { addNotification } = useNotificationsDispatch();
     
     // Create a local copy of settings for form manipulation

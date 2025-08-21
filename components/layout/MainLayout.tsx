@@ -1,57 +1,21 @@
-
-
-import React, { useMemo, useEffect, useState, useRef } from 'react';
+import React, { useMemo, useEffect, useState, useRef, Suspense } from 'react';
 import Sidebar from './Sidebar';
 import Header from './Header';
-import Dashboard from '../pages/Dashboard';
-import QuestsPage from '../pages/QuestsPage';
-import MarketplacePage from '../pages/MarketplacePage';
-import ChroniclesPage from '../pages/ChroniclesPage';
-import GuildPage from '../pages/GuildPage';
-import UserManagementPage from '../pages/management/UserManagementPage';
-import { Page, Role, SystemNotification } from '../../types';
-import RewardsPage from '../pages/RewardsPage';
-import ManageQuestsPage from '../pages/management/ManageQuestsPage';
-import ApprovalsPage from '../pages/ApprovalsPage';
-import ManageMarketsPage from '../pages/management/ManageMarketsPage';
-import ManageGuildsPage from '../pages/management/ManageGuildsPage';
-import { SettingsPage } from '../pages/SettingsPage';
-import ProfilePage from '../pages/ProfilePage';
-import CalendarPage from '../pages/CalendarPage';
-import ProgressPage from '../pages/ProgressPage';
-import TrophiesPage from '../pages/TrophiesPage';
-import RanksPage from '../pages/RanksPage';
-import HelpPage from '../pages/HelpPage';
-import AvatarPage from '../pages/AvatarPage';
+import { Role } from '../../types';
+import { Page } from '../../types/app';
+import { SystemNotification } from '../system/types';
 import VacationModeBanner from '../settings/VacationModeBanner';
-import ManageRanksPage from '../pages/management/ManageRanksPage';
-import ManageTrophiesPage from '../pages/management/ManageTrophiesPage';
-import { AboutPage } from '../pages/AboutPage';
-import CollectionPage from '../pages/CollectionPage';
-import ManageItemsPage from '../pages/management/ManageItemsPage';
-import SuggestionEnginePage from '../pages/SuggestionEnginePage';
-import AppearancePage from '../pages/AppearancePage';
-import ObjectExporterPage from '../pages/management/ObjectExporterPage';
-import AssetManagerPage from '../pages/management/AssetManagerPage';
-import { BackupAndImportPage } from '../pages/management/BackupAndImportPage';
-import AssetLibraryPage from '../pages/management/AssetLibraryPage';
-import ManageQuestGroupsPage from '../pages/management/ManageQuestGroupsPage';
-import { useData } from '../../context/DataProvider';
 import { useUIState, useUIDispatch } from '../../context/UIContext';
 import { useAuthState } from '../../context/AuthContext';
 import { useNotificationsDispatch } from '../../context/NotificationsContext';
-import ChatPanel from '../chat/ChatPanel';
+import { ChatPanel } from '../chat/ChatPanel';
 import LoginNotificationPopup from '../user-interface/LoginNotificationPopup';
-import ManageEventsPage from '../pages/management/ManageEventsPage';
-import BugTrackingPage from '../dev/BugTrackingPage';
-import ManageRotationsPage from '../pages/management/ManageRotationsPage';
-import ManageSetbacksPage from '../pages/management/ManageSetbacksPage';
-import ThemesPage from '../pages/ThemesPage';
 import ChatController from '../chat/ChatController';
-import TestCasesPage from '../dev/TestCasesPage';
+import { routeConfig } from './routeConfig';
+import { useSystemState } from '../../context/SystemContext';
 
 const MainLayout: React.FC = () => {
-  const { settings, systemNotifications } = useData();
+  const { settings, systemNotifications } = useSystemState();
   const { activePage, isChatOpen } = useUIState();
   const { currentUser } = useAuthState();
   const { addNotification } = useNotificationsDispatch();
@@ -113,47 +77,20 @@ const MainLayout: React.FC = () => {
 
 
   const renderPage = () => {
-    switch (activePage) {
-      case 'Dashboard': return <Dashboard />;
-      case 'Avatar': return <AvatarPage />;
-      case 'Collection': return <CollectionPage />;
-      case 'Themes': return <ThemesPage />;
-      case 'Quests': return <QuestsPage />;
-      case 'Marketplace': return <MarketplacePage />;
-      case 'Calendar': return <CalendarPage />;
-      case 'Progress': return <ProgressPage />;
-      case 'Trophies': return <TrophiesPage />;
-      case 'Ranks': return <RanksPage />;
-      case 'Chronicles': return <ChroniclesPage />;
-      case 'Guild': return <GuildPage />;
-      case 'Manage Users': return <UserManagementPage />;
-      case 'Manage Rewards': return <RewardsPage />;
-      case 'Manage Quests': return <ManageQuestsPage />;
-      case 'Manage Quest Groups': return <ManageQuestGroupsPage />;
-      case 'Manage Rotations': return <ManageRotationsPage />;
-      case 'Manage Goods': return <ManageItemsPage />;
-      case 'Manage Markets': return <ManageMarketsPage />;
-      case 'Manage Guilds': return <ManageGuildsPage />;
-      case 'Manage Ranks': return <ManageRanksPage />;
-      case 'Manage Trophies': return <ManageTrophiesPage />;
-      case 'Manage Events': return <ManageEventsPage />;
-      case 'Triumphs & Trials': return <ManageSetbacksPage />;
-      case 'Suggestion Engine': return <SuggestionEnginePage />;
-      case 'Approvals': return <ApprovalsPage />;
-      case 'Settings': return <SettingsPage />;
-      case 'Appearance': return <AppearancePage />;
-      case 'Object Exporter': return <ObjectExporterPage />;
-      case 'Asset Manager': return <AssetManagerPage />;
-      case 'Backup & Import': return <BackupAndImportPage />;
-      case 'Asset Library': return <AssetLibraryPage />;
-      case 'Profile': return <ProfilePage />;
-      case 'About': return <AboutPage />;
-      case 'Help Guide': return <HelpPage />;
-      case 'Bug Tracker': return <BugTrackingPage />;
-      case 'Test Cases': return <TestCasesPage />;
-      default: return <Dashboard />;
+    const PageComponent = routeConfig[activePage] || routeConfig['Dashboard'];
+    if (!PageComponent) {
+      // Fallback in case Dashboard is somehow missing from the config
+      const Fallback = routeConfig['Dashboard'];
+      return Fallback ? <Fallback /> : <div>Page not found</div>;
     }
+    return <PageComponent />;
   };
+  
+  const LoadingSpinner = () => (
+      <div className="flex items-center justify-center h-full">
+          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-emerald-400"></div>
+      </div>
+  );
 
   return (
     <>
@@ -170,7 +107,9 @@ const MainLayout: React.FC = () => {
           <Header />
           <main className="flex-1 overflow-x-hidden overflow-y-auto p-4 md:p-8" style={{ backgroundColor: 'hsl(var(--color-bg-tertiary))' }}>
             <VacationModeBanner />
-            {renderPage()}
+            <Suspense fallback={<LoadingSpinner />}>
+                {renderPage()}
+            </Suspense>
           </main>
         </div>
       </div>

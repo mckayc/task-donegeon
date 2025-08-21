@@ -3,7 +3,7 @@ import { GenerateContentResponse, Type } from "@google/genai";
 import Button from '../user-interface/Button';
 import Input from '../user-interface/Input';
 import { SparklesIcon } from '../user-interface/Icons';
-import { useData } from '../../context/DataProvider';
+import { useSystemState } from '../../context/SystemContext';
 
 interface ThemeIdea {
   name: string;
@@ -16,7 +16,7 @@ interface ThemeIdeaGeneratorProps {
 }
 
 const ThemeIdeaGenerator: React.FC<ThemeIdeaGeneratorProps> = ({ onUseIdea, onClose }) => {
-    const { settings } = useData();
+    const { settings } = useSystemState();
     const [prompt, setPrompt] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');

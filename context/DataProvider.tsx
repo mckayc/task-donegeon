@@ -1,126 +1,41 @@
+
 import React, { createContext, useState, useContext, ReactNode, useCallback, useEffect, useReducer, useRef } from 'react';
-import { IAppData, User } from '../types';
-import { INITIAL_SETTINGS } from '../data/initialData';
+import { User } from '../types';
 import { useNotificationsDispatch } from './NotificationsContext';
 import { useAuthDispatch, useAuthState } from './AuthContext';
+import { CommunityAction, CommunityDispatchContext } from './CommunityContext';
+import { EconomyAction, EconomyDispatchContext } from './EconomyContext';
+import { ProgressionAction, ProgressionDispatchContext } from './ProgressionContext';
+import { QuestsAction, QuestsDispatchContext } from './QuestsContext';
+import { SystemAction, SystemDispatchContext } from './SystemContext';
 
 export type SyncStatus = 'idle' | 'syncing' | 'success' | 'error';
 
-export interface DataState extends IAppData {
-  isDataLoaded: boolean;
-  isAiConfigured: boolean;
-  syncStatus: SyncStatus;
-  syncError: string | null;
-  allTags: string[];
-}
+// --- CONTEXT DEFINITIONS ---
+const DataLoadedContext = createContext<boolean>(false);
+const SyncStatusContext = createContext<{ syncStatus: SyncStatus; syncError: string | null; }>({ syncStatus: 'idle', syncError: null });
 
-type DataAction = 
-  | { type: 'SET_ALL_DATA', payload: Partial<IAppData> }
-  | { type: 'UPDATE_DATA', payload: Partial<IAppData> }
-  | { type: 'REMOVE_DATA', payload: { [key in keyof IAppData]?: string[] } }
-  | { type: 'SET_AI_CONFIGURED', payload: boolean }
-  | { type: 'SET_SYNC_STATE', payload: { syncStatus: SyncStatus, syncError: string | null } };
-
-const initialState: DataState = {
-  isDataLoaded: false,
-  isAiConfigured: false,
-  syncStatus: 'idle',
-  syncError: null,
-  allTags: [],
-  users: [],
-  quests: [],
-  questGroups: [],
-  markets: [],
-  rewardTypes: [],
-  questCompletions: [],
-  purchaseRequests: [],
-  guilds: [],
-  ranks: [],
-  trophies: [],
-  userTrophies: [],
-  adminAdjustments: [],
-  gameAssets: [],
-  systemLogs: [],
-  themes: [],
-  chatMessages: [],
-  systemNotifications: [],
-  scheduledEvents: [],
-  rotations: [],
-  bugReports: [],
-  modifierDefinitions: [],
-  appliedModifiers: [],
-  tradeOffers: [],
-  gifts: [],
-  settings: INITIAL_SETTINGS,
-  loginHistory: [],
-};
-
-const dataReducer = (state: DataState, action: DataAction): DataState => {
-    switch (action.type) {
-        case 'SET_SYNC_STATE':
-            return { ...state, syncStatus: action.payload.syncStatus, syncError: action.payload.syncError };
-        case 'SET_AI_CONFIGURED':
-            return { ...state, isAiConfigured: action.payload };
-        case 'SET_ALL_DATA':
-            return {
-                ...state,
-                ...action.payload,
-                isDataLoaded: true,
-                allTags: Array.from(new Set(action.payload.quests?.flatMap(q => q.tags) || [])),
-            };
-        case 'REMOVE_DATA':
-            const stateWithRemoved = { ...state };
-            for (const key in action.payload) {
-                const typedKey = key as keyof IAppData;
-                if (Array.isArray(stateWithRemoved[typedKey])) {
-                    const idsToRemove = new Set(action.payload[typedKey] as string[]);
-                    (stateWithRemoved as any)[typedKey] = (stateWithRemoved[typedKey] as any[]).filter(item => !idsToRemove.has(item.id));
-                }
-            }
-            return {
-                ...stateWithRemoved,
-                allTags: Array.from(new Set(stateWithRemoved.quests.flatMap(q => q.tags))),
-            };
-        case 'UPDATE_DATA':
-             const updatedState = { ...state };
-             for (const key in action.payload) {
-                if (key === 'users') continue; // Let AuthContext handle user updates exclusively to prevent conflicts.
-
-                const typedKey = key as keyof IAppData;
-                if (Array.isArray(updatedState[typedKey])) {
-                    const existingItems = new Map((updatedState[typedKey] as any[]).map(item => [item.id, item]));
-                    (action.payload[typedKey] as any[]).forEach(newItem => {
-                        existingItems.set(newItem.id, newItem);
-                    });
-                    (updatedState as any)[typedKey] = Array.from(existingItems.values());
-                } else if (typeof updatedState[typedKey] === 'object' && updatedState[typedKey] !== null) {
-                    (updatedState as any)[typedKey] = { ...(updatedState[typedKey] as object), ...(action.payload[typedKey] as object) };
-                } else {
-                    (updatedState as any)[typedKey] = action.payload[typedKey];
-                }
-            }
-            return {
-                ...updatedState,
-                allTags: Array.from(new Set(updatedState.quests.flatMap(q => q.tags))),
-            };
-        default:
-            return state;
-    }
-};
-
-export const DataStateContext = createContext<DataState | undefined>(undefined);
-export const DataDispatchContext = createContext<React.Dispatch<DataAction> | undefined>(undefined);
+// --- DATA PROVIDER COMPONENT ---
 
 export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [state, dispatch] = useReducer(dataReducer, initialState);
+  const [isDataLoaded, setIsDataLoaded] = useState(false);
+  const [syncStatus, setSyncStatus] = useState<SyncStatus>('idle');
+  const [syncError, setSyncError] = useState<string | null>(null);
+
   const { addNotification } = useNotificationsDispatch();
   const { setUsers, setCurrentUser, setLoginHistory, updateUser } = useAuthDispatch();
   const { users } = useAuthState();
+  const questsDispatch = useContext(QuestsDispatchContext)!;
+  const economyDispatch = useContext(EconomyDispatchContext)!.dispatch;
+  const progressionDispatch = useContext(ProgressionDispatchContext)!.dispatch;
+  const communityDispatch = useContext(CommunityDispatchContext)!.dispatch;
+  const systemDispatch = useContext(SystemDispatchContext)!.dispatch;
 
   const lastSyncTimestamp = useRef<string | null>(null);
 
   const syncData = useCallback(async () => {
-    dispatch({ type: 'SET_SYNC_STATE', payload: { syncStatus: 'syncing', syncError: null } });
+    setSyncStatus('syncing');
+    setSyncError(null);
     try {
         const endpoint = lastSyncTimestamp.current ? `/api/data/sync?lastSync=${encodeURIComponent(lastSyncTimestamp.current)}` : '/api/data/sync';
         const response = await fetch(endpoint);
@@ -131,45 +46,63 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
         const { updates, newSyncTimestamp } = await response.json();
         
+        const { 
+            users: updatedUsers, loginHistory: updatedLoginHistory, 
+            quests, questGroups, questCompletions, rotations, 
+            markets, gameAssets, purchaseRequests, rewardTypes, tradeOffers, gifts,
+            ranks, trophies, userTrophies,
+            guilds,
+            ...systemUpdates 
+        } = updates;
+        
+        const questsPayload = { quests, questGroups, questCompletions, rotations };
+        const economyPayload = { markets, gameAssets, purchaseRequests, rewardTypes, tradeOffers, gifts };
+        const progressionPayload = { ranks, trophies, userTrophies };
+        const communityPayload = { guilds };
+
         if (lastSyncTimestamp.current) { // Delta update
-            dispatch({ type: 'UPDATE_DATA', payload: updates });
-            if (updates.users) {
+            if (Object.values(questsPayload).some(v => v !== undefined)) (questsDispatch as React.Dispatch<QuestsAction>)({ type: 'UPDATE_QUESTS_DATA', payload: questsPayload });
+            if (Object.values(economyPayload).some(v => v !== undefined)) (economyDispatch as React.Dispatch<EconomyAction>)({ type: 'UPDATE_ECONOMY_DATA', payload: economyPayload });
+            if (Object.values(progressionPayload).some(v => v !== undefined)) (progressionDispatch as React.Dispatch<ProgressionAction>)({ type: 'UPDATE_PROGRESSION_DATA', payload: progressionPayload });
+            if (Object.values(communityPayload).some(v => v !== undefined)) (communityDispatch as React.Dispatch<CommunityAction>)({ type: 'UPDATE_COMMUNITY_DATA', payload: communityPayload });
+            if (Object.values(systemUpdates).some(v => v !== undefined)) (systemDispatch as React.Dispatch<SystemAction>)({ type: 'UPDATE_SYSTEM_DATA', payload: systemUpdates });
+            
+            if (updatedUsers) {
                 const existingUserIds = new Set(users.map(u => u.id));
                 const usersToAdd: User[] = [];
-                updates.users.forEach((user: User) => {
+                updatedUsers.forEach((user: User) => {
                     if (existingUserIds.has(user.id)) {
                         updateUser(user.id, user); 
                     } else {
                         usersToAdd.push(user);
                     }
                 });
-                if (usersToAdd.length > 0) {
-                    setUsers(currentUsers => [...currentUsers, ...usersToAdd]);
-                }
+                if (usersToAdd.length > 0) setUsers(currentUsers => [...currentUsers, ...usersToAdd]);
             }
-            if (updates.loginHistory) {
-                setLoginHistory(updates.loginHistory);
-            }
+            if (updatedLoginHistory) setLoginHistory(updatedLoginHistory);
+
         } else { // Initial load
-            dispatch({ type: 'SET_ALL_DATA', payload: updates });
+            (questsDispatch as React.Dispatch<QuestsAction>)({ type: 'SET_QUESTS_DATA', payload: questsPayload });
+            (economyDispatch as React.Dispatch<EconomyAction>)({ type: 'SET_ECONOMY_DATA', payload: economyPayload });
+            (progressionDispatch as React.Dispatch<ProgressionAction>)({ type: 'SET_PROGRESSION_DATA', payload: progressionPayload });
+            (communityDispatch as React.Dispatch<CommunityAction>)({ type: 'SET_COMMUNITY_DATA', payload: communityPayload });
+            (systemDispatch as React.Dispatch<SystemAction>)({ type: 'SET_SYSTEM_DATA', payload: systemUpdates });
+
             if (updates.users) {
                 setUsers(updates.users);
                  const lastUserId = localStorage.getItem('lastUserId');
                  const lastUser = updates.users.find((u: User) => u.id === lastUserId);
-                 if(lastUser) {
-                    setCurrentUser(lastUser);
-                 }
+                 if(lastUser) setCurrentUser(lastUser);
             }
-            if (updates.loginHistory) {
-                setLoginHistory(updates.loginHistory);
-            }
+            if (updates.loginHistory) setLoginHistory(updates.loginHistory);
+            
+            setIsDataLoaded(true);
 
-            // After initial load, check system status for AI configuration
             try {
                 const statusRes = await fetch('/api/system/status');
                 if (statusRes.ok) {
                     const statusData = await statusRes.json();
-                    dispatch({ type: 'SET_AI_CONFIGURED', payload: statusData.geminiConnected });
+                    (systemDispatch as React.Dispatch<SystemAction>)({ type: 'SET_AI_CONFIGURED', payload: statusData.geminiConnected });
                 }
             } catch (e) {
                 console.error("Could not fetch system status for AI check", e);
@@ -177,14 +110,15 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         }
 
         lastSyncTimestamp.current = newSyncTimestamp;
-        dispatch({ type: 'SET_SYNC_STATE', payload: { syncStatus: 'success', syncError: null } });
+        setSyncStatus('success');
 
     } catch (error) {
         const message = error instanceof Error ? error.message : 'Unknown error';
         console.error("Sync failed:", message);
-        dispatch({ type: 'SET_SYNC_STATE', payload: { syncStatus: 'error', syncError: message } });
+        setSyncStatus('error');
+        setSyncError(message);
     }
-  }, [users, addNotification, setUsers, setCurrentUser, setLoginHistory, updateUser]);
+  }, [users, setUsers, setCurrentUser, setLoginHistory, updateUser, questsDispatch, economyDispatch, progressionDispatch, communityDispatch, systemDispatch]);
 
   useEffect(() => {
     syncData(); // Initial sync
@@ -198,7 +132,6 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     };
     eventSource.onerror = () => {
         console.error('[SSE] Connection error. Attempting to reconnect...');
-        // The browser will automatically attempt to reconnect.
     };
     
     return () => {
@@ -207,22 +140,14 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   }, [syncData]);
 
   return (
-    <DataStateContext.Provider value={state}>
-      <DataDispatchContext.Provider value={dispatch}>
-        {children}
-      </DataDispatchContext.Provider>
-    </DataStateContext.Provider>
+    <DataLoadedContext.Provider value={isDataLoaded}>
+        <SyncStatusContext.Provider value={{ syncStatus, syncError }}>
+            {children}
+        </SyncStatusContext.Provider>
+    </DataLoadedContext.Provider>
   );
 };
 
-export const useData = (): DataState => {
-  const context = useContext(DataStateContext);
-  if (context === undefined) throw new Error('useData must be used within a DataProvider');
-  return context;
-};
-
-export const useDataDispatch = (): React.Dispatch<DataAction> => {
-    const context = useContext(DataDispatchContext);
-    if (context === undefined) throw new Error('useDataDispatch must be used within a DataProvider');
-    return context;
-};
+// --- CUSTOM HOOKS ---
+export const useIsDataLoaded = () => useContext(DataLoadedContext);
+export const useSyncStatus = () => useContext(SyncStatusContext);

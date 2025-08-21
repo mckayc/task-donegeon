@@ -1,8 +1,9 @@
 
+
+
 import React, { useState, useMemo } from 'react';
-import { useData } from '../../context/DataProvider';
-import { useActionsDispatch } from '../../context/ActionsContext';
-import { Quest, QuestType, QuestAvailability, User, AppMode, QuestCompletionStatus } from '../../types';
+import { Quest, QuestType, User, QuestCompletionStatus } from '../../types';
+import { AppMode } from '../../types/app';
 import { isQuestAvailableForUser, toYMD, isQuestScheduledForDay, questSorter } from '../../utils/quests';
 import Card from '../user-interface/Card';
 import Avatar from '../user-interface/Avatar';
@@ -12,6 +13,9 @@ import QuestDetailDialog from '../quests/QuestDetailDialog';
 import CompleteQuestDialog from '../quests/CompleteQuestDialog';
 import { useAuthState } from '../../context/AuthContext';
 import { useNotificationsDispatch } from '../../context/NotificationsContext';
+import { useSystemState } from '../../context/SystemContext';
+import { useCommunityState } from '../../context/CommunityContext';
+import { useQuestsState, useQuestsDispatch } from '../../context/QuestsContext';
 
 const getDueDateString = (quest: Quest): string | null => {
     if (quest.type === QuestType.Venture && quest.startDateTime) {
@@ -27,8 +31,10 @@ const getDueDateString = (quest: Quest): string | null => {
 };
 
 const SharedCalendarPage: React.FC = () => {
-    const { settings, guilds, scheduledEvents, quests, questCompletions } = useData();
-    const { markQuestAsTodo, unmarkQuestAsTodo, completeQuest } = useActionsDispatch();
+    const { settings, scheduledEvents } = useSystemState();
+    const { guilds } = useCommunityState();
+    const { quests, questCompletions } = useQuestsState();
+    const { markQuestAsTodo, unmarkQuestAsTodo, completeQuest } = useQuestsDispatch();
     const { users } = useAuthState();
     const { addNotification } = useNotificationsDispatch();
 

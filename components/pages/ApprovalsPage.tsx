@@ -1,19 +1,22 @@
-
-
 import React, { useState } from 'react';
 import Card from '../user-interface/Card';
 import Button from '../user-interface/Button';
-import { useData } from '../../context/DataProvider';
-import { useActionsDispatch } from '../../context/ActionsContext';
+import { useSystemState } from '../../context/SystemContext';
 import { QuestCompletionStatus, Role, PurchaseRequestStatus, TradeStatus, TradeOffer } from '../../types';
 import Input from '../user-interface/Input';
 import { useAuthState } from '../../context/AuthContext';
 import TradeDialog from '../trading/TradeDialog';
+import { useQuestsState, useQuestsDispatch } from '../../context/QuestsContext';
+import { useEconomyState, useEconomyDispatch } from '../../context/EconomyContext';
+import { useCommunityState } from '../../context/CommunityContext';
 
 const ApprovalsPage: React.FC = () => {
-    const { guilds, quests, questCompletions, purchaseRequests, tradeOffers, rewardTypes } = useData();
+    const { guilds } = useCommunityState();
+    const { quests, questCompletions } = useQuestsState();
+    const { purchaseRequests, tradeOffers, rewardTypes } = useEconomyState();
     const { currentUser, users } = useAuthState();
-    const { approveQuestCompletion, rejectQuestCompletion, approvePurchaseRequest, rejectPurchaseRequest } = useActionsDispatch();
+    const { approveQuestCompletion, rejectQuestCompletion } = useQuestsDispatch();
+    const { approvePurchaseRequest, rejectPurchaseRequest } = useEconomyDispatch();
     
     const [notes, setNotes] = useState<{ [key: string]: string }>({});
     const [tradeToView, setTradeToView] = useState<TradeOffer | null>(null);

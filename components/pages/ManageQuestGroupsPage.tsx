@@ -1,19 +1,20 @@
+
 import React, { useState, useMemo } from 'react';
-import { useData } from '../../context/DataProvider';
-import { useActionsDispatch } from '../../context/ActionsContext';
 import { QuestGroup } from '../../types';
 import Button from '../user-interface/Button';
 import Card from '../user-interface/Card';
-import { QuestsIcon } from '../user-interface/Icons';
-import EmptyState from '../user-interface/EmptyState';
 import EditQuestGroupDialog from '../quests/EditQuestGroupDialog';
 import ConfirmDialog from '../user-interface/ConfirmDialog';
 import AssignQuestGroupDialog from '../quests/AssignQuestGroupDialog';
 import { useShiftSelect } from '../../hooks/useShiftSelect';
+import { useSystemState, useSystemDispatch } from '../../context/SystemContext';
+import { useQuestsState } from '../../context/QuestsContext';
+import QuestGroupTable from '../quest-groups/QuestGroupTable';
 
 const ManageQuestGroupsPage: React.FC = () => {
-    const { settings, questGroups } = useData();
-    const { deleteSelectedAssets } = useActionsDispatch();
+    const { settings } = useSystemState();
+    const { questGroups } = useQuestsState();
+    const { deleteSelectedAssets } = useSystemDispatch();
     
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [editingGroup, setEditingGroup] = useState<QuestGroup | null>(null);
@@ -46,10 +47,6 @@ const ManageQuestGroupsPage: React.FC = () => {
         setSelectedGroups(prev => prev.filter(id => !deletingIds.includes(id)));
     };
 
-    const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
-        setSelectedGroups(e.target.checked ? groupIds : []);
-    };
-
     return (
         <div className="space-y-6">
             <Card
@@ -64,43 +61,15 @@ const ManageQuestGroupsPage: React.FC = () => {
                         <Button size="sm" variant="destructive" onClick={() => setDeletingIds(selectedGroups)}>Delete</Button>
                     </div>
                 )}
-                {questGroups.length > 0 ? (
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-left">
-                            <thead className="border-b border-stone-700/60">
-                                <tr>
-                                    <th className="p-4 w-12">
-                                        <input type="checkbox" onChange={handleSelectAll} checked={selectedGroups.length === groupIds.length && groupIds.length > 0} className="h-4 w-4 rounded text-emerald-600 bg-stone-700 border-stone-600 focus:ring-emerald-500" />
-                                    </th>
-                                    <th className="p-4 font-semibold">Name</th>
-                                    <th className="p-4 font-semibold">Description</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {questGroups.map(group => (
-                                    <tr key={group.id} className="border-b border-stone-700/40 last:border-b-0">
-                                        <td className="p-4">
-                                            <input type="checkbox" checked={selectedGroups.includes(group.id)} onChange={(e) => handleCheckboxClick(e, group.id)} className="h-4 w-4 rounded text-emerald-600 bg-stone-700 border-stone-600 focus:ring-emerald-500" />
-                                        </td>
-                                        <td className="p-4 font-bold">
-                                            <button onClick={() => handleEdit(group)} className="hover:underline hover:text-accent transition-colors text-left flex items-center gap-2">
-                                                {group.icon} {group.name}
-                                            </button>
-                                        </td>
-                                        <td className="p-4 text-stone-400">{group.description}</td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
-                ) : (
-                    <EmptyState
-                        Icon={QuestsIcon}
-                        title="No Quest Groups Created Yet"
-                        message="Create groups to organize your quests and assign them to users in bulk."
-                        actionButton={<Button onClick={handleCreate}>Create Quest Group</Button>}
-                    />
-                )}
+                <QuestGroupTable
+                    questGroups={questGroups}
+                    selectedGroups={selectedGroups}
+                    setSelectedGroups={setSelectedGroups}
+                    onEdit={handleEdit}
+                    onAssign={handleAssign}
+                    onDeleteRequest={(ids) => setDeletingIds(ids)}
+                    onCreate={handleCreate}
+                />
             </Card>
 
             {isDialogOpen && <EditQuestGroupDialog groupToEdit={editingGroup} onClose={() => setIsDialogOpen(false)} />}

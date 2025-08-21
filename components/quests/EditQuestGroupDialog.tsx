@@ -1,9 +1,10 @@
 
+
 import React, { useState, useEffect } from 'react';
 import { QuestGroup } from '../../types';
 import Button from '../user-interface/Button';
 import Input from '../user-interface/Input';
-import { useActionsDispatch } from '../../context/ActionsContext';
+import { useQuestsDispatch } from '../../context/QuestsContext';
 import EmojiPicker from '../user-interface/EmojiPicker';
 
 interface EditQuestGroupDialogProps {
@@ -12,7 +13,7 @@ interface EditQuestGroupDialogProps {
 }
 
 const EditQuestGroupDialog: React.FC<EditQuestGroupDialogProps> = ({ groupToEdit, onClose }) => {
-    const { addQuestGroup, updateQuestGroup } = useActionsDispatch();
+    const { addQuestGroup, updateQuestGroup } = useQuestsDispatch();
     const [formData, setFormData] = useState({
         name: '',
         description: '',

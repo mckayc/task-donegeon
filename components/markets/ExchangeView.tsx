@@ -1,7 +1,9 @@
 
+
+
 import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react';
-import { useData } from '../../context/DataProvider';
-import { useActionsDispatch } from '../../context/ActionsContext';
+import { useSystemState } from '../../context/SystemContext';
+import { useEconomyState, useEconomyDispatch } from '../../context/EconomyContext';
 import { useAuthState } from '../../context/AuthContext';
 import { RewardTypeDefinition, RewardCategory, Market, RewardItem } from '../../types';
 import Button from '../user-interface/Button';
@@ -43,10 +45,11 @@ const RewardButton: React.FC<{
 
 
 const ExchangeView: React.FC<ExchangeViewProps> = ({ market }) => {
-    const { settings, rewardTypes } = useData();
+    const { settings } = useSystemState();
+    const { rewardTypes } = useEconomyState();
     const { appMode } = useUIState();
     const { currentUser } = useAuthState();
-    const { executeExchange } = useActionsDispatch();
+    const { executeExchange } = useEconomyDispatch();
     const { setActiveMarketId } = useUIDispatch();
     const { addNotification } = useNotificationsDispatch();
 

@@ -1,22 +1,31 @@
 
+
 import React, { useState } from 'react';
 import Card from '../../user-interface/Card';
 import ExportPanel from '../../sharing/ExportPanel';
 import ImportPanel from '../../sharing/ImportPanel';
-import { useData } from '../../../context/DataProvider';
-import { useActionsDispatch } from '../../../context/ActionsContext';
+import { useSystemState, useSystemDispatch } from '../../../context/SystemContext';
 import { useAuthState } from '../../../context/AuthContext';
 import { IAppData, AssetPack, ImportResolution } from '../../../types';
-import { analyzeAssetPackForConflicts } from '../../../utils/sharing';
+import { analyzeAssetPackForConflicts } from '../../sharing/utils/sharing';
 import { useNotificationsDispatch } from '../../../context/NotificationsContext';
 import BlueprintPreviewDialog from '../../sharing/BlueprintPreviewDialog';
+import { useQuestsState } from '../../../context/QuestsContext';
+import { useEconomyState } from '../../../context/EconomyContext';
+import { useProgressionState } from '../../../context/ProgressionContext';
+import { useCommunityState } from '../../../context/CommunityContext';
 
 const ObjectExporterPage: React.FC = () => {
     const [activeTab, setActiveTab] = useState('export');
     
-    const appState = useData();
+    const systemState = useSystemState();
     const authState = useAuthState();
-    const { importAssetPack } = useActionsDispatch();
+    const questState = useQuestsState();
+    const economyState = useEconomyState();
+    const progressionState = useProgressionState();
+    const communityState = useCommunityState();
+
+    const { importAssetPack } = useSystemDispatch();
     const { addNotification } = useNotificationsDispatch();
 
     const [assetPackToPreview, setAssetPackToPreview] = useState<AssetPack | null>(null);
@@ -28,7 +37,7 @@ const ObjectExporterPage: React.FC = () => {
             try {
                 const json = JSON.parse(e.target?.result as string);
                 if (json.manifest && json.assets) {
-                    const fullCurrentData: IAppData = { ...appState, ...authState };
+                    const fullCurrentData: IAppData = { ...systemState, ...authState, ...questState, ...economyState, ...progressionState, ...communityState } as IAppData;
                     const conflictResolutions = analyzeAssetPackForConflicts(json, fullCurrentData);
                     setInitialResolutions(conflictResolutions);
                     setAssetPackToPreview(json);

@@ -1,7 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { Guild, User, GameAsset } from '../../types';
-import { useData } from '../../context/DataProvider';
-import { useActionsDispatch } from '../../context/ActionsContext';
+import { useEconomyState, useEconomyDispatch } from '../../context/EconomyContext';
 import { useAuthState } from '../../context/AuthContext';
 import Button from '../user-interface/Button';
 import DynamicIcon from '../user-interface/DynamicIcon';
@@ -14,9 +13,9 @@ interface GiftDialogProps {
 }
 
 const GiftDialog: React.FC<GiftDialogProps> = ({ recipient, guild, onClose }) => {
-    const { gameAssets } = useData();
+    const { gameAssets } = useEconomyState();
     const { currentUser } = useAuthState();
-    const { sendGift } = useActionsDispatch();
+    const { sendGift } = useEconomyDispatch();
     const [selectedAssetId, setSelectedAssetId] = useState<string | null>(null);
     const [isConfirming, setIsConfirming] = useState(false);
 

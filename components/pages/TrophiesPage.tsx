@@ -1,17 +1,23 @@
 
 import React, { useMemo, useState } from 'react';
-import { useData } from '../../context/DataProvider';
+import { useSystemState } from '../../context/SystemContext';
 import { useUIState } from '../../context/UIContext';
-import { Role, Trophy, UserTrophy, TrophyRequirementType, QuestType, QuestCompletionStatus, Quest, AppMode, User } from '../../types';
+import { Role, Trophy, UserTrophy, TrophyRequirementType, QuestType, QuestCompletionStatus, Quest, User } from '../../types';
 import Card from '../user-interface/Card';
 import { fromYMD } from '../../utils/quests';
 import EmptyState from '../user-interface/EmptyState';
 import DynamicIcon from '../user-interface/DynamicIcon';
 import ImagePreviewDialog from '../user-interface/ImagePreviewDialog';
 import { useAuthState } from '../../context/AuthContext';
+import { useQuestsState } from '../../context/QuestsContext';
+import { useProgressionState } from '../../context/ProgressionContext';
+import { useCommunityState } from '../../context/CommunityContext';
+import { AppMode } from '../../types/app';
 
 const TrophiesPage: React.FC = () => {
-    const { trophies, userTrophies, settings, ranks, quests, questCompletions } = useData();
+    const { settings } = useSystemState();
+    const { ranks, trophies, userTrophies } = useProgressionState();
+    const { quests, questCompletions } = useQuestsState();
     const { appMode } = useUIState();
     const { currentUser } = useAuthState();
     const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null);

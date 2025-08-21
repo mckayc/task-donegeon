@@ -1,8 +1,9 @@
 
 
+
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { BugReport, BugReportStatus, BugReportLogEntry } from '../../types';
-import { useActionsDispatch } from '../../context/ActionsContext';
+import { useSystemDispatch } from '../../context/SystemContext';
 import { useNotificationsDispatch } from '../../context/NotificationsContext';
 import Button from '../user-interface/Button';
 import Input from '../user-interface/Input';
@@ -35,7 +36,7 @@ const LogIcon: React.FC<{type: BugReportLogEntry['type']}> = ({ type }) => {
 }
 
 export const BugDetailDialog: React.FC<BugDetailDialogProps> = ({ report: initialReport, onClose, allTags, getTagColor }) => {
-    const { updateBugReport } = useActionsDispatch();
+    const { updateBugReport } = useSystemDispatch();
     const { currentUser, users } = useAuthState();
     const { addNotification } = useNotificationsDispatch();
     const [report, setReport] = useState(initialReport);

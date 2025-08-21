@@ -1,7 +1,8 @@
 
+
+
 import React, { useState, useMemo, useRef, useEffect } from 'react';
-import { useData } from '../../context/DataProvider';
-import { useActionsDispatch } from '../../context/ActionsContext';
+import { useSystemState, useSystemDispatch } from '../../context/SystemContext';
 import { BugReport, BugReportStatus } from '../../types';
 import Card from '../user-interface/Card';
 import Button from '../user-interface/Button';
@@ -14,8 +15,8 @@ import { useShiftSelect } from '../../hooks/useShiftSelect';
 import CreateBugReportDialog from './CreateBugReportDialog';
 
 const BugTrackingPage: React.FC = () => {
-    const { bugReports } = useData();
-    const { updateBugReport, deleteBugReports, importBugReports } = useActionsDispatch();
+    const { bugReports } = useSystemState();
+    const { updateBugReport, deleteBugReports, importBugReports } = useSystemDispatch();
     const { addNotification } = useNotificationsDispatch();
     
     const [detailedReportId, setDetailedReportId] = useState<string | null>(null);
@@ -164,7 +165,7 @@ const BugTrackingPage: React.FC = () => {
                                 className={`whitespace-nowrap pb-4 px-1 border-b-2 font-medium text-sm transition-colors ${
                                     activeTab === status
                                     ? 'border-emerald-500 text-emerald-400'
-                                    : 'border-transparent text-stone-400 hover:text-stone-200 hover:border-stone-500'
+                                    : 'border-transparent text-stone-400 hover:text-stone-200'
                                 }`}
                             >
                                 {status} ({bugReports.filter(r => r.status === status).length})

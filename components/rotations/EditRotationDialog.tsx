@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { useData } from '../../context/DataProvider';
-import { useActionsDispatch } from '../../context/ActionsContext';
 import { useAuthState } from '../../context/AuthContext';
 import { Rotation, Quest, User } from '../../types';
 import Button from '../user-interface/Button';
 import Input from '../user-interface/Input';
+import { useQuestsState, useQuestsDispatch } from '../../context/QuestsContext';
+import { useShiftSelect } from '../../hooks/useShiftSelect';
 
 interface EditRotationDialogProps {
     rotationToEdit: Rotation | null;
@@ -17,8 +17,8 @@ const WEEKDAYS = [
 ];
 
 const EditRotationDialog: React.FC<EditRotationDialogProps> = ({ rotationToEdit, onClose }) => {
-    const { addRotation, updateRotation } = useActionsDispatch();
-    const { quests } = useData();
+    const { addRotation, updateRotation } = useQuestsDispatch();
+    const { quests } = useQuestsState();
     const { users } = useAuthState();
 
     const [formData, setFormData] = useState<Omit<Rotation, 'id' | 'createdAt' | 'updatedAt' | 'lastAssignmentDate' | 'lastUserIndex' | 'lastQuestIndex'>>({
@@ -42,7 +42,7 @@ const EditRotationDialog: React.FC<EditRotationDialogProps> = ({ rotationToEdit,
             });
         }
     }, [rotationToEdit]);
-    
+
     const handleToggleSelection = (type: 'questIds' | 'userIds', id: string) => {
         setFormData(prev => ({
             ...prev,
@@ -51,7 +51,7 @@ const EditRotationDialog: React.FC<EditRotationDialogProps> = ({ rotationToEdit,
                 : [...prev[type], id]
         }));
     };
-    
+
     const handleToggleDay = (dayValue: number) => {
          setFormData(prev => ({
             ...prev,
@@ -63,19 +63,17 @@ const EditRotationDialog: React.FC<EditRotationDialogProps> = ({ rotationToEdit,
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        
-        const payload = {
+        const finalData = {
             ...formData,
-            // These are managed by the backend, but we need to initialize them.
             lastAssignmentDate: null,
             lastUserIndex: -1,
             lastQuestIndex: -1,
         };
 
         if (rotationToEdit) {
-            updateRotation({ ...rotationToEdit, ...payload });
+            updateRotation({ ...rotationToEdit, ...finalData });
         } else {
-            addRotation(payload);
+            addRotation(finalData);
         }
         onClose();
     };
@@ -87,54 +85,50 @@ const EditRotationDialog: React.FC<EditRotationDialogProps> = ({ rotationToEdit,
             <div className="bg-stone-800 border border-stone-700 rounded-xl shadow-2xl p-8 max-w-2xl w-full max-h-[90vh] flex flex-col">
                 <h2 className="text-3xl font-medieval text-emerald-400 mb-6">{dialogTitle}</h2>
                 <form id="rotation-form" onSubmit={handleSubmit} className="flex-1 space-y-4 overflow-y-auto pr-2">
-                    <Input label="Rotation Name" value={formData.name} onChange={e => setFormData(p => ({ ...p, name: e.target.value }))} required />
-                    <Input as="textarea" label="Description" value={formData.description} onChange={e => setFormData(p => ({ ...p, description: e.target.value }))} />
+                    <Input label="Rotation Name" value={formData.name} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData(p => ({ ...p, name: e.target.value }))} required />
+                    <Input as="textarea" label="Description" value={formData.description} onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setFormData(p => ({ ...p, description: e.target.value }))} />
                     
-                     <div className="p-4 bg-stone-900/50 rounded-lg space-y-4">
-                        <h3 className="font-semibold text-stone-200">Schedule</h3>
-                        <p className="text-sm text-stone-400 -mt-2">Select which days this rotation is active. This will override any schedule on the individual quests.</p>
-                        <div className="flex justify-center gap-2">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <h3 className="text-sm font-medium text-stone-300 mb-1">Quests to Rotate</h3>
+                            <div className="p-2 border border-stone-600 rounded-md h-48 overflow-y-auto">
+                                {quests.map(quest => (
+                                    <label key={quest.id} className="flex items-center gap-2 p-1.5 rounded hover:bg-stone-700/50">
+                                        <input type="checkbox" checked={formData.questIds.includes(quest.id)} onChange={() => handleToggleSelection('questIds', quest.id)} />
+                                        <span>{quest.icon} {quest.title}</span>
+                                    </label>
+                                ))}
+                            </div>
+                        </div>
+                        <div>
+                            <h3 className="text-sm font-medium text-stone-300 mb-1">Users in Rotation</h3>
+                            <div className="p-2 border border-stone-600 rounded-md h-48 overflow-y-auto">
+                                {users.map(user => (
+                                    <label key={user.id} className="flex items-center gap-2 p-1.5 rounded hover:bg-stone-700/50">
+                                        <input type="checkbox" checked={formData.userIds.includes(user.id)} onChange={() => handleToggleSelection('userIds', user.id)} />
+                                        <span>{user.gameName}</span>
+                                    </label>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <Input as="select" label="Frequency" value={formData.frequency} onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setFormData(p => ({ ...p, frequency: e.target.value as 'DAILY' | 'WEEKLY' }))}>
+                        <option value="DAILY">Daily</option>
+                        <option value="WEEKLY">Weekly</option>
+                    </Input>
+                    
+                    <div>
+                        <label className="block text-sm font-medium text-stone-300 mb-1">Active on Days</label>
+                        <div className="flex justify-center gap-1">
                             {WEEKDAYS.map(day => (
-                                <button
-                                    key={day.value}
-                                    type="button"
-                                    onClick={() => handleToggleDay(day.value)}
-                                    className={`w-10 h-10 rounded-full font-bold transition-colors ${formData.activeDays.includes(day.value) ? 'bg-emerald-600 text-white' : 'bg-stone-700 text-stone-300 hover:bg-stone-600'}`}
-                                >
-                                    {day.label.charAt(0)}
+                                <button key={day.value} type="button" onClick={() => handleToggleDay(day.value)} className={`w-10 h-10 rounded-full font-bold transition-colors ${formData.activeDays.includes(day.value) ? 'bg-emerald-600 text-white' : 'bg-stone-700 text-stone-300 hover:bg-stone-600'}`}>
+                                    {day.label}
                                 </button>
                             ))}
                         </div>
-                        <Input as="select" label="Rotation Frequency" value={formData.frequency} onChange={e => setFormData(p => ({...p, frequency: e.target.value as 'DAILY' | 'WEEKLY'}))}>
-                            <option value="DAILY">Daily</option>
-                            <option value="WEEKLY">Weekly</option>
-                        </Input>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4">
-                        <div className="p-4 bg-stone-900/50 rounded-lg">
-                            <h3 className="font-semibold text-stone-200 mb-2">Quests in Rotation ({formData.questIds.length})</h3>
-                            <div className="max-h-48 overflow-y-auto space-y-1 pr-2">
-                                {quests.map(quest => (
-                                    <label key={quest.id} className="flex items-center p-2 rounded-md hover:bg-stone-800/50 cursor-pointer">
-                                        <input type="checkbox" checked={formData.questIds.includes(quest.id)} onChange={() => handleToggleSelection('questIds', quest.id)} className="h-4 w-4 rounded text-emerald-600" />
-                                        <span className="ml-2 text-stone-300 truncate">{quest.icon} {quest.title}</span>
-                                    </label>
-                                ))}
-                            </div>
-                        </div>
-                        <div className="p-4 bg-stone-900/50 rounded-lg">
-                            <h3 className="font-semibold text-stone-200 mb-2">Users in Rotation ({formData.userIds.length})</h3>
-                            <div className="max-h-48 overflow-y-auto space-y-1 pr-2">
-                                {users.map(user => (
-                                    <label key={user.id} className="flex items-center p-2 rounded-md hover:bg-stone-800/50 cursor-pointer">
-                                        <input type="checkbox" checked={formData.userIds.includes(user.id)} onChange={() => handleToggleSelection('userIds', user.id)} className="h-4 w-4 rounded text-emerald-600" />
-                                        <span className="ml-2 text-stone-300 truncate">{user.gameName}</span>
-                                    </label>
-                                ))}
-                            </div>
-                        </div>
-                    </div>
                 </form>
                 <div className="flex justify-end space-x-4 pt-4 mt-auto">
                     <Button type="button" variant="secondary" onClick={onClose}>Cancel</Button>

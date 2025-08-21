@@ -1,52 +1,62 @@
-
-
-import React, { useMemo, useState, useEffect } from 'react';
-import { useData } from '../../context/DataProvider';
-import { useUIState, useUIDispatch } from '../../context/UIContext';
-import { useActionsDispatch } from '../../context/ActionsContext';
-import { useAuthState } from '../../context/AuthContext';
-import { Quest, QuestCompletionStatus, RewardCategory, QuestType, QuestKind, Rank } from '../../types';
-import Card from '../user-interface/Card';
-import { isQuestAvailableForUser, isQuestVisibleToUserInMode, questSorter } from '../../utils/quests';
+import React, { useState, useEffect, useMemo } from 'react';
+import { useQuestsDispatch, useQuestsState } from '../../context/QuestsContext';
+import { Quest, QuestType, QuestKind } from '../quests/types';
 import QuestDetailDialog from '../quests/QuestDetailDialog';
 import CompleteQuestDialog from '../quests/CompleteQuestDialog';
-import { useRewardValue } from '../../hooks/useRewardValue';
-import BarChart from '../user-interface/BarChart';
-import GuildPage from './GuildPage';
 import ContributeToQuestDialog from '../quests/ContributeToQuestDialog';
-import QuestWidget from '../dashboard/QuestWidget';
+import { useDashboardData } from '../dashboard/hooks/useDashboardData';
+import RankCard from '../dashboard/RankCard';
+import InventoryCard from '../dashboard/InventoryCard';
+import TrophyCard from '../dashboard/TrophyCard';
+import LeaderboardCard from '../dashboard/LeaderboardCard';
+import QuickActionsCard from '../dashboard/QuickActionsCard';
+import RecentActivityCard from '../dashboard/RecentActivityCard';
+import BarChart from '../user-interface/BarChart';
+import Card from '../user-interface/Card';
+import { useSystemState } from '../../context/SystemContext';
+import { useUIState } from '../../context/UIContext';
+import { useAuthState } from '../../context/AuthContext';
+import { useCommunityState } from '../../context/CommunityContext';
 
 const Dashboard: React.FC = () => {
-    const { ranks, userTrophies, trophies, settings, scheduledEvents, quests, questCompletions, rewardTypes, purchaseRequests, users, guilds, adminAdjustments } = useData();
+    const { markQuestAsTodo, unmarkQuestAsTodo } = useQuestsDispatch();
+    const { quests } = useQuestsState();
     const { appMode } = useUIState();
     const { currentUser } = useAuthState();
-    const { markQuestAsTodo, unmarkQuestAsTodo } = useActionsDispatch();
-    const { setActivePage } = useUIDispatch();
     
     const [selectedQuest, setSelectedQuest] = useState<Quest | null>(null);
     const [completingQuest, setCompletingQuest] = useState<Quest | null>(null);
     const [contributingQuest, setContributingQuest] = useState<Quest | null>(null);
+    
+    const {
+        rankData,
+        userCurrencies,
+        userExperience,
+        mostRecentTrophy,
+        leaderboard,
+        quickActionQuests,
+        recentActivities,
+        weeklyProgressData,
+        terminology,
+    } = useDashboardData();
+    
+    // Chart color logic must remain here as it depends on DOM styles
     const [chartColor, setChartColor] = useState<string>('hsl(158 84% 39%)');
-
+    const { settings } = useSystemState();
+    const { guilds } = useCommunityState();
+    
     const activeThemeId = useMemo(() => {
         let themeId: string | undefined = settings.theme;
         if (appMode.mode === 'guild') {
             const currentGuild = guilds.find(g => g.id === appMode.guildId);
-            if (currentGuild?.themeId) {
-                themeId = currentGuild.themeId;
-            } else if (currentUser?.theme) {
-                themeId = currentUser.theme;
-            }
+            themeId = currentGuild?.themeId || currentUser?.theme;
         } else {
-            if (currentUser?.theme) {
-                themeId = currentUser.theme;
-            }
+            themeId = currentUser?.theme;
         }
-        return themeId || 'default'; // fallback key
+        return themeId || 'default';
     }, [settings.theme, currentUser?.theme, appMode, guilds]);
-
+    
     useEffect(() => {
-        // This effect now runs reliably after the component re-mounts with the correct theme styles.
         if (typeof window !== 'undefined') {
             const style = getComputedStyle(document.documentElement);
             const h = style.getPropertyValue('--color-primary-hue').trim();
@@ -56,12 +66,9 @@ const Dashboard: React.FC = () => {
                 setChartColor(`hsl(${h} ${s} ${l})`);
             }
         }
-    }, [activeThemeId]); // Depend on the theme ID.
+    }, [activeThemeId]);
 
     useEffect(() => {
-        // If a quest is selected and the master list of quests changes,
-        // find the updated version of the selected quest and update the dialog's state.
-        // This prevents the dialog from showing stale data and fixes bugs with state conflicts.
         if (selectedQuest) {
           const updatedQuest = quests.find(q => q.id === selectedQuest.id);
           if (updatedQuest && JSON.stringify(updatedQuest) !== JSON.stringify(selectedQuest)) {
@@ -70,19 +77,9 @@ const Dashboard: React.FC = () => {
         }
     }, [quests, selectedQuest]);
 
-
     if (!currentUser) return <div>Loading adventurer's data...</div>;
     
-    const { terminology } = settings;
-
-    const getRewardInfo = (id: string) => {
-        const rewardDef = rewardTypes.find(rt => rt.id === id);
-        return { name: rewardDef?.name || 'Unknown Reward', icon: rewardDef?.icon || '❓' };
-    };
-
-    const handleQuestSelect = (quest: Quest) => {
-        setSelectedQuest(quest);
-    };
+    const handleQuestSelect = (quest: Quest) => setSelectedQuest(quest);
 
     const handleStartAction = (questToAction: Quest) => {
         setSelectedQuest(null);
@@ -103,384 +100,19 @@ const Dashboard: React.FC = () => {
         }
     };
 
-    const currentBalances = useMemo(() => {
-        if (appMode.mode === 'personal') {
-            return { purse: currentUser.personalPurse, experience: currentUser.personalExperience };
-        }
-        return currentUser.guildBalances[appMode.guildId] || { purse: {}, experience: {} };
-    }, [currentUser, appMode]);
-
-    const rankData = useMemo(() => {
-        const sortedRanks = [...ranks].sort((a, b) => a.xpThreshold - b.xpThreshold);
-        const totalXp = Object.values(currentBalances.experience).reduce((sum: number, amount: number) => sum + amount, 0);
-        
-        let currentRank: Rank | null = sortedRanks[0] || null;
-        let nextRank: Rank | null = sortedRanks[1] || null;
-
-        if (!currentRank) {
-            return { totalXp, currentRank: null, nextRank: null, progressPercentage: 0, currentLevel: 0, xpIntoCurrentRank: 0, xpForNextRank: 0 };
-        }
-
-        for (let i = sortedRanks.length - 1; i >= 0; i--) {
-            if (totalXp >= sortedRanks[i].xpThreshold) {
-                currentRank = sortedRanks[i];
-                nextRank = sortedRanks[i + 1] || null;
-                break;
-            }
-        }
-        
-        const xpForNextRank = nextRank ? nextRank.xpThreshold - currentRank.xpThreshold : 0;
-        const xpIntoCurrentRank = totalXp - currentRank.xpThreshold;
-
-        // Ensure progress is always between 0 and 100, even with negative XP for display.
-        const clampedXpIntoRank = Math.max(0, xpIntoCurrentRank);
-        const progressPercentage = (nextRank && xpForNextRank > 0) ? Math.min(100, (clampedXpIntoRank / xpForNextRank) * 100) : 100;
-
-        const currentLevel = sortedRanks.findIndex(r => r.id === currentRank!.id) + 1;
-        
-        return { totalXp, currentRank, nextRank, progressPercentage, currentLevel, xpIntoCurrentRank: clampedXpIntoRank, xpForNextRank };
-    }, [currentBalances.experience, ranks]);
-
-
-    const userCurrencies = useMemo(() => {
-        return rewardTypes
-            .filter(rt => rt.category === RewardCategory.Currency)
-            .map(c => ({ ...c, amount: currentBalances.purse[c.id] || 0 }))
-            .filter(c => c.amount > 0);
-    }, [currentBalances.purse, rewardTypes]);
-
-    const userExperience = useMemo(() => {
-        return rewardTypes
-            .filter(rt => rt.category === RewardCategory.XP)
-            .map(xp => ({ ...xp, amount: currentBalances.experience[xp.id] || 0 }))
-            .filter(xp => xp.amount > 0);
-    }, [currentBalances.experience, rewardTypes]);
-    
-    const recentActivities = useMemo(() => {
-        const currentGuildId = appMode.mode === 'guild' ? appMode.guildId : undefined;
-        
-        type Activity = {
-            id: string;
-            type: 'Quest' | 'Purchase' | 'Trophy' | 'Adjustment';
-            title: string;
-            date: string;
-            note?: string;
-            rewardsText?: string;
-            status: string;
-            icon: string;
-        };
-
-        const allActivities: Activity[] = [
-            ...questCompletions
-                .filter(c => c.userId === currentUser.id && c.guildId == currentGuildId)
-                .map(c => {
-                    const quest = quests.find(q => q.id === c.questId);
-                    let rewardsText = '';
-                    if (c.status === QuestCompletionStatus.Approved && quest && quest.rewards.length > 0) {
-                        rewardsText = quest.rewards.map(r => `+${r.amount} ${getRewardInfo(r.rewardTypeId).icon}`).join(' ');
-                    }
-
-                    return {
-                        id: c.id,
-                        type: 'Quest' as const,
-                        title: quest?.title || `Unknown ${terminology.task}`,
-                        date: c.completedAt,
-                        note: c.note ? `"${c.note}"` : undefined,
-                        rewardsText: rewardsText || undefined,
-                        status: c.status,
-                        icon: quest?.icon || '📜',
-                    };
-                }),
-            ...purchaseRequests
-                .filter(p => p.userId === currentUser.id && p.guildId == currentGuildId)
-                .map(p => ({
-                    id: p.id,
-                    type: 'Purchase' as const,
-                    title: `Purchased "${p.assetDetails.name}"`,
-                    date: p.requestedAt,
-                    note: p.assetDetails.cost.map(r => `-${r.amount} ${getRewardInfo(r.rewardTypeId).icon}`).join(' '),
-                    status: p.status,
-                    icon: '💰',
-                })),
-            ...userTrophies
-                .filter(ut => ut.userId === currentUser.id && ut.guildId == currentGuildId)
-                .map(ut => {
-                    const trophy = trophies.find(t => t.id === ut.trophyId);
-                    return {
-                        id: ut.id,
-                        type: 'Trophy' as const,
-                        title: `Earned ${terminology.award}: "${trophy?.name || ''}"`,
-                        date: ut.awardedAt,
-                        note: trophy?.description,
-                        status: 'Awarded!',
-                        icon: trophy?.icon || '🏆',
-                    };
-                }),
-            ...adminAdjustments
-                .filter(a => a.userId === currentUser.id && a.guildId == currentGuildId)
-                .map(a => {
-                    const isExchange = a.userId === a.adjusterId && a.reason.startsWith('Exchanged');
-                    
-                    if (!isExchange) return null; // Only show exchanges on dashboard
-
-                    const title = `Made an Exchange`;
-                    let rewardsText = '';
-                    if (a.rewards.length > 0 || a.setbacks.length > 0) {
-                        const paid = a.setbacks.map(r => `-${r.amount} ${getRewardInfo(r.rewardTypeId).icon}`).join(' ');
-                        const received = a.rewards.map(r => `+${r.amount} ${getRewardInfo(r.rewardTypeId).icon}`).join(' ');
-                        rewardsText = `${paid} ${received}`.trim();
-                    }
-
-                    return {
-                        id: a.id,
-                        type: 'Adjustment' as const,
-                        title,
-                        date: a.adjustedAt,
-                        note: a.reason,
-                        rewardsText: rewardsText || undefined,
-                        status: 'Exchanged!',
-                        icon: '⚖️',
-                    };
-                }).filter((a): a is NonNullable<typeof a> => !!a),
-        ];
-
-        return allActivities.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).slice(0, 10);
-    }, [adminAdjustments, questCompletions, purchaseRequests, userTrophies, quests, trophies, currentUser.id, appMode, terminology, rewardTypes, users]);
-
-    const leaderboard = useMemo(() => {
-        const currentGuildId = appMode.mode === 'guild' ? appMode.guildId : undefined;
-        return users
-            .map(user => {
-                let userTotalXp = 0;
-                if (currentGuildId) {
-                    userTotalXp = Object.values(user.guildBalances[currentGuildId]?.experience || {}).reduce((sum: number, amount) => sum + (amount as number), 0);
-                } else {
-                    userTotalXp = Object.values(user.personalExperience).reduce((sum: number, amount) => sum + (amount as number), 0);
-                }
-                return { name: user.gameName, xp: userTotalXp };
-            })
-            .sort((a, b) => b.xp - a.xp)
-            .slice(0, 5);
-    }, [users, appMode]);
-        
-    const mostRecentTrophy = useMemo(() => {
-        const currentGuildId = appMode.mode === 'guild' ? appMode.guildId : undefined;
-        const myTrophies = userTrophies.filter(ut => ut.userId === currentUser.id && ut.guildId == currentGuildId).sort((a, b) => new Date(b.awardedAt).getTime() - new Date(a.awardedAt).getTime());
-        const mostRecentTrophyAward = myTrophies.length > 0 ? myTrophies[0] : null;
-        return mostRecentTrophyAward ? trophies.find(t => t.id === mostRecentTrophyAward.trophyId) : null;
-    }, [userTrophies, trophies, currentUser.id, appMode]);
-
-    const quickActionQuests = useMemo(() => {
-        const today = new Date();
-        const userCompletions = questCompletions.filter(c => c.userId === currentUser.id);
-
-        const completableQuests = quests.filter(quest => {
-            return isQuestVisibleToUserInMode(quest, currentUser.id, appMode) &&
-                   isQuestAvailableForUser(quest, userCompletions, today, scheduledEvents, appMode);
-        });
-        
-        return completableQuests.sort(questSorter(currentUser, userCompletions, scheduledEvents, today));
-    }, [quests, currentUser, questCompletions, appMode, scheduledEvents]);
-
-    const statusColorClass = (status: string) => {
-        switch (status) {
-            case "Awarded!":
-            case QuestCompletionStatus.Approved:
-            case "Completed":
-            case "Exchanged!":
-                return 'text-green-400';
-            case QuestCompletionStatus.Pending:
-                return 'text-yellow-400';
-            case QuestCompletionStatus.Rejected:
-                return 'text-red-400';
-            default:
-                return 'text-stone-400';
-        }
-    };
-    
-    const weeklyProgressData = useMemo(() => {
-        const dataByDay: { [date: string]: number } = {};
-        const today = new Date();
-        
-        for (let i = 6; i >= 0; i--) {
-            const date = new Date();
-            date.setDate(today.getDate() - i);
-            const dateKey = date.toISOString().split('T')[0];
-            dataByDay[dateKey] = 0;
-        }
-
-        const currentGuildId = appMode.mode === 'guild' ? appMode.guildId : undefined;
-        const userCompletions = questCompletions.filter(
-            c => c.userId === currentUser.id && c.status === QuestCompletionStatus.Approved && c.guildId == currentGuildId
-        );
-
-        userCompletions.forEach(completion => {
-            const completionDate = new Date(completion.completedAt);
-            const sevenDaysAgo = new Date(today);
-            sevenDaysAgo.setDate(today.getDate() - 7);
-
-            if (completionDate >= sevenDaysAgo) {
-                const quest = quests.find(q => q.id === completion.questId);
-                if (!quest) return;
-                
-                const dateKey = completion.completedAt.split('T')[0];
-                const xpForThisQuest = quest.rewards
-                    .filter(r => rewardTypes.find(rt => rt.id === r.rewardTypeId)?.category === RewardCategory.XP)
-                    .reduce((sum, r) => sum + r.amount, 0);
-
-                if (dateKey in dataByDay) {
-                    dataByDay[dateKey] += xpForThisQuest;
-                }
-            }
-        });
-
-        return Object.entries(dataByDay)
-            .map(([date, value]) => ({
-                label: new Date(date + 'T00:00:00').toLocaleDateString('default', { weekday: 'short' }),
-                value
-            }));
-            
-    }, [currentUser.id, appMode, questCompletions, quests, rewardTypes]);
-
-
-    const CurrencyDisplay: React.FC<{currency: {id: string, name: string, icon?: string, amount: number}}> = ({ currency }) => {
-        const realValue = useRewardValue(currency.amount, currency.id);
-        const title = `${currency.name}: ${currency.amount}${realValue ? ` (${realValue})` : ''}`;
-
-        return (
-            <div title={title} className="flex items-baseline justify-between">
-                <span className="text-stone-200 flex items-center gap-2">
-                    <span>{currency.icon}</span>
-                    <span>{currency.name}</span>
-                </span>
-                <span className="font-semibold text-accent-light">{currency.amount}</span>
-            </div>
-        );
-    }
-    
-    if (!rankData.currentRank) {
-        return <Card title="Loading..."><p>Calculating your rank...</p></Card>;
-    }
-
     return (
         <div>
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                {/* Left Column */}
                 <div className="lg:col-span-1 space-y-6">
-                    <Card title={terminology.level}>
-                        <div className="cursor-pointer text-center" onClick={() => setActivePage('Ranks')}>
-                            <div className="w-32 h-32 mx-auto mb-4 bg-stone-700 rounded-full flex items-center justify-center text-6xl border-4 border-accent">
-                               {rankData.currentRank.icon}
-                            </div>
-                            <p className="text-2xl font-bold text-accent-light">{rankData.currentRank.name}</p>
-                            <p className="text-stone-400">Level {rankData.currentLevel}</p>
-                            <div className="relative w-full bg-stone-700 rounded-full h-5 mt-4 overflow-hidden text-white">
-                                <div className="absolute inset-0 h-full rounded-full transition-all duration-500" style={{width: `${rankData.progressPercentage}%`, backgroundColor: 'hsl(var(--primary))'}}></div>
-                                <div className="absolute inset-0 flex items-center justify-center">
-                                    {rankData.nextRank ? (
-                                        <span className="text-xs font-bold" style={{textShadow: '1px 1px 2px rgba(0,0,0,0.7)'}}>
-                                            {rankData.xpIntoCurrentRank} / {rankData.xpForNextRank} XP
-                                        </span>
-                                    ) : (
-                                        <span className="text-xs font-bold" style={{textShadow: '1px 1px 2px rgba(0,0,0,0.7)'}}>
-                                            Max Rank!
-                                        </span>
-                                    )}
-                                </div>
-                            </div>
-                            <p className="text-sm text-stone-300 mt-2">Total XP: {rankData.totalXp}</p>
-                        </div>
-                    </Card>
-
-                    <Card title="Inventory">
-                        <div className="grid grid-cols-2 gap-x-6">
-                            <div>
-                                <h4 className="font-bold text-lg text-stone-300 mb-2 border-b border-stone-700 pb-1 capitalize">{terminology.currency}</h4>
-                                <div className="space-y-2 mt-2">
-                                    {userCurrencies.length > 0 ? userCurrencies.map(c => 
-                                        <CurrencyDisplay key={c.id} currency={c} />
-                                    ) : <p className="text-stone-400 text-sm italic">None</p>}
-                                </div>
-                            </div>
-                             <div>
-                                <h4 className="font-bold text-lg text-stone-300 mb-2 border-b border-stone-700 pb-1 capitalize">{terminology.xp}</h4>
-                                <div className="space-y-2 mt-2">
-                                    {userExperience.length > 0 ? userExperience.map(xp => 
-                                        <div key={xp.id} className="flex items-baseline justify-between">
-                                            <span className="text-stone-200 flex items-center gap-2">
-                                                <span>{xp.icon}</span>
-                                                <span>{xp.name}</span>
-                                            </span>
-                                            <span className="font-semibold text-sky-400">{xp.amount}</span>
-                                        </div>
-                                    ) : <p className="text-stone-400 text-sm italic">None</p>}
-                                </div>
-                            </div>
-                        </div>
-                    </Card>
-
-                    {mostRecentTrophy && (
-                        <Card title={`Latest ${terminology.award}`}>
-                            <div className="flex items-center gap-4 cursor-pointer" onClick={() => setActivePage('Trophies')}>
-                                <div className="text-5xl">{mostRecentTrophy.icon}</div>
-                                <div>
-                                    <h4 className="font-bold text-lg text-amber-300">{mostRecentTrophy.name}</h4>
-                                    <p className="text-stone-400 text-sm">{mostRecentTrophy.description}</p>
-                                </div>
-                            </div>
-                        </Card>
-                    )}
-
-                    <Card title="Leaderboard">
-                         {leaderboard.length > 0 ? (
-                            <ul className="space-y-2">
-                                {leaderboard.map((player, index) => (
-                                    <li key={player.name} className="flex justify-between items-center text-sm font-semibold">
-                                        <span className="text-stone-200">{index + 1}. {player.name}</span>
-                                        <span className="text-sky-400">{player.xp} XP</span>
-                                    </li>
-                                ))}
-                            </ul>
-                        ) : <p className="text-stone-400 text-sm italic">No players to rank.</p>}
-                    </Card>
+                    <RankCard rankData={rankData} terminology={terminology} />
+                    <InventoryCard userCurrencies={userCurrencies} userExperience={userExperience} terminology={terminology} />
+                    <TrophyCard mostRecentTrophy={mostRecentTrophy} terminology={terminology} />
+                    <LeaderboardCard leaderboard={leaderboard} />
                 </div>
 
-                {/* Right Column */}
                 <div className="lg:col-span-2 space-y-6">
-                     <Card title="Quick Actions">
-                        {quickActionQuests.length > 0 ? (
-                            <div className="space-y-3 max-h-80 overflow-y-auto pr-2">
-                                {quickActionQuests.slice(0, 10).map(quest => (
-                                    <QuestWidget key={quest.id} quest={quest} handleQuestSelect={handleQuestSelect} />
-                                ))}
-                            </div>
-                        ) : (
-                            <p className="text-stone-400 text-center">No available quests right now. Great job!</p>
-                        )}
-                    </Card>
-                    
-                    <Card title={`Recent ${terminology.history}`}>
-                        {recentActivities.length > 0 ? (
-                            <div className="space-y-4 max-h-96 overflow-y-auto pr-2">
-                                {recentActivities.map(activity => (
-                                    <div key={activity.id} className="grid grid-cols-1 md:grid-cols-3 gap-2 items-center text-sm">
-                                        <p className="text-stone-300 truncate md:col-span-1 flex items-center gap-2" title={activity.title}>
-                                           <span className="text-xl">{activity.icon}</span>
-                                           <span>{activity.title}</span>
-                                        </p>
-                                        <p className="text-stone-400 italic truncate md:col-span-1 md:text-center" title={activity.note}>
-                                            {activity.note}
-                                        </p>
-                                        <p className={`font-semibold ${statusColorClass(activity.status)} flex-shrink-0 md:col-span-1 md:text-right flex items-center md:justify-end gap-2`}>
-                                            {activity.rewardsText && <span className="text-stone-300 font-semibold">{activity.rewardsText}</span>}
-                                            <span>{activity.status}</span>
-                                        </p>
-                                    </div>
-                                ))}
-                            </div>
-                        ) : <p className="text-stone-400 text-sm italic">No recent activity.</p>}
-                    </Card>
-
+                    <QuickActionsCard quests={quickActionQuests} onQuestSelect={handleQuestSelect} />
+                    <RecentActivityCard activities={recentActivities} terminology={terminology} />
                     <Card title="Weekly Progress">
                         <div className="h-80">
                            {weeklyProgressData.some(d => d.value > 0) ? (
@@ -502,16 +134,10 @@ const Dashboard: React.FC = () => {
                 />
             )}
             {completingQuest && (
-                <CompleteQuestDialog
-                    quest={completingQuest}
-                    onClose={() => setCompletingQuest(null)}
-                />
+                <CompleteQuestDialog quest={completingQuest} onClose={() => setCompletingQuest(null)} />
             )}
-            {ContributeToQuestDialog && contributingQuest && (
-                <ContributeToQuestDialog
-                    quest={contributingQuest}
-                    onClose={() => setContributingQuest(null)}
-                />
+            {contributingQuest && (
+                <ContributeToQuestDialog quest={contributingQuest} onClose={() => setContributingQuest(null)} />
             )}
         </div>
     );

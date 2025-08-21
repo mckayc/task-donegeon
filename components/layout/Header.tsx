@@ -1,17 +1,19 @@
-
 import React, { useState, useMemo, useEffect } from 'react';
-import { Page, Role, AppMode, User } from '../../types';
+import { User, Role } from '../users/types';
+import { Page, AppMode } from '../../types/app';
 import Avatar from '../user-interface/Avatar';
-import { useData } from '../../context/DataProvider';
 import { useUIState, useUIDispatch } from '../../context/UIContext';
 import { useAuthState, useAuthDispatch } from '../../context/AuthContext';
 import FullscreenToggle from '../user-interface/FullscreenToggle';
 import { ChevronDownIcon } from '../user-interface/Icons';
 import RewardDisplay from '../user-interface/RewardDisplay';
+import { useCommunityState } from '../../context/CommunityContext';
+import { useSystemState } from '../../context/SystemContext';
+import { useSyncStatus } from '../../context/DataProvider';
 
 const Clock: React.FC = () => {
     const [time, setTime] = useState(new Date());
-    const { syncStatus, syncError } = useData();
+    const { syncStatus, syncError } = useSyncStatus();
 
     useEffect(() => {
         const timerId = setInterval(() => setTime(new Date()), 1000);
@@ -38,7 +40,8 @@ const Clock: React.FC = () => {
 };
 
 const Header: React.FC = () => {
-  const { guilds, settings } = useData();
+  const { settings } = useSystemState();
+  const { guilds } = useCommunityState();
   const { appMode } = useUIState();
   const { setAppMode, setActivePage } = useUIDispatch();
   const { currentUser } = useAuthState();
@@ -141,30 +144,39 @@ const Header: React.FC = () => {
             <button
                 onClick={exitToSharedView}
                 data-log-id="header-exit-shared-view"
-                className="bg-amber-600 text-white px-4 py-1.5 rounded-full font-bold text-lg hover:bg-amber-500 transition-colors"
+                className="bg-amber-600 text-white px-4 py-1.5 rounded-full font-bold text-lg hover:bg-amber-500"
+                title="Exit to Shared View"
             >
-                Exit User
+                Exit
             </button>
         )}
         <div className="relative">
-          <button data-log-id="header-profile-dropdown-button" onClick={() => setProfileDropdownOpen(!profileDropdownOpen)} className="flex items-center" title={currentUser.gameName}>
-            <Avatar user={currentUser} className="w-12 h-12 bg-emerald-800 rounded-full border-2 border-accent overflow-hidden" />
-          </button>
-          {profileDropdownOpen && (
-            <div className="absolute right-0 mt-2 w-48 bg-stone-800 border border-stone-700 rounded-lg shadow-xl z-20">
-              <a href="#" data-log-id="header-profile-dropdown-switch-user" onClick={handleSwitchUser} className="block px-4 py-2 text-stone-300 hover:bg-stone-700">Switch User</a>
-              <a href="#" data-log-id="header-profile-dropdown-profile" onClick={() => navigateTo('Profile')} className="block px-4 py-2 text-stone-300 hover:bg-stone-700">Profile</a>
-              {currentUser.role === Role.DonegeonMaster && (
-                  <a href="#" data-log-id="header-profile-dropdown-settings" onClick={() => navigateTo('Settings')} className="block px-4 py-2 text-stone-300 hover:bg-stone-700">Settings</a>
-              )}
-              <div className="border-t border-stone-700"></div>
-              <a href="#" data-log-id="header-profile-dropdown-logout" onClick={handleLogout} className="block px-4 py-2 text-red-400 hover:bg-stone-700">Logout</a>
-            </div>
-          )}
+            <button onClick={() => setProfileDropdownOpen(p => !p)} data-log-id="header-profile-dropdown" className="flex items-center gap-2">
+                <Avatar user={currentUser} className="w-12 h-12 bg-stone-700 rounded-full border-2 border-stone-600" />
+                <div className="hidden md:block text-left">
+                    <p className="font-semibold text-stone-100">{currentUser.gameName}</p>
+                    <p className="text-xs text-stone-400">{currentUser.role}</p>
+                </div>
+                <ChevronDownIcon className="w-5 h-5 text-stone-400 hidden md:block" />
+            </button>
+            {profileDropdownOpen && (
+                <div className="absolute right-0 mt-2 w-56 bg-stone-800 border border-stone-700 rounded-lg shadow-xl z-20">
+                    <div className="px-4 py-3 border-b border-stone-700">
+                        <p className="font-semibold text-stone-100">{currentUser.gameName}</p>
+                        <p className="text-sm text-stone-400">{currentUser.email}</p>
+                    </div>
+                    <div className="py-1">
+                        <a href="#" onClick={(e) => { e.preventDefault(); navigateTo('Profile'); }} data-log-id="header-profile-link-profile" className="block px-4 py-2 text-stone-300 hover:bg-stone-700">My Profile</a>
+                        <a href="#" onClick={handleSwitchUser} data-log-id="header-profile-link-switch" className="block px-4 py-2 text-stone-300 hover:bg-stone-700">Switch User</a>
+                    </div>
+                    <div className="py-1 border-t border-stone-700">
+                        <a href="#" onClick={handleLogout} data-log-id="header-profile-link-logout" className="block px-4 py-2 text-red-400 hover:bg-stone-700">Log Out</a>
+                    </div>
+                </div>
+            )}
         </div>
       </div>
     </header>
   );
 };
-
 export default Header;

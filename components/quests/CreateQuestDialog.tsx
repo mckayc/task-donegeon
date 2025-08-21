@@ -1,7 +1,9 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { useData } from '../../context/DataProvider';
-import { useActionsDispatch } from '../../context/ActionsContext';
-import { Quest, QuestType, RewardItem, RewardCategory, Role, BugReport, QuestKind } from '../../types';
+import { useSystemState } from '../../context/SystemContext';
+import { Quest, QuestType, QuestKind } from '../quests/types';
+import { RewardItem, RewardCategory } from '../items/types';
+import { Role } from '../users/types';
+import { BugReport } from '../dev/types';
 import Button from '../user-interface/Button';
 import Input from '../user-interface/Input';
 import ToggleSwitch from '../user-interface/ToggleSwitch';
@@ -14,6 +16,9 @@ import { useAuthState } from '../../context/AuthContext';
 import { bugLogger } from '../../utils/bugLogger';
 import QuestScheduling from '../forms/QuestScheduling';
 import EditJourneyDialog from './EditJourneyDialog';
+import { useQuestsState, useQuestsDispatch } from '../../context/QuestsContext';
+import { useEconomyState } from '../../context/EconomyContext';
+import { useCommunityState } from '../../context/CommunityContext';
 
 type QuestFormData = Omit<Quest, 'id' | 'claimedByUserIds' | 'dismissals'> & { id?: string };
 
@@ -30,9 +35,12 @@ interface QuestDialogProps {
 }
 
 const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialData, onClose, mode = (questToEdit ? 'edit' : 'create'), onTryAgain, isGenerating, onSave, initialDataFromBug, onJourneySaved }) => {
-  const { guilds, settings, allTags, questGroups, rewardTypes, quests } = useData();
+  const { settings } = useSystemState();
+  const { guilds } = useCommunityState();
+  const { allTags, questGroups } = useQuestsState();
+  const { rewardTypes } = useEconomyState();
   const { users } = useAuthState();
-  const { addQuest, updateQuest, addQuestGroup } = useActionsDispatch();
+  const { addQuest, updateQuest, addQuestGroup } = useQuestsDispatch();
   const hasLoggedOpen = useRef(false);
 
   const getInitialFormData = useCallback((): QuestFormData => {

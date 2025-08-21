@@ -1,10 +1,10 @@
 
+
 import React, { useState, useMemo, useEffect } from 'react';
 import Button from '../../user-interface/Button';
 import Card from '../../user-interface/Card';
 import { AssetPack, AssetPackManifestInfo, IAppData, ImportResolution } from '../../../types';
-import { useData } from '../../../context/DataProvider';
-import { useActionsDispatch } from '../../../context/ActionsContext';
+import { useSystemDispatch, useSystemState } from '../../../context/SystemContext';
 import Input from '../../user-interface/Input';
 import { analyzeAssetPackForConflicts } from '../../../utils/sharing';
 import AssetPackInstallDialog from '../../sharing/AssetPackInstallDialog';
@@ -12,11 +12,19 @@ import { useNotificationsDispatch } from '../../../context/NotificationsContext'
 import { useAuthState } from '../../../context/AuthContext';
 import { bugLogger } from '../../../utils/bugLogger';
 import { useDebounce } from '../../../hooks/useDebounce';
+import { useQuestsState } from '../../../context/QuestsContext';
+import { useEconomyState } from '../../../context/EconomyContext';
+import { useProgressionState } from '../../../context/ProgressionContext';
+import { useCommunityState } from '../../../context/CommunityContext';
 
 const AssetLibraryPage: React.FC = () => {
-    const appState = useData();
+    const systemState = useSystemState();
+    const economyState = useEconomyState();
+    const progressionState = useProgressionState();
+    const communityState = useCommunityState();
     const authState = useAuthState();
-    const { importAssetPack } = useActionsDispatch();
+    const questState = useQuestsState();
+    const { importAssetPack } = useSystemDispatch();
     const { addNotification } = useNotificationsDispatch();
     const [localPacks, setLocalPacks] = useState<AssetPackManifestInfo[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -87,7 +95,7 @@ const AssetLibraryPage: React.FC = () => {
         try {
             setIsLoading(true);
             const packData = await packFetcher();
-            const fullCurrentData: IAppData = { ...appState, ...authState };
+            const fullCurrentData: IAppData = { ...systemState, ...questState, ...authState, ...economyState, ...progressionState, ...communityState } as IAppData;
             const conflictResolutions = analyzeAssetPackForConflicts(packData, fullCurrentData);
             setResolutions(conflictResolutions);
             setPackToInstall(packData);

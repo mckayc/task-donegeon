@@ -1,6 +1,4 @@
-
 import React, { useEffect } from 'react';
-import { useData } from './context/DataProvider';
 import { useUIState } from './context/UIContext';
 import { useAuthState } from './context/AuthContext';
 import FirstRunWizard from './components/auth/FirstRunWizard';
@@ -12,15 +10,22 @@ import AppLockScreen from './components/auth/AppLockScreen';
 import OnboardingWizard from './components/auth/OnboardingWizard';
 import SharedLayout from './components/layout/SharedLayout';
 import BugReporter from './components/dev/BugReporter';
-import { Role, Guild, ThemeDefinition } from './types';
-import { useDeveloper, useDeveloperState } from './context/DeveloperContext';
+import { Role } from './components/users/types';
+import { Guild } from './components/guilds/types';
+import { ThemeDefinition } from './components/themes/types';
+import { useDeveloperState, useDeveloperDispatch } from './context/DeveloperContext';
+import { useCommunityState } from './context/CommunityContext';
+import { useSystemState } from './context/SystemContext';
+import { useIsDataLoaded } from './context/DataProvider';
 
 const App: React.FC = () => {
-  const { isDataLoaded, settings, guilds, themes } = useData();
+  const { settings, themes } = useSystemState();
+  const { guilds } = useCommunityState();
   const { appMode, activePage } = useUIState();
   const { currentUser, isAppUnlocked, isFirstRun, isSwitchingUser, isSharedViewActive } = useAuthState();
-  const { isRecording, addLogEntry } = useDeveloper();
-  const { isPickingElement } = useDeveloperState();
+  const { isRecording, isPickingElement } = useDeveloperState();
+  const { addLogEntry } = useDeveloperDispatch();
+  const isDataLoaded = useIsDataLoaded();
 
   useEffect(() => {
     // If we are on a page that handles its own theme preview, don't apply the global theme.

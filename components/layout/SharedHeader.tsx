@@ -1,10 +1,11 @@
 
+
 import React, { useMemo, useState, useEffect } from 'react';
-import { useData } from '../../context/DataProvider';
 import { useAuthState, useAuthDispatch } from '../../context/AuthContext';
 import { User } from '../../types';
 import Avatar from '../user-interface/Avatar';
 import FullscreenToggle from '../user-interface/FullscreenToggle';
+import { useSystemState } from '../../context/SystemContext';
 
 const Clock: React.FC = () => {
     const [time, setTime] = useState(new Date());
@@ -20,7 +21,7 @@ const Clock: React.FC = () => {
 };
 
 const SharedHeader: React.FC = () => {
-  const { settings } = useData();
+  const { settings } = useSystemState();
   const { users } = useAuthState();
   const { setTargetedUserForLogin, setIsSwitchingUser } = useAuthDispatch();
   const [currentDate, setCurrentDate] = useState(new Date());

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { QuestType, Terminology } from '../../types';
 import Input from '../user-interface/Input';
 import ToggleSwitch from '../user-interface/ToggleSwitch';
-import { useData } from '../../context/DataProvider';
+import { useSystemState } from '../../context/SystemContext';
 
 interface QuestSchedulingProps {
     value: {
@@ -57,7 +57,7 @@ const TypeButton: React.FC<{
 
 
 const QuestScheduling: React.FC<QuestSchedulingProps> = ({ value, onChange }) => {
-    const { settings } = useData();
+    const { settings } = useSystemState();
     const [hasDueDate, setHasDueDate] = useState(!!(value.startDateTime || value.endDateTime));
     const [recurrenceType, setRecurrenceType] = useState('DAILY');
     const [weeklyDays, setWeeklyDays] = useState<string[]>([]);

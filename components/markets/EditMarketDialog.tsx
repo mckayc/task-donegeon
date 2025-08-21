@@ -1,12 +1,15 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useData } from '../../context/DataProvider';
-import { useActionsDispatch } from '../../context/ActionsContext';
+import { useSystemState } from '../../context/SystemContext';
 import { Market, MarketStatus, MarketCondition, MarketConditionType, Quest } from '../../types';
 import Button from '../user-interface/Button';
 import Input from '../user-interface/Input';
 import EmojiPicker from '../user-interface/EmojiPicker';
 import ImageSelectionDialog from '../user-interface/ImageSelectionDialog';
 import DynamicIcon from '../user-interface/DynamicIcon';
+import { useQuestsState } from '../../context/QuestsContext';
+import { useEconomyDispatch } from '../../context/EconomyContext';
+import { useCommunityState } from '../../context/CommunityContext';
+import { useProgressionState } from '../../context/ProgressionContext';
 
 interface EditMarketDialogProps {
   market: Market | null;
@@ -21,8 +24,10 @@ interface EditMarketDialogProps {
 const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
 const EditMarketDialog: React.FC<EditMarketDialogProps> = ({ market, initialData, onClose, mode = (market ? 'edit' : 'create'), onTryAgain, isGenerating, onSave }) => {
-  const { guilds, ranks, quests } = useData();
-  const { addMarket, updateMarket } = useActionsDispatch();
+  const { guilds } = useCommunityState();
+  const { ranks } = useProgressionState();
+  const { quests } = useQuestsState();
+  const { addMarket, updateMarket } = useEconomyDispatch();
   
   const getInitialFormData = useCallback(() => {
     const data = market || initialData;

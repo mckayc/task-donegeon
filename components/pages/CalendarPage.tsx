@@ -1,5 +1,7 @@
+
+
 import React, { useState, useMemo, useCallback, useRef, useEffect } from 'react';
-import { Role, ScheduledEvent, Quest, QuestType, ChronicleEvent, User, AppMode, RewardTypeDefinition, RewardItem } from '../../types';
+import { Role, ScheduledEvent, Quest, QuestType, ChronicleEvent, User, RewardTypeDefinition, RewardItem } from '../../types';
 import Card from '../user-interface/Card';
 import Button from '../user-interface/Button';
 import { ScheduleEventDialog } from '../admin/ScheduleEventDialog';
@@ -13,16 +15,18 @@ import googleCalendarPlugin from '@fullcalendar/google-calendar';
 import listPlugin from '@fullcalendar/list';
 import rrulePlugin from '@fullcalendar/rrule';
 import { EventClickArg, EventSourceInput, EventDropArg, MoreLinkArg, EventInput, EventContentArg } from '@fullcalendar/core';
-import { useChronicles } from '../../hooks/useChronicles';
+import { useChronicles } from '../chronicles/hooks/useChronicles';
 import QuestDetailDialog from '../quests/QuestDetailDialog';
 import CompleteQuestDialog from '../quests/CompleteQuestDialog';
-import { toYMD, isQuestAvailableForUser, isQuestVisibleToUserInMode } from '../../utils/quests';
+import { toYMD, isQuestAvailableForUser, isQuestVisibleToUserInMode, isQuestScheduledForDay } from '../quests/utils/quests';
 import CreateQuestDialog from '../quests/CreateQuestDialog';
 import { useNotificationsDispatch } from '../../context/NotificationsContext';
 import ChroniclesDetailDialog from '../calendar/ChroniclesDetailDialog';
-import { useData } from '../../context/DataProvider';
+import { useSystemState } from '../../context/SystemContext';
 import { useUIState, useUIDispatch } from '../../context/UIContext';
-import { useActionsDispatch } from '../../context/ActionsContext';
+import { useQuestsState, useQuestsDispatch } from '../../context/QuestsContext';
+import { useEconomyState } from '../../context/EconomyContext';
+import { AppMode } from '../../types/app';
 
 type CalendarMode = 'events' | 'chronicles';
 
@@ -48,11 +52,13 @@ const rruleStringToObject = (rruleString: string) => {
 
 
 const CalendarPage: React.FC = () => {
-    const { settings, scheduledEvents, quests, questCompletions, rewardTypes } = useData();
+    const { settings, scheduledEvents } = useSystemState();
+    const { rewardTypes } = useEconomyState();
+    const { quests, questCompletions } = useQuestsState();
     const { appMode } = useUIState();
     const { currentUser, users } = useAuthState();
     const { setActivePage } = useUIDispatch();
-    const { markQuestAsTodo, unmarkQuestAsTodo, updateQuest } = useActionsDispatch();
+    const { markQuestAsTodo, unmarkQuestAsTodo, updateQuest } = useQuestsDispatch();
     const { addNotification } = useNotificationsDispatch();
     
     const [mode, setMode] = useState<CalendarMode>('events');

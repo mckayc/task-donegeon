@@ -1,8 +1,9 @@
+
 import React from 'react';
 import { SystemNotification, SystemNotificationType, User } from '../../types';
 import Button from './Button';
 import { XCircleIcon } from './Icons';
-import { useActionsDispatch } from '../../context/ActionsContext';
+import { useSystemDispatch } from '../../context/SystemContext';
 
 // Icons for different notification types
 const getIconForType = (type: SystemNotificationType) => {
@@ -22,7 +23,7 @@ interface LoginNotificationPopupProps {
 }
 
 const LoginNotificationPopup: React.FC<LoginNotificationPopupProps> = ({ notifications, user, onClose }) => {
-    const { markSystemNotificationsAsRead } = useActionsDispatch();
+    const { markSystemNotificationsAsRead } = useSystemDispatch();
 
     const handleDismiss = () => {
         const notificationIds = notifications.map(n => n.id);
@@ -30,14 +31,14 @@ const LoginNotificationPopup: React.FC<LoginNotificationPopupProps> = ({ notific
         onClose();
     };
 
-    const groupedNotifications = notifications.reduce((acc, notif) => {
+    const groupedNotifications = notifications.reduce<Record<string, SystemNotification[]>>((acc, notif) => {
         const typeKey = notif.type.replace(/([A-Z])/g, ' $1').trim(); // Add spaces for readability
         if (!acc[typeKey]) {
             acc[typeKey] = [];
         }
         acc[typeKey].push(notif);
         return acc;
-    }, {} as Record<string, SystemNotification[]>);
+    }, {});
 
     return (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-[100] p-4">
@@ -54,7 +55,7 @@ const LoginNotificationPopup: React.FC<LoginNotificationPopupProps> = ({ notific
                     {Object.entries(groupedNotifications).map(([type, notifs]) => (
                         <div key={type}>
                             <h4 className="text-lg font-bold text-accent-light mb-2 flex items-center gap-2">
-                                {getIconForType(notifs[0].type)} {type}
+                                {notifs.length > 0 && getIconForType(notifs[0].type)} {type}
                             </h4>
                             <ul className="space-y-2 list-disc list-inside pl-2">
                                 {notifs.map(n => (

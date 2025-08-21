@@ -1,9 +1,8 @@
-
 import React, { useState, ReactNode } from 'react';
 import Card from '../user-interface/Card';
-import { useData } from '../../context/DataProvider';
 import { ChevronDownIcon } from '../user-interface/Icons';
 import Button from '../user-interface/Button';
+import { useSystemState } from '../../context/SystemContext';
 
 const CollapsibleSection: React.FC<{ title: string; children: React.ReactNode; defaultOpen?: boolean; }> = ({ title, children, defaultOpen = false }) => {
     const [isOpen, setIsOpen] = useState(defaultOpen);
@@ -255,7 +254,7 @@ const RoadmapContent: React.FC = () => (
 );
 
 export const AboutPage: React.FC = () => {
-    const { settings } = useData();
+    const { settings } = useSystemState();
     
     return (
         <div className="max-w-4xl mx-auto pb-12">

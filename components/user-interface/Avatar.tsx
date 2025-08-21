@@ -1,6 +1,7 @@
+
 import React from 'react';
 import { User } from '../../types';
-import { useData } from '../../context/DataProvider';
+import { useEconomyState } from '../../context/EconomyContext';
 
 interface AvatarProps {
   user: User;
@@ -8,7 +9,7 @@ interface AvatarProps {
 }
 
 const Avatar: React.FC<AvatarProps> = ({ user, className }) => {
-    const { gameAssets } = useData();
+    const { gameAssets } = useEconomyState();
 
     const equippedAssets = Object.entries(user.avatar)
         .map(([_, assetId]) => {

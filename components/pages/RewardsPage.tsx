@@ -4,10 +4,10 @@ import Button from '../user-interface/Button';
 import Card from '../user-interface/Card';
 import EditRewardTypeDialog from '../rewards/EditRewardTypeDialog';
 import ConfirmDialog from '../user-interface/ConfirmDialog';
-import { useRewardValuePerUnit } from '../../hooks/useRewardValue';
+import { useRewardValuePerUnit } from '../rewards/hooks/useRewardValue';
 import { EllipsisVerticalIcon } from '../user-interface/Icons';
-import { useData } from '../../context/DataProvider';
-import { useActionsDispatch } from '../../context/ActionsContext';
+import { useEconomyState, useEconomyDispatch } from '../../context/EconomyContext';
+import { useSystemState, useSystemDispatch } from '../../context/SystemContext';
 
 const RewardItem: React.FC<{
     reward: RewardTypeDefinition;
@@ -75,8 +75,10 @@ const RewardList: React.FC<{ title: string; rewards: RewardTypeDefinition[]; onE
 );
 
 const RewardsPage: React.FC = () => {
-    const { rewardTypes, settings } = useData();
-    const { deleteSelectedAssets, cloneRewardType } = useActionsDispatch();
+    const { settings } = useSystemState();
+    const { rewardTypes } = useEconomyState();
+    const { deleteSelectedAssets } = useSystemDispatch();
+    const { cloneRewardType } = useEconomyDispatch();
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [editingReward, setEditingReward] = useState<RewardTypeDefinition | null>(null);
     const [isConfirmOpen, setIsConfirmOpen] = useState(false);

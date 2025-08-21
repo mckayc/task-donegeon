@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { useData } from '../../context/DataProvider';
-import { useActionsDispatch } from '../../context/ActionsContext';
+import { useCommunityDispatch, useCommunityState } from '../../context/CommunityContext';
 import { useAuthState } from '../../context/AuthContext';
 import { Guild } from '../../types';
 import Button from '../user-interface/Button';
 import Input from '../user-interface/Input';
+import { useSystemState } from '../../context/SystemContext';
 
 interface EditGuildDialogProps {
   guild: Guild | null;
@@ -12,9 +12,10 @@ interface EditGuildDialogProps {
 }
 
 const EditGuildDialog: React.FC<EditGuildDialogProps> = ({ guild, onClose }) => {
-  const { guilds, themes } = useData();
+  const { themes } = useSystemState();
+  const { guilds } = useCommunityState();
   const { users } = useAuthState();
-  const { addGuild, updateGuild } = useActionsDispatch();
+  const { addGuild, updateGuild } = useCommunityDispatch();
   const [formData, setFormData] = useState({
     name: '',
     purpose: '',

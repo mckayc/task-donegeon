@@ -1,13 +1,9 @@
-import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
-import { useData } from '../../../context/DataProvider';
-import { useActionsDispatch } from '../../../context/ActionsContext';
-import { GameAsset } from '../../../types';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { GameAsset } from '../../items/types';
 import Button from '../../user-interface/Button';
 import Card from '../../user-interface/Card';
 import ConfirmDialog from '../../user-interface/ConfirmDialog';
 import EditGameAssetDialog from '../../admin/EditGameAssetDialog';
-import EmptyState from '../../user-interface/EmptyState';
-import { ItemManagerIcon, PencilIcon, CopyIcon, TrashIcon } from '../../user-interface/Icons';
 import ItemIdeaGenerator from '../../quests/ItemIdeaGenerator';
 import Input from '../../user-interface/Input';
 import ImagePreviewDialog from '../../user-interface/ImagePreviewDialog';
@@ -15,10 +11,15 @@ import { useDebounce } from '../../../hooks/useDebounce';
 import { useNotificationsDispatch } from '../../../context/NotificationsContext';
 import UploadWithCategoryDialog from '../../admin/UploadWithCategoryDialog';
 import { useShiftSelect } from '../../../hooks/useShiftSelect';
+import ItemTable from '../../items/ItemTable';
+import { useSystemState, useSystemDispatch } from '../../../context/SystemContext';
+import { useEconomyState, useEconomyDispatch } from '../../../context/EconomyContext';
 
 const ManageItemsPage: React.FC = () => {
-    const { settings, isAiConfigured, gameAssets: allGameAssets } = useData();
-    const { uploadFile, cloneGameAsset, deleteSelectedAssets } = useActionsDispatch();
+    const { settings, isAiConfigured } = useSystemState();
+    const { gameAssets: allGameAssets } = useEconomyState();
+    const { uploadFile, deleteSelectedAssets } = useSystemDispatch();
+    const { cloneGameAsset } = useEconomyDispatch();
     const { addNotification } = useNotificationsDispatch();
     
     const [pageAssets, setPageAssets] = useState<GameAsset[]>([]);
@@ -53,7 +54,7 @@ const ManageItemsPage: React.FC = () => {
             const categoryMatch = activeTab === 'All' || asset.category === activeTab;
             const searchMatch = !debouncedSearchTerm || 
                 asset.name.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
-                asset.description.toLowerCase().includes(debouncedSearchTerm.toLowerCase());
+                (asset.description && asset.description.toLowerCase().includes(debouncedSearchTerm.toLowerCase()));
             return categoryMatch && searchMatch;
         });
 
@@ -111,7 +112,7 @@ const ManageItemsPage: React.FC = () => {
     
     const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
         if (event.target.files) Array.from(event.target.files).forEach(handleFileProcess);
-        event.target.value = '';
+        if (event.target) event.target.value = '';
     };
 
     const handleDrop = useCallback((event: React.DragEvent<HTMLDivElement>) => {
@@ -149,7 +150,7 @@ const ManageItemsPage: React.FC = () => {
             await deleteSelectedAssets({ gameAssets: confirmation.ids });
             addNotification({ type: 'info', message: `${confirmation.ids.length} asset(s) deleted.` });
             setSelectedAssets([]);
-        } catch (e) { /* error handled */ }
+        } catch (e) { /* error handled in context */ }
         setConfirmation(null);
     };
 
@@ -225,69 +226,20 @@ const ManageItemsPage: React.FC = () => {
                     )}
                 </div>
 
-                {isLoading ? (
-                    <div className="text-center py-10"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-400 mx-auto"></div></div>
-                ) : pageAssets.length > 0 ? (
-                     <div className="overflow-x-auto">
-                        <table className="w-full text-left">
-                            <thead className="border-b border-stone-700/60">
-                                <tr>
-                                    <th className="p-4 w-12"><input type="checkbox" onChange={handleSelectAll} checked={selectedAssets.length === pageAssets.length && pageAssets.length > 0} className="h-4 w-4 rounded text-emerald-600 bg-stone-700 border-stone-600 focus:ring-emerald-500" /></th>
-                                    <th className="p-4 font-semibold w-20">Image</th>
-                                    <th className="p-4 font-semibold">Name</th>
-                                    <th className="p-4 font-semibold">Category</th>
-                                    <th className="p-4 font-semibold">For Sale</th>
-                                    <th className="p-4 font-semibold">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {pageAssets.map(asset => {
-                                    const isOrphaned = asset.isForSale && (!asset.marketIds || asset.marketIds.length === 0);
-                                    return (
-                                        <tr key={asset.id} className="border-b border-stone-700/40 last:border-b-0">
-                                            <td className="p-4">
-                                                <input type="checkbox" checked={selectedAssets.includes(asset.id)} onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleCheckboxClick(e, asset.id)} className="h-4 w-4 rounded text-emerald-600 bg-stone-700 border-stone-600 focus:ring-emerald-500" />
-                                            </td>
-                                            <td className="p-2">
-                                                <button onClick={() => setPreviewImageUrl(asset.imageUrl || null)} className="w-12 h-12 bg-stone-700 rounded-md overflow-hidden hover:ring-2 ring-accent">
-                                                    <img src={asset.imageUrl} alt={asset.name} className="w-full h-full object-cover" />
-                                                </button>
-                                            </td>
-                                            <td className="p-4 font-bold">
-                                                <button onClick={() => handleEdit(asset)} data-log-id={`manage-items-edit-title-${asset.id}`} className="hover:underline hover:text-accent transition-colors text-left flex items-center gap-1.5">
-                                                    {isOrphaned && <span title="This item is for sale but not in any market." className="text-yellow-400">⚠️</span>}
-                                                    {asset.name}
-                                                </button>
-                                            </td>
-                                            <td className="p-4 text-stone-400">{asset.category}</td>
-                                            <td className="p-4 text-stone-300">{asset.isForSale ? 'Yes' : 'No'}</td>
-                                            <td className="p-4">
-                                                <div className="flex items-center gap-1">
-                                                    <Button variant="ghost" size="icon" title="Edit" onClick={() => handleEdit(asset)} data-log-id={`manage-items-action-edit-${asset.id}`} className="h-8 w-8 text-stone-400 hover:text-white">
-                                                        <PencilIcon className="w-4 h-4" />
-                                                    </Button>
-                                                    <Button variant="ghost" size="icon" title="Clone" onClick={() => cloneGameAsset(asset.id)} data-log-id={`manage-items-action-clone-${asset.id}`} className="h-8 w-8 text-stone-400 hover:text-white">
-                                                        <CopyIcon className="w-4 h-4" />
-                                                    </Button>
-                                                    <Button variant="ghost" size="icon" title="Delete" onClick={() => setConfirmation({ action: 'delete', ids: [asset.id] })} data-log-id={`manage-items-action-delete-${asset.id}`} className="h-8 w-8 text-red-400 hover:text-red-300 hover:bg-red-900/50">
-                                                        <TrashIcon className="w-4 h-4" />
-                                                    </Button>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    );
-                                })}
-                            </tbody>
-                        </table>
-                    </div>
-                ) : (
-                    <EmptyState
-                        Icon={ItemManagerIcon}
-                        title="No Assets Found"
-                        message={searchTerm ? "No assets match your search." : "Create your first asset to be used as a reward or marketplace item."}
-                        actionButton={<Button onClick={handleCreate} data-log-id="manage-items-create-empty-state">Create Asset</Button>}
-                    />
-                )}
+                <ItemTable
+                    assets={pageAssets}
+                    selectedAssets={selectedAssets}
+                    onSelectAll={handleSelectAll}
+                    onSelectOne={handleCheckboxClick}
+                    onEdit={handleEdit}
+                    onClone={cloneGameAsset}
+                    onDeleteRequest={(ids) => setConfirmation({ action: 'delete', ids })}
+                    onPreviewImage={setPreviewImageUrl}
+                    isLoading={isLoading}
+                    searchTerm={debouncedSearchTerm}
+                    terminology={settings.terminology}
+                    onCreate={handleCreate}
+                />
             </Card>
             
             {fileToCategorize && (

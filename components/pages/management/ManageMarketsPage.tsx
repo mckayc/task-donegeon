@@ -1,20 +1,22 @@
-
-import React, { useState, useMemo } from 'react';
-import { Market } from '../../../types';
+import React, { useState, useRef, useEffect } from 'react';
+import { Market } from '../../markets/types';
 import Button from '../../user-interface/Button';
 import Card from '../../user-interface/Card';
 import EditMarketDialog from '../../markets/EditMarketDialog';
 import ConfirmDialog from '../../user-interface/ConfirmDialog';
-import { useData } from '../../../context/DataProvider';
-import { useActionsDispatch } from '../../../context/ActionsContext';
+import { useSystemState, useSystemDispatch } from '../../../context/SystemContext';
 import EmptyState from '../../user-interface/EmptyState';
-import { MarketplaceIcon, PencilIcon, CopyIcon, TrashIcon } from '../../user-interface/Icons';
+import { MarketplaceIcon } from '../../user-interface/Icons';
 import MarketIdeaGenerator from '../../quests/MarketIdeaGenerator';
+import { useEconomyState, useEconomyDispatch } from '../../../context/EconomyContext';
+import MarketTable from '../../markets/MarketTable';
 import { useShiftSelect } from '../../../hooks/useShiftSelect';
 
 const ManageMarketsPage: React.FC = () => {
-    const { settings, isAiConfigured, markets } = useData();
-    const { deleteSelectedAssets, updateMarketsStatus, cloneMarket } = useActionsDispatch();
+    const { settings, isAiConfigured } = useSystemState();
+    const { deleteSelectedAssets } = useSystemDispatch();
+    const { markets } = useEconomyState();
+    const { updateMarketsStatus, cloneMarket } = useEconomyDispatch();
     const [isMarketDialogOpen, setIsMarketDialogOpen] = useState(false);
     const [editingMarket, setEditingMarket] = useState<Market | null>(null);
     const [isGeneratorOpen, setIsGeneratorOpen] = useState(false);
@@ -22,10 +24,10 @@ const ManageMarketsPage: React.FC = () => {
     
     const [selectedMarkets, setSelectedMarkets] = useState<string[]>([]);
     const [confirmation, setConfirmation] = useState<{ action: 'delete' | 'open' | 'close', ids: string[] } | null>(null);
-
+    
     const isAiAvailable = settings.enableAiFeatures && isAiConfigured;
 
-    const marketIds = useMemo(() => markets.map(m => m.id), [markets]);
+    const marketIds = React.useMemo(() => markets.map(m => m.id), [markets]);
     const handleCheckboxClick = useShiftSelect(marketIds, selectedMarkets, setSelectedMarkets);
 
     const handleCreateMarket = () => {
@@ -46,29 +48,19 @@ const ManageMarketsPage: React.FC = () => {
         setEditingMarket(null);
         setIsMarketDialogOpen(true);
     };
-
-    const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
-        if (e.target.checked) {
-            setSelectedMarkets(markets.map(m => m.id));
-        } else {
-            setSelectedMarkets([]);
-        }
-    };
     
     const handleConfirmAction = () => {
         if (!confirmation) return;
         
-        const idsToProcess = confirmation.ids.filter(id => id !== 'market-bank');
-
         switch(confirmation.action) {
             case 'delete':
-                deleteSelectedAssets({ markets: idsToProcess });
+                deleteSelectedAssets({ markets: confirmation.ids });
                 break;
             case 'open':
-                updateMarketsStatus(idsToProcess, 'open');
+                updateMarketsStatus(confirmation.ids, 'open');
                 break;
             case 'close':
-                updateMarketsStatus(idsToProcess, 'closed');
+                updateMarketsStatus(confirmation.ids, 'closed');
                 break;
         }
 
@@ -107,82 +99,26 @@ const ManageMarketsPage: React.FC = () => {
                 title={`All Created ${settings.terminology.stores}`}
                 headerAction={headerActions}
             >
-                 {selectedMarkets.length > 0 && (
+                {selectedMarkets.length > 0 && (
                      <div className="flex items-center gap-2 p-2 mb-4 bg-stone-900/50 rounded-lg">
                         <span className="text-sm font-semibold text-stone-300 px-2">{selectedMarkets.length} selected</span>
                         <Button size="sm" variant="secondary" onClick={() => handleEditMarket(markets.find(m => m.id === selectedMarkets[0])!)} disabled={selectedMarkets.length !== 1}>Edit</Button>
-                        <Button size="sm" variant="secondary" onClick={() => cloneMarket(selectedMarkets[0])} disabled={selectedMarkets.length !== 1 || selectedMarkets.includes('market-bank')}>Clone</Button>
+                        <Button size="sm" variant="secondary" onClick={() => cloneMarket(selectedMarkets[0])} disabled={selectedMarkets.length !== 1 || selectedMarkets[0] === 'market-bank'}>Clone</Button>
                         <Button size="sm" variant="secondary" className="!bg-green-800/60 hover:!bg-green-700/70 text-green-200" onClick={() => setConfirmation({ action: 'open', ids: selectedMarkets })}>Mark Open</Button>
                         <Button size="sm" variant="secondary" className="!bg-yellow-800/60 hover:!bg-yellow-700/70 text-yellow-200" onClick={() => setConfirmation({ action: 'close', ids: selectedMarkets })}>Mark Closed</Button>
                         <Button size="sm" variant="secondary" className="!bg-red-900/50 hover:!bg-red-800/60 text-red-300" onClick={() => setConfirmation({ action: 'delete', ids: selectedMarkets })}>Delete</Button>
                     </div>
                 )}
-                {markets.length > 0 ? (
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-left">
-                            <thead className="border-b border-stone-700/60">
-                                <tr>
-                                    <th className="p-4 w-12"><input type="checkbox" onChange={handleSelectAll} checked={selectedMarkets.length === markets.length && markets.length > 0} className="h-4 w-4 rounded text-emerald-600 bg-stone-700 border-stone-600 focus:ring-emerald-500" /></th>
-                                    <th className="p-4 font-semibold">Title</th>
-                                    <th className="p-4 font-semibold hidden md:table-cell">Description</th>
-                                    <th className="p-4 font-semibold">Status</th>
-                                    <th className="p-4 font-semibold">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {markets.map(market => {
-                                    const isBank = market.id === 'market-bank';
-                                    const status = market.status;
-                                    const statusConfig = {
-                                        open: { text: 'Open', color: 'bg-green-500/20 text-green-300' },
-                                        closed: { text: 'Closed', color: 'bg-stone-500/20 text-stone-300' },
-                                        conditional: { text: 'Conditional', color: 'bg-blue-500/20 text-blue-300' },
-                                    };
-
-                                    return (
-                                        <tr key={market.id} className="border-b border-stone-700/40 last:border-b-0">
-                                            <td className="p-4">
-                                                <input 
-                                                    type="checkbox" 
-                                                    checked={selectedMarkets.includes(market.id)} 
-                                                    onChange={(e) => handleCheckboxClick(e, market.id)} 
-                                                    className="h-4 w-4 rounded text-emerald-600 bg-stone-700 border-stone-600 focus:ring-emerald-500"
-                                                />
-                                            </td>
-                                            <td className="p-4 font-bold">{market.icon} {market.title}</td>
-                                            <td className="p-4 text-stone-400 hidden md:table-cell">{market.description}</td>
-                                            <td className="p-4">
-                                                <span className={`px-2 py-1 text-xs font-semibold rounded-full capitalize ${statusConfig[status.type].color}`}>
-                                                    {statusConfig[status.type].text}
-                                                </span>
-                                            </td>
-                                            <td className="p-4">
-                                                <div className="flex items-center gap-1">
-                                                    <Button variant="ghost" size="icon" title="Edit" onClick={() => handleEditMarket(market)} className="h-8 w-8 text-stone-400 hover:text-white">
-                                                        <PencilIcon className="w-4 h-4" />
-                                                    </Button>
-                                                    <Button variant="ghost" size="icon" title="Clone" onClick={() => cloneMarket(market.id)} className="h-8 w-8 text-stone-400 hover:text-white" disabled={isBank}>
-                                                        <CopyIcon className="w-4 h-4" />
-                                                    </Button>
-                                                    <Button variant="ghost" size="icon" title="Delete" onClick={() => setConfirmation({ action: 'delete', ids: [market.id] })} className="h-8 w-8 text-red-400 hover:text-red-300 hover:bg-red-900/50" disabled={isBank}>
-                                                        <TrashIcon className="w-4 h-4" />
-                                                    </Button>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    );
-                                })}
-                            </tbody>
-                        </table>
-                    </div>
-                ) : (
-                    <EmptyState 
-                        Icon={MarketplaceIcon}
-                        title={`No ${settings.terminology.stores} Found`}
-                        message={`Create a ${settings.terminology.store.toLowerCase()} to allow users to spend their currency.`}
-                        actionButton={<Button onClick={handleCreateMarket}>Create {settings.terminology.store}</Button>}
-                    />
-                )}
+                <MarketTable
+                    markets={markets}
+                    selectedMarkets={selectedMarkets}
+                    setSelectedMarkets={setSelectedMarkets}
+                    onEdit={handleEditMarket}
+                    onClone={cloneMarket}
+                    onDeleteRequest={(ids) => setConfirmation({ action: 'delete', ids })}
+                    terminology={settings.terminology}
+                    onCreate={handleCreateMarket}
+                />
             </Card>
 
             {isMarketDialogOpen && (

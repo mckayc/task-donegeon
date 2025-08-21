@@ -5,9 +5,9 @@ import Button from '../user-interface/Button';
 import Input from '../user-interface/Input';
 import UserFormFields from './UserFormFields';
 import { useNotificationsDispatch } from '../../context/NotificationsContext';
-import { useData } from '../../context/DataProvider';
 import { SparklesIcon } from '../user-interface/Icons';
 import { GenerateContentResponse } from '@google/genai';
+import { useSystemState } from '../../context/SystemContext';
 
 interface EditUserDialogProps {
   user: User;
@@ -19,7 +19,7 @@ const EditUserDialog: React.FC<EditUserDialogProps> = ({ user, onClose, onUserUp
   const { users: allUsers, currentUser } = useAuthState();
   const { updateUser } = useAuthDispatch();
   const { addNotification } = useNotificationsDispatch();
-  const { isAiConfigured } = useData();
+  const { isAiConfigured } = useSystemState();
   const [formData, setFormData] = useState({
     firstName: user.firstName,
     lastName: user.lastName,

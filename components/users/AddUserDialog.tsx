@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
 import { useAuthDispatch, useAuthState } from '../../context/AuthContext';
-import { Role } from '../../types';
+import { Role } from '../users/types';
 import Button from '../user-interface/Button';
 import Input from '../user-interface/Input';
 import UserFormFields from './UserFormFields';
 import { useNotificationsDispatch } from '../../context/NotificationsContext';
-import { useData } from '../../context/DataProvider';
 import { SparklesIcon } from '../user-interface/Icons';
 import { GenerateContentResponse } from '@google/genai';
+import { useSystemState } from '../../context/SystemContext';
 
 interface AddUserDialogProps {
   onClose: () => void;
@@ -18,7 +18,7 @@ const AddUserDialog: React.FC<AddUserDialogProps> = ({ onClose, onUserAdded }) =
   const { addUser } = useAuthDispatch();
   const { users } = useAuthState();
   const { addNotification } = useNotificationsDispatch();
-  const { isAiConfigured } = useData();
+  const { isAiConfigured } = useSystemState();
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import Card from '../user-interface/Card';
-import { useData } from '../../context/DataProvider';
 import { ChevronDownIcon } from '../user-interface/Icons';
+import { useSystemState } from '../../context/SystemContext';
 
 const CollapsibleSection: React.FC<{ title: string; children: React.ReactNode; defaultOpen?: boolean; }> = ({ title, children, defaultOpen = false }) => {
     const [isOpen, setIsOpen] = useState(defaultOpen);
@@ -25,7 +25,7 @@ const CollapsibleSection: React.FC<{ title: string; children: React.ReactNode; d
 }
 
 const HelpPage: React.FC = () => {
-    const { settings } = useData();
+    const { settings } = useSystemState();
     const { terminology } = settings;
 
     return (

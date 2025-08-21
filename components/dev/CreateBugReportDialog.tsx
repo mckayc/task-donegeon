@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { BugReport, BugReportType, BugReportStatus } from '../../types';
-import { useActionsDispatch } from '../../context/ActionsContext';
+import { useSystemDispatch } from '../../context/SystemContext';
 import Button from '../user-interface/Button';
 import Input from '../user-interface/Input';
 import { useNotificationsDispatch } from '../../context/NotificationsContext';
@@ -10,7 +10,7 @@ interface CreateBugReportDialogProps {
 }
 
 const CreateBugReportDialog: React.FC<CreateBugReportDialogProps> = ({ onClose }) => {
-    const { addBugReport } = useActionsDispatch();
+    const { addBugReport } = useSystemDispatch();
     const { addNotification } = useNotificationsDispatch();
     const [title, setTitle] = useState('');
     const [reportType, setReportType] = useState<BugReportType>(BugReportType.Bug);

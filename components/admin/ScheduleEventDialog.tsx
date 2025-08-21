@@ -1,10 +1,12 @@
+
 import React, { useState, useEffect } from 'react';
-import { useData } from '../../context/DataProvider';
-import { useActionsDispatch } from '../../context/ActionsContext';
 import { ScheduledEvent, RewardCategory } from '../../types';
 import Button from '../user-interface/Button';
 import Input from '../user-interface/Input';
 import EmojiPicker from '../user-interface/EmojiPicker';
+import { useCommunityState } from '../../context/CommunityContext';
+import { useEconomyState } from '../../context/EconomyContext';
+import { useSystemDispatch } from '../../context/SystemContext';
 
 interface ScheduleEventDialogProps {
   event: ScheduledEvent | null;
@@ -25,8 +27,9 @@ const colorPalette = [
 ];
 
 export const ScheduleEventDialog: React.FC<ScheduleEventDialogProps> = ({ event, onClose }) => {
-    const { addScheduledEvent, updateScheduledEvent, deleteScheduledEvent } = useActionsDispatch();
-    const { guilds, markets, rewardTypes } = useData();
+    const { addScheduledEvent, updateScheduledEvent, deleteScheduledEvent } = useSystemDispatch();
+    const { guilds } = useCommunityState();
+    const { markets, rewardTypes } = useEconomyState();
     
     const [formData, setFormData] = useState<Omit<ScheduledEvent, 'id'>>({
         title: '', description: '', startDate: '', endDate: '', isAllDay: true, eventType: 'Announcement', guildId: '',
@@ -111,7 +114,7 @@ export const ScheduleEventDialog: React.FC<ScheduleEventDialogProps> = ({ event,
                 <div className="p-6 border-t border-stone-700/60 flex justify-between items-center">
                     <div>
                         {event && (
-                             <Button variant="destructive" onClick={() => { deleteScheduledEvent(event.id); onClose(); }}>Delete</Button>
+                             <Button variant="destructive" onClick={() => { if(event) deleteScheduledEvent(event.id); onClose(); }}>Delete</Button>
                         )}
                     </div>
                     <div className="flex gap-4">

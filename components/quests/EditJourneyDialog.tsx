@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { useData } from '../../context/DataProvider';
-import { useActionsDispatch } from '../../context/ActionsContext';
+import { useQuestsState, useQuestsDispatch } from '../../context/QuestsContext';
+import { useProgressionState } from '../../context/ProgressionContext';
+import { useEconomyState } from '../../context/EconomyContext';
 import { Quest, Checkpoint, RewardItem, RewardCategory, Trophy } from '../../types';
 import Button from '../user-interface/Button';
 import Input from '../user-interface/Input';
@@ -14,8 +15,10 @@ interface EditJourneyDialogProps {
 }
 
 const EditJourneyDialog: React.FC<EditJourneyDialogProps> = ({ questId, onClose }) => {
-    const { quests, trophies, rewardTypes } = useData();
-    const { updateQuest } = useActionsDispatch();
+    const { quests } = useQuestsState();
+    const { trophies } = useProgressionState();
+    const { rewardTypes } = useEconomyState();
+    const { updateQuest } = useQuestsDispatch();
 
     const [questData, setQuestData] = useState<Quest | null>(null);
     const [checkpoints, setCheckpoints] = useState<Checkpoint[]>([]);

@@ -17,7 +17,7 @@
     "jsx": "react-jsx",
     "types": ["jest", "@testing-library/jest-dom"]
   },
-  "include": ["components", "context", "data", "hooks", "utils", "lib", "index.tsx", "App.tsx", "types.ts", "metadata.json"],
+  "include": ["components", "context", "data", "lib", "index.tsx", "App.tsx", "types.ts", "metadata.json", "src/types"],
   "exclude": [
     "node_modules",
     "**/*.test.ts",

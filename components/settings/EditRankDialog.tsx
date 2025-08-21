@@ -1,12 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { useData } from '../../context/DataProvider';
-import { useActionsDispatch } from '../../context/ActionsContext';
 import { Rank } from '../../types';
 import Button from '../user-interface/Button';
 import Input from '../user-interface/Input';
 import EmojiPicker from '../user-interface/EmojiPicker';
 import ImageSelectionDialog from '../user-interface/ImageSelectionDialog';
 import DynamicIcon from '../user-interface/DynamicIcon';
+import { useProgressionState, useProgressionDispatch } from '../../context/ProgressionContext';
 
 interface EditRankDialogProps {
   rank: Rank | null;
@@ -14,8 +13,8 @@ interface EditRankDialogProps {
 }
 
 const EditRankDialog: React.FC<EditRankDialogProps> = ({ rank, onClose }) => {
-  const { ranks } = useData();
-  const { setRanks } = useActionsDispatch();
+  const { ranks } = useProgressionState();
+  const { setRanks } = useProgressionDispatch();
   const [formData, setFormData] = useState({ 
       name: '', 
       xpThreshold: 0,
@@ -41,13 +40,14 @@ const EditRankDialog: React.FC<EditRankDialogProps> = ({ rank, onClose }) => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    let updatedRanks;
     if (rank) {
-      const updatedRanks = ranks.map(r => r.id === rank.id ? { ...r, ...formData } : r);
-      setRanks(updatedRanks);
+      updatedRanks = ranks.map(r => r.id === rank.id ? { ...r, ...formData } : r);
     } else {
       const newRank: Rank = { id: `rank-${Date.now()}`, ...formData };
-      setRanks([...ranks, newRank]);
+      updatedRanks = [...ranks, newRank];
     }
+    setRanks(updatedRanks);
     onClose();
   };
 

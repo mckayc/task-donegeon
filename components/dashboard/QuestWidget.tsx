@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { Quest, QuestKind, QuestType, RewardTypeDefinition, RewardCategory } from '../../types';
-import { useData } from '../../context/DataProvider';
+import { useEconomyState } from '../../context/EconomyContext';
 import { useAuthState } from '../../context/AuthContext';
 
 interface QuestWidgetProps {
@@ -9,7 +9,7 @@ interface QuestWidgetProps {
 }
 
 const QuestWidget: React.FC<QuestWidgetProps> = ({ quest, handleQuestSelect }) => {
-    const { rewardTypes } = useData();
+    const { rewardTypes } = useEconomyState();
     const { currentUser } = useAuthState();
 
     const getRewardInfo = (id: string): RewardTypeDefinition => {

@@ -2,8 +2,8 @@ import React from 'react';
 import { RewardCategory, RewardItem } from '../../types';
 import Input from '../user-interface/Input';
 import Button from '../user-interface/Button';
-import { useData } from '../../context/DataProvider';
-import { useAnchorEquivalent } from '../../hooks/useRewardValue';
+import { useRewardValue } from '../rewards/hooks/useRewardValue';
+import { useEconomyState } from '../../context/EconomyContext';
 
 interface RewardInputGroupProps {
   category: 'rewards' | 'setbacks' | 'cost' | 'payout' | 'lateSetbacks' | 'incompleteSetbacks';
@@ -21,7 +21,7 @@ const RewardItemRow: React.FC<{
     onRemove: (index: number) => void;
 }> = ({ item, originalIndex, filteredRewardTypes, onChange, onRemove }) => {
     
-    const anchorEquivalent = useAnchorEquivalent(item.amount, item.rewardTypeId);
+    const anchorEquivalent = useRewardValue(item.amount, item.rewardTypeId);
 
     return (
         <div className="flex items-center gap-2">
@@ -35,7 +35,7 @@ const RewardItemRow: React.FC<{
             </select>
             <Input type="number" min="0.01" step="0.01" value={item.amount} onChange={(e) => onChange(originalIndex, 'amount', e.target.value)} className="w-24 flex-shrink-0" aria-label="Amount" />
             <div className="flex-1 text-left min-w-[150px]">
-                {anchorEquivalent && <span className="text-xs text-amber-300">{anchorEquivalent}</span>}
+                {anchorEquivalent && <span className="text-xs text-amber-300">(~{anchorEquivalent})</span>}
             </div>
             <button type="button" onClick={() => onRemove(originalIndex)} className="text-red-400 hover:text-red-300 p-2 rounded-full bg-stone-700 hover:bg-stone-600 flex-shrink-0" aria-label={`Remove item`}>
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM7 9a1 1 0 000 2h6a1 1 0 100-2H7z" clipRule="evenodd" /></svg>
@@ -46,7 +46,7 @@ const RewardItemRow: React.FC<{
 
 
 const RewardInputGroup: React.FC<RewardInputGroupProps> = ({ category, items, onChange, onAdd, onRemove }) => {
-  const { rewardTypes } = useData();
+  const { rewardTypes } = useEconomyState();
 
   const currencyTypes = rewardTypes.filter(rt => rt.category === RewardCategory.Currency);
   const xpTypes = rewardTypes.filter(rt => rt.category === RewardCategory.XP);

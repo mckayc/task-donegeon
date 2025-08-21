@@ -1,12 +1,15 @@
 
+
 import React, { useMemo } from 'react';
-import { useData } from '../../context/DataProvider';
 import { useUIState, useUIDispatch } from '../../context/UIContext';
 import { useAuthState } from '../../context/AuthContext';
 import { Role, ChatMessage } from '../../types';
+import { useSystemState } from '../../context/SystemContext';
+import { useCommunityState } from '../../context/CommunityContext';
 
 const ChatController: React.FC = () => {
-    const { settings, chatMessages, guilds } = useData();
+    const { settings, chatMessages } = useSystemState();
+    const { guilds } = useCommunityState();
     const { isChatOpen } = useUIState();
     const { currentUser } = useAuthState();
     const { toggleChat } = useUIDispatch();

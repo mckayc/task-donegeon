@@ -1,13 +1,13 @@
-
-
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import Card from '../user-interface/Card';
-import { useData } from '../../context/DataProvider';
+import { useSystemState } from '../../context/SystemContext';
 import { useUIState, useUIDispatch } from '../../context/UIContext';
-import { useActionsDispatch } from '../../context/ActionsContext';
 import { useAuthState } from '../../context/AuthContext';
 import Button from '../user-interface/Button';
-import { Guild, User, RewardCategory, TradeOffer } from '../../types';
+import { User } from '../users/types';
+import { Guild } from '../guilds/types';
+import { RewardCategory } from '../items/types';
+import { TradeOffer } from '../trading/types';
 import GuildMemberProfilePage from '../guilds/GuildMemberProfilePage';
 import Avatar from '../user-interface/Avatar';
 import DonateDialog from '../guilds/DonateDialog';
@@ -16,13 +16,17 @@ import { EllipsisVerticalIcon } from '../user-interface/Icons';
 import GiftDialog from '../trading/GiftDialog';
 import TradeDialog from '../trading/TradeDialog';
 import { useNotificationsDispatch } from '../../context/NotificationsContext';
+import { useEconomyDispatch, useEconomyState } from '../../context/EconomyContext';
+import { useCommunityState } from '../../context/CommunityContext';
 
 const GuildPage: React.FC = () => {
-    const { guilds, settings, rewardTypes, gameAssets, tradeOffers } = useData();
+    const { settings } = useSystemState();
+    const { guilds } = useCommunityState();
+    const { rewardTypes, gameAssets, tradeOffers } = useEconomyState();
     const { appMode } = useUIState();
     const { currentUser, users } = useAuthState();
     const { setAppMode, setActivePage } = useUIDispatch();
-    const { proposeTrade } = useActionsDispatch();
+    const { proposeTrade } = useEconomyDispatch();
     const { addNotification } = useNotificationsDispatch();
     
     const [viewingMember, setViewingMember] = useState<{ user: User; guild: Guild } | null>(null);

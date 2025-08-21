@@ -1,7 +1,5 @@
 import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react';
-import { useData } from '../../context/DataProvider';
 import { useUIState, useUIDispatch } from '../../context/UIContext';
-import { useActionsDispatch } from '../../context/ActionsContext';
 import { useAuthState } from '../../context/AuthContext';
 import { Role, User, ChatMessage, Guild } from '../../types';
 import Avatar from '../user-interface/Avatar';
@@ -10,6 +8,8 @@ import { XCircleIcon } from '../user-interface/Icons';
 import Button from '../user-interface/Button';
 import ToggleSwitch from '../user-interface/ToggleSwitch';
 import { motion } from 'framer-motion';
+import { useSystemState, useSystemDispatch } from '../../context/SystemContext';
+import { useCommunityState } from '../../context/CommunityContext';
 
 type GuildTarget = {
     id: string;
@@ -23,11 +23,12 @@ const isGuildChatTarget = (target: ChatTarget | null): target is GuildTarget => 
     return !!target && 'isGuild' in target && target.isGuild === true;
 }
 
-const ChatPanel = () => {
-    const { guilds, chatMessages, settings } = useData();
+export const ChatPanel: React.FC = () => {
+    const { guilds } = useCommunityState();
+    const { chatMessages, settings } = useSystemState();
     const { currentUser, users } = useAuthState();
     const { toggleChat } = useUIDispatch();
-    const { sendMessage, markMessagesAsRead } = useActionsDispatch();
+    const { sendMessage, markMessagesAsRead } = useSystemDispatch();
     const [activeChatTarget, setActiveChatTarget] = useState<ChatTarget | null>(null);
     const [message, setMessage] = useState('');
     const [isAnnouncement, setIsAnnouncement] = useState(false);
@@ -99,177 +100,158 @@ const ChatPanel = () => {
             (msg.senderId === currentUser.id && msg.recipientId === activeChatTarget.id) ||
             (msg.senderId === activeChatTarget.id && msg.recipientId === currentUser.id)
         ).sort((a: ChatMessage, b: ChatMessage) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
-    }, [chatMessages, currentUser, activeChatTarget]);
-    
-    const unreadInActiveConvo = useMemo(() => {
-        if (!currentUser || !activeConversation) return 0;
-        return activeConversation.filter((msg: ChatMessage) => msg.senderId !== currentUser.id && !msg.readBy.includes(currentUser.id)).length;
-    }, [activeConversation, currentUser]);
+    }, [activeChatTarget, chatMessages, currentUser]);
 
-    useEffect(() => {
-        if (activeChatTarget && unreadInActiveConvo > 0) {
-            if (isGuildChatTarget(activeChatTarget)) {
-                markMessagesAsRead({ guildId: activeChatTarget.id });
-            } else {
-                markMessagesAsRead({ partnerId: activeChatTarget.id });
-            }
-        }
-    }, [activeChatTarget, unreadInActiveConvo, markMessagesAsRead]);
-
-    const scrollToBottom = useCallback(() => {
-        if (messagesContainerRef.current) {
-            messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
-        }
-    }, []);
-
-    const handleScroll = () => {
-        const container = messagesContainerRef.current;
-        if (container) {
-            const atBottom = container.scrollHeight - container.scrollTop <= container.clientHeight + 5;
-            setUserScrolledUp(!atBottom);
-        }
-    };
-    
-    useEffect(() => {
-        if (!userScrolledUp) {
-            scrollToBottom();
-        }
-    }, [activeConversation, userScrolledUp, scrollToBottom]);
-    
-    const handleSend = (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!message.trim() || !activeChatTarget || !currentUser) return;
+    const handleSendMessage = async () => {
+        if (!message.trim() || !currentUser) return;
         
-        sendMessage({
-            recipientId: isGuildChatTarget(activeChatTarget) ? undefined : activeChatTarget.id,
-            guildId: isGuildChatTarget(activeChatTarget) ? activeChatTarget.id : undefined,
-            message: message,
-            isAnnouncement: isAnnouncement,
-        });
-        
+        const payload: { recipientId?: string; guildId?: string; message: string; isAnnouncement?: boolean; } = {
+            message: message.trim(),
+        };
+
+        if (isGuildChatTarget(activeChatTarget)) {
+            payload.guildId = activeChatTarget.id;
+            payload.isAnnouncement = isAnnouncement;
+        } else if (activeChatTarget) {
+            payload.recipientId = activeChatTarget.id;
+        } else {
+            return;
+        }
+
+        await sendMessage(payload);
         setMessage('');
         setIsAnnouncement(false);
     };
 
-    if (!currentUser) {
-        return null;
-    }
+    const handleSelectChat = (target: ChatTarget) => {
+        setActiveChatTarget(target);
+        if (isGuildChatTarget(target)) {
+            markMessagesAsRead({ guildId: target.id });
+        } else {
+            markMessagesAsRead({ partnerId: target.id });
+        }
+    };
+    
+    useEffect(() => {
+        if (messagesContainerRef.current && !userScrolledUp) {
+            messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
+        }
+    }, [activeConversation, userScrolledUp]);
 
-    const panelStyles = isMobile 
-        ? { width: '100vw', height: '100vh', top: 0, left: 0 }
-        : { width: 550, height: 600, bottom: '1.5rem', right: '1.5rem' };
+    const handleScroll = () => {
+        const container = messagesContainerRef.current;
+        if (container) {
+            const atBottom = container.scrollHeight - container.scrollTop <= container.clientHeight + 10;
+            setUserScrolledUp(!atBottom);
+        }
+    };
+
+    if (!currentUser) return null;
+    
+    const panelVariants = {
+        hidden: { x: isMobile ? "100vw" : 450 },
+        visible: { x: 0 },
+    };
+
+    const isAdmin = currentUser.role === Role.DonegeonMaster;
 
     return (
         <motion.div
+            initial="hidden"
+            animate="visible"
+            exit="hidden"
+            variants={panelVariants}
+            transition={{ type: 'spring', stiffness: 400, damping: 40 }}
+            className="fixed top-0 right-0 h-full w-full md:w-[420px] bg-stone-900/80 border-l border-stone-700/60 shadow-2xl z-50 flex flex-col backdrop-blur-sm"
             data-bug-reporter-ignore
-            className="fixed z-[98] flex flex-col bg-stone-800 border border-stone-700 rounded-xl shadow-2xl"
-            style={panelStyles}
-            initial={{ scale: 0.9, opacity: 0, y: 20 }}
-            animate={{ scale: 1, opacity: 1, y: 0 }}
-            transition={{ type: 'spring', stiffness: 400, damping: 30 }}
         >
-            <div
-                className="p-4 border-b border-stone-700 flex-shrink-0"
-            >
-                <div className="flex justify-between items-center">
-                    <h3 className="text-xl font-medieval text-accent flex items-center gap-2">
-                        {settings.terminology.link_chat}
-                    </h3>
-                    <button onClick={toggleChat} className="text-stone-400 hover:text-white">
-                        <XCircleIcon className="w-6 h-6" />
-                    </button>
-                </div>
+            <div className="p-4 border-b border-stone-700/60 flex items-center justify-between flex-shrink-0">
+                <h2 className="text-xl font-medieval text-emerald-400">Chat & Announcements</h2>
+                <button onClick={toggleChat} className="text-stone-400 hover:text-white">
+                    <XCircleIcon className="w-6 h-6" />
+                </button>
             </div>
 
-            <div className="flex flex-grow overflow-hidden">
-                {/* Sidebar */}
-                <div className={`border-r border-stone-700 flex flex-col flex-shrink-0 transition-all duration-300 ${isMobile ? (activeChatTarget ? 'hidden' : 'w-full') : 'w-48'}`}>
-                    <h4 className="p-3 font-semibold text-stone-300 border-b border-stone-700 flex-shrink-0">Conversations</h4>
-                    <div className="flex-grow overflow-y-auto scrollbar-hide">
-                        {chatPartners.map(partner => {
-                            const hasUnread = unreadInfo.dms.has(partner.id) || (isGuildChatTarget(partner) && unreadInfo.guilds.has(partner.id));
-                            return (
-                                <button
-                                    key={partner.id}
-                                    onClick={() => setActiveChatTarget(partner)}
-                                    className={`w-full text-left p-3 flex items-center gap-3 transition-colors ${
-                                        activeChatTarget?.id === partner.id ? 'bg-emerald-800/50' : 'hover:bg-stone-700/50'
-                                    }`}
-                                >
-                                    {isGuildChatTarget(partner) ? (
-                                        <div className="w-10 h-10 rounded-full bg-stone-700 flex items-center justify-center text-xl flex-shrink-0">{partner.icon}</div>
-                                    ) : (
-                                        <Avatar user={partner as User} className="w-10 h-10 rounded-full flex-shrink-0" />
-                                    )}
-                                    <span className="flex-grow truncate text-stone-200 text-sm font-semibold">{partner.gameName}</span>
-                                    {hasUnread && (
-                                        <div className="w-3 h-3 bg-red-500 rounded-full flex-shrink-0"></div>
-                                    )}
-                                </button>
-                            );
-                        })}
-                    </div>
+            <div className="flex flex-1 overflow-hidden">
+                <div className="w-1/3 border-r border-stone-700/60 overflow-y-auto scrollbar-hide">
+                    {chatPartners.map(partner => {
+                        const isGuild = isGuildChatTarget(partner);
+                        const hasUnread = isGuild ? unreadInfo.guilds.has(partner.id) : unreadInfo.dms.has(partner.id);
+
+                        return (
+                            <button
+                                key={partner.id}
+                                onClick={() => handleSelectChat(partner)}
+                                className={`w-full text-left p-3 flex items-center gap-3 transition-colors ${activeChatTarget?.id === partner.id ? 'bg-emerald-800/50' : 'hover:bg-stone-700/50'}`}
+                            >
+                                {isGuild ? (
+                                    <div className="w-10 h-10 rounded-full bg-stone-700 flex items-center justify-center text-xl">{partner.icon}</div>
+                                ) : (
+                                    <Avatar user={partner as User} className="w-10 h-10 rounded-full" />
+                                )}
+                                <div className="flex-grow overflow-hidden">
+                                    <p className="font-semibold text-stone-200 truncate">{partner.gameName}</p>
+                                </div>
+                                {hasUnread && <div className="w-2.5 h-2.5 bg-red-500 rounded-full flex-shrink-0"></div>}
+                            </button>
+                        );
+                    })}
                 </div>
 
-                {/* Main Conversation Area */}
-                <div className={`flex flex-col flex-grow ${isMobile && !activeChatTarget ? 'hidden' : ''}`}>
-                    {activeChatTarget ? (
-                        <>
-                            <div className="p-3 border-b border-stone-700 flex-shrink-0 flex items-center gap-3">
-                                {isMobile && (
-                                    <Button variant="secondary" size="sm" onClick={() => setActiveChatTarget(null)} className="!py-1 !px-2">&larr; Back</Button>
-                                )}
-                                {isGuildChatTarget(activeChatTarget) ? (
-                                    <div className="w-8 h-8 rounded-full bg-stone-700 flex items-center justify-center text-lg flex-shrink-0">{activeChatTarget.icon}</div>
-                                ) : (
-                                    <Avatar user={activeChatTarget as User} className="w-8 h-8 rounded-full flex-shrink-0" />
-                                )}
-                                <span className="font-bold text-stone-100">{activeChatTarget.gameName}</span>
-                            </div>
-                            <div ref={messagesContainerRef} onScroll={handleScroll} className="flex-grow p-4 space-y-4 overflow-y-auto scrollbar-hide">
-                                {activeConversation.map(msg => {
-                                    const sender = users.find(u => u.id === msg.senderId);
-                                    const isMyMessage = msg.senderId === currentUser.id;
-                                    const isSystemAnnouncement = msg.isAnnouncement && isGuildChatTarget(activeChatTarget);
+                <div className="w-2/3 flex flex-col">
+                    <div ref={messagesContainerRef} onScroll={handleScroll} className="flex-1 p-4 space-y-4 overflow-y-auto scrollbar-hide">
+                        {activeChatTarget ? activeConversation.map(msg => {
+                            const sender = users.find(u => u.id === msg.senderId);
+                            const isMe = msg.senderId === currentUser.id;
+                            
+                            if (msg.isAnnouncement) {
+                                return (
+                                    <div key={msg.id} className="text-center my-2">
+                                        <p className="text-xs font-bold text-amber-400 bg-amber-900/50 px-3 py-1 rounded-full inline-block">📢 ANNOUNCEMENT 📢</p>
+                                        <p className="text-sm text-stone-300 mt-1">{msg.message}</p>
+                                    </div>
+                                )
+                            }
 
-                                    if (isSystemAnnouncement) {
-                                        return (
-                                            <div key={msg.id} className="text-center my-2">
-                                                <span className="px-3 py-1 bg-amber-800 text-amber-200 text-xs font-bold rounded-full">{msg.message}</span>
-                                            </div>
-                                        )
-                                    }
-
-                                    return (
-                                        <div key={msg.id} className={`flex items-start gap-3 ${isMyMessage ? 'flex-row-reverse' : ''}`}>
-                                            {sender && <Avatar user={sender} className="w-10 h-10 rounded-full flex-shrink-0" />}
-                                            <div className={`p-3 rounded-lg max-w-xs ${isMyMessage ? 'bg-emerald-800' : 'bg-stone-700'}`}>
-                                                {!isMyMessage && sender && <p className="font-bold text-sm text-accent-light mb-1">{sender.gameName}</p>}
-                                                <p className="text-stone-200 whitespace-pre-wrap break-words">{msg.message}</p>
-                                                <p className="text-xs text-stone-400 mt-1 text-right">{new Date(msg.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</p>
-                                            </div>
-                                        </div>
-                                    );
-                                })}
-                            </div>
-                             <form onSubmit={handleSend} className="p-4 border-t border-stone-700 flex-shrink-0 space-y-2">
-                                <div className="flex gap-2">
-                                    <Input 
-                                        value={message} 
-                                        onChange={(e) => setMessage(e.target.value)}
-                                        placeholder="Type a message..."
-                                        className="flex-grow h-10"
-                                    />
-                                    <Button type="submit" disabled={!message.trim()} className="h-10">Send</Button>
+                            return (
+                                <div key={msg.id} className={`flex items-start gap-3 ${isMe ? 'flex-row-reverse' : ''}`}>
+                                    {sender && <Avatar user={sender} className="w-8 h-8 rounded-full" />}
+                                    <div className={`max-w-xs p-3 rounded-lg ${isMe ? 'bg-emerald-700 text-white' : 'bg-stone-700 text-stone-200'}`}>
+                                        <p className="text-sm">{msg.message}</p>
+                                        <p className={`text-xs opacity-60 mt-1 ${isMe ? 'text-right' : 'text-left'}`}>{new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit'})}</p>
+                                    </div>
                                 </div>
-                                {currentUser.role === Role.DonegeonMaster && isGuildChatTarget(activeChatTarget) && (
+                            );
+                        }) : (
+                            <div className="flex items-center justify-center h-full text-stone-500">
+                                <p>Select a conversation to start chatting.</p>
+                            </div>
+                        )}
+                    </div>
+                    {activeChatTarget && (
+                        <div className="p-4 border-t border-stone-700/60 flex-shrink-0">
+                             <div className="flex items-start gap-2">
+                                <Input
+                                    as="textarea"
+                                    rows={2}
+                                    value={message}
+                                    onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setMessage(e.target.value)}
+                                    onKeyDown={(e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+                                        if (e.key === 'Enter' && !e.shiftKey) {
+                                            e.preventDefault();
+                                            handleSendMessage();
+                                        }
+                                    }}
+                                    placeholder={`Message ${activeChatTarget.gameName}...`}
+                                    className="flex-grow resize-none"
+                                />
+                                <Button onClick={handleSendMessage} disabled={!message.trim()} className="h-full">Send</Button>
+                            </div>
+                            {isAdmin && isGuildChatTarget(activeChatTarget) && (
+                                <div className="mt-2">
                                     <ToggleSwitch enabled={isAnnouncement} setEnabled={setIsAnnouncement} label="Send as Announcement" />
-                                )}
-                            </form>
-                        </>
-                    ) : (
-                        <div className="flex items-center justify-center h-full text-stone-500">
-                            <p>Select a conversation from the left.</p>
+                                </div>
+                            )}
                         </div>
                     )}
                 </div>
@@ -277,5 +259,3 @@ const ChatPanel = () => {
         </motion.div>
     );
 };
-
-export default ChatPanel;

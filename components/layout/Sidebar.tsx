@@ -1,12 +1,20 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
-import { Role, Page, QuestCompletionStatus, PurchaseRequestStatus, Terminology, SidebarConfigItem, SidebarLink, SidebarHeader, TradeStatus, ChatMessage } from '../../types';
+import { Role } from '../users/types';
+import { QuestCompletionStatus } from '../quests/types';
+import { PurchaseRequestStatus } from '../items/types';
+import { Page, Terminology, SidebarConfigItem, SidebarLink, SidebarHeader } from '../../types/app';
+import { TradeStatus } from '../trading/types';
+import { ChatMessage } from '../chat/types';
 import { ChevronDownIcon, ArrowLeftIcon, ArrowRightIcon } from '../user-interface/Icons';
-import { useData } from '../../context/DataProvider';
 import { useUIState, useUIDispatch } from '../../context/UIContext';
 import { useAuthState } from '../../context/AuthContext';
+import { useQuestsState } from '../../context/QuestsContext';
+import { useEconomyState } from '../../context/EconomyContext';
+import { useCommunityState } from '../../context/CommunityContext';
+import { useSystemState } from '../../context/SystemContext';
 
 const FlyoutPanel: React.FC<{ title: string; items?: SidebarLink[]; isVisible: boolean; totalApprovals?: number }> = ({ title, items, isVisible, totalApprovals }) => {
-    const { settings } = useData();
+    const { settings } = useSystemState();
     const { setActivePage } = useUIDispatch();
     
     if (!isVisible) return null;
@@ -40,7 +48,7 @@ const FlyoutPanel: React.FC<{ title: string; items?: SidebarLink[]; isVisible: b
 
 
 const NavLink: React.FC<{ item: SidebarLink, activePage: Page, setActivePage: (page: Page) => void, badgeCount?: number, isCollapsed: boolean }> = ({ item, activePage, setActivePage, badgeCount = 0, isCollapsed }) => {
-    const { settings } = useData();
+    const { settings } = useSystemState();
     const [isHovered, setIsHovered] = useState(false);
     const linkName = item.termKey ? settings.terminology[item.termKey] : item.id;
 
@@ -169,7 +177,10 @@ const CollapsibleNavGroup: React.FC<CollapsibleNavGroupProps> = ({ header, child
 
 
 const Sidebar: React.FC = () => {
-  const { settings, isAiConfigured, chatMessages, guilds, purchaseRequests, questCompletions, tradeOffers } = useData();
+  const { settings, isAiConfigured, chatMessages } = useSystemState();
+  const { guilds } = useCommunityState();
+  const { purchaseRequests, tradeOffers } = useEconomyState();
+  const { questCompletions } = useQuestsState();
   const { activePage, isSidebarCollapsed, isChatOpen } = useUIState();
   const { setActivePage, toggleSidebar, toggleChat } = useUIDispatch();
   const { currentUser } = useAuthState();

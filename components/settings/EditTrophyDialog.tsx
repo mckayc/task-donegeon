@@ -1,6 +1,4 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useData } from '../../context/DataProvider';
-import { useActionsDispatch } from '../../context/ActionsContext';
 import { Trophy, TrophyRequirement, TrophyRequirementType, QuestType } from '../../types';
 import Button from '../user-interface/Button';
 import Input from '../user-interface/Input';
@@ -8,6 +6,8 @@ import ToggleSwitch from '../user-interface/ToggleSwitch';
 import EmojiPicker from '../user-interface/EmojiPicker';
 import ImageSelectionDialog from '../user-interface/ImageSelectionDialog';
 import DynamicIcon from '../user-interface/DynamicIcon';
+import { useQuestsState } from '../../context/QuestsContext';
+import { useProgressionState, useProgressionDispatch } from '../../context/ProgressionContext';
 
 interface EditTrophyDialogProps {
   trophy: Trophy | null;
@@ -20,8 +20,9 @@ interface EditTrophyDialogProps {
 }
 
 const EditTrophyDialog: React.FC<EditTrophyDialogProps> = ({ trophy, initialData, onClose, mode = (trophy ? 'edit' : 'create'), onTryAgain, isGenerating, onSave }) => {
-  const { ranks, quests, allTags } = useData();
-  const { addTrophy, updateTrophy } = useActionsDispatch();
+  const { ranks } = useProgressionState();
+  const { quests, allTags } = useQuestsState();
+  const { addTrophy, updateTrophy } = useProgressionDispatch();
 
   const getInitialFormData = useCallback(() => {
     const data = trophy || initialData;

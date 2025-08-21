@@ -1,7 +1,4 @@
-
-
 import React, { useMemo, useState } from 'react';
-import { useData } from '../../context/DataProvider';
 import { useUIState } from '../../context/UIContext';
 import { Rank } from '../../types';
 import Card from '../user-interface/Card';
@@ -9,9 +6,10 @@ import { RankIcon } from '../user-interface/Icons';
 import DynamicIcon from '../user-interface/DynamicIcon';
 import ImagePreviewDialog from '../user-interface/ImagePreviewDialog';
 import { useAuthState } from '../../context/AuthContext';
+import { useProgressionState } from '../../context/ProgressionContext';
 
 const RanksPage: React.FC = () => {
-    const { ranks } = useData();
+    const { ranks } = useProgressionState();
     const { appMode } = useUIState();
     const { currentUser } = useAuthState();
     const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null);

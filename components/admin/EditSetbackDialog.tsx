@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { useData } from '../../context/DataProvider';
-import { useActionsDispatch } from '../../context/ActionsContext';
 import { ModifierDefinition, ModifierEffect, ModifierEffectType, RewardCategory, RewardItem, QuestKind } from '../../types';
 import Button from '../user-interface/Button';
 import Input from '../user-interface/Input';
 import EmojiPicker from '../user-interface/EmojiPicker';
 import RewardInputGroup from '../forms/RewardInputGroup';
+import { useQuestsState } from '../../context/QuestsContext';
+import { useEconomyState } from '../../context/EconomyContext';
+import { useSystemDispatch } from '../../context/SystemContext';
 
 interface EditModifierDialogProps {
     setbackToEdit: ModifierDefinition | null;
@@ -13,8 +14,9 @@ interface EditModifierDialogProps {
 }
 
 const EditSetbackDialog: React.FC<EditModifierDialogProps> = ({ setbackToEdit: modifierToEdit, onClose }) => {
-    const { addModifierDefinition, updateModifierDefinition } = useActionsDispatch();
-    const { markets, rewardTypes, quests } = useData();
+    const { addModifierDefinition, updateModifierDefinition } = useSystemDispatch();
+    const { markets, rewardTypes } = useEconomyState();
+    const { quests } = useQuestsState();
     const [formData, setFormData] = useState<Omit<ModifierDefinition, 'id' | 'createdAt' | 'updatedAt'>>({
         name: '',
         description: '',

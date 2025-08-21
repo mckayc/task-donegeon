@@ -1,17 +1,17 @@
-
-
 import React, { useState, useMemo, useEffect } from 'react';
 import Card from '../user-interface/Card';
 import { useUIState } from '../../context/UIContext';
-import { useActionsDispatch } from '../../context/ActionsContext';
-import { Role, ChronicleEvent, PurchaseRequestStatus } from '../../types';
+import { Role } from '../users/types';
+import { PurchaseRequestStatus } from '../items/types';
+import { ChronicleEvent } from '../chronicles/types';
 import Button from '../user-interface/Button';
 import { useAuthState } from '../../context/AuthContext';
+import { useEconomyDispatch } from '../../context/EconomyContext';
 
 const ChroniclesPage: React.FC = () => {
     const { appMode } = useUIState();
     const { currentUser } = useAuthState();
-    const { cancelPurchaseRequest } = useActionsDispatch();
+    const { cancelPurchaseRequest } = useEconomyDispatch();
 
     const [viewMode, setViewMode] = useState<'all' | 'personal'>(currentUser?.role === Role.Explorer ? 'personal' : 'all');
     const [itemsPerPage, setItemsPerPage] = useState(50);

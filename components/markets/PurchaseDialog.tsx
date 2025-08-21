@@ -1,11 +1,13 @@
+
+
 import React, { useMemo } from 'react';
-import { useData } from '../../context/DataProvider';
-import { useActionsDispatch } from '../../context/ActionsContext';
-import { useAuthState } from '../../context/AuthContext';
 import { GameAsset, RewardItem, ScheduledEvent, RewardCategory } from '../../types';
 import Button from '../user-interface/Button';
-import { getFinalCostGroups } from '../../utils/markets';
+import { getFinalCostGroups } from './utils/markets';
 import { useUIState } from '../../context/UIContext';
+import { useAuthState } from '../../context/AuthContext';
+import { useEconomyState, useEconomyDispatch } from '../../context/EconomyContext';
+import { useSystemState } from '../../context/SystemContext';
 
 interface PurchaseDialogProps {
   asset: GameAsset;
@@ -14,10 +16,11 @@ interface PurchaseDialogProps {
 }
 
 const PurchaseDialog: React.FC<PurchaseDialogProps> = ({ asset, marketId, onClose }) => {
-    const { rewardTypes, scheduledEvents, markets } = useData();
+    const { rewardTypes } = useEconomyState();
+    const { scheduledEvents } = useSystemState();
     const { appMode } = useUIState();
     const { currentUser } = useAuthState();
-    const { purchaseMarketItem } = useActionsDispatch();
+    const { purchaseMarketItem } = useEconomyDispatch();
     
     if (!currentUser) return null;
 

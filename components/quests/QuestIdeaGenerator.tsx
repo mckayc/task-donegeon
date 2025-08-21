@@ -4,10 +4,12 @@ import { GenerateContentResponse, Type } from "@google/genai";
 import Button from '../user-interface/Button';
 import Input from '../user-interface/Input';
 import { SparklesIcon } from '../user-interface/Icons';
-import { useData } from '../../context/DataProvider';
 import { QuestType } from '../../types';
 import ToggleSwitch from '../user-interface/ToggleSwitch';
 import { useAuthState } from '../../context/AuthContext';
+import { useSystemState } from '../../context/SystemContext';
+import { useQuestsState } from '../../context/QuestsContext';
+import { useEconomyState } from '../../context/EconomyContext';
 
 interface QuestIdea {
   title: string;
@@ -28,7 +30,9 @@ interface QuestIdeaGeneratorProps {
 }
 
 const QuestIdeaGenerator: React.FC<QuestIdeaGeneratorProps> = ({ onUseIdea, onClose }) => {
-    const { settings, questGroups, rewardTypes } = useData();
+    const { settings } = useSystemState();
+    const { questGroups } = useQuestsState();
+    const { rewardTypes } = useEconomyState();
     const { users } = useAuthState();
     const [prompt, setPrompt] = useState('');
     const [questType, setQuestType] = useState<QuestType>(QuestType.Venture);

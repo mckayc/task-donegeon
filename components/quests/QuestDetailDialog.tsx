@@ -1,13 +1,15 @@
 
+
 import React, { useEffect, useMemo } from 'react';
 import { Quest, RewardCategory, RewardItem, QuestType } from '../../types';
-import { useData } from '../../context/DataProvider';
 import Button from '../user-interface/Button';
 import ToggleSwitch from '../user-interface/ToggleSwitch';
 import { bugLogger } from '../../utils/bugLogger';
 import { useAuthState } from '../../context/AuthContext';
 import { CheckCircleIcon } from '../user-interface/Icons';
-import { useActionsDispatch } from '../../context/ActionsContext';
+import { useQuestsDispatch } from '../../context/QuestsContext';
+import { useSystemState } from '../../context/SystemContext';
+import { useEconomyState } from '../../context/EconomyContext';
 
 interface QuestDetailDialogProps {
   quest: Quest;
@@ -19,9 +21,10 @@ interface QuestDetailDialogProps {
 }
 
 const QuestDetailDialog: React.FC<QuestDetailDialogProps> = ({ quest, onClose, onComplete, onToggleTodo, isTodo, dialogTitle }) => {
-    const { settings, rewardTypes } = useData();
+    const { settings } = useSystemState();
+    const { rewardTypes } = useEconomyState();
     const { currentUser } = useAuthState();
-    const { completeCheckpoint } = useActionsDispatch();
+    const { completeCheckpoint } = useQuestsDispatch();
 
     useEffect(() => {
         if (bugLogger.isRecording()) {
@@ -38,7 +41,7 @@ const QuestDetailDialog: React.FC<QuestDetailDialogProps> = ({ quest, onClose, o
 
     const handleComplete = () => {
         if (quest.type === QuestType.Journey && currentUser) {
-            completeCheckpoint(quest.id);
+            completeCheckpoint(quest.id, currentUser.id);
             onClose(); // Close dialog immediately after action is dispatched
         } else if (onComplete) {
             if (bugLogger.isRecording()) {

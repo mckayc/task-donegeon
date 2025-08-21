@@ -1,9 +1,6 @@
-
 import React, { createContext, useContext, ReactNode, useReducer, useMemo, useCallback } from 'react';
 import { Quest, QuestGroup, QuestCompletion, Rotation, BulkQuestUpdates } from '../types';
 import { useNotificationsDispatch } from './NotificationsContext';
-import { useAuthDispatch, useAuthState } from './AuthContext';
-import { bugLogger } from '../utils/bugLogger';
 import { 
     addQuestAPI, updateQuestAPI, cloneQuestAPI, updateQuestsStatusAPI, bulkUpdateQuestsAPI, 
     completeQuestAPI, approveQuestCompletionAPI, rejectQuestCompletionAPI, 

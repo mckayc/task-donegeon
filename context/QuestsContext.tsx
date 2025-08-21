@@ -8,6 +8,9 @@ import {
     assignQuestGroupToUsersAPI, addRotationAPI, updateRotationAPI, runRotationAPI,
     completeCheckpointAPI
 } from '../src/api';
+import { useAuthDispatch } from './AuthContext';
+import { ProgressionDispatchContext } from './ProgressionContext';
+import { SystemDispatchContext } from './SystemContext';
 
 // --- STATE & CONTEXT DEFINITIONS ---
 
@@ -93,54 +96,85 @@ const questsReducer = (state: QuestsState, action: QuestsAction): QuestsState =>
 export const QuestsProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     const [state, dispatch] = useReducer(questsReducer, initialState);
     const { addNotification } = useNotificationsDispatch();
+    const { updateUser } = useAuthDispatch();
+    const progressionDispatch = useContext(ProgressionDispatchContext);
+    const systemDispatch = useContext(SystemDispatchContext);
 
-    const createDataApiAction = useCallback(<T,>(apiFn: (...args: any[]) => Promise<T | null>) => {
-        return async (...args: any[]): Promise<T | null> => {
-            try {
-                return await apiFn(...args);
-            } catch (error) {
-                addNotification({ type: 'error', message: error instanceof Error ? error.message : String(error) });
-                return null;
-            }
-        };
+    const apiAction = useCallback(async <T,>(apiFn: () => Promise<T | null>, successMessage?: string): Promise<T | null> => {
+        try {
+            const result = await apiFn();
+            if (successMessage) addNotification({ type: 'success', message: successMessage });
+            return result;
+        } catch (error) {
+            addNotification({ type: 'error', message: error instanceof Error ? error.message : String(error) });
+            return null;
+        }
     }, [addNotification]);
     
-    const createVoidApiAction = useCallback(<T extends any[]>(apiFn: (...args: T) => Promise<void | null>) => {
-        return async (...args: T): Promise<void> => {
-            try {
-                await apiFn(...args);
-            } catch (error) {
-                addNotification({ type: 'error', message: error instanceof Error ? error.message : String(error) });
-            }
-        };
-    }, [addNotification]);
-
     const actions = useMemo<QuestsDispatch>(() => ({
-        addQuest: createDataApiAction(addQuestAPI),
-        updateQuest: createDataApiAction(updateQuestAPI),
-        cloneQuest: createDataApiAction(cloneQuestAPI),
-        updateQuestsStatus: createVoidApiAction(updateQuestsStatusAPI),
-        bulkUpdateQuests: createVoidApiAction(bulkUpdateQuestsAPI),
-        completeQuest: createVoidApiAction(completeQuestAPI),
-        approveQuestCompletion: createVoidApiAction(approveQuestCompletionAPI),
-        rejectQuestCompletion: createVoidApiAction(rejectQuestCompletionAPI),
-        markQuestAsTodo: createVoidApiAction(markQuestAsTodoAPI),
-        unmarkQuestAsTodo: createVoidApiAction(unmarkQuestAsTodoAPI),
-        addQuestGroup: createDataApiAction(addQuestGroupAPI),
-        updateQuestGroup: createDataApiAction(updateQuestGroupAPI),
-        assignQuestGroupToUsers: createVoidApiAction(assignQuestGroupToUsersAPI),
-        addRotation: createDataApiAction(addRotationAPI),
-        updateRotation: createDataApiAction(updateRotationAPI),
-        runRotation: async (rotationId: string) => {
-            try {
-                const result = await runRotationAPI(rotationId);
-                if (result) addNotification({ type: 'success', message: result.message });
-            } catch (error) {
-                addNotification({ type: 'error', message: error instanceof Error ? error.message : 'Failed to run rotation.' });
+        addQuest: (data) => apiAction(() => addQuestAPI(data), 'Quest created!'),
+        updateQuest: (data) => apiAction(() => updateQuestAPI(data), 'Quest updated!'),
+        cloneQuest: (id) => apiAction(() => cloneQuestAPI(id), 'Quest cloned!'),
+        updateQuestsStatus: (ids, isActive) => apiAction(() => updateQuestsStatusAPI(ids, isActive)),
+        bulkUpdateQuests: (ids, updates) => apiAction(() => bulkUpdateQuestsAPI(ids, updates)),
+        
+        completeQuest: async (completionData) => {
+            const result = await apiAction(() => completeQuestAPI(completionData));
+            if (result) {
+                const { updatedUser, newCompletion } = result as any;
+                if (updatedUser) updateUser(updatedUser.id, updatedUser);
+                if (newCompletion) dispatch({ type: 'UPDATE_QUESTS_DATA', payload: { questCompletions: [newCompletion] } });
+                addNotification({ type: 'success', message: 'Quest completed!' });
             }
         },
-        completeCheckpoint: createVoidApiAction(completeCheckpointAPI),
-    }), [addNotification, createDataApiAction, createVoidApiAction]);
+        approveQuestCompletion: async (id, approverId, note) => {
+            const result = await apiAction(() => approveQuestCompletionAPI(id, approverId, note));
+            if (result) {
+                const { updatedUser, updatedCompletion, newUserTrophies, newNotifications } = result as any;
+                if (updatedUser) updateUser(updatedUser.id, updatedUser);
+                if (updatedCompletion) dispatch({ type: 'UPDATE_QUESTS_DATA', payload: { questCompletions: [updatedCompletion] } });
+                if (newUserTrophies?.length > 0 && progressionDispatch) progressionDispatch.dispatch({ type: 'UPDATE_PROGRESSION_DATA', payload: { userTrophies: newUserTrophies } });
+                if (newNotifications?.length > 0 && systemDispatch) systemDispatch.dispatch({ type: 'UPDATE_SYSTEM_DATA', payload: { systemNotifications: newNotifications } });
+                addNotification({ type: 'success', message: 'Quest approved!' });
+            }
+        },
+        rejectQuestCompletion: async (id, rejecterId, note) => {
+            const result = await apiAction(() => rejectQuestCompletionAPI(id, rejecterId, note));
+            if (result) {
+                const { updatedCompletion } = result as any;
+                if (updatedCompletion) dispatch({ type: 'UPDATE_QUESTS_DATA', payload: { questCompletions: [updatedCompletion] } });
+            }
+        },
+        markQuestAsTodo: async (questId, userId) => {
+            const result = await apiAction(() => markQuestAsTodoAPI(questId, userId));
+            if (result) dispatch({ type: 'UPDATE_QUESTS_DATA', payload: { quests: [result] } });
+        },
+        unmarkQuestAsTodo: async (questId, userId) => {
+            const result = await apiAction(() => unmarkQuestAsTodoAPI(questId, userId));
+            if (result) dispatch({ type: 'UPDATE_QUESTS_DATA', payload: { quests: [result] } });
+        },
+        completeCheckpoint: async (questId, userId) => {
+            const result = await apiAction(() => completeCheckpointAPI(questId, userId));
+            if (result) {
+                const { updatedUser, updatedQuest, newCompletion, newUserTrophies, newNotifications } = result as any;
+                if (updatedUser) updateUser(updatedUser.id, updatedUser);
+                if (updatedQuest) dispatch({ type: 'UPDATE_QUESTS_DATA', payload: { quests: [updatedQuest] } });
+                if (newCompletion) dispatch({ type: 'UPDATE_QUESTS_DATA', payload: { questCompletions: [newCompletion] } });
+                if (newUserTrophies?.length > 0 && progressionDispatch) progressionDispatch.dispatch({ type: 'UPDATE_PROGRESSION_DATA', payload: { userTrophies: newUserTrophies } });
+                if (newNotifications?.length > 0 && systemDispatch) systemDispatch.dispatch({ type: 'UPDATE_SYSTEM_DATA', payload: { systemNotifications: newNotifications } });
+                addNotification({ type: 'success', message: 'Checkpoint completed!' });
+            }
+        },
+        addQuestGroup: (data) => apiAction(() => addQuestGroupAPI(data)),
+        updateQuestGroup: (data) => apiAction(() => updateQuestGroupAPI(data)),
+        assignQuestGroupToUsers: (groupId, userIds) => apiAction(() => assignQuestGroupToUsersAPI(groupId, userIds)),
+        addRotation: (data) => apiAction(() => addRotationAPI(data)),
+        updateRotation: (data) => apiAction(() => updateRotationAPI(data)),
+        runRotation: async (id) => {
+            const result = await apiAction(() => runRotationAPI(id));
+            if (result) addNotification({ type: 'success', message: (result as any).message });
+        },
+    }), [addNotification, apiAction, updateUser, progressionDispatch, systemDispatch]);
     
     const contextValue = useMemo(() => ({ dispatch, actions }), [dispatch, actions]);
 

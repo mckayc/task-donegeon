@@ -1,4 +1,5 @@
 
+
 const { dataSource } = require('../data-source');
 const { In, MoreThan } = require("typeorm");
 const { 
@@ -7,6 +8,8 @@ const {
 const { updateEmitter } = require('../utils/updateEmitter');
 const { getFullAppData } = require('../utils/helpers');
 const { INITIAL_SETTINGS } = require('../initialData');
+const systemService = require('../services/system.service');
+
 
 // === Server-Sent Events Logic ===
 let clients = [];
@@ -165,8 +168,7 @@ const factoryReset = async (req, res) => {
 };
 
 const getChronicles = async (req, res) => {
-    const { getChronicles } = require('../services/system.service');
-    await getChronicles(req, res);
+    await systemService.getChronicles(req, res);
 };
 
 module.exports = {

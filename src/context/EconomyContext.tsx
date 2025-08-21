@@ -11,7 +11,7 @@ import {
     purchaseMarketItemAPI, approvePurchaseRequestAPI, rejectPurchaseRequestAPI, cancelPurchaseRequestAPI, 
     executeExchangeAPI, proposeTradeAPI, updateTradeOfferAPI, acceptTradeAPI, cancelOrRejectTradeAPI, 
     sendGiftAPI, useItemAPI, craftItemAPI 
-} from '../src/api';
+} from '../api';
 
 // --- STATE & CONTEXT DEFINITIONS ---
 

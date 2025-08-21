@@ -1,3 +1,4 @@
+
 import {
     AppSettings, ThemeDefinition, SystemNotification, ScheduledEvent, BugReport, ModifierDefinition, AdminAdjustment, User, ChatMessage, AssetPack, ImportResolution, ShareableAssetType, Quest, QuestGroup, Rotation, QuestCompletion, Market, GameAsset, PurchaseRequest, RewardTypeDefinition, TradeOffer, Gift, Rank, Trophy, UserTrophy, Guild, BulkQuestUpdates, RewardItem,
 } from './types';
@@ -32,7 +33,7 @@ const apiUpload = async (path: string, file: File, category?: string) => {
 export const addUserAPI = (data: Omit<User, 'id' | 'personalPurse' | 'personalExperience' | 'guildBalances' | 'avatar' | 'ownedAssetIds' | 'ownedThemes' | 'hasBeenOnboarded'>) => apiRequest('POST', '/api/users', data);
 export const updateUserAPI = (id: string, data: Partial<User>) => apiRequest('PUT', `/api/users/${id}`, data);
 export const deleteUsersAPI = (ids: string[]) => apiRequest('DELETE', '/api/users', { ids });
-export const completeFirstRunAPI = (adminUserData: any) => apiRequest('POST', '/api/first-run', { adminUserData });
+export const completeFirstRunAPI = (adminUserData: any) => apiRequest('POST', '/api/data/first-run', { adminUserData });
 
 
 // --- Community API ---

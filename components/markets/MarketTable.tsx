@@ -1,9 +1,9 @@
+
 import React, { useMemo } from 'react';
 import { Market, Terminology } from '../../types';
 import Button from '../user-interface/Button';
 import EmptyState from '../user-interface/EmptyState';
 import { MarketplaceIcon, PencilIcon, CopyIcon, TrashIcon } from '../user-interface/Icons';
-import { useShiftSelect } from '../../hooks/useShiftSelect';
 
 interface MarketTableProps {
     markets: Market[];

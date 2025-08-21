@@ -1,14 +1,15 @@
+
 import React, { useState, useMemo } from 'react';
-import { Trophy } from '../../types';
-import Button from '../user-interface/Button';
-import Card from '../user-interface/Card';
-import EditTrophyDialog from '../settings/EditTrophyDialog';
-import ConfirmDialog from '../user-interface/ConfirmDialog';
-import TrophyIdeaGenerator from '../quests/TrophyIdeaGenerator';
-import { useShiftSelect } from '../../hooks/useShiftSelect';
-import { useProgressionState } from '../../context/ProgressionContext';
-import { useSystemState, useSystemDispatch } from '../../context/SystemContext';
-import TrophyTable from '../trophies/TrophyTable';
+import { Trophy } from '../../../types';
+import Button from '../../user-interface/Button';
+import Card from '../../user-interface/Card';
+import EditTrophyDialog from '../../settings/EditTrophyDialog';
+import ConfirmDialog from '../../user-interface/ConfirmDialog';
+import TrophyIdeaGenerator from '../../quests/TrophyIdeaGenerator';
+import { useShiftSelect } from '../../../hooks/useShiftSelect';
+import { useProgressionState } from '../../../context/ProgressionContext';
+import { useSystemState, useSystemDispatch } from '../../../context/SystemContext';
+import TrophyTable from '../../trophies/TrophyTable';
 
 const ManageTrophiesPage: React.FC = () => {
     const { trophies } = useProgressionState();
@@ -97,7 +98,7 @@ const ManageTrophiesPage: React.FC = () => {
                     onSelectAll={handleSelectAll}
                     onSelectOne={handleCheckboxClick}
                     onEdit={handleEdit}
-                    onDeleteRequest={(ids) => setDeletingIds(ids)}
+                    onDeleteRequest={(ids: string[]) => setDeletingIds(ids)}
                     terminology={settings.terminology}
                     onCreate={handleCreate}
                 />

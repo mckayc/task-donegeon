@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, ReactNode, useReducer, useMemo, useCallback } from 'react';
 import { Quest, QuestGroup, QuestCompletion, Rotation, BulkQuestUpdates } from '../types';
 import { useNotificationsDispatch } from './NotificationsContext';
@@ -9,7 +10,7 @@ import {
     markQuestAsTodoAPI, unmarkQuestAsTodoAPI, addQuestGroupAPI, updateQuestGroupAPI, 
     assignQuestGroupToUsersAPI, addRotationAPI, updateRotationAPI, runRotationAPI,
     completeCheckpointAPI
-} from '../src/api';
+} from '../api';
 
 // --- STATE & CONTEXT DEFINITIONS ---
 
@@ -95,41 +96,54 @@ const questsReducer = (state: QuestsState, action: QuestsAction): QuestsState =>
 export const QuestsProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     const [state, dispatch] = useReducer(questsReducer, initialState);
     const { addNotification } = useNotificationsDispatch();
-    const { updateUser } = useAuthDispatch();
-    const { currentUser } = useAuthState();
 
-    const createApiAction = <T_API extends (...args: any[]) => Promise<any>>(apiFn: T_API) =>
-    async (...args: Parameters<T_API>): Promise<ReturnType<T_API> | null> => {
-        try {
-            return await apiFn(...args);
-        } catch (error) {
-            addNotification({ type: 'error', message: error instanceof Error ? error.message : String(error) });
-            return null;
-        }
-    };
+    const createDataApiAction = useCallback(<T,>(apiFn: (...args: any[]) => Promise<T | null>) => {
+        return async (...args: any[]): Promise<T | null> => {
+            try {
+                return await apiFn(...args);
+            } catch (error) {
+                addNotification({ type: 'error', message: error instanceof Error ? error.message : String(error) });
+                return null;
+            }
+        };
+    }, [addNotification]);
+    
+    const createVoidApiAction = useCallback(<T extends any[]>(apiFn: (...args: T) => Promise<void | null>) => {
+        return async (...args: T): Promise<void> => {
+            try {
+                await apiFn(...args);
+            } catch (error) {
+                addNotification({ type: 'error', message: error instanceof Error ? error.message : String(error) });
+            }
+        };
+    }, [addNotification]);
 
     const actions = useMemo<QuestsDispatch>(() => ({
-        addQuest: createApiAction(addQuestAPI),
-        updateQuest: createApiAction(updateQuestAPI),
-        cloneQuest: createApiAction(cloneQuestAPI),
-        updateQuestsStatus: createApiAction(updateQuestsStatusAPI),
-        bulkUpdateQuests: createApiAction(bulkUpdateQuestsAPI),
-        completeQuest: createApiAction(completeQuestAPI),
-        approveQuestCompletion: createApiAction(approveQuestCompletionAPI),
-        rejectQuestCompletion: createApiAction(rejectQuestCompletionAPI),
-        markQuestAsTodo: createApiAction(markQuestAsTodoAPI),
-        unmarkQuestAsTodo: createApiAction(unmarkQuestAsTodoAPI),
-        addQuestGroup: createApiAction(addQuestGroupAPI),
-        updateQuestGroup: createApiAction(updateQuestGroupAPI),
-        assignQuestGroupToUsers: createApiAction(assignQuestGroupToUsersAPI),
-        addRotation: createApiAction(addRotationAPI),
-        updateRotation: createApiAction(updateRotationAPI),
-        runRotation: async (id) => {
-            const result = await createApiAction(runRotationAPI)(id);
-            if (result) addNotification({ type: 'success', message: result.message });
+        addQuest: createDataApiAction(addQuestAPI),
+        updateQuest: createDataApiAction(updateQuestAPI),
+        cloneQuest: createDataApiAction(cloneQuestAPI),
+        updateQuestsStatus: createVoidApiAction(updateQuestsStatusAPI),
+        bulkUpdateQuests: createVoidApiAction(bulkUpdateQuestsAPI),
+        completeQuest: createVoidApiAction(completeQuestAPI),
+        approveQuestCompletion: createVoidApiAction(approveQuestCompletionAPI),
+        rejectQuestCompletion: createVoidApiAction(rejectQuestCompletionAPI),
+        markQuestAsTodo: createVoidApiAction(markQuestAsTodoAPI),
+        unmarkQuestAsTodo: createVoidApiAction(unmarkQuestAsTodoAPI),
+        addQuestGroup: createDataApiAction(addQuestGroupAPI),
+        updateQuestGroup: createDataApiAction(updateQuestGroupAPI),
+        assignQuestGroupToUsers: createVoidApiAction(assignQuestGroupToUsersAPI),
+        addRotation: createDataApiAction(addRotationAPI),
+        updateRotation: createDataApiAction(updateRotationAPI),
+        runRotation: async (rotationId: string) => {
+            try {
+                const result = await runRotationAPI(rotationId);
+                if (result) addNotification({ type: 'success', message: result.message });
+            } catch (error) {
+                addNotification({ type: 'error', message: error instanceof Error ? error.message : 'Failed to run rotation.' });
+            }
         },
-        completeCheckpoint: createApiAction(completeCheckpointAPI),
-    }), [addNotification]);
+        completeCheckpoint: createVoidApiAction(completeCheckpointAPI),
+    }), [addNotification, createDataApiAction, createVoidApiAction]);
     
     const contextValue = useMemo(() => ({ dispatch, actions }), [dispatch, actions]);
 

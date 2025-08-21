@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { GameAsset } from '../../types';
 import Button from '../user-interface/Button';
@@ -12,7 +13,7 @@ import { useDebounce } from '../../hooks/useDebounce';
 import { useNotificationsDispatch } from '../../context/NotificationsContext';
 import UploadWithCategoryDialog from '../admin/UploadWithCategoryDialog';
 import { useShiftSelect } from '../../hooks/useShiftSelect';
-import ItemTable from '../../items/ItemTable';
+import ItemTable from '../items/ItemTable';
 import { useSystemState, useSystemDispatch } from '../../context/SystemContext';
 import { useEconomyState, useEconomyDispatch } from '../../context/EconomyContext';
 
@@ -234,7 +235,7 @@ const ManageItemsPage: React.FC = () => {
                     onSelectOne={handleCheckboxClick}
                     onEdit={handleEdit}
                     onClone={cloneGameAsset}
-                    onDeleteRequest={(ids) => setConfirmation({ action: 'delete', ids })}
+                    onDeleteRequest={(ids: string[]) => setConfirmation({ action: 'delete', ids })}
                     onPreviewImage={setPreviewImageUrl}
                     isLoading={isLoading}
                     searchTerm={debouncedSearchTerm}

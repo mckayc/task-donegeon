@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect, useMemo } from 'react';
 import { useQuestsDispatch, useQuestsState } from '../../context/QuestsContext';
 import { Quest, QuestType, QuestKind, Trophy } from '../../types';
@@ -18,10 +19,12 @@ import { useSystemState } from '../../context/SystemContext';
 import { useUIState } from '../../context/UIContext';
 import { useAuthState } from '../../context/AuthContext';
 import { useCommunityState } from '../../context/CommunityContext';
+import { useProgressionState } from '../../context/ProgressionContext';
 
 const Dashboard: React.FC = () => {
     const { markQuestAsTodo, unmarkQuestAsTodo } = useQuestsDispatch();
     const { quests } = useQuestsState();
+    const { trophies } = useProgressionState();
     const { appMode } = useUIState();
     const { currentUser } = useAuthState();
     
@@ -100,6 +103,8 @@ const Dashboard: React.FC = () => {
             markQuestAsTodo(questToToggle.id, currentUser.id);
         }
     };
+    
+    const finalMostRecentTrophy = mostRecentTrophy ? trophies.find(t => t.id === mostRecentTrophy.id) || null : null;
 
     return (
         <div>
@@ -107,7 +112,7 @@ const Dashboard: React.FC = () => {
                 <div className="lg:col-span-1 space-y-6">
                     <RankCard rankData={rankData} terminology={terminology} />
                     <InventoryCard userCurrencies={userCurrencies} userExperience={userExperience} terminology={terminology} />
-                    <TrophyCard mostRecentTrophy={mostRecentTrophy} terminology={terminology} />
+                    <TrophyCard mostRecentTrophy={finalMostRecentTrophy} terminology={terminology} />
                     <LeaderboardCard leaderboard={leaderboard} />
                 </div>
 

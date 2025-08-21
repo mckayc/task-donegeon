@@ -9,7 +9,7 @@ import EmptyState from '../user-interface/EmptyState';
 import { MarketplaceIcon } from '../user-interface/Icons';
 import MarketIdeaGenerator from '../quests/MarketIdeaGenerator';
 import { useEconomyState, useEconomyDispatch } from '../../context/EconomyContext';
-import MarketTable from '../../markets/MarketTable';
+import MarketTable from '../markets/MarketTable';
 import { useShiftSelect } from '../../hooks/useShiftSelect';
 
 const ManageMarketsPage: React.FC = () => {
@@ -112,10 +112,11 @@ const ManageMarketsPage: React.FC = () => {
                 <MarketTable
                     markets={markets}
                     selectedMarkets={selectedMarkets}
-                    setSelectedMarkets={setSelectedMarkets}
+                    onSelectAll={(e: React.ChangeEvent<HTMLInputElement>) => setSelectedMarkets(e.target.checked ? marketIds : [])}
+                    onSelectOne={handleCheckboxClick}
                     onEdit={handleEditMarket}
                     onClone={cloneMarket}
-                    onDeleteRequest={(ids) => setConfirmation({ action: 'delete', ids })}
+                    onDeleteRequest={(ids: string[]) => setConfirmation({ action: 'delete', ids })}
                     terminology={settings.terminology}
                     onCreate={handleCreateMarket}
                 />

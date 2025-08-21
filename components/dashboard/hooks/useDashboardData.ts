@@ -3,7 +3,7 @@ import { useMemo } from 'react';
 import { useSystemState } from '../../../context/SystemContext';
 import { useUIState } from '../../../context/UIContext';
 import { useAuthState } from '../../../context/AuthContext';
-import { Quest, QuestCompletionStatus, RewardCategory, Rank, QuestKind } from '../../../types';
+import { Quest, QuestCompletionStatus, RewardCategory, Rank, QuestKind, Trophy } from '../../../types';
 import { isQuestAvailableForUser, isQuestVisibleToUserInMode, questSorter } from '../../quests/utils/quests';
 import { useQuestsState } from '../../../context/QuestsContext';
 import { useProgressionState } from '../../../context/ProgressionContext';
@@ -50,7 +50,7 @@ export const useDashboardData = () => {
 
     const rankData = useMemo(() => {
         const sortedRanks = [...ranks].sort((a, b) => a.xpThreshold - b.xpThreshold);
-        const totalXp = Object.values(currentBalances.experience).reduce((sum: number, amount: number) => sum + amount, 0);
+        const totalXp = Object.values(currentBalances.experience).reduce((sum, amount) => sum + amount, 0);
         
         let currentRank: Rank | null = sortedRanks[0] || null;
         let nextRank: Rank | null = sortedRanks[1] || null;
@@ -136,9 +136,9 @@ export const useDashboardData = () => {
         return users.map(user => {
             let userTotalXp = 0;
             if (currentGuildId) {
-                userTotalXp = Object.values(user.guildBalances[currentGuildId]?.experience || {}).reduce((sum: number, amount: number) => sum + amount, 0);
+                userTotalXp = Object.values(user.guildBalances[currentGuildId]?.experience || {}).reduce((sum, amount) => sum + amount, 0);
             } else {
-                userTotalXp = Object.values(user.personalExperience).reduce((sum: number, amount: number) => sum + amount, 0);
+                userTotalXp = Object.values(user.personalExperience).reduce((sum, amount) => sum + amount, 0);
             }
             return { name: user.gameName, xp: userTotalXp };
         }).sort((a, b) => b.xp - a.xp).slice(0, 5);
@@ -148,7 +148,7 @@ export const useDashboardData = () => {
         const currentGuildId = appMode.mode === 'guild' ? appMode.guildId : undefined;
         const myTrophies = userTrophies.filter(ut => ut.userId === currentUser.id && ut.guildId == currentGuildId).sort((a, b) => new Date(b.awardedAt).getTime() - new Date(a.awardedAt).getTime());
         const mostRecentTrophyAward = myTrophies.length > 0 ? myTrophies[0] : null;
-        return mostRecentTrophyAward ? trophies.find(t => t.id === mostRecentTrophyAward.trophyId) : null;
+        return mostRecentTrophyAward ? trophies.find(t => t.id === mostRecentTrophyAward.trophyId) || null : null;
     }, [userTrophies, trophies, currentUser.id, appMode]);
 
     const quickActionQuests = useMemo(() => {

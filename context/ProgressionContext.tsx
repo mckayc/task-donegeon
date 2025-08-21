@@ -133,3 +133,11 @@ export const useProgressionDispatch = (): ProgressionDispatch => {
     if (context === undefined) throw new Error('useProgressionDispatch must be used within a ProgressionProvider');
     return context.actions;
 };
+
+export const useProgressionReducerDispatch = (): React.Dispatch<ProgressionAction> => {
+  const context = useContext(ProgressionDispatchContext);
+  if (!context) {
+    throw new Error('useProgressionReducerDispatch must be used within a ProgressionProvider');
+  }
+  return context.dispatch;
+};

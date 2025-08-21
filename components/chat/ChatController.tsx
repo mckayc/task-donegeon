@@ -1,5 +1,3 @@
-
-
 import React, { useMemo } from 'react';
 import { useUIState, useUIDispatch } from '../../context/UIContext';
 import { useAuthState } from '../../context/AuthContext';

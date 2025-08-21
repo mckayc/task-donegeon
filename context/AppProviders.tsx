@@ -17,25 +17,25 @@ interface AppProvidersProps {
 const AppProviders: React.FC<AppProvidersProps> = ({ children }) => {
   return (
     <NotificationsProvider>
-      <AuthProvider>
-        <SystemProvider>
-          <QuestsProvider>
-            <EconomyProvider>
-              <ProgressionProvider>
-                <CommunityProvider>
-                  <DataProvider>
-                    <UIProvider>
-                      <DeveloperProvider>
+      <UIProvider>
+        <AuthProvider>
+          <ProgressionProvider>
+            <CommunityProvider>
+              <SystemProvider>
+                <QuestsProvider>
+                  <EconomyProvider>
+                    <DeveloperProvider>
+                      <DataProvider>
                         {children}
-                      </DeveloperProvider>
-                    </UIProvider>
-                  </DataProvider>
-                </CommunityProvider>
-              </ProgressionProvider>
-            </EconomyProvider>
-          </QuestsProvider>
-        </SystemProvider>
-      </AuthProvider>
+                      </DataProvider>
+                    </DeveloperProvider>
+                  </EconomyProvider>
+                </QuestsProvider>
+              </SystemProvider>
+            </CommunityProvider>
+          </ProgressionProvider>
+        </AuthProvider>
+      </UIProvider>
     </NotificationsProvider>
   );
 };

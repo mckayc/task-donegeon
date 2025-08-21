@@ -201,9 +201,9 @@ export const SystemProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         },
         addTheme: createAddAction('/api/themes', 'themes'),
         updateTheme: createUpdateAction(id => `/api/themes/${id}`, 'themes'),
-        deleteTheme: (id) => apiRequest('DELETE', `/api/themes/${id}`),
+        deleteTheme: (id) => apiRequest('DELETE', `/api/themes`, { ids: [id] }),
         updateSettings: async (settings) => {
-            const result = await apiRequest('PUT', '/api/settings/1', settings);
+            const result = await apiRequest('PUT', '/api/settings', settings);
             if (result) dispatch({ type: 'UPDATE_SYSTEM_DATA', payload: { settings: result } });
         },
         resetSettings: () => apiRequest('POST', '/api/data/reset-settings'),
@@ -283,4 +283,12 @@ export const useSystemDispatch = (): SystemDispatch => {
     const context = useContext(SystemDispatchContext);
     if (context === undefined) throw new Error('useSystemDispatch must be used within a SystemProvider');
     return context.actions;
+};
+
+export const useSystemReducerDispatch = (): React.Dispatch<SystemAction> => {
+    const context = useContext(SystemDispatchContext);
+    if (!context) {
+        throw new Error('useSystemReducerDispatch must be used within a SystemProvider');
+    }
+    return context.dispatch;
 };

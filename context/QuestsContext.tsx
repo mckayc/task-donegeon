@@ -9,8 +9,8 @@ import {
     completeCheckpointAPI
 } from '../src/api';
 import { useAuthDispatch } from './AuthContext';
-import { ProgressionDispatchContext } from './ProgressionContext';
-import { SystemDispatchContext } from './SystemContext';
+import { useProgressionReducerDispatch } from './ProgressionContext';
+import { useSystemReducerDispatch } from './SystemContext';
 
 // --- STATE & CONTEXT DEFINITIONS ---
 
@@ -97,8 +97,8 @@ export const QuestsProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     const [state, dispatch] = useReducer(questsReducer, initialState);
     const { addNotification } = useNotificationsDispatch();
     const { updateUser } = useAuthDispatch();
-    const progressionDispatch = useContext(ProgressionDispatchContext);
-    const systemDispatch = useContext(SystemDispatchContext);
+    const progressionDispatch = useProgressionReducerDispatch();
+    const systemDispatch = useSystemReducerDispatch();
 
     const apiAction = useCallback(async <T,>(apiFn: () => Promise<T | null>, successMessage?: string): Promise<T | null> => {
         try {
@@ -133,8 +133,8 @@ export const QuestsProvider: React.FC<{ children: ReactNode }> = ({ children }) 
                 const { updatedUser, updatedCompletion, newUserTrophies, newNotifications } = result as any;
                 if (updatedUser) updateUser(updatedUser.id, updatedUser);
                 if (updatedCompletion) dispatch({ type: 'UPDATE_QUESTS_DATA', payload: { questCompletions: [updatedCompletion] } });
-                if (newUserTrophies?.length > 0 && progressionDispatch) progressionDispatch.dispatch({ type: 'UPDATE_PROGRESSION_DATA', payload: { userTrophies: newUserTrophies } });
-                if (newNotifications?.length > 0 && systemDispatch) systemDispatch.dispatch({ type: 'UPDATE_SYSTEM_DATA', payload: { systemNotifications: newNotifications } });
+                if (newUserTrophies?.length > 0) progressionDispatch({ type: 'UPDATE_PROGRESSION_DATA', payload: { userTrophies: newUserTrophies } });
+                if (newNotifications?.length > 0) systemDispatch({ type: 'UPDATE_SYSTEM_DATA', payload: { systemNotifications: newNotifications } });
                 addNotification({ type: 'success', message: 'Quest approved!' });
             }
         },
@@ -160,8 +160,8 @@ export const QuestsProvider: React.FC<{ children: ReactNode }> = ({ children }) 
                 if (updatedUser) updateUser(updatedUser.id, updatedUser);
                 if (updatedQuest) dispatch({ type: 'UPDATE_QUESTS_DATA', payload: { quests: [updatedQuest] } });
                 if (newCompletion) dispatch({ type: 'UPDATE_QUESTS_DATA', payload: { questCompletions: [newCompletion] } });
-                if (newUserTrophies?.length > 0 && progressionDispatch) progressionDispatch.dispatch({ type: 'UPDATE_PROGRESSION_DATA', payload: { userTrophies: newUserTrophies } });
-                if (newNotifications?.length > 0 && systemDispatch) systemDispatch.dispatch({ type: 'UPDATE_SYSTEM_DATA', payload: { systemNotifications: newNotifications } });
+                if (newUserTrophies?.length > 0) progressionDispatch({ type: 'UPDATE_PROGRESSION_DATA', payload: { userTrophies: newUserTrophies } });
+                if (newNotifications?.length > 0) systemDispatch({ type: 'UPDATE_SYSTEM_DATA', payload: { systemNotifications: newNotifications } });
                 addNotification({ type: 'success', message: 'Checkpoint completed!' });
             }
         },

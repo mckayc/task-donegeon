@@ -3,7 +3,7 @@ import { Market, GameAsset, PurchaseRequest, RewardTypeDefinition, TradeOffer, G
 import { useNotificationsDispatch } from './NotificationsContext';
 import { useAuthDispatch, useAuthState } from './AuthContext';
 import { bugLogger } from '../utils/bugLogger';
-import { SystemAction, SystemDispatchContext } from './SystemContext';
+import { SystemAction, useSystemReducerDispatch } from './SystemContext';
 import { 
     addMarketAPI, updateMarketAPI, cloneMarketAPI, updateMarketsStatusAPI, 
     addRewardTypeAPI, updateRewardTypeAPI, cloneRewardTypeAPI, 
@@ -101,7 +101,7 @@ const economyReducer = (state: EconomyState, action: EconomyAction): EconomyStat
 export const EconomyProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     const [state, dispatch] = useReducer(economyReducer, initialState);
     const { addNotification } = useNotificationsDispatch();
-    const systemDispatch = useContext(SystemDispatchContext);
+    const systemDispatch = useSystemReducerDispatch();
     const { updateUser } = useAuthDispatch();
     const { currentUser } = useAuthState();
 
@@ -148,10 +148,10 @@ export const EconomyProvider: React.FC<{ children: ReactNode }> = ({ children })
         },
         executeExchange: async (userId, payItem, receiveItem, guildId) => {
             const result = await apiAction(() => executeExchangeAPI(userId, payItem, receiveItem, guildId));
-            if (result && systemDispatch) {
+            if (result) {
                  if ((result as any).updatedUser) updateUser((result as any).updatedUser.id, (result as any).updatedUser);
                  if ((result as any).newAdjustment) {
-                    systemDispatch.dispatch({ type: 'UPDATE_SYSTEM_DATA', payload: { adminAdjustments: [(result as any).newAdjustment] } });
+                    systemDispatch({ type: 'UPDATE_SYSTEM_DATA', payload: { adminAdjustments: [(result as any).newAdjustment] } });
                  }
                 addNotification({ type: 'success', message: 'Exchange successful!' });
             }

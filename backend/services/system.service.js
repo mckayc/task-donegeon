@@ -1,4 +1,5 @@
 
+
 const { dataSource } = require('../data-source');
 const { 
     QuestCompletionEntity, PurchaseRequestEntity, UserTrophyEntity, AdminAdjustmentEntity, 
@@ -19,12 +20,22 @@ const getChronicles = async (req, res) => {
 
     // --- Fetch All Event Types Concurrently ---
     const completionsPromise = manager.createQueryBuilder(QuestCompletionEntity, "completion")
-        .innerJoinAndSelect("completion.quest", "quest")
-        .innerJoinAndSelect("completion.user", "user")
+        .select([
+            "completion.id as id",
+            "completion.completedAt as date",
+            "completion.note as note",
+            "completion.status as status",
+            "completion.userId as userId",
+            "quest.title as questTitle",
+            "quest.icon as questIcon",
+            "user.gameName as userName",
+        ])
+        .innerJoin("completion.quest", "quest")
+        .innerJoin("completion.user", "user")
         .where(isPersonalScope ? "completion.guildId IS NULL" : "completion.guildId = :guildId", { guildId })
         .andWhere(viewMode === 'personal' ? "completion.userId = :userId" : "1=1", { userId })
         .orderBy("completion.completedAt", "DESC")
-        .getMany();
+        .getRawMany();
 
     const buildOtherQuery = (entity) => {
         const qb = manager.createQueryBuilder(entity, "event")
@@ -60,37 +71,32 @@ const getChronicles = async (req, res) => {
 
     // --- Map to Common Format ---
     let allEvents = [];
-    allEvents.push(...completions.map(c => {
-        const questTitle = c.quest ? c.quest.title : 'Unknown Quest';
-        const questIcon = c.quest ? c.quest.icon : '❓';
-        const userName = c.user ? c.user.gameName : 'Unknown User';
-        return {
-            id: `c-${c.id}`, originalId: c.id, date: c.completedAt, type: 'Quest',
-            title: `${userName} completed "${questTitle}"`,
-            note: c.note, status: c.status, icon: questIcon, color: '#10b981', userId: c.userId, actorName: userName
-        };
-    }));
+    allEvents.push(...completions.map(c => ({
+        id: `c-${c.id}`, originalId: c.id, date: c.date, type: 'Quest',
+        title: `${c.userName || 'Unknown User'} completed "${c.questTitle || 'Unknown Quest'}"`,
+        note: c.note, status: c.status, icon: c.questIcon || '❓', color: '#10b981', userId: c.userId, actorName: c.userName
+    })));
 
     allEvents.push(...purchases.map(p => {
-        const userName = p.user ? p.user.gameName : 'Unknown User';
+        const userName = p.user?.gameName ?? 'Unknown User';
         return {
             id: `p-${p.id}`, originalId: p.id, date: p.requestedAt, type: 'Purchase',
-            title: `${userName} purchased "${p.assetDetails.name}"`,
-            note: p.assetDetails.description, status: p.status, icon: '💰', color: '#f59e0b', userId: p.userId, actorName: userName
+            title: `${userName} purchased "${p.assetDetails?.name ?? 'an item'}"`,
+            note: p.assetDetails?.description, status: p.status, icon: '💰', color: '#f59e0b', userId: p.userId, actorName: userName
         };
     }));
 
     allEvents.push(...userTrophies.map(t => {
-        const userName = t.user ? t.user.gameName : 'Unknown User';
+        const userName = t.user?.gameName ?? 'Unknown User';
         return {
             id: `t-${t.id}`, originalId: t.id, date: t.awardedAt, type: 'Trophy',
-            title: `${userName} earned: "${t.trophy.name}"`,
-            note: t.trophy.description, status: 'Awarded', icon: t.trophy.icon, color: '#ca8a04', userId: t.userId, actorName: userName
+            title: `${userName} earned: "${t.trophy?.name ?? 'a trophy'}"`,
+            note: t.trophy?.description, status: 'Awarded', icon: t.trophy?.icon || '🏆', color: '#ca8a04', userId: t.userId, actorName: userName
         };
     }));
 
     allEvents.push(...adjustments.map(a => {
-        const userName = a.user ? a.user.gameName : 'Unknown User';
+        const userName = a.user?.gameName ?? 'Unknown User';
         return {
             id: `a-${a.id}`, originalId: a.id, date: a.adjustedAt, type: 'Adjustment',
             title: `Admin Adjustment for ${userName}`,

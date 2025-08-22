@@ -22,7 +22,7 @@ import { useProgressionState } from '../../context/ProgressionContext';
 
 const Dashboard: React.FC = () => {
     const { markQuestAsTodo, unmarkQuestAsTodo } = useQuestsDispatch();
-    const { quests } = useQuestsState();
+    const { quests, questCompletions } = useQuestsState();
     const { trophies } = useProgressionState();
     const { appMode } = useUIState();
     const { currentUser } = useAuthState();
@@ -80,6 +80,18 @@ const Dashboard: React.FC = () => {
             }
         }
     }, [quests, selectedQuest]);
+
+    useEffect(() => {
+        if (settings.developerMode.enabled) {
+            console.log('[Dev Log - Dashboard] Data for rendering:', {
+                currentUser: currentUser?.gameName,
+                appMode,
+                recentActivities,
+                allQuests: quests,
+                allCompletions: questCompletions,
+            });
+        }
+    }, [recentActivities, settings.developerMode.enabled, currentUser, appMode, quests, questCompletions]);
 
 
     if (!currentUser) return <div>Loading adventurer's data...</div>;

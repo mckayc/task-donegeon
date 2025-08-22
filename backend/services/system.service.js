@@ -20,16 +20,27 @@ const getChronicles = async (req, res) => {
 
     let allEvents = [];
     
-    // --- Build base WHERE clauses ---
-    const guildFilter = guildId === 'null' ? IsNull() : (guildId ? guildId : undefined);
+    // --- Build base WHERE clauses (REFACTORED FOR CLARITY AND ROBUSTNESS) ---
+    const guildFilter = guildId === 'null' ? IsNull() : (guildId && guildId !== 'undefined' ? guildId : undefined);
 
-    const completionsWhere = {};
-    if (guildId !== undefined && guildId !== 'undefined') completionsWhere.guildId = guildFilter;
-    if (viewMode === 'personal' && userId) completionsWhere.user = { id: userId };
+    const buildWhereClause = (isRelation = false) => {
+        const where = {};
+        if (guildFilter !== undefined) {
+            where.guildId = guildFilter;
+        }
 
-    const otherWhere = {};
-    if (guildId !== undefined && guildId !== 'undefined') otherWhere.guildId = guildFilter;
-    if (viewMode === 'personal' && userId) otherWhere.userId = userId;
+        if (viewMode === 'personal' && userId) {
+            if (isRelation) {
+                where.user = { id: userId };
+            } else {
+                where.userId = userId;
+            }
+        }
+        return where;
+    };
+    
+    const completionsWhere = buildWhereClause(true);
+    const otherWhere = buildWhereClause(false);
     
     // --- Fetch Data ---
     // Quest Completions

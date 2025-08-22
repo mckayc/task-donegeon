@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo, useEffect } from 'react';
 import Card from '../user-interface/Card';
 import { useUIState } from '../../context/UIContext';
@@ -7,11 +8,15 @@ import { ChronicleEvent } from '../chronicles/types';
 import Button from '../user-interface/Button';
 import { useAuthState } from '../../context/AuthContext';
 import { useEconomyDispatch } from '../../context/EconomyContext';
+import { useSystemState } from '../../context/SystemContext';
+import { useQuestsState } from '../../context/QuestsContext';
 
 const ChroniclesPage: React.FC = () => {
     const { appMode } = useUIState();
     const { currentUser } = useAuthState();
     const { cancelPurchaseRequest } = useEconomyDispatch();
+    const { settings } = useSystemState();
+    const { quests } = useQuestsState();
 
     const [viewMode, setViewMode] = useState<'all' | 'personal'>(currentUser?.role === Role.Explorer ? 'personal' : 'all');
     const [itemsPerPage, setItemsPerPage] = useState(50);
@@ -40,6 +45,15 @@ const ChroniclesPage: React.FC = () => {
                 const response = await fetch(`/api/chronicles?${params.toString()}`);
                 if (!response.ok) throw new Error('Failed to fetch chronicles');
                 const data = await response.json();
+
+                if (settings.developerMode.enabled) {
+                    console.log('[Dev Log - Chronicles] Fetched data from API:', {
+                        params: params.toString(),
+                        response: data,
+                        localQuestsStateCount: quests.length,
+                    });
+                }
+
                 setEvents(data.events || []);
                 setTotalEvents(data.total || 0);
             } catch (error) {
@@ -51,7 +65,7 @@ const ChroniclesPage: React.FC = () => {
             }
         };
         fetchEvents();
-    }, [currentPage, itemsPerPage, viewMode, appMode, currentUser]);
+    }, [currentPage, itemsPerPage, viewMode, appMode, currentUser, settings.developerMode.enabled, quests]);
 
     if (!currentUser) return null;
 

@@ -109,12 +109,14 @@ const ChroniclesPage: React.FC = () => {
                     <div className="flex space-x-2 p-1 bg-stone-900/50 rounded-lg">
                         <button
                             onClick={() => setViewMode('all')}
+                            data-log-id="chronicles-filter-all"
                             className={`px-3 py-1 rounded-md font-semibold text-sm transition-colors ${viewMode === 'all' ? 'bg-emerald-600 text-white' : 'text-stone-300 hover:bg-stone-700'}`}
                         >
                             All Activity
                         </button>
                         <button
                             onClick={() => setViewMode('personal')}
+                            data-log-id="chronicles-filter-personal"
                             className={`px-3 py-1 rounded-md font-semibold text-sm transition-colors ${viewMode === 'personal' ? 'bg-emerald-600 text-white' : 'text-stone-300 hover:bg-stone-700'}`}
                         >
                             My Activity

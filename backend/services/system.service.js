@@ -1,4 +1,5 @@
 
+
 const { dataSource } = require('../data-source');
 const { 
     QuestCompletionEntity, PurchaseRequestEntity, UserTrophyEntity, AdminAdjustmentEntity, 
@@ -20,41 +21,43 @@ const getChronicles = async (req, res) => {
 
     let allEvents = [];
     
-    // --- Build base WHERE clauses (REFACTORED FOR CLARITY AND ROBUSTNESS) ---
-    const guildFilter = guildId === 'null' ? IsNull() : (guildId && guildId !== 'undefined' ? guildId : undefined);
+    const isPersonalScope = guildId === 'null' || !guildId || guildId === 'undefined';
 
-    const buildWhereClause = (isRelation = false) => {
-        const where = {};
-        if (guildFilter !== undefined) {
-            where.guildId = guildFilter;
-        }
+    // --- Quest Completions ---
+    const completionsQb = manager.createQueryBuilder(QuestCompletionEntity, "completion")
+        .leftJoinAndSelect("completion.user", "user")
+        .leftJoinAndSelect("completion.quest", "quest")
+        .orderBy("completion.completedAt", "DESC");
 
-        if (viewMode === 'personal' && userId) {
-            if (isRelation) {
-                where.user = { id: userId };
-            } else {
-                where.userId = userId;
-            }
-        }
-        return where;
-    };
-    
-    const completionsWhere = buildWhereClause(true);
-    const otherWhere = buildWhereClause(false);
-    
-    // --- Fetch Data ---
-    // Quest Completions
-    const completions = await manager.find(QuestCompletionEntity, {
-        where: completionsWhere,
-        relations: ['user', 'quest'],
-        order: { completedAt: 'DESC' }
-    });
+    if (isPersonalScope) {
+        completionsQb.where("completion.guildId IS NULL");
+    } else {
+        completionsQb.where("completion.guildId = :guildId", { guildId });
+    }
+
+    if (viewMode === 'personal') {
+        completionsQb.andWhere("user.id = :userId", { userId });
+    }
+    const completions = await completionsQb.getMany();
+
     allEvents.push(...completions.map(c => ({
         id: `c-${c.id}`, originalId: c.id, date: c.completedAt, type: 'Quest',
         title: c.quest?.title || 'Unknown Quest', note: c.note, status: c.status,
         icon: c.quest?.icon || '📜', color: '#10b981', userId: c.user?.id
     })));
 
+    // --- Other Entities ---
+    const otherWhere = {};
+    if (isPersonalScope) {
+        otherWhere.guildId = IsNull();
+    } else {
+        otherWhere.guildId = guildId;
+    }
+
+    if (viewMode === 'personal') {
+        otherWhere.userId = userId;
+    }
+    
     // Purchase Requests
     const purchases = await manager.find(PurchaseRequestEntity, {
         where: otherWhere,

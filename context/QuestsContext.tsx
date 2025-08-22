@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, ReactNode, useReducer, useMemo, useCallback } from 'react';
 import { Quest, QuestGroup, QuestCompletion, Rotation, BulkQuestUpdates } from '../types';
 import { useNotificationsDispatch } from './NotificationsContext';
@@ -36,8 +37,8 @@ export interface QuestsDispatch {
   completeQuest: (completionData: Omit<QuestCompletion, 'id'>) => Promise<void>;
   approveQuestCompletion: (completionId: string, approverId: string, note?: string) => Promise<void>;
   rejectQuestCompletion: (completionId: string, rejecterId: string, note?: string) => Promise<void>;
-  markQuestAsTodo: (questId: string, userId: string) => Promise<Quest | null>;
-  unmarkQuestAsTodo: (questId: string, userId: string) => Promise<Quest | null>;
+  markQuestAsTodo: (questId: string, userId: string) => Promise<void>;
+  unmarkQuestAsTodo: (questId: string, userId: string) => Promise<void>;
   addQuestGroup: (groupData: Omit<QuestGroup, 'id'>) => Promise<QuestGroup | null>;
   updateQuestGroup: (groupData: QuestGroup) => Promise<QuestGroup | null>;
   assignQuestGroupToUsers: (groupId: string, userIds: string[]) => Promise<void>;
@@ -148,12 +149,10 @@ export const QuestsProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         markQuestAsTodo: async (questId, userId) => {
             const result = await apiAction(() => markQuestAsTodoAPI(questId, userId));
             if (result) dispatch({ type: 'UPDATE_QUESTS_DATA', payload: { quests: [result] } });
-            return result;
         },
         unmarkQuestAsTodo: async (questId, userId) => {
             const result = await apiAction(() => unmarkQuestAsTodoAPI(questId, userId));
             if (result) dispatch({ type: 'UPDATE_QUESTS_DATA', payload: { quests: [result] } });
-            return result;
         },
         completeCheckpoint: async (questId, userId) => {
             const result = await apiAction(() => completeCheckpointAPI(questId, userId));

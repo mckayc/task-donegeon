@@ -72,15 +72,6 @@ const Dashboard: React.FC = () => {
         }
     }, [activeThemeId]);
 
-    useEffect(() => {
-        if (selectedQuest) {
-          const updatedQuest = quests.find(q => q.id === selectedQuest.id);
-          if (updatedQuest && JSON.stringify(updatedQuest) !== JSON.stringify(selectedQuest)) {
-            setSelectedQuest(updatedQuest);
-          }
-        }
-    }, [quests, selectedQuest]);
-
     if (!currentUser) return <div>Loading adventurer's data...</div>;
     
     const handleQuestSelect = (quest: Quest) => setSelectedQuest(quest);
@@ -94,13 +85,16 @@ const Dashboard: React.FC = () => {
         }
     };
 
-    const handleToggleTodo = (questToToggle: Quest) => {
+    const handleToggleTodo = async (questToToggle: Quest) => {
         if (!currentUser || questToToggle.type !== QuestType.Venture) return;
         const isTodo = questToToggle.todoUserIds?.includes(currentUser.id);
-        if (isTodo) {
-            unmarkQuestAsTodo(questToToggle.id, currentUser.id);
-        } else {
-            markQuestAsTodo(questToToggle.id, currentUser.id);
+        
+        const updatedQuest = isTodo
+          ? await unmarkQuestAsTodo(questToToggle.id, currentUser.id)
+          : await markQuestAsTodo(questToToggle.id, currentUser.id);
+        
+        if (updatedQuest && selectedQuest) {
+            setSelectedQuest(updatedQuest);
         }
     };
     

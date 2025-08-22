@@ -133,23 +133,23 @@ export const SystemProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         }
     }, [addNotification]);
     
-    const createAddAction = <T_ADD, T_RETURN extends { id: any }, D extends keyof SystemState>(path: string, dataType: D) => 
+    const createAddAction = useCallback(<T_ADD, T_RETURN extends { id: any }, D extends keyof SystemState>(dataType: D) => 
         async (data: T_ADD): Promise<T_RETURN | null> => {
-            const result = await apiRequest('POST', path, data);
+            const result = await apiAction(() => addThemeAPI(data as any)); // This needs to be more generic
             if (result) dispatch({ type: 'UPDATE_SYSTEM_DATA', payload: { [dataType]: [result] } as any });
-            return result;
-        };
+            return result as T_RETURN | null;
+        }, [apiAction]);
         
-    const createUpdateAction = <T extends { id: any }, D extends keyof SystemState>(pathTemplate: (id: any) => string, dataType: D) => 
+    const createUpdateAction = useCallback(<T extends { id: any }, D extends keyof SystemState>(dataType: D) => 
         async (data: T): Promise<T | null> => {
-            const result = await apiRequest('PUT', pathTemplate(data.id), data);
+            const result = await apiAction(() => updateThemeAPI(data as any)); // This needs to be more generic
             if (result) dispatch({ type: 'UPDATE_SYSTEM_DATA', payload: { [dataType]: [result] } as any });
-            return result;
-        };
+            return result as T | null;
+        }, [apiAction]);
 
     const actions = useMemo<SystemDispatch>(() => ({
         deleteSelectedAssets: async (assets, callback) => {
-            await deleteSelectedAssetsAPI(assets);
+            await apiAction(() => deleteSelectedAssetsAPI(assets));
             const assetsToRemove: { [key in keyof SystemState]?: string[] } = {};
             if (assets.users) { deleteUsers(assets.users); }
             Object.keys(assets).forEach(key => {
@@ -170,25 +170,20 @@ export const SystemProvider: React.FC<{ children: ReactNode }> = ({ children }) 
             return false;
         },
         uploadFile: (file, category) => apiAction(() => uploadFileAPI(file, category)),
-        addTheme: createAddAction('/api/themes', 'themes'),
-        updateTheme: createUpdateAction(id => `/api/themes/${id}`, 'themes'),
-        deleteTheme: async (id) => {
-            await apiAction(() => deleteThemeAPI(id));
-            dispatch({ type: 'REMOVE_SYSTEM_DATA', payload: { themes: [id] } });
-        },
-        updateSettings: async (settings) => {
-            await apiAction(() => updateSettingsAPI(settings), 'Settings saved!');
-        },
+        addTheme: (data) => apiAction(() => addThemeAPI(data)),
+        updateTheme: (data) => apiAction(() => updateThemeAPI(data)),
+        deleteTheme: (id) => apiAction(() => deleteThemeAPI(id)),
+        updateSettings: (settings) => apiAction(() => updateSettingsAPI(settings), 'Settings saved!'),
         resetSettings: () => apiAction(() => resetSettingsAPI()),
         applySettingsUpdates: () => apiAction(() => applySettingsUpdatesAPI()),
         clearAllHistory: () => apiAction(() => clearAllHistoryAPI()),
         resetAllPlayerData: () => apiAction(() => resetAllPlayerDataAPI()),
         deleteAllCustomContent: () => apiAction(() => deleteAllCustomContentAPI()),
         factoryReset: () => apiAction(() => factoryResetAPI()),
-        addSystemNotification: createAddAction('/api/notifications', 'systemNotifications'),
+        addSystemNotification: (data) => apiAction(() => addSystemNotificationAPI(data)),
         markSystemNotificationsAsRead: (ids, userId) => apiAction(() => markSystemNotificationsAsReadAPI(ids, userId)),
-        addScheduledEvent: createAddAction('/api/events', 'scheduledEvents'),
-        updateScheduledEvent: createUpdateAction(id => `/api/events/${id}`, 'scheduledEvents'),
+        addScheduledEvent: (data) => apiAction(() => addScheduledEventAPI(data)),
+        updateScheduledEvent: (data) => apiAction(() => updateScheduledEventAPI(data)),
         deleteScheduledEvent: (id) => apiAction(() => deleteScheduledEventAPI(id)),
         importAssetPack: (pack, resolutions) => apiAction(() => importAssetPackAPI(pack, resolutions)),
         addBugReport: async (report) => {
@@ -201,8 +196,8 @@ export const SystemProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         importBugReports: async (reports, mode) => {
             await apiAction(() => importBugReportsAPI(reports, mode));
         },
-        addModifierDefinition: createAddAction('/api/setbacks', 'modifierDefinitions'),
-        updateModifierDefinition: createUpdateAction(id => `/api/setbacks/${id}`, 'modifierDefinitions'),
+        addModifierDefinition: (data) => apiAction(() => addModifierDefinitionAPI(data)),
+        updateModifierDefinition: (data) => apiAction(() => updateModifierDefinitionAPI(data)),
         applyModifier: async (userId, modifierId, reason, overrides) => {
             if (!currentUser) return false;
             const result = await apiAction(() => applyModifierAPI(userId, modifierId, reason, currentUser.id, overrides));
@@ -223,13 +218,15 @@ export const SystemProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         },
         sendMessage: async (messageData) => {
             if (!currentUser) return null;
-            return await apiAction(() => sendMessageAPI({ ...messageData, senderId: currentUser.id }));
+            const result = await apiAction(() => sendMessageAPI({ ...messageData, senderId: currentUser.id }));
+            if (result) dispatch({ type: 'UPDATE_SYSTEM_DATA', payload: { chatMessages: [result] } });
+            return result;
         },
         markMessagesAsRead: async (payload) => {
             if (!currentUser) return;
             await apiAction(() => markMessagesAsReadAPI({ ...payload, userId: currentUser.id }));
         },
-    }), [apiRequest, addNotification, currentUser, updateUser, deleteUsers, setUsers, createAddAction, createUpdateAction]);
+    }), [apiAction, addNotification, currentUser, updateUser, deleteUsers, setUsers, createAddAction, createUpdateAction]);
 
     const contextValue = useMemo(() => ({ dispatch, actions }), [dispatch, actions]);
 

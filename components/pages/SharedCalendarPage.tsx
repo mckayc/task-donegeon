@@ -144,24 +144,18 @@ const SharedCalendarPage: React.FC = () => {
         setSelectedQuestDetails(null);
     };
 
-    const handleToggleTodo = () => {
+    const handleToggleTodo = async () => {
         if (!selectedQuestDetails) return;
         const { quest, user } = selectedQuestDetails;
         const isCurrentlyTodo = quest.todoUserIds?.includes(user.id);
 
-        if (isCurrentlyTodo) {
-            unmarkQuestAsTodo(quest.id, user.id);
-        } else {
-            markQuestAsTodo(quest.id, user.id);
-        }
+        const updatedQuest = isCurrentlyTodo
+            ? await unmarkQuestAsTodo(quest.id, user.id)
+            : await markQuestAsTodo(quest.id, user.id);
         
-        setSelectedQuestDetails(prev => {
-            if (!prev) return null;
-            const newTodoUserIds = isCurrentlyTodo
-                ? (prev.quest.todoUserIds || []).filter(id => id !== user.id)
-                : [...(prev.quest.todoUserIds || []), user.id];
-            return { ...prev, quest: { ...prev.quest, todoUserIds: newTodoUserIds } };
-        });
+        if (updatedQuest) {
+            setSelectedQuestDetails({ quest: updatedQuest, user });
+        }
     };
     
     return (

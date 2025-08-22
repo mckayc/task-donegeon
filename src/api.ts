@@ -106,6 +106,7 @@ export const uploadFileAPI = (file: File, category?: string) => apiUpload('/api/
 export const addThemeAPI = (data: Omit<ThemeDefinition, 'id'>) => apiRequest('POST', '/api/themes', data);
 export const updateThemeAPI = (data: ThemeDefinition) => apiRequest('PUT', `/api/themes/${data.id}`, data);
 export const deleteThemeAPI = (id: string) => apiRequest('DELETE', `/api/themes`, { ids: [id] });
+export const updateSettingsAPI = (settings: AppSettings) => apiRequest('PUT', '/api/settings', settings);
 export const resetSettingsAPI = () => apiRequest('POST', '/api/data/reset-settings');
 export const applySettingsUpdatesAPI = () => apiRequest('POST', '/api/data/apply-updates');
 export const clearAllHistoryAPI = () => apiRequest('POST', '/api/data/clear-history');

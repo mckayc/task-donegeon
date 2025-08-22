@@ -365,24 +365,18 @@ const CalendarPage: React.FC = () => {
         }
     };
 
-    const handleToggleTodo = () => {
+    const handleToggleTodo = async () => {
         if (!viewingQuest) return;
-        const { quest } = viewingQuest;
+        const { quest, date } = viewingQuest;
         const isCurrentlyTodo = quest.todoUserIds?.includes(currentUser.id);
 
-        if (isCurrentlyTodo) {
-            unmarkQuestAsTodo(quest.id, currentUser.id);
-        } else {
-            markQuestAsTodo(quest.id, currentUser.id);
-        }
+        const updatedQuest = isCurrentlyTodo
+            ? await unmarkQuestAsTodo(quest.id, currentUser.id)
+            : await markQuestAsTodo(quest.id, currentUser.id);
         
-        setViewingQuest(prev => {
-            if (!prev) return null;
-            const newTodoUserIds = isCurrentlyTodo
-                ? (prev.quest.todoUserIds || []).filter(id => id !== currentUser.id)
-                : [...(prev.quest.todoUserIds || []), currentUser.id];
-            return { ...prev, quest: { ...prev.quest, todoUserIds: newTodoUserIds } };
-        });
+        if (updatedQuest) {
+            setViewingQuest({ quest: updatedQuest, date });
+        }
     };
 
     return (

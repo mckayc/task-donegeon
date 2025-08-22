@@ -122,7 +122,6 @@ const QuestEntity = new EntitySchema({
         guildId: { type: "varchar", nullable: true },
         groupId: { type: "varchar", nullable: true },
         checkpoints: { type: "simple-json", nullable: true },
-        checkpointCompletions: { type: "simple-json", nullable: true },
         checkpointCompletionTimestamps: { type: "simple-json", nullable: true },
         createdAt: { type: "varchar", nullable: true },
         updatedAt: { type: "varchar", nullable: true },

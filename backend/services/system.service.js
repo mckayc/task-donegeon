@@ -1,4 +1,5 @@
 
+
 const { dataSource } = require('../data-source');
 const { 
     QuestCompletionEntity, PurchaseRequestEntity, UserTrophyEntity, AdminAdjustmentEntity, 
@@ -10,7 +11,7 @@ const {
 const { updateEmitter } = require('../utils/updateEmitter');
 const { updateTimestamps } = require('../utils/helpers');
 const { INITIAL_SETTINGS, INITIAL_RANKS, INITIAL_REWARD_TYPES, INITIAL_TROPHIES, INITIAL_QUEST_GROUPS, INITIAL_THEMES } = require('../initialData');
-const { In } = require('typeorm');
+const { In, IsNull } = require('typeorm');
 
 
 const getChronicles = async (req, res) => {
@@ -19,13 +20,30 @@ const getChronicles = async (req, res) => {
     const skip = (parseInt(page) - 1) * parseInt(limit);
 
     let allEvents = [];
-    const baseWhere = { timestamp: { $gte: startDate, $lte: endDate } }; // Simplified, TypeORM uses different syntax
+    
+    // --- Build base where clause for all queries ---
+    const buildWhereClause = (userSpecific = false) => {
+        const where = {};
+        if (guildId === 'null') {
+            where.guildId = IsNull();
+        } else if (guildId) {
+            where.guildId = guildId;
+        }
 
-    const userFilter = viewMode === 'personal' ? { userId: userId } : {};
+        if (viewMode === 'personal' && userId) {
+            // For entities with direct userId column
+            if (userSpecific) {
+                 where.userId = userId;
+            } else { // For entities with user relation
+                 where.user = { id: userId };
+            }
+        }
+        return where;
+    };
 
     // Quest Completions
     const completions = await manager.find(QuestCompletionEntity, {
-        where: { userId: userFilter.userId, guildId: guildId === 'null' ? null : guildId },
+        where: buildWhereClause(false),
         relations: ['user', 'quest'],
         order: { completedAt: 'DESC' }
     });
@@ -37,7 +55,7 @@ const getChronicles = async (req, res) => {
 
     // Purchase Requests
     const purchases = await manager.find(PurchaseRequestEntity, {
-        where: { userId: userFilter.userId, guildId: guildId === 'null' ? null : guildId },
+        where: buildWhereClause(true), // PurchaseRequest has direct userId
         relations: ['user'],
         order: { requestedAt: 'DESC' }
     });
@@ -49,7 +67,7 @@ const getChronicles = async (req, res) => {
 
     // User Trophies
     const trophies = await manager.find(UserTrophyEntity, {
-        where: { userId: userFilter.userId, guildId: guildId === 'null' ? null : guildId },
+        where: buildWhereClause(true), // UserTrophy has direct userId
         relations: ['user', 'trophy'],
         order: { awardedAt: 'DESC' }
     });
@@ -61,7 +79,7 @@ const getChronicles = async (req, res) => {
 
     // Admin Adjustments
     const adjustments = await manager.find(AdminAdjustmentEntity, {
-        where: { userId: userFilter.userId, guildId: guildId === 'null' ? null : guildId },
+        where: buildWhereClause(true), // AdminAdjustment has direct userId
         relations: ['user'],
         order: { adjustedAt: 'DESC' }
     });

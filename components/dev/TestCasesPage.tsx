@@ -2,10 +2,12 @@ import React, { useState } from 'react';
 import Card from '../user-interface/Card';
 import MarkVentureAsTodoTestCase from './test-cases/MarkVentureAsTodo.testcase';
 import MarkVentureAsTodoIntegrationTestCase from './test-cases/MarkVentureAsTodo.integration.testcase';
+import CompleteQuestIntegrationTestCase from './test-cases/CompleteQuest.integration.testcase';
 
 const testCases = [
   { id: 'mark-venture-todo', name: 'Mark Venture as To-Do (Unit)', component: MarkVentureAsTodoTestCase },
   { id: 'mark-venture-todo-integration', name: 'Mark Venture as To-Do (Integration)', component: MarkVentureAsTodoIntegrationTestCase },
+  { id: 'complete-quest-integration', name: 'Complete Quest (Integration)', component: CompleteQuestIntegrationTestCase },
   // Future test cases can be added here
 ];
 

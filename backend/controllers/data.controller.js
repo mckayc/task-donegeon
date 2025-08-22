@@ -1,9 +1,9 @@
 
 
 const { dataSource } = require('../data-source');
-const { In, MoreThan } = require("typeorm");
+const { In, MoreThan, IsNull } = require("typeorm");
 const { 
-    UserEntity
+    UserEntity, QuestEntity, QuestCompletionEntity, GuildEntity
 } = require('../entities');
 const { updateEmitter } = require('../utils/updateEmitter');
 const { getFullAppData } = require('../utils/helpers');
@@ -63,11 +63,10 @@ updateEmitter.on('update', sendUpdateToClients);
 const getDeltaAppData = async (manager, lastSync) => {
     const updates = {};
     const entityMap = {
-        QuestGroup: 'questGroups', QuestCompletion: 'questCompletions', Rotation: 'rotations',
         Market: 'markets', GameAsset: 'gameAssets', PurchaseRequest: 'purchaseRequests', RewardTypeDefinition: 'rewardTypes', TradeOffer: 'tradeOffers', Gift: 'gifts',
-        Rank: 'ranks', Trophy: 'trophies', UserTrophy: 'userTrophies', Guild: 'guilds',
+        Rank: 'ranks', Trophy: 'trophies', UserTrophy: 'userTrophies',
         SystemLog: 'systemLogs', AdminAdjustment: 'adminAdjustments', SystemNotification: 'systemNotifications', ScheduledEvent: 'scheduledEvents', ChatMessage: 'chatMessages',
-        BugReport: 'bugReports', ModifierDefinition: 'modifierDefinitions', AppliedModifier: 'appliedModifiers', ThemeDefinition: 'themes'
+        BugReport: 'bugReports', ModifierDefinition: 'modifierDefinitions', AppliedModifier: 'appliedModifiers', ThemeDefinition: 'themes', QuestGroup: 'questGroups', Rotation: 'rotations'
     };
 
     // User sync is special because of relations
@@ -79,13 +78,35 @@ const getDeltaAppData = async (manager, lastSync) => {
         });
     }
 
-    // Quest sync is also special because of relations
-    const updatedQuests = await manager.find('Quest', { where: { updatedAt: MoreThan(lastSync) }, relations: ['assignedUsers'] });
-     if (updatedQuests.length > 0) {
+    // Quest sync
+    const questRepo = manager.getRepository('Quest');
+    const updatedQuests = await questRepo.find({ where: { updatedAt: MoreThan(lastSync) }, relations: ['assignedUsers'] });
+    if (updatedQuests.length > 0) {
         updates.quests = updatedQuests.map(q => {
             const { assignedUsers, ...questData } = q;
-            // FIX: Safely map assignedUsers, providing an empty array as a fallback if it's null or undefined.
             return { ...questData, assignedUserIds: assignedUsers?.map(u => u.id) || [] };
+        });
+    }
+
+    // QuestCompletion sync
+    const qcRepo = manager.getRepository('QuestCompletion');
+    const updatedQCs = await qcRepo.find({ where: { updatedAt: MoreThan(lastSync) }, relations: ['user', 'quest'] });
+    if (updatedQCs.length > 0) {
+        updates.questCompletions = updatedQCs
+            .filter(qc => qc.user && qc.quest)
+            .map(qc => {
+                const { user, quest, ...completionData } = qc;
+                return { ...completionData, userId: user.id, questId: quest.id };
+            });
+    }
+
+    // Guild sync
+    const guildRepo = manager.getRepository('Guild');
+    const updatedGuilds = await guildRepo.find({ where: { updatedAt: MoreThan(lastSync) }, relations: ['members'] });
+    if (updatedGuilds.length > 0) {
+        updates.guilds = updatedGuilds.map(g => {
+            const { members, ...guildData } = g;
+            return { ...guildData, memberIds: members?.map(m => m.id) || [] };
         });
     }
     

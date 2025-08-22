@@ -1,16 +1,13 @@
 
-
 const { dataSource } = require('../data-source');
 const { 
     QuestCompletionEntity, PurchaseRequestEntity, UserTrophyEntity, AdminAdjustmentEntity, 
-    GiftEntity, TradeOfferEntity, AppliedModifierEntity, UserEntity, QuestEntity, GameAssetEntity, 
-    MarketEntity, RewardTypeDefinitionEntity, RankEntity, TrophyEntity, QuestGroupEntity, 
-    SettingEntity, LoginHistoryEntity, SystemLogEntity, ChatMessageEntity, SystemNotificationEntity,
-    ScheduledEventEntity, BugReportEntity, ModifierDefinitionEntity, RotationEntity, GuildEntity
+    UserEntity, QuestEntity,
+    SettingEntity
 } = require('../entities');
 const { updateEmitter } = require('../utils/updateEmitter');
 const { updateTimestamps } = require('../utils/helpers');
-const { INITIAL_SETTINGS, INITIAL_RANKS, INITIAL_REWARD_TYPES, INITIAL_TROPHIES, INITIAL_QUEST_GROUPS, INITIAL_THEMES } = require('../initialData');
+const { INITIAL_SETTINGS } = require('../initialData');
 const { In, IsNull } = require('typeorm');
 
 
@@ -20,69 +17,75 @@ const getChronicles = async (req, res) => {
     const skip = (parseInt(page, 10) - 1) * parseInt(limit, 10);
     const isPersonalScope = guildId === 'null' || !guildId || guildId === 'undefined';
 
+    // --- Fetch All Event Types Concurrently ---
+    const completionsPromise = manager.createQueryBuilder(QuestCompletionEntity, "completion")
+        .innerJoin("completion.quest", "quest")
+        .innerJoin("completion.user", "user")
+        .addSelect(["quest.title", "quest.icon"])
+        .addSelect(["user.gameName"])
+        .where(isPersonalScope ? "completion.guildId IS NULL" : "completion.guildId = :guildId", { guildId })
+        .andWhere(viewMode === 'personal' ? "completion.userId = :userId" : "1=1", { userId })
+        .orderBy("completion.completedAt", "DESC")
+        .getMany();
+
+    const buildOtherQuery = (entity) => {
+        const qb = manager.createQueryBuilder(entity, "event")
+            .leftJoinAndSelect("event.user", "user");
+
+        if (isPersonalScope) {
+            qb.where("event.guildId IS NULL");
+        } else {
+            qb.where("event.guildId = :guildId", { guildId });
+        }
+        if (viewMode === 'personal') {
+            qb.andWhere("event.userId = :userId", { userId });
+        }
+        return qb.getMany();
+    };
+
+    const purchasesPromise = buildOtherQuery(PurchaseRequestEntity);
+    const adjustmentsPromise = buildOtherQuery(AdminAdjustmentEntity);
+
+    const trophiesPromise = manager.createQueryBuilder(UserTrophyEntity, "ut")
+        .innerJoinAndSelect("ut.trophy", "trophy")
+        .innerJoinAndSelect("ut.user", "user")
+        .where(isPersonalScope ? "ut.guildId IS NULL" : "ut.guildId = :guildId", { guildId })
+        .andWhere(viewMode === 'personal' ? "ut.userId = :userId" : "1=1", { userId })
+        .getMany();
+
+    const [completions, purchases, adjustments, userTrophies] = await Promise.all([
+        completionsPromise,
+        purchasesPromise,
+        adjustmentsPromise,
+        trophiesPromise
+    ]);
+
+    // --- Map to Common Format ---
     let allEvents = [];
-
-    // --- Quest Completions ---
-    const completionsQb = manager.createQueryBuilder(QuestCompletionEntity, "completion")
-        .leftJoinAndSelect("completion.quest", "quest")
-        .leftJoinAndSelect("completion.user", "user")
-        .select([
-            "completion.id", "completion.completedAt", "completion.note", "completion.status", "completion.userId", "completion.guildId",
-            "quest.id", "quest.title", "quest.icon",
-            "user.id", "user.gameName"
-        ]);
-
-    if (isPersonalScope) {
-        completionsQb.where("completion.guildId IS NULL");
-    } else {
-        completionsQb.where("completion.guildId = :guildId", { guildId });
-    }
-
-    if (viewMode === 'personal') {
-        completionsQb.andWhere("completion.userId = :userId", { userId });
-    }
-    
-    const completions = await completionsQb.getMany();
-
     allEvents.push(...completions.map(c => ({
         id: `c-${c.id}`, originalId: c.id, date: c.completedAt, type: 'Quest',
-        title: c.quest?.title || 'Unknown Quest', note: c.note, status: c.status,
-        icon: c.quest?.icon || '📜', color: '#10b981', userId: c.userId, actorName: c.user?.gameName,
+        title: `${c.user.gameName} completed "${c.quest.title}"`,
+        note: c.note, status: c.status, icon: c.quest.icon, color: '#10b981', userId: c.userId, actorName: c.user.gameName
     })));
 
-    // --- Other Entities ---
-    const otherWhere = {};
-    if (isPersonalScope) {
-        otherWhere.guildId = IsNull();
-    } else {
-        otherWhere.guildId = guildId;
-    }
-
-    if (viewMode === 'personal') {
-        otherWhere.userId = userId;
-    }
-    
-    const purchases = await manager.find(PurchaseRequestEntity, { where: otherWhere, relations: ['user'] });
     allEvents.push(...purchases.map(p => ({
         id: `p-${p.id}`, originalId: p.id, date: p.requestedAt, type: 'Purchase',
-        title: `Purchase: ${p.assetDetails.name}`, note: p.assetDetails.description, status: p.status,
-        icon: '💰', color: '#f59e0b', userId: p.userId, actorName: p.user?.gameName
+        title: `${p.user.gameName} purchased "${p.assetDetails.name}"`,
+        note: p.assetDetails.description, status: p.status, icon: '💰', color: '#f59e0b', userId: p.userId, actorName: p.user.gameName
     })));
 
-    const trophies = await manager.find(UserTrophyEntity, { where: otherWhere, relations: ['user', 'trophy'] });
-    allEvents.push(...trophies.map(t => ({
+    allEvents.push(...userTrophies.map(t => ({
         id: `t-${t.id}`, originalId: t.id, date: t.awardedAt, type: 'Trophy',
-        title: `Trophy Earned: ${t.trophy?.name || 'Unknown Trophy'}`, note: t.trophy?.description, status: 'Awarded',
-        icon: t.trophy?.icon || '🏆', color: '#ca8a04', userId: t.userId, actorName: t.user?.gameName
+        title: `${t.user.gameName} earned: "${t.trophy.name}"`,
+        note: t.trophy.description, status: 'Awarded', icon: t.trophy.icon, color: '#ca8a04', userId: t.userId, actorName: t.user.gameName
     })));
 
-    const adjustments = await manager.find(AdminAdjustmentEntity, { where: otherWhere, relations: ['user'] });
     allEvents.push(...adjustments.map(a => ({
         id: `a-${a.id}`, originalId: a.id, date: a.adjustedAt, type: 'Adjustment',
-        title: `Admin Adjustment: ${a.type}`, note: a.reason, status: a.type,
-        icon: '⚖️', color: '#a855f7', userId: a.userId, actorName: a.user?.gameName
+        title: `Admin Adjustment for ${a.user.gameName}`,
+        note: a.reason, status: a.type, icon: '⚖️', color: '#a855f7', userId: a.userId, actorName: a.user.gameName
     })));
-
+    
     // Date Range Filtering & Sorting
     const filteredByDate = allEvents.filter(event => {
         if (!startDate || !endDate) return true;
@@ -139,7 +142,7 @@ const applySettingsUpdates = async (req, res) => {
 const clearAllHistory = async (req, res) => {
     const manager = dataSource.manager;
     const historyEntities = [
-        QuestCompletionEntity, PurchaseRequestEntity, UserTrophyEntity, AdminAdjustmentEntity,
+        QuestCompletionEntity, PurchaseRequestEntity, UserTrophyEntity, AdminAdjustmentEntity, 
         GiftEntity, TradeOfferEntity, AppliedModifierEntity, SystemLogEntity,
         ChatMessageEntity, SystemNotificationEntity
     ];

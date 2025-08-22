@@ -1,5 +1,4 @@
 
-
 const { dataSource } = require('../data-source');
 const { In, MoreThan } = require("typeorm");
 const { 
@@ -136,35 +135,27 @@ const syncData = async (req, res) => {
 };
 
 const firstRun = async (req, res) => {
-    // This is now handled by the data controller and its firstRun service.
-    // For now, keep the old logic but this should be refactored.
-    const { firstRun } = require('../services/system.service');
-    await firstRun(req, res);
+    await systemService.firstRun(req, res);
 };
 
 const applyUpdates = async (req, res) => {
-    const { applySettingsUpdates } = require('../services/system.service');
-    await applySettingsUpdates(req, res);
+    await systemService.applySettingsUpdates(req, res);
 };
 
 const clearHistory = async (req, res) => {
-    const { clearAllHistory } = require('../services/system.service');
-    await clearAllHistory(req, res);
+    await systemService.clearAllHistory(req, res);
 };
 
 const resetPlayers = async (req, res) => {
-    const { resetAllPlayerData } = require('../services/system.service');
-    await resetAllPlayerData(req, res);
+    await systemService.resetAllPlayerData(req, res);
 };
 
 const deleteContent = async (req, res) => {
-    const { deleteAllCustomContent } = require('../services/system.service');
-    await deleteAllCustomContent(req, res);
+    await systemService.deleteAllCustomContent(req, res);
 };
 
 const factoryReset = async (req, res) => {
-    const { factoryReset } = require('../services/system.service');
-    await factoryReset(req, res);
+    await systemService.factoryReset(req, res);
 };
 
 const getChronicles = async (req, res) => {

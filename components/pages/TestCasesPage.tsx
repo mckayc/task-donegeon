@@ -1,8 +1,9 @@
+
 import React, { useState } from 'react';
 import Card from '../user-interface/Card';
-import MarkVentureAsTodoTestCase from './test-cases/MarkVentureAsTodo.testcase';
-import MarkVentureAsTodoIntegrationTestCase from './test-cases/MarkVentureAsTodo.integration.testcase';
-import ChroniclesDataIntegrityTestCase from './test-cases/ChroniclesDataIntegrity.testcase';
+import MarkVentureAsTodoTestCase from '../dev/test-cases/MarkVentureAsTodo.testcase';
+import MarkVentureAsTodoIntegrationTestCase from '../dev/test-cases/MarkVentureAsTodo.integration.testcase';
+import ChroniclesDataIntegrityTestCase from '../dev/test-cases/ChroniclesDataIntegrity.testcase';
 
 const testCases = [
   { id: 'chronicles-data-integrity', name: 'Chronicles Data Integrity', component: ChroniclesDataIntegrityTestCase },

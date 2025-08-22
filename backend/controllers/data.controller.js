@@ -1,4 +1,5 @@
 
+
 const { dataSource } = require('../data-source');
 const { In, MoreThan, IsNull } = require("typeorm");
 const { 
@@ -88,13 +89,16 @@ const getDeltaAppData = async (manager, lastSync) => {
     }
 
     // QuestCompletion sync
-    const qcRepo = manager.getRepository('QuestCompletion');
-    const updatedQCs = await qcRepo.find({ where: { updatedAt: MoreThan(lastSync) }, relations: ['user', 'quest'] });
+    const qcRepo = manager.getRepository(QuestCompletionEntity);
+    const updatedQCs = await qcRepo.find({ 
+        where: { updatedAt: MoreThan(lastSync) }, 
+        relations: ['user', 'quest'] 
+    });
     if (updatedQCs.length > 0) {
         updates.questCompletions = updatedQCs
-            .filter(qc => qc.user && qc.quest) // Ensure relations are loaded
+            .filter(qc => qc.user && qc.quest)
             .map(qc => {
-                // Manually structure the object to match frontend expectations
+                // Explicitly create a new object to avoid TypeORM proxy issues
                 return {
                     id: qc.id,
                     completedAt: qc.completedAt,

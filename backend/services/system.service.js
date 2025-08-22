@@ -1,4 +1,5 @@
 
+
 const { dataSource } = require('../data-source');
 const { 
     QuestCompletionEntity, PurchaseRequestEntity, UserTrophyEntity, AdminAdjustmentEntity, 
@@ -46,7 +47,7 @@ const getChronicles = async (req, res) => {
     });
     allEvents.push(...completions.map(c => ({
         id: `c-${c.id}`, originalId: c.id, date: c.completedAt, type: 'Quest',
-        title: `Completed: ${c.quest?.title || 'Unknown Quest'}`, note: c.note, status: c.status,
+        title: `${c.user.gameName} completed: ${c.quest?.title || 'Unknown Quest'}`, note: c.note, status: c.status,
         icon: c.quest?.icon || '📜', color: '#10b981', userId: c.user.id
     })));
 
@@ -58,7 +59,7 @@ const getChronicles = async (req, res) => {
     });
     allEvents.push(...purchases.map(p => ({
         id: `p-${p.id}`, originalId: p.id, date: p.requestedAt, type: 'Purchase',
-        title: `Purchase: ${p.assetDetails.name}`, note: p.assetDetails.description, status: p.status,
+        title: `${p.user.gameName} requested: ${p.assetDetails.name}`, note: p.assetDetails.description, status: p.status,
         icon: '💰', color: '#f59e0b', userId: p.userId
     })));
 
@@ -70,7 +71,7 @@ const getChronicles = async (req, res) => {
     });
     allEvents.push(...trophies.map(t => ({
         id: `t-${t.id}`, originalId: t.id, date: t.awardedAt, type: 'Trophy',
-        title: `Trophy Earned: ${t.trophy.name}`, note: t.trophy.description, status: 'Awarded',
+        title: `${t.user.gameName} earned: ${t.trophy.name}`, note: t.trophy.description, status: 'Awarded',
         icon: t.trophy.icon, color: '#ca8a04', userId: t.userId
     })));
 
@@ -82,7 +83,7 @@ const getChronicles = async (req, res) => {
     });
     allEvents.push(...adjustments.map(a => ({
         id: `a-${a.id}`, originalId: a.id, date: a.adjustedAt, type: 'Adjustment',
-        title: `Admin Adjustment: ${a.type}`, note: a.reason, status: a.type,
+        title: `Admin Adjustment for ${a.user.gameName}: ${a.type}`, note: a.reason, status: a.type,
         icon: '⚖️', color: '#a855f7', userId: a.userId
     })));
     

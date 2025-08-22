@@ -13,7 +13,6 @@ import LoginNotificationPopup from '../user-interface/LoginNotificationPopup';
 import ChatController from '../chat/ChatController';
 import { routeConfig } from './routeConfig';
 import { useSystemState } from '../../context/SystemContext';
-import { logger } from '../../utils/logger';
 
 const MainLayout: React.FC = () => {
   const { settings, systemNotifications } = useSystemState();
@@ -68,11 +67,9 @@ const MainLayout: React.FC = () => {
     const isPageForGatekeepers = GATEKEEPER_PAGES.includes(activePage);
 
     if (isPageAdminOnly && currentUser.role !== Role.DonegeonMaster) {
-      logger.warn(`[MainLayout] Permission denied for admin page "${activePage}" for user role "${currentUser.role}". Redirecting.`);
       addNotification({ type: 'error', message: 'You do not have permission to view this page.' });
       setActivePage('Dashboard');
     } else if (isPageForGatekeepers && currentUser.role === Role.Explorer) {
-      logger.warn(`[MainLayout] Permission denied for gatekeeper page "${activePage}" for user role "${currentUser.role}". Redirecting.`);
       addNotification({ type: 'error', message: 'You do not have permission to view this page.' });
       setActivePage('Dashboard');
     }

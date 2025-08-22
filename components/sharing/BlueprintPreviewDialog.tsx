@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { AssetPack, ImportResolution, ShareableAssetType } from '../../types';
 import { Terminology } from '../../types/app';
@@ -5,7 +6,6 @@ import Button from '../user-interface/Button';
 import Input from '../user-interface/Input';
 import { useSystemState } from '../../context/SystemContext';
 import { analyzeAssetPackForConflicts } from '../../utils/sharing';
-import { logger } from '../../utils/logger';
 
 interface BlueprintPreviewDialogProps {
   blueprint: AssetPack;
@@ -37,11 +37,6 @@ const BlueprintPreviewDialog: React.FC<BlueprintPreviewDialogProps> = ({ bluepri
 
     const handleRenameChange = (id: string, type: ShareableAssetType, newName: string) => {
         setResolutions(prev => prev.map(r => r.id === id && r.type === type ? { ...r, newName } : r));
-    };
-    
-    const handleConfirmImport = () => {
-        logger.log('[BlueprintPreview] Confirming asset pack import', { packName: blueprint.manifest.name, resolutions });
-        onConfirm(blueprint, resolutions);
     };
 
     const newItems = resolutions.filter(r => r.status === 'new');
@@ -106,7 +101,7 @@ const BlueprintPreviewDialog: React.FC<BlueprintPreviewDialogProps> = ({ bluepri
                 <div className="p-6 border-t border-stone-700/60">
                     <div className="flex justify-end space-x-4">
                         <Button type="button" variant="secondary" onClick={onClose}>Cancel</Button>
-                        <Button type="button" onClick={handleConfirmImport}>Confirm & Import</Button>
+                        <Button type="button" onClick={() => onConfirm(blueprint, resolutions)}>Confirm & Import</Button>
                     </div>
                 </div>
             </div>

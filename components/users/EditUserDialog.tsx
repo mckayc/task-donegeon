@@ -8,7 +8,6 @@ import { useNotificationsDispatch } from '../../context/NotificationsContext';
 import { SparklesIcon } from '../user-interface/Icons';
 import { GenerateContentResponse } from '@google/genai';
 import { useSystemState } from '../../context/SystemContext';
-import { logger } from '../../utils/logger';
 
 interface EditUserDialogProps {
   user: User;
@@ -69,7 +68,6 @@ const EditUserDialog: React.FC<EditUserDialogProps> = ({ user, onClose, onUserUp
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    logger.log('[EditUserDialog] Submitting user update.', { userId: user.id, gameName: formData.gameName });
 
     if (formData.pin && (formData.pin.length < 4 || formData.pin.length > 10 || !/^\d+$/.test(formData.pin))) {
         addNotification({ type: 'error', message: 'PIN must be 4-10 numbers.'});

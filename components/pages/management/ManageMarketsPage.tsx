@@ -1,17 +1,17 @@
+
 import React, { useState, useRef, useEffect } from 'react';
-import { Market } from '../../types';
-import Button from '../user-interface/Button';
-import Card from '../user-interface/Card';
-import EditMarketDialog from '../markets/EditMarketDialog';
-import ConfirmDialog from '../user-interface/ConfirmDialog';
-import { useSystemState, useSystemDispatch } from '../../context/SystemContext';
-import EmptyState from '../user-interface/EmptyState';
-import { MarketplaceIcon } from '../user-interface/Icons';
-import MarketIdeaGenerator from '../quests/MarketIdeaGenerator';
-import { useEconomyState, useEconomyDispatch } from '../../context/EconomyContext';
-import MarketTable from '../markets/MarketTable';
-import { useShiftSelect } from '../../hooks/useShiftSelect';
-import { logger } from '../../utils/logger';
+import { Market } from '../../../types';
+import Button from '../../user-interface/Button';
+import Card from '../../user-interface/Card';
+import EditMarketDialog from '../../markets/EditMarketDialog';
+import ConfirmDialog from '../../user-interface/ConfirmDialog';
+import { useSystemState, useSystemDispatch } from '../../../context/SystemContext';
+import EmptyState from '../../user-interface/EmptyState';
+import { MarketplaceIcon } from '../../user-interface/Icons';
+import MarketIdeaGenerator from '../../quests/MarketIdeaGenerator';
+import { useEconomyState, useEconomyDispatch } from '../../../context/EconomyContext';
+import MarketTable from '../../markets/MarketTable';
+import { useShiftSelect } from '../../../hooks/useShiftSelect';
 
 const ManageMarketsPage: React.FC = () => {
     const { settings, isAiConfigured } = useSystemState();
@@ -30,42 +30,32 @@ const ManageMarketsPage: React.FC = () => {
 
     const marketIds = React.useMemo(() => markets.map(m => m.id), [markets]);
     const handleCheckboxClick = useShiftSelect(marketIds, selectedMarkets, setSelectedMarkets);
+    
+    const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setSelectedMarkets(e.target.checked ? marketIds : []);
+    };
 
     const handleCreateMarket = () => {
-        logger.log('[ManageMarkets] Opening create dialog');
         setEditingMarket(null);
         setInitialCreateData(null);
         setIsMarketDialogOpen(true);
     };
 
     const handleEditMarket = (market: Market) => {
-        logger.log('[ManageMarkets] Opening edit dialog for market', { id: market.id, name: market.title });
         setEditingMarket(market);
         setInitialCreateData(null);
         setIsMarketDialogOpen(true);
     };
 
     const handleUseIdea = (idea: { title: string; description: string; icon: string; }) => {
-        logger.log('[ManageMarkets] Using AI-generated idea to create market', { title: idea.title });
         setIsGeneratorOpen(false);
         setInitialCreateData(idea);
         setEditingMarket(null);
         setIsMarketDialogOpen(true);
     };
-
-    const handleCloneMarket = (marketId: string) => {
-        logger.log('[ManageMarkets] Cloning market', { id: marketId });
-        cloneMarket(marketId);
-    };
-
-    const handleStageAction = (action: 'delete' | 'open' | 'close', ids: string[]) => {
-        logger.log(`[ManageMarkets] Staging bulk action: ${action} for ${ids.length} markets`, { ids });
-        setConfirmation({ action, ids });
-    };
     
     const handleConfirmAction = () => {
         if (!confirmation) return;
-        logger.log(`[ManageMarkets] Confirming bulk action: ${confirmation.action}`, { ids: confirmation.ids });
         
         switch(confirmation.action) {
             case 'delete':
@@ -98,7 +88,7 @@ const ManageMarketsPage: React.FC = () => {
     const headerActions = (
         <div className="flex items-center gap-2 flex-wrap">
             {isAiAvailable && (
-                <Button onClick={() => { logger.log('[ManageMarkets] Opening AI generator'); setIsGeneratorOpen(true); }} variant="secondary" size="sm">
+                <Button onClick={() => setIsGeneratorOpen(true)} variant="secondary" size="sm">
                     Create with AI
                 </Button>
             )}
@@ -118,20 +108,20 @@ const ManageMarketsPage: React.FC = () => {
                      <div className="flex items-center gap-2 p-2 mb-4 bg-stone-900/50 rounded-lg">
                         <span className="text-sm font-semibold text-stone-300 px-2">{selectedMarkets.length} selected</span>
                         <Button size="sm" variant="secondary" onClick={() => handleEditMarket(markets.find(m => m.id === selectedMarkets[0])!)} disabled={selectedMarkets.length !== 1}>Edit</Button>
-                        <Button size="sm" variant="secondary" onClick={() => handleCloneMarket(selectedMarkets[0])} disabled={selectedMarkets.length !== 1 || selectedMarkets[0] === 'market-bank'}>Clone</Button>
-                        <Button size="sm" variant="secondary" className="!bg-green-800/60 hover:!bg-green-700/70 text-green-200" onClick={() => handleStageAction('open', selectedMarkets)}>Mark Open</Button>
-                        <Button size="sm" variant="secondary" className="!bg-yellow-800/60 hover:!bg-yellow-700/70 text-yellow-200" onClick={() => handleStageAction('close', selectedMarkets)}>Mark Closed</Button>
-                        <Button size="sm" variant="secondary" className="!bg-red-900/50 hover:!bg-red-800/60 text-red-300" onClick={() => handleStageAction('delete', selectedMarkets)}>Delete</Button>
+                        <Button size="sm" variant="secondary" onClick={() => cloneMarket(selectedMarkets[0])} disabled={selectedMarkets.length !== 1 || selectedMarkets[0] === 'market-bank'}>Clone</Button>
+                        <Button size="sm" variant="secondary" className="!bg-green-800/60 hover:!bg-green-700/70 text-green-200" onClick={() => setConfirmation({ action: 'open', ids: selectedMarkets })}>Mark Open</Button>
+                        <Button size="sm" variant="secondary" className="!bg-yellow-800/60 hover:!bg-yellow-700/70 text-yellow-200" onClick={() => setConfirmation({ action: 'close', ids: selectedMarkets })}>Mark Closed</Button>
+                        <Button size="sm" variant="secondary" className="!bg-red-900/50 hover:!bg-red-800/60 text-red-300" onClick={() => setConfirmation({ action: 'delete', ids: selectedMarkets })}>Delete</Button>
                     </div>
                 )}
                 <MarketTable
                     markets={markets}
                     selectedMarkets={selectedMarkets}
-                    onSelectAll={(e: React.ChangeEvent<HTMLInputElement>) => setSelectedMarkets(e.target.checked ? marketIds : [])}
+                    onSelectAll={handleSelectAll}
                     onSelectOne={handleCheckboxClick}
                     onEdit={handleEditMarket}
-                    onClone={handleCloneMarket}
-                    onDeleteRequest={(ids: string[]) => handleStageAction('delete', ids)}
+                    onClone={cloneMarket}
+                    onDeleteRequest={(ids: string[]) => setConfirmation({ action: 'delete', ids })}
                     terminology={settings.terminology}
                     onCreate={handleCreateMarket}
                 />

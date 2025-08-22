@@ -6,7 +6,6 @@ import Input from '../user-interface/Input';
 import { Role, User } from '../../types';
 import UserFormFields from '../users/UserFormFields';
 import { useNotificationsDispatch } from '../../context/NotificationsContext';
-import { logger } from '../../utils/logger';
 
 const ProfilePage: React.FC = () => {
     const { currentUser, users } = useAuthState();
@@ -43,7 +42,6 @@ const ProfilePage: React.FC = () => {
     const handleSave = async (e: React.FormEvent) => {
         e.preventDefault();
         setError('');
-        logger.log('[ProfilePage] Save profile changes initiated.', { userId: currentUser.id });
 
         const updatePayload: Partial<User> = {};
 
@@ -105,12 +103,10 @@ const ProfilePage: React.FC = () => {
         
         if (Object.keys(updatePayload).length > 0) {
             setIsSaving(true);
-            logger.log('[ProfilePage] Saving updates:', { updatePayload });
             await updateUser(currentUser.id, updatePayload);
             setIsSaving(false);
             setFormData(p => ({...p, password: '', confirmPassword: '', confirmPin: ''}));
         } else {
-            logger.log('[ProfilePage] No changes to save.');
             addNotification({type: 'info', message: 'No changes were made.'});
         }
     };

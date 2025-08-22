@@ -1,11 +1,9 @@
 
-
 import React, { createContext, useContext, ReactNode, useReducer, useMemo, useCallback } from 'react';
 import { Guild } from '../types';
 import { useNotificationsDispatch } from './NotificationsContext';
 import { bugLogger } from '../utils/bugLogger';
 import { addGuildAPI, updateGuildAPI, deleteGuildAPI } from '../src/api';
-import { logger } from '../utils/logger';
 
 // --- STATE & CONTEXT DEFINITIONS ---
 
@@ -33,7 +31,6 @@ const initialState: CommunityState = {
 };
 
 const communityReducer = (state: CommunityState, action: CommunityAction): CommunityState => {
-    logger.log('[CommunityReducer] Action:', action.type, 'Payload:', action.payload);
     switch (action.type) {
         case 'SET_COMMUNITY_DATA':
             return { ...state, ...action.payload };
@@ -41,8 +38,6 @@ const communityReducer = (state: CommunityState, action: CommunityAction): Commu
             const updatedState = { ...state };
             for (const key in action.payload) {
                 const typedKey = key as keyof CommunityState;
-                if (!action.payload[typedKey]) continue;
-                
                 if (Array.isArray(updatedState[typedKey])) {
                     const existingItems = new Map((updatedState[typedKey] as any[]).map(item => [item.id, item]));
                     (action.payload[typedKey] as any[]).forEach(newItem => existingItems.set(newItem.id, newItem));
@@ -55,8 +50,6 @@ const communityReducer = (state: CommunityState, action: CommunityAction): Commu
             const stateWithRemoved = { ...state };
             for (const key in action.payload) {
                 const typedKey = key as keyof CommunityState;
-                 if (!action.payload[typedKey]) continue;
-
                 if (Array.isArray(stateWithRemoved[typedKey])) {
                     const idsToRemove = new Set(action.payload[typedKey] as string[]);
                     (stateWithRemoved as any)[typedKey] = ((stateWithRemoved as any)[typedKey] as any[]).filter(item => !idsToRemove.has(item.id));
@@ -75,7 +68,6 @@ export const CommunityProvider: React.FC<{ children: ReactNode }> = ({ children 
     
     const actions = useMemo<CommunityDispatch>(() => ({
         addGuild: async (data) => {
-            logger.log('[CommunityDispatch] addGuild', data);
             try {
                 const result = await addGuildAPI(data);
                 if (result) {
@@ -89,7 +81,6 @@ export const CommunityProvider: React.FC<{ children: ReactNode }> = ({ children 
             }
         },
         updateGuild: async (data) => {
-            logger.log('[CommunityDispatch] updateGuild', data);
             try {
                 const result = await updateGuildAPI(data);
                 if (result) {
@@ -103,7 +94,6 @@ export const CommunityProvider: React.FC<{ children: ReactNode }> = ({ children 
             }
         },
         deleteGuild: async (id) => {
-            logger.log('[CommunityDispatch] deleteGuild', { id });
             try {
                 await deleteGuildAPI(id);
                 dispatch({ type: 'REMOVE_COMMUNITY_DATA', payload: { guilds: [id] } });

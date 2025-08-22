@@ -1,11 +1,9 @@
 
-
 import React, { createContext, useContext, ReactNode, useReducer, useMemo, useCallback } from 'react';
 import { Rank, Trophy, UserTrophy } from '../types';
 import { useNotificationsDispatch } from './NotificationsContext';
 import { bugLogger } from '../utils/bugLogger';
 import { addTrophyAPI, updateTrophyAPI, setRanksAPI } from '../src/api';
-import { logger } from '../utils/logger';
 
 // --- STATE & CONTEXT DEFINITIONS ---
 
@@ -37,7 +35,6 @@ const initialState: ProgressionState = {
 };
 
 const progressionReducer = (state: ProgressionState, action: ProgressionAction): ProgressionState => {
-    logger.log('[ProgressionReducer] Action:', action.type, 'Payload:', action.payload);
     switch (action.type) {
         case 'SET_PROGRESSION_DATA':
             return { ...state, ...action.payload };
@@ -45,11 +42,12 @@ const progressionReducer = (state: ProgressionState, action: ProgressionAction):
             const updatedState = { ...state };
             for (const key in action.payload) {
                 const typedKey = key as keyof ProgressionState;
-                if (!action.payload[typedKey]) continue;
-
                 if (Array.isArray(updatedState[typedKey])) {
                     const existingItems = new Map((updatedState[typedKey] as any[]).map(item => [item.id, item]));
-                    (action.payload[typedKey] as any[]).forEach(newItem => existingItems.set(newItem.id, newItem));
+                    const itemsToUpdate = action.payload[typedKey];
+                    if (Array.isArray(itemsToUpdate)) {
+                        itemsToUpdate.forEach(newItem => existingItems.set(newItem.id, newItem));
+                    }
                     (updatedState as any)[typedKey] = Array.from(existingItems.values());
                 }
             }
@@ -59,8 +57,6 @@ const progressionReducer = (state: ProgressionState, action: ProgressionAction):
             const stateWithRemoved = { ...state };
             for (const key in action.payload) {
                 const typedKey = key as keyof ProgressionState;
-                if (!action.payload[typedKey]) continue;
-
                 if (Array.isArray(stateWithRemoved[typedKey])) {
                     const idsToRemove = new Set(action.payload[typedKey] as string[]);
                     (stateWithRemoved as any)[typedKey] = ((stateWithRemoved as any)[typedKey] as any[]).filter(item => !idsToRemove.has(item.id));
@@ -89,18 +85,9 @@ export const ProgressionProvider: React.FC<{ children: ReactNode }> = ({ childre
     }, [addNotification]);
     
     const actions = useMemo<ProgressionDispatch>(() => ({
-        addTrophy: (data) => {
-            logger.log('[ProgressionDispatch] addTrophy', data);
-            return apiAction(() => addTrophyAPI(data), 'Trophy created!');
-        },
-        updateTrophy: (data) => {
-            logger.log('[ProgressionDispatch] updateTrophy', data);
-            return apiAction(() => updateTrophyAPI(data), 'Trophy updated!');
-        },
-        setRanks: (ranks) => {
-            logger.log('[ProgressionDispatch] setRanks', { count: ranks.length });
-            return apiAction(() => setRanksAPI(ranks));
-        },
+        addTrophy: (data) => apiAction(() => addTrophyAPI(data), 'Trophy created!'),
+        updateTrophy: (data) => apiAction(() => updateTrophyAPI(data), 'Trophy updated!'),
+        setRanks: (ranks) => apiAction(() => setRanksAPI(ranks)),
     }), [apiAction]);
 
     const contextValue = useMemo(() => ({ dispatch, actions }), [dispatch, actions]);

@@ -19,7 +19,6 @@ import { useUIState } from '../../context/UIContext';
 import { useAuthState } from '../../context/AuthContext';
 import { useCommunityState } from '../../context/CommunityContext';
 import { useProgressionState } from '../../context/ProgressionContext';
-import { logger } from '../../utils/logger';
 
 const Dashboard: React.FC = () => {
     const { markQuestAsTodo, unmarkQuestAsTodo } = useQuestsDispatch();
@@ -85,13 +84,9 @@ const Dashboard: React.FC = () => {
 
     if (!currentUser) return <div>Loading adventurer's data...</div>;
     
-    const handleQuestSelect = (quest: Quest) => {
-        logger.log('[Dashboard] Viewing quest details', { id: quest.id, title: quest.title });
-        setSelectedQuest(quest);
-    };
+    const handleQuestSelect = (quest: Quest) => setSelectedQuest(quest);
 
     const handleStartAction = (questToAction: Quest) => {
-        logger.log('[Dashboard] Starting action for quest', { id: questToAction.id, title: questToAction.title, kind: questToAction.kind });
         setSelectedQuest(null);
         if (questToAction.kind === QuestKind.GuildCollaborative) {
             setContributingQuest(questToAction);

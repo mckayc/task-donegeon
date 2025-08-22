@@ -1,12 +1,10 @@
 
-
 import React, { createContext, useContext, ReactNode, useReducer, useMemo, useCallback } from 'react';
 import { Market, GameAsset, PurchaseRequest, RewardTypeDefinition, TradeOffer, Gift, ShareableAssetType, RewardItem, User, Trophy } from '../types';
 import { useNotificationsDispatch } from './NotificationsContext';
 import { useAuthDispatch, useAuthState } from './AuthContext';
 import { bugLogger } from '../utils/bugLogger';
 import { SystemAction, useSystemReducerDispatch } from './SystemContext';
-import { logger } from '../utils/logger';
 import { 
     addMarketAPI, updateMarketAPI, cloneMarketAPI, updateMarketsStatusAPI, 
     addRewardTypeAPI, updateRewardTypeAPI, cloneRewardTypeAPI, 
@@ -70,7 +68,6 @@ const initialState: EconomyState = {
 };
 
 const economyReducer = (state: EconomyState, action: EconomyAction): EconomyState => {
-    logger.log('[EconomyReducer] Action:', action.type, 'Payload:', action.payload);
     switch (action.type) {
         case 'SET_ECONOMY_DATA':
             return { ...state, ...action.payload };
@@ -78,11 +75,12 @@ const economyReducer = (state: EconomyState, action: EconomyAction): EconomyStat
             const updatedState = { ...state };
             for (const key in action.payload) {
                 const typedKey = key as keyof EconomyState;
-                if (!action.payload[typedKey]) continue;
-
                 if (Array.isArray(updatedState[typedKey])) {
                     const existingItems = new Map((updatedState[typedKey] as any[]).map(item => [item.id, item]));
-                    (action.payload[typedKey] as any[]).forEach(newItem => existingItems.set(newItem.id, newItem));
+                    const itemsToUpdate = action.payload[typedKey];
+                    if (Array.isArray(itemsToUpdate)) {
+                        itemsToUpdate.forEach(newItem => existingItems.set(newItem.id, newItem));
+                    }
                     (updatedState as any)[typedKey] = Array.from(existingItems.values());
                 }
             }
@@ -92,8 +90,6 @@ const economyReducer = (state: EconomyState, action: EconomyAction): EconomyStat
             const stateWithRemoved = { ...state };
             for (const key in action.payload) {
                 const typedKey = key as keyof EconomyState;
-                if (!action.payload[typedKey]) continue;
-                
                 if (Array.isArray(stateWithRemoved[typedKey])) {
                     const idsToRemove = new Set(action.payload[typedKey] as string[]);
                     (stateWithRemoved as any)[typedKey] = ((stateWithRemoved as any)[typedKey] as any[]).filter(item => !idsToRemove.has(item.id));
@@ -125,51 +121,20 @@ export const EconomyProvider: React.FC<{ children: ReactNode }> = ({ children })
     }, [addNotification]);
     
     const actions = useMemo<EconomyDispatch>(() => ({
-        addMarket: (data) => {
-            logger.log('[EconomyDispatch] addMarket', data);
-            return apiAction(() => addMarketAPI(data), 'Market created!');
-        },
-        updateMarket: (data) => {
-            logger.log('[EconomyDispatch] updateMarket', data);
-            return apiAction(() => updateMarketAPI(data), 'Market updated!');
-        },
-        updateMarketsStatus: (ids, statusType) => {
-            logger.log('[EconomyDispatch] updateMarketsStatus', { ids, statusType });
-            return apiAction(() => updateMarketsStatusAPI(ids, statusType));
-        },
-        cloneMarket: (id) => {
-            logger.log('[EconomyDispatch] cloneMarket', { id });
-            return apiAction(() => cloneMarketAPI(id), 'Market cloned!');
-        },
+        addMarket: (data) => apiAction(() => addMarketAPI(data), 'Market created!'),
+        updateMarket: (data) => apiAction(() => updateMarketAPI(data), 'Market updated!'),
+        cloneMarket: (id) => apiAction(() => cloneMarketAPI(id), 'Market cloned!'),
+        updateMarketsStatus: (ids, statusType) => apiAction(() => updateMarketsStatusAPI(ids, statusType)),
         
-        addRewardType: (data) => {
-            logger.log('[EconomyDispatch] addRewardType', data);
-            return apiAction(() => addRewardTypeAPI(data), 'Reward type created!');
-        },
-        updateRewardType: (data) => {
-            logger.log('[EconomyDispatch] updateRewardType', data);
-            return apiAction(() => updateRewardTypeAPI(data), 'Reward type updated!');
-        },
-        cloneRewardType: (id) => {
-            logger.log('[EconomyDispatch] cloneRewardType', { id });
-            return apiAction(() => cloneRewardTypeAPI(id), 'Reward type cloned!');
-        },
+        addRewardType: (data) => apiAction(() => addRewardTypeAPI(data), 'Reward type created!'),
+        updateRewardType: (data) => apiAction(() => updateRewardTypeAPI(data), 'Reward type updated!'),
+        cloneRewardType: (id) => apiAction(() => cloneRewardTypeAPI(id), 'Reward type cloned!'),
         
-        addGameAsset: (data) => {
-            logger.log('[EconomyDispatch] addGameAsset', { name: data.name, category: data.category });
-            return apiAction(() => addGameAssetAPI(data), 'Asset created!');
-        },
-        updateGameAsset: (data) => {
-            logger.log('[EconomyDispatch] updateGameAsset', { id: data.id, name: data.name });
-            return apiAction(() => updateGameAssetAPI(data), 'Asset updated!');
-        },
-        cloneGameAsset: (id) => {
-            logger.log('[EconomyDispatch] cloneGameAsset', { id });
-            return apiAction(() => cloneGameAssetAPI(id), 'Asset cloned!');
-        },
+        addGameAsset: (data) => apiAction(() => addGameAssetAPI(data), 'Asset created!'),
+        updateGameAsset: (data) => apiAction(() => updateGameAssetAPI(data), 'Asset updated!'),
+        cloneGameAsset: (id) => apiAction(() => cloneGameAssetAPI(id), 'Asset cloned!'),
 
         purchaseMarketItem: async (assetId, marketId, user, costGroupIndex) => {
-            logger.log('[EconomyDispatch] purchaseMarketItem', { assetId, marketId, userId: user.id, costGroupIndex });
             const result = await apiAction(() => purchaseMarketItemAPI(assetId, marketId, user, costGroupIndex));
             if (result) {
                 if ((result as any).updatedUser) updateUser((result as any).updatedUser.id, (result as any).updatedUser);
@@ -177,19 +142,15 @@ export const EconomyProvider: React.FC<{ children: ReactNode }> = ({ children })
             }
         },
         approvePurchaseRequest: async (requestId, approverId) => {
-            logger.log('[EconomyDispatch] approvePurchaseRequest', { requestId, approverId });
             await apiAction(() => approvePurchaseRequestAPI(requestId, approverId));
         },
         rejectPurchaseRequest: async (requestId, rejecterId) => {
-            logger.log('[EconomyDispatch] rejectPurchaseRequest', { requestId, rejecterId });
             await apiAction(() => rejectPurchaseRequestAPI(requestId, rejecterId));
         },
         cancelPurchaseRequest: async (requestId) => {
-            logger.log('[EconomyDispatch] cancelPurchaseRequest', { requestId });
              await apiAction(() => cancelPurchaseRequestAPI(requestId));
         },
         executeExchange: async (userId, payItem, receiveItem, guildId) => {
-            logger.log('[EconomyDispatch] executeExchange', { userId, payItem, receiveItem, guildId });
             const result = await apiAction(() => executeExchangeAPI(userId, payItem, receiveItem, guildId));
             if (result && systemDispatch) {
                  if ((result as any).updatedUser) updateUser((result as any).updatedUser.id, (result as any).updatedUser);
@@ -201,29 +162,17 @@ export const EconomyProvider: React.FC<{ children: ReactNode }> = ({ children })
         },
         proposeTrade: (recipientId, guildId) => {
             if (!currentUser) return Promise.resolve(null);
-            logger.log('[EconomyDispatch] proposeTrade', { recipientId, guildId, initiatorId: currentUser.id });
             return apiAction(() => proposeTradeAPI(recipientId, guildId, currentUser.id), 'Trade proposed!');
         },
-        updateTradeOffer: (id, updates) => {
-            logger.log('[EconomyDispatch] updateTradeOffer', { id, updates });
-            return apiAction(() => updateTradeOfferAPI(id, updates));
-        },
-        acceptTrade: (id) => {
-            logger.log('[EconomyDispatch] acceptTrade', { id });
-            return apiAction(() => acceptTradeAPI(id));
-        },
-        cancelOrRejectTrade: (id, action) => {
-            logger.log('[EconomyDispatch] cancelOrRejectTrade', { id, action });
-            return apiAction(() => cancelOrRejectTradeAPI(id, action));
-        },
+        updateTradeOffer: (id, updates) => apiAction(() => updateTradeOfferAPI(id, updates)),
+        acceptTrade: (id) => apiAction(() => acceptTradeAPI(id)),
+        cancelOrRejectTrade: (id, action) => apiAction(() => cancelOrRejectTradeAPI(id, action)),
         sendGift: (recipientId, assetId, guildId) => {
             if (!currentUser) return Promise.resolve();
-            logger.log('[EconomyDispatch] sendGift', { recipientId, assetId, guildId, senderId: currentUser.id });
             return apiAction(() => sendGiftAPI(recipientId, assetId, guildId, currentUser.id), 'Gift sent!');
         },
         useItem: async (assetId) => {
             if (!currentUser) return;
-            logger.log('[EconomyDispatch] useItem', { assetId, userId: currentUser.id });
             const result = await apiAction(() => useItemAPI(assetId, currentUser.id));
             if (result) {
                  if ((result as any).updatedUser) updateUser((result as any).updatedUser.id, (result as any).updatedUser);
@@ -232,7 +181,6 @@ export const EconomyProvider: React.FC<{ children: ReactNode }> = ({ children })
         },
         craftItem: async (assetId) => {
             if (!currentUser) return;
-            logger.log('[EconomyDispatch] craftItem', { assetId, userId: currentUser.id });
             const result = await apiAction(() => craftItemAPI(assetId, currentUser.id));
             if (result) {
                 if ((result as any).updatedUser) updateUser((result as any).updatedUser.id, (result as any).updatedUser);

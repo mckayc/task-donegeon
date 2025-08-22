@@ -19,7 +19,6 @@ import { useQuestsState } from '../../context/QuestsContext';
 import { useEconomyState } from '../../context/EconomyContext';
 import { useCommunityState } from '../../context/CommunityContext';
 import { useProgressionState } from '../../context/ProgressionContext';
-import { logger } from '../../utils/logger';
 
 const MarketItemView: React.FC<{ market: Market }> = ({ market }) => {
     const { settings, scheduledEvents } = useSystemState();
@@ -39,16 +38,6 @@ const MarketItemView: React.FC<{ market: Market }> = ({ market }) => {
     const getRewardInfo = (id: string) => {
         const rewardDef = rewardTypes.find(rt => rt.id === id);
         return { name: rewardDef?.name || 'Unknown Reward', icon: rewardDef?.icon || '❓' };
-    };
-    
-    const handleSortChange = (value: 'default' | 'title-asc' | 'title-desc') => {
-        logger.log(`[Marketplace] Sorting items by: ${value}`);
-        setSortBy(value);
-    };
-
-    const handlePurchaseClick = (asset: GameAsset) => {
-        logger.log('[Marketplace] Initiating purchase for item', { id: asset.id, name: asset.name });
-        setItemToPurchase(asset);
     };
 
     const sortedItems = useMemo(() => {
@@ -185,7 +174,7 @@ const MarketItemView: React.FC<{ market: Market }> = ({ market }) => {
                 </div>
 
                 <div className="p-3 mt-auto bg-black/20 border-t border-white/10 flex items-center justify-end gap-2">
-                     <Button className="text-sm py-1 px-3" onClick={() => handlePurchaseClick(asset)} disabled={!canPurchase || !canAffordAny}>
+                     <Button className="text-sm py-1 px-3" onClick={() => setItemToPurchase(asset)} disabled={!canPurchase || !canAffordAny}>
                         {buttonText}
                     </Button>
                 </div>
@@ -202,7 +191,7 @@ const MarketItemView: React.FC<{ market: Market }> = ({ market }) => {
                         <select
                             id="sort-market-items"
                             value={sortBy}
-                            onChange={(e) => handleSortChange(e.target.value as any)}
+                            onChange={(e) => setSortBy(e.target.value as any)}
                             className="px-3 py-1.5 bg-stone-700 border border-stone-600 rounded-md focus:ring-emerald-500 focus:border-emerald-500 transition text-sm"
                         >
                             <option value="default">Default</option>
@@ -310,14 +299,12 @@ const MarketplacePage: React.FC = () => {
                                 key={market.id} 
                                 onClick={() => {
                                     if (openStatus.isOpen === false) {
-                                        logger.log(`[Marketplace] Denied entry to market "${market.title}" due to:`, openStatus);
                                         let message = openStatus.message;
                                         if (openStatus.reason === 'SETBACK' && openStatus.redemptionQuest) {
                                             message += ` Complete your quest, '${openStatus.redemptionQuest.title}', to unlock it.`
                                         }
                                         addNotification({ type: 'error', message, duration: 8000 });
                                     } else {
-                                        logger.log(`[Marketplace] Entering market: ${market.title}`);
                                         setActiveMarketId(market.id);
                                     }
                                 }}

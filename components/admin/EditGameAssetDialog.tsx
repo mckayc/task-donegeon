@@ -1,6 +1,5 @@
 
 
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { GameAsset, RewardItem, RewardCategory } from '../../types';
 import Button from '../user-interface/Button';
@@ -11,7 +10,6 @@ import ImageSelectionDialog from '../user-interface/ImageSelectionDialog';
 import { useNotificationsDispatch } from '../../context/NotificationsContext';
 import { useEconomyState, useEconomyDispatch } from '../../context/EconomyContext';
 import { useSystemDispatch } from '../../context/SystemContext';
-import { logger } from '../../utils/logger';
 
 interface EditGameAssetDialogProps {
   assetToEdit: GameAsset | null;
@@ -169,7 +167,6 @@ const EditGameAssetDialog: React.FC<EditGameAssetDialogProps> = ({ assetToEdit, 
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    logger.log(`[EditGameAssetDialog] Submitting form for asset: ${formData.name}`, { assetToEdit, formData, mode });
     if (!formData.name.trim()) {
       setError('A name is required for the asset.');
       return;

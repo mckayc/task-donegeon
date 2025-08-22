@@ -16,7 +16,6 @@ import { useAuthState } from '../../context/AuthContext';
 import { useSystemState } from '../../context/SystemContext';
 import { useQuestsState } from '../../context/QuestsContext';
 import { useEconomyState } from '../../context/EconomyContext';
-import { logger } from '../../utils/logger';
 
 type AssetType = 'Duties' | 'Ventures' | 'Trophies' | 'Items' | 'Markets';
 
@@ -128,7 +127,6 @@ const SuggestionEnginePage: React.FC = () => {
     const handleGenerate = useCallback(async () => {
         if (!prompt.trim()) { setError('Please enter a prompt to generate assets.'); return; }
         setIsLoading(true); setError('');
-        logger.log('[SuggestionEngine] Generating asset idea', { assetType, prompt, context });
         
         const assetTypeName = assetType === 'Duties' ? 'Duties (recurring tasks)' : assetType === 'Ventures' ? 'Ventures (one-time projects)' : assetType;
         const rewardNames = rewardTypes.map(rt => rt.name).join(', ');

@@ -1,3 +1,4 @@
+
 import React, { createContext, useState, useContext, ReactNode, useCallback, useEffect, useReducer, useRef } from 'react';
 import { User } from '../types';
 import { useNotificationsDispatch } from './NotificationsContext';
@@ -7,7 +8,6 @@ import { EconomyAction, EconomyDispatchContext } from './EconomyContext';
 import { ProgressionAction, ProgressionDispatchContext } from './ProgressionContext';
 import { QuestsAction, QuestsDispatchContext } from './QuestsContext';
 import { SystemAction, SystemDispatchContext } from './SystemContext';
-import { logger } from '../utils/logger';
 
 export type SyncStatus = 'idle' | 'syncing' | 'success' | 'error';
 
@@ -61,7 +61,6 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         const communityPayload = { guilds };
 
         if (lastSyncTimestamp.current) { // Delta update
-            logger.log('Received delta sync from server, applying updates...', updates);
             if (Object.values(questsPayload).some(v => v !== undefined)) questsDispatch.dispatch({ type: 'UPDATE_QUESTS_DATA', payload: questsPayload });
             if (Object.values(economyPayload).some(v => v !== undefined)) (economyDispatch as React.Dispatch<EconomyAction>)({ type: 'UPDATE_ECONOMY_DATA', payload: economyPayload });
             if (Object.values(progressionPayload).some(v => v !== undefined)) (progressionDispatch as React.Dispatch<ProgressionAction>)({ type: 'UPDATE_PROGRESSION_DATA', payload: progressionPayload });
@@ -83,7 +82,6 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             if (updatedLoginHistory) setLoginHistory(updatedLoginHistory);
 
         } else { // Initial load
-            logger.log('Received initial data load from server.', updates);
             questsDispatch.dispatch({ type: 'SET_QUESTS_DATA', payload: questsPayload });
             (economyDispatch as React.Dispatch<EconomyAction>)({ type: 'SET_ECONOMY_DATA', payload: economyPayload });
             (progressionDispatch as React.Dispatch<ProgressionAction>)({ type: 'SET_PROGRESSION_DATA', payload: progressionPayload });
@@ -128,12 +126,12 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const eventSource = new EventSource('/api/data/events');
     eventSource.onmessage = (event) => {
         if (event.data === 'sync') {
-            logger.log('[SSE] Received sync event from server, fetching updates...');
+            console.log('[SSE] Received sync event from server, fetching updates...');
             syncData();
         }
     };
     eventSource.onerror = () => {
-        logger.warn('[SSE] Connection error. Attempting to reconnect...');
+        console.error('[SSE] Connection error. Attempting to reconnect...');
     };
     
     return () => {

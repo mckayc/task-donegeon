@@ -1,11 +1,9 @@
+
 const path = require('path');
 const multer = require('multer');
 const fs = require('fs').promises;
-const { dataSource } = require('../data-source');
-const { SettingEntity, allEntities } = require('../entities');
-const { asyncMiddleware, getFullAppData } = require('../utils/helpers');
-const { updateEmitter } = require('../utils/updateEmitter');
-const { updateTimestamps } = require('../utils/helpers');
+const { asyncMiddleware } = require('../utils/helpers');
+const backupService = require('../services/backup.service');
 
 // === Multer Configuration ===
 const UPLOADS_DIR = '/app/data/assets';
@@ -29,69 +27,13 @@ const storage = multer.diskStorage({
 const upload = multer({ storage, limits: { fileSize: 10 * 1024 * 1024 } });
 const restoreUpload = multer({ dest: '/tmp/' });
 
-// === Backup/Asset Dirs ===
-const BACKUP_DIR = '/app/data/backups';
-const ASSET_PACKS_DIR = '/app/data/asset_packs';
-const dbPath = process.env.DATABASE_PATH || '/app/data/database/database.sqlite';
-
 
 // --- Scheduled Backups ---
 const runScheduledBackups = async () => {
     try {
-        const manager = dataSource.manager;
-        const settingsRow = await manager.findOneBy(SettingEntity, { id: 1 });
-        if (!settingsRow || !settingsRow.settings.automatedBackups?.enabled) {
-            return;
-        }
-
-        const { schedules, format } = settingsRow.settings.automatedBackups;
-        const now = Date.now();
-        let settingsChanged = false;
-
-        for (const schedule of schedules) {
-            const frequencyMs = schedule.frequency * (schedule.unit === 'hours' ? 3600000 : schedule.unit === 'days' ? 86400000 : 604800000);
-            const lastBackup = schedule.lastBackupTimestamp || 0;
-
-            if (now - lastBackup > frequencyMs) {
-                console.log(`[Backup] Running automated backup for schedule: ${schedule.id}`);
-                const version = settingsRow.settings.contentVersion || 1;
-                const timestamp = new Date().toISOString().slice(0, 19).replace('T', '_').replace(/:/g, '-');
-                
-                if (format === 'json' || format === 'both') {
-                    const filename = `backup-auto-${schedule.id}-${timestamp}-v${version}.json`;
-                    const filePath = path.join(BACKUP_DIR, filename);
-                    const appData = await getFullAppData(manager);
-                    await fs.writeFile(filePath, JSON.stringify(appData, null, 2));
-                }
-                if (format === 'sqlite' || format === 'both') {
-                    const filename = `backup-auto-${schedule.id}-${timestamp}-v${version}.sqlite`;
-                    const filePath = path.join(BACKUP_DIR, filename);
-                    await fs.copyFile(dbPath, filePath);
-                }
-
-                schedule.lastBackupTimestamp = now;
-                settingsChanged = true;
-
-                const allBackups = await fs.readdir(BACKUP_DIR);
-                const scheduleBackups = allBackups
-                    .filter(file => file.startsWith(`backup-auto-${schedule.id}`))
-                    .sort().reverse();
-
-                if (scheduleBackups.length > schedule.maxBackups) {
-                    const backupsToDelete = scheduleBackups.slice(schedule.maxBackups);
-                    for (const fileToDelete of backupsToDelete) {
-                        await fs.unlink(path.join(BACKUP_DIR, fileToDelete));
-                        console.log(`[Backup] Cleaned up old backup: ${fileToDelete}`);
-                    }
-                }
-            }
-        }
-
-        if (settingsChanged) {
-            await manager.save(SettingEntity, updateTimestamps({ id: 1, settings: settingsRow.settings }));
-        }
+        await backupService.runScheduled();
     } catch (err) {
-        console.error("[Backup] Error during automated backup:", err);
+        console.error("[Controller] Error during automated backup execution:", err);
     }
 };
 
@@ -117,6 +59,7 @@ const createAssetPackSummary = (pack) => {
 };
 
 const discoverAssetPacks = async (req, res) => {
+    const ASSET_PACKS_DIR = '/app/data/asset_packs';
     const files = await fs.readdir(ASSET_PACKS_DIR);
     const packInfos = [];
     for (const file of files) {
@@ -142,6 +85,7 @@ const discoverAssetPacks = async (req, res) => {
 
 const getAssetPack = async (req, res) => {
     const { filename } = req.params;
+    const ASSET_PACKS_DIR = '/app/data/asset_packs';
     const safeFilename = path.basename(filename);
     if (safeFilename !== filename) {
         return res.status(400).json({ error: 'Invalid filename.' });
@@ -237,125 +181,46 @@ const importImagePack = async (req, res) => {
 };
 
 // --- Backups ---
-const parseBackupFilename = (filename) => {
-    const match = filename.match(/backup-(manual|auto-.+?)-(.+?)-v(\d+)\.(json|sqlite)/);
-    if (!match) return null;
-    return {
-        type: match[1],
-        date: new Date(match[2].replace(/_/g, 'T').replace(/-/g, ':')).toISOString(),
-        version: match[3],
-        format: match[4],
-    };
-};
-
 const getBackups = async (req, res) => {
-    await fs.mkdir(BACKUP_DIR, { recursive: true });
-    const files = await fs.readdir(BACKUP_DIR);
-    const backupInfos = await Promise.all(files.map(async (file) => {
-        const filePath = path.join(BACKUP_DIR, file);
-        const stats = await fs.stat(filePath);
-        return {
-            filename: file,
-            size: stats.size,
-            createdAt: stats.mtime.toISOString(),
-            parsed: parseBackupFilename(file),
-        };
-    }));
-    backupInfos.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-    res.json(backupInfos);
+    const backups = await backupService.list();
+    res.json(backups);
 };
 
 const createJsonBackup = async (req, res) => {
-    const manager = dataSource.manager;
-    const appData = await getFullAppData(manager);
-    const version = appData.settings?.contentVersion || 1;
-    const timestamp = new Date().toISOString().slice(0, 19).replace('T', '_').replace(/:/g, '-');
-    const filename = `backup-manual-${timestamp}-v${version}.json`;
-    const filePath = path.join(BACKUP_DIR, filename);
-    await fs.writeFile(filePath, JSON.stringify(appData, null, 2));
-    res.status(201).json({ message: 'JSON backup created.', filename });
+    const backup = await backupService.create('json');
+    res.status(201).json({ message: 'JSON backup created.', filename: backup.filename });
 };
 
 const createSqliteBackup = async (req, res) => {
-    const manager = dataSource.manager;
-    const settingsRow = await manager.findOneBy(SettingEntity, { id: 1 });
-    const version = settingsRow?.settings?.contentVersion || 1;
-    const timestamp = new Date().toISOString().slice(0, 19).replace('T', '_').replace(/:/g, '-');
-    const filename = `backup-manual-${timestamp}-v${version}.sqlite`;
-    const filePath = path.join(BACKUP_DIR, filename);
-    await fs.copyFile(dbPath, filePath);
-    res.status(201).json({ message: 'SQLite backup created.', filename });
+    const backup = await backupService.create('sqlite');
+    res.status(201).json({ message: 'SQLite backup created.', filename: backup.filename });
 };
 
 const downloadBackup = async (req, res) => {
     const { filename } = req.params;
-    const safeFilename = path.basename(filename);
-    if (safeFilename !== filename) return res.status(400).send('Invalid filename.');
-    const filePath = path.join(BACKUP_DIR, safeFilename);
-    try {
-        await fs.access(filePath);
+    const filePath = await backupService.getFilePath(filename);
+    if (filePath) {
         res.download(filePath);
-    } catch (err) {
+    } else {
         res.status(404).send('Backup not found.');
     }
 };
 
 const deleteBackup = async (req, res) => {
     const { filename } = req.params;
-    const safeFilename = path.basename(filename);
-    if (safeFilename !== filename) return res.status(400).send('Invalid filename.');
-    const filePath = path.join(BACKUP_DIR, safeFilename);
-    try {
-        await fs.unlink(filePath);
-        res.status(204).send();
-    } catch (err) {
-        res.status(404).send('Backup not found.');
-    }
+    await backupService.remove(filename);
+    res.status(204).send();
 };
 
 const bulkDeleteBackups = async (req, res) => {
     const { filenames } = req.body;
-    if (!filenames || !Array.isArray(filenames)) {
-        return res.status(400).json({ error: 'Expected an array of filenames.' });
-    }
-    for (const filename of filenames) {
-        const safeFilename = path.basename(filename);
-        if (safeFilename !== filename) {
-             console.warn(`Skipping invalid filename during bulk delete: ${filename}`);
-             continue;
-        }
-        const filePath = path.join(BACKUP_DIR, safeFilename);
-        try {
-            await fs.unlink(filePath);
-        } catch (err) {
-            if (err.code !== 'ENOENT') console.error(`Error deleting file ${safeFilename}:`, err);
-        }
-    }
-    updateEmitter.emit('update');
+    await backupService.removeMany(filenames);
     res.status(204).send();
 };
 
 const restoreFromBackup = async (req, res) => {
     if (!req.file) return res.status(400).json({ error: 'No backup file provided.' });
-    if (dataSource.isInitialized) await dataSource.destroy();
-    if (req.file.originalname.endsWith('.sqlite')) {
-        await fs.copyFile(req.file.path, dbPath);
-    } else {
-        await fs.unlink(dbPath).catch(err => { if (err.code !== 'ENOENT') throw err; });
-        await dataSource.initialize();
-        const manager = dataSource.manager;
-        const backupContent = await fs.readFile(req.file.path, 'utf-8');
-        const backupData = JSON.parse(backupContent);
-        
-        for (const entity of allEntities) {
-            const repo = manager.getRepository(entity);
-            const pluralName = entity.options.name.toLowerCase() + 's';
-            if (backupData[pluralName]) await repo.save(backupData[pluralName]);
-        }
-        if (backupData.settings) await manager.save(SettingEntity, { id: 1, settings: backupData.settings });
-        if (backupData.loginHistory) await manager.save('LoginHistory', { id: 1, history: backupData.loginHistory });
-    }
-    await fs.unlink(req.file.path);
+    await backupService.restore(req.file);
     res.json({ message: 'Restore successful! The application will now reload.' });
 };
 

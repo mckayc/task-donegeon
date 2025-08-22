@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import Card from '../../user-interface/Card';
 import { BackupInfo, BackupSchedule } from '../../../types';
@@ -245,6 +246,8 @@ export const BackupAndImportPage: React.FC = () => {
         if (editingSchedule) {
             const index = updatedSchedules.findIndex(s => s.id === editingSchedule.id);
             if (index !== -1) {
+                // IMPORTANT FIX: Merge with the existing schedule object from settings
+                // to preserve the `lastBackupTimestamp` which is not present in `scheduleData`.
                 updatedSchedules[index] = { ...updatedSchedules[index], ...scheduleData };
             }
         } else {

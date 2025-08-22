@@ -19,9 +19,9 @@ const AppProviders: React.FC<AppProvidersProps> = ({ children }) => {
     <NotificationsProvider>
       <UIProvider>
         <AuthProvider>
-          <ProgressionProvider>
-            <CommunityProvider>
-              <SystemProvider>
+          <SystemProvider>
+            <ProgressionProvider>
+              <CommunityProvider>
                 <QuestsProvider>
                   <EconomyProvider>
                     <DeveloperProvider>
@@ -31,9 +31,9 @@ const AppProviders: React.FC<AppProvidersProps> = ({ children }) => {
                     </DeveloperProvider>
                   </EconomyProvider>
                 </QuestsProvider>
-              </SystemProvider>
-            </CommunityProvider>
-          </ProgressionProvider>
+              </CommunityProvider>
+            </ProgressionProvider>
+          </SystemProvider>
         </AuthProvider>
       </UIProvider>
     </NotificationsProvider>

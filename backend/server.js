@@ -44,6 +44,38 @@ app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
+// === Server-Side Activity Logging Setup ===
+const loggedUsers = new Map(); // In-memory store for user IDs and their logging expiry timestamps.
+
+// Middleware to attach the logger store to each request
+app.use((req, res, next) => {
+    req.loggedUsers = loggedUsers;
+    next();
+});
+
+const activityLogMiddleware = (req, res, next) => {
+    // This middleware will log requests for specific users if their logging session is active.
+    // It relies on the body being parsed, so it should run after express.json().
+    // We try to find the user ID from various common places in the request.
+    const userId = req.body?.userId || req.query?.userId || req.params?.userId || req.body?.senderId || (req.body?.user?.id) || (req.body?.adminUserData?.id);
+    
+    if (userId && req.loggedUsers.has(userId)) {
+        const expiry = req.loggedUsers.get(userId);
+        if (Date.now() < expiry) {
+            // Log the activity
+            console.log(`[Activity Log] User: ${userId} | ${req.method} ${req.originalUrl} | Body: ${JSON.stringify(req.body)}`);
+        } else {
+            // Clean up expired session
+            req.loggedUsers.delete(userId);
+            console.log(`[Activity Log] Logging session expired for user ${userId}.`);
+        }
+    }
+    next();
+};
+
+// Apply the logging middleware to all API routes
+app.use('/api', activityLogMiddleware);
+
 
 // === Backup/Asset Directories & Scheduler ===
 const UPLOADS_DIR = '/app/data/assets';

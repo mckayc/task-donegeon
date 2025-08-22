@@ -16,6 +16,34 @@ const getSystemStatus = (req, res) => {
     });
 };
 
+const startServerLogging = (req, res) => {
+    const { userId, duration } = req.body;
+    const { loggedUsers } = req; // Get the map from the request object
+
+    if (!userId || !duration) {
+        return res.status(400).json({ error: 'User ID and duration are required.' });
+    }
+    const durationMs = parseInt(duration, 10) * 1000;
+    if (isNaN(durationMs) || durationMs <= 0) {
+        return res.status(400).json({ error: 'Invalid duration.' });
+    }
+
+    const expiry = Date.now() + durationMs;
+    loggedUsers.set(userId, expiry);
+    console.log(`[Activity Log] Started logging for user ${userId} for ${duration} seconds. Expires at ${new Date(expiry).toLocaleString()}`);
+    
+    // Simple cleanup of old entries
+    const now = Date.now();
+    for (const [key, value] of loggedUsers.entries()) {
+        if (value < now) {
+            loggedUsers.delete(key);
+        }
+    }
+
+    res.status(200).json({ message: `Server-side logging enabled for ${duration} seconds.` });
+};
+
 module.exports = {
-    getSystemStatus
+    getSystemStatus,
+    startServerLogging,
 };

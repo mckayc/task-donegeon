@@ -6,10 +6,12 @@ import { useDeveloper } from '../../context/DeveloperContext';
 import { ChevronDownIcon, ChevronUpIcon } from '../user-interface/Icons';
 import { BugReportType } from '../../types';
 import { useSystemState } from '../../context/SystemContext';
+import { useAuthState } from '../../context/AuthContext';
 
 const BugReporter: React.FC = () => {
     const { isRecording, startRecording, stopRecording, addLogEntry, isPickingElement, startPickingElement, stopPickingElement, logs, activeBugId } = useDeveloper();
     const { bugReports } = useSystemState();
+    const { currentUser } = useAuthState();
 
     const [title, setTitle] = useState('');
     const [note, setNote] = useState('');
@@ -18,6 +20,10 @@ const BugReporter: React.FC = () => {
     const [isMinimized, setIsMinimized] = useState(true);
     const [activeTab, setActiveTab] = useState<'create' | 'continue'>('create');
     const logContainerRef = useRef<HTMLDivElement>(null);
+
+    const [serverLogCountdown, setServerLogCountdown] = useState(0);
+    const [isServerLogging, setIsServerLogging] = useState(false);
+    const serverLogIntervalRef = useRef<number | null>(null);
 
     const activeReportTitle = useMemo(() => {
         if (!isRecording) return '';
@@ -32,6 +38,60 @@ const BugReporter: React.FC = () => {
             logContainerRef.current.scrollTop = logContainerRef.current.scrollHeight;
         }
     }, [logs, isLogVisible]);
+    
+    useEffect(() => {
+        // Cleanup interval on unmount
+        return () => {
+            if (serverLogIntervalRef.current) {
+                clearInterval(serverLogIntervalRef.current);
+            }
+        };
+    }, []);
+
+    const handleStartServerLog = async (duration: number) => {
+        if (!currentUser) return;
+
+        try {
+            const response = await fetch('/api/system/log-activity', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userId: currentUser.id, duration }),
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to start server logging.');
+            }
+
+            setIsServerLogging(true);
+            setServerLogCountdown(duration);
+            
+            addLogEntry({
+                type: 'ACTION',
+                message: `Started server-side activity logging for ${duration} seconds.`
+            });
+
+            if (serverLogIntervalRef.current) {
+                clearInterval(serverLogIntervalRef.current);
+            }
+
+            serverLogIntervalRef.current = window.setInterval(() => {
+                setServerLogCountdown(prev => {
+                    if (prev <= 1) {
+                        clearInterval(serverLogIntervalRef.current!);
+                        setIsServerLogging(false);
+                        return 0;
+                    }
+                    return prev - 1;
+                });
+            }, 1000);
+
+        } catch (error) {
+            addLogEntry({
+                type: 'NOTE',
+                message: `Error starting server log: ${error instanceof Error ? error.message : 'Unknown error'}`
+            });
+        }
+    };
 
     const handleStart = () => {
         if (title.trim()) {
@@ -51,6 +111,11 @@ const BugReporter: React.FC = () => {
         setReportType(BugReportType.Bug);
         setIsLogVisible(false);
         setIsMinimized(false);
+        if (serverLogIntervalRef.current) {
+            clearInterval(serverLogIntervalRef.current);
+        }
+        setIsServerLogging(false);
+        setServerLogCountdown(0);
     };
 
     const handleAddNote = (e: React.FormEvent) => {
@@ -136,6 +201,22 @@ const BugReporter: React.FC = () => {
                             </Button>
                             <Button type="submit" variant="secondary" className="h-10">Add Note</Button>
                         </form>
+                    </div>
+                    <div className="border-l border-red-700/60 pl-4 ml-4 flex-shrink-0">
+                        <p className="text-xs font-semibold text-white/80 mb-1">Server-Side Logging</p>
+                        {isServerLogging ? (
+                            <div className="flex items-center gap-2 h-10">
+                                <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse"></div>
+                                <span className="text-white font-mono font-semibold">Active: {serverLogCountdown}s</span>
+                            </div>
+                        ) : (
+                            <div className="flex items-center gap-2 h-10">
+                                <Button type="button" variant="secondary" onClick={() => handleStartServerLog(15)} className="!text-xs !py-1 !px-2 !h-auto">15s</Button>
+                                <Button type="button" variant="secondary" onClick={() => handleStartServerLog(30)} className="!text-xs !py-1 !px-2 !h-auto">30s</Button>
+                                <Button type="button" variant="secondary" onClick={() => handleStartServerLog(60)} className="!text-xs !py-1 !px-2 !h-auto">60s</Button>
+                                <Button type="button" variant="secondary" onClick={() => handleStartServerLog(120)} className="!text-xs !py-1 !px-2 !h-auto">120s</Button>
+                            </div>
+                        )}
                     </div>
                     <div className="flex items-center gap-2">
                         <Button onClick={handleStop} className="!bg-red-600 hover:!bg-red-500 text-white h-10">Stop Recording</Button>

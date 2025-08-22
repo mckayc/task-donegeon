@@ -20,22 +20,12 @@ const getChronicles = async (req, res) => {
 
     // --- Fetch All Event Types Concurrently ---
     const completionsPromise = manager.createQueryBuilder(QuestCompletionEntity, "completion")
-        .select([
-            "completion.id as id",
-            "completion.completedAt as date",
-            "completion.note as note",
-            "completion.status as status",
-            "completion.userId as userId",
-            "quest.title as questTitle",
-            "quest.icon as questIcon",
-            "user.gameName as userName",
-        ])
-        .innerJoin("completion.quest", "quest")
-        .innerJoin("completion.user", "user")
+        .leftJoinAndSelect("completion.quest", "quest")
+        .leftJoinAndSelect("completion.user", "user")
         .where(isPersonalScope ? "completion.guildId IS NULL" : "completion.guildId = :guildId", { guildId })
         .andWhere(viewMode === 'personal' ? "completion.userId = :userId" : "1=1", { userId })
         .orderBy("completion.completedAt", "DESC")
-        .getRawMany();
+        .getMany();
 
     const buildOtherQuery = (entity) => {
         const qb = manager.createQueryBuilder(entity, "event")
@@ -71,11 +61,16 @@ const getChronicles = async (req, res) => {
 
     // --- Map to Common Format ---
     let allEvents = [];
-    allEvents.push(...completions.map(c => ({
-        id: `c-${c.id}`, originalId: c.id, date: c.date, type: 'Quest',
-        title: `${c.userName || 'Unknown User'} completed "${c.questTitle || 'Unknown Quest'}"`,
-        note: c.note, status: c.status, icon: c.questIcon || '❓', color: '#10b981', userId: c.userId, actorName: c.userName
-    })));
+    allEvents.push(...completions.map(c => {
+        const userName = c.user?.gameName || 'Unknown User';
+        const questTitle = c.quest?.title || 'Unknown Quest';
+        const questIcon = c.quest?.icon || '❓';
+        return {
+            id: `c-${c.id}`, originalId: c.id, date: c.completedAt, type: 'Quest',
+            title: `${userName} completed "${questTitle}"`,
+            note: c.note, status: c.status, icon: questIcon, color: '#10b981', userId: c.userId, actorName: userName
+        };
+    }));
 
     allEvents.push(...purchases.map(p => {
         const userName = p.user?.gameName ?? 'Unknown User';

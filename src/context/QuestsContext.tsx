@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, ReactNode, useReducer, useMemo, useCallback } from 'react';
 import { Quest, QuestGroup, QuestCompletion, Rotation, BulkQuestUpdates } from '../types';
 import { useNotificationsDispatch } from './NotificationsContext';
@@ -59,38 +60,62 @@ const initialState: QuestsState = {
 };
 
 const questsReducer = (state: QuestsState, action: QuestsAction): QuestsState => {
+    let newState: QuestsState;
+
     switch (action.type) {
         case 'SET_QUESTS_DATA':
-            return { ...state, ...action.payload, allTags: Array.from(new Set(action.payload.quests?.flatMap(q => q.tags) || [])) };
+            newState = { ...initialState, ...action.payload };
+            break;
         case 'UPDATE_QUESTS_DATA': {
             const updatedState = { ...state };
             for (const key in action.payload) {
                 const typedKey = key as keyof QuestsState;
+
+                if (typedKey === 'allTags') {
+                    continue; // Skip allTags, it is derived from quests
+                }
+
                 if (Array.isArray(updatedState[typedKey])) {
                     const existingItems = new Map((updatedState[typedKey] as any[]).map(item => [item.id, item]));
-                    (action.payload[typedKey] as any[]).forEach(newItem => existingItems.set(newItem.id, newItem));
+                    const itemsToUpdate = action.payload[typedKey];
+                    if (Array.isArray(itemsToUpdate)) {
+                        itemsToUpdate.forEach(newItem => existingItems.set(newItem.id, newItem));
+                    }
                     (updatedState as any)[typedKey] = Array.from(existingItems.values());
                 }
             }
-            if (action.payload.quests) {
-                updatedState.allTags = Array.from(new Set(updatedState.quests.flatMap(q => q.tags)));
-            }
-            return updatedState;
+            newState = updatedState;
+            break;
         }
         case 'REMOVE_QUESTS_DATA': {
             const stateWithRemoved = { ...state };
             for (const key in action.payload) {
                 const typedKey = key as keyof QuestsState;
+                
+                if (typedKey === 'allTags') {
+                    continue; // Skip allTags
+                }
+
                 if (Array.isArray(stateWithRemoved[typedKey])) {
                     const idsToRemove = new Set(action.payload[typedKey] as string[]);
                     (stateWithRemoved as any)[typedKey] = ((stateWithRemoved as any)[typedKey] as any[]).filter(item => !idsToRemove.has(item.id));
                 }
             }
-            return stateWithRemoved;
+            newState = stateWithRemoved;
+            break;
         }
         default:
             return state;
     }
+    
+    // Always derive allTags from the quests array to ensure consistency
+    if (newState.quests) {
+        newState.allTags = Array.from(new Set(newState.quests.flatMap(q => q.tags || [])));
+    } else {
+        newState.allTags = [];
+    }
+
+    return newState;
 };
 
 export const QuestsProvider: React.FC<{ children: ReactNode }> = ({ children }) => {

@@ -1,4 +1,5 @@
 
+
 const { dataSource } = require('../data-source');
 const { 
     QuestCompletionEntity, PurchaseRequestEntity, UserTrophyEntity, AdminAdjustmentEntity, 
@@ -29,10 +30,10 @@ const getChronicles = async (req, res) => {
         relations: ['user', 'quest'],
         order: { completedAt: 'DESC' }
     });
-    allEvents.push(...completions.map(c => ({
+    allEvents.push(...completions.filter(c => c.user && c.quest).map(c => ({
         id: `c-${c.id}`, originalId: c.id, date: c.completedAt, type: 'Quest',
-        title: c.quest?.title || 'Unknown Quest', note: c.note, status: c.status,
-        icon: c.quest?.icon, color: '#10b981', userId: c.user.id
+        title: c.quest.title, note: c.note, status: c.status,
+        icon: c.quest.icon, color: '#10b981', userId: c.user.id
     })));
 
     // Purchase Requests
@@ -41,7 +42,7 @@ const getChronicles = async (req, res) => {
         relations: ['user'],
         order: { requestedAt: 'DESC' }
     });
-    allEvents.push(...purchases.map(p => ({
+    allEvents.push(...purchases.filter(p => p.user).map(p => ({
         id: `p-${p.id}`, originalId: p.id, date: p.requestedAt, type: 'Purchase',
         title: `Purchase: ${p.assetDetails.name}`, note: p.assetDetails.description, status: p.status,
         icon: '💰', color: '#f59e0b', userId: p.user.id
@@ -53,7 +54,7 @@ const getChronicles = async (req, res) => {
         relations: ['user', 'trophy'],
         order: { awardedAt: 'DESC' }
     });
-    allEvents.push(...trophies.map(t => ({
+    allEvents.push(...trophies.filter(t => t.user && t.trophy).map(t => ({
         id: `t-${t.id}`, originalId: t.id, date: t.awardedAt, type: 'Trophy',
         title: `Trophy Earned: ${t.trophy.name}`, note: t.trophy.description, status: 'Awarded',
         icon: t.trophy.icon, color: '#ca8a04', userId: t.user.id
@@ -65,7 +66,7 @@ const getChronicles = async (req, res) => {
         relations: ['user'],
         order: { adjustedAt: 'DESC' }
     });
-    allEvents.push(...adjustments.map(a => ({
+    allEvents.push(...adjustments.filter(a => a.user).map(a => ({
         id: `a-${a.id}`, originalId: a.id, date: a.adjustedAt, type: 'Adjustment',
         title: `Admin Adjustment: ${a.type}`, note: a.reason, status: a.type,
         icon: '⚖️', color: '#a855f7', userId: a.user.id

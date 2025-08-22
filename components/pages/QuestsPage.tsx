@@ -69,7 +69,7 @@ const QuestItem: React.FC<{ quest: Quest; now: Date; onSelect: (quest: Quest) =>
     if (!currentUser) return null;
 
     const isAvailable = useMemo(() => isQuestAvailableForUser(quest, questCompletions.filter(c => c.userId === currentUser.id), now, scheduledEvents, appMode), [quest, questCompletions, currentUser.id, now, scheduledEvents, appMode]);
-    const isTodo = quest.type === QuestType.Venture && quest.todoUserIds?.includes(currentUser.id);
+    const isTodo = quest.type === QuestType.Venture && (quest.todoUserIds || []).includes(currentUser.id);
     const isRedemption = quest.kind === QuestKind.Redemption;
     const questGroup = useMemo(() => quest.groupId ? questGroups.find(g => g.id === quest.groupId) : null, [quest.groupId, questGroups]);
     const scopeName = useMemo(() => quest.guildId ? guilds.find(g => g.id === quest.guildId)?.name || 'Guild Scope' : 'Personal', [quest.guildId, guilds]);
@@ -297,7 +297,7 @@ const QuestsPage: React.FC = () => {
                     onClose={() => setSelectedQuest(null)}
                     onComplete={() => handleStartCompletion(selectedQuest)}
                     onToggleTodo={() => handleToggleTodo(selectedQuest)}
-                    isTodo={!!(currentUser && selectedQuest.type === QuestType.Venture && selectedQuest.todoUserIds?.includes(currentUser.id))}
+                    isTodo={!!(currentUser && selectedQuest.type === QuestType.Venture && (selectedQuest.todoUserIds || []).includes(currentUser.id))}
                 />
             )}
             {completingQuest && (

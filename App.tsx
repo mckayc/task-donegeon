@@ -17,6 +17,7 @@ import { useDeveloperState, useDeveloperDispatch } from './context/DeveloperCont
 import { useCommunityState } from './context/CommunityContext';
 import { useSystemState } from './context/SystemContext';
 import { useIsDataLoaded } from './context/DataProvider';
+import ErrorBoundary from './components/layout/ErrorBoundary';
 
 const App: React.FC = () => {
   const { settings, themes } = useSystemState();
@@ -135,7 +136,7 @@ const App: React.FC = () => {
   const showBugReporter = settings.developerMode.enabled && currentUser?.role === Role.DonegeonMaster;
 
   return (
-    <>
+    <ErrorBoundary>
       <NotificationContainer />
       {showOnboarding && <OnboardingWizard />}
 
@@ -157,7 +158,7 @@ const App: React.FC = () => {
       })()}
 
       {showBugReporter && <BugReporter />}
-    </>
+    </ErrorBoundary>
   );
 };
 

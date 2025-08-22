@@ -1,5 +1,6 @@
 
 
+
 import React, { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import { Role, ScheduledEvent, Quest, QuestType, ChronicleEvent, User, RewardTypeDefinition, RewardItem } from '../../types';
 import Card from '../user-interface/Card';
@@ -79,6 +80,16 @@ const CalendarPage: React.FC = () => {
     });
     
     if (!currentUser) return null;
+
+    // Safely syncs the dialog's quest data with the main quests list from the provider.
+    useEffect(() => {
+        if (viewingQuest) {
+            const updatedQuestInList = quests.find(q => q.id === viewingQuest.quest.id);
+            if (updatedQuestInList && JSON.stringify(updatedQuestInList) !== JSON.stringify(viewingQuest.quest)) {
+                setViewingQuest(prev => prev ? { ...prev, quest: updatedQuestInList } : null);
+            }
+        }
+    }, [quests, viewingQuest]);
 
     const renderEventContent = (eventInfo: EventContentArg) => {
         const { event } = eventInfo;
@@ -365,17 +376,15 @@ const CalendarPage: React.FC = () => {
         }
     };
 
-    const handleToggleTodo = async () => {
-        if (!viewingQuest) return;
-        const { quest, date } = viewingQuest;
+    const handleToggleTodo = () => {
+        if (!viewingQuest || !currentUser) return;
+        const { quest } = viewingQuest;
         const isCurrentlyTodo = quest.todoUserIds?.includes(currentUser.id);
 
-        const updatedQuest = isCurrentlyTodo
-            ? await unmarkQuestAsTodo(quest.id, currentUser.id)
-            : await markQuestAsTodo(quest.id, currentUser.id);
-        
-        if (updatedQuest) {
-            setViewingQuest({ quest: updatedQuest, date });
+        if (isCurrentlyTodo) {
+            unmarkQuestAsTodo(quest.id, currentUser.id);
+        } else {
+            markQuestAsTodo(quest.id, currentUser.id);
         }
     };
 

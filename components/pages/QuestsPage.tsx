@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo, useEffect } from 'react';
 import Card from '../user-interface/Card';
 import Button from '../user-interface/Button';
@@ -231,17 +232,25 @@ const QuestsPage: React.FC = () => {
         return () => clearInterval(timer);
     }, []);
 
+    // Safely syncs the dialog's quest data with the main quests list from the provider.
+    useEffect(() => {
+        if (selectedQuest) {
+            const updatedQuestInList = quests.find(q => q.id === selectedQuest.id);
+            if (updatedQuestInList && JSON.stringify(updatedQuestInList) !== JSON.stringify(selectedQuest)) {
+                setSelectedQuest(updatedQuestInList);
+            }
+        }
+    }, [quests]);
+
     if (!currentUser) return null;
 
-    const handleToggleTodo = async (quest: Quest) => {
+    const handleToggleTodo = (quest: Quest) => {
         if (!currentUser || quest.type !== QuestType.Venture) return;
         const isTodo = quest.todoUserIds?.includes(currentUser.id);
-        const updatedQuest = isTodo
-          ? await unmarkQuestAsTodo(quest.id, currentUser.id)
-          : await markQuestAsTodo(quest.id, currentUser.id);
-
-        if (updatedQuest && selectedQuest) {
-            setSelectedQuest(updatedQuest);
+        if (isTodo) {
+            unmarkQuestAsTodo(quest.id, currentUser.id);
+        } else {
+            markQuestAsTodo(quest.id, currentUser.id);
         }
     };
 

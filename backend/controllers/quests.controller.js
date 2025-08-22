@@ -1,3 +1,4 @@
+
 const questService = require('../services/quests.service');
 
 const getAllQuests = async (req, res) => {

@@ -1,5 +1,6 @@
 
 
+
 import React, { useState, useEffect, useMemo } from 'react';
 import { useQuestsDispatch, useQuestsState } from '../../context/QuestsContext';
 import { Quest, QuestType, QuestKind, Trophy } from '../../types';
@@ -72,6 +73,17 @@ const Dashboard: React.FC = () => {
         }
     }, [activeThemeId]);
 
+    // Safely syncs the dialog's quest data with the main quests list from the provider.
+    useEffect(() => {
+        if (selectedQuest) {
+            const updatedQuestInList = quests.find(q => q.id === selectedQuest.id);
+            if (updatedQuestInList && JSON.stringify(updatedQuestInList) !== JSON.stringify(selectedQuest)) {
+                setSelectedQuest(updatedQuestInList);
+            }
+        }
+    }, [quests]);
+
+
     if (!currentUser) return <div>Loading adventurer's data...</div>;
     
     const handleQuestSelect = (quest: Quest) => setSelectedQuest(quest);
@@ -85,16 +97,14 @@ const Dashboard: React.FC = () => {
         }
     };
 
-    const handleToggleTodo = async (questToToggle: Quest) => {
+    const handleToggleTodo = (questToToggle: Quest) => {
         if (!currentUser || questToToggle.type !== QuestType.Venture) return;
         const isTodo = questToToggle.todoUserIds?.includes(currentUser.id);
         
-        const updatedQuest = isTodo
-          ? await unmarkQuestAsTodo(questToToggle.id, currentUser.id)
-          : await markQuestAsTodo(questToToggle.id, currentUser.id);
-        
-        if (updatedQuest && selectedQuest) {
-            setSelectedQuest(updatedQuest);
+        if (isTodo) {
+            unmarkQuestAsTodo(questToToggle.id, currentUser.id);
+        } else {
+            markQuestAsTodo(questToToggle.id, currentUser.id);
         }
     };
     

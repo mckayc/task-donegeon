@@ -1,7 +1,9 @@
 
 
 
-import React, { useState, useMemo } from 'react';
+
+
+import React, { useState, useMemo, useEffect } from 'react';
 import { Quest, QuestType, User, QuestCompletionStatus } from '../../types';
 import { AppMode } from '../../types/app';
 import { isQuestAvailableForUser, toYMD, isQuestScheduledForDay, questSorter } from '../../utils/quests';
@@ -42,6 +44,17 @@ const SharedCalendarPage: React.FC = () => {
     const [verifyingQuest, setVerifyingQuest] = useState<{ quest: Quest; user: User } | null>(null);
     const [questForNoteCompletion, setQuestForNoteCompletion] = useState<{ quest: Quest; user: User } | null>(null);
     const [selectedQuestDetails, setSelectedQuestDetails] = useState<{ quest: Quest; user: User } | null>(null);
+
+    // Safely syncs the dialog's quest data with the main quests list from the provider.
+    useEffect(() => {
+        if (selectedQuestDetails) {
+            const updatedQuestInList = quests.find(q => q.id === selectedQuestDetails.quest.id);
+            if (updatedQuestInList && JSON.stringify(updatedQuestInList) !== JSON.stringify(selectedQuestDetails.quest)) {
+                setSelectedQuestDetails(prev => prev ? { ...prev, quest: updatedQuestInList } : null);
+            }
+        }
+    }, [quests, selectedQuestDetails]);
+
 
     const sharedUsers = useMemo(() => {
         const userMap = new Map(users.map(u => [u.id, u]));
@@ -144,17 +157,15 @@ const SharedCalendarPage: React.FC = () => {
         setSelectedQuestDetails(null);
     };
 
-    const handleToggleTodo = async () => {
+    const handleToggleTodo = () => {
         if (!selectedQuestDetails) return;
         const { quest, user } = selectedQuestDetails;
         const isCurrentlyTodo = quest.todoUserIds?.includes(user.id);
 
-        const updatedQuest = isCurrentlyTodo
-            ? await unmarkQuestAsTodo(quest.id, user.id)
-            : await markQuestAsTodo(quest.id, user.id);
-        
-        if (updatedQuest) {
-            setSelectedQuestDetails({ quest: updatedQuest, user });
+        if (isCurrentlyTodo) {
+            unmarkQuestAsTodo(quest.id, user.id);
+        } else {
+            markQuestAsTodo(quest.id, user.id);
         }
     };
     

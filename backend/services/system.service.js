@@ -1,5 +1,4 @@
 
-
 const { dataSource } = require('../data-source');
 const { 
     QuestCompletionEntity, PurchaseRequestEntity, UserTrophyEntity, AdminAdjustmentEntity, 
@@ -15,14 +14,13 @@ const { In, IsNull } = require('typeorm');
 
 
 const getChronicles = async (req, res) => {
-    const { startDate, endDate, userId, guildId, viewMode, page = 1, limit = 50 } = req.query;
+    const { userId, guildId, viewMode, page = 1, limit = 50 } = req.query;
     const manager = dataSource.manager;
     const skip = (parseInt(page) - 1) * parseInt(limit);
 
     let allEvents = [];
     
-    // --- Build base where clause for all queries ---
-    const buildWhereClause = (userSpecific = false) => {
+    const buildWhereClause = (entityConfig = { hasDirectUserId: false }) => {
         const where = {};
         if (guildId === 'null') {
             where.guildId = IsNull();
@@ -31,11 +29,10 @@ const getChronicles = async (req, res) => {
         }
 
         if (viewMode === 'personal' && userId) {
-            // For entities with direct userId column
-            if (userSpecific) {
-                 where.userId = userId;
-            } else { // For entities with user relation
-                 where.user = { id: userId };
+            if (entityConfig.hasDirectUserId) {
+                where.userId = userId;
+            } else {
+                where.user = { id: userId };
             }
         }
         return where;
@@ -43,50 +40,50 @@ const getChronicles = async (req, res) => {
 
     // Quest Completions
     const completions = await manager.find(QuestCompletionEntity, {
-        where: buildWhereClause(false),
+        where: buildWhereClause({ hasDirectUserId: false }),
         relations: ['user', 'quest'],
         order: { completedAt: 'DESC' }
     });
     allEvents.push(...completions.map(c => ({
         id: `c-${c.id}`, originalId: c.id, date: c.completedAt, type: 'Quest',
-        title: c.quest?.title || 'Unknown Quest', note: c.note, status: c.status,
-        icon: c.quest?.icon, color: '#10b981', userId: c.user.id
+        title: `Completed: ${c.quest?.title || 'Unknown Quest'}`, note: c.note, status: c.status,
+        icon: c.quest?.icon || '📜', color: '#10b981', userId: c.user.id
     })));
 
     // Purchase Requests
     const purchases = await manager.find(PurchaseRequestEntity, {
-        where: buildWhereClause(true), // PurchaseRequest has direct userId
+        where: buildWhereClause({ hasDirectUserId: true }),
         relations: ['user'],
         order: { requestedAt: 'DESC' }
     });
     allEvents.push(...purchases.map(p => ({
         id: `p-${p.id}`, originalId: p.id, date: p.requestedAt, type: 'Purchase',
         title: `Purchase: ${p.assetDetails.name}`, note: p.assetDetails.description, status: p.status,
-        icon: '💰', color: '#f59e0b', userId: p.user.id
+        icon: '💰', color: '#f59e0b', userId: p.userId
     })));
 
     // User Trophies
     const trophies = await manager.find(UserTrophyEntity, {
-        where: buildWhereClause(true), // UserTrophy has direct userId
+        where: buildWhereClause({ hasDirectUserId: true }),
         relations: ['user', 'trophy'],
         order: { awardedAt: 'DESC' }
     });
     allEvents.push(...trophies.map(t => ({
         id: `t-${t.id}`, originalId: t.id, date: t.awardedAt, type: 'Trophy',
         title: `Trophy Earned: ${t.trophy.name}`, note: t.trophy.description, status: 'Awarded',
-        icon: t.trophy.icon, color: '#ca8a04', userId: t.user.id
+        icon: t.trophy.icon, color: '#ca8a04', userId: t.userId
     })));
 
     // Admin Adjustments
     const adjustments = await manager.find(AdminAdjustmentEntity, {
-        where: buildWhereClause(true), // AdminAdjustment has direct userId
+        where: buildWhereClause({ hasDirectUserId: true }),
         relations: ['user'],
         order: { adjustedAt: 'DESC' }
     });
     allEvents.push(...adjustments.map(a => ({
         id: `a-${a.id}`, originalId: a.id, date: a.adjustedAt, type: 'Adjustment',
         title: `Admin Adjustment: ${a.type}`, note: a.reason, status: a.type,
-        icon: '⚖️', color: '#a855f7', userId: a.user.id
+        icon: '⚖️', color: '#a855f7', userId: a.userId
     })));
     
     // Sort all collected events by date

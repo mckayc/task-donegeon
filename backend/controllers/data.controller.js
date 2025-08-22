@@ -1,5 +1,4 @@
 
-
 const { dataSource } = require('../data-source');
 const { In, MoreThan, IsNull } = require("typeorm");
 const { 
@@ -93,10 +92,22 @@ const getDeltaAppData = async (manager, lastSync) => {
     const updatedQCs = await qcRepo.find({ where: { updatedAt: MoreThan(lastSync) }, relations: ['user', 'quest'] });
     if (updatedQCs.length > 0) {
         updates.questCompletions = updatedQCs
-            .filter(qc => qc.user && qc.quest)
+            .filter(qc => qc.user && qc.quest) // Ensure relations are loaded
             .map(qc => {
-                const { user, quest, ...completionData } = qc;
-                return { ...completionData, userId: user.id, questId: quest.id };
+                // Manually structure the object to match frontend expectations
+                return {
+                    id: qc.id,
+                    completedAt: qc.completedAt,
+                    status: qc.status,
+                    note: qc.note,
+                    guildId: qc.guildId,
+                    actedById: qc.actedById,
+                    actedAt: qc.actedAt,
+                    createdAt: qc.createdAt,
+                    updatedAt: qc.updatedAt,
+                    userId: qc.user.id,
+                    questId: qc.quest.id,
+                };
             });
     }
 

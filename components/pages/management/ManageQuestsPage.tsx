@@ -1,20 +1,18 @@
 
-
 import React, { useState, useMemo, useEffect } from 'react';
 import { useSystemState, useSystemDispatch } from '../../../context/SystemContext';
 import { useQuestsState, useQuestsDispatch } from '../../../context/QuestsContext';
 import { Quest, QuestType, QuestGroup } from '../../../types';
 import Button from '../../user-interface/Button';
 import Card from '../../user-interface/Card';
-import CreateQuestDialog from '../quests/CreateQuestDialog';
-import ConfirmDialog from '../user-interface/ConfirmDialog';
-import QuestIdeaGenerator from '../quests/QuestIdeaGenerator';
-import Input from '../user-interface/Input';
-import BulkEditQuestsDialog from '../quests/BulkEditQuestsDialog';
+import CreateQuestDialog from '../../quests/CreateQuestDialog';
+import ConfirmDialog from '../../user-interface/ConfirmDialog';
+import QuestIdeaGenerator from '../../quests/QuestIdeaGenerator';
+import Input from '../../user-interface/Input';
+import BulkEditQuestsDialog from '../../quests/BulkEditQuestsDialog';
 import { useDebounce } from '../../../hooks/useDebounce';
-import EditJourneyDialog from '../quests/EditJourneyDialog';
-import { QuestTable } from '../quests/QuestTable';
-import { logger } from '../../../utils/logger';
+import EditJourneyDialog from '../../quests/EditJourneyDialog';
+import { QuestTable } from '../../quests/QuestTable';
 
 const ManageQuestsPage: React.FC = () => {
     const { settings, isAiConfigured } = useSystemState();
@@ -37,12 +35,6 @@ const ManageQuestsPage: React.FC = () => {
     const debouncedSearchTerm = useDebounce(searchTerm, 300);
 
     const isAiAvailable = settings.enableAiFeatures && isAiConfigured;
-    
-    useEffect(() => {
-        if (debouncedSearchTerm) {
-            logger.log(`[ManageQuests] Search term updated: "${debouncedSearchTerm}"`);
-        }
-    }, [debouncedSearchTerm]);
 
     const pageQuests = useMemo(() => {
         const group = questGroups.find(g => g.name === activeTab);
@@ -80,18 +72,7 @@ const ManageQuestsPage: React.FC = () => {
         setSelectedQuests([]);
     }, [activeTab, searchTerm, sortBy]);
 
-    const handleTabChange = (tab: string) => {
-        logger.log(`[ManageQuests] Tab changed to: ${tab}`);
-        setActiveTab(tab);
-    };
-
-    const handleSortChange = (value: typeof sortBy) => {
-        logger.log(`[ManageQuests] Sort changed to: ${value}`);
-        setSortBy(value);
-    };
-
     const handleEdit = (quest: Quest) => {
-        logger.log('[ManageQuests] Opening edit dialog for quest', { id: quest.id, title: quest.title });
         if (quest.type === QuestType.Journey) {
             setEditingJourneyId(quest.id);
         } else {
@@ -102,20 +83,13 @@ const ManageQuestsPage: React.FC = () => {
     };
 
     const handleCreate = () => {
-        logger.log('[ManageQuests] Opening create dialog');
         setInitialCreateData(null);
         setEditingQuest(null);
         setIsCreateDialogOpen(true);
     };
 
-    const handleClone = (questId: string) => {
-        logger.log('[ManageQuests] Cloning quest', { id: questId });
-        cloneQuest(questId);
-    };
-
     const handleConfirmAction = async () => {
         if (!confirmation) return;
-        logger.log(`[ManageQuests] Confirming bulk action: ${confirmation.action}`, { ids: confirmation.ids });
         
         switch(confirmation.action) {
             case 'delete':
@@ -139,7 +113,6 @@ const ManageQuestsPage: React.FC = () => {
     }
     
     const handleUseIdea = (idea: any) => {
-        logger.log('[ManageQuests] Using AI-generated idea to create quest', { title: idea.title });
         setIsGeneratorOpen(false);
         setInitialCreateData(idea);
         setEditingQuest(null);
@@ -161,7 +134,7 @@ const ManageQuestsPage: React.FC = () => {
     const headerActions = (
         <div className="flex items-center gap-2 flex-wrap">
              {isAiAvailable && (
-                <Button size="sm" onClick={() => { logger.log('[ManageQuests] Opening AI generator'); setIsGeneratorOpen(true); }} variant="secondary" data-log-id="manage-quests-create-with-ai">
+                <Button size="sm" onClick={() => setIsGeneratorOpen(true)} variant="secondary" data-log-id="manage-quests-create-with-ai">
                     Create with AI
                 </Button>
             )}
@@ -180,7 +153,7 @@ const ManageQuestsPage: React.FC = () => {
                         {tabs.map(tab => (
                             <button
                                 key={tab}
-                                onClick={() => handleTabChange(tab)}
+                                onClick={() => setActiveTab(tab)}
                                 data-log-id={`manage-quests-tab-${tab.toLowerCase().replace(' ', '-')}`}
                                 className={`capitalize whitespace-nowrap pb-4 px-1 border-b-2 font-medium text-sm transition-colors ${
                                     activeTab === tab
@@ -195,7 +168,7 @@ const ManageQuestsPage: React.FC = () => {
 
                  <div className="flex flex-wrap gap-4 mb-4">
                     <Input placeholder="Search quests..." value={searchTerm} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchTerm(e.target.value)} className="max-w-xs" />
-                    <Input as="select" value={sortBy} onChange={(e: React.ChangeEvent<HTMLSelectElement>) => handleSortChange(e.target.value as any)}>
+                    <Input as="select" value={sortBy} onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setSortBy(e.target.value as any)}>
                         <option value="title-asc">Title (A-Z)</option>
                         <option value="title-desc">Title (Z-A)</option>
                         <option value="status-asc">Status (Inactive first)</option>
@@ -204,7 +177,7 @@ const ManageQuestsPage: React.FC = () => {
                     {selectedQuests.length > 0 && (
                         <div className="flex items-center gap-2 p-2 bg-stone-900/50 rounded-lg">
                             <span className="text-sm font-semibold text-stone-300 px-2">{selectedQuests.length} selected</span>
-                            <Button size="sm" variant="secondary" onClick={() => { logger.log('[ManageQuests] Opening bulk edit dialog'); setIsBulkEditDialogOpen(true); }} data-log-id="manage-quests-bulk-edit">Bulk Edit</Button>
+                            <Button size="sm" variant="secondary" onClick={() => setIsBulkEditDialogOpen(true)} data-log-id="manage-quests-bulk-edit">Bulk Edit</Button>
                             <Button size="sm" variant="secondary" className="!bg-green-800/60 hover:!bg-green-700/70 text-green-200" onClick={() => setConfirmation({ action: 'activate', ids: selectedQuests })} data-log-id="manage-quests-bulk-activate">Mark Active</Button>
                             <Button size="sm" variant="secondary" className="!bg-yellow-800/60 hover:!bg-yellow-700/70 text-yellow-200" onClick={() => setConfirmation({ action: 'deactivate', ids: selectedQuests })} data-log-id="manage-quests-bulk-deactivate">Mark Inactive</Button>
                             <Button size="sm" variant="secondary" className="!bg-red-900/50 hover:!bg-red-800/60 text-red-300" onClick={() => setConfirmation({ action: 'delete', ids: selectedQuests })} data-log-id="manage-quests-bulk-delete">Delete</Button>
@@ -217,7 +190,7 @@ const ManageQuestsPage: React.FC = () => {
                     selectedQuests={selectedQuests}
                     setSelectedQuests={setSelectedQuests}
                     onEdit={handleEdit}
-                    onClone={handleClone}
+                    onClone={cloneQuest}
                     onDeleteRequest={(ids) => setConfirmation({ action: 'delete', ids })}
                     terminology={settings.terminology}
                     isLoading={!quests}

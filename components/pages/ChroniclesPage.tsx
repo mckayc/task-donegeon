@@ -7,7 +7,6 @@ import { ChronicleEvent } from '../chronicles/types';
 import Button from '../user-interface/Button';
 import { useAuthState } from '../../context/AuthContext';
 import { useEconomyDispatch } from '../../context/EconomyContext';
-import { logger } from '../../utils/logger';
 
 const ChroniclesPage: React.FC = () => {
     const { appMode } = useUIState();
@@ -22,7 +21,6 @@ const ChroniclesPage: React.FC = () => {
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
-        logger.log('[ChroniclesPage] View changed, resetting to page 1.', { viewMode, appMode: appMode.mode, itemsPerPage });
         setCurrentPage(1);
     }, [viewMode, appMode, itemsPerPage]);
 
@@ -30,7 +28,6 @@ const ChroniclesPage: React.FC = () => {
         const fetchEvents = async () => {
             if (!currentUser) return;
             setIsLoading(true);
-            logger.log('[ChroniclesPage] Fetching events.', { page: currentPage, limit: itemsPerPage, viewMode, guildId: appMode.mode === 'guild' ? appMode.guildId : null });
             try {
                 const guildId = appMode.mode === 'guild' ? appMode.guildId : 'null';
                 const params = new URLSearchParams({
@@ -46,7 +43,7 @@ const ChroniclesPage: React.FC = () => {
                 setEvents(data.events || []);
                 setTotalEvents(data.total || 0);
             } catch (error) {
-                logger.error(error);
+                console.error(error);
                 setEvents([]);
                 setTotalEvents(0);
             } finally {

@@ -1,19 +1,19 @@
-
-import type { User, UserTemplate, AdminAdjustment } from './components/users/types';
-import type { GameAsset, Market, PurchaseRequest, RewardTypeDefinition } from './components/items/types';
-import type { Quest, QuestGroup, QuestCompletion } from './components/quests/types';
-import type { Trophy, UserTrophy } from './components/trophies/types';
-import type { Rank } from './components/ranks/types';
-import type { Rotation } from './components/rotations/types';
-import type { Guild } from './components/guilds/types';
-import type { ModifierDefinition, AppliedModifier } from './components/modifiers/types';
-import type { ScheduledEvent } from './components/events/types';
-import type { SystemLog, SystemNotification } from './components/system/types';
-import type { ChatMessage } from './components/chat/types';
-import type { BugReport } from './components/dev/types';
-import type { TradeOffer, Gift } from './components/trading/types';
-import type { ThemeDefinition } from './components/themes/types';
-import type { AppSettings } from './types/app';
+import { GenerateContentResponse } from "@google/genai";
+import { User, UserTemplate, AdminAdjustment } from './components/users/types';
+import { GameAsset, Market, PurchaseRequest, RewardTypeDefinition } from './components/items/types';
+import { Quest, QuestGroup, QuestCompletion } from './components/quests/types';
+import { Trophy, UserTrophy } from './components/trophies/types';
+import { Rank } from './components/ranks/types';
+import { Rotation } from './components/rotations/types';
+import { Guild } from './components/guilds/types';
+import { ModifierDefinition, AppliedModifier } from './components/modifiers/types';
+import { ScheduledEvent } from './components/events/types';
+import { SystemLog, SystemNotification } from './components/system/types';
+import { ChatMessage } from './components/chat/types';
+import { BugReport } from './components/dev/types';
+import { TradeOffer, Gift } from './components/trading/types';
+import { ThemeDefinition } from './components/themes/types';
+import { AppSettings } from './types/app';
 
 // Re-export all the modularized types
 export * from './components/users/types';

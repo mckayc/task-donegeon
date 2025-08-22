@@ -2,14 +2,13 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
 import AppProviders from './context/AppProviders';
-import { logger } from './utils/logger';
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('/sw.js').then(registration => {
-      logger.log('SW registered: ', registration);
+      console.log('SW registered: ', registration);
     }).catch(registrationError => {
-      logger.error('SW registration failed: ', registrationError);
+      console.log('SW registration failed: ', registrationError);
     });
   });
 }

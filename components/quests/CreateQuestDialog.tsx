@@ -19,7 +19,6 @@ import EditJourneyDialog from './EditJourneyDialog';
 import { useQuestsState, useQuestsDispatch } from '../../context/QuestsContext';
 import { useEconomyState } from '../../context/EconomyContext';
 import { useCommunityState } from '../../context/CommunityContext';
-import { logger } from '../../utils/logger';
 
 type QuestFormData = Omit<Quest, 'id' | 'claimedByUserIds' | 'dismissals'> & { id?: string };
 
@@ -147,17 +146,14 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
   const dialogTitle = initialDataFromBug ? 'Convert Bug to Quest' : (mode === 'edit' ? `Edit ${settings.terminology.task}` : `Create New ${settings.terminology.task}`);
   
   useEffect(() => {
-    if (!hasLoggedOpen.current) {
+    if (bugLogger.isRecording() && !hasLoggedOpen.current) {
         let logMessage = `Opened '${dialogTitle}' dialog.`;
         if (mode === 'edit' && questToEdit) {
           logMessage += ` for quest "${questToEdit.title}".`;
         } else if (initialDataFromBug) {
           logMessage += ` from bug report "${initialDataFromBug.title}".`;
         }
-        logger.log(`[CreateQuestDialog] ${logMessage}`);
-        if (bugLogger.isRecording()) {
-            bugLogger.add({ type: 'ACTION', message: logMessage });
-        }
+        bugLogger.add({ type: 'ACTION', message: logMessage });
         hasLoggedOpen.current = true;
     }
   }, [dialogTitle, mode, questToEdit, initialDataFromBug]);
@@ -210,10 +206,8 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
     }
     setError('');
 
-    const logMessage = `Submitted '${dialogTitle}' form.`;
-    logger.log(`[CreateQuestDialog] ${logMessage}`);
     if (bugLogger.isRecording()) {
-      bugLogger.add({ type: 'ACTION', message: logMessage });
+      bugLogger.add({ type: 'ACTION', message: `Submitted '${dialogTitle}' form.` });
     }
 
     let finalGroupId = formData.groupId;
@@ -274,7 +268,6 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
   
   const handleGroupChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
       const { value } = e.target;
-      logger.log('[CreateQuestDialog] Group changed', { value });
       if (value === '--new--') {
           setIsCreatingNewGroup(true);
           setFormData(p => ({...p, groupId: ''}));
@@ -286,7 +279,6 @@ const CreateQuestDialog: React.FC<QuestDialogProps> = ({ questToEdit, initialDat
 
   const handleKindChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const newKind = e.target.value as QuestKind;
-    logger.log('[CreateQuestDialog] Kind changed', { newKind });
     const isPersonalScope = newKind === QuestKind.Personal || newKind === QuestKind.Redemption;
     
     setFormData(p => ({

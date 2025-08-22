@@ -1,6 +1,5 @@
 import React, { createContext, useState, useContext, ReactNode, useCallback } from 'react';
 import { Notification } from '../types';
-import { logger } from '../utils/logger';
 
 // State managed by this context
 interface NotificationsState {
@@ -22,7 +21,6 @@ export const NotificationsProvider: React.FC<{ children: ReactNode }> = ({ child
 
   const addNotification = useCallback((notification: Omit<Notification, 'id'>): string => {
     const uniqueId = `notif-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
-    logger.log('[NotificationDispatch] addNotification called:', notification);
     setNotifications(prev => [...prev, { ...notification, id: uniqueId }]);
     return uniqueId;
   }, []);

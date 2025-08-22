@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, ReactNode, useReducer, useMemo, useCallback } from 'react';
 import { Quest, QuestGroup, QuestCompletion, Rotation, BulkQuestUpdates } from '../types';
 import { useNotificationsDispatch } from './NotificationsContext';
@@ -11,7 +12,6 @@ import {
 import { useAuthDispatch } from './AuthContext';
 import { useProgressionReducerDispatch } from './ProgressionContext';
 import { useSystemReducerDispatch } from './SystemContext';
-import { logger } from '../utils/logger';
 
 // --- STATE & CONTEXT DEFINITIONS ---
 
@@ -60,7 +60,6 @@ const initialState: QuestsState = {
 };
 
 const questsReducer = (state: QuestsState, action: QuestsAction): QuestsState => {
-    logger.log('[QuestsReducer] Action:', action.type, 'Payload:', action.payload);
     let newState: QuestsState;
 
     switch (action.type) {
@@ -71,7 +70,6 @@ const questsReducer = (state: QuestsState, action: QuestsAction): QuestsState =>
             const updatedState = { ...state };
             for (const key in action.payload) {
                 const typedKey = key as keyof QuestsState;
-                if (!action.payload[typedKey]) continue;
 
                 if (typedKey === 'allTags') {
                     continue; // Skip allTags, it is derived from quests
@@ -79,7 +77,10 @@ const questsReducer = (state: QuestsState, action: QuestsAction): QuestsState =>
 
                 if (Array.isArray(updatedState[typedKey])) {
                     const existingItems = new Map((updatedState[typedKey] as any[]).map(item => [item.id, item]));
-                    (action.payload[typedKey] as any[]).forEach(newItem => existingItems.set(newItem.id, newItem));
+                    const itemsToUpdate = action.payload[typedKey];
+                    if (Array.isArray(itemsToUpdate)) {
+                        itemsToUpdate.forEach(newItem => existingItems.set(newItem.id, newItem));
+                    }
                     (updatedState as any)[typedKey] = Array.from(existingItems.values());
                 }
             }
@@ -90,7 +91,6 @@ const questsReducer = (state: QuestsState, action: QuestsAction): QuestsState =>
             const stateWithRemoved = { ...state };
             for (const key in action.payload) {
                 const typedKey = key as keyof QuestsState;
-                 if (!action.payload[typedKey]) continue;
                 
                 if (typedKey === 'allTags') {
                     continue; // Skip allTags

@@ -7,7 +7,6 @@ import Button from '../user-interface/Button';
 import ImageSelectionDialog from '../user-interface/ImageSelectionDialog';
 import { useEconomyState } from '../../context/EconomyContext';
 import { useSystemDispatch } from '../../context/SystemContext';
-import { logger } from '../../utils/logger';
 
 const AvatarPage: React.FC = () => {
     const { gameAssets } = useEconomyState();
@@ -55,13 +54,11 @@ const AvatarPage: React.FC = () => {
     
     const handleEquipItem = (asset: GameAsset) => {
         if (!asset.avatarSlot) return;
-        logger.log('[AvatarPage] Equipping item', { assetId: asset.id, assetName: asset.name, slot: asset.avatarSlot });
         const newAvatarConfig = { ...currentUser.avatar, [asset.avatarSlot]: asset.id };
         updateUser(currentUser.id, { avatar: newAvatarConfig });
     };
     
     const handleProfilePictureSelect = (url: string) => {
-        logger.log('[AvatarPage] Setting profile picture from collection', { url });
         updateUser(currentUser.id, { profilePictureUrl: url });
         setIsGalleryOpen(false);
     };
@@ -69,7 +66,6 @@ const AvatarPage: React.FC = () => {
     const handleProfilePictureUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (file) {
-            logger.log('[AvatarPage] Uploading new profile picture', { fileName: file.name, size: file.size });
             setIsUploading(true);
             const result = await uploadFile(file, 'profile-pictures');
             if (result?.url) {
@@ -77,11 +73,6 @@ const AvatarPage: React.FC = () => {
             }
             setIsUploading(false);
         }
-    };
-    
-    const handleRemoveProfilePicture = () => {
-        logger.log('[AvatarPage] Removing profile picture');
-        updateUser(currentUser.id, { profilePictureUrl: undefined });
     };
 
     const assetsForActiveSlot = ownedAvatarAssets.get(activeSlot) || [];
@@ -102,7 +93,7 @@ const AvatarPage: React.FC = () => {
                             </Button>
                             <Button variant="secondary" onClick={() => setIsGalleryOpen(true)} className="w-full">Select from My Collection</Button>
                              {currentUser.profilePictureUrl && (
-                                <Button variant="secondary" onClick={handleRemoveProfilePicture} className="w-full !bg-red-900/50 hover:!bg-red-800/60 text-red-300">
+                                <Button variant="secondary" onClick={() => updateUser(currentUser.id, { profilePictureUrl: undefined })} className="w-full !bg-red-900/50 hover:!bg-red-800/60 text-red-300">
                                     Remove Picture
                                 </Button>
                             )}

@@ -3,7 +3,6 @@ import { Quest, User, QuestCompletionStatus } from '../../types';
 import { useQuestsDispatch } from '../../context/QuestsContext';
 import { useAuthState } from '../../context/AuthContext';
 import Button from '../user-interface/Button';
-import { logger } from '../../utils/logger';
 
 interface CompleteQuestDialogProps {
   quest: Quest;
@@ -19,7 +18,6 @@ const CompleteQuestDialog: React.FC<CompleteQuestDialogProps> = ({ quest, onClos
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    logger.log('[CompleteQuestDialog] Submitting quest completion for:', { id: quest.id, title: quest.title, forUser: user?.gameName || currentUser?.gameName });
     const userToComplete = user || currentUser;
     if (!userToComplete) return;
 

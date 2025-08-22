@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Rank } from '../../types';
+import { Rank } from '../../ranks/types';
 import Button from '../../user-interface/Button';
 import Card from '../../user-interface/Card';
 import EditRankDialog from '../../settings/EditRankDialog';
@@ -8,7 +8,6 @@ import { useShiftSelect } from '../../../hooks/useShiftSelect';
 import { useProgressionState } from '../../../context/ProgressionContext';
 import { useSystemState, useSystemDispatch } from '../../../context/SystemContext';
 import RankTable from '../../ranks/RankTable';
-import { logger } from '../../../utils/logger';
 
 const ManageRanksPage: React.FC = () => {
     const { ranks } = useProgressionState();
@@ -27,19 +26,16 @@ const ManageRanksPage: React.FC = () => {
     const handleCheckboxClick = useShiftSelect(rankIds, selectedRanks, setSelectedRanks);
 
     const handleCreate = () => {
-        logger.log('[ManageRanks] Opening create dialog');
         setEditingRank(null);
         setIsDialogOpen(true);
     };
 
     const handleEdit = (rank: Rank) => {
-        logger.log('[ManageRanks] Opening edit dialog for rank', { id: rank.id, name: rank.name });
         setEditingRank(rank);
         setIsDialogOpen(true);
     };
 
     const handleDeleteRequest = (rankIds: string[]) => {
-        logger.log(`[ManageRanks] Staging delete action for ${rankIds.length} ranks`, { ids: rankIds });
         const firstRank = ranks.find(r => r.xpThreshold === 0);
         if (firstRank && rankIds.includes(firstRank.id)) {
             alert(`The first ${settings.terminology.level.toLowerCase()} (0 XP Threshold) cannot be deleted.`);
@@ -50,7 +46,6 @@ const ManageRanksPage: React.FC = () => {
 
     const handleConfirmDelete = () => {
         if (deletingIds.length > 0) {
-            logger.log('[ManageRanks] Confirming delete action', { ids: deletingIds });
             deleteSelectedAssets({ ranks: deletingIds }, () => {
                 setDeletingIds([]);
                 setSelectedRanks(prev => prev.filter(id => !deletingIds.includes(id)));

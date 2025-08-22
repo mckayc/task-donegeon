@@ -17,11 +17,11 @@
     "jsx": "react-jsx",
     "types": ["jest", "@testing-library/jest-dom"]
   },
-  "include": ["components", "context", "data", "lib", "index.tsx", "App.tsx", "types.ts", "metadata.json", "src/types"],
+  "include": ["src"],
   "exclude": [
     "node_modules",
-    "**/*.test.ts",
-    "**/*.test.tsx",
+    "src/**/*.test.ts",
+    "src/**/*.test.tsx",
     "jest.config.js",
     "jest.setup.js",
     "test-utils.tsx"

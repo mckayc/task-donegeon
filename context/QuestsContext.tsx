@@ -1,5 +1,7 @@
 
 
+
+
 import React, { createContext, useContext, ReactNode, useReducer, useMemo, useCallback } from 'react';
 import { Quest, QuestGroup, QuestCompletion, Rotation, BulkQuestUpdates } from '../types';
 import { useNotificationsDispatch } from './NotificationsContext';
@@ -65,7 +67,6 @@ const questsReducer = (state: QuestsState, action: QuestsAction): QuestsState =>
         case 'SET_QUESTS_DATA':
             return { ...state, ...action.payload, allTags: Array.from(new Set(action.payload.quests?.flatMap(q => q.tags) || [])) };
         case 'UPDATE_QUESTS_DATA': {
-            if (action.payload.quests) console.log('[FE][QuestsReducer] Received quest payload:', JSON.stringify(action.payload.quests, null, 2));
             const updatedState = { ...state };
             for (const key in action.payload) {
                 const typedKey = key as keyof QuestsState;
@@ -78,7 +79,6 @@ const questsReducer = (state: QuestsState, action: QuestsAction): QuestsState =>
             if (action.payload.quests) {
                 updatedState.allTags = Array.from(new Set(updatedState.quests.flatMap(q => q.tags)));
             }
-            console.log('[FE][QuestsReducer] State after update:', JSON.stringify(updatedState.quests.map(q => ({id: q.id, title: q.title, todoUserIds: q.todoUserIds})), null, 2));
             return updatedState;
         }
         case 'REMOVE_QUESTS_DATA': {

@@ -1,4 +1,5 @@
 
+
 const { dataSource } = require('../data-source');
 const { In, MoreThan } = require("typeorm");
 const { 
@@ -83,7 +84,8 @@ const getDeltaAppData = async (manager, lastSync) => {
      if (updatedQuests.length > 0) {
         updates.quests = updatedQuests.map(q => {
             const { assignedUsers, ...questData } = q;
-            return { ...questData, assignedUserIds: assignedUsers.map(u => u.id) };
+            // FIX: Safely map assignedUsers, providing an empty array as a fallback if it's null or undefined.
+            return { ...questData, assignedUserIds: assignedUsers?.map(u => u.id) || [] };
         });
     }
     

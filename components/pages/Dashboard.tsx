@@ -2,6 +2,7 @@
 
 
 
+
 import React, { useState, useEffect, useMemo } from 'react';
 import { useQuestsDispatch, useQuestsState } from '../../context/QuestsContext';
 import { Quest, QuestType, QuestKind, Trophy } from '../../types';
@@ -79,7 +80,6 @@ const Dashboard: React.FC = () => {
         if (selectedQuest) {
             const updatedQuestInList = quests.find(q => q.id === selectedQuest.id);
             if (updatedQuestInList && JSON.stringify(updatedQuestInList) !== JSON.stringify(selectedQuest)) {
-                console.log('[FE][Dashboard] Syncing dialog with updated quest from provider:', JSON.stringify(updatedQuestInList, null, 2));
                 setSelectedQuest(updatedQuestInList);
             }
         }
@@ -100,7 +100,6 @@ const Dashboard: React.FC = () => {
     };
 
     const handleToggleTodo = (questToToggle: Quest) => {
-        console.log('[FE][Dashboard] Toggling To-Do for quest:', JSON.stringify(questToToggle, null, 2));
         if (!currentUser || questToToggle.type !== QuestType.Venture) return;
         const isTodo = questToToggle.todoUserIds?.includes(currentUser.id);
         

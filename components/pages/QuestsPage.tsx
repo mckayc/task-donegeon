@@ -1,5 +1,7 @@
 
 
+
+
 import React, { useState, useMemo, useEffect } from 'react';
 import Card from '../user-interface/Card';
 import Button from '../user-interface/Button';
@@ -238,7 +240,6 @@ const QuestsPage: React.FC = () => {
         if (selectedQuest) {
             const updatedQuestInList = quests.find(q => q.id === selectedQuest.id);
             if (updatedQuestInList && JSON.stringify(updatedQuestInList) !== JSON.stringify(selectedQuest)) {
-                console.log('[FE][QuestsPage] Syncing dialog with updated quest from provider:', JSON.stringify(updatedQuestInList, null, 2));
                 setSelectedQuest(updatedQuestInList);
             }
         }
@@ -247,7 +248,6 @@ const QuestsPage: React.FC = () => {
     if (!currentUser) return null;
 
     const handleToggleTodo = (quest: Quest) => {
-        console.log('[FE][QuestsPage] Toggling To-Do for quest:', JSON.stringify(quest, null, 2));
         if (!currentUser || quest.type !== QuestType.Venture) return;
         const isTodo = quest.todoUserIds?.includes(currentUser.id);
         if (isTodo) {

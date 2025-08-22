@@ -1,6 +1,8 @@
 
 
 
+
+
 import React, { createContext, useState, useContext, ReactNode, useCallback, useEffect, useReducer, useRef } from 'react';
 import { User } from '../types';
 import { useNotificationsDispatch } from './NotificationsContext';
@@ -47,7 +49,6 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         }
 
         const { updates, newSyncTimestamp } = await response.json();
-        console.log('[FE][DataProvider] Received sync updates:', JSON.stringify(updates, null, 2));
         
         const { 
             users: updatedUsers, loginHistory: updatedLoginHistory, 
@@ -64,7 +65,6 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         const communityPayload = { guilds };
 
         if (lastSyncTimestamp.current) { // Delta update
-            if (quests) console.log('[FE][DataProvider] Dispatching quest updates to reducer:', JSON.stringify(quests, null, 2));
             if (Object.values(questsPayload).some(v => v !== undefined)) questsDispatch.dispatch({ type: 'UPDATE_QUESTS_DATA', payload: questsPayload });
             if (Object.values(economyPayload).some(v => v !== undefined)) (economyDispatch as React.Dispatch<EconomyAction>)({ type: 'UPDATE_ECONOMY_DATA', payload: economyPayload });
             if (Object.values(progressionPayload).some(v => v !== undefined)) (progressionDispatch as React.Dispatch<ProgressionAction>)({ type: 'UPDATE_PROGRESSION_DATA', payload: progressionPayload });

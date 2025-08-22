@@ -71,6 +71,7 @@ const markQuestAsTodo = async (req, res) => {
     const { questId, userId } = req.body;
     const updatedQuest = await questService.markAsTodo(questId, userId);
     if (!updatedQuest) return res.status(404).json({ error: 'Quest not found.' });
+    console.log('[BE][markQuestAsTodo] Sending updated quest:', JSON.stringify(updatedQuest, null, 2));
     res.json(updatedQuest);
 };
 
@@ -78,6 +79,7 @@ const unmarkQuestAsTodo = async (req, res) => {
     const { questId, userId } = req.body;
     const updatedQuest = await questService.unmarkAsTodo(questId, userId);
     if (!updatedQuest) return res.status(404).json({ error: 'Quest not found.' });
+    console.log('[BE][unmarkQuestAsTodo] Sending updated quest:', JSON.stringify(updatedQuest, null, 2));
     res.json(updatedQuest);
 };
 
